@@ -9,29 +9,40 @@ return Component {
 
     OnClickContinueButton = function(self)
         local pauseUIEntity = Engine.GetEntityByName("PauseMenuUI")
-        local pauseComp = GetComponent(pauseUIEntity, "ActiveComponent")
-        pauseComp.isActive = false
-        Time.SetPaused(false)       --Reset Dt back to normal
+        if pauseUIEntity then
+            local pauseComp = GetComponent(pauseUIEntity, "ActiveComponent")
+            if pauseComp then pauseComp.isActive = false end
+        end
+        Time.SetPaused(false)
     end,
 
     OnClickSettingButton = function(self)
         local PauseUIEntity = Engine.GetEntityByName("PauseMenuUI")
         local SettingsUIEntity = Engine.GetEntityByName("SettingsUI")
         
-        if PauseUIEntity then GetComponent(PauseUIEntity, "ActiveComponent").isActive = false end
-        if SettingsUIEntity then GetComponent(SettingsUIEntity, "ActiveComponent").isActive = true end
+        if PauseUIEntity then 
+            local comp = GetComponent(PauseUIEntity, "ActiveComponent")
+            if comp then comp.isActive = false end 
+        end
+        if SettingsUIEntity then 
+            local comp = GetComponent(SettingsUIEntity, "ActiveComponent")
+            if comp then comp.isActive = true end 
+        end
     end,
 
     OnClickMainMenuButton = function(self) 
-        print("is this shit showing")
         local pauseUIEntity = Engine.GetEntityByName("PauseMenuUI")
-        local pauseComp = GetComponent(pauseUIEntity, "ActiveComponent")
-        pauseComp.isActive = false
+        if pauseUIEntity then
+            local pauseComp = GetComponent(pauseUIEntity, "ActiveComponent")
+            if pauseComp then pauseComp.isActive = false end
+        end
            
         local confirmUIEntity = Engine.GetEntityByName("ConfirmationPromptUI")
-        local confirmComp = GetComponent(confirmUIEntity, "ActiveComponent")
-        confirmComp.isActive = true
-end,
+        if confirmUIEntity then
+            local confirmComp = GetComponent(confirmUIEntity, "ActiveComponent")
+            if confirmComp then confirmComp.isActive = true end
+        end
+    end, -- Fixed: Correctly closing the function and adding comma for the next table entry
 
     Start = function(self)
         self._buttonData = {} 
@@ -59,7 +70,6 @@ end,
                     maxY = pos.y + (scale.y / 2)
                 }
 
-                -- Initialize: All hovers start OFF
                 if hoverSprite then
                     hoverSprite.isVisible = false
                 end
@@ -78,10 +88,8 @@ end,
         local mouseCoordinate = Engine.GetGameCoordinate(pointerPos.x, pointerPos.y)
         local inputX, inputY = mouseCoordinate[1], mouseCoordinate[2]
 
-        -- Logic: Check every button every frame
         for _, data in pairs(self._buttonData) do
             if data.hoverSprite then
-                -- The hover sprite is ONLY visible if the mouse is inside the box
                 local isHovering = (inputX >= data.minX and inputX <= data.maxX and
                                    inputY >= data.minY and inputY <= data.maxY)
                 

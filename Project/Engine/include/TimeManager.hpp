@@ -9,7 +9,6 @@ public:
 	static double GetUnscaledDeltaTime();
 	static double GetFps();
 	static double GetFixedDeltaTime();
-
 	//PAUSE CONTROLS
 	static void SetPaused(bool paused) { isPaused = paused; }
 	static bool IsPaused() { return isPaused; }

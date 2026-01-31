@@ -24,10 +24,10 @@ return Component {
         local confirmUIEntity = Engine.GetEntityByName("ConfirmationPromptUI")
         self._confirmComp = GetComponent(confirmUIEntity, "ActiveComponent")
 
-        --NEED TO GET COMPONENT FOR PAUSEMENU UI, SETTINGS UI, CONFIRMATION PROMPT
+        local blackScreenUIEntity = Engine.GetEntityByName("BlackScreen")
+        self._blackScreenComp = GetComponent(blackScreenUIEntity, "ActiveComponent")
 
-        --IF ALL INACTIVE -> OPEN PAUSEMENU UI
-        --IF PAUSE MENU ACTIVE -> CLOSE, -> IF SETTING OR CONFIRM PROMPT UI IS ACTIVE , ESC GOES INTO PAUSEMENU UI
+
 
     end,
 
@@ -44,23 +44,6 @@ return Component {
         local isPressed = Input.IsActionJustPressed("Pause")
         -- Only fire if the button is pressed AND our cooldown has expired  --TO STOP IT FROM FIRING TWICE
         if isPressed and self._pauseTimer <= 0 then
-            -- if not self._pauseComp.isActive and not self._settingsComp.isActive and not self._pauseComp.isActive then
-            --     self._pauseComp.isActive = true
-            -- end
-
-            -- --TOGGLE PAUSE MENU LOGIC VIA ESC KEY
-            -- if self._pauseComp.isActive then
-            --     self._pauseComp.isActive = false
-            -- end
-
-            -- if self._settingsComp.isActive then
-            --     self._settingsComp.isActive = false
-            --     self._pauseComp.isActive    = true
-            -- end
-            -- if self._confirmComp.isActive then
-            --     self._confirmComp.isActive = false
-            --     self._pauseComp.isActive = true
-            -- end
             -- -- Set a small cooldown (e.g., 0.1 seconds) to swallow the "double fire"
             self._pauseTimer = 0.1 
 
@@ -81,6 +64,11 @@ return Component {
                 self._pauseComp.isActive = true
                 Time.SetPaused(true)             -- Pause game
             end
+        end
+        if self._confirmComp.isActive or self._settingsComp.isActive or self._pauseComp.isActive then
+            self._blackScreenComp.isActive = true
+        else
+            self._blackScreenComp.isActive = false
         end
     end,
 }

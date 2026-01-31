@@ -32,7 +32,7 @@
                                 },
                                 {
                                     "type": "float",
-                                    "data": 5
+                                    "data": 0
                                 }
                             ]
                         },
@@ -93,7 +93,7 @@
                         },
                         {
                             "type": "float",
-                            "data": -90
+                            "data": 90
                         },
                         {
                             "type": "float",
@@ -306,33 +306,71 @@
                             "entryFunction": "OnInit",
                             "autoInvokeEntry": true,
                             "instanceState": {
+                                "StartSafe": null,
+                                "OnClickMainMenuButton": null,
+                                "Every": null,
+                                "__created_at": 1769694721.0,
+                                "_buttonData": [
+                                    {
+                                        "minY": 550.0,
+                                        "minX": 846.9010009765625,
+                                        "maxY": 620.0,
+                                        "maxX": 1146.9010009765625,
+                                        "hoverSprite": null
+                                    },
+                                    {
+                                        "minY": 445.0,
+                                        "minX": 846.9010009765625,
+                                        "maxY": 515.0,
+                                        "maxX": 1146.9010009765625,
+                                        "hoverSprite": null
+                                    },
+                                    {
+                                        "minY": 340.0,
+                                        "minX": 796.9010009765625,
+                                        "maxY": 410.0,
+                                        "maxX": 1196.9010009765625,
+                                        "hoverSprite": null
+                                    }
+                                ],
+                                "fields": {
+                                    "_subscriptions": {},
+                                    "__meta": {},
+                                    "__created_at": 1769694721.0,
+                                    "fadeDuration": 1.0,
+                                    "_private": {},
+                                    "__field_list": {
+                                        "fadeDuration": 1.0,
+                                        "fadeScreenName": "MenuFadeScreen"
+                                    },
+                                    "fadeScreenName": "MenuFadeScreen"
+                                },
+                                "AwakeSafe": null,
+                                "__meta": {},
+                                "entityId": 1.0,
                                 "Destroy": null,
-                                "Update": null,
                                 "Subscribe": null,
+                                "_subs_map": {},
                                 "_call_lifecycle": null,
+                                "fadeDuration": 1.0,
+                                "After": null,
+                                "SerializeFields": null,
+                                "DisableSafe": null,
+                                "OnClickContinueButton": null,
+                                "UpdateSafe": null,
+                                "DeserializeFields": null,
                                 "__field_list": {
                                     "fadeDuration": 1.0,
                                     "fadeScreenName": "MenuFadeScreen"
                                 },
-                                "OnClickContinueButton": null,
-                                "DeserializeFields": null,
-                                "SerializeFields": null,
-                                "StartSafe": null,
-                                "Every": null,
-                                "DisableSafe": null,
-                                "Start": null,
                                 "_subscriptions": {},
-                                "UpdateSafe": null,
-                                "fadeDuration": 1.0,
-                                "AwakeSafe": null,
-                                "fadeScreenName": "MenuFadeScreen",
                                 "_private": {},
+                                "Start": null,
                                 "OnClickSettingButton": null,
-                                "__created_at": 1769694721.0,
-                                "After": null,
-                                "__meta": {},
                                 "Unsubscribe": null,
-                                "OnClickMainMenuButton": null
+                                "GetComponent": null,
+                                "fadeScreenName": "MenuFadeScreen",
+                                "Update": null
                             }
                         }
                     ]
@@ -497,7 +535,7 @@
                         },
                         {
                             "type": "int",
-                            "data": 1
+                            "data": 51
                         },
                         {
                             "type": "Vector3D",
@@ -672,7 +710,7 @@
                         },
                         {
                             "type": "int",
-                            "data": 2
+                            "data": 52
                         },
                         {
                             "type": "Matrix4x4",
@@ -936,7 +974,7 @@
                         },
                         {
                             "type": "int",
-                            "data": 2
+                            "data": 52
                         },
                         {
                             "type": "Vector3D",
@@ -1007,7 +1045,7 @@
                         },
                         {
                             "type": "bool",
-                            "data": false
+                            "data": true
                         }
                     ]
                 }
@@ -1171,7 +1209,7 @@
                         },
                         {
                             "type": "int",
-                            "data": 2
+                            "data": 52
                         },
                         {
                             "type": "Vector3D",
@@ -1367,7 +1405,7 @@
                         },
                         {
                             "type": "int",
-                            "data": 2
+                            "data": 52
                         },
                         {
                             "type": "Vector3D",
@@ -1602,7 +1640,7 @@
                         },
                         {
                             "type": "int",
-                            "data": 2
+                            "data": 52
                         },
                         {
                             "type": "Vector3D",
@@ -1798,7 +1836,7 @@
                         },
                         {
                             "type": "int",
-                            "data": 2
+                            "data": 52
                         },
                         {
                             "type": "Vector3D",
@@ -1869,7 +1907,7 @@
                         },
                         {
                             "type": "bool",
-                            "data": false
+                            "data": true
                         }
                     ]
                 }
@@ -2033,7 +2071,7 @@
                         },
                         {
                             "type": "int",
-                            "data": 2
+                            "data": 52
                         },
                         {
                             "type": "Vector3D",
@@ -2181,32 +2219,93 @@
                             "entryFunction": "OnInit",
                             "autoInvokeEntry": true,
                             "instanceState": {
+                                "StartSafe": null,
+                                "fields": {
+                                    "_subscriptions": {},
+                                    "__meta": {},
+                                    "__created_at": 1769694721.0,
+                                    "fadeScreenName": "MenuFadeScreen",
+                                    "_private": {},
+                                    "__field_list": {
+                                        "fadeDuration": 1.0,
+                                        "fadeScreenName": "MenuFadeScreen"
+                                    },
+                                    "fadeDuration": 1.0
+                                },
+                                "Every": null,
                                 "OnClickResetButton": null,
-                                "Destroy": null,
-                                "Update": null,
+                                "__created_at": 1769694721.0,
+                                "_buttonData": [
+                                    {
+                                        "minY": 212.20399475097656,
+                                        "minX": 1254.3399658203125,
+                                        "maxY": 292.20399475097656,
+                                        "maxX": 1454.3399658203125,
+                                        "hoverSprite": null
+                                    },
+                                    {
+                                        "minY": 38.858001708984375,
+                                        "minX": 64.01899719238281,
+                                        "maxY": 158.85800170898438,
+                                        "maxX": 214.0189971923828,
+                                        "hoverSprite": null
+                                    }
+                                ],
+                                "fadeScreenName": "MenuFadeScreen",
+                                "AwakeSafe": null,
+                                "_fillEnt": null,
+                                "OnClickBackButton": null,
+                                "__meta": {},
                                 "Subscribe": null,
+                                "entityId": 10.0,
                                 "_call_lifecycle": null,
+                                "fadeDuration": 1.0,
+                                "After": null,
+                                "Start": null,
+                                "UpdateSafe": null,
+                                "SerializeFields": null,
+                                "DisableSafe": null,
+                                "DeserializeFields": null,
+                                "_subs_map": {},
+                                "_subscriptions": {},
                                 "__field_list": {
                                     "fadeDuration": 1.0,
                                     "fadeScreenName": "MenuFadeScreen"
                                 },
-                                "AwakeSafe": null,
-                                "DeserializeFields": null,
-                                "StartSafe": null,
-                                "Every": null,
-                                "Start": null,
-                                "_subscriptions": {},
-                                "SerializeFields": null,
-                                "fadeDuration": 1.0,
-                                "DisableSafe": null,
-                                "UpdateSafe": null,
                                 "_private": {},
-                                "fadeScreenName": "MenuFadeScreen",
-                                "__created_at": 1769694721.0,
-                                "After": null,
-                                "__meta": {},
-                                "OnClickBackButton": null,
-                                "Unsubscribe": null
+                                "Destroy": null,
+                                "Unsubscribe": null,
+                                "GetComponent": null,
+                                "_sliderData": [
+                                    {
+                                        "minY": 571.4039916992188,
+                                        "barTrans": null,
+                                        "maxY": 636.4039916992188,
+                                        "maxX": 1275.3499755859375,
+                                        "type": "master",
+                                        "notchTrans": null,
+                                        "minX": 775.3499755859375
+                                    },
+                                    {
+                                        "minY": 461.5,
+                                        "barTrans": null,
+                                        "maxY": 526.5,
+                                        "maxX": 1275.1500244140625,
+                                        "type": "bgm",
+                                        "notchTrans": null,
+                                        "minX": 775.1500244140625
+                                    },
+                                    {
+                                        "minY": 351.59600830078125,
+                                        "barTrans": null,
+                                        "maxY": 416.5960083007813,
+                                        "maxX": 1275.1500244140625,
+                                        "type": "sfx",
+                                        "notchTrans": null,
+                                        "minX": 775.1500244140625
+                                    }
+                                ],
+                                "Update": null
                             }
                         }
                     ]
@@ -2477,7 +2576,7 @@
                         },
                         {
                             "type": "int",
-                            "data": 1
+                            "data": 51
                         },
                         {
                             "type": "Vector3D",
@@ -2673,7 +2772,7 @@
                         },
                         {
                             "type": "int",
-                            "data": 1
+                            "data": 51
                         },
                         {
                             "type": "Vector3D",
@@ -2869,7 +2968,7 @@
                         },
                         {
                             "type": "int",
-                            "data": 1
+                            "data": 51
                         },
                         {
                             "type": "Vector3D",
@@ -3150,7 +3249,7 @@
                         },
                         {
                             "type": "int",
-                            "data": 2
+                            "data": 52
                         },
                         {
                             "type": "Matrix4x4",
@@ -3393,7 +3492,7 @@
                         },
                         {
                             "type": "int",
-                            "data": 2
+                            "data": 52
                         },
                         {
                             "type": "Matrix4x4",
@@ -3636,7 +3735,7 @@
                         },
                         {
                             "type": "int",
-                            "data": 2
+                            "data": 52
                         },
                         {
                             "type": "Matrix4x4",
@@ -4012,7 +4111,7 @@
                         },
                         {
                             "type": "int",
-                            "data": 3
+                            "data": 53
                         },
                         {
                             "type": "Vector3D",
@@ -4208,7 +4307,7 @@
                         },
                         {
                             "type": "int",
-                            "data": 3
+                            "data": 53
                         },
                         {
                             "type": "Vector3D",
@@ -4404,7 +4503,7 @@
                         },
                         {
                             "type": "int",
-                            "data": 3
+                            "data": 53
                         },
                         {
                             "type": "Vector3D",
@@ -4600,7 +4699,7 @@
                         },
                         {
                             "type": "int",
-                            "data": 5
+                            "data": 55
                         },
                         {
                             "type": "Vector3D",
@@ -4796,7 +4895,7 @@
                         },
                         {
                             "type": "int",
-                            "data": 5
+                            "data": 55
                         },
                         {
                             "type": "Vector3D",
@@ -4992,7 +5091,7 @@
                         },
                         {
                             "type": "int",
-                            "data": 5
+                            "data": 55
                         },
                         {
                             "type": "Vector3D",
@@ -5188,7 +5287,7 @@
                         },
                         {
                             "type": "int",
-                            "data": 4
+                            "data": 54
                         },
                         {
                             "type": "Vector3D",
@@ -5384,7 +5483,7 @@
                         },
                         {
                             "type": "int",
-                            "data": 4
+                            "data": 54
                         },
                         {
                             "type": "Vector3D",
@@ -5580,7 +5679,7 @@
                         },
                         {
                             "type": "int",
-                            "data": 4
+                            "data": 54
                         },
                         {
                             "type": "Vector3D",
@@ -5881,7 +5980,7 @@
                         },
                         {
                             "type": "int",
-                            "data": 3
+                            "data": 53
                         },
                         {
                             "type": "Vector3D",
@@ -5952,7 +6051,7 @@
                         },
                         {
                             "type": "bool",
-                            "data": true
+                            "data": false
                         }
                     ]
                 }
@@ -6116,7 +6215,7 @@
                         },
                         {
                             "type": "int",
-                            "data": 3
+                            "data": 53
                         },
                         {
                             "type": "Vector3D",
@@ -6417,7 +6516,7 @@
                         },
                         {
                             "type": "int",
-                            "data": 3
+                            "data": 53
                         },
                         {
                             "type": "Vector3D",
@@ -6488,7 +6587,7 @@
                         },
                         {
                             "type": "bool",
-                            "data": true
+                            "data": false
                         }
                     ]
                 }
@@ -6652,7 +6751,7 @@
                         },
                         {
                             "type": "int",
-                            "data": 4
+                            "data": 54
                         },
                         {
                             "type": "Vector3D",
@@ -6848,7 +6947,7 @@
                         },
                         {
                             "type": "int",
-                            "data": 0
+                            "data": 50
                         },
                         {
                             "type": "Vector3D",
@@ -6989,7 +7088,56 @@
                             "enabled": true,
                             "preserveKeys": [],
                             "entryFunction": "OnInit",
-                            "autoInvokeEntry": true
+                            "autoInvokeEntry": true,
+                            "instanceState": {
+                                "OnClickNoButton": null,
+                                "StartSafe": null,
+                                "OnClickYesButton": null,
+                                "__created_at": 1769854620.0,
+                                "_buttonData": [
+                                    {
+                                        "minY": 460.0,
+                                        "minX": 703.0549926757813,
+                                        "maxY": 530.0,
+                                        "maxX": 903.0549926757813,
+                                        "hoverSprite": null
+                                    },
+                                    {
+                                        "minY": 460.0,
+                                        "minX": 1037.6700439453125,
+                                        "maxY": 530.0,
+                                        "maxX": 1237.6700439453125,
+                                        "hoverSprite": null
+                                    }
+                                ],
+                                "AwakeSafe": null,
+                                "__field_list": {
+                                    "fadeDuration": 1.0,
+                                    "fadeScreenName": "MenuFadeScreen",
+                                    "mainMenuScene": "Resources/Scenes/01_MainMenu.scene"
+                                },
+                                "entityId": 36.0,
+                                "mainMenuScene": "Resources/Scenes/01_MainMenu.scene",
+                                "Subscribe": null,
+                                "_subs_map": {},
+                                "_call_lifecycle": null,
+                                "fadeDuration": 1.0,
+                                "After": null,
+                                "SerializeFields": null,
+                                "DisableSafe": null,
+                                "UpdateSafe": null,
+                                "Every": null,
+                                "DeserializeFields": null,
+                                "__meta": {},
+                                "_subscriptions": {},
+                                "_private": {},
+                                "Start": null,
+                                "Destroy": null,
+                                "Unsubscribe": null,
+                                "GetComponent": null,
+                                "fadeScreenName": "MenuFadeScreen",
+                                "Update": null
+                            }
                         }
                     ]
                 }
@@ -7153,7 +7301,7 @@
                         },
                         {
                             "type": "int",
-                            "data": 1
+                            "data": 51
                         },
                         {
                             "type": "Vector3D",
@@ -7328,7 +7476,7 @@
                         },
                         {
                             "type": "int",
-                            "data": 2
+                            "data": 52
                         },
                         {
                             "type": "Matrix4x4",
@@ -7592,7 +7740,7 @@
                         },
                         {
                             "type": "int",
-                            "data": 2
+                            "data": 52
                         },
                         {
                             "type": "Vector3D",
@@ -7663,7 +7811,7 @@
                         },
                         {
                             "type": "bool",
-                            "data": true
+                            "data": false
                         }
                     ]
                 }
@@ -7827,7 +7975,7 @@
                         },
                         {
                             "type": "int",
-                            "data": 2
+                            "data": 52
                         },
                         {
                             "type": "Vector3D",
@@ -8023,7 +8171,7 @@
                         },
                         {
                             "type": "int",
-                            "data": 2
+                            "data": 52
                         },
                         {
                             "type": "Vector3D",
@@ -8094,7 +8242,7 @@
                         },
                         {
                             "type": "bool",
-                            "data": true
+                            "data": false
                         }
                     ]
                 }
@@ -8258,7 +8406,7 @@
                         },
                         {
                             "type": "int",
-                            "data": 2
+                            "data": 52
                         },
                         {
                             "type": "Vector3D",
@@ -8391,25 +8539,51 @@
                             "entryFunction": "OnInit",
                             "autoInvokeEntry": true,
                             "instanceState": {
-                                "Destroy": null,
-                                "Update": null,
-                                "Subscribe": null,
-                                "_call_lifecycle": null,
-                                "__field_list": {},
-                                "AwakeSafe": null,
-                                "DeserializeFields": null,
                                 "StartSafe": null,
-                                "Unsubscribe": null,
-                                "Start": null,
-                                "_subscriptions": {},
-                                "SerializeFields": null,
-                                "_private": {},
-                                "__created_at": 1769694721.0,
-                                "DisableSafe": null,
-                                "After": null,
-                                "__meta": {},
+                                "fields": {
+                                    "_subscriptions": {},
+                                    "__meta": {},
+                                    "_private": {},
+                                    "__field_list": {},
+                                    "__created_at": 1769694721.0
+                                },
                                 "Every": null,
-                                "UpdateSafe": null
+                                "__created_at": 1769694721.0,
+                                "_private": {},
+                                "_settingMenuUI": null,
+                                "AwakeSafe": null,
+                                "entityId": 43.0,
+                                "_confirmButtons": {
+                                    "YesButton": null,
+                                    "NoButton": null
+                                },
+                                "SerializeFields": null,
+                                "Subscribe": null,
+                                "_pauseButtons": {
+                                    "MainMenuButton": null,
+                                    "ContinueButton": null,
+                                    "SettingsButton": null
+                                },
+                                "_call_lifecycle": null,
+                                "_subs_map": {},
+                                "After": null,
+                                "Start": null,
+                                "_pauseMenuUI": null,
+                                "_confirmMenuUI": null,
+                                "_settingButtons": {
+                                    "BackButton": null,
+                                    "ResetButton": null
+                                },
+                                "DeserializeFields": null,
+                                "DisableSafe": null,
+                                "__meta": {},
+                                "UpdateSafe": null,
+                                "__field_list": {},
+                                "Destroy": null,
+                                "Unsubscribe": null,
+                                "GetComponent": null,
+                                "_subscriptions": {},
+                                "Update": null
                             }
                         }
                     ]
@@ -8509,7 +8683,47 @@
                             "enabled": true,
                             "preserveKeys": [],
                             "entryFunction": "OnInit",
-                            "autoInvokeEntry": true
+                            "autoInvokeEntry": true,
+                            "instanceState": {
+                                "_pauseTimer": -0.0029273993335664217,
+                                "__created_at": 1769854620.0,
+                                "SetPosition": null,
+                                "AwakeSafe": null,
+                                "Subscribe": null,
+                                "_subs_map": {},
+                                "UpdateSafe": null,
+                                "_blackScreenComp": null,
+                                "GetTransform": null,
+                                "DeserializeFields": null,
+                                "entityId": 44.0,
+                                "Unsubscribe": null,
+                                "GetComponent": null,
+                                "Move": null,
+                                "Update": null,
+                                "StartSafe": null,
+                                "Every": null,
+                                "GetScale": null,
+                                "__field_list": {},
+                                "_settingsComp": null,
+                                "DisableSafe": null,
+                                "_call_lifecycle": null,
+                                "_confirmComp": null,
+                                "After": null,
+                                "SerializeFields": null,
+                                "GetRotation": null,
+                                "GetPosition": null,
+                                "_subscriptions": {},
+                                "_isGamePaused": false,
+                                "Start": null,
+                                "__meta": {},
+                                "_transform_fetched": false,
+                                "DebugTransform": null,
+                                "Destroy": null,
+                                "SetScale": null,
+                                "_private": {},
+                                "_pauseComp": null,
+                                "SetRotation": null
+                            }
                         }
                     ]
                 }
