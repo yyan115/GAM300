@@ -48,10 +48,6 @@ return Component {
             self._isFading = false
             self._fadeTimer = 0
             self._isHovered = false
-            -- Reset to normal sprite
-            if self._sprite and self.spriteGUIDs and self.spriteGUIDs[1] then
-                self._sprite:SetTextureFromGUID(self.spriteGUIDs[1])
-            end
         end
 
         -- Update previous state
