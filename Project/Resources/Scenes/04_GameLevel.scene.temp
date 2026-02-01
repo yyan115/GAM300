@@ -200,42 +200,7 @@
                             "preserveKeys": [],
                             "entryFunction": "OnInit",
                             "autoInvokeEntry": true,
-                            "instanceState": {
-                                "mouseSensitivity": 0.15,
-                                "followLerp": 10.0,
-                                "__meta": {},
-                                "_targetPos": {
-                                    "y": 0.0,
-                                    "z": 0.0,
-                                    "x": 0.0
-                                },
-                                "_subscriptions": {},
-                                "_lastMouseY": 0.0,
-                                "_posSub": {
-                                    "id": 1064.0,
-                                    "event": "player_position"
-                                },
-                                "__created_at": 1764350815.0,
-                                "followDistance": 5.0,
-                                "_hasTarget": false,
-                                "_firstMouse": true,
-                                "_yaw": 180.0,
-                                "minPitch": -30.0,
-                                "__field_list": {
-                                    "mouseSensitivity": 0.15,
-                                    "followLerp": 10.0,
-                                    "maxPitch": 60.0,
-                                    "heightOffset": 0.0,
-                                    "followDistance": 5.0,
-                                    "minPitch": -30.0
-                                },
-                                "_pitch": 15.0,
-                                "_transform_fetched": false,
-                                "_lastMouseX": 0.0,
-                                "heightOffset": 0.0,
-                                "_private": {},
-                                "maxPitch": 60.0
-                            }
+                            "instanceState": {}
                         }
                     ]
                 }
@@ -864,7 +829,7 @@
                     "layerIndex": 0
                 },
                 "SiblingIndexComponent": {
-                    "siblingIndex": 15
+                    "siblingIndex": 14
                 },
                 "Transform": {
                     "type": "Transform",
@@ -11827,7 +11792,7 @@
                     "layerIndex": 0
                 },
                 "SiblingIndexComponent": {
-                    "siblingIndex": 9
+                    "siblingIndex": 8
                 },
                 "Transform": {
                     "type": "Transform",
@@ -11914,7 +11879,7 @@
                     "layerIndex": 0
                 },
                 "SiblingIndexComponent": {
-                    "siblingIndex": 10
+                    "siblingIndex": 9
                 },
                 "Transform": {
                     "type": "Transform",
@@ -12001,7 +11966,7 @@
                     "layerIndex": 0
                 },
                 "SiblingIndexComponent": {
-                    "siblingIndex": 11
+                    "siblingIndex": 10
                 },
                 "Transform": {
                     "type": "Transform",
@@ -12088,7 +12053,7 @@
                     "layerIndex": 0
                 },
                 "SiblingIndexComponent": {
-                    "siblingIndex": 12
+                    "siblingIndex": 11
                 },
                 "Transform": {
                     "type": "Transform",
@@ -12175,7 +12140,7 @@
                     "layerIndex": 0
                 },
                 "SiblingIndexComponent": {
-                    "siblingIndex": 13
+                    "siblingIndex": 12
                 },
                 "Transform": {
                     "type": "Transform",
@@ -12262,7 +12227,7 @@
                     "layerIndex": 0
                 },
                 "SiblingIndexComponent": {
-                    "siblingIndex": 14
+                    "siblingIndex": 13
                 },
                 "Transform": {
                     "type": "Transform",
@@ -12349,7 +12314,7 @@
                     "layerIndex": 0
                 },
                 "SiblingIndexComponent": {
-                    "siblingIndex": 16
+                    "siblingIndex": 15
                 },
                 "Transform": {
                     "type": "Transform",
@@ -15574,7 +15539,7 @@
                     "layerIndex": 0
                 },
                 "SiblingIndexComponent": {
-                    "siblingIndex": 17
+                    "siblingIndex": 16
                 },
                 "Transform": {
                     "type": "Transform",
@@ -23174,7 +23139,7 @@
                     "layerIndex": 0
                 },
                 "SiblingIndexComponent": {
-                    "siblingIndex": 18
+                    "siblingIndex": 17
                 },
                 "Transform": {
                     "type": "Transform",
@@ -23261,7 +23226,7 @@
                     "layerIndex": 0
                 },
                 "SiblingIndexComponent": {
-                    "siblingIndex": 20
+                    "siblingIndex": 19
                 },
                 "Transform": {
                     "type": "Transform",
@@ -30709,7 +30674,7 @@
                     "layerIndex": 0
                 },
                 "SiblingIndexComponent": {
-                    "siblingIndex": 21
+                    "siblingIndex": 20
                 },
                 "Transform": {
                     "type": "Transform",
@@ -30796,7 +30761,7 @@
                     "layerIndex": 0
                 },
                 "SiblingIndexComponent": {
-                    "siblingIndex": 22
+                    "siblingIndex": 21
                 },
                 "Transform": {
                     "type": "Transform",
@@ -31270,7 +31235,7 @@
                     "layerIndex": 0
                 },
                 "SiblingIndexComponent": {
-                    "siblingIndex": 23
+                    "siblingIndex": 22
                 },
                 "Transform": {
                     "type": "Transform",
@@ -31744,7 +31709,7 @@
                     "layerIndex": 0
                 },
                 "SiblingIndexComponent": {
-                    "siblingIndex": 24
+                    "siblingIndex": 23
                 },
                 "Transform": {
                     "type": "Transform",
@@ -32216,7 +32181,7 @@
                     "layerIndex": 0
                 },
                 "SiblingIndexComponent": {
-                    "siblingIndex": 25
+                    "siblingIndex": 24
                 },
                 "Transform": {
                     "type": "Transform",
@@ -32688,7 +32653,7 @@
                     "layerIndex": 0
                 },
                 "SiblingIndexComponent": {
-                    "siblingIndex": 26
+                    "siblingIndex": 25
                 },
                 "Transform": {
                     "type": "Transform",
@@ -33160,7 +33125,7 @@
                     "layerIndex": 0
                 },
                 "SiblingIndexComponent": {
-                    "siblingIndex": 33
+                    "siblingIndex": 32
                 },
                 "Transform": {
                     "type": "Transform",
@@ -33579,7 +33544,7 @@
                     "layerIndex": 0
                 },
                 "SiblingIndexComponent": {
-                    "siblingIndex": 35
+                    "siblingIndex": 34
                 },
                 "Transform": {
                     "type": "Transform",
@@ -33742,7 +33707,7 @@
             "guid": "001bb91d79234f28-0003fd5772000015",
             "components": {
                 "NameComponent": {
-                    "name": "ChainCreation"
+                    "name": "ChainManager"
                 },
                 "TagComponent": {
                     "tagIndex": 0
@@ -33751,7 +33716,7 @@
                     "layerIndex": 0
                 },
                 "SiblingIndexComponent": {
-                    "siblingIndex": 34
+                    "siblingIndex": 33
                 },
                 "Transform": {
                     "type": "Transform",
@@ -33825,21 +33790,52 @@
                 "ScriptComponent": {
                     "scripts": [
                         {
-                            "scriptGuidStr": "003952bdfa3876c4-0003d3227c000007",
-                            "scriptPath": "../../Resources/Scripts/Gameplay/PlayerChain.lua",
+                            "scriptGuidStr": "0000000000000000-0000000000000000",
+                            "scriptPath": "../../Resources/Scripts/GamePlay/ChainBootstrap.lua",
                             "enabled": true,
                             "preserveKeys": [],
                             "entryFunction": "OnInit",
                             "autoInvokeEntry": true,
                             "instanceState": {
-                                "IsElastic": true,
-                                "VerletGravity": 0.5,
-                                "MaxLength": 2.0,
-                                "NumberOfLinks": 200.0,
                                 "LinkName": "Link",
-                                "ConstraintIterations": 20.0,
-                                "AutoStart": true,
-                                "PlayerName": "Kusane_Player_LeftHandMiddle1"
+                                "TriggerKey": "G",
+                                "MaxLength": 5.0,
+                                "SimulatedHitDistance": 0.0,
+                                "PlayerName": "Kusane_Player_LeftHandMiddle1",
+                                "_subscriptions": {},
+                                "VerletGravity": 0.5,
+                                "LinkMaxDistance": 0.025,
+                                "NumberOfLinks": 200.0,
+                                "_private": {},
+                                "__created_at": 1769925658.0,
+                                "PinEndWhenExtended": true,
+                                "ConstraintIterations": 10.0,
+                                "IsElastic": true,
+                                "__field_list": {
+                                    "LinkMaxDistance": 0.025,
+                                    "NumberOfLinks": 200.0,
+                                    "ChainSpeed": 10.0,
+                                    "MaxLength": 0.0,
+                                    "PinEndWhenExtended": true,
+                                    "ConstraintIterations": 2.0,
+                                    "SimulatedHitDistance": 0.0,
+                                    "EnableLogs": false,
+                                    "LinkName": "Link",
+                                    "TriggerKey": "G",
+                                    "IsElastic": true,
+                                    "AnchorAngleThresholdDeg": 45.0,
+                                    "AutoStart": false,
+                                    "PlayerName": "Kusane_Player_LeftHandMiddle1",
+                                    "VerletDamping": 0.02,
+                                    "VerletGravity": 9.81
+                                },
+                                "__meta": {},
+                                "ChainSpeed": 10.0,
+                                "AnchorAngleThresholdDeg": 45.0,
+                                "AutoStart": false,
+                                "_subs_map": {},
+                                "VerletDamping": 0.02,
+                                "EnableLogs": false
                             }
                         }
                     ]
@@ -33860,7 +33856,7 @@
                     "layerIndex": 0
                 },
                 "SiblingIndexComponent": {
-                    "siblingIndex": 19
+                    "siblingIndex": 18
                 },
                 "Transform": {
                     "type": "Transform",
@@ -34356,7 +34352,7 @@
                     "layerIndex": 0
                 },
                 "SiblingIndexComponent": {
-                    "siblingIndex": 27
+                    "siblingIndex": 26
                 },
                 "Transform": {
                     "type": "Transform",
@@ -34615,7 +34611,7 @@
                     "layerIndex": 0
                 },
                 "SiblingIndexComponent": {
-                    "siblingIndex": 28
+                    "siblingIndex": 27
                 },
                 "Transform": {
                     "type": "Transform",
@@ -34925,7 +34921,7 @@
                     "layerIndex": 0
                 },
                 "SiblingIndexComponent": {
-                    "siblingIndex": 29
+                    "siblingIndex": 28
                 },
                 "Transform": {
                     "type": "Transform",
@@ -35184,7 +35180,7 @@
                     "layerIndex": 0
                 },
                 "SiblingIndexComponent": {
-                    "siblingIndex": 30
+                    "siblingIndex": 29
                 },
                 "Transform": {
                     "type": "Transform",
@@ -35494,7 +35490,7 @@
                     "layerIndex": 0
                 },
                 "SiblingIndexComponent": {
-                    "siblingIndex": 31
+                    "siblingIndex": 30
                 },
                 "Transform": {
                     "type": "Transform",
@@ -35753,7 +35749,7 @@
                     "layerIndex": 0
                 },
                 "SiblingIndexComponent": {
-                    "siblingIndex": 32
+                    "siblingIndex": 31
                 },
                 "Transform": {
                     "type": "Transform",
@@ -36050,179 +36046,11 @@
             }
         },
         {
-            "PrefabPath": "../../Resources/Prefabs/Player (2).prefab",
+            "PrefabPath": "../../Resources/Prefabs/Player (4).prefab",
             "id": 262,
             "guid": "002936801107bf75-00040d569e004657",
             "Name": "Player",
             "ComponentOverrides": [
-                {
-                    "ModelRenderComponent": {
-                        "type": "ModelRenderComponent",
-                        "data": [
-                            "0021cfe6a89046e8-0004055610000009",
-                            "0060f444e1e8808c-000337e664000011",
-                            "001f43f4a75d8356-00040106ec000003",
-                            {
-                                "type": "Matrix4x4",
-                                "data": [
-                                    {
-                                        "type": "float",
-                                        "data": 1
-                                    },
-                                    {
-                                        "type": "float",
-                                        "data": 0
-                                    },
-                                    {
-                                        "type": "float",
-                                        "data": 0
-                                    },
-                                    {
-                                        "type": "float",
-                                        "data": 0
-                                    },
-                                    {
-                                        "type": "float",
-                                        "data": 0
-                                    },
-                                    {
-                                        "type": "float",
-                                        "data": 1
-                                    },
-                                    {
-                                        "type": "float",
-                                        "data": 0
-                                    },
-                                    {
-                                        "type": "float",
-                                        "data": 0
-                                    },
-                                    {
-                                        "type": "float",
-                                        "data": 0
-                                    },
-                                    {
-                                        "type": "float",
-                                        "data": 0
-                                    },
-                                    {
-                                        "type": "float",
-                                        "data": 1
-                                    },
-                                    {
-                                        "type": "float",
-                                        "data": 0
-                                    },
-                                    {
-                                        "type": "float",
-                                        "data": 0
-                                    },
-                                    {
-                                        "type": "float",
-                                        "data": 0
-                                    },
-                                    {
-                                        "type": "float",
-                                        "data": 0
-                                    },
-                                    {
-                                        "type": "float",
-                                        "data": 1
-                                    }
-                                ]
-                            },
-                            {
-                                "type": "bool",
-                                "data": true
-                            },
-                            {
-                                "type": "bool",
-                                "data": true
-                            }
-                        ]
-                    }
-                },
-                {
-                    "AnimationComponent": {
-                        "type": "AnimationComponent",
-                        "data": [
-                            {
-                                "type": "bool",
-                                "data": true
-                            },
-                            {
-                                "type": "bool",
-                                "data": true
-                            },
-                            {
-                                "type": "bool",
-                                "data": true
-                            },
-                            {
-                                "type": "float",
-                                "data": 1
-                            },
-                            {
-                                "type": "int",
-                                "data": 7
-                            },
-                            {
-                                "type": "std::vector<std::string>",
-                                "data": [
-                                    {
-                                        "type": "std::string",
-                                        "data": "Resources/Animations/Kusane@Idle.fbx"
-                                    },
-                                    {
-                                        "type": "std::string",
-                                        "data": "Resources/Animations/Kusane@Hurt.fbx"
-                                    },
-                                    {
-                                        "type": "std::string",
-                                        "data": "Resources/Animations/Kusane@Run.fbx"
-                                    },
-                                    {
-                                        "type": "std::string",
-                                        "data": "Resources/Animations/Kusane@Death.fbx"
-                                    },
-                                    {
-                                        "type": "std::string",
-                                        "data": "Resources/Animations/Kusane@Jump.fbx"
-                                    },
-                                    {
-                                        "type": "std::string",
-                                        "data": "Resources/Animations/Kusane@Land.fbx"
-                                    },
-                                    {
-                                        "type": "std::string",
-                                        "data": "Resources/Animations/Kusane@Roll.fbx"
-                                    }
-                                ]
-                            },
-                            {
-                                "type": "std::vector<GUID_128>",
-                                "data": [
-                                    "0021cfe696d7800b-0004055ab000147b",
-                                    "0078e0e1ab0a863d-00040569a0000003",
-                                    "0078e0e1983f1346-00040569a2000005",
-                                    "0078e0e1b6fb5612-00040569a0000001",
-                                    "00293680445a81bd-00040d31fc000191",
-                                    "006c6ee2251c2d11-00040fc31e0029d3",
-                                    "00485ed685fc886a-0004104122005d8d"
-                                ]
-                            },
-                            {
-                                "type": "std::string",
-                                "data": "../../Resources/Animations/PlayerAC.animator"
-                            }
-                        ]
-                    }
-                },
-                {
-                    "SiblingIndexComponent": {
-                        "siblingIndex": 36
-                    }
-                },
                 {
                     "ScriptComponent": {
                         "scripts": [
@@ -36334,377 +36162,7 @@
                                     "002936802db7574c-00040d569e0046db"
                                 ]
                             },
-                            "ComponentOverrides": [
-                                {
-                                    "Transform": {
-                                        "type": "Transform",
-                                        "data": [
-                                            {
-                                                "type": "Vector3D",
-                                                "data": [
-                                                    {
-                                                        "type": "float",
-                                                        "data": 0.00136528
-                                                    },
-                                                    {
-                                                        "type": "float",
-                                                        "data": 0.427932
-                                                    },
-                                                    {
-                                                        "type": "float",
-                                                        "data": -0.00024917
-                                                    }
-                                                ]
-                                            },
-                                            {
-                                                "type": "Vector3D",
-                                                "data": [
-                                                    {
-                                                        "type": "float",
-                                                        "data": 1
-                                                    },
-                                                    {
-                                                        "type": "float",
-                                                        "data": 1
-                                                    },
-                                                    {
-                                                        "type": "float",
-                                                        "data": 1
-                                                    }
-                                                ]
-                                            },
-                                            {
-                                                "type": "Quaternion",
-                                                "data": [
-                                                    {
-                                                        "type": "float",
-                                                        "data": 0.562579
-                                                    },
-                                                    {
-                                                        "type": "float",
-                                                        "data": 0.257941
-                                                    },
-                                                    {
-                                                        "type": "float",
-                                                        "data": 0.220215
-                                                    },
-                                                    {
-                                                        "type": "float",
-                                                        "data": 0.753974
-                                                    }
-                                                ]
-                                            }
-                                        ]
-                                    }
-                                }
-                            ],
                             "Children": [
-                                {
-                                    "id": 330,
-                                    "guid": "00293680483302ec-00040d569e0046df",
-                                    "Name": "Kusane_Player_LeftUpLeg",
-                                    "ParentComponent": {
-                                        "type": "ParentComponent",
-                                        "data": [
-                                            "0029368039f2f89c-00040d569e0046dd"
-                                        ]
-                                    },
-                                    "ComponentOverrides": [
-                                        {
-                                            "Transform": {
-                                                "type": "Transform",
-                                                "data": [
-                                                    {
-                                                        "type": "Vector3D",
-                                                        "data": [
-                                                            {
-                                                                "type": "float",
-                                                                "data": -0.0108511
-                                                            },
-                                                            {
-                                                                "type": "float",
-                                                                "data": 0.00011169
-                                                            },
-                                                            {
-                                                                "type": "float",
-                                                                "data": 0.0519031
-                                                            }
-                                                        ]
-                                                    },
-                                                    {
-                                                        "type": "Vector3D",
-                                                        "data": [
-                                                            {
-                                                                "type": "float",
-                                                                "data": 1
-                                                            },
-                                                            {
-                                                                "type": "float",
-                                                                "data": 1
-                                                            },
-                                                            {
-                                                                "type": "float",
-                                                                "data": 1
-                                                            }
-                                                        ]
-                                                    },
-                                                    {
-                                                        "type": "Quaternion",
-                                                        "data": [
-                                                            {
-                                                                "type": "float",
-                                                                "data": 0.470568
-                                                            },
-                                                            {
-                                                                "type": "float",
-                                                                "data": 0.154857
-                                                            },
-                                                            {
-                                                                "type": "float",
-                                                                "data": -0.388725
-                                                            },
-                                                            {
-                                                                "type": "float",
-                                                                "data": 0.776839
-                                                            }
-                                                        ]
-                                                    }
-                                                ]
-                                            }
-                                        }
-                                    ],
-                                    "Children": [
-                                        {
-                                            "id": 331,
-                                            "guid": "0029368038a4187a-00040d569e0046e1",
-                                            "Name": "Kusane_Player_LeftLeg",
-                                            "ParentComponent": {
-                                                "type": "ParentComponent",
-                                                "data": [
-                                                    "00293680483302ec-00040d569e0046df"
-                                                ]
-                                            },
-                                            "ComponentOverrides": [
-                                                {
-                                                    "Transform": {
-                                                        "type": "Transform",
-                                                        "data": [
-                                                            {
-                                                                "type": "Vector3D",
-                                                                "data": [
-                                                                    {
-                                                                        "type": "float",
-                                                                        "data": 0.196115
-                                                                    },
-                                                                    {
-                                                                        "type": "float",
-                                                                        "data": -1.86117e-7
-                                                                    },
-                                                                    {
-                                                                        "type": "float",
-                                                                        "data": -0.00000923142
-                                                                    }
-                                                                ]
-                                                            },
-                                                            {
-                                                                "type": "Vector3D",
-                                                                "data": [
-                                                                    {
-                                                                        "type": "float",
-                                                                        "data": 1
-                                                                    },
-                                                                    {
-                                                                        "type": "float",
-                                                                        "data": 1
-                                                                    },
-                                                                    {
-                                                                        "type": "float",
-                                                                        "data": 1
-                                                                    }
-                                                                ]
-                                                            },
-                                                            {
-                                                                "type": "Quaternion",
-                                                                "data": [
-                                                                    {
-                                                                        "type": "float",
-                                                                        "data": 0.896327
-                                                                    },
-                                                                    {
-                                                                        "type": "float",
-                                                                        "data": 0.170569
-                                                                    },
-                                                                    {
-                                                                        "type": "float",
-                                                                        "data": 0.0460408
-                                                                    },
-                                                                    {
-                                                                        "type": "float",
-                                                                        "data": 0.406675
-                                                                    }
-                                                                ]
-                                                            }
-                                                        ]
-                                                    }
-                                                }
-                                            ],
-                                            "Children": [
-                                                {
-                                                    "id": 332,
-                                                    "guid": "0029368039d5fbaa-00040d569e0046e3",
-                                                    "Name": "Kusane_Player_LeftFoot",
-                                                    "ParentComponent": {
-                                                        "type": "ParentComponent",
-                                                        "data": [
-                                                            "0029368038a4187a-00040d569e0046e1"
-                                                        ]
-                                                    },
-                                                    "ComponentOverrides": [
-                                                        {
-                                                            "Transform": {
-                                                                "type": "Transform",
-                                                                "data": [
-                                                                    {
-                                                                        "type": "Vector3D",
-                                                                        "data": [
-                                                                            {
-                                                                                "type": "float",
-                                                                                "data": 0.221143
-                                                                            },
-                                                                            {
-                                                                                "type": "float",
-                                                                                "data": 4.16509e-7
-                                                                            },
-                                                                            {
-                                                                                "type": "float",
-                                                                                "data": -2.31762e-7
-                                                                            }
-                                                                        ]
-                                                                    },
-                                                                    {
-                                                                        "type": "Vector3D",
-                                                                        "data": [
-                                                                            {
-                                                                                "type": "float",
-                                                                                "data": 1
-                                                                            },
-                                                                            {
-                                                                                "type": "float",
-                                                                                "data": 1
-                                                                            },
-                                                                            {
-                                                                                "type": "float",
-                                                                                "data": 1
-                                                                            }
-                                                                        ]
-                                                                    },
-                                                                    {
-                                                                        "type": "Quaternion",
-                                                                        "data": [
-                                                                            {
-                                                                                "type": "float",
-                                                                                "data": 0.880009
-                                                                            },
-                                                                            {
-                                                                                "type": "float",
-                                                                                "data": -0.04619
-                                                                            },
-                                                                            {
-                                                                                "type": "float",
-                                                                                "data": 0.0719404
-                                                                            },
-                                                                            {
-                                                                                "type": "float",
-                                                                                "data": -0.467199
-                                                                            }
-                                                                        ]
-                                                                    }
-                                                                ]
-                                                            }
-                                                        }
-                                                    ],
-                                                    "Children": [
-                                                        {
-                                                            "id": 333,
-                                                            "guid": "0029368059624fd6-00040d569e0046e5",
-                                                            "Name": "Kusane_Player_LeftToeBase",
-                                                            "ParentComponent": {
-                                                                "type": "ParentComponent",
-                                                                "data": [
-                                                                    "0029368039d5fbaa-00040d569e0046e3"
-                                                                ]
-                                                            },
-                                                            "ComponentOverrides": [
-                                                                {
-                                                                    "Transform": {
-                                                                        "type": "Transform",
-                                                                        "data": [
-                                                                            {
-                                                                                "type": "Vector3D",
-                                                                                "data": [
-                                                                                    {
-                                                                                        "type": "float",
-                                                                                        "data": 0.0607739
-                                                                                    },
-                                                                                    {
-                                                                                        "type": "float",
-                                                                                        "data": -8.86404e-9
-                                                                                    },
-                                                                                    {
-                                                                                        "type": "float",
-                                                                                        "data": 2.96232e-8
-                                                                                    }
-                                                                                ]
-                                                                            },
-                                                                            {
-                                                                                "type": "Vector3D",
-                                                                                "data": [
-                                                                                    {
-                                                                                        "type": "float",
-                                                                                        "data": 1
-                                                                                    },
-                                                                                    {
-                                                                                        "type": "float",
-                                                                                        "data": 1
-                                                                                    },
-                                                                                    {
-                                                                                        "type": "float",
-                                                                                        "data": 1
-                                                                                    }
-                                                                                ]
-                                                                            },
-                                                                            {
-                                                                                "type": "Quaternion",
-                                                                                "data": [
-                                                                                    {
-                                                                                        "type": "float",
-                                                                                        "data": 0.998501
-                                                                                    },
-                                                                                    {
-                                                                                        "type": "float",
-                                                                                        "data": 0.0393119
-                                                                                    },
-                                                                                    {
-                                                                                        "type": "float",
-                                                                                        "data": 0.0374413
-                                                                                    },
-                                                                                    {
-                                                                                        "type": "float",
-                                                                                        "data": -0.00700089
-                                                                                    }
-                                                                                ]
-                                                                            }
-                                                                        ]
-                                                                    }
-                                                                }
-                                                            ]
-                                                        }
-                                                    ]
-                                                }
-                                            ]
-                                        }
-                                    ]
-                                },
                                 {
                                     "id": 334,
                                     "guid": "002936806739deb3-00040d569e0046e7",
@@ -36715,70 +36173,6 @@
                                             "0029368039f2f89c-00040d569e0046dd"
                                         ]
                                     },
-                                    "ComponentOverrides": [
-                                        {
-                                            "Transform": {
-                                                "type": "Transform",
-                                                "data": [
-                                                    {
-                                                        "type": "Vector3D",
-                                                        "data": [
-                                                            {
-                                                                "type": "float",
-                                                                "data": -0.0108511
-                                                            },
-                                                            {
-                                                                "type": "float",
-                                                                "data": 0.000111699
-                                                            },
-                                                            {
-                                                                "type": "float",
-                                                                "data": -0.0519031
-                                                            }
-                                                        ]
-                                                    },
-                                                    {
-                                                        "type": "Vector3D",
-                                                        "data": [
-                                                            {
-                                                                "type": "float",
-                                                                "data": 1
-                                                            },
-                                                            {
-                                                                "type": "float",
-                                                                "data": 1
-                                                            },
-                                                            {
-                                                                "type": "float",
-                                                                "data": 1
-                                                            }
-                                                        ]
-                                                    },
-                                                    {
-                                                        "type": "Quaternion",
-                                                        "data": [
-                                                            {
-                                                                "type": "float",
-                                                                "data": 0.908409
-                                                            },
-                                                            {
-                                                                "type": "float",
-                                                                "data": -0.0760012
-                                                            },
-                                                            {
-                                                                "type": "float",
-                                                                "data": -0.19057
-                                                            },
-                                                            {
-                                                                "type": "float",
-                                                                "data": -0.364279
-                                                            }
-                                                        ]
-                                                    }
-                                                ]
-                                            }
-                                        }
-                                    ],
                                     "Children": [
                                         {
                                             "id": 335,
@@ -36790,70 +36184,6 @@
                                                     "002936806739deb3-00040d569e0046e7"
                                                 ]
                                             },
-                                            "ComponentOverrides": [
-                                                {
-                                                    "Transform": {
-                                                        "type": "Transform",
-                                                        "data": [
-                                                            {
-                                                                "type": "Vector3D",
-                                                                "data": [
-                                                                    {
-                                                                        "type": "float",
-                                                                        "data": -0.196115
-                                                                    },
-                                                                    {
-                                                                        "type": "float",
-                                                                        "data": 0.0000085314
-                                                                    },
-                                                                    {
-                                                                        "type": "float",
-                                                                        "data": 0.00000725811
-                                                                    }
-                                                                ]
-                                                            },
-                                                            {
-                                                                "type": "Vector3D",
-                                                                "data": [
-                                                                    {
-                                                                        "type": "float",
-                                                                        "data": 1
-                                                                    },
-                                                                    {
-                                                                        "type": "float",
-                                                                        "data": 1
-                                                                    },
-                                                                    {
-                                                                        "type": "float",
-                                                                        "data": 1
-                                                                    }
-                                                                ]
-                                                            },
-                                                            {
-                                                                "type": "Quaternion",
-                                                                "data": [
-                                                                    {
-                                                                        "type": "float",
-                                                                        "data": 0.8733070000000001
-                                                                    },
-                                                                    {
-                                                                        "type": "float",
-                                                                        "data": 0.0437989
-                                                                    },
-                                                                    {
-                                                                        "type": "float",
-                                                                        "data": -0.0472604
-                                                                    },
-                                                                    {
-                                                                        "type": "float",
-                                                                        "data": 0.48289
-                                                                    }
-                                                                ]
-                                                            }
-                                                        ]
-                                                    }
-                                                }
-                                            ],
                                             "Children": [
                                                 {
                                                     "id": 336,
@@ -36865,70 +36195,6 @@
                                                             "0029368072892aa3-00040d569e0046e9"
                                                         ]
                                                     },
-                                                    "ComponentOverrides": [
-                                                        {
-                                                            "Transform": {
-                                                                "type": "Transform",
-                                                                "data": [
-                                                                    {
-                                                                        "type": "Vector3D",
-                                                                        "data": [
-                                                                            {
-                                                                                "type": "float",
-                                                                                "data": -0.221143
-                                                                            },
-                                                                            {
-                                                                                "type": "float",
-                                                                                "data": 1.6147e-8
-                                                                            },
-                                                                            {
-                                                                                "type": "float",
-                                                                                "data": 0.00000232688
-                                                                            }
-                                                                        ]
-                                                                    },
-                                                                    {
-                                                                        "type": "Vector3D",
-                                                                        "data": [
-                                                                            {
-                                                                                "type": "float",
-                                                                                "data": 1
-                                                                            },
-                                                                            {
-                                                                                "type": "float",
-                                                                                "data": 1
-                                                                            },
-                                                                            {
-                                                                                "type": "float",
-                                                                                "data": 1
-                                                                            }
-                                                                        ]
-                                                                    },
-                                                                    {
-                                                                        "type": "Quaternion",
-                                                                        "data": [
-                                                                            {
-                                                                                "type": "float",
-                                                                                "data": 0.719006
-                                                                            },
-                                                                            {
-                                                                                "type": "float",
-                                                                                "data": -0.0714467
-                                                                            },
-                                                                            {
-                                                                                "type": "float",
-                                                                                "data": 0.195434
-                                                                            },
-                                                                            {
-                                                                                "type": "float",
-                                                                                "data": -0.663123
-                                                                            }
-                                                                        ]
-                                                                    }
-                                                                ]
-                                                            }
-                                                        }
-                                                    ],
                                                     "Children": [
                                                         {
                                                             "id": 337,
@@ -37021,70 +36287,6 @@
                                             "0029368039f2f89c-00040d569e0046dd"
                                         ]
                                     },
-                                    "ComponentOverrides": [
-                                        {
-                                            "Transform": {
-                                                "type": "Transform",
-                                                "data": [
-                                                    {
-                                                        "type": "Vector3D",
-                                                        "data": [
-                                                            {
-                                                                "type": "float",
-                                                                "data": 0.0538267
-                                                            },
-                                                            {
-                                                                "type": "float",
-                                                                "data": 9.8967e-9
-                                                            },
-                                                            {
-                                                                "type": "float",
-                                                                "data": -5.55485e-9
-                                                            }
-                                                        ]
-                                                    },
-                                                    {
-                                                        "type": "Vector3D",
-                                                        "data": [
-                                                            {
-                                                                "type": "float",
-                                                                "data": 1
-                                                            },
-                                                            {
-                                                                "type": "float",
-                                                                "data": 1
-                                                            },
-                                                            {
-                                                                "type": "float",
-                                                                "data": 1
-                                                            }
-                                                        ]
-                                                    },
-                                                    {
-                                                        "type": "Quaternion",
-                                                        "data": [
-                                                            {
-                                                                "type": "float",
-                                                                "data": 0.99949
-                                                            },
-                                                            {
-                                                                "type": "float",
-                                                                "data": 0.0254439
-                                                            },
-                                                            {
-                                                                "type": "float",
-                                                                "data": -0.0175003
-                                                            },
-                                                            {
-                                                                "type": "float",
-                                                                "data": 0.0081393
-                                                            }
-                                                        ]
-                                                    }
-                                                ]
-                                            }
-                                        }
-                                    ],
                                     "Children": [
                                         {
                                             "id": 339,
@@ -37096,70 +36298,6 @@
                                                     "002936801e1986f0-00040d569e0046ef"
                                                 ]
                                             },
-                                            "ComponentOverrides": [
-                                                {
-                                                    "Transform": {
-                                                        "type": "Transform",
-                                                        "data": [
-                                                            {
-                                                                "type": "Vector3D",
-                                                                "data": [
-                                                                    {
-                                                                        "type": "float",
-                                                                        "data": 0.0512532
-                                                                    },
-                                                                    {
-                                                                        "type": "float",
-                                                                        "data": -1.19753e-9
-                                                                    },
-                                                                    {
-                                                                        "type": "float",
-                                                                        "data": 6.77877e-10
-                                                                    }
-                                                                ]
-                                                            },
-                                                            {
-                                                                "type": "Vector3D",
-                                                                "data": [
-                                                                    {
-                                                                        "type": "float",
-                                                                        "data": 1
-                                                                    },
-                                                                    {
-                                                                        "type": "float",
-                                                                        "data": 1
-                                                                    },
-                                                                    {
-                                                                        "type": "float",
-                                                                        "data": 1
-                                                                    }
-                                                                ]
-                                                            },
-                                                            {
-                                                                "type": "Quaternion",
-                                                                "data": [
-                                                                    {
-                                                                        "type": "float",
-                                                                        "data": 0.996805
-                                                                    },
-                                                                    {
-                                                                        "type": "float",
-                                                                        "data": 0.0515572
-                                                                    },
-                                                                    {
-                                                                        "type": "float",
-                                                                        "data": -0.0330237
-                                                                    },
-                                                                    {
-                                                                        "type": "float",
-                                                                        "data": 0.0512861
-                                                                    }
-                                                                ]
-                                                            }
-                                                        ]
-                                                    }
-                                                }
-                                            ],
                                             "Children": [
                                                 {
                                                     "id": 340,
@@ -37171,377 +36309,7 @@
                                                             "0029368040c1c1c1-00040d569e0046f1"
                                                         ]
                                                     },
-                                                    "ComponentOverrides": [
-                                                        {
-                                                            "Transform": {
-                                                                "type": "Transform",
-                                                                "data": [
-                                                                    {
-                                                                        "type": "Vector3D",
-                                                                        "data": [
-                                                                            {
-                                                                                "type": "float",
-                                                                                "data": 0.0512067
-                                                                            },
-                                                                            {
-                                                                                "type": "float",
-                                                                                "data": -3.93292e-9
-                                                                            },
-                                                                            {
-                                                                                "type": "float",
-                                                                                "data": 7.0392e-9
-                                                                            }
-                                                                        ]
-                                                                    },
-                                                                    {
-                                                                        "type": "Vector3D",
-                                                                        "data": [
-                                                                            {
-                                                                                "type": "float",
-                                                                                "data": 1
-                                                                            },
-                                                                            {
-                                                                                "type": "float",
-                                                                                "data": 1
-                                                                            },
-                                                                            {
-                                                                                "type": "float",
-                                                                                "data": 1
-                                                                            }
-                                                                        ]
-                                                                    },
-                                                                    {
-                                                                        "type": "Quaternion",
-                                                                        "data": [
-                                                                            {
-                                                                                "type": "float",
-                                                                                "data": 0.994841
-                                                                            },
-                                                                            {
-                                                                                "type": "float",
-                                                                                "data": 0.0554799
-                                                                            },
-                                                                            {
-                                                                                "type": "float",
-                                                                                "data": -0.0258981
-                                                                            },
-                                                                            {
-                                                                                "type": "float",
-                                                                                "data": -0.0808832
-                                                                            }
-                                                                        ]
-                                                                    }
-                                                                ]
-                                                            }
-                                                        }
-                                                    ],
                                                     "Children": [
-                                                        {
-                                                            "id": 341,
-                                                            "guid": "0029368018e3aa3a-00040d569e0046f5",
-                                                            "Name": "Kusane_Player_LeftShoulder",
-                                                            "ParentComponent": {
-                                                                "type": "ParentComponent",
-                                                                "data": [
-                                                                    "002936807da0a558-00040d569e0046f3"
-                                                                ]
-                                                            },
-                                                            "ComponentOverrides": [
-                                                                {
-                                                                    "Transform": {
-                                                                        "type": "Transform",
-                                                                        "data": [
-                                                                            {
-                                                                                "type": "Vector3D",
-                                                                                "data": [
-                                                                                    {
-                                                                                        "type": "float",
-                                                                                        "data": 0.0737298
-                                                                                    },
-                                                                                    {
-                                                                                        "type": "float",
-                                                                                        "data": -0.0100286
-                                                                                    },
-                                                                                    {
-                                                                                        "type": "float",
-                                                                                        "data": 0.0347986
-                                                                                    }
-                                                                                ]
-                                                                            },
-                                                                            {
-                                                                                "type": "Vector3D",
-                                                                                "data": [
-                                                                                    {
-                                                                                        "type": "float",
-                                                                                        "data": 1
-                                                                                    },
-                                                                                    {
-                                                                                        "type": "float",
-                                                                                        "data": 1
-                                                                                    },
-                                                                                    {
-                                                                                        "type": "float",
-                                                                                        "data": 1
-                                                                                    }
-                                                                                ]
-                                                                            },
-                                                                            {
-                                                                                "type": "Quaternion",
-                                                                                "data": [
-                                                                                    {
-                                                                                        "type": "float",
-                                                                                        "data": -0.466044
-                                                                                    },
-                                                                                    {
-                                                                                        "type": "float",
-                                                                                        "data": 0.589952
-                                                                                    },
-                                                                                    {
-                                                                                        "type": "float",
-                                                                                        "data": 0.539722
-                                                                                    },
-                                                                                    {
-                                                                                        "type": "float",
-                                                                                        "data": 0.378761
-                                                                                    }
-                                                                                ]
-                                                                            }
-                                                                        ]
-                                                                    }
-                                                                }
-                                                            ],
-                                                            "Children": [
-                                                                {
-                                                                    "id": 342,
-                                                                    "guid": "0029368039612bd7-00040d569e0046f7",
-                                                                    "Name": "Kusane_Player_LeftArm",
-                                                                    "ParentComponent": {
-                                                                        "type": "ParentComponent",
-                                                                        "data": [
-                                                                            "0029368018e3aa3a-00040d569e0046f5"
-                                                                        ]
-                                                                    },
-                                                                    "ComponentOverrides": [
-                                                                        {
-                                                                            "Transform": {
-                                                                                "type": "Transform",
-                                                                                "data": [
-                                                                                    {
-                                                                                        "type": "Vector3D",
-                                                                                        "data": [
-                                                                                            {
-                                                                                                "type": "float",
-                                                                                                "data": 0.0468555
-                                                                                            },
-                                                                                            {
-                                                                                                "type": "float",
-                                                                                                "data": -3.8295e-9
-                                                                                            },
-                                                                                            {
-                                                                                                "type": "float",
-                                                                                                "data": -9.77536e-9
-                                                                                            }
-                                                                                        ]
-                                                                                    },
-                                                                                    {
-                                                                                        "type": "Vector3D",
-                                                                                        "data": [
-                                                                                            {
-                                                                                                "type": "float",
-                                                                                                "data": 1
-                                                                                            },
-                                                                                            {
-                                                                                                "type": "float",
-                                                                                                "data": 1
-                                                                                            },
-                                                                                            {
-                                                                                                "type": "float",
-                                                                                                "data": 1
-                                                                                            }
-                                                                                        ]
-                                                                                    },
-                                                                                    {
-                                                                                        "type": "Quaternion",
-                                                                                        "data": [
-                                                                                            {
-                                                                                                "type": "float",
-                                                                                                "data": 0.685129
-                                                                                            },
-                                                                                            {
-                                                                                                "type": "float",
-                                                                                                "data": 0.551966
-                                                                                            },
-                                                                                            {
-                                                                                                "type": "float",
-                                                                                                "data": -0.342591
-                                                                                            },
-                                                                                            {
-                                                                                                "type": "float",
-                                                                                                "data": -0.32949
-                                                                                            }
-                                                                                        ]
-                                                                                    }
-                                                                                ]
-                                                                            }
-                                                                        }
-                                                                    ],
-                                                                    "Children": [
-                                                                        {
-                                                                            "id": 343,
-                                                                            "guid": "0029368032bc32a8-00040d569e0046f9",
-                                                                            "Name": "Kusane_Player_LeftForeArm",
-                                                                            "ParentComponent": {
-                                                                                "type": "ParentComponent",
-                                                                                "data": [
-                                                                                    "0029368039612bd7-00040d569e0046f7"
-                                                                                ]
-                                                                            },
-                                                                            "ComponentOverrides": [
-                                                                                {
-                                                                                    "Transform": {
-                                                                                        "type": "Transform",
-                                                                                        "data": [
-                                                                                            {
-                                                                                                "type": "Vector3D",
-                                                                                                "data": [
-                                                                                                    {
-                                                                                                        "type": "float",
-                                                                                                        "data": 0.119283
-                                                                                                    },
-                                                                                                    {
-                                                                                                        "type": "float",
-                                                                                                        "data": 0.00000675609
-                                                                                                    },
-                                                                                                    {
-                                                                                                        "type": "float",
-                                                                                                        "data": -0.00000128336
-                                                                                                    }
-                                                                                                ]
-                                                                                            },
-                                                                                            {
-                                                                                                "type": "Vector3D",
-                                                                                                "data": [
-                                                                                                    {
-                                                                                                        "type": "float",
-                                                                                                        "data": 1
-                                                                                                    },
-                                                                                                    {
-                                                                                                        "type": "float",
-                                                                                                        "data": 1
-                                                                                                    },
-                                                                                                    {
-                                                                                                        "type": "float",
-                                                                                                        "data": 1
-                                                                                                    }
-                                                                                                ]
-                                                                                            },
-                                                                                            {
-                                                                                                "type": "Quaternion",
-                                                                                                "data": [
-                                                                                                    {
-                                                                                                        "type": "float",
-                                                                                                        "data": 0.952399
-                                                                                                    },
-                                                                                                    {
-                                                                                                        "type": "float",
-                                                                                                        "data": -0.161146
-                                                                                                    },
-                                                                                                    {
-                                                                                                        "type": "float",
-                                                                                                        "data": -0.0881174
-                                                                                                    },
-                                                                                                    {
-                                                                                                        "type": "float",
-                                                                                                        "data": 0.243316
-                                                                                                    }
-                                                                                                ]
-                                                                                            }
-                                                                                        ]
-                                                                                    }
-                                                                                }
-                                                                            ],
-                                                                            "Children": [
-                                                                                {
-                                                                                    "id": 344,
-                                                                                    "guid": "002936800cfe9b97-00040d569e0046fb",
-                                                                                    "Name": "Kusane_Player_LeftHand",
-                                                                                    "ParentComponent": {
-                                                                                        "type": "ParentComponent",
-                                                                                        "data": [
-                                                                                            "0029368032bc32a8-00040d569e0046f9"
-                                                                                        ]
-                                                                                    },
-                                                                                    "ComponentOverrides": [
-                                                                                        {
-                                                                                            "Transform": {
-                                                                                                "type": "Transform",
-                                                                                                "data": [
-                                                                                                    {
-                                                                                                        "type": "Vector3D",
-                                                                                                        "data": [
-                                                                                                            {
-                                                                                                                "type": "float",
-                                                                                                                "data": 0.109569
-                                                                                                            },
-                                                                                                            {
-                                                                                                                "type": "float",
-                                                                                                                "data": -5.73253e-7
-                                                                                                            },
-                                                                                                            {
-                                                                                                                "type": "float",
-                                                                                                                "data": -7.62652e-7
-                                                                                                            }
-                                                                                                        ]
-                                                                                                    },
-                                                                                                    {
-                                                                                                        "type": "Vector3D",
-                                                                                                        "data": [
-                                                                                                            {
-                                                                                                                "type": "float",
-                                                                                                                "data": 1
-                                                                                                            },
-                                                                                                            {
-                                                                                                                "type": "float",
-                                                                                                                "data": 1
-                                                                                                            },
-                                                                                                            {
-                                                                                                                "type": "float",
-                                                                                                                "data": 1
-                                                                                                            }
-                                                                                                        ]
-                                                                                                    },
-                                                                                                    {
-                                                                                                        "type": "Quaternion",
-                                                                                                        "data": [
-                                                                                                            {
-                                                                                                                "type": "float",
-                                                                                                                "data": 0.997761
-                                                                                                            },
-                                                                                                            {
-                                                                                                                "type": "float",
-                                                                                                                "data": 0.0203843
-                                                                                                            },
-                                                                                                            {
-                                                                                                                "type": "float",
-                                                                                                                "data": 0.0593325
-                                                                                                            },
-                                                                                                            {
-                                                                                                                "type": "float",
-                                                                                                                "data": 0.0231723
-                                                                                                            }
-                                                                                                        ]
-                                                                                                    }
-                                                                                                ]
-                                                                                            }
-                                                                                        }
-                                                                                    ]
-                                                                                }
-                                                                            ]
-                                                                        }
-                                                                    ]
-                                                                }
-                                                            ]
-                                                        },
                                                         {
                                                             "id": 365,
                                                             "guid": "00293680529515ec-00040d569e004725",
@@ -37552,70 +36320,6 @@
                                                                     "002936807da0a558-00040d569e0046f3"
                                                                 ]
                                                             },
-                                                            "ComponentOverrides": [
-                                                                {
-                                                                    "Transform": {
-                                                                        "type": "Transform",
-                                                                        "data": [
-                                                                            {
-                                                                                "type": "Vector3D",
-                                                                                "data": [
-                                                                                    {
-                                                                                        "type": "float",
-                                                                                        "data": 0.0737297
-                                                                                    },
-                                                                                    {
-                                                                                        "type": "float",
-                                                                                        "data": -0.0100286
-                                                                                    },
-                                                                                    {
-                                                                                        "type": "float",
-                                                                                        "data": -0.0347987
-                                                                                    }
-                                                                                ]
-                                                                            },
-                                                                            {
-                                                                                "type": "Vector3D",
-                                                                                "data": [
-                                                                                    {
-                                                                                        "type": "float",
-                                                                                        "data": 1
-                                                                                    },
-                                                                                    {
-                                                                                        "type": "float",
-                                                                                        "data": 1
-                                                                                    },
-                                                                                    {
-                                                                                        "type": "float",
-                                                                                        "data": 1
-                                                                                    }
-                                                                                ]
-                                                                            },
-                                                                            {
-                                                                                "type": "Quaternion",
-                                                                                "data": [
-                                                                                    {
-                                                                                        "type": "float",
-                                                                                        "data": -0.348517
-                                                                                    },
-                                                                                    {
-                                                                                        "type": "float",
-                                                                                        "data": -0.541938
-                                                                                    },
-                                                                                    {
-                                                                                        "type": "float",
-                                                                                        "data": 0.642194
-                                                                                    },
-                                                                                    {
-                                                                                        "type": "float",
-                                                                                        "data": -0.415241
-                                                                                    }
-                                                                                ]
-                                                                            }
-                                                                        ]
-                                                                    }
-                                                                }
-                                                            ],
                                                             "Children": [
                                                                 {
                                                                     "id": 366,
@@ -37627,70 +36331,6 @@
                                                                             "00293680529515ec-00040d569e004725"
                                                                         ]
                                                                     },
-                                                                    "ComponentOverrides": [
-                                                                        {
-                                                                            "Transform": {
-                                                                                "type": "Transform",
-                                                                                "data": [
-                                                                                    {
-                                                                                        "type": "Vector3D",
-                                                                                        "data": [
-                                                                                            {
-                                                                                                "type": "float",
-                                                                                                "data": -0.0468556
-                                                                                            },
-                                                                                            {
-                                                                                                "type": "float",
-                                                                                                "data": -5.17192e-8
-                                                                                            },
-                                                                                            {
-                                                                                                "type": "float",
-                                                                                                "data": 5.86513e-9
-                                                                                            }
-                                                                                        ]
-                                                                                    },
-                                                                                    {
-                                                                                        "type": "Vector3D",
-                                                                                        "data": [
-                                                                                            {
-                                                                                                "type": "float",
-                                                                                                "data": 1
-                                                                                            },
-                                                                                            {
-                                                                                                "type": "float",
-                                                                                                "data": 1
-                                                                                            },
-                                                                                            {
-                                                                                                "type": "float",
-                                                                                                "data": 1
-                                                                                            }
-                                                                                        ]
-                                                                                    },
-                                                                                    {
-                                                                                        "type": "Quaternion",
-                                                                                        "data": [
-                                                                                            {
-                                                                                                "type": "float",
-                                                                                                "data": 0.609292
-                                                                                            },
-                                                                                            {
-                                                                                                "type": "float",
-                                                                                                "data": 0.515527
-                                                                                            },
-                                                                                            {
-                                                                                                "type": "float",
-                                                                                                "data": -0.162056
-                                                                                            },
-                                                                                            {
-                                                                                                "type": "float",
-                                                                                                "data": -0.580287
-                                                                                            }
-                                                                                        ]
-                                                                                    }
-                                                                                ]
-                                                                            }
-                                                                        }
-                                                                    ],
                                                                     "Children": [
                                                                         {
                                                                             "id": 367,
@@ -37702,70 +36342,6 @@
                                                                                     "002936800f158904-00040d569e004727"
                                                                                 ]
                                                                             },
-                                                                            "ComponentOverrides": [
-                                                                                {
-                                                                                    "Transform": {
-                                                                                        "type": "Transform",
-                                                                                        "data": [
-                                                                                            {
-                                                                                                "type": "Vector3D",
-                                                                                                "data": [
-                                                                                                    {
-                                                                                                        "type": "float",
-                                                                                                        "data": -0.119283
-                                                                                                    },
-                                                                                                    {
-                                                                                                        "type": "float",
-                                                                                                        "data": 7.33513e-7
-                                                                                                    },
-                                                                                                    {
-                                                                                                        "type": "float",
-                                                                                                        "data": 0.00000181209
-                                                                                                    }
-                                                                                                ]
-                                                                                            },
-                                                                                            {
-                                                                                                "type": "Vector3D",
-                                                                                                "data": [
-                                                                                                    {
-                                                                                                        "type": "float",
-                                                                                                        "data": 1
-                                                                                                    },
-                                                                                                    {
-                                                                                                        "type": "float",
-                                                                                                        "data": 1
-                                                                                                    },
-                                                                                                    {
-                                                                                                        "type": "float",
-                                                                                                        "data": 1
-                                                                                                    }
-                                                                                                ]
-                                                                                            },
-                                                                                            {
-                                                                                                "type": "Quaternion",
-                                                                                                "data": [
-                                                                                                    {
-                                                                                                        "type": "float",
-                                                                                                        "data": 0.907216
-                                                                                                    },
-                                                                                                    {
-                                                                                                        "type": "float",
-                                                                                                        "data": -0.101184
-                                                                                                    },
-                                                                                                    {
-                                                                                                        "type": "float",
-                                                                                                        "data": -0.0889779
-                                                                                                    },
-                                                                                                    {
-                                                                                                        "type": "float",
-                                                                                                        "data": 0.398503
-                                                                                                    }
-                                                                                                ]
-                                                                                            }
-                                                                                        ]
-                                                                                    }
-                                                                                }
-                                                                            ],
                                                                             "Children": [
                                                                                 {
                                                                                     "id": 368,
@@ -37777,70 +36353,6 @@
                                                                                             "0029368058c3f943-00040d569e004729"
                                                                                         ]
                                                                                     },
-                                                                                    "ComponentOverrides": [
-                                                                                        {
-                                                                                            "Transform": {
-                                                                                                "type": "Transform",
-                                                                                                "data": [
-                                                                                                    {
-                                                                                                        "type": "Vector3D",
-                                                                                                        "data": [
-                                                                                                            {
-                                                                                                                "type": "float",
-                                                                                                                "data": -0.109569
-                                                                                                            },
-                                                                                                            {
-                                                                                                                "type": "float",
-                                                                                                                "data": -2.75932e-7
-                                                                                                            },
-                                                                                                            {
-                                                                                                                "type": "float",
-                                                                                                                "data": 2.97043e-7
-                                                                                                            }
-                                                                                                        ]
-                                                                                                    },
-                                                                                                    {
-                                                                                                        "type": "Vector3D",
-                                                                                                        "data": [
-                                                                                                            {
-                                                                                                                "type": "float",
-                                                                                                                "data": 1
-                                                                                                            },
-                                                                                                            {
-                                                                                                                "type": "float",
-                                                                                                                "data": 1
-                                                                                                            },
-                                                                                                            {
-                                                                                                                "type": "float",
-                                                                                                                "data": 1
-                                                                                                            }
-                                                                                                        ]
-                                                                                                    },
-                                                                                                    {
-                                                                                                        "type": "Quaternion",
-                                                                                                        "data": [
-                                                                                                            {
-                                                                                                                "type": "float",
-                                                                                                                "data": 0.950097
-                                                                                                            },
-                                                                                                            {
-                                                                                                                "type": "float",
-                                                                                                                "data": 0.0192059
-                                                                                                            },
-                                                                                                            {
-                                                                                                                "type": "float",
-                                                                                                                "data": -0.0618255
-                                                                                                            },
-                                                                                                            {
-                                                                                                                "type": "float",
-                                                                                                                "data": 0.305164
-                                                                                                            }
-                                                                                                        ]
-                                                                                                    }
-                                                                                                ]
-                                                                                            }
-                                                                                        }
-                                                                                    ],
                                                                                     "Children": [
                                                                                         {
                                                                                             "id": 369,
@@ -38025,158 +36537,6 @@
                                                                     ]
                                                                 }
                                                             ]
-                                                        },
-                                                        {
-                                                            "id": 389,
-                                                            "guid": "00293680500fbbb1-00040d569e004755",
-                                                            "Name": "Kusane_Player_Neck",
-                                                            "ParentComponent": {
-                                                                "type": "ParentComponent",
-                                                                "data": [
-                                                                    "002936807da0a558-00040d569e0046f3"
-                                                                ]
-                                                            },
-                                                            "ComponentOverrides": [
-                                                                {
-                                                                    "Transform": {
-                                                                        "type": "Transform",
-                                                                        "data": [
-                                                                            {
-                                                                                "type": "Vector3D",
-                                                                                "data": [
-                                                                                    {
-                                                                                        "type": "float",
-                                                                                        "data": 0.119089
-                                                                                    },
-                                                                                    {
-                                                                                        "type": "float",
-                                                                                        "data": 1.74218e-8
-                                                                                    },
-                                                                                    {
-                                                                                        "type": "float",
-                                                                                        "data": 5.28258e-8
-                                                                                    }
-                                                                                ]
-                                                                            },
-                                                                            {
-                                                                                "type": "Vector3D",
-                                                                                "data": [
-                                                                                    {
-                                                                                        "type": "float",
-                                                                                        "data": 1
-                                                                                    },
-                                                                                    {
-                                                                                        "type": "float",
-                                                                                        "data": 1
-                                                                                    },
-                                                                                    {
-                                                                                        "type": "float",
-                                                                                        "data": 1
-                                                                                    }
-                                                                                ]
-                                                                            },
-                                                                            {
-                                                                                "type": "Quaternion",
-                                                                                "data": [
-                                                                                    {
-                                                                                        "type": "float",
-                                                                                        "data": 0.980529
-                                                                                    },
-                                                                                    {
-                                                                                        "type": "float",
-                                                                                        "data": 0.081411
-                                                                                    },
-                                                                                    {
-                                                                                        "type": "float",
-                                                                                        "data": -0.00627405
-                                                                                    },
-                                                                                    {
-                                                                                        "type": "float",
-                                                                                        "data": 0.178592
-                                                                                    }
-                                                                                ]
-                                                                            }
-                                                                        ]
-                                                                    }
-                                                                }
-                                                            ],
-                                                            "Children": [
-                                                                {
-                                                                    "id": 390,
-                                                                    "guid": "002936801fb9f407-00040d569e004757",
-                                                                    "Name": "Kusane_Player_Head",
-                                                                    "ParentComponent": {
-                                                                        "type": "ParentComponent",
-                                                                        "data": [
-                                                                            "00293680500fbbb1-00040d569e004755"
-                                                                        ]
-                                                                    },
-                                                                    "ComponentOverrides": [
-                                                                        {
-                                                                            "Transform": {
-                                                                                "type": "Transform",
-                                                                                "data": [
-                                                                                    {
-                                                                                        "type": "Vector3D",
-                                                                                        "data": [
-                                                                                            {
-                                                                                                "type": "float",
-                                                                                                "data": 0.0366597
-                                                                                            },
-                                                                                            {
-                                                                                                "type": "float",
-                                                                                                "data": -1.25165e-8
-                                                                                            },
-                                                                                            {
-                                                                                                "type": "float",
-                                                                                                "data": 1.10666e-10
-                                                                                            }
-                                                                                        ]
-                                                                                    },
-                                                                                    {
-                                                                                        "type": "Vector3D",
-                                                                                        "data": [
-                                                                                            {
-                                                                                                "type": "float",
-                                                                                                "data": 1
-                                                                                            },
-                                                                                            {
-                                                                                                "type": "float",
-                                                                                                "data": 1
-                                                                                            },
-                                                                                            {
-                                                                                                "type": "float",
-                                                                                                "data": 1
-                                                                                            }
-                                                                                        ]
-                                                                                    },
-                                                                                    {
-                                                                                        "type": "Quaternion",
-                                                                                        "data": [
-                                                                                            {
-                                                                                                "type": "float",
-                                                                                                "data": 0.978315
-                                                                                            },
-                                                                                            {
-                                                                                                "type": "float",
-                                                                                                "data": 0.185749
-                                                                                            },
-                                                                                            {
-                                                                                                "type": "float",
-                                                                                                "data": -0.0816535
-                                                                                            },
-                                                                                            {
-                                                                                                "type": "float",
-                                                                                                "data": -0.0415898
-                                                                                            }
-                                                                                        ]
-                                                                                    }
-                                                                                ]
-                                                                            }
-                                                                        }
-                                                                    ]
-                                                                }
-                                                            ]
                                                         }
                                                     ]
                                                 }
@@ -38191,7 +36551,7 @@
             ]
         },
         {
-            "id": 401,
+            "id": 403,
             "guid": "005da414a0202f20-0004052f0c000003",
             "components": {
                 "NameComponent": {
@@ -38384,7 +36744,7 @@
             }
         },
         {
-            "id": 402,
+            "id": 404,
             "guid": "0074f141fc070b30-000412e788000119",
             "components": {
                 "NameComponent": {
@@ -38397,7 +36757,7 @@
                     "layerIndex": 0
                 },
                 "SiblingIndexComponent": {
-                    "siblingIndex": 38
+                    "siblingIndex": 37
                 },
                 "Transform": {
                     "type": "Transform",
@@ -38487,7 +36847,7 @@
             }
         },
         {
-            "id": 403,
+            "id": 405,
             "guid": "0020a8d86cf7d84f-0004053bc0000005",
             "components": {
                 "NameComponent": {
@@ -38677,7 +37037,7 @@
             }
         },
         {
-            "id": 404,
+            "id": 406,
             "guid": "0020a8d835400eaf-0004053a20000001",
             "components": {
                 "NameComponent": {
@@ -38873,7 +37233,7 @@
             }
         },
         {
-            "id": 405,
+            "id": 407,
             "guid": "0020a8d84cfcc96d-0004053c4a000007",
             "components": {
                 "NameComponent": {
@@ -39116,7 +37476,7 @@
             }
         },
         {
-            "id": 406,
+            "id": 408,
             "guid": "0020a8d81ce7a864-0004053d1c000009",
             "components": {
                 "NameComponent": {
@@ -39351,7 +37711,7 @@
             }
         },
         {
-            "id": 407,
+            "id": 409,
             "guid": "0016e27ecd7baabd-0004055db8000003",
             "components": {
                 "NameComponent": {
@@ -39547,7 +37907,7 @@
             }
         },
         {
-            "id": 408,
+            "id": 410,
             "guid": "0020a8d84be72f54-0004053d2000000b",
             "components": {
                 "NameComponent": {
@@ -39782,7 +38142,7 @@
             }
         },
         {
-            "id": 409,
+            "id": 411,
             "guid": "0016e27e9b39e238-0004055eb8000005",
             "components": {
                 "NameComponent": {
@@ -39978,7 +38338,7 @@
             }
         },
         {
-            "id": 410,
+            "id": 412,
             "guid": "0020a8d8090bd2d9-0004053d2200000d",
             "components": {
                 "NameComponent": {
@@ -40213,7 +38573,7 @@
             }
         },
         {
-            "id": 411,
+            "id": 413,
             "guid": "0016e27ee3a2258b-0004055f1a000007",
             "components": {
                 "NameComponent": {
@@ -40409,7 +38769,7 @@
             }
         },
         {
-            "id": 412,
+            "id": 414,
             "guid": "004fbdfd10b41e63-000405904e000005",
             "components": {
                 "NameComponent": {
@@ -40618,7 +38978,7 @@
             }
         },
         {
-            "id": 413,
+            "id": 415,
             "guid": "0074b8e83d6dd210-00040d1cc6000007",
             "components": {
                 "NameComponent": {
@@ -40724,7 +39084,7 @@
             }
         },
         {
-            "id": 414,
+            "id": 416,
             "guid": "007f7ae3a600fe0a-000405929e000001",
             "components": {
                 "NameComponent": {
@@ -40920,7 +39280,7 @@
             }
         },
         {
-            "id": 415,
+            "id": 417,
             "guid": "007f7ae3ffb4105b-000405a8fc000017",
             "components": {
                 "NameComponent": {
@@ -41116,7 +39476,7 @@
             }
         },
         {
-            "id": 416,
+            "id": 418,
             "guid": "007f7ae3c84cfb99-000405a920000019",
             "components": {
                 "NameComponent": {
@@ -41312,7 +39672,7 @@
             }
         },
         {
-            "id": 417,
+            "id": 419,
             "guid": "0074b8e870ad7288-00040d1fa4000013",
             "components": {
                 "NameComponent": {
@@ -41418,7 +39778,7 @@
             }
         },
         {
-            "id": 418,
+            "id": 420,
             "guid": "007f7ae3e4e67d9f-000405ad2200001b",
             "components": {
                 "NameComponent": {
@@ -41661,7 +40021,7 @@
             }
         },
         {
-            "id": 419,
+            "id": 421,
             "guid": "007f7ae3a25a3d35-000405ad4600001d",
             "components": {
                 "NameComponent": {
@@ -41904,7 +40264,7 @@
             }
         },
         {
-            "id": 420,
+            "id": 422,
             "guid": "007f7ae3f01fb33b-000405ad5800001f",
             "components": {
                 "NameComponent": {
@@ -42147,7 +40507,7 @@
             }
         },
         {
-            "id": 421,
+            "id": 423,
             "guid": "0074b8e810e38d7b-00040d1cfa000009",
             "components": {
                 "NameComponent": {
@@ -42259,7 +40619,7 @@
             }
         },
         {
-            "id": 422,
+            "id": 424,
             "guid": "0074b8e859db4e63-00040d1906000001",
             "components": {
                 "NameComponent": {
@@ -42455,7 +40815,7 @@
             }
         },
         {
-            "id": 423,
+            "id": 425,
             "guid": "0074b8e83f1cf78c-00040d1b84000003",
             "components": {
                 "NameComponent": {
@@ -42651,7 +41011,7 @@
             }
         },
         {
-            "id": 424,
+            "id": 426,
             "guid": "0074b8e8697e8aed-00040d1c6e000005",
             "components": {
                 "NameComponent": {
@@ -42847,7 +41207,7 @@
             }
         },
         {
-            "id": 425,
+            "id": 427,
             "guid": "0074b8e86d44a56b-00040d24bc000019",
             "components": {
                 "NameComponent": {
@@ -43043,7 +41403,7 @@
             }
         },
         {
-            "id": 426,
+            "id": 428,
             "guid": "0074b8e810bda892-00040d24da00001b",
             "components": {
                 "NameComponent": {
@@ -43239,7 +41599,7 @@
             }
         },
         {
-            "id": 427,
+            "id": 429,
             "guid": "0074b8e809a17950-00040d24e400001d",
             "components": {
                 "NameComponent": {
@@ -43435,7 +41795,7 @@
             }
         },
         {
-            "id": 428,
+            "id": 430,
             "guid": "0016265d4939837f-00040d3e2000003d",
             "components": {
                 "NameComponent": {
@@ -43631,7 +41991,7 @@
             }
         },
         {
-            "id": 429,
+            "id": 431,
             "guid": "002cfbd76d01e288-00040ded46000005",
             "components": {
                 "NameComponent": {
@@ -43827,7 +42187,7 @@
             }
         },
         {
-            "id": 430,
+            "id": 432,
             "guid": "002cfbd723846b75-00040ded74000007",
             "components": {
                 "NameComponent": {
@@ -44023,7 +42383,7 @@
             }
         },
         {
-            "id": 431,
+            "id": 433,
             "guid": "0074b8e813c4ee2b-00040d1f6800000f",
             "components": {
                 "NameComponent": {
@@ -44128,7 +42488,7 @@
             }
         },
         {
-            "id": 432,
+            "id": 434,
             "guid": "0074b8e825839cee-00040d1d4e00000b",
             "components": {
                 "NameComponent": {
@@ -44363,7 +42723,7 @@
             }
         },
         {
-            "id": 433,
+            "id": 435,
             "guid": "0074b8e85229217f-00040d1ed800000d",
             "components": {
                 "NameComponent": {
@@ -44559,7 +42919,7 @@
             }
         },
         {
-            "id": 434,
+            "id": 436,
             "guid": "0074b8e845b04ac2-00040d2012000015",
             "components": {
                 "NameComponent": {
@@ -44664,7 +43024,7 @@
             }
         },
         {
-            "id": 435,
+            "id": 437,
             "guid": "000bc734d9f1bb67-000405e866000003",
             "components": {
                 "NameComponent": {
@@ -44899,7 +43259,7 @@
             }
         },
         {
-            "id": 436,
+            "id": 438,
             "guid": "0074b8e84745236f-00040d2032000017",
             "components": {
                 "NameComponent": {
@@ -45095,7 +43455,7 @@
             }
         },
         {
-            "id": 437,
+            "id": 439,
             "guid": "004caf3971a4d54e-00040daffc000001",
             "components": {
                 "NameComponent": {
@@ -45265,7 +43625,7 @@
             }
         },
         {
-            "id": 438,
+            "id": 440,
             "guid": "004caf3965cfdce5-00040db02c000005",
             "components": {
                 "NameComponent": {
@@ -45461,7 +43821,7 @@
             }
         },
         {
-            "id": 439,
+            "id": 441,
             "guid": "004caf3940ef1866-00040db030000007",
             "components": {
                 "NameComponent": {
@@ -45704,7 +44064,7 @@
             }
         },
         {
-            "id": 440,
+            "id": 442,
             "guid": "004caf390851563d-00040db032000009",
             "components": {
                 "NameComponent": {
@@ -45939,7 +44299,7 @@
             }
         },
         {
-            "id": 441,
+            "id": 443,
             "guid": "004caf395f9beea1-00040db03200000b",
             "components": {
                 "NameComponent": {
@@ -46135,7 +44495,7 @@
             }
         },
         {
-            "id": 442,
+            "id": 444,
             "guid": "004caf393558b3cc-00040db06e00000d",
             "components": {
                 "NameComponent": {
@@ -46370,7 +44730,7 @@
             }
         },
         {
-            "id": 443,
+            "id": 445,
             "guid": "004caf393c0749f5-00040db07800000f",
             "components": {
                 "NameComponent": {
@@ -46566,7 +44926,7 @@
             }
         },
         {
-            "id": 444,
+            "id": 446,
             "guid": "000bc734a204e9c3-000405d19e000001",
             "components": {
                 "NameComponent": {
@@ -46762,7 +45122,7 @@
             }
         },
         {
-            "id": 445,
+            "id": 447,
             "guid": "004caf392b22724b-00040db368000011",
             "components": {
                 "NameComponent": {
@@ -46914,7 +45274,7 @@
             }
         },
         {
-            "id": 446,
+            "id": 448,
             "guid": "00241e81aea4502d-00040fe44e000001",
             "components": {
                 "NameComponent": {

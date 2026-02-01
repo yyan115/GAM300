@@ -288,7 +288,7 @@ return Component {
         
         -- PRIORITY 1: Chain aiming mode (overrides orbit)
         if self._chainAiming then
-            print("Chain aiming active")
+          --[[  print("Chain aiming active")
                 
                 -- FIRST FRAME: Snap yaw/pitch to aim target rotation BEFORE doing anything else
                 if not self._chainAimPos then
@@ -336,7 +336,7 @@ return Component {
                 else
                     print("Not first frame, _chainAimPos already exists")
                 end
-            
+            ]]
             useOrbitFollow = false
             useFreeRotation = true
             
