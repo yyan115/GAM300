@@ -200,7 +200,15 @@
                             "preserveKeys": [],
                             "entryFunction": "OnInit",
                             "autoInvokeEntry": true,
-                            "instanceState": {}
+                            "instanceState": {
+                                "maxPitch": 30.0,
+                                "enemyDisengageRange": 3.0,
+                                "followDistance": 1.7,
+                                "followLerp": 15.0,
+                                "actionModePitch": 40.0,
+                                "minPitch": -20.0,
+                                "enemyDetectionRange": 2.0
+                            }
                         }
                     ]
                 }
