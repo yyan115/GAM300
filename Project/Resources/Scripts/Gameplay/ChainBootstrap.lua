@@ -1,7 +1,7 @@
 -- ChainBootstrap.lua (refactored wiring: use component Subscribe, set controller start/end via API, seed positions safely)
 local Component = require("extension.mono_helper")
-local LinkHandlerModule = require("GamePlay.ChainLinkTransformHandler")
-local ControllerModule = require("GamePlay.ChainController")
+local LinkHandlerModule = require("Gameplay.ChainLinkTransformHandler")
+local ControllerModule = require("Gameplay.ChainController")
 
 return Component {
     fields = {
@@ -97,69 +97,6 @@ return Component {
 
         return false
     end,
-
-    GetForwardDirection = function(self) --TO BE REMOVED
-        -- Get player transform
-        local playerTr = self.playerTransform
-        if not playerTr then
-            playerTr = Engine.FindTransformByName(self.PlayerName)
-            self.playerTransform = playerTr  -- cache it
-        end
-        
-        if playerTr then
-            -- Method 1: Try direct forward property
-            if playerTr.forward then
-                local fwd = playerTr.forward
-                if type(fwd) == "table" or type(fwd) == "userdata" then
-                    local fx = fwd.x or fwd[1] or 0
-                    local fy = fwd.y or fwd[2] or 0
-                    local fz = fwd.z or fwd[3] or 0
-                    local mag = math.sqrt(fx*fx + fy*fy + fz*fz)
-                    if mag > 0.0001 then
-                        return {fx/mag, fy/mag, fz/mag}
-                    end
-                end
-            end
-            
-            -- Method 2: Extract from rotation quaternion
-            if playerTr.rotation then
-                local rot = playerTr.rotation
-                local qx = rot.x or rot[1] or 0
-                local qy = rot.y or rot[2] or 0
-                local qz = rot.z or rot[3] or 0
-                local qw = rot.w or rot[4] or 1
-                
-                -- Convert quaternion to forward vector (Unity-style, forward is +Z)
-                local fx = 2 * (qx*qz + qw*qy)
-                local fy = 2 * (qy*qz - qw*qx)
-                local fz = 1 - 2 * (qx*qx + qy*qy)
-                
-                local mag = math.sqrt(fx*fx + fy*fy + fz*fz)
-                if mag > 0.0001 then
-                    return {fx/mag, fy/mag, fz/mag}
-                end
-            end
-            
-            -- Method 3: Check if Engine has a GetTransformForward function
-            if Engine and Engine.GetTransformForward then
-                local ok, fx, fy, fz = pcall(function() 
-                    return Engine.GetTransformForward(playerTr) 
-                end)
-                if ok and fx then
-                    if type(fx) == "table" then
-                        fx, fy, fz = fx.x or fx[1] or 0, fx.y or fx[2] or 0, fx.z or fx[3] or 0
-                    end
-                    local mag = math.sqrt(fx*fx + fy*fy + fz*fz)
-                    if mag > 0.0001 then
-                        return {fx/mag, fy/mag, fz/mag}
-                    end
-                end
-            end
-        end
-        
-        -- Fallback
-        return {0.0, 0.0, 1.0}
-    end,
     
     _on_chain_down = function(self, payload)
         print("down")
@@ -168,9 +105,10 @@ return Component {
     end,
 
     _on_chain_up = function(self, payload)
-        print("up")
+        print("up chain control")
         self._chain_pressing = false
         self._chain_held = false
+        
         -- Deactivate camera aiming
         if event_bus and event_bus.publish then
             event_bus.publish("chain.aim_camera", {active = false})
@@ -182,15 +120,7 @@ return Component {
         local isExt = self.controller.isExtending or false
         local isRet = self.controller.isRetracting or false
 
-        if not isExt and not isRet and len <= 1e-4 then
-            -- begin extension immediately when releasing from a retracted state
-            local forward = nil
-            if type(self.GetForwardDirection) == "function" then
-                forward = self:GetForwardDirection()
-            end
-            self.controller:StartExtension(forward)
-            return
-        end
+        if not isExt and not isRet and len <= 1e-4 then self.controller:StartExtension(self._cameraForward) end
 
         if len > 1e-4 and (not isRet) then
             self.controller:StartRetraction()
@@ -279,25 +209,45 @@ return Component {
             local sx, sy, sz = self:_unpack_pos(self:GetPosition())
             self.controller:SetStartPos(sx, sy, sz)
         end
+        
+        -- Initialize camera forward with fallback
+        self._cameraForward = {0, 0, 1}
 
         -- fallback to global event bus if Subscribe unavailable (defensive)
         if _G.event_bus and _G.event_bus.subscribe then
+            self._cameraForwardSub = _G.event_bus.subscribe("ChainAim_basis", function(payload)
+                if payload and payload.forward then
+                    local fwd = payload.forward
+                    local fx = fwd.x or fwd[1] or 0
+                    local fy = fwd.y or fwd[2] or 0
+                    local fz = fwd.z or fwd[3] or 0
+                    print(fx)
+                    print(fy)
+                    print(fz)
+                    -- Negate to get the direction the camera is looking (not towards camera)
+                    --fx = -fx
+                    --fz = -fz
+
+                    -- Normalize to be safe
+                    local mag = math.sqrt(fx*fx + fy*fy + fz*fz)
+                    if mag > 0.0001 then
+                        self._cameraForward = {fx/mag, fy/mag, fz/mag}
+                    end
+                end
+            end)
             self._chainSubDown = _G.event_bus.subscribe("chain.down", function(payload) if not payload then return end pcall(function() self:_on_chain_down(payload) end) end)
             self._chainSubUp = _G.event_bus.subscribe("chain.up", function(payload) if not payload then return end pcall(function() self:_on_chain_up(payload) end) end)
             self._chainSubHold = _G.event_bus.subscribe("chain.hold", function(payload) if not payload then return end pcall(function() self:_on_chain_hold(payload) end) end)
         end
 
         if self.AutoStart then
-            local forward = nil
-            if type(self.GetForwardDirection) == "function" then
-                forward = self:GetForwardDirection()
-            end
-            self.controller:StartExtension(forward)
+            self.controller:StartExtension(self._cameraForward)
         end
     end,
 
     Update = function(self, dt)
         if not self.controller then return end
+        
         -- quick debug dump (temporary)
         local function dump_state(ctrl)
             if not ctrl then return end
@@ -318,9 +268,9 @@ return Component {
             local a={}
             for idx,_ in pairs(ctrl.anchors) do table.insert(a, idx) end
             if #a>0 then print("[CHAIN DEBUG] anchors:", table.concat(a, ",")) end
-            print(self:GetForwardDirection()[1]);
-            print(self:GetForwardDirection()[2]);
-            print(self:GetForwardDirection()[3]);
+            print(self._cameraForward[1]);
+            print(self._cameraForward[2]);
+            print(self._cameraForward[3]);
         end
         -- call: dump_state(self.controller)
         local settings = {
@@ -368,13 +318,14 @@ return Component {
         -- mono_helper will automatically unsubscribe tokens registered via self:Subscribe
         -- fallback: if manual tokens were used, attempt to unsubscribe them defensively
         if _G.event_bus and _G.event_bus.unsubscribe then
+            if self._cameraForwardSub then pcall(function() _G.event_bus.unsubscribe(self._cameraForwardSub) end) end
             if self._chainSubDown then pcall(function() _G.event_bus.unsubscribe(self._chainSubDown) end) end
             if self._chainSubUp then pcall(function() _G.event_bus.unsubscribe(self._chainSubUp) end) end
             if self._chainSubHold then pcall(function() _G.event_bus.unsubscribe(self._chainSubHold) end) end
         end
     end,
 
-    StartExtension = function(self) if self.controller then self.controller:StartExtension(self:GetForwardDirection()) end end,
+    StartExtension = function(self) if self.controller then self.controller:StartExtension(self._cameraForward) end end,
     StartRetraction = function(self) if self.controller then self.controller:StartRetraction() end end,
     StopExtension = function(self) if self.controller then self.controller:StopExtension() end end,
     GetChainState = function(self) return { Length = self.m_CurrentLength, Count = self.m_LinkCount } end

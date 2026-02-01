@@ -66,7 +66,8 @@ return Component {
         actionModeTransition = 8.0,
         actionModeLockRotation = false,  -- Set to true to lock camera rotation when in action mode
         -- Chain mode aim settings
-        chainAimTargetName = "ChainAimPoint",
+        chainAimPosName = "ChainAimPointLeft",
+        chainAimTargetName = "ChainAimPointLeftEnd",
         chainAimTransitionSpeed = 5.0,
         -- Camera rotation lock
         lockCameraRotation  = false,
@@ -94,6 +95,7 @@ return Component {
         self._chainAiming = false
         self._chainAimPos = nil
         self._normalCameraPos = nil
+        self._chainAimInitialized = false
 
         if event_bus and event_bus.subscribe then
             self._posSub = event_bus.subscribe("player_position", function(payload)
@@ -115,11 +117,14 @@ return Component {
             end)    
 
             self._chainAimSub = event_bus.subscribe("chain.aim_camera", function(payload)
-                if not payload then return end
-                self._chainAiming = payload.active or false
-                if not self._chainAiming then
-                    self._chainAimPos = nil
-                end
+            if not payload then return end
+            local wasAiming = self._chainAiming
+            self._chainAiming = payload.active or false
+            
+            -- Reset initialization flag when entering chain aim mode
+            if self._chainAiming and not wasAiming then
+                self._chainAimInitialized = false
+            end
             end)
         end
     end,
@@ -288,99 +293,94 @@ return Component {
         
         -- PRIORITY 1: Chain aiming mode (overrides orbit)
         if self._chainAiming then
-            print("Chain aiming active")
-                
-                -- FIRST FRAME: Snap yaw/pitch to aim target rotation BEFORE doing anything else
-                if not self._chainAimPos then
-                    print("First frame of chain aim")
-                    
-                    local aimTarget = Engine.FindTransformByName(self.chainAimTargetName)
-                    print("aimTarget:", aimTarget)
-                    print("Engine:", Engine)
-                    print("Engine.GetTransformWorldRotation:", Engine and Engine.GetTransformWorldRotation)
-                    
-                    if aimTarget then
-                        print("aimTarget found!")
-                        if Engine and Engine.GetTransformWorldRotation then
-                            print("GetTransformWorldRotation exists, calling...")
-                            local qw, qx, qy, qz = Engine.GetTransformWorldRotation(aimTarget)
-                            print("Quaternion: qw=" .. qw .. " qx=" .. qx .. " qy=" .. qy .. " qz=" .. qz)
-                            
-                            if qw then
-                                print("Got quaternion!")
-                                -- Extract forward vector from quaternion
-                                local fx = 2 * (qx*qz + qw*qy)
-                                local fy = 2 * (qy*qz - qw*qx)
-                                local fz = 1 - 2 * (qx*qx + qy*qy)
-                                
-                                print("Forward vector: fx=" .. fx .. " fy=" .. fy .. " fz=" .. fz)
-                                
-                                -- IMMEDIATELY update yaw/pitch
-                                local horizontalLen = math.sqrt(fx*fx + fz*fz)
-                                if horizontalLen > 0.0001 then
-                                    self._yaw = math.deg(atan2(fx, fz))
-                                    self._pitch = -math.deg(math.atan(fy / horizontalLen))
-                                    print("[CameraFollow] SNAP rotation: yaw=" .. self._yaw .. " pitch=" .. self._pitch)
-                                else
-                                    print("horizontalLen too small:", horizontalLen)
-                                end
-                            else
-                                print("pcall failed or qw is nil")
-                            end
-                        else
-                            print("Engine.GetTransformWorldRotation does NOT exist")
-                        end
-                    else
-                        print("aimTarget NOT found with name:", self.chainAimTargetName)
-                    end
-                else
-                    print("Not first frame, _chainAimPos already exists")
-                end
+          -- Get both transform positions
+          local aimPos = Engine.FindTransformByName(self.chainAimPosName)
+          local aimTarget = Engine.FindTransformByName(self.chainAimTargetName)
+          
+          if aimPos and aimTarget then
+            -- Get position of camera anchor point (where camera should be)
+            local camX, camY, camZ = 0, 0, 0
+            local ok, a, b, c = pcall(function()
+              if Engine and Engine.GetTransformWorldPosition then
+                return Engine.GetTransformWorldPosition(aimPos)
+              end
+              return nil
+            end)
             
+            if ok and a ~= nil then
+              if type(a) == "table" then
+                camX, camY, camZ = a[1] or a.x or 0, a[2] or a.y or 0, a[3] or a.z or 0
+              else
+                camX, camY, camZ = a, b, c
+              end
+            end
+            
+            -- ONLY ON FIRST FRAME: Lock camera rotation to look at target
+            if not self._chainAimInitialized then
+              -- Get position of look-at target
+              local targetX, targetY, targetZ = 0, 0, 0
+              ok, a, b, c = pcall(function()
+                if Engine and Engine.GetTransformWorldPosition then
+                  return Engine.GetTransformWorldPosition(aimTarget)
+                end
+                return nil
+              end)
+              
+              if ok and a ~= nil then
+                if type(a) == "table" then
+                  targetX, targetY, targetZ = a[1] or a.x or 0, a[2] or a.y or 0, a[3] or a.z or 0
+                else
+                  targetX, targetY, targetZ = a, b, c
+                end
+              end
+              
+              -- Calculate direction from camera position to target
+              local dirX = targetX - camX
+              local dirY = targetY - camY
+              local dirZ = targetZ - camZ
+              
+              local dirLen = math.sqrt(dirX*dirX + dirY*dirY + dirZ*dirZ)
+              
+              if dirLen > 0.0001 then
+                -- Normalize direction
+                dirX, dirY, dirZ = dirX/dirLen, dirY/dirLen, dirZ/dirLen
+                
+                -- Calculate yaw (rotation around Y axis)
+                self._yaw = math.deg(atan2(dirX, dirZ))
+                
+                -- Calculate pitch (rotation around X axis)
+                self._pitch = -math.deg(math.asin(dirY))
+                
+                -- Mark as initialized so we don't re-lock
+                self._chainAimInitialized = true
+              end
+            end
+            
+            -- Set camera position (every frame)
+            desiredX = camX
+            desiredY = camY
+            desiredZ = camZ
+            
+            -- Camera now uses free rotation (yaw/pitch from mouse input)
             useOrbitFollow = false
             useFreeRotation = true
-            
-            -- NOW get position (every frame)
-            local aimTarget = Engine.FindTransformByName(self.chainAimTargetName)
-            if aimTarget then
-                local ax, ay, az = 0, 0, 0
-                local ok, a, b, c = pcall(function()
-                    if Engine and Engine.GetTransformWorldPosition then
-                        return Engine.GetTransformWorldPosition(aimTarget)
-                    end
-                    return nil
-                end)
-                if ok and a ~= nil then
-                    if type(a) == "table" then
-                        ax, ay, az = a[1] or a.x or 0, a[2] or a.y or 0, a[3] or a.z or 0
-                    else
-                        ax, ay, az = a, b, c
-                    end
-                end
-                self._chainAimPos = {x = ax, y = ay, z = az}
+
+            -- Publish camera basis for chain
+            local yaw_rad = math.rad(self._yaw)
+            local pitch_rad = math.rad(self._pitch)
+            local fx = math.sin(yaw_rad) * math.cos(pitch_rad)
+            local fy = -math.sin(pitch_rad)  -- negative if pitch up = negative
+            local fz = math.cos(yaw_rad) * math.cos(pitch_rad)
+            if event_bus and event_bus.publish then
+                event_bus.publish("ChainAim_basis", {
+                    forward = { x = fx, y = fy, z = fz },
+                })
             end
-            
-            if self._chainAimPos then
-                desiredX = self._chainAimPos.x
-                desiredY = self._chainAimPos.y
-                desiredZ = self._chainAimPos.z
-                
-                -- Use the NOW-CORRECT yaw/pitch
-                local pitchRad = math.rad(self._pitch)
-                local yawRad = math.rad(self._yaw)
-                
-                local forwardDist = 10.0
-                local fx = math.sin(yawRad) * math.cos(pitchRad)
-                local fy = -math.sin(pitchRad)
-                local fz = math.cos(yawRad) * math.cos(pitchRad)
-                
-                cameraTarget.x = desiredX + fx * forwardDist
-                cameraTarget.y = desiredY + fy * forwardDist
-                cameraTarget.z = desiredZ + fz * forwardDist
-            else
-                useOrbitFollow = true
-                useFreeRotation = false
-            end
+          else
+            -- Transforms not found, fall back to orbit
+            useOrbitFollow = true
+            useFreeRotation = false
+          end
         end
         
         -- DEFAULT: Player orbit follow
