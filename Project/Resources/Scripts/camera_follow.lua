@@ -1,4 +1,6 @@
 -- camera_follow.lua
+-- Third-person camera with orbit controls, action mode, chain aiming, and collision detection
+-- NEW: Added automatic enemy detection system for action mode triggering (NO CACHING)
 require("extension.engine_bootstrap")
 local Component      = require("extension.mono_helper")
 local TransformMixin = require("extension.transform_mixin")
@@ -70,6 +72,15 @@ return Component {
         chainAimTransitionSpeed = 5.0,
         -- Camera rotation lock
         lockCameraRotation  = false,
+        
+        -- Enemy Detection Settings
+        enableEnemyDetection = true,
+        enemyDetectionRange  = 8.0,
+        enemyDisengageRange  = 10.0,
+        enemyDisengageDelay  = 2.0,
+        enemyScriptNames = {"EnemyAI", "FlyingEnemyLogic"},
+        cacheUpdateInterval = 1.0,  -- C++ cache update interval (seconds)
+        debugEnemyDetection = false,       
     },
 
     Awake = function(self)
@@ -94,6 +105,26 @@ return Component {
         self._chainAiming = false
         self._chainAimPos = nil
         self._normalCameraPos = nil
+        
+        --  Enemy detection state
+        self._enemyInRange = false               -- Is an enemy currently within detection range?
+        self._enemyDisengageTimer = 0.0          -- Timer for delayed action mode exit
+        self._enemyTriggeredActionMode = false   -- Did an enemy trigger action mode (vs manual)?
+
+        -- Configure C++ cache intervals
+        if Engine and Engine.SetCacheUpdateInterval then
+            for _, scriptName in ipairs(self.enemyScriptNames) do
+                Engine.SetCacheUpdateInterval(scriptName, self.cacheUpdateInterval)
+                if self.debugEnemyDetection then
+                    print(string.format("[CameraFollow] Set cache interval for '%s' to %.1fs", 
+                                      scriptName, self.cacheUpdateInterval))
+                end
+            end
+        end
+
+        if self.debugEnemyDetection then
+            print("[CameraFollow] Initialized with enemy detection enabled (NO CACHING)")
+        end
 
         if event_bus and event_bus.subscribe then
             self._posSub = event_bus.subscribe("player_position", function(payload)
@@ -140,6 +171,91 @@ return Component {
             Screen.SetCursorLocked(false)
         end
     end,
+    
+    -- Find the closest enemy to the player
+    _findClosestEnemy = function(self)
+        if not self._hasTarget or not Engine or not Engine.FindEntitiesWithScript or not Engine.GetEntityPosition then
+            return nil, math.huge
+        end
+        
+        local playerX = self._targetPos.x
+        local playerZ = self._targetPos.z
+        local closestDist = math.huge
+        local closestEnemy = nil
+        
+        -- C++ returns cached results (updated by UpdateCacheTiming)
+        for _, scriptName in ipairs(self.enemyScriptNames) do
+            local entities = Engine.FindEntitiesWithScript(scriptName)
+            
+            if entities and #entities > 0 then
+                for i = 1, #entities do
+                    local entityId = entities[i]
+                    local x, y, z = Engine.GetEntityPosition(entityId)
+                    
+                    if x and z then
+                        local dx = x - playerX
+                        local dz = z - playerZ
+                        local dist = math.sqrt(dx * dx + dz * dz)
+                        
+                        if dist < closestDist then
+                            closestDist = dist
+                            closestEnemy = entityId
+                        end
+                    end
+                end
+            end
+        end
+        
+        return closestEnemy, closestDist
+    end,
+    
+    -- Main enemy proximity update - triggers/untriggers action mode based on enemy distance
+    _updateEnemyProximity = function(self, dt)
+        if not self.enableEnemyDetection then return end
+        
+        -- While in action mode, don't search for enemies
+        if self._actionModeActive then
+            if self._enemyTriggeredActionMode then
+                self._enemyDisengageTimer = self._enemyDisengageTimer + dt
+                
+                if self._enemyDisengageTimer >= self.enemyDisengageDelay then
+                    self._actionModeActive = false
+                    self._enemyTriggeredActionMode = false
+                    self._enemyDisengageTimer = 0.0
+                    
+                    if self.debugEnemyDetection then
+                        print("[CameraFollow] ★★★ Action Mode DISABLED ★★★")
+                    end
+                end
+            end
+            return  -- EXIT EARLY - no search
+        end
+        
+        -- Only search when NOT in action mode
+        local closestEnemy, closestDist = self:_findClosestEnemy()
+        
+        local wasInRange = self._enemyInRange
+        self._enemyInRange = closestEnemy ~= nil and closestDist <= self.enemyDetectionRange
+        
+        if self.debugEnemyDetection and self._enemyInRange ~= wasInRange then
+            print(string.format("[CameraFollow] Enemy proximity: %s (%.1fu)", 
+                              tostring(self._enemyInRange), closestDist))
+        end
+        
+        if self._enemyInRange then
+            self._enemyDisengageTimer = 0.0
+            
+            if not self._actionModeActive then
+                self._actionModeActive = true
+                self._enemyTriggeredActionMode = true
+                
+                if self.debugEnemyDetection then
+                    print("[CameraFollow] ★★★ Action Mode ENABLED ★★★")
+                end
+            end
+        end
+    end,
+    
 
     _updateScrollZoom = function(self)
         if not (Input and Input.GetScrollY) then return end
@@ -215,17 +331,27 @@ return Component {
         if not (self.GetPosition and self.SetPosition and self.SetRotation) then return end
         if not self._hasTarget then return end
 
+        -- ==========================================
+        -- CRITICAL: Update C++ cache timing FIRST
+        -- This accumulates deltaTime for all caches
+        -- ==========================================
+        if Engine and Engine.UpdateCacheTiming then
+            Engine.UpdateCacheTiming(dt)
+        end
+
+        -- Update enemy proximity
+        self:_updateEnemyProximity(dt)
+
         -- Cooldown timer
         if self._toggleCooldown > 0 then
             self._toggleCooldown = self._toggleCooldown - dt
         end
 
-        
-
         -- Action mode toggle
         if self.actionModeEnabled and Input and Input.IsActionJustPressed and Input.IsActionJustPressed(self.actionModeKey) then
             if self._toggleCooldown <= 0 then
                 self._actionModeActive = not self._actionModeActive
+                self._enemyTriggeredActionMode = false
                 self._toggleCooldown = 0.25
                 print("[CameraFollow] Action Mode " .. (self._actionModeActive and "ENABLED" or "DISABLED"))
             end
@@ -277,6 +403,7 @@ return Component {
         
         self._pitch = self._pitch + (targetPitch - self._pitch) * t
         self.followDistance = self.followDistance + (targetDistance - self.followDistance) * t
+
 
         -- ==========================================
         -- CAMERA TARGET CALCULATION (Extensible)

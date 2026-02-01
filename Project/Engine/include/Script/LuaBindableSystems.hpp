@@ -784,3 +784,206 @@ namespace NavWrappers {
         return NavSystem::Get().GetGroundY(entity);
     }
 }
+
+
+
+// ============================================================================
+// 
+// ============================================================================
+
+#include "Script/ScriptComponentData.hpp"
+#include "ECS/NameComponent.hpp"
+// EntityQueryWrappers.cpp - ROBUST STRING DECODING VERSION
+// Handles the case where Lua strings come through as encoded data
+
+namespace EntityQueryWrappers {
+
+    struct ScriptQueryCache {
+        std::vector<Entity> entities;
+        std::string scriptFilename;
+        float timeSinceUpdate;
+        float updateInterval;
+
+        ScriptQueryCache()
+            : scriptFilename("")
+            , timeSinceUpdate(999.0f)
+            , updateInterval(1.0f)
+        {
+        }
+    };
+
+    static std::unordered_map<std::string, ScriptQueryCache> s_scriptQueryCache;
+
+    inline std::string GetFilenameWithoutExtension(const std::string& path) {
+        size_t lastSlash = path.find_last_of("/\\");
+        std::string filename = (lastSlash != std::string::npos)
+            ? path.substr(lastSlash + 1)
+            : path;
+
+        size_t lastDot = filename.find_last_of('.');
+        if (lastDot != std::string::npos) {
+            filename = filename.substr(0, lastDot);
+        }
+
+        return filename;
+    }
+
+    inline void UpdateCacheForScript(const std::string& scriptName) {
+        std::string targetFilename = GetFilenameWithoutExtension(scriptName);
+
+        printf("[EntityQuery] Updating cache for script: '%s'\n", targetFilename.c_str());
+
+        ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
+        std::vector<Entity> allEntities = ecsManager.GetAllEntities();
+
+        std::vector<Entity> results;
+
+        for (Entity entity : allEntities) {
+            auto scriptCompOpt = ecsManager.TryGetComponent<ScriptComponentData>(entity);
+            if (!scriptCompOpt.has_value()) continue;
+
+            ScriptComponentData& scriptComp = scriptCompOpt.value().get();
+
+            for (const auto& script : scriptComp.scripts) {
+                if (!script.enabled) continue;
+
+                std::string scriptFilename = GetFilenameWithoutExtension(script.scriptPath);
+
+                if (scriptFilename == targetFilename) {
+                    results.push_back(entity);
+                    break;
+                }
+            }
+        }
+
+        auto& cache = s_scriptQueryCache[scriptName];
+        cache.entities = results;
+        cache.scriptFilename = targetFilename;
+        cache.timeSinceUpdate = 0.0f;
+
+        printf("[EntityQuery] Cache updated: %zu entities found\n", results.size());
+    }
+
+    // Find entities with script - returns Lua table using manual stack operations
+    // PATTERN: Exactly like NavWrappers::RequestPathXZ
+    inline int FindEntitiesWithScript(lua_State* L) {
+        // Get string parameter from Lua stack
+        const char* scriptPath = luaL_checkstring(L, 1);
+        if (!scriptPath) {
+            lua_newtable(L);  // Return empty table
+            return 1;
+        }
+
+        std::string scriptName(scriptPath);
+
+        // Check if cache exists and is still valid
+        auto it = s_scriptQueryCache.find(scriptName);
+        if (it != s_scriptQueryCache.end()) {
+            ScriptQueryCache& cache = it->second;
+
+            // Cache is still valid
+            if (cache.timeSinceUpdate < cache.updateInterval) {
+                // Build Lua table from cached results
+                lua_newtable(L);
+                int index = 1;
+                for (Entity entity : cache.entities) {
+                    lua_pushinteger(L, static_cast<lua_Integer>(entity));
+                    lua_rawseti(L, -2, index++);
+                }
+                return 1;
+            }
+        }
+
+        // Cache expired or doesn't exist - update it
+        UpdateCacheForScript(scriptName);
+
+        // Build Lua table from updated cache
+        lua_newtable(L);
+        int index = 1;
+        for (Entity entity : s_scriptQueryCache[scriptName].entities) {
+            lua_pushinteger(L, static_cast<lua_Integer>(entity));
+            lua_rawseti(L, -2, index++);
+        }
+
+        return 1;  // Return the table
+    }
+
+    // Update timing for all caches
+    inline void UpdateCacheTiming(float deltaTime) {
+        for (auto& pair : s_scriptQueryCache) {
+            pair.second.timeSinceUpdate += deltaTime;
+        }
+    }
+
+    // Force update cache for a specific script
+    inline void UpdateEnemyCache(const std::string& scriptName) {
+        UpdateCacheForScript(scriptName);
+    }
+
+    // Set cache update interval
+    inline void SetCacheUpdateInterval(const std::string& scriptName, float intervalSeconds) {
+        auto it = s_scriptQueryCache.find(scriptName);
+        if (it != s_scriptQueryCache.end()) {
+            it->second.updateInterval = intervalSeconds;
+            printf("[EntityQuery] Cache interval for '%s' set to %.2f seconds\n",
+                scriptName.c_str(), intervalSeconds);
+        }
+        else {
+            s_scriptQueryCache[scriptName].updateInterval = intervalSeconds;
+        }
+    }
+
+    // Clear all caches
+    inline void ClearEnemyCaches() {
+        s_scriptQueryCache.clear();
+        printf("[EntityQuery] All caches cleared\n");
+    }
+
+    // Get cache info - returns tuple
+    inline std::tuple<int, float, float> GetCacheInfo(const std::string& scriptName) {
+        auto it = s_scriptQueryCache.find(scriptName);
+        if (it != s_scriptQueryCache.end()) {
+            const ScriptQueryCache& cache = it->second;
+            return std::make_tuple(
+                static_cast<int>(cache.entities.size()),
+                cache.timeSinceUpdate,
+                cache.updateInterval
+            );
+        }
+        return std::make_tuple(0, -1.0f, -1.0f);
+    }
+
+
+    // Get world position - returns tuple (like Lua_GetTransformWorldPosition)
+    inline std::tuple<float, float, float> GetEntityPosition(Entity entity) {
+        ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
+
+        auto transformOpt = ecsManager.TryGetComponent<Transform>(entity);
+        if (!transformOpt.has_value()) {
+            return std::make_tuple(0.0f, 0.0f, 0.0f);
+        }
+
+        auto& transform = transformOpt.value().get();
+        Vector3D worldPos = transform.worldPosition;
+
+        return std::make_tuple(worldPos.x, worldPos.y, worldPos.z);
+    }
+
+    // Get entity name - returns string
+    inline std::string GetEntityName(Entity entity) {
+        ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
+
+        auto nameOpt = ecsManager.TryGetComponent<NameComponent>(entity);
+        if (!nameOpt.has_value()) {
+            return "";
+        }
+
+        return nameOpt.value().get().name;
+    }
+
+    // Check if entity is active - returns bool
+    inline bool IsEntityActive(Entity entity) {
+        ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
+        return ecsManager.IsEntityActiveInHierarchy(entity);
+    }
+}

@@ -201,40 +201,9 @@
                             "entryFunction": "OnInit",
                             "autoInvokeEntry": true,
                             "instanceState": {
-                                "mouseSensitivity": 0.15,
-                                "followLerp": 10.0,
-                                "__meta": {},
-                                "_targetPos": {
-                                    "y": 0.0,
-                                    "z": 0.0,
-                                    "x": 0.0
-                                },
-                                "_subscriptions": {},
-                                "_lastMouseY": 0.0,
-                                "_posSub": {
-                                    "id": 1064.0,
-                                    "event": "player_position"
-                                },
-                                "__created_at": 1764350815.0,
-                                "followDistance": 5.0,
-                                "_hasTarget": false,
-                                "_firstMouse": true,
-                                "_yaw": 180.0,
-                                "minPitch": -30.0,
-                                "__field_list": {
-                                    "mouseSensitivity": 0.15,
-                                    "followLerp": 10.0,
-                                    "maxPitch": 60.0,
-                                    "heightOffset": 0.0,
-                                    "followDistance": 5.0,
-                                    "minPitch": -30.0
-                                },
-                                "_pitch": 15.0,
-                                "_transform_fetched": false,
-                                "_lastMouseX": 0.0,
-                                "heightOffset": 0.0,
-                                "_private": {},
-                                "maxPitch": 60.0
+                                "enemyDetectionRange": 5.0,
+                                "enemyDisengageRange": 5.0,
+                                "debugEnemyDetection": true
                             }
                         }
                     ]
