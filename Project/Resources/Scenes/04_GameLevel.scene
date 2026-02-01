@@ -220,7 +220,7 @@
                     "layerIndex": 0
                 },
                 "SiblingIndexComponent": {
-                    "siblingIndex": 2
+                    "siblingIndex": 3
                 },
                 "Transform": {
                     "type": "Transform",
@@ -404,7 +404,7 @@
                     "layerIndex": 0
                 },
                 "SiblingIndexComponent": {
-                    "siblingIndex": 3
+                    "siblingIndex": 4
                 },
                 "Transform": {
                     "type": "Transform",
@@ -829,7 +829,7 @@
                     "layerIndex": 0
                 },
                 "SiblingIndexComponent": {
-                    "siblingIndex": 14
+                    "siblingIndex": 15
                 },
                 "Transform": {
                     "type": "Transform",
@@ -11444,7 +11444,7 @@
                     "layerIndex": 0
                 },
                 "SiblingIndexComponent": {
-                    "siblingIndex": 4
+                    "siblingIndex": 5
                 },
                 "Transform": {
                     "type": "Transform",
@@ -11531,7 +11531,7 @@
                     "layerIndex": 0
                 },
                 "SiblingIndexComponent": {
-                    "siblingIndex": 5
+                    "siblingIndex": 6
                 },
                 "Transform": {
                     "type": "Transform",
@@ -11618,7 +11618,7 @@
                     "layerIndex": 0
                 },
                 "SiblingIndexComponent": {
-                    "siblingIndex": 6
+                    "siblingIndex": 7
                 },
                 "Transform": {
                     "type": "Transform",
@@ -11705,7 +11705,7 @@
                     "layerIndex": 0
                 },
                 "SiblingIndexComponent": {
-                    "siblingIndex": 7
+                    "siblingIndex": 8
                 },
                 "Transform": {
                     "type": "Transform",
@@ -11792,7 +11792,7 @@
                     "layerIndex": 0
                 },
                 "SiblingIndexComponent": {
-                    "siblingIndex": 8
+                    "siblingIndex": 9
                 },
                 "Transform": {
                     "type": "Transform",
@@ -11879,7 +11879,7 @@
                     "layerIndex": 0
                 },
                 "SiblingIndexComponent": {
-                    "siblingIndex": 9
+                    "siblingIndex": 10
                 },
                 "Transform": {
                     "type": "Transform",
@@ -11966,7 +11966,7 @@
                     "layerIndex": 0
                 },
                 "SiblingIndexComponent": {
-                    "siblingIndex": 10
+                    "siblingIndex": 11
                 },
                 "Transform": {
                     "type": "Transform",
@@ -12053,7 +12053,7 @@
                     "layerIndex": 0
                 },
                 "SiblingIndexComponent": {
-                    "siblingIndex": 11
+                    "siblingIndex": 12
                 },
                 "Transform": {
                     "type": "Transform",
@@ -12140,7 +12140,7 @@
                     "layerIndex": 0
                 },
                 "SiblingIndexComponent": {
-                    "siblingIndex": 12
+                    "siblingIndex": 13
                 },
                 "Transform": {
                     "type": "Transform",
@@ -12227,7 +12227,7 @@
                     "layerIndex": 0
                 },
                 "SiblingIndexComponent": {
-                    "siblingIndex": 13
+                    "siblingIndex": 14
                 },
                 "Transform": {
                     "type": "Transform",
@@ -12314,7 +12314,7 @@
                     "layerIndex": 0
                 },
                 "SiblingIndexComponent": {
-                    "siblingIndex": 15
+                    "siblingIndex": 16
                 },
                 "Transform": {
                     "type": "Transform",
@@ -15539,7 +15539,7 @@
                     "layerIndex": 0
                 },
                 "SiblingIndexComponent": {
-                    "siblingIndex": 16
+                    "siblingIndex": 17
                 },
                 "Transform": {
                     "type": "Transform",
@@ -23139,7 +23139,7 @@
                     "layerIndex": 0
                 },
                 "SiblingIndexComponent": {
-                    "siblingIndex": 17
+                    "siblingIndex": 18
                 },
                 "Transform": {
                     "type": "Transform",
@@ -23226,7 +23226,7 @@
                     "layerIndex": 0
                 },
                 "SiblingIndexComponent": {
-                    "siblingIndex": 19
+                    "siblingIndex": 20
                 },
                 "Transform": {
                     "type": "Transform",
@@ -30674,7 +30674,7 @@
                     "layerIndex": 0
                 },
                 "SiblingIndexComponent": {
-                    "siblingIndex": 20
+                    "siblingIndex": 21
                 },
                 "Transform": {
                     "type": "Transform",
@@ -30761,7 +30761,7 @@
                     "layerIndex": 0
                 },
                 "SiblingIndexComponent": {
-                    "siblingIndex": 21
+                    "siblingIndex": 22
                 },
                 "Transform": {
                     "type": "Transform",
@@ -31235,7 +31235,7 @@
                     "layerIndex": 0
                 },
                 "SiblingIndexComponent": {
-                    "siblingIndex": 22
+                    "siblingIndex": 23
                 },
                 "Transform": {
                     "type": "Transform",
@@ -31709,7 +31709,7 @@
                     "layerIndex": 0
                 },
                 "SiblingIndexComponent": {
-                    "siblingIndex": 23
+                    "siblingIndex": 24
                 },
                 "Transform": {
                     "type": "Transform",
@@ -32181,7 +32181,7 @@
                     "layerIndex": 0
                 },
                 "SiblingIndexComponent": {
-                    "siblingIndex": 24
+                    "siblingIndex": 25
                 },
                 "Transform": {
                     "type": "Transform",
@@ -32653,7 +32653,7 @@
                     "layerIndex": 0
                 },
                 "SiblingIndexComponent": {
-                    "siblingIndex": 25
+                    "siblingIndex": 26
                 },
                 "Transform": {
                     "type": "Transform",
@@ -33125,7 +33125,7 @@
                     "layerIndex": 0
                 },
                 "SiblingIndexComponent": {
-                    "siblingIndex": 32
+                    "siblingIndex": 33
                 },
                 "Transform": {
                     "type": "Transform",
@@ -33544,7 +33544,7 @@
                     "layerIndex": 0
                 },
                 "SiblingIndexComponent": {
-                    "siblingIndex": 34
+                    "siblingIndex": 35
                 },
                 "Transform": {
                     "type": "Transform",
@@ -33716,7 +33716,7 @@
                     "layerIndex": 0
                 },
                 "SiblingIndexComponent": {
-                    "siblingIndex": 33
+                    "siblingIndex": 34
                 },
                 "Transform": {
                     "type": "Transform",
@@ -33856,7 +33856,7 @@
                     "layerIndex": 0
                 },
                 "SiblingIndexComponent": {
-                    "siblingIndex": 18
+                    "siblingIndex": 19
                 },
                 "Transform": {
                     "type": "Transform",
@@ -34352,7 +34352,7 @@
                     "layerIndex": 0
                 },
                 "SiblingIndexComponent": {
-                    "siblingIndex": 26
+                    "siblingIndex": 27
                 },
                 "Transform": {
                     "type": "Transform",
@@ -34611,7 +34611,7 @@
                     "layerIndex": 0
                 },
                 "SiblingIndexComponent": {
-                    "siblingIndex": 27
+                    "siblingIndex": 28
                 },
                 "Transform": {
                     "type": "Transform",
@@ -34921,7 +34921,7 @@
                     "layerIndex": 0
                 },
                 "SiblingIndexComponent": {
-                    "siblingIndex": 28
+                    "siblingIndex": 29
                 },
                 "Transform": {
                     "type": "Transform",
@@ -35180,7 +35180,7 @@
                     "layerIndex": 0
                 },
                 "SiblingIndexComponent": {
-                    "siblingIndex": 29
+                    "siblingIndex": 30
                 },
                 "Transform": {
                     "type": "Transform",
@@ -35490,7 +35490,7 @@
                     "layerIndex": 0
                 },
                 "SiblingIndexComponent": {
-                    "siblingIndex": 30
+                    "siblingIndex": 31
                 },
                 "Transform": {
                     "type": "Transform",
@@ -35749,7 +35749,7 @@
                     "layerIndex": 0
                 },
                 "SiblingIndexComponent": {
-                    "siblingIndex": 31
+                    "siblingIndex": 32
                 },
                 "Transform": {
                     "type": "Transform",
@@ -36046,100 +36046,10 @@
             }
         },
         {
-            "PrefabPath": "../../Resources/Prefabs/Player (4).prefab",
+            "PrefabPath": "../../Resources/Prefabs/Player (5).prefab",
             "id": 262,
             "guid": "002936801107bf75-00040d569e004657",
             "Name": "Player",
-            "ComponentOverrides": [
-                {
-                    "ScriptComponent": {
-                        "scripts": [
-                            {
-                                "scriptGuidStr": "00465fde5d0ebe89-00040ce56800002d",
-                                "scriptPath": "../../Resources/Scripts/Gameplay/PlayerMovement(Updated).lua",
-                                "enabled": true,
-                                "preserveKeys": [],
-                                "entryFunction": "OnInit",
-                                "autoInvokeEntry": true,
-                                "instanceState": {
-                                    "_currentRotZ": 0.0,
-                                    "Speed": 1.5,
-                                    "_currentRotX": 0.0,
-                                    "_subscriptions": {},
-                                    "_cameraYaw": 180.0,
-                                    "__created_at": 1769704807.0,
-                                    "JumpHeight": 1.2,
-                                    "_currentRotY": 0.0,
-                                    "_playerHurtTriggeredSub": {
-                                        "event": "playerHurtTriggered",
-                                        "id": 3.0
-                                    },
-                                    "_playerDeadSub": {
-                                        "event": "playerDead",
-                                        "id": 2.0
-                                    },
-                                    "__meta": {},
-                                    "_private": {},
-                                    "_cameraYawSub": {
-                                        "event": "camera_yaw",
-                                        "id": 1.0
-                                    },
-                                    "_currentRotW": 1.0,
-                                    "DamageStunDuration": 1.0,
-                                    "_transform_fetched": false,
-                                    "__field_list": {
-                                        "JumpHeight": 1.2,
-                                        "Speed": 1.5,
-                                        "DamageStunDuration": 1.0
-                                    },
-                                    "LandingDuration": 0.85
-                                }
-                            },
-                            {
-                                "scriptGuidStr": "00465fde2b22d5e3-00040ce56800002b",
-                                "scriptPath": "../../Resources/Scripts/Gameplay/PlayerHealth.lua",
-                                "enabled": true,
-                                "preserveKeys": [],
-                                "entryFunction": "OnInit",
-                                "autoInvokeEntry": true,
-                                "instanceState": {
-                                    "__meta": {},
-                                    "__created_at": 1769707349.0,
-                                    "_knifeHitPlayerDmgSub": {
-                                        "event": "knifeHitPlayerDmg",
-                                        "id": 4.0
-                                    },
-                                    "_subscriptions": {},
-                                    "_transform_fetched": false,
-                                    "Health": 5.0,
-                                    "_private": {},
-                                    "IFrameDuration": 1.0,
-                                    "__field_list": {
-                                        "Health": 10.0,
-                                        "IFrameDuration": 1.0
-                                    }
-                                }
-                            },
-                            {
-                                "scriptGuidStr": "00465fde158eb349-00040ce56800001b",
-                                "scriptPath": "../../Resources/Scripts/Gameplay/InputInterpreter.lua",
-                                "enabled": true,
-                                "preserveKeys": [],
-                                "entryFunction": "OnInit",
-                                "autoInvokeEntry": true
-                            },
-                            {
-                                "scriptGuidStr": "00465fde65554e39-00040ce568000003",
-                                "scriptPath": "../../Resources/Scripts/Gameplay/ComboManager.lua",
-                                "enabled": true,
-                                "preserveKeys": [],
-                                "entryFunction": "OnInit",
-                                "autoInvokeEntry": true
-                            }
-                        ]
-                    }
-                }
-            ],
             "Children": [
                 {
                     "id": 328,
@@ -36551,7 +36461,7 @@
             ]
         },
         {
-            "id": 402,
+            "id": 403,
             "guid": "005da414a0202f20-0004052f0c000003",
             "components": {
                 "NameComponent": {
@@ -36564,7 +36474,7 @@
                     "layerIndex": 0
                 },
                 "SiblingIndexComponent": {
-                    "siblingIndex": 1
+                    "siblingIndex": 2
                 },
                 "Transform": {
                     "type": "Transform",
@@ -36744,7 +36654,7 @@
             }
         },
         {
-            "id": 403,
+            "id": 404,
             "guid": "0074f141fc070b30-000412e788000119",
             "components": {
                 "NameComponent": {
@@ -36847,7 +36757,7 @@
             }
         },
         {
-            "id": 404,
+            "id": 405,
             "guid": "0020a8d86cf7d84f-0004053bc0000005",
             "components": {
                 "NameComponent": {
@@ -37037,7 +36947,7 @@
             }
         },
         {
-            "id": 405,
+            "id": 406,
             "guid": "0020a8d835400eaf-0004053a20000001",
             "components": {
                 "NameComponent": {
@@ -37233,7 +37143,7 @@
             }
         },
         {
-            "id": 406,
+            "id": 407,
             "guid": "0020a8d84cfcc96d-0004053c4a000007",
             "components": {
                 "NameComponent": {
@@ -37476,7 +37386,7 @@
             }
         },
         {
-            "id": 407,
+            "id": 408,
             "guid": "0020a8d81ce7a864-0004053d1c000009",
             "components": {
                 "NameComponent": {
@@ -37711,7 +37621,7 @@
             }
         },
         {
-            "id": 408,
+            "id": 409,
             "guid": "0016e27ecd7baabd-0004055db8000003",
             "components": {
                 "NameComponent": {
@@ -37907,7 +37817,7 @@
             }
         },
         {
-            "id": 409,
+            "id": 410,
             "guid": "0020a8d84be72f54-0004053d2000000b",
             "components": {
                 "NameComponent": {
@@ -38142,7 +38052,7 @@
             }
         },
         {
-            "id": 410,
+            "id": 411,
             "guid": "0016e27e9b39e238-0004055eb8000005",
             "components": {
                 "NameComponent": {
@@ -38338,7 +38248,7 @@
             }
         },
         {
-            "id": 411,
+            "id": 412,
             "guid": "0020a8d8090bd2d9-0004053d2200000d",
             "components": {
                 "NameComponent": {
@@ -38573,7 +38483,7 @@
             }
         },
         {
-            "id": 412,
+            "id": 413,
             "guid": "0016e27ee3a2258b-0004055f1a000007",
             "components": {
                 "NameComponent": {
@@ -38769,7 +38679,7 @@
             }
         },
         {
-            "id": 413,
+            "id": 414,
             "guid": "004fbdfd10b41e63-000405904e000005",
             "components": {
                 "NameComponent": {
@@ -38978,7 +38888,7 @@
             }
         },
         {
-            "id": 414,
+            "id": 415,
             "guid": "0074b8e83d6dd210-00040d1cc6000007",
             "components": {
                 "NameComponent": {
@@ -39084,7 +38994,7 @@
             }
         },
         {
-            "id": 415,
+            "id": 416,
             "guid": "007f7ae3a600fe0a-000405929e000001",
             "components": {
                 "NameComponent": {
@@ -39280,7 +39190,7 @@
             }
         },
         {
-            "id": 416,
+            "id": 417,
             "guid": "007f7ae3ffb4105b-000405a8fc000017",
             "components": {
                 "NameComponent": {
@@ -39476,7 +39386,7 @@
             }
         },
         {
-            "id": 417,
+            "id": 418,
             "guid": "007f7ae3c84cfb99-000405a920000019",
             "components": {
                 "NameComponent": {
@@ -39672,7 +39582,7 @@
             }
         },
         {
-            "id": 418,
+            "id": 419,
             "guid": "0074b8e870ad7288-00040d1fa4000013",
             "components": {
                 "NameComponent": {
@@ -39778,7 +39688,7 @@
             }
         },
         {
-            "id": 419,
+            "id": 420,
             "guid": "007f7ae3e4e67d9f-000405ad2200001b",
             "components": {
                 "NameComponent": {
@@ -40021,7 +39931,7 @@
             }
         },
         {
-            "id": 420,
+            "id": 421,
             "guid": "007f7ae3a25a3d35-000405ad4600001d",
             "components": {
                 "NameComponent": {
@@ -40264,7 +40174,7 @@
             }
         },
         {
-            "id": 421,
+            "id": 422,
             "guid": "007f7ae3f01fb33b-000405ad5800001f",
             "components": {
                 "NameComponent": {
@@ -40507,7 +40417,7 @@
             }
         },
         {
-            "id": 422,
+            "id": 423,
             "guid": "0074b8e810e38d7b-00040d1cfa000009",
             "components": {
                 "NameComponent": {
@@ -40619,7 +40529,7 @@
             }
         },
         {
-            "id": 423,
+            "id": 424,
             "guid": "0074b8e859db4e63-00040d1906000001",
             "components": {
                 "NameComponent": {
@@ -40815,7 +40725,7 @@
             }
         },
         {
-            "id": 424,
+            "id": 425,
             "guid": "0074b8e83f1cf78c-00040d1b84000003",
             "components": {
                 "NameComponent": {
@@ -41011,7 +40921,7 @@
             }
         },
         {
-            "id": 425,
+            "id": 426,
             "guid": "0074b8e8697e8aed-00040d1c6e000005",
             "components": {
                 "NameComponent": {
@@ -41207,7 +41117,7 @@
             }
         },
         {
-            "id": 426,
+            "id": 427,
             "guid": "0074b8e86d44a56b-00040d24bc000019",
             "components": {
                 "NameComponent": {
@@ -41403,7 +41313,7 @@
             }
         },
         {
-            "id": 427,
+            "id": 428,
             "guid": "0074b8e810bda892-00040d24da00001b",
             "components": {
                 "NameComponent": {
@@ -41599,7 +41509,7 @@
             }
         },
         {
-            "id": 428,
+            "id": 429,
             "guid": "0074b8e809a17950-00040d24e400001d",
             "components": {
                 "NameComponent": {
@@ -41795,7 +41705,7 @@
             }
         },
         {
-            "id": 429,
+            "id": 430,
             "guid": "0016265d4939837f-00040d3e2000003d",
             "components": {
                 "NameComponent": {
@@ -41991,7 +41901,7 @@
             }
         },
         {
-            "id": 430,
+            "id": 431,
             "guid": "002cfbd76d01e288-00040ded46000005",
             "components": {
                 "NameComponent": {
@@ -42187,7 +42097,7 @@
             }
         },
         {
-            "id": 431,
+            "id": 432,
             "guid": "002cfbd723846b75-00040ded74000007",
             "components": {
                 "NameComponent": {
@@ -42383,7 +42293,7 @@
             }
         },
         {
-            "id": 432,
+            "id": 433,
             "guid": "0074b8e813c4ee2b-00040d1f6800000f",
             "components": {
                 "NameComponent": {
@@ -42488,7 +42398,7 @@
             }
         },
         {
-            "id": 433,
+            "id": 434,
             "guid": "0074b8e825839cee-00040d1d4e00000b",
             "components": {
                 "NameComponent": {
@@ -42723,7 +42633,7 @@
             }
         },
         {
-            "id": 434,
+            "id": 435,
             "guid": "0074b8e85229217f-00040d1ed800000d",
             "components": {
                 "NameComponent": {
@@ -42919,7 +42829,7 @@
             }
         },
         {
-            "id": 435,
+            "id": 436,
             "guid": "0074b8e845b04ac2-00040d2012000015",
             "components": {
                 "NameComponent": {
@@ -43024,7 +42934,7 @@
             }
         },
         {
-            "id": 436,
+            "id": 437,
             "guid": "000bc734d9f1bb67-000405e866000003",
             "components": {
                 "NameComponent": {
@@ -43259,7 +43169,7 @@
             }
         },
         {
-            "id": 437,
+            "id": 438,
             "guid": "0074b8e84745236f-00040d2032000017",
             "components": {
                 "NameComponent": {
@@ -43455,7 +43365,7 @@
             }
         },
         {
-            "id": 438,
+            "id": 439,
             "guid": "004caf3971a4d54e-00040daffc000001",
             "components": {
                 "NameComponent": {
@@ -43625,7 +43535,7 @@
             }
         },
         {
-            "id": 439,
+            "id": 440,
             "guid": "004caf3965cfdce5-00040db02c000005",
             "components": {
                 "NameComponent": {
@@ -43821,7 +43731,7 @@
             }
         },
         {
-            "id": 440,
+            "id": 441,
             "guid": "004caf3940ef1866-00040db030000007",
             "components": {
                 "NameComponent": {
@@ -44064,7 +43974,7 @@
             }
         },
         {
-            "id": 441,
+            "id": 442,
             "guid": "004caf390851563d-00040db032000009",
             "components": {
                 "NameComponent": {
@@ -44299,7 +44209,7 @@
             }
         },
         {
-            "id": 442,
+            "id": 443,
             "guid": "004caf395f9beea1-00040db03200000b",
             "components": {
                 "NameComponent": {
@@ -44495,7 +44405,7 @@
             }
         },
         {
-            "id": 443,
+            "id": 444,
             "guid": "004caf393558b3cc-00040db06e00000d",
             "components": {
                 "NameComponent": {
@@ -44730,7 +44640,7 @@
             }
         },
         {
-            "id": 444,
+            "id": 445,
             "guid": "004caf393c0749f5-00040db07800000f",
             "components": {
                 "NameComponent": {
@@ -44926,7 +44836,7 @@
             }
         },
         {
-            "id": 445,
+            "id": 446,
             "guid": "000bc734a204e9c3-000405d19e000001",
             "components": {
                 "NameComponent": {
@@ -45122,7 +45032,7 @@
             }
         },
         {
-            "id": 446,
+            "id": 447,
             "guid": "004caf392b22724b-00040db368000011",
             "components": {
                 "NameComponent": {
@@ -45274,7 +45184,7 @@
             }
         },
         {
-            "id": 447,
+            "id": 448,
             "guid": "00241e81aea4502d-00040fe44e000001",
             "components": {
                 "NameComponent": {
@@ -45413,6 +45323,113 @@
                                 "_pauseComp": null,
                                 "SetRotation": null
                             }
+                        }
+                    ]
+                }
+            }
+        },
+        {
+            "id": 449,
+            "guid": "00273e378cd42466-000414f780006783",
+            "components": {
+                "NameComponent": {
+                    "name": "GameManager"
+                },
+                "TagComponent": {
+                    "tagIndex": 0
+                },
+                "LayerComponent": {
+                    "layerIndex": 0
+                },
+                "SiblingIndexComponent": {
+                    "siblingIndex": 1
+                },
+                "Transform": {
+                    "type": "Transform",
+                    "data": [
+                        {
+                            "type": "Vector3D",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                }
+                            ]
+                        },
+                        {
+                            "type": "Vector3D",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                }
+                            ]
+                        },
+                        {
+                            "type": "Quaternion",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                }
+                            ]
+                        }
+                    ]
+                },
+                "ActiveComponent": {
+                    "type": "ActiveComponent",
+                    "data": [
+                        {
+                            "type": "bool",
+                            "data": true
+                        }
+                    ]
+                },
+                "ScriptComponent": {
+                    "scripts": [
+                        {
+                            "scriptGuidStr": "002e3c8087f92277-0004102b42000023",
+                            "scriptPath": "../../Resources/Scripts/Gameplay/InputInterpreter.lua",
+                            "enabled": true,
+                            "preserveKeys": [],
+                            "entryFunction": "OnInit",
+                            "autoInvokeEntry": true
+                        },
+                        {
+                            "scriptGuidStr": "002e3c80b8302dff-0004102b4200000b",
+                            "scriptPath": "../../Resources/Scripts/Gameplay/ComboManager.lua",
+                            "enabled": true,
+                            "preserveKeys": [],
+                            "entryFunction": "OnInit",
+                            "autoInvokeEntry": true
                         }
                     ]
                 }

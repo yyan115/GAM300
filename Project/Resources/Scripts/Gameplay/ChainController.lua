@@ -53,6 +53,10 @@ function M:StartExtension(forward)
     self.extensionTime = 0
     self.chainLen = 0
     if forward and type(forward) == "table" and (#forward >= 3) then
+        print("is called forward")
+        print(forward[1])
+        print(forward[2])
+        print(forward[3])
         local fx,fy,fz = forward[1], forward[2], forward[3]
         local nx,ny,nz = normalize(fx,fy,fz)
         if nx ~= 0 or ny ~= 0 or nz ~= 0 then self.lastForward = {nx,ny,nz} end

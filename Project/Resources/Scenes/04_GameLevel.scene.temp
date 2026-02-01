@@ -220,7 +220,7 @@
                     "layerIndex": 0
                 },
                 "SiblingIndexComponent": {
-                    "siblingIndex": 2
+                    "siblingIndex": 3
                 },
                 "Transform": {
                     "type": "Transform",
@@ -404,7 +404,7 @@
                     "layerIndex": 0
                 },
                 "SiblingIndexComponent": {
-                    "siblingIndex": 3
+                    "siblingIndex": 4
                 },
                 "Transform": {
                     "type": "Transform",
@@ -829,7 +829,7 @@
                     "layerIndex": 0
                 },
                 "SiblingIndexComponent": {
-                    "siblingIndex": 14
+                    "siblingIndex": 15
                 },
                 "Transform": {
                     "type": "Transform",
@@ -11444,7 +11444,7 @@
                     "layerIndex": 0
                 },
                 "SiblingIndexComponent": {
-                    "siblingIndex": 4
+                    "siblingIndex": 5
                 },
                 "Transform": {
                     "type": "Transform",
@@ -11531,7 +11531,7 @@
                     "layerIndex": 0
                 },
                 "SiblingIndexComponent": {
-                    "siblingIndex": 5
+                    "siblingIndex": 6
                 },
                 "Transform": {
                     "type": "Transform",
@@ -11618,7 +11618,7 @@
                     "layerIndex": 0
                 },
                 "SiblingIndexComponent": {
-                    "siblingIndex": 6
+                    "siblingIndex": 7
                 },
                 "Transform": {
                     "type": "Transform",
@@ -11705,7 +11705,7 @@
                     "layerIndex": 0
                 },
                 "SiblingIndexComponent": {
-                    "siblingIndex": 7
+                    "siblingIndex": 8
                 },
                 "Transform": {
                     "type": "Transform",
@@ -11792,7 +11792,7 @@
                     "layerIndex": 0
                 },
                 "SiblingIndexComponent": {
-                    "siblingIndex": 8
+                    "siblingIndex": 9
                 },
                 "Transform": {
                     "type": "Transform",
@@ -11879,7 +11879,7 @@
                     "layerIndex": 0
                 },
                 "SiblingIndexComponent": {
-                    "siblingIndex": 9
+                    "siblingIndex": 10
                 },
                 "Transform": {
                     "type": "Transform",
@@ -11966,7 +11966,7 @@
                     "layerIndex": 0
                 },
                 "SiblingIndexComponent": {
-                    "siblingIndex": 10
+                    "siblingIndex": 11
                 },
                 "Transform": {
                     "type": "Transform",
@@ -12053,7 +12053,7 @@
                     "layerIndex": 0
                 },
                 "SiblingIndexComponent": {
-                    "siblingIndex": 11
+                    "siblingIndex": 12
                 },
                 "Transform": {
                     "type": "Transform",
@@ -12140,7 +12140,7 @@
                     "layerIndex": 0
                 },
                 "SiblingIndexComponent": {
-                    "siblingIndex": 12
+                    "siblingIndex": 13
                 },
                 "Transform": {
                     "type": "Transform",
@@ -12227,7 +12227,7 @@
                     "layerIndex": 0
                 },
                 "SiblingIndexComponent": {
-                    "siblingIndex": 13
+                    "siblingIndex": 14
                 },
                 "Transform": {
                     "type": "Transform",
@@ -12314,7 +12314,7 @@
                     "layerIndex": 0
                 },
                 "SiblingIndexComponent": {
-                    "siblingIndex": 15
+                    "siblingIndex": 16
                 },
                 "Transform": {
                     "type": "Transform",
@@ -15539,7 +15539,7 @@
                     "layerIndex": 0
                 },
                 "SiblingIndexComponent": {
-                    "siblingIndex": 16
+                    "siblingIndex": 17
                 },
                 "Transform": {
                     "type": "Transform",
@@ -23139,7 +23139,7 @@
                     "layerIndex": 0
                 },
                 "SiblingIndexComponent": {
-                    "siblingIndex": 17
+                    "siblingIndex": 18
                 },
                 "Transform": {
                     "type": "Transform",
@@ -23226,7 +23226,7 @@
                     "layerIndex": 0
                 },
                 "SiblingIndexComponent": {
-                    "siblingIndex": 19
+                    "siblingIndex": 20
                 },
                 "Transform": {
                     "type": "Transform",
@@ -30674,7 +30674,7 @@
                     "layerIndex": 0
                 },
                 "SiblingIndexComponent": {
-                    "siblingIndex": 20
+                    "siblingIndex": 21
                 },
                 "Transform": {
                     "type": "Transform",
@@ -30761,7 +30761,7 @@
                     "layerIndex": 0
                 },
                 "SiblingIndexComponent": {
-                    "siblingIndex": 21
+                    "siblingIndex": 22
                 },
                 "Transform": {
                     "type": "Transform",
@@ -31235,7 +31235,7 @@
                     "layerIndex": 0
                 },
                 "SiblingIndexComponent": {
-                    "siblingIndex": 22
+                    "siblingIndex": 23
                 },
                 "Transform": {
                     "type": "Transform",
@@ -31709,7 +31709,7 @@
                     "layerIndex": 0
                 },
                 "SiblingIndexComponent": {
-                    "siblingIndex": 23
+                    "siblingIndex": 24
                 },
                 "Transform": {
                     "type": "Transform",
@@ -32181,7 +32181,7 @@
                     "layerIndex": 0
                 },
                 "SiblingIndexComponent": {
-                    "siblingIndex": 24
+                    "siblingIndex": 25
                 },
                 "Transform": {
                     "type": "Transform",
@@ -32653,7 +32653,7 @@
                     "layerIndex": 0
                 },
                 "SiblingIndexComponent": {
-                    "siblingIndex": 25
+                    "siblingIndex": 26
                 },
                 "Transform": {
                     "type": "Transform",
@@ -33125,7 +33125,7 @@
                     "layerIndex": 0
                 },
                 "SiblingIndexComponent": {
-                    "siblingIndex": 32
+                    "siblingIndex": 33
                 },
                 "Transform": {
                     "type": "Transform",
@@ -33544,7 +33544,7 @@
                     "layerIndex": 0
                 },
                 "SiblingIndexComponent": {
-                    "siblingIndex": 34
+                    "siblingIndex": 35
                 },
                 "Transform": {
                     "type": "Transform",
@@ -33716,7 +33716,7 @@
                     "layerIndex": 0
                 },
                 "SiblingIndexComponent": {
-                    "siblingIndex": 33
+                    "siblingIndex": 34
                 },
                 "Transform": {
                     "type": "Transform",
@@ -33797,45 +33797,45 @@
                             "entryFunction": "OnInit",
                             "autoInvokeEntry": true,
                             "instanceState": {
-                                "LinkName": "Link",
-                                "TriggerKey": "G",
-                                "MaxLength": 5.0,
-                                "SimulatedHitDistance": 0.0,
-                                "PlayerName": "Kusane_Player_LeftHandMiddle1",
-                                "_subscriptions": {},
-                                "VerletGravity": 0.5,
-                                "LinkMaxDistance": 0.025,
-                                "NumberOfLinks": 200.0,
-                                "_private": {},
-                                "__created_at": 1769925658.0,
-                                "PinEndWhenExtended": true,
-                                "ConstraintIterations": 10.0,
-                                "IsElastic": true,
                                 "__field_list": {
-                                    "LinkMaxDistance": 0.025,
-                                    "NumberOfLinks": 200.0,
-                                    "ChainSpeed": 10.0,
-                                    "MaxLength": 0.0,
-                                    "PinEndWhenExtended": true,
-                                    "ConstraintIterations": 2.0,
-                                    "SimulatedHitDistance": 0.0,
+                                    "TriggerKey": "G",
+                                    "PlayerName": "Kusane_Player_LeftHandMiddle1",
+                                    "AnchorAngleThresholdDeg": 45.0,
+                                    "IsElastic": true,
                                     "EnableLogs": false,
                                     "LinkName": "Link",
-                                    "TriggerKey": "G",
-                                    "IsElastic": true,
-                                    "AnchorAngleThresholdDeg": 45.0,
-                                    "AutoStart": false,
-                                    "PlayerName": "Kusane_Player_LeftHandMiddle1",
+                                    "ChainSpeed": 10.0,
                                     "VerletDamping": 0.02,
-                                    "VerletGravity": 9.81
+                                    "ConstraintIterations": 2.0,
+                                    "MaxLength": 0.0,
+                                    "SimulatedHitDistance": 0.0,
+                                    "PinEndWhenExtended": true,
+                                    "LinkMaxDistance": 0.025,
+                                    "VerletGravity": 9.81,
+                                    "AutoStart": false,
+                                    "NumberOfLinks": 200.0
                                 },
-                                "__meta": {},
+                                "_subscriptions": {},
                                 "ChainSpeed": 10.0,
+                                "MaxLength": 5.0,
+                                "SimulatedHitDistance": 0.0,
+                                "__created_at": 1769925658.0,
+                                "VerletGravity": 0.5,
+                                "NumberOfLinks": 200.0,
                                 "AnchorAngleThresholdDeg": 45.0,
                                 "AutoStart": false,
-                                "_subs_map": {},
+                                "EnableLogs": false,
+                                "PinEndWhenExtended": true,
+                                "LinkName": "Link",
                                 "VerletDamping": 0.02,
-                                "EnableLogs": false
+                                "ConstraintIterations": 10.0,
+                                "TriggerKey": "G",
+                                "_private": {},
+                                "_subs_map": {},
+                                "LinkMaxDistance": 0.025,
+                                "IsElastic": true,
+                                "__meta": {},
+                                "PlayerName": "Kusane_Player_LeftHandMiddle1"
                             }
                         }
                     ]
@@ -33856,7 +33856,7 @@
                     "layerIndex": 0
                 },
                 "SiblingIndexComponent": {
-                    "siblingIndex": 18
+                    "siblingIndex": 19
                 },
                 "Transform": {
                     "type": "Transform",
@@ -34352,7 +34352,7 @@
                     "layerIndex": 0
                 },
                 "SiblingIndexComponent": {
-                    "siblingIndex": 26
+                    "siblingIndex": 27
                 },
                 "Transform": {
                     "type": "Transform",
@@ -34611,7 +34611,7 @@
                     "layerIndex": 0
                 },
                 "SiblingIndexComponent": {
-                    "siblingIndex": 27
+                    "siblingIndex": 28
                 },
                 "Transform": {
                     "type": "Transform",
@@ -34921,7 +34921,7 @@
                     "layerIndex": 0
                 },
                 "SiblingIndexComponent": {
-                    "siblingIndex": 28
+                    "siblingIndex": 29
                 },
                 "Transform": {
                     "type": "Transform",
@@ -35180,7 +35180,7 @@
                     "layerIndex": 0
                 },
                 "SiblingIndexComponent": {
-                    "siblingIndex": 29
+                    "siblingIndex": 30
                 },
                 "Transform": {
                     "type": "Transform",
@@ -35490,7 +35490,7 @@
                     "layerIndex": 0
                 },
                 "SiblingIndexComponent": {
-                    "siblingIndex": 30
+                    "siblingIndex": 31
                 },
                 "Transform": {
                     "type": "Transform",
@@ -35749,7 +35749,7 @@
                     "layerIndex": 0
                 },
                 "SiblingIndexComponent": {
-                    "siblingIndex": 31
+                    "siblingIndex": 32
                 },
                 "Transform": {
                     "type": "Transform",
@@ -36046,100 +36046,10 @@
             }
         },
         {
-            "PrefabPath": "../../Resources/Prefabs/Player (4).prefab",
+            "PrefabPath": "../../Resources/Prefabs/Player (5).prefab",
             "id": 262,
             "guid": "002936801107bf75-00040d569e004657",
             "Name": "Player",
-            "ComponentOverrides": [
-                {
-                    "ScriptComponent": {
-                        "scripts": [
-                            {
-                                "scriptGuidStr": "00465fde5d0ebe89-00040ce56800002d",
-                                "scriptPath": "../../Resources/Scripts/Gameplay/PlayerMovement(Updated).lua",
-                                "enabled": true,
-                                "preserveKeys": [],
-                                "entryFunction": "OnInit",
-                                "autoInvokeEntry": true,
-                                "instanceState": {
-                                    "_currentRotZ": 0.0,
-                                    "Speed": 1.5,
-                                    "_currentRotX": 0.0,
-                                    "_subscriptions": {},
-                                    "_cameraYaw": 180.0,
-                                    "__created_at": 1769704807.0,
-                                    "JumpHeight": 1.2,
-                                    "_currentRotY": 0.0,
-                                    "_playerHurtTriggeredSub": {
-                                        "event": "playerHurtTriggered",
-                                        "id": 3.0
-                                    },
-                                    "_playerDeadSub": {
-                                        "event": "playerDead",
-                                        "id": 2.0
-                                    },
-                                    "__meta": {},
-                                    "_private": {},
-                                    "_cameraYawSub": {
-                                        "event": "camera_yaw",
-                                        "id": 1.0
-                                    },
-                                    "_currentRotW": 1.0,
-                                    "DamageStunDuration": 1.0,
-                                    "_transform_fetched": false,
-                                    "__field_list": {
-                                        "JumpHeight": 1.2,
-                                        "Speed": 1.5,
-                                        "DamageStunDuration": 1.0
-                                    },
-                                    "LandingDuration": 0.85
-                                }
-                            },
-                            {
-                                "scriptGuidStr": "00465fde2b22d5e3-00040ce56800002b",
-                                "scriptPath": "../../Resources/Scripts/Gameplay/PlayerHealth.lua",
-                                "enabled": true,
-                                "preserveKeys": [],
-                                "entryFunction": "OnInit",
-                                "autoInvokeEntry": true,
-                                "instanceState": {
-                                    "__meta": {},
-                                    "__created_at": 1769707349.0,
-                                    "_knifeHitPlayerDmgSub": {
-                                        "event": "knifeHitPlayerDmg",
-                                        "id": 4.0
-                                    },
-                                    "_subscriptions": {},
-                                    "_transform_fetched": false,
-                                    "Health": 5.0,
-                                    "_private": {},
-                                    "IFrameDuration": 1.0,
-                                    "__field_list": {
-                                        "Health": 10.0,
-                                        "IFrameDuration": 1.0
-                                    }
-                                }
-                            },
-                            {
-                                "scriptGuidStr": "00465fde158eb349-00040ce56800001b",
-                                "scriptPath": "../../Resources/Scripts/Gameplay/InputInterpreter.lua",
-                                "enabled": true,
-                                "preserveKeys": [],
-                                "entryFunction": "OnInit",
-                                "autoInvokeEntry": true
-                            },
-                            {
-                                "scriptGuidStr": "00465fde65554e39-00040ce568000003",
-                                "scriptPath": "../../Resources/Scripts/Gameplay/ComboManager.lua",
-                                "enabled": true,
-                                "preserveKeys": [],
-                                "entryFunction": "OnInit",
-                                "autoInvokeEntry": true
-                            }
-                        ]
-                    }
-                }
-            ],
             "Children": [
                 {
                     "id": 328,
@@ -36564,7 +36474,7 @@
                     "layerIndex": 0
                 },
                 "SiblingIndexComponent": {
-                    "siblingIndex": 1
+                    "siblingIndex": 2
                 },
                 "Transform": {
                     "type": "Transform",
@@ -45413,6 +45323,113 @@
                                 "_pauseComp": null,
                                 "SetRotation": null
                             }
+                        }
+                    ]
+                }
+            }
+        },
+        {
+            "id": 449,
+            "guid": "00273e378cd42466-000414f780006783",
+            "components": {
+                "NameComponent": {
+                    "name": "GameManager"
+                },
+                "TagComponent": {
+                    "tagIndex": 0
+                },
+                "LayerComponent": {
+                    "layerIndex": 0
+                },
+                "SiblingIndexComponent": {
+                    "siblingIndex": 1
+                },
+                "Transform": {
+                    "type": "Transform",
+                    "data": [
+                        {
+                            "type": "Vector3D",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                }
+                            ]
+                        },
+                        {
+                            "type": "Vector3D",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                }
+                            ]
+                        },
+                        {
+                            "type": "Quaternion",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                }
+                            ]
+                        }
+                    ]
+                },
+                "ActiveComponent": {
+                    "type": "ActiveComponent",
+                    "data": [
+                        {
+                            "type": "bool",
+                            "data": true
+                        }
+                    ]
+                },
+                "ScriptComponent": {
+                    "scripts": [
+                        {
+                            "scriptGuidStr": "002e3c8087f92277-0004102b42000023",
+                            "scriptPath": "../../Resources/Scripts/Gameplay/InputInterpreter.lua",
+                            "enabled": true,
+                            "preserveKeys": [],
+                            "entryFunction": "OnInit",
+                            "autoInvokeEntry": true
+                        },
+                        {
+                            "scriptGuidStr": "002e3c80b8302dff-0004102b4200000b",
+                            "scriptPath": "../../Resources/Scripts/Gameplay/ComboManager.lua",
+                            "enabled": true,
+                            "preserveKeys": [],
+                            "entryFunction": "OnInit",
+                            "autoInvokeEntry": true
                         }
                     ]
                 }
