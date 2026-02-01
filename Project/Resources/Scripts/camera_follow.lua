@@ -420,11 +420,7 @@ return Component {
         end
 
         -- Update enemy proximity
-        print("[CameraFollow] Updating enemy proximity]")
-        print("[CameraFollow] Updating enemy proximity]")
         self:_updateEnemyProximity(dt)
-        print("[CameraFollow] Finished updating enemy proximity]")
-        print("[CameraFollow] Finished updating enemy proximity]\n")
 
         -- Cooldown timer
         if self._toggleCooldown > 0 then

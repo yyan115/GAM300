@@ -201,12 +201,9 @@
                             "entryFunction": "OnInit",
                             "autoInvokeEntry": true,
                             "instanceState": {
-                                "enemyDetectionRange": 5.0,
-                                "enemyDisengageRange": 5.0,
-                                "debugEnemyDetection": true,
-                                "actionModePitch": 40.0,
-                                "actionModeTransition": 10.0,
-                                "actionModeLockRotation": true
+                                "enemyDisengageRange": 2.0,
+                                "enemyDetectionRange": 2.0,
+                                "debugEnemyDetection": true
                             }
                         }
                     ]

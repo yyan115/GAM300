@@ -793,8 +793,6 @@ namespace NavWrappers {
 
 #include "Script/ScriptComponentData.hpp"
 #include "ECS/NameComponent.hpp"
-// EntityQueryWrappers - COMPLETE FIXED VERSION WITH DEBUG LOGS
-// GetEntityPosition now uses lua_State* to return 3 separate values
 
 namespace EntityQueryWrappers {
 
@@ -835,14 +833,14 @@ namespace EntityQueryWrappers {
     inline void UpdateCacheForScript(const std::string& scriptName) {
         std::string targetFilename = GetFilenameWithoutExtension(scriptName);
 
-        printf("\n========== C++ UpdateCacheForScript ==========\n");
-        printf("[C++ DEBUG] Input scriptName: '%s'\n", scriptName.c_str());
-        printf("[C++ DEBUG] Target filename (extracted): '%s'\n", targetFilename.c_str());
+        //printf("\n========== C++ UpdateCacheForScript ==========\n");
+        //printf("[C++ DEBUG] Input scriptName: '%s'\n", scriptName.c_str());
+        //printf("[C++ DEBUG] Target filename (extracted): '%s'\n", targetFilename.c_str());
 
         ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
         std::vector<Entity> allEntities = ecsManager.GetAllEntities();
 
-        printf("[C++ DEBUG] Total entities in scene: %zu\n", allEntities.size());
+        //printf("[C++ DEBUG] Total entities in scene: %zu\n", allEntities.size());
 
         std::vector<Entity> results;
         int entitiesWithScript = 0;
@@ -861,9 +859,9 @@ namespace EntityQueryWrappers {
 
                 if (scriptFilename == targetFilename) {
                     entitiesWithScript++;
-                    printf("[C++ DEBUG] Entity %u has script: '%s' (full path: '%s')\n",
-                        entity, scriptFilename.c_str(), script.scriptPath.c_str());
-                    printf("[C++ DEBUG]   *** MATCH! Script filename matches target ***\n");
+                    //printf("[C++ DEBUG] Entity %u has script: '%s' (full path: '%s')\n",
+                    //    entity, scriptFilename.c_str(), script.scriptPath.c_str());
+                    //printf("[C++ DEBUG]   *** MATCH! Script filename matches target ***\n");
 
                     // Check for Transform
                     auto transformOpt = ecsManager.TryGetComponent<Transform>(entity);
@@ -872,8 +870,8 @@ namespace EntityQueryWrappers {
                         auto& transform = transformOpt.value().get();
                         Vector3D pos = transform.worldPosition;
 
-                        printf("[C++ DEBUG]  Entity has Transform at position: (%.2f, %.2f, %.2f)\n",
-                            pos.x, pos.y, pos.z);
+                        //printf("[C++ DEBUG]  Entity has Transform at position: (%.2f, %.2f, %.2f)\n",
+                        //    pos.x, pos.y, pos.z);
 
                         results.push_back(entity);
                     }
@@ -890,20 +888,20 @@ namespace EntityQueryWrappers {
         cache.scriptFilename = targetFilename;
         cache.timeSinceUpdate = 0.0f;
 
-        printf("[C++ DEBUG] ========== CACHE UPDATE SUMMARY ==========\n");
-        printf("[C++ DEBUG] Entities with matching script: %d\n", entitiesWithScript);
-        printf("[C++ DEBUG] Entities with script AND Transform: %d\n", entitiesWithScriptAndTransform);
-        printf("[C++ DEBUG] Cached entities: %zu\n", results.size());
+        //printf("[C++ DEBUG] ========== CACHE UPDATE SUMMARY ==========\n");
+        //printf("[C++ DEBUG] Entities with matching script: %d\n", entitiesWithScript);
+        //printf("[C++ DEBUG] Entities with script AND Transform: %d\n", entitiesWithScriptAndTransform);
+        //printf("[C++ DEBUG] Cached entities: %zu\n", results.size());
 
-        if (results.size() > 0) {
-            printf("[C++ DEBUG] Cached entity IDs: ");
-            for (size_t i = 0; i < results.size(); ++i) {
-                printf("%u", results[i]);
-                if (i < results.size() - 1) printf(", ");
-            }
-            printf("\n");
-        }
-        printf("========== C++ UpdateCacheForScript END ==========\n\n");
+        //if (results.size() > 0) {
+        //    printf("[C++ DEBUG] Cached entity IDs: ");
+        //    for (size_t i = 0; i < results.size(); ++i) {
+        //        printf("%u", results[i]);
+        //        if (i < results.size() - 1) printf(", ");
+        //    }
+        //    printf("\n");
+        //}
+        //printf("========== C++ UpdateCacheForScript END ==========\n\n");
     }
 
     // ============================================================================
@@ -912,7 +910,7 @@ namespace EntityQueryWrappers {
 
     // Find entities with script - returns Lua table
     inline int FindEntitiesWithScript(lua_State* L) {
-        printf("\n========== C++ FindEntitiesWithScript CALLED ==========\n");
+        //printf("\n========== C++ FindEntitiesWithScript CALLED ==========\n");
 
         const char* scriptPath = luaL_checkstring(L, 1);
         if (!scriptPath) {
@@ -922,33 +920,33 @@ namespace EntityQueryWrappers {
         }
 
         std::string scriptName(scriptPath);
-        printf("[C++ DEBUG] Received from Lua: '%s'\n", scriptName.c_str());
-        printf("[C++ DEBUG] String length: %zu\n", scriptName.length());
+        //printf("[C++ DEBUG] Received from Lua: '%s'\n", scriptName.c_str());
+        //printf("[C++ DEBUG] String length: %zu\n", scriptName.length());
 
         // Check cache
         auto it = s_scriptQueryCache.find(scriptName);
         if (it != s_scriptQueryCache.end()) {
             ScriptQueryCache& cache = it->second;
 
-            printf("[C++ DEBUG] Cache exists for '%s'\n", scriptName.c_str());
-            printf("[C++ DEBUG] Cache age: %.2f seconds (interval: %.2f)\n",
-                cache.timeSinceUpdate, cache.updateInterval);
+            //printf("[C++ DEBUG] Cache exists for '%s'\n", scriptName.c_str());
+            //printf("[C++ DEBUG] Cache age: %.2f seconds (interval: %.2f)\n",
+            //    cache.timeSinceUpdate, cache.updateInterval);
 
             if (cache.timeSinceUpdate < cache.updateInterval) {
-                printf("[C++ DEBUG] Cache still valid - using cached results\n");
-                printf("[C++ DEBUG] Cached entity count: %zu\n", cache.entities.size());
+                //printf("[C++ DEBUG] Cache still valid - using cached results\n");
+                //printf("[C++ DEBUG] Cached entity count: %zu\n", cache.entities.size());
 
                 // Build Lua table from cached results
                 lua_newtable(L);
                 int index = 1;
                 for (Entity entity : cache.entities) {
-                    printf("[C++ DEBUG]   Pushing entity %u to Lua table at index %d\n", entity, index);
+                    //printf("[C++ DEBUG]   Pushing entity %u to Lua table at index %d\n", entity, index);
                     lua_pushinteger(L, static_cast<lua_Integer>(entity));
                     lua_rawseti(L, -2, index++);
                 }
 
-                printf("[C++ DEBUG] Returning table with %d entries\n", index - 1);
-                printf("========== C++ FindEntitiesWithScript END (cached) ==========\n\n");
+                //printf("[C++ DEBUG] Returning table with %d entries\n", index - 1);
+                //printf("========== C++ FindEntitiesWithScript END (cached) ==========\n\n");
                 return 1;
             }
             else {
@@ -966,15 +964,15 @@ namespace EntityQueryWrappers {
         lua_newtable(L);
         int index = 1;
 
-        printf("[C++ DEBUG] Building Lua table from updated cache:\n");
+        //printf("[C++ DEBUG] Building Lua table from updated cache:\n");
         for (Entity entity : s_scriptQueryCache[scriptName].entities) {
-            printf("[C++ DEBUG]   Pushing entity %u to Lua table at index %d\n", entity, index);
+            //printf("[C++ DEBUG]   Pushing entity %u to Lua table at index %d\n", entity, index);
             lua_pushinteger(L, static_cast<lua_Integer>(entity));
             lua_rawseti(L, -2, index++);
         }
 
-        printf("[C++ DEBUG] Returning table with %d entries\n", index - 1);
-        printf("========== C++ FindEntitiesWithScript END (updated) ==========\n\n");
+        //printf("[C++ DEBUG] Returning table with %d entries\n", index - 1);
+        //printf("========== C++ FindEntitiesWithScript END (updated) ==========\n\n");
 
         return 1;
     }
@@ -985,15 +983,15 @@ namespace EntityQueryWrappers {
         static int callCount = 0;
         callCount++;
 
-        if (callCount % 60 == 0) {
-            printf("[C++ DEBUG] UpdateCacheTiming called (deltaTime: %.4f)\n", deltaTime);
-            printf("[C++ DEBUG] Current cache count: %zu\n", s_scriptQueryCache.size());
+        //if (callCount % 60 == 0) {
+        //    printf("[C++ DEBUG] UpdateCacheTiming called (deltaTime: %.4f)\n", deltaTime);
+        //    printf("[C++ DEBUG] Current cache count: %zu\n", s_scriptQueryCache.size());
 
-            for (auto& pair : s_scriptQueryCache) {
-                printf("[C++ DEBUG]   Cache '%s': age=%.2fs, entities=%zu\n",
-                    pair.first.c_str(), pair.second.timeSinceUpdate, pair.second.entities.size());
-            }
-        }
+        //    for (auto& pair : s_scriptQueryCache) {
+        //        printf("[C++ DEBUG]   Cache '%s': age=%.2fs, entities=%zu\n",
+        //            pair.first.c_str(), pair.second.timeSinceUpdate, pair.second.entities.size());
+        //    }
+        //}
 
         for (auto& pair : s_scriptQueryCache) {
             pair.second.timeSinceUpdate += deltaTime;
@@ -1002,7 +1000,7 @@ namespace EntityQueryWrappers {
 
     // Force update cache
     inline void UpdateEnemyCache(const std::string& scriptName) {
-        printf("[C++ DEBUG] UpdateEnemyCache called for: '%s'\n", scriptName.c_str());
+        //printf("[C++ DEBUG] UpdateEnemyCache called for: '%s'\n", scriptName.c_str());
         UpdateCacheForScript(scriptName);
     }
 
@@ -1011,19 +1009,19 @@ namespace EntityQueryWrappers {
         auto it = s_scriptQueryCache.find(scriptName);
         if (it != s_scriptQueryCache.end()) {
             it->second.updateInterval = intervalSeconds;
-            printf("[C++ DEBUG] Cache interval for '%s' set to %.2f seconds\n",
-                scriptName.c_str(), intervalSeconds);
+            //printf("[C++ DEBUG] Cache interval for '%s' set to %.2f seconds\n",
+            //    scriptName.c_str(), intervalSeconds);
         }
         else {
             s_scriptQueryCache[scriptName].updateInterval = intervalSeconds;
-            printf("[C++ DEBUG] Created cache entry for '%s' with interval %.2f seconds\n",
-                scriptName.c_str(), intervalSeconds);
+            //printf("[C++ DEBUG] Created cache entry for '%s' with interval %.2f seconds\n",
+            //    scriptName.c_str(), intervalSeconds);
         }
     }
 
     // Clear all caches
     inline void ClearEnemyCaches() {
-        printf("[C++ DEBUG] ClearEnemyCaches called - clearing %zu caches\n", s_scriptQueryCache.size());
+        //printf("[C++ DEBUG] ClearEnemyCaches called - clearing %zu caches\n", s_scriptQueryCache.size());
         s_scriptQueryCache.clear();
     }
 
@@ -1032,15 +1030,15 @@ namespace EntityQueryWrappers {
         auto it = s_scriptQueryCache.find(scriptName);
         if (it != s_scriptQueryCache.end()) {
             const ScriptQueryCache& cache = it->second;
-            printf("[C++ DEBUG] GetCacheInfo('%s'): count=%zu, age=%.2f, interval=%.2f\n",
-                scriptName.c_str(), cache.entities.size(), cache.timeSinceUpdate, cache.updateInterval);
+            //printf("[C++ DEBUG] GetCacheInfo('%s'): count=%zu, age=%.2f, interval=%.2f\n",
+            //    scriptName.c_str(), cache.entities.size(), cache.timeSinceUpdate, cache.updateInterval);
             return std::make_tuple(
                 static_cast<int>(cache.entities.size()),
                 cache.timeSinceUpdate,
                 cache.updateInterval
             );
         }
-        printf("[C++ DEBUG] GetCacheInfo('%s'): No cache found\n", scriptName.c_str());
+        //printf("[C++ DEBUG] GetCacheInfo('%s'): No cache found\n", scriptName.c_str());
         return std::make_tuple(0, -1.0f, -1.0f);
     }
 
@@ -1050,13 +1048,13 @@ namespace EntityQueryWrappers {
     inline int GetEntityPosition(lua_State* L) {
         Entity entity = static_cast<Entity>(luaL_checkinteger(L, 1));
 
-        printf("[C++ DEBUG] GetEntityPosition called for entity %u\n", entity);
+        //printf("[C++ DEBUG] GetEntityPosition called for entity %u\n", entity);
 
         ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
 
         auto transformOpt = ecsManager.TryGetComponent<Transform>(entity);
         if (!transformOpt.has_value()) {
-            printf("[C++ DEBUG]   Entity %u has NO Transform - returning (0, 0, 0)\n", entity);
+            //printf("[C++ DEBUG]   Entity %u has NO Transform - returning (0, 0, 0)\n", entity);
 
             // Return (0, 0, 0) when no transform
             lua_pushnumber(L, 0.0);
@@ -1068,16 +1066,16 @@ namespace EntityQueryWrappers {
         auto& transform = transformOpt.value().get();
         Vector3D worldPos = transform.worldPosition;
 
-        printf("[C++ DEBUG]   Entity %u position: (%.2f, %.2f, %.2f)\n",
-            entity, worldPos.x, worldPos.y, worldPos.z);
-        printf("[C++ DEBUG]   Pushing 3 SEPARATE numbers to Lua stack\n");
+        //printf("[C++ DEBUG]   Entity %u position: (%.2f, %.2f, %.2f)\n",
+        //    entity, worldPos.x, worldPos.y, worldPos.z);
+        //printf("[C++ DEBUG]   Pushing 3 SEPARATE numbers to Lua stack\n");
 
         // Push 3 separate numbers (NOT a table!)
         lua_pushnumber(L, worldPos.x);
         lua_pushnumber(L, worldPos.y);
         lua_pushnumber(L, worldPos.z);
 
-        printf("[C++ DEBUG]   Returning 3 values\n");
+        //printf("[C++ DEBUG]   Returning 3 values\n");
         return 3;  // Return 3 values
     }
 

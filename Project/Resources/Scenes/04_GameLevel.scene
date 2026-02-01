@@ -201,8 +201,8 @@
                             "entryFunction": "OnInit",
                             "autoInvokeEntry": true,
                             "instanceState": {
-                                "enemyDetectionRange": 5.0,
-                                "enemyDisengageRange": 5.0,
+                                "enemyDisengageRange": 2.0,
+                                "enemyDetectionRange": 2.0,
                                 "debugEnemyDetection": true
                             }
                         }
