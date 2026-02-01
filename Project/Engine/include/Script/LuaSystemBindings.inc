@@ -262,6 +262,7 @@ BEGIN_SYSTEM("Physics")
     // Raycast(originX, originY, originZ, dirX, dirY, dirZ, maxDistance)
     // Returns: distance (float, -1.0 if no hit)
     FUNCTION("Raycast", PhysicsSystemWrappers::Raycast)
+    FUNCTION("GetOverlappingEntities", PhysicsSystemWrappers::Lua_GetOverlappingEntities)
 END_SYSTEM()
 
 

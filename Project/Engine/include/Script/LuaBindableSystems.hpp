@@ -2,7 +2,7 @@
 #include "Math/Vector3D.hpp"
 #include "Reflection/ReflectionBase.hpp"
 #include <tuple>
-
+#include <LuaBridge.h>
 // ============================================================================
 // VECTOR2D (for 2D values like axis input, pointer position)
 // ============================================================================
@@ -221,6 +221,157 @@ namespace PhysicsSystemWrappers {
 
         auto result = g_PhysicsSystem->Raycast(origin, direction, maxDistance);
         return result.hit ? result.distance : -1.0f;
+    }
+
+    // Get overlapping entities wrapper for Lua
+    // Usage: local entities = Physics.GetOverlappingEntities(entityId)
+    // Returns: table of entity IDs (integers), or empty table if none/error
+    // Robust Lua-facing adapter that accepts many Lua representations
+    //static luabridge::LuaRef Lua_GetOverlappingEntities(lua_State* L, luabridge::LuaRef arg)
+    //{
+    //    luabridge::LuaRef out = luabridge::newTable(L);
+
+    //    if (!g_PhysicsSystem) return out;
+
+    //    // Attempt to resolve an entity id from the Lua argument:
+    //    uint32_t entityId = UINT32_MAX;
+
+    //    // 1) plain number
+    //    if (arg.isNumber()) {
+    //        try { entityId = arg.cast<uint32_t>(); }
+    //        catch (...) {}
+    //    }
+
+    //    // 2) table forms: { id = N } or { entityId = N } or { N }
+    //    if (entityId == UINT32_MAX && arg.isTable()) {
+    //        try {
+    //            if (arg["id"].isNumber()) entityId = arg["id"].cast<uint32_t>();
+    //            else if (arg["entityId"].isNumber()) entityId = arg["entityId"].cast<uint32_t>();
+    //            else if (arg[1].isNumber()) entityId = arg[1].cast<uint32_t>();
+    //        }
+    //        catch (...) { /* ignore */ }
+    //    }
+
+    //    // 3) userdata -> try casting to uint32_t or Entity* (best-effort)
+    //    if (entityId == UINT32_MAX && arg.isUserdata()) {
+    //        try { entityId = arg.cast<uint32_t>(); }
+    //        catch (...) {
+    //            try {
+    //                Entity* ep = arg.cast<Entity*>();
+    //                if (ep) entityId = static_cast<uint32_t>(*ep);
+    //            }
+    //            catch (...) { /* ignore */ }
+    //        }
+    //    }
+
+        // 4) string -> call Engine.GetEntityByName(name) from Lua to resolve
+    //    if (entityId == UINT32_MAX && arg.isString()) {
+    //        const char* name = nullptr;
+    //        try { name = arg.cast<const char*>(); }
+    //        catch (...) { name = nullptr; }
+    //        if (name && name[0] != '\0') {
+    //            // call Engine.GetEntityByName(name) safely
+    //            lua_getglobal(L, "Engine");                       // push Engine
+    //            if (lua_istable(L, -1)) {
+    //                lua_getfield(L, -1, "GetEntityByName");      // push Engine.GetEntityByName
+    //                if (lua_isfunction(L, -1)) {
+    //                    lua_pushvalue(L, -2);                   // push Engine as self for : call
+    //                    lua_pushstring(L, name);                // push arg
+    //                    if (lua_pcall(L, 2, 1, 0) == 0) {       // call, 1 return
+    //                        if (lua_isinteger(L, -1)) {
+    //                            entityId = static_cast<uint32_t>(lua_tointeger(L, -1));
+    //                        }
+    //                        else if (lua_isnumber(L, -1)) {
+    //                            entityId = static_cast<uint32_t>(lua_tonumber(L, -1));
+    //                        }
+    //                        else if (lua_istable(L, -1)) {
+    //                            // try .id field
+    //                            lua_getfield(L, -1, "id");
+    //                            if (lua_isinteger(L, -1)) entityId = static_cast<uint32_t>(lua_tointeger(L, -1));
+    //                            lua_pop(L, 1);
+    //                        }
+    //                        lua_pop(L, 1); // pop return
+    //                    }
+    //                    else {
+    //                        lua_pop(L, 1); // pop error
+    //                    }
+    //                }
+    //                else {
+    //                    lua_pop(L, 1); // pop GetEntityByName
+    //                }
+    //            }
+    //            lua_pop(L, 1); // pop Engine
+    //        }
+    //    }
+
+    //    // If unresolved, return empty table
+    //    if (entityId == UINT32_MAX) return out;
+
+    //    // Use your original helper to get overlaps
+    //    std::vector<Entity> overlaps;
+    //    bool ok = false;
+    //    try {
+    //        ok = GetOverlappingEntities(static_cast<Entity>(entityId));
+    //        // NOTE: if your original is a free function that returns vector, call it directly.
+    //        // In your case the helper returns std::vector<Entity>, so instead:
+    //    }
+    //    catch (...) {
+    //        ok = false;
+    //    }
+
+    //    // Actually call the function that returns the vector:
+    //    overlaps = GetOverlappingEntities(static_cast<Entity>(entityId));
+
+    //    if (!ok && overlaps.empty()) {
+    //        // Even if ok==false, overlaps might be empty; just return empty table
+    //        // (we don't print/log here to avoid spamming; add logging if desired)
+    //        // fall through to return empty out
+    //    }
+
+    //    int idx = 1;
+    //    for (Entity e : overlaps) {
+    //        out[idx++] = static_cast<uint32_t>(e);
+    //    }
+
+    //    return out;
+    //}
+
+    // This function must be registered as a lua_CFunction
+    inline int Lua_GetOverlappingEntities(lua_State* L) {
+        // Get entity ID from Lua stack (first argument)
+        if (lua_gettop(L) < 1) {
+            lua_newtable(L); // Return empty table
+            return 1;
+        }
+    
+        Entity entity = static_cast<Entity>(lua_tointeger(L, 1));
+    
+        if (!g_PhysicsSystem) {
+            std::cerr << "[Physics] GetOverlappingEntities: PhysicsSystem not initialized!" << std::endl;
+            lua_newtable(L); // Return empty table
+            return 1;
+        }
+    
+        std::vector<Entity> overlapping;
+        bool success = g_PhysicsSystem->GetOverlappingEntities(entity, overlapping);
+    
+        if (!success) {
+            std::cerr << "[Physics] GetOverlappingEntities: Failed to get overlaps for entity " << entity << std::endl;
+            lua_newtable(L); // Return empty table
+            return 1;
+        }
+    
+        // Create Lua table
+        lua_newtable(L);
+    
+        // Populate table with 1-based indexing
+        for (size_t i = 0; i < overlapping.size(); ++i) {
+            lua_pushinteger(L, i + 1);           // Push index (1-based)
+            lua_pushinteger(L, overlapping[i]);  // Push entity ID
+            lua_settable(L, -3);                 // Set table[index] = entityId
+        }
+    
+        return 1; // Return 1 value (the table)
     }
 }
 

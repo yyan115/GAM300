@@ -75,8 +75,8 @@
             "speed": 2.000000238418579,
             "crossfadeDuration": 0.0,
             "nodePosition": {
-                "x": 407.2657470703125,
-                "y": -366.439208984375
+                "x": 1059.2657470703125,
+                "y": -380.439208984375
             }
         },
         {
@@ -102,17 +102,6 @@
             }
         },
         {
-            "id": "Jump",
-            "clipIndex": 4,
-            "loop": false,
-            "speed": 1.0,
-            "crossfadeDuration": 0.0,
-            "nodePosition": {
-                "x": 100.50003051757813,
-                "y": -2.4705705642700195
-            }
-        },
-        {
             "id": "Death",
             "clipIndex": 3,
             "loop": false,
@@ -121,6 +110,17 @@
             "nodePosition": {
                 "x": 450.529541015625,
                 "y": -2.4705915451049805
+            }
+        },
+        {
+            "id": "Jump",
+            "clipIndex": 4,
+            "loop": false,
+            "speed": 1.0,
+            "crossfadeDuration": 0.0,
+            "nodePosition": {
+                "x": 100.50003051757813,
+                "y": -2.4705705642700195
             }
         },
         {
@@ -152,8 +152,8 @@
             "speed": 2.000000238418579,
             "crossfadeDuration": 0.0,
             "nodePosition": {
-                "x": 597.0,
-                "y": -368.5
+                "x": 1239.0,
+                "y": -384.5
             }
         },
         {
@@ -163,8 +163,8 @@
             "speed": 2.000000238418579,
             "crossfadeDuration": 0.0,
             "nodePosition": {
-                "x": 784.0,
-                "y": -368.5
+                "x": 1410.0,
+                "y": -388.5
             }
         }
     ],
@@ -666,6 +666,46 @@
                     "paramName": "ComboStep",
                     "mode": "Equals",
                     "threshold": 0.0
+                }
+            ]
+        },
+        {
+            "from": "Run",
+            "to": "NA1",
+            "anyState": false,
+            "hasExitTime": false,
+            "exitTime": 1.0,
+            "transitionDuration": 0.0,
+            "conditions": [
+                {
+                    "paramName": "Attack",
+                    "mode": "TriggerFired",
+                    "threshold": 0.0
+                },
+                {
+                    "paramName": "ComboStep",
+                    "mode": "Equals",
+                    "threshold": 1.0
+                }
+            ]
+        },
+        {
+            "from": "Land",
+            "to": "NA1",
+            "anyState": false,
+            "hasExitTime": false,
+            "exitTime": 1.0,
+            "transitionDuration": 0.0,
+            "conditions": [
+                {
+                    "paramName": "Attack",
+                    "mode": "TriggerFired",
+                    "threshold": 0.0
+                },
+                {
+                    "paramName": "ComboStep",
+                    "mode": "Equals",
+                    "threshold": 1.0
                 }
             ]
         }
