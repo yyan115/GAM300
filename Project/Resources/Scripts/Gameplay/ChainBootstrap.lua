@@ -1,7 +1,7 @@
 -- ChainBootstrap.lua (refactored wiring: use component Subscribe, set controller start/end via API, seed positions safely)
 local Component = require("extension.mono_helper")
-local LinkHandlerModule = require("GamePlay.ChainLinkTransformHandler")
-local ControllerModule = require("GamePlay.ChainController")
+local LinkHandlerModule = require("Gameplay.ChainLinkTransformHandler")
+local ControllerModule = require("Gameplay.ChainController")
 
 return Component {
     fields = {
