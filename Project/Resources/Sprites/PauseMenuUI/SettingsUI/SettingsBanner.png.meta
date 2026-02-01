@@ -1,0 +1,13 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "007f7ae3830e4c8e-00040593b2000011",
+        "source": "../../Resources/Sprites/PauseMenuUI/SettingsUI/SettingsBanner.png",
+        "compiled": "../../Resources/Sprites/PauseMenuUI/SettingsUI/SettingsBanner.dds"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": true,
+        "generateMipmaps": true
+    }
+}

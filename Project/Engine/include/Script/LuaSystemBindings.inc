@@ -101,6 +101,8 @@ BEGIN_SYSTEM("Time")
     FUNCTION("GetTimeScale", TimeWrappers::GetTimeScale)
     FUNCTION("SetTimeScale", TimeWrappers::SetTimeScale)
     FUNCTION("GetScaledDeltaTime", TimeWrappers::GetScaledDeltaTime)
+    FUNCTION("SetPaused", TimeWrappers::SetPaused)
+    FUNCTION("IsPaused", TimeWrappers::IsPaused)
 END_SYSTEM()
 
 // ============================================================================

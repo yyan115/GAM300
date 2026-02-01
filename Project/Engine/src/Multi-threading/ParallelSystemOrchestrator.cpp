@@ -10,12 +10,38 @@ void ParallelSystemOrchestrator::Update() {
     // Update physics and transform systems sequentially first.
     // Use actual delta time, not fixed - these are called once per frame, not in a fixed timestep loop
     auto& mainECS = ECSRegistry::GetInstance().GetActiveECSManager();
-    mainECS.physicsSystem->Update((float)TimeManager::GetDeltaTime(), mainECS);
-    mainECS.characterControllerSystem->Update((float)TimeManager::GetDeltaTime(), mainECS);
+
+    //
+
+    bool gamePaused = TimeManager::IsPaused();
+    if (!gamePaused)
+    {
+        mainECS.physicsSystem->Update((float)TimeManager::GetDeltaTime(), mainECS);
+        mainECS.characterControllerSystem->Update((float)TimeManager::GetDeltaTime(), mainECS);
+    }
+
+
+    //mainECS.physicsSystem->Update((float)TimeManager::GetDeltaTime(), mainECS);
+    //mainECS.characterControllerSystem->Update((float)TimeManager::GetDeltaTime(), mainECS);
     mainECS.transformSystem->Update();
     mainECS.uiAnchorSystem->Update();  // Must run before button/slider to update positions
     mainECS.videoSystem->Update((float)TimeManager::GetDeltaTime()); // must be run on the main thread due to call to OpenGL functions
     mainECS.scriptSystem->Update();
+
+    if (!gamePaused)
+    {
+        frameChannel.Submit([&] {
+            auto& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
+            //ENGINE_LOG_DEBUG("Running AnimationJob");
+            ecs.animationSystem->Update();
+            });
+        frameChannel.Submit([&] {
+          auto& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
+          //ENGINE_LOG_DEBUG("Running SpriteAnimationJob");
+          ecs.spriteAnimationSystem->Update();
+          });
+    }
+
 
 	// Then update the other systems in parallel.
     frameChannel.Submit([&] {
@@ -23,11 +49,11 @@ void ParallelSystemOrchestrator::Update() {
         //ENGINE_LOG_DEBUG("Running AudioJob");
         ecs.audioSystem->Update((float)TimeManager::GetDeltaTime());
         });
-    frameChannel.Submit([&] {
-        auto& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
-        //ENGINE_LOG_DEBUG("Running AnimationJob");
-        ecs.animationSystem->Update();
-		});
+  //  frameChannel.Submit([&] {
+  //      auto& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
+  //      //ENGINE_LOG_DEBUG("Running AnimationJob");
+  //      ecs.animationSystem->Update();
+		//});
     frameChannel.Submit([&] {
         auto& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
         //ENGINE_LOG_DEBUG("Running CameraJob");
@@ -55,11 +81,11 @@ void ParallelSystemOrchestrator::Update() {
             ecs.sliderSystem->Update();
         }
         });
-    frameChannel.Submit([&] {
-        auto& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
-        //ENGINE_LOG_DEBUG("Running SpriteAnimationJob");
-        ecs.spriteAnimationSystem->Update();
-		});
+  //  frameChannel.Submit([&] {
+  //      auto& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
+  //      //ENGINE_LOG_DEBUG("Running SpriteAnimationJob");
+  //      ecs.spriteAnimationSystem->Update();
+		//});
 
     // Synchronize
     frameChannel.join();

@@ -1,6 +1,7 @@
 #include "EditorState.hpp"
 #include <iostream>
 #include "Logging.hpp"
+#include "TimeManager.hpp"
 
 // Added includes for ECS and audio control
 #include <ECS/ECSRegistry.hpp>
@@ -53,6 +54,10 @@ void EditorState::Play() {
         SceneManager::GetInstance().SaveTempScene();
 
         SetState(State::PLAY_MODE);
+
+        //SET PAUSE = FALSE
+        TimeManager::SetPaused(false);
+
 
         // Reset all animations to start fresh (ignore inspector preview state)
         ECSManager& ecs = ECSRegistry::GetInstance().GetActiveECSManager();

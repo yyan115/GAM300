@@ -465,6 +465,11 @@ namespace TimeWrappers {
     inline float GetScaledDeltaTime() {
         return static_cast<float>(TimeManager::GetDeltaTime()) * s_timeScale;
     }
+
+    //PAUSE FUNCTIONS
+    inline void SetPaused(bool paused) { return TimeManager::SetPaused(paused); }
+    inline bool IsPaused() { return TimeManager::IsPaused(); }
+
 }
 
 // ============================================================================

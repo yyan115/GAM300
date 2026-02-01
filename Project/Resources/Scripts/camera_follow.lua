@@ -220,6 +220,8 @@ return Component {
             self._toggleCooldown = self._toggleCooldown - dt
         end
 
+        
+
         -- Action mode toggle
         if self.actionModeEnabled and Input and Input.IsActionJustPressed and Input.IsActionJustPressed(self.actionModeKey) then
             if self._toggleCooldown <= 0 then

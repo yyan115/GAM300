@@ -5,15 +5,7 @@
 #include "WindowManager.hpp"
 #include "Platform/IPlatform.h"
 
-// Static member initialization for fixed timestep
-static double fixedDeltaTime = 1.0 / 60.0; // Default 60 FPS physics
-static double accumulator = 0.0;
-static int frameCount = 0;
-static double fpsUpdateTimer = 0.0;
-static double currentFps = 0.0;
-
 void TimeManager::UpdateDeltaTime() {
-
     double currentTime = WindowManager::GetPlatform() ? WindowManager::GetPlatform()->GetTime() : 0.0;
 
     // Update deltaTime
@@ -36,6 +28,13 @@ void TimeManager::UpdateDeltaTime() {
         frameCount = 0;
         fpsUpdateTimer = 0.0;
     }
+    RunTimeVar::unscaledDeltaTime = RunTimeVar::deltaTime; //Store for pause usage
+
+    //IF PAUSED, SET DELTATIME TO 0
+    if (isPaused)
+    {
+        RunTimeVar::deltaTime = 0;
+    }
 }
 
 double TimeManager::GetDeltaTime() {
@@ -47,4 +46,8 @@ double TimeManager::GetFps() {
 
 double TimeManager::GetFixedDeltaTime() {
     return fixedDeltaTime;
+}
+double TimeManager::GetUnscaledDeltaTime()
+{
+    return RunTimeVar::unscaledDeltaTime;
 }

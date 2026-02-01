@@ -1,0 +1,13 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "007ba6c37c4e29a7-0004053256000007",
+        "source": "../../Resources/Sprites/PauseMenuUI/SettingsButtonPressed.png",
+        "compiled": "../../Resources/Sprites/PauseMenuUI/SettingsButtonPressed.dds"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": true,
+        "generateMipmaps": true
+    }
+}

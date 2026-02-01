@@ -1,0 +1,13 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "00752ad5e464d757-00040da454000011",
+        "source": "../../Resources/Sprites/PauseMenuUI/YesButton.png",
+        "compiled": "../../Resources/Sprites/PauseMenuUI/YesButton.dds"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": true,
+        "generateMipmaps": true
+    }
+}

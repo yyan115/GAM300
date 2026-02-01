@@ -681,7 +681,7 @@ void ScriptSystem::Update()
     }
 
     // advance coroutines & runtime tick if runtime initialized
-    if (Scripting::GetLuaState()) Scripting::Tick(static_cast<float>(TimeManager::GetDeltaTime()));
+    if (Scripting::GetLuaState()) Scripting::Tick(static_cast<float>(TimeManager::GetUnscaledDeltaTime()));
 
     // iterate over entities matched to this system (System::entities)
     for (Entity e : entities)
@@ -706,7 +706,7 @@ void ScriptSystem::Update()
                 {
                     if (scriptInst)
                     {
-                        scriptInst->Update(static_cast<float>(TimeManager::GetDeltaTime()));
+                        scriptInst->Update(static_cast<float>(TimeManager::GetUnscaledDeltaTime()));
                     }
                 }
             }
