@@ -52,10 +52,11 @@ void ButtonSystem::UpdateButtonStates() {
 
         Vector3D pointerPosInGameSpace(gameX, gameY, 0.0f);
 
-        ENGINE_LOG_INFO("Viewport: " + std::to_string(viewportWidth) + "x" + std::to_string(viewportHeight) +
-                       " | Game Res: " + std::to_string(gameResWidth) + "x" + std::to_string(gameResHeight) +
-                       " | Pointer viewport: (" + std::to_string(pointerX) + ", " + std::to_string(pointerY) + ")" +
-                       " | Pointer game: (" + std::to_string(gameX) + ", " + std::to_string(gameY) + ")");
+        // I TURNED THIS OFF BECAUSE ITS NOISY
+        //ENGINE_LOG_INFO("Viewport: " + std::to_string(viewportWidth) + "x" + std::to_string(viewportHeight) +
+        //               " | Game Res: " + std::to_string(gameResWidth) + "x" + std::to_string(gameResHeight) +
+        //               " | Pointer viewport: (" + std::to_string(pointerX) + ", " + std::to_string(pointerY) + ")" +
+        //               " | Pointer game: (" + std::to_string(gameX) + ", " + std::to_string(gameY) + ")");
 
         for (Entity e : m_ecs->GetActiveEntities()) {
             if (!m_ecs->HasComponent<ButtonComponent>(e)) continue;

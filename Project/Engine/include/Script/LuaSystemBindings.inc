@@ -306,6 +306,8 @@ BEGIN_SYSTEM("Engine")
     FUNCTION("GetGameCoordinate", &Lua_ScreenToGameCoordinates)
     FUNCTION("CreateEntityDup", &Lua_CreateEntityDup)
     FUNCTION("DestroyEntityDup", &Lua_DestroyEntityDup)
+
+    FUNCTION("FindAnimatorByName", &Lua_FindAnimatorByName)
 END_SYSTEM()
 
 
