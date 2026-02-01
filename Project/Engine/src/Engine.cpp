@@ -632,7 +632,7 @@ bool Engine::InitializeGraphicsResources() {
 	ENGINE_LOG_INFO("Loaded main menu scene (Android)");
 #else
 	// Desktop: Load main menu
-	SceneManager::GetInstance().LoadScene(AssetManager::GetInstance().GetRootAssetDirectory() + "/Scenes/Joe_MainMenuTest.scene");
+	SceneManager::GetInstance().LoadScene(AssetManager::GetInstance().GetRootAssetDirectory() + "/Scenes/01_MainMenu.scene");
 	ENGINE_LOG_INFO("Loaded main menu scene");
 #endif
 #endif

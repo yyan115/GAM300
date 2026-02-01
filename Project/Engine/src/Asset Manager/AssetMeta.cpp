@@ -37,6 +37,10 @@ void AssetMeta::PopulateAssetMetaFromFile(const std::string& metaFilePath)
 		ENGINE_LOG_DEBUG("[AssetMeta]: Rapidjson parse error: " + metaFilePath);
 	}
 
+	if (!doc.IsObject()) return;
+
+	if (!doc.HasMember("AssetMetaData")) return;
+
 	const auto& assetMetaData = doc["AssetMetaData"];
 	if (assetMetaData.HasMember("version")) {
 		version = assetMetaData["version"].GetInt();
