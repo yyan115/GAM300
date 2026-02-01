@@ -36,7 +36,6 @@ AudioComponent::~AudioComponent() {
 }
 
 void AudioComponent::Play() {
-    ENGINE_PRINT("[AudioComponent] Play() called. Mute=", Mute, " Volume=", Volume, " CurrentChannel=", CurrentChannel);
     if (Mute) return;
     if (GetIsPlaying()) return;
 
@@ -46,7 +45,6 @@ void AudioComponent::Play() {
         IsPlaying = true;
         IsPaused = false;
         WasPlayingBeforePause = false;
-        ENGINE_PRINT("[AudioComponent] Started playback. Channel=", CurrentChannel, " Volume=", Volume);
     }
 }
 
@@ -140,11 +138,9 @@ AudioSourceState AudioComponent::GetState() const {
 
 void AudioComponent::SetVolume(float newVolume) {
     float clamped = std::clamp(newVolume, 0.0f, 1.0f);
-    ENGINE_PRINT("[AudioComponent] SetVolume called. newVolume=", newVolume, " clamped=", clamped, " CurrentChannel=", CurrentChannel);
     Volume = clamped;
     if (CurrentChannel != 0) {
         AudioManager::GetInstance().SetChannelVolume(CurrentChannel, Mute ? 0.0f : Volume);
-        ENGINE_PRINT("[AudioComponent] Queued channel volume update. Channel=", CurrentChannel, " Volume=", Volume);
     }
 }
 
@@ -334,7 +330,6 @@ ChannelHandle AudioComponent::PlayInternal(bool oneShot) {
     
     AudioManager& audioMgr = AudioManager::GetInstance();
     ChannelHandle channel = 0;
-    ENGINE_PRINT("[AudioComponent] PlayInternal called. Volume=", Volume, " Loop=", Loop, " OutputBus=", OutputAudioMixerGroup.c_str());
     
     if (Spatialize && SpatialBlend > 0.0f) {
         channel = audioMgr.PlayAudioAtPosition(CachedAudioAsset, Position, Loop && !oneShot, Volume, SpatialBlend, MinDistance, MaxDistance);

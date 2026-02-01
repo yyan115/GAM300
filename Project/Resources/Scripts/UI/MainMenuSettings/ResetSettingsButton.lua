@@ -6,10 +6,13 @@ return Component {
         -- Entity names for slider notches to update visual positions
         masterNotch = "MasterNotch",
         masterBar = "MasterBar",
+        masterFill = "MasterFill",
         bgmNotch = "BGMNotch",
         bgmBar = "BGMBar",
+        bgmFill = "BGMFill",
         sfxNotch = "SFXNotch",
         sfxBar = "SFXBar",
+        sfxFill = "SFXFill",
         -- Sprite GUIDs array: [1] = normal sprite, [2] = hover sprite
         -- Drag-drop textures from editor (recognized via "sprite" in field name)
         spriteGUIDs = {},
@@ -88,8 +91,8 @@ return Component {
     end,
 
     UpdateSliderPositions = function(self)
-        -- Helper function to update a slider's visual position
-        local function updateSlider(notchName, barName, value, minVal, maxVal)
+        -- Helper function to update a slider's visual position and fill bar
+        local function updateSlider(notchName, barName, fillName, value, minVal, maxVal)
             local notchEntity = Engine.GetEntityByName(notchName)
             local barEntity = Engine.GetEntityByName(barName)
 
@@ -109,6 +112,23 @@ return Component {
                     notchTransform.localPosition.x = newPosX
                     notchTransform.isDirty = true
 
+                    -- Update fill bar if specified
+                    if fillName and fillName ~= "" then
+                        local fillEntity = Engine.GetEntityByName(fillName)
+                        if fillEntity and fillEntity ~= -1 then
+                            local fillTransform = GetComponent(fillEntity, "Transform")
+                            if fillTransform then
+                                local fillMaxWidth = barTransform.localScale.x
+                                local fillWidth = normalized * fillMaxWidth
+                                if fillWidth < 1 then fillWidth = 1 end
+
+                                fillTransform.localScale.x = fillWidth
+                                fillTransform.localPosition.x = minX + (fillWidth / 2)
+                                fillTransform.isDirty = true
+                            end
+                        end
+                    end
+
                     print("[ResetSettings] Updated " .. notchName .. " to value " .. value)
                 end
             else
@@ -119,9 +139,9 @@ return Component {
         -- Update all sliders using default values from C++
         -- Volume sliders: 0-1 range
         -- Gamma slider: 1-3 range
-        updateSlider(self.masterNotch, self.masterBar, GameSettings.GetDefaultMasterVolume(), 0, 1)
-        updateSlider(self.bgmNotch, self.bgmBar, GameSettings.GetDefaultBGMVolume(), 0, 1)
-        updateSlider(self.sfxNotch, self.sfxBar, GameSettings.GetDefaultSFXVolume(), 0, 1)
-        -- updateSlider(self.gammaNotch, self.gammaBar, GameSettings.GetDefaultGamma(), 1, 3)
+        updateSlider(self.masterNotch, self.masterBar, self.masterFill, GameSettings.GetDefaultMasterVolume(), 0, 1)
+        updateSlider(self.bgmNotch, self.bgmBar, self.bgmFill, GameSettings.GetDefaultBGMVolume(), 0, 1)
+        updateSlider(self.sfxNotch, self.sfxBar, self.sfxFill, GameSettings.GetDefaultSFXVolume(), 0, 1)
+        -- updateSlider(self.gammaNotch, self.gammaBar, self.gammaFill, GameSettings.GetDefaultGamma(), 1, 3)
     end,
 }
