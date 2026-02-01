@@ -110,6 +110,7 @@ return Component {
         self._enemyInRange = false               -- Is an enemy currently within detection range?
         self._enemyDisengageTimer = 0.0          -- Timer for delayed action mode exit
         self._enemyTriggeredActionMode = false   -- Did an enemy trigger action mode (vs manual)?
+        self._triggeringEnemyId = nil            -- tracks which enemy triggered action mode
 
         -- Configure C++ cache intervals
         if Engine and Engine.SetCacheUpdateInterval then
@@ -192,7 +193,7 @@ return Component {
                     local entityId = entities[i]
                     local x, y, z = Engine.GetEntityPosition(entityId)
                     
-                    if x and z then
+                    if x and y and z then
                         local dx = x - playerX
                         local dz = z - playerZ
                         local dist = math.sqrt(dx * dx + dz * dz)
@@ -209,48 +210,121 @@ return Component {
         return closestEnemy, closestDist
     end,
     
-    -- Main enemy proximity update - triggers/untriggers action mode based on enemy distance
+    -- NEW: Get distance to a specific enemy by ID
+    _getDistanceToEnemy = function(self, enemyId)
+        if not enemyId or not Engine or not Engine.GetEntityPosition then
+            return math.huge
+        end
+        
+        local x, y, z = Engine.GetEntityPosition(enemyId)
+        if not x or not y or not z then
+            return math.huge
+        end
+        
+        local playerX = self._targetPos.x
+        local playerZ = self._targetPos.z
+        
+        local dx = x - playerX
+        local dz = z - playerZ
+        
+        return math.sqrt(dx * dx + dz * dz)
+    end,
+    
+    -- FIXED: Properly handles action mode distance checking
     _updateEnemyProximity = function(self, dt)
         if not self.enableEnemyDetection then return end
         
-        -- While in action mode, don't search for enemies
-        if self._actionModeActive then
-            if self._enemyTriggeredActionMode then
-                self._enemyDisengageTimer = self._enemyDisengageTimer + dt
+        -- ==========================================
+        -- CASE 1: Currently in action mode (triggered by enemy)
+        -- ==========================================
+        if self._actionModeActive and self._enemyTriggeredActionMode then
+            -- Check distance to the ORIGINAL triggering enemy
+            if self._triggeringEnemyId then
+                local distToTrigger = self:_getDistanceToEnemy(self._triggeringEnemyId)
                 
-                if self._enemyDisengageTimer >= self.enemyDisengageDelay then
-                    self._actionModeActive = false
-                    self._enemyTriggeredActionMode = false
+                if self.debugEnemyDetection then
+                    print(string.format("[CameraFollow] Action mode active - distance to trigger enemy: %.1f", distToTrigger))
+                end
+                
+                -- Enemy is beyond disengage range
+                if distToTrigger > self.enemyDisengageRange then
+                    self._enemyDisengageTimer = self._enemyDisengageTimer + dt
+                    
+                    if self.debugEnemyDetection and self._enemyDisengageTimer > 0.1 then
+                        print(string.format("[CameraFollow] Enemy beyond disengage range - timer: %.1fs / %.1fs", 
+                                          self._enemyDisengageTimer, self.enemyDisengageDelay))
+                    end
+                    
+                    -- Timer expired - exit action mode
+                    if self._enemyDisengageTimer >= self.enemyDisengageDelay then
+                        self._actionModeActive = false
+                        self._enemyTriggeredActionMode = false
+                        self._enemyDisengageTimer = 0.0
+                        self._triggeringEnemyId = nil
+                        
+                        if self.debugEnemyDetection then
+                            print("[CameraFollow]  Action Mode DISABLED - enemy left range ")
+                        end
+                    end
+                else
+                    -- Enemy came back within disengage range - reset timer
+                    if self._enemyDisengageTimer > 0 and self.debugEnemyDetection then
+                        print("[CameraFollow] Enemy returned within range - timer reset")
+                    end
+                    self._enemyDisengageTimer = 0.0
+                end
+            else
+                -- Lost track of triggering enemy - search for any enemy
+                local closestEnemy, closestDist = self:_findClosestEnemy()
+                
+                if closestEnemy and closestDist <= self.enemyDisengageRange then
+                    -- Found a close enemy - track it
+                    self._triggeringEnemyId = closestEnemy
                     self._enemyDisengageTimer = 0.0
                     
                     if self.debugEnemyDetection then
-                        print("[CameraFollow] ★★★ Action Mode DISABLED ★★★")
+                        print(string.format("[CameraFollow] Locked onto new enemy: %d at %.1fu", closestEnemy, closestDist))
+                    end
+                else
+                    -- No enemies in range - exit action mode
+                    self._actionModeActive = false
+                    self._enemyTriggeredActionMode = false
+                    self._triggeringEnemyId = nil
+                    
+                    if self.debugEnemyDetection then
+                        print("[CameraFollow] Action Mode DISABLED - no enemies found")
                     end
                 end
             end
-            return  -- EXIT EARLY - no search
+            
+            return  -- EXIT - don't search for new enemies while in action mode
         end
         
-        -- Only search when NOT in action mode
+        -- ==========================================
+        -- CASE 2: Not in action mode - search for enemies
+        -- ==========================================
         local closestEnemy, closestDist = self:_findClosestEnemy()
         
         local wasInRange = self._enemyInRange
         self._enemyInRange = closestEnemy ~= nil and closestDist <= self.enemyDetectionRange
         
         if self.debugEnemyDetection and self._enemyInRange ~= wasInRange then
-            print(string.format("[CameraFollow] Enemy proximity: %s (%.1fu)", 
+            print(string.format("[CameraFollow] Enemy proximity changed: %s (%.1fu)", 
                               tostring(self._enemyInRange), closestDist))
         end
         
+        -- Enemy entered detection range - trigger action mode
         if self._enemyInRange then
             self._enemyDisengageTimer = 0.0
             
             if not self._actionModeActive then
                 self._actionModeActive = true
                 self._enemyTriggeredActionMode = true
+                self._triggeringEnemyId = closestEnemy  -- NEW: Remember which enemy triggered it
                 
                 if self.debugEnemyDetection then
-                    print("[CameraFollow] ★★★ Action Mode ENABLED ★★★")
+                    print(string.format("[CameraFollow] Action Mode ENABLED by enemy %d at %.1fu", 
+                                      closestEnemy, closestDist))
                 end
             end
         end
@@ -310,12 +384,17 @@ return Component {
             print("[CameraFollow] SENS=" .. sensitivity .. " offset=(" .. xoffset .. "," .. yoffset .. ") yaw=" .. self._yaw)
         end
 
-        self._yaw   = self._yaw   - xoffset  -- Subtract for correct left/right direction
-        self._pitch = clamp(self._pitch + yoffset, self.minPitch or -80.0, self.maxPitch or 80.0)  -- Add for correct up/down direction
+        local shouldLockRotation = self.lockCameraRotation or (self._actionModeActive and self.actionModeLockRotation)
         
-        -- Track normal pitch when not in action mode
-        if not self._actionModeActive then
-            self._normalPitch = self._pitch
+        if not shouldLockRotation then
+            -- Normal behavior - update yaw and pitch
+            self._yaw   = self._yaw   - xoffset  -- Subtract for correct left/right direction
+            self._pitch = clamp(self._pitch + yoffset, self.minPitch or -80.0, self.maxPitch or 80.0)  -- Add for correct up/down direction
+            
+            -- Track normal pitch when not in action mode
+            if not self._actionModeActive then
+                self._normalPitch = self._pitch
+            end
         end
 
         -- Store camera yaw in global for player movement (bypass event_bus)
@@ -326,6 +405,7 @@ return Component {
             event_bus.publish("camera_yaw", self._yaw)
         end
     end,
+
 
     Update = function(self, dt)
         if not (self.GetPosition and self.SetPosition and self.SetRotation) then return end
@@ -340,7 +420,11 @@ return Component {
         end
 
         -- Update enemy proximity
+        print("[CameraFollow] Updating enemy proximity]")
+        print("[CameraFollow] Updating enemy proximity]")
         self:_updateEnemyProximity(dt)
+        print("[CameraFollow] Finished updating enemy proximity]")
+        print("[CameraFollow] Finished updating enemy proximity]\n")
 
         -- Cooldown timer
         if self._toggleCooldown > 0 then
@@ -351,7 +435,8 @@ return Component {
         if self.actionModeEnabled and Input and Input.IsActionJustPressed and Input.IsActionJustPressed(self.actionModeKey) then
             if self._toggleCooldown <= 0 then
                 self._actionModeActive = not self._actionModeActive
-                self._enemyTriggeredActionMode = false
+                self._enemyTriggeredActionMode = false  -- Disable enemy control when manually toggled
+                self._triggeringEnemyId = nil           -- ADD THIS LINE - clear tracked enemy
                 self._toggleCooldown = 0.25
                 print("[CameraFollow] Action Mode " .. (self._actionModeActive and "ENABLED" or "DISABLED"))
             end

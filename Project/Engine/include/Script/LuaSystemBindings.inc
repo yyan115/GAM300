@@ -306,10 +306,18 @@ BEGIN_SYSTEM("Engine")
     FUNCTION("GetGameCoordinate", &Lua_ScreenToGameCoordinates)
     FUNCTION("CreateEntityDup", &Lua_CreateEntityDup)
     FUNCTION("DestroyEntityDup", &Lua_DestroyEntityDup)
+
     FUNCTION("FindEntitiesWithScript", &EntityQueryWrappers::FindEntitiesWithScript)
     FUNCTION("GetEntityPosition", &EntityQueryWrappers::GetEntityPosition)
     FUNCTION("GetEntityName", &EntityQueryWrappers::GetEntityName)
     FUNCTION("IsEntityActive", &EntityQueryWrappers::IsEntityActive)
+
+    FUNCTION("UpdateCacheTiming", &EntityQueryWrappers::UpdateCacheTiming)
+    FUNCTION("UpdateEnemyCache", &EntityQueryWrappers::UpdateEnemyCache)
+    FUNCTION("SetCacheUpdateInterval", &EntityQueryWrappers::SetCacheUpdateInterval)
+    FUNCTION("ClearEnemyCaches", &EntityQueryWrappers::ClearEnemyCaches)
+    FUNCTION("GetCacheInfo", &EntityQueryWrappers::GetCacheInfo)
+
 END_SYSTEM()
 
 
