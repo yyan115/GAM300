@@ -34,6 +34,26 @@
             "name": "IsJumping",
             "type": "Bool",
             "defaultValue": 0.0
+        },
+        {
+            "name": "IsAttacking",
+            "type": "Bool",
+            "defaultValue": 0.0
+        },
+        {
+            "name": "IsHeavyCharging",
+            "type": "Bool",
+            "defaultValue": 0.0
+        },
+        {
+            "name": "Attack",
+            "type": "Trigger",
+            "defaultValue": 0.0
+        },
+        {
+            "name": "ComboStep",
+            "type": "Int",
+            "defaultValue": 0.0
         }
     ],
     "states": [
@@ -46,6 +66,17 @@
             "nodePosition": {
                 "x": 100.0,
                 "y": -128.0
+            }
+        },
+        {
+            "id": "NA1",
+            "clipIndex": 7,
+            "loop": false,
+            "speed": 2.000000238418579,
+            "crossfadeDuration": 0.0,
+            "nodePosition": {
+                "x": 1059.2657470703125,
+                "y": -380.439208984375
             }
         },
         {
@@ -71,17 +102,6 @@
             }
         },
         {
-            "id": "Jump",
-            "clipIndex": 4,
-            "loop": false,
-            "speed": 1.0,
-            "crossfadeDuration": 0.0,
-            "nodePosition": {
-                "x": 100.50003051757813,
-                "y": -2.4705705642700195
-            }
-        },
-        {
             "id": "Death",
             "clipIndex": 3,
             "loop": false,
@@ -90,6 +110,17 @@
             "nodePosition": {
                 "x": 450.529541015625,
                 "y": -2.4705915451049805
+            }
+        },
+        {
+            "id": "Jump",
+            "clipIndex": 4,
+            "loop": false,
+            "speed": 1.0,
+            "crossfadeDuration": 0.0,
+            "nodePosition": {
+                "x": 100.50003051757813,
+                "y": -2.4705705642700195
             }
         },
         {
@@ -112,6 +143,28 @@
             "nodePosition": {
                 "x": -155.5,
                 "y": 38.5
+            }
+        },
+        {
+            "id": "NA2",
+            "clipIndex": 8,
+            "loop": true,
+            "speed": 2.000000238418579,
+            "crossfadeDuration": 0.0,
+            "nodePosition": {
+                "x": 1239.0,
+                "y": -384.5
+            }
+        },
+        {
+            "id": "NA3",
+            "clipIndex": 9,
+            "loop": true,
+            "speed": 2.000000238418579,
+            "crossfadeDuration": 0.0,
+            "nodePosition": {
+                "x": 1410.0,
+                "y": -388.5
             }
         }
     ],
@@ -510,6 +563,151 @@
                     "threshold": 1.0
                 }
             ]
+        },
+        {
+            "from": "Idle",
+            "to": "NA1",
+            "anyState": false,
+            "hasExitTime": false,
+            "exitTime": 1.0,
+            "transitionDuration": 0.0,
+            "conditions": [
+                {
+                    "paramName": "Attack",
+                    "mode": "TriggerFired",
+                    "threshold": 0.0
+                },
+                {
+                    "paramName": "ComboStep",
+                    "mode": "Equals",
+                    "threshold": 1.0
+                }
+            ]
+        },
+        {
+            "from": "NA1",
+            "to": "Idle",
+            "anyState": false,
+            "hasExitTime": false,
+            "exitTime": 1.0,
+            "transitionDuration": 1.0,
+            "conditions": [
+                {
+                    "paramName": "ComboStep",
+                    "mode": "Equals",
+                    "threshold": 0.0
+                }
+            ]
+        },
+        {
+            "from": "NA1",
+            "to": "NA2",
+            "anyState": false,
+            "hasExitTime": false,
+            "exitTime": 1.0,
+            "transitionDuration": 0.0,
+            "conditions": [
+                {
+                    "paramName": "Attack",
+                    "mode": "TriggerFired",
+                    "threshold": 0.0
+                },
+                {
+                    "paramName": "ComboStep",
+                    "mode": "Equals",
+                    "threshold": 2.0
+                }
+            ]
+        },
+        {
+            "from": "NA2",
+            "to": "Idle",
+            "anyState": false,
+            "hasExitTime": false,
+            "exitTime": 1.0,
+            "transitionDuration": 1.0,
+            "conditions": [
+                {
+                    "paramName": "ComboStep",
+                    "mode": "Equals",
+                    "threshold": 0.0
+                }
+            ]
+        },
+        {
+            "from": "NA2",
+            "to": "NA3",
+            "anyState": false,
+            "hasExitTime": false,
+            "exitTime": 1.0,
+            "transitionDuration": 0.0,
+            "conditions": [
+                {
+                    "paramName": "Attack",
+                    "mode": "TriggerFired",
+                    "threshold": 0.0
+                },
+                {
+                    "paramName": "ComboStep",
+                    "mode": "Equals",
+                    "threshold": 3.0
+                }
+            ]
+        },
+        {
+            "from": "NA3",
+            "to": "Idle",
+            "anyState": false,
+            "hasExitTime": false,
+            "exitTime": 1.0,
+            "transitionDuration": 1.0,
+            "conditions": [
+                {
+                    "paramName": "ComboStep",
+                    "mode": "Equals",
+                    "threshold": 0.0
+                }
+            ]
+        },
+        {
+            "from": "Run",
+            "to": "NA1",
+            "anyState": false,
+            "hasExitTime": false,
+            "exitTime": 1.0,
+            "transitionDuration": 0.0,
+            "conditions": [
+                {
+                    "paramName": "Attack",
+                    "mode": "TriggerFired",
+                    "threshold": 0.0
+                },
+                {
+                    "paramName": "ComboStep",
+                    "mode": "Equals",
+                    "threshold": 1.0
+                }
+            ]
+        },
+        {
+            "from": "Land",
+            "to": "NA1",
+            "anyState": false,
+            "hasExitTime": false,
+            "exitTime": 1.0,
+            "transitionDuration": 0.0,
+            "conditions": [
+                {
+                    "paramName": "Attack",
+                    "mode": "TriggerFired",
+                    "threshold": 0.0
+                },
+                {
+                    "paramName": "ComboStep",
+                    "mode": "Equals",
+                    "threshold": 1.0
+                }
+            ]
         }
     ],
     "clipPaths": [
@@ -519,6 +717,9 @@
         "Resources/Animations/Kusane@Death.fbx",
         "Resources/Animations/Kusane@Jump.fbx",
         "Resources/Animations/Kusane@Land.fbx",
-        "Resources/Animations/Kusane@Roll.fbx"
+        "Resources/Animations/Kusane@Roll.fbx",
+        "Resources/Animations/Kusane@Slash1.fbx",
+        "Resources/Animations/Kusane@Slash2.fbx",
+        "Resources/Animations/Kusane@Slash3.fbx"
     ]
 }

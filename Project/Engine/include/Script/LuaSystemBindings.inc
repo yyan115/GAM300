@@ -262,6 +262,10 @@ BEGIN_SYSTEM("Physics")
     // Raycast(originX, originY, originZ, dirX, dirY, dirZ, maxDistance)
     // Returns: distance (float, -1.0 if no hit)
     FUNCTION("Raycast", PhysicsSystemWrappers::Raycast)
+    FUNCTION("GetOverlappingEntities", PhysicsSystemWrappers::Lua_GetOverlappingEntities)
+    FUNCTION("GetOverlapCount", PhysicsSystemWrappers::GetOverlapCount)
+    FUNCTION("GetOverlapAt", PhysicsSystemWrappers::GetOverlapAt)
+    FUNCTION("ClearOverlapCache", PhysicsSystemWrappers::ClearOverlapCache)
 END_SYSTEM()
 
 
@@ -306,6 +310,7 @@ BEGIN_SYSTEM("Engine")
     FUNCTION("GetGameCoordinate", &Lua_ScreenToGameCoordinates)
     FUNCTION("CreateEntityDup", &Lua_CreateEntityDup)
     FUNCTION("DestroyEntityDup", &Lua_DestroyEntityDup)
+    FUNCTION("FindAnimatorByName", &Lua_FindAnimatorByName)
 
     FUNCTION("FindEntitiesWithScript", &EntityQueryWrappers::FindEntitiesWithScript)
     FUNCTION("GetEntityPosition", &EntityQueryWrappers::GetEntityPosition)

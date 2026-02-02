@@ -7,6 +7,9 @@ local TransformMixin = require("extension.transform_mixin")
 
 local event_bus = _G.event_bus
 
+local POST_HOLD_MULTIPLIER = 3.0         -- how much longer Action Mode lasts after attacks stop
+local ATTACK_GRACE = 0.12                -- small grace window to consider rapid taps part of same attack sequence
+
 local function clamp(x, minv, maxv)
     if x < minv then return minv end
     if x > maxv then return maxv end
@@ -61,8 +64,8 @@ return Component {
         collisionLerpIn  = 20.0,   -- Fast snap when hitting wall
         collisionLerpOut = 5.0,    -- Slower ease when wall clears
         -- Action mode settings
-        actionModeEnabled   = true,
-        actionModeKey       = "Attack",
+        actionModeEnabled   = false,
+        actionModeDuration  = 3.0,
         actionModePitch     = 25.0,
         actionModeDistance  = 3.5,
         actionModeTransition = 8.0,
@@ -432,6 +435,11 @@ return Component {
             self._toggleCooldown = self._toggleCooldown - dt
         end
 
+        -----------------------------------------------------------------------------------------------------------
+        -- Action mode toggle
+        -- ensure the timer variable exists
+        self._actionModeTimer = self._actionModeTimer or 0.0
+        --[[
         -- Action mode toggle
         if self.actionModeEnabled and Input and Input.IsActionJustPressed and Input.IsActionJustPressed(self.actionModeKey) then
             if self._toggleCooldown <= 0 then
@@ -442,23 +450,37 @@ return Component {
                 print("[CameraFollow] Action Mode " .. (self._actionModeActive and "ENABLED" or "DISABLED"))
             end
         end
+        ]]
+        -- Extended duration after attacks finish
+        local extendedDuration = (self.actionModeDuration or 3.0) * POST_HOLD_MULTIPLIER
 
-        -- Toggle cursor lock with Escape (unified input system)
-        if Input and Input.IsActionJustPressed and Input.IsActionJustPressed("Pause") then
-            if Screen and Screen.SetCursorLocked and Screen.IsCursorLocked then
-                local isLocked = Screen.IsCursorLocked()
-                Screen.SetCursorLocked(not isLocked)
-                self._firstMouse = true
+        -- Attack pressed or held -> (re)start the timer and enable action mode
+        if Input then
+            if (Input.IsActionJustPressed and Input.IsActionJustPressed("Attack")) or
+            (Input.IsActionPressed and Input.IsActionPressed("Attack")) then
+
+                -- re-lock cursor (existing behaviour)
+                if Screen and Screen.SetCursorLocked and Screen.IsCursorLocked then
+                    if not Screen.IsCursorLocked() then
+                        Screen.SetCursorLocked(true)
+                        self._firstMouse = true
+                    end
+                end
+
+                -- reset timer and enable action mode
+                self._actionModeTimer = extendedDuration
+                self._actionModeActive = true
             end
         end
 
-        -- Re-lock cursor when clicking Attack action
-        if Input and Input.IsActionJustPressed and Input.IsActionJustPressed("Attack") then
-            if Screen and Screen.SetCursorLocked and Screen.IsCursorLocked then
-                if not Screen.IsCursorLocked() then
-                    Screen.SetCursorLocked(true)
-                    self._firstMouse = true
-                end
+        -- countdown the single timer and disable when expired
+        if self._actionModeTimer > 0 then
+            self._actionModeTimer = self._actionModeTimer - dt
+            if self._actionModeTimer <= 0 then
+                self._actionModeTimer = 0
+                self._actionModeActive = false
+                -- optional debug:
+                -- print("[CameraFollow] Action Mode DISABLED (timer expired)")
             end
         end
 
