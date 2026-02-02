@@ -13,7 +13,14 @@ class LightingSystem : public System {
 public:
     int MAX_POINT_LIGHTS = 32;
     int MAX_SPOT_LIGHTS = 16;
+#ifdef __ANDROID__
+    const int MAX_VISIBLE_POINT_LIGHTS = 8;
+    static const int MAX_POINT_LIGHT_SHADOWS = 4;
+#else
+    const int MAX_VISIBLE_POINT_LIGHTS = 16;
     static const int MAX_POINT_LIGHT_SHADOWS = 8;
+#endif
+
     
     LightingSystem() = default;
     ~LightingSystem() = default;

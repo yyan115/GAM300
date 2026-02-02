@@ -221,10 +221,6 @@ void LightingSystem::CollectLightData()
 {
     ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
 
-    int pointShadowCount = 0;
-    int requestedShadowCasters = 0;
-    pointLightData.shadowIndex.clear();
-
     // Clear previous frame data
     pointLightData.positions.clear();
     pointLightData.ambient.clear();
@@ -234,6 +230,7 @@ void LightingSystem::CollectLightData()
     pointLightData.linear.clear();
     pointLightData.quadratic.clear();
     pointLightData.intensity.clear();
+    pointLightData.shadowIndex.clear();
 
     directionalLightData.hasDirectionalLight = false;
 
@@ -256,13 +253,21 @@ void LightingSystem::CollectLightData()
     glm::vec3 camPos = camera ? camera->Position : glm::vec3(0.0f);
 
     // =========================================================================
-    // TEMPORARY STORAGE FOR SHADOW CANDIDATES
+    // TEMPORARY STORAGE FOR ALL POINT LIGHTS (before culling)
     // =========================================================================
-    struct ShadowCandidate {
-        size_t lightIndex;      // Index in pointLightData arrays
+    struct PointLightCandidate {
+        glm::vec3 position;
+        glm::vec3 ambient;
+        glm::vec3 diffuse;
+        glm::vec3 specular;
+        float constant;
+        float linear;
+        float quadratic;
+        float intensity;
+        bool castShadows;
         float distanceToCamera;
     };
-    std::vector<ShadowCandidate> shadowCandidates;
+    std::vector<PointLightCandidate> allPointLights;
 
     for (const auto& entity : entities)
     {
@@ -299,56 +304,37 @@ void LightingSystem::CollectLightData()
             }
         }
 
-        // Collect point lights
+        // =====================================================================
+        // COLLECT ALL POINT LIGHTS INTO TEMPORARY VECTOR
+        // =====================================================================
         if (ecsManager.HasComponent<PointLightComponent>(entity))
         {
             auto& light = ecsManager.GetComponent<PointLightComponent>(entity);
 
             if (light.enabled)
             {
-                if (pointLightData.positions.size() < MAX_POINT_LIGHTS)
+                glm::vec3 position(0.0f);
+                if (ecsManager.HasComponent<Transform>(entity))
                 {
-                    glm::vec3 position(0.0f);
-                    if (ecsManager.HasComponent<Transform>(entity))
-                    {
-                        auto& transform = ecsManager.GetComponent<Transform>(entity);
-                        glm::mat4 worldMat = transform.worldMatrix.ConvertToGLM();
-                        position = glm::vec3(worldMat[3]);
-                    }
-
-                    // Store light data
-                    pointLightData.positions.push_back(position);
-                    pointLightData.ambient.push_back(light.ambient.ConvertToGLM());
-                    pointLightData.diffuse.push_back(light.diffuse.ConvertToGLM());
-                    pointLightData.specular.push_back(light.specular.ConvertToGLM());
-                    pointLightData.constant.push_back(light.constant);
-                    pointLightData.linear.push_back(light.linear);
-                    pointLightData.quadratic.push_back(light.quadratic);
-                    pointLightData.intensity.push_back(light.intensity);
-
-                    // Placeholder - will be assigned after sorting
-                    pointLightData.shadowIndex.push_back(-1);
-
-                    // Track shadow candidates
-                    if (light.castShadows)
-                    {
-                        requestedShadowCasters++;
-                        float dist = glm::distance(position, camPos);
-                        shadowCandidates.push_back({
-                            pointLightData.positions.size() - 1,  // Current index
-                            dist
-                            });
-                    }
+                    auto& transform = ecsManager.GetComponent<Transform>(entity);
+                    glm::mat4 worldMat = transform.worldMatrix.ConvertToGLM();
+                    position = glm::vec3(worldMat[3]);
                 }
-                else
-                {
-                    static bool pointLightWarningShown = false;
-                    if (!pointLightWarningShown) {
-                        std::cout << "[LightingSystem] Warning: Maximum point lights (" << MAX_POINT_LIGHTS
-                            << ") reached. Additional point lights will be ignored." << std::endl;
-                        pointLightWarningShown = true;
-                    }
-                }
+
+                float dist = glm::distance(position, camPos);
+
+                allPointLights.push_back({
+                    position,
+                    light.ambient.ConvertToGLM(),
+                    light.diffuse.ConvertToGLM(),
+                    light.specular.ConvertToGLM(),
+                    light.constant,
+                    light.linear,
+                    light.quadratic,
+                    light.intensity,
+                    light.castShadows,
+                    dist
+                    });
             }
         }
 
@@ -399,17 +385,68 @@ void LightingSystem::CollectLightData()
     }
 
     // =========================================================================
-    // DISTANCE-BASED SHADOW CULLING
-    // Sort shadow candidates by distance, assign shadows to closest N lights
+    // POINT LIGHT DISTANCE CULLING
+    // Sort all point lights by distance, keep only closest MAX_VISIBLE_POINT_LIGHTS
     // =========================================================================
 
     // Sort by distance (closest first)
+    std::sort(allPointLights.begin(), allPointLights.end(),
+        [](const PointLightCandidate& a, const PointLightCandidate& b) {
+            return a.distanceToCamera < b.distanceToCamera;
+        });
+
+    // Determine how many lights to keep
+    size_t numLightsToKeep = std::min(allPointLights.size(), static_cast<size_t>(MAX_VISIBLE_POINT_LIGHTS));
+
+    // Also respect the shader's maximum
+    numLightsToKeep = std::min(numLightsToKeep, static_cast<size_t>(MAX_POINT_LIGHTS));
+
+    // =========================================================================
+    // BUILD FINAL POINT LIGHT ARRAYS (only closest N lights)
+    // =========================================================================
+
+    struct ShadowCandidate {
+        size_t lightIndex;
+        float distanceToCamera;
+    };
+    std::vector<ShadowCandidate> shadowCandidates;
+
+    for (size_t i = 0; i < numLightsToKeep; ++i)
+    {
+        const auto& light = allPointLights[i];
+
+        pointLightData.positions.push_back(light.position);
+        pointLightData.ambient.push_back(light.ambient);
+        pointLightData.diffuse.push_back(light.diffuse);
+        pointLightData.specular.push_back(light.specular);
+        pointLightData.constant.push_back(light.constant);
+        pointLightData.linear.push_back(light.linear);
+        pointLightData.quadratic.push_back(light.quadratic);
+        pointLightData.intensity.push_back(light.intensity);
+        pointLightData.shadowIndex.push_back(-1);  // Will be assigned below
+
+        // Track shadow candidates
+        if (light.castShadows)
+        {
+            shadowCandidates.push_back({
+                pointLightData.positions.size() - 1,
+                light.distanceToCamera
+                });
+        }
+    }
+
+    // =========================================================================
+    // SHADOW DISTANCE CULLING
+    // From visible lights, assign shadows to closest MAX_POINT_LIGHT_SHADOWS
+    // =========================================================================
+
+    // Already sorted by distance (inherited from point light sort)
     std::sort(shadowCandidates.begin(), shadowCandidates.end(),
         [](const ShadowCandidate& a, const ShadowCandidate& b) {
             return a.distanceToCamera < b.distanceToCamera;
         });
 
-    // Assign shadow indices to the closest lights (up to MAX_POINT_LIGHT_SHADOWS)
+    int pointShadowCount = 0;
     for (size_t i = 0; i < shadowCandidates.size() && pointShadowCount < MAX_POINT_LIGHT_SHADOWS; ++i)
     {
         size_t lightIndex = shadowCandidates[i].lightIndex;
@@ -420,23 +457,24 @@ void LightingSystem::CollectLightData()
     // Update active shadow caster count for editor
     activeShadowCasterCount = pointShadowCount;
 
-    // DEBUG: Log which lights got shadows
-    static int debugFrameCounter = 0;
+    // =========================================================================
+    // DEBUG LOGGING (comment out in production)
+    // =========================================================================
+    /*static int debugFrameCounter = 0;
     debugFrameCounter++;
-    if (debugFrameCounter % 60 == 0 && !shadowCandidates.empty())
+    if (debugFrameCounter % 60 == 0)
     {
-        std::cout << "[Shadow Culling] " << shadowCandidates.size() << " lights want shadows, "
-            << pointShadowCount << " assigned:" << std::endl;
-
-        for (size_t i = 0; i < shadowCandidates.size(); ++i)
+        if (allPointLights.size() > numLightsToKeep)
         {
-            size_t lightIndex = shadowCandidates[i].lightIndex;
-            int shadowIdx = pointLightData.shadowIndex[lightIndex];
-
-            std::cout << "  Light " << lightIndex
-                << " dist: " << shadowCandidates[i].distanceToCamera
-                << (shadowIdx >= 0 ? " -> SHADOW" : " -> no shadow")
-                << std::endl;
+            std::cout << "[Light Culling] " << allPointLights.size() << " point lights in scene, "
+                      << numLightsToKeep << " visible (culled "
+                      << (allPointLights.size() - numLightsToKeep) << ")" << std::endl;
         }
-    }
+    
+        if (!shadowCandidates.empty())
+        {
+            std::cout << "[Shadow Culling] " << shadowCandidates.size() << " lights want shadows, "
+                      << pointShadowCount << " assigned" << std::endl;
+        }
+    }*/
 }
