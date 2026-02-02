@@ -403,6 +403,45 @@ static Entity Lua_FindEntityByName(const std::string& name)
     return -1; // Not found
 }
 
+// stack args: 1 = tag (string), 2 = maxResults (optional number)
+static int Lua_GetEntitiesByTag(lua_State* L)
+{
+    const char* tag = luaL_checkstring(L, 1);
+    int maxResults = static_cast<int>(luaL_optinteger(L, 2, 4));
+
+    if (!g_ecsManager) {
+        lua_newtable(L);  // Return empty table instead of count=0
+        return 1;
+    }
+
+    ECSManager& ecs = *g_ecsManager;
+    const auto& entities = ecs.GetActiveEntities();
+
+    std::vector<Entity> results;
+    results.reserve(maxResults);
+
+    for (Entity e : entities)
+    {
+        if (results.size() >= static_cast<size_t>(maxResults)) break;
+        if (!ecs.HasComponent<TagComponent>(e)) continue;
+        auto& tc = ecs.GetComponent<TagComponent>(e);
+        if (tc.HasTag(tag))
+        {
+            results.push_back(e);
+        }
+    }
+
+    // Create and populate a Lua table
+    lua_createtable(L, results.size(), 0);  // Pre-allocate array part
+    for (size_t i = 0; i < results.size(); ++i)
+    {
+        lua_pushinteger(L, static_cast<lua_Integer>(results[i]));
+        lua_rawseti(L, -2, i + 1);  // Lua arrays are 1-indexed
+    }
+
+    return 1;  // Return the table
+}
+
 static std::tuple<float, float> Lua_ScreenToGameCoordinates(float mouseX, float mouseY)
 {
     float viewportWidth = static_cast<float>(WindowManager::GetViewportWidth());
@@ -452,8 +491,6 @@ static size_t Lua_FindCurrentClipByName(const std::string& name)
 
     return -1;
 }
-
-
 
 
 

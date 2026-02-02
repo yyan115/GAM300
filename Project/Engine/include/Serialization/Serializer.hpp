@@ -99,10 +99,6 @@ public:
         SerializerFunc serializer)
     {
         bool hasInst = sceneECS.HasComponent<T>(instanceEnt);
-        bool hasBase = sceneECS.HasComponent<T>(baselineEnt);
-
-        // 1. If neither has it, skip
-        if (!hasInst && !hasBase) return;
 
         // 2. Serialize both to compare
         // (We use a temporary document for the baseline to keep the allocators independent/clean)
@@ -110,6 +106,20 @@ public:
         if (hasInst) {
             valInst = serializer(sceneECS.GetComponent<T>(instanceEnt), alloc);
         }
+
+        // If there is no valid baselineEnt (i.e. prefab with a new child created), straightaway fully serialize the component.
+        if (hasInst && baselineEnt == static_cast<Entity>(-1)) {
+            rapidjson::Value wrapper(rapidjson::kObjectType);
+            wrapper.AddMember(rapidjson::StringRef(compName), valInst, alloc);
+            outComponentsArray.PushBack(wrapper, alloc);
+            return;
+        }
+
+        bool hasBase = sceneECS.HasComponent<T>(baselineEnt);
+
+        // 1. If neither has it, skip
+        if (!hasInst && !hasBase) return;
+
 
         rapidjson::Value valBase;
         if (hasBase) {
@@ -143,9 +153,9 @@ public:
 
     static void UpdateEntityGUID_Safe(ECSManager& ecs, Entity entity, GUID_128 newGUID);
     static void RestorePrefabHierarchy(ECSManager& ecs, Entity currentEntity, const rapidjson::Value& jsonNode);
-    static void ApplyPrefabOverridesRecursive(ECSManager& ecs, Entity currentEntity, const rapidjson::Value& jsonNode);
+    static void ApplyPrefabOverridesRecursive(ECSManager& ecs, Entity& currentEntity, const rapidjson::Value& jsonNode, bool isNewEntity = false);
 
-    static void DeserializeEntity(ECSManager& ecs, const rapidjson::Value& entObj, bool isPrefab = false, Entity entity = MAX_ENTITIES, bool skipSpawnChildren = false);
+    static Entity DeserializeEntity(ECSManager& ecs, const rapidjson::Value& entObj, bool isPrefab = false, Entity entity = MAX_ENTITIES, bool skipSpawnChildren = false);
 	static void ENGINE_API DeserializeScene(const std::string& scenePath);
 	static void ENGINE_API ReloadScene(const std::string& tempScenePath, const std::string& currentScenePath);
 

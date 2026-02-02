@@ -271,6 +271,42 @@ return Component {
                 local hitType = payload.hitType or payload.src or "MELEE"
                 self:ApplyHit(dmg, hitType)
             end)
+            
+            -- NEW: Subscribe to deal_damage from AttackHitbox/ComboManager system
+            self._comboDamageSub = _G.event_bus.subscribe("deal_damage", function(payload)
+                if not payload then return end
+                
+                -- Check if this enemy is the target
+                if payload.targetEntityId ~= self.entityId then
+                    return
+                end
+                
+                -- Extract attack data from ComboManager
+                local attackData = payload.attackData or {}
+                local damage = attackData.damage or 10
+                local knockback = attackData.knockback or 0
+                local attackState = attackData.state or "unknown"
+                local direction = payload.direction or { x = 0, y = 0, z = 1 }
+                
+                print(string.format("[EnemyAI] Taking damage: %d from attack '%s' (knockback: %.1f)", 
+                                damage, attackState, knockback))
+                
+                -- Apply damage through existing system
+                self:ApplyHit(damage, "COMBO")
+                
+                -- Apply knockback if any
+                if knockback > 0 and self._rb and not self.dead then
+                    local kbX = direction.x * knockback
+                    local kbY = direction.y * knockback + 2.0  -- Add slight upward force
+                    local kbZ = direction.z * knockback
+                    
+                    pcall(function()
+                        self._rb.impulseApplied = { x = kbX, y = kbY, z = kbZ }
+                    end)
+                    
+                    print(string.format("[EnemyAI] Knockback applied: (%.2f, %.2f, %.2f)", kbX, kbY, kbZ))
+                end
+            end)
         end
 
         -- If you're using CC, do NOT run your old kinematic grounding system
@@ -878,11 +914,21 @@ return Component {
             if self.Unsubscribe then self:Unsubscribe() end
         end)
 
-        if _G.event_bus and _G.event_bus.unsubscribe and self._damageSub then
-            pcall(function()
-                _G.event_bus.unsubscribe(self._damageSub)
-            end)
-            self._damageSub = nil
+        if _G.event_bus and _G.event_bus.unsubscribe then
+            if self._damageSub then
+                pcall(function()
+                    _G.event_bus.unsubscribe(self._damageSub)
+                end)
+                self._damageSub = nil
+            end
+            
+            -- NEW: Unsubscribe from combo damage
+            if self._comboDamageSub then
+                pcall(function()
+                    _G.event_bus.unsubscribe(self._comboDamageSub)
+                end)
+                self._comboDamageSub = nil
+            end
         end
     end,
 
@@ -895,11 +941,20 @@ return Component {
             end)
             self._controller = nil
         end
-        if _G.event_bus and _G.event_bus.unsubscribe and self._damageSub then
-            pcall(function()
-                _G.event_bus.unsubscribe(self._damageSub)
-            end)
-            self._damageSub = nil
+        if _G.event_bus and _G.event_bus.unsubscribe then
+            if self._damageSub then
+                pcall(function()
+                    _G.event_bus.unsubscribe(self._damageSub)
+                end)
+                self._damageSub = nil
+            end
+            
+            if self._comboDamageSub then
+                pcall(function()
+                    _G.event_bus.unsubscribe(self._comboDamageSub)
+                end)
+                self._comboDamageSub = nil
+            end
         end
     end,
 }

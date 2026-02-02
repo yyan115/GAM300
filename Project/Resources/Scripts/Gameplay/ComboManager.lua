@@ -79,6 +79,7 @@ return Component {
                 animParam = 1,
                 duration = 1.5,
                 damage = 10,
+                knockback = 20.0,
                 canMove = false,
                 comboWindow = 0.2,
                 transitions = {
@@ -92,6 +93,7 @@ return Component {
                 animParam = 2,
                 duration = 1.5,
                 damage = 12,
+                knockback = 20.0,
                 canMove = false,
                 comboWindow = 0.2,
                 transitions = {
@@ -105,6 +107,7 @@ return Component {
                 animParam = 3,
                 duration = 1.5,
                 damage = 20,
+                knockback = 200.0,
                 canMove = false,
                 comboWindow = nil,  -- Finisher - no combo continuation
                 transitions = {}
@@ -145,6 +148,7 @@ return Component {
                 animParam = 11,
                 duration = 0.8,
                 damage = 30,  -- Will be multiplied by chargePercent
+                knockback = 20.0,
                 canMove = false,
                 comboWindow = nil,
                 
@@ -175,6 +179,7 @@ return Component {
                 animParam = 20,
                 duration = 0.5,
                 damage = 25,
+                knockback = 1.0,
                 canMove = false,
                 comboWindow = 0.5,
                 transitions = {
@@ -457,7 +462,8 @@ return Component {
             if event_bus then
                 event_bus.publish("attack_performed", {
                     state = stateId,
-                    damage = newState.damage
+                    damage = newState.damage,
+                    knockback = newState.knockback or 0
                 })
             end
         end
