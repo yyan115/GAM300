@@ -589,7 +589,7 @@ void RegisterInspectorCustomRenderers()
     {
         ecs;
         auto &collider = ecs.GetComponent<ColliderComponent>(entity);
-        auto &rc = ecs.GetComponent<ModelRenderComponent>(entity);
+        auto rc = ecs.TryGetComponent<ModelRenderComponent>(entity);
         const float labelWidth = EditorComponents::GetLabelWidth();
 
         ImGui::Text("Shape Type");
@@ -621,8 +621,14 @@ void RegisterInspectorCustomRenderers()
 
         // Shape Parameters based on type
         bool shapeParamsChanged = false;
-        Vector3D halfExtent = rc.CalculateModelHalfExtent(*rc.model);
-        float radius = rc.CalculateModelRadius(*rc.model);
+
+        Vector3D halfExtent = { 0.5f, 0.5f, 0.5f }; // default values
+		float radius = 0.5f; // default value
+        if (rc.has_value()) {
+            auto& modelComp = rc->get();
+            halfExtent = modelComp.CalculateModelHalfExtent(*modelComp.model);
+            radius = modelComp.CalculateModelRadius(*modelComp.model);
+        }
 
         switch (collider.shapeType)
         {
