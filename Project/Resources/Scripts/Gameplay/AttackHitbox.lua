@@ -6,7 +6,7 @@ local TransformMixin = require("extension.transform_mixin")
 return Component {
     mixins = { TransformMixin },
 
-    fields = {},
+    --fields = { },
 
     Start = function(self)
         print("[AttackHitbox] Testing overlap detection")
@@ -14,19 +14,20 @@ return Component {
         print("[AttackHitbox] Entity ID type: " .. type(self.entityId))
     end,
 
-    Update = function(self, dt)
-        -- Try converting entityId to a number
-        --[[]
-        local id = tonumber(self.entityId)
-        if not id then
-            print("[AttackHitbox] ERROR: Cannot convert entityId to number")
-            return
-        end
-        ]]
-        local overlaps = Physics.GetOverlappingEntities(Engine.GetEntityByName("AttackHitbox"))
+    Update = function(self)
+        --[[
+        local cacheId = Physics.GetOverlappingEntities(Engine.GetEntityByName("AttackHitbox"))
+        local count = Physics.GetOverlapCount(cacheId)
         
-        for i,id in ipairs(overlaps) do
-            print(i, id)
+        if count > 0 then
+            print("[AttackHitbox] HIT " .. count .. " entities:")
+            for i = 0, count - 1 do
+                local entityId = Physics.GetOverlapAt(cacheId, i)
+                print("  Entity " .. entityId)
+            end
         end
+        
+        Physics.ClearOverlapCache(cacheId)  -- Clean up when done
+        ]]
     end,
 }

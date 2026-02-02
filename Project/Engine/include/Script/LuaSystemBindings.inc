@@ -263,6 +263,9 @@ BEGIN_SYSTEM("Physics")
     // Returns: distance (float, -1.0 if no hit)
     FUNCTION("Raycast", PhysicsSystemWrappers::Raycast)
     FUNCTION("GetOverlappingEntities", PhysicsSystemWrappers::Lua_GetOverlappingEntities)
+    FUNCTION("GetOverlapCount", PhysicsSystemWrappers::GetOverlapCount)
+    FUNCTION("GetOverlapAt", PhysicsSystemWrappers::GetOverlapAt)
+    FUNCTION("ClearOverlapCache", PhysicsSystemWrappers::ClearOverlapCache)
 END_SYSTEM()
 
 
