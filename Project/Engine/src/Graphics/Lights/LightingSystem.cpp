@@ -249,6 +249,21 @@ void LightingSystem::CollectLightData()
     spotLightData.outerCutOff.clear();
     spotLightData.intensity.clear();
 
+    // =========================================================================
+    // GET CAMERA POSITION FOR DISTANCE CULLING
+    // =========================================================================
+    Camera* camera = GraphicsManager::GetInstance().GetCurrentCamera();
+    glm::vec3 camPos = camera ? camera->Position : glm::vec3(0.0f);
+
+    // =========================================================================
+    // TEMPORARY STORAGE FOR SHADOW CANDIDATES
+    // =========================================================================
+    struct ShadowCandidate {
+        size_t lightIndex;      // Index in pointLightData arrays
+        float distanceToCamera;
+    };
+    std::vector<ShadowCandidate> shadowCandidates;
+
     for (const auto& entity : entities)
     {
         // Skip inactive entities
@@ -281,7 +296,6 @@ void LightingSystem::CollectLightData()
                 directionalLightData.diffuse = light.diffuse.ConvertToGLM();
                 directionalLightData.specular = light.specular.ConvertToGLM();
                 directionalLightData.intensity = light.intensity;
-                // directionalLightData.castShadows = light.castShadows;  // Add this to component if needed
             }
         }
 
@@ -302,6 +316,7 @@ void LightingSystem::CollectLightData()
                         position = glm::vec3(worldMat[3]);
                     }
 
+                    // Store light data
                     pointLightData.positions.push_back(position);
                     pointLightData.ambient.push_back(light.ambient.ConvertToGLM());
                     pointLightData.diffuse.push_back(light.diffuse.ConvertToGLM());
@@ -311,25 +326,18 @@ void LightingSystem::CollectLightData()
                     pointLightData.quadratic.push_back(light.quadratic);
                     pointLightData.intensity.push_back(light.intensity);
 
-                    // Only assign shadow if designer enabled castShadows AND we have slots available
+                    // Placeholder - will be assigned after sorting
+                    pointLightData.shadowIndex.push_back(-1);
+
+                    // Track shadow candidates
                     if (light.castShadows)
                     {
                         requestedShadowCasters++;
-
-                        if (pointShadowCount < MAX_POINT_LIGHT_SHADOWS)
-                        {
-                            pointLightData.shadowIndex.push_back(pointShadowCount);
-                            pointShadowCount++;
-                        }
-                        else
-                        {
-                            // Designer wanted shadow but we're at limit
-                            pointLightData.shadowIndex.push_back(-1);
-                        }
-                    }
-                    else
-                    {
-                        pointLightData.shadowIndex.push_back(-1);  // No shadow requested
+                        float dist = glm::distance(position, camPos);
+                        shadowCandidates.push_back({
+                            pointLightData.positions.size() - 1,  // Current index
+                            dist
+                            });
                     }
                 }
                 else
@@ -344,7 +352,7 @@ void LightingSystem::CollectLightData()
             }
         }
 
-        // Collect spot lights
+        // Collect spot lights (unchanged)
         if (ecsManager.HasComponent<SpotLightComponent>(entity))
         {
             auto& light = ecsManager.GetComponent<SpotLightComponent>(entity);
@@ -389,6 +397,46 @@ void LightingSystem::CollectLightData()
             }
         }
     }
+
+    // =========================================================================
+    // DISTANCE-BASED SHADOW CULLING
+    // Sort shadow candidates by distance, assign shadows to closest N lights
+    // =========================================================================
+
+    // Sort by distance (closest first)
+    std::sort(shadowCandidates.begin(), shadowCandidates.end(),
+        [](const ShadowCandidate& a, const ShadowCandidate& b) {
+            return a.distanceToCamera < b.distanceToCamera;
+        });
+
+    // Assign shadow indices to the closest lights (up to MAX_POINT_LIGHT_SHADOWS)
+    for (size_t i = 0; i < shadowCandidates.size() && pointShadowCount < MAX_POINT_LIGHT_SHADOWS; ++i)
+    {
+        size_t lightIndex = shadowCandidates[i].lightIndex;
+        pointLightData.shadowIndex[lightIndex] = pointShadowCount;
+        pointShadowCount++;
+    }
+
     // Update active shadow caster count for editor
     activeShadowCasterCount = pointShadowCount;
+
+    // DEBUG: Log which lights got shadows
+    static int debugFrameCounter = 0;
+    debugFrameCounter++;
+    if (debugFrameCounter % 60 == 0 && !shadowCandidates.empty())
+    {
+        std::cout << "[Shadow Culling] " << shadowCandidates.size() << " lights want shadows, "
+            << pointShadowCount << " assigned:" << std::endl;
+
+        for (size_t i = 0; i < shadowCandidates.size(); ++i)
+        {
+            size_t lightIndex = shadowCandidates[i].lightIndex;
+            int shadowIdx = pointLightData.shadowIndex[lightIndex];
+
+            std::cout << "  Light " << lightIndex
+                << " dist: " << shadowCandidates[i].distanceToCamera
+                << (shadowIdx >= 0 ? " -> SHADOW" : " -> no shadow")
+                << std::endl;
+        }
+    }
 }
