@@ -772,6 +772,10 @@ void Serializer::SerializePrefabInstanceDelta(ECSManager& sceneECS, Entity insta
     CheckAndSerializeDelta<VideoComponent>("VideoComponent", sceneECS, instanceEnt, baselineEnt, alloc, outComponentsArray, standardSerializer);
 
     // Note: ChildrenComponent and ParentComponent are intentionally SKIPPED.
+    if (baselineEnt == static_cast<Entity>(-1)) {
+        CheckAndSerializeDelta<ChildrenComponent>("ChildrenComponent", sceneECS, instanceEnt, baselineEnt, alloc, outComponentsArray, standardSerializer);
+		CheckAndSerializeDelta<ParentComponent>("ParentComponent", sceneECS, instanceEnt, baselineEnt, alloc, outComponentsArray, standardSerializer);
+    }
 
     // --- 2. Manual Components (Name, Tag, Layer, Sibling) ---
 
@@ -1053,20 +1057,12 @@ void Serializer::SerializePrefabOverridesRecursive(ECSManager& sceneECS, Entity 
                 }
             }
 
-            // If we found a match, check for differences
-            if (baseChild != static_cast<Entity>(-1)) {
-                rapidjson::Value childNode(rapidjson::kObjectType);
-                SerializePrefabOverridesRecursive(sceneECS, instChild, baseChild, alloc, childNode);
+            rapidjson::Value childNode(rapidjson::kObjectType);
+            SerializePrefabOverridesRecursive(sceneECS, instChild, baseChild, alloc, childNode);
 
-                // Only add to list if there was actually an override inside
-                if (childNode.HasMember("ComponentOverrides") || childNode.HasMember("Children")) {
-                    childrenOverrides.PushBack(childNode, alloc);
-                }
-            }
-            else {
-                // This is a NEW child added in the scene (not in prefab).
-                // You need to serialize it fully as a "Added Entity".
-                SerializeEntity(instChild, alloc);
+            // Only add to list if there was actually an override inside
+            if (childNode.HasMember("ComponentOverrides") || childNode.HasMember("Children")) {
+                childrenOverrides.PushBack(childNode, alloc);
             }
         }
 
@@ -1155,8 +1151,11 @@ void Serializer::RestorePrefabHierarchy(ECSManager& ecs, Entity currentEntity, c
     }
 }
 
-void Serializer::DeserializeEntity(ECSManager& ecs, const rapidjson::Value& entObj, bool isPrefab, Entity entity, bool skipSpawnChildren) {
-    if (!entObj.IsObject()) return;
+Entity Serializer::DeserializeEntity(ECSManager& ecs, const rapidjson::Value& entObj, bool isPrefab, Entity entity, bool skipSpawnChildren) {
+    if (!entObj.IsObject()) {
+		ENGINE_LOG_WARN("[Serializer] DeserializeEntity: Invalid entity JSON object.");
+        return static_cast<Entity>(-1);
+    }
 
     // 1. Check: Is this a Prefab Instance?
     // (Assuming you saved "PrefabPath" at the top level of your entity JSON)
@@ -1217,7 +1216,7 @@ void Serializer::DeserializeEntity(ECSManager& ecs, const rapidjson::Value& entO
         // D. Apply Overrides
         ApplyPrefabOverridesRecursive(ecs, instanceRoot, entObj);
 
-        return;
+        return instanceRoot;
     }
 
     Entity newEnt{};
@@ -1251,8 +1250,8 @@ void Serializer::DeserializeEntity(ECSManager& ecs, const rapidjson::Value& entO
             auto& prefabComp = ecs.GetComponent<PrefabLinkComponent>(newEnt);
             DeserializePrefabLinkComponent(prefabComp, prefabCompJSON);
 
-            InstantiatePrefabIntoEntity(prefabComp.prefabPath, newEnt);
-            return;
+            Entity prefab = InstantiatePrefabIntoEntity(prefabComp.prefabPath, newEnt);
+            return prefab;
         }
     }
 
@@ -1482,9 +1481,16 @@ void Serializer::DeserializeEntity(ECSManager& ecs, const rapidjson::Value& entO
     if (!ecs.HasComponent<LayerComponent>(newEnt)) {
         ecs.AddComponent<LayerComponent>(newEnt, LayerComponent{ 0 });
     }
+
+    return newEnt;
 }
 
-void Serializer::ApplyPrefabOverridesRecursive(ECSManager& ecs, Entity currentEntity, const rapidjson::Value& jsonNode) {
+void Serializer::ApplyPrefabOverridesRecursive(ECSManager& ecs, Entity& currentEntity, const rapidjson::Value& jsonNode, bool isNewEntity) {
+    if (isNewEntity && jsonNode.HasMember("guid")) {
+        GUID_128 entityGUID = DeserializeEntityGUID(jsonNode);
+        currentEntity = ecs.CreateEntityWithGUID(entityGUID);
+    }
+
     // 1. Apply Component Overrides for THIS entity
     // This overwrites values like Transform, Light Color, etc.
     if (jsonNode.HasMember("ComponentOverrides")) {
@@ -1640,31 +1646,62 @@ void Serializer::ApplyPrefabOverridesRecursive(ECSManager& ecs, Entity currentEn
         auto& childrenComp = ecs.GetComponent<ChildrenComponent>(currentEntity);
 
         for (const auto& childNode : jsonChildren.GetArray()) {
-            if (!childNode.HasMember("Name")) continue;
-            std::string targetName = childNode["Name"].GetString();
+            if (!childNode.HasMember("Name")) {
+                continue;
+                //if (!childNode.HasMember("components")) continue;
 
-            // FIND the matching child in the live hierarchy
-            Entity matchingChild = static_cast<Entity>(-1);
+                //// Edge Case: The child exists in the Scene save but not in the Prefab?
+                //// This means it was "Added in Scene". You would need to CreateEntity here.
+                //Entity newChild = DeserializeEntity(ecs, childNode);
+                //GUID_128 newChildGUID = EntityGUIDRegistry::GetInstance().GetGUIDByEntity(newChild);
+                //childrenComp.children.push_back(newChildGUID);
 
-            for (const auto& childGUID : childrenComp.children) {
-                Entity realChild = EntityGUIDRegistry::GetInstance().GetEntityByGUID(childGUID);
-                if (ecs.HasComponent<NameComponent>(realChild)) {
-                    // Match by Name (Unity-style matching)
-                    if (ecs.GetComponent<NameComponent>(realChild).name == targetName) {
-                        matchingChild = realChild;
-                        break;
-                    }
-                }
-            }
-
-            // If found, recurse to patch that child
-            if (matchingChild != static_cast<Entity>(-1)) {
-                ApplyPrefabOverridesRecursive(ecs, matchingChild, childNode);
+                //// Restore the link to the new parent GUID.s
+                //if (ecs.HasComponent<ParentComponent>(newChild)) {
+                //    auto& parentComp = ecs.GetComponent<ParentComponent>(newChild);
+                //    GUID_128 newParentGUID = EntityGUIDRegistry::GetInstance().GetGUIDByEntity(currentEntity);
+                //    parentComp.parent = newParentGUID;
+                //}
             }
             else {
-                // Edge Case: The child exists in the Scene save but not in the Prefab?
-                // This means it was "Added in Scene". You would need to CreateEntity here.
-                DeserializeEntity(ecs, childNode);
+                std::string targetName = childNode["Name"].GetString();
+
+                // FIND the matching child in the live hierarchy
+                Entity matchingChild = static_cast<Entity>(-1);
+
+                for (const auto& childGUID : childrenComp.children) {
+                    Entity realChild = EntityGUIDRegistry::GetInstance().GetEntityByGUID(childGUID);
+                    if (ecs.HasComponent<NameComponent>(realChild)) {
+                        // Match by Name (Unity-style matching)
+                        if (ecs.GetComponent<NameComponent>(realChild).name == targetName) {
+                            matchingChild = realChild;
+                            break;
+                        }
+                    }
+                }
+
+                // If found, recurse to patch that child
+                if (matchingChild != static_cast<Entity>(-1)) {
+                    ApplyPrefabOverridesRecursive(ecs, matchingChild, childNode);
+                }
+                else {
+                    // Edge Case: The child exists in the Scene save but not in the Prefab?
+                    // This means it was "Added in Scene". You would need to CreateEntity here.
+                    ApplyPrefabOverridesRecursive(ecs, matchingChild, childNode, true);
+
+                    // Restore the link between the child and parent GUIDs.
+                    if (!ecs.HasComponent<ParentComponent>(matchingChild)) {
+                        ecs.AddComponent<ParentComponent>(matchingChild, ParentComponent{});
+                    }
+                    if (ecs.HasComponent<ParentComponent>(matchingChild)) {
+                        auto& parentComp = ecs.GetComponent<ParentComponent>(matchingChild);
+                        GUID_128 newParentGUID = EntityGUIDRegistry::GetInstance().GetGUIDByEntity(currentEntity);
+                        parentComp.parent = newParentGUID;
+                    }
+
+                    GUID_128 childGUID = EntityGUIDRegistry::GetInstance().GetGUIDByEntity(matchingChild);
+                    childrenComp.children.push_back(childGUID);
+                }
             }
         }
     }
@@ -3173,6 +3210,16 @@ void Serializer::DeserializeScriptComponent(Entity entity, const rapidjson::Valu
                     ENGINE_PRINT("LOAD DEBUG: Resolved scriptPath from GUID: ", sd.scriptPath.c_str(), "\n");
                 }
             }
+
+			// Check if the ScriptComponent already has a script with the same path. If so, skip adding this one to avoid duplicates.
+			bool duplicateFound = false;
+            for (const auto& existingScript : scriptComp.scripts) {
+                if (existingScript.scriptPath == sd.scriptPath) {
+                    duplicateFound = true;
+                    break;
+				}
+            }
+            if (duplicateFound) continue;
 
             if (scriptData.HasMember("enabled") && scriptData["enabled"].IsBool()) {
                 sd.enabled = scriptData["enabled"].GetBool();
