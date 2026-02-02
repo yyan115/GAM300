@@ -266,6 +266,7 @@ BEGIN_SYSTEM("Physics")
     FUNCTION("GetOverlapCount", PhysicsSystemWrappers::GetOverlapCount)
     FUNCTION("GetOverlapAt", PhysicsSystemWrappers::GetOverlapAt)
     FUNCTION("ClearOverlapCache", PhysicsSystemWrappers::ClearOverlapCache)
+    FUNCTION("CheckDistance", PhysicsSystemWrappers::CheckDistance)
 END_SYSTEM()
 
 
@@ -307,6 +308,10 @@ BEGIN_SYSTEM("Engine")
     FUNCTION("GetClipIndexByName", &Lua_FindCurrentClipByName)      //TEMPHACK
     FUNCTION("GetTransformRotation", &Lua_GetTransformRotation)
     FUNCTION("GetEntityByName", &Lua_FindEntityByName)
+    FUNCTION("GetEntitiesByTag", Lua_FindEntitiesByTag)
+    FUNCTION("GetTagCacheCount", Lua_GetTagCacheCount)
+    FUNCTION("GetTagCacheAt", Lua_GetTagCacheAt)
+    FUNCTION("ClearTagCache", Lua_ClearTagCache)
     FUNCTION("GetGameCoordinate", &Lua_ScreenToGameCoordinates)
     FUNCTION("CreateEntityDup", &Lua_CreateEntityDup)
     FUNCTION("DestroyEntityDup", &Lua_DestroyEntityDup)

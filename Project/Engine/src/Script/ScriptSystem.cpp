@@ -403,6 +403,70 @@ static Entity Lua_FindEntityByName(const std::string& name)
     return -1; // Not found
 }
 
+namespace {
+    static std::unordered_map<int, std::vector<Entity>> s_TagCache;
+    static int s_NextCacheID = 1000; // start at 1000 if you want to avoid collisions
+    static std::mutex s_TagCacheMutex;
+}
+static int Lua_FindEntitiesByTag(const std::string& tag, int NumOfEntities = 4)
+{
+    if (!g_ecsManager) return 0;
+    ECSManager& ecs = *g_ecsManager;
+    const auto& entities = ecs.GetActiveEntities();
+
+    std::vector<Entity> found;
+    found.reserve(NumOfEntities);
+
+    for (Entity e : entities)
+    {
+        if (!ecs.HasComponent<TagComponent>(e))
+            continue;
+        auto& tc = ecs.GetComponent<TagComponent>(e);
+        if (tc.HasTag(tag))
+        {
+            found.push_back(e);
+            std::cout << "found\n";
+            if (found.size() >= static_cast<size_t>(NumOfEntities)) break;
+        }
+    }
+
+    if (found.empty()) return 0;
+
+    // store in the shared cache
+    std::lock_guard<std::mutex> lock(s_TagCacheMutex);
+    int cacheId = s_NextCacheID++;
+    s_TagCache[cacheId] = std::move(found);
+
+    std::cout << "created cache id " << cacheId << std::endl;
+    return cacheId;
+}
+
+static int Lua_GetTagCacheCount(int cacheId) {
+    std::lock_guard<std::mutex> lock(s_TagCacheMutex);
+    auto it = s_TagCache.find(cacheId);
+    if (it == s_TagCache.end()) return 0;
+    return static_cast<int>(it->second.size());
+}
+
+static Entity Lua_GetTagCacheAt(int cacheId, int index) {
+    std::lock_guard<std::mutex> lk(s_TagCacheMutex);
+    auto it = s_TagCache.find(cacheId);
+    if (it == s_TagCache.end()) return 0;
+    auto& vec = it->second;
+    if (index < 0 || index >= static_cast<int>(vec.size())) return 0;
+    Entity e = vec[index];
+    if (index == static_cast<int>(vec.size()) - 1) {
+        // last element read -> erase cache
+        s_TagCache.erase(it);
+    }
+    return e;
+}
+
+static void Lua_ClearTagCache(int cacheId) {
+    std::lock_guard<std::mutex> lock(s_TagCacheMutex);
+    s_TagCache.erase(cacheId);
+}
+
 static std::tuple<float, float> Lua_ScreenToGameCoordinates(float mouseX, float mouseY)
 {
     float viewportWidth = static_cast<float>(WindowManager::GetViewportWidth());

@@ -15541,7 +15541,7 @@
                     "name": "GroundEnemy"
                 },
                 "TagComponent": {
-                    "tagIndex": 0
+                    "tagIndex": 7
                 },
                 "LayerComponent": {
                     "layerIndex": 0
@@ -23228,7 +23228,7 @@
                     "name": "FlyingEnemy"
                 },
                 "TagComponent": {
-                    "tagIndex": 0
+                    "tagIndex": 7
                 },
                 "LayerComponent": {
                     "layerIndex": 0
@@ -36054,7 +36054,7 @@
             }
         },
         {
-            "PrefabPath": "../../Resources/Prefabs/Player (12).prefab",
+            "PrefabPath": "../../Resources/Prefabs/Player (17).prefab",
             "id": 262,
             "guid": "002936801107bf75-00040d569e004657",
             "Name": "Player",
@@ -36478,98 +36478,11 @@
                     },
                     "ComponentOverrides": [
                         {
-                            "ModelRenderComponent": {
-                                "type": "ModelRenderComponent",
-                                "data": [
-                                    "003c2588b8ec01ae-0003f3938c000001",
-                                    "0060f444e1e8808c-000337e664000011",
-                                    "0000000000000000-0000000000000000",
-                                    {
-                                        "type": "Matrix4x4",
-                                        "data": [
-                                            {
-                                                "type": "float",
-                                                "data": 1
-                                            },
-                                            {
-                                                "type": "float",
-                                                "data": 0
-                                            },
-                                            {
-                                                "type": "float",
-                                                "data": 0
-                                            },
-                                            {
-                                                "type": "float",
-                                                "data": 0
-                                            },
-                                            {
-                                                "type": "float",
-                                                "data": 0
-                                            },
-                                            {
-                                                "type": "float",
-                                                "data": 1
-                                            },
-                                            {
-                                                "type": "float",
-                                                "data": 0
-                                            },
-                                            {
-                                                "type": "float",
-                                                "data": 0
-                                            },
-                                            {
-                                                "type": "float",
-                                                "data": 0
-                                            },
-                                            {
-                                                "type": "float",
-                                                "data": 0
-                                            },
-                                            {
-                                                "type": "float",
-                                                "data": 1
-                                            },
-                                            {
-                                                "type": "float",
-                                                "data": 0
-                                            },
-                                            {
-                                                "type": "float",
-                                                "data": 0
-                                            },
-                                            {
-                                                "type": "float",
-                                                "data": 0
-                                            },
-                                            {
-                                                "type": "float",
-                                                "data": 0
-                                            },
-                                            {
-                                                "type": "float",
-                                                "data": 1
-                                            }
-                                        ]
-                                    },
-                                    {
-                                        "type": "bool",
-                                        "data": true
-                                    },
-                                    {
-                                        "type": "bool",
-                                        "data": true
-                                    }
-                                ]
-                            }
-                        },
-                        {
                             "ScriptComponent": {
                                 "scripts": [
                                     {
-                                        "scriptGuidStr": "0056e20b59668f95-000415d348000001",
-                                        "scriptPath": "../../Resources/Scripts/Gameplay/AttackHitbox.lua",
+                                        "scriptGuidStr": "00041cc89e9f4054-0004176a34000001",
+                                        "scriptPath": "../../Resources/Scripts/Gameplay/AttackHitboxDeprecated.lua",
                                         "enabled": true,
                                         "preserveKeys": [],
                                         "entryFunction": "OnInit",

@@ -226,6 +226,43 @@ namespace PhysicsSystemWrappers {
         return result.hit ? result.distance : -1.0f;
     }
 
+    // Check if two entities are within a certain distance
+    // Usage: local hit = Physics.CheckDistance(entityA, entityB, maxDistance)
+    // Returns: true if distance <= maxDistance, false otherwise
+    inline bool CheckDistance(Entity entityA, Entity entityB, float maxDistance) {
+        if (!g_PhysicsSystem) {
+            std::cerr << "[Physics] CheckDistance: PhysicsSystem not initialized!" << std::endl;
+            return false;
+        }
+
+        auto& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
+
+        // Get transform for entity A
+        if (!ecs.HasComponent<Transform>(entityA)) {
+            std::cerr << "[Physics] CheckDistance: Entity " << entityA << " has no Transform!" << std::endl;
+            return false;
+        }
+
+        // Get transform for entity B
+        if (!ecs.HasComponent<Transform>(entityB)) {
+            std::cerr << "[Physics] CheckDistance: Entity " << entityB << " has no Transform!" << std::endl;
+            return false;
+        }
+
+        auto& transformA = ecs.GetComponent<Transform>(entityA);
+        auto& transformB = ecs.GetComponent<Transform>(entityB);
+
+        // Calculate distance between world positions
+        float dx = transformB.worldPosition.x - transformA.worldPosition.x;
+        float dy = transformB.worldPosition.y - transformA.worldPosition.y;
+        float dz = transformB.worldPosition.z - transformA.worldPosition.z;
+
+        float distanceSquared = dx * dx + dy * dy + dz * dz;
+        float maxDistanceSquared = maxDistance * maxDistance;
+
+        return distanceSquared <= maxDistanceSquared;
+    }
+
     // Get overlapping entities and return a cache ID
     // Usage: local cacheId = Physics.GetOverlappingEntities(entityId)
     inline int Lua_GetOverlappingEntities(Entity entity) {
