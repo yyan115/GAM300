@@ -1,0 +1,11 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "00243e5d3503c2e5-000418c38e00024b",
+        "source": "../../Resources/Models/Environment/EndLedge.fbx",
+        "compiled": "../../Resources/Models/Environment/EndLedge.mesh"
+    },
+    "ModelMetaData": {
+        "optimizeMeshes": true
+    }
+}

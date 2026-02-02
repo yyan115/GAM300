@@ -255,7 +255,7 @@
                                 },
                                 {
                                     "type": "float",
-                                    "data": 9.31894e-10
+                                    "data": 9.31889e-10
                                 },
                                 {
                                     "type": "float",
@@ -263,7 +263,7 @@
                                 },
                                 {
                                     "type": "float",
-                                    "data": 9.31894e-10
+                                    "data": 9.31889e-10
                                 }
                             ]
                         }
@@ -389,31 +389,7 @@
                             "enabled": true,
                             "preserveKeys": [],
                             "entryFunction": "OnInit",
-                            "autoInvokeEntry": true,
-                            "instanceState": {
-                                "__created_at": 1769759387.0,
-                                "__meta": {},
-                                "_subscriptions": {},
-                                "StartSafe": null,
-                                "After": null,
-                                "AwakeSafe": null,
-                                "UpdateSafe": null,
-                                "Start": null,
-                                "_call_lifecycle": null,
-                                "__field_list": {
-                                    "targetScene": "Resources/Scenes/04_GameLevel.scene"
-                                },
-                                "targetScene": "Resources/Scenes/04_GameLevel.scene",
-                                "Destroy": null,
-                                "Subscribe": null,
-                                "Every": null,
-                                "Update": null,
-                                "SerializeFields": null,
-                                "DisableSafe": null,
-                                "Unsubscribe": null,
-                                "_private": {},
-                                "DeserializeFields": null
-                            }
+                            "autoInvokeEntry": true
                         }
                     ]
                 },
@@ -1111,17 +1087,34 @@
                             "entryFunction": "OnInit",
                             "autoInvokeEntry": true,
                             "instanceState": {
-                                "minY": 912.3670043945313,
-                                "maxY": 1042.3670043945313,
-                                "__field_list": {},
+                                "GetComponent": null,
+                                "Every": null,
+                                "highlightSprite": null,
+                                "AwakeSafe": null,
                                 "_private": {},
-                                "buttonBounds": {},
+                                "DisableSafe": null,
+                                "DeserializeFields": null,
+                                "StartSafe": null,
                                 "_subscriptions": {},
+                                "UpdateSafe": null,
+                                "Subscribe": null,
+                                "SerializeFields": null,
+                                "buttonBounds": {},
+                                "defaultSprite": null,
+                                "After": null,
+                                "minY": 912.3670043945313,
+                                "Unsubscribe": null,
                                 "maxX": 1846.0899658203125,
-                                "__created_at": 1769156017.0,
-                                "__meta": {},
                                 "minX": 1621.0899658203125,
-                                "entityId": 3.0
+                                "entityId": 3.0,
+                                "__field_list": {},
+                                "__meta": {},
+                                "maxY": 1042.3670043945313,
+                                "__created_at": 1769156017.0,
+                                "Destroy": null,
+                                "Start": null,
+                                "_call_lifecycle": null,
+                                "Update": null
                             }
                         }
                     ]
@@ -1804,19 +1797,19 @@
         },
         {
             "id": 8,
-            "guid": "0006716b4339c6e7-00040fba48000b97",
+            "guid": "007add1d2b2e522b-0003fbaf56000003",
             "components": {
                 "NameComponent": {
-                    "name": "Blackscreen1 (2)"
+                    "name": "Blackscreen1"
                 },
                 "TagComponent": {
-                    "tagIndex": 0
+                    "tagIndex": 12
                 },
                 "LayerComponent": {
                     "layerIndex": 0
                 },
                 "SiblingIndexComponent": {
-                    "siblingIndex": 7
+                    "siblingIndex": 4
                 },
                 "Transform": {
                     "type": "Transform",
@@ -1986,7 +1979,7 @@
                     "data": [
                         {
                             "type": "bool",
-                            "data": false
+                            "data": true
                         }
                     ]
                 }

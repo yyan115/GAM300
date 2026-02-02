@@ -1,0 +1,13 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "00243e5d03ca83a2-000418c3ae000261",
+        "source": "../../Resources/Textures/M4/StartLedge_normal.png",
+        "compiled": "../../Resources/Textures/M4/StartLedge_normal.dds"
+    },
+    "TextureMetaData": {
+        "type": "normal",
+        "flipUVs": false,
+        "generateMipmaps": true
+    }
+}

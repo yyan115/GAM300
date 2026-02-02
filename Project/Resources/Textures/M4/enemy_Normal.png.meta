@@ -1,0 +1,13 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "004f036c182c4c99-000418b66e01c227",
+        "source": "../../Resources/Textures/M4/enemy_Normal.png",
+        "compiled": "../../Resources/Textures/M4/enemy_Normal.dds"
+    },
+    "TextureMetaData": {
+        "type": "normal",
+        "flipUVs": false,
+        "generateMipmaps": true
+    }
+}

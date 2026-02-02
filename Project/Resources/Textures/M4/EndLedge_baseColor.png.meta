@@ -1,0 +1,13 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "00243e5d2ef31c1e-000418c3b0000263",
+        "source": "../../Resources/Textures/M4/EndLedge_baseColor.png",
+        "compiled": "../../Resources/Textures/M4/EndLedge_baseColor.dds"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true
+    }
+}

@@ -6,8 +6,8 @@
         "compiled": "../../Resources/Textures/M4/Door_MainGate_Normal.dds"
     },
     "TextureMetaData": {
-        "type": "diffuse",
-        "flipUVs": true,
+        "type": "normal",
+        "flipUVs": false,
         "generateMipmaps": true
     }
 }
