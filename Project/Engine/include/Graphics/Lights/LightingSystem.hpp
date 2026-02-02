@@ -14,7 +14,7 @@ public:
     int MAX_POINT_LIGHTS = 32;
     int MAX_SPOT_LIGHTS = 16;
     static const int MAX_POINT_LIGHT_SHADOWS = 8;
-
+    
     LightingSystem() = default;
     ~LightingSystem() = default;
 
