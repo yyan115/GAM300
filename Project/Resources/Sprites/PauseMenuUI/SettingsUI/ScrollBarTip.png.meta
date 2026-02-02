@@ -1,0 +1,13 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "007f7ae3f7d009ef-0004059368000005",
+        "source": "../../Resources/Sprites/PauseMenuUI/SettingsUI/ScrollBarTip.png",
+        "compiled": "../../Resources/Sprites/PauseMenuUI/SettingsUI/ScrollBarTip.dds"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": true,
+        "generateMipmaps": true
+    }
+}

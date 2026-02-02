@@ -101,6 +101,8 @@ BEGIN_SYSTEM("Time")
     FUNCTION("GetTimeScale", TimeWrappers::GetTimeScale)
     FUNCTION("SetTimeScale", TimeWrappers::SetTimeScale)
     FUNCTION("GetScaledDeltaTime", TimeWrappers::GetScaledDeltaTime)
+    FUNCTION("SetPaused", TimeWrappers::SetPaused)
+    FUNCTION("IsPaused", TimeWrappers::IsPaused)
 END_SYSTEM()
 
 // ============================================================================
@@ -260,6 +262,11 @@ BEGIN_SYSTEM("Physics")
     // Raycast(originX, originY, originZ, dirX, dirY, dirZ, maxDistance)
     // Returns: distance (float, -1.0 if no hit)
     FUNCTION("Raycast", PhysicsSystemWrappers::Raycast)
+    FUNCTION("GetOverlappingEntities", PhysicsSystemWrappers::Lua_GetOverlappingEntities)
+    FUNCTION("GetOverlapCount", PhysicsSystemWrappers::GetOverlapCount)
+    FUNCTION("GetOverlapAt", PhysicsSystemWrappers::GetOverlapAt)
+    FUNCTION("ClearOverlapCache", PhysicsSystemWrappers::ClearOverlapCache)
+    FUNCTION("CheckDistance", PhysicsSystemWrappers::CheckDistance)
 END_SYSTEM()
 
 
@@ -300,9 +307,24 @@ BEGIN_SYSTEM("Engine")
     FUNCTION("GetClipIndexByName", &Lua_FindCurrentClipByName)      //TEMPHACK
     FUNCTION("GetTransformRotation", &Lua_GetTransformRotation)
     FUNCTION("GetEntityByName", &Lua_FindEntityByName)
+    //FUNCTION("GetEntitiesByTag", Lua_FindEntitiesByTag) //DONE & INITIALIZED DIRECTLY IN SCRIPT SYSTEMS FOR VECTOR TABLE
+    FUNCTION("GetEntitiesByTag", Lua_GetEntitiesByTag)
     FUNCTION("GetGameCoordinate", &Lua_ScreenToGameCoordinates)
     FUNCTION("CreateEntityDup", &Lua_CreateEntityDup)
     FUNCTION("DestroyEntityDup", &Lua_DestroyEntityDup)
+    FUNCTION("FindAnimatorByName", &Lua_FindAnimatorByName)
+
+    FUNCTION("FindEntitiesWithScript", &EntityQueryWrappers::FindEntitiesWithScript)
+    FUNCTION("GetEntityPosition", &EntityQueryWrappers::GetEntityPosition)
+    FUNCTION("GetEntityName", &EntityQueryWrappers::GetEntityName)
+    FUNCTION("IsEntityActive", &EntityQueryWrappers::IsEntityActive)
+
+    FUNCTION("UpdateCacheTiming", &EntityQueryWrappers::UpdateCacheTiming)
+    FUNCTION("UpdateEnemyCache", &EntityQueryWrappers::UpdateEnemyCache)
+    FUNCTION("SetCacheUpdateInterval", &EntityQueryWrappers::SetCacheUpdateInterval)
+    FUNCTION("ClearEnemyCaches", &EntityQueryWrappers::ClearEnemyCaches)
+    FUNCTION("GetCacheInfo", &EntityQueryWrappers::GetCacheInfo)
+
 END_SYSTEM()
 
 

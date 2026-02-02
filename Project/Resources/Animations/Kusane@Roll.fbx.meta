@@ -1,0 +1,11 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "00485ed685fc886a-0004104122005d8d",
+        "source": "../../Resources/Animations/Kusane@Roll.fbx",
+        "compiled": "../../Resources/Animations/Kusane@Roll.fbx"
+    },
+    "ModelMetaData": {
+        "optimizeMeshes": true
+    }
+}

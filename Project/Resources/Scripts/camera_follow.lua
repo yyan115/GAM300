@@ -1,9 +1,14 @@
 -- camera_follow.lua
+-- Third-person camera with orbit controls, action mode, chain aiming, and collision detection
+-- NEW: Added automatic enemy detection system for action mode triggering (NO CACHING)
 require("extension.engine_bootstrap")
 local Component      = require("extension.mono_helper")
 local TransformMixin = require("extension.transform_mixin")
 
 local event_bus = _G.event_bus
+
+local POST_HOLD_MULTIPLIER = 3.0         -- how much longer Action Mode lasts after attacks stop
+local ATTACK_GRACE = 0.12                -- small grace window to consider rapid taps part of same attack sequence
 
 local function clamp(x, minv, maxv)
     if x < minv then return minv end
@@ -59,14 +64,27 @@ return Component {
         collisionLerpIn  = 20.0,   -- Fast snap when hitting wall
         collisionLerpOut = 5.0,    -- Slower ease when wall clears
         -- Action mode settings
-        actionModeEnabled   = true,
-        actionModeKey       = "Attack",
+        actionModeEnabled   = false,
+        actionModeDuration  = 3.0,
         actionModePitch     = 25.0,
         actionModeDistance  = 3.5,
         actionModeTransition = 8.0,
         actionModeLockRotation = false,  -- Set to true to lock camera rotation when in action mode
+        -- Chain mode aim settings
+        chainAimPosName = "ChainAimPointLeft",
+        chainAimTargetName = "ChainAimPointLeftEnd",
+        chainAimTransitionSpeed = 5.0,
         -- Camera rotation lock
         lockCameraRotation  = false,
+        
+        -- Enemy Detection Settings
+        enableEnemyDetection = true,
+        enemyDetectionRange  = 8.0,
+        enemyDisengageRange  = 10.0,
+        enemyDisengageDelay  = 2.0,
+        enemyScriptNames = {"EnemyAI", "FlyingEnemyLogic"},
+        cacheUpdateInterval = 1.0,  -- C++ cache update interval (seconds)
+        debugEnemyDetection = false,       
     },
 
     Awake = function(self)
@@ -87,6 +105,33 @@ return Component {
         self._normalDistance = 2.0
         self._toggleCooldown = 0.0
 
+        -- Chain mode aim settings
+        self._chainAiming = false
+        self._chainAimPos = nil
+        self._normalCameraPos = nil
+        
+        --  Enemy detection state
+        self._enemyInRange = false               -- Is an enemy currently within detection range?
+        self._enemyDisengageTimer = 0.0          -- Timer for delayed action mode exit
+        self._enemyTriggeredActionMode = false   -- Did an enemy trigger action mode (vs manual)?
+        self._triggeringEnemyId = nil            -- tracks which enemy triggered action mode
+
+        -- Configure C++ cache intervals
+        if Engine and Engine.SetCacheUpdateInterval then
+            for _, scriptName in ipairs(self.enemyScriptNames) do
+                Engine.SetCacheUpdateInterval(scriptName, self.cacheUpdateInterval)
+                if self.debugEnemyDetection then
+                    print(string.format("[CameraFollow] Set cache interval for '%s' to %.1fs", 
+                                      scriptName, self.cacheUpdateInterval))
+                end
+            end
+        end
+
+        if self.debugEnemyDetection then
+            print("[CameraFollow] Initialized with enemy detection enabled (NO CACHING)")
+        end
+        self._chainAimInitialized = false
+
         if event_bus and event_bus.subscribe then
             self._posSub = event_bus.subscribe("player_position", function(payload)
                 if not payload then return end
@@ -104,6 +149,17 @@ return Component {
                     end
                 end
                 self._hasTarget = true
+            end)    
+
+            self._chainAimSub = event_bus.subscribe("chain.aim_camera", function(payload)
+            if not payload then return end
+            local wasAiming = self._chainAiming
+            self._chainAiming = payload.active or false
+            
+            -- Reset initialization flag when entering chain aim mode
+            if self._chainAiming and not wasAiming then
+                self._chainAimInitialized = false
+            end
             end)
         end
     end,
@@ -114,11 +170,174 @@ return Component {
             self._posSub = nil
         end
 
+        if event_bus and event_bus.unsubscribe and self._chainAimSub then
+            event_bus.unsubscribe(self._chainAimSub)
+            self._chainAimSub = nil
+        end
+
         -- Unlock cursor when camera is disabled
         if Screen and Screen.SetCursorLocked then
             Screen.SetCursorLocked(false)
         end
     end,
+    
+    -- Find the closest enemy to the player
+    _findClosestEnemy = function(self)
+        if not self._hasTarget or not Engine or not Engine.FindEntitiesWithScript or not Engine.GetEntityPosition then
+            return nil, math.huge
+        end
+        
+        local playerX = self._targetPos.x
+        local playerZ = self._targetPos.z
+        local closestDist = math.huge
+        local closestEnemy = nil
+        
+        -- C++ returns cached results (updated by UpdateCacheTiming)
+        for _, scriptName in ipairs(self.enemyScriptNames) do
+            local entities = Engine.FindEntitiesWithScript(scriptName)
+            
+            if entities and #entities > 0 then
+                for i = 1, #entities do
+                    local entityId = entities[i]
+                    local x, y, z = Engine.GetEntityPosition(entityId)
+                    
+                    if x and y and z then
+                        local dx = x - playerX
+                        local dz = z - playerZ
+                        local dist = math.sqrt(dx * dx + dz * dz)
+                        
+                        if dist < closestDist then
+                            closestDist = dist
+                            closestEnemy = entityId
+                        end
+                    end
+                end
+            end
+        end
+        
+        return closestEnemy, closestDist
+    end,
+    
+    -- NEW: Get distance to a specific enemy by ID
+    _getDistanceToEnemy = function(self, enemyId)
+        if not enemyId or not Engine or not Engine.GetEntityPosition then
+            return math.huge
+        end
+        
+        local x, y, z = Engine.GetEntityPosition(enemyId)
+        if not x or not y or not z then
+            return math.huge
+        end
+        
+        local playerX = self._targetPos.x
+        local playerZ = self._targetPos.z
+        
+        local dx = x - playerX
+        local dz = z - playerZ
+        
+        return math.sqrt(dx * dx + dz * dz)
+    end,
+    
+    -- FIXED: Properly handles action mode distance checking
+    _updateEnemyProximity = function(self, dt)
+        if not self.enableEnemyDetection then return end
+        
+        -- ==========================================
+        -- CASE 1: Currently in action mode (triggered by enemy)
+        -- ==========================================
+        if self._actionModeActive and self._enemyTriggeredActionMode then
+            -- Check distance to the ORIGINAL triggering enemy
+            if self._triggeringEnemyId then
+                local distToTrigger = self:_getDistanceToEnemy(self._triggeringEnemyId)
+                
+                if self.debugEnemyDetection then
+                    print(string.format("[CameraFollow] Action mode active - distance to trigger enemy: %.1f", distToTrigger))
+                end
+                
+                -- Enemy is beyond disengage range
+                if distToTrigger > self.enemyDisengageRange then
+                    self._enemyDisengageTimer = self._enemyDisengageTimer + dt
+                    
+                    if self.debugEnemyDetection and self._enemyDisengageTimer > 0.1 then
+                        print(string.format("[CameraFollow] Enemy beyond disengage range - timer: %.1fs / %.1fs", 
+                                          self._enemyDisengageTimer, self.enemyDisengageDelay))
+                    end
+                    
+                    -- Timer expired - exit action mode
+                    if self._enemyDisengageTimer >= self.enemyDisengageDelay then
+                        self._actionModeActive = false
+                        self._enemyTriggeredActionMode = false
+                        self._enemyDisengageTimer = 0.0
+                        self._triggeringEnemyId = nil
+                        
+                        if self.debugEnemyDetection then
+                            print("[CameraFollow]  Action Mode DISABLED - enemy left range ")
+                        end
+                    end
+                else
+                    -- Enemy came back within disengage range - reset timer
+                    if self._enemyDisengageTimer > 0 and self.debugEnemyDetection then
+                        print("[CameraFollow] Enemy returned within range - timer reset")
+                    end
+                    self._enemyDisengageTimer = 0.0
+                end
+            else
+                -- Lost track of triggering enemy - search for any enemy
+                local closestEnemy, closestDist = self:_findClosestEnemy()
+                
+                if closestEnemy and closestDist <= self.enemyDisengageRange then
+                    -- Found a close enemy - track it
+                    self._triggeringEnemyId = closestEnemy
+                    self._enemyDisengageTimer = 0.0
+                    
+                    if self.debugEnemyDetection then
+                        print(string.format("[CameraFollow] Locked onto new enemy: %d at %.1fu", closestEnemy, closestDist))
+                    end
+                else
+                    -- No enemies in range - exit action mode
+                    self._actionModeActive = false
+                    self._enemyTriggeredActionMode = false
+                    self._triggeringEnemyId = nil
+                    
+                    if self.debugEnemyDetection then
+                        print("[CameraFollow] Action Mode DISABLED - no enemies found")
+                    end
+                end
+            end
+            
+            return  -- EXIT - don't search for new enemies while in action mode
+        end
+        
+        -- ==========================================
+        -- CASE 2: Not in action mode - search for enemies
+        -- ==========================================
+        local closestEnemy, closestDist = self:_findClosestEnemy()
+        
+        local wasInRange = self._enemyInRange
+        self._enemyInRange = closestEnemy ~= nil and closestDist <= self.enemyDetectionRange
+        
+        if self.debugEnemyDetection and self._enemyInRange ~= wasInRange then
+            print(string.format("[CameraFollow] Enemy proximity changed: %s (%.1fu)", 
+                              tostring(self._enemyInRange), closestDist))
+        end
+        
+        -- Enemy entered detection range - trigger action mode
+        if self._enemyInRange then
+            self._enemyDisengageTimer = 0.0
+            
+            if not self._actionModeActive then
+                self._actionModeActive = true
+                self._enemyTriggeredActionMode = true
+                self._triggeringEnemyId = closestEnemy  -- NEW: Remember which enemy triggered it
+                
+                if self.debugEnemyDetection then
+                    print(string.format("[CameraFollow] Action Mode ENABLED by enemy %d at %.1fu", 
+                                      closestEnemy, closestDist))
+                end
+            end
+        end
+    end,
+    
 
     _updateScrollZoom = function(self)
         if not (Input and Input.GetScrollY) then return end
@@ -173,12 +392,17 @@ return Component {
             print("[CameraFollow] SENS=" .. sensitivity .. " offset=(" .. xoffset .. "," .. yoffset .. ") yaw=" .. self._yaw)
         end
 
-        self._yaw   = self._yaw   - xoffset  -- Subtract for correct left/right direction
-        self._pitch = clamp(self._pitch + yoffset, self.minPitch or -80.0, self.maxPitch or 80.0)  -- Add for correct up/down direction
+        local shouldLockRotation = self.lockCameraRotation or (self._actionModeActive and self.actionModeLockRotation)
         
-        -- Track normal pitch when not in action mode
-        if not self._actionModeActive then
-            self._normalPitch = self._pitch
+        if not shouldLockRotation then
+            -- Normal behavior - update yaw and pitch
+            self._yaw   = self._yaw   - xoffset  -- Subtract for correct left/right direction
+            self._pitch = clamp(self._pitch + yoffset, self.minPitch or -80.0, self.maxPitch or 80.0)  -- Add for correct up/down direction
+            
+            -- Track normal pitch when not in action mode
+            if not self._actionModeActive then
+                self._normalPitch = self._pitch
+            end
         end
 
         -- Store camera yaw in global for player movement (bypass event_bus)
@@ -190,55 +414,85 @@ return Component {
         end
     end,
 
+
     Update = function(self, dt)
         if not (self.GetPosition and self.SetPosition and self.SetRotation) then return end
         if not self._hasTarget then return end
+
+        -- ==========================================
+        -- CRITICAL: Update C++ cache timing FIRST
+        -- This accumulates deltaTime for all caches
+        -- ==========================================
+        if Engine and Engine.UpdateCacheTiming then
+            Engine.UpdateCacheTiming(dt)
+        end
+
+        -- Update enemy proximity
+        self:_updateEnemyProximity(dt)
 
         -- Cooldown timer
         if self._toggleCooldown > 0 then
             self._toggleCooldown = self._toggleCooldown - dt
         end
 
+        -----------------------------------------------------------------------------------------------------------
+        -- Action mode toggle
+        -- ensure the timer variable exists
+        self._actionModeTimer = self._actionModeTimer or 0.0
+        --[[
         -- Action mode toggle
         if self.actionModeEnabled and Input and Input.IsActionJustPressed and Input.IsActionJustPressed(self.actionModeKey) then
             if self._toggleCooldown <= 0 then
                 self._actionModeActive = not self._actionModeActive
+                self._enemyTriggeredActionMode = false  -- Disable enemy control when manually toggled
+                self._triggeringEnemyId = nil           -- ADD THIS LINE - clear tracked enemy
                 self._toggleCooldown = 0.25
                 print("[CameraFollow] Action Mode " .. (self._actionModeActive and "ENABLED" or "DISABLED"))
             end
         end
+        ]]
+        -- Extended duration after attacks finish
+        local extendedDuration = (self.actionModeDuration or 3.0) * POST_HOLD_MULTIPLIER
 
-        -- Toggle cursor lock with Escape (unified input system)
-        if Input and Input.IsActionJustPressed and Input.IsActionJustPressed("Pause") then
-            if Screen and Screen.SetCursorLocked and Screen.IsCursorLocked then
-                local isLocked = Screen.IsCursorLocked()
-                Screen.SetCursorLocked(not isLocked)
-                self._firstMouse = true  -- Reset mouse tracking to avoid camera jump
+        -- Attack pressed or held -> (re)start the timer and enable action mode
+        if Input then
+            if (Input.IsActionJustPressed and Input.IsActionJustPressed("Attack")) or
+            (Input.IsActionPressed and Input.IsActionPressed("Attack")) then
+
+                -- re-lock cursor (existing behaviour)
+                if Screen and Screen.SetCursorLocked and Screen.IsCursorLocked then
+                    if not Screen.IsCursorLocked() then
+                        Screen.SetCursorLocked(true)
+                        self._firstMouse = true
+                    end
+                end
+
+                -- reset timer and enable action mode
+                self._actionModeTimer = extendedDuration
+                self._actionModeActive = true
             end
         end
 
-        -- Re-lock cursor when clicking Attack action (for standalone game builds)
-        -- In Editor, this is handled by GamePanel which only re-locks when clicking inside game panel
-        if Input and Input.IsActionJustPressed and Input.IsActionJustPressed("Attack") then
-            if Screen and Screen.SetCursorLocked and Screen.IsCursorLocked then
-                if not Screen.IsCursorLocked() then
-                    Screen.SetCursorLocked(true)
-                    self._firstMouse = true
-                end
+        -- countdown the single timer and disable when expired
+        if self._actionModeTimer > 0 then
+            self._actionModeTimer = self._actionModeTimer - dt
+            if self._actionModeTimer <= 0 then
+                self._actionModeTimer = 0
+                self._actionModeActive = false
+                -- optional debug:
+                -- print("[CameraFollow] Action Mode DISABLED (timer expired)")
             end
         end
 
         -- Only update camera look when cursor is locked (desktop) or always on Android
         local isAndroid = Platform and Platform.IsAndroid and Platform.IsAndroid()
 
-        -- Debug log once
         if not self._loggedPlatform then
             print("[CameraFollow] isAndroid=" .. tostring(isAndroid))
             self._loggedPlatform = true
         end
 
         if isAndroid or (Screen and Screen.IsCursorLocked and Screen.IsCursorLocked()) then
-            -- Check if rotation should be locked (either always locked OR locked during action mode)
             local shouldLockRotation = self.lockCameraRotation or (self._actionModeActive and self.actionModeLockRotation)
             
             if not shouldLockRotation then
@@ -258,87 +512,182 @@ return Component {
         self._pitch = self._pitch + (targetPitch - self._pitch) * t
         self.followDistance = self.followDistance + (targetDistance - self.followDistance) * t
 
-        local radius = self.followDistance or 5.0
-        local pitchRad = math.rad(self._pitch)
-        local yawRad = math.rad(self._yaw)
 
-        -- Scale height offset based on zoom distance (less offset when zoomed in)
-        local minZoom = self.minZoom or 2.0
-        local maxZoom = self.maxZoom or 15.0
-        local zoomFactor = (radius - minZoom) / (maxZoom - minZoom)  -- 0 at min zoom, 1 at max zoom
-        zoomFactor = clamp(zoomFactor, 0.0, 1.0)
+        -- ==========================================
+        -- CAMERA TARGET CALCULATION (Extensible)
+        -- ==========================================
+        local cameraTarget = { x = 0, y = 0, z = 0 }  -- Where camera looks at
+        local desiredX, desiredY, desiredZ             -- Where camera should be positioned
+        local useOrbitFollow = true                    -- Default: orbit around player
+        local useFreeRotation = false                  -- Use yaw/pitch for look direction
+        
+        -- PRIORITY 1: Chain aiming mode (overrides orbit)
+        if self._chainAiming then
+          -- Get both transform positions
+          local aimPos = Engine.FindTransformByName(self.chainAimPosName)
+          local aimTarget = Engine.FindTransformByName(self.chainAimTargetName)
+          
+          if aimPos and aimTarget then
+            -- Get position of camera anchor point (where camera should be)
+            local camX, camY, camZ = 0, 0, 0
+            local ok, a, b, c = pcall(function()
+              if Engine and Engine.GetTransformWorldPosition then
+                return Engine.GetTransformWorldPosition(aimPos)
+              end
+              return nil
+            end)
+            
+            if ok and a ~= nil then
+              if type(a) == "table" then
+                camX, camY, camZ = a[1] or a.x or 0, a[2] or a.y or 0, a[3] or a.z or 0
+              else
+                camX, camY, camZ = a, b, c
+              end
+            end
+            
+            -- ONLY ON FIRST FRAME: Lock camera rotation to look at target
+            if not self._chainAimInitialized then
+              -- Get position of look-at target
+              local targetX, targetY, targetZ = 0, 0, 0
+              ok, a, b, c = pcall(function()
+                if Engine and Engine.GetTransformWorldPosition then
+                  return Engine.GetTransformWorldPosition(aimTarget)
+                end
+                return nil
+              end)
+              
+              if ok and a ~= nil then
+                if type(a) == "table" then
+                  targetX, targetY, targetZ = a[1] or a.x or 0, a[2] or a.y or 0, a[3] or a.z or 0
+                else
+                  targetX, targetY, targetZ = a, b, c
+                end
+              end
+              
+              -- Calculate direction from camera position to target
+              local dirX = targetX - camX
+              local dirY = targetY - camY
+              local dirZ = targetZ - camZ
+              
+              local dirLen = math.sqrt(dirX*dirX + dirY*dirY + dirZ*dirZ)
+              
+              if dirLen > 0.0001 then
+                -- Normalize direction
+                dirX, dirY, dirZ = dirX/dirLen, dirY/dirLen, dirZ/dirLen
+                
+                -- Calculate yaw (rotation around Y axis)
+                self._yaw = math.deg(atan2(dirX, dirZ))
+                
+                -- Calculate pitch (rotation around X axis)
+                self._pitch = -math.deg(math.asin(dirY))
+                
+                -- Mark as initialized so we don't re-lock
+                self._chainAimInitialized = true
+              end
+            end
+            
+            -- Set camera position (every frame)
+            desiredX = camX
+            desiredY = camY
+            desiredZ = camZ
+            
+            -- Camera now uses free rotation (yaw/pitch from mouse input)
+            useOrbitFollow = false
+            useFreeRotation = true
 
-        -- Target look-at point: scale from feet (0.5) at close zoom to chest (1.2) at far zoom
-        local lookAtHeight = 0.5 + zoomFactor * 0.7  -- 0.5 to 1.2
-        local tx = self._targetPos.x
-        local ty = self._targetPos.y + lookAtHeight
-        local tz = self._targetPos.z
+            -- Publish camera basis for chain
+            local yaw_rad = math.rad(self._yaw)
+            local pitch_rad = math.rad(self._pitch)
+            local fx = math.sin(yaw_rad) * math.cos(pitch_rad)
+            local fy = -math.sin(pitch_rad)  -- negative if pitch up = negative
+            local fz = math.cos(yaw_rad) * math.cos(pitch_rad)
+            if event_bus and event_bus.publish then
+                event_bus.publish("ChainAim_basis", {
+                    forward = { x = fx, y = fy, z = fz },
+                })
+            end
+          else
+            -- Transforms not found, fall back to orbit
+            useOrbitFollow = true
+            useFreeRotation = false
+          end
+        end
+        
+        -- DEFAULT: Player orbit follow
+        if useOrbitFollow then
+            local radius = self.followDistance or 5.0
+            local pitchRad = math.rad(self._pitch)
+            local yawRad = math.rad(self._yaw)
 
-        -- Camera height offset also scales with zoom
-        local baseHeightOffset = self.heightOffset or 1.0
-        local scaledHeightOffset = baseHeightOffset * (0.3 + zoomFactor * 0.7)  -- 30% to 100% of offset
+            -- Scale height offset based on zoom distance
+            local minZoom = self.minZoom or 2.0
+            local maxZoom = self.maxZoom or 15.0
+            local zoomFactor = (radius - minZoom) / (maxZoom - minZoom)
+            zoomFactor = clamp(zoomFactor, 0.0, 1.0)
 
-        if event_bus and event_bus.publish then
-            local fx = math.sin(yawRad)  -- forward.x
-            local fz = math.cos(yawRad)  -- forward.z
-            event_bus.publish("camera_basis", {
-                forward = { x = fx, y = 0.0, z = fz },
-            })
+            -- Target look-at point
+            local lookAtHeight = 0.5 + zoomFactor * 0.7
+            cameraTarget.x = self._targetPos.x
+            cameraTarget.y = self._targetPos.y + lookAtHeight
+            cameraTarget.z = self._targetPos.z
+
+            -- Publish camera basis for player movement
+            if event_bus and event_bus.publish then
+                local fx = math.sin(yawRad)
+                local fz = math.cos(yawRad)
+                event_bus.publish("camera_basis", {
+                    forward = { x = fx, y = 0.0, z = fz },
+                })
+            end
+
+            -- Camera position offset
+            local baseHeightOffset = self.heightOffset or 1.0
+            local scaledHeightOffset = baseHeightOffset * (0.3 + zoomFactor * 0.7)
+            local horizontalRadius = radius * math.cos(pitchRad)
+            local offsetX = horizontalRadius * math.sin(yawRad)
+            local offsetZ = horizontalRadius * math.cos(yawRad)
+            local offsetY = radius * math.sin(pitchRad) + scaledHeightOffset
+
+            desiredX = cameraTarget.x + offsetX
+            desiredY = cameraTarget.y + offsetY
+            desiredZ = cameraTarget.z + offsetZ
         end
 
-        local horizontalRadius = radius * math.cos(pitchRad)
-        local offsetX = horizontalRadius * math.sin(yawRad)
-        local offsetZ = horizontalRadius * math.cos(yawRad)
-        local offsetY = radius * math.sin(pitchRad) + scaledHeightOffset
-
-        local desiredX, desiredY, desiredZ = tx + offsetX, ty + offsetY, tz + offsetZ
-
-        -- Camera collision detection using raycast
-        if self.collisionEnabled and Physics and Physics.Raycast then
-            -- Direction from target to desired camera position
+        -- ==========================================
+        -- CAMERA COLLISION (only for orbit mode)
+        -- ==========================================
+        if useOrbitFollow and self.collisionEnabled and Physics and Physics.Raycast then
+            local tx, ty, tz = cameraTarget.x, cameraTarget.y, cameraTarget.z
             local dirX = desiredX - tx
             local dirY = desiredY - ty
             local dirZ = desiredZ - tz
             local dirLen = math.sqrt(dirX*dirX + dirY*dirY + dirZ*dirZ)
 
             if dirLen > 0.001 then
-                -- Normalize direction
                 dirX, dirY, dirZ = dirX/dirLen, dirY/dirLen, dirZ/dirLen
 
-                -- Raycast from target toward camera
-                -- Returns: distance (float, -1 if no hit)
                 local dist = Physics.Raycast(
-                    tx, ty, tz,           -- origin (player position)
-                    dirX, dirY, dirZ,     -- direction (toward camera)
-                    dirLen + 0.5          -- max distance (slightly beyond desired)
+                    tx, ty, tz,
+                    dirX, dirY, dirZ,
+                    dirLen + 0.5
                 )
 
                 local hit = (dist >= 0 and dist < dirLen)
                 local collisionOffset = self.collisionOffset or 0.2
-                local targetDist = dirLen  -- Default: no collision
+                local targetDist = dirLen
 
                 if hit then
-                    -- Wall detected! Pull camera in front of hit point
-                    targetDist = math.max(dist - collisionOffset, 0.5)  -- Minimum 0.5 distance from player
+                    targetDist = math.max(dist - collisionOffset, 0.5)
                 end
 
-                -- Smooth collision distance (fast in, slow out)
                 if self._currentCollisionDist == nil then
                     self._currentCollisionDist = targetDist
                 else
-                    local lerpSpeed
-                    if targetDist < self._currentCollisionDist then
-                        -- Snapping in (wall hit) - fast
-                        lerpSpeed = self.collisionLerpIn or 20.0
-                    else
-                        -- Easing out (wall cleared) - slow
-                        lerpSpeed = self.collisionLerpOut or 5.0
-                    end
+                    local lerpSpeed = targetDist < self._currentCollisionDist and (self.collisionLerpIn or 20.0) or (self.collisionLerpOut or 5.0)
                     local collisionT = 1.0 - math.exp(-lerpSpeed * dt)
                     self._currentCollisionDist = self._currentCollisionDist + (targetDist - self._currentCollisionDist) * collisionT
                 end
 
-                -- Apply collision-adjusted position
                 local adjustedDist = self._currentCollisionDist
                 desiredX = tx + dirX * adjustedDist
                 desiredY = ty + dirY * adjustedDist
@@ -346,7 +695,9 @@ return Component {
             end
         end
 
-        -- Smooth follow
+        -- ==========================================
+        -- SMOOTH FOLLOW & ROTATION
+        -- ==========================================
         local cx, cy, cz = 0.0, 0.0, 0.0
         local px, py, pz = self:GetPosition()
         if type(px) == "table" then
@@ -355,21 +706,30 @@ return Component {
             cx, cy, cz = px or 0.0, py or 0.0, pz or 0.0
         end
 
-        local t = 1.0 - math.exp(-(self.followLerp or 10.0) * dt)
-        local newX = cx + (desiredX - cx) * t
-        local newY = cy + (desiredY - cy) * t
-        local newZ = cz + (desiredZ - cz) * t
+        -- Smooth lerp to desired position
+        local followSpeed = self._chainAiming and (self.chainAimTransitionSpeed or 5.0) or (self.followLerp or 10.0)
+        local lerpT = 1.0 - math.exp(-followSpeed * dt)
+        local newX = cx + (desiredX - cx) * lerpT
+        local newY = cy + (desiredY - cy) * lerpT
+        local newZ = cz + (desiredZ - cz) * lerpT
         self:SetPosition(newX, newY, newZ)
 
-        -- Look at target: compute yaw/pitch, then convert to quaternion
-        local fx, fy, fz = tx - newX, ty - newY, tz - newZ
-        local flen = math.sqrt(fx*fx + fy*fy + fz*fz)
-        if flen > 0.0001 then
-            fx, fy, fz = fx/flen, fy/flen, fz/flen
-            local yawDeg   = math.deg(atan2(fx, fz))
-            local pitchDeg = -math.deg(math.asin(fy))
-            local quat = eulerToQuat(pitchDeg, yawDeg, 0.0)
+        -- Set rotation based on mode
+        if useFreeRotation then
+            -- Use current yaw/pitch directly (camera looks forward from its position)
+            local quat = eulerToQuat(self._pitch, self._yaw, 0.0)
             self:SetRotation(quat.w, quat.x, quat.y, quat.z)
+        else
+            -- Look at target (orbit mode)
+            local fx, fy, fz = cameraTarget.x - newX, cameraTarget.y - newY, cameraTarget.z - newZ
+            local flen = math.sqrt(fx*fx + fy*fy + fz*fz)
+            if flen > 0.0001 then
+                fx, fy, fz = fx/flen, fy/flen, fz/flen
+                local yawDeg   = math.deg(atan2(fx, fz))
+                local pitchDeg = -math.deg(math.asin(fy))
+                local quat = eulerToQuat(pitchDeg, yawDeg, 0.0)
+                self:SetRotation(quat.w, quat.x, quat.y, quat.z)
+            end
         end
 
         self.isDirty = true

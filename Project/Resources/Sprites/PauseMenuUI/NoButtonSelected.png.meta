@@ -1,0 +1,13 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "00752ad5becad683-00040da494000017",
+        "source": "../../Resources/Sprites/PauseMenuUI/NoButtonSelected.png",
+        "compiled": "../../Resources/Sprites/PauseMenuUI/NoButtonSelected.dds"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": true,
+        "generateMipmaps": true
+    }
+}

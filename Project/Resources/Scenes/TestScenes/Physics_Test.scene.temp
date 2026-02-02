@@ -2543,6 +2543,185 @@
             }
         },
         {
+            "id": 17,
+            "guid": "0075a70f68374b55-0004052a4c00013d",
+            "components": {
+                "NameComponent": {
+                    "name": "mixamorig:Hips"
+                },
+                "TagComponent": {
+                    "tagIndex": 0
+                },
+                "LayerComponent": {
+                    "layerIndex": 0
+                },
+                "Transform": {
+                    "type": "Transform",
+                    "data": [
+                        {
+                            "type": "Vector3D",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": -0.00150027
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0.477249
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0.00100532
+                                }
+                            ]
+                        },
+                        {
+                            "type": "Vector3D",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                }
+                            ]
+                        },
+                        {
+                            "type": "Quaternion",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 0.886342
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0.0743393
+                                },
+                                {
+                                    "type": "float",
+                                    "data": -0.45603
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0.0301285
+                                }
+                            ]
+                        }
+                    ]
+                },
+                "ChildrenComponent": {
+                    "type": "ChildrenComponent",
+                    "data": [
+                        {
+                            "type": "std::vector<GUID_128>",
+                            "data": [
+                                "0075a70f0490e3c0-0004052a4c00013f",
+                                "0075a70f3a85d417-0004052a4c0001bf",
+                                "0075a70f2315fa23-0004052a4c0001c9"
+                            ]
+                        }
+                    ]
+                },
+                "ParentComponent": {
+                    "type": "ParentComponent",
+                    "data": [
+                        "005228ec22d0d1ea-00039e73f400015b"
+                    ]
+                },
+                "ActiveComponent": {
+                    "type": "ActiveComponent",
+                    "data": [
+                        {
+                            "type": "bool",
+                            "data": true
+                        }
+                    ]
+                }
+            }
+        },
+        {
+            "id": 18,
+            "guid": "0075a70f0490e3c0-0004052a4c00013f",
+            "components": {
+                "NameComponent": {
+                    "name": "mixamorig:Spine"
+                },
+                "TagComponent": {
+                    "tagIndex": 0
+                },
+                "LayerComponent": {
+                    "layerIndex": 0
+                },
+                "Transform": {
+                    "type": "Transform",
+                    "data": [
+                        {
+                            "type": "Vector3D",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": -0.0000025
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0.054823
+                                },
+                                {
+                                    "type": "float",
+                                    "data": -0.00031
+                                }
+                            ]
+                        },
+                        {
+                            "type": "Vector3D",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 1
+                }
+                            ]
+                        },
+                        {
+                            "type": "Quaternion",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 0.997291
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0.0609052
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0.0327202
+                                },
+                                {
+                                    "type": "float",
+                                    "data": -0.0251272
+            }
+                            ]
+                        }
+                    ]
+        },
+                "ChildrenComponent": {
+                    "type": "ChildrenComponent",
+                    "data": [
+        {
             "id": 14,
             "guid": "005228ec1f8b0185-00039e7506000161",
             "components": {
@@ -2558,6 +2737,9 @@
                 "SiblingIndexComponent": {
                     "siblingIndex": 7
                 },
+                "LayerComponent": {
+                    "layerIndex": 0
+                },
                 "Transform": {
                     "type": "Transform",
                     "data": [
@@ -2570,11 +2752,318 @@
                                 },
                                 {
                                     "type": "float",
-                                    "data": 0
+                                    "data": 0.073512
                                 },
                                 {
                                     "type": "float",
                                     "data": 0
+                                }
+                            ]
+                        },
+                        {
+                            "type": "Vector3D",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                }
+                            ]
+                        },
+                        {
+                            "type": "Quaternion",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 0.999348
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0.0330418
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0.0109434
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0.00957268
+                                }
+                            ]
+                        }
+                    ]
+                },
+                "ChildrenComponent": {
+                    "type": "ChildrenComponent",
+                    "data": [
+                        {
+                            "type": "std::vector<GUID_128>",
+                            "data": [
+                                "0075a70f28bba831-0004052a4c000145",
+                                "0075a70f6c68a102-0004052a4c00014f",
+                                "0075a70f43c70ce6-0004052a4c00017f"
+                            ]
+                        }
+                    ]
+                },
+                "ParentComponent": {
+                    "type": "ParentComponent",
+                    "data": [
+                        "0075a70f0469d5a1-0004052a4c000141"
+                    ]
+                                },
+                "ActiveComponent": {
+                    "type": "ActiveComponent",
+                    "data": [
+                                {
+                            "type": "bool",
+                            "data": true
+                        }
+                    ]
+                }
+            }
+        },
+        {
+            "id": 21,
+            "guid": "0075a70f28bba831-0004052a4c000145",
+            "components": {
+                "NameComponent": {
+                    "name": "mixamorig:Neck"
+                },
+                "TagComponent": {
+                    "tagIndex": 0
+                },
+                "LayerComponent": {
+                    "layerIndex": 0
+                },
+                "Transform": {
+                    "type": "Transform",
+                    "data": [
+                        {
+                            "type": "Vector3D",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": -0.0001395
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0.0810435
+                                },
+                                {
+                                    "type": "float",
+                                    "data": -0.0249385
+                                }
+                            ]
+                        },
+                        {
+                            "type": "Vector3D",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                }
+                            ]
+                        },
+                        {
+                            "type": "Quaternion",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 0.996111
+                                },
+                                {
+                                    "type": "float",
+                                    "data": -0.0172704
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0.0850844
+                                },
+                                {
+                                    "type": "float",
+                                    "data": -0.0150282
+                                }
+                            ]
+                        }
+                    ]
+                },
+                "ChildrenComponent": {
+                    "type": "ChildrenComponent",
+                    "data": [
+                        {
+                            "type": "std::vector<GUID_128>",
+                            "data": [
+                                "0075a70f3da862bb-0004052a4c000147"
+                            ]
+                        }
+                    ]
+                },
+                "ParentComponent": {
+                    "type": "ParentComponent",
+                    "data": [
+                        "0075a70f0eff28bd-0004052a4c000143"
+                    ]
+                },
+                "ActiveComponent": {
+                    "type": "ActiveComponent",
+                    "data": [
+                        {
+                            "type": "bool",
+                            "data": true
+                        }
+                    ]
+                }
+            }
+        },
+        {
+            "id": 22,
+            "guid": "0075a70f3da862bb-0004052a4c000147",
+            "components": {
+                "NameComponent": {
+                    "name": "mixamorig:Head"
+                },
+                "TagComponent": {
+                    "tagIndex": 0
+                },
+                "LayerComponent": {
+                    "layerIndex": 0
+                },
+                "Transform": {
+                    "type": "Transform",
+                    "data": [
+                        {
+                            "type": "Vector3D",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0.037363
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0.0094885
+                                }
+                            ]
+                        },
+                        {
+                            "type": "Vector3D",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                }
+                            ]
+                        },
+                        {
+                            "type": "Quaternion",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 0.977008
+                                },
+                                {
+                                    "type": "float",
+                                    "data": -0.0405753
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0.20344
+                                },
+                                {
+                                    "type": "float",
+                                    "data": -0.0491981
+                                }
+                            ]
+                        }
+                    ]
+                },
+                "ChildrenComponent": {
+                    "type": "ChildrenComponent",
+                    "data": [
+                        {
+                            "type": "std::vector<GUID_128>",
+                            "data": [
+                                "0075a70f53b42037-0004052a4c000149",
+                                "0075a70f13d66d73-0004052a4c00014b",
+                                "0075a70f44813996-0004052a4c00014d"
+                            ]
+                        }
+                    ]
+                },
+                "ParentComponent": {
+                    "type": "ParentComponent",
+                    "data": [
+                        "0075a70f28bba831-0004052a4c000145"
+                    ]
+                },
+                "ActiveComponent": {
+                    "type": "ActiveComponent",
+                    "data": [
+                        {
+                            "type": "bool",
+                            "data": true
+                        }
+                    ]
+                }
+            }
+        },
+        {
+            "id": 23,
+            "guid": "0075a70f53b42037-0004052a4c000149",
+            "components": {
+                "NameComponent": {
+                    "name": "mixamorig:HeadTop_End"
+                },
+                "TagComponent": {
+                    "tagIndex": 0
+                },
+                "LayerComponent": {
+                    "layerIndex": 0
+                },
+                "Transform": {
+                    "type": "Transform",
+                    "data": [
+                        {
+                            "type": "Vector3D",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0.127485
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0.032375
                                 }
                             ]
                         },
@@ -2616,6 +3105,12 @@
                                 }
                             ]
                         }
+                    ]
+                },
+                "ParentComponent": {
+                    "type": "ParentComponent",
+                    "data": [
+                        "0075a70f3da862bb-0004052a4c000147"
                     ]
                 },
                 "ActiveComponent": {
@@ -2651,17 +3146,17 @@
                         {
                             "type": "Vector3D",
                             "data": [
-                                {
+                        {
                                     "type": "float",
-                                    "data": 0
+                                    "data": 0.0199145
                                 },
                                 {
                                     "type": "float",
-                                    "data": 0
+                                    "data": 0.053738
                                 },
                                 {
                                     "type": "float",
-                                    "data": 0
+                                    "data": 0.0535055
                                 }
                             ]
                         },
@@ -2703,6 +3198,203 @@
                                 }
                             ]
                         }
+                    ]
+                        },
+                "ParentComponent": {
+                    "type": "ParentComponent",
+                    "data": [
+                        "0075a70f3da862bb-0004052a4c000147"
+                    ]
+                },
+                "ActiveComponent": {
+                    "type": "ActiveComponent",
+                    "data": [
+                        {
+                            "type": "bool",
+                            "data": true
+                        }
+                    ]
+                }
+            }
+        },
+        {
+            "id": 25,
+            "guid": "0075a70f44813996-0004052a4c00014d",
+            "components": {
+                "NameComponent": {
+                    "name": "mixamorig:Reye"
+                },
+                "TagComponent": {
+                    "tagIndex": 0
+                },
+                "LayerComponent": {
+                    "layerIndex": 0
+                },
+                "Transform": {
+                    "type": "Transform",
+                    "data": [
+                        {
+                            "type": "Vector3D",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": -0.0166975
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0.053439
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0.053463
+                                }
+                            ]
+                        },
+                        {
+                            "type": "Vector3D",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                }
+                            ]
+                        },
+                        {
+                            "type": "Quaternion",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                }
+                            ]
+                        }
+                    ]
+                },
+                "ParentComponent": {
+                    "type": "ParentComponent",
+                    "data": [
+                        "0075a70f3da862bb-0004052a4c000147"
+                    ]
+                },
+                "ActiveComponent": {
+                    "type": "ActiveComponent",
+                    "data": [
+                        {
+                            "type": "bool",
+                            "data": true
+                        }
+                    ]
+                }
+            }
+        },
+        {
+            "id": 26,
+            "guid": "0075a70f6c68a102-0004052a4c00014f",
+            "components": {
+                "NameComponent": {
+                    "name": "mixamorig:LeftShoulder"
+                },
+                "TagComponent": {
+                    "tagIndex": 0
+                },
+                "LayerComponent": {
+                    "layerIndex": 0
+                },
+                "Transform": {
+                    "type": "Transform",
+                    "data": [
+                        {
+                            "type": "Vector3D",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 0.0276565
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0.068202
+                                },
+                                {
+                                    "type": "float",
+                                    "data": -0.0249815
+                                }
+                            ]
+                        },
+                        {
+                            "type": "Vector3D",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                }
+                            ]
+                        },
+                        {
+                            "type": "Quaternion",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 0.456561
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0.613096
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0.363059
+                                },
+                                {
+                                    "type": "float",
+                                    "data": -0.532778
+                        }
+                    ]
+                        }
+                    ]
+                },
+                "ChildrenComponent": {
+                    "type": "ChildrenComponent",
+                    "data": [
+                        {
+                            "type": "std::vector<GUID_128>",
+                            "data": [
+                                "0075a70f313da503-0004052a4c000151"
+                            ]
+                        }
+                    ]
+                },
+                "ParentComponent": {
+                    "type": "ParentComponent",
+                    "data": [
+                        "0075a70f0eff28bd-0004052a4c000143"
                     ]
                 },
                 "ActiveComponent": {
@@ -2744,7 +3436,7 @@
                                 },
                                 {
                                     "type": "float",
-                                    "data": 0
+                                    "data": 0.146202
                                 },
                                 {
                                     "type": "float",
@@ -2774,22 +3466,447 @@
                             "data": [
                                 {
                                     "type": "float",
-                                    "data": 1
+                                    "data": 0.660592
                                 },
+                                {
+                                    "type": "float",
+                                    "data": 0.181661
+                                },
+                                {
+                                    "type": "float",
+                                    "data": -0.204167
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0.699238
+                                }
+                            ]
+                        }
+                    ]
+                },
+                "ChildrenComponent": {
+                    "type": "ChildrenComponent",
+                    "data": [
+                        {
+                            "type": "std::vector<GUID_128>",
+                            "data": [
+                                "0075a70f7bc2fb5a-0004052a4c000155"
+                            ]
+                        }
+                    ]
+                },
+                "ParentComponent": {
+                    "type": "ParentComponent",
+                    "data": [
+                        "0075a70f313da503-0004052a4c000151"
+                    ]
+                },
+                "ActiveComponent": {
+                    "type": "ActiveComponent",
+                    "data": [
+                        {
+                            "type": "bool",
+                            "data": true
+                        }
+                    ]
+                }
+            }
+        },
+        {
+            "id": 29,
+            "guid": "0075a70f7bc2fb5a-0004052a4c000155",
+            "components": {
+                "NameComponent": {
+                    "name": "mixamorig:LeftHand"
+                },
+                "TagComponent": {
+                    "tagIndex": 0
+                },
+                "LayerComponent": {
+                    "layerIndex": 0
+                },
+                "Transform": {
+                    "type": "Transform",
+                    "data": [
+                        {
+                            "type": "Vector3D",
+                            "data": [
                                 {
                                     "type": "float",
                                     "data": 0
                                 },
                                 {
                                     "type": "float",
-                                    "data": 0
+                                    "data": 0.148324
                                 },
                                 {
                                     "type": "float",
                                     "data": 0
                                 }
                             ]
+                        },
+                        {
+                            "type": "Vector3D",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                }
+                            ]
+                        },
+                        {
+                            "type": "Quaternion",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 0.999592
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0.0284734
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0.000355172
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0.00232048
+                                }
+                            ]
                         }
+                    ]
+                },
+                "ChildrenComponent": {
+                    "type": "ChildrenComponent",
+                    "data": [
+                        {
+                            "type": "std::vector<GUID_128>",
+                            "data": [
+                                "0075a70f5ea93e71-0004052a4c000157",
+                                "0075a70f59f0687c-0004052a4c00015f",
+                                "0075a70f7a7e6088-0004052a4c000167",
+                                "0075a70f516900f0-0004052a4c00016f",
+                                "0075a70f35c986bf-0004052a4c000177"
+                            ]
+                        }
+                    ]
+                },
+                "ParentComponent": {
+                    "type": "ParentComponent",
+                    "data": [
+                        "0075a70f19e13bf9-0004052a4c000153"
+                    ]
+                },
+                "ActiveComponent": {
+                    "type": "ActiveComponent",
+                    "data": [
+                        {
+                            "type": "bool",
+                            "data": true
+                        }
+                    ]
+                }
+            }
+        },
+        {
+            "id": 30,
+            "guid": "0075a70f5ea93e71-0004052a4c000157",
+            "components": {
+                "NameComponent": {
+                    "name": "mixamorig:LeftHandThumb1"
+                },
+                "TagComponent": {
+                    "tagIndex": 0
+                },
+                "LayerComponent": {
+                    "layerIndex": 0
+                },
+                "Transform": {
+                    "type": "Transform",
+                    "data": [
+                        {
+                            "type": "Vector3D",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": -0.0147615
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0.0306605
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0.0202025
+                                }
+                            ]
+                        },
+                        {
+                            "type": "Vector3D",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                }
+                            ]
+                        },
+                        {
+                            "type": "Quaternion",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 0.899568
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0.345555
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0.0790719
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0.255181
+                                }
+                            ]
+                        }
+                    ]
+                },
+                "ChildrenComponent": {
+                    "type": "ChildrenComponent",
+                    "data": [
+                        {
+                            "type": "std::vector<GUID_128>",
+                            "data": [
+                                "0075a70f6ae591ab-0004052a4c000159"
+                            ]
+                        }
+                    ]
+                },
+                "ParentComponent": {
+                    "type": "ParentComponent",
+                    "data": [
+                        "0075a70f7bc2fb5a-0004052a4c000155"
+                    ]
+                },
+                "ActiveComponent": {
+                    "type": "ActiveComponent",
+                    "data": [
+                        {
+                            "type": "bool",
+                            "data": true
+                        }
+                    ]
+                }
+            }
+        },
+        {
+            "id": 31,
+            "guid": "0075a70f6ae591ab-0004052a4c000159",
+            "components": {
+                "NameComponent": {
+                    "name": "mixamorig:LeftHandThumb2"
+                },
+                "TagComponent": {
+                    "tagIndex": 0
+                },
+                "LayerComponent": {
+                    "layerIndex": 0
+                },
+                "Transform": {
+                    "type": "Transform",
+                    "data": [
+                        {
+                            "type": "Vector3D",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0.0116975
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                }
+                            ]
+                                },
+                                {
+                            "type": "Vector3D",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                }
+                            ]
+                        },
+                        {
+                            "type": "Quaternion",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 0.980454
+                                },
+                                {
+                                    "type": "float",
+                                    "data": -0.00252102
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0.108121
+                                },
+                                {
+                                    "type": "float",
+                                    "data": -0.164356
+                                }
+                            ]
+                        }
+                    ]
+                },
+                "ChildrenComponent": {
+                    "type": "ChildrenComponent",
+                    "data": [
+                        {
+                            "type": "std::vector<GUID_128>",
+                            "data": [
+                                "0075a70f6dfa5ee1-0004052a4c00015b"
+                            ]
+                        }
+                    ]
+                },
+                "ParentComponent": {
+                    "type": "ParentComponent",
+                    "data": [
+                        "0075a70f5ea93e71-0004052a4c000157"
+                    ]
+                },
+                "ActiveComponent": {
+                    "type": "ActiveComponent",
+                    "data": [
+                        {
+                            "type": "bool",
+                            "data": true
+                        }
+                    ]
+                }
+            }
+        },
+        {
+            "id": 32,
+            "guid": "0075a70f6dfa5ee1-0004052a4c00015b",
+            "components": {
+                "NameComponent": {
+                    "name": "mixamorig:LeftHandThumb3"
+                },
+                "TagComponent": {
+                    "tagIndex": 0
+                },
+                "LayerComponent": {
+                    "layerIndex": 0
+                },
+                "Transform": {
+                    "type": "Transform",
+                    "data": [
+                        {
+                            "type": "Vector3D",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0.007972
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                }
+                            ]
+                        },
+                        {
+                            "type": "Vector3D",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                }
+                            ]
+                        },
+                        {
+                            "type": "Quaternion",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 0.850293
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0.26848
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0.436213
+                                },
+                                {
+                                    "type": "float",
+                                    "data": -0.120987
+                                }
+                            ]
+                        }
+                    ]
+                },
+                "ChildrenComponent": {
+                    "type": "ChildrenComponent",
+                    "data": [
+                        {
+                            "type": "std::vector<GUID_128>",
+                            "data": [
+                                "0075a70f6cdf7ca8-0004052a4c00015d"
+                            ]
+                        }
+                    ]
+                },
+                "ParentComponent": {
+                    "type": "ParentComponent",
+                    "data": [
+                        "0075a70f6ae591ab-0004052a4c000159"
                     ]
                 },
                 "ActiveComponent": {
@@ -2879,6 +3996,12 @@
                         }
                     ]
                 },
+                "ParentComponent": {
+                    "type": "ParentComponent",
+                    "data": [
+                        "0075a70f6dfa5ee1-0004052a4c00015b"
+                    ]
+                },
                 "ActiveComponent": {
                     "type": "ActiveComponent",
                     "data": [
@@ -2890,6 +4013,25 @@
                 }
             }
         },
+        {
+            "id": 34,
+            "guid": "0075a70f59f0687c-0004052a4c00015f",
+            "components": {
+                "NameComponent": {
+                    "name": "mixamorig:LeftHandIndex1"
+                },
+                "TagComponent": {
+                    "tagIndex": 0
+                },
+                "LayerComponent": {
+                    "layerIndex": 0
+                },
+                "Transform": {
+                    "type": "Transform",
+                    "data": [
+                        {
+                            "type": "Vector3D",
+                            "data": [
         {
             "id": 18,
             "guid": "005228ec06fb3d00-00039e7506000169",
@@ -2918,7 +4060,108 @@
                                 },
                                 {
                                     "type": "float",
+                                    "data": 0.0075475
+                                },
+                                {
+                                    "type": "float",
                                     "data": 0
+                                }
+                            ]
+                        },
+                        {
+                            "type": "Vector3D",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                }
+                            ]
+                        },
+                        {
+                            "type": "Quaternion",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 0.821153
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0.570447
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0.00979401
+                                },
+                                {
+                                    "type": "float",
+                                    "data": -0.0142249
+                                }
+                            ]
+                        }
+                    ]
+                },
+                "ChildrenComponent": {
+                    "type": "ChildrenComponent",
+                    "data": [
+                        {
+                            "type": "std::vector<GUID_128>",
+                            "data": [
+                                "0075a70f3ad062c5-0004052a4c000165"
+                            ]
+                        }
+                    ]
+                },
+                "ParentComponent": {
+                    "type": "ParentComponent",
+                    "data": [
+                        "0075a70f7ee3e859-0004052a4c000161"
+                    ]
+                                },
+                "ActiveComponent": {
+                    "type": "ActiveComponent",
+                    "data": [
+                                {
+                            "type": "bool",
+                            "data": true
+                        }
+                    ]
+                }
+            }
+        },
+        {
+            "id": 37,
+            "guid": "0075a70f3ad062c5-0004052a4c000165",
+            "components": {
+                "NameComponent": {
+                    "name": "mixamorig:LeftHandIndex4"
+                },
+                "TagComponent": {
+                    "tagIndex": 0
+                },
+                "LayerComponent": {
+                    "layerIndex": 0
+                },
+                "Transform": {
+                    "type": "Transform",
+                    "data": [
+                        {
+                            "type": "Vector3D",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0.0081655
                                 },
                                 {
                                     "type": "float",
@@ -2964,6 +4207,12 @@
                                 }
                             ]
                         }
+                    ]
+                },
+                "ParentComponent": {
+                    "type": "ParentComponent",
+                    "data": [
+                        "0075a70f338dd01d-0004052a4c000163"
                     ]
                 },
                 "ActiveComponent": {
@@ -2993,6 +4242,19 @@
                 "SiblingIndexComponent": {
                     "siblingIndex": 12
                 },
+        {
+            "id": 40,
+            "guid": "0075a70f2964515a-0004052a4c00016b",
+            "components": {
+                "NameComponent": {
+                    "name": "mixamorig:LeftHandMiddle3"
+                },
+                "TagComponent": {
+                    "tagIndex": 0
+                },
+                "LayerComponent": {
+                    "layerIndex": 0
+                },
                 "Transform": {
                     "type": "Transform",
                     "data": [
@@ -3005,7 +4267,108 @@
                                 },
                                 {
                                     "type": "float",
+                                    "data": 0.011941
+                                },
+                                {
+                                    "type": "float",
                                     "data": 0
+                                }
+                            ]
+                        },
+                        {
+                            "type": "Vector3D",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                }
+                            ]
+                        },
+                        {
+                            "type": "Quaternion",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 0.832662
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0.553602
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0.00842744
+                                },
+                                {
+                                    "type": "float",
+                                    "data": -0.0112938
+                                }
+                            ]
+                        }
+                    ]
+                },
+                "ChildrenComponent": {
+                    "type": "ChildrenComponent",
+                    "data": [
+                        {
+                            "type": "std::vector<GUID_128>",
+                            "data": [
+                                "0075a70f46a5f7cb-0004052a4c00016d"
+                            ]
+                        }
+                    ]
+                },
+                "ParentComponent": {
+                    "type": "ParentComponent",
+                    "data": [
+                        "0075a70f217b9093-0004052a4c000169"
+                    ]
+                },
+                "ActiveComponent": {
+                    "type": "ActiveComponent",
+                    "data": [
+                        {
+                            "type": "bool",
+                            "data": true
+                        }
+                    ]
+                }
+            }
+        },
+        {
+            "id": 41,
+            "guid": "0075a70f46a5f7cb-0004052a4c00016d",
+            "components": {
+                "NameComponent": {
+                    "name": "mixamorig:LeftHandMiddle4"
+                },
+                "TagComponent": {
+                    "tagIndex": 0
+                },
+                "LayerComponent": {
+                    "layerIndex": 0
+                },
+                "Transform": {
+                    "type": "Transform",
+                    "data": [
+                        {
+                            "type": "Vector3D",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0.0087545
                                 },
                                 {
                                     "type": "float",
@@ -3051,6 +4414,12 @@
                                 }
                             ]
                         }
+                    ]
+                },
+                "ParentComponent": {
+                    "type": "ParentComponent",
+                    "data": [
+                        "0075a70f2964515a-0004052a4c00016b"
                     ]
                 },
                 "ActiveComponent": {
@@ -3092,7 +4461,209 @@
                                 },
                                 {
                                     "type": "float",
+                                    "data": 0.010832
+                                },
+                                {
+                                    "type": "float",
                                     "data": 0
+                                }
+                            ]
+                                },
+                                {
+                            "type": "Vector3D",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                }
+                            ]
+                        },
+                        {
+                            "type": "Quaternion",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 0.855742
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0.51728
+                                },
+                                {
+                                    "type": "float",
+                                    "data": -0.00515912
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0.0100238
+                                }
+                            ]
+                        }
+                    ]
+                },
+                "ChildrenComponent": {
+                    "type": "ChildrenComponent",
+                    "data": [
+                        {
+                            "type": "std::vector<GUID_128>",
+                            "data": [
+                                "0075a70f339df7cb-0004052a4c000173"
+                            ]
+                        }
+                    ]
+                },
+                "ParentComponent": {
+                    "type": "ParentComponent",
+                    "data": [
+                        "0075a70f516900f0-0004052a4c00016f"
+                    ]
+                },
+                "ActiveComponent": {
+                    "type": "ActiveComponent",
+                    "data": [
+                        {
+                            "type": "bool",
+                            "data": true
+                        }
+                    ]
+                }
+            }
+        },
+        {
+            "id": 44,
+            "guid": "0075a70f339df7cb-0004052a4c000173",
+            "components": {
+                "NameComponent": {
+                    "name": "mixamorig:LeftHandRing3"
+                },
+                "TagComponent": {
+                    "tagIndex": 0
+                },
+                "LayerComponent": {
+                    "layerIndex": 0
+                },
+                "Transform": {
+                    "type": "Transform",
+                    "data": [
+                        {
+                            "type": "Vector3D",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0.009381
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                }
+                            ]
+                        },
+                        {
+                            "type": "Vector3D",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                }
+                            ]
+                        },
+                        {
+                            "type": "Quaternion",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 0.806365
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0.591327
+                                },
+                                {
+                                    "type": "float",
+                                    "data": -0.00682651
+                                },
+                                {
+                                    "type": "float",
+                                    "data": -0.00784141
+                                }
+                            ]
+                        }
+                    ]
+                },
+                "ChildrenComponent": {
+                    "type": "ChildrenComponent",
+                    "data": [
+                        {
+                            "type": "std::vector<GUID_128>",
+                            "data": [
+                                "0075a70f367525b1-0004052a4c000175"
+                            ]
+                        }
+                    ]
+                },
+                "ParentComponent": {
+                    "type": "ParentComponent",
+                    "data": [
+                        "0075a70f77f8b2d9-0004052a4c000171"
+                    ]
+                },
+                "ActiveComponent": {
+                    "type": "ActiveComponent",
+                    "data": [
+                        {
+                            "type": "bool",
+                            "data": true
+                        }
+                    ]
+                }
+            }
+        },
+        {
+            "id": 45,
+            "guid": "0075a70f367525b1-0004052a4c000175",
+            "components": {
+                "NameComponent": {
+                    "name": "mixamorig:LeftHandRing4"
+                },
+                "TagComponent": {
+                    "tagIndex": 0
+                },
+                "LayerComponent": {
+                    "layerIndex": 0
+                },
+                "Transform": {
+                    "type": "Transform",
+                    "data": [
+                        {
+                            "type": "Vector3D",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0.0112
                                 },
                                 {
                                     "type": "float",
@@ -3138,6 +4709,12 @@
                                 }
                             ]
                         }
+                    ]
+                },
+                "ParentComponent": {
+                    "type": "ParentComponent",
+                    "data": [
+                        "0075a70f339df7cb-0004052a4c000173"
                     ]
                 },
                 "ActiveComponent": {
@@ -3167,6 +4744,47 @@
                 "SiblingIndexComponent": {
                     "siblingIndex": 14
                 },
+                "ChildrenComponent": {
+                    "type": "ChildrenComponent",
+                    "data": [
+                        {
+                            "type": "std::vector<GUID_128>",
+                            "data": [
+                                "0075a70f59c92440-0004052a4c00017b"
+                            ]
+                        }
+                    ]
+                },
+                "ParentComponent": {
+                    "type": "ParentComponent",
+                    "data": [
+                        "0075a70f35c986bf-0004052a4c000177"
+                    ]
+                },
+                "ActiveComponent": {
+                    "type": "ActiveComponent",
+                    "data": [
+                        {
+                            "type": "bool",
+                            "data": true
+                        }
+                    ]
+                }
+            }
+        },
+        {
+            "id": 48,
+            "guid": "0075a70f59c92440-0004052a4c00017b",
+            "components": {
+                "NameComponent": {
+                    "name": "mixamorig:LeftHandPinky3"
+                },
+                "TagComponent": {
+                    "tagIndex": 0
+                },
+                "LayerComponent": {
+                    "layerIndex": 0
+                },
                 "Transform": {
                     "type": "Transform",
                     "data": [
@@ -3179,7 +4797,108 @@
                                 },
                                 {
                                     "type": "float",
+                                    "data": 0.006392
+                                },
+                                {
+                                    "type": "float",
                                     "data": 0
+                                }
+                            ]
+                        },
+                        {
+                            "type": "Vector3D",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                }
+                            ]
+                        },
+                        {
+                            "type": "Quaternion",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 0.911587
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0.411107
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0.0000440033
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0.000395327
+                                }
+                            ]
+                        }
+                    ]
+                },
+                "ChildrenComponent": {
+                    "type": "ChildrenComponent",
+                    "data": [
+                        {
+                            "type": "std::vector<GUID_128>",
+                            "data": [
+                                "0075a70f4b7fe3f5-0004052a4c00017d"
+                            ]
+                        }
+                    ]
+                },
+                "ParentComponent": {
+                    "type": "ParentComponent",
+                    "data": [
+                        "0075a70f3cce830b-0004052a4c000179"
+                    ]
+                },
+                "ActiveComponent": {
+                    "type": "ActiveComponent",
+                    "data": [
+                        {
+                            "type": "bool",
+                            "data": true
+                        }
+                    ]
+                }
+            }
+        },
+        {
+            "id": 49,
+            "guid": "0075a70f4b7fe3f5-0004052a4c00017d",
+            "components": {
+                "NameComponent": {
+                    "name": "mixamorig:LeftHandPinky4"
+                },
+                "TagComponent": {
+                    "tagIndex": 0
+                },
+                "LayerComponent": {
+                    "layerIndex": 0
+                },
+                "Transform": {
+                    "type": "Transform",
+                    "data": [
+                        {
+                            "type": "Vector3D",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0.008681
                                 },
                                 {
                                     "type": "float",
@@ -3225,6 +4944,12 @@
                                 }
                             ]
                         }
+                    ]
+                },
+                "ParentComponent": {
+                    "type": "ParentComponent",
+                    "data": [
+                        "0075a70f59c92440-0004052a4c00017b"
                     ]
                 },
                 "ActiveComponent": {
@@ -3266,7 +4991,7 @@
                                 },
                                 {
                                     "type": "float",
-                                    "data": 0
+                                    "data": 0.146202
                                 },
                                 {
                                     "type": "float",
@@ -3296,22 +5021,447 @@
                             "data": [
                                 {
                                     "type": "float",
-                                    "data": 1
+                                    "data": 0.79519
                                 },
+                                {
+                                    "type": "float",
+                                    "data": 0.0313245
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0.0249148
+                                },
+                                {
+                                    "type": "float",
+                                    "data": -0.605038
+                                }
+                            ]
+                        }
+                    ]
+                },
+                "ChildrenComponent": {
+                    "type": "ChildrenComponent",
+                    "data": [
+                        {
+                            "type": "std::vector<GUID_128>",
+                            "data": [
+                                "0075a70f142f8426-0004052a4c000185"
+                            ]
+                        }
+                    ]
+                },
+                "ParentComponent": {
+                    "type": "ParentComponent",
+                    "data": [
+                        "0075a70f6790e2a1-0004052a4c000181"
+                    ]
+                },
+                "ActiveComponent": {
+                    "type": "ActiveComponent",
+                    "data": [
+                        {
+                            "type": "bool",
+                            "data": true
+                        }
+                    ]
+                }
+            }
+        },
+        {
+            "id": 53,
+            "guid": "0075a70f142f8426-0004052a4c000185",
+            "components": {
+                "NameComponent": {
+                    "name": "mixamorig:RightHand"
+                },
+                "TagComponent": {
+                    "tagIndex": 0
+                },
+                "LayerComponent": {
+                    "layerIndex": 0
+                },
+                "Transform": {
+                    "type": "Transform",
+                    "data": [
+                        {
+                            "type": "Vector3D",
+                            "data": [
                                 {
                                     "type": "float",
                                     "data": 0
                                 },
                                 {
                                     "type": "float",
-                                    "data": 0
+                                    "data": 0.148324
                                 },
                                 {
                                     "type": "float",
                                     "data": 0
                                 }
                             ]
+                        },
+                        {
+                            "type": "Vector3D",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                }
+                            ]
+                        },
+                        {
+                            "type": "Quaternion",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 0.967402
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0.0834255
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0.000908762
+                                },
+                                {
+                                    "type": "float",
+                                    "data": -0.239109
+                                }
+                            ]
                         }
+                    ]
+                },
+                "ChildrenComponent": {
+                    "type": "ChildrenComponent",
+                    "data": [
+                        {
+                            "type": "std::vector<GUID_128>",
+                            "data": [
+                                "0075a70f7e5a4524-0004052a4c000187",
+                                "0075a70f315043fe-0004052a4c00018f",
+                                "0075a70f63ba6829-0004052a4c000197",
+                                "0075a70f5ad2eaf3-0004052a4c00019f",
+                                "0075a70f26de82f0-0004052a4c0001a7"
+                            ]
+                        }
+                    ]
+                },
+                "ParentComponent": {
+                    "type": "ParentComponent",
+                    "data": [
+                        "0075a70f7c9d8f8c-0004052a4c000183"
+                    ]
+                },
+                "ActiveComponent": {
+                    "type": "ActiveComponent",
+                    "data": [
+                        {
+                            "type": "bool",
+                            "data": true
+                        }
+                    ]
+                }
+            }
+        },
+        {
+            "id": 54,
+            "guid": "0075a70f7e5a4524-0004052a4c000187",
+            "components": {
+                "NameComponent": {
+                    "name": "mixamorig:RightHandThumb1"
+                },
+                "TagComponent": {
+                    "tagIndex": 0
+                },
+                "LayerComponent": {
+                    "layerIndex": 0
+                },
+                "Transform": {
+                    "type": "Transform",
+                    "data": [
+                        {
+                            "type": "Vector3D",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 0.0147615
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0.0306605
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0.0202
+                                }
+                            ]
+                        },
+                        {
+                            "type": "Vector3D",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                }
+                            ]
+                        },
+                        {
+                            "type": "Quaternion",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 0.880865
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0.460894
+                                },
+                                {
+                                    "type": "float",
+                                    "data": -0.10791
+                                },
+                                {
+                                    "type": "float",
+                                    "data": -0.00282547
+                                }
+                            ]
+                        }
+                    ]
+                },
+                "ChildrenComponent": {
+                    "type": "ChildrenComponent",
+                    "data": [
+                        {
+                            "type": "std::vector<GUID_128>",
+                            "data": [
+                                "0075a70f1266d001-0004052a4c000189"
+                            ]
+                        }
+                    ]
+                },
+                "ParentComponent": {
+                    "type": "ParentComponent",
+                    "data": [
+                        "0075a70f142f8426-0004052a4c000185"
+                    ]
+                },
+                "ActiveComponent": {
+                    "type": "ActiveComponent",
+                    "data": [
+                        {
+                            "type": "bool",
+                            "data": true
+                        }
+                    ]
+                }
+            }
+                                },
+                                {
+            "id": 55,
+            "guid": "0075a70f1266d001-0004052a4c000189",
+            "components": {
+                "NameComponent": {
+                    "name": "mixamorig:RightHandThumb2"
+                },
+                "TagComponent": {
+                    "tagIndex": 0
+                },
+                "LayerComponent": {
+                    "layerIndex": 0
+                },
+                "Transform": {
+                    "type": "Transform",
+                    "data": [
+                        {
+                            "type": "Vector3D",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0.011699
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                }
+                            ]
+                        },
+                        {
+                            "type": "Vector3D",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                }
+                            ]
+                        },
+                        {
+                            "type": "Quaternion",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 0.982943
+                                },
+                                {
+                                    "type": "float",
+                                    "data": -0.0969248
+                                },
+                                {
+                                    "type": "float",
+                                    "data": -0.155726
+                                },
+                                {
+                                    "type": "float",
+                                    "data": -0.0133409
+                                }
+                            ]
+                        }
+                    ]
+                },
+                "ChildrenComponent": {
+                    "type": "ChildrenComponent",
+                    "data": [
+                        {
+                            "type": "std::vector<GUID_128>",
+                            "data": [
+                                "0075a70f3b5b6150-0004052a4c00018b"
+                            ]
+                        }
+                    ]
+                },
+                "ParentComponent": {
+                    "type": "ParentComponent",
+                    "data": [
+                        "0075a70f7e5a4524-0004052a4c000187"
+                    ]
+                },
+                "ActiveComponent": {
+                    "type": "ActiveComponent",
+                    "data": [
+                        {
+                            "type": "bool",
+                            "data": true
+                        }
+                    ]
+                }
+            }
+        },
+        {
+            "id": 56,
+            "guid": "0075a70f3b5b6150-0004052a4c00018b",
+            "components": {
+                "NameComponent": {
+                    "name": "mixamorig:RightHandThumb3"
+                },
+                "TagComponent": {
+                    "tagIndex": 0
+                },
+                "LayerComponent": {
+                    "layerIndex": 0
+                },
+                "Transform": {
+                    "type": "Transform",
+                    "data": [
+                        {
+                            "type": "Vector3D",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0.007972
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                }
+                            ]
+                        },
+                        {
+                            "type": "Vector3D",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 1
+                        }
+                    ]
+                },
+                        {
+                            "type": "Quaternion",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 0.973173
+                                },
+                                {
+                                    "type": "float",
+                                    "data": -0.128545
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0.135644
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0.134205
+                                }
+                            ]
+                        }
+                    ]
+                },
+                "ChildrenComponent": {
+                    "type": "ChildrenComponent",
+                    "data": [
+                        {
+                            "type": "std::vector<GUID_128>",
+                            "data": [
+                                "0075a70f443a60d9-0004052a4c00018d"
+                            ]
+                        }
+                    ]
+                },
+                "ParentComponent": {
+                    "type": "ParentComponent",
+                    "data": [
+                        "0075a70f1266d001-0004052a4c000189"
                     ]
                 },
                 "ActiveComponent": {
@@ -3401,6 +5551,12 @@
                         }
                     ]
                 },
+                "ParentComponent": {
+                    "type": "ParentComponent",
+                    "data": [
+                        "0075a70f3b5b6150-0004052a4c00018b"
+                    ]
+                },
                 "ActiveComponent": {
                     "type": "ActiveComponent",
                     "data": [
@@ -3427,6 +5583,97 @@
                 },
                 "SiblingIndexComponent": {
                     "siblingIndex": 17
+                },
+                                {
+                                    "type": "float",
+                                    "data": 0.066213
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0.001535
+                                }
+                            ]
+                        },
+                        {
+                            "type": "Vector3D",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                }
+                            ]
+                        },
+                        {
+                            "type": "Quaternion",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 0.859477
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0.510541
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0.0135092
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0.021552
+                                }
+                            ]
+                        }
+                    ]
+                },
+                "ChildrenComponent": {
+                    "type": "ChildrenComponent",
+                    "data": [
+                        {
+                            "type": "std::vector<GUID_128>",
+                            "data": [
+                                "0075a70f02875970-0004052a4c000191"
+                            ]
+                        }
+                    ]
+                },
+                "ParentComponent": {
+                    "type": "ParentComponent",
+                    "data": [
+                        "0075a70f142f8426-0004052a4c000185"
+                    ]
+                },
+                "ActiveComponent": {
+                    "type": "ActiveComponent",
+                    "data": [
+                        {
+                            "type": "bool",
+                            "data": true
+                        }
+                    ]
+                }
+            }
+        },
+        {
+            "id": 59,
+            "guid": "0075a70f02875970-0004052a4c000191",
+            "components": {
+                "NameComponent": {
+                    "name": "mixamorig:RightHandIndex2"
+                },
+                "TagComponent": {
+                    "tagIndex": 0
+                },
+                "LayerComponent": {
+                    "layerIndex": 0
                 },
                 "Transform": {
                     "type": "Transform",
@@ -3472,20 +5719,79 @@
                                     "type": "float",
                                     "data": 1
                                 },
+                "Transform": {
+                    "type": "Transform",
+                    "data": [
+                        {
+                            "type": "Vector3D",
+                            "data": [
                                 {
                                     "type": "float",
                                     "data": 0
                                 },
                                 {
                                     "type": "float",
-                                    "data": 0
+                                    "data": 0.0075475
                                 },
                                 {
                                     "type": "float",
                                     "data": 0
                                 }
                             ]
+                        },
+                        {
+                            "type": "Vector3D",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                }
+                            ]
+                        },
+                        {
+                            "type": "Quaternion",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 0.86829
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0.495761
+                                },
+                                {
+                                    "type": "float",
+                                    "data": -0.0126862
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                }
+                            ]
+                },
+                "ChildrenComponent": {
+                    "type": "ChildrenComponent",
+                    "data": [
+                        {
+                            "type": "std::vector<GUID_128>",
+                            "data": [
+                                "0075a70f0e701a10-0004052a4c000195"
+                            ]
                         }
+                    ]
+                },
+                "ParentComponent": {
+                    "type": "ParentComponent",
+                    "data": [
+                        "0075a70f02875970-0004052a4c000191"
                     ]
                 },
                 "ActiveComponent": {
@@ -3575,6 +5881,12 @@
                         }
                     ]
                 },
+                "ParentComponent": {
+                    "type": "ParentComponent",
+                    "data": [
+                        "0075a70f6a20776f-0004052a4c000193"
+                    ]
+                },
                 "ActiveComponent": {
                     "type": "ActiveComponent",
                     "data": [
@@ -3646,6 +5958,18 @@
                                     "type": "float",
                                     "data": 1
                                 },
+                "TagComponent": {
+                    "tagIndex": 0
+                },
+                "LayerComponent": {
+                    "layerIndex": 0
+                },
+                "Transform": {
+                    "type": "Transform",
+                    "data": [
+                                {
+                            "type": "Vector3D",
+                            "data": [
                                 {
                                     "type": "float",
                                     "data": 0
@@ -3659,7 +5983,62 @@
                                     "data": 0
                                 }
                             ]
+                        },
+                        {
+                            "type": "Vector3D",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 1
                         }
+                    ]
+                },
+                        {
+                            "type": "Quaternion",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 0.959465
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0.281473
+                                },
+                                {
+                                    "type": "float",
+                                    "data": -0.0044167
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0.0134278
+                                }
+                            ]
+                        }
+                    ]
+                },
+                "ChildrenComponent": {
+                    "type": "ChildrenComponent",
+                    "data": [
+                        {
+                            "type": "std::vector<GUID_128>",
+                            "data": [
+                                "0075a70f5b814bd4-0004052a4c00019d"
+                            ]
+                        }
+                    ]
+                },
+                "ParentComponent": {
+                    "type": "ParentComponent",
+                    "data": [
+                        "0075a70f756db5df-0004052a4c000199"
                     ]
                 },
                 "ActiveComponent": {
@@ -3749,6 +6128,12 @@
                         }
                     ]
                 },
+                "ParentComponent": {
+                    "type": "ParentComponent",
+                    "data": [
+                        "0075a70f7fff68c9-0004052a4c00019b"
+                    ]
+                },
                 "ActiveComponent": {
                     "type": "ActiveComponent",
                     "data": [
@@ -3775,6 +6160,97 @@
                 },
                 "SiblingIndexComponent": {
                     "siblingIndex": 21
+                },
+                                {
+                                    "type": "float",
+                                    "data": 0.061082
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0.000285
+                                }
+                            ]
+                        },
+                        {
+                            "type": "Vector3D",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                }
+                            ]
+                        },
+                        {
+                            "type": "Quaternion",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 0.77016
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0.636589
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0.0191612
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0.0352282
+                                }
+                            ]
+                        }
+                    ]
+                },
+                "ChildrenComponent": {
+                    "type": "ChildrenComponent",
+                    "data": [
+                        {
+                            "type": "std::vector<GUID_128>",
+                            "data": [
+                                "0075a70f43a925e2-0004052a4c0001a1"
+                            ]
+                        }
+                    ]
+                },
+                "ParentComponent": {
+                    "type": "ParentComponent",
+                    "data": [
+                        "0075a70f142f8426-0004052a4c000185"
+                    ]
+                },
+                "ActiveComponent": {
+                    "type": "ActiveComponent",
+                    "data": [
+                        {
+                            "type": "bool",
+                            "data": true
+                        }
+                    ]
+                }
+            }
+        },
+        {
+            "id": 67,
+            "guid": "0075a70f43a925e2-0004052a4c0001a1",
+            "components": {
+                "NameComponent": {
+                    "name": "mixamorig:RightHandRing2"
+                },
+                "TagComponent": {
+                    "tagIndex": 0
+                },
+                "LayerComponent": {
+                    "layerIndex": 0
                 },
                 "Transform": {
                     "type": "Transform",
@@ -3826,14 +6302,132 @@
                                 },
                                 {
                                     "type": "float",
+                                    "data": -0.000845153
+                                },
+                                {
+                                    "type": "float",
+                                    "data": -0.0117889
+                                }
+                            ]
+                        }
+                    ]
+                },
+                "ChildrenComponent": {
+                    "type": "ChildrenComponent",
+                    "data": [
+                        {
+                            "type": "std::vector<GUID_128>",
+                            "data": [
+                                "0075a70f15135278-0004052a4c0001a3"
+                            ]
+                        }
+                    ]
+                },
+                "ParentComponent": {
+                    "type": "ParentComponent",
+                    "data": [
+                        "0075a70f5ad2eaf3-0004052a4c00019f"
+                    ]
+                },
+                "ActiveComponent": {
+                    "type": "ActiveComponent",
+                    "data": [
+                        {
+                            "type": "bool",
+                            "data": true
+                        }
+                    ]
+                }
+            }
+        },
+        {
+            "id": 68,
+            "guid": "0075a70f15135278-0004052a4c0001a3",
+            "components": {
+                "NameComponent": {
+                    "name": "mixamorig:RightHandRing3"
+                },
+                "TagComponent": {
+                    "tagIndex": 0
+                },
+                "LayerComponent": {
+                    "layerIndex": 0
+                },
+                "Transform": {
+                    "type": "Transform",
+                    "data": [
+                        {
+                            "type": "Vector3D",
+                            "data": [
+                                {
+                                    "type": "float",
                                     "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0.0093805
                                 },
                                 {
                                     "type": "float",
                                     "data": 0
                                 }
                             ]
+                        },
+                        {
+                            "type": "Vector3D",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 1
                         }
+                    ]
+                },
+                        {
+                            "type": "Quaternion",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 0.942167
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0.334982
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0.00404169
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0.00965787
+                                }
+                            ]
+                        }
+                    ]
+                },
+                "ChildrenComponent": {
+                    "type": "ChildrenComponent",
+                    "data": [
+                        {
+                            "type": "std::vector<GUID_128>",
+                            "data": [
+                                "0075a70f4ba3d0f2-0004052a4c0001a5"
+                            ]
+                        }
+                    ]
+                },
+                "ParentComponent": {
+                    "type": "ParentComponent",
+                    "data": [
+                        "0075a70f43a925e2-0004052a4c0001a1"
                     ]
                 },
                 "ActiveComponent": {
@@ -3923,6 +6517,12 @@
                         }
                     ]
                 },
+                "ParentComponent": {
+                    "type": "ParentComponent",
+                    "data": [
+                        "0075a70f15135278-0004052a4c0001a3"
+                    ]
+                },
                 "ActiveComponent": {
                     "type": "ActiveComponent",
                     "data": [
@@ -3949,6 +6549,97 @@
                 },
                 "SiblingIndexComponent": {
                     "siblingIndex": 23
+                },
+                                {
+                                    "type": "float",
+                                    "data": 0.054561
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0.001345
+                                }
+                            ]
+                        },
+                        {
+                            "type": "Vector3D",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                }
+                            ]
+                        },
+                        {
+                            "type": "Quaternion",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 0.726377
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0.686429
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0.0237898
+                                },
+                                {
+                                    "type": "float",
+                                    "data": -0.0250246
+                                }
+                            ]
+                        }
+                    ]
+                },
+                "ChildrenComponent": {
+                    "type": "ChildrenComponent",
+                    "data": [
+                        {
+                            "type": "std::vector<GUID_128>",
+                            "data": [
+                                "0075a70f6a6dfdcd-0004052a4c0001a9"
+                            ]
+                        }
+                    ]
+                },
+                "ParentComponent": {
+                    "type": "ParentComponent",
+                    "data": [
+                        "0075a70f142f8426-0004052a4c000185"
+                    ]
+                },
+                "ActiveComponent": {
+                    "type": "ActiveComponent",
+                    "data": [
+                        {
+                            "type": "bool",
+                            "data": true
+                        }
+                    ]
+                }
+            }
+        },
+        {
+            "id": 71,
+            "guid": "0075a70f6a6dfdcd-0004052a4c0001a9",
+            "components": {
+                "NameComponent": {
+                    "name": "mixamorig:RightHandPinky2"
+                },
+                "TagComponent": {
+                    "tagIndex": 0
+                },
+                "LayerComponent": {
+                    "layerIndex": 0
                 },
                 "Transform": {
                     "type": "Transform",
@@ -3994,20 +6685,79 @@
                                     "type": "float",
                                     "data": 1
                                 },
+                "Transform": {
+                    "type": "Transform",
+                    "data": [
+                        {
+                            "type": "Vector3D",
+                            "data": [
                                 {
                                     "type": "float",
                                     "data": 0
                                 },
                                 {
                                     "type": "float",
-                                    "data": 0
+                                    "data": 0.006392
                                 },
                                 {
                                     "type": "float",
                                     "data": 0
                                 }
                             ]
+                        },
+                        {
+                            "type": "Vector3D",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                }
+                            ]
+                        },
+                        {
+                            "type": "Quaternion",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 0.974703
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0.223504
+                                },
+                                {
+                                    "type": "float",
+                                    "data": -1.00495e-8
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                }
+                            ]
+                },
+                "ChildrenComponent": {
+                    "type": "ChildrenComponent",
+                    "data": [
+                        {
+                            "type": "std::vector<GUID_128>",
+                            "data": [
+                                "0075a70f78a67b08-0004052a4c0001ad"
+                            ]
                         }
+                    ]
+                },
+                "ParentComponent": {
+                    "type": "ParentComponent",
+                    "data": [
+                        "0075a70f6a6dfdcd-0004052a4c0001a9"
                     ]
                 },
                 "ActiveComponent": {
@@ -4097,6 +6847,12 @@
                         }
                     ]
                 },
+                "ParentComponent": {
+                    "type": "ParentComponent",
+                    "data": [
+                        "0075a70f6beb8895-0004052a4c0001ab"
+                    ]
+                },
                 "ActiveComponent": {
                     "type": "ActiveComponent",
                     "data": [
@@ -4136,7 +6892,108 @@
                                 },
                                 {
                                     "type": "float",
+                                    "data": 0.081999
+                                },
+                                {
+                                    "type": "float",
                                     "data": 0
+                                }
+                            ]
+                        },
+                        {
+                            "type": "Vector3D",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                }
+                            ]
+                        },
+                        {
+                            "type": "Quaternion",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 0.988726
+                                },
+                                {
+                                    "type": "float",
+                                    "data": -0.13275699999999999
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0.00774866
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0.0688247
+                                }
+                            ]
+                        }
+                    ]
+                },
+                "ChildrenComponent": {
+                    "type": "ChildrenComponent",
+                    "data": [
+                        {
+                            "type": "std::vector<GUID_128>",
+                            "data": [
+                                "0075a70f3763f73e-0004052a4c0001b3"
+                            ]
+                        }
+                    ]
+                },
+                "ParentComponent": {
+                    "type": "ParentComponent",
+                    "data": [
+                        "0075a70f232a3641-0004052a4c0001af"
+                    ]
+                },
+                "ActiveComponent": {
+                    "type": "ActiveComponent",
+                    "data": [
+                        {
+                            "type": "bool",
+                            "data": true
+                        }
+                    ]
+                }
+            }
+        },
+        {
+            "id": 76,
+            "guid": "0075a70f3763f73e-0004052a4c0001b3",
+            "components": {
+                "NameComponent": {
+                    "name": "mixamorig:Bow3"
+                },
+                "TagComponent": {
+                    "tagIndex": 0
+                },
+                "LayerComponent": {
+                    "layerIndex": 0
+                                },
+                "Transform": {
+                    "type": "Transform",
+                    "data": [
+                        {
+                            "type": "Vector3D",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0.0793505
                                 },
                                 {
                                     "type": "float",
@@ -4168,13 +7025,57 @@
                                     "type": "float",
                                     "data": 1
                                 },
+                "Transform": {
+                    "type": "Transform",
+                    "data": [
+                        {
+                            "type": "Vector3D",
+                            "data": [
                                 {
                                     "type": "float",
                                     "data": 0
                                 },
                                 {
                                     "type": "float",
+                                    "data": 0.0834345
+                                },
+                                {
+                                    "type": "float",
                                     "data": 0
+                                }
+                            ]
+                        },
+                        {
+                            "type": "Vector3D",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                }
+                            ]
+                        },
+                        {
+                            "type": "Quaternion",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 0.997507
+                                },
+                                {
+                                    "type": "float",
+                                    "data": -0.0474761
+                                },
+                                {
+                                    "type": "float",
+                                    "data": -0.00980279
                                 },
                                 {
                                     "type": "float",
@@ -4182,6 +7083,12 @@
                                 }
                             ]
                         }
+                    ]
+                },
+                "ParentComponent": {
+                    "type": "ParentComponent",
+                    "data": [
+                        "0075a70f3763f73e-0004052a4c0001b3"
                     ]
                 },
                 "ActiveComponent": {
@@ -4211,6 +7118,36 @@
                 "SiblingIndexComponent": {
                     "siblingIndex": 26
                 },
+                "ParentComponent": {
+                    "type": "ParentComponent",
+                    "data": [
+                        "0075a70f0490e3c0-0004052a4c00013f"
+                    ]
+                },
+                "ActiveComponent": {
+                    "type": "ActiveComponent",
+                    "data": [
+                        {
+                            "type": "bool",
+                            "data": true
+                        }
+                    ]
+                }
+            }
+        },
+        {
+            "id": 79,
+            "guid": "0075a70f350c5409-0004052a4c0001b9",
+            "components": {
+                "NameComponent": {
+                    "name": "mixamorig:Bow6"
+                },
+                "TagComponent": {
+                    "tagIndex": 0
+                },
+                "LayerComponent": {
+                    "layerIndex": 0
+                },
                 "Transform": {
                     "type": "Transform",
                     "data": [
@@ -4257,18 +7194,226 @@
                                 },
                                 {
                                     "type": "float",
+                                    "data": -0.103798
+                                },
+                                {
+                                    "type": "float",
+                                    "data": -0.00791568
+                                },
+                                {
+                                    "type": "float",
+                                    "data": -0.0688449
+                                }
+                            ]
+                        }
+                    ]
+                },
+                "ChildrenComponent": {
+                    "type": "ChildrenComponent",
+                    "data": [
+                        {
+                            "type": "std::vector<GUID_128>",
+                            "data": [
+                                "0075a70f4a970326-0004052a4c0001bb"
+                            ]
+                        }
+                    ]
+                },
+                "ParentComponent": {
+                    "type": "ParentComponent",
+                    "data": [
+                        "0075a70f1c33cf5c-0004052a4c0001b7"
+                    ]
+                },
+                "ActiveComponent": {
+                    "type": "ActiveComponent",
+                    "data": [
+                        {
+                            "type": "bool",
+                            "data": true
+                        }
+                    ]
+                }
+            }
+        },
+        {
+            "id": 80,
+            "guid": "0075a70f4a970326-0004052a4c0001bb",
+            "components": {
+                "NameComponent": {
+                    "name": "mixamorig:Bow7"
+                },
+                "TagComponent": {
+                    "tagIndex": 0
+                },
+                "LayerComponent": {
+                    "layerIndex": 0
+                },
+                "Transform": {
+                    "type": "Transform",
+                    "data": [
+                        {
+                            "type": "Vector3D",
+                            "data": [
+                                {
+                                    "type": "float",
                                     "data": 0
                                 },
                                 {
                                     "type": "float",
-                                    "data": 0
+                                    "data": 0.079486
                                 },
                                 {
                                     "type": "float",
                                     "data": 0
                                 }
                             ]
+                                },
+                                {
+                            "type": "Vector3D",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                }
+                            ]
+                        },
+                        {
+                            "type": "Quaternion",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 0.994227
+                                },
+                                {
+                                    "type": "float",
+                                    "data": -0.0611798
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0.00451311
+                                },
+                                {
+                                    "type": "float",
+                                    "data": -0.0880339
+                                }
+                            ]
                         }
+                    ]
+                },
+                "ChildrenComponent": {
+                    "type": "ChildrenComponent",
+                    "data": [
+                        {
+                            "type": "std::vector<GUID_128>",
+                            "data": [
+                                "0075a70f195bf1b1-0004052a4c0001bd"
+                            ]
+                        }
+                    ]
+                },
+                "ParentComponent": {
+                    "type": "ParentComponent",
+                    "data": [
+                        "0075a70f350c5409-0004052a4c0001b9"
+                    ]
+                },
+                "ActiveComponent": {
+                    "type": "ActiveComponent",
+                    "data": [
+                        {
+                            "type": "bool",
+                            "data": true
+                        }
+                    ]
+                }
+            }
+        },
+        {
+            "id": 81,
+            "guid": "0075a70f195bf1b1-0004052a4c0001bd",
+            "components": {
+                "NameComponent": {
+                    "name": "mixamorig:Bow8"
+                },
+                "TagComponent": {
+                    "tagIndex": 0
+                },
+                "LayerComponent": {
+                    "layerIndex": 0
+                },
+                "Transform": {
+                    "type": "Transform",
+                    "data": [
+                        {
+                            "type": "Vector3D",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0.082987
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                }
+                            ]
+                        },
+                        {
+                            "type": "Vector3D",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 1
+                        }
+                    ]
+                },
+                        {
+                            "type": "Quaternion",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 0.997848
+                                },
+                                {
+                                    "type": "float",
+                                    "data": -0.0627031
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0.00334944
+                                },
+                                {
+                                    "type": "float",
+                                    "data": -0.0188988
+                                }
+                            ]
+                        }
+                    ]
+                },
+                "ParentComponent": {
+                    "type": "ParentComponent",
+                    "data": [
+                        "0075a70f4a970326-0004052a4c0001bb"
                     ]
                 },
                 "ActiveComponent": {
@@ -4298,6 +7443,97 @@
                 "SiblingIndexComponent": {
                     "siblingIndex": 27
                 },
+                                {
+                                    "type": "float",
+                                    "data": -0.030266
+                                },
+                                {
+                                    "type": "float",
+                                    "data": -0.006166
+                                }
+                            ]
+                        },
+                        {
+                            "type": "Vector3D",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                }
+                            ]
+                        },
+                        {
+                            "type": "Quaternion",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": -0.192903
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0.363477
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0.446862
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0.794347
+                                }
+                            ]
+                        }
+                    ]
+                },
+                "ChildrenComponent": {
+                    "type": "ChildrenComponent",
+                    "data": [
+                        {
+                            "type": "std::vector<GUID_128>",
+                            "data": [
+                                "0075a70f3290c2d7-0004052a4c0001c1"
+                            ]
+                        }
+                    ]
+                },
+                "ParentComponent": {
+                    "type": "ParentComponent",
+                    "data": [
+                        "0075a70f68374b55-0004052a4c00013d"
+                    ]
+                },
+                "ActiveComponent": {
+                    "type": "ActiveComponent",
+                    "data": [
+                        {
+                            "type": "bool",
+                            "data": true
+                        }
+                    ]
+                }
+            }
+        },
+        {
+            "id": 83,
+            "guid": "0075a70f3290c2d7-0004052a4c0001c1",
+            "components": {
+                "NameComponent": {
+                    "name": "mixamorig:LeftLeg"
+                },
+                "TagComponent": {
+                    "tagIndex": 0
+                },
+                "LayerComponent": {
+                    "layerIndex": 0
+                },
                 "Transform": {
                     "type": "Transform",
                     "data": [
@@ -4310,7 +7546,108 @@
                                 },
                                 {
                                     "type": "float",
+                                    "data": 0.233035
+                                },
+                                {
+                                    "type": "float",
                                     "data": 0
+                                }
+                            ]
+                                },
+                                {
+                            "type": "Vector3D",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                }
+                            ]
+                        },
+                        {
+                            "type": "Quaternion",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 0.901629
+                                },
+                                {
+                                    "type": "float",
+                                    "data": -0.412
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0.131216
+                                },
+                                {
+                                    "type": "float",
+                                    "data": -0.0102278
+                                }
+                            ]
+                        }
+                    ]
+                },
+                "ChildrenComponent": {
+                    "type": "ChildrenComponent",
+                    "data": [
+                        {
+                            "type": "std::vector<GUID_128>",
+                            "data": [
+                                "0075a70f52b88ae1-0004052a4c0001c3"
+                            ]
+                        }
+                    ]
+                },
+                "ParentComponent": {
+                    "type": "ParentComponent",
+                    "data": [
+                        "0075a70f3a85d417-0004052a4c0001bf"
+                    ]
+                },
+                "ActiveComponent": {
+                    "type": "ActiveComponent",
+                    "data": [
+                        {
+                            "type": "bool",
+                            "data": true
+                        }
+                    ]
+                }
+            }
+        },
+        {
+            "id": 84,
+            "guid": "0075a70f52b88ae1-0004052a4c0001c3",
+            "components": {
+                "NameComponent": {
+                    "name": "mixamorig:LeftFoot"
+                },
+                "TagComponent": {
+                    "tagIndex": 0
+                },
+                "LayerComponent": {
+                    "layerIndex": 0
+                },
+                "Transform": {
+                    "type": "Transform",
+                    "data": [
+                        {
+                            "type": "Vector3D",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0.25241
                                 },
                                 {
                                     "type": "float",
@@ -4342,20 +7679,79 @@
                                     "type": "float",
                                     "data": 1
                                 },
+                "Transform": {
+                    "type": "Transform",
+                    "data": [
+                        {
+                            "type": "Vector3D",
+                            "data": [
                                 {
                                     "type": "float",
                                     "data": 0
                                 },
                                 {
                                     "type": "float",
-                                    "data": 0
+                                    "data": 0.08875
                                 },
                                 {
                                     "type": "float",
                                     "data": 0
                                 }
                             ]
+                        },
+                        {
+                            "type": "Vector3D",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                }
+                            ]
+                        },
+                        {
+                            "type": "Quaternion",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 0.941002
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0.335643
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0.0371269
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                }
+                            ]
+                },
+                "ChildrenComponent": {
+                    "type": "ChildrenComponent",
+                    "data": [
+                        {
+                            "type": "std::vector<GUID_128>",
+                            "data": [
+                                "0075a70f0ec859df-0004052a4c0001c7"
+                            ]
                         }
+                    ]
+                },
+                "ParentComponent": {
+                    "type": "ParentComponent",
+                    "data": [
+                        "0075a70f52b88ae1-0004052a4c0001c3"
                     ]
                 },
                 "ActiveComponent": {
@@ -4445,6 +7841,12 @@
                         }
                     ]
                 },
+                "ParentComponent": {
+                    "type": "ParentComponent",
+                    "data": [
+                        "0075a70f41207137-0004052a4c0001c5"
+                    ]
+                },
                 "ActiveComponent": {
                     "type": "ActiveComponent",
                     "data": [
@@ -4484,7 +7886,108 @@
                                 },
                                 {
                                     "type": "float",
+                                    "data": 0.233034
+                                },
+                                {
+                                    "type": "float",
                                     "data": 0
+                                }
+                            ]
+                        },
+                        {
+                            "type": "Vector3D",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                }
+                            ]
+                        },
+                        {
+                            "type": "Quaternion",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 0.921178
+                                },
+                                {
+                                    "type": "float",
+                                    "data": -0.386262
+                                },
+                                {
+                                    "type": "float",
+                                    "data": -0.00494793
+                                },
+                                {
+                                    "type": "float",
+                                    "data": -0.0469842
+                                }
+                            ]
+                        }
+                    ]
+                },
+                "ChildrenComponent": {
+                    "type": "ChildrenComponent",
+                    "data": [
+                        {
+                            "type": "std::vector<GUID_128>",
+                            "data": [
+                                "0075a70f118115c4-0004052a4c0001cd"
+                            ]
+                        }
+                    ]
+                },
+                "ParentComponent": {
+                    "type": "ParentComponent",
+                    "data": [
+                        "0075a70f2315fa23-0004052a4c0001c9"
+                    ]
+                },
+                "ActiveComponent": {
+                    "type": "ActiveComponent",
+                    "data": [
+                        {
+                            "type": "bool",
+                            "data": true
+                        }
+                    ]
+                }
+            }
+        },
+        {
+            "id": 89,
+            "guid": "0075a70f118115c4-0004052a4c0001cd",
+            "components": {
+                "NameComponent": {
+                    "name": "mixamorig:RightFoot"
+                },
+                "TagComponent": {
+                    "tagIndex": 0
+                },
+                "LayerComponent": {
+                    "layerIndex": 0
+                                },
+                "Transform": {
+                    "type": "Transform",
+                    "data": [
+                        {
+                            "type": "Vector3D",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0.252409
                                 },
                                 {
                                     "type": "float",
@@ -4516,20 +8019,79 @@
                                     "type": "float",
                                     "data": 1
                                 },
+                "Transform": {
+                    "type": "Transform",
+                    "data": [
+                        {
+                            "type": "Vector3D",
+                            "data": [
                                 {
                                     "type": "float",
                                     "data": 0
                                 },
                                 {
                                     "type": "float",
-                                    "data": 0
+                                    "data": 0.08875
                                 },
                                 {
                                     "type": "float",
                                     "data": 0
                                 }
                             ]
+                        },
+                        {
+                            "type": "Vector3D",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                }
+                            ]
+                        },
+                        {
+                            "type": "Quaternion",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 0.94799
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0.318136
+                                },
+                                {
+                                    "type": "float",
+                                    "data": -0.0099037
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                }
+                            ]
+                },
+                "ChildrenComponent": {
+                    "type": "ChildrenComponent",
+                    "data": [
+                        {
+                            "type": "std::vector<GUID_128>",
+                            "data": [
+                                "0075a70f3c8d8ed2-0004052a4c0001d1"
+                            ]
                         }
+                    ]
+                },
+                "ParentComponent": {
+                    "type": "ParentComponent",
+                    "data": [
+                        "0075a70f118115c4-0004052a4c0001cd"
                     ]
                 },
                 "ActiveComponent": {
@@ -4619,6 +8181,12 @@
                         }
                     ]
                 },
+                "ParentComponent": {
+                    "type": "ParentComponent",
+                    "data": [
+                        "0075a70f44904f80-0004052a4c0001cf"
+                    ]
+                },
                 "ActiveComponent": {
                     "type": "ActiveComponent",
                     "data": [
@@ -4704,6 +8272,12 @@
                                 }
                             ]
                         }
+                    ]
+                },
+                "ParentComponent": {
+                    "type": "ParentComponent",
+                    "data": [
+                        "005228ec22d0d1ea-00039e73f400015b"
                     ]
                 },
                 "ActiveComponent": {
@@ -5319,6 +8893,33 @@
                     "type": "DirectionalLightComponent",
                     "data": [
                         {
+                            "type": "bool",
+                            "data": true
+                        }
+                    ]
+                }
+            }
+        },
+        {
+            "id": 100,
+            "guid": "005228ec41ea052b-00039e750600016f",
+            "components": {
+                "NameComponent": {
+                    "name": "PREVIEW"
+                },
+                "TagComponent": {
+                    "tagIndex": 0
+                },
+                "LayerComponent": {
+                    "layerIndex": 0
+                },
+                "SiblingIndexComponent": {
+                    "siblingIndex": 14
+                },
+                "Transform": {
+                    "type": "Transform",
+                    "data": [
+                        {
                             "type": "Vector3D",
                             "data": [
                                 {
@@ -5336,6 +8937,9 @@
                             ]
                         },
                         {
+                            "type": "Vector3D",
+                            "data": [
+                                {
                             "type": "float",
                             "data": 2.8
                         },
@@ -5359,7 +8963,39 @@
                                     "data": -0.3
                                 }
                             ]
+                        }
+                    ]
                         },
+                "ActiveComponent": {
+                    "type": "ActiveComponent",
+                    "data": [
+                        {
+                            "type": "bool",
+                            "data": true
+                        }
+                    ]
+                }
+            }
+        },
+        {
+            "id": 101,
+            "guid": "005228ec3cd19651-00039e7506000171",
+            "components": {
+                "NameComponent": {
+                    "name": "PREVIEW"
+                },
+                "TagComponent": {
+                    "tagIndex": 0
+                },
+                "LayerComponent": {
+                    "layerIndex": 0
+                },
+                "SiblingIndexComponent": {
+                    "siblingIndex": 15
+                },
+                "Transform": {
+                    "type": "Transform",
+                    "data": [
                         {
                             "type": "Vector3D",
                             "data": [
@@ -5510,25 +9146,8 @@
                             "type": "Matrix4x4",
                             "data": [
                                 {
-                                    "type": "float",
-                                    "data": 1
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                },
+                            "type": "Vector3D",
+                            "data": [
                                 {
                                     "type": "float",
                                     "data": 1
@@ -5540,7 +9159,12 @@
                                 {
                                     "type": "float",
                                     "data": 0
+                                }
+                            ]
                                 },
+                                {
+                            "type": "Vector3D",
+                            "data": [
                                 {
                                     "type": "float",
                                     "data": 0
@@ -5552,7 +9176,12 @@
                                 {
                                     "type": "float",
                                     "data": 1
+                                }
+                            ]
                                 },
+                                {
+                            "type": "Quaternion",
+                            "data": [
                                 {
                                     "type": "float",
                                     "data": 0
@@ -5568,7 +9197,54 @@
                                 {
                                     "type": "float",
                                     "data": 0
+                                }
+                            ]
+                        }
+                    ]
                                 },
+                "ActiveComponent": {
+                    "type": "ActiveComponent",
+                    "data": [
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                "TagComponent": {
+                    "tagIndex": 0
+                },
+                "LayerComponent": {
+                    "layerIndex": 0
+                },
+                "SiblingIndexComponent": {
+                    "siblingIndex": 18
+                },
+                "Transform": {
+                    "type": "Transform",
+                    "data": [
+                                {
+                            "type": "Vector3D",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                }
+                            ]
+                                },
+                                {
+                            "type": "Vector3D",
+                            "data": [
                                 {
                                     "type": "float",
                                     "data": 1
@@ -5604,6 +9280,10 @@
                         {
                             "type": "bool",
                             "data": true
+                        }
+                    ]
+                }
+            }
                         },
                         {
                             "type": "int",
@@ -5617,6 +9297,12 @@
                             "type": "float",
                             "data": 1
                         },
+                "SiblingIndexComponent": {
+                    "siblingIndex": 19
+                },
+                "Transform": {
+                    "type": "Transform",
+                    "data": [
                         {
                             "type": "Vector3D",
                             "data": [
@@ -5662,6 +9348,12 @@
                         {
                             "type": "float",
                             "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                        }
+                    ]
                         }
                     ]
                 },
@@ -5671,11 +9363,27 @@
                         {
                             "type": "bool",
                             "data": true
+                        }
+                    ]
+                }
+            }
                         },
                         {
                             "type": "int",
                             "data": 1
                         },
+                "TagComponent": {
+                    "tagIndex": 0
+                },
+                "LayerComponent": {
+                    "layerIndex": 0
+                },
+                "SiblingIndexComponent": {
+                    "siblingIndex": 20
+                },
+                "Transform": {
+                    "type": "Transform",
+                    "data": [
                         {
                             "type": "unsigned",
                             "data": 25
@@ -5683,6 +9391,12 @@
                         {
                             "type": "int",
                             "data": 0
+                        },
+                        {
+                                    "type": "float",
+                                    "data": 0
+                                }
+                            ]
                         },
                         {
                             "type": "Vector3D",
@@ -5702,6 +9416,9 @@
                             ]
                         },
                         {
+                            "type": "Quaternion",
+                            "data": [
+                                {
                             "type": "float",
                             "data": 0.5
                         },
@@ -5717,13 +9434,77 @@
                             "type": "float",
                             "data": 0.5
                         },
+                "ActiveComponent": {
+                    "type": "ActiveComponent",
+                    "data": [
                         {
+                            "type": "bool",
+                            "data": true
+                        }
+                    ]
+                }
+            }
+        },
+        {
+            "id": 107,
+            "guid": "005228ec7b70246d-00039e750600017d",
+            "components": {
+                "NameComponent": {
+                    "name": "PREVIEW"
+                },
+                "TagComponent": {
+                    "tagIndex": 0
+                },
+                "LayerComponent": {
+                    "layerIndex": 0
+                },
+                "SiblingIndexComponent": {
+                    "siblingIndex": 21
+                },
+                "Transform": {
+                    "type": "Transform",
+                    "data": [
+                        {
+                            "type": "Vector3D",
+                            "data": [
+                                {
                             "type": "float",
                             "data": 0.5
+                        },
+                        {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                }
+                            ]
                         },
                         {
                             "type": "Vector3D",
                             "data": [
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                }
+                            ]
+                        },
+                        {
+                            "type": "Quaternion",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
                                 {
                                     "type": "float",
                                     "data": 0
@@ -5763,6 +9544,9 @@
                 },
                 "LayerComponent": {
                     "layerIndex": 0
+                },
+                "SiblingIndexComponent": {
+                    "siblingIndex": 22
                 },
                 "Transform": {
                     "type": "Transform",
@@ -5854,6 +9638,9 @@
                 "LayerComponent": {
                     "layerIndex": 0
                 },
+                "SiblingIndexComponent": {
+                    "siblingIndex": 23
+                },
                 "Transform": {
                     "type": "Transform",
                     "data": [
@@ -5923,6 +9710,21 @@
                                 "004a451c32fc430b-00040b1a9e000005",
                                 "004a451c7cc32d1f-00040b1a9e000007"
                             ]
+                        },
+                        {
+                            "type": "Vector3D",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 1
                         }
                     ]
                 },
@@ -5930,6 +9732,8 @@
                     "type": "ParentComponent",
                     "data": [
                         "00201c9020f3b290-00040b069c00001f"
+                    ]
+                        }
                     ]
                 },
                 "ActiveComponent": {
@@ -5955,6 +9759,9 @@
                 },
                 "LayerComponent": {
                     "layerIndex": 0
+                },
+                "SiblingIndexComponent": {
+                    "siblingIndex": 25
                 },
                 "Transform": {
                     "type": "Transform",
@@ -6045,6 +9852,9 @@
                 },
                 "LayerComponent": {
                     "layerIndex": 0
+                },
+                "SiblingIndexComponent": {
+                    "siblingIndex": 26
                 },
                 "Transform": {
                     "type": "Transform",
@@ -6209,25 +10019,8 @@
                             "type": "Matrix4x4",
                             "data": [
                                 {
-                                    "type": "float",
-                                    "data": 1
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                },
+                            "type": "Vector3D",
+                            "data": [
                                 {
                                     "type": "float",
                                     "data": 1
@@ -6239,27 +10032,12 @@
                                 {
                                     "type": "float",
                                     "data": 0
+                                }
+                            ]
                                 },
                                 {
-                                    "type": "float",
-                                    "data": 0
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 1
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                },
+                            "type": "Vector3D",
+                            "data": [
                                 {
                                     "type": "float",
                                     "data": 0
@@ -6273,16 +10051,120 @@
                                     "data": 1
                                 }
                             ]
+                                },
+                                {
+                            "type": "Quaternion",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                }
+                            ]
+                        }
+                    ]
+                                },
+                "ActiveComponent": {
+                    "type": "ActiveComponent",
+                    "data": [
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+            "id": 115,
+            "guid": "005228ec5f1f2107-00039e751400018d",
+            "components": {
+                "NameComponent": {
+                    "name": "PREVIEW"
+                },
+                "TagComponent": {
+                    "tagIndex": 0
+                },
+                "LayerComponent": {
+                    "layerIndex": 0
+                },
+                "SiblingIndexComponent": {
+                    "siblingIndex": 29
+                },
+                "Transform": {
+                    "type": "Transform",
+                    "data": [
+                        {
+                            "type": "Vector3D",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                }
+                            ]
+                                },
+                                {
+                            "type": "Vector3D",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                }
+                            ]
                         },
                         {
                             "type": "bool",
                             "data": true
                         },
+                        {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                }
+                            ]
+                        }
+                    ]
+                },
+                "ActiveComponent": {
+                    "type": "ActiveComponent",
+                    "data": [
                         {
                             "type": "bool",
                             "data": true
                         }
                     ]
+                }
+            }
                 },
                 "ChildrenComponent": {
                     "type": "ChildrenComponent",
@@ -6321,6 +10203,36 @@
                             "type": "float",
                             "data": 1
                         },
+                "ActiveComponent": {
+                    "type": "ActiveComponent",
+                    "data": [
+                        {
+                            "type": "bool",
+                            "data": true
+                        }
+                    ]
+                }
+            }
+        },
+        {
+            "id": 117,
+            "guid": "005228ec6b2d1c2e-00039e7514000191",
+            "components": {
+                "NameComponent": {
+                    "name": "PREVIEW"
+                },
+                "TagComponent": {
+                    "tagIndex": 0
+                },
+                "LayerComponent": {
+                    "layerIndex": 0
+                },
+                "SiblingIndexComponent": {
+                    "siblingIndex": 31
+                },
+                "Transform": {
+                    "type": "Transform",
+                    "data": [
                         {
                             "type": "Vector3D",
                             "data": [
@@ -6366,6 +10278,12 @@
                         {
                             "type": "float",
                             "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                        }
+                    ]
                         }
                     ]
                 },
@@ -6375,11 +10293,27 @@
                         {
                             "type": "bool",
                             "data": true
+                        }
+                    ]
+                }
+            }
                         },
                         {
                             "type": "int",
                             "data": 1
                         },
+                "TagComponent": {
+                    "tagIndex": 0
+                },
+                "LayerComponent": {
+                    "layerIndex": 0
+                },
+                "SiblingIndexComponent": {
+                    "siblingIndex": 32
+                },
+                "Transform": {
+                    "type": "Transform",
+                    "data": [
                         {
                             "type": "unsigned",
                             "data": 5
@@ -6387,6 +10321,12 @@
                         {
                             "type": "int",
                             "data": 0
+                        },
+                        {
+                                    "type": "float",
+                                    "data": 0
+                                }
+                            ]
                         },
                         {
                             "type": "Vector3D",
@@ -6406,6 +10346,17 @@
                             ]
                         },
                         {
+                            "type": "Quaternion",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
                             "type": "float",
                             "data": 0.5
                         },
@@ -6413,6 +10364,12 @@
                             "type": "float",
                             "data": 0.5
                         },
+                "Transform": {
+                    "type": "Transform",
+                    "data": [
+                        {
+                            "type": "Vector3D",
+                            "data": [
                         {
                             "type": "float",
                             "data": 0.5
@@ -6428,6 +10385,27 @@
                         {
                             "type": "Vector3D",
                             "data": [
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                }
+                            ]
+                        },
+                        {
+                            "type": "Quaternion",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
                                 {
                                     "type": "float",
                                     "data": 0
@@ -6467,6 +10445,9 @@
                 },
                 "LayerComponent": {
                     "layerIndex": 0
+                },
+                "SiblingIndexComponent": {
+                    "siblingIndex": 34
                 },
                 "Transform": {
                     "type": "Transform",
@@ -6558,6 +10539,9 @@
                 "LayerComponent": {
                     "layerIndex": 0
                 },
+                "SiblingIndexComponent": {
+                    "siblingIndex": 35
+                },
                 "Transform": {
                     "type": "Transform",
                     "data": [
@@ -6618,6 +10602,33 @@
                         }
                     ]
                 },
+                "ActiveComponent": {
+                    "type": "ActiveComponent",
+                    "data": [
+                        {
+                            "type": "bool",
+                            "data": true
+                        }
+                    ]
+                }
+            }
+        },
+        {
+            "id": 122,
+            "guid": "005228ec2fccbcdb-00039e751400019b",
+            "components": {
+                "NameComponent": {
+                    "name": "PREVIEW"
+                },
+                "TagComponent": {
+                    "tagIndex": 0
+                },
+                "LayerComponent": {
+                    "layerIndex": 0
+                },
+                "SiblingIndexComponent": {
+                    "siblingIndex": 36
+                },
                 "ChildrenComponent": {
                     "type": "ChildrenComponent",
                     "data": [
@@ -6627,6 +10638,21 @@
                                 "0067ee41036b4d30-00040b6f6a000007",
                                 "0067ee4134ff5002-00040b6f6a000009"
                             ]
+                        },
+                        {
+                            "type": "Vector3D",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 1
                         }
                     ]
                 },
@@ -6659,6 +10685,9 @@
                 },
                 "LayerComponent": {
                     "layerIndex": 0
+                },
+                "SiblingIndexComponent": {
+                    "siblingIndex": 37
                 },
                 "Transform": {
                     "type": "Transform",
@@ -6749,6 +10778,9 @@
                 },
                 "LayerComponent": {
                     "layerIndex": 0
+                },
+                "SiblingIndexComponent": {
+                    "siblingIndex": 38
                 },
                 "Transform": {
                     "type": "Transform",
@@ -7002,6 +11034,12 @@
                                 "0008fef8c4b27662-00040b81640036d7"
                             ]
                         }
+                    ]
+                },
+                "ParentComponent": {
+                    "type": "ParentComponent",
+                    "data": [
+                        "005b8379f5f64cf4-00039ed706000001"
                     ]
                 },
                 "RigidBodyComponent": {
@@ -7361,6 +11399,9 @@
                 "LayerComponent": {
                     "layerIndex": 0
                 },
+                "SiblingIndexComponent": {
+                    "siblingIndex": 39
+                },
                 "Transform": {
                     "type": "Transform",
                     "data": [
@@ -7403,6 +11444,35 @@
                             "data": [
                                 {
                                     "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                }
+                            ]
+                        }
+                    ]
+                },
+                "ModelRenderComponent": {
+                    "type": "ModelRenderComponent",
+                    "data": [
+                        "00374a2100cab2d8-000331fc58000037",
+                        "0060f444e1e8808c-000337e664000011",
+                        "005330ffb75ae0fb-00036c7f64000003",
+                        {
+                            "type": "Matrix4x4",
+                            "data": [
+                                {
+                                    "type": "float",
                                     "data": 0.165131
                                 },
                                 {
@@ -7417,6 +11487,16 @@
                                     "type": "float",
                                     "data": -0.326966
                                 }
+                            ]
+                },
+                "ChildrenComponent": {
+                    "type": "ChildrenComponent",
+                    "data": [
+                        {
+                            "type": "std::vector<GUID_128>",
+                            "data": [
+                                "0075a70f6f059b87-0004052a4c0001d5",
+                                "0075a70f5ac38b1b-0004052a4c0001d7"
                             ]
                         }
                     ]
@@ -7642,23 +11722,26 @@
                 "LayerComponent": {
                     "layerIndex": 0
                 },
+                "SiblingIndexComponent": {
+                    "siblingIndex": 39
+                },
                 "Transform": {
                     "type": "Transform",
                     "data": [
                         {
                             "type": "Vector3D",
                             "data": [
+                        {
+                                    "type": "float",
+                                    "data": -28.13
+                                },
                                 {
                                     "type": "float",
-                                    "data": 0
+                                    "data": 7.17146
                                 },
                                 {
                                     "type": "float",
                                     "data": 0
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0.00781417
                                 }
                             ]
                         },
@@ -7667,15 +11750,15 @@
                             "data": [
                                 {
                                     "type": "float",
-                                    "data": 1
+                                    "data": 0.401
                                 },
                                 {
                                     "type": "float",
-                                    "data": 1
+                                    "data": 1.7
                                 },
                                 {
                                     "type": "float",
-                                    "data": 1
+                                    "data": 4.4
                                 }
                             ]
                         },
@@ -7696,9 +11779,162 @@
                                 },
                                 {
                                     "type": "float",
+                                    "data": 0.00781417
+                                }
+                            ]
+                        },
+                "ModelRenderComponent": {
+                    "type": "ModelRenderComponent",
+                    "data": [
+                        "00374a2100cab2d8-000331fc58000037",
+                        "0060f444e1e8808c-000337e664000011",
+                        "005330ffb75ae0fb-00036c7f64000003",
+                        {
+                            "type": "Vector3D",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                }
+                            ]
+                        },
+                        {
+                            "type": "bool",
+                            "data": true
+                        },
+                        {
+                            "type": "bool",
+                            "data": true
+                        }
+                    ]
+                },
+                "ChildrenComponent": {
+                    "type": "ChildrenComponent",
+                    "data": [
+                        {
+                            "type": "Quaternion",
+                            "data": [
+                                {
+                            "type": "bool",
+                            "data": true
+                        },
+                        {
+                            "type": "int",
+                            "data": 0
+                        },
+                        {
+                            "type": "bool",
+                            "data": false
+                        },
+                        {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                            "type": "Vector3D",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
                                     "data": 0
                                 }
                             ]
+                                },
+                                {
+                            "type": "Vector3D",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": -9.81
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                }
+                            ]
+                        },
+                        {
+                            "type": "bool",
+                            "data": false
+                        },
+                        {
+                            "type": "float",
+                            "data": 0
+                        },
+                        {
+                            "type": "float",
+                            "data": 0
                         }
                     ]
                 },

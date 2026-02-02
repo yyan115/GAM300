@@ -8,6 +8,7 @@ return Component {
     fields = {
         sliderNotch = "MasterNotch",  -- Name of the notch entity (this entity)
         sliderBar = "MasterBar",      -- Name of the bar entity
+        sliderFill = "",              -- Name of the fill entity (optional, leave empty if no fill)
         settingType = "master",       -- "master", "bgm", "sfx", or "gamma"
     },
 
@@ -21,12 +22,14 @@ return Component {
         -- Clean field values
         local notchName = stripQuotes(self.sliderNotch)
         local barName = stripQuotes(self.sliderBar)
+        local fillName = stripQuotes(self.sliderFill)
         local settingType = stripQuotes(self.settingType)
 
         -- Debug: Show what field values we received
         print("[SettingsSlider] Start called with fields:")
         print("  sliderNotch = " .. tostring(notchName))
         print("  sliderBar = " .. tostring(barName))
+        print("  sliderFill = " .. tostring(fillName))
         print("  settingType = " .. tostring(settingType))
 
         -- Initialize GameSettings (safe to call multiple times)
@@ -71,6 +74,23 @@ return Component {
         self._maxSliderY = self._barTransform.localPosition.y + offsetY
         self._minSliderY = self._barTransform.localPosition.y - offsetY
 
+        -- Cache fill bar transform (optional)
+        self._fillTransform = nil
+        self._fillMaxWidth = nil
+        if fillName and fillName ~= "" then
+            local fillEntity = Engine.GetEntityByName(fillName)
+            if fillEntity then
+                self._fillTransform = GetComponent(fillEntity, "Transform")
+                if self._fillTransform then
+                    -- Max width is the full bar width
+                    self._fillMaxWidth = self._barTransform.localScale.x
+                    print("[SettingsSlider] Fill bar configured: " .. fillName)
+                end
+            else
+                print("[SettingsSlider] Warning: Fill entity not found: " .. fillName)
+            end
+        end
+
         -- Track dragging state
         self._isDragging = false
 
@@ -90,7 +110,31 @@ return Component {
         self._sliderTransform.localPosition.x = savedPosX
         self._sliderTransform.isDirty = true
 
+        -- Update fill bar to match initial position
+        self:UpdateFillBar(normalized)
+
         print("[SettingsSlider] " .. self._settingType .. " initialized with value: " .. savedValue)
+    end,
+
+    -- Update the fill bar based on normalized value (0-1)
+    UpdateFillBar = function(self, normalized)
+        if not self._fillTransform or not self._fillMaxWidth then
+            return
+        end
+
+        -- Calculate fill width based on normalized value
+        local fillWidth = normalized * self._fillMaxWidth
+        
+        -- Minimum width to prevent zero-scale issues
+        if fillWidth < 1 then fillWidth = 1 end
+
+        -- Update fill scale (width)
+        self._fillTransform.localScale.x = fillWidth
+
+        -- Position the fill bar so its left edge aligns with the bar's left edge
+        -- The fill's center should be at: leftEdge + (fillWidth / 2)
+        self._fillTransform.localPosition.x = self._minSliderX + (fillWidth / 2)
+        self._fillTransform.isDirty = true
     end,
 
     Update = function(self, dt)
@@ -145,6 +189,9 @@ return Component {
             -- Apply snapping at edges
             if normalized < 0.01 then normalized = 0 end
             if normalized > 0.99 then normalized = 1.0 end
+
+            -- Update the fill bar to follow the notch
+            self:UpdateFillBar(normalized)
 
             -- Convert to actual value and apply
             local newValue = self:NormalizedToValue(normalized)

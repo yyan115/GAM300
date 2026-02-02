@@ -1201,3 +1201,88 @@ void PhysicsSystem::UpdateColliderShapeScale(ColliderComponent& col, Vector3D wo
 		col.cylinderHalfHeight *= worldScale.y; // Y for height
     }
 }
+
+// Call: std::vector<Entity> out; GetOverlappingEntities(entity, out);
+// Returns true if call succeeded (even if zero results). Results appended to 'out'.
+bool PhysicsSystem::GetOverlappingEntities(Entity entity, std::vector<Entity>& out)
+{
+    out.clear();
+
+    // 1) find the Jolt body
+    auto it = entityBodyMap.find(entity);
+    if (it == entityBodyMap.end()) return false;
+    JPH::BodyID bodyId = it->second;
+    if (bodyId.IsInvalid()) return false;
+
+    // 2) lock the body for safe read access
+    const JPH::BodyLockInterface& bli = physics.GetBodyLockInterface();
+    JPH::BodyLockRead lock(bli, bodyId);
+    if (!lock.Succeeded()) return false;
+
+    // 3) grab shape pointer & transform from the locked body (safe while locked)
+    const JPH::Body& body = lock.GetBody();
+    const JPH::Shape* bodyShape = body.GetShape(); // Body::GetShape() is available.
+    if (!bodyShape) return false;
+
+    // Use the body's world transform (center-of-mass transform) for placing the shape
+    JPH::RMat44 bodyTransform = body.GetWorldTransform();
+
+    // 4) Prepare narrow-phase query + filters (reuse your existing filters)
+    const JPH::NarrowPhaseQuery& query = physics.GetNarrowPhaseQuery();
+
+    // Broadphase / object filters (reuse your existing rules - ignore character/sensor)
+    class LocalBPFilter : public JPH::BroadPhaseLayerFilter { public: bool ShouldCollide(JPH::BroadPhaseLayer) const override { return true; } };
+    class LocalObjFilter : public JPH::ObjectLayerFilter { public: bool ShouldCollide(JPH::ObjectLayer inLayer) const override { return inLayer != Layers::SENSOR && inLayer != Layers::CHARACTER; } } objFilter;
+    LocalBPFilter bpFilter;
+
+    // 5) Collector: gather unique hit body IDs (exclude self)
+    struct CollectOverlaps : public JPH::CollideShapeCollector
+    {
+        PhysicsSystem* ps = nullptr;
+        mutable std::vector<Entity>* out = nullptr;
+        JPH::BodyID self{};
+        void AddHit(const JPH::CollideShapeResult& hit) override
+        {
+            // Jolt reports collisions: use hit.mBodyID2 as the body we collided with (consistent with earlier code)
+            const JPH::BodyID other = hit.mBodyID2;
+            if (other.IsInvalid() || other == self) return;
+
+            // Map to ECS entity
+            auto it = ps->bodyToEntityMap.find(other);
+            if (it != ps->bodyToEntityMap.end())
+            {
+                // Avoid duplicates: (simple check) only append if last != this one (or maintain set if many hits)
+                // For small numbers of overlaps, linear check is fine:
+                Entity e = static_cast<Entity>(it->second);
+                bool found = false;
+                for (auto existing : *out) { if (existing == e) { found = true; break; } }
+                if (!found) out->push_back(e);
+            }
+        }
+    } collector;
+
+    collector.ps = this;
+    collector.out = &out;
+    collector.self = bodyId;
+
+    // 6) Collide the shape at the body's transform (scale = 1, offset = zero)
+    JPH::CollideShapeSettings settings;
+    JPH::Vec3 scale(1.0f, 1.0f, 1.0f);
+    JPH::RVec3 baseOffset(0.0f, 0.0f, 0.0f);
+
+    // NOTE: this call performs narrow-phase checks for the given shape against the world.
+    query.CollideShape(
+        bodyShape,                    // shape pointer (no new allocation)
+        scale,                        // shape scale (1 if shape already baked to world scale)
+        bodyTransform,                // transform to place the shape in world
+        settings,
+        baseOffset,
+        collector,
+        bpFilter,
+        objFilter,
+        JPH::BodyFilter(),            // default (hits all bodies) - you can provide custom BodyFilter if needed
+        JPH::ShapeFilter()            // default
+    );
+
+    return true;
+}

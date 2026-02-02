@@ -41,19 +41,19 @@ prior written consent of DigiPen Institute of Technology is prohibited.
 \return     bool - Returns true if initialization is successful
 */
 /******************************************************************************/
-bool ParticleSystem::Initialise() 
+bool ParticleSystem::Initialise(bool forceInit) 
 {
     ENGINE_LOG_INFO("Particle System Initializing...");
 //#ifndef ANDROID
-    return InitialiseParticles(); // Same as for SpriteSystem, Android must delay particle initialisation.
+    return InitialiseParticles(forceInit); // Same as for SpriteSystem, Android must delay particle initialisation.
 //#else
 //    return true;
 //#endif
 }
 
-bool ParticleSystem::InitialiseParticles()
+bool ParticleSystem::InitialiseParticles(bool forceInit)
 {
-    if (particleSystemInitialised) return true;
+    if (particleSystemInitialised && !forceInit) return true;
 
     ENGINE_LOG_INFO("[ParticleSystem] InitialiseParticles");
 #ifdef ANDROID

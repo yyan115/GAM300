@@ -99,10 +99,6 @@ public:
         SerializerFunc serializer)
     {
         bool hasInst = sceneECS.HasComponent<T>(instanceEnt);
-        bool hasBase = sceneECS.HasComponent<T>(baselineEnt);
-
-        // 1. If neither has it, skip
-        if (!hasInst && !hasBase) return;
 
         // 2. Serialize both to compare
         // (We use a temporary document for the baseline to keep the allocators independent/clean)
@@ -110,6 +106,20 @@ public:
         if (hasInst) {
             valInst = serializer(sceneECS.GetComponent<T>(instanceEnt), alloc);
         }
+
+        // If there is no valid baselineEnt (i.e. prefab with a new child created), straightaway fully serialize the component.
+        if (hasInst && baselineEnt == static_cast<Entity>(-1)) {
+            rapidjson::Value wrapper(rapidjson::kObjectType);
+            wrapper.AddMember(rapidjson::StringRef(compName), valInst, alloc);
+            outComponentsArray.PushBack(wrapper, alloc);
+            return;
+        }
+
+        bool hasBase = sceneECS.HasComponent<T>(baselineEnt);
+
+        // 1. If neither has it, skip
+        if (!hasInst && !hasBase) return;
+
 
         rapidjson::Value valBase;
         if (hasBase) {
@@ -143,9 +153,9 @@ public:
 
     static void UpdateEntityGUID_Safe(ECSManager& ecs, Entity entity, GUID_128 newGUID);
     static void RestorePrefabHierarchy(ECSManager& ecs, Entity currentEntity, const rapidjson::Value& jsonNode);
-    static void ApplyPrefabOverridesRecursive(ECSManager& ecs, Entity currentEntity, const rapidjson::Value& jsonNode);
+    static void ApplyPrefabOverridesRecursive(ECSManager& ecs, Entity& currentEntity, const rapidjson::Value& jsonNode, bool isNewEntity = false);
 
-    static void DeserializeEntity(ECSManager& ecs, const rapidjson::Value& entObj, bool isPrefab = false, Entity entity = MAX_ENTITIES, bool skipSpawnChildren = false);
+    static Entity DeserializeEntity(ECSManager& ecs, const rapidjson::Value& entObj, bool isPrefab = false, Entity entity = MAX_ENTITIES, bool skipSpawnChildren = false);
 	static void ENGINE_API DeserializeScene(const std::string& scenePath);
 	static void ENGINE_API ReloadScene(const std::string& tempScenePath, const std::string& currentScenePath);
 
@@ -287,6 +297,54 @@ public:
         }
 
         return defaultValue;
+    }
+
+    static Vector3D GetVector3D(const rapidjson::Value& dataArray, size_t index, const Vector3D& defaultValue = Vector3D(0, 0, 0))
+    {
+        // 1. Basic Bounds Check
+        if (!dataArray.IsArray() || index >= dataArray.Size()) {
+            return defaultValue;
+        }
+
+        const rapidjson::Value& item = dataArray[index];
+
+        // 2. Identify where the XYZ data is located
+        const rapidjson::Value* vecData = nullptr;
+
+        // Case A: The item is the wrapper object {"type": "Vector3D", "data": [...]}
+        if (item.IsObject() && item.HasMember("data") && item["data"].IsArray()) {
+            vecData = &item["data"];
+        }
+        // Case B: The item is a raw array [x, y, z]
+        else if (item.IsArray()) {
+            vecData = &item;
+        }
+
+        // 3. Validation: Must have at least 3 components
+        if (!vecData || vecData->Size() < 3) {
+            return defaultValue;
+        }
+
+        Vector3D result;
+        float* outComponents[3] = { &result.x, &result.y, &result.z };
+
+        // 4. Extract each component using your GetFloat-style logic
+        for (size_t i = 0; i < 3; ++i) {
+            const rapidjson::Value& val = (*vecData)[i];
+
+            if (val.IsNumber()) {
+                *outComponents[i] = val.GetFloat();
+            }
+            else if (val.IsObject() && val.HasMember("data") && val["data"].IsNumber()) {
+                *outComponents[i] = val["data"].GetFloat();
+            }
+            else {
+                // If any component is invalid, return the full default to avoid partial vectors
+                return defaultValue;
+            }
+        }
+
+        return result;
     }
 
 private:

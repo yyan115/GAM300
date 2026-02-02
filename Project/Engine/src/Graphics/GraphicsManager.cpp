@@ -309,15 +309,14 @@ void GraphicsManager::Render()
 	}
 
 	// Debug output (optional - remove in release)
-#ifdef _DEBUG
-	static int frameCount = 0;
-	if (++frameCount % 300 == 0) {  // Every 5 seconds at 60fps
+	/*static int frameCount = 0;
+	if (++frameCount % 300 == 0) 
+	{
 		std::cout << "[Sorting] Objects: " << m_sortingStats.totalObjects
 			<< " DrawCalls: " << m_sortingStats.drawCalls
 			<< " ShaderSwitch: " << m_sortingStats.shaderSwitches
 			<< " MatSwitch: " << m_sortingStats.materialSwitches << "\n";
-	}
-#endif
+	}*/
 }
 
 void GraphicsManager::RenderModel(const ModelRenderComponent& item)

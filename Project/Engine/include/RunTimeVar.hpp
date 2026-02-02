@@ -41,6 +41,7 @@ namespace RunTimeVar {
     //TimeManager
     extern ENGINE_API double deltaTime;
     extern ENGINE_API double lastFrameTime;
+    extern ENGINE_API double unscaledDeltaTime;
     //extern class IPlatform* platform;
     //extern PlatformWindow ptrWindow;
 }

@@ -39,12 +39,24 @@ return function(spec)
     
     local inst = {}
     
+    -- SAFELY preserve entityId if it was already set by C++
+    -- Check if this is being called as a result of C++ AttachScript
+    local existing_entityId = nil
+    if spec.entityId then
+        existing_entityId = spec.entityId
+    end
+
     -- Copy fields into instance
     inst.__field_list = shallow_copy(spec.fields or {})
     for k, v in pairs(inst.__field_list) do
         inst[k] = v
     end
     
+    -- Restore entityId if it existed
+    if existing_entityId then
+        inst.entityId = existing_entityId
+    end
+
     inst.__meta = spec.meta or {}
     inst._private = {}
     inst._subscriptions = {}

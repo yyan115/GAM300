@@ -151,7 +151,6 @@ void VideoSystem::Update(float dt) {
                 FadeOutTransition(blackScreenSprite, dt, videoComp.preTime);
                 if (blackScreenSprite.alpha >= 0.99f)
                 {
-                    std::cout << "am i seein this right? " << blackScreenSprite.alpha << std::endl;
                     blackScreenSprite.alpha = 1.0f;
                     isTransitioning = false;
                     videoComp.cutsceneEnded = true;     //set this to true, handle in lua script.
