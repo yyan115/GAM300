@@ -2907,9 +2907,14 @@ void Serializer::DeserializeRigidBodyComponent(RigidBodyComponent& rbComp, const
     // typed form: tv.data = [ {type: "std::string", data: "Hello"}, { type:"float", data: 1 }, {type:"bool", data:false} ]
     if (rbJSON.HasMember("data") && rbJSON["data"].IsArray()) {
         const auto& d = rbJSON["data"];
+        rbComp.enabled = Serializer::GetBool(d, 0);
         rbComp.motionID = Serializer::GetInt(d, 1);
-        rbComp.motion = static_cast<Motion>(rbComp.motionID);
         rbComp.ccd = Serializer::GetBool(d, 2);
+        rbComp.gravityFactor = Serializer::GetFloat(d, 3);
+        rbComp.isTrigger = Serializer::GetBool(d, 6);
+        rbComp.linearDamping = Serializer::GetFloat(d, 7);
+        rbComp.angularDamping = Serializer::GetFloat(d, 8);
+        rbComp.motion = static_cast<Motion>(rbComp.motionID);
         rbComp.transform_dirty = true;
         rbComp.motion_dirty = true;
         rbComp.collider_seen_version = 0;
