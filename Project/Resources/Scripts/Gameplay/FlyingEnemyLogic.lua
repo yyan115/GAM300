@@ -181,6 +181,10 @@ return Component {
         end
 
 
+        -- Guard against missing animation component
+        if not self._animation then
+            return
+        end
         
         -- Update animation if state changed
         if newState ~= currentState then
