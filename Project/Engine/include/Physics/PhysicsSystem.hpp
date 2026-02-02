@@ -103,6 +103,7 @@ public:
 
 	bool GetBodyWorldAABB(Entity e, JPH::AABox& outAABB) const;
 
+	bool GetOverlappingEntities(Entity entity, std::vector<Entity>& out);
 private:
 	JPH::PhysicsSystem          physics;
 	std::unordered_map<JPH::BodyID, int> bodyToEntityMap;	//to reference physics id -> entity id (for logging)

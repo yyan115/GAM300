@@ -166,7 +166,7 @@ void SceneInstance::InitializePhysics()
 
 void SceneInstance::Update(double dt)
 {
-	dt;
+	dt; //?
 
 	// Update logic for the test scene
 	ECSManager &mainECS = ECSRegistry::GetInstance().GetECSManager(scenePath);
