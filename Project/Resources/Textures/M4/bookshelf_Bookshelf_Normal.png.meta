@@ -6,8 +6,8 @@
         "compiled": "../../Resources/Textures/M4/bookshelf_Bookshelf_Normal.dds"
     },
     "TextureMetaData": {
-        "type": "diffuse",
-        "flipUVs": true,
+        "type": "normal",
+        "flipUVs": false,
         "generateMipmaps": true
     }
 }

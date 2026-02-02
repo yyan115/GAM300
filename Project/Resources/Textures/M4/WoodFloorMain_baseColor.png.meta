@@ -1,0 +1,13 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "0073eb409a0146dc-00040dd05a005963",
+        "source": "../../Resources/Textures/M4/WoodFloorMain_baseColor.png",
+        "compiled": "../../Resources/Textures/M4/WoodFloorMain_baseColor.dds"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true
+    }
+}

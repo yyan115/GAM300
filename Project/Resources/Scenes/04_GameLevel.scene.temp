@@ -383,7 +383,7 @@
                         },
                         {
                             "type": "bool",
-                            "data": true
+                            "data": false
                         }
                     ]
                 },
@@ -4420,15 +4420,15 @@
                             "data": [
                                 {
                                     "type": "float",
-                                    "data": -0.00000120699
+                                    "data": 0
                                 },
                                 {
                                     "type": "float",
-                                    "data": -0.641755
+                                    "data": 0
                                 },
                                 {
                                     "type": "float",
-                                    "data": -0.145637
+                                    "data": 0
                                 }
                             ]
                         }
