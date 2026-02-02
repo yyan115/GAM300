@@ -21,17 +21,17 @@
             "defaultValue": 0.0
         },
         {
-            "name": "IsDead",
-            "type": "Bool",
-            "defaultValue": 0.0
-        },
-        {
             "name": "IsGrounded",
             "type": "Bool",
             "defaultValue": 0.0
         },
         {
-            "name": "IsJumping",
+            "name": "IsHeavyCharging",
+            "type": "Bool",
+            "defaultValue": 0.0
+        },
+        {
+            "name": "IsDead",
             "type": "Bool",
             "defaultValue": 0.0
         },
@@ -41,7 +41,7 @@
             "defaultValue": 0.0
         },
         {
-            "name": "IsHeavyCharging",
+            "name": "IsJumping",
             "type": "Bool",
             "defaultValue": 0.0
         },
@@ -102,17 +102,6 @@
             }
         },
         {
-            "id": "Death",
-            "clipIndex": 3,
-            "loop": false,
-            "speed": 1.0,
-            "crossfadeDuration": 0.0,
-            "nodePosition": {
-                "x": 450.529541015625,
-                "y": -2.4705915451049805
-            }
-        },
-        {
             "id": "Jump",
             "clipIndex": 4,
             "loop": false,
@@ -121,6 +110,17 @@
             "nodePosition": {
                 "x": 100.50003051757813,
                 "y": -2.4705705642700195
+            }
+        },
+        {
+            "id": "Death",
+            "clipIndex": 3,
+            "loop": false,
+            "speed": 1.0,
+            "crossfadeDuration": 0.0,
+            "nodePosition": {
+                "x": 450.529541015625,
+                "y": -2.4705915451049805
             }
         },
         {
@@ -256,6 +256,11 @@
                     "paramName": "IsJumping",
                     "mode": "Equals",
                     "threshold": 0.0
+                },
+                {
+                    "paramName": "IsGrounded",
+                    "mode": "Equals",
+                    "threshold": 1.0
                 }
             ]
         },
@@ -463,9 +468,9 @@
             "from": "Hurt",
             "to": "Land",
             "anyState": false,
-            "hasExitTime": false,
-            "exitTime": 1.0,
-            "transitionDuration": 0.0,
+            "hasExitTime": true,
+            "exitTime": 0.6399999856948853,
+            "transitionDuration": 0.6100000143051147,
             "conditions": [
                 {
                     "paramName": "IsGrounded",
@@ -543,9 +548,9 @@
             "from": "Hurt",
             "to": "Roll",
             "anyState": false,
-            "hasExitTime": false,
-            "exitTime": 1.0,
-            "transitionDuration": 0.0,
+            "hasExitTime": true,
+            "exitTime": 0.800000011920929,
+            "transitionDuration": 0.800000011920929,
             "conditions": [
                 {
                     "paramName": "IsGrounded",
