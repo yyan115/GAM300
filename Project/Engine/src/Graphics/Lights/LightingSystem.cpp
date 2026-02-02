@@ -74,20 +74,43 @@ void LightingSystem::RenderShadowMaps()
         );
     }
 
-    // Render point light shadows
+    // =========================================================================
+    // POINT LIGHT SHADOWS WITH CACHING
+    // =========================================================================
+
+    // Increment frame counters for ALL shadow maps
+    for (int i = 0; i < MAX_POINT_LIGHT_SHADOWS; ++i)
+    {
+        pointShadowMaps[i].IncrementFrameCounter();
+    }
+
+    // LOGGING: Track updates this frame
+    int updatedCount = 0;
+    int skippedCount = 0;
+
+    // Render only shadows that need updating
     int shadowIndex = 0;
     for (size_t i = 0; i < pointLightData.positions.size() && shadowIndex < MAX_POINT_LIGHT_SHADOWS; ++i)
     {
         if (pointLightData.shadowIndex[i] >= 0)
         {
-            pointShadowMaps[shadowIndex].Render(
-                pointLightData.positions[i],
-                pointLightShadowFarPlane,
-                shadowRenderCallback
-            );
+            glm::vec3 lightPos = pointLightData.positions[i];
+
+            if (pointShadowMaps[shadowIndex].NeedsUpdate(lightPos, pointLightShadowFarPlane))
+            {
+                pointShadowMaps[shadowIndex].Render(lightPos, pointLightShadowFarPlane, shadowRenderCallback);
+                pointShadowMaps[shadowIndex].MarkUpdated(lightPos, pointLightShadowFarPlane);
+                updatedCount++;
+            }
+            else
+            {
+                skippedCount++;
+            }
+
             shadowIndex++;
         }
     }
+
 }
 
 void LightingSystem::ApplyLighting(Shader& shader)
