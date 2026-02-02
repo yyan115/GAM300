@@ -166,6 +166,7 @@ public:
 	static void DeserializeModelComponent(ModelRenderComponent& modelComp, const rapidjson::Value& modelJSON, Entity root, bool skipSpawnChildren = false);
 	static void DeserializeSpriteComponent(SpriteRenderComponent& spriteComp, const rapidjson::Value& spriteJSON);
 	static void DeserializeSpriteAnimationComponent(SpriteAnimationComponent& animComp, const rapidjson::Value& animJSON);
+	static void DeserializeAnimationComponent(AnimationComponent& animComp, const rapidjson::Value& animJSON);
 	static void DeserializeTextComponent(TextRenderComponent& textComp, const rapidjson::Value& textJSON);
 	static void DeserializeParticleComponent(ParticleComponent& particleComp, const rapidjson::Value& particleJSON);
 	static void DeserializeDirLightComponent(DirectionalLightComponent& dirLightComp, const rapidjson::Value& dirLightJSON);
