@@ -403,68 +403,43 @@ static Entity Lua_FindEntityByName(const std::string& name)
     return -1; // Not found
 }
 
-namespace {
-    static std::unordered_map<int, std::vector<Entity>> s_TagCache;
-    static int s_NextCacheID = 1000; // start at 1000 if you want to avoid collisions
-    static std::mutex s_TagCacheMutex;
-}
-static int Lua_FindEntitiesByTag(const std::string& tag, int NumOfEntities = 4)
+// stack args: 1 = tag (string), 2 = maxResults (optional number)
+static int Lua_GetEntitiesByTag(lua_State* L)
 {
-    if (!g_ecsManager) return 0;
+    const char* tag = luaL_checkstring(L, 1);
+    int maxResults = static_cast<int>(luaL_optinteger(L, 2, 4));
+
+    if (!g_ecsManager) {
+        lua_newtable(L);  // Return empty table instead of count=0
+        return 1;
+    }
+
     ECSManager& ecs = *g_ecsManager;
     const auto& entities = ecs.GetActiveEntities();
 
-    std::vector<Entity> found;
-    found.reserve(NumOfEntities);
+    std::vector<Entity> results;
+    results.reserve(maxResults);
 
     for (Entity e : entities)
     {
-        if (!ecs.HasComponent<TagComponent>(e))
-            continue;
+        if (results.size() >= static_cast<size_t>(maxResults)) break;
+        if (!ecs.HasComponent<TagComponent>(e)) continue;
         auto& tc = ecs.GetComponent<TagComponent>(e);
         if (tc.HasTag(tag))
         {
-            found.push_back(e);
-            std::cout << "found\n";
-            if (found.size() >= static_cast<size_t>(NumOfEntities)) break;
+            results.push_back(e);
         }
     }
 
-    if (found.empty()) return 0;
-
-    // store in the shared cache
-    std::lock_guard<std::mutex> lock(s_TagCacheMutex);
-    int cacheId = s_NextCacheID++;
-    s_TagCache[cacheId] = std::move(found);
-
-    std::cout << "created cache id " << cacheId << std::endl;
-    return cacheId;
-}
-
-static int Lua_GetTagCacheCount(int cacheId) {
-    std::lock_guard<std::mutex> lock(s_TagCacheMutex);
-    auto it = s_TagCache.find(cacheId);
-    if (it == s_TagCache.end()) return 0;
-    return static_cast<int>(it->second.size());
-}
-
-static Entity Lua_GetTagCacheAt(int cacheId, int index) {
-    std::lock_guard<std::mutex> lk(s_TagCacheMutex);
-    auto it = s_TagCache.find(cacheId);
-    if (it == s_TagCache.end()) return 0;
-    auto& vec = it->second;
-    if (index < 0 || index >= static_cast<int>(vec.size())) return 0;
-    Entity e = vec[index];
-    if (index == static_cast<int>(vec.size()) - 1) {
-        // last element read -> erase cache
-        s_TagCache.erase(it);
+    // Create and populate a Lua table
+    lua_createtable(L, results.size(), 0);  // Pre-allocate array part
+    for (size_t i = 0; i < results.size(); ++i)
+    {
+        lua_pushinteger(L, static_cast<lua_Integer>(results[i]));
+        lua_rawseti(L, -2, i + 1);  // Lua arrays are 1-indexed
     }
-    return e;
-}
 
-static void Lua_ClearTagCache(int cacheId) {
-    std::lock_guard<std::mutex> lock(s_TagCacheMutex);
-    s_TagCache.erase(cacheId);
+    return 1;  // Return the table
 }
 
 static std::tuple<float, float> Lua_ScreenToGameCoordinates(float mouseX, float mouseY)
@@ -516,8 +491,6 @@ static size_t Lua_FindCurrentClipByName(const std::string& name)
 
     return -1;
 }
-
-
 
 
 
