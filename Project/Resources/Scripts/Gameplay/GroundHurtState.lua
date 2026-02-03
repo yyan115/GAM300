@@ -11,7 +11,7 @@ function HurtState:Enter(ai)
 
     if ai.particles then
         ai.particles.isEmitting   = true
-        ai.particles.emissionRate = 6
+        ai.particles.emissionRate = 180
     end
 end
 
