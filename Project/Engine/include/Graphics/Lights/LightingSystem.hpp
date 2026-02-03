@@ -3,6 +3,7 @@
 #include "Graphics/ShaderClass.h"
 #include "Graphics/Shadows/ShadowMap.hpp"
 #include "Graphics/Shadows/PointShadowMap.hpp" 
+#include "Graphics/Lights/LightingUBO.hpp"
 
 struct DirectionalLightComponent;
 struct PointLightComponent;
@@ -12,13 +13,14 @@ class Camera;
 class LightingSystem : public System {
 public:
     int MAX_POINT_LIGHTS = 32;
-    int MAX_SPOT_LIGHTS = 16;
 #ifdef __ANDROID__
     const int MAX_VISIBLE_POINT_LIGHTS = 8;
     static const int MAX_POINT_LIGHT_SHADOWS = 4;
+    const int MAX_SPOT_LIGHTS = 8;   
 #else
     const int MAX_VISIBLE_POINT_LIGHTS = 16;
     static const int MAX_POINT_LIGHT_SHADOWS = 8;
+    const int MAX_SPOT_LIGHTS = 16; 
 #endif
 
     
@@ -127,4 +129,8 @@ private:
 
     // Track active shadow casters for editor warnings
     int activeShadowCasterCount = 0;
+
+    // UBO for efficient uniform upload
+    LightingUBO lightingUBO;
+    LightingDataUBO lightingData;
 };

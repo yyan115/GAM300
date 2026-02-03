@@ -29,6 +29,12 @@ bool LightingSystem::Initialise()
         }
     }
 
+    // Initialise UBO
+    if (!lightingUBO.Initialize())
+    {
+        std::cout << "[LightingSystem] Warning: UBO initialization failed, using fallback" << std::endl;
+    }
+
     std::cout << "[LightingSystem] Initialized" << std::endl;
     return true;
 }
@@ -49,6 +55,8 @@ void LightingSystem::Shutdown()
         psm.Shutdown();
     }
     pointShadowMaps.clear();
+
+    lightingUBO.Shutdown();
 
     std::cout << "[LightingSystem] Shutdown" << std::endl;
 }
@@ -115,63 +123,132 @@ void LightingSystem::RenderShadowMaps()
 
 void LightingSystem::ApplyLighting(Shader& shader)
 {
-    shader.setInt("ambientMode", static_cast<int>(ambientMode));
-    shader.setVec3("ambientSky", ambientSky);
-    shader.setVec3("ambientEquator", ambientEquator);
-    shader.setVec3("ambientGround", ambientGround);
+    std::cout << "[UBO Debug] === ApplyLighting Start ===" << std::endl;
+    std::cout << "[UBO Debug] UBO Initialized: " << lightingUBO.IsInitialized() << std::endl;
+    std::cout << "[UBO Debug] UBO Buffer ID: " << lightingUBO.GetBufferID() << std::endl;
+    std::cout << "[UBO Debug] Shader ID: " << shader.ID << std::endl;
 
-    // Apply directional light
-    if (directionalLightData.hasDirectionalLight)
+    // Check if block exists in shader
+    GLuint blockIndex = glGetUniformBlockIndex(shader.ID, "LightingData");
+    std::cout << "[UBO Debug] Block Index: " << blockIndex << " (GL_INVALID_INDEX = " << GL_INVALID_INDEX << ")" << std::endl;
+
+    if (blockIndex == GL_INVALID_INDEX)
     {
-        shader.setVec3("dirLight.direction", directionalLightData.direction);
-        shader.setVec3("dirLight.ambient", directionalLightData.ambient);
-        shader.setVec3("dirLight.diffuse", directionalLightData.diffuse);
-        shader.setVec3("dirLight.specular", directionalLightData.specular);
-        shader.setFloat("dirLight.intensity", directionalLightData.intensity);
-    }
-    else
-    {
-        shader.setVec3("dirLight.direction", glm::vec3(0.0f, -1.0f, 0.0f));
-        shader.setVec3("dirLight.ambient", glm::vec3(0.0f));
-        shader.setVec3("dirLight.diffuse", glm::vec3(0.0f));
-        shader.setVec3("dirLight.specular", glm::vec3(0.0f));
-        shader.setFloat("dirLight.intensity", 0.0f);
+        std::cout << "[UBO Debug] ERROR: LightingData block not found in shader!" << std::endl;
+        return;
     }
 
-    // Send counts to shader
-    shader.setInt("numPointLights", static_cast<int>(pointLightData.positions.size()));
-    shader.setInt("numSpotLights", static_cast<int>(spotLightData.positions.size()));
+    // Check block size
+    GLint blockSize;
+    glGetActiveUniformBlockiv(shader.ID, blockIndex, GL_UNIFORM_BLOCK_DATA_SIZE, &blockSize);
+    std::cout << "[UBO Debug] Shader expects block size: " << blockSize << " bytes" << std::endl;
+    std::cout << "[UBO Debug] C++ struct size: " << sizeof(LightingDataUBO) << " bytes" << std::endl;
 
-    // Set active point lights
-    for (size_t i = 0; i < pointLightData.positions.size(); i++)
+    if (blockSize != sizeof(LightingDataUBO))
     {
-        std::string base = "pointLights[" + std::to_string(i) + "]";
-        shader.setVec3(base + ".position", pointLightData.positions[i]);
-        shader.setVec3(base + ".ambient", pointLightData.ambient[i]);
-        shader.setVec3(base + ".diffuse", pointLightData.diffuse[i]);
-        shader.setVec3(base + ".specular", pointLightData.specular[i]);
-        shader.setFloat(base + ".constant", pointLightData.constant[i]);
-        shader.setFloat(base + ".linear", pointLightData.linear[i]);
-        shader.setFloat(base + ".quadratic", pointLightData.quadratic[i]);
-        shader.setFloat(base + ".intensity", pointLightData.intensity[i]);
+        std::cout << "[UBO Debug] WARNING: Size mismatch! This will cause problems." << std::endl;
     }
 
-    // Set active spot lights
-    for (size_t i = 0; i < spotLightData.positions.size(); i++)
+    // Fill and upload data
+    lightingData.numPointLights = static_cast<int>(pointLightData.positions.size());
+    lightingData.numSpotLights = static_cast<int>(spotLightData.positions.size());
+    std::cout << "[UBO Debug] Point lights: " << lightingData.numPointLights << std::endl;
+    std::cout << "[UBO Debug] Spot lights: " << lightingData.numSpotLights << std::endl;
+
+    // =========================================================================
+    // Use UBO (fast path)
+    // =========================================================================
+    if (lightingUBO.IsInitialized())
     {
-        std::string base = "spotLights[" + std::to_string(i) + "]";
-        shader.setVec3(base + ".position", spotLightData.positions[i]);
-        shader.setVec3(base + ".direction", spotLightData.directions[i]);
-        shader.setVec3(base + ".ambient", spotLightData.ambient[i]);
-        shader.setVec3(base + ".diffuse", spotLightData.diffuse[i]);
-        shader.setVec3(base + ".specular", spotLightData.specular[i]);
-        shader.setFloat(base + ".constant", spotLightData.constant[i]);
-        shader.setFloat(base + ".linear", spotLightData.linear[i]);
-        shader.setFloat(base + ".quadratic", spotLightData.quadratic[i]);
-        shader.setFloat(base + ".cutOff", spotLightData.cutOff[i]);
-        shader.setFloat(base + ".outerCutOff", spotLightData.outerCutOff[i]);
-        shader.setFloat(base + ".intensity", spotLightData.intensity[i]);
+        // Fill UBO data struct
+        lightingData.ambientSky = glm::vec4(ambientSky, 0.0f);
+        lightingData.ambientEquator = glm::vec4(ambientEquator, 0.0f);
+        lightingData.ambientGround = glm::vec4(ambientGround, 0.0f);
+        lightingData.ambientMode = static_cast<int>(ambientMode);
+        lightingData.ambientIntensity = ambientIntensity;
+        lightingData.numPointLights = static_cast<int>(pointLightData.positions.size());
+        lightingData.numSpotLights = static_cast<int>(spotLightData.positions.size());
+
+        // Directional light
+        if (directionalLightData.hasDirectionalLight)
+        {
+            lightingData.dirLight.direction = glm::vec4(directionalLightData.direction, 0.0f);
+            lightingData.dirLight.ambient = glm::vec4(directionalLightData.ambient, 0.0f);
+            lightingData.dirLight.diffuse = glm::vec4(directionalLightData.diffuse, 0.0f);
+            lightingData.dirLight.specular = glm::vec4(directionalLightData.specular, 0.0f);
+            lightingData.dirLight.intensity = directionalLightData.intensity;
+        }
+        else
+        {
+            lightingData.dirLight.direction = glm::vec4(0.0f, -1.0f, 0.0f, 0.0f);
+            lightingData.dirLight.ambient = glm::vec4(0.0f);
+            lightingData.dirLight.diffuse = glm::vec4(0.0f);
+            lightingData.dirLight.specular = glm::vec4(0.0f);
+            lightingData.dirLight.intensity = 0.0f;
+        }
+
+        // Point lights
+        size_t numPoints = std::min(pointLightData.positions.size(),
+            static_cast<size_t>(LightingDataUBO::MAX_POINT_LIGHTS_UBO));
+        for (size_t i = 0; i < numPoints; ++i)
+        {
+            lightingData.pointLights[i].position = glm::vec4(pointLightData.positions[i], 0.0f);
+            lightingData.pointLights[i].ambient = glm::vec4(pointLightData.ambient[i], 0.0f);
+            lightingData.pointLights[i].diffuse = glm::vec4(pointLightData.diffuse[i], 0.0f);
+            lightingData.pointLights[i].specular = glm::vec4(pointLightData.specular[i], 0.0f);
+            lightingData.pointLights[i].constant = pointLightData.constant[i];
+            lightingData.pointLights[i].linear = pointLightData.linear[i];
+            lightingData.pointLights[i].quadratic = pointLightData.quadratic[i];
+            lightingData.pointLights[i].intensity = pointLightData.intensity[i];
+            lightingData.pointLights[i].shadowIndex = pointLightData.shadowIndex[i];
+        }
+
+        // Spot lights
+        size_t numSpots = std::min(spotLightData.positions.size(),
+            static_cast<size_t>(LightingDataUBO::MAX_SPOT_LIGHTS_UBO));
+        for (size_t i = 0; i < numSpots; ++i)
+        {
+            lightingData.spotLights[i].position = glm::vec4(spotLightData.positions[i], 0.0f);
+            lightingData.spotLights[i].direction = glm::vec4(spotLightData.directions[i], 0.0f);
+            lightingData.spotLights[i].ambient = glm::vec4(spotLightData.ambient[i], 0.0f);
+            lightingData.spotLights[i].diffuse = glm::vec4(spotLightData.diffuse[i], 0.0f);
+            lightingData.spotLights[i].specular = glm::vec4(spotLightData.specular[i], 0.0f);
+            lightingData.spotLights[i].constant = spotLightData.constant[i];
+            lightingData.spotLights[i].linear = spotLightData.linear[i];
+            lightingData.spotLights[i].quadratic = spotLightData.quadratic[i];
+            lightingData.spotLights[i].cutOff = spotLightData.cutOff[i];
+            lightingData.spotLights[i].outerCutOff = spotLightData.outerCutOff[i];
+            lightingData.spotLights[i].intensity = spotLightData.intensity[i];
+        }
+
+        // Upload to GPU (ONE call instead of 100+)
+        lightingUBO.Update(lightingData);
+
+        // Bind to binding point 0 (must match shader)
+        lightingUBO.Bind(0);
+
+        // Link shader's uniform block to binding point 0
+        GLuint blockIndex = glGetUniformBlockIndex(shader.ID, "LightingData");
+        if (blockIndex != GL_INVALID_INDEX)
+        {
+            glUniformBlockBinding(shader.ID, blockIndex, 0);
+        }
+
+        std::cout << "[UBO Debug] MAX_POINT_LIGHTS_UBO: " << LightingDataUBO::MAX_POINT_LIGHTS_UBO << std::endl;
+        std::cout << "[UBO Debug] MAX_SPOT_LIGHTS_UBO: " << LightingDataUBO::MAX_SPOT_LIGHTS_UBO << std::endl;
+        std::cout << "[UBO Debug] PointLightUBO size: " << sizeof(PointLightUBO) << std::endl;
+        std::cout << "[UBO Debug] SpotLightUBO size: " << sizeof(SpotLightUBO) << std::endl;
+
+        lightingUBO.Update(lightingData);
+        lightingUBO.Bind(0);
+        glUniformBlockBinding(shader.ID, blockIndex, 0);
+
+        std::cout << "[UBO Debug] === ApplyLighting End ===" << std::endl;
+
+        return;
     }
+
+    
 }
 
 void LightingSystem::ApplyShadows(Shader& shader)

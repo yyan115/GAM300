@@ -1,14 +1,77 @@
 #version 330 core
 
 // ============================================================================
-// Point Light Shadow Uniforms
+// UNIFORM BUFFER OBJECT - All lighting data in one block
+// Uses std140 layout for predictable memory alignment
 // ============================================================================
+
+#define MAX_POINT_LIGHTS_UBO 16
+#define MAX_SPOT_LIGHTS_UBO 16
 #define MAX_POINT_LIGHT_SHADOWS 8
+
+// Point light shadow maps (still need individual samplers)
 uniform samplerCube pointShadowMaps[MAX_POINT_LIGHT_SHADOWS];
 uniform float pointShadowFarPlane;
 
+// Directional shadow map
+uniform sampler2D shadowMap;
+uniform bool shadowsEnabled;
+
+// UBO structs must match C++ exactly with std140 padding
+struct PointLightData {
+    vec4 position;      // xyz = position
+    vec4 ambient;       // xyz = ambient
+    vec4 diffuse;       // xyz = diffuse
+    vec4 specular;      // xyz = specular
+    float constant;
+    float linear;
+    float quadratic;
+    float intensity;
+    int shadowIndex;
+    float padding[3];
+};
+
+struct SpotLightData {
+    vec4 position;      // xyz = position
+    vec4 direction;     // xyz = direction
+    vec4 ambient;       // xyz = ambient
+    vec4 diffuse;       // xyz = diffuse
+    vec4 specular;      // xyz = specular
+    float constant;
+    float linear;
+    float quadratic;
+    float cutOff;
+    float outerCutOff;
+    float intensity;
+    float padding[2];
+};
+
+struct DirectionalLightData {
+    vec4 direction;     // xyz = direction
+    vec4 ambient;       // xyz = ambient
+    vec4 diffuse;       // xyz = diffuse
+    vec4 specular;      // xyz = specular
+    float intensity;
+    float padding[3];
+};
+
+// The uniform block - binding point 0
+layout(std140) uniform LightingData {
+    vec4 ambientSky;
+    vec4 ambientEquator;
+    vec4 ambientGround;
+    int ambientMode;
+    float ambientIntensity;
+    int numPointLights;
+    int numSpotLights;
+    
+    DirectionalLightData dirLight;
+    PointLightData pointLights[MAX_POINT_LIGHTS_UBO];
+    SpotLightData spotLights[MAX_SPOT_LIGHTS_UBO];
+};
+
 // ============================================================================
-// Material
+// Material (unchanged)
 // ============================================================================
 struct Material {
     vec3 ambient;
@@ -36,66 +99,12 @@ in vec3 Tangent;
 in vec4 FragPosLightSpace;
 
 uniform Material material;
-
-// ============================================================================
-// Lighting Structures
-// ============================================================================
-struct DirectionLight {
-    vec3 direction;
-    vec3 ambient;
-    vec3 diffuse;
-    vec3 specular;
-    float intensity;
-};
-uniform DirectionLight dirLight;
-
-struct PointLight {
-    vec3 position;
-    vec3 ambient;
-    vec3 diffuse;
-    vec3 specular;
-    float constant;
-    float linear;
-    float quadratic;   
-    float intensity;
-    int shadowIndex;
-};
-#define NR_POINT_LIGHTS 32
-uniform PointLight pointLights[NR_POINT_LIGHTS];
-uniform int numPointLights;
-
-struct Spotlight {
-    vec3 position;  
-    vec3 direction;
-    float cutOff;
-    float outerCutOff;
-    vec3 ambient;
-    vec3 diffuse;
-    vec3 specular;
-    float constant;
-    float linear;
-    float quadratic;
-    float intensity;
-};
-#define NR_SPOT_LIGHTS 16
-uniform Spotlight spotLights[NR_SPOT_LIGHTS];
-uniform int numSpotLights;
-
-uniform int ambientMode;
-uniform vec3 ambientSky;
-uniform vec3 ambientEquator;
-uniform vec3 ambientGround;
-uniform float ambientIntensity;
-
-// Directional shadow mapping uniforms
-uniform sampler2D shadowMap;
-uniform bool shadowsEnabled;
-
-out vec4 FragColor;
 uniform vec3 cameraPos;
 
+out vec4 FragColor;
+
 // ============================================================================
-// Helper functions for materials
+// Helper functions for materials (unchanged)
 // ============================================================================
 
 vec3 getMaterialDiffuse() {
@@ -120,16 +129,16 @@ vec3 calculateAmbient(vec3 normal) {
     vec3 ambient;
 
     if (ambientMode == 0) {
-        ambient = ambientSky;
+        ambient = ambientSky.rgb;
     } else if (ambientMode == 1) {
         float t = normal.y * 0.5 + 0.5;
         if (t < 0.5) {
-            ambient = mix(ambientGround, ambientEquator, t * 2.0);
+            ambient = mix(ambientGround.rgb, ambientEquator.rgb, t * 2.0);
         } else {
-            ambient = mix(ambientEquator, ambientSky, (t - 0.5) * 2.0);
+            ambient = mix(ambientEquator.rgb, ambientSky.rgb, (t - 0.5) * 2.0);
         }
     } else {
-        ambient = ambientSky;
+        ambient = ambientSky.rgb;
     }
 
     return ambient * ambientIntensity;
@@ -152,7 +161,7 @@ vec3 getNormalFromMap() {
 }
 
 // ============================================================================
-// Directional Shadow Calculation (PCF 3x3)
+// Shadow Calculations (unchanged)
 // ============================================================================
 
 float calculateShadow(vec4 fragPosLightSpace, vec3 normal, vec3 lightDir)
@@ -171,7 +180,6 @@ float calculateShadow(vec4 fragPosLightSpace, vec3 normal, vec3 lightDir)
     float shadow = 0.0;
     vec2 texelSize = 1.0 / textureSize(shadowMap, 0);
     
-    // 3x3 PCF kernel (9 samples)
     for (int x = -1; x <= 1; ++x) {
         for (int y = -1; y <= 1; ++y) {
             float pcfDepth = texture(shadowMap, projCoords.xy + vec2(x, y) * texelSize).r;
@@ -182,10 +190,6 @@ float calculateShadow(vec4 fragPosLightSpace, vec3 normal, vec3 lightDir)
     shadow /= 9.0;
     return shadow;
 }
-
-// ============================================================================
-// Point Light Shadow Calculation
-// ============================================================================
 
 float calculatePointShadow(int shadowIndex, vec3 fragPos, vec3 lightPos)
 {
@@ -216,72 +220,78 @@ float calculatePointShadow(int shadowIndex, vec3 fragPos, vec3 lightPos)
 }
 
 // ============================================================================
-// Lighting Calculations
+// Lighting Calculations (updated to use UBO struct)
 // ============================================================================
 
-vec3 calculateDirectionLight(DirectionLight light, vec3 normal, vec3 viewDir, float shadow)
+vec3 calculateDirectionLight(vec3 normal, vec3 viewDir, float shadow)
 {
-    vec3 lightDir = normalize(-light.direction);
+    vec3 lightDir = normalize(-dirLight.direction.xyz);
     float diff = max(dot(normal, lightDir), 0.0);
     
     vec3 halfwayDir = normalize(lightDir + viewDir);
     float spec = pow(max(dot(normal, halfwayDir), 0.0), material.shininess);
     
-    vec3 ambient  = light.ambient * getMaterialAmbient();
-    vec3 diffuse  = light.diffuse * diff * getMaterialDiffuse();
-    vec3 specular = light.specular * spec * getMaterialSpecular();
+    vec3 ambient  = dirLight.ambient.rgb * getMaterialAmbient();
+    vec3 diffuse  = dirLight.diffuse.rgb * diff * getMaterialDiffuse();
+    vec3 specular = dirLight.specular.rgb * spec * getMaterialSpecular();
     
-    return (ambient + (1.0 - shadow) * (diffuse + specular)) * light.intensity;
+    return (ambient + (1.0 - shadow) * (diffuse + specular)) * dirLight.intensity;
 }
 
-vec3 calculatePointLight(PointLight light, vec3 normal, vec3 fragPos, vec3 viewDir)
+vec3 calculatePointLight(int index, vec3 normal, vec3 fragPos, vec3 viewDir)
 {
-    vec3 lightDir = normalize(light.position - fragPos);
+    vec3 lightPos = pointLights[index].position.xyz;
+    vec3 lightDir = normalize(lightPos - fragPos);
     float diff = max(dot(normal, lightDir), 0.0);
     
     vec3 reflectDir = reflect(-lightDir, normal);
     float spec = pow(max(dot(viewDir, reflectDir), 0.0), material.shininess);
     
-    float distance = length(light.position - fragPos);
-    float attenuation = 1.0 / (light.constant + light.linear * distance + light.quadratic * (distance * distance));    
+    float distance = length(lightPos - fragPos);
+    float attenuation = 1.0 / (pointLights[index].constant + 
+                               pointLights[index].linear * distance + 
+                               pointLights[index].quadratic * (distance * distance));    
     
-    float shadow = calculatePointShadow(light.shadowIndex, fragPos, light.position);
+    float shadow = calculatePointShadow(pointLights[index].shadowIndex, fragPos, lightPos);
     
-    vec3 ambient  = light.ambient * getMaterialAmbient();
-    vec3 diffuse  = light.diffuse * diff * getMaterialDiffuse();
-    vec3 specular = light.specular * spec * getMaterialSpecular();
+    vec3 ambient  = pointLights[index].ambient.rgb * getMaterialAmbient();
+    vec3 diffuse  = pointLights[index].diffuse.rgb * diff * getMaterialDiffuse();
+    vec3 specular = pointLights[index].specular.rgb * spec * getMaterialSpecular();
     
     ambient  *= attenuation;
     diffuse  *= attenuation;
     specular *= attenuation;
     
-    return (ambient + (1.0 - shadow) * (diffuse + specular)) * light.intensity;
+    return (ambient + (1.0 - shadow) * (diffuse + specular)) * pointLights[index].intensity;
 }
 
-vec3 calculateSpotlight(Spotlight light, vec3 normal, vec3 fragPos, vec3 viewDir)
+vec3 calculateSpotlight(int index, vec3 normal, vec3 fragPos, vec3 viewDir)
 {
-    vec3 lightDir = normalize(light.position - fragPos);
+    vec3 lightPos = spotLights[index].position.xyz;
+    vec3 lightDir = normalize(lightPos - fragPos);
     float diff = max(dot(normal, lightDir), 0.0);
     
     vec3 reflectDir = reflect(-lightDir, normal);
     float spec = pow(max(dot(viewDir, reflectDir), 0.0), material.shininess);
     
-    float distance = length(light.position - fragPos);
-    float attenuation = 1.0 / (light.constant + light.linear * distance + light.quadratic * (distance * distance));
+    float distance = length(lightPos - fragPos);
+    float attenuation = 1.0 / (spotLights[index].constant + 
+                               spotLights[index].linear * distance + 
+                               spotLights[index].quadratic * (distance * distance));
     
-    float theta = dot(lightDir, normalize(-light.direction));
-    float epsilon = light.cutOff - light.outerCutOff;
-    float intensity = clamp((theta - light.outerCutOff) / epsilon, 0.0, 1.0);
+    float theta = dot(lightDir, normalize(-spotLights[index].direction.xyz));
+    float epsilon = spotLights[index].cutOff - spotLights[index].outerCutOff;
+    float intensity = clamp((theta - spotLights[index].outerCutOff) / epsilon, 0.0, 1.0);
     
-    vec3 ambient = light.ambient * getMaterialAmbient();
-    vec3 diffuse = light.diffuse * diff * getMaterialDiffuse();
-    vec3 specular = light.specular * spec * getMaterialSpecular();
+    vec3 ambient = spotLights[index].ambient.rgb * getMaterialAmbient();
+    vec3 diffuse = spotLights[index].diffuse.rgb * diff * getMaterialDiffuse();
+    vec3 specular = spotLights[index].specular.rgb * spec * getMaterialSpecular();
     
     ambient *= attenuation * intensity;
     diffuse *= attenuation * intensity;
     specular *= attenuation * intensity;
     
-    return (ambient + diffuse + specular) * light.intensity;
+    return (ambient + diffuse + specular) * spotLights[index].intensity;
 }
 
 // ============================================================================
@@ -296,19 +306,21 @@ void main()
     
     vec3 norm = getNormalFromMap();
     vec3 viewDir = normalize(cameraPos - FragPos);
-    vec3 lightDir = normalize(-dirLight.direction);
+    vec3 lightDir = normalize(-dirLight.direction.xyz);
     
     float dirShadow = calculateShadow(FragPosLightSpace, norm, lightDir);
 
     vec3 result = calculateAmbient(norm) * getMaterialDiffuse() * 0.5;
-    result += calculateDirectionLight(dirLight, norm, viewDir, dirShadow);
+    result += calculateDirectionLight(norm, viewDir, dirShadow);
     
+    // Use numPointLights from UBO
     for (int i = 0; i < numPointLights; i++) {
-        result += calculatePointLight(pointLights[i], norm, FragPos, viewDir);
+        result += calculatePointLight(i, norm, FragPos, viewDir);
     }
     
+    // Use numSpotLights from UBO
     for (int i = 0; i < numSpotLights; i++) {
-        result += calculateSpotlight(spotLights[i], norm, FragPos, viewDir);
+        result += calculateSpotlight(i, norm, FragPos, viewDir);
     }
 
     if (material.hasEmissiveMap) {
