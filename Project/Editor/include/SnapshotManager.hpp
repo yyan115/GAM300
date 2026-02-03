@@ -168,5 +168,5 @@ private:
 
     std::deque<Snapshot> undoStack;     // Undo history (FIFO with max size)
     std::stack<Snapshot> redoStack;     // Redo history (LIFO)
-    bool snapshotEnabled = true;        // Whether automatic snapshots are enabled
+    bool snapshotEnabled = false;        // Whether automatic snapshots are enabled
 };

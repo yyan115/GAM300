@@ -1,5 +1,6 @@
 #include "pch.h"
 #include "Video/VideoComponent.hpp"
+#include <algorithm>
 
 #pragma region Reflection
 REFL_REGISTER_START(VideoComponent)
@@ -24,7 +25,7 @@ std::string VideoComponent::PadNumber(int num)
 }
 
 
-//Called once 
+//Called once
 bool VideoComponent::ProcessMetaData(std::string resourcePath) {
 	if (resourcePath.empty()) return false;
 
@@ -41,6 +42,14 @@ bool VideoComponent::ProcessMetaData(std::string resourcePath) {
 	this->frameStart	= info.frameStart;
 	this->frameEnd		= info.frameEnd;
 	this->activeFrame	= info.frameStart;
+
+	// New timing system
+	this->fadeDuration		= info.fadeDuration;
+	this->boardDuration		= info.boardDuration;
+	this->panelDuration		= info.panelDuration;
+	this->skipFadeDuration	= info.skipFadeDuration;
+
+	// Legacy timing (for backwards compatibility)
 	this->preTime		= info.preTime;
 	this->duration		= info.duration;
 	this->postTime		= info.postTime;
@@ -57,19 +66,28 @@ bool VideoComponent::ProcessDialogueData(std::string dialoguePath)
 	while (std::getline(file, line))
 	{
 		// Skip empty lines or comments
-		if (line.empty() || line.find("Frame") == std::string::npos)
+		if (line.empty() || line[0] == '#')
+			continue;
+
+		// Support "Board N :", "Panel N :", and "Frame N :" formats
+		bool isBoard = line.find("Board") != std::string::npos;
+		bool isPanel = line.find("Panel") != std::string::npos;
+		bool isFrame = line.find("Frame") != std::string::npos;
+
+		if (!isBoard && !isPanel && !isFrame)
 			continue;
 
 		// 1. Find the position of the colon ':'
 		size_t colonPos = line.find(":");
 		if (colonPos == std::string::npos) continue;
 
-		// 2. Extract the Frame Number part (e.g., "Frame 1 ")
-		// We look for the space after "Frame" and before the colon
+		// 2. Extract the number part
 		size_t firstSpace = line.find(" ");
-		std::string frameNumStr = line.substr(firstSpace + 1, colonPos - firstSpace - 1);
+		std::string numStr = line.substr(firstSpace + 1, colonPos - firstSpace - 1);
+		// Clean whitespace
+		numStr.erase(std::remove_if(numStr.begin(), numStr.end(), ::isspace), numStr.end());
 
-		int frameNum = std::stoi(frameNumStr);
+		int num = std::stoi(numStr);
 
 		// 3. Extract the Dialogue part (everything after the colon)
 		std::string dialogueText = line.substr(colonPos + 1);
@@ -79,7 +97,17 @@ bool VideoComponent::ProcessDialogueData(std::string dialoguePath)
 		if (firstChar != std::string::npos) {
 			dialogueText = dialogueText.substr(firstChar);
 		}
-		dialogueMap[frameNum] = dialogueText;
+
+		if (isPanel)
+		{
+			// Store panel text - same text for all frames in panel
+			panelDialogueMap[num] = dialogueText;
+		}
+		else if (isBoard || isFrame)
+		{
+			// Board/Frame-based dialogue - text per individual board
+			dialogueMap[num] = dialogueText;
+		}
 	}
 	return true;
 }

@@ -70,7 +70,7 @@
         },
         {
             "id": "NA1",
-            "clipIndex": 7,
+            "clipIndex": 6,
             "loop": false,
             "speed": 2.000000238418579,
             "crossfadeDuration": 0.0,
@@ -81,7 +81,7 @@
         },
         {
             "id": "Hurt",
-            "clipIndex": 1,
+            "clipIndex": 4,
             "loop": false,
             "speed": 1.0,
             "crossfadeDuration": 0.0,
@@ -103,7 +103,7 @@
         },
         {
             "id": "Death",
-            "clipIndex": 3,
+            "clipIndex": 5,
             "loop": false,
             "speed": 1.0,
             "crossfadeDuration": 0.0,
@@ -114,7 +114,7 @@
         },
         {
             "id": "Jump",
-            "clipIndex": 4,
+            "clipIndex": 1,
             "loop": false,
             "speed": 1.0,
             "crossfadeDuration": 0.0,
@@ -125,7 +125,7 @@
         },
         {
             "id": "Land",
-            "clipIndex": 5,
+            "clipIndex": 3,
             "loop": false,
             "speed": 1.0,
             "crossfadeDuration": 0.0,
@@ -136,7 +136,7 @@
         },
         {
             "id": "Roll",
-            "clipIndex": 6,
+            "clipIndex": 9,
             "loop": false,
             "speed": 1.3000000715255737,
             "crossfadeDuration": 0.0,
@@ -147,7 +147,7 @@
         },
         {
             "id": "NA2",
-            "clipIndex": 8,
+            "clipIndex": 7,
             "loop": true,
             "speed": 2.000000238418579,
             "crossfadeDuration": 0.0,
@@ -158,13 +158,24 @@
         },
         {
             "id": "NA3",
-            "clipIndex": 9,
+            "clipIndex": 8,
             "loop": true,
             "speed": 2.000000238418579,
             "crossfadeDuration": 0.0,
             "nodePosition": {
                 "x": 1410.0,
                 "y": -388.5
+            }
+        },
+        {
+            "id": "Standing",
+            "clipIndex": 10,
+            "loop": false,
+            "speed": 1.0,
+            "crossfadeDuration": 0.0,
+            "nodePosition": {
+                "x": -141.25021362304688,
+                "y": -61.19632339477539
             }
         }
     ],
@@ -530,21 +541,6 @@
             ]
         },
         {
-            "from": "Roll",
-            "to": "Idle",
-            "anyState": false,
-            "hasExitTime": true,
-            "exitTime": 0.6200000047683716,
-            "transitionDuration": 0.5799999833106995,
-            "conditions": [
-                {
-                    "paramName": "IsRunning",
-                    "mode": "Equals",
-                    "threshold": 0.0
-                }
-            ]
-        },
-        {
             "from": "Hurt",
             "to": "Roll",
             "anyState": false,
@@ -713,18 +709,34 @@
                     "threshold": 1.0
                 }
             ]
+        },
+        {
+            "from": "Roll",
+            "to": "Idle",
+            "anyState": false,
+            "hasExitTime": true,
+            "exitTime": 0.6800000071525574,
+            "transitionDuration": 0.5799999833106995,
+            "conditions": [
+                {
+                    "paramName": "IsRunning",
+                    "mode": "Equals",
+                    "threshold": 0.0
+                }
+            ]
         }
     ],
     "clipPaths": [
-        "Resources/Animations/Kusane@Idle.fbx",
-        "Resources/Animations/Kusane@Hurt.fbx",
-        "Resources/Animations/Kusane@Run.fbx",
-        "Resources/Animations/Kusane@Death.fbx",
-        "Resources/Animations/Kusane@Jump.fbx",
-        "Resources/Animations/Kusane@Land.fbx",
-        "Resources/Animations/Kusane@Roll.fbx",
-        "Resources/Animations/Kusane@Slash1.fbx",
-        "Resources/Animations/Kusane@Slash2.fbx",
-        "Resources/Animations/Kusane@Slash3.fbx"
+        "Resources/Animations/Player@Idle.fbx",
+        "Resources/Animations/Player@Jump.fbx",
+        "Resources/Animations/Player@Run.fbx",
+        "Resources/Animations/Player@Land.fbx",
+        "Resources/Animations/Player@Hurt.fbx",
+        "Resources/Animations/Player@Death.fbx",
+        "Resources/Animations/Player@Slash1.fbx",
+        "Resources/Animations/Player@Slash2.fbx",
+        "Resources/Animations/Player@Slash3.fbx",
+        "Resources/Animations/Player@Roll.fbx",
+        "Resources/Animations/Player@Standing.fbx"
     ]
 }

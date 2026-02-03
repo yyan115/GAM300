@@ -2998,14 +2998,14 @@ void RegisterInspectorCustomRenderers()
                         if (!scriptData.pendingInstanceState.empty())
                         {
                             bool restored = Scripting::DeserializeJsonToInstance(previewInstance, scriptData.pendingInstanceState);
-                            if (restored)
+                            /*if (restored)
                             {
                                 ENGINE_PRINT("Restored pendingInstanceState for ", scriptData.scriptPath.c_str());
                             }
                             else
                             {
                                 ENGINE_PRINT("Failed to restore pendingInstanceState for ", scriptData.scriptPath.c_str());
-                            }
+                            }*/
                         }
                     }
                     else

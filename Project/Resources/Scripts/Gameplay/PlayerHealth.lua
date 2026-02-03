@@ -39,7 +39,10 @@ return Component {
     },
 
     Awake = function(self)
-        print("[PlayerHealth] Health initialized to ", self.Health)
+        self._iFrameDuration = self.IFrameDuration
+        self._animator  = self:GetComponent("AnimationComponent")
+        self._maxHealth = self.Health
+        self._currentHealth = self._maxHealth
 
         if event_bus and event_bus.subscribe then
             print("[PlayerHealth] Subscribing to knifeHitPlayerDmg")
@@ -59,14 +62,6 @@ return Component {
     end,
 
     Start = function(self)
-        self._animator  = self:GetComponent("AnimationComponent")
-
-        self._maxHealth = self.Health
-        self._currentHealth = self._maxHealth
-
-        self._iFrameDuration = self.IFrameDuration
-        self._isIFrame = false
-
         if event_bus and event_bus.publish then
             event_bus.publish("playerMaxhealth", self._maxHealth)
             event_bus.publish("playerCurrentHealth", self._currentHealth)
