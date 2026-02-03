@@ -55,7 +55,7 @@ function AttackState:Update(ai, dt)
             print(string.format("Melee Attack!"))
             -- MELEE HIT: emit event (keeps consistent with your event-bus approach)
             if _G.event_bus and _G.event_bus.publish then
-                _G.event_bus.publish("player_damage", {
+                _G.event_bus.publish("meleeHitPlayerDmg", {
                     dmg = (ai.MeleeDamage or 1),
                     src = "GroundEnemy",
                     enemyEntityId = ai.entityId,

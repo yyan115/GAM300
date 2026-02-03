@@ -81,6 +81,13 @@ local MOVES = {
     Move3 = { cooldown = 3.0, weights = { [1]=25,  [2]=35, [3]=30, [4]=20 }, execute = function(ai) print("[Miniboss] Move3: Anti Dodge") ai:AntiDodge() end },
     Move4 = { cooldown = 4.0, weights = { [1]=0,  [2]=10,  [3]=30, [4]=30 }, execute = function(ai) print("[Miniboss] Move4: Fate Sealed") ai:FateSealed() end },
     Move5 = { cooldown = 5.0, weights = { [1]=0,  [2]=0,  [3]=0,  [4]=30 }, execute = function(ai) print("[Miniboss] Move5: Death Lotus") ai:DeathLotus() end },
+
+    -- For testing individual moves 1 by 1
+    -- Move1 = { cooldown = 2.0, weights = { [1]=0, [2]=20, [3]=10, [4]=0 }, execute = function(ai) print("[Miniboss] Move1: Basic Attack") ai:BasicAttack() end },
+    -- Move2 = { cooldown = 2.5, weights = { [1]=0, [2]=35, [3]=30, [4]=20 }, execute = function(ai) print("[Miniboss] Move2: Burst Fire") ai:BurstFire() end },
+    -- Move3 = { cooldown = 3.0, weights = { [1]=10,  [2]=35, [3]=30, [4]=20 }, execute = function(ai) print("[Miniboss] Move3: Anti Dodge") ai:AntiDodge() end },
+    -- Move4 = { cooldown = 4.0, weights = { [1]=0,  [2]=10,  [3]=30, [4]=30 }, execute = function(ai) print("[Miniboss] Move4: Fate Sealed") ai:FateSealed() end },
+    -- Move5 = { cooldown = 5.0, weights = { [1]=0,  [2]=0,  [3]=0,  [4]=30 }, execute = function(ai) print("[Miniboss] Move5: Death Lotus") ai:DeathLotus() end },
 }
 
 local MOVE_ORDER = { "Move1", "Move2", "Move3", "Move4", "Move5" }
@@ -301,7 +308,7 @@ return Component {
                 local pos = CharacterController.GetPosition(self._controller)
                 if pos then
                     self:SetPosition(pos.x, pos.y, pos.z)
-                    if self._lastFacingRot then
+                    if (not self:IsInMove("DeathLotus")) and self._lastFacingRot then
                         local r = self._lastFacingRot
                         self:SetRotation(r.w, r.x, r.y, r.z)
                     end
@@ -317,18 +324,17 @@ return Component {
             return
         end
 
-        self:TickMove(dtSec)
-
         -- Run behaviour
         self.fsm:Update(dtSec)
+
+        self:TickMove(dtSec)
 
         if self._controller then
             local pos = CharacterController.GetPosition(self._controller)
             if pos then
                 self:SetPosition(pos.x, pos.y, pos.z)
 
-                -- restore yaw after CC sync
-                if self._lastFacingRot then
+                if (not self:IsInMove("DeathLotus")) and self._lastFacingRot then
                     local r = self._lastFacingRot
                     self:SetRotation(r.w, r.x, r.y, r.z)
                 end
@@ -536,6 +542,10 @@ return Component {
         return self._moveFinished == true
     end,
 
+    IsInMove = function(self, kind)
+        return (self._moveFinished == false) and self._move and (self._move.kind == kind)
+    end,
+
     GetNextMoveReadyTime = function(self)
         local soonest = math.huge
         for _, cd in pairs(self._moveCooldowns) do
@@ -709,7 +719,7 @@ return Component {
         end
     end,
 
-    _GetPlayerPos = function(self)
+    _GetPlayerPos = function(self, yOffset)
         local tr = self._playerTr
         if not tr then
             tr = Engine.FindTransformByName(self.PlayerName)
@@ -719,7 +729,9 @@ return Component {
 
         local pp = Engine.GetTransformPosition(tr)
         if not pp then return nil end
-        return pp[1], (pp[2] or 0) + 0.5, pp[3]
+
+        yOffset = yOffset or 0.5
+        return pp[1], (pp[2] or 0) + yOffset, pp[3]
     end,
 
     _GetSpawnPos = function(self)
@@ -751,7 +763,7 @@ return Component {
         return knife:Launch(sx, sy, sz, tx, ty, tz, token, tag)
     end,
 
-    -- EnemyAI-like 3-shot volley: center aimed + L/R perpendicular offsets
+    -- 3-shot volley: center aimed + L/R perpendicular offsets
     SpawnKnifeVolley3 = function(self, spread)
         spread = spread or 1.0
         local knives = KnifePool.RequestMany(3)
@@ -793,6 +805,39 @@ return Component {
 
         if not (ok1 and ok2 and ok3) then
             for i=1,3 do if knives[i] then knives[i]:Reset() end end
+            return false
+        end
+        return true
+    end,
+
+    -- Single aimed knife at player's current position (aim locked per shot)
+    SpawnKnifeSingleAtPlayer = function(self)
+        local knives = KnifePool.RequestMany(1)
+        if not knives or not knives[1] then return false end
+        local k = knives[1]
+
+        local px, py, pz = self:_GetPlayerPos()
+        if not px then
+            k.reserved = false
+            k._reservedToken = nil
+            return false
+        end
+
+        local sx, sy, sz = self:_GetSpawnPos()
+        if not sx then
+            k.reserved = false
+            k._reservedToken = nil
+            return false
+        end
+
+        local token = self:_NewVolleyToken()
+        k._reservedToken = token
+        k.reserved = true
+
+        local ok = self:_LaunchKnife(k, sx, sy, sz, px, py, pz, token, "S")
+
+        if not ok then
+            k:Reset()
             return false
         end
         return true
@@ -853,7 +898,7 @@ return Component {
     end,
 
     -- forward spray (not aimed): shoot 3 knives in facing direction with sideways offsets
-    SpawnForwardSpray3 = function(self, fx, fz, range, spread)
+    SpawnForwardSpray3 = function(self, fx, fz, range, spread, yOffset)
         range = range or 12.0
         spread = spread or 0.6
 
@@ -880,7 +925,9 @@ return Component {
             knives[i].reserved = true
         end
 
-        local baseTx, baseTy, baseTz = sx + fx*range, sy, sz + fz*range
+        local _, py, _ = self:_GetPlayerPos(yOffset or 0.0)
+        local targetY = py or sy
+        local baseTx, baseTy, baseTz = sx + fx*range, targetY, sz + fz*range
 
         local t0x, t0y, t0z = baseTx, baseTy, baseTz
         local t1x, t1y, t1z = baseTx - rx*spread, baseTy, baseTz - rz*spread
@@ -938,7 +985,7 @@ return Component {
         end
 
         -------------------------------------------------
-        -- Move2: 5 Bursts of 3 (aim per burst)
+        -- Move2: 5 Bursts (aim per burst)
         -------------------------------------------------
         if m.kind == "BurstFire" then
             local burstInterval = m.interval or 0.18
@@ -952,7 +999,7 @@ return Component {
 
             if m.t >= (m.nextShotT or 0) and (m.shotsDone or 0) < bursts then
                 self:FacePlayer()
-                self:SpawnKnifeVolley3(m.spread or 0.85)
+                self:SpawnKnifeSingleAtPlayer()
                 m.shotsDone = m.shotsDone + 1
                 m.nextShotT = m.t + burstInterval
             end
@@ -984,41 +1031,67 @@ return Component {
         end
 
         -------------------------------------------------
-        -- Move4: Fate Sealed (dash + slash window)
+        -- Move4: Fate Sealed (charge-up -> dash -> slash -> recover)
         -------------------------------------------------
         if m.kind == "FateSealed" then
+
+            -- Step 0: charge-up (telegraph)
             if m.step == 0 then
-                -- lock dash direction at start
-                local dx, dz = self:_DirToPlayerXZ()
-                if not dx then
-                    self:_EndMove()
-                    return
+                -- face player during charge (feels intentional)
+                self:FacePlayer()
+
+                m.chargeT = (m.chargeT or 0) + dtSec
+                local chargeDur = m.chargeDur or 0.45
+
+                -- OPTIONAL: play charge animation / VFX / SFX once
+                if not m.chargeStarted then
+                    m.chargeStarted = true
+                    -- Example hooks (only if you have them):
+                    -- if self.PlayClip and self.ClipCharge then self:PlayClip(self.ClipCharge, false) end
+                    -- if _G.event_bus and _G.event_bus.publish then _G.event_bus.publish("miniboss_charge", { entityId=self.entityId }) end
                 end
 
-                -- face dash direction
-                local q = { yawQuatFromDir(dx, dz) }
-                if #q > 0 then self:ApplyRotation(q[1], q[2], q[3], q[4]) end
+                if m.chargeT >= chargeDur then
+                    -- lock dash direction at the END of charge (fair + readable)
+                    local dx, dz = self:_DirToPlayerXZ()
+                    if not dx then
+                        self:_EndMove()
+                        return
+                    end
 
-                m.dx, m.dz = dx, dz
-                m.dashT = 0
-                m.step = 1
+                    -- face dash direction
+                    local q = { yawQuatFromDir(dx, dz) }
+                    if #q > 0 then self:ApplyRotation(q[1], q[2], q[3], q[4]) end
+
+                    m.dx, m.dz = dx, dz
+                    m.dashT = 0
+                    m.step = 1
+                end
+
+                return
             end
 
-            -- dash phase
-            local dashDur = m.dashDur or 0.22
+            -- Step 1: dash phase
+            local dashDur   = m.dashDur or 0.22
             local dashSpeed = m.dashSpeed or 18.0
 
             if m.step == 1 then
                 m.dashT = (m.dashT or 0) + dtSec
+
                 if self._controller then
-                    CharacterController.Move(self._controller, m.dx * dashSpeed * dtSec, 0, m.dz * dashSpeed * dtSec)
+                    CharacterController.Move(
+                        self._controller,
+                        m.dx * dashSpeed * dtSec,
+                        0,
+                        m.dz * dashSpeed * dtSec
+                    )
                 end
 
-                -- slash window near end of dash (or right after)
-                if not m.slashed and m.dashT >= (dashDur * 0.8) then
+                -- slash timing: you can do "at end" or "near end"
+                local slashAt = m.slashAt or 0.85 -- fraction of dash
+                if not m.slashed and m.dashT >= (dashDur * slashAt) then
                     m.slashed = true
 
-                    -- If you have a damage system, emit an event here:
                     if _G.event_bus and _G.event_bus.publish then
                         local ex, ey, ez = self:GetPosition()
                         _G.event_bus.publish("miniboss_slash", {
@@ -1034,13 +1107,18 @@ return Component {
                     m.step = 2
                     m.recoverT = 0
                 end
-            elseif m.step == 2 then
+
+                return
+            end
+
+            -- Step 2: recovery
+            if m.step == 2 then
                 m.recoverT = (m.recoverT or 0) + dtSec
                 if m.recoverT >= (m.postDelay or 0.55) then
                     self:_EndMove()
                 end
+                return
             end
-            return
         end
 
         -------------------------------------------------
@@ -1072,7 +1150,7 @@ return Component {
             m.fireAcc = (m.fireAcc or 0) + dtSec
             while m.fireAcc >= fireInterval do
                 m.fireAcc = m.fireAcc - fireInterval
-                self:SpawnForwardSpray3(fx, fz, m.range or 12.0, m.spread or 0.7)
+                self:SpawnForwardSpray3(fx, fz, m.range or 12.0, m.spread or 0.7, m.lotusYOffset or 0.0)
             end
 
             if m.t >= dur then
@@ -1082,60 +1160,52 @@ return Component {
         end
     end,
 
-    -- -------------------------------------------------
-    -- -- Move implementations (entry points)
-    -- -------------------------------------------------
-    -- BasicAttack = function(self)
-    --     self:_BeginMove("Basic", {
-    --         spread = 0.6,
-    --         postDelay = 0.35
-    --     })
-    -- end,
-
-    -- BurstFire = function(self)
-    --     self:_BeginMove("BurstFire", {
-    --         bursts = 5,
-    --         interval = 0.18,   -- adjust for difficulty
-    --         spread = 0.85,
-    --         postDelay = 0.45
-    --     })
-    -- end,
-
-    -- AntiDodge = function(self)
-    --     self:_BeginMove("AntiDodge", {
-    --         spread1 = 0.5,
-    --         spread2 = 1.0,
-    --         postDelay = 0.45
-    --     })
-    -- end,
-
-    -- FateSealed = function(self)
-    --     self:_BeginMove("FateSealed", {
-    --         dashDur = 0.22,
-    --         dashSpeed = 18.0,
-    --         slashRadius = 1.4,
-    --         dmg = 1,
-    --         postDelay = 0.55
-    --     })
-    -- end,
-
-    -- DeathLotus = function(self)
-    --     self:_BeginMove("DeathLotus", {
-    --         duration = 2.8,
-    --         spinSpeed = math.pi * 1.8,  -- rad/s
-    --         fireInterval = 0.10,
-    --         range = 12.0,
-    --         spread = 0.7
-    --     })
-    -- end,
-
     -------------------------------------------------
-    -- Move implementations (stub)
-    -- IMPORTANT: moves can call self:FacePlayer() if needed.
+    -- Move implementations (entry points)
     -------------------------------------------------
-    BasicAttack   = function(self) end,
-    BurstFire     = function(self) end,
-    AntiDodge     = function(self) end,
-    FateSealed    = function(self) end,
-    DeathLotus    = function(self) end,
+    BasicAttack = function(self)
+        self:_BeginMove("Basic", {
+            spread = 0.6,
+            postDelay = 0.35
+        })
+    end,
+
+    BurstFire = function(self)
+        self:_BeginMove("BurstFire", {
+            bursts = 5,
+            interval = 0.18,   -- adjust for difficulty
+            postDelay = 0.45
+        })
+    end,
+
+    AntiDodge = function(self)
+        self:_BeginMove("AntiDodge", {
+            spread1 = 0.25,
+            spread2 = 0.35,
+            postDelay = 0.45
+        })
+    end,
+
+    FateSealed = function(self)
+        self:_BeginMove("FateSealed", {
+            chargeDur = 2.00,
+            dashDur = 0.33,
+            dashSpeed = 290.0,
+            slashAt = 0.90,
+            slashRadius = 1.4,
+            dmg = 1,
+            postDelay = 2.60
+        })
+    end,
+
+    DeathLotus = function(self)
+        self:_BeginMove("DeathLotus", {
+            duration = 2.8,
+            spinSpeed = math.pi * 1.8,  -- rad/s
+            fireInterval = 0.10,
+            range = 12.0,
+            spread = 0.7,
+            lotusYOffset = -3.0,
+        })
+    end,
 }
