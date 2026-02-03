@@ -209,6 +209,86 @@
                                 "minPitch": -20.0,
                                 "enemyDetectionRange": 2.0
                             }
+                        },
+                        {
+                            "scriptGuidStr": "004fe54a20228fd8-000419dbe2000003",
+                            "scriptPath": "../../Resources/Scripts/Camera_Cinematic.lua",
+                            "enabled": true,
+                            "preserveKeys": [],
+                            "entryFunction": "OnInit",
+                            "autoInvokeEntry": true,
+                            "instanceState": {
+                                "GetTransform": null,
+                                "useSequence": false,
+                                "__created_at": 1770095598.0,
+                                "DisableSafe": null,
+                                "__field_list": {
+                                    "useSequence": false,
+                                    "sequenceLoop": false,
+                                    "targetRotation": {
+                                        "y": 0.0,
+                                        "z": 0.0,
+                                        "x": 0.0
+                                    },
+                                    "cinematicActive": false,
+                                    "targetTransformName": "",
+                                    "debugMode": true,
+                                    "sequenceInterval": 3.0,
+                                    "targetPosition": {
+                                        "y": 1.0,
+                                        "z": -2.0,
+                                        "x": -2.0
+                                    },
+                                    "sequenceWaypoints": {},
+                                    "transitionSpeed": 0.5
+                                },
+                                "AwakeSafe": null,
+                                "debugMode": true,
+                                "Every": null,
+                                "sequenceLoop": false,
+                                "SetRotation": null,
+                                "DebugTransform": null,
+                                "cinematicActive": false,
+                                "Subscribe": null,
+                                "_subscriptions": {},
+                                "SetScale": null,
+                                "_waypointTimer": 0.0,
+                                "GetRotation": null,
+                                "Awake": null,
+                                "_call_lifecycle": null,
+                                "_wasCinematicActive": false,
+                                "UpdateSafe": null,
+                                "_private": {},
+                                "Destroy": null,
+                                "GetPosition": null,
+                                "GetScale": null,
+                                "__meta": {},
+                                "SerializeFields": null,
+                                "After": null,
+                                "DeserializeFields": null,
+                                "Move": null,
+                                "StartSafe": null,
+                                "_currentWaypointIndex": 1.0,
+                                "_transform_fetched": false,
+                                "Unsubscribe": null,
+                                "targetTransformName": "\"Miniboss\"",
+                                "targetRotation": {
+                                    "y": 0.0,
+                                    "z": 0.0,
+                                    "x": 0.0
+                                },
+                                "sequenceWaypoints": {},
+                                "Update": null,
+                                "_subs_map": {},
+                                "sequenceInterval": 3.0,
+                                "SetPosition": null,
+                                "targetPosition": {
+                                    "y": 1.0,
+                                    "z": -2.0,
+                                    "x": -2.0
+                                },
+                                "transitionSpeed": 0.5
+                            }
                         }
                     ]
                 }

@@ -116,6 +116,10 @@ return Component {
         self._enemyTriggeredActionMode = false   -- Did an enemy trigger action mode (vs manual)?
         self._triggeringEnemyId = nil            -- tracks which enemy triggered action mode
 
+        -- Cinematic camera state
+        self._cinematicActive = false
+        self._cinematicTarget = nil
+
         -- Configure C++ cache intervals
         if Engine and Engine.SetCacheUpdateInterval then
             for _, scriptName in ipairs(self.enemyScriptNames) do
@@ -152,14 +156,25 @@ return Component {
             end)    
 
             self._chainAimSub = event_bus.subscribe("chain.aim_camera", function(payload)
-            if not payload then return end
-            local wasAiming = self._chainAiming
-            self._chainAiming = payload.active or false
+                if not payload then return end
+                local wasAiming = self._chainAiming
+                self._chainAiming = payload.active or false
+                
+                -- Reset initialization flag when entering chain aim mode
+                if self._chainAiming and not wasAiming then
+                    self._chainAimInitialized = false
+                end
+            end)
+
+            -- Cinematic active/inactive
+            self._cinematicActiveSub = event_bus.subscribe("cinematic.active", function(active)
+                self._cinematicActive = active or false
+                print(string.format("[CameraFollow] Cinematic mode: %s", active and "ON" or "OFF"))
+            end)
             
-            -- Reset initialization flag when entering chain aim mode
-            if self._chainAiming and not wasAiming then
-                self._chainAimInitialized = false
-            end
+            -- Cinematic target position/rotation
+            self._cinematicTargetSub = event_bus.subscribe("cinematic.target", function(target)
+                self._cinematicTarget = target
             end)
         end
     end,
@@ -179,6 +194,18 @@ return Component {
         if Screen and Screen.SetCursorLocked then
             Screen.SetCursorLocked(false)
         end
+        
+        if event_bus and event_bus.unsubscribe then
+            if self._cinematicActiveSub then
+                event_bus.unsubscribe(self._cinematicActiveSub)
+                self._cinematicActiveSub = nil
+            end
+            if self._cinematicTargetSub then
+                event_bus.unsubscribe(self._cinematicTargetSub)
+                self._cinematicTargetSub = nil
+            end
+        end
+
     end,
     
     -- Find the closest enemy to the player
@@ -417,7 +444,6 @@ return Component {
 
     Update = function(self, dt)
         if not (self.GetPosition and self.SetPosition and self.SetRotation) then return end
-        if not self._hasTarget then return end
 
         -- ==========================================
         -- CRITICAL: Update C++ cache timing FIRST
@@ -426,6 +452,91 @@ return Component {
         if Engine and Engine.UpdateCacheTiming then
             Engine.UpdateCacheTiming(dt)
         end
+
+        -- ==========================================
+        -- CINEMATIC MODE: Overrides everything
+        -- ==========================================
+        if self._cinematicActive and self._cinematicTarget then
+            local target = self._cinematicTarget
+    
+            print("========== CINEMATIC ACTIVE ==========")
+            print(string.format("Target position: (%.2f, %.2f, %.2f)", 
+                                target.position.x, target.position.y, target.position.z))
+
+            -- Get current position - FIXED to handle all return types
+            local cx, cy, cz = 0.0, 0.0, 0.0
+    
+            -- Call GetPosition ONCE and store all results
+            local result1, result2, result3 = self:GetPosition()
+    
+            print(string.format("GetPosition returned: r1=%s (type:%s), r2=%s (type:%s), r3=%s (type:%s)",
+                                tostring(result1), type(result1),
+                                tostring(result2), type(result2),
+                                tostring(result3), type(result3)))
+    
+            -- Case 1: Returns a table
+            if type(result1) == "table" then
+                cx = result1.x or result1[1] or 0.0
+                cy = result1.y or result1[2] or 0.0
+                cz = result1.z or result1[3] or 0.0
+                print("[CameraFollow] Position format: table")
+    
+            -- Case 2: Returns 3 separate numbers
+            elseif type(result1) == "number" and type(result2) == "number" and type(result3) == "number" then
+                cx, cy, cz = result1, result2, result3
+                print("[CameraFollow] Position format: 3 numbers")
+    
+            -- Case 3: Returns nothing (nil)
+            elseif result1 == nil then
+                print("[CameraFollow] Position format: nil (using default 0,0,0)")
+                cx, cy, cz = 0.0, 0.0, 0.0
+    
+            else
+                print("[CameraFollow] WARNING: Unknown position format!")
+                cx, cy, cz = 0.0, 0.0, 0.0
+            end
+    
+            print(string.format("Current camera position: (%.2f, %.2f, %.2f)", cx, cy, cz))
+
+            -- Lerp to target position
+            if target.position then
+                local speed = target.transitionSpeed or 2.0
+                local t = 1.0 - math.exp(-speed * dt)
+        
+                print(string.format("Lerp speed: %.2f, t: %.4f, dt: %.4f", speed, t, dt))
+    
+                local newX = cx + (target.position.x - cx) * t
+                local newY = cy + (target.position.y - cy) * t
+                local newZ = cz + (target.position.z - cz) * t
+        
+                print(string.format("Calculated new position: (%.2f, %.2f, %.2f)", newX, newY, newZ))
+    
+                self:SetPosition(newX, newY, newZ)
+        
+                print("SetPosition called!")
+            end
+
+            -- Set target rotation
+            if target.rotation then
+                print(string.format("Setting rotation: qw=%.2f, qx=%.2f, qy=%.2f, qz=%.2f",
+                                    target.rotation.qw, target.rotation.qx, target.rotation.qy, target.rotation.qz))
+                self:SetRotation(
+                    target.rotation.qw,
+                    target.rotation.qx,
+                    target.rotation.qy,
+                    target.rotation.qz
+                )
+                print("SetRotation called!")
+            end
+
+            self.isDirty = true
+            print("Returning from cinematic mode")
+            print("====================================\n")
+            return  -- EXIT
+        end
+
+        
+        if not self._hasTarget then return end
 
         -- Update enemy proximity
         self:_updateEnemyProximity(dt)
