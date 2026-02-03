@@ -1,0 +1,13 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "004bc8acc0973229-00041b443c001e83",
+        "source": "../../Resources/Textures/M4/CandleSmall_BaseColor.png",
+        "compiled": "../../Resources/Textures/M4/CandleSmall_BaseColor.dds"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true
+    }
+}

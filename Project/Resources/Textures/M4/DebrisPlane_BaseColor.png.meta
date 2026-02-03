@@ -1,0 +1,13 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "004bc8acaa1b7c7f-00041b64b6007ecd",
+        "source": "../../Resources/Textures/M4/DebrisPlane_BaseColor.png",
+        "compiled": "../../Resources/Textures/M4/DebrisPlane_BaseColor.dds"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true
+    }
+}
