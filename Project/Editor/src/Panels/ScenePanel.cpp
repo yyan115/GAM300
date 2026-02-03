@@ -1513,7 +1513,7 @@ void ScenePanel::HandleImGuizmoInChildWindow(float sceneWidth, float sceneHeight
 
         // When user STOPS dragging: re-enable auto-snapshots and reset flag
         if (!isUsing && gizmoWasUsing) {
-            SnapshotManager::GetInstance().SetSnapshotEnabled(true);  // Re-enable Inspector snapshots
+            //SnapshotManager::GetInstance().SetSnapshotEnabled(true);  // Re-enable Inspector snapshots
             gizmoSnapshotTaken = false;  // Reset for next drag operation
             justFinishedGizmoDrag = true;  // Prevent accidental selection on release
             originalMatrices.clear();  // Free memory
