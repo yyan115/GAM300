@@ -166,12 +166,6 @@ return Component {
         self._armedTimer = (self._armedTimer or 0) + dt
         if self._armedTimer >= self.ArmDelay then
             if self:_CheckHitPlayer() then
-                print("[KnifeLogic] Hit player")
-                if event_bus and event_bus.publish then
-                    event_bus.publish("isKnifeHitPlayer", true)
-                    event_bus.publish("knifeHitPlayerDmg", self.Damage)
-                end
-
                 --print("[Knife] HIT PLAYER -> reset")
                 self:Reset("HIT")
                 return

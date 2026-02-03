@@ -1,0 +1,11 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "0073eb40aa464b68-00040db52e005523",
+        "source": "../../Resources/Models/TenguStatue.fbx",
+        "compiled": "../../Resources/Models/TenguStatue.mesh"
+    },
+    "ModelMetaData": {
+        "optimizeMeshes": true
+    }
+}

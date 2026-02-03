@@ -1,0 +1,13 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "0073eb40e27948c3-00040dd05c005965",
+        "source": "../../Resources/Textures/M4/WoodFloorMain_normal.png",
+        "compiled": "../../Resources/Textures/M4/WoodFloorMain_normal.dds"
+    },
+    "TextureMetaData": {
+        "type": "normal",
+        "flipUVs": false,
+        "generateMipmaps": true
+    }
+}

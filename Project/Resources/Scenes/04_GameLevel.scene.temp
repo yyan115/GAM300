@@ -16102,7 +16102,8 @@
                                     "Idle": 0.0,
                                     "Hurt": 2.0,
                                     "Death": 3.0
-                                }
+                                },
+                                "IsPassive": true
                             }
                         }
                     ]

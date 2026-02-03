@@ -5,7 +5,7 @@ return Component {
     fields = {
         fadeDuration = 1.0,
         fadeScreenName = "MenuFadeScreen",
-        targetScene = "Resources/Scenes/04_GameLevel.scene"
+        targetScene = "Resources/Scenes/IntroCutScene.scene"
     },
     _pendingScene = nil,
     _isFading = false,

@@ -66,14 +66,6 @@ return Component {
                 end
             end)
             print("[PlayerMovement] Subscription token: " .. tostring(self._cameraYawSub))
-
-            print("[PlayerMovement] Subscribing to playerDead")
-            self._playerDeadSub = event_bus.subscribe("playerDead", function(playerDead)
-                if playerDead then
-                    self._playerDead = playerDead
-                end
-            end)
-            print("[PlayerMovement] Subscription token: " .. tostring(self._playerDeadSub))
         else
             print("[PlayerMovement] ERROR: event_bus not available!")
         end
@@ -101,7 +93,7 @@ return Component {
     end,
 
     Update = function(self, dt)
-        if not self._collider or not self._transform or not self._controller or self._playerDead then
+        if not self._collider or not self._transform or not self._controller then
             return
         end
 
@@ -157,8 +149,8 @@ return Component {
         if not isGrounded then
             if not self._isJumping then
                 -- Start jump animation
-                --print("[PlayerMovement] PlayClip(JUMP=" .. JUMP .. ")")
-                --self._animator:PlayClip(JUMP, false)
+                print("[PlayerMovement] PlayClip(JUMP=" .. JUMP .. ")")
+                self._animator:PlayClip(JUMP, false)
                 self._isJumping = true
                 self._isRunning = false
             end
@@ -168,21 +160,21 @@ return Component {
                 self._isJumping = false
                 -- Resume proper state based on movement
                 if isMoving then
-                    print("[PlayerMovement] SetBool(IsRunning, true)")
-                    self._animator:SetBool("IsRunning", true)
+                    print("[PlayerMovement] PlayClip(RUN=" .. RUN .. ")")
+                    self._animator:PlayClip(RUN, true)
                     self._isRunning = true
                 else
-                    print("[PlayerMovement] SetBool(IsRunning, false)")
-                    self._animator:SetBool("IsRunning", false)
+                    print("[PlayerMovement] PlayClip(IDLE=" .. IDLE .. ")")
+                    self._animator:PlayClip(IDLE, true)
                     self._isRunning = false
                 end
             elseif isMoving and not self._isRunning then
-                print("[PlayerMovement] SetBool(IsRunning, true)")
-                self._animator:SetBool("IsRunning", true)
+                print("[PlayerMovement] PlayClip(RUN=" .. RUN .. ")")
+                self._animator:PlayClip(RUN, true)
                 self._isRunning = true
             elseif not isMoving and self._isRunning then
-                print("[PlayerMovement] SetBool(IsRunning, false)")
-                self._animator:SetBool("IsRunning", false)
+                print("[PlayerMovement] PlayClip(IDLE=" .. IDLE .. ")")
+                self._animator:PlayClip(IDLE, true)
                 self._isRunning = false
             end
         end

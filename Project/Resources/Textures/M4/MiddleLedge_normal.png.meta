@@ -1,0 +1,13 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "00243e5d445588f7-000418c3aa00025d",
+        "source": "../../Resources/Textures/M4/MiddleLedge_normal.png",
+        "compiled": "../../Resources/Textures/M4/MiddleLedge_normal.dds"
+    },
+    "TextureMetaData": {
+        "type": "normal",
+        "flipUVs": false,
+        "generateMipmaps": true
+    }
+}

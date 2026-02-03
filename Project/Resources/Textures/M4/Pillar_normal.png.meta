@@ -1,0 +1,13 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "0079821fc72b2a91-00040e1ea6042da1",
+        "source": "../../Resources/Textures/M4/Pillar_normal.png",
+        "compiled": "../../Resources/Textures/M4/Pillar_normal.dds"
+    },
+    "TextureMetaData": {
+        "type": "normal",
+        "flipUVs": false,
+        "generateMipmaps": true
+    }
+}
