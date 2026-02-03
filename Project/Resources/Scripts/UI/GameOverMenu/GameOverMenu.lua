@@ -1,0 +1,106 @@
+require("extension.engine_bootstrap")
+local Component = require("extension.mono_helper")
+local event_bus = _G.event_bus
+
+return Component {
+    fields = {
+        fadeScreenName = "DeathScreenBG",
+        respawnButtonName = "RespawnButton",
+        respawnButtonHoveredName = "RespawnButtonHovered",
+        isFading = false,
+        fadeAlpha = 0,
+        fadeDuration = 1.0,
+        deathAnimationDelay = 3.0,
+        playerDead = false,
+    },
+
+    Awake = function(self)
+        if event_bus and event_bus.subscribe then
+            print("[GameOverMenu] Subscribing to playerDead")
+            self._playerDeadSub = event_bus.subscribe("playerDead", function(dead)
+                if dead then
+                    self._playerDead = dead
+                    print("[GameOverMenu] playerDead received: ", self._playerDead)
+                end
+            end)
+            print("[GameOverMenu] Subscription token: " .. tostring(self._playerDeadSub))
+        else
+            print("[GameOverMenu] ERROR: event_bus not available!")
+        end
+    end,
+
+    Start = function(self)
+        self._isFading = false
+        self._fadeAlpha = 0
+        self._fadeTimer = 0
+        self._deathAnimationDelay = self.deathAnimationDelay
+
+        local fadeEntity = Engine.GetEntityByName(self.fadeScreenName)
+        if fadeEntity then
+            self._fadeActive = GetComponent(fadeEntity, "ActiveComponent")
+            self._fadeSprite = GetComponent(fadeEntity, "SpriteRenderComponent")
+            if self._fadeActive then
+                self._fadeActive.isActive = false
+            end
+            if self._fadeSprite then
+                -- Initialize alpha to 0
+                self._fadeSprite.alpha = 0
+            end
+        end
+
+        local respawnButton = Engine.GetEntityByName(self.respawnButtonName)
+        if respawnButton then
+            self._respawnButtonActive = GetComponent(respawnButton, "ActiveComponent")
+            self._respawnButtonSprite = GetComponent(respawnButton, "SpriteRenderComponent")
+            if self._respawnButtonActive then
+                self._respawnButtonActive.isActive = false
+            end
+            if self._respawnButtonSprite then
+                -- Initialize alpha to 0
+                self._respawnButtonSprite.alpha = 0
+            end
+        end
+
+        local respawnButtonHovered = Engine.GetEntityByName(self.respawnButtonHoveredName)
+        if respawnButtonHovered then
+            self._respawnButtonHoveredActive = GetComponent(respawnButtonHovered, "ActiveComponent")
+            if self._respawnButtonHoveredActive then
+                self._respawnButtonHoveredActive.isActive = false
+            end
+        end
+    end,
+
+    -- Update handles fade transition and scene loading
+    Update = function(self, dt)
+        -- If player just died, wait ~3 secs for the death animation to play before fading in the Death Screen
+        if self._playerDead then
+            self._deathAnimationDelay = self._deathAnimationDelay - dt
+            --print("[GameOverMenu] self._deathAnimationDelay", self._deathAnimationDelay)
+            if self._deathAnimationDelay <= 0 then
+                self._isFading = true
+                self._playerDead = false
+                self._fadeActive.isActive = true
+                self._respawnButtonActive.isActive = true
+                self._respawnButtonHoveredActive.isActive = true
+
+                if Screen and Screen.IsCursorLocked() then
+                    Screen.SetCursorLocked(false)
+                end
+            end
+        end
+
+        -- Handle fade in of Death Screen
+        if self._isFading and self._fadeSprite then
+            self._fadeTimer = self._fadeTimer + dt
+            local duration = self.fadeDuration or 1.0
+            self._fadeAlpha = math.min(self._fadeTimer / duration, 1.0)
+            self._fadeSprite.alpha = self._fadeAlpha
+            self._respawnButtonSprite.alpha = self._fadeAlpha
+
+            -- Stop once fade is complete
+            if self._fadeAlpha >= 1.0 then
+                self._isFading = false
+            end
+        end
+    end
+}
