@@ -27,10 +27,22 @@ struct ENGINE_API VideoComponent {
 	int frameEnd = 0;     ///< Ending frame
 	int activeFrame = 0;
 
+	// Timing configuration
+	float fadeDuration = 0.5f;      ///< Fade in/out between boards (seconds)
+	float boardDuration = 3.0f;     ///< How long a board stays before auto-advancing (seconds)
+	float panelDuration = 6.0f;     ///< How long before fading to next panel on last board (seconds)
+	float skipFadeDuration = 1.0f;  ///< Fade duration when skipping or ending (seconds)
+
+	// Legacy timing (kept for compatibility)
 	float preTime = 0.0f;  ///< Delay before first frame starts
 	float duration = 0.0f; ///< Active playback time
 	float postTime = 0.0f; ///< Delay after last frame reached
 	std::string cutSceneName = "";
+
+	// Panel system
+	int currentPanel = 1;           ///< Current panel (1-indexed)
+	float boardTimer = 0.0f;        ///< Timer for auto-advancing boards
+	bool isLastBoardInPanel = false; ///< Whether current board is last in its panel
 
 
 	// --- Rendering Data ---
@@ -56,7 +68,8 @@ struct ENGINE_API VideoComponent {
 	//DIALOGUE ASSET MANAGEMENT
 	std::string dialoguePath = "";		//For reference/display purposes
 
-	std::unordered_map<int, std::string> dialogueMap;
+	std::unordered_map<int, std::string> dialogueMap;       // Frame-based dialogue (legacy)
+	std::unordered_map<int, std::string> panelDialogueMap;  // Panel-based dialogue (new)
 
 
 };

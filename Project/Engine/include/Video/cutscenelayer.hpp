@@ -20,7 +20,7 @@ class DialogueManager
 
     // Timing and state management
     float m_dialogueTimer = 0.0f;     // Accumulates time for text animation
-    float m_dialogueTextRate = 20.0f; // Characters per second
+    float m_dialogueTextRate = 50.0f; // Characters per second (0.02s per character)
 
     //float m_dialogueHoldTimer = 0.0f; // Time after text is fully revealed
     //float m_dialogueHoldDuration = 1.0f;
@@ -32,11 +32,17 @@ class DialogueManager
     std::string m_currentVisibleText; // The text currently appearing on UI
     int lastFrame = -1;
 
+    // Progressive text tracking (for board-based text within panels)
+    int m_lastPanel = -1;
+    size_t m_previousBoardTextLength = 0;  // How many chars were shown on previous board
+    std::string m_previousBoardText;       // Text from previous board for comparison
+
 public:
     DialogueManager() = default;
     ~DialogueManager() = default;
 
-    std::unordered_map<int, std::string> dialogueMap;
+    std::unordered_map<int, std::string> dialogueMap;       // Frame-based dialogue (legacy)
+    std::unordered_map<int, std::string> panelDialogueMap;  // Panel-based dialogue (new)
     float m_timer = 0;
 
 
@@ -73,13 +79,22 @@ public:
     void HandleTextLogic();
 
 
-    //current frame -> go to map and find out where 
+    //current frame -> go to map and find out where
     void HandleTextRender(float deltaTime, TextRenderComponent& textComp, Transform& textTransform, int currentFrame, bool instantRender = false);
 
-    //Reset the string rendered 
+    // Panel-based text rendering (new system)
+    void HandlePanelTextRender(float deltaTime, TextRenderComponent& textComp, Transform& textTransform, int currentPanel, bool instantRender = false);
+
+    //Reset the string rendered
     void Reset();
 
-    bool IsTextFinished(TextRenderComponent& textComp ,int currentFrame);
+    bool IsTextFinished(TextRenderComponent& textComp, int currentFrame);
+
+    // Panel-based text completion check
+    bool IsTextFinishedForPanel(TextRenderComponent& textComp, int currentPanel);
+
+    // Complete text immediately (for tap-to-skip typewriter)
+    void CompleteTextImmediately(TextRenderComponent& textComp, int currentPanel);
 
     void AdvanceDialogue(float deltaTime, TextRenderComponent& textComp, Transform& textTransform, int currentFrame);
 

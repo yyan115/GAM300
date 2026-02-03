@@ -1,2 +1,25 @@
-Frame 1 : A song can make or ruin a person day if they let it get to them.
-Frame 5 : It didn't make sense unless you had the power to eat colors.
+# Board-based dialogue within panels
+# Format: Board N : Text (text accumulates/continues within panel)
+
+# Panel 1: Boards 0-2
+Board 0 : Kusane the lone survivor of this clan crawls out of the battlefield barely alive.
+Board 1 : Kusane the lone survivor of this clan crawls out of the battlefield barely alive. Alone.
+Board 2 : Blacking out from the fatigue.
+
+# Panel 2: Boards 3-5
+Board 3 : . . .
+Board 4 : Still in a daze,
+Board 5 : Still in a daze, they wake up clueless to what has happened.
+
+# Panel 3: Boards 6-8
+Board 6 : After taking in their surroundings
+Board 7 : After taking in their surroundings, they realized that they have lost their wings.
+Board 8 : "WHY ARE MY WINGS GONE?!?!?!"
+
+# Panel 4: Boards 9-10
+Board 9 : But in the corner of their eyes, they spot a faint glow...
+Board 10 : But in the corner of their eyes, they spot a faint glow... is that a feather?
+
+# Panel 5: Boards 11-12
+Board 11 : Curious, they walk towards it to pick it up.
+Board 12 : Now brimming with power, they set out for revenge against the Karasu!
