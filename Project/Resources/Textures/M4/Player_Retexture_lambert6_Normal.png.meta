@@ -1,0 +1,13 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "00567c08b0513785-00041a4d2c000005",
+        "source": "../../Resources/Textures/M4/Player_Retexture_lambert6_Normal.png",
+        "compiled": "../../Resources/Textures/M4/Player_Retexture_lambert6_Normal.dds"
+    },
+    "TextureMetaData": {
+        "type": "normal",
+        "flipUVs": false,
+        "generateMipmaps": true
+    }
+}
