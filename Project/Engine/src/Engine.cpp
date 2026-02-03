@@ -27,6 +27,7 @@
 #include "Graphics/GraphicsManager.hpp"
 #include "Performance/PerformanceProfiler.hpp"
 #include "Settings/GameSettings.hpp"
+#include "ECS/TagsLayersSettings.hpp"
 
 #ifdef ANDROID
 #endif
@@ -92,6 +93,7 @@ bool Engine::Initialize() {
 	// Note: This is called early but ApplySettings() for graphics is deferred
 	// until PostProcessingManager is initialized (in InitializeGraphicsResources)
 	GameSettingsManager::GetInstance().Initialize();
+    TagsLayersSettings::GetInstance().LoadSettings();
 	ENGINE_PRINT("[Engine] GameSettings initialized\n");
 
 	// Android: Asset initialization happens in JNI after AssetManager is set

@@ -47,6 +47,33 @@ void TextRenderingSystem::Update()
 
         auto& textComponent = ecsManager.GetComponent<TextRenderComponent>(entity);
 
+        // Sync alignment enum from alignmentInt (alignmentInt is serialized, alignment enum is used for rendering)
+        textComponent.alignment = static_cast<TextRenderComponent::Alignment>(textComponent.alignmentInt);
+
+        // Load or reload font if needed (handles newly added components, fontGUID changes, or fontSize changes)
+        bool needsFontReload = !textComponent.font ||
+                               textComponent.fontGUID != textComponent.lastLoadedFontGUID ||
+                               (textComponent.font && textComponent.font->GetFontSize() != textComponent.fontSize);
+        bool hasValidFontGUID = textComponent.fontGUID.high != 0 || textComponent.fontGUID.low != 0;
+        if (needsFontReload && hasValidFontGUID)
+        {
+            std::string fontPath = AssetManager::GetInstance().GetAssetPathFromGUID(textComponent.fontGUID);
+            textComponent.font = ResourceManager::GetInstance().GetFontResourceFromGUID(textComponent.fontGUID, fontPath, textComponent.fontSize);
+            textComponent.lastLoadedFontGUID = textComponent.fontGUID;
+        }
+
+        // Ensure shader is loaded (handles newly added components or missing shader)
+        if (!textComponent.shader)
+        {
+#ifndef ANDROID
+            std::string shaderPath = AssetManager::GetInstance().GetAssetPathFromGUID(textComponent.shaderGUID);
+            textComponent.shader = ResourceManager::GetInstance().GetResourceFromGUID<Shader>(textComponent.shaderGUID, shaderPath);
+#else
+            std::string shaderPath = ResourceManager::GetPlatformShaderPath("text");
+            textComponent.shader = ResourceManager::GetInstance().GetResource<Shader>(shaderPath);
+#endif
+        }
+
         // Sync position, scale and transform from Transform component
         if (ecsManager.HasComponent<Transform>(entity)) 
         {

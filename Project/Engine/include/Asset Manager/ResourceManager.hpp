@@ -46,16 +46,22 @@ public:
 		auto& resourceMap = GetResourceMap<Font>();
 		auto it = resourceMap.find(guid);
 		if (it != resourceMap.end()) {
-			return it->second;
+			// Check if cached font has the correct size, reload if different
+			if (it->second && it->second->GetFontSize() != fontSize) {
+				// Remove from cache and reload with new size
+				resourceMap.erase(it);
+			}
+			else {
+				return it->second;
+			}
 		}
-		else {
+		// Load font with requested size
 #ifndef EDITOR
-			std::string gameAssetPath = assetPath.substr(assetPath.find("Resources"));
-			return GetFontResource(gameAssetPath, fontSize);
+		std::string gameAssetPath = assetPath.substr(assetPath.find("Resources"));
+		return GetFontResource(gameAssetPath, fontSize);
 #else
-			return GetFontResource(assetPath, fontSize);
+		return GetFontResource(assetPath, fontSize);
 #endif
-		}
 	}
 
 	template <typename T>

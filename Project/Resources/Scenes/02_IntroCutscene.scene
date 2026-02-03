@@ -255,7 +255,7 @@
                                 },
                                 {
                                     "type": "float",
-                                    "data": 9.31912e-10
+                                    "data": 9.31913e-10
                                 },
                                 {
                                     "type": "float",
@@ -263,7 +263,7 @@
                                 },
                                 {
                                     "type": "float",
-                                    "data": 9.31912e-10
+                                    "data": 9.31913e-10
                                 }
                             ]
                         }
@@ -743,7 +743,7 @@
                         },
                         {
                             "type": "std::string",
-                            "data": "Text to be filled"
+                            "data": "Kusane the lone survivor of this clan crawls out of the battlefield barely alive."
                         },
                         {
                             "type": "unsigned",

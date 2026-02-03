@@ -16102,8 +16102,7 @@
                                     "Idle": 0.0,
                                     "Hurt": 2.0,
                                     "Death": 3.0
-                                },
-                                "IsPassive": true
+                                }
                             }
                         }
                     ]
@@ -36082,50 +36081,54 @@
                             },
                             {
                                 "type": "int",
-                                "data": 10
+                                "data": 11
                             },
                             {
                                 "type": "std::vector<std::string>",
                                 "data": [
                                     {
                                         "type": "std::string",
-                                        "data": "Resources/Animations/Kusane@Idle.fbx"
+                                        "data": "Resources/Animations/Player@Idle.fbx"
                                     },
                                     {
                                         "type": "std::string",
-                                        "data": "Resources/Animations/Kusane@Hurt.fbx"
+                                        "data": "Resources/Animations/Player@Jump.fbx"
                                     },
                                     {
                                         "type": "std::string",
-                                        "data": "Resources/Animations/Kusane@Run.fbx"
+                                        "data": "Resources/Animations/Player@Run.fbx"
                                     },
                                     {
                                         "type": "std::string",
-                                        "data": "Resources/Animations/Kusane@Death.fbx"
+                                        "data": "Resources/Animations/Player@Land.fbx"
                                     },
                                     {
                                         "type": "std::string",
-                                        "data": "Resources/Animations/Kusane@Jump.fbx"
+                                        "data": "Resources/Animations/Player@Hurt.fbx"
                                     },
                                     {
                                         "type": "std::string",
-                                        "data": "Resources/Animations/Kusane@Land.fbx"
+                                        "data": "Resources/Animations/Player@Death.fbx"
                                     },
                                     {
                                         "type": "std::string",
-                                        "data": "Resources/Animations/Kusane@Roll.fbx"
+                                        "data": "Resources/Animations/Player@Slash1.fbx"
                                     },
                                     {
                                         "type": "std::string",
-                                        "data": "Resources/Animations/Kusane@Slash1.fbx"
+                                        "data": "Resources/Animations/Player@Slash2.fbx"
                                     },
                                     {
                                         "type": "std::string",
-                                        "data": "Resources/Animations/Kusane@Slash2.fbx"
+                                        "data": "Resources/Animations/Player@Slash3.fbx"
                                     },
                                     {
                                         "type": "std::string",
-                                        "data": "Resources/Animations/Kusane@Slash3.fbx"
+                                        "data": "Resources/Animations/Player@Roll.fbx"
+                                    },
+                                    {
+                                        "type": "std::string",
+                                        "data": "Resources/Animations/Player@Standing.fbx"
                                     }
                                 ]
                             },
@@ -36141,7 +36144,8 @@
                                     "00485ed685fc886a-0004104122005d8d",
                                     "0021cfe6ab29079a-00040555d6000001",
                                     "0021cfe6fa15ca03-00040555d6000003",
-                                    "0021cfe6fc36b21f-00040555d6000005"
+                                    "0021cfe6fc36b21f-00040555d6000005",
+                                    "0000000000000000-0000000000000000"
                                 ]
                             },
                             {

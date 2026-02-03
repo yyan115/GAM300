@@ -2717,6 +2717,9 @@ void Serializer::DeserializeTextComponent(TextRenderComponent& textComp, const r
                 textComp.lineSpacing = Serializer::GetFloat(d, startIdx + 13, 1.2f);
             }
         }
+
+        // Sync alignment enum from alignmentInt (enum is used for rendering, int is serialized)
+        textComp.alignment = static_cast<TextRenderComponent::Alignment>(textComp.alignmentInt);
     }
 }
 

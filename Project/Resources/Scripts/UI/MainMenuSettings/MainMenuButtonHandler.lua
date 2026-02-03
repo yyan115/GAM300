@@ -5,12 +5,15 @@ return Component {
     fields = {
         fadeDuration = 1.0,
         fadeScreenName = "MenuFadeScreen",
-        targetScene = "Resources/Scenes/02_IntroCutscene.scene"
+        targetScene = "Resources/Scenes/02_IntroCutscene.scene",
+        bgmEntityName = "BGM"
     },
     _pendingScene = nil,
     _isFading = false,
     _fadeAlpha = 0,
     _fadeTimer = 0,
+    _bgmAudio = nil,
+    _bgmInitialVolume = 1.0,
 
     Start = function(self)
         -- Reset state for scene reloads
@@ -32,6 +35,15 @@ return Component {
                 fadeSprite.color.y = 0
                 fadeSprite.color.z = 0
                 fadeSprite.alpha = 0
+            end
+        end
+
+        -- Get reference to BGM AudioComponent
+        local bgmEntity = Engine.GetEntityByName(self.bgmEntityName)
+        if bgmEntity then
+            self._bgmAudio = GetComponent(bgmEntity, "AudioComponent")
+            if self._bgmAudio then
+                self._bgmInitialVolume = self._bgmAudio.Volume
             end
         end
     end,
@@ -180,6 +192,12 @@ return Component {
             local duration = self.fadeDuration or 1.0
             self._fadeAlpha = math.min(self._fadeTimer / duration, 1.0)
             self._fadeSprite.alpha = self._fadeAlpha
+
+            -- Fade out BGM volume alongside screen fade
+            if self._bgmAudio then
+                local bgmVolume = self._bgmInitialVolume * (1.0 - self._fadeAlpha)
+                self._bgmAudio:SetVolume(bgmVolume)
+            end
 
             -- Once fade is complete, load the scene
             if self._fadeAlpha >= 1.0 then
