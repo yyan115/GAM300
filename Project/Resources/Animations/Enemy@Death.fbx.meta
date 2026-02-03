@@ -1,0 +1,11 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "001b9f1475670420-00041a3ca4003e6f",
+        "source": "../../Resources/Animations/Enemy@Death.fbx",
+        "compiled": "../../Resources/Animations/Enemy@Death.mesh"
+    },
+    "ModelMetaData": {
+        "optimizeMeshes": true
+    }
+}
