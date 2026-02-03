@@ -9,7 +9,7 @@ local function stopCC(ai)
 end
 
 function AttackState:Enter(ai)
-    ai:PlayClip(ai.clips.Attack, true)
+    ai._animator:SetBool("PlayerInRange", true)
     ai.attackTimer = 0
 end
 
@@ -77,6 +77,7 @@ function AttackState:Update(ai, dt)
 end
 
 function AttackState:Exit(ai)
+    ai._animator:SetBool("PlayerInRange", false)
     stopCC(ai)
 end
 

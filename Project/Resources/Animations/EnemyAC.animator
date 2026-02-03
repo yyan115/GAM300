@@ -9,7 +9,43 @@
         "x": -200.0,
         "y": 0.0
     },
-    "parameters": [],
+    "parameters": [
+        {
+            "name": "Dead",
+            "type": "Bool",
+            "defaultValue": 0.0
+        },
+        {
+            "name": "Hooked",
+            "type": "Bool",
+            "defaultValue": 0.0
+        },
+        {
+            "name": "Hurt",
+            "type": "Bool",
+            "defaultValue": 0.0
+        },
+        {
+            "name": "PlayerInRange",
+            "type": "Bool",
+            "defaultValue": 0.0
+        },
+        {
+            "name": "Melee",
+            "type": "Bool",
+            "defaultValue": 0.0
+        },
+        {
+            "name": "PatrolEnabled",
+            "type": "Bool",
+            "defaultValue": 0.0
+        },
+        {
+            "name": "Passive",
+            "type": "Bool",
+            "defaultValue": 0.0
+        }
+    ],
     "states": [
         {
             "id": "Idle",
@@ -21,10 +57,342 @@
                 "x": -59.5,
                 "y": -127.5
             }
+        },
+        {
+            "id": "Hooked",
+            "clipIndex": 2,
+            "loop": false,
+            "speed": 1.0,
+            "crossfadeDuration": 0.0,
+            "nodePosition": {
+                "x": 428.5,
+                "y": 75.0
+            }
+        },
+        {
+            "id": "Death",
+            "clipIndex": 1,
+            "loop": false,
+            "speed": 1.0,
+            "crossfadeDuration": 0.0,
+            "nodePosition": {
+                "x": -274.5,
+                "y": 61.0
+            }
+        },
+        {
+            "id": "Hurt",
+            "clipIndex": 2,
+            "loop": false,
+            "speed": 1.0,
+            "crossfadeDuration": 0.0,
+            "nodePosition": {
+                "x": 309.5,
+                "y": -41.0
+            }
+        },
+        {
+            "id": "Melee Attack",
+            "clipIndex": 4,
+            "loop": false,
+            "speed": 1.0,
+            "crossfadeDuration": 0.0,
+            "nodePosition": {
+                "x": 428.5,
+                "y": -504.0
+            }
+        },
+        {
+            "id": "Ranged Attack",
+            "clipIndex": 5,
+            "loop": false,
+            "speed": 1.0,
+            "crossfadeDuration": 0.0,
+            "nodePosition": {
+                "x": 595.5,
+                "y": -431.0
+            }
+        },
+        {
+            "id": "Move",
+            "clipIndex": 3,
+            "loop": true,
+            "speed": 1.0,
+            "crossfadeDuration": 0.0,
+            "nodePosition": {
+                "x": 30.5,
+                "y": -301.0
+            }
         }
     ],
-    "transitions": [],
+    "transitions": [
+        {
+            "from": "Idle",
+            "to": "Move",
+            "anyState": false,
+            "hasExitTime": false,
+            "exitTime": 1.0,
+            "transitionDuration": 0.0,
+            "conditions": [
+                {
+                    "paramName": "PatrolEnabled",
+                    "mode": "Equals",
+                    "threshold": 1.0
+                }
+            ]
+        },
+        {
+            "from": "Move",
+            "to": "Idle",
+            "anyState": false,
+            "hasExitTime": false,
+            "exitTime": 1.0,
+            "transitionDuration": 0.0,
+            "conditions": [
+                {
+                    "paramName": "PlayerInRange",
+                    "mode": "Equals",
+                    "threshold": 1.0
+                },
+                {
+                    "paramName": "Passive",
+                    "mode": "Equals",
+                    "threshold": 1.0
+                }
+            ]
+        },
+        {
+            "from": "Move",
+            "to": "Melee Attack",
+            "anyState": false,
+            "hasExitTime": false,
+            "exitTime": 1.0,
+            "transitionDuration": 0.0,
+            "conditions": [
+                {
+                    "paramName": "PlayerInRange",
+                    "mode": "Equals",
+                    "threshold": 1.0
+                },
+                {
+                    "paramName": "Passive",
+                    "mode": "Equals",
+                    "threshold": 0.0
+                }
+            ]
+        },
+        {
+            "from": "Melee Attack",
+            "to": "Move",
+            "anyState": false,
+            "hasExitTime": false,
+            "exitTime": 1.0,
+            "transitionDuration": 0.0,
+            "conditions": [
+                {
+                    "paramName": "PlayerInRange",
+                    "mode": "Equals",
+                    "threshold": 0.0
+                }
+            ]
+        },
+        {
+            "from": "",
+            "to": "Hurt",
+            "anyState": true,
+            "hasExitTime": false,
+            "exitTime": 1.0,
+            "transitionDuration": 0.0,
+            "conditions": [
+                {
+                    "paramName": "Hurt",
+                    "mode": "Equals",
+                    "threshold": 1.0
+                }
+            ]
+        },
+        {
+            "from": "",
+            "to": "Hooked",
+            "anyState": true,
+            "hasExitTime": false,
+            "exitTime": 1.0,
+            "transitionDuration": 0.0,
+            "conditions": [
+                {
+                    "paramName": "Hooked",
+                    "mode": "Equals",
+                    "threshold": 1.0
+                }
+            ]
+        },
+        {
+            "from": "",
+            "to": "Death",
+            "anyState": true,
+            "hasExitTime": false,
+            "exitTime": 1.0,
+            "transitionDuration": 0.0,
+            "conditions": [
+                {
+                    "paramName": "Dead",
+                    "mode": "Equals",
+                    "threshold": 1.0
+                }
+            ]
+        },
+        {
+            "from": "Hurt",
+            "to": "Melee Attack",
+            "anyState": false,
+            "hasExitTime": false,
+            "exitTime": 1.0,
+            "transitionDuration": 0.0,
+            "conditions": [
+                {
+                    "paramName": "PlayerInRange",
+                    "mode": "Equals",
+                    "threshold": 1.0
+                },
+                {
+                    "paramName": "Melee",
+                    "mode": "Equals",
+                    "threshold": 1.0
+                }
+            ]
+        },
+        {
+            "from": "Hurt",
+            "to": "Idle",
+            "anyState": false,
+            "hasExitTime": false,
+            "exitTime": 1.0,
+            "transitionDuration": 0.0,
+            "conditions": [
+                {
+                    "paramName": "PlayerInRange",
+                    "mode": "Equals",
+                    "threshold": 0.0
+                }
+            ]
+        },
+        {
+            "from": "Hooked",
+            "to": "Melee Attack",
+            "anyState": false,
+            "hasExitTime": false,
+            "exitTime": 1.0,
+            "transitionDuration": 0.0,
+            "conditions": [
+                {
+                    "paramName": "PlayerInRange",
+                    "mode": "Equals",
+                    "threshold": 1.0
+                },
+                {
+                    "paramName": "Melee",
+                    "mode": "Equals",
+                    "threshold": 1.0
+                }
+            ]
+        },
+        {
+            "from": "Hooked",
+            "to": "Idle",
+            "anyState": false,
+            "hasExitTime": false,
+            "exitTime": 1.0,
+            "transitionDuration": 0.0,
+            "conditions": [
+                {
+                    "paramName": "PlayerInRange",
+                    "mode": "Equals",
+                    "threshold": 0.0
+                }
+            ]
+        },
+        {
+            "from": "Move",
+            "to": "Ranged Attack",
+            "anyState": false,
+            "hasExitTime": false,
+            "exitTime": 1.0,
+            "transitionDuration": 0.0,
+            "conditions": [
+                {
+                    "paramName": "PlayerInRange",
+                    "mode": "Equals",
+                    "threshold": 1.0
+                },
+                {
+                    "paramName": "Passive",
+                    "mode": "Equals",
+                    "threshold": 0.0
+                }
+            ]
+        },
+        {
+            "from": "Hurt",
+            "to": "Ranged Attack",
+            "anyState": false,
+            "hasExitTime": false,
+            "exitTime": 1.0,
+            "transitionDuration": 0.0,
+            "conditions": [
+                {
+                    "paramName": "PlayerInRange",
+                    "mode": "Equals",
+                    "threshold": 1.0
+                },
+                {
+                    "paramName": "Melee",
+                    "mode": "Equals",
+                    "threshold": 0.0
+                }
+            ]
+        },
+        {
+            "from": "Hooked",
+            "to": "Ranged Attack",
+            "anyState": false,
+            "hasExitTime": false,
+            "exitTime": 1.0,
+            "transitionDuration": 0.0,
+            "conditions": [
+                {
+                    "paramName": "PlayerInRange",
+                    "mode": "Equals",
+                    "threshold": 1.0
+                },
+                {
+                    "paramName": "Melee",
+                    "mode": "Equals",
+                    "threshold": 0.0
+                }
+            ]
+        },
+        {
+            "from": "Ranged Attack",
+            "to": "Move",
+            "anyState": false,
+            "hasExitTime": false,
+            "exitTime": 1.0,
+            "transitionDuration": 0.0,
+            "conditions": [
+                {
+                    "paramName": "PlayerInRange",
+                    "mode": "Equals",
+                    "threshold": 0.0
+                }
+            ]
+        }
+    ],
     "clipPaths": [
-        "Resources/Animations/Enemy@Idle.fbx"
+        "Resources/Animations/Enemy@Idle.fbx",
+        "Resources/Animations/Enemy@Death.fbx",
+        "Resources/Animations/Enemy@Hurt.fbx",
+        "Resources/Animations/Enemy@Walk.fbx",
+        "Resources/Animations/Enemy@AttackScratch.fbx",
+        "Resources/Animations/Enemy@AttackThrow.fbx"
     ]
 }

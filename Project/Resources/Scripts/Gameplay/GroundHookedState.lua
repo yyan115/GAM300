@@ -2,11 +2,8 @@
 local HookedState = {}
 
 function HookedState:Enter(ai)
+    ai._animator:SetBool("Hooked", true)
     ai._hookedTimer = 0
-
-    -- If you have a specific clip, use it. Otherwise reuse hurt for now.
-    local clip = ai.clips.Hooked or ai.clips.Hurt
-    ai:PlayClip(clip, false)
 
     -- Optional: stop attacks immediately
     ai.attackTimer = 0
@@ -17,19 +14,25 @@ function HookedState:Update(ai, dt)
 
     -- Still allow death to override
     if ai.health <= 0 then
-        ai.fsm:Change("Death", ai.states.Death)
+        self.dead = true
         return
     end
 
     if ai._hookedTimer >= ai.config.HookedDuration then
         ai._hookedTimer = 0
-
+        
         if ai:IsPlayerInRange(ai.config.DetectionRange) then
+            self._animator:SetBool("PlayerInRange", true)
             ai.fsm:Change("Attack", ai.states.Attack)
         else
+            self._animator:SetBool("PlayerInRange", false)
             ai.fsm:Change("Idle", ai.states.Idle)
         end
     end
+end
+
+function HookedState:Exit(ai) 
+    ai._animator:SetBool("Hooked", false)
 end
 
 return HookedState

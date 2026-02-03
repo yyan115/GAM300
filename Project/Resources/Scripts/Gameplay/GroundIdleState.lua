@@ -2,7 +2,7 @@
 local IdleState = {}
 
 function IdleState:Enter(ai)
-    ai:PlayClip(ai.clips.Idle, true)
+    
 end
 
 function IdleState:Update(ai, dt)
