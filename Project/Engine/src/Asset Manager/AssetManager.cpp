@@ -131,7 +131,7 @@ bool AssetManager::CompileAsset(const std::string& filePathStr, bool forceCompil
 	std::filesystem::path filePathObj(filePathStr);
 	std::string extension = filePathObj.extension().string();
 	if (textureExtensions.find(extension) != textureExtensions.end()) {
-		return CompileTexture(filePathStr, "diffuse", -1, true, forceCompile, forAndroid);
+		return CompileTexture(filePathStr, "diffuse", -1, false, forceCompile, forAndroid);
 	}
 	else if (audioExtensions.find(extension) != audioExtensions.end()) {
 		return CompileAsset<Audio>(filePathStr, forceCompile, forAndroid);
