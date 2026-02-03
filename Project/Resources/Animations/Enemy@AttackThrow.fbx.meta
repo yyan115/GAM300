@@ -1,0 +1,11 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "001b9f147d529815-00041a3ffe003e85",
+        "source": "../../Resources/Animations/Enemy@AttackThrow.fbx",
+        "compiled": "../../Resources/Animations/Enemy@AttackThrow.mesh"
+    },
+    "ModelMetaData": {
+        "optimizeMeshes": true
+    }
+}

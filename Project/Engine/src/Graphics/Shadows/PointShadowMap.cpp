@@ -75,6 +75,11 @@ bool PointShadowMap::Initialize(int res)
     }
 
     initialized = true;
+
+    // Initialize cache state - force first render
+    m_forceDirty = true;
+    m_framesSinceUpdate = 999;
+
     std::cout << "[PointShadowMap] Initialized - Resolution: " << resolution
         << ", FBO: " << depthMapFBO << ", Cubemap: " << depthCubemap << std::endl;
     return true;
@@ -94,6 +99,12 @@ void PointShadowMap::Shutdown()
     }
     depthShader = nullptr;
     initialized = false;
+
+    // Reset cache state
+    m_cachedLightPos = glm::vec3(std::numeric_limits<float>::max());
+    m_cachedFarPlane = -1.0f;
+    m_framesSinceUpdate = 999;
+    m_forceDirty = true;
 }
 
 std::vector<glm::mat4> PointShadowMap::GetLightSpaceMatrices(const glm::vec3& lightPos, float nearPlane, float farPlane)
@@ -199,4 +210,65 @@ void PointShadowMap::Apply(Shader& shader, int textureUnit, int shadowIndex)
     glActiveTexture(GL_TEXTURE0 + textureUnit);
     glBindTexture(GL_TEXTURE_CUBE_MAP, depthCubemap);
     shader.setInt("pointShadowMaps[" + std::to_string(shadowIndex) + "]", textureUnit);
+}
+
+bool PointShadowMap::NeedsUpdate(const glm::vec3& lightPos, float farPlane) const
+{
+    // Always update if forced dirty (initialization, invalidation, etc.)
+    if (m_forceDirty)
+    {
+        return true;
+    }
+
+    // Check if enough frames have passed since last update (respect update interval)
+    if (m_framesSinceLastCheck < cacheConfig.updateInterval)
+    {
+        return false;
+    }
+
+    // Force update if shadow map is too stale
+    if (m_framesSinceUpdate >= cacheConfig.maxStaleFrames)
+    {
+        return true;
+    }
+
+    // Check if light position changed significantly
+    float positionDelta = glm::distance(lightPos, m_cachedLightPos);
+    if (positionDelta > cacheConfig.positionThreshold)
+    {
+        return true;
+    }
+
+    // Check if far plane changed significantly (affects shadow quality/range)
+    float farPlaneDelta = std::abs(farPlane - m_cachedFarPlane);
+    if (farPlaneDelta > cacheConfig.farPlaneThreshold)
+    {
+        return true;
+    }
+
+    // No significant changes - can skip update
+    return false;
+}
+
+void PointShadowMap::MarkUpdated(const glm::vec3& lightPos, float farPlane)
+{
+    m_cachedLightPos = lightPos;
+    m_cachedFarPlane = farPlane;
+    m_framesSinceUpdate = 0;
+    m_framesSinceLastCheck = 0;
+    m_forceDirty = false;
+
+    cacheStats.updatesPerformed++;
+}
+
+void PointShadowMap::IncrementFrameCounter()
+{
+    m_framesSinceUpdate++;
+    m_framesSinceLastCheck++;
+    cacheStats.totalFrames++;
+}
+
+void PointShadowMap::Invalidate()
+{
+    m_forceDirty = true;
 }

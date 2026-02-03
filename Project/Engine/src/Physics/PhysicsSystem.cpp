@@ -421,9 +421,9 @@ void PhysicsSystem::Update(float fixedDt, ECSManager& ecsManager) {
 
         if (!ecsManager.HasComponent<ColliderComponent>(e)) continue;
         auto& col = ecsManager.GetComponent<ColliderComponent>(e);
-
+        auto& rb = ecsManager.GetComponent<RigidBodyComponent>(e);
         // Determine if this body SHOULD be in the physics world
-        bool shouldBeActive = ecsManager.IsEntityActiveInHierarchy(e) && col.enabled;
+        bool shouldBeActive = ecsManager.IsEntityActiveInHierarchy(e) && col.enabled && rb.enabled;
         bool isCurrentlyAdded = bi.IsAdded(bodyId);
 
         if (shouldBeActive && !isCurrentlyAdded) {
@@ -451,6 +451,7 @@ void PhysicsSystem::Update(float fixedDt, ECSManager& ecsManager) {
 
         if (!ecsManager.HasComponent<RigidBodyComponent>(e)) continue;
         auto& rb = ecsManager.GetComponent<RigidBodyComponent>(e);
+        if (!rb.enabled) continue;
 
         auto& tr = ecsManager.GetComponent<Transform>(e);
 
@@ -513,6 +514,7 @@ void PhysicsSystem::Update(float fixedDt, ECSManager& ecsManager) {
 
         if (!ecsManager.HasComponent<RigidBodyComponent>(e)) continue;
         auto& rb = ecsManager.GetComponent<RigidBodyComponent>(e);
+        if (!rb.enabled) continue;
 
         bi.SetGravityFactor(bodyId, rb.gravityFactor);
         bi.SetIsSensor(bodyId, rb.isTrigger);
@@ -592,6 +594,8 @@ void PhysicsSystem::PhysicsSyncBack(ECSManager& ecsManager) {
         auto& tr = ecsManager.GetComponent<Transform>(e);
         auto& rb = ecsManager.GetComponent<RigidBodyComponent>(e);
         auto& col = ecsManager.GetComponent<ColliderComponent>(e);
+
+        if (!rb.enabled) continue;
 
         // Only sync Dynamic bodies (physics controls them)
         // Kinematic/Static bodies are controlled by Transform, not physics

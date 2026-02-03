@@ -1,0 +1,13 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "00243e5d4fe4e1ab-000418c3a800025b",
+        "source": "../../Resources/Textures/M4/MiddleLedge_baseColor.png",
+        "compiled": "../../Resources/Textures/M4/MiddleLedge_baseColor.dds"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true
+    }
+}

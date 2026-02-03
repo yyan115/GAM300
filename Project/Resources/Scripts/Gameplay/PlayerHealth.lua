@@ -2,7 +2,7 @@ require("extension.engine_bootstrap")
 local Component = require("extension.mono_helper")
 local TransformMixin = require("extension.transform_mixin")
 
-local event_bus = _G.event_bus
+local Input = _G.Input
 
 -- Animation States
 local HurtTrigger = "Hurt"
@@ -21,6 +21,7 @@ local function PlayerTakeDmg(self, dmg)
 
         event_bus.publish("playerDead", true)
     end
+
     if event_bus and event_bus.publish then
         event_bus.publish("playerMaxhealth", self._maxHealth)
         event_bus.publish("playerCurrentHealth", self._currentHealth)
@@ -73,10 +74,6 @@ return Component {
     end,
 
     Update = function(self, dt)
-        if not self._animator then 
-            return
-        end
-
         if self._hurtTriggered then
             if event_bus and event_bus.publish then
                 print("[PlayerHealth] playerHurtTriggered published")

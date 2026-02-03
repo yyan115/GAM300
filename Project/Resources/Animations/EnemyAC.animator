@@ -1,0 +1,30 @@
+{
+    "name": "New Animator",
+    "entryState": "Idle",
+    "entryNodePosition": {
+        "x": -200.0,
+        "y": -100.0
+    },
+    "anyStatePosition": {
+        "x": -200.0,
+        "y": 0.0
+    },
+    "parameters": [],
+    "states": [
+        {
+            "id": "Idle",
+            "clipIndex": 0,
+            "loop": true,
+            "speed": 1.0,
+            "crossfadeDuration": 0.0,
+            "nodePosition": {
+                "x": -59.5,
+                "y": -127.5
+            }
+        }
+    ],
+    "transitions": [],
+    "clipPaths": [
+        "Resources/Animations/Enemy@Idle.fbx"
+    ]
+}

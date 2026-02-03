@@ -12,7 +12,7 @@ function HurtState:Enter(ai)
 
     if ai.particles then
         ai.particles.isEmitting   = true
-        ai.particles.emissionRate = 4
+        ai.particles.emissionRate = 6
     end
 end
 
@@ -30,7 +30,11 @@ function HurtState:Update(ai, dt)
 
         -- If player is still near, resume Attack. Otherwise go Idle.
         if ai:IsPlayerInRange(ai.config.DetectionRange) then
-            ai.fsm:Change("Attack", ai.states.Attack)
+            if not ai.IsPassive then 
+                ai.fsm:Change("Attack", ai.states.Attack)
+            else
+                ai.fsm:Change("Idle", ai.states.Idle)
+            end
         else
             ai.fsm:Change("Idle", ai.states.Idle)
         end

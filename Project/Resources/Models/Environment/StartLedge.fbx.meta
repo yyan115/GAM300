@@ -1,0 +1,11 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "00243e5d5e2fb7dd-000418c390000253",
+        "source": "../../Resources/Models/Environment/StartLedge.fbx",
+        "compiled": "../../Resources/Models/Environment/StartLedge.mesh"
+    },
+    "ModelMetaData": {
+        "optimizeMeshes": true
+    }
+}

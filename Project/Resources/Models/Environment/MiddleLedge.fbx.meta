@@ -1,0 +1,11 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "00243e5d1df66080-000418c39000024f",
+        "source": "../../Resources/Models/Environment/MiddleLedge.fbx",
+        "compiled": "../../Resources/Models/Environment/MiddleLedge.mesh"
+    },
+    "ModelMetaData": {
+        "optimizeMeshes": true
+    }
+}

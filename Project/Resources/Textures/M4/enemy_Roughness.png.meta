@@ -1,0 +1,13 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "004f036c4d471681-000418b82001f66b",
+        "source": "../../Resources/Textures/M4/enemy_Roughness.png",
+        "compiled": "../../Resources/Textures/M4/enemy_Roughness.dds"
+    },
+    "TextureMetaData": {
+        "type": "specular",
+        "flipUVs": false,
+        "generateMipmaps": true
+    }
+}

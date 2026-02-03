@@ -82,56 +82,24 @@ return function(spec)
         end
     end
     
-    inst._subscriptions = {}    -- numeric list of tokens for cleanup
-    inst._subs_map = {}        -- map: eventName -> { [callback] = token }
-
+    -- Event subscription
     function inst:Subscribe(eventName, callback)
         if not event_bus or type(event_bus.subscribe) ~= "function" then
             log_error("Subscribe: event_bus not available")
             return nil
         end
-        if type(eventName) ~= "string" or type(callback) ~= "function" then
-            log_error("Subscribe: invalid args")
-            return nil
-        end
-
-        inst._subs_map[eventName] = inst._subs_map[eventName] or {}
-
-        -- guard: callback already registered for this event
-        if inst._subs_map[eventName][callback] then
-            return inst._subs_map[eventName][callback]
-        end
-
         local token = event_bus.subscribe(eventName, callback)
-        if token then
-            table.insert(self._subscriptions, token)
-            inst._subs_map[eventName][callback] = token
-        else
-            log_error("Subscribe: subscribe returned nil for "..tostring(eventName))
-        end
+        table.insert(self._subscriptions, token)
         return token
     end
-
+    
     function inst:Unsubscribe(token)
         if not event_bus then return end
-        if not token then return end
         pcall(event_bus.unsubscribe, token)
-
-        -- remove token from numeric list
         for i = #self._subscriptions, 1, -1 do
-            if self._subscriptions[i] == token then
-                table.remove(self._subscriptions, i)
+            if self._subscriptions[i] == token then 
+                table.remove(self._subscriptions, i) 
             end
-        end
-
-        -- remove from subs_map (best-effort): find matching entry(s)
-        for evt, map in pairs(inst._subs_map) do
-            for cb, tok in pairs(map) do
-                if tok == token then
-                    map[cb] = nil
-                end
-            end
-            if next(map) == nil then inst._subs_map[evt] = nil end
         end
     end
     
@@ -185,18 +153,24 @@ return function(spec)
     -- Cleanup
     function inst:Destroy()
         safe_call(self.OnDisable, self)
+        
+        -- Unsubscribe all events
         if event_bus then
             for _, token in ipairs(self._subscriptions) do
                 pcall(event_bus.unsubscribe, token)
             end
             self._subscriptions = {}
-            self._subs_map = {}
         end
+        
+        -- Remove from global instances
         if _G.__instances then
             for i = #_G.__instances, 1, -1 do
-                if _G.__instances[i] == self then table.remove(_G.__instances, i) end
+                if _G.__instances[i] == self then 
+                    table.remove(_G.__instances, i) 
+                end
             end
         end
+        
         safe_call(self.OnDestroy, self)
     end
     

@@ -2,7 +2,7 @@
 -- Lightweight Verlet solver module with correct anchor behavior
 -- First link follows player, last link pins at hit point when fully extended
 -- Now respects component.IsElastic and component.LinkMaxDistance
--- DEPRECATED
+
 local M = {}
 
 M.EPS = 1e-6

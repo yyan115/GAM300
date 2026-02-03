@@ -27,13 +27,21 @@ function ChaseState:Update(ai, dt)
     if ai.IsMelee then
         if d2 < (meleeR * meleeR) then
             ai:StopCC()
-            ai.fsm:Change("Attack", ai.states.Attack)
+            if not ai.IsPassive then 
+                ai.fsm:Change("Attack", ai.states.Attack)
+            else
+                ai.fsm:Change("Idle", ai.states.Idle)
+            end
             return
         end
     else
         if d2 <= (attackR * attackR) then
             ai:StopCC()
-            ai.fsm:Change("Attack", ai.states.Attack)
+            if not ai.IsPassive then 
+                ai.fsm:Change("Attack", ai.states.Attack)
+            else
+                ai.fsm:Change("Idle", ai.states.Idle)
+            end
             return
         end
     end

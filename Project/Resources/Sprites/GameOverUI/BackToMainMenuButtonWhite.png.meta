@@ -1,0 +1,13 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "003736b746d0323a-000417dc2e0006c9",
+        "source": "../../Resources/Sprites/GameOverUI/BackToMainMenuButtonWhite.png",
+        "compiled": "../../Resources/Sprites/GameOverUI/BackToMainMenuButtonWhite.dds"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": true,
+        "generateMipmaps": true
+    }
+}

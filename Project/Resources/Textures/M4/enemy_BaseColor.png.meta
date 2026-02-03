@@ -1,0 +1,13 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "004f036c342a80a5-000418b66e01c229",
+        "source": "../../Resources/Textures/M4/enemy_BaseColor.png",
+        "compiled": "../../Resources/Textures/M4/enemy_BaseColor.dds"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true
+    }
+}
