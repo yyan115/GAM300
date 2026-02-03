@@ -1,0 +1,13 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "004f036c1337e068-000418b82201f66d",
+        "source": "../../Resources/Textures/M4/enemy_Height.png",
+        "compiled": "../../Resources/Textures/M4/enemy_Height.dds"
+    },
+    "TextureMetaData": {
+        "type": "specular",
+        "flipUVs": false,
+        "generateMipmaps": true
+    }
+}

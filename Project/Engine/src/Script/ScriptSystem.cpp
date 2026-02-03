@@ -147,18 +147,6 @@ static std::tuple<float, float, float> Lua_GetTransformWorldPosition(Transform* 
     return std::make_tuple(p.x, p.y, p.z);
 }
 
-static std::tuple<float, float, float, float> Lua_GetTransformWorldRotation(Transform* t)
-{
-    if (!t)
-    {
-        // Return identity quaternion
-        return std::make_tuple(1.0f, 0.0f, 0.0f, 0.0f);  // w, x, y, z
-    }
-    const auto& q = t->worldRotation; // assuming this is a quaternion
-    return std::make_tuple(q.w, q.x, q.y, q.z);  // Return quaternion components
-}
-
-
 
 static std::tuple<float, float, float> Lua_GetTransformRotation(Transform* t)
 {

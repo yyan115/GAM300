@@ -1,0 +1,11 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "0006716b4a2c29b3-00040fb4ee000001",
+        "source": "../../Resources/Animations/Enemy@Idle.fbx",
+        "compiled": "../../Resources/Animations/Enemy@Idle.fbx"
+    },
+    "ModelMetaData": {
+        "optimizeMeshes": true
+    }
+}

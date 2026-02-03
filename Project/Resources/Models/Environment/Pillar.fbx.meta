@@ -1,0 +1,11 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "0079821fe6dc0f32-00040e1ebe042da5",
+        "source": "../../Resources/Models/Environment/Pillar.fbx",
+        "compiled": "../../Resources/Models/Environment/Pillar.mesh"
+    },
+    "ModelMetaData": {
+        "optimizeMeshes": true
+    }
+}

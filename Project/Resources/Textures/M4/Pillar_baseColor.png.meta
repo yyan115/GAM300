@@ -1,0 +1,13 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "0079821fe8bca9fa-00040e1ea6042da3",
+        "source": "../../Resources/Textures/M4/Pillar_baseColor.png",
+        "compiled": "../../Resources/Textures/M4/Pillar_baseColor.dds"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true
+    }
+}
