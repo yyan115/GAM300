@@ -541,6 +541,12 @@ namespace TimeWrappers {
         return static_cast<float>(TimeManager::GetDeltaTime()) * s_timeScale;
     }
 
+    // Unscaled delta time - NOT affected by pause (always real frame time)
+    // Use this for UI animations, timers, etc. that should run even when game is paused
+    inline float GetUnscaledDeltaTime() {
+        return static_cast<float>(TimeManager::GetUnscaledDeltaTime());
+    }
+
     //PAUSE FUNCTIONS
     inline void SetPaused(bool paused) { return TimeManager::SetPaused(paused); }
     inline bool IsPaused() { return TimeManager::IsPaused(); }
