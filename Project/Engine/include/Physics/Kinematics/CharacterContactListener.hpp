@@ -22,6 +22,7 @@
 #include <functional>
 #include <iostream>
 #include <iomanip>
+#include "Logging.hpp"
 
  // Character collision event data structure
 struct CharacterCollisionEvent {
@@ -105,7 +106,7 @@ public:
     {
         if (enableDetailedLogging) {
             int otherEntity = GetEntityID(inBodyID2);
-            std::cout << "[Character] Validating contact with entity " << otherEntity << std::endl;
+            ENGINE_PRINT("[Character] Validating contact with entity {}", otherEntity);
         }
     }
 
@@ -137,19 +138,15 @@ public:
                 groundNormal = inContactNormal;
 
                 if (enableLogging) {
-                    std::cout << "[Character] Grounded on entity " << otherEntity
-                        << " (slope: " << std::fixed << std::setprecision(1)
-                        << slopeAngle << "°)" << std::endl;
+                    ENGINE_PRINT("[Character] Grounded on entity {} (slope: {:.1f})", otherEntity, slopeAngle);
                 }
             }
         }
 
         // Log contact
         if (enableLogging && isNewContact) {
-            std::cout << "[Character] Contact added with entity " << otherEntity;
-            if (isValidGround) std::cout << " [GROUND]";
-            else if (isSteep) std::cout << " [STEEP SLOPE]";
-            std::cout << std::endl;
+            std::string contactType = isValidGround ? " [GROUND]" : (isSteep ? " [STEEP SLOPE]" : "");
+            ENGINE_PRINT("[Character] Contact added with entity {}{}", otherEntity, contactType);
         }
 
         // Trigger callbacks
@@ -212,7 +209,7 @@ public:
             }
 
             if (enableLogging) {
-                std::cout << "[Character] Left ground (entity " << GetEntityID(groundBodyID) << ")" << std::endl;
+                ENGINE_PRINT("[Character] Left ground (entity {})", GetEntityID(groundBodyID));
             }
         }
 
@@ -287,18 +284,14 @@ private:
         bool isGround,
         bool isSteep) const
     {
-        std::cout << "========= CHARACTER CONTACT DETAIL =========" << std::endl;
-        std::cout << "Character Entity: " << characterEntityID << std::endl;
-        std::cout << "Other Entity: " << GetEntityID(bodyID) << std::endl;
-        std::cout << "Position: (" << std::fixed << std::setprecision(2)
-            << position.GetX() << ", " << position.GetY() << ", " << position.GetZ() << ")" << std::endl;
-        std::cout << "Normal: (" << normal.GetX() << ", " << normal.GetY() << ", " << normal.GetZ() << ")" << std::endl;
-        std::cout << "Slope angle: " << std::setprecision(1) << slopeAngle << "°" << std::endl;
-        std::cout << "Type: ";
-        if (isGround) std::cout << "GROUND";
-        else if (isSteep) std::cout << "STEEP SLOPE";
-        else std::cout << "WALL";
-        std::cout << std::endl;
-        std::cout << "============================================" << std::endl;
+        ENGINE_PRINT("========= CHARACTER CONTACT DETAIL =========");
+        ENGINE_PRINT("Character Entity: {}", characterEntityID);
+        ENGINE_PRINT("Other Entity: {}", GetEntityID(bodyID));
+        ENGINE_PRINT("Position: ({:.2f}, {:.2f}, {:.2f})", position.GetX(), position.GetY(), position.GetZ());
+        ENGINE_PRINT("Normal: ({:.2f}, {:.2f}, {:.2f})", normal.GetX(), normal.GetY(), normal.GetZ());
+        ENGINE_PRINT("Slope angle: {:.1f}", slopeAngle);
+        std::string contactType = isGround ? "GROUND" : (isSteep ? "STEEP SLOPE" : "WALL");
+        ENGINE_PRINT("Type: {}", contactType);
+        ENGINE_PRINT("============================================");
     }
 };

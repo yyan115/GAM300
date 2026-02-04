@@ -537,12 +537,12 @@ std::string Material::CompileToResource(const std::string& assetPath, bool forAn
 		materialPath = newPath.generic_string();
 	}
 
-	std::cout << "[Material] SAVE - Input path: " << assetPath << std::endl;
-	std::cout << "[Material] SAVE - Computed path: " << materialPath << std::endl;
-	std::cout << "[Material] SAVE - Working directory: " << std::filesystem::current_path() << std::endl;
-	std::cout << "[Material] SAVE - Material name: " << m_name << std::endl;
-	std::cout << "[Material] SAVE - Number of textures: " << m_textureInfo.size() << std::endl;
-	std::cout << "[Material] SAVE - Ambient: (" << m_ambient.x << ", " << m_ambient.y << ", " << m_ambient.z << ")" << std::endl;
+	ENGINE_PRINT("[Material] SAVE - Input path: {}", assetPath);
+	ENGINE_PRINT("[Material] SAVE - Computed path: {}", materialPath);
+	ENGINE_PRINT("[Material] SAVE - Working directory: {}", std::filesystem::current_path().generic_string());
+	ENGINE_PRINT("[Material] SAVE - Material name: {}", m_name);
+	ENGINE_PRINT("[Material] SAVE - Number of textures: {}", m_textureInfo.size());
+	ENGINE_PRINT("[Material] SAVE - Ambient: ({}, {}, {})", m_ambient.x, m_ambient.y, m_ambient.z);
 
 	p = materialPath;
 	std::filesystem::create_directories(p.parent_path());

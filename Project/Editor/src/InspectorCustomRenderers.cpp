@@ -1636,7 +1636,7 @@ void RegisterInspectorCustomRenderers()
                     std::string pathStr(filePath, payload->DataSize);
                     pathStr.erase(std::find(pathStr.begin(), pathStr.end(), '\0'), pathStr.end());
 
-                    std::cout << "Configuration PathStr is " << pathStr << std::endl;
+                    ENGINE_PRINT("Configuration PathStr is ", pathStr);
 
                     // Update the videoPath directly
                     *pathPtr = pathStr;
@@ -1685,7 +1685,7 @@ void RegisterInspectorCustomRenderers()
                     std::string pathStr(filePath, payload->DataSize);
                     pathStr.erase(std::find(pathStr.begin(), pathStr.end(), '\0'), pathStr.end());
 
-                    std::cout << "Dialogue PathStr is " << pathStr << std::endl;
+                    ENGINE_PRINT("Dialogue PathStr is ", pathStr);
 
                     // Update the dialoguePath directly
                     *pathPtr = pathStr;
@@ -1995,7 +1995,7 @@ void RegisterInspectorCustomRenderers()
                 // Load and apply the model
                 auto &modelRenderer = ecs.GetComponent<ModelRenderComponent>(entity);
 
-                std::cout << "[Inspector] Applying model - GUID: {" << DraggedModelGuid.high << ", " << DraggedModelGuid.low << "}, Path: " << DraggedModelPath << std::endl;
+                ENGINE_PRINT("[Inspector] Applying model - GUID: {", DraggedModelGuid.high, ", ", DraggedModelGuid.low, "}, Path: ", DraggedModelPath);
 
                 try
                 {
@@ -2012,7 +2012,7 @@ void RegisterInspectorCustomRenderers()
 
                     if (loadedModel)
                     {
-                        std::cout << "[Inspector] Model loaded successfully!" << std::endl;
+                        ENGINE_PRINT("[Inspector] Model loaded successfully!");
                         modelRenderer.model = loadedModel;
                         modelRenderer.modelGUID = DraggedModelGuid;
 
@@ -2152,7 +2152,7 @@ void RegisterInspectorCustomRenderers()
                 pathStr.erase(std::find(pathStr.begin(), pathStr.end(), '\0'), pathStr.end());
 
                 GUID_128 textureGUID = AssetManager::GetInstance().GetGUID128FromAssetMeta(pathStr);
-                std::cout << "PathStr is " << pathStr << std::endl;
+                ENGINE_PRINT("PathStr is ", pathStr);
                 *guid = textureGUID;
 
                 // Load texture immediately
