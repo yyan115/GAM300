@@ -628,15 +628,14 @@ bool Engine::InitializeGraphicsResources() {
 	SceneManager::GetInstance().LoadScene(lastScenePath);
 #else
 	// Game build loads default scene
-#ifdef ANDROID
-	// Android: Load main menu
-	SceneManager::GetInstance().LoadScene(AssetManager::GetInstance().GetRootAssetDirectory() + "/Scenes/01_MainMenu.scene");
-	ENGINE_LOG_INFO("Loaded main menu scene (Android)");
-#else
-	// Desktop: Load main menu
-	SceneManager::GetInstance().LoadScene(AssetManager::GetInstance().GetRootAssetDirectory() + "/Scenes/01_MainMenu.scene");
-	ENGINE_LOG_INFO("Loaded main menu scene");
-#endif
+// #ifdef ANDROID
+// 	SceneManager::GetInstance().LoadScene(AssetManager::GetInstance().GetRootAssetDirectory() + "/Scenes/01_MainMenu.scene");
+// 	ENGINE_LOG_INFO("Loaded main menu scene (Android)");
+// #else
+// 	SceneManager::GetInstance().LoadScene(AssetManager::GetInstance().GetRootAssetDirectory() + "/Scenes/01_MainMenu.scene");
+// 	ENGINE_LOG_INFO("Loaded main menu scene");
+// #endif
+	SceneManager::GetInstance().LoadScene(AssetManager::GetInstance().GetRootAssetDirectory() + "/Scenes/04_GameLevel.scene");
 #endif
 
 #ifdef ANDROID

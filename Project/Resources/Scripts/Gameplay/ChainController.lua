@@ -1,6 +1,6 @@
 -- ChainController.lua (refactored, authoritative chain length, clear responsibilities)
 -- Owns logical chain state (chainLen, extending/retracting), anchors, and prepares pure-physics params.
-local VerletAdapter = require("extension.VerletAdapter")
+local VerletAdapter = require("extension.verletAdapter")
 local M = {}
 
 local function vec_len(x,y,z) return math.sqrt((x or 0)*(x or 0) + (y or 0)*(y or 0) + (z or 0)*(z or 0)) end
