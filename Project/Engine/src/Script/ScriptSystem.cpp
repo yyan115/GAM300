@@ -760,21 +760,11 @@ void ScriptSystem::Update()
             auto it = m_runtimeMap.find(e);
             if (it != m_runtimeMap.end())
             {
-                // Also check individual script enabled flags
-                for (size_t i = 0; i < it->second.size(); ++i)
+                for (auto& scriptInst : it->second)
                 {
-                    auto& scriptInst = it->second[i];
                     if (scriptInst)
                     {
-                        // Check if this specific script is enabled
-                        bool scriptEnabled = true;
-                        if (comp && i < comp->scripts.size()) {
-                            scriptEnabled = comp->scripts[i].enabled;
-                        }
-
-                        if (scriptEnabled) {
-                            scriptInst->Update(static_cast<float>(TimeManager::GetDeltaTime()));
-                        }
+                        scriptInst->Update(static_cast<float>(TimeManager::GetDeltaTime()));
                     }
                 }
             }

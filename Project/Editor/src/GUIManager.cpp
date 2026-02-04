@@ -73,7 +73,7 @@ void GUIManager::Initialize() {
 	// Load default layout from Editor's imgui.ini if build's imgui.ini doesn't exist
 	if (!std::filesystem::exists("imgui.ini")) {
 		std::filesystem::path editorIni = "../../../Project/Editor/imgui.ini";
-		ENGINE_LOG_DEBUG("Loading default editor layout from: " + editorIni.string());
+		std::cout << "Loading default editor layout from: " << editorIni << std::endl;
 		ImGui::LoadIniSettingsFromDisk(editorIni.string().c_str());
 	}
 	

@@ -6,7 +6,7 @@
         "compiled": "../../Resources/Textures/M4/Player_Retexture_lambert6_Normal.dds"
     },
     "TextureMetaData": {
-        "type": "diffuse",
+        "type": "normal",
         "flipUVs": false,
         "generateMipmaps": true
     }

@@ -1239,6 +1239,7 @@ return Component {
             slashAt = 0.90,
             slashRadius = 1.4,
             dmg = 1,
+            kbStrength = 8.0,
             postDelay = 2.60
         })
     end,

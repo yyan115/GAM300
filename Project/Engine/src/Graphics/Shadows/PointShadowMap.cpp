@@ -2,7 +2,6 @@
 #include "Graphics/Shadows/PointShadowMap.hpp"
 #include "Graphics/ShaderClass.h"
 #include "Asset Manager/ResourceManager.hpp"
-#include "Logging.hpp"
 #include <glm/gtc/matrix_transform.hpp>
 
 bool PointShadowMap::Initialize(int res)
@@ -51,7 +50,7 @@ bool PointShadowMap::Initialize(int res)
 
     if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
     {
-        ENGINE_PRINT("[PointShadowMap] Framebuffer not complete!");
+        std::cout << "[PointShadowMap] Framebuffer not complete!" << std::endl;
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
         return false;
     }
@@ -71,7 +70,7 @@ bool PointShadowMap::Initialize(int res)
 
     if (!depthShader)
     {
-        ENGINE_PRINT("[PointShadowMap] Failed to load shader: {}", shaderPath);
+        std::cout << "[PointShadowMap] Failed to load shader: " << shaderPath << std::endl;
         return false;
     }
 
@@ -81,7 +80,8 @@ bool PointShadowMap::Initialize(int res)
     m_forceDirty = true;
     m_framesSinceUpdate = 999;
 
-    ENGINE_PRINT("[PointShadowMap] Initialized - Resolution: {}, FBO: {}, Cubemap: {}", resolution, depthMapFBO, depthCubemap);
+    std::cout << "[PointShadowMap] Initialized - Resolution: " << resolution
+        << ", FBO: " << depthMapFBO << ", Cubemap: " << depthCubemap << std::endl;
     return true;
 }
 

@@ -11,7 +11,6 @@
 #include "ShaderClass.h"
 #include "Asset Manager/Asset.hpp"
 #include "../Engine.h"
-#include "Logging.hpp"
 
 
 class ENGINE_API Material : public IAsset {

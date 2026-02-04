@@ -48,23 +48,6 @@ struct Particle {
 
 /******************************************************************************/
 /*!
-\struct     ParticleInstanceData
-\brief      GPU instance data structure for a single particle
-
-\details    Contains all per-particle data needed for instanced rendering:
-            position in world space, RGBA color with alpha, size scalar,
-            and rotation in degrees. Tightly packed for efficient GPU upload.
-*/
-/******************************************************************************/
-struct ParticleInstanceData {
-    glm::vec3 position;
-    glm::vec4 color;
-    float size;
-    float rotation;
-};
-
-/******************************************************************************/
-/*!
 \class      ParticleComponent
 \brief      ECS component for particle emitter configuration and runtime data
 
@@ -104,7 +87,6 @@ public:
 
     // Runtime data (don't serialize)
     std::vector<Particle> particles;
-    std::vector<ParticleInstanceData> instanceDataBuffer;
     std::shared_ptr<Texture> particleTexture;
     std::shared_ptr<Shader> particleShader;
     std::string texturePath;  // For inspector display
@@ -121,7 +103,4 @@ public:
 
     ParticleComponent() = default;
     ~ParticleComponent() = default;
-
-    int sortingLayer = 0;
-    int sortingOrder = 0;
 };

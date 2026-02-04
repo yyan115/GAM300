@@ -250,217 +250,6 @@ bool RenderAssetField(const std::string& fieldName, std::string& guidStr, AssetT
     return modified;
 }
 
-// Helper function to convert simple Lua table string to JSON string
-// Handles: {x = -2, y = 1, z = -2} -> {"x":-2,"y":1,"z":-2}
-// Handles: {"EnemyAI", "FlyingEnemyLogic"} -> ["EnemyAI","FlyingEnemyLogic"]
-// Handles: {} -> []
-std::string ConvertLuaTableToJson(const std::string& luaTable) {
-    if (luaTable.empty() || luaTable.front() != '{' || luaTable.back() != '}') {
-        return "{}";
-    }
-
-    // Remove outer braces
-    std::string content = luaTable.substr(1, luaTable.size() - 2);
-
-    // Trim whitespace
-    size_t start = content.find_first_not_of(" \t\n\r");
-    size_t end = content.find_last_not_of(" \t\n\r");
-    if (start == std::string::npos) {
-        return "[]"; // Empty table
-    }
-    content = content.substr(start, end - start + 1);
-
-    if (content.empty()) {
-        return "[]"; // Empty table
-    }
-
-    // Check if it's an array-style table (no "=" signs means array)
-    bool isArray = (content.find('=') == std::string::npos);
-
-    rapidjson::Document doc;
-    auto& alloc = doc.GetAllocator();
-
-    if (isArray) {
-        // Parse as array: {"val1", "val2", 3, 4}
-        doc.SetArray();
-
-        size_t pos = 0;
-        while (pos < content.size()) {
-            // Skip whitespace
-            while (pos < content.size() && std::isspace(content[pos])) pos++;
-            if (pos >= content.size()) break;
-
-            std::string value;
-            bool inString = false;
-            char stringDelim = 0;
-
-            while (pos < content.size()) {
-                char c = content[pos];
-
-                if (!inString) {
-                    if (c == '"' || c == '\'') {
-                        inString = true;
-                        stringDelim = c;
-                    } else if (c == ',') {
-                        pos++; // Skip comma
-                        break;
-                    } else {
-                        value += c;
-                    }
-                } else {
-                    if (c == stringDelim) {
-                        inString = false;
-                    } else {
-                        value += c;
-                    }
-                }
-                pos++;
-            }
-
-            // Trim value
-            size_t vstart = value.find_first_not_of(" \t\n\r");
-            size_t vend = value.find_last_not_of(" \t\n\r");
-            if (vstart != std::string::npos) {
-                value = value.substr(vstart, vend - vstart + 1);
-            } else {
-                value = "";
-            }
-
-            if (!value.empty()) {
-                // Try to parse as number
-                try {
-                    size_t processed = 0;
-                    double num = std::stod(value, &processed);
-                    if (processed == value.size()) {
-                        doc.PushBack(rapidjson::Value(num), alloc);
-                    } else {
-                        doc.PushBack(rapidjson::Value(value.c_str(), alloc), alloc);
-                    }
-                } catch (...) {
-                    doc.PushBack(rapidjson::Value(value.c_str(), alloc), alloc);
-                }
-            }
-        }
-    } else {
-        // Parse as object: {x = -2, y = 1, z = -2}
-        doc.SetObject();
-
-        size_t pos = 0;
-        while (pos < content.size()) {
-            // Skip whitespace
-            while (pos < content.size() && std::isspace(content[pos])) pos++;
-            if (pos >= content.size()) break;
-
-            // Parse key
-            std::string key;
-            while (pos < content.size() && content[pos] != '=' && content[pos] != ',' && !std::isspace(content[pos])) {
-                key += content[pos++];
-            }
-
-            // Skip whitespace and '='
-            while (pos < content.size() && (std::isspace(content[pos]) || content[pos] == '=')) pos++;
-
-            if (key.empty()) {
-                // Skip to next comma
-                while (pos < content.size() && content[pos] != ',') pos++;
-                if (pos < content.size()) pos++; // Skip comma
-                continue;
-            }
-
-            // Parse value
-            std::string value;
-            bool inString = false;
-            char stringDelim = 0;
-            int braceDepth = 0;
-
-            while (pos < content.size()) {
-                char c = content[pos];
-
-                if (!inString) {
-                    if (c == '"' || c == '\'') {
-                        inString = true;
-                        stringDelim = c;
-                        value += c;
-                    } else if (c == '{') {
-                        braceDepth++;
-                        value += c;
-                    } else if (c == '}') {
-                        if (braceDepth > 0) {
-                            braceDepth--;
-                            value += c;
-                        } else {
-                            break;
-                        }
-                    } else if (c == ',' && braceDepth == 0) {
-                        pos++; // Skip comma
-                        break;
-                    } else {
-                        value += c;
-                    }
-                } else {
-                    value += c;
-                    if (c == stringDelim) {
-                        inString = false;
-                    }
-                }
-                pos++;
-            }
-
-            // Trim value
-            size_t vstart = value.find_first_not_of(" \t\n\r");
-            size_t vend = value.find_last_not_of(" \t\n\r");
-            if (vstart != std::string::npos) {
-                value = value.substr(vstart, vend - vstart + 1);
-            } else {
-                value = "";
-            }
-
-            if (!key.empty() && !value.empty()) {
-                // Remove quotes from string values
-                if ((value.front() == '"' && value.back() == '"') ||
-                    (value.front() == '\'' && value.back() == '\'')) {
-                    value = value.substr(1, value.size() - 2);
-                    doc.AddMember(
-                        rapidjson::Value(key.c_str(), alloc),
-                        rapidjson::Value(value.c_str(), alloc),
-                        alloc
-                    );
-                } else {
-                    // Try to parse as number
-                    try {
-                        size_t processed = 0;
-                        double num = std::stod(value, &processed);
-                        if (processed == value.size()) {
-                            doc.AddMember(
-                                rapidjson::Value(key.c_str(), alloc),
-                                rapidjson::Value(num),
-                                alloc
-                            );
-                        } else {
-                            doc.AddMember(
-                                rapidjson::Value(key.c_str(), alloc),
-                                rapidjson::Value(value.c_str(), alloc),
-                                alloc
-                            );
-                        }
-                    } catch (...) {
-                        doc.AddMember(
-                            rapidjson::Value(key.c_str(), alloc),
-                            rapidjson::Value(value.c_str(), alloc),
-                            alloc
-                        );
-                    }
-                }
-            }
-        }
-    }
-
-    rapidjson::StringBuffer buffer;
-    rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
-    doc.Accept(writer);
-    return buffer.GetString();
-}
-
 // Forward declaration for sprite animation inspector
 void RegisterSpriteAnimationInspector();
 
@@ -1847,7 +1636,7 @@ void RegisterInspectorCustomRenderers()
                     std::string pathStr(filePath, payload->DataSize);
                     pathStr.erase(std::find(pathStr.begin(), pathStr.end(), '\0'), pathStr.end());
 
-                    ENGINE_PRINT("Configuration PathStr is ", pathStr);
+                    std::cout << "Configuration PathStr is " << pathStr << std::endl;
 
                     // Update the videoPath directly
                     *pathPtr = pathStr;
@@ -1896,7 +1685,7 @@ void RegisterInspectorCustomRenderers()
                     std::string pathStr(filePath, payload->DataSize);
                     pathStr.erase(std::find(pathStr.begin(), pathStr.end(), '\0'), pathStr.end());
 
-                    ENGINE_PRINT("Dialogue PathStr is ", pathStr);
+                    std::cout << "Dialogue PathStr is " << pathStr << std::endl;
 
                     // Update the dialoguePath directly
                     *pathPtr = pathStr;
@@ -2206,7 +1995,7 @@ void RegisterInspectorCustomRenderers()
                 // Load and apply the model
                 auto &modelRenderer = ecs.GetComponent<ModelRenderComponent>(entity);
 
-                ENGINE_PRINT("[Inspector] Applying model - GUID: {", DraggedModelGuid.high, ", ", DraggedModelGuid.low, "}, Path: ", DraggedModelPath);
+                std::cout << "[Inspector] Applying model - GUID: {" << DraggedModelGuid.high << ", " << DraggedModelGuid.low << "}, Path: " << DraggedModelPath << std::endl;
 
                 try
                 {
@@ -2223,7 +2012,7 @@ void RegisterInspectorCustomRenderers()
 
                     if (loadedModel)
                     {
-                        ENGINE_PRINT("[Inspector] Model loaded successfully!");
+                        std::cout << "[Inspector] Model loaded successfully!" << std::endl;
                         modelRenderer.model = loadedModel;
                         modelRenderer.modelGUID = DraggedModelGuid;
 
@@ -2363,7 +2152,7 @@ void RegisterInspectorCustomRenderers()
                 pathStr.erase(std::find(pathStr.begin(), pathStr.end(), '\0'), pathStr.end());
 
                 GUID_128 textureGUID = AssetManager::GetInstance().GetGUID128FromAssetMeta(pathStr);
-                ENGINE_PRINT("PathStr is ", pathStr);
+                std::cout << "PathStr is " << pathStr << std::endl;
                 *guid = textureGUID;
 
                 // Load texture immediately
@@ -6064,9 +5853,9 @@ void RegisterInspectorCustomRenderers()
                                 syntheticField.type = Scripting::FieldType::String;
                                 syntheticField.defaultValueSerialized = "\"" + luaDefault.substr(1, luaDefault.size() - 2) + "\"";
                             } else if (luaDefault.front() == '{') {
-                                // Lua table - convert to JSON
+                                // Lua table - can't easily convert, treat as Table
                                 syntheticField.type = Scripting::FieldType::Table;
-                                syntheticField.defaultValueSerialized = ConvertLuaTableToJson(luaDefault);
+                                syntheticField.defaultValueSerialized = "{}";  // Placeholder
                             } else {
                                 // Assume it's a number
                                 syntheticField.type = Scripting::FieldType::Number;
@@ -6387,87 +6176,11 @@ void RegisterInspectorCustomRenderers()
                             }
                             else
                             {
-                                // Generic string array - render with +/- buttons like Unity
-                                renderLabelWithTooltip();
-                                bool arrayModified = false;
-                                rapidjson::Document newDoc;
-                                newDoc.SetArray();
-                                auto& alloc = newDoc.GetAllocator();
-
-                                // Static buffers for string editing (keyed by field name + index)
-                                static std::unordered_map<std::string, std::vector<char>> stringArrayBuffers;
-
-                                for (size_t i = 0; i < doc.Size(); ++i)
+                                // Generic array - show as text for now
+                                ImGui::Text("%s: [Array with %zu elements]", displayName.c_str(), doc.Size());
+                                if (!field.meta.tooltip.empty() && ImGui::IsItemHovered())
                                 {
-                                    ImGui::PushID(static_cast<int>(i));
-
-                                    std::string currentValue;
-                                    if (doc[i].IsString())
-                                    {
-                                        currentValue = doc[i].GetString();
-                                    }
-                                    else if (doc[i].IsNumber())
-                                    {
-                                        currentValue = std::to_string(doc[i].GetDouble());
-                                    }
-                                    else
-                                    {
-                                        currentValue = "";
-                                    }
-
-                                    // Create a unique key for this field+index buffer
-                                    std::string bufferKey = field.name + "_" + std::to_string(i);
-                                    auto& buffer = stringArrayBuffers[bufferKey];
-                                    if (buffer.size() < 256) buffer.resize(256);
-
-                                    // Initialize buffer with current value if it's empty or different
-                                    if (buffer[0] == '\0' || std::string(buffer.data()) != currentValue) {
-                                        size_t copyLen = std::min(currentValue.size(), size_t(255));
-                                        std::memcpy(buffer.data(), currentValue.c_str(), copyLen);
-                                        buffer[copyLen] = '\0';
-                                    }
-
-                                    ImGui::Text("[%zu]", i + 1);
-                                    ImGui::SameLine();
-                                    ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x - 30.0f);
-
-                                    if (ImGui::InputText(("##str" + std::to_string(i)).c_str(), buffer.data(), 256))
-                                    {
-                                        arrayModified = true;
-                                    }
-
-                                    ImGui::SameLine();
-                                    if (ImGui::SmallButton((std::string(ICON_FA_MINUS) + "##remove" + std::to_string(i)).c_str()))
-                                    {
-                                        // Skip this element (remove it)
-                                        arrayModified = true;
-                                        // Clear the buffer for this removed element
-                                        stringArrayBuffers.erase(bufferKey);
-                                    }
-                                    else
-                                    {
-                                        // Add to new array (use buffer content)
-                                        newDoc.PushBack(rapidjson::Value(buffer.data(), alloc), alloc);
-                                    }
-
-                                    ImGui::PopID();
-                                }
-
-                                // Add new element button
-                                if (ImGui::Button((std::string(ICON_FA_PLUS) + "##add_" + field.name).c_str()))
-                                {
-                                    newDoc.PushBack(rapidjson::Value("", alloc), alloc);
-                                    arrayModified = true;
-                                }
-
-                                if (arrayModified)
-                                {
-                                    // Serialize new array
-                                    rapidjson::StringBuffer buffer;
-                                    rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
-                                    newDoc.Accept(writer);
-                                    newValue = buffer.GetString();
-                                    fieldModified = true;
+                                    ImGui::SetTooltip("%s", field.meta.tooltip.c_str());
                                 }
                             }
                         }
@@ -6569,88 +6282,11 @@ void RegisterInspectorCustomRenderers()
                                 }
                                 else
                                 {
-                                    // Generic string array-like table - render with +/- buttons
-                                    renderLabelWithTooltip();
-                                    bool arrayModified = false;
-                                    rapidjson::Document newDoc;
-                                    newDoc.SetArray();
-                                    auto& alloc = newDoc.GetAllocator();
-
-                                    // Static buffers for string editing
-                                    static std::unordered_map<std::string, std::vector<char>> stringArrayTableBuffers;
-
-                                    size_t arraySize = doc.GetObject().MemberCount();
-                                    for (size_t i = 0; i < arraySize; ++i)
-                                    {
-                                        std::string key = std::to_string(i + 1);
-                                        auto it = doc.FindMember(key.c_str());
-                                        if (it == doc.MemberEnd()) continue;
-
-                                        ImGui::PushID(static_cast<int>(i));
-
-                                        std::string currentValue;
-                                        if (it->value.IsString())
-                                        {
-                                            currentValue = it->value.GetString();
-                                        }
-                                        else if (it->value.IsNumber())
-                                        {
-                                            currentValue = std::to_string(it->value.GetDouble());
-                                        }
-                                        else
-                                        {
-                                            currentValue = "";
-                                        }
-
-                                        // Create a unique key for this field+index buffer
-                                        std::string bufferKey = field.name + "_tbl_" + std::to_string(i);
-                                        auto& buffer = stringArrayTableBuffers[bufferKey];
-                                        if (buffer.size() < 256) buffer.resize(256);
-
-                                        // Initialize buffer
-                                        if (buffer[0] == '\0' || std::string(buffer.data()) != currentValue) {
-                                            size_t copyLen = std::min(currentValue.size(), size_t(255));
-                                            std::memcpy(buffer.data(), currentValue.c_str(), copyLen);
-                                            buffer[copyLen] = '\0';
-                                        }
-
-                                        ImGui::Text("[%zu]", i + 1);
-                                        ImGui::SameLine();
-                                        ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x - 30.0f);
-
-                                        if (ImGui::InputText(("##str_tbl" + std::to_string(i)).c_str(), buffer.data(), 256))
-                                        {
-                                            arrayModified = true;
-                                        }
-
-                                        ImGui::SameLine();
-                                        if (ImGui::SmallButton((std::string(ICON_FA_MINUS) + "##remove_tbl" + std::to_string(i)).c_str()))
-                                        {
-                                            arrayModified = true;
-                                            stringArrayTableBuffers.erase(bufferKey);
-                                        }
-                                        else
-                                        {
-                                            newDoc.PushBack(rapidjson::Value(buffer.data(), alloc), alloc);
-                                        }
-
-                                        ImGui::PopID();
-                                    }
-
-                                    // Add new element button
-                                    if (ImGui::Button((std::string(ICON_FA_PLUS) + "##add_tbl_" + field.name).c_str()))
-                                    {
-                                        newDoc.PushBack(rapidjson::Value("", alloc), alloc);
-                                        arrayModified = true;
-                                    }
-
-                                    if (arrayModified)
-                                    {
-                                        rapidjson::StringBuffer buffer;
-                                        rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
-                                        newDoc.Accept(writer);
-                                        newValue = buffer.GetString();
-                                        fieldModified = true;
+                                    // Generic array-like table - show as text for now
+                                    ImGui::Text("%s: [Array with %zu elements]", displayName.c_str(), doc.GetObject().MemberCount());
+                                    if (ImGui::IsItemHovered()) {
+                                        std::string tooltip = !fieldComment.empty() ? fieldComment : field.meta.tooltip;
+                                        if (!tooltip.empty()) ImGui::SetTooltip("%s", tooltip.c_str());
                                     }
                                 }
                             }

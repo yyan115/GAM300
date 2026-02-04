@@ -152,8 +152,6 @@ void VideoSystem::Update(float dt) {
     {
         if (!m_ecs->HasComponent<VideoComponent>(entity) || !m_ecs->HasComponent<SpriteRenderComponent>(entity))
             continue;
-        // Skip entities that are inactive in hierarchy (checks parents too)
-        if (!m_ecs->IsEntityActiveInHierarchy(entity)) continue;
 
         auto& videoComp = m_ecs->GetComponent<VideoComponent>(entity);
         auto& spriteComp = m_ecs->GetComponent<SpriteRenderComponent>(entity);

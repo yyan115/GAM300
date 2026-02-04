@@ -21,7 +21,6 @@
 #include <unordered_set>
 #include <iostream>
 #include <iomanip>
-#include "Logging.hpp"
 
 // Collision event data structure
 struct CollisionEvent {
@@ -65,9 +64,9 @@ public:
         const JPH::CollideShapeResult& /*inCollisionResult*/) override
     {
         if (enableDetailedLogging) {
-            ENGINE_PRINT("[Collision] Validating contact between entities ",
-                GetEntityID(inBody1), " (", GetMotionTypeName(inBody1), ") and ",
-                GetEntityID(inBody2), " (", GetMotionTypeName(inBody2), ")");
+            std::cout << "[Collision] Validating contact between entities "
+                << GetEntityID(inBody1) << " (" << GetMotionTypeName(inBody1) << ") and "
+                << GetEntityID(inBody2) << " (" << GetMotionTypeName(inBody2) << ")" << std::endl;
         }
 
         // You can add custom validation logic here
@@ -93,9 +92,9 @@ public:
         // Only trigger callback if this is a new collision
         if (activeCollisions.insert(key).second) {
             if (enableLogging) {
-                ENGINE_PRINT("[Collision] Enter: Entity ", entityA,
-                    " (", GetMotionTypeName(inBody1), ") <-> Entity ", entityB,
-                    " (", GetMotionTypeName(inBody2), ")");
+                std::cout << "[Collision] Enter: Entity " << entityA
+                    << " (" << GetMotionTypeName(inBody1) << ") <-> Entity " << entityB
+                    << " (" << GetMotionTypeName(inBody2) << ")" << std::endl;
             }
 
             if (onCollisionEnter && inManifold.mRelativeContactPointsOn1.size() > 0) {
@@ -129,7 +128,8 @@ public:
             if (enableLogging) {
                 // We need to access the bodies to get their motion type
                 // Note: This requires access to the body interface
-                ENGINE_PRINT("[Collision] Exit: Entity ", entityA, " <-> Entity ", entityB);
+                std::cout << "[Collision] Exit: Entity " << entityA
+                    << " <-> Entity " << entityB << std::endl;
             }
 
             if (onCollisionExit) {
@@ -187,24 +187,30 @@ private:
     // Detailed logging
     void LogCollisionDetails(const JPH::Body& body1, const JPH::Body& body2,
         const JPH::ContactManifold& manifold) {
-        ENGINE_PRINT("========= COLLISION DETAIL =========");
-        ENGINE_PRINT("Entity {} ({}) <-> Entity {} ({})", GetEntityID(body1), GetMotionTypeName(body1), GetEntityID(body2), GetMotionTypeName(body2));
-        ENGINE_PRINT("Contact points: {}", manifold.mRelativeContactPointsOn1.size());
+        std::cout << "========= COLLISION DETAIL =========" << std::endl;
+        std::cout << "Entity " << GetEntityID(body1) << " (" << GetMotionTypeName(body1)
+            << ") <-> Entity " << GetEntityID(body2) << " (" << GetMotionTypeName(body2) << ")" << std::endl;
+        std::cout << "Contact points: " << manifold.mRelativeContactPointsOn1.size() << std::endl;
 
         for (size_t i = 0; i < manifold.mRelativeContactPointsOn1.size(); ++i) {
             JPH::Vec3 p1 = manifold.GetWorldSpaceContactPointOn1(i);
             JPH::Vec3 p2 = manifold.GetWorldSpaceContactPointOn2(i);
-            ENGINE_PRINT("  Point {}: ({:.2f}, {:.2f}, {:.2f}) <-> ({:.2f}, {:.2f}, {:.2f})", i, p1.GetX(), p1.GetY(), p1.GetZ(), p2.GetX(), p2.GetY(), p2.GetZ());
+            std::cout << "  Point " << i << ": ("
+                << std::fixed << std::setprecision(2)
+                << p1.GetX() << ", " << p1.GetY() << ", " << p1.GetZ() << ") <-> ("
+                << p2.GetX() << ", " << p2.GetY() << ", " << p2.GetZ() << ")" << std::endl;
         }
 
         JPH::Vec3 normal = manifold.mWorldSpaceNormal;
-        ENGINE_PRINT("Normal: ({:.2f}, {:.2f}, {:.2f})", normal.GetX(), normal.GetY(), normal.GetZ());
-        ENGINE_PRINT("Penetration depth: {:.4f}", manifold.mPenetrationDepth);
+        std::cout << "Normal: (" << std::fixed << std::setprecision(2)
+            << normal.GetX() << ", " << normal.GetY() << ", " << normal.GetZ() << ")" << std::endl;
+        std::cout << "Penetration depth: " << std::fixed << std::setprecision(4)
+            << manifold.mPenetrationDepth << std::endl;
 
         LogAngularVelocity(body1);
         LogAngularVelocity(body2);
 
-        ENGINE_PRINT("====================================");
+        std::cout << "====================================" << std::endl;
     }
 
     void LogAngularVelocity(const JPH::Body& body) {
@@ -212,8 +218,10 @@ private:
         float speed = angVel.Length();
 
         if (speed > 0.5f) {
-            ENGINE_PRINT("Entity {} ({}) angular speed: {:.2f} rad/s", GetEntityID(body), GetMotionTypeName(body), speed);
-            ENGINE_PRINT("  Vector: ({:.2f}, {:.2f}, {:.2f})", angVel.GetX(), angVel.GetY(), angVel.GetZ());
+            std::cout << "Entity " << GetEntityID(body) << " (" << GetMotionTypeName(body)
+                << ") angular speed: " << std::fixed << std::setprecision(2) << speed << " rad/s" << std::endl;
+            std::cout << "  Vector: (" << angVel.GetX() << ", "
+                << angVel.GetY() << ", " << angVel.GetZ() << ")" << std::endl;
         }
     }
 };

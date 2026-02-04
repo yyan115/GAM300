@@ -24,25 +24,6 @@
 #endif
 #endif
 
-// =============================================================================
-// LOGGING CONTROL
-// =============================================================================
-// Uncomment the line below to disable ALL logging at compile time.
-// This eliminates all logging overhead - no function calls, no string formatting.
-// =============================================================================
-
- #define ENGINE_LOGGING_DISABLED
-
-// =============================================================================
-// LOGGING MACROS
-// =============================================================================
-// When ENGINE_LOGGING_DISABLED is defined, all logging macros compile to nothing.
-// The (void)0 is a standard idiom that:
-// - Produces no code
-// - Is syntactically valid where a statement is expected
-// - Suppresses "unused variable" warnings when logging is disabled
-// =============================================================================
-
 namespace EngineLogging {
         
     // Log levels matching spdlog levels
@@ -161,18 +142,8 @@ namespace EngineLogging {
     
 }
 
-#ifdef ENGINE_LOGGING_DISABLED
+// Convenience macros for Engine logging  //SHOULDNT BE NEEDED ANYMORE, ALL CHANGE TO 
 
-// All logging compiles to nothing
-#define ENGINE_LOG_TRACE(msg)    ((void)0)
-#define ENGINE_LOG_DEBUG(msg)    ((void)0)
-#define ENGINE_LOG_INFO(msg)     ((void)0)
-#define ENGINE_LOG_WARN(msg)     ((void)0)
-#define ENGINE_LOG_ERROR(msg)    ((void)0)
-#define ENGINE_LOG_CRITICAL(msg) ((void)0)
-#define ENGINE_PRINT(...)        ((void)0)
-
-#else // ENGINE_LOGGING_DISABLED not defined - logging enabled
 
 #define ENGINE_LOG_TRACE(msg)    EngineLogging::LogTrace(msg)
 #define ENGINE_LOG_DEBUG(msg)    EngineLogging::LogDebug(msg)
@@ -180,6 +151,9 @@ namespace EngineLogging {
 #define ENGINE_LOG_WARN(msg)     EngineLogging::LogWarn(msg)
 #define ENGINE_LOG_ERROR(msg)    EngineLogging::LogError(msg)
 #define ENGINE_LOG_CRITICAL(msg) EngineLogging::LogCritical(msg)
+
+
+//Currently TRACE DEBUG INFO is all printed to console as [INFO], to be changed?
 
 /**
  * @brief Prints a message either to the console or to the internal editor logger.
@@ -200,5 +174,3 @@ namespace EngineLogging {
  * PrintOutput("Something went wrong!", LogLevel::Error, true);
  */
 #define ENGINE_PRINT(...) EngineLogging::PrintEditorVariadic(__VA_ARGS__)
-
-#endif // ENGINE_LOGGING_DISABLED
