@@ -321,9 +321,23 @@ void DesktopPlatform::FocusCallback(GLFWwindow* window, int focused) {
 
 // Input callback implementations
 void DesktopPlatform::KeyCallback(GLFWwindow* window, int key, int scancode, int action, int mods) {
-	(void)mods, scancode, window;
+	(void)scancode;
     Input::Key engineKey = GLFWKeyToEngineKey(key);
     Input::KeyAction engineAction = GLFWActionToEngineAction(action);
+    (void)engineAction;
+
+#ifndef EDITOR
+    // Alt+Enter to toggle fullscreen (game builds only)
+    if (key == GLFW_KEY_ENTER && action == GLFW_PRESS && (mods & GLFW_MOD_ALT)) {
+        if (s_instance) {
+            s_instance->ToggleFullscreen();
+        }
+        return;
+    }
+#else
+    (void)mods;
+    (void)window;
+#endif
 
     if (engineKey != Input::Key::UNKNOWN) {
     }
