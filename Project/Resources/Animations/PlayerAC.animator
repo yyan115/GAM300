@@ -21,14 +21,9 @@
             "defaultValue": 0.0
         },
         {
-            "name": "IsDead",
-            "type": "Bool",
-            "defaultValue": 0.0
-        },
-        {
             "name": "IsGrounded",
             "type": "Bool",
-            "defaultValue": 1.0
+            "defaultValue": 0.0
         },
         {
             "name": "IsHeavyCharging",
@@ -36,14 +31,19 @@
             "defaultValue": 0.0
         },
         {
-            "name": "IsJumping",
+            "name": "IsDead",
             "type": "Bool",
             "defaultValue": 0.0
         },
         {
             "name": "IsAttacking",
             "type": "Bool",
-            "defaultValue": 1.0
+            "defaultValue": 0.0
+        },
+        {
+            "name": "IsJumping",
+            "type": "Bool",
+            "defaultValue": 0.0
         },
         {
             "name": "Attack",
@@ -102,17 +102,6 @@
             }
         },
         {
-            "id": "Jump",
-            "clipIndex": 1,
-            "loop": false,
-            "speed": 1.0,
-            "crossfadeDuration": 0.0,
-            "nodePosition": {
-                "x": 100.50003051757813,
-                "y": -2.4705705642700195
-            }
-        },
-        {
             "id": "Death",
             "clipIndex": 5,
             "loop": false,
@@ -121,6 +110,17 @@
             "nodePosition": {
                 "x": 450.529541015625,
                 "y": -2.4705915451049805
+            }
+        },
+        {
+            "id": "Jump",
+            "clipIndex": 1,
+            "loop": false,
+            "speed": 1.0,
+            "crossfadeDuration": 0.0,
+            "nodePosition": {
+                "x": 100.50003051757813,
+                "y": -2.4705705642700195
             }
         },
         {
@@ -720,6 +720,21 @@
             "conditions": [
                 {
                     "paramName": "IsRunning",
+                    "mode": "Equals",
+                    "threshold": 0.0
+                }
+            ]
+        },
+        {
+            "from": "Death",
+            "to": "Idle",
+            "anyState": false,
+            "hasExitTime": true,
+            "exitTime": 1.0,
+            "transitionDuration": 1.0,
+            "conditions": [
+                {
+                    "paramName": "IsDead",
                     "mode": "Equals",
                     "threshold": 0.0
                 }

@@ -13,7 +13,8 @@
         "DialogueText",
         "DialogueBox",
         "BlackScreen",
-        "SkipButton"
+        "SkipButton",
+        "Checkpoint"
     ],
     "layers": [
         {

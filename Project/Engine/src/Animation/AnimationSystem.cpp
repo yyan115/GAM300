@@ -23,6 +23,8 @@ bool AnimationSystem::Initialise()
 
 			try {
 				InitialiseAnimationComponent(entity, modelComp, animComp);
+				animComp.ResetPreview(entity);
+				animComp.ResetForPlay(entity); // Reset animator to time 0 for fresh start
 			}
 			catch (const std::exception& e) {
 				ENGINE_PRINT(EngineLogging::LogLevel::Error, "[AnimationSystem] Exception initializing entity ", entity, ": ", e.what(), "\n");
