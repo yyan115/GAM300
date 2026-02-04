@@ -60,6 +60,8 @@ void ButtonSystem::UpdateButtonStates() {
 
         for (Entity e : m_ecs->GetActiveEntities()) {
             if (!m_ecs->HasComponent<ButtonComponent>(e)) continue;
+            // Skip entities that are inactive in hierarchy (checks parents too)
+            if (!m_ecs->IsEntityActiveInHierarchy(e)) continue;
             HandlePointerClick(e, pointerPosInGameSpace);
         }
     }
