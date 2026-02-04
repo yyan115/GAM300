@@ -1,8 +1,8 @@
 {
     "AssetMetaData": {
         "version": 7,
-        "guid": "003438301e9e7c23-00041ac50a000009",
-        "source": "../../Resources/Scripts/GamePlay/ChainController.lua",
-        "compiled": "../../Resources/Scripts/GamePlay/ChainController.lua"
+        "guid": "002e3c80ad6de8dc-0004102b42000005",
+        "source": "../../Resources/Scripts/Gameplay/ChainController.lua",
+        "compiled": "../../Resources/Scripts/Gameplay/ChainController.lua"
     }
 }

@@ -1707,7 +1707,7 @@
             "guid": "0003e8c6800a6de1-000405d0a40000a7",
             "components": {
                 "NameComponent": {
-                    "name": "PED_TEST"
+                    "name": "Pedestal"
                 },
                 "TagComponent": {
                     "tagIndex": 0
@@ -2017,21 +2017,6 @@
                         {
                             "type": "bool",
                             "data": true
-                        }
-                    ]
-                },
-                "ScriptComponent": {
-                    "scripts": [
-                        {
-                            "scriptGuidStr": "004fd797d555ac74-00041d3e16000001",
-                            "scriptPath": "../../Resources/Scripts/GamePlay/DoorHandler.lua",
-                            "enabled": true,
-                            "preserveKeys": [],
-                            "entryFunction": "OnInit",
-                            "autoInvokeEntry": true,
-                            "instanceState": {
-                                "PedestalName": "\"PED_TEST\""
-                            }
                         }
                     ]
                 }
