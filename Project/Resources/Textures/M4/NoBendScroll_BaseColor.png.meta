@@ -1,0 +1,13 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "004bc8acdac67741-00041b64b6007ed1",
+        "source": "../../Resources/Textures/M4/NoBendScroll_BaseColor.png",
+        "compiled": "../../Resources/Textures/M4/NoBendScroll_BaseColor.dds"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true
+    }
+}

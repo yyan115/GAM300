@@ -23,6 +23,21 @@ prior written consent of DigiPen Institute of Technology is prohibited.
 class ECSManager;
 
 /**
+ * @brief Result of rendering a component, tracking which specific field was modified
+ *
+ * Unity-style approach: Instead of just returning bool for "was anything modified",
+ * we track exactly which field was modified so multi-entity editing only copies
+ * that specific field to other selected entities.
+ */
+struct FieldModificationResult {
+    bool wasModified = false;
+    std::string modifiedFieldName;  // Empty if not modified, field name if modified
+
+    // Implicit conversion to bool for backward compatibility
+    operator bool() const { return wasModified; }
+};
+
+/**
  * @brief Automatically renders component fields using reflection metadata
  *
  * This class eliminates the need for hardcoded DrawXComponent() methods by:
@@ -42,6 +57,19 @@ public:
      */
     static bool RenderComponent(void* componentPtr, TypeDescriptor_Struct* typeDesc,
                                 Entity entity, ECSManager& ecsManager);
+
+    /**
+     * @brief Renders all reflected fields and tracks which specific field was modified (Unity-style)
+     * @param componentPtr Pointer to the component instance
+     * @param typeDesc Type descriptor from reflection system
+     * @param entity The entity that owns this component (for special handlers)
+     * @param ecsManager ECS manager for accessing other components if needed
+     * @return FieldModificationResult containing modification status and field name
+     *
+     * Use this for multi-entity editing to only copy the specific modified field.
+     */
+    static FieldModificationResult RenderComponentWithFieldTracking(void* componentPtr, TypeDescriptor_Struct* typeDesc,
+                                                                     Entity entity, ECSManager& ecsManager);
 
     /**
      * @brief Renders a single field with appropriate ImGui widget

@@ -1,0 +1,13 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "004bc8acfbf003c9-00041b443a001e7d",
+        "source": "../../Resources/Textures/M4/BendScroll_BaseColor.png",
+        "compiled": "../../Resources/Textures/M4/BendScroll_BaseColor.dds"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true
+    }
+}

@@ -1,0 +1,11 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "0048e304de7a5a62-00041ca8e4002003",
+        "source": "../../Resources/Models/Environment/OfferingBox.fbx",
+        "compiled": "../../Resources/Models/Environment/OfferingBox.mesh"
+    },
+    "ModelMetaData": {
+        "optimizeMeshes": true
+    }
+}
