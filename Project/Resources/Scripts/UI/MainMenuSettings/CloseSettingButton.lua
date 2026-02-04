@@ -13,10 +13,18 @@ return Component {
         self._transform = self:GetComponent("Transform")
         self._audio = self:GetComponent("AudioComponent")
         self._sprite = self:GetComponent("SpriteRenderComponent")
-        self._isHovered = false       
+        self._isHovered = false
+        self._SettingsUIEntity = Engine.GetEntityByName("SettingsUI")
+        if self._SettingsUIEntity then
+            self._settingsUIActive = GetComponent(self._SettingsUIEntity, "ActiveComponent")
+        end
     end,
 
     Update = function(self, dt)
+        if not self._settingsUIActive or not self._settingsUIActive.isActive then
+            return
+        end
+        
         self:_updateHover()
     end,
 
