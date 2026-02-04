@@ -7,6 +7,7 @@ local StateMachine = require("Gameplay.StateMachine")
 local ChooseState  = require("Gameplay.MinibossChooseState")
 local ExecuteState = require("Gameplay.MinibossExecuteState")
 local RecoverState = require("Gameplay.MinibossRecoverState")
+local BattlecryState = require("Gameplay.MinibossBattlecryState")
 
 local KnifePool = require("Gameplay.KnifePool")
 
@@ -76,18 +77,18 @@ end
 -- Move definitions (DATA-DRIVEN)
 -------------------------------------------------
 local MOVES = {
-    Move1 = { cooldown = 2.0, weights = { [1]=50, [2]=20, [3]=10, [4]=0 }, execute = function(ai) print("[Miniboss] Move1: Basic Attack") ai:BasicAttack() end },
-    Move2 = { cooldown = 2.5, weights = { [1]=25, [2]=35, [3]=30, [4]=20 }, execute = function(ai) print("[Miniboss] Move2: Burst Fire") ai:BurstFire() end },
-    Move3 = { cooldown = 3.0, weights = { [1]=25,  [2]=35, [3]=30, [4]=20 }, execute = function(ai) print("[Miniboss] Move3: Anti Dodge") ai:AntiDodge() end },
-    Move4 = { cooldown = 4.0, weights = { [1]=0,  [2]=10,  [3]=30, [4]=30 }, execute = function(ai) print("[Miniboss] Move4: Fate Sealed") ai:FateSealed() end },
-    Move5 = { cooldown = 5.0, weights = { [1]=0,  [2]=0,  [3]=0,  [4]=30 }, execute = function(ai) print("[Miniboss] Move5: Death Lotus") ai:DeathLotus() end },
-
-    -- For testing individual moves 1 by 1
-    -- Move1 = { cooldown = 2.0, weights = { [1]=0, [2]=20, [3]=10, [4]=0 }, execute = function(ai) print("[Miniboss] Move1: Basic Attack") ai:BasicAttack() end },
-    -- Move2 = { cooldown = 2.5, weights = { [1]=0, [2]=35, [3]=30, [4]=20 }, execute = function(ai) print("[Miniboss] Move2: Burst Fire") ai:BurstFire() end },
-    -- Move3 = { cooldown = 3.0, weights = { [1]=10,  [2]=35, [3]=30, [4]=20 }, execute = function(ai) print("[Miniboss] Move3: Anti Dodge") ai:AntiDodge() end },
+    -- Move1 = { cooldown = 2.0, weights = { [1]=50, [2]=20, [3]=10, [4]=0 }, execute = function(ai) print("[Miniboss] Move1: Basic Attack") ai:BasicAttack() end },
+    -- Move2 = { cooldown = 2.5, weights = { [1]=25, [2]=35, [3]=30, [4]=20 }, execute = function(ai) print("[Miniboss] Move2: Burst Fire") ai:BurstFire() end },
+    -- Move3 = { cooldown = 3.0, weights = { [1]=25,  [2]=35, [3]=30, [4]=20 }, execute = function(ai) print("[Miniboss] Move3: Anti Dodge") ai:AntiDodge() end },
     -- Move4 = { cooldown = 4.0, weights = { [1]=0,  [2]=10,  [3]=30, [4]=30 }, execute = function(ai) print("[Miniboss] Move4: Fate Sealed") ai:FateSealed() end },
     -- Move5 = { cooldown = 5.0, weights = { [1]=0,  [2]=0,  [3]=0,  [4]=30 }, execute = function(ai) print("[Miniboss] Move5: Death Lotus") ai:DeathLotus() end },
+
+    -- For testing individual moves 1 by 1
+    Move1 = { cooldown = 2.0, weights = { [1]=0, [2]=20, [3]=10, [4]=0 }, execute = function(ai) print("[Miniboss] Move1: Basic Attack") ai:BasicAttack() end },
+    Move2 = { cooldown = 2.5, weights = { [1]=0, [2]=35, [3]=30, [4]=20 }, execute = function(ai) print("[Miniboss] Move2: Burst Fire") ai:BurstFire() end },
+    Move3 = { cooldown = 3.0, weights = { [1]=0,  [2]=35, [3]=30, [4]=20 }, execute = function(ai) print("[Miniboss] Move3: Anti Dodge") ai:AntiDodge() end },
+    Move4 = { cooldown = 4.0, weights = { [1]=10,  [2]=10,  [3]=30, [4]=30 }, execute = function(ai) print("[Miniboss] Move4: Fate Sealed") ai:FateSealed() end },
+    Move5 = { cooldown = 5.0, weights = { [1]=0,  [2]=0,  [3]=0,  [4]=30 }, execute = function(ai) print("[Miniboss] Move5: Death Lotus") ai:DeathLotus() end },
 }
 
 local MOVE_ORDER = { "Move1", "Move2", "Move3", "Move4", "Move5" }
@@ -102,7 +103,7 @@ return Component {
         MaxHealth = 30,
         RecoverDuration = 1.0,
 
-        -- Damage / Hook / Death (EnemyAI-style)
+        -- Damage / Hook / Death
         HitIFrame      = 0.2,
         HookedDuration = 4.0,
 
@@ -111,23 +112,29 @@ return Component {
 
         PlayerName = "Player",
 
-        -- Gravity tuning (copied style from EnemyAI)
+        -- Gravity tuning
         Gravity      = -9.81,
         MaxFallSpeed = -25.0,
 
         -- Optional: small “stick to ground” behaviour
         GroundStickVel = -0.2,
+
+        IntroDuration = 5.0,
+        AggroRange    = 15.0,  -- distance to trigger intro
+        ClipBattlecry = -1,    -- (optional) set in inspector
+
     },
 
     Awake = function(self)
         self.health = self.MaxHealth
-        self.dead = false
+        self.dead   = false
 
         self.fsm = StateMachine.new(self)
         self.states = {
-            Choose  = ChooseState,
-            Execute = ExecuteState,
-            Recover = RecoverState,
+            Choose    = ChooseState,
+            Execute   = ExecuteState,
+            Recover   = RecoverState,
+            Battlecry = BattlecryState
         }
 
         self._moveCooldowns = {}
@@ -150,6 +157,8 @@ return Component {
         self._knifeVolleyId = 0
 
         -- action lock system (blocks Choose/Execute/etc)
+        self._inIntro    = false
+        self._introDone  = false
         self._lockAction = false
         self._lockReason = nil
         self._lockTimer  = 0
@@ -260,7 +269,8 @@ return Component {
 
         self._phase = self:GetPhase()
 
-        self.fsm:Change("Choose", self.states.Choose)
+        self.fsm:Change("Recover", self.states.Recover)
+        self._recoverTimer = 999999 -- idle until aggro
     end,
 
     Update = function(self, dt)
@@ -322,6 +332,23 @@ return Component {
         if self:IsActionLocked() then
             -- phase transform may have started
             return
+        end
+
+        -- Aggro trigger: if not intro done, wait until player is close
+        if not self._introDone and not self._inIntro then
+            local px, py, pz = self:GetPlayerPosForAI()
+            if px then
+                local ex, ez = self:GetEnemyPosXZ()
+                local dx, dz = px - ex, pz - ez
+                local r = self.AggroRange or 6.0
+                if (dx*dx + dz*dz) <= (r*r) then
+                    self._introDone = true
+                    self._recoverTimer = 0
+                    self.fsm:Change("Battlecry", self.states.Battlecry)
+                    -- IMPORTANT: don’t continue updating combat this frame
+                    return
+                end
+            end
         end
 
         -- Run behaviour
@@ -410,6 +437,18 @@ return Component {
         end
         local x, _, z = self:GetPosition()
         return x, z
+    end,
+
+    GetPlayerPosForAI = function(self)
+        local tr = self._playerTr
+        if not tr then
+            tr = Engine.FindTransformByName(self.PlayerName)
+            self._playerTr = tr
+        end
+        if not tr then return nil end
+        local pp = Engine.GetTransformPosition(tr)
+        if not pp then return nil end
+        return pp[1], pp[2], pp[3]
     end,
 
     -------------------------------------------------
@@ -593,6 +632,7 @@ return Component {
 
     ApplyHit = function(self, dmg, hitType)
         if self.dead then return end
+        if self._inIntro then return end
         if (self._hitLockTimer or 0) > 0 then return end
 
         self._hitLockTimer = self.HitIFrame or 0.2
@@ -623,6 +663,8 @@ return Component {
 
     ApplyHook = function(self, duration)
         if self.dead then return end
+        if self._inIntro then return end
+
         self._hooked = true
 
         local dur = duration or self.HookedDuration or 4.0
@@ -1098,7 +1140,10 @@ return Component {
                             entityId = self.entityId,
                             x = ex, y = ey, z = ez,
                             radius = m.slashRadius or 1.4,
-                            dmg = m.dmg or 1
+                            dmg = m.dmg or 1,
+
+                            kbStrength = m.kbStrength or 8.0,
+                            kbUp = 0.0,
                         })
                     end
                 end
@@ -1194,6 +1239,7 @@ return Component {
             slashAt = 0.90,
             slashRadius = 1.4,
             dmg = 1,
+            kbStrength = 8.0,
             postDelay = 2.60
         })
     end,

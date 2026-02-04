@@ -83,6 +83,17 @@ return Component {
                     if self._animator then self._animator:SetBool("IsJumping", false) end
                 end
             end)
+
+            print("[PlayerMovement] Subscribing to player_knockback")
+            self._kbPending = false
+            self._kbX, self._kbZ = 0, 0
+
+            self._knockSub = event_bus.subscribe("player_knockback", function(p)
+                if not p then return end
+                self._kbX = (p.x or 0) * (p.strength or 0)
+                self._kbZ = (p.z or 0) * (p.strength or 0)
+                self._kbPending = true
+            end)
         else
             print("[PlayerMovement] ERROR: event_bus not available!")
         end
@@ -116,6 +127,19 @@ return Component {
     Update = function(self, dt)
         if not self._collider or not self._transform or not self._controller or self._playerDead then
             return
+        end
+
+        -- KNOCKBACK (ONE-SHOT, applied immediately even during damage stun)
+        if self._kbPending then
+            self._kbPending = false
+            CharacterController.Move(
+                self._controller,
+                (self._kbX or 0),
+                0,
+                (self._kbZ or 0)
+            )
+            -- prevent weird follow-through
+            self._kbX, self._kbZ = 0, 0
         end
 
         if self._isDamageStun == true then

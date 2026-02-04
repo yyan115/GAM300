@@ -74,7 +74,7 @@ return Component {
         end)
         print("[PlayerHealth] Subscription token (melee): " .. tostring(self._meleeHitPlayerDmgSub))
 
-            print("[PlayerHealth] Subscribing to miniboss_slash")
+        print("[PlayerHealth] Subscribing to miniboss_slash")
             self._minibossSlashSub = event_bus.subscribe("miniboss_slash", function(payload)
             if not payload then return end
             if self._isIFrame then return end
@@ -90,7 +90,53 @@ return Component {
             -- simple XZ circle hit
             if (dx*dx + dz*dz) <= (r*r) then
                 PlayerTakeDmg(self, payload.dmg or 1)
+                if event_bus and event_bus.publish then
+                    local strength = payload.kbStrength or 0
+                    if strength > 0 then
+                        local kbx, kbz = dx, dz
+                        local len = math.sqrt(kbx*kbx + kbz*kbz)
+                        if len > 1e-4 then
+                            kbx = kbx / len
+                            kbz = kbz / len
+                        else
+                            kbx, kbz = 0, 1
+                        end
+
+                        event_bus.publish("player_knockback", {
+                            x = kbx,
+                            z = kbz,
+                            strength = strength,
+                        })
+                    end
+                end
                 self._isIFrame = true
+                -- KNOCKBACK (NEW) - push player away from slash center
+                local strength = payload.kbStrength or 0
+                if strength > 0 then
+                    local kbx, kbz = dx, dz
+                    local len = math.sqrt(kbx*kbx + kbz*kbz)
+                    if len > 1e-4 then
+                        kbx = kbx / len
+                        kbz = kbz / len
+                    else
+                        -- edge case: player exactly at center
+                        kbx, kbz = 0, 1
+                    end
+
+                    -- If you have a CharacterController on player:
+                    if self._controller then
+                        CharacterController.Move(self._controller, kbx * strength, 0, kbz * strength)
+                    else
+                        -- fallback: if you have RB
+                        local rb = self:GetComponent("RigidBodyComponent")
+                        if rb then
+                            local v = rb.linearVel or {x=0,y=0,z=0}
+                            v.x = (v.x or 0) + kbx * strength
+                            v.z = (v.z or 0) + kbz * strength
+                            rb.linearVel = v
+                        end
+                    end
+                end
             end
         end)
         print("[PlayerHealth] Subscribed to miniboss_slash: " .. tostring(self._minibossSlashSub))
