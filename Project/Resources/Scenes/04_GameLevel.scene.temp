@@ -12667,6 +12667,18 @@
                             "data": true
                         }
                     ]
+                },
+                "ScriptComponent": {
+                    "scripts": [
+                        {
+                            "scriptGuidStr": "001b4a9583ee87fa-0003ef19b2000001",
+                            "scriptPath": "../../Resources/Scripts/UI/AndroidOnly.lua",
+                            "enabled": true,
+                            "preserveKeys": [],
+                            "entryFunction": "OnInit",
+                            "autoInvokeEntry": true
+                        }
+                    ]
                 }
             }
         },
@@ -12861,6 +12873,18 @@
                         {
                             "type": "bool",
                             "data": true
+                        }
+                    ]
+                },
+                "ScriptComponent": {
+                    "scripts": [
+                        {
+                            "scriptGuidStr": "001b4a9583ee87fa-0003ef19b2000001",
+                            "scriptPath": "../../Resources/Scripts/UI/AndroidOnly.lua",
+                            "enabled": true,
+                            "preserveKeys": [],
+                            "entryFunction": "OnInit",
+                            "autoInvokeEntry": true
                         }
                     ]
                 }
