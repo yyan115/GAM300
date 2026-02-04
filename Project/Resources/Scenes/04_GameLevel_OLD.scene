@@ -1707,7 +1707,7 @@
             "guid": "0003e8c6800a6de1-000405d0a40000a7",
             "components": {
                 "NameComponent": {
-                    "name": "Pedestal"
+                    "name": "PED_TEST"
                 },
                 "TagComponent": {
                     "tagIndex": 0
@@ -2017,6 +2017,21 @@
                         {
                             "type": "bool",
                             "data": true
+                        }
+                    ]
+                },
+                "ScriptComponent": {
+                    "scripts": [
+                        {
+                            "scriptGuidStr": "004fd797d555ac74-00041d3e16000001",
+                            "scriptPath": "../../Resources/Scripts/GamePlay/DoorHandler.lua",
+                            "enabled": true,
+                            "preserveKeys": [],
+                            "entryFunction": "OnInit",
+                            "autoInvokeEntry": true,
+                            "instanceState": {
+                                "PedestalName": "\"PED_TEST\""
+                            }
                         }
                     ]
                 }
@@ -16019,19 +16034,19 @@
                             "data": [
                                 {
                                     "type": "std::string",
-                                    "data": "../../Resources/Models/Character/Enemy/GroundAnimation/EnemyGroundIdle.fbx"
+                                    "data": ""
                                 },
                                 {
                                     "type": "std::string",
-                                    "data": "../../Resources/Models/Character/Enemy/GroundAnimation/EnemyAttack.fbx"
+                                    "data": ""
                                 },
                                 {
                                     "type": "std::string",
-                                    "data": "../../Resources/Models/Character/Enemy/GroundAnimation/EnemyHurt.fbx"
+                                    "data": ""
                                 },
                                 {
                                     "type": "std::string",
-                                    "data": "../../Resources/Models/Character/Enemy/GroundAnimation/EnemyDeath.fbx"
+                                    "data": ""
                                 }
                             ]
                         },
@@ -23579,27 +23594,27 @@
                             "data": [
                                 {
                                     "type": "std::string",
-                                    "data": "../../Resources/Models/Character/Enemy/FlyingAnimation/EnemyFlyPose.fbx"
+                                    "data": ""
                                 },
                                 {
                                     "type": "std::string",
-                                    "data": "../../Resources/Models/Character/Enemy/FlyingAnimation/EnemyPierced.fbx"
+                                    "data": ""
                                 },
                                 {
                                     "type": "std::string",
-                                    "data": "../../Resources/Models/Character/Enemy/FlyingAnimation/EnemyHurt2.fbx"
+                                    "data": ""
                                 },
                                 {
                                     "type": "std::string",
-                                    "data": "../../Resources/Models/Character/Enemy/FlyingAnimation/EnemyFallToGround.fbx"
+                                    "data": ""
                                 },
                                 {
                                     "type": "std::string",
-                                    "data": "../../Resources/Models/Character/Enemy/FlyingAnimation/EnemyFallLoop.fbx"
+                                    "data": ""
                                 },
                                 {
                                     "type": "std::string",
-                                    "data": "../../Resources/Models/Character/Enemy/GroundAnimation/EnemyAttack.fbx"
+                                    "data": ""
                                 }
                             ]
                         },
@@ -34057,19 +34072,19 @@
                             "data": [
                                 {
                                     "type": "std::string",
-                                    "data": "../../Resources/Models/Character/Enemy/GroundAnimation/EnemyGroundIdle.fbx"
+                                    "data": ""
                                 },
                                 {
                                     "type": "std::string",
-                                    "data": "../../Resources/Models/Character/Enemy/GroundAnimation/EnemyAttack.fbx"
+                                    "data": ""
                                 },
                                 {
                                     "type": "std::string",
-                                    "data": "../../Resources/Models/Character/Enemy/GroundAnimation/EnemyHurt.fbx"
+                                    "data": ""
                                 },
                                 {
                                     "type": "std::string",
-                                    "data": "../../Resources/Models/Character/Enemy/GroundAnimation/EnemyDeath.fbx"
+                                    "data": ""
                                 }
                             ]
                         },
@@ -36202,7 +36217,7 @@
                             "data": [
                                 {
                                     "type": "std::string",
-                                    "data": "Resources/Animations/Kusane@Idle.fbx"
+                                    "data": ""
                                 }
                             ]
                         },
