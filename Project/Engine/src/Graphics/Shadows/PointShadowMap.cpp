@@ -19,8 +19,14 @@ bool PointShadowMap::Initialize(int res)
     // Allocate storage for each of the 6 faces
     for (int i = 0; i < 6; ++i)
     {
+#ifdef __ANDROID__
+        // OpenGL ES 3.0 requires sized internal format for depth textures
+        glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_DEPTH_COMPONENT24,
+            resolution, resolution, 0, GL_DEPTH_COMPONENT, GL_UNSIGNED_INT, nullptr);
+#else
         glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_DEPTH_COMPONENT,
             resolution, resolution, 0, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
+#endif
     }
 
     glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
