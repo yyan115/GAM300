@@ -11261,7 +11261,7 @@
                         },
                         {
                             "type": "bool",
-                            "data": true
+                            "data": false
                         }
                     ]
                 },
@@ -18578,47 +18578,47 @@
                             "data": [
                                 {
                                     "type": "std::string",
-                                    "data": "Resources/Animations/Player@Idle.fbx"
+                                    "data": ""
                                 },
                                 {
                                     "type": "std::string",
-                                    "data": "Resources/Animations/Player@Jump.fbx"
+                                    "data": ""
                                 },
                                 {
                                     "type": "std::string",
-                                    "data": "Resources/Animations/Player@Run.fbx"
+                                    "data": ""
                                 },
                                 {
                                     "type": "std::string",
-                                    "data": "Resources/Animations/Player@Land.fbx"
+                                    "data": ""
                                 },
                                 {
                                     "type": "std::string",
-                                    "data": "Resources/Animations/Player@Hurt.fbx"
+                                    "data": ""
                                 },
                                 {
                                     "type": "std::string",
-                                    "data": "Resources/Animations/Player@Death.fbx"
+                                    "data": ""
                                 },
                                 {
                                     "type": "std::string",
-                                    "data": "Resources/Animations/Player@Slash1.fbx"
+                                    "data": ""
                                 },
                                 {
                                     "type": "std::string",
-                                    "data": "Resources/Animations/Player@Slash2.fbx"
+                                    "data": ""
                                 },
                                 {
                                     "type": "std::string",
-                                    "data": "Resources/Animations/Player@Slash3.fbx"
+                                    "data": ""
                                 },
                                 {
                                     "type": "std::string",
-                                    "data": "Resources/Animations/Player@Roll.fbx"
+                                    "data": ""
                                 },
                                 {
                                     "type": "std::string",
-                                    "data": "Resources/Animations/Player@Standing.fbx"
+                                    "data": ""
                                 }
                             ]
                         },
