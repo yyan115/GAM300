@@ -98,7 +98,7 @@ return Component {
     mixins = { TransformMixin },
 
     fields = {
-        followDistance   = 2.0,
+        followDistance   = 1.0,
         heightOffset     = 1.0,
         followLerp       = 10.0,
         mouseSensitivity = 0.15,
@@ -107,6 +107,10 @@ return Component {
         minZoom          = 2.0,
         maxZoom          = 15.0,
         zoomSpeed        = 1.0,
+        
+        -- Camera offset (applied in local camera space)
+        cameraOffset     = {x = 0.1, y = 0.0, z = 0.0},
+        
         -- Camera collision settings
         collisionEnabled = true,
         collisionOffset  = 0.2,    -- How far to pull camera in front of hit point
@@ -151,7 +155,7 @@ return Component {
         -- Action mode state
         self._actionModeActive = false
         self._normalPitch = 15.0
-        self._normalDistance = 2.0
+        self._normalDistance = self.followDistance or 2.0
         self._toggleCooldown = 0.0
 
         -- Chain mode aim settings
@@ -608,7 +612,7 @@ return Component {
                 local transitionSpeed = target.transitionSpeed or 0.2
                 local lerpT = 1.0 - math.exp(-transitionSpeed * dt)
                 
-                print(string.format("[CameraFollow] [DEBUG] transitionSpeed=%.2f, dt=%.4f, lerpT=%.4f", 
+                print(string.format("[CameraFollow][DEBUG] transitionSpeed=%.2f, dt=%.4f, lerpT=%.4f", 
                     transitionSpeed, dt, lerpT))
                 
                 -- ALWAYS slerp from current towards target (handles changing targets)
@@ -619,7 +623,7 @@ return Component {
                     lerpT
                 )
                 
-                print(string.format("[CameraFollow] [DEBUG] After slerp: w=%.3f, x=%.3f, y=%.3f, z=%.3f", 
+                print(string.format("[CameraFollow][DEBUG] After slerp: w=%.3f, x=%.3f, y=%.3f, z=%.3f", 
                     newQw, newQx, newQy, newQz))
                 
                 -- Update current quaternion for next frame
@@ -864,11 +868,20 @@ return Component {
             local zoomFactor = (radius - minZoom) / (maxZoom - minZoom)
             zoomFactor = clamp(zoomFactor, 0.0, 1.0)
 
-            -- Target look-at point
+            -- Camera offset (applied to both target and camera position)
+            local offsetX = self.cameraOffset.x or 0.0
+            local offsetY = self.cameraOffset.y or 0.0
+            local offsetZ = self.cameraOffset.z or 0.0
+            
+            -- Calculate right vector for horizontal offset
+            local rightX = math.cos(yawRad)
+            local rightZ = -math.sin(yawRad)
+
+            -- Target look-at point (with offset)
             local lookAtHeight = 0.5 + zoomFactor * 0.7
-            cameraTarget.x = self._targetPos.x
-            cameraTarget.y = self._targetPos.y + lookAtHeight
-            cameraTarget.z = self._targetPos.z
+            cameraTarget.x = self._targetPos.x + rightX * offsetX
+            cameraTarget.y = self._targetPos.y + lookAtHeight + offsetY
+            cameraTarget.z = self._targetPos.z + rightZ * offsetX
 
             -- Publish camera basis for player movement
             if event_bus and event_bus.publish then
@@ -882,14 +895,14 @@ return Component {
             -- Camera position offset
             local baseHeightOffset = self.heightOffset or 1.0
             local scaledHeightOffset = baseHeightOffset * (0.3 + zoomFactor * 0.7)
-            local horizontalRadius = radius * math.cos(pitchRad)
-            local offsetX = horizontalRadius * math.sin(yawRad)
-            local offsetZ = horizontalRadius * math.cos(yawRad)
-            local offsetY = radius * math.sin(pitchRad) + scaledHeightOffset
+            local horizontalRadius = (radius + offsetZ) * math.cos(pitchRad)
+            local camOffsetX = horizontalRadius * math.sin(yawRad)
+            local camOffsetZ = horizontalRadius * math.cos(yawRad)
+            local camOffsetY = (radius + offsetZ) * math.sin(pitchRad) + scaledHeightOffset
 
-            desiredX = cameraTarget.x + offsetX
-            desiredY = cameraTarget.y + offsetY
-            desiredZ = cameraTarget.z + offsetZ
+            desiredX = cameraTarget.x + camOffsetX
+            desiredY = cameraTarget.y + camOffsetY
+            desiredZ = cameraTarget.z + camOffsetZ
         end
 
         -- ==========================================
@@ -937,6 +950,7 @@ return Component {
         -- ==========================================
         -- SMOOTH FOLLOW & ROTATION
         -- ==========================================
+        
         local cx, cy, cz = 0.0, 0.0, 0.0
         local px, py, pz = self:GetPosition()
         if type(px) == "table" then
@@ -951,6 +965,7 @@ return Component {
         local newX = cx + (desiredX - cx) * lerpT
         local newY = cy + (desiredY - cy) * lerpT
         local newZ = cz + (desiredZ - cz) * lerpT
+        
         self:SetPosition(newX, newY, newZ)
 
         -- Set rotation based on mode
