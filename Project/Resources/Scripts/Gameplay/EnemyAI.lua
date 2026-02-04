@@ -107,7 +107,7 @@ return Component {
         MeleeAttackCooldown  = 5.0,
         MeleeAnimDelay       = 2.0,
 
-        HurtDuration      = 2.0,
+        HurtDuration      = 0.5,
         HitIFrame         = 0.2,
         HookedDuration    = 4.0,
         KnockbackStrength = 12.0,
