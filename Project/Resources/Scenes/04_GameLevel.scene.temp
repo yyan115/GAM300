@@ -218,53 +218,55 @@
                             "entryFunction": "OnInit",
                             "autoInvokeEntry": true,
                             "instanceState": {
+                                "_currentWaypointIndex": 1.0,
+                                "debugMode": true,
+                                "__created_at": 1770095598.0,
+                                "sequenceInterval": 3.0,
+                                "_subs_map": {},
+                                "__meta": {},
+                                "_transform_fetched": false,
+                                "cinematicActive": false,
+                                "sequenceLoop": false,
+                                "targetRotation": {
+                                    "z": 0.0,
+                                    "y": 0.0,
+                                    "x": 0.0
+                                },
+                                "_subscriptions": {},
+                                "_private": {},
+                                "_wasCinematicActive": false,
+                                "targetPosition": {
+                                    "z": -2.0,
+                                    "y": 1.0,
+                                    "x": -2.0
+                                },
+                                "_waypointTimer": 0.0,
                                 "sequenceWaypoints": {},
+                                "transitionSpeed": 1.0,
+                                "targetTransformName": "\"CamPose1\"",
                                 "__field_list": {
-                                    "targetTransformName": "",
-                                    "sequenceInterval": 3.0,
-                                    "sequenceLoop": false,
-                                    "cinematicActive": false,
                                     "debugMode": true,
+                                    "sequenceInterval": 3.0,
                                     "targetPosition": {
                                         "z": -2.0,
                                         "y": 1.0,
                                         "x": -2.0
                                     },
+                                    "targetTransformName": "",
                                     "transitionSpeed": 0.5,
                                     "targetRotation": {
                                         "z": 0.0,
                                         "y": 0.0,
                                         "x": 0.0
                                     },
-                                    "sequenceWaypoints": {},
-                                    "useSequence": false
+                                    "useSequence": false,
+                                    "cinematicActive": false,
+                                    "sequenceLoop": false,
+                                    "sequenceWaypoints": {}
                                 },
-                                "transitionSpeed": 0.5,
-                                "targetPosition": {
-                                    "z": -2.0,
-                                    "y": 1.0,
-                                    "x": -2.0
-                                },
-                                "_private": {},
-                                "targetTransformName": "\"GroundEnemy\"",
                                 "useSequence": false,
-                                "sequenceInterval": 3.0,
-                                "_wasCinematicActive": false,
-                                "_subscriptions": {},
-                                "cinematicActive": false,
-                                "debugMode": true,
-                                "_waypointTimer": 0.0,
-                                "sequenceLoop": false,
-                                "_currentWaypointIndex": 1.0,
-                                "_subs_map": {},
-                                "__created_at": 1770095598.0,
-                                "targetRotation": {
-                                    "z": 0.0,
-                                    "y": 0.0,
-                                    "x": 0.0
-                                },
-                                "_transform_fetched": false,
-                                "__meta": {}
+                                "cinematicDuration": 30.0,
+                                "useDuration": true
                             }
                         }
                     ]
@@ -2781,15 +2783,15 @@
                             "data": [
                                 {
                                     "type": "float",
-                                    "data": 0
+                                    "data": -0.00000120699
                                 },
                                 {
                                     "type": "float",
-                                    "data": 0
+                                    "data": -0.641755
                                 },
                                 {
                                     "type": "float",
-                                    "data": 0
+                                    "data": -0.145637
                                 }
                             ]
                         }
@@ -16159,8 +16161,7 @@
                                     "Idle": 0.0,
                                     "Hurt": 2.0,
                                     "Death": 3.0
-                                },
-                                "IsPassive": true
+                                }
                             }
                         }
                     ]
@@ -45616,6 +45617,93 @@
                             "preserveKeys": [],
                             "entryFunction": "OnInit",
                             "autoInvokeEntry": true
+                        }
+                    ]
+                }
+            }
+        },
+        {
+            "id": 453,
+            "guid": "00571c535c8c7d0f-00041d0042000123",
+            "components": {
+                "NameComponent": {
+                    "name": "CamPose1"
+                },
+                "TagComponent": {
+                    "tagIndex": 0
+                },
+                "LayerComponent": {
+                    "layerIndex": 0
+                },
+                "SiblingIndexComponent": {
+                    "siblingIndex": 39
+                },
+                "Transform": {
+                    "type": "Transform",
+                    "data": [
+                        {
+                            "type": "Vector3D",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 1.62856
+                                },
+                                {
+                                    "type": "float",
+                                    "data": -1.03315
+                                }
+                            ]
+                        },
+                        {
+                            "type": "Vector3D",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                }
+                            ]
+                        },
+                        {
+                            "type": "Quaternion",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 9.20088e-9
+                                },
+                                {
+                                    "type": "float",
+                                    "data": -7.49352e-8
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0.992546
+                                },
+                                {
+                                    "type": "float",
+                                    "data": -0.121869
+                                }
+                            ]
+                        }
+                    ]
+                },
+                "ActiveComponent": {
+                    "type": "ActiveComponent",
+                    "data": [
+                        {
+                            "type": "bool",
+                            "data": true
                         }
                     ]
                 }

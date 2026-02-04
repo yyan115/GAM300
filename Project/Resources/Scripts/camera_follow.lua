@@ -29,7 +29,7 @@ local function atan2(y, x)
     else return 0.0 end
 end
 
--- Helper: Euler (deg) → Quaternion
+-- Helper: Euler (deg) -> Quaternion
 local function eulerToQuat(pitch, yaw, roll)
     local p = math.rad(pitch or 0) * 0.5
     local y = math.rad(yaw or 0) * 0.5
@@ -43,6 +43,55 @@ local function eulerToQuat(pitch, yaw, roll)
         y = cosP * sinY * cosR + sinP * cosY * sinR,
         z = cosP * cosY * sinR - sinP * sinY * cosR
     }
+end
+
+-- Helper: slerp between two quaternions
+ -- Slerp (Spherical Linear Interpolation) for smooth rotation
+local function slerpQuat(q1w, q1x, q1y, q1z, q2w, q2x, q2y, q2z, t)
+    -- Calculate dot product
+    local dot = q1w * q2w + q1x * q2x + q1y * q2y + q1z * q2z
+                    
+    -- If dot < 0, negate one quaternion to take shorter path
+    if dot < 0 then
+        q2w, q2x, q2y, q2z = -q2w, -q2x, -q2y, -q2z
+        dot = -dot
+    end
+                    
+    -- Clamp dot to prevent acos from returning NaN
+    dot = math.min(math.max(dot, -1), 1)
+                    
+    -- If quaternions are very close, use linear interpolation
+    if dot > 0.9995 then
+        local outW = q1w + (q2w - q1w) * t
+        local outX = q1x + (q2x - q1x) * t
+        local outY = q1y + (q2y - q1y) * t
+        local outZ = q1z + (q2z - q1z) * t
+                        
+        -- Normalize
+        local len = math.sqrt(outW*outW + outX*outX + outY*outY + outZ*outZ)
+        if len > 0.0001 then
+            return outW/len, outX/len, outY/len, outZ/len
+        else
+            return 1, 0, 0, 0  -- Identity quaternion
+        end
+    end
+                    
+    -- Spherical interpolation
+    local theta = math.acos(dot)
+    local sinTheta = math.sin(theta)
+                    
+    if math.abs(sinTheta) < 0.001 then
+        -- Avoid division by zero
+        return q1w, q1x, q1y, q1z
+    end
+                    
+    local weight1 = math.sin((1 - t) * theta) / sinTheta
+    local weight2 = math.sin(t * theta) / sinTheta
+                    
+    return q1w * weight1 + q2w * weight2,
+            q1x * weight1 + q2x * weight2,
+            q1y * weight1 + q2y * weight2,
+            q1z * weight1 + q2z * weight2
 end
 
 return Component {
@@ -170,11 +219,20 @@ return Component {
             self._cinematicActiveSub = event_bus.subscribe("cinematic.active", function(active)
                 self._cinematicActive = active or false
                 print(string.format("[CameraFollow] Cinematic mode: %s", active and "ON" or "OFF"))
+                if not active then
+                    self._cinematicTarget = nil
+                end
             end)
             
             -- Cinematic target position/rotation
             self._cinematicTargetSub = event_bus.subscribe("cinematic.target", function(target)
-                self._cinematicTarget = target
+                if target then
+                    self._cinematicTarget = {
+                        position = target.position,
+                        rotation = target.rotation,
+                        transitionSpeed = target.transitionSpeed or 0.5
+                    }
+                end
             end)
         end
     end,
@@ -458,17 +516,13 @@ return Component {
         -- ==========================================
         if self._cinematicActive and self._cinematicTarget then
             local target = self._cinematicTarget
-    
-            print("========== CINEMATIC ACTIVE ==========")
-            print(string.format("Target position: (%.2f, %.2f, %.2f)", 
-                                target.position.x, target.position.y, target.position.z))
 
             -- Get current position - FIXED to handle all return types
             local cx, cy, cz = 0.0, 0.0, 0.0
     
             -- Call GetPosition ONCE and store all results
             local result1, result2, result3 = self:GetPosition()
-    
+
             print(string.format("GetPosition returned: r1=%s (type:%s), r2=%s (type:%s), r3=%s (type:%s)",
                                 tostring(result1), type(result1),
                                 tostring(result2), type(result2),
@@ -498,40 +552,90 @@ return Component {
     
             print(string.format("Current camera position: (%.2f, %.2f, %.2f)", cx, cy, cz))
 
+            print("[CameraFollow] Target Position: %.2f, %.2f, %.2f", 
+                  target.position and target.position.x or 0.0,
+                  target.position and target.position.y or 0.0,
+                  target.position and target.position.z or 0.0)
+
             -- Lerp to target position
             if target.position then
                 local speed = target.transitionSpeed or 2.0
                 local t = 1.0 - math.exp(-speed * dt)
-        
-                print(string.format("Lerp speed: %.2f, t: %.4f, dt: %.4f", speed, t, dt))
     
                 local newX = cx + (target.position.x - cx) * t
                 local newY = cy + (target.position.y - cy) * t
                 local newZ = cz + (target.position.z - cz) * t
-        
-                print(string.format("Calculated new position: (%.2f, %.2f, %.2f)", newX, newY, newZ))
     
-                self:SetPosition(newX, newY, newZ)
-        
-                print("SetPosition called!")
+                print(string.format("Calculated new position: (%.2f, %.2f, %.2f)", newX, newY, newZ))
+
+                self:SetPosition(newX, newY, newZ)        
             end
 
             -- Set target rotation
             if target.rotation then
-                print(string.format("Setting rotation: qw=%.2f, qx=%.2f, qy=%.2f, qz=%.2f",
-                                    target.rotation.qw, target.rotation.qx, target.rotation.qy, target.rotation.qz))
-                self:SetRotation(
-                    target.rotation.qw,
-                    target.rotation.qx,
-                    target.rotation.qy,
-                    target.rotation.qz
+                print("[CameraFollow] [DEBUG] Rotation slerp section ENTERED")
+                
+                local rot = target.rotation
+                local targetQw = rot.qw or rot.w or rot[1] or 1
+                local targetQx = rot.qx or rot.x or rot[2] or 0
+                local targetQy = rot.qy or rot.y or rot[3] or 0
+                local targetQz = rot.qz or rot.z or rot[4] or 0
+                
+                print(string.format("[CameraFollow] [DEBUG] Target quaternion: w=%.3f, x=%.3f, y=%.3f, z=%.3f", 
+                    targetQw, targetQx, targetQy, targetQz))
+                
+                -- Initialize current rotation quaternion if first frame of cinematic mode
+                if not self._currentCinematicQuat then
+                    -- Start from current camera rotation
+                    local currentYaw = math.rad(self._yaw or 0)
+                    local currentPitch = math.rad(self._pitch or 0)
+                    local cy = math.cos(currentYaw * 0.5)
+                    local sy = math.sin(currentYaw * 0.5)
+                    local cp = math.cos(currentPitch * 0.5)
+                    local sp = math.sin(currentPitch * 0.5)
+                    
+                    self._currentCinematicQuat = {
+                        w = cy * cp,
+                        x = cy * sp,
+                        y = sy * cp,
+                        z = -sy * sp
+                    }
+                    
+                    print("[CameraFollow] Initialized cinematic rotation slerp")
+                end
+                
+                -- Calculate lerp factor - SMALLER value = SLOWER rotation
+                local transitionSpeed = target.transitionSpeed or 0.2
+                local lerpT = 1.0 - math.exp(-transitionSpeed * dt)
+                
+                print(string.format("[CameraFollow] [DEBUG] transitionSpeed=%.2f, dt=%.4f, lerpT=%.4f", 
+                    transitionSpeed, dt, lerpT))
+                
+                -- ALWAYS slerp from current towards target (handles changing targets)
+                local newQw, newQx, newQy, newQz = slerpQuat(
+                    self._currentCinematicQuat.w, self._currentCinematicQuat.x,
+                    self._currentCinematicQuat.y, self._currentCinematicQuat.z,
+                    targetQw, targetQx, targetQy, targetQz,
+                    lerpT
                 )
-                print("SetRotation called!")
+                
+                print(string.format("[CameraFollow] [DEBUG] After slerp: w=%.3f, x=%.3f, y=%.3f, z=%.3f", 
+                    newQw, newQx, newQy, newQz))
+                
+                -- Update current quaternion for next frame
+                self._currentCinematicQuat.w = newQw
+                self._currentCinematicQuat.x = newQx
+                self._currentCinematicQuat.y = newQy
+                self._currentCinematicQuat.z = newQz
+                
+                -- Apply rotation to camera
+                self:SetRotation(newQw, newQx, newQy, newQz)
+                
+            else
+                print("[DEBUG] target.rotation is NIL - slerp code SKIPPED!")
             end
 
             self.isDirty = true
-            print("Returning from cinematic mode")
-            print("====================================\n")
             return  -- EXIT
         end
 
@@ -546,7 +650,6 @@ return Component {
             self._toggleCooldown = self._toggleCooldown - dt
         end
 
-        -----------------------------------------------------------------------------------------------------------
         -- Action mode toggle
         -- ensure the timer variable exists
         self._actionModeTimer = self._actionModeTimer or 0.0
@@ -579,8 +682,8 @@ return Component {
                 end
 
                 -- reset timer and enable action mode
-                self._actionModeTimer = extendedDuration
-                self._actionModeActive = true
+                --self._actionModeTimer = extendedDuration
+                --self._actionModeActive = true
             end
         end
 
@@ -627,6 +730,31 @@ return Component {
         -- ==========================================
         -- CAMERA TARGET CALCULATION (Extensible)
         -- ==========================================
+        
+        -- PRIORITY 0: Cinematic camera mode - CONVERT TO YAW/PITCH
+        if self._cinematicActive and self._cinematicTarget then
+            print("How is it getting here.")
+        else
+            -- Smoothly transition out of cinematic mode
+            if self._currentCinematicQuat then
+                print("[CameraFollow] Cinematic ended - camera will smoothly transition back to player")
+                -- DON'T immediately clear _currentCinematicQuat
+                -- Keep the last yaw/pitch values so camera doesn't snap
+                -- Normal camera code below will gradually take over
+                
+                if not self._cinematicExitDelay then
+                    self._cinematicExitDelay = 0.3  -- Small delay before allowing normal camera to fully take over
+                end
+                
+                self._cinematicExitDelay = self._cinematicExitDelay - dt
+                if self._cinematicExitDelay <= 0 then
+                    self._currentCinematicQuat = nil
+                    self._cinematicExitDelay = nil
+                end
+            end
+        end
+        
+        -- Normal camera continues below...
         local cameraTarget = { x = 0, y = 0, z = 0 }  -- Where camera looks at
         local desiredX, desiredY, desiredZ             -- Where camera should be positioned
         local useOrbitFollow = true                    -- Default: orbit around player
