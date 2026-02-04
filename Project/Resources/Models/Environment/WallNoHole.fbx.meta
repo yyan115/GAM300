@@ -1,0 +1,11 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "00243e5d2efbcc81-000418c38e000247",
+        "source": "../../Resources/Models/Environment/WallNoHole.fbx",
+        "compiled": "../../Resources/Models/Environment/WallNoHole.mesh"
+    },
+    "ModelMetaData": {
+        "optimizeMeshes": true
+    }
+}

@@ -171,10 +171,6 @@ return Component {
                     event_bus.publish("isKnifeHitPlayer", true)
                     event_bus.publish("knifeHitPlayerDmg", self.Damage)
                 end
-
-                --print("[Knife] HIT PLAYER -> reset")
-                self:Reset("HIT")
-                return
             end
         end
 

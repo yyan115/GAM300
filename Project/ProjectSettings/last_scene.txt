@@ -1,1 +1,1 @@
-../../Resources/Scenes/LoadingPage.scene
+../../Resources/Scenes/04_GameLevelMap.scene

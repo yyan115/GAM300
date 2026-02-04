@@ -9,7 +9,7 @@ local function stopCC(ai)
 end
 
 function AttackState:Enter(ai)
-    ai:PlayClip(ai.clips.Attack, true)
+    ai._animator:SetBool("PlayerInRange", true)
     ai.attackTimer = 0
 end
 
@@ -55,7 +55,7 @@ function AttackState:Update(ai, dt)
             print(string.format("Melee Attack!"))
             -- MELEE HIT: emit event (keeps consistent with your event-bus approach)
             if _G.event_bus and _G.event_bus.publish then
-                _G.event_bus.publish("player_damage", {
+                _G.event_bus.publish("meleeHitPlayerDmg", {
                     dmg = (ai.MeleeDamage or 1),
                     src = "GroundEnemy",
                     enemyEntityId = ai.entityId,
@@ -77,6 +77,7 @@ function AttackState:Update(ai, dt)
 end
 
 function AttackState:Exit(ai)
+    ai._animator:SetBool("PlayerInRange", false)
     stopCC(ai)
 end
 

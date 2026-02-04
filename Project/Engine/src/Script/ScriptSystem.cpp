@@ -147,18 +147,6 @@ static std::tuple<float, float, float> Lua_GetTransformWorldPosition(Transform* 
     return std::make_tuple(p.x, p.y, p.z);
 }
 
-static std::tuple<float, float, float, float> Lua_GetTransformWorldRotation(Transform* t)
-{
-    if (!t)
-    {
-        // Return identity quaternion
-        return std::make_tuple(1.0f, 0.0f, 0.0f, 0.0f);  // w, x, y, z
-    }
-    const auto& q = t->worldRotation; // assuming this is a quaternion
-    return std::make_tuple(q.w, q.x, q.y, q.z);  // Return quaternion components
-}
-
-
 
 static std::tuple<float, float, float> Lua_GetTransformRotation(Transform* t)
 {
@@ -748,7 +736,8 @@ void ScriptSystem::Update()
     }
 
     // advance coroutines & runtime tick if runtime initialized
-    if (Scripting::GetLuaState()) Scripting::Tick(static_cast<float>(TimeManager::GetUnscaledDeltaTime()));
+    // Use scaled delta time so coroutines respect pause state
+    if (Scripting::GetLuaState()) Scripting::Tick(static_cast<float>(TimeManager::GetDeltaTime()));
 
     // iterate over entities matched to this system (System::entities)
     for (Entity e : entities)
@@ -764,6 +753,8 @@ void ScriptSystem::Update()
         if (!EnsureInstanceForEntity(e, *m_ecs)) continue;
 
         // call Update(dt) on all script instances for this entity
+        // Use scaled delta time so scripts receive dt=0 when paused
+        // UI scripts that need to run during pause should use Time.GetUnscaledDeltaTime() directly
         {
             std::lock_guard<std::mutex> lk(m_mutex);
             auto it = m_runtimeMap.find(e);
@@ -773,7 +764,7 @@ void ScriptSystem::Update()
                 {
                     if (scriptInst)
                     {
-                        scriptInst->Update(static_cast<float>(TimeManager::GetUnscaledDeltaTime()));
+                        scriptInst->Update(static_cast<float>(TimeManager::GetDeltaTime()));
                     }
                 }
             }

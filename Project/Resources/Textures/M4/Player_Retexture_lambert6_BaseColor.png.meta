@@ -1,0 +1,13 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "00567c08d8cf1f4f-00041a4d2c000003",
+        "source": "../../Resources/Textures/M4/Player_Retexture_lambert6_BaseColor.png",
+        "compiled": "../../Resources/Textures/M4/Player_Retexture_lambert6_BaseColor.dds"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true
+    }
+}

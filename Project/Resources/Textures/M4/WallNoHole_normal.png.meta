@@ -1,0 +1,13 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "00243e5d6509af29-000418c3b0000265",
+        "source": "../../Resources/Textures/M4/WallNoHole_normal.png",
+        "compiled": "../../Resources/Textures/M4/WallNoHole_normal.dds"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true
+    }
+}

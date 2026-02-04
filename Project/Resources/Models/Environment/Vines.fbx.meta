@@ -1,0 +1,11 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "004bc8acbf86ad4f-00041b64c8007ed7",
+        "source": "../../Resources/Models/Environment/Vines.fbx",
+        "compiled": "../../Resources/Models/Environment/Vines.mesh"
+    },
+    "ModelMetaData": {
+        "optimizeMeshes": true
+    }
+}

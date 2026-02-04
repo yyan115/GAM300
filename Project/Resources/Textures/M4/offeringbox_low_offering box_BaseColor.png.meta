@@ -1,0 +1,13 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "0048e304a5e9da40-00041ca8d2001ffd",
+        "source": "../../Resources/Textures/M4/offeringbox_low_offering box_BaseColor.png",
+        "compiled": "../../Resources/Textures/M4/offeringbox_low_offering box_BaseColor.dds"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true
+    }
+}

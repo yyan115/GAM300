@@ -1,0 +1,13 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "004f036c1498c0b3-000418b82401f66f",
+        "source": "../../Resources/Textures/M4/enemy_Metallic.png",
+        "compiled": "../../Resources/Textures/M4/enemy_Metallic.dds"
+    },
+    "TextureMetaData": {
+        "type": "specular",
+        "flipUVs": false,
+        "generateMipmaps": true
+    }
+}

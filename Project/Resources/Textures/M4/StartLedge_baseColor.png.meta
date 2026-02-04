@@ -1,0 +1,13 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "00243e5d442764bd-000418c3aa00025f",
+        "source": "../../Resources/Textures/M4/StartLedge_baseColor.png",
+        "compiled": "../../Resources/Textures/M4/StartLedge_baseColor.dds"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true
+    }
+}

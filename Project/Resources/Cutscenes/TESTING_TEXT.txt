@@ -1,1 +1,10 @@
-Board, frames:00000-00012, time:(1.0f,0.6f,1.0f)
+# Cutscene Configuration
+# Format: Name, frames:START-END, time:(fadeIn, boardDuration, panelDuration, fadeOut, skipFade)
+Board, frames:00000-00012, time:(0.5f, 3.0f, 6.0f, 0.5f, 1.0f)
+
+# Panel Definitions (which boards belong to which panel)
+# Panel 1: frames 0-2
+# Panel 2: frames 3-5
+# Panel 3: frames 6-8
+# Panel 4: frames 9-10
+# Panel 5: frames 11-12

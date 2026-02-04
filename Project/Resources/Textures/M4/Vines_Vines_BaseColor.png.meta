@@ -1,0 +1,13 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "004bc8ac93b957ea-00041b64b4007ecb",
+        "source": "../../Resources/Textures/M4/Vines_Vines_BaseColor.png",
+        "compiled": "../../Resources/Textures/M4/Vines_Vines_BaseColor.dds"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true
+    }
+}

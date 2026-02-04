@@ -1,0 +1,13 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "00243e5d34223175-000418c3a8000259",
+        "source": "../../Resources/Textures/M4/EndLedge_normal.png",
+        "compiled": "../../Resources/Textures/M4/EndLedge_normal.dds"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true
+    }
+}

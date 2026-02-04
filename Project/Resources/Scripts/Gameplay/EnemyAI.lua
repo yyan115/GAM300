@@ -10,7 +10,7 @@ local GroundHurtState    = require("Gameplay.GroundHurtState")
 local GroundDeathState   = require("Gameplay.GroundDeathState")
 local GroundHookedState  = require("Gameplay.GroundHookedState")
 local GroundPatrolState  = require("Gameplay.GroundPatrolState")
-local GroundChaseState = require("Gameplay.GroundChaseState")
+local GroundChaseState   = require("Gameplay.GroundChaseState")
 
 local KnifePool = require("Gameplay.KnifePool")
 local Input = _G.Input
@@ -100,14 +100,17 @@ return Component {
         AttackDisengageRange = 4.0,   -- exit attack state (slightly bigger)
         AttackCooldown       = 3.0,
         IsMelee              = false,
+        IsPassive            = false,
         MeleeSpeed           = 0.9,
         MeleeRange           = 1.2,
         MeleeDamage          = 1,
         MeleeAttackCooldown  = 5.0,
 
-        HurtDuration   = 2.0,
-        HitIFrame      = 0.2,
-        HookedDuration = 4.0,
+        HurtDuration      = 2.0,
+        HitIFrame         = 0.2,
+        HookedDuration    = 4.0,
+        KnockbackStrength = 12.0,
+        KnockbackDuration = 0.5,
 
         EnablePatrol   = true,
         PatrolSpeed    = 0.3,
@@ -143,26 +146,13 @@ return Component {
         Gravity        = -9.81,
         MaxFallSpeed   = -25.0,
 
-        WallRayUp      = 0.8,    -- cast from chest height
-        WallSkin   = 0.18,  -- your current probe padding
-        WallOffset = 0.08,  -- NEW: how far to stop before the wall
-        MinStep    = 0.01,  -- NEW: avoids tiny jitter moves
+        WallRayUp      = 0.8,
+        WallSkin       = 0.18,
+        WallOffset     = 0.08,
+        MinStep        = 0.01,
     },
 
     Awake = function(self)
-        -- self.AttackRange          = (self.AttackRange          ~= nil) and self.AttackRange          or 3.0
-        -- self.AttackDisengageRange = (self.AttackDisengageRange ~= nil) and self.AttackDisengageRange or 4.0
-        -- self.AttackCooldown       = (self.AttackCooldown       ~= nil) and self.AttackCooldown       or 3.0
-
-        -- self.IsMelee              = (self.IsMelee              ~= nil) and self.IsMelee              or false
-        -- self.MeleeSpeed           = (self.MeleeSpeed           ~= nil) and self.MeleeSpeed           or 0.9
-        -- self.MeleeRange           = (self.MeleeRange           ~= nil) and self.MeleeRange           or 1.2
-        -- self.MeleeDamage          = (self.MeleeDamage          ~= nil) and self.MeleeDamage          or 1
-        -- self.MeleeAttackCooldown  = (self.MeleeAttackCooldown  ~= nil) and self.MeleeAttackCooldown  or 5.0
-
-        -- self.HurtDuration         = (self.HurtDuration         ~= nil) and self.HurtDuration         or 2.0
-        -- self.HitIFrame            = (self.HitIFrame            ~= nil) and self.HitIFrame            or 0.2
-        -- self.HookedDuration       = (self.HookedDuration       ~= nil) and self.HookedDuration       or 4.0
 
         self.dead = false
         self.health = self.MaxHealth
@@ -203,11 +193,6 @@ return Component {
             PatrolDistance       = self.PatrolDistance,
             PatrolWait           = self.PatrolWait,
             EnablePatrol         = self.EnablePatrol,
-
-            -- PatrolPointA_X = self.PatrolPointA_X,
-            -- PatrolPointA_Z = self.PatrolPointA_Z,
-            -- PatrolPointB_X = self.PatrolPointB_X,
-            -- PatrolPointB_Z = self.PatrolPointB_Z,
         }
 
         -- fixed-step accumulator for kinematic grounding
@@ -231,6 +216,17 @@ return Component {
             self._controller = nil
         end
 
+        if self._animator then
+            print("[PlayerMovement] Animator found, playing IDLE clip")
+            self._animator:PlayClip(IDLE, true)
+        else
+            print("[PlayerMovement] ERROR: Animator is nil!")
+        end
+
+        self._animator:SetBool("PatrolEnabled", EnablePatrol)
+        self._animator:SetBool("Passive", IsPassive)
+        self._animator:SetBool("Melee", IsMelee)
+
         -- Create CC only if we have the right inputs, and only if we don't already have one
         if not self._controller and self._collider and self._transform then
             local ok, ctrl = pcall(function()
@@ -246,7 +242,6 @@ return Component {
 
         if self._rb then
             pcall(function() self._rb.motionID = 0 end)
-            -- DO NOT force gravityFactor = 0 for CC unless you are 100% sure CC has its own gravity
             pcall(function() self._rb.linearVel = { x=0, y=0, z=0 } end)
             pcall(function() self._rb.impulseApplied = { x=0, y=0, z=0 } end)
         end
@@ -294,17 +289,14 @@ return Component {
                 -- Apply damage through existing system
                 self:ApplyHit(damage, "COMBO")
                 
-                -- Apply knockback if any
-                if knockback > 0 and self._rb and not self.dead then
-                    local kbX = direction.x * knockback
-                    local kbY = direction.y * knockback + 2.0  -- Add slight upward force
-                    local kbZ = direction.z * knockback
-                    
-                    pcall(function()
-                        self._rb.impulseApplied = { x = kbX, y = kbY, z = kbZ }
-                    end)
-                    
-                    print(string.format("[EnemyAI] Knockback applied: (%.2f, %.2f, %.2f)", kbX, kbY, kbZ))
+                -- Apply knockback using CC system, not RB impulse
+                if knockback and knockback > 0 then
+                    -- direction should be from attacker -> enemy (or similar)
+                    -- if it's opposite, just negate it
+                    local dir = direction or { x = 0, z = 1 }
+                    self._kbVX = (dir.x or 0) * knockback
+                    self._kbVZ = (dir.z or 0) * knockback
+                    self._kbT  = self.KnockbackDuration
                 end
             end)
         end
@@ -347,8 +339,14 @@ return Component {
         _G.__CC_UPDATED_THIS_FRAME = nil
 
         if self.health <= 0 and not self.dead then
+            self.dead = true
+        end
+
+        if self.dead then
             self.fsm:Change("Death", self.states.Death)
         end
+
+        if self._freezeAI or self._despawned or self._softDespawned then return end
 
         self._motionID = self._rb and self._rb.motionID or nil
 
@@ -379,6 +377,28 @@ return Component {
 
         -- FSM drives behaviour (may call MoveCC)
         self.fsm:Update(dtSec)
+
+        -- Apply knockback movement regardless of current FSM state
+        if self._kbT and self._kbT > 0 then
+            self._kbT = self._kbT - dtSec
+            if self._kbT < 0 then self._kbT = 0 end
+
+            -- convert kb velocity (units/sec) -> displacement this frame
+            local mx = (self._kbVX or 0) * dtSec
+            local mz = (self._kbVZ or 0) * dtSec
+
+            -- clamp displacement so it never "teleports"
+            local maxStep = 0.20  -- tune (0.15 - 0.30)
+            if mx >  maxStep then mx =  maxStep end
+            if mx < -maxStep then mx = -maxStep end
+            if mz >  maxStep then mz =  maxStep end
+            if mz < -maxStep then mz = -maxStep end
+
+            -- Optional: if your CC Move expects displacement (very likely), pass displacement
+            CharacterController.Move(self._controller, mx, 0, mz)
+
+            -- NOTE: don't call self:MoveCC here, because MoveCC assumes velocity-style usage
+        end
 
         if not _G.__CC_UPDATED_THIS_FRAME then
             _G.__CC_UPDATED_THIS_FRAME = true
@@ -455,6 +475,13 @@ return Component {
                 print("[EnemyAI] MoveCC called but _controller is NIL")
             end
             return
+        end
+
+        if (self._kbT or 0) > 0 then
+            -- ignore normal movement while knockback is active
+            -- (but allow if this MoveCC call is the knockback call)
+            -- easiest: add a flag when calling knockback MoveCC
+            if not self._isApplyingKnockback then return end
         end
 
         self._dbgMoveT = (self._dbgMoveT or 0) + (dt or 0)
@@ -826,7 +853,7 @@ return Component {
         dx, dz = dx / len, dz / len
 
         local rx, rz = -dz, dx
-        local spread = 1.0
+        local spread = 0.6
 
         local t0x, t0y, t0z = px, py, pz
         local t1x, t1y, t1z = px - rx * spread, py, pz - rz * spread
@@ -855,6 +882,7 @@ return Component {
         self._hitLockTimer = self.config.HitIFrame or 0.1
 
         self.health = self.health - (dmg or 1)
+        self:ApplyKnockback(self.KnockbackStrength, self.KnockbackDuration)
 
         if self.health <= 0 then
             self.health = 0
@@ -865,7 +893,43 @@ return Component {
         if self.fsm.currentName == "Hooked" then
             return
         end
+        self._animator:SetBool("Hurt", false)
         self.fsm:ForceChange("Hurt", self.states.Hurt)
+    end,
+
+    ApplyKnockback = function(self, strength, duration)
+        if self.dead then return end
+
+        -- Get player position from existing cached transform
+        local tr = self._playerTr
+        if not tr then
+            tr = Engine.FindTransformByName(self.PlayerName)
+            self._playerTr = tr
+        end
+        if not tr then return end
+
+        local pp = Engine.GetTransformPosition(tr)
+        if not pp then return end
+        local px, pz = pp[1], pp[3]
+
+        -- Enemy position (prefer controller)
+        local ex, ez = self:GetEnemyPosXZ()
+        if ex == nil or ez == nil then return end
+
+        local dx = ex - px
+        local dz = ez - pz
+        local len = math.sqrt(dx*dx + dz*dz)
+        if len < 0.001 then return end
+
+        dx = dx / len
+        dz = dz / len
+
+        local s = tonumber(strength) or self.KnockbackStrength or 0.8
+        local d = tonumber(duration) or self.KnockbackDuration or 0.12
+
+        self._kbVX = dx * s
+        self._kbVZ = dz * s
+        self._kbT  = d
     end,
 
     ApplyHook = function(self, duration)
@@ -929,6 +993,81 @@ return Component {
                 end)
                 self._comboDamageSub = nil
             end
+        end
+    end,
+
+    Despawn = function(self)
+        if self._despawned then return end
+        self._despawned = true
+
+        -- stop AI update first
+        self._freezeAI = true
+
+        -- cleanup controller + event subs
+        if self.OnDestroy then pcall(function() self:OnDestroy() end) end
+
+        -- hide visuals + disable physics (pool-like safety)
+        local model = self:GetComponent("ModelRenderComponent")
+        if model then pcall(function() ModelRenderComponent.SetVisible(model, false) end) end
+
+        local col = self:GetComponent("ColliderComponent")
+        if col then col.enabled = false end
+
+        local rb = self:GetComponent("RigidBodyComponent")
+        if rb then rb.enabled = false end
+
+        -- ACTUAL removal (if entity was created as a duplicate/prefab instance)
+        if _G.Engine and _G.Engine.DestroyEntityDup then
+            pcall(function()
+                _G.Engine.DestroyEntityDup(self.entityId)
+            end)
+        else
+            print("[EnemyAI] Despawn: Engine.DestroyEntityDup not available")
+        end
+    end,
+
+    SoftDespawn = function(self)
+        if self._softDespawned then return end
+        self._softDespawned = true
+
+        print("[EnemyAI] SoftDespawn entity=", tostring(self.entityId))
+
+        -- Stop FSM/AI updates from doing anything
+        self._freezeAI = true
+        self.dead = true
+
+        -- Kill controller safely (prevents pointer crash later)
+        if self._controller then
+            pcall(function()
+                CharacterController.DestroyByEntity(self.entityId)
+            end)
+            self._controller = nil
+        end
+
+        -- Unsubscribe events (reuse your existing cleanup if you want)
+        if _G.event_bus and _G.event_bus.unsubscribe then
+            if self._damageSub then pcall(function() _G.event_bus.unsubscribe(self._damageSub) end) end
+            if self._comboDamageSub then pcall(function() _G.event_bus.unsubscribe(self._comboDamageSub) end) end
+            self._damageSub, self._comboDamageSub = nil, nil
+        end
+
+        -- Hide render
+        local model = self:GetComponent("ModelRenderComponent")
+        if model then
+            pcall(function() ModelRenderComponent.SetVisible(model, false) end)
+        end
+
+        -- Disable collider + rigidbody
+        local col = self:GetComponent("ColliderComponent")
+        if col then col.enabled = false end
+
+        local rb = self:GetComponent("RigidBodyComponent")
+        if rb then rb.enabled = false end
+
+        -- If you have an ActiveComponent, disable it too
+        local active = self:GetComponent("ActiveComponent")
+        if active then
+            active.isActive = false
         end
     end,
 

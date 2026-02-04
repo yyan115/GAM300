@@ -56,9 +56,22 @@ private:
     bool foundSkipButton = false;
     bool isTransitioning = false;
     bool internalCutsceneEnded = false;
+    bool isSkipping = false;           // True when skip button pressed
 
     Entity dialogueText_Entity = -1;
     Entity dialogueBox_Entity = -1;
     Entity blackScreen_Entity = -1;
     Entity skipButton_Entity = -1;
+
+    // Panel system
+    int GetPanelForFrame(int frame) const;
+    int GetFirstFrameOfPanel(int panel) const;
+    int GetLastFrameOfPanel(int panel) const;
+    bool IsLastFrameInPanel(int frame) const;
+
+    // Auto-advance timer
+    float m_boardTimer = 0.0f;
+    float m_fadeTimer = 0.0f;
+    bool m_isFading = false;
+    int m_fadeTargetFrame = -1;
 };

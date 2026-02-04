@@ -2,8 +2,7 @@
 local HurtState = {}
 
 function HurtState:Enter(ai)
-    -- Play hurt clip once (non-loop)
-    ai:PlayClip(ai.clips.Hurt, false)
+    ai._animator:SetBool("Hurt", true)
 
     ai:FacePlayer()
 
@@ -12,7 +11,7 @@ function HurtState:Enter(ai)
 
     if ai.particles then
         ai.particles.isEmitting   = true
-        ai.particles.emissionRate = 4
+        ai.particles.emissionRate = 180
     end
 end
 
@@ -24,13 +23,17 @@ function HurtState:Update(ai, dt)
         ai._hurtTimer = 0
 
         if ai.health <= 0 then
-            ai.fsm:Change("Death", ai.states.Death)
+            self.dead = true
             return
         end
 
         -- If player is still near, resume Attack. Otherwise go Idle.
         if ai:IsPlayerInRange(ai.config.DetectionRange) then
-            ai.fsm:Change("Attack", ai.states.Attack)
+            if not ai.IsPassive then 
+                ai.fsm:Change("Attack", ai.states.Attack)
+            else
+                ai.fsm:Change("Idle", ai.states.Idle)
+            end
         else
             ai.fsm:Change("Idle", ai.states.Idle)
         end
@@ -38,6 +41,7 @@ function HurtState:Update(ai, dt)
 end
 
 function HurtState:Exit(ai)
+    ai._animator:SetBool("Hurt", false)
     if ai.particles then
         ai.particles.isEmitting   = false
         ai.particles.emissionRate = 0

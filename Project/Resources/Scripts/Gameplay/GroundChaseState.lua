@@ -2,7 +2,6 @@
 local ChaseState = {}
 
 function ChaseState:Enter(ai)
-    ai:PlayClip(ai.clips.Walk or ai.clips.Idle, true)
     -- Optional: force first repath on enter
     ai._pathRepathT = (ai.PathRepathInterval or 0.45)
 end
@@ -27,13 +26,21 @@ function ChaseState:Update(ai, dt)
     if ai.IsMelee then
         if d2 < (meleeR * meleeR) then
             ai:StopCC()
-            ai.fsm:Change("Attack", ai.states.Attack)
+            if not ai.IsPassive then 
+                ai.fsm:Change("Attack", ai.states.Attack)
+            else
+                ai.fsm:Change("Idle", ai.states.Idle)
+            end
             return
         end
     else
         if d2 <= (attackR * attackR) then
             ai:StopCC()
-            ai.fsm:Change("Attack", ai.states.Attack)
+            if not ai.IsPassive then 
+                ai.fsm:Change("Attack", ai.states.Attack)
+            else
+                ai.fsm:Change("Idle", ai.states.Idle)
+            end
             return
         end
     end

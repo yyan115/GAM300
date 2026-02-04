@@ -1,0 +1,11 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "004e592cd5235522-00041cb196000621",
+        "source": "../../Resources/Animations/Miniboss@Taunt.fbx",
+        "compiled": "../../Resources/Animations/Miniboss@Taunt.mesh"
+    },
+    "ModelMetaData": {
+        "optimizeMeshes": true
+    }
+}

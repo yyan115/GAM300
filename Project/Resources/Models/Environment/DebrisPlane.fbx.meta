@@ -1,0 +1,11 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "004bc8acd26cfb1b-00041b64c8007edb",
+        "source": "../../Resources/Models/Environment/DebrisPlane.fbx",
+        "compiled": "../../Resources/Models/Environment/DebrisPlane.mesh"
+    },
+    "ModelMetaData": {
+        "optimizeMeshes": true
+    }
+}

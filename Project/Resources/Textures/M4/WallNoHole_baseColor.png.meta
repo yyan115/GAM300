@@ -1,0 +1,13 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "00243e5d656e34fd-000418c3a6000257",
+        "source": "../../Resources/Textures/M4/WallNoHole_baseColor.png",
+        "compiled": "../../Resources/Textures/M4/WallNoHole_baseColor.dds"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true
+    }
+}
