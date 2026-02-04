@@ -255,7 +255,7 @@
                                 },
                                 {
                                     "type": "float",
-                                    "data": 9.31914e-10
+                                    "data": 9.31913e-10
                                 },
                                 {
                                     "type": "float",
@@ -263,7 +263,7 @@
                                 },
                                 {
                                     "type": "float",
-                                    "data": 9.31914e-10
+                                    "data": 9.31913e-10
                                 }
                             ]
                         }
@@ -391,15 +391,29 @@
                             "entryFunction": "OnInit",
                             "autoInvokeEntry": true,
                             "instanceState": {
-                                "_subs_map": {},
+                                "_subscriptions": {},
                                 "__field_list": {
                                     "targetScene": "Resources/Scenes/04_GameLevel.scene"
                                 },
-                                "__meta": {},
+                                "targetScene": "Resources/Scenes/04_GameLevel.scene",
+                                "AwakeSafe": null,
+                                "_call_lifecycle": null,
+                                "SerializeFields": null,
+                                "_subs_map": {},
+                                "Update": null,
+                                "StartSafe": null,
+                                "Subscribe": null,
+                                "__created_at": 1770115547.0,
+                                "Destroy": null,
+                                "DeserializeFields": null,
+                                "Start": null,
+                                "UpdateSafe": null,
+                                "DisableSafe": null,
+                                "After": null,
+                                "Unsubscribe": null,
                                 "_private": {},
-                                "_subscriptions": {},
-                                "targetScene": "\"Resources/Scenes/04_GameLevelMap.scene\"",
-                                "__created_at": 1770115547.0
+                                "Every": null,
+                                "__meta": {}
                             }
                         }
                     ]
