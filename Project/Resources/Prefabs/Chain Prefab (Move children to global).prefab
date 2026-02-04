@@ -591,7 +591,7 @@
                     "scripts": [
                         {
                             "scriptGuidStr": "003952bdfa3876c4-0003d3227c000007",
-                            "scriptPath": "../../Resources/Scripts/GamePlay/PlayerChain.lua",
+                            "scriptPath": "../../Resources/Scripts/Gameplay/PlayerChain.lua",
                             "enabled": true,
                             "preserveKeys": [],
                             "entryFunction": "OnInit",

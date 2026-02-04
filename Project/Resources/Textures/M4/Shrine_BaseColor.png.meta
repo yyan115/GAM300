@@ -1,12 +1,12 @@
 {
     "AssetMetaData": {
         "version": 7,
-        "guid": "0021a352b71347cb-00041a02c2000233",
+        "guid": "0047cd029de5ceff-00041dd0fc000001",
         "source": "../../Resources/Textures/M4/Shrine_BaseColor.png",
         "compiled": "../../Resources/Textures/M4/Shrine_BaseColor.dds"
     },
     "TextureMetaData": {
-        "type": "diffuse",
+        "type": "",
         "flipUVs": false,
         "generateMipmaps": true
     }

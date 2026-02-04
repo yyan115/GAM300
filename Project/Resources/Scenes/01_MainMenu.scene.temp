@@ -462,6 +462,53 @@
                         }
                     ]
                 },
+                "ScriptComponent": {
+                    "scripts": [
+                        {
+                            "scriptGuidStr": "005e6c80c3c62142-0003fe066a000001",
+                            "scriptPath": "../../Resources/Scripts/UI/MainMenuSettings/MainMenuButtonHandler.lua",
+                            "enabled": true,
+                            "preserveKeys": [],
+                            "entryFunction": "OnInit",
+                            "autoInvokeEntry": true,
+                            "instanceState": {
+                                "OnClickCreditButton": null,
+                                "OnClickQuitButton": null,
+                                "Start": null,
+                                "After": null,
+                                "targetScene": "Resources/Scenes/02_IntroCutscene.scene",
+                                "_call_lifecycle": null,
+                                "OnClickPlayButton": null,
+                                "fadeDuration": 3.0,
+                                "_playClickSFX": null,
+                                "bgmEntityName": "BGM",
+                                "UpdateSafe": null,
+                                "OnClickSettingButton": null,
+                                "Update": null,
+                                "Destroy": null,
+                                "fadeScreenName": "MenuFadeScreen",
+                                "_private": {},
+                                "DeserializeFields": null,
+                                "SerializeFields": null,
+                                "DisableSafe": null,
+                                "__created_at": 1770232752.0,
+                                "__field_list": {
+                                    "fadeDuration": 1.0,
+                                    "bgmEntityName": "BGM",
+                                    "fadeScreenName": "MenuFadeScreen",
+                                    "targetScene": "Resources/Scenes/02_IntroCutscene.scene"
+                                },
+                                "__meta": {},
+                                "StartSafe": null,
+                                "AwakeSafe": null,
+                                "_subscriptions": {},
+                                "Every": null,
+                                "Unsubscribe": null,
+                                "Subscribe": null
+                            }
+                        }
+                    ]
+                },
                 "ButtonComponent": {
                     "type": "ButtonComponent",
                     "data": [
@@ -12583,7 +12630,7 @@
             "guid": "00032e8703076569-00036d2e3c00003d",
             "components": {
                 "NameComponent": {
-                    "name": "MasterVol"
+                    "name": "MasterText"
                 },
                 "TagComponent": {
                     "tagIndex": 0
@@ -12826,7 +12873,7 @@
             "guid": "00032e8735acb420-00036d2e5400003f",
             "components": {
                 "NameComponent": {
-                    "name": "BGM"
+                    "name": "BGMText"
                 },
                 "TagComponent": {
                     "tagIndex": 0
@@ -13069,7 +13116,7 @@
             "guid": "00032e872b34a611-00036d2e62000041",
             "components": {
                 "NameComponent": {
-                    "name": "SFX"
+                    "name": "SFXText"
                 },
                 "TagComponent": {
                     "tagIndex": 0
@@ -18397,7 +18444,7 @@
                             "data": [
                                 {
                                     "type": "float",
-                                    "data": 0.264944
+                                    "data": 0.220041
                                 },
                                 {
                                     "type": "float",
@@ -18405,7 +18452,7 @@
                                 },
                                 {
                                     "type": "float",
-                                    "data": 1.68224
+                                    "data": 1.86526
                                 }
                             ]
                         },

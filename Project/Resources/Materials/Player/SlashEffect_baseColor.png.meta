@@ -1,0 +1,13 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "006298ac6cdbc4e7-00041dbcfa000001",
+        "source": "../../Resources/Materials/Player/SlashEffect_baseColor.png",
+        "compiled": "../../Resources/Materials/Player/SlashEffect_baseColor.dds"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true
+    }
+}

@@ -16,6 +16,9 @@
 #include "Reflection/ReflectionBase.hpp"
 #include "Asset Manager/AssetManager.hpp"
 #include "Asset Manager/ResourceManager.hpp"
+#include "Platform/IPlatform.h"
+#include "WindowManager.hpp"
+#include "Logging.hpp"
 #include "ECS/NameComponent.hpp"
 #include "ECS/TagComponent.hpp"
 #include "ECS/LayerComponent.hpp"
@@ -224,35 +227,62 @@ Entity SpawnPrefab(const rapidjson::Value& ents, ECSManager& ecs) {
 
 ENGINE_API Entity InstantiatePrefabFromFile(const std::string& prefabPath)
 {
+    //ENGINE_LOG_INFO("[PrefabIO_v2] InstantiatePrefabFromFile called with: " + prefabPath);
     ECSManager& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
+    IPlatform* platform = WindowManager::GetPlatform();
 
+    // Normalize the path - strip leading "../../" for Android asset paths
+    std::string assetPath = prefabPath;
+
+    // Convert backslashes to forward slashes
+    std::replace(assetPath.begin(), assetPath.end(), '\\', '/');
+
+    // Strip leading "../" prefixes (common in editor-saved paths like "../../Resources/...")
+    while (assetPath.substr(0, 3) == "../") {
+        assetPath = assetPath.substr(3);
+    }
+
+    // Also handle paths that start with "Resources/" directly
+    // Keep the path as-is if it already starts with Resources
+
+    // For desktop, we may need the relative path with ../.. prefix
+    std::string finalRelativePath;
+#ifdef __ANDROID__
+    finalRelativePath = assetPath;
+#else
+    // On desktop, try the original path first, then the normalized one
     std::error_code ec;
     std::filesystem::path canon = std::filesystem::weakly_canonical(prefabPath, ec);
     const std::string tryPath = (ec ? std::filesystem::path(prefabPath) : canon).generic_string();
 
-    // Save the prefab path as a relative path from the current working directory
-    // If in editor, this should be "../../Resources/..."
     std::filesystem::path p(tryPath);
     std::error_code relEc;
-
-    // Calculates 'p' relative to std::filesystem::current_path()
     std::filesystem::path relativePath = std::filesystem::relative(p, relEc);
-    std::string finalRelativePath;
 
     if (!relEc) {
-        // Success: Convert to generic string (forward slashes)
         finalRelativePath = relativePath.generic_string();
     }
     else {
-        // Fallback: If relative calculation fails (e.g. different drives on Windows), keep absolute
         finalRelativePath = tryPath;
     }
+#endif
 
-    if (!std::filesystem::exists(finalRelativePath)) { std::cerr << "[PrefabIO] Prefab file does not exist: " << finalRelativePath << "\n"; return MAX_ENTITIES; }
+    // Use platform->ReadAsset() for cross-platform file reading
+    //ENGINE_LOG_INFO("[PrefabIO_v2] Trying to read: " + finalRelativePath);
+    std::vector<uint8_t> buffer = platform->ReadAsset(finalRelativePath);
+    if (buffer.empty()) {
+        //ENGINE_LOG_WARN("[PrefabIO_v2] First path failed, trying: " + assetPath);
+        // Try with the normalized asset path as fallback
+        buffer = platform->ReadAsset(assetPath);
+        if (buffer.empty()) {
+            ENGINE_LOG_ERROR("[PrefabIO] Failed to read prefab: " + prefabPath);
+            return MAX_ENTITIES;
+        }
+        finalRelativePath = assetPath; // Use the working path for PrefabLinkComponent
+    }
+    //ENGINE_LOG_INFO("[PrefabIO_v2] Successfully read " + std::to_string(buffer.size()) + " bytes");
 
-    std::ifstream f(finalRelativePath, std::ios::binary);
-    if (!f) { std::cerr << "[PrefabIO] Failed to open prefab: " << finalRelativePath << "\n"; return MAX_ENTITIES; }
-    const std::string json((std::istreambuf_iterator<char>(f)), std::istreambuf_iterator<char>());
+    const std::string json(buffer.begin(), buffer.end());
 
     rapidjson::Document doc;
     doc.Parse(json.c_str());
@@ -285,34 +315,51 @@ ENGINE_API Entity InstantiatePrefabFromFile(const std::string& prefabPath)
 
 ENGINE_API Entity InstantiatePrefabIntoEntity(const std::string& prefabPath, Entity intoEntity) {
     ECSManager& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
+    IPlatform* platform = WindowManager::GetPlatform();
 
+    // Normalize the path - strip leading "../../" for Android asset paths
+    std::string assetPath = prefabPath;
+
+    // Convert backslashes to forward slashes
+    std::replace(assetPath.begin(), assetPath.end(), '\\', '/');
+
+    // Strip leading "../" prefixes
+    while (assetPath.substr(0, 3) == "../") {
+        assetPath = assetPath.substr(3);
+    }
+
+    std::string finalRelativePath;
+#ifdef __ANDROID__
+    finalRelativePath = assetPath;
+#else
     std::error_code ec;
     std::filesystem::path canon = std::filesystem::weakly_canonical(prefabPath, ec);
     const std::string tryPath = (ec ? std::filesystem::path(prefabPath) : canon).generic_string();
 
-    // Save the prefab path as a relative path from the current working directory
-    // If in editor, this should be "../../Resources/..."
     std::filesystem::path p(tryPath);
     std::error_code relEc;
-
-    // Calculates 'p' relative to std::filesystem::current_path()
     std::filesystem::path relativePath = std::filesystem::relative(p, relEc);
-    std::string finalRelativePath;
 
     if (!relEc) {
-        // Success: Convert to generic string (forward slashes)
         finalRelativePath = relativePath.generic_string();
     }
     else {
-        // Fallback: If relative calculation fails (e.g. different drives on Windows), keep absolute
         finalRelativePath = tryPath;
     }
+#endif
 
-    if (!std::filesystem::exists(finalRelativePath)) { std::cerr << "[PrefabIO] File does not exist: " << finalRelativePath << "\n"; return MAX_ENTITIES; }
+    // Use platform->ReadAsset() for cross-platform file reading
+    std::vector<uint8_t> buffer = platform->ReadAsset(finalRelativePath);
+    if (buffer.empty()) {
+        buffer = platform->ReadAsset(assetPath);
+        if (buffer.empty()) {
+            std::cerr << "[PrefabIO] Failed to read prefab: " << prefabPath << " (tried: " << finalRelativePath << ", " << assetPath << ")\n";
+            return MAX_ENTITIES;
+        }
+        finalRelativePath = assetPath;
+    }
 
-    std::ifstream f(finalRelativePath, std::ios::binary);
-    if (!f) { std::cerr << "[PrefabIO] Failed to open prefab: " << finalRelativePath << "\n"; return MAX_ENTITIES; }
-    const std::string json((std::istreambuf_iterator<char>(f)), std::istreambuf_iterator<char>());
+    const std::string json(buffer.begin(), buffer.end());
 
     rapidjson::Document doc;
     doc.Parse(json.c_str());

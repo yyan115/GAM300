@@ -1,4 +1,4 @@
--- VerletAdapter.lua (refactored: pure physics, does NOT mutate invMass; controller owns invMass)
+-- verletAdapter.lua (refactored: pure physics, does NOT mutate invMass; controller owns invMass)
 local M = {}
 local EPS = 1e-6
 

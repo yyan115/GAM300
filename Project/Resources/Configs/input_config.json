@@ -24,7 +24,7 @@
         "mouseButtons": ["LEFT"]
       },
       "android": {
-        "entity": "(ANDROID)AttackButton"
+        "entity": "AttackIcon"
       }
     },
 

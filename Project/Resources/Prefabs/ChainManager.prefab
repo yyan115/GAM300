@@ -89,7 +89,7 @@
                     "scripts": [
                         {
                             "scriptGuidStr": "000ed71a64694a4c-00040df9920009a9",
-                            "scriptPath": "../../Resources/Scripts/GamePlay/ChainBootstrap.lua",
+                            "scriptPath": "../../Resources/Scripts/Gameplay/ChainBootstrap.lua",
                             "enabled": true,
                             "preserveKeys": [],
                             "entryFunction": "OnInit",
