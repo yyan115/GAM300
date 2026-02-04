@@ -382,7 +382,7 @@
                     "scripts": [
                         {
                             "scriptGuidStr": "0021cfe6c6e575b4-000405561400002b",
-                            "scriptPath": "../../Resources/Scripts/GamePlay/PlayerMovement(Updated).lua",
+                            "scriptPath": "../../Resources/Scripts/Gameplay/PlayerMovement(Updated).lua",
                             "enabled": true,
                             "preserveKeys": [],
                             "entryFunction": "OnInit",
@@ -412,7 +412,7 @@
                         },
                         {
                             "scriptGuidStr": "0021cfe6a45590a8-0004055614000023",
-                            "scriptPath": "../../Resources/Scripts/GamePlay/InputInterpreter.lua",
+                            "scriptPath": "../../Resources/Scripts/Gameplay/InputInterpreter.lua",
                             "enabled": true,
                             "preserveKeys": [],
                             "entryFunction": "OnInit",
@@ -464,7 +464,7 @@
                         },
                         {
                             "scriptGuidStr": "0021cfe6c4c15260-000405561200000b",
-                            "scriptPath": "../../Resources/Scripts/GamePlay/ComboManager.lua",
+                            "scriptPath": "../../Resources/Scripts/Gameplay/ComboManager.lua",
                             "enabled": true,
                             "preserveKeys": [],
                             "entryFunction": "OnInit",
@@ -585,7 +585,7 @@
                         },
                         {
                             "scriptGuidStr": "006284839ba9fd53-000407a7b8000191",
-                            "scriptPath": "../../Resources/Scripts/GamePlay/PlayerHealth.lua",
+                            "scriptPath": "../../Resources/Scripts/Gameplay/PlayerHealth.lua",
                             "enabled": true,
                             "preserveKeys": [],
                             "entryFunction": "OnInit",
