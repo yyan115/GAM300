@@ -6,6 +6,7 @@
 #include "Game AI/GridPos.hpp"
 #include "ECS/ECSManager.hpp"
 #include "Physics/ColliderComponent.hpp"
+#include "Logging.hpp"
 
 struct NavCell {
     bool walkable = false;

@@ -2,6 +2,7 @@
 #include "Graphics/Shadows/ShadowMap.hpp"
 #include "Graphics/ShaderClass.h"
 #include "Asset Manager/ResourceManager.hpp"
+#include "Logging.hpp"
 #include <glm/gtc/matrix_transform.hpp>
 
 bool DirectionalShadowMap::Initialize(int res)
@@ -42,7 +43,7 @@ bool DirectionalShadowMap::Initialize(int res)
 
     if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
     {
-        std::cout << "[DirectionalShadowMap] Framebuffer not complete!" << std::endl;
+        ENGINE_PRINT("[DirectionalShadowMap] Framebuffer not complete!");
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
         return false;
     }
@@ -55,13 +56,12 @@ bool DirectionalShadowMap::Initialize(int res)
 
     if (!depthShader)
     {
-        std::cout << "[DirectionalShadowMap] Failed to load shader: " << shaderPath << std::endl;
+        ENGINE_PRINT("[DirectionalShadowMap] Failed to load shader: {}", shaderPath);
         return false;
     }
 
     initialized = true;
-    std::cout << "[DirectionalShadowMap] Initialized - Resolution: " << resolution
-        << ", FBO: " << depthMapFBO << ", Texture: " << depthTexture << std::endl;
+    ENGINE_PRINT("[DirectionalShadowMap] Initialized - Resolution: {}, FBO: {}, Texture: {}", resolution, depthMapFBO, depthTexture);
     return true;
 }
 

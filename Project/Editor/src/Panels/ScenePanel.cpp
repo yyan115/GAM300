@@ -33,6 +33,7 @@
 #include <limits>
 #include <glm/gtc/type_ptr.hpp>
 #include "SnapshotManager.hpp"
+#include "UndoSystem.hpp"
 #include <glm/gtc/matrix_transform.hpp>
 #include "Logging.hpp"
 #include "RunTimeVar.hpp"
@@ -394,10 +395,8 @@ void ScenePanel::Handle2DGizmo(float sceneWidth, float sceneHeight) {
 
     if (activeGizmo2DAxis != Gizmo2DAxis::None) {
         if (ImGui::IsMouseDown(ImGuiMouseButton_Left)) {
-            // Take undo snapshot on first movement
+            // Mark that we started dragging (original positions already captured above)
             if (!gizmo2DSnapshotTaken) {
-                SnapshotManager::GetInstance().TakeSnapshot("2D Transform");
-                SnapshotManager::GetInstance().SetSnapshotEnabled(false);
                 gizmo2DSnapshotTaken = true;
             }
 
@@ -453,12 +452,78 @@ void ScenePanel::Handle2DGizmo(float sceneWidth, float sceneHeight) {
             }
         }
         else {
-            // Mouse released
+            // Mouse released - record undo command
             activeGizmo2DAxis = Gizmo2DAxis::None;
-            if (gizmo2DSnapshotTaken) {
-                SnapshotManager::GetInstance().SetSnapshotEnabled(true);
+
+            if (gizmo2DSnapshotTaken && UndoSystem::GetInstance().IsEnabled()) {
+                // Capture final transforms
+                std::vector<glm::vec3> finalPositions;
+                std::vector<glm::vec3> finalScales;
+                std::vector<float> finalRotations;
+
+                for (auto entity : selectedEntities) {
+                    if (ecsManager.HasComponent<Transform>(entity)) {
+                        auto& transform = ecsManager.GetComponent<Transform>(entity);
+                        finalPositions.push_back(glm::vec3(transform.localPosition.x, transform.localPosition.y, transform.localPosition.z));
+                        finalScales.push_back(glm::vec3(transform.localScale.x, transform.localScale.y, transform.localScale.z));
+                        finalRotations.push_back(transform.localRotation.z);
+                    } else {
+                        finalPositions.push_back(glm::vec3(0.0f));
+                        finalScales.push_back(glm::vec3(1.0f));
+                        finalRotations.push_back(0.0f);
+                    }
+                }
+
+                // Capture copies for lambdas
+                std::vector<Entity> capturedEntities = selectedEntities;
+                std::vector<glm::vec3> capturedOrigPos = gizmo2DOriginalLocalPositions;
+                std::vector<glm::vec3> capturedOrigScale = gizmo2DOriginalLocalScales;
+                std::vector<float> capturedOrigRot = gizmo2DOriginalLocalRotations;
+                std::vector<glm::vec3> capturedFinalPos = finalPositions;
+                std::vector<glm::vec3> capturedFinalScale = finalScales;
+                std::vector<float> capturedFinalRot = finalRotations;
+
+                UndoSystem::GetInstance().RecordLambdaChange(
+                    [capturedEntities, capturedFinalPos, capturedFinalScale, capturedFinalRot]() {
+                        // Redo: restore final transforms
+                        ECSManager& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
+                        for (size_t i = 0; i < capturedEntities.size(); ++i) {
+                            if (ecs.HasComponent<Transform>(capturedEntities[i]) && i < capturedFinalPos.size()) {
+                                auto& t = ecs.GetComponent<Transform>(capturedEntities[i]);
+                                t.localPosition.x = capturedFinalPos[i].x;
+                                t.localPosition.y = capturedFinalPos[i].y;
+                                t.localPosition.z = capturedFinalPos[i].z;
+                                t.localScale.x = capturedFinalScale[i].x;
+                                t.localScale.y = capturedFinalScale[i].y;
+                                t.localScale.z = capturedFinalScale[i].z;
+                                t.localRotation.z = capturedFinalRot[i];
+                                t.isDirty = true;
+                            }
+                        }
+                    },
+                    [capturedEntities, capturedOrigPos, capturedOrigScale, capturedOrigRot]() {
+                        // Undo: restore original transforms
+                        ECSManager& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
+                        for (size_t i = 0; i < capturedEntities.size(); ++i) {
+                            if (ecs.HasComponent<Transform>(capturedEntities[i]) && i < capturedOrigPos.size()) {
+                                auto& t = ecs.GetComponent<Transform>(capturedEntities[i]);
+                                t.localPosition.x = capturedOrigPos[i].x;
+                                t.localPosition.y = capturedOrigPos[i].y;
+                                t.localPosition.z = capturedOrigPos[i].z;
+                                t.localScale.x = capturedOrigScale[i].x;
+                                t.localScale.y = capturedOrigScale[i].y;
+                                t.localScale.z = capturedOrigScale[i].z;
+                                t.localRotation.z = capturedOrigRot[i];
+                                t.isDirty = true;
+                            }
+                        }
+                    },
+                    "2D Transform"
+                );
+
                 gizmo2DSnapshotTaken = false;
             }
+
             justFinishedGizmoDrag = true;
             // Clear stored data
             gizmo2DOriginalLocalPositions.clear();
@@ -1491,15 +1556,11 @@ void ScenePanel::HandleImGuizmoInChildWindow(float sceneWidth, float sceneHeight
         // Use ImGuizmo::IsUsing() for reliable state detection (doesn't flicker during drag)
         bool isUsing = ImGuizmo::IsUsing();
 
-        // Track gizmo manipulation for undo/redo
+        // Track gizmo manipulation for undo/redo (Unity-style command-based)
 
-        // When user STARTS dragging: take ONE snapshot and disable auto-snapshots from Inspector
+        // When user STARTS dragging: store original transforms
         if (isUsing && !gizmoWasUsing && !gizmoSnapshotTaken) {
-            SnapshotManager::GetInstance().TakeSnapshot("Transform Entities");
-            SnapshotManager::GetInstance().SetSnapshotEnabled(false);  // Disable Inspector snapshots
             gizmoSnapshotTaken = true;
-            // Commented out to fix warning C4189 - unused variable
-            // Entity lastManipulatedEntity = selectedEntities[0];  // Use first for tracking
 
             // Store original matrices for all selected entities
             originalMatrices.clear();
@@ -1511,12 +1572,48 @@ void ScenePanel::HandleImGuizmoInChildWindow(float sceneWidth, float sceneHeight
             memcpy(originalPivot.data(), selectedObjectMatrix, sizeof(selectedObjectMatrix));
         }
 
-        // When user STOPS dragging: re-enable auto-snapshots and reset flag
+        // When user STOPS dragging: record undo command with original and new transforms
         if (!isUsing && gizmoWasUsing) {
-            SnapshotManager::GetInstance().SetSnapshotEnabled(true);  // Re-enable Inspector snapshots
-            gizmoSnapshotTaken = false;  // Reset for next drag operation
-            justFinishedGizmoDrag = true;  // Prevent accidental selection on release
-            originalMatrices.clear();  // Free memory
+            gizmoSnapshotTaken = false;
+            justFinishedGizmoDrag = true;
+
+            // Capture final matrices for all entities
+            std::vector<std::array<float, 16>> finalMatrices;
+            for (auto entity : selectedEntities) {
+                std::array<float, 16> mat;
+                RaycastUtil::GetEntityTransform(entity, mat.data());
+                finalMatrices.push_back(mat);
+            }
+
+            // Record undo command if any transforms actually changed
+            if (UndoSystem::GetInstance().IsEnabled() && !originalMatrices.empty()) {
+                // Capture copies for the lambdas
+                std::vector<Entity> capturedEntities = selectedEntities;
+                std::vector<std::array<float, 16>> capturedOriginal = originalMatrices;
+                std::vector<std::array<float, 16>> capturedFinal = finalMatrices;
+
+                UndoSystem::GetInstance().RecordLambdaChange(
+                    [capturedEntities, capturedFinal]() {
+                        // Redo: restore final transforms
+                        for (size_t i = 0; i < capturedEntities.size() && i < capturedFinal.size(); ++i) {
+                            float mat[16];
+                            memcpy(mat, capturedFinal[i].data(), sizeof(mat));
+                            RaycastUtil::SetEntityTransform(capturedEntities[i], mat);
+                        }
+                    },
+                    [capturedEntities, capturedOriginal]() {
+                        // Undo: restore original transforms
+                        for (size_t i = 0; i < capturedEntities.size() && i < capturedOriginal.size(); ++i) {
+                            float mat[16];
+                            memcpy(mat, capturedOriginal[i].data(), sizeof(mat));
+                            RaycastUtil::SetEntityTransform(capturedEntities[i], mat);
+                        }
+                    },
+                    "Transform Entities"
+                );
+            }
+
+            originalMatrices.clear();
         }
 
         gizmoWasUsing = isUsing;

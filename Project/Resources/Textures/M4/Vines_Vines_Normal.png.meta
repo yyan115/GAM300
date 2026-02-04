@@ -1,0 +1,13 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "004bc8ac9187cc72-00041b64b8007ed5",
+        "source": "../../Resources/Textures/M4/Vines_Vines_Normal.png",
+        "compiled": "../../Resources/Textures/M4/Vines_Vines_Normal.dds"
+    },
+    "TextureMetaData": {
+        "type": "normal",
+        "flipUVs": false,
+        "generateMipmaps": true
+    }
+}

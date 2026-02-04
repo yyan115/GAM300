@@ -53,10 +53,10 @@ namespace Asset
             std::string timeValues = line.substr(openParen + 1, closeParen - openParen - 1);
             std::stringstream ssTime(timeValues);
             std::string token;
-            float times[3] = { 0.0f, 0.0f, 0.0f };
+            float times[5] = { 0.5f, 3.0f, 6.0f, 0.5f, 1.0f };  // Default values
             int idx = 0;
 
-            while (std::getline(ssTime, token, ',') && idx < 3)
+            while (std::getline(ssTime, token, ',') && idx < 5)
             {
                 // Clean up whitespace and 'f' suffix
                 token.erase(std::remove_if(token.begin(), token.end(), ::isspace), token.end());
@@ -69,9 +69,32 @@ namespace Asset
             CutsceneInfo info;
             info.frameStart = frameStart;
             info.frameEnd = frameEnd;
-            info.preTime = times[0];
-            info.duration = times[1];
-            info.postTime = times[2];
+
+            // Support both new (5-value) and legacy (3-value) timing formats
+            if (idx >= 5)
+            {
+                // New format: (fadeDuration, boardDuration, panelDuration, fadeOut, skipFade)
+                info.fadeDuration = times[0];
+                info.boardDuration = times[1];
+                info.panelDuration = times[2];
+                info.postTime = times[3];  // Use as fade out for legacy compatibility
+                info.skipFadeDuration = times[4];
+                // Set legacy values for backwards compatibility
+                info.preTime = times[0];
+                info.duration = times[1];
+            }
+            else
+            {
+                // Legacy format: (preTime, duration, postTime)
+                info.preTime = times[0];
+                info.duration = times[1];
+                info.postTime = times[2];
+                // Set new values from legacy
+                info.fadeDuration = times[0];
+                info.boardDuration = times[1];
+                info.panelDuration = times[1] * 2.0f;
+                info.skipFadeDuration = 1.0f;
+            }
 
             cutscenes[name] = info;
         }

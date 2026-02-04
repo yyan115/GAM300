@@ -1,0 +1,13 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "004bc8ac9b41e337-00041b64b6007ecf",
+        "source": "../../Resources/Textures/M4/DebrisPlane_Normal.png",
+        "compiled": "../../Resources/Textures/M4/DebrisPlane_Normal.dds"
+    },
+    "TextureMetaData": {
+        "type": "normal",
+        "flipUVs": false,
+        "generateMipmaps": true
+    }
+}

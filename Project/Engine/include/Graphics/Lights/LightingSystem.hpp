@@ -2,7 +2,8 @@
 #include "ECS/System.hpp"
 #include "Graphics/ShaderClass.h"
 #include "Graphics/Shadows/ShadowMap.hpp"
-#include "Graphics/Shadows/PointShadowMap.hpp" 
+#include "Graphics/Shadows/PointShadowMap.hpp"
+#include "Logging.hpp" 
 
 struct DirectionalLightComponent;
 struct PointLightComponent;

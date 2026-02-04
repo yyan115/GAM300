@@ -1,0 +1,13 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "0048e304d2103669-00041ca8d4001fff",
+        "source": "../../Resources/Textures/M4/offeringbox_low_offering box_Normal.png",
+        "compiled": "../../Resources/Textures/M4/offeringbox_low_offering box_Normal.dds"
+    },
+    "TextureMetaData": {
+        "type": "normal",
+        "flipUVs": false,
+        "generateMipmaps": true
+    }
+}

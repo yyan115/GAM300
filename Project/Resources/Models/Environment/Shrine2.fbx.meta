@@ -1,0 +1,11 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "0048e30496964503-00041ca908002007",
+        "source": "../../Resources/Models/Environment/Shrine2.fbx",
+        "compiled": "../../Resources/Models/Environment/Shrine2.mesh"
+    },
+    "ModelMetaData": {
+        "optimizeMeshes": true
+    }
+}

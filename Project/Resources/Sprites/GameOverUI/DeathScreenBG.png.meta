@@ -1,0 +1,13 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "003736b7542ba2e6-000417dc1e0006c7",
+        "source": "../../Resources/Sprites/GameOverUI/DeathScreenBG.png",
+        "compiled": "../../Resources/Sprites/GameOverUI/DeathScreenBG.dds"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": true,
+        "generateMipmaps": true
+    }
+}

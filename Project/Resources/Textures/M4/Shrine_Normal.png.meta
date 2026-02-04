@@ -1,0 +1,13 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "0021a352b8298735-00041a02c2000231",
+        "source": "../../Resources/Textures/M4/Shrine_Normal.png",
+        "compiled": "../../Resources/Textures/M4/Shrine_Normal.dds"
+    },
+    "TextureMetaData": {
+        "type": "normal",
+        "flipUVs": false,
+        "generateMipmaps": true
+    }
+}

@@ -6,8 +6,8 @@
         "compiled": "../../Resources/Textures/M4/Scroll_Paper_Normal.dds"
     },
     "TextureMetaData": {
-        "type": "diffuse",
-        "flipUVs": true,
+        "type": "normal",
+        "flipUVs": false,
         "generateMipmaps": true
     }
 }

@@ -1,0 +1,13 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "004bc8acd4212798-00041b64b8007ed3",
+        "source": "../../Resources/Textures/M4/NoBendScroll_Normal.png",
+        "compiled": "../../Resources/Textures/M4/NoBendScroll_Normal.dds"
+    },
+    "TextureMetaData": {
+        "type": "normal",
+        "flipUVs": false,
+        "generateMipmaps": true
+    }
+}

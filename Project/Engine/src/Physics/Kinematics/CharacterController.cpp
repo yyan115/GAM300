@@ -1,6 +1,7 @@
 #pragma once
 #include "pch.h"
 #include "Physics/Kinematics/CharacterController.hpp"
+#include "Logging.hpp"
 #include <Jolt/Physics/Collision/Shape/RotatedTranslatedShape.h>
 #include <Jolt/Physics/Collision/ObjectLayer.h>
 #include "Physics/CollisionFilters.hpp"
@@ -36,7 +37,7 @@ CharacterController::~CharacterController()
 bool CharacterController::Initialise(ColliderComponent& collider, Transform& transform)
 {
     if (!mPhysicsSystem) {
-        std::cerr << "[CharacterController] ERROR: PhysicsSystem is NULL!" << std::endl;
+        ENGINE_PRINT("[CharacterController] ERROR: PhysicsSystem is NULL!");
         return false;
     }
 
@@ -51,14 +52,11 @@ bool CharacterController::Initialise(ColliderComponent& collider, Transform& tra
     // Calculate offset - this represents how much the capsule center is above the feet
     collider_offsetY = collider.center.y * transform.localScale.y;
 
-    std::cout << "[CharacterController] Collider offset Y: " << collider_offsetY << std::endl;
-    std::cout << "[CharacterController] Transform position: ("
-        << transform.localPosition.x << ", "
-        << transform.localPosition.y << ", "
-        << transform.localPosition.z << ")" << std::endl;
+    ENGINE_PRINT("[CharacterController] Collider offset Y: {}", collider_offsetY);
+    ENGINE_PRINT("[CharacterController] Transform position: ({}, {}, {})", 
+        transform.localPosition.x, transform.localPosition.y, transform.localPosition.z);
 
-    std::cout << "Capsule radius=" << collider.capsuleRadius
-        << " halfHeight=" << collider.capsuleHalfHeight << std::endl;
+    ENGINE_PRINT("Capsule radius={} halfHeight={}", collider.capsuleRadius, collider.capsuleHalfHeight);
 
 
     // Create the capsule shape
@@ -96,10 +94,8 @@ bool CharacterController::Initialise(ColliderComponent& collider, Transform& tra
         transform.localPosition.z
     );
 
-    std::cout << "[CharacterController] Creating character at physics position: ("
-        << physicsPosition.GetX() << ", "
-        << physicsPosition.GetY() << ", "
-        << physicsPosition.GetZ() << ")" << std::endl;
+    ENGINE_PRINT("[CharacterController] Creating character at physics position: ({}, {}, {})",
+        physicsPosition.GetX(), physicsPosition.GetY(), physicsPosition.GetZ());
 
     // CREATE VIRTUAL CHARACTER at the correct physics position
     mCharacter = new JPH::CharacterVirtual(
@@ -111,7 +107,7 @@ bool CharacterController::Initialise(ColliderComponent& collider, Transform& tra
 
     if (!mCharacter)
     {
-        std::cerr << "[CharacterController] Failed to create CharacterVirtual!" << std::endl;
+        ENGINE_PRINT("[CharacterController] Failed to create CharacterVirtual!");
         return false;
     }
 
@@ -125,8 +121,7 @@ bool CharacterController::Initialise(ColliderComponent& collider, Transform& tra
         temp_allocator
     );
 
-    std::cout << "[CharacterController] Initialized with Ground State: "
-        << (int)mCharacter->GetGroundState() << std::endl;
+    ENGINE_PRINT("[CharacterController] Initialized with Ground State: {}", (int)mCharacter->GetGroundState());
 
     return true;
 }
@@ -135,14 +130,14 @@ bool CharacterController::Initialise(ColliderComponent& collider, Transform& tra
 CharacterController* CharacterController::CreateController(ColliderComponent& collider, Transform& transform)
 {
     if (!mPhysicsSystem) {
-        std::cerr << "[ERROR] Cannot create CharacterController - PhysicsSystem unavailable!" << std::endl;
+        ENGINE_PRINT("[ERROR] Cannot create CharacterController - PhysicsSystem unavailable!");
         return nullptr;
     }
 
     CharacterController* controller = new CharacterController(mPhysicsSystem);
 
     if (!controller->Initialise(collider, transform)) {
-        std::cerr << "[ERROR] CharacterController initialization failed!" << std::endl;
+        ENGINE_PRINT("[ERROR] CharacterController initialization failed!");
         delete controller;
         return nullptr;
     }
@@ -336,7 +331,7 @@ bool CharacterController::IsGrounded() const
 {
     if (mCharacter == nullptr)
     {
-        std::cerr << "[DBG] IsGrounded: mCharacter is NULL\n";
+        ENGINE_PRINT("[DBG] IsGrounded: mCharacter is NULL");
         return false;
     }
 

@@ -95,6 +95,42 @@ namespace {
     };
 
     static ComponentClipboard g_ComponentClipboard;
+
+    /**
+     * @brief Copy a single field from source component to destination component using reflection (Unity-style)
+     *
+     * This function finds the field by name in the type descriptor and copies just that field's data,
+     * instead of copying the entire component. This is the key to proper multi-entity editing.
+     *
+     * @param srcPtr Pointer to source component
+     * @param dstPtr Pointer to destination component
+     * @param typeDesc Type descriptor for the component
+     * @param fieldName Name of the field to copy
+     * @return true if field was found and copied, false otherwise
+     */
+    bool CopySingleFieldUsingReflection(void* srcPtr, void* dstPtr, TypeDescriptor_Struct* typeDesc, const std::string& fieldName) {
+        if (!srcPtr || !dstPtr || !typeDesc || fieldName.empty()) return false;
+
+        std::vector<TypeDescriptor_Struct::Member> members = typeDesc->GetMembers();
+        for (const auto& member : members) {
+            if (std::string(member.name) == fieldName) {
+                // Found the field - get pointers to both source and destination field
+                void* srcFieldPtr = member.get_ptr(srcPtr);
+                void* dstFieldPtr = member.get_ptr(dstPtr);
+
+                if (srcFieldPtr && dstFieldPtr && member.type) {
+                    // Copy the field data using memcpy based on the type's size
+                    size_t fieldSize = member.type->GetSize();
+                    if (fieldSize > 0) {
+                        std::memcpy(dstFieldPtr, srcFieldPtr, fieldSize);
+                        return true;
+                    }
+                }
+                break;
+            }
+        }
+        return false;
+    }
 }
 
 template <typename, typename = void> struct has_override_flag : std::false_type {};
@@ -412,7 +448,7 @@ void InspectorPanel::OnImGuiRender() {
 		else {
 			// Clear cached material when no asset is selected
 			if (cachedMaterial) {
-				std::cout << "[Inspector] Clearing cached material" << std::endl;
+				ENGINE_PRINT("[Inspector] Clearing cached material");
 				cachedMaterial.reset();
 				cachedMaterialGuid = { 0, 0 };
 				cachedMaterialPath.clear();
@@ -1122,13 +1158,13 @@ void InspectorPanel::DrawSelectedAsset(const GUID_128& assetGuid) {
 				std::string absolutePathStr = absolutePath.string();
 
 				// Load material and cache it
-				std::cout << "[Inspector] Loading material from: " << sourceFilePath << std::endl;
-				std::cout << "[Inspector] Absolute path: " << absolutePathStr << std::endl;
+				ENGINE_PRINT("[Inspector] Loading material from: ", sourceFilePath);
+				ENGINE_PRINT("[Inspector] Absolute path: ", absolutePathStr);
 				cachedMaterial = ResourceManager::GetInstance().GetResource<Material>(absolutePathStr);
 				if (cachedMaterial) {
 					cachedMaterialGuid = assetGuid;
 					cachedMaterialPath = sourceFilePath;
-					std::cout << "[Inspector] Successfully loaded and cached material: " << cachedMaterial->GetName() << " with " << cachedMaterial->GetAllTextureInfo().size() << " textures" << std::endl;
+					ENGINE_PRINT("[Inspector] Successfully loaded and cached material: ", cachedMaterial->GetName(), " with ", cachedMaterial->GetAllTextureInfo().size(), " textures");
 				}
 				else {
 					cachedMaterial.reset();
@@ -1690,7 +1726,7 @@ void InspectorPanel::DrawAddComponentButtonMulti(const std::vector<Entity>& enti
 					}
 				}
 			}
-			std::cout << "[Inspector] Added " << comp.displayName << " to " << entities.size() << " entities" << std::endl;
+			ENGINE_PRINT("[Inspector] Added ", comp.displayName, " to ", entities.size(), " entities");
 		};
 
 		if (isSearching) {
@@ -1780,29 +1816,29 @@ void InspectorPanel::AddComponent(Entity entity, const std::string& componentTyp
 			component.shader = ResourceManager::GetInstance().GetResourceFromGUID<Shader>(component.shaderGUID, shaderPath);
 
 			if (component.shader) {
-				std::cout << "[Inspector] Default shader loaded successfully for new ModelRenderComponent" << std::endl;
+				ENGINE_PRINT("[Inspector] Default shader loaded successfully for new ModelRenderComponent");
 			}
 			else {
 				std::cerr << "[Inspector] Warning: Failed to load default shader for new ModelRenderComponent" << std::endl;
 			}
 
 			ecsManager.AddComponent<ModelRenderComponent>(entity, component);
-			std::cout << "[Inspector] Added ModelRenderComponent to entity " << entity << " (ready for model assignment)" << std::endl;
+			ENGINE_PRINT("[Inspector] Added ModelRenderComponent to entity ", entity, " (ready for model assignment)");
 		}
 		else if (componentType == "AudioComponent") {
 			AudioComponent component;
 			ecsManager.AddComponent<AudioComponent>(entity, component);
-			std::cout << "[Inspector] Added AudioComponent to entity " << entity << std::endl;
+			ENGINE_PRINT("[Inspector] Added AudioComponent to entity ", entity);
 		}
 		else if (componentType == "AudioListenerComponent") {
 			AudioListenerComponent component;
 			ecsManager.AddComponent<AudioListenerComponent>(entity, component);
-			std::cout << "[Inspector] Added AudioListenerComponent to entity " << entity << std::endl;
+			ENGINE_PRINT("[Inspector] Added AudioListenerComponent to entity ", entity);
 		}
 		else if (componentType == "AudioReverbZoneComponent") {
 			AudioReverbZoneComponent component;
 			ecsManager.AddComponent<AudioReverbZoneComponent>(entity, component);
-			std::cout << "[Inspector] Added AudioReverbZoneComponent to entity " << entity << std::endl;
+			ENGINE_PRINT("[Inspector] Added AudioReverbZoneComponent to entity ", entity);
 		}
 		else if (componentType == "SpriteRenderComponent") {
 			// Set default shader GUID for sprite
@@ -1826,10 +1862,10 @@ void InspectorPanel::AddComponent(Entity entity, const std::string& componentTyp
 			if (!ecsManager.HasComponent<Transform>(entity)) {
 				Transform transform;
 				ecsManager.AddComponent<Transform>(entity, transform);
-				std::cout << "[Inspector] Added Transform component for Sprite positioning" << std::endl;
+				ENGINE_PRINT("[Inspector] Added Transform component for Sprite positioning");
 			}
 
-			std::cout << "[Inspector] Added SpriteRenderComponent to entity " << entity << std::endl;
+			ENGINE_PRINT("[Inspector] Added SpriteRenderComponent to entity ", entity);
 		}
 		else if (componentType == "SpriteAnimationComponent") {
 			SpriteAnimationComponent component;
@@ -1841,7 +1877,7 @@ void InspectorPanel::AddComponent(Entity entity, const std::string& componentTyp
 			component.timeInCurrentFrame = 0.0f;
 
 			ecsManager.AddComponent<SpriteAnimationComponent>(entity, component);
-			std::cout << "[Inspector] Added SpriteAnimationComponent to entity " << entity << std::endl;
+			ENGINE_PRINT("[Inspector] Added SpriteAnimationComponent to entity ", entity);
 		}
 		else if (componentType == "DirectionalLightComponent") {
 			DirectionalLightComponent component;
@@ -1865,7 +1901,7 @@ void InspectorPanel::AddComponent(Entity entity, const std::string& componentTyp
 			//	ecsManager.lightingSystem->RegisterEntity(entity);
 			//}
 
-			std::cout << "[Inspector] Added DirectionalLightComponent to entity " << entity << std::endl;
+			ENGINE_PRINT("[Inspector] Added DirectionalLightComponent to entity ", entity);
 		}
 		else if (componentType == "PointLightComponent") {
 			PointLightComponent component;
@@ -1884,7 +1920,7 @@ void InspectorPanel::AddComponent(Entity entity, const std::string& componentTyp
 			if (!ecsManager.HasComponent<Transform>(entity)) {
 				Transform transform;
 				ecsManager.AddComponent<Transform>(entity, transform);
-				std::cout << "[Inspector] Added Transform component for PointLight positioning" << std::endl;
+				ENGINE_PRINT("[Inspector] Added Transform component for PointLight positioning");
 			}
 
 			//// Register entity with lighting system
@@ -1892,7 +1928,7 @@ void InspectorPanel::AddComponent(Entity entity, const std::string& componentTyp
 			//	ecsManager.lightingSystem->RegisterEntity(entity);
 			//}
 
-			std::cout << "[Inspector] Added PointLightComponent to entity " << entity << std::endl;
+			ENGINE_PRINT("[Inspector] Added PointLightComponent to entity ", entity);
 		}
 		else if (componentType == "SpotLightComponent") {
 			SpotLightComponent component;
@@ -1921,7 +1957,7 @@ void InspectorPanel::AddComponent(Entity entity, const std::string& componentTyp
 			//	ecsManager.lightingSystem->RegisterEntity(entity);
 			//}
 
-			std::cout << "[Inspector] Added SpotLightComponent to entity " << entity << std::endl;
+			ENGINE_PRINT("[Inspector] Added SpotLightComponent to entity ", entity);
 		}
 		else if (componentType == "ParticleComponent") {
 			ParticleComponent component;
@@ -1951,10 +1987,10 @@ void InspectorPanel::AddComponent(Entity entity, const std::string& componentTyp
 			if (!ecsManager.HasComponent<Transform>(entity)) {
 				Transform transform;
 				ecsManager.AddComponent<Transform>(entity, transform);
-				std::cout << "[Inspector] Added Transform component for Particle emitter positioning" << std::endl;
+				ENGINE_PRINT("[Inspector] Added Transform component for Particle emitter positioning");
 			}
 
-			std::cout << "[Inspector] Added ParticleComponent to entity " << entity << std::endl;
+			ENGINE_PRINT("[Inspector] Added ParticleComponent to entity ", entity);
 		}
 		else if (componentType == "TextRenderComponent") {
 			// Load default font and shader GUIDs (matching SceneInstance.cpp)
@@ -1993,10 +2029,10 @@ void InspectorPanel::AddComponent(Entity entity, const std::string& componentTyp
 				Transform transform;
 				transform.localPosition = Vector3D(100.0f, 100.0f, 0.0f); // Default screen position
 				ecsManager.AddComponent<Transform>(entity, transform);
-				std::cout << "[Inspector] Added Transform component for Text positioning" << std::endl;
+				ENGINE_PRINT("[Inspector] Added Transform component for Text positioning");
 			}
 
-			std::cout << "[Inspector] Added TextRenderComponent to entity " << entity << std::endl;
+			ENGINE_PRINT("[Inspector] Added TextRenderComponent to entity ", entity);
 		}
 		else if (componentType == "ColliderComponent") {
 
@@ -2004,7 +2040,7 @@ void InspectorPanel::AddComponent(Entity entity, const std::string& componentTyp
 			if (!ecsManager.HasComponent<Transform>(entity)) {
 				Transform transform;
 				ecsManager.AddComponent<Transform>(entity, transform);
-				std::cout << "[Inspector] Added Transform component for Collider" << std::endl;
+				ENGINE_PRINT("[Inspector] Added Transform component for Collider");
 			}
 
 			ColliderComponent component;
@@ -2028,7 +2064,7 @@ void InspectorPanel::AddComponent(Entity entity, const std::string& componentTyp
 			ecsManager.AddComponent<ColliderComponent>(entity, component);
 
 
-			std::cout << "[Inspector] Added ColliderComponent to entity " << entity << std::endl;
+			ENGINE_PRINT("[Inspector] Added ColliderComponent to entity ", entity);
 		}
 		else if (componentType == "RigidBodyComponent") {
 			RigidBodyComponent component;
@@ -2041,10 +2077,10 @@ void InspectorPanel::AddComponent(Entity entity, const std::string& componentTyp
 			if (!ecsManager.HasComponent<Transform>(entity)) {
 				Transform transform;
 				ecsManager.AddComponent<Transform>(entity, transform);
-				std::cout << "[Inspector] Added Transform component for RigidBody" << std::endl;
+				ENGINE_PRINT("[Inspector] Added Transform component for RigidBody");
 			}
 
-			std::cout << "[Inspector] Added RigidBodyComponent to entity " << entity << std::endl;
+			ENGINE_PRINT("[Inspector] Added RigidBodyComponent to entity ", entity);
 		}
 		else if (componentType == "VideoComponent") {
 			VideoComponent component;
@@ -2059,21 +2095,21 @@ void InspectorPanel::AddComponent(Entity entity, const std::string& componentTyp
 			if (!ecsManager.HasComponent<Transform>(entity)) {
 				Transform transform;
 				ecsManager.AddComponent<Transform>(entity, transform);
-				std::cout << "[Inspector] Added Transform component for VideoComponent" << std::endl;
+				ENGINE_PRINT("[Inspector] Added Transform component for VideoComponent");
 			}
 
-			std::cout << "[Inspector] Added VideoComponent to entity " << entity << std::endl;
+			ENGINE_PRINT("[Inspector] Added VideoComponent to entity ", entity);
 			}
 
 		else if (componentType == "TagComponent") {
 			TagComponent component;
 			ecsManager.AddComponent<TagComponent>(entity, component);
-			std::cout << "[Inspector] Added TagComponent to entity " << entity << std::endl;
+			ENGINE_PRINT("[Inspector] Added TagComponent to entity ", entity);
 		}
 		else if (componentType == "LayerComponent") {
 			LayerComponent component;
 			ecsManager.AddComponent<LayerComponent>(entity, component);
-			std::cout << "[Inspector] Added LayerComponent to entity " << entity << std::endl;
+			ENGINE_PRINT("[Inspector] Added LayerComponent to entity ", entity);
 		}
 		else if (componentType == "CameraComponent") {
 			CameraComponent component;
@@ -2098,10 +2134,10 @@ void InspectorPanel::AddComponent(Entity entity, const std::string& componentTyp
 			if (!ecsManager.HasComponent<Transform>(entity)) {
 				Transform transform;
 				ecsManager.AddComponent<Transform>(entity, transform);
-				std::cout << "[Inspector] Added Transform component for Camera positioning" << std::endl;
+				ENGINE_PRINT("[Inspector] Added Transform component for Camera positioning");
 			}
 
-			std::cout << "[Inspector] Added CameraComponent to entity " << entity << std::endl;
+			ENGINE_PRINT("[Inspector] Added CameraComponent to entity ", entity);
 		}
 		else if (componentType == "AnimationComponent") {
 			AnimationComponent component;
@@ -2110,28 +2146,28 @@ void InspectorPanel::AddComponent(Entity entity, const std::string& componentTyp
 			if (!ecsManager.HasComponent<Transform>(entity)) {
 				Transform transform;
 				ecsManager.AddComponent<Transform>(entity, transform);
-				std::cout << "[Inspector] Added Transform component for Animator" << std::endl;
+				ENGINE_PRINT("[Inspector] Added Transform component for Animator");
 			}
 
-			std::cout << "[Inspector] Added AnimationComponent to entity " << entity << std::endl;
+			ENGINE_PRINT("[Inspector] Added AnimationComponent to entity ", entity);
 		}
 		else if (componentType == "Brain") {
 			BrainComponent component;
 			ecsManager.AddComponent<BrainComponent>(entity, component);
-			std::cout << "[Inspector] Added Brain to entity " << entity << std::endl;
+			ENGINE_PRINT("[Inspector] Added Brain to entity ", entity);
 		}
 		else if (componentType == "ScriptComponentData") {
 			ScriptComponentData component;
 			// Default values are set in the struct definition
 			// scriptPath is empty, enabled is true, etc.
 			ecsManager.AddComponent<ScriptComponentData>(entity, component);
-			std::cout << "[Inspector] Added ScriptComponentData to entity " << entity << " (ready for script assignment)" << std::endl;
+			ENGINE_PRINT("[Inspector] Added ScriptComponentData to entity ", entity, " (ready for script assignment)");
 		}
 		else if (componentType == "ButtonComponent") {
 			ButtonComponent component;
 			component.interactable = true;
 			ecsManager.AddComponent<ButtonComponent>(entity, component);
-			std::cout << "[Inspector] Added ButtonComponent to entity " << entity << std::endl;
+			ENGINE_PRINT("[Inspector] Added ButtonComponent to entity ", entity);
 		}
 		else if (componentType == "SliderComponent") {
 			// Ensure entity has Transform component for UI positioning
@@ -2139,7 +2175,7 @@ void InspectorPanel::AddComponent(Entity entity, const std::string& componentTyp
 				Transform transform;
 				transform.localScale = Vector3D(200.0f, 20.0f, 1.0f);
 				ecsManager.AddComponent<Transform>(entity, transform);
-				std::cout << "[Inspector] Added Transform component for Slider" << std::endl;
+				ENGINE_PRINT("[Inspector] Added Transform component for Slider");
 			}
 
 			SliderComponent component;
@@ -2215,7 +2251,7 @@ void InspectorPanel::AddComponent(Entity entity, const std::string& componentTyp
 			}
 
 			ecsManager.AddComponent<SliderComponent>(entity, component);
-			std::cout << "[Inspector] Added SliderComponent to entity " << entity << std::endl;
+			ENGINE_PRINT("[Inspector] Added SliderComponent to entity ", entity);
 		}
 		else if (componentType == "UIAnchorComponent") {
 			UIAnchorComponent component;
@@ -2232,10 +2268,10 @@ void InspectorPanel::AddComponent(Entity entity, const std::string& componentTyp
 			if (!ecsManager.HasComponent<Transform>(entity)) {
 				Transform transform;
 				ecsManager.AddComponent<Transform>(entity, transform);
-				std::cout << "[Inspector] Added Transform component for UI Anchor" << std::endl;
+				ENGINE_PRINT("[Inspector] Added Transform component for UI Anchor");
 			}
 
-			std::cout << "[Inspector] Added UIAnchorComponent to entity " << entity << std::endl;
+			ENGINE_PRINT("[Inspector] Added UIAnchorComponent to entity ", entity);
 		}
 		else {
 			std::cerr << "[Inspector] Unknown component type: " << componentType << std::endl;
@@ -2529,76 +2565,76 @@ void InspectorPanel::ProcessPendingComponentRemovals() {
 			// Remove the component based on type
 			if (request.componentType == "DirectionalLightComponent") {
 				ecsManager.RemoveComponent<DirectionalLightComponent>(request.entity);
-				std::cout << "[Inspector] Removed DirectionalLightComponent from entity " << request.entity << std::endl;
+				ENGINE_PRINT("[Inspector] Removed DirectionalLightComponent from entity ", request.entity);
 			}
 			else if (request.componentType == "PointLightComponent") {
 				ecsManager.RemoveComponent<PointLightComponent>(request.entity);
-				std::cout << "[Inspector] Removed PointLightComponent from entity " << request.entity << std::endl;
+				ENGINE_PRINT("[Inspector] Removed PointLightComponent from entity ", request.entity);
 			}
 			else if (request.componentType == "SpotLightComponent") {
 				ecsManager.RemoveComponent<SpotLightComponent>(request.entity);
-				std::cout << "[Inspector] Removed SpotLightComponent from entity " << request.entity << std::endl;
+				ENGINE_PRINT("[Inspector] Removed SpotLightComponent from entity ", request.entity);
 			}
 			else if (request.componentType == "ModelRenderComponent") {
 				ecsManager.RemoveComponent<ModelRenderComponent>(request.entity);
-				std::cout << "[Inspector] Removed ModelRenderComponent from entity " << request.entity << std::endl;
+				ENGINE_PRINT("[Inspector] Removed ModelRenderComponent from entity ", request.entity);
 			}
 			else if (request.componentType == "SpriteRenderComponent") {
 				ecsManager.RemoveComponent<SpriteRenderComponent>(request.entity);
-				std::cout << "[Inspector] Removed SpriteRenderComponent from entity " << request.entity << std::endl;
+				ENGINE_PRINT("[Inspector] Removed SpriteRenderComponent from entity ", request.entity);
 			}
 			else if (request.componentType == "TextRenderComponent") {
 				ecsManager.RemoveComponent<TextRenderComponent>(request.entity);
-				std::cout << "[Inspector] Removed TextRenderComponent from entity " << request.entity << std::endl;
+				ENGINE_PRINT("[Inspector] Removed TextRenderComponent from entity ", request.entity);
 			}
 			else if (request.componentType == "ParticleComponent") {
 				ecsManager.RemoveComponent<ParticleComponent>(request.entity);
-				std::cout << "[Inspector] Removed ParticleComponent from entity " << request.entity << std::endl;
+				ENGINE_PRINT("[Inspector] Removed ParticleComponent from entity ", request.entity);
 			}
 			else if (request.componentType == "AudioComponent") {
 				ecsManager.RemoveComponent<AudioComponent>(request.entity);
-				std::cout << "[Inspector] Removed AudioComponent from entity " << request.entity << std::endl;
+				ENGINE_PRINT("[Inspector] Removed AudioComponent from entity ", request.entity);
 			}
 			else if (request.componentType == "AudioListenerComponent") {
 				ecsManager.RemoveComponent<AudioListenerComponent>(request.entity);
-				std::cout << "[Inspector] Removed AudioListenerComponent from entity " << request.entity << std::endl;
+				ENGINE_PRINT("[Inspector] Removed AudioListenerComponent from entity ", request.entity);
 			}
 			else if (request.componentType == "AudioReverbZoneComponent") {
 				ecsManager.RemoveComponent<AudioReverbZoneComponent>(request.entity);
-				std::cout << "[Inspector] Removed AudioReverbZoneComponent from entity " << request.entity << std::endl;
+				ENGINE_PRINT("[Inspector] Removed AudioReverbZoneComponent from entity ", request.entity);
 			}
 			else if (request.componentType == "ColliderComponent") {
 				ecsManager.RemoveComponent<ColliderComponent>(request.entity);
-				std::cout << "[Inspector] Removed ColliderComponent from entity " << request.entity << std::endl;
+				ENGINE_PRINT("[Inspector] Removed ColliderComponent from entity ", request.entity);
 			}
 			else if (request.componentType == "RigidBodyComponent") {
 				ecsManager.RemoveComponent<RigidBodyComponent>(request.entity);
-				std::cout << "[Inspector] Removed RigidBodyComponent from entity " << request.entity << std::endl;
+				ENGINE_PRINT("[Inspector] Removed RigidBodyComponent from entity ", request.entity);
 			}
 			else if (request.componentType == "VideoComponent") {
 				ecsManager.RemoveComponent<VideoComponent>(request.entity);
-				std::cout << "[Inspector] Removed VideoComponent from entity " << request.entity << std::endl;
+				ENGINE_PRINT("[Inspector] Removed VideoComponent from entity ", request.entity);
 			}
 			else if (request.componentType == "CameraComponent") {
 				ecsManager.RemoveComponent<CameraComponent>(request.entity);
-				std::cout << "[Inspector] Removed CameraComponent from entity " << request.entity << std::endl;
+				ENGINE_PRINT("[Inspector] Removed CameraComponent from entity ", request.entity);
 			}
 			else if (request.componentType == "AnimationComponent") {
 				ecsManager.RemoveComponent<AnimationComponent>(request.entity);
 				ecsManager.GetComponent<ModelRenderComponent>(request.entity).SetAnimator(nullptr);
-				std::cout << "[Inspector] Removed AnimationComponent from entity " << request.entity << std::endl;
+				ENGINE_PRINT("[Inspector] Removed AnimationComponent from entity ", request.entity);
 			}
 			else if (request.componentType == "Brain") {
 				ecsManager.RemoveComponent<BrainComponent>(request.entity);
-				std::cout << "[Inspector] Removed Brain from entity " << request.entity << std::endl;
+				ENGINE_PRINT("[Inspector] Removed Brain from entity ", request.entity);
 			}
 			else if (request.componentType == "ScriptComponentData") {
 				ecsManager.RemoveComponent<ScriptComponentData>(request.entity);
-				std::cout << "[Inspector] Removed ScriptComponentData from entity " << request.entity << std::endl;
+				ENGINE_PRINT("[Inspector] Removed ScriptComponentData from entity ", request.entity);
 			}
 			else if (request.componentType == "ButtonComponent") {
 				ecsManager.RemoveComponent<ButtonComponent>(request.entity);
-				std::cout << "[Inspector] Removed ButtonComponent from entity " << request.entity << std::endl;
+				ENGINE_PRINT("[Inspector] Removed ButtonComponent from entity ", request.entity);
 			}
 			else if (request.componentType == "SliderComponent") {
 				if (ecsManager.HasComponent<SliderComponent>(request.entity)) {
@@ -2621,11 +2657,11 @@ void InspectorPanel::ProcessPendingComponentRemovals() {
 				}
 
 				ecsManager.RemoveComponent<SliderComponent>(request.entity);
-				std::cout << "[Inspector] Removed SliderComponent from entity " << request.entity << std::endl;
+				ENGINE_PRINT("[Inspector] Removed SliderComponent from entity ", request.entity);
 			}
 			else if (request.componentType == "UIAnchorComponent") {
 				ecsManager.RemoveComponent<UIAnchorComponent>(request.entity);
-				std::cout << "[Inspector] Removed UIAnchorComponent from entity " << request.entity << std::endl;
+				ENGINE_PRINT("[Inspector] Removed UIAnchorComponent from entity ", request.entity);
 			}
 			else if (request.componentType == "TransformComponent") {
 				std::cerr << "[Inspector] Cannot remove TransformComponent - all entities must have one" << std::endl;
@@ -2651,71 +2687,71 @@ void InspectorPanel::ProcessPendingComponentResets() {
 			// Reset the component based on type by assigning default-constructed value
 			if (request.componentType == "DirectionalLightComponent") {
 				ecsManager.GetComponent<DirectionalLightComponent>(request.entity) = DirectionalLightComponent{};
-				std::cout << "[Inspector] Reset DirectionalLightComponent on entity " << request.entity << std::endl;
+				ENGINE_PRINT("[Inspector] Reset DirectionalLightComponent on entity ", request.entity);
 			}
 			else if (request.componentType == "PointLightComponent") {
 				ecsManager.GetComponent<PointLightComponent>(request.entity) = PointLightComponent{};
-				std::cout << "[Inspector] Reset PointLightComponent on entity " << request.entity << std::endl;
+				ENGINE_PRINT("[Inspector] Reset PointLightComponent on entity ", request.entity);
 			}
 			else if (request.componentType == "SpotLightComponent") {
 				ecsManager.GetComponent<SpotLightComponent>(request.entity) = SpotLightComponent{};
-				std::cout << "[Inspector] Reset SpotLightComponent on entity " << request.entity << std::endl;
+				ENGINE_PRINT("[Inspector] Reset SpotLightComponent on entity ", request.entity);
 			}
 			else if (request.componentType == "ModelRenderComponent") {
 				ecsManager.GetComponent<ModelRenderComponent>(request.entity) = ModelRenderComponent{};
-				std::cout << "[Inspector] Reset ModelRenderComponent on entity " << request.entity << std::endl;
+				ENGINE_PRINT("[Inspector] Reset ModelRenderComponent on entity ", request.entity);
 			}
 			else if (request.componentType == "SpriteRenderComponent") {
 				ecsManager.GetComponent<SpriteRenderComponent>(request.entity) = SpriteRenderComponent{};
-				std::cout << "[Inspector] Reset SpriteRenderComponent on entity " << request.entity << std::endl;
+				ENGINE_PRINT("[Inspector] Reset SpriteRenderComponent on entity ", request.entity);
 			}
 			else if (request.componentType == "TextRenderComponent") {
 				ecsManager.GetComponent<TextRenderComponent>(request.entity) = TextRenderComponent{};
-				std::cout << "[Inspector] Reset TextRenderComponent on entity " << request.entity << std::endl;
+				ENGINE_PRINT("[Inspector] Reset TextRenderComponent on entity ", request.entity);
 			}
 			else if (request.componentType == "ParticleComponent") {
 				ecsManager.GetComponent<ParticleComponent>(request.entity) = ParticleComponent{};
-				std::cout << "[Inspector] Reset ParticleComponent on entity " << request.entity << std::endl;
+				ENGINE_PRINT("[Inspector] Reset ParticleComponent on entity ", request.entity);
 			}
 			else if (request.componentType == "AudioComponent") {
 				ecsManager.GetComponent<AudioComponent>(request.entity) = AudioComponent{};
-				std::cout << "[Inspector] Reset AudioComponent on entity " << request.entity << std::endl;
+				ENGINE_PRINT("[Inspector] Reset AudioComponent on entity ", request.entity);
 			}
 			else if (request.componentType == "AudioListenerComponent") {
 				ecsManager.GetComponent<AudioListenerComponent>(request.entity) = AudioListenerComponent{};
-				std::cout << "[Inspector] Reset AudioListenerComponent on entity " << request.entity << std::endl;
+				ENGINE_PRINT("[Inspector] Reset AudioListenerComponent on entity ", request.entity);
 			}
 			else if (request.componentType == "AudioReverbZoneComponent") {
 				ecsManager.GetComponent<AudioReverbZoneComponent>(request.entity) = AudioReverbZoneComponent{};
-				std::cout << "[Inspector] Reset AudioReverbZoneComponent on entity " << request.entity << std::endl;
+				ENGINE_PRINT("[Inspector] Reset AudioReverbZoneComponent on entity ", request.entity);
 			}
 			else if (request.componentType == "ColliderComponent") {
 				ecsManager.GetComponent<ColliderComponent>(request.entity) = ColliderComponent{};
-				std::cout << "[Inspector] Reset ColliderComponent on entity " << request.entity << std::endl;
+				ENGINE_PRINT("[Inspector] Reset ColliderComponent on entity ", request.entity);
 			}
 			else if (request.componentType == "RigidBodyComponent") {
 				ecsManager.GetComponent<RigidBodyComponent>(request.entity) = RigidBodyComponent{};
-				std::cout << "[Inspector] Reset RigidBodyComponent on entity " << request.entity << std::endl;
+				ENGINE_PRINT("[Inspector] Reset RigidBodyComponent on entity ", request.entity);
 			}
 			else if (request.componentType == "VideoComponent") {
 				ecsManager.GetComponent<VideoComponent>(request.entity) = VideoComponent{};
-				std::cout << "[Inspector] Reset VideoComponent on entity " << request.entity << std::endl;
+				ENGINE_PRINT("[Inspector] Reset VideoComponent on entity ", request.entity);
 			}
 			else if (request.componentType == "CameraComponent") {
 				ecsManager.GetComponent<CameraComponent>(request.entity) = CameraComponent{};
-				std::cout << "[Inspector] Reset CameraComponent on entity " << request.entity << std::endl;
+				ENGINE_PRINT("[Inspector] Reset CameraComponent on entity ", request.entity);
 			}
 			else if (request.componentType == "BrainComponent") {
 				ecsManager.GetComponent<BrainComponent>(request.entity) = BrainComponent{};
-				std::cout << "[Inspector] Reset BrainComponent on entity " << request.entity << std::endl;
+				ENGINE_PRINT("[Inspector] Reset BrainComponent on entity ", request.entity);
 			}
 			else if (request.componentType == "ScriptComponentData") {
 				ecsManager.GetComponent<ScriptComponentData>(request.entity) = ScriptComponentData{};
-				std::cout << "[Inspector] Reset ScriptComponentData on entity " << request.entity << std::endl;
+				ENGINE_PRINT("[Inspector] Reset ScriptComponentData on entity ", request.entity);
 			}
 			else if (request.componentType == "ButtonComponent") {
 				ecsManager.GetComponent<ButtonComponent>(request.entity) = ButtonComponent{};
-				std::cout << "[Inspector] Reset ButtonComponent on entity " << request.entity << std::endl;
+				ENGINE_PRINT("[Inspector] Reset ButtonComponent on entity ", request.entity);
 			}
 			else if (request.componentType == "SliderComponent") {
 				auto& sliderComp = ecsManager.GetComponent<SliderComponent>(request.entity);
@@ -2724,16 +2760,16 @@ void InspectorPanel::ProcessPendingComponentResets() {
 				sliderComp = SliderComponent{};
 				sliderComp.trackEntityGuid = trackGuid;
 				sliderComp.handleEntityGuid = handleGuid;
-				std::cout << "[Inspector] Reset SliderComponent on entity " << request.entity << std::endl;
+				ENGINE_PRINT("[Inspector] Reset SliderComponent on entity ", request.entity);
 			}
 			else if (request.componentType == "UIAnchorComponent") {
 				ecsManager.GetComponent<UIAnchorComponent>(request.entity) = UIAnchorComponent{};
-				std::cout << "[Inspector] Reset UIAnchorComponent on entity " << request.entity << std::endl;
+				ENGINE_PRINT("[Inspector] Reset UIAnchorComponent on entity ", request.entity);
 			}
 			else if (request.componentType == "Transform") {
 				// Reset transform to default values
 				ecsManager.GetComponent<Transform>(request.entity) = Transform{};
-				std::cout << "[Inspector] Reset Transform on entity " << request.entity << std::endl;
+				ENGINE_PRINT("[Inspector] Reset Transform on entity ", request.entity);
 			}
 			else if (request.componentType == "AnimationComponent") {
 				auto& animComp = ecsManager.GetComponent<AnimationComponent>(request.entity);
@@ -2752,7 +2788,7 @@ void InspectorPanel::ProcessPendingComponentResets() {
 				if (sm) {
 					sm->Clear();
 				}
-				std::cout << "[Inspector] Reset AnimationComponent on entity " << request.entity << std::endl;
+				ENGINE_PRINT("[Inspector] Reset AnimationComponent on entity ", request.entity);
 			}
 			else {
 				std::cerr << "[Inspector] Unknown component type for reset: " << request.componentType << std::endl;
@@ -2778,22 +2814,22 @@ void InspectorPanel::ApplyModelToRenderer(Entity entity, const GUID_128& modelGu
 
 		ModelRenderComponent& modelRenderer = ecsManager.GetComponent<ModelRenderComponent>(entity);
 
-		std::cout << "[Inspector] Applying model to entity " << entity << " - GUID: {" << modelGuid.high << ", " << modelGuid.low << "}, Path: " << modelPath << std::endl;
+		ENGINE_PRINT("[Inspector] Applying model to entity ", entity, " - GUID: {", modelGuid.high, ", ", modelGuid.low, "}, Path: ", modelPath);
 
 		// Try to load model using GUID first, then fallback to path
 		std::shared_ptr<Model> loadedModel = nullptr;
 
 		if (modelGuid.high != 0 || modelGuid.low != 0) {
-			std::cout << "[Inspector] Loading model using GUID..." << std::endl;
+			ENGINE_PRINT("[Inspector] Loading model using GUID...");
 			loadedModel = ResourceManager::GetInstance().GetResourceFromGUID<Model>(modelGuid, modelPath);
 		}
 		else if (!modelPath.empty()) {
-			std::cout << "[Inspector] Loading model using path: " << modelPath << std::endl;
+			ENGINE_PRINT("[Inspector] Loading model using path: ", modelPath);
 			loadedModel = ResourceManager::GetInstance().GetResource<Model>(modelPath);
 		}
 
 		if (loadedModel) {
-			std::cout << "[Inspector] Model loaded successfully, applying to ModelRenderComponent..." << std::endl;
+			ENGINE_PRINT("[Inspector] Model loaded successfully, applying to ModelRenderComponent...");
 			modelRenderer.model = loadedModel;
 			modelRenderer.modelGUID = modelGuid;
 			modelRenderer.shader = ResourceManager::GetInstance().GetResource<Shader>(ResourceManager::GetPlatformShaderPath("default"));
@@ -2801,7 +2837,7 @@ void InspectorPanel::ApplyModelToRenderer(Entity entity, const GUID_128& modelGu
 
 			// Ensure entity has a shader for rendering
 			if (modelRenderer.shaderGUID.high == 0 && modelRenderer.shaderGUID.low == 0) {
-				std::cout << "[Inspector] Setting default shader for entity " << entity << std::endl;
+				ENGINE_PRINT("[Inspector] Setting default shader for entity ", entity);
 				modelRenderer.shaderGUID = { 0x007ebbc8de41468e, 0x0002c7078200001b }; // Default shader GUID
 			}
 
@@ -2825,7 +2861,7 @@ void InspectorPanel::ApplyModelToRenderer(Entity entity, const GUID_128& modelGu
 			//	}
 			//}
 
-			std::cout << "[Inspector] Model successfully applied to entity " << entity << std::endl;
+			ENGINE_PRINT("[Inspector] Model successfully applied to entity ", entity);
 		}
 		else {
 			std::cerr << "[Inspector] Failed to load model for entity " << entity << std::endl;
@@ -3197,160 +3233,103 @@ void InspectorPanel::DrawSharedComponentGeneric(const std::vector<Entity>& entit
 	else {
 		// For other components, show the first entity's component and apply changes to all
 		ImGui::TextDisabled("Showing values from first selected entity");
-		ImGui::TextDisabled("Editing will apply to all selected entities");
+		ImGui::TextDisabled("Editing will apply only the modified field to all (Unity-style)");
 		ImGui::Spacing();
 
-		// Render using reflection and track if changes were made
+		// Render using reflection and track WHICH SPECIFIC FIELD was modified (Unity-style)
 		ImGui::PushID(firstComponentPtr);
-		bool wasModified = false;
+		FieldModificationResult modResult;
 		try {
-			wasModified = ReflectionRenderer::RenderComponent(firstComponentPtr, typeDesc, firstEntity, ecs);
+			modResult = ReflectionRenderer::RenderComponentWithFieldTracking(firstComponentPtr, typeDesc, firstEntity, ecs);
 		}
 		catch (const std::exception& e) {
 			ImGui::TextColored(ImVec4(1.0f, 0.3f, 0.3f, 1.0f), "Error: %s", e.what());
 		}
 		ImGui::PopID();
 
-		// If the component was modified, apply the changes to all other selected entities
-		if (wasModified && entities.size() > 1) {
+		// Unity-style: If a SPECIFIC FIELD was modified, copy ONLY that field to other entities
+		// This prevents the bug where selecting multiple objects would overwrite all their models
+		if (modResult.wasModified && !modResult.modifiedFieldName.empty() && entities.size() > 1) {
 			for (size_t i = 1; i < entities.size(); ++i) {
 				Entity otherEntity = entities[i];
 
-				// Copy component data from first entity to other entities based on component type
+				// Get destination component pointer for this entity based on component type
+				void* otherComponentPtr = nullptr;
+
 				if (componentType == "ModelRenderComponent" && ecs.HasComponent<ModelRenderComponent>(otherEntity)) {
-					ecs.GetComponent<ModelRenderComponent>(otherEntity) = ecs.GetComponent<ModelRenderComponent>(firstEntity);
+					otherComponentPtr = &ecs.GetComponent<ModelRenderComponent>(otherEntity);
 				}
 				else if (componentType == "SpriteRenderComponent" && ecs.HasComponent<SpriteRenderComponent>(otherEntity)) {
-					ecs.GetComponent<SpriteRenderComponent>(otherEntity) = ecs.GetComponent<SpriteRenderComponent>(firstEntity);
+					otherComponentPtr = &ecs.GetComponent<SpriteRenderComponent>(otherEntity);
 				}
 				else if (componentType == "ColliderComponent" && ecs.HasComponent<ColliderComponent>(otherEntity)) {
-					ColliderComponent& src = ecs.GetComponent<ColliderComponent>(firstEntity);
-					ColliderComponent& dst = ecs.GetComponent<ColliderComponent>(otherEntity);
-					// Copy serializable fields, preserve runtime fields
-					dst.enabled = src.enabled;
-					dst.layerID = src.layerID;
-					dst.shapeTypeID = src.shapeTypeID;
-					dst.boxHalfExtents = src.boxHalfExtents;
-					dst.sphereRadius = src.sphereRadius;
-					dst.capsuleRadius = src.capsuleRadius;
-					dst.capsuleHalfHeight = src.capsuleHalfHeight;
-					dst.cylinderRadius = src.cylinderRadius;
-					dst.cylinderHalfHeight = src.cylinderHalfHeight;
-					dst.center = src.center;
-					dst.shapeType = src.shapeType;
-					dst.layer = src.layer;
-					dst.version++;  // Trigger physics rebuild
+					otherComponentPtr = &ecs.GetComponent<ColliderComponent>(otherEntity);
+					// Trigger physics rebuild after field copy
+					ecs.GetComponent<ColliderComponent>(otherEntity).version++;
 				}
 				else if (componentType == "RigidBodyComponent" && ecs.HasComponent<RigidBodyComponent>(otherEntity)) {
-					RigidBodyComponent& src = ecs.GetComponent<RigidBodyComponent>(firstEntity);
-					RigidBodyComponent& dst = ecs.GetComponent<RigidBodyComponent>(otherEntity);
-					// Copy serializable fields, preserve runtime fields
-					dst.enabled = src.enabled;
-					dst.motionID = src.motionID;
-					dst.motion = src.motion;
-					dst.ccd = src.ccd;
-					dst.isTrigger = src.isTrigger;
-					dst.gravityFactor = src.gravityFactor;
-					dst.linearVel = src.linearVel;
-					dst.angularVel = src.angularVel;
-					dst.linearDamping = src.linearDamping;
-					dst.angularDamping = src.angularDamping;
-					dst.collideWithStatic = src.collideWithStatic;
-					dst.motion_dirty = true;  // Trigger physics update
+					otherComponentPtr = &ecs.GetComponent<RigidBodyComponent>(otherEntity);
+					// Trigger physics update after field copy
+					ecs.GetComponent<RigidBodyComponent>(otherEntity).motion_dirty = true;
 				}
 				else if (componentType == "VideoComponent" && ecs.HasComponent<VideoComponent>(otherEntity)) {
-					ecs.GetComponent<VideoComponent>(otherEntity) = ecs.GetComponent<VideoComponent>(firstEntity);
+					otherComponentPtr = &ecs.GetComponent<VideoComponent>(otherEntity);
 				}
 				else if (componentType == "CameraComponent" && ecs.HasComponent<CameraComponent>(otherEntity)) {
-					ecs.GetComponent<CameraComponent>(otherEntity) = ecs.GetComponent<CameraComponent>(firstEntity);
+					otherComponentPtr = &ecs.GetComponent<CameraComponent>(otherEntity);
 				}
 				else if (componentType == "DirectionalLightComponent" && ecs.HasComponent<DirectionalLightComponent>(otherEntity)) {
-					ecs.GetComponent<DirectionalLightComponent>(otherEntity) = ecs.GetComponent<DirectionalLightComponent>(firstEntity);
+					otherComponentPtr = &ecs.GetComponent<DirectionalLightComponent>(otherEntity);
 				}
 				else if (componentType == "PointLightComponent" && ecs.HasComponent<PointLightComponent>(otherEntity)) {
-					ecs.GetComponent<PointLightComponent>(otherEntity) = ecs.GetComponent<PointLightComponent>(firstEntity);
+					otherComponentPtr = &ecs.GetComponent<PointLightComponent>(otherEntity);
 				}
 				else if (componentType == "SpotLightComponent" && ecs.HasComponent<SpotLightComponent>(otherEntity)) {
-					ecs.GetComponent<SpotLightComponent>(otherEntity) = ecs.GetComponent<SpotLightComponent>(firstEntity);
+					otherComponentPtr = &ecs.GetComponent<SpotLightComponent>(otherEntity);
 				}
 				else if (componentType == "AudioComponent" && ecs.HasComponent<AudioComponent>(otherEntity)) {
-					ecs.GetComponent<AudioComponent>(otherEntity) = ecs.GetComponent<AudioComponent>(firstEntity);
+					otherComponentPtr = &ecs.GetComponent<AudioComponent>(otherEntity);
 				}
 				else if (componentType == "ParticleComponent" && ecs.HasComponent<ParticleComponent>(otherEntity)) {
-					ParticleComponent& src = ecs.GetComponent<ParticleComponent>(firstEntity);
-					ParticleComponent& dst = ecs.GetComponent<ParticleComponent>(otherEntity);
-					// Copy serializable fields only, preserve runtime state
-					dst.textureGUID = src.textureGUID;
-					dst.emitterPosition = src.emitterPosition;
-					dst.emissionRate = src.emissionRate;
-					dst.maxParticles = src.maxParticles;
-					dst.particleLifetime = src.particleLifetime;
-					dst.startSize = src.startSize;
-					dst.endSize = src.endSize;
-					dst.startColor = src.startColor;
-					dst.startColorAlpha = src.startColorAlpha;
-					dst.endColor = src.endColor;
-					dst.endColorAlpha = src.endColorAlpha;
-					dst.gravity = src.gravity;
-					dst.velocityRandomness = src.velocityRandomness;
-					dst.initialVelocity = src.initialVelocity;
-					dst.isEmitting = src.isEmitting;
+					otherComponentPtr = &ecs.GetComponent<ParticleComponent>(otherEntity);
 				}
 				else if (componentType == "AnimationComponent" && ecs.HasComponent<AnimationComponent>(otherEntity)) {
-					ecs.GetComponent<AnimationComponent>(otherEntity) = ecs.GetComponent<AnimationComponent>(firstEntity);
+					otherComponentPtr = &ecs.GetComponent<AnimationComponent>(otherEntity);
 				}
 				else if (componentType == "SpriteAnimationComponent" && ecs.HasComponent<SpriteAnimationComponent>(otherEntity)) {
-					ecs.GetComponent<SpriteAnimationComponent>(otherEntity) = ecs.GetComponent<SpriteAnimationComponent>(firstEntity);
+					otherComponentPtr = &ecs.GetComponent<SpriteAnimationComponent>(otherEntity);
 				}
 				else if (componentType == "TextRenderComponent" && ecs.HasComponent<TextRenderComponent>(otherEntity)) {
-					ecs.GetComponent<TextRenderComponent>(otherEntity) = ecs.GetComponent<TextRenderComponent>(firstEntity);
+					otherComponentPtr = &ecs.GetComponent<TextRenderComponent>(otherEntity);
 				}
 				else if (componentType == "ButtonComponent" && ecs.HasComponent<ButtonComponent>(otherEntity)) {
-					ecs.GetComponent<ButtonComponent>(otherEntity) = ecs.GetComponent<ButtonComponent>(firstEntity);
+					otherComponentPtr = &ecs.GetComponent<ButtonComponent>(otherEntity);
 				}
 				else if (componentType == "SliderComponent" && ecs.HasComponent<SliderComponent>(otherEntity)) {
-					ecs.GetComponent<SliderComponent>(otherEntity) = ecs.GetComponent<SliderComponent>(firstEntity);
+					otherComponentPtr = &ecs.GetComponent<SliderComponent>(otherEntity);
 				}
 				else if (componentType == "UIAnchorComponent" && ecs.HasComponent<UIAnchorComponent>(otherEntity)) {
-					ecs.GetComponent<UIAnchorComponent>(otherEntity) = ecs.GetComponent<UIAnchorComponent>(firstEntity);
+					otherComponentPtr = &ecs.GetComponent<UIAnchorComponent>(otherEntity);
 				}
 				else if (componentType == "AudioListenerComponent" && ecs.HasComponent<AudioListenerComponent>(otherEntity)) {
-					ecs.GetComponent<AudioListenerComponent>(otherEntity) = ecs.GetComponent<AudioListenerComponent>(firstEntity);
+					otherComponentPtr = &ecs.GetComponent<AudioListenerComponent>(otherEntity);
 				}
 				else if (componentType == "AudioReverbZoneComponent" && ecs.HasComponent<AudioReverbZoneComponent>(otherEntity)) {
-					AudioReverbZoneComponent& src = ecs.GetComponent<AudioReverbZoneComponent>(firstEntity);
-					AudioReverbZoneComponent& dst = ecs.GetComponent<AudioReverbZoneComponent>(otherEntity);
-					// Copy serializable fields, preserve FMOD handles
-					dst.enabled = src.enabled;
-					dst.MinDistance = src.MinDistance;
-					dst.MaxDistance = src.MaxDistance;
-					dst.reverbPresetIndex = src.reverbPresetIndex;
-					dst.decayTime = src.decayTime;
-					dst.earlyDelay = src.earlyDelay;
-					dst.lateDelay = src.lateDelay;
-					dst.hfReference = src.hfReference;
-					dst.hfDecayRatio = src.hfDecayRatio;
-					dst.diffusion = src.diffusion;
-					dst.density = src.density;
-					dst.lowShelfFrequency = src.lowShelfFrequency;
-					dst.lowShelfGain = src.lowShelfGain;
-					dst.highCut = src.highCut;
-					dst.earlyLateMix = src.earlyLateMix;
-					dst.wetLevel = src.wetLevel;
+					otherComponentPtr = &ecs.GetComponent<AudioReverbZoneComponent>(otherEntity);
 				}
 				else if (componentType == "BrainComponent" && ecs.HasComponent<BrainComponent>(otherEntity)) {
-					BrainComponent& src = ecs.GetComponent<BrainComponent>(firstEntity);
-					BrainComponent& dst = ecs.GetComponent<BrainComponent>(otherEntity);
-					// Copy serializable fields, preserve runtime impl
-					dst.kind = src.kind;
-					dst.kindInt = src.kindInt;
-					dst.enabled = src.enabled;
+					otherComponentPtr = &ecs.GetComponent<BrainComponent>(otherEntity);
 				}
 				else if (componentType == "ScriptComponentData" && ecs.HasComponent<ScriptComponentData>(otherEntity)) {
-					ecs.GetComponent<ScriptComponentData>(otherEntity) = ecs.GetComponent<ScriptComponentData>(firstEntity);
+					otherComponentPtr = &ecs.GetComponent<ScriptComponentData>(otherEntity);
 				}
 				else if (componentType == "DebugDrawComponent" && ecs.HasComponent<DebugDrawComponent>(otherEntity)) {
-					ecs.GetComponent<DebugDrawComponent>(otherEntity) = ecs.GetComponent<DebugDrawComponent>(firstEntity);
+					otherComponentPtr = &ecs.GetComponent<DebugDrawComponent>(otherEntity);
+				}
+
+				// Unity-style: Copy ONLY the modified field using reflection, not the entire component
+				if (otherComponentPtr) {
+					CopySingleFieldUsingReflection(firstComponentPtr, otherComponentPtr, typeDesc, modResult.modifiedFieldName);
 				}
 			}
 		}

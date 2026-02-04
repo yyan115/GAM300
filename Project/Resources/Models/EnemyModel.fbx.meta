@@ -1,0 +1,11 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "001b9f143526f465-00041a3900000013",
+        "source": "../../Resources/Models/EnemyModel.fbx",
+        "compiled": "../../Resources/Models/EnemyModel.mesh"
+    },
+    "ModelMetaData": {
+        "optimizeMeshes": true
+    }
+}

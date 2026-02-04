@@ -6,7 +6,7 @@
         "compiled": "../../Resources/Textures/M4/enemy_Normal.dds"
     },
     "TextureMetaData": {
-        "type": "normal",
+        "type": "diffuse",
         "flipUVs": false,
         "generateMipmaps": true
     }

@@ -3,6 +3,7 @@
 
 #include "Game AI/NavGrid.hpp"
 #include "Game AI/AStar.hpp" // you need to create this
+#include "Logging.hpp"
 
 class NavSystem {
 public:
