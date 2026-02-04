@@ -59,14 +59,15 @@ void EditorState::Play() {
         TimeManager::SetPaused(false);
 
 
-        // Reset all animations to start fresh (ignore inspector preview state)
+        //// Reset all animations to start fresh (ignore inspector preview state)
+        //for (auto ent : ecs.GetActiveEntities()) {
+        //    if (ecs.HasComponent<AnimationComponent>(ent)) {
+        //        AnimationComponent& animComp = ecs.GetComponent<AnimationComponent>(ent);
+        //        animComp.ResetForPlay(ent); // Reset animator to time 0 for fresh start
+        //    }
+        //}
+
         ECSManager& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
-        for (auto ent : ecs.GetActiveEntities()) {
-            if (ecs.HasComponent<AnimationComponent>(ent)) {
-                AnimationComponent& animComp = ecs.GetComponent<AnimationComponent>(ent);
-                animComp.ResetForPlay(ent); // Reset animator to time 0 for fresh start
-            }
-        }
 
         // Ensure FMOD global paused flag cleared so audio can play
         AudioManager::GetInstance().SetGlobalPaused(false);

@@ -5,10 +5,9 @@ return Component {
     mixins = { TransformMixin },
 
     fields = {
-        Speed    = 15.0,  
-        Lifetime = 0.5,   -- Total time the slash is visible
+        Speed    = 500,
+        Lifetime = 0.2,   
         StartRot = -60,   
-        EndRot   = 60,    
     },
 
     Start = function(self)
@@ -22,9 +21,7 @@ return Component {
     end,
 
     Update = function(self, dt)
-
-        --REPLACE THIS WITH IF SLASHING LOGIC 
-        --Only trigger if not already slashing
+        -- TO BE REPLACED WITH THE SLASH LOGIC
         if not self.active and Input.IsPointerJustPressed() then
             self.active = true
             self.age = 0
@@ -33,19 +30,22 @@ return Component {
             end
         end
 
-        --If currently slashing
         if self.active then
             self.age = self.age + dt
+
             local progress = math.min(self.age / self.Lifetime, 1.0)
 
-            -- Calculate Y-axis sweep
-            local currentYaw = self.StartRot + (self.EndRot - self.StartRot) * progress
-            local halfAngle = math.rad(currentYaw) * 0.5
+            -- Speed now represents total degrees to sweep
+            local currentYaw = self.StartRot + (self.Speed * progress)
             
-            -- Apply rotation 
-            self:SetRotation(math.cos(halfAngle), 0, math.sin(halfAngle), 0)
+            -- Convert to Quaternion
+            local halfAngle = math.rad(currentYaw) * 0.5
+            local w = math.cos(halfAngle)
+            local y = math.sin(halfAngle)
+            
+            self:SetRotation(w, 0, y, 0)
 
-            -- when finished
+            --RESET
             if self.age >= self.Lifetime then
                 self.active = false
                 if self.model then

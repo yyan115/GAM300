@@ -260,43 +260,6 @@ namespace PhysicsSystemWrappers {
         float maxDistanceSquared = maxDistance * maxDistance;
         return distanceSquared <= maxDistanceSquared;
     }
-
-    // Get overlapping entities and return a cache ID
-    // Usage: local cacheId = Physics.GetOverlappingEntities(entityId)
-    inline int Lua_GetOverlappingEntities(Entity entity) {
-        if (!g_PhysicsSystem) return 0;
-
-        std::vector<Entity> overlapping;
-        bool success = g_PhysicsSystem->GetOverlappingEntities(entity, overlapping);
-
-        if (!success) return 0;
-
-        // Store in cache
-        int cacheId = g_NextCacheID++;
-        g_OverlapCache[cacheId] = std::move(overlapping);
-
-        return cacheId;
-    }
-
-    // Get count from cache
-    inline int GetOverlapCount(int cacheId) {
-        auto it = g_OverlapCache.find(cacheId);
-        if (it == g_OverlapCache.end()) return 0;
-        return static_cast<int>(it->second.size());
-    }
-
-    // Get entity at index from cache
-    inline Entity GetOverlapAt(int cacheId, int index) {
-        auto it = g_OverlapCache.find(cacheId);
-        if (it == g_OverlapCache.end()) return 0;
-        if (index < 0 || index >= it->second.size()) return 0;
-        return it->second[index];
-    }
-
-    // Clear cache entry (call when done)
-    inline void ClearOverlapCache(int cacheId) {
-        g_OverlapCache.erase(cacheId);
-    }
 }
 
 
@@ -380,6 +343,12 @@ namespace CharacterControllerWrappers {
     inline void Jump(CharacterController* controller, float height) {
         if (controller)
             controller->Jump(height);
+    }
+
+    inline void SetPosition(CharacterController* controller, Transform* transform) {
+        if (controller) {
+            controller->SetPosition(*transform);
+        }
     }
 
     inline Vector3D GetPosition(CharacterController* controller) {
@@ -1177,4 +1146,23 @@ namespace EntityQueryWrappers {
         return ecsManager.IsEntityActiveInHierarchy(entity);
     }
 
+    // Return all children entities
+    // Args: entityId
+    inline int GetChildrenEntities(lua_State* L) {
+        Entity entity = static_cast<Entity>(luaL_checkinteger(L, 1));
+
+        ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
+        auto childrenEntities = ecsManager.transformSystem->GetAllChildEntitiesVector(entity);
+
+        // Build Lua table from the childrenEntities
+        lua_newtable(L);
+        int index = 1;
+
+        for (Entity child : childrenEntities) {
+            lua_pushinteger(L, static_cast<lua_Integer>(child));
+            lua_rawseti(L, -2, index++);
+		}
+
+        return 1;
+    }
 }

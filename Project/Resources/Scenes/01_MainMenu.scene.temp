@@ -17349,7 +17349,7 @@
                             "data": [
                                 {
                                     "type": "float",
-                                    "data": 1030
+                                    "data": 1025
                                 },
                                 {
                                     "type": "float",
@@ -17545,11 +17545,11 @@
                             "data": [
                                 {
                                     "type": "float",
-                                    "data": 109.026
+                                    "data": 110
                                 },
                                 {
                                     "type": "float",
-                                    "data": 80.5852
+                                    "data": 80
                                 },
                                 {
                                     "type": "float",
