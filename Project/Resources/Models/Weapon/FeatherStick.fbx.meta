@@ -1,0 +1,11 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "00120d787a8c137b-00041d360a0034db",
+        "source": "../../Resources/Models/Weapon/FeatherStick.fbx",
+        "compiled": "../../Resources/Models/Weapon/FeatherStick.mesh"
+    },
+    "ModelMetaData": {
+        "optimizeMeshes": true
+    }
+}

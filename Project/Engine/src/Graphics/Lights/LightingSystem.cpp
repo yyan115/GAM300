@@ -10,12 +10,12 @@
 
 bool LightingSystem::Initialise()
 {
-    std::cout << "[LightingSystem] Initializing..." << std::endl;
+    ENGINE_PRINT("[LightingSystem] Initializing...");
 
     // Initialize directional shadow map
     if (!directionalShadowMap.Initialize(shadowMapResolution))
     {
-        std::cout << "[LightingSystem] Warning: Directional shadow map failed" << std::endl;
+        ENGINE_PRINT("[LightingSystem] Warning: Directional shadow map failed");
         shadowsEnabled = false;
     }
 
@@ -25,11 +25,11 @@ bool LightingSystem::Initialise()
     {
         if (!pointShadowMaps[i].Initialize(pointShadowMapResolution))
         {
-            std::cout << "[LightingSystem] Warning: Point shadow map " << i << " failed" << std::endl;
+            ENGINE_PRINT("[LightingSystem] Warning: Point shadow map {} failed", i);
         }
     }
 
-    std::cout << "[LightingSystem] Initialized" << std::endl;
+    ENGINE_PRINT("[LightingSystem] Initialized");
     return true;
 }
 
@@ -50,7 +50,7 @@ void LightingSystem::Shutdown()
     }
     pointShadowMaps.clear();
 
-    std::cout << "[LightingSystem] Shutdown" << std::endl;
+    ENGINE_PRINT("[LightingSystem] Shutdown");
 }
 
 void LightingSystem::RenderShadowMaps()
@@ -271,12 +271,9 @@ void LightingSystem::CollectLightData()
 
     for (const auto& entity : entities)
     {
-        // Skip inactive entities
-        if (ecsManager.HasComponent<ActiveComponent>(entity)) {
-            auto& activeComp = ecsManager.GetComponent<ActiveComponent>(entity);
-            if (!activeComp.isActive) {
-                continue;
-            }
+        // Skip entities that are inactive in hierarchy (checks parents too)
+        if (!ecsManager.IsEntityActiveInHierarchy(entity)) {
+            continue;
         }
 
         // Collect directional light (first one only)
@@ -375,8 +372,7 @@ void LightingSystem::CollectLightData()
                 {
                     static bool spotLightWarningShown = false;
                     if (!spotLightWarningShown) {
-                        std::cout << "[LightingSystem] Warning: Maximum spot lights (" << MAX_SPOT_LIGHTS
-                            << ") reached. Additional spot lights will be ignored." << std::endl;
+                        ENGINE_PRINT("[LightingSystem] Warning: Maximum spot lights ({}) reached. Additional spot lights will be ignored.", MAX_SPOT_LIGHTS);
                         spotLightWarningShown = true;
                     }
                 }

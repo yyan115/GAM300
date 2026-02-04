@@ -1,0 +1,13 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "00120d785e078447-00041d35dc0034d9",
+        "source": "../../Resources/Textures/M4/feather_featherstick_mat_BaseColor.png",
+        "compiled": "../../Resources/Textures/M4/feather_featherstick_mat_BaseColor.dds"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true
+    }
+}
