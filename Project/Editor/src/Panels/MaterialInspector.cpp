@@ -1,6 +1,7 @@
 #include "Panels/MaterialInspector.hpp"
 #include "Panels/AssetBrowserPanel.hpp"
 #include "EditorComponents.hpp"
+#include "Logging.hpp"
 #include "imgui.h"
 #include "../../../Libraries/IconFontCppHeaders/IconsFontAwesome6.h"
 #include <Graphics/Texture.h>
@@ -218,13 +219,13 @@ void MaterialInspector::DrawMaterialAsset(std::shared_ptr<Material> material, co
                     // Use the original path as-is since it already has the correct relative path
                     std::string assetPathStr = pathStr;
 
-                    std::cout << "[MaterialInspector] Using original path: " << assetPathStr << std::endl;
+                    ENGINE_PRINT("[MaterialInspector] Using original path: ", assetPathStr);
 
                     // Create a TextureInfo with the path - the texture will be loaded when actually needed by the renderer
                     auto textureInfo = std::make_unique<TextureInfo>(assetPathStr, nullptr);
                     material->SetTexture(type, std::move(textureInfo));
                     materialChanged = true;
-                    std::cout << "[MaterialInspector] Successfully set texture path on material: " << assetPathStr << std::endl;
+                    ENGINE_PRINT("[MaterialInspector] Successfully set texture path on material: ", assetPathStr);
                 }
                 EditorComponents::EndDragDropTarget();
             }
@@ -237,7 +238,7 @@ void MaterialInspector::DrawMaterialAsset(std::shared_ptr<Material> material, co
                 // Remove the texture
                 material->RemoveTexture(type);
                 materialChanged = true;
-                std::cout << "[MaterialInspector] Removed " << name << " texture" << std::endl;
+                ENGINE_PRINT("[MaterialInspector] Removed ", name, " texture");
             }
             ImGui::PopStyleVar();
             if (ImGui::IsItemHovered()) {
@@ -283,15 +284,15 @@ void MaterialInspector::DrawMaterialAsset(std::shared_ptr<Material> material, co
                         auto textureInfo = std::make_unique<TextureInfo>(finalPath, nullptr);
                         material->SetTexture(type, std::move(textureInfo));
                         materialChanged = true;
-                        std::cout << "[MaterialInspector] Selected texture: " << finalPath << std::endl;
+                        ENGINE_PRINT("[MaterialInspector] Selected texture: ", finalPath);
                     }
 
                     // Restore the original working directory to ensure asset browser isn't affected
                     std::filesystem::current_path(originalWorkingDir);
-                    std::cout << "[MaterialInspector] Restored working directory to: " << originalWorkingDir << std::endl;
+                    ENGINE_PRINT("[MaterialInspector] Restored working directory to: ", originalWorkingDir.string());
                 #else
                     // For non-Windows platforms, show a message
-                    std::cout << "[MaterialInspector] File dialog not implemented for this platform" << std::endl;
+                    ENGINE_PRINT("[MaterialInspector] File dialog not implemented for this platform");
                 #endif
             }
             ImGui::PopStyleVar(); // Pop ButtonTextAlign style
@@ -313,7 +314,7 @@ void MaterialInspector::DrawMaterialAsset(std::shared_ptr<Material> material, co
         std::filesystem::path absoluteSavePath = std::filesystem::absolute(assetPath);
         std::string absoluteSavePathStr = absoluteSavePath.string();
         
-        std::cout << "[MaterialInspector] Attempting to save material to: " << absoluteSavePathStr << std::endl;
+        ENGINE_PRINT("[MaterialInspector] Attempting to save material to: ", absoluteSavePathStr);
         //material->CompileUpdatedAssetToResource(assetPath);
 		AssetManager::GetInstance().CompileUpdatedMaterial(assetPath, material, true);
         //AssetManager::GetInstance().AddToEventQueue(AssetManager::Event::modified, assetPath);
@@ -366,13 +367,13 @@ void MaterialInspector::ApplyMaterialToModel(Entity entity, const GUID_128& mate
         
         if (!materialMeta) {
             // Try fallback GUID lookup
-            std::cout << "[MaterialInspector] AssetMeta not found, trying fallback path lookup" << std::endl;
+            ENGINE_PRINT("[MaterialInspector] AssetMeta not found, trying fallback path lookup");
             sourceFilePath = AssetBrowserPanel::GetFallbackGuidFilePath(materialGuid);
             if (sourceFilePath.empty()) {
                 std::cerr << "[MaterialInspector] Material asset not found and no fallback path available" << std::endl;
                 return;
             }
-            std::cout << "[MaterialInspector] Found fallback path: " << sourceFilePath << std::endl;
+            ENGINE_PRINT("[MaterialInspector] Found fallback path: ", sourceFilePath);
         } else {
             sourceFilePath = materialMeta->sourceFilePath;
         }
@@ -393,13 +394,13 @@ void MaterialInspector::ApplyMaterialToModel(Entity entity, const GUID_128& mate
             std::filesystem::path path(sourceFilePath);
             std::string name = path.stem().string(); // Get filename without extension
             material->SetName(name);
-            std::cout << "[MaterialInspector] Set material name to: " << name << std::endl;
+            ENGINE_PRINT("[MaterialInspector] Set material name to: ", name);
         }
 
         // Apply the material to the entire entity (like Unity)
         modelRenderer.SetMaterial(material);
         modelRenderer.materialGUID = materialGuid;
-        std::cout << "[MaterialInspector] Applied material '" << material->GetName() << "' to entity" << std::endl;
+        ENGINE_PRINT("[MaterialInspector] Applied material '", material->GetName(), "' to entity");
     }
     catch (const std::exception& e) {
         std::cerr << "[MaterialInspector] Error applying material to model: " << e.what() << std::endl;
@@ -438,12 +439,12 @@ void MaterialInspector::ApplyMaterialToModelByPath(Entity entity, const std::str
             std::filesystem::path path(materialPath);
             std::string name = path.stem().string(); // Get filename without extension
             material->SetName(name);
-            std::cout << "[MaterialInspector] Set material name to: " << name << std::endl;
+            ENGINE_PRINT("[MaterialInspector] Set material name to: ", name);
         }
 
         // Apply the material to the entire entity (like Unity)
         modelRenderer.SetMaterial(material);
-        std::cout << "[MaterialInspector] Applied material '" << material->GetName() << "' to entity (by path)" << std::endl;
+        ENGINE_PRINT("[MaterialInspector] Applied material '", material->GetName(), "' to entity (by path)");
     }
     catch (const std::exception& e) {
         std::cerr << "[MaterialInspector] Error applying material to model by path: " << e.what() << std::endl;

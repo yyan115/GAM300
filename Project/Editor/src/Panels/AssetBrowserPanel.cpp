@@ -182,8 +182,6 @@ void AssetBrowserPanel::ProcessFileChange(const std::string& relativePath, const
     case filewatch::Event::renamed_new: eventStr = "RENAMED_NEW"; break;
     }
 
-    // std::cout << "[AssetBrowserPanel] File " << eventStr << ": " << relativePath << std::endl;
-
     // Build full path from rootAssetDirectory + relativePath
     std::filesystem::path fullPathPath = std::filesystem::path(rootAssetDirectory) / relativePath;
     const std::string fullPath = fullPathPath.generic_string();
@@ -311,7 +309,6 @@ void AssetBrowserPanel::OnImGuiRender() {
 
     // Check if refresh is needed (from file watcher)
     if (refreshPending.exchange(false)) {
-        // std::cout << "[AssetBrowserPanel] Refreshing assets due to file changes." << std::endl;
         RefreshAssets();
     }
 

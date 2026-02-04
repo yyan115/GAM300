@@ -190,7 +190,7 @@ void PrefabEditor::StopEditingPrefab() {
 }
 
 void PrefabEditor::SaveEditedPrefab() {
-    std::cout << "[PrefabEditor] Saving prefab..." << std::endl;
+	ENGINE_PRINT("[PrefabEditor] Saving prefab...\n");
     SaveEntityToPrefabFile(ECSRegistry::GetInstance().GetActiveECSManager(), AssetManager::GetInstance(), sandboxEntity, prefabPath);
 }
 
