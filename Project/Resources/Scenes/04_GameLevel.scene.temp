@@ -26692,52 +26692,52 @@
                             "entryFunction": "OnInit",
                             "autoInvokeEntry": true,
                             "instanceState": {
-                                "_recoverTimer": 0.0,
-                                "_lockAction": false,
-                                "MaxFallSpeed": -25.0,
-                                "_lockTimer": 0.0,
                                 "HookedDuration": 4.0,
-                                "_vy": 0.0,
-                                "_phase": 1.0,
                                 "PhaseTransformDuration": 3.2,
                                 "_hooked": false,
-                                "_transform_fetched": false,
-                                "_hitLockTimer": 0.0,
-                                "RecoverDuration": 1.0,
+                                "__created_at": 1769444779.0,
+                                "GroundStickVel": -0.2,
+                                "_lastPhaseProcessed": 1.0,
+                                "dead": false,
                                 "_private": {},
-                                "__meta": {},
+                                "health": 30.0,
                                 "fsm": {
-                                    "enabled": true,
-                                    "timeInState": 0.0
-                                },
-                                "MaxHealth": 30.0,
-                                "_moveCooldowns": {},
-                                "PlayerName": "\"\"",
-                                "states": {
-                                    "Execute": {},
-                                    "Choose": {},
-                                    "Recover": {}
+                                    "timeInState": 0.0,
+                                    "enabled": true
                                 },
                                 "__field_list": {
-                                    "MaxFallSpeed": -25.0,
-                                    "GroundStickVel": -0.2,
                                     "HookedDuration": 4.0,
-                                    "RecoverDuration": 1.0,
-                                    "PhaseTransformDuration": 3.2,
                                     "MaxHealth": 30.0,
-                                    "PlayerName": "Player",
+                                    "GroundStickVel": -0.2,
+                                    "RecoverDuration": 1.0,
+                                    "MaxFallSpeed": -25.0,
                                     "HitIFrame": 0.2,
-                                    "Gravity": -9.81
+                                    "Gravity": -9.81,
+                                    "PlayerName": "Player",
+                                    "PhaseTransformDuration": 3.2
                                 },
-                                "_transforming": false,
-                                "GroundStickVel": -0.2,
-                                "Gravity": -9.81,
+                                "PlayerName": "\"Player\"",
                                 "HitIFrame": 0.2,
-                                "health": 30.0,
-                                "dead": false,
-                                "_lastPhaseProcessed": 1.0,
-                                "__created_at": 1769444779.0,
-                                "_subscriptions": {}
+                                "Gravity": -9.81,
+                                "_phase": 1.0,
+                                "states": {
+                                    "Choose": {},
+                                    "Recover": {},
+                                    "Execute": {}
+                                },
+                                "_moveCooldowns": {},
+                                "_subscriptions": {},
+                                "MaxHealth": 30.0,
+                                "__meta": {},
+                                "_vy": 0.0,
+                                "_transforming": false,
+                                "RecoverDuration": 1.0,
+                                "MaxFallSpeed": -25.0,
+                                "_lockAction": false,
+                                "_lockTimer": 0.0,
+                                "_recoverTimer": 0.0,
+                                "_hitLockTimer": 0.0,
+                                "_transform_fetched": false
                             }
                         }
                     ]
