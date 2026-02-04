@@ -95,6 +95,42 @@ namespace {
     };
 
     static ComponentClipboard g_ComponentClipboard;
+
+    /**
+     * @brief Copy a single field from source component to destination component using reflection (Unity-style)
+     *
+     * This function finds the field by name in the type descriptor and copies just that field's data,
+     * instead of copying the entire component. This is the key to proper multi-entity editing.
+     *
+     * @param srcPtr Pointer to source component
+     * @param dstPtr Pointer to destination component
+     * @param typeDesc Type descriptor for the component
+     * @param fieldName Name of the field to copy
+     * @return true if field was found and copied, false otherwise
+     */
+    bool CopySingleFieldUsingReflection(void* srcPtr, void* dstPtr, TypeDescriptor_Struct* typeDesc, const std::string& fieldName) {
+        if (!srcPtr || !dstPtr || !typeDesc || fieldName.empty()) return false;
+
+        std::vector<TypeDescriptor_Struct::Member> members = typeDesc->GetMembers();
+        for (const auto& member : members) {
+            if (std::string(member.name) == fieldName) {
+                // Found the field - get pointers to both source and destination field
+                void* srcFieldPtr = member.get_ptr(srcPtr);
+                void* dstFieldPtr = member.get_ptr(dstPtr);
+
+                if (srcFieldPtr && dstFieldPtr && member.type) {
+                    // Copy the field data using memcpy based on the type's size
+                    size_t fieldSize = member.type->GetSize();
+                    if (fieldSize > 0) {
+                        std::memcpy(dstFieldPtr, srcFieldPtr, fieldSize);
+                        return true;
+                    }
+                }
+                break;
+            }
+        }
+        return false;
+    }
 }
 
 template <typename, typename = void> struct has_override_flag : std::false_type {};
@@ -3197,160 +3233,103 @@ void InspectorPanel::DrawSharedComponentGeneric(const std::vector<Entity>& entit
 	else {
 		// For other components, show the first entity's component and apply changes to all
 		ImGui::TextDisabled("Showing values from first selected entity");
-		ImGui::TextDisabled("Editing will apply to all selected entities");
+		ImGui::TextDisabled("Editing will apply only the modified field to all (Unity-style)");
 		ImGui::Spacing();
 
-		// Render using reflection and track if changes were made
+		// Render using reflection and track WHICH SPECIFIC FIELD was modified (Unity-style)
 		ImGui::PushID(firstComponentPtr);
-		bool wasModified = false;
+		FieldModificationResult modResult;
 		try {
-			wasModified = ReflectionRenderer::RenderComponent(firstComponentPtr, typeDesc, firstEntity, ecs);
+			modResult = ReflectionRenderer::RenderComponentWithFieldTracking(firstComponentPtr, typeDesc, firstEntity, ecs);
 		}
 		catch (const std::exception& e) {
 			ImGui::TextColored(ImVec4(1.0f, 0.3f, 0.3f, 1.0f), "Error: %s", e.what());
 		}
 		ImGui::PopID();
 
-		// If the component was modified, apply the changes to all other selected entities
-		if (wasModified && entities.size() > 1) {
+		// Unity-style: If a SPECIFIC FIELD was modified, copy ONLY that field to other entities
+		// This prevents the bug where selecting multiple objects would overwrite all their models
+		if (modResult.wasModified && !modResult.modifiedFieldName.empty() && entities.size() > 1) {
 			for (size_t i = 1; i < entities.size(); ++i) {
 				Entity otherEntity = entities[i];
 
-				// Copy component data from first entity to other entities based on component type
+				// Get destination component pointer for this entity based on component type
+				void* otherComponentPtr = nullptr;
+
 				if (componentType == "ModelRenderComponent" && ecs.HasComponent<ModelRenderComponent>(otherEntity)) {
-					ecs.GetComponent<ModelRenderComponent>(otherEntity) = ecs.GetComponent<ModelRenderComponent>(firstEntity);
+					otherComponentPtr = &ecs.GetComponent<ModelRenderComponent>(otherEntity);
 				}
 				else if (componentType == "SpriteRenderComponent" && ecs.HasComponent<SpriteRenderComponent>(otherEntity)) {
-					ecs.GetComponent<SpriteRenderComponent>(otherEntity) = ecs.GetComponent<SpriteRenderComponent>(firstEntity);
+					otherComponentPtr = &ecs.GetComponent<SpriteRenderComponent>(otherEntity);
 				}
 				else if (componentType == "ColliderComponent" && ecs.HasComponent<ColliderComponent>(otherEntity)) {
-					ColliderComponent& src = ecs.GetComponent<ColliderComponent>(firstEntity);
-					ColliderComponent& dst = ecs.GetComponent<ColliderComponent>(otherEntity);
-					// Copy serializable fields, preserve runtime fields
-					dst.enabled = src.enabled;
-					dst.layerID = src.layerID;
-					dst.shapeTypeID = src.shapeTypeID;
-					dst.boxHalfExtents = src.boxHalfExtents;
-					dst.sphereRadius = src.sphereRadius;
-					dst.capsuleRadius = src.capsuleRadius;
-					dst.capsuleHalfHeight = src.capsuleHalfHeight;
-					dst.cylinderRadius = src.cylinderRadius;
-					dst.cylinderHalfHeight = src.cylinderHalfHeight;
-					dst.center = src.center;
-					dst.shapeType = src.shapeType;
-					dst.layer = src.layer;
-					dst.version++;  // Trigger physics rebuild
+					otherComponentPtr = &ecs.GetComponent<ColliderComponent>(otherEntity);
+					// Trigger physics rebuild after field copy
+					ecs.GetComponent<ColliderComponent>(otherEntity).version++;
 				}
 				else if (componentType == "RigidBodyComponent" && ecs.HasComponent<RigidBodyComponent>(otherEntity)) {
-					RigidBodyComponent& src = ecs.GetComponent<RigidBodyComponent>(firstEntity);
-					RigidBodyComponent& dst = ecs.GetComponent<RigidBodyComponent>(otherEntity);
-					// Copy serializable fields, preserve runtime fields
-					dst.enabled = src.enabled;
-					dst.motionID = src.motionID;
-					dst.motion = src.motion;
-					dst.ccd = src.ccd;
-					dst.isTrigger = src.isTrigger;
-					dst.gravityFactor = src.gravityFactor;
-					dst.linearVel = src.linearVel;
-					dst.angularVel = src.angularVel;
-					dst.linearDamping = src.linearDamping;
-					dst.angularDamping = src.angularDamping;
-					dst.collideWithStatic = src.collideWithStatic;
-					dst.motion_dirty = true;  // Trigger physics update
+					otherComponentPtr = &ecs.GetComponent<RigidBodyComponent>(otherEntity);
+					// Trigger physics update after field copy
+					ecs.GetComponent<RigidBodyComponent>(otherEntity).motion_dirty = true;
 				}
 				else if (componentType == "VideoComponent" && ecs.HasComponent<VideoComponent>(otherEntity)) {
-					ecs.GetComponent<VideoComponent>(otherEntity) = ecs.GetComponent<VideoComponent>(firstEntity);
+					otherComponentPtr = &ecs.GetComponent<VideoComponent>(otherEntity);
 				}
 				else if (componentType == "CameraComponent" && ecs.HasComponent<CameraComponent>(otherEntity)) {
-					ecs.GetComponent<CameraComponent>(otherEntity) = ecs.GetComponent<CameraComponent>(firstEntity);
+					otherComponentPtr = &ecs.GetComponent<CameraComponent>(otherEntity);
 				}
 				else if (componentType == "DirectionalLightComponent" && ecs.HasComponent<DirectionalLightComponent>(otherEntity)) {
-					ecs.GetComponent<DirectionalLightComponent>(otherEntity) = ecs.GetComponent<DirectionalLightComponent>(firstEntity);
+					otherComponentPtr = &ecs.GetComponent<DirectionalLightComponent>(otherEntity);
 				}
 				else if (componentType == "PointLightComponent" && ecs.HasComponent<PointLightComponent>(otherEntity)) {
-					ecs.GetComponent<PointLightComponent>(otherEntity) = ecs.GetComponent<PointLightComponent>(firstEntity);
+					otherComponentPtr = &ecs.GetComponent<PointLightComponent>(otherEntity);
 				}
 				else if (componentType == "SpotLightComponent" && ecs.HasComponent<SpotLightComponent>(otherEntity)) {
-					ecs.GetComponent<SpotLightComponent>(otherEntity) = ecs.GetComponent<SpotLightComponent>(firstEntity);
+					otherComponentPtr = &ecs.GetComponent<SpotLightComponent>(otherEntity);
 				}
 				else if (componentType == "AudioComponent" && ecs.HasComponent<AudioComponent>(otherEntity)) {
-					ecs.GetComponent<AudioComponent>(otherEntity) = ecs.GetComponent<AudioComponent>(firstEntity);
+					otherComponentPtr = &ecs.GetComponent<AudioComponent>(otherEntity);
 				}
 				else if (componentType == "ParticleComponent" && ecs.HasComponent<ParticleComponent>(otherEntity)) {
-					ParticleComponent& src = ecs.GetComponent<ParticleComponent>(firstEntity);
-					ParticleComponent& dst = ecs.GetComponent<ParticleComponent>(otherEntity);
-					// Copy serializable fields only, preserve runtime state
-					dst.textureGUID = src.textureGUID;
-					dst.emitterPosition = src.emitterPosition;
-					dst.emissionRate = src.emissionRate;
-					dst.maxParticles = src.maxParticles;
-					dst.particleLifetime = src.particleLifetime;
-					dst.startSize = src.startSize;
-					dst.endSize = src.endSize;
-					dst.startColor = src.startColor;
-					dst.startColorAlpha = src.startColorAlpha;
-					dst.endColor = src.endColor;
-					dst.endColorAlpha = src.endColorAlpha;
-					dst.gravity = src.gravity;
-					dst.velocityRandomness = src.velocityRandomness;
-					dst.initialVelocity = src.initialVelocity;
-					dst.isEmitting = src.isEmitting;
+					otherComponentPtr = &ecs.GetComponent<ParticleComponent>(otherEntity);
 				}
 				else if (componentType == "AnimationComponent" && ecs.HasComponent<AnimationComponent>(otherEntity)) {
-					ecs.GetComponent<AnimationComponent>(otherEntity) = ecs.GetComponent<AnimationComponent>(firstEntity);
+					otherComponentPtr = &ecs.GetComponent<AnimationComponent>(otherEntity);
 				}
 				else if (componentType == "SpriteAnimationComponent" && ecs.HasComponent<SpriteAnimationComponent>(otherEntity)) {
-					ecs.GetComponent<SpriteAnimationComponent>(otherEntity) = ecs.GetComponent<SpriteAnimationComponent>(firstEntity);
+					otherComponentPtr = &ecs.GetComponent<SpriteAnimationComponent>(otherEntity);
 				}
 				else if (componentType == "TextRenderComponent" && ecs.HasComponent<TextRenderComponent>(otherEntity)) {
-					ecs.GetComponent<TextRenderComponent>(otherEntity) = ecs.GetComponent<TextRenderComponent>(firstEntity);
+					otherComponentPtr = &ecs.GetComponent<TextRenderComponent>(otherEntity);
 				}
 				else if (componentType == "ButtonComponent" && ecs.HasComponent<ButtonComponent>(otherEntity)) {
-					ecs.GetComponent<ButtonComponent>(otherEntity) = ecs.GetComponent<ButtonComponent>(firstEntity);
+					otherComponentPtr = &ecs.GetComponent<ButtonComponent>(otherEntity);
 				}
 				else if (componentType == "SliderComponent" && ecs.HasComponent<SliderComponent>(otherEntity)) {
-					ecs.GetComponent<SliderComponent>(otherEntity) = ecs.GetComponent<SliderComponent>(firstEntity);
+					otherComponentPtr = &ecs.GetComponent<SliderComponent>(otherEntity);
 				}
 				else if (componentType == "UIAnchorComponent" && ecs.HasComponent<UIAnchorComponent>(otherEntity)) {
-					ecs.GetComponent<UIAnchorComponent>(otherEntity) = ecs.GetComponent<UIAnchorComponent>(firstEntity);
+					otherComponentPtr = &ecs.GetComponent<UIAnchorComponent>(otherEntity);
 				}
 				else if (componentType == "AudioListenerComponent" && ecs.HasComponent<AudioListenerComponent>(otherEntity)) {
-					ecs.GetComponent<AudioListenerComponent>(otherEntity) = ecs.GetComponent<AudioListenerComponent>(firstEntity);
+					otherComponentPtr = &ecs.GetComponent<AudioListenerComponent>(otherEntity);
 				}
 				else if (componentType == "AudioReverbZoneComponent" && ecs.HasComponent<AudioReverbZoneComponent>(otherEntity)) {
-					AudioReverbZoneComponent& src = ecs.GetComponent<AudioReverbZoneComponent>(firstEntity);
-					AudioReverbZoneComponent& dst = ecs.GetComponent<AudioReverbZoneComponent>(otherEntity);
-					// Copy serializable fields, preserve FMOD handles
-					dst.enabled = src.enabled;
-					dst.MinDistance = src.MinDistance;
-					dst.MaxDistance = src.MaxDistance;
-					dst.reverbPresetIndex = src.reverbPresetIndex;
-					dst.decayTime = src.decayTime;
-					dst.earlyDelay = src.earlyDelay;
-					dst.lateDelay = src.lateDelay;
-					dst.hfReference = src.hfReference;
-					dst.hfDecayRatio = src.hfDecayRatio;
-					dst.diffusion = src.diffusion;
-					dst.density = src.density;
-					dst.lowShelfFrequency = src.lowShelfFrequency;
-					dst.lowShelfGain = src.lowShelfGain;
-					dst.highCut = src.highCut;
-					dst.earlyLateMix = src.earlyLateMix;
-					dst.wetLevel = src.wetLevel;
+					otherComponentPtr = &ecs.GetComponent<AudioReverbZoneComponent>(otherEntity);
 				}
 				else if (componentType == "BrainComponent" && ecs.HasComponent<BrainComponent>(otherEntity)) {
-					BrainComponent& src = ecs.GetComponent<BrainComponent>(firstEntity);
-					BrainComponent& dst = ecs.GetComponent<BrainComponent>(otherEntity);
-					// Copy serializable fields, preserve runtime impl
-					dst.kind = src.kind;
-					dst.kindInt = src.kindInt;
-					dst.enabled = src.enabled;
+					otherComponentPtr = &ecs.GetComponent<BrainComponent>(otherEntity);
 				}
 				else if (componentType == "ScriptComponentData" && ecs.HasComponent<ScriptComponentData>(otherEntity)) {
-					ecs.GetComponent<ScriptComponentData>(otherEntity) = ecs.GetComponent<ScriptComponentData>(firstEntity);
+					otherComponentPtr = &ecs.GetComponent<ScriptComponentData>(otherEntity);
 				}
 				else if (componentType == "DebugDrawComponent" && ecs.HasComponent<DebugDrawComponent>(otherEntity)) {
-					ecs.GetComponent<DebugDrawComponent>(otherEntity) = ecs.GetComponent<DebugDrawComponent>(firstEntity);
+					otherComponentPtr = &ecs.GetComponent<DebugDrawComponent>(otherEntity);
+				}
+
+				// Unity-style: Copy ONLY the modified field using reflection, not the entire component
+				if (otherComponentPtr) {
+					CopySingleFieldUsingReflection(firstComponentPtr, otherComponentPtr, typeDesc, modResult.modifiedFieldName);
 				}
 			}
 		}
