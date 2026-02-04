@@ -2,7 +2,17 @@
 local HurtState = {}
 
 function HurtState:Enter(ai)
-    ai._animator:SetBool("Hurt", true)
+    print("[GroundHurtState] ENTER")
+
+    -- Randomly choose one of the Hurt animations to play
+    local random = math.random(1, 3)
+    if random == 1 then
+        ai._animator:SetBool("Hurt1", true)
+    elseif random == 2 then
+        ai._animator:SetBool("Hurt2", true)
+    elseif random == 3 then
+        ai._animator:SetBool("Hurt3", true)
+    end
 
     ai:FacePlayer()
 
@@ -11,7 +21,7 @@ function HurtState:Enter(ai)
 
     if ai.particles then
         ai.particles.isEmitting   = true
-        ai.particles.emissionRate = 180
+        ai.particles.emissionRate = 100
     end
 end
 
@@ -41,7 +51,10 @@ function HurtState:Update(ai, dt)
 end
 
 function HurtState:Exit(ai)
-    ai._animator:SetBool("Hurt", false)
+    print("[GroundHurtState] EXIT")
+    ai._animator:SetBool("Hurt1", false)
+    ai._animator:SetBool("Hurt2", false)
+    ai._animator:SetBool("Hurt3", false)
     if ai.particles then
         ai.particles.isEmitting   = false
         ai.particles.emissionRate = 0

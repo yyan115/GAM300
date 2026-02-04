@@ -10,7 +10,13 @@ end
 
 function AttackState:Enter(ai)
     ai._animator:SetBool("PlayerInRange", true)
+    if not ai.IsMelee then
+        ai._animator:SetBool("Ranged", true)
+    -- else
+    --     ai._animator:SetBool("Melee", true)
+    end
     ai.attackTimer = 0
+    ai.meleeAnimTriggered = false
 end
 
 function AttackState:Update(ai, dt)
@@ -49,10 +55,16 @@ function AttackState:Update(ai, dt)
     if ai.IsMelee then
         ai.attackTimer = (ai.attackTimer or 0) + dtSec
         local cd = ai.MeleeAttackCooldown or (ai.config.AttackCooldown or 1.0)
+        if not ai.meleeAnimTriggered and ai.attackTimer >= ai.MeleeAnimDelay then
+            ai._animator:SetBool("Melee", true)
+            MeleeAnimTriggered = true
+        end
+
         if ai.attackTimer >= cd then
             ai.attackTimer = 0
 
             print(string.format("Melee Attack!"))
+            --ai._animator:SetBool("Melee", true)
             -- MELEE HIT: emit event (keeps consistent with your event-bus approach)
             if _G.event_bus and _G.event_bus.publish then
                 _G.event_bus.publish("meleeHitPlayerDmg", {
@@ -78,6 +90,9 @@ end
 
 function AttackState:Exit(ai)
     ai._animator:SetBool("PlayerInRange", false)
+    ai._animator:SetBool("Ranged", false)
+    ai._animator:SetBool("Melee", false)
+    ai.meleeAnimTriggered = false
     stopCC(ai)
 end
 
