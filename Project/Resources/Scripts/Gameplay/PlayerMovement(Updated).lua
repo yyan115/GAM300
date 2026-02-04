@@ -71,6 +71,7 @@ return Component {
             print("[PlayerMovement] Subscribing to playerDead")
             self._playerDeadSub = event_bus.subscribe("playerDead", function(playerDead)
                 if playerDead then
+                    print("[PlayerMovement] Received playerDead")
                     self._playerDeadPending = playerDead
                 end
             end)
@@ -83,6 +84,21 @@ return Component {
                     if self._animator then self._animator:SetBool("IsJumping", false) end
                 end
             end)
+
+            print("[PlayerMovement] Subscribing to respawnPlayer")
+            self._respawnPlayerSub = event_bus.subscribe("respawnPlayer", function(respawn)
+                if respawn then
+                    self._respawnPlayer = true
+                end
+            end)
+
+            print("[PlayerMovement] Subscribing to activatedCheckpoint")
+            self._activatedCheckpointSub = event_bus.subscribe("activatedCheckpoint", function(entityId)
+                if entityId then
+                    self._activatedCheckpoint = entityId
+                end
+            end)
+            print("[PlayerMovement] Subscription token: " .. tostring(self._activatedCheckpointSub))
         else
             print("[PlayerMovement] ERROR: event_bus not available!")
         end
@@ -111,9 +127,47 @@ return Component {
         self._isDamageStun = false
 
         self._landingDuration = self.LandingDuration
+
+        self._initialSpawnPoint = self._transform.worldPosition
+    end,
+
+    RespawnPlayer = function(self)
+        if not self._controller then
+            --print("[PlayerMovement] RespawnPlayer: self._controller is null")
+        end
+
+        if not self._transform then
+            --print("[PlayerMovement] RespawnPlayer: self._transform is null")
+        end
+        
+        if not self._activatedCheckpoint then
+            --print("[PlayerMovement] RespawnPlayer: self._activatedCheckpoint is null")
+        end
+
+        if self._activatedCheckpoint then
+            local checkpointTransform = GetComponent(self._activatedCheckpoint, "Transform")
+            local checkpointPos = checkpointTransform.worldPosition
+            self:SetPosition(checkpointPos.x, checkpointPos.y, checkpointPos.z)
+        elseif self._initialSpawnPoint then
+            self:SetPosition(self._initialSpawnPoint.x, self._initialSpawnPoint.y, self._initialSpawnPoint.z)
+        end
+
+        CharacterController.SetPosition(self._controller, self._transform)
+        self._respawnPlayer = false
+        self._playerDead = false
+        self._playerDeadPending = false
+        print("self._animator:SetBool(IsDead, false)")
+        self._animator:SetBool("IsDead", false)
+
+        print(string.format("[PlayerMovement] Respawned player to %f %f %f", checkpointPos.x, checkpointPos.y, checkpointPos.z))
     end,
 
     Update = function(self, dt)
+        if self._respawnPlayer then
+            self.RespawnPlayer(self)
+            return
+        end
+
         if not self._collider or not self._transform or not self._controller or self._playerDead then
             return
         end

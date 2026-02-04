@@ -320,24 +320,24 @@ void AnimationComponent::LoadClipsFromPaths(const std::map<std::string, BoneInfo
     std::vector<std::string> validClipPaths;
     std::vector<GUID_128> validClipGUIDs;
 
-    ENGINE_PRINT("[AnimationComponent] clipPaths size: ", clipPaths.size());
-    ENGINE_PRINT("[AnimationComponent] clipGUIDs size: ", clipGUIDs.size());
+    //ENGINE_PRINT("[AnimationComponent] clipPaths size: ", clipPaths.size());
+    //ENGINE_PRINT("[AnimationComponent] clipGUIDs size: ", clipGUIDs.size());
 
     for (size_t i = 0; i < clipPaths.size(); ++i) {
         const auto& path = clipPaths[i];
-        ENGINE_PRINT("[AnimationComponent] Clip ", i, " path: ", path);
+        //ENGINE_PRINT("[AnimationComponent] Clip ", i, " path: ", path);
         std::string pathToLoad{};
 
         // First try to use GUID to get the correct local path (handles cross-machine scenarios)
         GUID_128 currentGUID = {};
         if (i < clipGUIDs.size()) {
             currentGUID = clipGUIDs[i];
-            ENGINE_PRINT("[AnimationComponent] Clip ", i, " GUID: ", currentGUID.low, " ", currentGUID.high);
+            //ENGINE_PRINT("[AnimationComponent] Clip ", i, " GUID: ", currentGUID.low, " ", currentGUID.high);
             if (currentGUID.high != 0 || currentGUID.low != 0) {
                 std::string guidPath = AssetManager::GetInstance().GetAssetPathFromGUID(currentGUID);
                 if (!guidPath.empty()) {
                     pathToLoad = guidPath;
-                    ENGINE_PRINT("[AnimationComponent] Resolved path from GUID: ", pathToLoad, "\n");
+                    //ENGINE_PRINT("[AnimationComponent] Resolved path from GUID: ", pathToLoad, "\n");
                 }
             }
         }
@@ -348,24 +348,24 @@ void AnimationComponent::LoadClipsFromPaths(const std::map<std::string, BoneInfo
             size_t resPos = path.find("Resources");
             if (resPos != std::string::npos) {
                 pathToLoad = path.substr(resPos);
-                ENGINE_PRINT("[AnimationComponent] Resolved relative path: ", pathToLoad, "\n");
+                //ENGINE_PRINT("[AnimationComponent] Resolved relative path: ", pathToLoad, "\n");
             } else {
                 pathToLoad = path;  // Use as-is if "Resources" not found
             }
         }
 
         if (pathToLoad.empty()) {
-            ENGINE_PRINT("[AnimationComponent] Skipping empty path\n");
+            //ENGINE_PRINT("[AnimationComponent] Skipping empty path\n");
             continue;
         }
 
-        ENGINE_PRINT("[AnimationComponent] Loading clip from: ", pathToLoad, "\n");
+        //ENGINE_PRINT("[AnimationComponent] Loading clip from: ", pathToLoad, "\n");
         auto anim = LoadClipFromPath(pathToLoad, boneInfoMap, boneCount);
         if (anim) {
             clips.emplace_back(std::move(anim));
             validClipPaths.push_back(path);
             validClipGUIDs.push_back(currentGUID);
-            ENGINE_PRINT("[AnimationComponent] Successfully loaded clip, total: ", clips.size(), "\n");
+            //ENGINE_PRINT("[AnimationComponent] Successfully loaded clip, total: ", clips.size(), "\n");
         } else {
             ENGINE_PRINT(EngineLogging::LogLevel::Error, "[AnimationComponent] Failed to load clip from: ", pathToLoad, " - removing from list\n");
         }
@@ -376,7 +376,7 @@ void AnimationComponent::LoadClipsFromPaths(const std::map<std::string, BoneInfo
     clipGUIDs = std::move(validClipGUIDs);
     clipCount = static_cast<int>(clipPaths.size());
 
-    ENGINE_PRINT("[AnimationComponent] Finished loading clips, count: ", clips.size(), "\n");
+    //ENGINE_PRINT("[AnimationComponent] Finished loading clips, count: ", clips.size(), "\n");
 
     if (!clips.empty() && activeClip >= clips.size()) {
         activeClip = 0;

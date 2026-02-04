@@ -24,6 +24,35 @@ return Component {
                 end
             end)
             print("[GameOverMenu] Subscription token: " .. tostring(self._playerDeadSub))
+
+            print("[GameOverMenu] Subscribing to respawnPlayer")
+            self._respawnPlayerSub = event_bus.subscribe("respawnPlayer", function(respawn)
+                if respawn then
+                    if self._fadeActive then
+                        self._fadeActive.isActive = false
+                    end
+                    if self._fadeSprite then
+                        -- Initialize alpha to 0
+                        self._fadeSprite.alpha = 0
+                    end
+
+                    if self._respawnButtonActive then
+                        self._respawnButtonActive.isActive = false
+                    end
+                    if self._respawnButtonSprite then
+                        -- Initialize alpha to 0
+                        self._respawnButtonSprite.alpha = 0
+                    end
+
+                    if self._respawnButtonHoveredActive then
+                        self._respawnButtonHoveredActive.isActive = false
+                    end
+
+                    self._fadeTimer = 0
+                    self._deathAnimationDelay = self.deathAnimationDelay
+                    self._playerDead = false
+                end
+            end)
         else
             print("[GameOverMenu] ERROR: event_bus not available!")
         end
@@ -73,7 +102,7 @@ return Component {
     -- Update handles fade transition and scene loading
     Update = function(self, dt)
         -- If player just died, wait ~3 secs for the death animation to play before fading in the Death Screen
-        if self._playerDead then
+        if self._playerDead and self._deathAnimationDelay then
             self._deathAnimationDelay = self._deathAnimationDelay - dt
             --print("[GameOverMenu] self._deathAnimationDelay", self._deathAnimationDelay)
             if self._deathAnimationDelay <= 0 then
