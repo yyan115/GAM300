@@ -1,18 +1,27 @@
 require("extension.engine_bootstrap")
+
+local event_bus = _G.event_bus
 local Component = require("extension.mono_helper")
 
 return Component {
     fields = {
         fadeDuration = 3.0,
         fadeScreenName = "GameOverFade",
+        playerName = "Player"
     },
 
     OnClickRespawnButton = function(self)
         if Screen and Screen.IsCursorLocked() then
             Screen.SetCursorLocked(true)
         end
-        self._startRespawning = true
-        Scene.Load(Scene.GetCurrentPath())
+        
+        if event_bus and event_bus.publish then
+            event_bus.publish("respawnPlayer", true)
+        end
+    end,
+
+    Awake = function(self)
+        
     end,
 
     Start = function(self)

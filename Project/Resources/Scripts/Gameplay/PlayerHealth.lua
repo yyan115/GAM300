@@ -74,7 +74,7 @@ return Component {
         end)
         print("[PlayerHealth] Subscription token (melee): " .. tostring(self._meleeHitPlayerDmgSub))
 
-            print("[PlayerHealth] Subscribing to miniboss_slash")
+        print("[PlayerHealth] Subscribing to miniboss_slash")
             self._minibossSlashSub = event_bus.subscribe("miniboss_slash", function(payload)
             if not payload then return end
             if self._isIFrame then return end
@@ -95,6 +95,13 @@ return Component {
         end)
         print("[PlayerHealth] Subscribed to miniboss_slash: " .. tostring(self._minibossSlashSub))
 
+        print("[PlayerHealth] Subscribing to respawnPlayer")
+        self._respawnPlayerSub = event_bus.subscribe("respawnPlayer", function(respawn)
+            if respawn then
+                self._respawnPlayer = true
+            end
+        end)
+
         else
             print("[PlayerHealth] ERROR: event_bus not available!")
         end
@@ -107,7 +114,21 @@ return Component {
         end
     end,
 
+    RespawnPlayer = function(self)
+        self._currentHealth = self._maxHealth
+        if event_bus and event_bus.publish then
+            event_bus.publish("playerMaxhealth", self._maxHealth)
+            event_bus.publish("playerCurrentHealth", self._currentHealth)
+        end
+
+        self._respawnPlayer = false
+    end,
+
     Update = function(self, dt)
+        if self._respawnPlayer then
+            self.RespawnPlayer(self)
+        end
+
         if self._hurtTriggered then
             if event_bus and event_bus.publish then
                 print("[PlayerHealth] playerHurtTriggered published")

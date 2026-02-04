@@ -382,6 +382,12 @@ namespace CharacterControllerWrappers {
             controller->Jump(height);
     }
 
+    inline void SetPosition(CharacterController* controller, Transform* transform) {
+        if (controller) {
+            controller->SetPosition(*transform);
+        }
+    }
+
     inline Vector3D GetPosition(CharacterController* controller) {
         if (controller)
             return controller->GetPosition();
@@ -1177,4 +1183,23 @@ namespace EntityQueryWrappers {
         return ecsManager.IsEntityActiveInHierarchy(entity);
     }
 
+    // Return all children entities
+    // Args: entityId
+    inline int GetChildrenEntities(lua_State* L) {
+        Entity entity = static_cast<Entity>(luaL_checkinteger(L, 1));
+
+        ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
+        auto childrenEntities = ecsManager.transformSystem->GetAllChildEntitiesVector(entity);
+
+        // Build Lua table from the childrenEntities
+        lua_newtable(L);
+        int index = 1;
+
+        for (Entity child : childrenEntities) {
+            lua_pushinteger(L, static_cast<lua_Integer>(child));
+            lua_rawseti(L, -2, index++);
+		}
+
+        return 1;
+    }
 }

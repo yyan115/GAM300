@@ -635,7 +635,7 @@ void ScriptSystem::Initialise(ECSManager& ecsManager)
 
         // install host get-component handler that uses ComponentRegistry
         Scripting::SetHostGetComponentHandler([this](lua_State* L, uint32_t entityId, const std::string& compName) -> bool {
-            ENGINE_PRINT(EngineLogging::LogLevel::Info, "[ScriptSystem] HostGetComponentHandler asked for comp=", compName, " entity=", entityId);
+            //ENGINE_PRINT(EngineLogging::LogLevel::Info, "[ScriptSystem] HostGetComponentHandler asked for comp=", compName, " entity=", entityId);
 
             // Check if component type is registered
             if (!ComponentRegistry::Instance().Has(compName))
@@ -656,7 +656,7 @@ void ScriptSystem::Initialise(ECSManager& ecsManager)
 
             // Call the getter
             void* compPtr = getter(m_ecs, static_cast<Entity>(entityId));
-            ENGINE_PRINT(EngineLogging::LogLevel::Info, "[ScriptSystem] Getter returned ptr=", compPtr, " for comp=", compName, " entity=", entityId);
+            //ENGINE_PRINT(EngineLogging::LogLevel::Info, "[ScriptSystem] Getter returned ptr=", compPtr, " for comp=", compName, " entity=", entityId);
 
             if (!compPtr)
             {
