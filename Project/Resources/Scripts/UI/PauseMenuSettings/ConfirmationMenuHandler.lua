@@ -12,6 +12,8 @@ return Component {
     OnClickYesButton = function(self)
         --TODO TRANSITION
         print("TIME TO RETURN TO MAIN MENU")
+        Time.SetPaused(false)  -- Reset pause state before loading scene
+        Time.SetTimeScale(1.0)  -- Reset time scale to normal
         Scene.Load(self.mainMenuScene)
     end,
 

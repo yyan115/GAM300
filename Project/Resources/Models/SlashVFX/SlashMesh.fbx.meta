@@ -1,0 +1,11 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "006298ac45b9e217-00041dbd0c000003",
+        "source": "../../Resources/Models/SlashVFX/SlashMesh.fbx",
+        "compiled": "../../Resources/Models/SlashVFX/SlashMesh.mesh"
+    },
+    "ModelMetaData": {
+        "optimizeMeshes": true
+    }
+}

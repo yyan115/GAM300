@@ -147,7 +147,7 @@ return Component {
         local pointerJustPressed = Input.IsPointerJustPressed()
 
         -- Handle drag start - only if pointer just pressed within our bounds
-        if pointerJustPressed and not self._isDragging then
+        if pointerPressed and not self._isDragging then
             local pointerPos = Input.GetPointerPosition()
             if pointerPos then
                 local gameCoordinate = Engine.GetGameCoordinate(pointerPos.x, pointerPos.y)
