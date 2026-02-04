@@ -102,17 +102,6 @@
             }
         },
         {
-            "id": "Death",
-            "clipIndex": 5,
-            "loop": false,
-            "speed": 1.0,
-            "crossfadeDuration": 0.0,
-            "nodePosition": {
-                "x": 450.529541015625,
-                "y": -2.4705915451049805
-            }
-        },
-        {
             "id": "Jump",
             "clipIndex": 1,
             "loop": false,
@@ -121,6 +110,17 @@
             "nodePosition": {
                 "x": 100.50003051757813,
                 "y": -2.4705705642700195
+            }
+        },
+        {
+            "id": "Death",
+            "clipIndex": 5,
+            "loop": false,
+            "speed": 1.0,
+            "crossfadeDuration": 0.0,
+            "nodePosition": {
+                "x": 450.529541015625,
+                "y": -2.4705915451049805
             }
         },
         {
@@ -136,7 +136,7 @@
         },
         {
             "id": "Roll",
-            "clipIndex": 9,
+            "clipIndex": 10,
             "loop": false,
             "speed": 1.3000000715255737,
             "crossfadeDuration": 0.0,
@@ -169,7 +169,7 @@
         },
         {
             "id": "Standing",
-            "clipIndex": 10,
+            "clipIndex": 9,
             "loop": false,
             "speed": 1.0,
             "crossfadeDuration": 0.0,
@@ -736,7 +736,7 @@
         "Resources/Animations/Player@Slash1.fbx",
         "Resources/Animations/Player@Slash2.fbx",
         "Resources/Animations/Player@Slash3.fbx",
-        "Resources/Animations/Player@Roll.fbx",
-        "Resources/Animations/Player@Standing.fbx"
+        "Resources/Animations/Player@Standing.fbx",
+        "Resources/Animations/Player@Roll.fbx"
     ]
 }
