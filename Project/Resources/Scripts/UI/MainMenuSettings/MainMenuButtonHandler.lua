@@ -16,6 +16,11 @@ return Component {
     _bgmInitialVolume = 1.0,
 
     Start = function(self)
+        -- Ensure game is not paused when entering main menu (defensive reset)
+        -- This handles cases where we return from gameplay while paused
+        Time.SetPaused(false)
+        Time.SetTimeScale(1.0)
+
         -- Reset state for scene reloads
         self._pendingScene = nil
         self._isFading = false
