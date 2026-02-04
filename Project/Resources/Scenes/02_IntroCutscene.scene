@@ -255,7 +255,7 @@
                                 },
                                 {
                                     "type": "float",
-                                    "data": 9.31914e-10
+                                    "data": 9.31915e-10
                                 },
                                 {
                                     "type": "float",
@@ -263,7 +263,7 @@
                                 },
                                 {
                                     "type": "float",
-                                    "data": 9.31914e-10
+                                    "data": 9.31915e-10
                                 }
                             ]
                         }
@@ -389,18 +389,7 @@
                             "enabled": true,
                             "preserveKeys": [],
                             "entryFunction": "OnInit",
-                            "autoInvokeEntry": true,
-                            "instanceState": {
-                                "_subscriptions": {},
-                                "__meta": {},
-                                "_private": {},
-                                "__created_at": 1770115547.0,
-                                "targetScene": "\"Resources/Scenes/04_GameLevelMap.scene\"",
-                                "__field_list": {
-                                    "targetScene": "Resources/Scenes/04_GameLevel.scene"
-                                },
-                                "_subs_map": {}
-                            }
+                            "autoInvokeEntry": true
                         }
                     ]
                 },
