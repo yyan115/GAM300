@@ -1163,49 +1163,49 @@ return Component {
     -------------------------------------------------
     -- Move implementations (entry points)
     -------------------------------------------------
-    BasicAttack = function(self)
-        self:_BeginMove("Basic", {
-            spread = 0.6,
-            postDelay = 0.35
-        })
-    end,
+    -- BasicAttack = function(self)
+    --     self:_BeginMove("Basic", {
+    --         spread = 0.6,
+    --         postDelay = 0.35
+    --     })
+    -- end,
 
-    BurstFire = function(self)
-        self:_BeginMove("BurstFire", {
-            bursts = 5,
-            interval = 0.18,   -- adjust for difficulty
-            postDelay = 0.45
-        })
-    end,
+    -- BurstFire = function(self)
+    --     self:_BeginMove("BurstFire", {
+    --         bursts = 5,
+    --         interval = 0.18,   -- adjust for difficulty
+    --         postDelay = 0.45
+    --     })
+    -- end,
 
-    AntiDodge = function(self)
-        self:_BeginMove("AntiDodge", {
-            spread1 = 0.25,
-            spread2 = 0.35,
-            postDelay = 0.45
-        })
-    end,
+    -- AntiDodge = function(self)
+    --     self:_BeginMove("AntiDodge", {
+    --         spread1 = 0.25,
+    --         spread2 = 0.35,
+    --         postDelay = 0.45
+    --     })
+    -- end,
 
-    FateSealed = function(self)
-        self:_BeginMove("FateSealed", {
-            chargeDur = 2.00,
-            dashDur = 0.33,
-            dashSpeed = 290.0,
-            slashAt = 0.90,
-            slashRadius = 1.4,
-            dmg = 1,
-            postDelay = 2.60
-        })
-    end,
+    -- FateSealed = function(self)
+    --     self:_BeginMove("FateSealed", {
+    --         chargeDur = 2.00,
+    --         dashDur = 0.33,
+    --         dashSpeed = 290.0,
+    --         slashAt = 0.90,
+    --         slashRadius = 1.4,
+    --         dmg = 1,
+    --         postDelay = 2.60
+    --     })
+    -- end,
 
-    DeathLotus = function(self)
-        self:_BeginMove("DeathLotus", {
-            duration = 2.8,
-            spinSpeed = math.pi * 1.8,  -- rad/s
-            fireInterval = 0.10,
-            range = 12.0,
-            spread = 0.7,
-            lotusYOffset = -3.0,
-        })
-    end,
+    -- DeathLotus = function(self)
+    --     self:_BeginMove("DeathLotus", {
+    --         duration = 2.8,
+    --         spinSpeed = math.pi * 1.8,  -- rad/s
+    --         fireInterval = 0.10,
+    --         range = 12.0,
+    --         spread = 0.7,
+    --         lotusYOffset = -3.0,
+    --     })
+    -- end,
 }

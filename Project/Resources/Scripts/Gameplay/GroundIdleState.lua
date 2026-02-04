@@ -2,7 +2,8 @@
 local IdleState = {}
 
 function IdleState:Enter(ai)
-    
+    print("[GroundIdleState] ENTER")
+    ai._animator:SetBool("PatrolEnabled", false)
 end
 
 function IdleState:Update(ai, dt)

@@ -43,10 +43,12 @@ local function switchTarget(ai)
 end
 
 function PatrolState:Enter(ai)
-    -- print(string.format("[Patrol][Enter] A=%s B=%s T=%s",
-    -- tostring(ai._patrolA and (ai._patrolA.x .. "," .. ai._patrolA.z) or "nil"),
-    -- tostring(ai._patrolB and (ai._patrolB.x .. "," .. ai._patrolB.z) or "nil"),
-    -- tostring(ai._patrolTarget and (ai._patrolTarget.x .. "," .. ai._patrolTarget.z) or "nil")))
+    print(string.format("[Patrol][Enter] A=%s B=%s T=%s",
+    tostring(ai._patrolA and (ai._patrolA.x .. "," .. ai._patrolA.z) or "nil"),
+    tostring(ai._patrolB and (ai._patrolB.x .. "," .. ai._patrolB.z) or "nil"),
+    tostring(ai._patrolTarget and (ai._patrolTarget.x .. "," .. ai._patrolTarget.z) or "nil")))
+
+    ai._animator:SetBool("PatrolEnabled", true)
 
     ai._patrolWaitT  = 0
     ai._switchLockT  = 0
@@ -76,7 +78,7 @@ function PatrolState:Enter(ai)
         ai._patrolTarget = ai._patrolB
     end
 
-    ai:PlayClip((ai.clips and (ai.clips.Walk or ai.clips.Idle)) or 0, true)
+    --ai:PlayClip((ai.clips and (ai.clips.Walk or ai.clips.Idle)) or 0, true)
 
     ai._lastX, ai._lastZ = x, z
     stop(ai)
@@ -149,6 +151,8 @@ function PatrolState:Update(ai, dt)
         ai._patrolWaitT = (ai.config and ai.config.PatrolWait) or ai.PatrolWait or 1.5
         stop(ai)
         ai._isPatrolWait = true
+        ai._animator:SetBool("PatrolEnabled", false)
+        ai._animator:SetBool("Passive", true)
         return
     end
 
@@ -161,6 +165,8 @@ function PatrolState:Update(ai, dt)
 
             t = ai._patrolTarget
             ai:RequestPathToXZ(t.x, t.z)
+            ai._animator:SetBool("PatrolEnabled", true)
+            ai._animator:SetBool("Passive", false)
         end
     end
 
