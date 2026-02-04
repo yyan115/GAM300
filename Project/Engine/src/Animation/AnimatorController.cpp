@@ -1,6 +1,7 @@
 #include "pch.h"
 #include "Animation/AnimatorController.hpp"
 #include <fstream>
+#include <algorithm>
 #include <rapidjson/document.h>
 #include <rapidjson/prettywriter.h>
 #include <rapidjson/stringbuffer.h>
@@ -183,9 +184,16 @@ bool AnimatorController::LoadFromFile(const std::string& filePath)
 		return false;
 	}
 
-	std::vector<uint8_t> buffer = platform->ReadAsset(filePath);
+	// Normalize path for Android - strip leading "../" and convert backslashes
+	std::string assetPath = filePath;
+	std::replace(assetPath.begin(), assetPath.end(), '\\', '/');
+	while (assetPath.size() >= 3 && assetPath.substr(0, 3) == "../") {
+		assetPath = assetPath.substr(3);
+	}
+
+	std::vector<uint8_t> buffer = platform->ReadAsset(assetPath);
 	if (buffer.empty()) {
-		ENGINE_PRINT(EngineLogging::LogLevel::Error, "[AnimatorController] Failed to read asset: ", filePath, "\n");
+		ENGINE_PRINT(EngineLogging::LogLevel::Error, "[AnimatorController] Failed to read asset: ", filePath, " (tried: ", assetPath, ")\n");
 		return false;
 	}
 	content.assign(buffer.begin(), buffer.end());
