@@ -260,43 +260,6 @@ namespace PhysicsSystemWrappers {
         float maxDistanceSquared = maxDistance * maxDistance;
         return distanceSquared <= maxDistanceSquared;
     }
-
-    // Get overlapping entities and return a cache ID
-    // Usage: local cacheId = Physics.GetOverlappingEntities(entityId)
-    inline int Lua_GetOverlappingEntities(Entity entity) {
-        if (!g_PhysicsSystem) return 0;
-
-        std::vector<Entity> overlapping;
-        bool success = g_PhysicsSystem->GetOverlappingEntities(entity, overlapping);
-
-        if (!success) return 0;
-
-        // Store in cache
-        int cacheId = g_NextCacheID++;
-        g_OverlapCache[cacheId] = std::move(overlapping);
-
-        return cacheId;
-    }
-
-    // Get count from cache
-    inline int GetOverlapCount(int cacheId) {
-        auto it = g_OverlapCache.find(cacheId);
-        if (it == g_OverlapCache.end()) return 0;
-        return static_cast<int>(it->second.size());
-    }
-
-    // Get entity at index from cache
-    inline Entity GetOverlapAt(int cacheId, int index) {
-        auto it = g_OverlapCache.find(cacheId);
-        if (it == g_OverlapCache.end()) return 0;
-        if (index < 0 || index >= it->second.size()) return 0;
-        return it->second[index];
-    }
-
-    // Clear cache entry (call when done)
-    inline void ClearOverlapCache(int cacheId) {
-        g_OverlapCache.erase(cacheId);
-    }
 }
 
 
