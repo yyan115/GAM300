@@ -34,11 +34,13 @@ return Component {
     Update = function(self, dt)
         if not self._pauseComp or not self._settingsComp or not self._confirmComp then
             return
-        end     
+        end
 
-        -- Reduce the timer by the time passed since last frame
+        -- Use unscaled delta time for the cooldown timer so it works even when paused
+        -- This allows the player to unpause (timer counts down regardless of pause state)
+        local unscaledDt = Time.GetUnscaledDeltaTime()
         if self._pauseTimer > 0 then
-            self._pauseTimer = self._pauseTimer - dt
+            self._pauseTimer = self._pauseTimer - unscaledDt
         end
 
         local isPressed = Input.IsActionJustPressed("Pause")
