@@ -107,7 +107,7 @@ bool TagsLayersSettings::SaveSettings(const std::string& projectPath) {
     outFile << buffer.GetString();
     outFile.close();
 
-    std::cout << "[TagsLayersSettings] Saved project settings to: " << filePath << std::endl;
+    ENGINE_PRINT("[TagsLayersSettings] Saved project settings to: {}", filePath);
     return true;
 }
 
@@ -118,7 +118,7 @@ bool TagsLayersSettings::LoadSettings(const std::string& projectPath) {
 
     // Check if file exists
     if (!fs::exists(filePath)) {
-        std::cout << "[TagsLayersSettings] Settings file not found, using defaults: " << filePath << std::endl;
+        ENGINE_PRINT("[TagsLayersSettings] Settings file not found, using defaults: {}", filePath);
         return false;
     }
 
@@ -184,6 +184,6 @@ bool TagsLayersSettings::LoadSettings(const std::string& projectPath) {
         }
     }
 
-    std::cout << "[TagsLayersSettings] Loaded project settings from: " << filePath << std::endl;
+    ENGINE_PRINT("[TagsLayersSettings] Loaded project settings from: {}", filePath);
     return true;
 }

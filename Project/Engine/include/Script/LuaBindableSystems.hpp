@@ -203,7 +203,7 @@ namespace PhysicsSystemWrappers {
 
     // Simple test function to verify Lua bindings work
     inline float TestBinding() {
-        std::cout << "[Physics] TestBinding called from Lua!" << std::endl;
+		ENGINE_LOG_DEBUG("[Physics] TestBinding called from Lua!");
         return 42.0f;
     }
 
@@ -357,7 +357,6 @@ namespace CharacterControllerWrappers {
             std::cerr << "[ERROR] Cannot create CharacterController - CharacterControllerSystem unavailable!" << std::endl;
             return nullptr;
         }
-        std::cout << "UPDATED 0" << std::endl;
         //call system to create controller
         return ecsManager.characterControllerSystem->CreateController(id, *collider, *transform);
 
@@ -539,6 +538,12 @@ namespace TimeWrappers {
     // Scaled delta time for gameplay (respects time scale)
     inline float GetScaledDeltaTime() {
         return static_cast<float>(TimeManager::GetDeltaTime()) * s_timeScale;
+    }
+
+    // Unscaled delta time - NOT affected by pause (always real frame time)
+    // Use this for UI animations, timers, etc. that should run even when game is paused
+    inline float GetUnscaledDeltaTime() {
+        return static_cast<float>(TimeManager::GetUnscaledDeltaTime());
     }
 
     //PAUSE FUNCTIONS

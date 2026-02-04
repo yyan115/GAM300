@@ -736,7 +736,8 @@ void ScriptSystem::Update()
     }
 
     // advance coroutines & runtime tick if runtime initialized
-    if (Scripting::GetLuaState()) Scripting::Tick(static_cast<float>(TimeManager::GetUnscaledDeltaTime()));
+    // Use scaled delta time so coroutines respect pause state
+    if (Scripting::GetLuaState()) Scripting::Tick(static_cast<float>(TimeManager::GetDeltaTime()));
 
     // iterate over entities matched to this system (System::entities)
     for (Entity e : entities)
@@ -752,16 +753,28 @@ void ScriptSystem::Update()
         if (!EnsureInstanceForEntity(e, *m_ecs)) continue;
 
         // call Update(dt) on all script instances for this entity
+        // Use scaled delta time so scripts receive dt=0 when paused
+        // UI scripts that need to run during pause should use Time.GetUnscaledDeltaTime() directly
         {
             std::lock_guard<std::mutex> lk(m_mutex);
             auto it = m_runtimeMap.find(e);
             if (it != m_runtimeMap.end())
             {
-                for (auto& scriptInst : it->second)
+                // Also check individual script enabled flags
+                for (size_t i = 0; i < it->second.size(); ++i)
                 {
+                    auto& scriptInst = it->second[i];
                     if (scriptInst)
                     {
-                        scriptInst->Update(static_cast<float>(TimeManager::GetUnscaledDeltaTime()));
+                        // Check if this specific script is enabled
+                        bool scriptEnabled = true;
+                        if (comp && i < comp->scripts.size()) {
+                            scriptEnabled = comp->scripts[i].enabled;
+                        }
+
+                        if (scriptEnabled) {
+                            scriptInst->Update(static_cast<float>(TimeManager::GetDeltaTime()));
+                        }
                     }
                 }
             }

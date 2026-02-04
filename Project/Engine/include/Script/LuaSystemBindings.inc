@@ -96,6 +96,7 @@ END_SYSTEM()
 
 BEGIN_SYSTEM("Time")
     FUNCTION("GetDeltaTime", TimeWrappers::GetDeltaTime)
+    FUNCTION("GetUnscaledDeltaTime", TimeWrappers::GetUnscaledDeltaTime)
     FUNCTION("GetFixedDeltaTime", TimeWrappers::GetFixedDeltaTime)
     FUNCTION("GetFPS", TimeWrappers::GetFPS)
     FUNCTION("GetTimeScale", TimeWrappers::GetTimeScale)

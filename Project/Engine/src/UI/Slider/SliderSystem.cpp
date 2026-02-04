@@ -362,6 +362,8 @@ void SliderSystem::Update() {
 
     for (Entity sliderEntity : entities) {
         if (!m_ecs->HasComponent<SliderComponent>(sliderEntity)) continue;
+        // Skip entities that are inactive in hierarchy (checks parents too)
+        if (!m_ecs->IsEntityActiveInHierarchy(sliderEntity)) continue;
 
         auto& sliderComp = m_ecs->GetComponent<SliderComponent>(sliderEntity);
         EnsureChildEntities(sliderEntity, sliderComp);

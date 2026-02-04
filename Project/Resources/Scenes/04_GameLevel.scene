@@ -201,13 +201,74 @@
                             "entryFunction": "OnInit",
                             "autoInvokeEntry": true,
                             "instanceState": {
-                                "maxPitch": 30.0,
                                 "enemyDisengageRange": 3.0,
-                                "followDistance": 1.7,
-                                "followLerp": 15.0,
-                                "actionModePitch": 40.0,
+                                "followDistance": 0.1,
+                                "enemyDetectionRange": 2.0,
+                                "maxPitch": 30.0,
                                 "minPitch": -20.0,
-                                "enemyDetectionRange": 2.0
+                                "followLerp": 15.0,
+                                "actionModePitch": 40.0
+                            }
+                        },
+                        {
+                            "scriptGuidStr": "004fe54a20228fd8-000419dbe2000003",
+                            "scriptPath": "../../Resources/Scripts/Camera_Cinematic.lua",
+                            "enabled": true,
+                            "preserveKeys": [],
+                            "entryFunction": "OnInit",
+                            "autoInvokeEntry": true,
+                            "instanceState": {
+                                "sequenceWaypoints": {},
+                                "_durationTimer": 0.0,
+                                "targetPosition": {
+                                    "x": -2.0,
+                                    "y": 1.0,
+                                    "z": -2.0
+                                },
+                                "targetTransformName": "\"CamPos1\"",
+                                "_subscriptions": {},
+                                "__field_list": {
+                                    "sequenceWaypoints": {},
+                                    "sequenceInterval": 3.0,
+                                    "useSequence": false,
+                                    "useDuration": false,
+                                    "transitionSpeed": 0.5,
+                                    "debugMode": true,
+                                    "targetPosition": {
+                                        "x": -2.0,
+                                        "y": 1.0,
+                                        "z": -2.0
+                                    },
+                                    "cinematicActive": false,
+                                    "targetRotation": {
+                                        "x": 0.0,
+                                        "y": 0.0,
+                                        "z": 0.0
+                                    },
+                                    "targetTransformName": "",
+                                    "cinematicDuration": 5.0,
+                                    "sequenceLoop": false
+                                },
+                                "_wasCinematicActive": false,
+                                "__created_at": 1770201442.0,
+                                "useDuration": true,
+                                "useSequence": false,
+                                "__meta": {},
+                                "sequenceLoop": false,
+                                "targetRotation": {
+                                    "x": 0.0,
+                                    "y": 0.0,
+                                    "z": 0.0
+                                },
+                                "debugMode": true,
+                                "sequenceInterval": 3.0,
+                                "_currentWaypointIndex": 1.0,
+                                "cinematicDuration": 30.0,
+                                "cinematicActive": false,
+                                "_transform_fetched": false,
+                                "_private": {},
+                                "_waypointTimer": 0.0,
+                                "transitionSpeed": 0.5
                             }
                         }
                     ]
@@ -34231,115 +34292,52 @@
                             "entryFunction": "OnInit",
                             "autoInvokeEntry": true,
                             "instanceState": {
-                                "_private": {},
-                                "DeserializeFields": null,
-                                "KnifeSpin": null,
-                                "GetPhase": null,
-                                "HitIFrame": 0.2,
-                                "_moveCooldowns": {},
-                                "DisableSafe": null,
-                                "FrenzyCombo": null,
-                                "AwakeSafe": null,
-                                "states": {
-                                    "Execute": {
-                                        "Enter": null,
-                                        "Update": null,
-                                        "Exit": null
-                                    },
-                                    "Recover": {
-                                        "Enter": null,
-                                        "Update": null
-                                    },
-                                    "Choose": {
-                                        "Enter": null,
-                                        "Update": null
-                                    }
-                                },
-                                "_hooked": false,
                                 "_recoverTimer": 0.0,
-                                "StartMoveCooldown": null,
-                                "_hitLockTimer": 0.0,
-                                "SerializeFields": null,
-                                "__meta": {},
-                                "UpdateSafe": null,
-                                "SetPosition": null,
-                                "Start": null,
-                                "Subscribe": null,
-                                "_lastPhaseProcessed": 1.0,
-                                "Unsubscribe": null,
-                                "GetEnemyPosXZ": null,
-                                "GetRotation": null,
-                                "GetPosition": null,
-                                "OnDisable": null,
-                                "IsActionLocked": null,
-                                "SetRotation": null,
-                                "DashSlash": null,
-                                "ApplyRotation": null,
                                 "_lockAction": false,
-                                "_subscriptions": {},
-                                "_phase": 1.0,
-                                "DebugTransform": null,
-                                "GetMoveWeightForPhase": null,
-                                "SetScale": null,
-                                "OnDestroy": null,
-                                "UnlockActions": null,
-                                "health": 30.0,
-                                "StartSafe": null,
-                                "LockActions": null,
-                                "_call_lifecycle": null,
-                                "IsMoveOnCooldown": null,
-                                "Destroy": null,
-                                "MaxHealth": 30.0,
-                                "_vy": 0.0,
-                                "_transforming": false,
-                                "Awake": null,
-                                "GetScale": null,
-                                "dead": false,
-                                "_lockTimer": 0.0,
-                                "FinishPhaseTransform": null,
-                                "PlayerName": "Player",
-                                "ApplyHit": null,
-                                "KnifeVolley": null,
-                                "After": null,
-                                "GroundStickVel": -0.2,
-                                "Every": null,
-                                "__field_list": {
-                                    "Gravity": -9.81,
-                                    "PlayerName": "Player",
-                                    "GroundStickVel": -0.2,
-                                    "MaxHealth": 30.0,
-                                    "HookedDuration": 4.0,
-                                    "PhaseTransformDuration": 3.2,
-                                    "HitIFrame": 0.2,
-                                    "RecoverDuration": 1.0,
-                                    "MaxFallSpeed": -25.0
-                                },
-                                "ChooseMove": null,
-                                "ApplyGravity": null,
-                                "PhaseTransformDuration": 3.2,
-                                "Gravity": -9.81,
-                                "__created_at": 1769444779.0,
-                                "HookedDuration": 4.0,
-                                "Die": null,
-                                "Move": null,
-                                "IsCurrentMoveFinished": null,
-                                "GetCurrentPhase": null,
-                                "Flight": null,
-                                "ApplyHook": null,
-                                "FacePlayer": null,
-                                "StartPhaseTransform": null,
-                                "Update": null,
-                                "fsm": {
-                                    "timeInState": 0.0,
-                                    "owner": null,
-                                    "enabled": true
-                                },
-                                "CheckPhaseTransition": null,
-                                "GetTransform": null,
-                                "GetNextMoveReadyTime": null,
-                                "RecoverDuration": 1.0,
                                 "MaxFallSpeed": -25.0,
-                                "_transform_fetched": false
+                                "_lockTimer": 0.0,
+                                "HookedDuration": 4.0,
+                                "_vy": 0.0,
+                                "_phase": 1.0,
+                                "PhaseTransformDuration": 3.2,
+                                "_hooked": false,
+                                "_transform_fetched": false,
+                                "_hitLockTimer": 0.0,
+                                "RecoverDuration": 1.0,
+                                "_private": {},
+                                "__meta": {},
+                                "fsm": {
+                                    "enabled": true,
+                                    "timeInState": 0.0
+                                },
+                                "MaxHealth": 30.0,
+                                "_moveCooldowns": {},
+                                "PlayerName": "\"\"",
+                                "states": {
+                                    "Execute": {},
+                                    "Choose": {},
+                                    "Recover": {}
+                                },
+                                "__field_list": {
+                                    "MaxFallSpeed": -25.0,
+                                    "GroundStickVel": -0.2,
+                                    "HookedDuration": 4.0,
+                                    "RecoverDuration": 1.0,
+                                    "PhaseTransformDuration": 3.2,
+                                    "MaxHealth": 30.0,
+                                    "PlayerName": "Player",
+                                    "HitIFrame": 0.2,
+                                    "Gravity": -9.81
+                                },
+                                "_transforming": false,
+                                "GroundStickVel": -0.2,
+                                "Gravity": -9.81,
+                                "HitIFrame": 0.2,
+                                "health": 30.0,
+                                "dead": false,
+                                "_lastPhaseProcessed": 1.0,
+                                "__created_at": 1769444779.0,
+                                "_subscriptions": {}
                             }
                         }
                     ]
@@ -36081,50 +36079,54 @@
                             },
                             {
                                 "type": "int",
-                                "data": 10
+                                "data": 11
                             },
                             {
                                 "type": "std::vector<std::string>",
                                 "data": [
                                     {
                                         "type": "std::string",
-                                        "data": "Resources/Animations/Kusane@Idle.fbx"
+                                        "data": "Resources/Animations/Player@Idle.fbx"
                                     },
                                     {
                                         "type": "std::string",
-                                        "data": "Resources/Animations/Kusane@Hurt.fbx"
+                                        "data": "Resources/Animations/Player@Jump.fbx"
                                     },
                                     {
                                         "type": "std::string",
-                                        "data": "Resources/Animations/Kusane@Run.fbx"
+                                        "data": "Resources/Animations/Player@Run.fbx"
                                     },
                                     {
                                         "type": "std::string",
-                                        "data": "Resources/Animations/Kusane@Death.fbx"
+                                        "data": "Resources/Animations/Player@Land.fbx"
                                     },
                                     {
                                         "type": "std::string",
-                                        "data": "Resources/Animations/Kusane@Jump.fbx"
+                                        "data": "Resources/Animations/Player@Hurt.fbx"
                                     },
                                     {
                                         "type": "std::string",
-                                        "data": "Resources/Animations/Kusane@Land.fbx"
+                                        "data": "Resources/Animations/Player@Death.fbx"
                                     },
                                     {
                                         "type": "std::string",
-                                        "data": "Resources/Animations/Kusane@Roll.fbx"
+                                        "data": "Resources/Animations/Player@Slash1.fbx"
                                     },
                                     {
                                         "type": "std::string",
-                                        "data": "Resources/Animations/Kusane@Slash1.fbx"
+                                        "data": "Resources/Animations/Player@Slash2.fbx"
                                     },
                                     {
                                         "type": "std::string",
-                                        "data": "Resources/Animations/Kusane@Slash2.fbx"
+                                        "data": "Resources/Animations/Player@Slash3.fbx"
                                     },
                                     {
                                         "type": "std::string",
-                                        "data": "Resources/Animations/Kusane@Slash3.fbx"
+                                        "data": "Resources/Animations/Player@Standing.fbx"
+                                    },
+                                    {
+                                        "type": "std::string",
+                                        "data": "Resources/Animations/Player@Roll.fbx"
                                     }
                                 ]
                             },
@@ -36140,7 +36142,8 @@
                                     "00485ed685fc886a-0004104122005d8d",
                                     "0021cfe6ab29079a-00040555d6000001",
                                     "0021cfe6fa15ca03-00040555d6000003",
-                                    "0021cfe6fc36b21f-00040555d6000005"
+                                    "0021cfe6fc36b21f-00040555d6000005",
+                                    "0000000000000000-0000000000000000"
                                 ]
                             },
                             {
@@ -46540,6 +46543,93 @@
                         {
                             "type": "bool",
                             "data": false
+                        }
+                    ]
+                }
+            }
+        },
+        {
+            "id": 458,
+            "guid": "00156e3e013ee62a-00041d37e6000125",
+            "components": {
+                "NameComponent": {
+                    "name": "CamPos1"
+                },
+                "TagComponent": {
+                    "tagIndex": 0
+                },
+                "LayerComponent": {
+                    "layerIndex": 0
+                },
+                "SiblingIndexComponent": {
+                    "siblingIndex": 40
+                },
+                "Transform": {
+                    "type": "Transform",
+                    "data": [
+                        {
+                            "type": "Vector3D",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 2
+                                },
+                                {
+                                    "type": "float",
+                                    "data": -1.4
+                                }
+                            ]
+                        },
+                        {
+                            "type": "Vector3D",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                }
+                            ]
+                        },
+                        {
+                            "type": "Quaternion",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 9.20089e-9
+                                },
+                                {
+                                    "type": "float",
+                                    "data": -7.49352e-8
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0.992546
+                                },
+                                {
+                                    "type": "float",
+                                    "data": -0.121869
+                                }
+                            ]
+                        }
+                    ]
+                },
+                "ActiveComponent": {
+                    "type": "ActiveComponent",
+                    "data": [
+                        {
+                            "type": "bool",
+                            "data": true
                         }
                     ]
                 }

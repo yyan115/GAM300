@@ -251,6 +251,11 @@ void ParticleSystem::Update()
         }
 
         auto& particleComp = ecsManager.GetComponent<ParticleComponent>(entity);
+        
+        // Skip if not emitting and no particles to render
+        if (!particleComp.isEmitting && particleComp.particles.empty()) {
+            continue;
+        }
 
         // Initialize if not already done
         if (!particleComp.particleVAO) // In case new particle system is added on the fly
@@ -269,6 +274,7 @@ void ParticleSystem::Update()
         if (!shouldUpdateParticles) {
             // Still submit to renderer (to show existing particles), but don't update physics or emit new particles
             auto renderItem = std::make_unique<ParticleComponent>(particleComp);
+            renderItem->renderOrder = particleComp.sortingLayer * 100 + particleComp.sortingOrder;
             gfxManager.Submit(std::move(renderItem));
             continue;
         }
@@ -302,7 +308,18 @@ void ParticleSystem::Update()
 
         // Submit to renderer
         auto renderItem = std::make_unique<ParticleComponent>(particleComp);
+        renderItem->renderOrder = particleComp.sortingLayer * 100 + particleComp.sortingOrder;
         gfxManager.Submit(std::move(renderItem));
+    }
+    static int frameCount = 0;
+    if (++frameCount % 60 == 0) {  // Print every second
+        int totalParticles = 0;
+        for (const auto& entity : entities) {
+            auto& comp = ecsManager.GetComponent<ParticleComponent>(entity);
+            totalParticles += comp.particles.size();
+        }
+        std::cout << "[ParticleSystem] Total particles: " << totalParticles
+            << ", Emitters: " << entities.size() << std::endl;
     }
 }
 
@@ -464,9 +481,13 @@ void ParticleSystem::UpdateInstanceBuffer(ParticleComponent& comp)
 {
     if (comp.particles.empty()) return;
 
-    // Prepare instance data array
-    std::vector<ParticleInstanceData> instanceData;
-    instanceData.reserve(comp.particles.size());
+    // Reuse buffer instead of allocating every frame
+    comp.instanceDataBuffer.clear();
+
+    // Reserve once (only allocates if capacity is smaller)
+    if (comp.instanceDataBuffer.capacity() < comp.particles.size()) {
+        comp.instanceDataBuffer.reserve(comp.maxParticles);
+    }
 
     for (const auto& particle : comp.particles)
     {
@@ -475,11 +496,11 @@ void ParticleSystem::UpdateInstanceBuffer(ParticleComponent& comp)
         data.color = particle.color;
         data.size = particle.size;
         data.rotation = particle.rotation;
-        instanceData.push_back(data);
+        comp.instanceDataBuffer.emplace_back(data);
     }
 
     // Update the instance VBO
     comp.instanceVBO->Bind();
-    comp.instanceVBO->UpdateData(instanceData.data(), instanceData.size() * sizeof(ParticleInstanceData));
+    comp.instanceVBO->UpdateData(comp.instanceDataBuffer.data(), comp.instanceDataBuffer.size() * sizeof(ParticleInstanceData));
     comp.instanceVBO->Unbind();
 }

@@ -10,6 +10,7 @@
 #include "Asset Manager/AssetManager.hpp"
 #include "Asset Manager/ResourceManager.hpp"
 #include "Performance/PerformanceProfiler.hpp"
+#include "Logging.hpp"
 
 bool SpriteSystem::Initialise()
 {
@@ -134,9 +135,8 @@ void SpriteSystem::Update()
                     spriteComponent.hasMigratedToTransform = true;
 
                     // Log the migration (only once)
-                    std::cout << "[SpriteSystem] Migrated 2D sprite " << entity << " from sprite properties to Transform: "
-                              << "pos(" << spriteComponent.position.x << "," << spriteComponent.position.y << ") "
-                              << "scale(" << spriteComponent.scale.x << "," << spriteComponent.scale.y << ")" << std::endl;
+                    ENGINE_PRINT("[SpriteSystem] Migrated 2D sprite {} from sprite properties to Transform: pos({},{}) scale({},{})", 
+                        entity, spriteComponent.position.x, spriteComponent.position.y, spriteComponent.scale.x, spriteComponent.scale.y);
                 }
 
                 spriteRenderItem->position = Vector3D::ConvertGLMToVector3D(transformPos);
@@ -182,7 +182,7 @@ void SpriteSystem::Update()
 void SpriteSystem::Shutdown()
 {
     CleanupSpriteQuad();
-    std::cout << "[SpriteSystem] Shutdown" << std::endl;
+    ENGINE_PRINT("[SpriteSystem] Shutdown");
 }
 
 void SpriteSystem::InitializeSpriteQuad()
@@ -243,7 +243,7 @@ void SpriteSystem::InitializeSpriteQuad()
 #ifdef ANDROID
     __android_log_print(ANDROID_LOG_INFO, "GAM300", "[SpriteSystem] Sprite quad initialized using VBO/VAO/EBO classes with indices");
 #endif
-    std::cout << "[SpriteSystem] Sprite quad initialized with indexed rendering" << std::endl;
+    ENGINE_PRINT("[SpriteSystem] Sprite quad initialized with indexed rendering");
 }
 
 void SpriteSystem::CleanupSpriteQuad()
@@ -266,6 +266,6 @@ void SpriteSystem::CleanupSpriteQuad()
             spriteEBO.reset();
         }
         spriteQuadInitialized = false;
-        std::cout << "[SpriteSystem] Sprite quad cleaned up" << std::endl;
+        ENGINE_PRINT("[SpriteSystem] Sprite quad cleaned up");
     }
 }
