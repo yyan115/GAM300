@@ -2,7 +2,6 @@
 local ChaseState = {}
 
 function ChaseState:Enter(ai)
-    ai:PlayClip(ai.clips.Walk or ai.clips.Idle, true)
     -- Optional: force first repath on enter
     ai._pathRepathT = (ai.PathRepathInterval or 0.45)
 end

@@ -2,8 +2,7 @@
 local HurtState = {}
 
 function HurtState:Enter(ai)
-    -- Play hurt clip once (non-loop)
-    ai:PlayClip(ai.clips.Hurt, false)
+    ai._animator:SetBool("Hurt", true)
 
     ai:FacePlayer()
 
@@ -12,7 +11,7 @@ function HurtState:Enter(ai)
 
     if ai.particles then
         ai.particles.isEmitting   = true
-        ai.particles.emissionRate = 6
+        ai.particles.emissionRate = 180
     end
 end
 
@@ -24,7 +23,7 @@ function HurtState:Update(ai, dt)
         ai._hurtTimer = 0
 
         if ai.health <= 0 then
-            ai.fsm:Change("Death", ai.states.Death)
+            self.dead = true
             return
         end
 
@@ -42,6 +41,7 @@ function HurtState:Update(ai, dt)
 end
 
 function HurtState:Exit(ai)
+    ai._animator:SetBool("Hurt", false)
     if ai.particles then
         ai.particles.isEmitting   = false
         ai.particles.emissionRate = 0

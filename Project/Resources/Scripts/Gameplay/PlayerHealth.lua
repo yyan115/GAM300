@@ -56,6 +56,45 @@ return Component {
                 end
             end)
             print("[PlayerHealth] Subscription token: " .. tostring(self._knifeHitPlayerSub))
+
+        print("[PlayerHealth] Subscribing to meleeHitPlayerDmg")
+        self._meleeHitPlayerDmgSub = event_bus.subscribe("meleeHitPlayerDmg", function(payload)
+            if not payload then return end
+            if self._isIFrame then return end
+
+            local dmg = payload
+            if type(payload) == "table" then
+                dmg = payload.dmg
+            end
+
+            if dmg ~= nil then
+                PlayerTakeDmg(self, dmg)
+                self._isIFrame = true
+            end
+        end)
+        print("[PlayerHealth] Subscription token (melee): " .. tostring(self._meleeHitPlayerDmgSub))
+
+            print("[PlayerHealth] Subscribing to miniboss_slash")
+            self._minibossSlashSub = event_bus.subscribe("miniboss_slash", function(payload)
+            if not payload then return end
+            if self._isIFrame then return end
+
+            -- payload: x,y,z,radius,dmg,entityId
+            local px, py, pz = self:GetPosition()
+            if not px then return end
+
+            local dx = (px - (payload.x or 0))
+            local dz = (pz - (payload.z or 0))
+            local r  = (payload.radius or 1.4)
+
+            -- simple XZ circle hit
+            if (dx*dx + dz*dz) <= (r*r) then
+                PlayerTakeDmg(self, payload.dmg or 1)
+                self._isIFrame = true
+            end
+        end)
+        print("[PlayerHealth] Subscribed to miniboss_slash: " .. tostring(self._minibossSlashSub))
+
         else
             print("[PlayerHealth] ERROR: event_bus not available!")
         end

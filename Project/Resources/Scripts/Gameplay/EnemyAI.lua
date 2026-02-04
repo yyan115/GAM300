@@ -10,7 +10,7 @@ local GroundHurtState    = require("Gameplay.GroundHurtState")
 local GroundDeathState   = require("Gameplay.GroundDeathState")
 local GroundHookedState  = require("Gameplay.GroundHookedState")
 local GroundPatrolState  = require("Gameplay.GroundPatrolState")
-local GroundChaseState = require("Gameplay.GroundChaseState")
+local GroundChaseState   = require("Gameplay.GroundChaseState")
 
 local KnifePool = require("Gameplay.KnifePool")
 local Input = _G.Input
@@ -146,26 +146,13 @@ return Component {
         Gravity        = -9.81,
         MaxFallSpeed   = -25.0,
 
-        WallRayUp      = 0.8,    -- cast from chest height
-        WallSkin   = 0.18,  -- your current probe padding
-        WallOffset = 0.08,  -- NEW: how far to stop before the wall
-        MinStep    = 0.01,  -- NEW: avoids tiny jitter moves
+        WallRayUp      = 0.8,
+        WallSkin       = 0.18,
+        WallOffset     = 0.08,
+        MinStep        = 0.01,
     },
 
     Awake = function(self)
-        -- self.AttackRange          = (self.AttackRange          ~= nil) and self.AttackRange          or 3.0
-        -- self.AttackDisengageRange = (self.AttackDisengageRange ~= nil) and self.AttackDisengageRange or 4.0
-        -- self.AttackCooldown       = (self.AttackCooldown       ~= nil) and self.AttackCooldown       or 3.0
-
-        -- self.IsMelee              = (self.IsMelee              ~= nil) and self.IsMelee              or false
-        -- self.MeleeSpeed           = (self.MeleeSpeed           ~= nil) and self.MeleeSpeed           or 0.9
-        -- self.MeleeRange           = (self.MeleeRange           ~= nil) and self.MeleeRange           or 1.2
-        -- self.MeleeDamage          = (self.MeleeDamage          ~= nil) and self.MeleeDamage          or 1
-        -- self.MeleeAttackCooldown  = (self.MeleeAttackCooldown  ~= nil) and self.MeleeAttackCooldown  or 5.0
-
-        -- self.HurtDuration         = (self.HurtDuration         ~= nil) and self.HurtDuration         or 2.0
-        -- self.HitIFrame            = (self.HitIFrame            ~= nil) and self.HitIFrame            or 0.2
-        -- self.HookedDuration       = (self.HookedDuration       ~= nil) and self.HookedDuration       or 4.0
 
         self.dead = false
         self.health = self.MaxHealth
@@ -206,11 +193,6 @@ return Component {
             PatrolDistance       = self.PatrolDistance,
             PatrolWait           = self.PatrolWait,
             EnablePatrol         = self.EnablePatrol,
-
-            -- PatrolPointA_X = self.PatrolPointA_X,
-            -- PatrolPointA_Z = self.PatrolPointA_Z,
-            -- PatrolPointB_X = self.PatrolPointB_X,
-            -- PatrolPointB_Z = self.PatrolPointB_Z,
         }
 
         -- fixed-step accumulator for kinematic grounding
@@ -234,6 +216,17 @@ return Component {
             self._controller = nil
         end
 
+        if self._animator then
+            print("[PlayerMovement] Animator found, playing IDLE clip")
+            self._animator:PlayClip(IDLE, true)
+        else
+            print("[PlayerMovement] ERROR: Animator is nil!")
+        end
+
+        self._animator:SetBool("PatrolEnabled", EnablePatrol)
+        self._animator:SetBool("Passive", IsPassive)
+        self._animator:SetBool("Melee", IsMelee)
+
         -- Create CC only if we have the right inputs, and only if we don't already have one
         if not self._controller and self._collider and self._transform then
             local ok, ctrl = pcall(function()
@@ -249,7 +242,6 @@ return Component {
 
         if self._rb then
             pcall(function() self._rb.motionID = 0 end)
-            -- DO NOT force gravityFactor = 0 for CC unless you are 100% sure CC has its own gravity
             pcall(function() self._rb.linearVel = { x=0, y=0, z=0 } end)
             pcall(function() self._rb.impulseApplied = { x=0, y=0, z=0 } end)
         end
@@ -347,6 +339,10 @@ return Component {
         _G.__CC_UPDATED_THIS_FRAME = nil
 
         if self.health <= 0 and not self.dead then
+            self.dead = true
+        end
+
+        if self.dead then
             self.fsm:Change("Death", self.states.Death)
         end
 
@@ -857,7 +853,7 @@ return Component {
         dx, dz = dx / len, dz / len
 
         local rx, rz = -dz, dx
-        local spread = 1.0
+        local spread = 0.6
 
         local t0x, t0y, t0z = px, py, pz
         local t1x, t1y, t1z = px - rx * spread, py, pz - rz * spread
@@ -897,6 +893,7 @@ return Component {
         if self.fsm.currentName == "Hooked" then
             return
         end
+        self._animator:SetBool("Hurt", false)
         self.fsm:ForceChange("Hurt", self.states.Hurt)
     end,
 
