@@ -67,7 +67,15 @@ std::string ReflectionRenderer::MakeFieldID(const char* fieldName, const void* f
 
 bool ReflectionRenderer::RenderComponent(void* componentPtr, TypeDescriptor_Struct* typeDesc,
                                          Entity entity, ECSManager& ecsManager) {
-    if (!componentPtr || !typeDesc) return false;
+    // Delegate to the field-tracking version and just return the bool
+    FieldModificationResult result = RenderComponentWithFieldTracking(componentPtr, typeDesc, entity, ecsManager);
+    return result.wasModified;
+}
+
+FieldModificationResult ReflectionRenderer::RenderComponentWithFieldTracking(void* componentPtr, TypeDescriptor_Struct* typeDesc,
+                                                                              Entity entity, ECSManager& ecsManager) {
+    FieldModificationResult result;
+    if (!componentPtr || !typeDesc) return result;
 
     // Check for custom component renderer
     std::string componentType = typeDesc->GetName();
@@ -75,12 +83,11 @@ bool ReflectionRenderer::RenderComponent(void* componentPtr, TypeDescriptor_Stru
     if (componentRenderers.find(componentType) != componentRenderers.end()) {
         bool skipDefaultRendering = componentRenderers[componentType](componentPtr, typeDesc, entity, ecsManager);
         if (skipDefaultRendering) {
-            return false;  // Custom renderer handled everything, skip default field rendering
+            return result;  // Custom renderer handled everything, skip default field rendering
         }
         // If it returns false, continue with default field rendering below
     }
 
-    bool modified = false;
     std::vector<TypeDescriptor_Struct::Member> members = typeDesc->GetMembers();
 
     for (const auto& member : members) {
@@ -114,20 +121,29 @@ bool ReflectionRenderer::RenderComponent(void* componentPtr, TypeDescriptor_Stru
         if (fieldRenderers.find(fieldKey) != fieldRenderers.end()) {
             // Custom field renderer handles its own undo/redo via UndoableWidgets
             bool fieldModified = fieldRenderers[fieldKey](member.name, fieldPtr, entity, ecsManager);
-            modified |= fieldModified;
+            if (fieldModified) {
+                result.wasModified = true;
+                result.modifiedFieldName = memberName;
+                // Continue rendering other fields but we already know which one was modified
+            }
             continue;
         }
 
         // Render using type-based renderer (has its own snapshot handling in RenderField)
-        modified |= RenderField(member.name, fieldPtr, member.type, entity, ecsManager);
+        bool fieldModified = RenderField(member.name, fieldPtr, member.type, entity, ecsManager);
+        if (fieldModified) {
+            result.wasModified = true;
+            result.modifiedFieldName = memberName;
+            // Continue rendering other fields but we already know which one was modified
+        }
     }
 
-    if (modified && PrefabEditor::IsInPrefabEditorMode()) {
+    if (result.wasModified && PrefabEditor::IsInPrefabEditorMode()) {
         std::cout << "[ReflectionRenderer] Modified prefab component, saving prefab changes..." << std::endl;
-		PrefabEditor::SaveEditedPrefab();
+        PrefabEditor::SaveEditedPrefab();
     }
 
-    return modified;
+    return result;
 }
 
 bool ReflectionRenderer::RenderField(const char* fieldName, void* fieldPtr,
