@@ -2795,6 +2795,8 @@ void Serializer::DeserializeParticleComponent(ParticleComponent& particleComp, c
         readVec3Generic(d[startIdx + 11], particleComp.gravity);
         particleComp.velocityRandomness = Serializer::GetFloat(d, startIdx + 12);
         readVec3Generic(d[startIdx + 13], particleComp.initialVelocity);
+        particleComp.sortingLayer = Serializer::GetInt(d, startIdx + 14);
+        particleComp.sortingOrder = Serializer::GetInt(d, startIdx + 15);
     }
 }
 

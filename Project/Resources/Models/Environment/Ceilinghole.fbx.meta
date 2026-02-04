@@ -1,0 +1,11 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "00120d781f53b297-00041d351e0034cb",
+        "source": "../../Resources/Models/Environment/Ceilinghole.fbx",
+        "compiled": "../../Resources/Models/Environment/Ceilinghole.mesh"
+    },
+    "ModelMetaData": {
+        "optimizeMeshes": true
+    }
+}

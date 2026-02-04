@@ -1,0 +1,13 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "00120d7816a09674-00041d353c0034d1",
+        "source": "../../Resources/Textures/M4/CeilingHole_normal.png",
+        "compiled": "../../Resources/Textures/M4/CeilingHole_normal.dds"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true
+    }
+}

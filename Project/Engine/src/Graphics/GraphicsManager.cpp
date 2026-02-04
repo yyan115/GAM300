@@ -281,6 +281,51 @@ void GraphicsManager::Render()
 			return a->renderOrder < b->renderOrder;
 		});
 
+	// After sorting otherItems, before rendering
+	/*static int frame = 0;
+	if (++frame % 60 == 0) {
+		std::cout << "=== DRAW CALL BREAKDOWN ===" << std::endl;
+		std::cout << "Models: " << modelItems.size() << std::endl;
+
+		int spriteCount = 0;
+		int textCount = 0;
+		int particleCount = 0;
+		int debugCount = 0;
+
+		for (IRenderComponent* item : otherItems) {
+			if (dynamic_cast<TextRenderComponent*>(item)) textCount++;
+			else if (dynamic_cast<SpriteRenderComponent*>(item)) spriteCount++;
+			else if (dynamic_cast<ParticleComponent*>(item)) particleCount++;
+			else if (dynamic_cast<DebugDrawComponent*>(item)) debugCount++;
+		}
+
+		std::cout << "Sprites: " << spriteCount << std::endl;
+		std::cout << "Text: " << textCount << std::endl;
+		std::cout << "Particles: " << particleCount << std::endl;
+		std::cout << "Debug: " << debugCount << std::endl;
+		std::cout << "Total otherItems: " << otherItems.size() << std::endl;
+		std::cout << "===========================" << std::endl;
+	}*/
+
+	//static int frame = 0;
+	//if (++frame % 60 == 0) {
+	//	std::cout << "=== MODEL BREAKDOWN ===" << std::endl;
+
+	//	std::map<std::string, int> modelCounts;
+	//	for (IRenderComponent* item : modelItems) {
+	//		auto* model = static_cast<ModelRenderComponent*>(item);
+	//		if (model->model) {
+	//			std::string name = model->model->modelName;  // or GetName() if you have it
+	//			modelCounts[name]++;
+	//		}
+	//	}
+
+	//	for (const auto& pair : modelCounts) {
+	//		std::cout << pair.second << "x " << pair.first << std::endl;
+	//	}
+	//	std::cout << "========================" << std::endl;
+	//}
+
 	// =========================================================================
 	// Render models with state tracking
 	// =========================================================================
@@ -308,15 +353,15 @@ void GraphicsManager::Render()
 		}
 	}
 
-	// Debug output (optional - remove in release)
-	/*static int frameCount = 0;
-	if (++frameCount % 300 == 0) 
-	{
-		std::cout << "[Sorting] Objects: " << m_sortingStats.totalObjects
-			<< " DrawCalls: " << m_sortingStats.drawCalls
-			<< " ShaderSwitch: " << m_sortingStats.shaderSwitches
-			<< " MatSwitch: " << m_sortingStats.materialSwitches << "\n";
-	}*/
+	//// Debug output (optional - remove in release)
+	//static int frameCount = 0;
+	//if (++frameCount % 60 == 0) 
+	//{
+	//	std::cout << "[Sorting] Objects: " << m_sortingStats.totalObjects
+	//		<< " DrawCalls: " << m_sortingStats.drawCalls
+	//		<< " ShaderSwitch: " << m_sortingStats.shaderSwitches
+	//		<< " MatSwitch: " << m_sortingStats.materialSwitches << "\n";
+	//}
 }
 
 void GraphicsManager::RenderModel(const ModelRenderComponent& item)
