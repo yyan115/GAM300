@@ -1,0 +1,30 @@
+{
+    "name": "New Animator",
+    "entryState": "Taunt",
+    "entryNodePosition": {
+        "x": -200.0,
+        "y": -100.0
+    },
+    "anyStatePosition": {
+        "x": -200.0,
+        "y": 0.0
+    },
+    "parameters": [],
+    "states": [
+        {
+            "id": "Taunt",
+            "clipIndex": 0,
+            "loop": false,
+            "speed": 1.0,
+            "crossfadeDuration": 0.0,
+            "nodePosition": {
+                "x": -78.0,
+                "y": -117.0
+            }
+        }
+    ],
+    "transitions": [],
+    "clipPaths": [
+        "Resources/Animations/Miniboss@Taunt.fbx"
+    ]
+}

@@ -1,12 +1,19 @@
 /* Start Header ************************************************************************/
 /*!
 \file       UndoableWidgets.hpp
-\author     Lucas Yee
-\date       2025
-\brief      ImGui widget wrappers with automatic undo/redo support.
-            Use these instead of raw ImGui calls to get undo/redo for free.
+\author     Claude (Rewrite)
+\date       2026
+\brief      ImGui widget wrappers with automatic undo/redo support (Unity-style).
 
-Copyright (C) 2025 DigiPen Institute of Technology.
+            These widgets use the new command-based UndoSystem instead of taking
+            full scene snapshots. This means:
+            - NO lag when clicking on fields
+            - NO scene serialization
+            - Instant undo/redo
+
+            Usage: Use these instead of raw ImGui calls to get undo/redo for free.
+
+Copyright (C) 2026 DigiPen Institute of Technology.
 Reproduction or disclosure of this file or its contents without the
 prior written consent of DigiPen Institute of Technology is prohibited.
 */
@@ -14,7 +21,6 @@ prior written consent of DigiPen Institute of Technology is prohibited.
 #pragma once
 #include "imgui.h"
 #include <functional>
-#include "SnapshotManager.hpp"
 
 namespace UndoableWidgets {
 
@@ -23,8 +29,18 @@ namespace UndoableWidgets {
                    float v_min = 0.0f, float v_max = 0.0f,
                    const char* format = "%.3f", ImGuiSliderFlags flags = 0);
 
+    // ==================== DRAG FLOAT2 ====================
+    bool DragFloat2(const char* label, float v[2], float v_speed = 1.0f,
+                    float v_min = 0.0f, float v_max = 0.0f,
+                    const char* format = "%.3f", ImGuiSliderFlags flags = 0);
+
     // ==================== DRAG FLOAT3 ====================
     bool DragFloat3(const char* label, float v[3], float v_speed = 1.0f,
+                    float v_min = 0.0f, float v_max = 0.0f,
+                    const char* format = "%.3f", ImGuiSliderFlags flags = 0);
+
+    // ==================== DRAG FLOAT4 ====================
+    bool DragFloat4(const char* label, float v[4], float v_speed = 1.0f,
                     float v_min = 0.0f, float v_max = 0.0f,
                     const char* format = "%.3f", ImGuiSliderFlags flags = 0);
 
@@ -38,6 +54,13 @@ namespace UndoableWidgets {
 
     // ==================== COLOR EDIT 4 ====================
     bool ColorEdit4(const char* label, float col[4], ImGuiColorEditFlags flags = 0);
+
+    // ==================== COLOR PICKER 3 ====================
+    bool ColorPicker3(const char* label, float col[3], ImGuiColorEditFlags flags = 0);
+
+    // ==================== COLOR PICKER 4 ====================
+    bool ColorPicker4(const char* label, float col[4], ImGuiColorEditFlags flags = 0,
+                      const float* ref_col = NULL);
 
     // ==================== CHECKBOX ====================
     bool Checkbox(const char* label, bool* v);
@@ -72,44 +95,28 @@ namespace UndoableWidgets {
     bool InputInt(const char* label, int* v, int step = 1, int step_fast = 100,
                   ImGuiInputTextFlags flags = 0);
 
-    // ==================== DRAG FLOAT2 ====================
-    bool DragFloat2(const char* label, float v[2], float v_speed = 1.0f,
-                    float v_min = 0.0f, float v_max = 0.0f,
-                    const char* format = "%.3f", ImGuiSliderFlags flags = 0);
+    // ==================== DRAG DROP HANDLERS ====================
 
-    // ==================== DRAG FLOAT4 ====================
-    bool DragFloat4(const char* label, float v[4], float v_speed = 1.0f,
-                    float v_min = 0.0f, float v_max = 0.0f,
-                    const char* format = "%.3f", ImGuiSliderFlags flags = 0);
-
-    // ==================== COLOR PICKER 3 ====================
-    bool ColorPicker3(const char* label, float col[3], ImGuiColorEditFlags flags = 0);
-
-    // ==================== COLOR PICKER 4 ====================
-    bool ColorPicker4(const char* label, float col[4], ImGuiColorEditFlags flags = 0,
-                      const float* ref_col = NULL);
-
-    // ==================== UNIVERSAL DRAG DROP HANDLER ====================
-    // Template function that handles drag-drop with automatic undo support
+    /**
+     * @brief Handle drag-drop with automatic undo support
+     *
+     * Use this for drag-drop operations that modify data.
+     */
     template<typename T>
-    bool AcceptDragDropPayload(const char* type, const char* snapshotName,
+    bool AcceptDragDropPayload(const char* type, const char* description,
                                 std::function<void(const ImGuiPayload*)> handler) {
         if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload(type)) {
-            // Take snapshot before applying changes
-            SnapshotManager::GetInstance().TakeSnapshot(snapshotName);
-            // Execute the handler to apply the changes
+            // Execute the handler (it should record its own undo command)
             handler(payload);
             return true;
         }
         return false;
     }
 
-    // Helper for simple value assignments
+    /**
+     * @brief Handle drag-drop for simple value assignments
+     */
     template<typename T>
-    bool AcceptDragDropValue(const char* type, const char* snapshotName, T* targetValue, const T& newValue) {
-        return AcceptDragDropPayload<T>(type, snapshotName, [targetValue, &newValue](const ImGuiPayload* payload) {
-            *targetValue = newValue;
-        });
-    }
+    bool AcceptDragDropValue(const char* type, const char* description, T* targetValue, const T& newValue);
 
 } // namespace UndoableWidgets

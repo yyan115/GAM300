@@ -1,0 +1,13 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "004bc8acf73be39b-00041b443a001e81",
+        "source": "../../Resources/Textures/M4/LanternHolder_Holder_Normal.png",
+        "compiled": "../../Resources/Textures/M4/LanternHolder_Holder_Normal.dds"
+    },
+    "TextureMetaData": {
+        "type": "normal",
+        "flipUVs": false,
+        "generateMipmaps": true
+    }
+}

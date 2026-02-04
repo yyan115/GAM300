@@ -410,7 +410,7 @@ void GraphicsManager::RenderModel(const ModelRenderComponent& item)
 		static bool once = false;
 		if (!once) 
 		{
-			std::cout << "[Debug] ApplyShadows called" << std::endl;
+			ENGINE_PRINT("[Debug] ApplyShadows called");
 			once = true;
 		}
 	}
@@ -1067,12 +1067,12 @@ void GraphicsManager::InitializeSkybox()
 	std::string skyboxShaderPath = ResourceManager::GetPlatformShaderPath("skybox");
 	skyboxShader = ResourceManager::GetInstance().GetResource<Shader>(skyboxShaderPath);
 	if (!skyboxShader) {
-		std::cout << "[GraphicsManager] WARNING: Failed to load skybox shader from: " << skyboxShaderPath << std::endl;
+		ENGINE_PRINT("[GraphicsManager] WARNING: Failed to load skybox shader from: {}", skyboxShaderPath);
 	} else {
-		std::cout << "[GraphicsManager] Skybox shader loaded successfully - ID: " << skyboxShader->ID << std::endl;
+		ENGINE_PRINT("[GraphicsManager] Skybox shader loaded successfully - ID: {}", skyboxShader->ID);
 	}
 
-	std::cout << "[GraphicsManager] Skybox initialized - VAO: " << skyboxVAO << ", VBO: " << skyboxVBO << std::endl;
+	ENGINE_PRINT("[GraphicsManager] Skybox initialized - VAO: {}, VBO: {}", skyboxVAO, skyboxVBO);
 }
 
 void GraphicsManager::RenderSceneForShadows(Shader& depthShader)
@@ -1080,8 +1080,7 @@ void GraphicsManager::RenderSceneForShadows(Shader& depthShader)
 	static int frameCount = 0;
 	frameCount++;
 	if (frameCount <= 5) {
-		std::cout << "[Shadow] RenderSceneForShadows called - frame " << frameCount
-			<< ", queue size: " << renderQueue.size() << std::endl;
+		ENGINE_PRINT("[Shadow] RenderSceneForShadows called - frame {}, queue size: {}", frameCount, renderQueue.size());
 	}
 
 	int count = 0;
@@ -1115,7 +1114,7 @@ void GraphicsManager::RenderSceneForShadows(Shader& depthShader)
 	// Debug
 	static bool once = false;
 	if (!once) {
-		std::cout << "[Shadow Pass] Rendered " << count << " objects to shadow map" << std::endl;
+		ENGINE_PRINT("[Shadow Pass] Rendered {} objects to shadow map", count);
 		once = true;
 	}
 }
@@ -1126,8 +1125,7 @@ void GraphicsManager::RenderSkybox()
 
 	if (!currentCamera || !skyboxShader || skyboxVAO == 0) {
 		if (!checkedOnce) {
-			std::cout << "[GraphicsManager] Skybox render skipped - camera: " << (currentCamera != nullptr)
-				<< ", shader: " << (skyboxShader != nullptr) << ", VAO: " << skyboxVAO << std::endl;
+			ENGINE_PRINT("[GraphicsManager] Skybox render skipped - camera: {}, shader: {}, VAO: {}", (currentCamera != nullptr), (skyboxShader != nullptr), skyboxVAO);
 			checkedOnce = true;
 		}
 		return;
@@ -1136,7 +1134,7 @@ void GraphicsManager::RenderSkybox()
 	ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
 	if (!ecsManager.cameraSystem) {
 		if (!checkedOnce) {
-			std::cout << "[GraphicsManager] Skybox render skipped - no camera system" << std::endl;
+			ENGINE_PRINT("[GraphicsManager] Skybox render skipped - no camera system");
 			checkedOnce = true;
 		}
 		return;
@@ -1145,7 +1143,7 @@ void GraphicsManager::RenderSkybox()
 	Entity activeCameraEntity = ecsManager.cameraSystem->GetActiveCameraEntity();
 	if (activeCameraEntity == UINT32_MAX || !ecsManager.HasComponent<CameraComponent>(activeCameraEntity)) {
 		if (!checkedOnce) {
-			std::cout << "[GraphicsManager] Skybox render skipped - no active camera entity" << std::endl;
+			ENGINE_PRINT("[GraphicsManager] Skybox render skipped - no active camera entity");
 			checkedOnce = true;
 		}
 		return;
@@ -1154,7 +1152,7 @@ void GraphicsManager::RenderSkybox()
 	auto& cameraComp = ecsManager.GetComponent<CameraComponent>(activeCameraEntity);
 	if (!cameraComp.skyboxTexture) {
 		if (!checkedOnce) {
-			std::cout << "[GraphicsManager] Skybox render skipped - no skybox texture assigned" << std::endl;
+			ENGINE_PRINT("[GraphicsManager] Skybox render skipped - no skybox texture assigned");
 			checkedOnce = true;
 		}
 		return;
@@ -1162,8 +1160,7 @@ void GraphicsManager::RenderSkybox()
 
 	static bool logged = false;
 	if (!logged) {
-		std::cout << "[GraphicsManager] Rendering skybox - Texture ID: " << cameraComp.skyboxTexture->ID
-			<< ", Viewport: " << viewportWidth << "x" << viewportHeight << std::endl;
+		ENGINE_PRINT("[GraphicsManager] Rendering skybox - Texture ID: {}, Viewport: {}x{}", cameraComp.skyboxTexture->ID, viewportWidth, viewportHeight);
 		logged = true;
 	}
 

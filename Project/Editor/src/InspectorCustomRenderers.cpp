@@ -14,9 +14,12 @@ prior written consent of DigiPen Institute of Technology is prohibited.
 #include <filesystem>
 #include <algorithm>
 #include <cstdio>
+#include <unordered_map>
 #include "Logging.hpp"
 #include "ReflectionRenderer.hpp"
 #include "ECS/ECSManager.hpp"
+#include "ECS/ECSRegistry.hpp"
+#include "UndoSystem.hpp"
 #include "Transform/TransformSystem.hpp"
 #include "Physics/ColliderComponent.hpp"
 #include "Physics/CollisionLayers.hpp"
@@ -299,12 +302,20 @@ void RegisterInspectorCustomRenderers()
 
     // ==================== NAME COMPONENT ====================
     // Name component is rendered without collapsing header at the top
+    // Uses entity-aware lambda commands for proper undo/redo
 
     ReflectionRenderer::RegisterComponentRenderer("NameComponent",
     [](void *componentPtr, TypeDescriptor_Struct *, Entity entity, ECSManager &ecs)
     {
-        ecs;
         NameComponent &nameComp = *static_cast<NameComponent *>(componentPtr);
+
+        // Static tracking maps for entity-aware undo
+        static std::unordered_map<Entity, bool> startIsActive;
+        static std::unordered_map<Entity, std::string> startName;
+        static std::unordered_map<Entity, bool> isEditingName;
+
+        // Initialize tracking state
+        if (isEditingName.find(entity) == isEditingName.end()) isEditingName[entity] = false;
 
         if (ecs.HasComponent<ActiveComponent>(entity))
         {
@@ -317,8 +328,31 @@ void RegisterInspectorCustomRenderers()
             ImGui::PushStyleColor(ImGuiCol_FrameBgHovered, ImVec4(0.4f, 0.4f, 0.4f, 1.0f)); // Lighter on hover
             ImGui::PushStyleColor(ImGuiCol_FrameBgActive, ImVec4(0.5f, 0.5f, 0.5f, 1.0f));  // Even lighter when clicking
 
-            // Use UndoableWidgets wrapper for automatic undo/redo
-            UndoableWidgets::Checkbox("##EntityActive", &activeComp.isActive);
+            // Entity-aware checkbox for active state
+            startIsActive[entity] = activeComp.isActive;
+            bool isActiveVal = activeComp.isActive;
+            if (ImGui::Checkbox("##EntityActive", &isActiveVal)) {
+                bool oldVal = startIsActive[entity];
+                bool newVal = isActiveVal;
+                activeComp.isActive = newVal;
+                if (oldVal != newVal && UndoSystem::GetInstance().IsEnabled()) {
+                    UndoSystem::GetInstance().RecordLambdaChange(
+                        [entity, newVal]() {
+                            ECSManager& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
+                            if (ecs.HasComponent<ActiveComponent>(entity)) {
+                                ecs.GetComponent<ActiveComponent>(entity).isActive = newVal;
+                            }
+                        },
+                        [entity, oldVal]() {
+                            ECSManager& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
+                            if (ecs.HasComponent<ActiveComponent>(entity)) {
+                                ecs.GetComponent<ActiveComponent>(entity).isActive = oldVal;
+                            }
+                        },
+                        "Toggle Entity Active"
+                    );
+                }
+            }
 
             ImGui::PopStyleColor(4); // Pop all 4 colors
             ImGui::PopStyleVar();    // Pop padding
@@ -330,12 +364,38 @@ void RegisterInspectorCustomRenderers()
             ImGui::SameLine();
         }
 
-        // Simple text input for name (no collapsing header)
+        // Simple text input for name with entity-aware undo
         char buf[128] = {};
         std::snprintf(buf, sizeof(buf), "%s", nameComp.name.c_str());
-        if (UndoableWidgets::InputText("Name", buf, sizeof(buf)))
+
+        if (!isEditingName[entity]) startName[entity] = nameComp.name;
+        if (ImGui::IsItemActivated()) { startName[entity] = nameComp.name; isEditingName[entity] = true; }
+
+        if (ImGui::InputText("Name", buf, sizeof(buf)))
         {
             nameComp.name = buf;
+            isEditingName[entity] = true;
+        }
+
+        if (isEditingName[entity] && !ImGui::IsItemActive()) {
+            std::string oldVal = startName[entity];
+            std::string newVal = nameComp.name;
+            if (oldVal != newVal && UndoSystem::GetInstance().IsEnabled()) {
+                UndoSystem::GetInstance().RecordLambdaChange(
+                    [entity, newVal, &ecs]() {
+                        if (ecs.HasComponent<NameComponent>(entity)) {
+                            ecs.GetComponent<NameComponent>(entity).name = newVal;
+                        }
+                    },
+                    [entity, oldVal, &ecs]() {
+                        if (ecs.HasComponent<NameComponent>(entity)) {
+                            ecs.GetComponent<NameComponent>(entity).name = oldVal;
+                        }
+                    },
+                    "Change Entity Name"
+                );
+            }
+            isEditingName[entity] = false;
         }
 
         return true; // Skip default rendering (we rendered everything)
@@ -343,12 +403,15 @@ void RegisterInspectorCustomRenderers()
 
     // ==================== TAG COMPONENT ====================
     // Tag component uses TagManager dropdown (rendered inline with Layer)
+    // Uses entity-aware lambda commands for proper undo/redo
 
     ReflectionRenderer::RegisterComponentRenderer("TagComponent",
-    [](void *componentPtr, TypeDescriptor_Struct *, Entity, ECSManager &ecs)
+    [](void *componentPtr, TypeDescriptor_Struct *, Entity entity, ECSManager &ecs)
     {
-        ecs;
         TagComponent &tagComp = *static_cast<TagComponent *>(componentPtr);
+
+        // Static tracking for entity-aware undo
+        static std::unordered_map<Entity, int> startTagIndex;
 
         // Get available tags
         const auto &availableTags = TagManager::GetInstance().GetAllTags();
@@ -358,7 +421,7 @@ void RegisterInspectorCustomRenderers()
         tagItems.reserve(availableTags.size() + 1);
         for (const auto &tag : availableTags)
         {
-        tagItems.push_back(tag);
+            tagItems.push_back(tag);
         }
         tagItems.push_back("Add Tag...");
 
@@ -367,36 +430,63 @@ void RegisterInspectorCustomRenderers()
         tagItemPtrs.reserve(tagItems.size());
         for (const auto &item : tagItems)
         {
-        tagItemPtrs.push_back(item.c_str());
+            tagItemPtrs.push_back(item.c_str());
         }
 
         // Ensure tagIndex is valid
         if (tagComp.tagIndex < 0 || tagComp.tagIndex >= static_cast<int>(availableTags.size()))
         {
-        tagComp.tagIndex = 0; // Default to first tag
+            tagComp.tagIndex = 0; // Default to first tag
         }
 
-        // Inline rendering (no label, just combo) - using UndoableWidgets
+        // Inline rendering (no label, just combo) with entity-aware undo
         ImGui::Text("Tag");
         ImGui::SameLine();
         ImGui::SetNextItemWidth(120.0f);
         int currentTag = tagComp.tagIndex;
-        if (UndoableWidgets::Combo("##Tag", &currentTag, tagItemPtrs.data(), static_cast<int>(tagItemPtrs.size())))
+        startTagIndex[entity] = currentTag;
+
+        if (ImGui::BeginCombo("##Tag", tagItemPtrs[currentTag]))
         {
-        if (currentTag >= 0 && currentTag < static_cast<int>(availableTags.size()))
-        {
-        tagComp.tagIndex = currentTag;
-        }
-        else if (currentTag == static_cast<int>(availableTags.size()))
-        {
-        // "Add Tag..." was selected - open Tags & Layers window
-        auto tagsLayersPanel = GUIManager::GetPanelManager().GetPanel("Tags & Layers");
-        if (tagsLayersPanel) {
-            tagsLayersPanel->SetOpen(true);
-        }
-        // Reset selection to current tag
-        currentTag = tagComp.tagIndex;
-        }
+            for (int i = 0; i < static_cast<int>(tagItemPtrs.size()); i++)
+            {
+                bool isSelected = (currentTag == i);
+                if (ImGui::Selectable(tagItemPtrs[i], isSelected))
+                {
+                    if (i >= 0 && i < static_cast<int>(availableTags.size()))
+                    {
+                        int oldVal = startTagIndex[entity];
+                        int newVal = i;
+                        tagComp.tagIndex = newVal;
+
+                        if (oldVal != newVal && UndoSystem::GetInstance().IsEnabled()) {
+                            UndoSystem::GetInstance().RecordLambdaChange(
+                                [entity, newVal, &ecs]() {
+                                    if (ecs.HasComponent<TagComponent>(entity)) {
+                                        ecs.GetComponent<TagComponent>(entity).tagIndex = newVal;
+                                    }
+                                },
+                                [entity, oldVal, &ecs]() {
+                                    if (ecs.HasComponent<TagComponent>(entity)) {
+                                        ecs.GetComponent<TagComponent>(entity).tagIndex = oldVal;
+                                    }
+                                },
+                                "Change Entity Tag"
+                            );
+                        }
+                    }
+                    else if (i == static_cast<int>(availableTags.size()))
+                    {
+                        // "Add Tag..." was selected - open Tags & Layers window
+                        auto tagsLayersPanel = GUIManager::GetPanelManager().GetPanel("Tags & Layers");
+                        if (tagsLayersPanel) {
+                            tagsLayersPanel->SetOpen(true);
+                        }
+                    }
+                }
+                if (isSelected) ImGui::SetItemDefaultFocus();
+            }
+            ImGui::EndCombo();
         }
 
         ImGui::SameLine(); // Keep Layer on same line
@@ -406,12 +496,15 @@ void RegisterInspectorCustomRenderers()
 
     // ==================== LAYER COMPONENT ====================
     // Layer component uses LayerManager dropdown (rendered inline with Tag)
+    // Uses entity-aware lambda commands for proper undo/redo
 
     ReflectionRenderer::RegisterComponentRenderer("LayerComponent",
-    [](void *componentPtr, TypeDescriptor_Struct *, Entity, ECSManager &ecs)
+    [](void *componentPtr, TypeDescriptor_Struct *, Entity entity, ECSManager &ecs)
     {
-        ecs;
         LayerComponent &layerComp = *static_cast<LayerComponent *>(componentPtr);
+
+        // Static tracking for entity-aware undo
+        static std::unordered_map<Entity, int> startLayerIndex;
 
         // Get available layers
         const auto &availableLayers = LayerManager::GetInstance().GetAllLayers();
@@ -466,38 +559,59 @@ void RegisterInspectorCustomRenderers()
             layerComp.layerIndex = layerIndices[0];
         }
 
-        // Inline rendering (continues from Tag on same line) - using UndoableWidgets
+        // Store the start value for undo
+        startLayerIndex[entity] = layerComp.layerIndex;
+
+        // Inline rendering (continues from Tag on same line) with entity-aware undo
         ImGui::Text("Layer");
         ImGui::SameLine();
         ImGui::SetNextItemWidth(120.0f);
-        if (UndoableWidgets::Combo("##Layer", &currentSelection, layerItemPtrs.data(), static_cast<int>(layerItemPtrs.size())))
+
+        if (ImGui::BeginCombo("##Layer", currentSelection >= 0 ? layerItemPtrs[currentSelection] : ""))
         {
-            if (currentSelection >= 0 && currentSelection < static_cast<int>(tempIndices.size()))
+            for (int i = 0; i < static_cast<int>(layerItemPtrs.size()); i++)
             {
-                int selectedIndex = tempIndices[currentSelection];
-                if (selectedIndex != -1)
+                bool isSelected = (currentSelection == i);
+                if (ImGui::Selectable(layerItemPtrs[i], isSelected))
                 {
-                    layerComp.layerIndex = selectedIndex;
-                }
-                else
-                {
-                    // "Add Layer..." was selected - open Tags & Layers window
-                    auto tagsLayersPanel = GUIManager::GetPanelManager().GetPanel("Tags & Layers");
-                    if (tagsLayersPanel) {
-                        tagsLayersPanel->SetOpen(true);
-                    }
-                    // Reset selection to current layer
-                    currentSelection = -1; // or find the current
-                    for (size_t i = 0; i < layerIndices.size(); ++i)
+                    if (i >= 0 && i < static_cast<int>(tempIndices.size()))
                     {
-                        if (layerIndices[i] == layerComp.layerIndex)
+                        int selectedIndex = tempIndices[i];
+                        if (selectedIndex != -1)
                         {
-                            currentSelection = static_cast<int>(i);
-                            break;
+                            int oldVal = startLayerIndex[entity];
+                            int newVal = selectedIndex;
+                            layerComp.layerIndex = newVal;
+
+                            if (oldVal != newVal && UndoSystem::GetInstance().IsEnabled()) {
+                                UndoSystem::GetInstance().RecordLambdaChange(
+                                    [entity, newVal, &ecs]() {
+                                        if (ecs.HasComponent<LayerComponent>(entity)) {
+                                            ecs.GetComponent<LayerComponent>(entity).layerIndex = newVal;
+                                        }
+                                    },
+                                    [entity, oldVal, &ecs]() {
+                                        if (ecs.HasComponent<LayerComponent>(entity)) {
+                                            ecs.GetComponent<LayerComponent>(entity).layerIndex = oldVal;
+                                        }
+                                    },
+                                    "Change Entity Layer"
+                                );
+                            }
+                        }
+                        else
+                        {
+                            // "Add Layer..." was selected - open Tags & Layers window
+                            auto tagsLayersPanel = GUIManager::GetPanelManager().GetPanel("Tags & Layers");
+                            if (tagsLayersPanel) {
+                                tagsLayersPanel->SetOpen(true);
+                            }
                         }
                     }
                 }
+                if (isSelected) ImGui::SetItemDefaultFocus();
             }
+            ImGui::EndCombo();
         }
 
         ImGui::Separator(); // Add separator after Tag/Layer line
@@ -506,79 +620,199 @@ void RegisterInspectorCustomRenderers()
     });
 
     // ==================== TRANSFORM COMPONENT ====================
-    // Transform needs to use TransformSystem for setting values
+    // Transform needs special undo handling - must use TransformSystem, not direct memory writes
+    // We track editing state per-entity and record commands that call TransformSystem on undo
 
     ReflectionRenderer::RegisterFieldRenderer("Transform", "localPosition",
     [](const char *name, void *ptr, Entity entity, ECSManager &ecs)
     {
-        // Commented out to fix warning C4100 - unreferenced parameters
-        // Remove these lines when 'name' and 'ecs' are used
         (void)name;
-        (void)ecs;
+        static std::unordered_map<Entity, Vector3D> startPositions;
+        static std::unordered_map<Entity, bool> isEditingPosition;
+
         Vector3D *pos = static_cast<Vector3D *>(ptr);
         float arr[3] = {pos->x, pos->y, pos->z};
         const float labelWidth = EditorComponents::GetLabelWidth();
+
+        // Capture start value when not editing
+        if (!isEditingPosition[entity]) {
+            startPositions[entity] = *pos;
+        }
 
         ImGui::Text("Position");
         ImGui::SameLine(labelWidth);
         ImGui::SetNextItemWidth(-1);
 
-        // Use UndoableWidgets wrapper for automatic undo/redo
-        bool changed = UndoableWidgets::DragFloat3("##Position", arr, 0.1f, -FLT_MAX, FLT_MAX, "%.3f");
+        // Use raw ImGui (not UndoableWidgets) - we handle undo ourselves
+        bool changed = ImGui::DragFloat3("##Position", arr, 0.1f, -FLT_MAX, FLT_MAX, "%.3f");
 
-        if (changed)
-        {
-        ecs.transformSystem->SetLocalPosition(entity, {arr[0], arr[1], arr[2]});
-        return true;
+        // Track editing state
+        if (ImGui::IsItemActivated()) {
+            startPositions[entity] = *pos;
+            isEditingPosition[entity] = true;
         }
-        return false;
+
+        if (changed) {
+            ecs.transformSystem->SetLocalPosition(entity, {arr[0], arr[1], arr[2]});
+        }
+
+        // Record undo command when editing ends
+        if (isEditingPosition[entity] && !ImGui::IsItemActive()) {
+            isEditingPosition[entity] = false;
+            Vector3D startPos = startPositions[entity];
+            Vector3D endPos = *pos;
+
+            // Only record if actually changed
+            if (startPos.x != endPos.x || startPos.y != endPos.y || startPos.z != endPos.z) {
+                if (UndoSystem::GetInstance().IsEnabled()) {
+                    // Capture entity and positions for lambda
+                    UndoSystem::GetInstance().RecordLambdaChange(
+                        [entity, endPos]() {
+                            // Redo: restore end position
+                            ECSManager& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
+                            if (ecs.HasComponent<Transform>(entity)) {
+                                ecs.transformSystem->SetLocalPosition(entity, endPos);
+                            }
+                        },
+                        [entity, startPos]() {
+                            // Undo: restore start position
+                            ECSManager& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
+                            if (ecs.HasComponent<Transform>(entity)) {
+                                ecs.transformSystem->SetLocalPosition(entity, startPos);
+                            }
+                        },
+                        "Move Entity"
+                    );
+                }
+            }
+        }
+
+        return changed;
     });
 
     ReflectionRenderer::RegisterFieldRenderer("Transform", "localRotation",
     [](const char *, void *ptr, Entity entity, ECSManager &ecs)
     {
-        ecs;
+        static std::unordered_map<Entity, Vector3D> startRotations;
+        static std::unordered_map<Entity, bool> isEditingRotation;
+
         Quaternion *quat = static_cast<Quaternion *>(ptr);
         Vector3D euler = quat->ToEulerDegrees();
         float arr[3] = {euler.x, euler.y, euler.z};
         const float labelWidth = EditorComponents::GetLabelWidth();
 
+        // Capture start value when not editing
+        if (!isEditingRotation[entity]) {
+            startRotations[entity] = euler;
+        }
+
         ImGui::Text("Rotation");
         ImGui::SameLine(labelWidth);
         ImGui::SetNextItemWidth(-1);
 
-        // Use UndoableWidgets wrapper for automatic undo/redo
-        bool changed = UndoableWidgets::DragFloat3("##Rotation", arr, 1.0f, -180.0f, 180.0f, "%.1f");
+        // Use raw ImGui - we handle undo ourselves
+        bool changed = ImGui::DragFloat3("##Rotation", arr, 1.0f, -180.0f, 180.0f, "%.1f");
 
-        if (changed)
-        {
-        ecs.transformSystem->SetLocalRotation(entity, {arr[0], arr[1], arr[2]});
-        return true;
+        // Track editing state
+        if (ImGui::IsItemActivated()) {
+            startRotations[entity] = euler;
+            isEditingRotation[entity] = true;
         }
-        return false;
+
+        if (changed) {
+            ecs.transformSystem->SetLocalRotation(entity, {arr[0], arr[1], arr[2]});
+        }
+
+        // Record undo command when editing ends
+        if (isEditingRotation[entity] && !ImGui::IsItemActive()) {
+            isEditingRotation[entity] = false;
+            Vector3D startRot = startRotations[entity];
+            Vector3D endRot = {arr[0], arr[1], arr[2]};
+
+            if (startRot.x != endRot.x || startRot.y != endRot.y || startRot.z != endRot.z) {
+                if (UndoSystem::GetInstance().IsEnabled()) {
+                    UndoSystem::GetInstance().RecordLambdaChange(
+                        [entity, endRot]() {
+                            ECSManager& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
+                            if (ecs.HasComponent<Transform>(entity)) {
+                                ecs.transformSystem->SetLocalRotation(entity, endRot);
+                            }
+                        },
+                        [entity, startRot]() {
+                            ECSManager& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
+                            if (ecs.HasComponent<Transform>(entity)) {
+                                ecs.transformSystem->SetLocalRotation(entity, startRot);
+                            }
+                        },
+                        "Rotate Entity"
+                    );
+                }
+            }
+        }
+
+        return changed;
     });
 
     ReflectionRenderer::RegisterFieldRenderer("Transform", "localScale",
     [](const char *, void *ptr, Entity entity, ECSManager &ecs)
     {
-        ecs;
+        static std::unordered_map<Entity, Vector3D> startScales;
+        static std::unordered_map<Entity, bool> isEditingScale;
+
         Vector3D *scale = static_cast<Vector3D *>(ptr);
         float arr[3] = {scale->x, scale->y, scale->z};
         const float labelWidth = EditorComponents::GetLabelWidth();
+
+        // Capture start value when not editing
+        if (!isEditingScale[entity]) {
+            startScales[entity] = *scale;
+        }
 
         ImGui::Text("Scale");
         ImGui::SameLine(labelWidth);
         ImGui::SetNextItemWidth(-1);
 
-        // Use UndoableWidgets wrapper for automatic undo/redo
-        bool changed = UndoableWidgets::DragFloat3("##Scale", arr, 0.1f, 0.001f, FLT_MAX, "%.3f");
+        // Use raw ImGui - we handle undo ourselves
+        bool changed = ImGui::DragFloat3("##Scale", arr, 0.1f, 0.001f, FLT_MAX, "%.3f");
 
-        if (changed)
-        {
-            ecs.transformSystem->SetLocalScale(entity, {arr[0], arr[1], arr[2]});
-            return true;
+        // Track editing state
+        if (ImGui::IsItemActivated()) {
+            startScales[entity] = *scale;
+            isEditingScale[entity] = true;
         }
-        return false;
+
+        if (changed) {
+            ecs.transformSystem->SetLocalScale(entity, {arr[0], arr[1], arr[2]});
+        }
+
+        // Record undo command when editing ends
+        if (isEditingScale[entity] && !ImGui::IsItemActive()) {
+            isEditingScale[entity] = false;
+            Vector3D startScl = startScales[entity];
+            Vector3D endScl = {arr[0], arr[1], arr[2]};
+
+            if (startScl.x != endScl.x || startScl.y != endScl.y || startScl.z != endScl.z) {
+                if (UndoSystem::GetInstance().IsEnabled()) {
+                    UndoSystem::GetInstance().RecordLambdaChange(
+                        [entity, endScl]() {
+                            ECSManager& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
+                            if (ecs.HasComponent<Transform>(entity)) {
+                                ecs.transformSystem->SetLocalScale(entity, endScl);
+                            }
+                        },
+                        [entity, startScl]() {
+                            ECSManager& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
+                            if (ecs.HasComponent<Transform>(entity)) {
+                                ecs.transformSystem->SetLocalScale(entity, startScl);
+                            }
+                        },
+                        "Scale Entity"
+                    );
+                }
+            }
+        }
+
+        return changed;
     });
 
     // ==================== COLLIDER COMPONENT ====================
@@ -587,10 +821,30 @@ void RegisterInspectorCustomRenderers()
     ReflectionRenderer::RegisterFieldRenderer("ColliderComponent", "shapeTypeID",
     [](const char *, void *, Entity entity, ECSManager &ecs)
     {
-        ecs;
+        // Entity-aware undo for ColliderComponent - stores entity ID, not pointers
+        static std::unordered_map<Entity, int> startShapeType;
+        static std::unordered_map<Entity, Vector3D> startBoxHalfExtents;
+        static std::unordered_map<Entity, float> startSphereRadius;
+        static std::unordered_map<Entity, float> startCapsuleRadius;
+        static std::unordered_map<Entity, float> startCapsuleHalfHeight;
+        static std::unordered_map<Entity, float> startCylinderRadius;
+        static std::unordered_map<Entity, float> startCylinderHalfHeight;
+        static std::unordered_map<Entity, bool> isEditingCollider;
+
         auto &collider = ecs.GetComponent<ColliderComponent>(entity);
         auto rc = ecs.TryGetComponent<ModelRenderComponent>(entity);
         const float labelWidth = EditorComponents::GetLabelWidth();
+
+        // Capture start values when not editing
+        if (!isEditingCollider[entity]) {
+            startShapeType[entity] = static_cast<int>(collider.shapeType);
+            startBoxHalfExtents[entity] = collider.boxHalfExtents;
+            startSphereRadius[entity] = collider.sphereRadius;
+            startCapsuleRadius[entity] = collider.capsuleRadius;
+            startCapsuleHalfHeight[entity] = collider.capsuleHalfHeight;
+            startCylinderRadius[entity] = collider.cylinderRadius;
+            startCylinderHalfHeight[entity] = collider.cylinderHalfHeight;
+        }
 
         ImGui::Text("Shape Type");
         ImGui::SameLine(labelWidth);
@@ -599,21 +853,37 @@ void RegisterInspectorCustomRenderers()
         int currentShapeType = static_cast<int>(collider.shapeType);
 
         EditorComponents::PushComboColors();
-        bool changed = UndoableWidgets::Combo("##ShapeType", &currentShapeType, shapeTypes, 5);
+        int oldShapeType = currentShapeType;
+        bool shapeChanged = ImGui::Combo("##ShapeType", &currentShapeType, shapeTypes, 5);
         EditorComponents::PopComboColors();
 
-        //ImGui::Text("Collider Offset");
-        //ImGui::SameLine(labelWidth);
-        //ImGui::SetNextItemWidth(-1);
-
-        //float colliderOffset[3] = { collider.offset.x, collider.offset.y, collider.offset.z };
-        //if (UndoableWidgets::DragFloat3("##ColliderOffset", colliderOffset, 0.05f, -FLT_MAX, FLT_MAX, "%.2f"))
-        //{
-        //    collider.offset = Vector3D(colliderOffset[0], colliderOffset[1], colliderOffset[2]);
-        //}
-
-        if (changed)
-        {
+        if (shapeChanged) {
+            // Record undo for shape type change immediately (combo is instant)
+            if (UndoSystem::GetInstance().IsEnabled()) {
+                int capturedOld = oldShapeType;
+                int capturedNew = currentShapeType;
+                UndoSystem::GetInstance().RecordLambdaChange(
+                    [entity, capturedNew]() {
+                        ECSManager& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
+                        if (ecs.HasComponent<ColliderComponent>(entity)) {
+                            auto& c = ecs.GetComponent<ColliderComponent>(entity);
+                            c.shapeType = static_cast<ColliderShapeType>(capturedNew);
+                            c.shapeTypeID = capturedNew;
+                            c.version++;
+                        }
+                    },
+                    [entity, capturedOld]() {
+                        ECSManager& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
+                        if (ecs.HasComponent<ColliderComponent>(entity)) {
+                            auto& c = ecs.GetComponent<ColliderComponent>(entity);
+                            c.shapeType = static_cast<ColliderShapeType>(capturedOld);
+                            c.shapeTypeID = capturedOld;
+                            c.version++;
+                        }
+                    },
+                    "Change Collider Shape"
+                );
+            }
             collider.shapeType = static_cast<ColliderShapeType>(currentShapeType);
             collider.shapeTypeID = currentShapeType;
             collider.version++;
@@ -622,8 +892,8 @@ void RegisterInspectorCustomRenderers()
         // Shape Parameters based on type
         bool shapeParamsChanged = false;
 
-        Vector3D halfExtent = { 0.5f, 0.5f, 0.5f }; // default values
-		float radius = 0.5f; // default value
+        Vector3D halfExtent = { 0.5f, 0.5f, 0.5f };
+        float radius = 0.5f;
         if (rc.has_value()) {
             auto& modelComp = rc->get();
             halfExtent = modelComp.CalculateModelHalfExtent(*modelComp.model);
@@ -637,12 +907,42 @@ void RegisterInspectorCustomRenderers()
             ImGui::Text("Half Extents");
             ImGui::SameLine(labelWidth);
             ImGui::SetNextItemWidth(-1);
-            //collider.boxHalfExtents = halfExtent;
             float halfExtents[3] = {collider.boxHalfExtents.x, collider.boxHalfExtents.y, collider.boxHalfExtents.z};
-            if (UndoableWidgets::DragFloat3("##HalfExtents", halfExtents, 0.1f, 0.01f, FLT_MAX, "%.2f"))
-            {
+
+            if (ImGui::IsItemActivated()) isEditingCollider[entity] = true;
+
+            if (ImGui::DragFloat3("##HalfExtents", halfExtents, 0.1f, 0.01f, FLT_MAX, "%.2f")) {
                 collider.boxHalfExtents = Vector3D(halfExtents[0], halfExtents[1], halfExtents[2]);
                 shapeParamsChanged = true;
+                isEditingCollider[entity] = true;
+            }
+
+            // Record undo when editing ends
+            if (isEditingCollider[entity] && !ImGui::IsItemActive() && !ImGui::IsAnyItemActive()) {
+                Vector3D oldVal = startBoxHalfExtents[entity];
+                Vector3D newVal = collider.boxHalfExtents;
+                if (oldVal.x != newVal.x || oldVal.y != newVal.y || oldVal.z != newVal.z) {
+                    if (UndoSystem::GetInstance().IsEnabled()) {
+                        UndoSystem::GetInstance().RecordLambdaChange(
+                            [entity, newVal]() {
+                                ECSManager& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
+                                if (ecs.HasComponent<ColliderComponent>(entity)) {
+                                    ecs.GetComponent<ColliderComponent>(entity).boxHalfExtents = newVal;
+                                    ecs.GetComponent<ColliderComponent>(entity).version++;
+                                }
+                            },
+                            [entity, oldVal]() {
+                                ECSManager& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
+                                if (ecs.HasComponent<ColliderComponent>(entity)) {
+                                    ecs.GetComponent<ColliderComponent>(entity).boxHalfExtents = oldVal;
+                                    ecs.GetComponent<ColliderComponent>(entity).version++;
+                                }
+                            },
+                            "Edit Box Half Extents"
+                        );
+                    }
+                }
+                isEditingCollider[entity] = false;
             }
             break;
         }
@@ -651,30 +951,123 @@ void RegisterInspectorCustomRenderers()
             ImGui::Text("Radius");
             ImGui::SameLine(labelWidth);
             ImGui::SetNextItemWidth(-1);
-            //collider.sphereRadius = radius;
-            if (UndoableWidgets::DragFloat("##SphereRadius", &collider.sphereRadius, 0.1f, 0.01f, FLT_MAX, "%.2f"))
-            {
+            float oldRadius = collider.sphereRadius;
+
+            if (ImGui::IsItemActivated()) {
+                startSphereRadius[entity] = collider.sphereRadius;
+                isEditingCollider[entity] = true;
+            }
+
+            if (ImGui::DragFloat("##SphereRadius", &collider.sphereRadius, 0.1f, 0.01f, FLT_MAX, "%.2f")) {
                 shapeParamsChanged = true;
+                isEditingCollider[entity] = true;
+            }
+
+            if (isEditingCollider[entity] && !ImGui::IsItemActive()) {
+                float startVal = startSphereRadius[entity];
+                float endVal = collider.sphereRadius;
+                if (startVal != endVal && UndoSystem::GetInstance().IsEnabled()) {
+                    UndoSystem::GetInstance().RecordLambdaChange(
+                        [entity, endVal]() {
+                            ECSManager& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
+                            if (ecs.HasComponent<ColliderComponent>(entity)) {
+                                ecs.GetComponent<ColliderComponent>(entity).sphereRadius = endVal;
+                                ecs.GetComponent<ColliderComponent>(entity).version++;
+                            }
+                        },
+                        [entity, startVal]() {
+                            ECSManager& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
+                            if (ecs.HasComponent<ColliderComponent>(entity)) {
+                                ecs.GetComponent<ColliderComponent>(entity).sphereRadius = startVal;
+                                ecs.GetComponent<ColliderComponent>(entity).version++;
+                            }
+                        },
+                        "Edit Sphere Radius"
+                    );
+                }
+                isEditingCollider[entity] = false;
             }
             break;
         }
         case ColliderShapeType::Capsule:
-        {            
+        {
             ImGui::Text("Radius");
             ImGui::SameLine(labelWidth);
             ImGui::SetNextItemWidth(-1);
-            //collider.capsuleRadius = std::min(halfExtent.x, halfExtent.z);
-            if (UndoableWidgets::DragFloat("##CapsuleRadius", &collider.capsuleRadius, 0.1f, 0.01f, FLT_MAX, "%.2f"))
-            {
-                shapeParamsChanged = true;
+
+            if (ImGui::IsItemActivated()) {
+                startCapsuleRadius[entity] = collider.capsuleRadius;
+                isEditingCollider[entity] = true;
             }
+
+            if (ImGui::DragFloat("##CapsuleRadius", &collider.capsuleRadius, 0.1f, 0.01f, FLT_MAX, "%.2f")) {
+                shapeParamsChanged = true;
+                isEditingCollider[entity] = true;
+            }
+
+            if (isEditingCollider[entity] && !ImGui::IsItemActive()) {
+                float startVal = startCapsuleRadius[entity];
+                float endVal = collider.capsuleRadius;
+                if (startVal != endVal && UndoSystem::GetInstance().IsEnabled()) {
+                    UndoSystem::GetInstance().RecordLambdaChange(
+                        [entity, endVal]() {
+                            ECSManager& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
+                            if (ecs.HasComponent<ColliderComponent>(entity)) {
+                                ecs.GetComponent<ColliderComponent>(entity).capsuleRadius = endVal;
+                                ecs.GetComponent<ColliderComponent>(entity).version++;
+                            }
+                        },
+                        [entity, startVal]() {
+                            ECSManager& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
+                            if (ecs.HasComponent<ColliderComponent>(entity)) {
+                                ecs.GetComponent<ColliderComponent>(entity).capsuleRadius = startVal;
+                                ecs.GetComponent<ColliderComponent>(entity).version++;
+                            }
+                        },
+                        "Edit Capsule Radius"
+                    );
+                }
+                isEditingCollider[entity] = false;
+            }
+
             ImGui::Text("Half Height");
             ImGui::SameLine(labelWidth);
             ImGui::SetNextItemWidth(-1);
-            //collider.capsuleHalfHeight = halfExtent.y;
-            if (UndoableWidgets::DragFloat("##CapsuleHalfHeight", &collider.capsuleHalfHeight, 0.1f, 0.01f, FLT_MAX, "%.2f"))
-            {
+
+            static std::unordered_map<Entity, bool> isEditingCapsuleHeight;
+            if (ImGui::IsItemActivated()) {
+                startCapsuleHalfHeight[entity] = collider.capsuleHalfHeight;
+                isEditingCapsuleHeight[entity] = true;
+            }
+
+            if (ImGui::DragFloat("##CapsuleHalfHeight", &collider.capsuleHalfHeight, 0.1f, 0.01f, FLT_MAX, "%.2f")) {
                 shapeParamsChanged = true;
+                isEditingCapsuleHeight[entity] = true;
+            }
+
+            if (isEditingCapsuleHeight[entity] && !ImGui::IsItemActive()) {
+                float startVal = startCapsuleHalfHeight[entity];
+                float endVal = collider.capsuleHalfHeight;
+                if (startVal != endVal && UndoSystem::GetInstance().IsEnabled()) {
+                    UndoSystem::GetInstance().RecordLambdaChange(
+                        [entity, endVal]() {
+                            ECSManager& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
+                            if (ecs.HasComponent<ColliderComponent>(entity)) {
+                                ecs.GetComponent<ColliderComponent>(entity).capsuleHalfHeight = endVal;
+                                ecs.GetComponent<ColliderComponent>(entity).version++;
+                            }
+                        },
+                        [entity, startVal]() {
+                            ECSManager& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
+                            if (ecs.HasComponent<ColliderComponent>(entity)) {
+                                ecs.GetComponent<ColliderComponent>(entity).capsuleHalfHeight = startVal;
+                                ecs.GetComponent<ColliderComponent>(entity).version++;
+                            }
+                        },
+                        "Edit Capsule Half Height"
+                    );
+                }
+                isEditingCapsuleHeight[entity] = false;
             }
             break;
         }
@@ -683,18 +1076,81 @@ void RegisterInspectorCustomRenderers()
             ImGui::Text("Radius");
             ImGui::SameLine(labelWidth);
             ImGui::SetNextItemWidth(-1);
-            //collider.cylinderRadius = std::min(halfExtent.x, halfExtent.z);
-            if (UndoableWidgets::DragFloat("##CylinderRadius", &collider.cylinderRadius, 0.1f, 0.01f, FLT_MAX, "%.2f"))
-            {
-                shapeParamsChanged = true;
+
+            static std::unordered_map<Entity, bool> isEditingCylRadius;
+            if (ImGui::IsItemActivated()) {
+                startCylinderRadius[entity] = collider.cylinderRadius;
+                isEditingCylRadius[entity] = true;
             }
+
+            if (ImGui::DragFloat("##CylinderRadius", &collider.cylinderRadius, 0.1f, 0.01f, FLT_MAX, "%.2f")) {
+                shapeParamsChanged = true;
+                isEditingCylRadius[entity] = true;
+            }
+
+            if (isEditingCylRadius[entity] && !ImGui::IsItemActive()) {
+                float startVal = startCylinderRadius[entity];
+                float endVal = collider.cylinderRadius;
+                if (startVal != endVal && UndoSystem::GetInstance().IsEnabled()) {
+                    UndoSystem::GetInstance().RecordLambdaChange(
+                        [entity, endVal]() {
+                            ECSManager& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
+                            if (ecs.HasComponent<ColliderComponent>(entity)) {
+                                ecs.GetComponent<ColliderComponent>(entity).cylinderRadius = endVal;
+                                ecs.GetComponent<ColliderComponent>(entity).version++;
+                            }
+                        },
+                        [entity, startVal]() {
+                            ECSManager& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
+                            if (ecs.HasComponent<ColliderComponent>(entity)) {
+                                ecs.GetComponent<ColliderComponent>(entity).cylinderRadius = startVal;
+                                ecs.GetComponent<ColliderComponent>(entity).version++;
+                            }
+                        },
+                        "Edit Cylinder Radius"
+                    );
+                }
+                isEditingCylRadius[entity] = false;
+            }
+
             ImGui::Text("Half Height");
             ImGui::SameLine(labelWidth);
             ImGui::SetNextItemWidth(-1);
-            //collider.cylinderHalfHeight = halfExtent.y;
-            if (UndoableWidgets::DragFloat("##CylinderHalfHeight", &collider.cylinderHalfHeight, 0.1f, 0.01f, FLT_MAX, "%.2f"))
-            {
+
+            static std::unordered_map<Entity, bool> isEditingCylHeight;
+            if (ImGui::IsItemActivated()) {
+                startCylinderHalfHeight[entity] = collider.cylinderHalfHeight;
+                isEditingCylHeight[entity] = true;
+            }
+
+            if (ImGui::DragFloat("##CylinderHalfHeight", &collider.cylinderHalfHeight, 0.1f, 0.01f, FLT_MAX, "%.2f")) {
                 shapeParamsChanged = true;
+                isEditingCylHeight[entity] = true;
+            }
+
+            if (isEditingCylHeight[entity] && !ImGui::IsItemActive()) {
+                float startVal = startCylinderHalfHeight[entity];
+                float endVal = collider.cylinderHalfHeight;
+                if (startVal != endVal && UndoSystem::GetInstance().IsEnabled()) {
+                    UndoSystem::GetInstance().RecordLambdaChange(
+                        [entity, endVal]() {
+                            ECSManager& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
+                            if (ecs.HasComponent<ColliderComponent>(entity)) {
+                                ecs.GetComponent<ColliderComponent>(entity).cylinderHalfHeight = endVal;
+                                ecs.GetComponent<ColliderComponent>(entity).version++;
+                            }
+                        },
+                        [entity, startVal]() {
+                            ECSManager& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
+                            if (ecs.HasComponent<ColliderComponent>(entity)) {
+                                ecs.GetComponent<ColliderComponent>(entity).cylinderHalfHeight = startVal;
+                                ecs.GetComponent<ColliderComponent>(entity).version++;
+                            }
+                        },
+                        "Edit Cylinder Half Height"
+                    );
+                }
+                isEditingCylHeight[entity] = false;
             }
             break;
         }
@@ -703,23 +1159,20 @@ void RegisterInspectorCustomRenderers()
             ImGui::Text("Mesh Shape");
             ImGui::SameLine(labelWidth);
             ImGui::SetNextItemWidth(-1);
-
             ImGui::TextDisabled("Uses Model Geometry");
         }
         }
 
-        if (shapeParamsChanged)
-        {
+        if (shapeParamsChanged) {
             collider.version++;
         }
 
-        return changed || shapeParamsChanged;
+        return shapeChanged || shapeParamsChanged;
     });
 
     ReflectionRenderer::RegisterFieldRenderer("ColliderComponent", "layerID",
     [](const char *, void *, Entity entity, ECSManager &ecs)
     {
-        ecs;
         auto &collider = ecs.GetComponent<ColliderComponent>(entity);
         const float labelWidth = EditorComponents::GetLabelWidth();
 
@@ -728,13 +1181,39 @@ void RegisterInspectorCustomRenderers()
         ImGui::SetNextItemWidth(-1);
         const char *layers[] = {"Non-Moving", "Moving", "Sensor", "Debris"};
         int currentLayer = static_cast<int>(collider.layer);
+        int oldLayer = currentLayer;
 
         EditorComponents::PushComboColors();
-        bool changed = UndoableWidgets::Combo("##Layer", &currentLayer, layers, 4);
+        bool changed = ImGui::Combo("##Layer", &currentLayer, layers, 4);
         EditorComponents::PopComboColors();
 
-        if (changed)
-        {
+        if (changed) {
+            // Record undo immediately for combo changes
+            if (UndoSystem::GetInstance().IsEnabled()) {
+                int capturedOld = oldLayer;
+                int capturedNew = currentLayer;
+                UndoSystem::GetInstance().RecordLambdaChange(
+                    [entity, capturedNew]() {
+                        ECSManager& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
+                        if (ecs.HasComponent<ColliderComponent>(entity)) {
+                            auto& c = ecs.GetComponent<ColliderComponent>(entity);
+                            c.layer = static_cast<JPH::ObjectLayer>(capturedNew);
+                            c.layerID = capturedNew;
+                            c.version++;
+                        }
+                    },
+                    [entity, capturedOld]() {
+                        ECSManager& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
+                        if (ecs.HasComponent<ColliderComponent>(entity)) {
+                            auto& c = ecs.GetComponent<ColliderComponent>(entity);
+                            c.layer = static_cast<JPH::ObjectLayer>(capturedOld);
+                            c.layerID = capturedOld;
+                            c.version++;
+                        }
+                    },
+                    "Change Collider Layer"
+                );
+            }
             collider.layer = static_cast<JPH::ObjectLayer>(currentLayer);
             collider.layerID = currentLayer;
             collider.version++;
@@ -746,79 +1225,273 @@ void RegisterInspectorCustomRenderers()
     // Skip non-reflected fields (these are handled with shapeTypeID)
     ReflectionRenderer::RegisterFieldRenderer("ColliderComponent", "boxHalfExtents",
     [](const char *, void *, Entity, ECSManager &ecs)
-    { 
+    {
         ecs;
-        return false; 
+        return false;
     });
-    //ReflectionRenderer::RegisterFieldRenderer("ColliderComponent", "center",
-    //    [](const char*, void*, Entity, ECSManager& ecs)
-    //    {
-    //        ecs;
-    //        return false;
-    //    });
+
+    // ColliderComponent center field - entity-aware undo
+    ReflectionRenderer::RegisterFieldRenderer("ColliderComponent", "center",
+    [](const char*, void*, Entity entity, ECSManager& ecs)
+    {
+        static std::unordered_map<Entity, Vector3D> startCenter;
+        static std::unordered_map<Entity, bool> isEditingCenter;
+
+        auto& collider = ecs.GetComponent<ColliderComponent>(entity);
+        const float labelWidth = EditorComponents::GetLabelWidth();
+
+        // Initialize tracking
+        if (isEditingCenter.find(entity) == isEditingCenter.end()) {
+            isEditingCenter[entity] = false;
+        }
+
+        ImGui::Text("Center");
+        ImGui::SameLine(labelWidth);
+        ImGui::SetNextItemWidth(-1);
+
+        float center[3] = { collider.center.x, collider.center.y, collider.center.z };
+
+        // Track start value
+        if (!isEditingCenter[entity]) {
+            startCenter[entity] = collider.center;
+        }
+        if (ImGui::IsItemActivated()) {
+            startCenter[entity] = collider.center;
+            isEditingCenter[entity] = true;
+        }
+
+        bool changed = false;
+        if (ImGui::DragFloat3("##Center", center, 0.1f)) {
+            collider.center = Vector3D(center[0], center[1], center[2]);
+            collider.version++;
+            isEditingCenter[entity] = true;
+            changed = true;
+        }
+
+        // Record undo when editing ends
+        if (isEditingCenter[entity] && !ImGui::IsItemActive()) {
+            Vector3D oldVal = startCenter[entity];
+            Vector3D newVal = collider.center;
+            if ((oldVal.x != newVal.x || oldVal.y != newVal.y || oldVal.z != newVal.z) &&
+                UndoSystem::GetInstance().IsEnabled()) {
+                UndoSystem::GetInstance().RecordLambdaChange(
+                    [entity, newVal]() {
+                        ECSManager& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
+                        if (ecs.HasComponent<ColliderComponent>(entity)) {
+                            ecs.GetComponent<ColliderComponent>(entity).center = newVal;
+                            ecs.GetComponent<ColliderComponent>(entity).version++;
+                        }
+                    },
+                    [entity, oldVal]() {
+                        ECSManager& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
+                        if (ecs.HasComponent<ColliderComponent>(entity)) {
+                            ecs.GetComponent<ColliderComponent>(entity).center = oldVal;
+                            ecs.GetComponent<ColliderComponent>(entity).version++;
+                        }
+                    },
+                    "Edit Collider Center"
+                );
+            }
+            isEditingCenter[entity] = false;
+        }
+
+        return changed;
+    });
 
     // ==================== RIGIDBODY COMPONENT ====================
     ReflectionRenderer::RegisterComponentRenderer("RigidBodyComponent",
-    [](void *, TypeDescriptor_Struct *, Entity entity, ECSManager &ecs)  
+    [](void *, TypeDescriptor_Struct *, Entity entity, ECSManager &ecs)
     {
-        ecs;
         auto &rigidBody = ecs.GetComponent<RigidBodyComponent>(entity);
         auto &transform = ecs.GetComponent<Transform>(entity); // for info tab
 
         ImGui::PushID("RigidBodyComponent");
         const float labelWidth = EditorComponents::GetLabelWidth();
 
-        // --- Motion Type dropdown ---
-        ImGui::Text("Motion"); 
+        // --- Motion Type dropdown (entity-aware undo) ---
+        ImGui::Text("Motion");
         ImGui::SameLine(labelWidth);
         ImGui::SetNextItemWidth(-1);
 
         const char *motionTypes[] = {"Static", "Kinematic", "Dynamic"};
         int currentMotion = rigidBody.motionID;
+        int oldMotion = currentMotion;
         EditorComponents::PushComboColors();
-        if (UndoableWidgets::Combo("##MotionType", &currentMotion, motionTypes, IM_ARRAYSIZE(motionTypes)))
+        if (ImGui::Combo("##MotionType", &currentMotion, motionTypes, IM_ARRAYSIZE(motionTypes)))
         {
+            // Record undo for motion type change
+            if (UndoSystem::GetInstance().IsEnabled()) {
+                int capturedOld = oldMotion;
+                int capturedNew = currentMotion;
+                UndoSystem::GetInstance().RecordLambdaChange(
+                    [entity, capturedNew]() {
+                        ECSManager& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
+                        if (ecs.HasComponent<RigidBodyComponent>(entity)) {
+                            auto& rb = ecs.GetComponent<RigidBodyComponent>(entity);
+                            rb.motion = static_cast<Motion>(capturedNew);
+                            rb.motionID = capturedNew;
+                            rb.motion_dirty = true;
+                        }
+                    },
+                    [entity, capturedOld]() {
+                        ECSManager& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
+                        if (ecs.HasComponent<RigidBodyComponent>(entity)) {
+                            auto& rb = ecs.GetComponent<RigidBodyComponent>(entity);
+                            rb.motion = static_cast<Motion>(capturedOld);
+                            rb.motionID = capturedOld;
+                            rb.motion_dirty = true;
+                        }
+                    },
+                    "Change Motion Type"
+                );
+            }
             rigidBody.motion = static_cast<Motion>(currentMotion);
             rigidBody.motionID = currentMotion;
-            rigidBody.motion_dirty = true; // mark for recreation
+            rigidBody.motion_dirty = true;
         }
         EditorComponents::PopComboColors();
 
-        // --- Is Trigger checkbox ---
+        // --- Is Trigger checkbox (entity-aware undo) ---
         ImGui::AlignTextToFramePadding();
-        UndoableWidgets::Checkbox("##IsTrigger", &rigidBody.isTrigger);
+        bool oldTrigger = rigidBody.isTrigger;
+        if (ImGui::Checkbox("##IsTrigger", &rigidBody.isTrigger)) {
+            if (UndoSystem::GetInstance().IsEnabled()) {
+                bool capturedOld = oldTrigger;
+                bool capturedNew = rigidBody.isTrigger;
+                UndoSystem::GetInstance().RecordLambdaChange(
+                    [entity, capturedNew]() {
+                        ECSManager& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
+                        if (ecs.HasComponent<RigidBodyComponent>(entity)) {
+                            ecs.GetComponent<RigidBodyComponent>(entity).isTrigger = capturedNew;
+                        }
+                    },
+                    [entity, capturedOld]() {
+                        ECSManager& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
+                        if (ecs.HasComponent<RigidBodyComponent>(entity)) {
+                            ecs.GetComponent<RigidBodyComponent>(entity).isTrigger = capturedOld;
+                        }
+                    },
+                    "Toggle Is Trigger"
+                );
+            }
+        }
         ImGui::SameLine();
         ImGui::Text("Is Trigger");
 
         if (rigidBody.motion == Motion::Dynamic)
         {
-            // --- CCD checkbox ---
+            // --- CCD checkbox (entity-aware undo) ---
             ImGui::AlignTextToFramePadding();
-            if (UndoableWidgets::Checkbox("##CCD", &rigidBody.ccd))
+            bool oldCCD = rigidBody.ccd;
+            if (ImGui::Checkbox("##CCD", &rigidBody.ccd))
             {
                 rigidBody.motion_dirty = true;
+                if (UndoSystem::GetInstance().IsEnabled()) {
+                    bool capturedOld = oldCCD;
+                    bool capturedNew = rigidBody.ccd;
+                    UndoSystem::GetInstance().RecordLambdaChange(
+                        [entity, capturedNew]() {
+                            ECSManager& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
+                            if (ecs.HasComponent<RigidBodyComponent>(entity)) {
+                                auto& rb = ecs.GetComponent<RigidBodyComponent>(entity);
+                                rb.ccd = capturedNew;
+                                rb.motion_dirty = true;
+                            }
+                        },
+                        [entity, capturedOld]() {
+                            ECSManager& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
+                            if (ecs.HasComponent<RigidBodyComponent>(entity)) {
+                                auto& rb = ecs.GetComponent<RigidBodyComponent>(entity);
+                                rb.ccd = capturedOld;
+                                rb.motion_dirty = true;
+                            }
+                        },
+                        "Toggle CCD"
+                    );
+                }
             }
             ImGui::SameLine();
             ImGui::Text("CCD");
             if (ImGui::IsItemHovered())
                 ImGui::SetTooltip("Continuous Collision Detection - prevents fast-moving objects from tunneling");
 
-            // --- Linear & Angular Damping ---
+            // --- Linear Damping (entity-aware undo) ---
+            static std::unordered_map<Entity, float> startLinearDamping;
+            static std::unordered_map<Entity, bool> isEditingLinearDamping;
+
             ImGui::Text("Linear Damping");
             ImGui::SameLine(labelWidth);
             ImGui::SetNextItemWidth(-1);
-            UndoableWidgets::DragFloat("##LinearDamping", &rigidBody.linearDamping, 0.1f, -FLT_MAX, FLT_MAX, "%.2f");
+
+            if (!isEditingLinearDamping[entity]) startLinearDamping[entity] = rigidBody.linearDamping;
+            if (ImGui::IsItemActivated()) { startLinearDamping[entity] = rigidBody.linearDamping; isEditingLinearDamping[entity] = true; }
+
+            ImGui::DragFloat("##LinearDamping", &rigidBody.linearDamping, 0.1f, -FLT_MAX, FLT_MAX, "%.2f");
+
+            if (isEditingLinearDamping[entity] && !ImGui::IsItemActive()) {
+                float startVal = startLinearDamping[entity];
+                float endVal = rigidBody.linearDamping;
+                if (startVal != endVal && UndoSystem::GetInstance().IsEnabled()) {
+                    UndoSystem::GetInstance().RecordLambdaChange(
+                        [entity, endVal]() { ECSManager& ecs = ECSRegistry::GetInstance().GetActiveECSManager(); if (ecs.HasComponent<RigidBodyComponent>(entity)) ecs.GetComponent<RigidBodyComponent>(entity).linearDamping = endVal; },
+                        [entity, startVal]() { ECSManager& ecs = ECSRegistry::GetInstance().GetActiveECSManager(); if (ecs.HasComponent<RigidBodyComponent>(entity)) ecs.GetComponent<RigidBodyComponent>(entity).linearDamping = startVal; },
+                        "Edit Linear Damping"
+                    );
+                }
+                isEditingLinearDamping[entity] = false;
+            }
+
+            // --- Angular Damping (entity-aware undo) ---
+            static std::unordered_map<Entity, float> startAngularDamping;
+            static std::unordered_map<Entity, bool> isEditingAngularDamping;
 
             ImGui::Text("Angular Damping");
             ImGui::SameLine(labelWidth);
             ImGui::SetNextItemWidth(-1);
-            UndoableWidgets::DragFloat("##AngularDamping", &rigidBody.angularDamping, 0.1f, -FLT_MAX, FLT_MAX, "%.2f");
 
-            // --- Gravity Factor ---
+            if (!isEditingAngularDamping[entity]) startAngularDamping[entity] = rigidBody.angularDamping;
+            if (ImGui::IsItemActivated()) { startAngularDamping[entity] = rigidBody.angularDamping; isEditingAngularDamping[entity] = true; }
+
+            ImGui::DragFloat("##AngularDamping", &rigidBody.angularDamping, 0.1f, -FLT_MAX, FLT_MAX, "%.2f");
+
+            if (isEditingAngularDamping[entity] && !ImGui::IsItemActive()) {
+                float startVal = startAngularDamping[entity];
+                float endVal = rigidBody.angularDamping;
+                if (startVal != endVal && UndoSystem::GetInstance().IsEnabled()) {
+                    UndoSystem::GetInstance().RecordLambdaChange(
+                        [entity, endVal]() { ECSManager& ecs = ECSRegistry::GetInstance().GetActiveECSManager(); if (ecs.HasComponent<RigidBodyComponent>(entity)) ecs.GetComponent<RigidBodyComponent>(entity).angularDamping = endVal; },
+                        [entity, startVal]() { ECSManager& ecs = ECSRegistry::GetInstance().GetActiveECSManager(); if (ecs.HasComponent<RigidBodyComponent>(entity)) ecs.GetComponent<RigidBodyComponent>(entity).angularDamping = startVal; },
+                        "Edit Angular Damping"
+                    );
+                }
+                isEditingAngularDamping[entity] = false;
+            }
+
+            // --- Gravity Factor (entity-aware undo) ---
+            static std::unordered_map<Entity, float> startGravityFactor;
+            static std::unordered_map<Entity, bool> isEditingGravityFactor;
+
             ImGui::Text("Gravity Factor");
             ImGui::SameLine(labelWidth);
             ImGui::SetNextItemWidth(-1);
-            UndoableWidgets::DragFloat("##GravityFactor", &rigidBody.gravityFactor, 0.1f, -FLT_MAX, FLT_MAX, "%.2f");
+
+            if (!isEditingGravityFactor[entity]) startGravityFactor[entity] = rigidBody.gravityFactor;
+            if (ImGui::IsItemActivated()) { startGravityFactor[entity] = rigidBody.gravityFactor; isEditingGravityFactor[entity] = true; }
+
+            ImGui::DragFloat("##GravityFactor", &rigidBody.gravityFactor, 0.1f, -FLT_MAX, FLT_MAX, "%.2f");
+
+            if (isEditingGravityFactor[entity] && !ImGui::IsItemActive()) {
+                float startVal = startGravityFactor[entity];
+                float endVal = rigidBody.gravityFactor;
+                if (startVal != endVal && UndoSystem::GetInstance().IsEnabled()) {
+                    UndoSystem::GetInstance().RecordLambdaChange(
+                        [entity, endVal]() { ECSManager& ecs = ECSRegistry::GetInstance().GetActiveECSManager(); if (ecs.HasComponent<RigidBodyComponent>(entity)) ecs.GetComponent<RigidBodyComponent>(entity).gravityFactor = endVal; },
+                        [entity, startVal]() { ECSManager& ecs = ECSRegistry::GetInstance().GetActiveECSManager(); if (ecs.HasComponent<RigidBodyComponent>(entity)) ecs.GetComponent<RigidBodyComponent>(entity).gravityFactor = startVal; },
+                        "Edit Gravity Factor"
+                    );
+                }
+                isEditingGravityFactor[entity] = false;
+            }
         }
 
         // --- Info Section (Read-only) ---
@@ -963,7 +1636,7 @@ void RegisterInspectorCustomRenderers()
                     std::string pathStr(filePath, payload->DataSize);
                     pathStr.erase(std::find(pathStr.begin(), pathStr.end(), '\0'), pathStr.end());
 
-                    std::cout << "Configuration PathStr is " << pathStr << std::endl;
+                    ENGINE_PRINT("Configuration PathStr is ", pathStr);
 
                     // Update the videoPath directly
                     *pathPtr = pathStr;
@@ -1012,7 +1685,7 @@ void RegisterInspectorCustomRenderers()
                     std::string pathStr(filePath, payload->DataSize);
                     pathStr.erase(std::find(pathStr.begin(), pathStr.end(), '\0'), pathStr.end());
 
-                    std::cout << "Dialogue PathStr is " << pathStr << std::endl;
+                    ENGINE_PRINT("Dialogue PathStr is ", pathStr);
 
                     // Update the dialoguePath directly
                     *pathPtr = pathStr;
@@ -1043,27 +1716,81 @@ void RegisterInspectorCustomRenderers()
 
     // ==================== CAMERA COMPONENT ====================
     // Camera needs special handling for enum and glm::vec3 properties
+    // Uses entity-aware lambda commands for proper undo/redo
 
     ReflectionRenderer::RegisterComponentRenderer("CameraComponent",
-    [](void *componentPtr, TypeDescriptor_Struct *, Entity, ECSManager &ecs)
+    [](void *componentPtr, TypeDescriptor_Struct *, Entity entity, ECSManager &ecs)
     {
-        ecs;
         CameraComponent &camera = *static_cast<CameraComponent *>(componentPtr);
         const float labelWidth = EditorComponents::GetLabelWidth();
 
-        // Manually render the non-reflected properties first
+        // Static tracking maps for entity-aware undo
+        static std::unordered_map<Entity, int> startProjectionType;
+        static std::unordered_map<Entity, bool> isEditingProjection;
+        static std::unordered_map<Entity, glm::vec3> startTarget;
+        static std::unordered_map<Entity, bool> isEditingTarget;
+        static std::unordered_map<Entity, glm::vec3> startUp;
+        static std::unordered_map<Entity, bool> isEditingUp;
+        static std::unordered_map<Entity, int> startClearFlags;
+        static std::unordered_map<Entity, bool> isEditingClearFlags;
+        static std::unordered_map<Entity, glm::vec3> startBgColor;
+        static std::unordered_map<Entity, bool> isEditingBgColor;
 
-        // Projection Type dropdown - using UndoableWidgets
+        // Initialize tracking state
+        if (isEditingProjection.find(entity) == isEditingProjection.end()) isEditingProjection[entity] = false;
+        if (isEditingTarget.find(entity) == isEditingTarget.end()) isEditingTarget[entity] = false;
+        if (isEditingUp.find(entity) == isEditingUp.end()) isEditingUp[entity] = false;
+        if (isEditingClearFlags.find(entity) == isEditingClearFlags.end()) isEditingClearFlags[entity] = false;
+        if (isEditingBgColor.find(entity) == isEditingBgColor.end()) isEditingBgColor[entity] = false;
+
+        // Projection Type dropdown
         ImGui::Text("Projection");
         ImGui::SameLine(labelWidth);
         ImGui::SetNextItemWidth(-1);
         const char *projTypes[] = {"Perspective", "Orthographic"};
         int currentProj = static_cast<int>(camera.projectionType);
 
+        if (!isEditingProjection[entity]) startProjectionType[entity] = currentProj;
+
         EditorComponents::PushComboColors();
-        if (UndoableWidgets::Combo("##Projection", &currentProj, projTypes, 2))
+        if (ImGui::BeginCombo("##Projection", projTypes[currentProj]))
         {
-            camera.projectionType = static_cast<ProjectionType>(currentProj);
+            if (!isEditingProjection[entity]) {
+                startProjectionType[entity] = currentProj;
+                isEditingProjection[entity] = true;
+            }
+            for (int i = 0; i < 2; i++)
+            {
+                bool isSelected = (currentProj == i);
+                if (ImGui::Selectable(projTypes[i], isSelected))
+                {
+                    int oldVal = startProjectionType[entity];
+                    int newVal = i;
+                    camera.projectionType = static_cast<ProjectionType>(newVal);
+
+                    if (oldVal != newVal && UndoSystem::GetInstance().IsEnabled()) {
+                        UndoSystem::GetInstance().RecordLambdaChange(
+                            [entity, newVal, &ecs]() {
+                                if (ecs.HasComponent<CameraComponent>(entity)) {
+                                    ecs.GetComponent<CameraComponent>(entity).projectionType = static_cast<ProjectionType>(newVal);
+                                }
+                            },
+                            [entity, oldVal, &ecs]() {
+                                if (ecs.HasComponent<CameraComponent>(entity)) {
+                                    ecs.GetComponent<CameraComponent>(entity).projectionType = static_cast<ProjectionType>(oldVal);
+                                }
+                            },
+                            "Change Camera Projection"
+                        );
+                    }
+                    isEditingProjection[entity] = false;
+                }
+                if (isSelected) ImGui::SetItemDefaultFocus();
+            }
+            ImGui::EndCombo();
+        }
+        else {
+            isEditingProjection[entity] = false;
         }
         EditorComponents::PopComboColors();
 
@@ -1072,9 +1799,37 @@ void RegisterInspectorCustomRenderers()
         ImGui::SameLine(labelWidth);
         ImGui::SetNextItemWidth(-1);
         float target[3] = {camera.target.x, camera.target.y, camera.target.z};
-        if (UndoableWidgets::DragFloat3("##Target", target, 0.1f))
+
+        if (!isEditingTarget[entity]) startTarget[entity] = camera.target;
+        if (ImGui::IsItemActivated()) { startTarget[entity] = camera.target; isEditingTarget[entity] = true; }
+
+        if (ImGui::DragFloat3("##Target", target, 0.1f))
         {
             camera.target = glm::vec3(target[0], target[1], target[2]);
+            isEditingTarget[entity] = true;
+        }
+
+        if (isEditingTarget[entity] && !ImGui::IsItemActive()) {
+            glm::vec3 oldVal = startTarget[entity];
+            glm::vec3 newVal = camera.target;
+            if (oldVal != newVal && UndoSystem::GetInstance().IsEnabled()) {
+                UndoSystem::GetInstance().RecordLambdaChange(
+                    [entity, newVal]() {
+                        ECSManager& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
+                        if (ecs.HasComponent<CameraComponent>(entity)) {
+                            ecs.GetComponent<CameraComponent>(entity).target = newVal;
+                        }
+                    },
+                    [entity, oldVal]() {
+                        ECSManager& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
+                        if (ecs.HasComponent<CameraComponent>(entity)) {
+                            ecs.GetComponent<CameraComponent>(entity).target = oldVal;
+                        }
+                    },
+                    "Change Camera Target"
+                );
+            }
+            isEditingTarget[entity] = false;
         }
 
         // Up (glm::vec3)
@@ -1082,30 +1837,126 @@ void RegisterInspectorCustomRenderers()
         ImGui::SameLine(labelWidth);
         ImGui::SetNextItemWidth(-1);
         float up[3] = {camera.up.x, camera.up.y, camera.up.z};
-        if (UndoableWidgets::DragFloat3("##Up", up, 0.1f))
+
+        if (!isEditingUp[entity]) startUp[entity] = camera.up;
+        if (ImGui::IsItemActivated()) { startUp[entity] = camera.up; isEditingUp[entity] = true; }
+
+        if (ImGui::DragFloat3("##Up", up, 0.1f))
         {
             camera.up = glm::vec3(up[0], up[1], up[2]);
+            isEditingUp[entity] = true;
         }
 
+        if (isEditingUp[entity] && !ImGui::IsItemActive()) {
+            glm::vec3 oldVal = startUp[entity];
+            glm::vec3 newVal = camera.up;
+            if (oldVal != newVal && UndoSystem::GetInstance().IsEnabled()) {
+                UndoSystem::GetInstance().RecordLambdaChange(
+                    [entity, newVal]() {
+                        ECSManager& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
+                        if (ecs.HasComponent<CameraComponent>(entity)) {
+                            ecs.GetComponent<CameraComponent>(entity).up = newVal;
+                        }
+                    },
+                    [entity, oldVal]() {
+                        ECSManager& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
+                        if (ecs.HasComponent<CameraComponent>(entity)) {
+                            ecs.GetComponent<CameraComponent>(entity).up = oldVal;
+                        }
+                    },
+                    "Change Camera Up"
+                );
+            }
+            isEditingUp[entity] = false;
+        }
+
+        // Clear Flags dropdown
         ImGui::Text("Clear Flags");
         ImGui::SameLine(labelWidth);
         ImGui::SetNextItemWidth(-1);
         const char* clearFlagsOptions[] = {"Skybox", "Solid Color", "Depth Only", "Don't Clear"};
         int currentClearFlags = static_cast<int>(camera.clearFlags);
+
+        if (!isEditingClearFlags[entity]) startClearFlags[entity] = currentClearFlags;
+
         EditorComponents::PushComboColors();
-        if (UndoableWidgets::Combo("##ClearFlags", &currentClearFlags, clearFlagsOptions, 4))
+        if (ImGui::BeginCombo("##ClearFlags", clearFlagsOptions[currentClearFlags]))
         {
-            camera.clearFlags = static_cast<CameraClearFlags>(currentClearFlags);
+            if (!isEditingClearFlags[entity]) {
+                startClearFlags[entity] = currentClearFlags;
+                isEditingClearFlags[entity] = true;
+            }
+            for (int i = 0; i < 4; i++)
+            {
+                bool isSelected = (currentClearFlags == i);
+                if (ImGui::Selectable(clearFlagsOptions[i], isSelected))
+                {
+                    int oldVal = startClearFlags[entity];
+                    int newVal = i;
+                    camera.clearFlags = static_cast<CameraClearFlags>(newVal);
+
+                    if (oldVal != newVal && UndoSystem::GetInstance().IsEnabled()) {
+                        UndoSystem::GetInstance().RecordLambdaChange(
+                            [entity, newVal, &ecs]() {
+                                if (ecs.HasComponent<CameraComponent>(entity)) {
+                                    ecs.GetComponent<CameraComponent>(entity).clearFlags = static_cast<CameraClearFlags>(newVal);
+                                }
+                            },
+                            [entity, oldVal, &ecs]() {
+                                if (ecs.HasComponent<CameraComponent>(entity)) {
+                                    ecs.GetComponent<CameraComponent>(entity).clearFlags = static_cast<CameraClearFlags>(oldVal);
+                                }
+                            },
+                            "Change Camera Clear Flags"
+                        );
+                    }
+                    isEditingClearFlags[entity] = false;
+                }
+                if (isSelected) ImGui::SetItemDefaultFocus();
+            }
+            ImGui::EndCombo();
+        }
+        else {
+            isEditingClearFlags[entity] = false;
         }
         EditorComponents::PopComboColors();
 
+        // Background Color
         ImGui::Text("Background");
         ImGui::SameLine(labelWidth);
         ImGui::SetNextItemWidth(-1);
         float bgColor[3] = {camera.backgroundColor.r, camera.backgroundColor.g, camera.backgroundColor.b};
-        if (UndoableWidgets::ColorEdit3("##Background", bgColor))
+
+        if (!isEditingBgColor[entity]) startBgColor[entity] = camera.backgroundColor;
+        if (ImGui::IsItemActivated()) { startBgColor[entity] = camera.backgroundColor; isEditingBgColor[entity] = true; }
+
+        if (ImGui::ColorEdit3("##Background", bgColor))
         {
             camera.backgroundColor = glm::vec3(bgColor[0], bgColor[1], bgColor[2]);
+            isEditingBgColor[entity] = true;
+        }
+
+        if (isEditingBgColor[entity] && !ImGui::IsItemActive()) {
+            glm::vec3 oldVal = startBgColor[entity];
+            glm::vec3 newVal = camera.backgroundColor;
+            if (oldVal != newVal && UndoSystem::GetInstance().IsEnabled()) {
+                UndoSystem::GetInstance().RecordLambdaChange(
+                    [entity, newVal]() {
+                        ECSManager& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
+                        if (ecs.HasComponent<CameraComponent>(entity)) {
+                            ecs.GetComponent<CameraComponent>(entity).backgroundColor = newVal;
+                        }
+                    },
+                    [entity, oldVal]() {
+                        ECSManager& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
+                        if (ecs.HasComponent<CameraComponent>(entity)) {
+                            ecs.GetComponent<CameraComponent>(entity).backgroundColor = oldVal;
+                        }
+                    },
+                    "Change Camera Background"
+                );
+            }
+            isEditingBgColor[entity] = false;
         }
 
         return false;
@@ -1144,7 +1995,7 @@ void RegisterInspectorCustomRenderers()
                 // Load and apply the model
                 auto &modelRenderer = ecs.GetComponent<ModelRenderComponent>(entity);
 
-                std::cout << "[Inspector] Applying model - GUID: {" << DraggedModelGuid.high << ", " << DraggedModelGuid.low << "}, Path: " << DraggedModelPath << std::endl;
+                ENGINE_PRINT("[Inspector] Applying model - GUID: {", DraggedModelGuid.high, ", ", DraggedModelGuid.low, "}, Path: ", DraggedModelPath);
 
                 try
                 {
@@ -1161,7 +2012,7 @@ void RegisterInspectorCustomRenderers()
 
                     if (loadedModel)
                     {
-                        std::cout << "[Inspector] Model loaded successfully!" << std::endl;
+                        ENGINE_PRINT("[Inspector] Model loaded successfully!");
                         modelRenderer.model = loadedModel;
                         modelRenderer.modelGUID = DraggedModelGuid;
 
@@ -1301,7 +2152,7 @@ void RegisterInspectorCustomRenderers()
                 pathStr.erase(std::find(pathStr.begin(), pathStr.end(), '\0'), pathStr.end());
 
                 GUID_128 textureGUID = AssetManager::GetInstance().GetGUID128FromAssetMeta(pathStr);
-                std::cout << "PathStr is " << pathStr << std::endl;
+                ENGINE_PRINT("PathStr is ", pathStr);
                 *guid = textureGUID;
 
                 // Load texture immediately
@@ -1488,13 +2339,20 @@ void RegisterInspectorCustomRenderers()
     });
 
     // Custom color picker for SpriteRenderComponent
+    // Uses entity-aware lambda commands for proper undo/redo
     ReflectionRenderer::RegisterFieldRenderer("SpriteRenderComponent", "color",
     [](const char *, void *ptr, Entity entity, ECSManager &ecs)
     {
-        ecs;
         Vector3D *color = static_cast<Vector3D *>(ptr);
         auto &sprite = ecs.GetComponent<SpriteRenderComponent>(entity);
         const float labelWidth = EditorComponents::GetLabelWidth();
+
+        // Static tracking for entity-aware undo
+        static std::unordered_map<Entity, Vector3D> startColor;
+        static std::unordered_map<Entity, float> startAlpha;
+        static std::unordered_map<Entity, bool> isEditingColor;
+
+        if (isEditingColor.find(entity) == isEditingColor.end()) isEditingColor[entity] = false;
 
         // Convert to 0-255 range for display, combine with alpha
         float colorRGBA[4] = {
@@ -1507,12 +2365,55 @@ void RegisterInspectorCustomRenderers()
         ImGui::SameLine(labelWidth);
         ImGui::SetNextItemWidth(-1);
 
-        if (UndoableWidgets::ColorEdit4("##Color", colorRGBA, ImGuiColorEditFlags_Uint8))
+        if (!isEditingColor[entity]) {
+            startColor[entity] = *color;
+            startAlpha[entity] = sprite.alpha;
+        }
+        if (ImGui::IsItemActivated()) {
+            startColor[entity] = *color;
+            startAlpha[entity] = sprite.alpha;
+            isEditingColor[entity] = true;
+        }
+
+        if (ImGui::ColorEdit4("##Color", colorRGBA, ImGuiColorEditFlags_Uint8))
         {
             color->x = colorRGBA[0];
             color->y = colorRGBA[1];
             color->z = colorRGBA[2];
             sprite.alpha = colorRGBA[3];
+            isEditingColor[entity] = true;
+        }
+
+        if (isEditingColor[entity] && !ImGui::IsItemActive()) {
+            Vector3D oldColor = startColor[entity];
+            float oldAlpha = startAlpha[entity];
+            Vector3D newColor = *color;
+            float newAlpha = sprite.alpha;
+
+            bool colorChanged = (oldColor.x != newColor.x || oldColor.y != newColor.y ||
+                                oldColor.z != newColor.z || oldAlpha != newAlpha);
+            if (colorChanged && UndoSystem::GetInstance().IsEnabled()) {
+                UndoSystem::GetInstance().RecordLambdaChange(
+                    [entity, newColor, newAlpha]() {
+                        ECSManager& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
+                        if (ecs.HasComponent<SpriteRenderComponent>(entity)) {
+                            auto& s = ecs.GetComponent<SpriteRenderComponent>(entity);
+                            s.color = newColor;
+                            s.alpha = newAlpha;
+                        }
+                    },
+                    [entity, oldColor, oldAlpha]() {
+                        ECSManager& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
+                        if (ecs.HasComponent<SpriteRenderComponent>(entity)) {
+                            auto& s = ecs.GetComponent<SpriteRenderComponent>(entity);
+                            s.color = oldColor;
+                            s.alpha = oldAlpha;
+                        }
+                    },
+                    "Change Sprite Color"
+                );
+            }
+            isEditingColor[entity] = false;
         }
 
         return true; // Skip default rendering
@@ -1570,6 +2471,36 @@ void RegisterInspectorCustomRenderers()
 
         return false;
     });
+
+    // Skip ParticleComponent fields that are handled in the component renderer
+    ReflectionRenderer::RegisterFieldRenderer("ParticleComponent", "emitterPosition",
+    [](const char*, void*, Entity, ECSManager&) { return false; }); // Not editable, set by transform
+    ReflectionRenderer::RegisterFieldRenderer("ParticleComponent", "emissionRate",
+    [](const char*, void*, Entity, ECSManager&) { return false; }); // Handled in component renderer
+    ReflectionRenderer::RegisterFieldRenderer("ParticleComponent", "maxParticles",
+    [](const char*, void*, Entity, ECSManager&) { return false; }); // Handled in component renderer
+    ReflectionRenderer::RegisterFieldRenderer("ParticleComponent", "particleLifetime",
+    [](const char*, void*, Entity, ECSManager&) { return false; }); // Handled in component renderer
+    ReflectionRenderer::RegisterFieldRenderer("ParticleComponent", "startSize",
+    [](const char*, void*, Entity, ECSManager&) { return false; }); // Handled in component renderer
+    ReflectionRenderer::RegisterFieldRenderer("ParticleComponent", "endSize",
+    [](const char*, void*, Entity, ECSManager&) { return false; }); // Handled in component renderer
+    ReflectionRenderer::RegisterFieldRenderer("ParticleComponent", "startColor",
+    [](const char*, void*, Entity, ECSManager&) { return false; }); // Handled in component renderer
+    ReflectionRenderer::RegisterFieldRenderer("ParticleComponent", "startColorAlpha",
+    [](const char*, void*, Entity, ECSManager&) { return false; }); // Handled in component renderer
+    ReflectionRenderer::RegisterFieldRenderer("ParticleComponent", "endColor",
+    [](const char*, void*, Entity, ECSManager&) { return false; }); // Handled in component renderer
+    ReflectionRenderer::RegisterFieldRenderer("ParticleComponent", "endColorAlpha",
+    [](const char*, void*, Entity, ECSManager&) { return false; }); // Handled in component renderer
+    ReflectionRenderer::RegisterFieldRenderer("ParticleComponent", "gravity",
+    [](const char*, void*, Entity, ECSManager&) { return false; }); // Handled in component renderer
+    ReflectionRenderer::RegisterFieldRenderer("ParticleComponent", "velocityRandomness",
+    [](const char*, void*, Entity, ECSManager&) { return false; }); // Handled in component renderer
+    ReflectionRenderer::RegisterFieldRenderer("ParticleComponent", "initialVelocity",
+    [](const char*, void*, Entity, ECSManager&) { return false; }); // Handled in component renderer
+    ReflectionRenderer::RegisterFieldRenderer("ParticleComponent", "isEmitting",
+    [](const char*, void*, Entity, ECSManager&) { return false; }); // Handled in component renderer
 
     // Text font GUID
     ReflectionRenderer::RegisterFieldRenderer("TextRenderComponent", "fontGUID",
@@ -1725,12 +2656,28 @@ void RegisterInspectorCustomRenderers()
     });
 
     // Audio GUID
+    // Uses entity-aware lambda commands for proper undo/redo
     ReflectionRenderer::RegisterComponentRenderer("AudioComponent",
-    [](void *componentPtr, TypeDescriptor_Struct *, Entity, ECSManager &ecs)
+    [](void *componentPtr, TypeDescriptor_Struct *, Entity entity, ECSManager &ecs)
     {
-        ecs;
         AudioComponent &audio = *static_cast<AudioComponent *>(componentPtr);
         const float labelWidth = EditorComponents::GetLabelWidth();
+
+        // Static tracking maps for entity-aware undo
+        static std::unordered_map<Entity, int> startMixerGroup;
+        static std::unordered_map<Entity, bool> startMute;
+        static std::unordered_map<Entity, bool> startBypassListenerEffects;
+        static std::unordered_map<Entity, bool> startPlayOnAwake;
+        static std::unordered_map<Entity, bool> startLoop;
+        static std::unordered_map<Entity, bool> startSpatialize;
+        static std::unordered_map<Entity, float> startMinDistance;
+        static std::unordered_map<Entity, bool> isEditingMinDistance;
+        static std::unordered_map<Entity, float> startMaxDistance;
+        static std::unordered_map<Entity, bool> isEditingMaxDistance;
+
+        // Initialize tracking
+        if (isEditingMinDistance.find(entity) == isEditingMinDistance.end()) isEditingMinDistance[entity] = false;
+        if (isEditingMaxDistance.find(entity) == isEditingMaxDistance.end()) isEditingMaxDistance[entity] = false;
 
         // Audio Resource field
         ImGui::Text("Audio File:");
@@ -1744,9 +2691,26 @@ void RegisterInspectorCustomRenderers()
         {
             if (const ImGuiPayload *payload = ImGui::AcceptDragDropPayload("AUDIO_DRAG"))
             {
-                // Take snapshot before changing audio clip
-                SnapshotManager::GetInstance().TakeSnapshot("Assign Audio Clip");
-                audio.SetClip(DraggedAudioGuid);
+                GUID_128 oldGUID = audio.audioGUID;
+                GUID_128 newGUID = DraggedAudioGuid;
+                audio.SetClip(newGUID);
+                if (UndoSystem::GetInstance().IsEnabled()) {
+                    UndoSystem::GetInstance().RecordLambdaChange(
+                        [entity, newGUID]() {
+                            ECSManager& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
+                            if (ecs.HasComponent<AudioComponent>(entity)) {
+                                ecs.GetComponent<AudioComponent>(entity).SetClip(newGUID);
+                            }
+                        },
+                        [entity, oldGUID]() {
+                            ECSManager& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
+                            if (ecs.HasComponent<AudioComponent>(entity)) {
+                                ecs.GetComponent<AudioComponent>(entity).SetClip(oldGUID);
+                            }
+                        },
+                        "Assign Audio Clip"
+                    );
+                }
                 ImGui::EndDragDropTarget();
                 return true;
             }
@@ -1773,52 +2737,167 @@ void RegisterInspectorCustomRenderers()
             currentMixerIndex = 0; // Default or empty
         }
 
+        startMixerGroup[entity] = currentMixerIndex;
         EditorComponents::PushComboColors();
-        if (UndoableWidgets::Combo("##OutputMixerGroup", &currentMixerIndex, mixerGroups, 3))
-        {
-            // Update the mixer group based on selection
-            if (currentMixerIndex == 1) {
-                audio.SetOutputAudioMixerGroup("BGM");
-            } else if (currentMixerIndex == 2) {
-                audio.SetOutputAudioMixerGroup("SFX");
-            } else {
-                audio.SetOutputAudioMixerGroup(""); // Default/empty means master
+        if (ImGui::BeginCombo("##OutputMixerGroup", mixerGroups[currentMixerIndex])) {
+            for (int i = 0; i < 3; i++) {
+                bool isSelected = (currentMixerIndex == i);
+                if (ImGui::Selectable(mixerGroups[i], isSelected)) {
+                    int oldVal = startMixerGroup[entity];
+                    int newVal = i;
+                    if (newVal == 1) {
+                        audio.SetOutputAudioMixerGroup("BGM");
+                    } else if (newVal == 2) {
+                        audio.SetOutputAudioMixerGroup("SFX");
+                    } else {
+                        audio.SetOutputAudioMixerGroup("");
+                    }
+                    if (oldVal != newVal && UndoSystem::GetInstance().IsEnabled()) {
+                        UndoSystem::GetInstance().RecordLambdaChange(
+                            [entity, newVal]() {
+                                ECSManager& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
+                                if (ecs.HasComponent<AudioComponent>(entity)) {
+                                    auto& a = ecs.GetComponent<AudioComponent>(entity);
+                                    if (newVal == 1) a.SetOutputAudioMixerGroup("BGM");
+                                    else if (newVal == 2) a.SetOutputAudioMixerGroup("SFX");
+                                    else a.SetOutputAudioMixerGroup("");
+                                }
+                            },
+                            [entity, oldVal]() {
+                                ECSManager& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
+                                if (ecs.HasComponent<AudioComponent>(entity)) {
+                                    auto& a = ecs.GetComponent<AudioComponent>(entity);
+                                    if (oldVal == 1) a.SetOutputAudioMixerGroup("BGM");
+                                    else if (oldVal == 2) a.SetOutputAudioMixerGroup("SFX");
+                                    else a.SetOutputAudioMixerGroup("");
+                                }
+                            },
+                            "Change Audio Mixer Group"
+                        );
+                    }
+                }
+                if (isSelected) ImGui::SetItemDefaultFocus();
             }
+            ImGui::EndCombo();
         }
         EditorComponents::PopComboColors();
 
-        // Checkboxes (aligned with labels) - using UndoableWidgets
+        // Mute checkbox
         ImGui::AlignTextToFramePadding();
         ImGui::Text("Mute");
         ImGui::SameLine(labelWidth);
-        UndoableWidgets::Checkbox("##Mute", &audio.Mute);
+        startMute[entity] = audio.Mute;
+        bool muteVal = audio.Mute;
+        if (ImGui::Checkbox("##Mute", &muteVal)) {
+            bool oldVal = startMute[entity];
+            bool newVal = muteVal;
+            audio.Mute = newVal;
+            if (oldVal != newVal && UndoSystem::GetInstance().IsEnabled()) {
+                UndoSystem::GetInstance().RecordLambdaChange(
+                    [entity, newVal, &ecs]() {
+                        if (ecs.HasComponent<AudioComponent>(entity)) {
+                            ecs.GetComponent<AudioComponent>(entity).Mute = newVal;
+                        }
+                    },
+                    [entity, oldVal, &ecs]() {
+                        if (ecs.HasComponent<AudioComponent>(entity)) {
+                            ecs.GetComponent<AudioComponent>(entity).Mute = oldVal;
+                        }
+                    },
+                    "Toggle Audio Mute"
+                );
+            }
+        }
 
+        // Bypass Listener Effects checkbox
         ImGui::AlignTextToFramePadding();
         ImGui::Text("Bypass Listener Effects");
         ImGui::SameLine(labelWidth);
-        UndoableWidgets::Checkbox("##BypassListenerEffects", &audio.bypassListenerEffects);
+        startBypassListenerEffects[entity] = audio.bypassListenerEffects;
+        bool bypassVal = audio.bypassListenerEffects;
+        if (ImGui::Checkbox("##BypassListenerEffects", &bypassVal)) {
+            bool oldVal = startBypassListenerEffects[entity];
+            bool newVal = bypassVal;
+            audio.bypassListenerEffects = newVal;
+            if (oldVal != newVal && UndoSystem::GetInstance().IsEnabled()) {
+                UndoSystem::GetInstance().RecordLambdaChange(
+                    [entity, newVal, &ecs]() {
+                        if (ecs.HasComponent<AudioComponent>(entity)) {
+                            ecs.GetComponent<AudioComponent>(entity).bypassListenerEffects = newVal;
+                        }
+                    },
+                    [entity, oldVal, &ecs]() {
+                        if (ecs.HasComponent<AudioComponent>(entity)) {
+                            ecs.GetComponent<AudioComponent>(entity).bypassListenerEffects = oldVal;
+                        }
+                    },
+                    "Toggle Audio Bypass Listener"
+                );
+            }
+        }
 
+        // Play On Awake checkbox
         ImGui::AlignTextToFramePadding();
         ImGui::Text("Play On Awake");
         ImGui::SameLine(labelWidth);
-        UndoableWidgets::Checkbox("##PlayOnAwake", &audio.PlayOnAwake);
+        startPlayOnAwake[entity] = audio.PlayOnAwake;
+        bool playOnAwakeVal = audio.PlayOnAwake;
+        if (ImGui::Checkbox("##PlayOnAwake", &playOnAwakeVal)) {
+            bool oldVal = startPlayOnAwake[entity];
+            bool newVal = playOnAwakeVal;
+            audio.PlayOnAwake = newVal;
+            if (oldVal != newVal && UndoSystem::GetInstance().IsEnabled()) {
+                UndoSystem::GetInstance().RecordLambdaChange(
+                    [entity, newVal, &ecs]() {
+                        if (ecs.HasComponent<AudioComponent>(entity)) {
+                            ecs.GetComponent<AudioComponent>(entity).PlayOnAwake = newVal;
+                        }
+                    },
+                    [entity, oldVal, &ecs]() {
+                        if (ecs.HasComponent<AudioComponent>(entity)) {
+                            ecs.GetComponent<AudioComponent>(entity).PlayOnAwake = oldVal;
+                        }
+                    },
+                    "Toggle Audio Play On Awake"
+                );
+            }
+        }
 
+        // Loop checkbox
         ImGui::AlignTextToFramePadding();
         ImGui::Text("Loop");
         ImGui::SameLine(labelWidth);
-        UndoableWidgets::Checkbox("##Loop", &audio.Loop);
+        startLoop[entity] = audio.Loop;
+        bool loopVal = audio.Loop;
+        if (ImGui::Checkbox("##Loop", &loopVal)) {
+            bool oldVal = startLoop[entity];
+            bool newVal = loopVal;
+            audio.Loop = newVal;
+            if (oldVal != newVal && UndoSystem::GetInstance().IsEnabled()) {
+                UndoSystem::GetInstance().RecordLambdaChange(
+                    [entity, newVal, &ecs]() {
+                        if (ecs.HasComponent<AudioComponent>(entity)) {
+                            ecs.GetComponent<AudioComponent>(entity).Loop = newVal;
+                        }
+                    },
+                    [entity, oldVal, &ecs]() {
+                        if (ecs.HasComponent<AudioComponent>(entity)) {
+                            ecs.GetComponent<AudioComponent>(entity).Loop = oldVal;
+                        }
+                    },
+                    "Toggle Audio Loop"
+                );
+            }
+        }
 
         ImGui::Separator();
 
-        // Priority (editable drag)
+        // Priority, Volume, Pitch, etc. use EditorComponents::DrawSliderWithInput
+        // which doesn't have entity-aware undo yet - these will use reflection renderer defaults
         EditorComponents::DrawSliderWithInput("Priority", &audio.Priority, 0, 256, true, labelWidth);
-        // Volume (editable drag)
         EditorComponents::DrawSliderWithInput("Volume", &audio.Volume, 0.0f, 1.0f, false, labelWidth);
-        // Pitch (editable drag)
         EditorComponents::DrawSliderWithInput("Pitch", &audio.Pitch, 0.1f, 3.0f, false, labelWidth);
-        // Stereo Pan (editable drag)
         EditorComponents::DrawSliderWithInput("Stereo Pan", &audio.StereoPan, -1.0f, 1.0f, false, labelWidth);
-        // Reverb Zone Mix (editable drag)
         EditorComponents::DrawSliderWithInput("Reverb Zone Mix", &audio.reverbZoneMix, 0.0f, 1.0f, false, labelWidth);
 
         // 3D Sound Settings (collapsible)
@@ -1826,50 +2905,103 @@ void RegisterInspectorCustomRenderers()
         {
             ImGui::Indent();
 
+            // Spatialize checkbox
             ImGui::Text("Spatialize");
             ImGui::SameLine(labelWidth);
             ImGui::SetNextItemWidth(-1);
-            UndoableWidgets::Checkbox("##Spatialize", &audio.Spatialize);
+            startSpatialize[entity] = audio.Spatialize;
+            bool spatializeVal = audio.Spatialize;
+            if (ImGui::Checkbox("##Spatialize", &spatializeVal)) {
+                bool oldVal = startSpatialize[entity];
+                bool newVal = spatializeVal;
+                audio.Spatialize = newVal;
+                if (oldVal != newVal && UndoSystem::GetInstance().IsEnabled()) {
+                    UndoSystem::GetInstance().RecordLambdaChange(
+                        [entity, newVal, &ecs]() {
+                            if (ecs.HasComponent<AudioComponent>(entity)) {
+                                ecs.GetComponent<AudioComponent>(entity).Spatialize = newVal;
+                            }
+                        },
+                        [entity, oldVal, &ecs]() {
+                            if (ecs.HasComponent<AudioComponent>(entity)) {
+                                ecs.GetComponent<AudioComponent>(entity).Spatialize = oldVal;
+                            }
+                        },
+                        "Toggle Audio Spatialize"
+                    );
+                }
+            }
 
             if (audio.Spatialize)
             {
-                // Spatial Blend (editable dra with undo support)
+                // Spatial Blend
                 if (EditorComponents::DrawSliderWithInput("Spatial Blend", &audio.SpatialBlend, 0.0f, 1.0f, false, labelWidth))
                 {
                     audio.SetSpatialBlend(audio.SpatialBlend);
                 }
 
-                // Doppler Level (editable drag)
+                // Doppler Level
                 EditorComponents::DrawSliderWithInput("Doppler Level", &audio.DopplerLevel, 0.0f, 5.0f, false, labelWidth);
 
-                //// Spread (placeholder, editable drag)
-                // static float spread = 0.0f;
-                // ImGui::Text("Spread");
-                // ImGui::SameLine(labelWidth);
-                // ImGui::SetNextItemWidth(-1);
-                // ImGui::DragInt("##Spread", reinterpret_cast<int*>(&spread), 1.0f, 0, 360);
-
-                //// Volume Rolloff dropdown
-                // ImGui::Text("Volume Rolloff");
-                // ImGui::SameLine(labelWidth);
-                // ImGui::SetNextItemWidth(-1);
-                // const char* rolloffModes[] = { "Logarithmic Rolloff", "Linear Rolloff", "Custom Rolloff" };
-                // static int currentRolloff = 0;
-                // EditorComponents::PushComboColors();
-                // ImGui::Combo("##VolumeRolloff", &currentRolloff, rolloffModes, 3);
-                // EditorComponents::PopComboColors();
-
-                // Min Distance (editable drag)
+                // Min Distance
                 ImGui::Text("Min Distance");
                 ImGui::SameLine(labelWidth);
                 ImGui::SetNextItemWidth(-1);
-                UndoableWidgets::DragFloat("##MinDistance", &audio.MinDistance, 0.1f, 0.0f, audio.MaxDistance, "%.2f");
+                if (!isEditingMinDistance[entity]) startMinDistance[entity] = audio.MinDistance;
+                if (ImGui::IsItemActivated()) { startMinDistance[entity] = audio.MinDistance; isEditingMinDistance[entity] = true; }
+                if (ImGui::DragFloat("##MinDistance", &audio.MinDistance, 0.1f, 0.0f, audio.MaxDistance, "%.2f")) {
+                    isEditingMinDistance[entity] = true;
+                }
+                if (isEditingMinDistance[entity] && !ImGui::IsItemActive()) {
+                    float oldVal = startMinDistance[entity];
+                    float newVal = audio.MinDistance;
+                    if (oldVal != newVal && UndoSystem::GetInstance().IsEnabled()) {
+                        UndoSystem::GetInstance().RecordLambdaChange(
+                            [entity, newVal, &ecs]() {
+                                if (ecs.HasComponent<AudioComponent>(entity)) {
+                                    ecs.GetComponent<AudioComponent>(entity).MinDistance = newVal;
+                                }
+                            },
+                            [entity, oldVal, &ecs]() {
+                                if (ecs.HasComponent<AudioComponent>(entity)) {
+                                    ecs.GetComponent<AudioComponent>(entity).MinDistance = oldVal;
+                                }
+                            },
+                            "Change Audio Min Distance"
+                        );
+                    }
+                    isEditingMinDistance[entity] = false;
+                }
 
-                // Max Distance (editable drag)
+                // Max Distance
                 ImGui::Text("Max Distance");
                 ImGui::SameLine(labelWidth);
                 ImGui::SetNextItemWidth(-1);
-                UndoableWidgets::DragFloat("##MaxDistance", &audio.MaxDistance, 0.1f, audio.MinDistance, 10000.0f, "%.2f");
+                if (!isEditingMaxDistance[entity]) startMaxDistance[entity] = audio.MaxDistance;
+                if (ImGui::IsItemActivated()) { startMaxDistance[entity] = audio.MaxDistance; isEditingMaxDistance[entity] = true; }
+                if (ImGui::DragFloat("##MaxDistance", &audio.MaxDistance, 0.1f, audio.MinDistance, 10000.0f, "%.2f")) {
+                    isEditingMaxDistance[entity] = true;
+                }
+                if (isEditingMaxDistance[entity] && !ImGui::IsItemActive()) {
+                    float oldVal = startMaxDistance[entity];
+                    float newVal = audio.MaxDistance;
+                    if (oldVal != newVal && UndoSystem::GetInstance().IsEnabled()) {
+                        UndoSystem::GetInstance().RecordLambdaChange(
+                            [entity, newVal, &ecs]() {
+                                if (ecs.HasComponent<AudioComponent>(entity)) {
+                                    ecs.GetComponent<AudioComponent>(entity).MaxDistance = newVal;
+                                }
+                            },
+                            [entity, oldVal, &ecs]() {
+                                if (ecs.HasComponent<AudioComponent>(entity)) {
+                                    ecs.GetComponent<AudioComponent>(entity).MaxDistance = oldVal;
+                                }
+                            },
+                            "Change Audio Max Distance"
+                        );
+                    }
+                    isEditingMaxDistance[entity] = false;
+                }
             }
             ImGui::Unindent();
         }
@@ -2029,19 +3161,60 @@ void RegisterInspectorCustomRenderers()
 
     // ==================== PARTICLE COMPONENT ====================
     // Add Play/Pause/Stop buttons at the beginning of ParticleComponent rendering
+    // Uses entity-aware lambda commands for proper undo/redo
 
     ReflectionRenderer::RegisterComponentRenderer("ParticleComponent",
-    [](void *componentPtr, TypeDescriptor_Struct *, Entity, ECSManager &ecs)
+    [](void *componentPtr, TypeDescriptor_Struct *, Entity entity, ECSManager &ecs)
     {
-        ecs;
         ParticleComponent &particle = *static_cast<ParticleComponent *>(componentPtr);
+        const float labelWidth = EditorComponents::GetLabelWidth();
+
+        // Static tracking maps for entity-aware undo
+        static std::unordered_map<Entity, bool> startIsEmitting;
+        static std::unordered_map<Entity, int> startMaxParticles;
+        static std::unordered_map<Entity, bool> isEditingMaxParticles;
+        static std::unordered_map<Entity, float> startEmissionRate;
+        static std::unordered_map<Entity, bool> isEditingEmissionRate;
+        static std::unordered_map<Entity, float> startParticleLifetime;
+        static std::unordered_map<Entity, bool> isEditingParticleLifetime;
+        static std::unordered_map<Entity, float> startStartSize;
+        static std::unordered_map<Entity, bool> isEditingStartSize;
+        static std::unordered_map<Entity, float> startEndSize;
+        static std::unordered_map<Entity, bool> isEditingEndSize;
+        static std::unordered_map<Entity, Vector3D> startStartColor;
+        static std::unordered_map<Entity, bool> isEditingStartColor;
+        static std::unordered_map<Entity, float> startStartColorAlpha;
+        static std::unordered_map<Entity, bool> isEditingStartColorAlpha;
+        static std::unordered_map<Entity, Vector3D> startEndColor;
+        static std::unordered_map<Entity, bool> isEditingEndColor;
+        static std::unordered_map<Entity, float> startEndColorAlpha;
+        static std::unordered_map<Entity, bool> isEditingEndColorAlpha;
+        static std::unordered_map<Entity, Vector3D> startGravity;
+        static std::unordered_map<Entity, bool> isEditingGravity;
+        static std::unordered_map<Entity, float> startVelocityRandomness;
+        static std::unordered_map<Entity, bool> isEditingVelocityRandomness;
+        static std::unordered_map<Entity, Vector3D> startInitialVelocity;
+        static std::unordered_map<Entity, bool> isEditingInitialVelocity;
+
+        // Initialize tracking state
+        if (isEditingMaxParticles.find(entity) == isEditingMaxParticles.end()) isEditingMaxParticles[entity] = false;
+        if (isEditingEmissionRate.find(entity) == isEditingEmissionRate.end()) isEditingEmissionRate[entity] = false;
+        if (isEditingParticleLifetime.find(entity) == isEditingParticleLifetime.end()) isEditingParticleLifetime[entity] = false;
+        if (isEditingStartSize.find(entity) == isEditingStartSize.end()) isEditingStartSize[entity] = false;
+        if (isEditingEndSize.find(entity) == isEditingEndSize.end()) isEditingEndSize[entity] = false;
+        if (isEditingStartColor.find(entity) == isEditingStartColor.end()) isEditingStartColor[entity] = false;
+        if (isEditingStartColorAlpha.find(entity) == isEditingStartColorAlpha.end()) isEditingStartColorAlpha[entity] = false;
+        if (isEditingEndColor.find(entity) == isEditingEndColor.end()) isEditingEndColor[entity] = false;
+        if (isEditingEndColorAlpha.find(entity) == isEditingEndColorAlpha.end()) isEditingEndColorAlpha[entity] = false;
+        if (isEditingGravity.find(entity) == isEditingGravity.end()) isEditingGravity[entity] = false;
+        if (isEditingVelocityRandomness.find(entity) == isEditingVelocityRandomness.end()) isEditingVelocityRandomness[entity] = false;
+        if (isEditingInitialVelocity.find(entity) == isEditingInitialVelocity.end()) isEditingInitialVelocity[entity] = false;
 
         // Play/Pause/Stop buttons for editor preview
         float buttonWidth = (ImGui::GetContentRegionAvail().x - ImGui::GetStyle().ItemSpacing.x) * 0.5f;
 
         if (EditorComponents::DrawPlayButton(particle.isPlayingInEditor && !particle.isPausedInEditor, buttonWidth))
         {
-            SnapshotManager::GetInstance().TakeSnapshot("Play Particles");
             particle.isPlayingInEditor = true;
             particle.isPausedInEditor = false;
         }
@@ -2052,14 +3225,12 @@ void RegisterInspectorCustomRenderers()
         {
             if (particle.isPlayingInEditor)
             {
-                SnapshotManager::GetInstance().TakeSnapshot("Pause Particles");
                 particle.isPausedInEditor = !particle.isPausedInEditor;
             }
         }
 
         if (EditorComponents::DrawStopButton())
         {
-            SnapshotManager::GetInstance().TakeSnapshot("Stop Particles");
             particle.isPlayingInEditor = false;
             particle.isPausedInEditor = false;
             particle.particles.clear();
@@ -2072,156 +3243,1067 @@ void RegisterInspectorCustomRenderers()
         // Show active particle count
         ImGui::Text("Active Particles: %zu / %d", particle.particles.size(), particle.maxParticles);
 
-        // Is Emitting checkbox (not in reflection, so we render it manually)
-        UndoableWidgets::Checkbox("Is Emitting", &particle.isEmitting);
+        // Is Emitting checkbox with entity-aware undo
+        startIsEmitting[entity] = particle.isEmitting;
+        bool isEmittingVal = particle.isEmitting;
+        if (ImGui::Checkbox("Is Emitting", &isEmittingVal)) {
+            bool oldVal = startIsEmitting[entity];
+            bool newVal = isEmittingVal;
+            particle.isEmitting = newVal;
+            if (oldVal != newVal && UndoSystem::GetInstance().IsEnabled()) {
+                UndoSystem::GetInstance().RecordLambdaChange(
+                    [entity, newVal]() {
+                        ECSManager& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
+                        if (ecs.HasComponent<ParticleComponent>(entity)) {
+                            ecs.GetComponent<ParticleComponent>(entity).isEmitting = newVal;
+                        }
+                    },
+                    [entity, oldVal]() {
+                        ECSManager& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
+                        if (ecs.HasComponent<ParticleComponent>(entity)) {
+                            ecs.GetComponent<ParticleComponent>(entity).isEmitting = oldVal;
+                        }
+                    },
+                    "Toggle Particle Emitting"
+                );
+            }
+        }
         if (ImGui::IsItemHovered())
         {
             ImGui::SetTooltip("Whether the particle system is actively emitting new particles");
         }
 
         ImGui::Separator();
+        ImGui::Text("Emitter Settings");
 
-        // Continue with normal field rendering
-        return false; // Return false to continue with default field rendering
+        // Max Particles
+        ImGui::Text("Max Particles");
+        ImGui::SameLine(labelWidth);
+        ImGui::SetNextItemWidth(-1);
+        if (!isEditingMaxParticles[entity]) startMaxParticles[entity] = particle.maxParticles;
+        if (ImGui::IsItemActivated()) { startMaxParticles[entity] = particle.maxParticles; isEditingMaxParticles[entity] = true; }
+        if (ImGui::DragInt("##MaxParticles", &particle.maxParticles, 1.0f, 1, 10000)) {
+            isEditingMaxParticles[entity] = true;
+        }
+        if (isEditingMaxParticles[entity] && !ImGui::IsItemActive()) {
+            int oldVal = startMaxParticles[entity];
+            int newVal = particle.maxParticles;
+            if (oldVal != newVal && UndoSystem::GetInstance().IsEnabled()) {
+                UndoSystem::GetInstance().RecordLambdaChange(
+                    [entity, newVal]() { ECSManager& ecs = ECSRegistry::GetInstance().GetActiveECSManager(); if (ecs.HasComponent<ParticleComponent>(entity)) ecs.GetComponent<ParticleComponent>(entity).maxParticles = newVal; },
+                    [entity, oldVal]() { ECSManager& ecs = ECSRegistry::GetInstance().GetActiveECSManager(); if (ecs.HasComponent<ParticleComponent>(entity)) ecs.GetComponent<ParticleComponent>(entity).maxParticles = oldVal; },
+                    "Edit Max Particles"
+                );
+            }
+            isEditingMaxParticles[entity] = false;
+        }
+
+        // Emission Rate
+        ImGui::Text("Emission Rate");
+        ImGui::SameLine(labelWidth);
+        ImGui::SetNextItemWidth(-1);
+        if (!isEditingEmissionRate[entity]) startEmissionRate[entity] = particle.emissionRate;
+        if (ImGui::IsItemActivated()) { startEmissionRate[entity] = particle.emissionRate; isEditingEmissionRate[entity] = true; }
+        if (ImGui::DragFloat("##EmissionRate", &particle.emissionRate, 0.1f, 0.0f, 1000.0f)) {
+            isEditingEmissionRate[entity] = true;
+        }
+        if (isEditingEmissionRate[entity] && !ImGui::IsItemActive()) {
+            float oldVal = startEmissionRate[entity];
+            float newVal = particle.emissionRate;
+            if (oldVal != newVal && UndoSystem::GetInstance().IsEnabled()) {
+                UndoSystem::GetInstance().RecordLambdaChange(
+                    [entity, newVal]() { ECSManager& ecs = ECSRegistry::GetInstance().GetActiveECSManager(); if (ecs.HasComponent<ParticleComponent>(entity)) ecs.GetComponent<ParticleComponent>(entity).emissionRate = newVal; },
+                    [entity, oldVal]() { ECSManager& ecs = ECSRegistry::GetInstance().GetActiveECSManager(); if (ecs.HasComponent<ParticleComponent>(entity)) ecs.GetComponent<ParticleComponent>(entity).emissionRate = oldVal; },
+                    "Edit Emission Rate"
+                );
+            }
+            isEditingEmissionRate[entity] = false;
+        }
+
+        ImGui::Separator();
+        ImGui::Text("Particle Properties");
+
+        // Particle Lifetime
+        ImGui::Text("Lifetime");
+        ImGui::SameLine(labelWidth);
+        ImGui::SetNextItemWidth(-1);
+        if (!isEditingParticleLifetime[entity]) startParticleLifetime[entity] = particle.particleLifetime;
+        if (ImGui::IsItemActivated()) { startParticleLifetime[entity] = particle.particleLifetime; isEditingParticleLifetime[entity] = true; }
+        if (ImGui::DragFloat("##ParticleLifetime", &particle.particleLifetime, 0.1f, 0.01f, 100.0f)) {
+            isEditingParticleLifetime[entity] = true;
+        }
+        if (isEditingParticleLifetime[entity] && !ImGui::IsItemActive()) {
+            float oldVal = startParticleLifetime[entity];
+            float newVal = particle.particleLifetime;
+            if (oldVal != newVal && UndoSystem::GetInstance().IsEnabled()) {
+                UndoSystem::GetInstance().RecordLambdaChange(
+                    [entity, newVal]() { ECSManager& ecs = ECSRegistry::GetInstance().GetActiveECSManager(); if (ecs.HasComponent<ParticleComponent>(entity)) ecs.GetComponent<ParticleComponent>(entity).particleLifetime = newVal; },
+                    [entity, oldVal]() { ECSManager& ecs = ECSRegistry::GetInstance().GetActiveECSManager(); if (ecs.HasComponent<ParticleComponent>(entity)) ecs.GetComponent<ParticleComponent>(entity).particleLifetime = oldVal; },
+                    "Edit Particle Lifetime"
+                );
+            }
+            isEditingParticleLifetime[entity] = false;
+        }
+
+        // Start Size
+        ImGui::Text("Start Size");
+        ImGui::SameLine(labelWidth);
+        ImGui::SetNextItemWidth(-1);
+        if (!isEditingStartSize[entity]) startStartSize[entity] = particle.startSize;
+        if (ImGui::IsItemActivated()) { startStartSize[entity] = particle.startSize; isEditingStartSize[entity] = true; }
+        if (ImGui::DragFloat("##StartSize", &particle.startSize, 0.01f, 0.0f, 10.0f)) {
+            isEditingStartSize[entity] = true;
+        }
+        if (isEditingStartSize[entity] && !ImGui::IsItemActive()) {
+            float oldVal = startStartSize[entity];
+            float newVal = particle.startSize;
+            if (oldVal != newVal && UndoSystem::GetInstance().IsEnabled()) {
+                UndoSystem::GetInstance().RecordLambdaChange(
+                    [entity, newVal]() { ECSManager& ecs = ECSRegistry::GetInstance().GetActiveECSManager(); if (ecs.HasComponent<ParticleComponent>(entity)) ecs.GetComponent<ParticleComponent>(entity).startSize = newVal; },
+                    [entity, oldVal]() { ECSManager& ecs = ECSRegistry::GetInstance().GetActiveECSManager(); if (ecs.HasComponent<ParticleComponent>(entity)) ecs.GetComponent<ParticleComponent>(entity).startSize = oldVal; },
+                    "Edit Start Size"
+                );
+            }
+            isEditingStartSize[entity] = false;
+        }
+
+        // End Size
+        ImGui::Text("End Size");
+        ImGui::SameLine(labelWidth);
+        ImGui::SetNextItemWidth(-1);
+        if (!isEditingEndSize[entity]) startEndSize[entity] = particle.endSize;
+        if (ImGui::IsItemActivated()) { startEndSize[entity] = particle.endSize; isEditingEndSize[entity] = true; }
+        if (ImGui::DragFloat("##EndSize", &particle.endSize, 0.01f, 0.0f, 10.0f)) {
+            isEditingEndSize[entity] = true;
+        }
+        if (isEditingEndSize[entity] && !ImGui::IsItemActive()) {
+            float oldVal = startEndSize[entity];
+            float newVal = particle.endSize;
+            if (oldVal != newVal && UndoSystem::GetInstance().IsEnabled()) {
+                UndoSystem::GetInstance().RecordLambdaChange(
+                    [entity, newVal]() { ECSManager& ecs = ECSRegistry::GetInstance().GetActiveECSManager(); if (ecs.HasComponent<ParticleComponent>(entity)) ecs.GetComponent<ParticleComponent>(entity).endSize = newVal; },
+                    [entity, oldVal]() { ECSManager& ecs = ECSRegistry::GetInstance().GetActiveECSManager(); if (ecs.HasComponent<ParticleComponent>(entity)) ecs.GetComponent<ParticleComponent>(entity).endSize = oldVal; },
+                    "Edit End Size"
+                );
+            }
+            isEditingEndSize[entity] = false;
+        }
+
+        ImGui::Separator();
+        ImGui::Text("Color Settings");
+
+        // Start Color
+        ImGui::Text("Start Color");
+        ImGui::SameLine(labelWidth);
+        ImGui::SetNextItemWidth(-1);
+        float startColorArr[3] = { particle.startColor.x, particle.startColor.y, particle.startColor.z };
+        if (!isEditingStartColor[entity]) startStartColor[entity] = particle.startColor;
+        if (ImGui::IsItemActivated()) { startStartColor[entity] = particle.startColor; isEditingStartColor[entity] = true; }
+        if (ImGui::ColorEdit3("##StartColor", startColorArr)) {
+            particle.startColor = Vector3D(startColorArr[0], startColorArr[1], startColorArr[2]);
+            isEditingStartColor[entity] = true;
+        }
+        if (isEditingStartColor[entity] && !ImGui::IsItemActive()) {
+            Vector3D oldVal = startStartColor[entity];
+            Vector3D newVal = particle.startColor;
+            if ((oldVal.x != newVal.x || oldVal.y != newVal.y || oldVal.z != newVal.z) && UndoSystem::GetInstance().IsEnabled()) {
+                UndoSystem::GetInstance().RecordLambdaChange(
+                    [entity, newVal]() { ECSManager& ecs = ECSRegistry::GetInstance().GetActiveECSManager(); if (ecs.HasComponent<ParticleComponent>(entity)) ecs.GetComponent<ParticleComponent>(entity).startColor = newVal; },
+                    [entity, oldVal]() { ECSManager& ecs = ECSRegistry::GetInstance().GetActiveECSManager(); if (ecs.HasComponent<ParticleComponent>(entity)) ecs.GetComponent<ParticleComponent>(entity).startColor = oldVal; },
+                    "Edit Start Color"
+                );
+            }
+            isEditingStartColor[entity] = false;
+        }
+
+        // Start Color Alpha
+        ImGui::Text("Start Alpha");
+        ImGui::SameLine(labelWidth);
+        ImGui::SetNextItemWidth(-1);
+        if (!isEditingStartColorAlpha[entity]) startStartColorAlpha[entity] = particle.startColorAlpha;
+        if (ImGui::IsItemActivated()) { startStartColorAlpha[entity] = particle.startColorAlpha; isEditingStartColorAlpha[entity] = true; }
+        if (ImGui::DragFloat("##StartColorAlpha", &particle.startColorAlpha, 0.01f, 0.0f, 1.0f)) {
+            isEditingStartColorAlpha[entity] = true;
+        }
+        if (isEditingStartColorAlpha[entity] && !ImGui::IsItemActive()) {
+            float oldVal = startStartColorAlpha[entity];
+            float newVal = particle.startColorAlpha;
+            if (oldVal != newVal && UndoSystem::GetInstance().IsEnabled()) {
+                UndoSystem::GetInstance().RecordLambdaChange(
+                    [entity, newVal]() { ECSManager& ecs = ECSRegistry::GetInstance().GetActiveECSManager(); if (ecs.HasComponent<ParticleComponent>(entity)) ecs.GetComponent<ParticleComponent>(entity).startColorAlpha = newVal; },
+                    [entity, oldVal]() { ECSManager& ecs = ECSRegistry::GetInstance().GetActiveECSManager(); if (ecs.HasComponent<ParticleComponent>(entity)) ecs.GetComponent<ParticleComponent>(entity).startColorAlpha = oldVal; },
+                    "Edit Start Alpha"
+                );
+            }
+            isEditingStartColorAlpha[entity] = false;
+        }
+
+        // End Color
+        ImGui::Text("End Color");
+        ImGui::SameLine(labelWidth);
+        ImGui::SetNextItemWidth(-1);
+        float endColorArr[3] = { particle.endColor.x, particle.endColor.y, particle.endColor.z };
+        if (!isEditingEndColor[entity]) startEndColor[entity] = particle.endColor;
+        if (ImGui::IsItemActivated()) { startEndColor[entity] = particle.endColor; isEditingEndColor[entity] = true; }
+        if (ImGui::ColorEdit3("##EndColor", endColorArr)) {
+            particle.endColor = Vector3D(endColorArr[0], endColorArr[1], endColorArr[2]);
+            isEditingEndColor[entity] = true;
+        }
+        if (isEditingEndColor[entity] && !ImGui::IsItemActive()) {
+            Vector3D oldVal = startEndColor[entity];
+            Vector3D newVal = particle.endColor;
+            if ((oldVal.x != newVal.x || oldVal.y != newVal.y || oldVal.z != newVal.z) && UndoSystem::GetInstance().IsEnabled()) {
+                UndoSystem::GetInstance().RecordLambdaChange(
+                    [entity, newVal]() { ECSManager& ecs = ECSRegistry::GetInstance().GetActiveECSManager(); if (ecs.HasComponent<ParticleComponent>(entity)) ecs.GetComponent<ParticleComponent>(entity).endColor = newVal; },
+                    [entity, oldVal]() { ECSManager& ecs = ECSRegistry::GetInstance().GetActiveECSManager(); if (ecs.HasComponent<ParticleComponent>(entity)) ecs.GetComponent<ParticleComponent>(entity).endColor = oldVal; },
+                    "Edit End Color"
+                );
+            }
+            isEditingEndColor[entity] = false;
+        }
+
+        // End Color Alpha
+        ImGui::Text("End Alpha");
+        ImGui::SameLine(labelWidth);
+        ImGui::SetNextItemWidth(-1);
+        if (!isEditingEndColorAlpha[entity]) startEndColorAlpha[entity] = particle.endColorAlpha;
+        if (ImGui::IsItemActivated()) { startEndColorAlpha[entity] = particle.endColorAlpha; isEditingEndColorAlpha[entity] = true; }
+        if (ImGui::DragFloat("##EndColorAlpha", &particle.endColorAlpha, 0.01f, 0.0f, 1.0f)) {
+            isEditingEndColorAlpha[entity] = true;
+        }
+        if (isEditingEndColorAlpha[entity] && !ImGui::IsItemActive()) {
+            float oldVal = startEndColorAlpha[entity];
+            float newVal = particle.endColorAlpha;
+            if (oldVal != newVal && UndoSystem::GetInstance().IsEnabled()) {
+                UndoSystem::GetInstance().RecordLambdaChange(
+                    [entity, newVal]() { ECSManager& ecs = ECSRegistry::GetInstance().GetActiveECSManager(); if (ecs.HasComponent<ParticleComponent>(entity)) ecs.GetComponent<ParticleComponent>(entity).endColorAlpha = newVal; },
+                    [entity, oldVal]() { ECSManager& ecs = ECSRegistry::GetInstance().GetActiveECSManager(); if (ecs.HasComponent<ParticleComponent>(entity)) ecs.GetComponent<ParticleComponent>(entity).endColorAlpha = oldVal; },
+                    "Edit End Alpha"
+                );
+            }
+            isEditingEndColorAlpha[entity] = false;
+        }
+
+        ImGui::Separator();
+        ImGui::Text("Physics");
+
+        // Gravity
+        ImGui::Text("Gravity");
+        ImGui::SameLine(labelWidth);
+        ImGui::SetNextItemWidth(-1);
+        float gravityArr[3] = { particle.gravity.x, particle.gravity.y, particle.gravity.z };
+        if (!isEditingGravity[entity]) startGravity[entity] = particle.gravity;
+        if (ImGui::IsItemActivated()) { startGravity[entity] = particle.gravity; isEditingGravity[entity] = true; }
+        if (ImGui::DragFloat3("##Gravity", gravityArr, 0.1f)) {
+            particle.gravity = Vector3D(gravityArr[0], gravityArr[1], gravityArr[2]);
+            isEditingGravity[entity] = true;
+        }
+        if (isEditingGravity[entity] && !ImGui::IsItemActive()) {
+            Vector3D oldVal = startGravity[entity];
+            Vector3D newVal = particle.gravity;
+            if ((oldVal.x != newVal.x || oldVal.y != newVal.y || oldVal.z != newVal.z) && UndoSystem::GetInstance().IsEnabled()) {
+                UndoSystem::GetInstance().RecordLambdaChange(
+                    [entity, newVal]() { ECSManager& ecs = ECSRegistry::GetInstance().GetActiveECSManager(); if (ecs.HasComponent<ParticleComponent>(entity)) ecs.GetComponent<ParticleComponent>(entity).gravity = newVal; },
+                    [entity, oldVal]() { ECSManager& ecs = ECSRegistry::GetInstance().GetActiveECSManager(); if (ecs.HasComponent<ParticleComponent>(entity)) ecs.GetComponent<ParticleComponent>(entity).gravity = oldVal; },
+                    "Edit Gravity"
+                );
+            }
+            isEditingGravity[entity] = false;
+        }
+
+        // Velocity Randomness
+        ImGui::Text("Velocity Randomness");
+        ImGui::SameLine(labelWidth);
+        ImGui::SetNextItemWidth(-1);
+        if (!isEditingVelocityRandomness[entity]) startVelocityRandomness[entity] = particle.velocityRandomness;
+        if (ImGui::IsItemActivated()) { startVelocityRandomness[entity] = particle.velocityRandomness; isEditingVelocityRandomness[entity] = true; }
+        if (ImGui::DragFloat("##VelocityRandomness", &particle.velocityRandomness, 0.1f, 0.0f, 10.0f)) {
+            isEditingVelocityRandomness[entity] = true;
+        }
+        if (isEditingVelocityRandomness[entity] && !ImGui::IsItemActive()) {
+            float oldVal = startVelocityRandomness[entity];
+            float newVal = particle.velocityRandomness;
+            if (oldVal != newVal && UndoSystem::GetInstance().IsEnabled()) {
+                UndoSystem::GetInstance().RecordLambdaChange(
+                    [entity, newVal]() { ECSManager& ecs = ECSRegistry::GetInstance().GetActiveECSManager(); if (ecs.HasComponent<ParticleComponent>(entity)) ecs.GetComponent<ParticleComponent>(entity).velocityRandomness = newVal; },
+                    [entity, oldVal]() { ECSManager& ecs = ECSRegistry::GetInstance().GetActiveECSManager(); if (ecs.HasComponent<ParticleComponent>(entity)) ecs.GetComponent<ParticleComponent>(entity).velocityRandomness = oldVal; },
+                    "Edit Velocity Randomness"
+                );
+            }
+            isEditingVelocityRandomness[entity] = false;
+        }
+
+        // Initial Velocity
+        ImGui::Text("Initial Velocity");
+        ImGui::SameLine(labelWidth);
+        ImGui::SetNextItemWidth(-1);
+        float initialVelArr[3] = { particle.initialVelocity.x, particle.initialVelocity.y, particle.initialVelocity.z };
+        if (!isEditingInitialVelocity[entity]) startInitialVelocity[entity] = particle.initialVelocity;
+        if (ImGui::IsItemActivated()) { startInitialVelocity[entity] = particle.initialVelocity; isEditingInitialVelocity[entity] = true; }
+        if (ImGui::DragFloat3("##InitialVelocity", initialVelArr, 0.1f)) {
+            particle.initialVelocity = Vector3D(initialVelArr[0], initialVelArr[1], initialVelArr[2]);
+            isEditingInitialVelocity[entity] = true;
+        }
+        if (isEditingInitialVelocity[entity] && !ImGui::IsItemActive()) {
+            Vector3D oldVal = startInitialVelocity[entity];
+            Vector3D newVal = particle.initialVelocity;
+            if ((oldVal.x != newVal.x || oldVal.y != newVal.y || oldVal.z != newVal.z) && UndoSystem::GetInstance().IsEnabled()) {
+                UndoSystem::GetInstance().RecordLambdaChange(
+                    [entity, newVal]() { ECSManager& ecs = ECSRegistry::GetInstance().GetActiveECSManager(); if (ecs.HasComponent<ParticleComponent>(entity)) ecs.GetComponent<ParticleComponent>(entity).initialVelocity = newVal; },
+                    [entity, oldVal]() { ECSManager& ecs = ECSRegistry::GetInstance().GetActiveECSManager(); if (ecs.HasComponent<ParticleComponent>(entity)) ecs.GetComponent<ParticleComponent>(entity).initialVelocity = oldVal; },
+                    "Edit Initial Velocity"
+                );
+            }
+            isEditingInitialVelocity[entity] = false;
+        }
+
+        // Note: textureGUID is handled by a separate field renderer
+        return false; // Return false to let the textureGUID field renderer run
     });
 
     // ==================== DIRECTIONAL LIGHT COMPONENT ====================
+    // Uses entity-aware lambda commands for proper undo/redo
 
     ReflectionRenderer::RegisterComponentRenderer("DirectionalLightComponent",
-    [](void *componentPtr, TypeDescriptor_Struct *, Entity, ECSManager &ecs)
+    [](void *componentPtr, TypeDescriptor_Struct *, Entity entity, ECSManager &ecs)
     {
-            ecs;
         DirectionalLightComponent &light = *static_cast<DirectionalLightComponent *>(componentPtr);
         const float labelWidth = EditorComponents::GetLabelWidth();
 
-        // Basic properties with automatic undo/redo
+        // Static tracking maps for entity-aware undo
+        static std::unordered_map<Entity, bool> startEnabled;
+        static std::unordered_map<Entity, bool> isEditingEnabled;
+        static std::unordered_map<Entity, Vector3D> startColor;
+        static std::unordered_map<Entity, bool> isEditingColor;
+        static std::unordered_map<Entity, float> startIntensity;
+        static std::unordered_map<Entity, bool> isEditingIntensity;
+        static std::unordered_map<Entity, Vector3D> startAmbient;
+        static std::unordered_map<Entity, bool> isEditingAmbient;
+        static std::unordered_map<Entity, Vector3D> startDiffuse;
+        static std::unordered_map<Entity, bool> isEditingDiffuse;
+        static std::unordered_map<Entity, Vector3D> startSpecular;
+        static std::unordered_map<Entity, bool> isEditingSpecular;
+
+        // Initialize tracking state
+        if (isEditingEnabled.find(entity) == isEditingEnabled.end()) isEditingEnabled[entity] = false;
+        if (isEditingColor.find(entity) == isEditingColor.end()) isEditingColor[entity] = false;
+        if (isEditingIntensity.find(entity) == isEditingIntensity.end()) isEditingIntensity[entity] = false;
+        if (isEditingAmbient.find(entity) == isEditingAmbient.end()) isEditingAmbient[entity] = false;
+        if (isEditingDiffuse.find(entity) == isEditingDiffuse.end()) isEditingDiffuse[entity] = false;
+        if (isEditingSpecular.find(entity) == isEditingSpecular.end()) isEditingSpecular[entity] = false;
+
+        // Enabled checkbox
         ImGui::AlignTextToFramePadding();
         ImGui::Text("Enabled");
         ImGui::SameLine(labelWidth);
-        UndoableWidgets::Checkbox("##Enabled", &light.enabled);
 
+        if (!isEditingEnabled[entity]) startEnabled[entity] = light.enabled;
+        bool enabledVal = light.enabled;
+        if (ImGui::Checkbox("##Enabled", &enabledVal)) {
+            bool oldVal = startEnabled[entity];
+            bool newVal = enabledVal;
+            light.enabled = newVal;
+            if (oldVal != newVal && UndoSystem::GetInstance().IsEnabled()) {
+                UndoSystem::GetInstance().RecordLambdaChange(
+                    [entity, newVal]() {
+                        ECSManager& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
+                        if (ecs.HasComponent<DirectionalLightComponent>(entity)) {
+                            ecs.GetComponent<DirectionalLightComponent>(entity).enabled = newVal;
+                        }
+                    },
+                    [entity, oldVal]() {
+                        ECSManager& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
+                        if (ecs.HasComponent<DirectionalLightComponent>(entity)) {
+                            ecs.GetComponent<DirectionalLightComponent>(entity).enabled = oldVal;
+                        }
+                    },
+                    "Toggle Directional Light"
+                );
+            }
+        }
+
+        // Color
         ImGui::Text("Color");
         ImGui::SameLine(labelWidth);
         ImGui::SetNextItemWidth(-1);
-        UndoableWidgets::ColorEdit3("##Color", &light.color.x);
+        float color[3] = {light.color.x, light.color.y, light.color.z};
+        if (!isEditingColor[entity]) startColor[entity] = light.color;
+        if (ImGui::IsItemActivated()) { startColor[entity] = light.color; isEditingColor[entity] = true; }
+        if (ImGui::ColorEdit3("##Color", color)) {
+            light.color = Vector3D(color[0], color[1], color[2]);
+            isEditingColor[entity] = true;
+        }
+        if (isEditingColor[entity] && !ImGui::IsItemActive()) {
+            Vector3D oldVal = startColor[entity];
+            Vector3D newVal = light.color;
+            if (oldVal != newVal && UndoSystem::GetInstance().IsEnabled()) {
+                UndoSystem::GetInstance().RecordLambdaChange(
+                    [entity, newVal]() {
+                        ECSManager& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
+                        if (ecs.HasComponent<DirectionalLightComponent>(entity)) {
+                            ecs.GetComponent<DirectionalLightComponent>(entity).color = newVal;
+                        }
+                    },
+                    [entity, oldVal]() {
+                        ECSManager& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
+                        if (ecs.HasComponent<DirectionalLightComponent>(entity)) {
+                            ecs.GetComponent<DirectionalLightComponent>(entity).color = oldVal;
+                        }
+                    },
+                    "Change Light Color"
+                );
+            }
+            isEditingColor[entity] = false;
+        }
 
+        // Intensity
         ImGui::Text("Intensity");
         ImGui::SameLine(labelWidth);
         ImGui::SetNextItemWidth(-1);
-        UndoableWidgets::DragFloat("##Intensity", &light.intensity, 0.1f, 0.0f, 10.0f);
+        if (!isEditingIntensity[entity]) startIntensity[entity] = light.intensity;
+        if (ImGui::IsItemActivated()) { startIntensity[entity] = light.intensity; isEditingIntensity[entity] = true; }
+        if (ImGui::DragFloat("##Intensity", &light.intensity, 0.1f, 0.0f, 10.0f)) {
+            isEditingIntensity[entity] = true;
+        }
+        if (isEditingIntensity[entity] && !ImGui::IsItemActive()) {
+            float oldVal = startIntensity[entity];
+            float newVal = light.intensity;
+            if (oldVal != newVal && UndoSystem::GetInstance().IsEnabled()) {
+                UndoSystem::GetInstance().RecordLambdaChange(
+                    [entity, newVal]() {
+                        ECSManager& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
+                        if (ecs.HasComponent<DirectionalLightComponent>(entity)) {
+                            ecs.GetComponent<DirectionalLightComponent>(entity).intensity = newVal;
+                        }
+                    },
+                    [entity, oldVal]() {
+                        ECSManager& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
+                        if (ecs.HasComponent<DirectionalLightComponent>(entity)) {
+                            ecs.GetComponent<DirectionalLightComponent>(entity).intensity = oldVal;
+                        }
+                    },
+                    "Change Light Intensity"
+                );
+            }
+            isEditingIntensity[entity] = false;
+        }
 
         // Note: Direction is controlled via Transform rotation
         ImGui::Separator();
         ImGui::Text("Lighting Properties");
 
+        // Ambient
         ImGui::Text("Ambient");
         ImGui::SameLine(labelWidth);
         ImGui::SetNextItemWidth(-1);
-        UndoableWidgets::ColorEdit3("##Ambient", &light.ambient.x);
+        float ambient[3] = {light.ambient.x, light.ambient.y, light.ambient.z};
+        if (!isEditingAmbient[entity]) startAmbient[entity] = light.ambient;
+        if (ImGui::IsItemActivated()) { startAmbient[entity] = light.ambient; isEditingAmbient[entity] = true; }
+        if (ImGui::ColorEdit3("##Ambient", ambient)) {
+            light.ambient = Vector3D(ambient[0], ambient[1], ambient[2]);
+            isEditingAmbient[entity] = true;
+        }
+        if (isEditingAmbient[entity] && !ImGui::IsItemActive()) {
+            Vector3D oldVal = startAmbient[entity];
+            Vector3D newVal = light.ambient;
+            if (oldVal != newVal && UndoSystem::GetInstance().IsEnabled()) {
+                UndoSystem::GetInstance().RecordLambdaChange(
+                    [entity, newVal]() {
+                        ECSManager& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
+                        if (ecs.HasComponent<DirectionalLightComponent>(entity)) {
+                            ecs.GetComponent<DirectionalLightComponent>(entity).ambient = newVal;
+                        }
+                    },
+                    [entity, oldVal]() {
+                        ECSManager& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
+                        if (ecs.HasComponent<DirectionalLightComponent>(entity)) {
+                            ecs.GetComponent<DirectionalLightComponent>(entity).ambient = oldVal;
+                        }
+                    },
+                    "Change Light Ambient"
+                );
+            }
+            isEditingAmbient[entity] = false;
+        }
 
+        // Diffuse
         ImGui::Text("Diffuse");
         ImGui::SameLine(labelWidth);
         ImGui::SetNextItemWidth(-1);
-        UndoableWidgets::ColorEdit3("##Diffuse", &light.diffuse.x);
+        float diffuse[3] = {light.diffuse.x, light.diffuse.y, light.diffuse.z};
+        if (!isEditingDiffuse[entity]) startDiffuse[entity] = light.diffuse;
+        if (ImGui::IsItemActivated()) { startDiffuse[entity] = light.diffuse; isEditingDiffuse[entity] = true; }
+        if (ImGui::ColorEdit3("##Diffuse", diffuse)) {
+            light.diffuse = Vector3D(diffuse[0], diffuse[1], diffuse[2]);
+            isEditingDiffuse[entity] = true;
+        }
+        if (isEditingDiffuse[entity] && !ImGui::IsItemActive()) {
+            Vector3D oldVal = startDiffuse[entity];
+            Vector3D newVal = light.diffuse;
+            if (oldVal != newVal && UndoSystem::GetInstance().IsEnabled()) {
+                UndoSystem::GetInstance().RecordLambdaChange(
+                    [entity, newVal]() {
+                        ECSManager& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
+                        if (ecs.HasComponent<DirectionalLightComponent>(entity)) {
+                            ecs.GetComponent<DirectionalLightComponent>(entity).diffuse = newVal;
+                        }
+                    },
+                    [entity, oldVal]() {
+                        ECSManager& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
+                        if (ecs.HasComponent<DirectionalLightComponent>(entity)) {
+                            ecs.GetComponent<DirectionalLightComponent>(entity).diffuse = oldVal;
+                        }
+                    },
+                    "Change Light Diffuse"
+                );
+            }
+            isEditingDiffuse[entity] = false;
+        }
 
+        // Specular
         ImGui::Text("Specular");
         ImGui::SameLine(labelWidth);
         ImGui::SetNextItemWidth(-1);
-        UndoableWidgets::ColorEdit3("##Specular", &light.specular.x);
+        float specular[3] = {light.specular.x, light.specular.y, light.specular.z};
+        if (!isEditingSpecular[entity]) startSpecular[entity] = light.specular;
+        if (ImGui::IsItemActivated()) { startSpecular[entity] = light.specular; isEditingSpecular[entity] = true; }
+        if (ImGui::ColorEdit3("##Specular", specular)) {
+            light.specular = Vector3D(specular[0], specular[1], specular[2]);
+            isEditingSpecular[entity] = true;
+        }
+        if (isEditingSpecular[entity] && !ImGui::IsItemActive()) {
+            Vector3D oldVal = startSpecular[entity];
+            Vector3D newVal = light.specular;
+            if (oldVal != newVal && UndoSystem::GetInstance().IsEnabled()) {
+                UndoSystem::GetInstance().RecordLambdaChange(
+                    [entity, newVal]() {
+                        ECSManager& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
+                        if (ecs.HasComponent<DirectionalLightComponent>(entity)) {
+                            ecs.GetComponent<DirectionalLightComponent>(entity).specular = newVal;
+                        }
+                    },
+                    [entity, oldVal]() {
+                        ECSManager& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
+                        if (ecs.HasComponent<DirectionalLightComponent>(entity)) {
+                            ecs.GetComponent<DirectionalLightComponent>(entity).specular = oldVal;
+                        }
+                    },
+                    "Change Light Specular"
+                );
+            }
+            isEditingSpecular[entity] = false;
+        }
 
         return true; // Return true to skip default field rendering
     });
 
     // ==================== POINT LIGHT COMPONENT ====================
+    // Uses entity-aware lambda commands for proper undo/redo
 
     ReflectionRenderer::RegisterComponentRenderer("PointLightComponent",
-    [](void *componentPtr, TypeDescriptor_Struct *, Entity, ECSManager &ecs)
+    [](void *componentPtr, TypeDescriptor_Struct *, Entity entity, ECSManager &ecs)
     {
-            ecs;
         PointLightComponent &light = *static_cast<PointLightComponent *>(componentPtr);
         const float labelWidth = EditorComponents::GetLabelWidth();
 
+        // Static tracking maps for entity-aware undo
+        static std::unordered_map<Entity, bool> startEnabled;
+        static std::unordered_map<Entity, Vector3D> startColor;
+        static std::unordered_map<Entity, bool> isEditingColor;
+        static std::unordered_map<Entity, float> startIntensity;
+        static std::unordered_map<Entity, bool> isEditingIntensity;
+        static std::unordered_map<Entity, float> startConstant;
+        static std::unordered_map<Entity, bool> isEditingConstant;
+        static std::unordered_map<Entity, float> startLinear;
+        static std::unordered_map<Entity, bool> isEditingLinear;
+        static std::unordered_map<Entity, float> startQuadratic;
+        static std::unordered_map<Entity, bool> isEditingQuadratic;
+        static std::unordered_map<Entity, Vector3D> startAmbient;
+        static std::unordered_map<Entity, bool> isEditingAmbient;
+        static std::unordered_map<Entity, Vector3D> startDiffuse;
+        static std::unordered_map<Entity, bool> isEditingDiffuse;
+        static std::unordered_map<Entity, Vector3D> startSpecular;
+        static std::unordered_map<Entity, bool> isEditingSpecular;
+        static std::unordered_map<Entity, bool> startCastShadows;
+
+        // Initialize tracking state
+        if (isEditingColor.find(entity) == isEditingColor.end()) isEditingColor[entity] = false;
+        if (isEditingIntensity.find(entity) == isEditingIntensity.end()) isEditingIntensity[entity] = false;
+        if (isEditingConstant.find(entity) == isEditingConstant.end()) isEditingConstant[entity] = false;
+        if (isEditingLinear.find(entity) == isEditingLinear.end()) isEditingLinear[entity] = false;
+        if (isEditingQuadratic.find(entity) == isEditingQuadratic.end()) isEditingQuadratic[entity] = false;
+        if (isEditingAmbient.find(entity) == isEditingAmbient.end()) isEditingAmbient[entity] = false;
+        if (isEditingDiffuse.find(entity) == isEditingDiffuse.end()) isEditingDiffuse[entity] = false;
+        if (isEditingSpecular.find(entity) == isEditingSpecular.end()) isEditingSpecular[entity] = false;
+
+        // Enabled checkbox
         ImGui::AlignTextToFramePadding();
         ImGui::Text("Enabled");
         ImGui::SameLine(labelWidth);
-        UndoableWidgets::Checkbox("##Enabled", &light.enabled);
+        startEnabled[entity] = light.enabled;
+        bool enabledVal = light.enabled;
+        if (ImGui::Checkbox("##Enabled", &enabledVal)) {
+            bool oldVal = startEnabled[entity];
+            bool newVal = enabledVal;
+            light.enabled = newVal;
+            if (oldVal != newVal && UndoSystem::GetInstance().IsEnabled()) {
+                UndoSystem::GetInstance().RecordLambdaChange(
+                    [entity, newVal]() {
+                        ECSManager& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
+                        if (ecs.HasComponent<PointLightComponent>(entity)) {
+                            ecs.GetComponent<PointLightComponent>(entity).enabled = newVal;
+                        }
+                    },
+                    [entity, oldVal]() {
+                        ECSManager& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
+                        if (ecs.HasComponent<PointLightComponent>(entity)) {
+                            ecs.GetComponent<PointLightComponent>(entity).enabled = oldVal;
+                        }
+                    },
+                    "Toggle Point Light"
+                );
+            }
+        }
 
+        // Color
         ImGui::Text("Color");
         ImGui::SameLine(labelWidth);
         ImGui::SetNextItemWidth(-1);
-        UndoableWidgets::ColorEdit3("##Color", &light.color.x);
+        float color[3] = {light.color.x, light.color.y, light.color.z};
+        if (!isEditingColor[entity]) startColor[entity] = light.color;
+        if (ImGui::IsItemActivated()) { startColor[entity] = light.color; isEditingColor[entity] = true; }
+        if (ImGui::ColorEdit3("##Color", color)) {
+            light.color = Vector3D(color[0], color[1], color[2]);
+            isEditingColor[entity] = true;
+        }
+        if (isEditingColor[entity] && !ImGui::IsItemActive()) {
+            Vector3D oldVal = startColor[entity];
+            Vector3D newVal = light.color;
+            if (oldVal != newVal && UndoSystem::GetInstance().IsEnabled()) {
+                UndoSystem::GetInstance().RecordLambdaChange(
+                    [entity, newVal]() {
+                        ECSManager& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
+                        if (ecs.HasComponent<PointLightComponent>(entity)) {
+                            ecs.GetComponent<PointLightComponent>(entity).color = newVal;
+                        }
+                    },
+                    [entity, oldVal]() {
+                        ECSManager& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
+                        if (ecs.HasComponent<PointLightComponent>(entity)) {
+                            ecs.GetComponent<PointLightComponent>(entity).color = oldVal;
+                        }
+                    },
+                    "Change Point Light Color"
+                );
+            }
+            isEditingColor[entity] = false;
+        }
 
+        // Intensity
         ImGui::Text("Intensity");
         ImGui::SameLine(labelWidth);
         ImGui::SetNextItemWidth(-1);
-        UndoableWidgets::DragFloat("##Intensity", &light.intensity, 0.1f, 0.0f, 10.0f);
+        if (!isEditingIntensity[entity]) startIntensity[entity] = light.intensity;
+        if (ImGui::IsItemActivated()) { startIntensity[entity] = light.intensity; isEditingIntensity[entity] = true; }
+        if (ImGui::DragFloat("##Intensity", &light.intensity, 0.1f, 0.0f, 10.0f)) {
+            isEditingIntensity[entity] = true;
+        }
+        if (isEditingIntensity[entity] && !ImGui::IsItemActive()) {
+            float oldVal = startIntensity[entity];
+            float newVal = light.intensity;
+            if (oldVal != newVal && UndoSystem::GetInstance().IsEnabled()) {
+                UndoSystem::GetInstance().RecordLambdaChange(
+                    [entity, newVal]() {
+                        ECSManager& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
+                        if (ecs.HasComponent<PointLightComponent>(entity)) {
+                            ecs.GetComponent<PointLightComponent>(entity).intensity = newVal;
+                        }
+                    },
+                    [entity, oldVal]() {
+                        ECSManager& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
+                        if (ecs.HasComponent<PointLightComponent>(entity)) {
+                            ecs.GetComponent<PointLightComponent>(entity).intensity = oldVal;
+                        }
+                    },
+                    "Change Point Light Intensity"
+                );
+            }
+            isEditingIntensity[entity] = false;
+        }
 
         ImGui::Separator();
         ImGui::Text("Attenuation");
 
+        // Constant
         ImGui::Text("Constant");
         ImGui::SameLine(labelWidth);
         ImGui::SetNextItemWidth(-1);
-        UndoableWidgets::DragFloat("##Constant", &light.constant, 0.01f, 0.0f, 2.0f);
+        if (!isEditingConstant[entity]) startConstant[entity] = light.constant;
+        if (ImGui::IsItemActivated()) { startConstant[entity] = light.constant; isEditingConstant[entity] = true; }
+        if (ImGui::DragFloat("##Constant", &light.constant, 0.01f, 0.0f, 2.0f)) {
+            isEditingConstant[entity] = true;
+        }
+        if (isEditingConstant[entity] && !ImGui::IsItemActive()) {
+            float oldVal = startConstant[entity];
+            float newVal = light.constant;
+            if (oldVal != newVal && UndoSystem::GetInstance().IsEnabled()) {
+                UndoSystem::GetInstance().RecordLambdaChange(
+                    [entity, newVal]() {
+                        ECSManager& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
+                        if (ecs.HasComponent<PointLightComponent>(entity)) {
+                            ecs.GetComponent<PointLightComponent>(entity).constant = newVal;
+                        }
+                    },
+                    [entity, oldVal]() {
+                        ECSManager& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
+                        if (ecs.HasComponent<PointLightComponent>(entity)) {
+                            ecs.GetComponent<PointLightComponent>(entity).constant = oldVal;
+                        }
+                    },
+                    "Change Light Constant"
+                );
+            }
+            isEditingConstant[entity] = false;
+        }
 
+        // Linear
         ImGui::Text("Linear");
         ImGui::SameLine(labelWidth);
         ImGui::SetNextItemWidth(-1);
-        UndoableWidgets::DragFloat("##Linear", &light.linear, 0.01f, 0.0f, 1.0f);
+        if (!isEditingLinear[entity]) startLinear[entity] = light.linear;
+        if (ImGui::IsItemActivated()) { startLinear[entity] = light.linear; isEditingLinear[entity] = true; }
+        if (ImGui::DragFloat("##Linear", &light.linear, 0.01f, 0.0f, 1.0f)) {
+            isEditingLinear[entity] = true;
+        }
+        if (isEditingLinear[entity] && !ImGui::IsItemActive()) {
+            float oldVal = startLinear[entity];
+            float newVal = light.linear;
+            if (oldVal != newVal && UndoSystem::GetInstance().IsEnabled()) {
+                UndoSystem::GetInstance().RecordLambdaChange(
+                    [entity, newVal]() {
+                        ECSManager& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
+                        if (ecs.HasComponent<PointLightComponent>(entity)) {
+                            ecs.GetComponent<PointLightComponent>(entity).linear = newVal;
+                        }
+                    },
+                    [entity, oldVal]() {
+                        ECSManager& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
+                        if (ecs.HasComponent<PointLightComponent>(entity)) {
+                            ecs.GetComponent<PointLightComponent>(entity).linear = oldVal;
+                        }
+                    },
+                    "Change Light Linear"
+                );
+            }
+            isEditingLinear[entity] = false;
+        }
 
+        // Quadratic
         ImGui::Text("Quadratic");
         ImGui::SameLine(labelWidth);
         ImGui::SetNextItemWidth(-1);
-        UndoableWidgets::DragFloat("##Quadratic", &light.quadratic, 0.01f, 0.0f, 1.0f);
+        if (!isEditingQuadratic[entity]) startQuadratic[entity] = light.quadratic;
+        if (ImGui::IsItemActivated()) { startQuadratic[entity] = light.quadratic; isEditingQuadratic[entity] = true; }
+        if (ImGui::DragFloat("##Quadratic", &light.quadratic, 0.01f, 0.0f, 1.0f)) {
+            isEditingQuadratic[entity] = true;
+        }
+        if (isEditingQuadratic[entity] && !ImGui::IsItemActive()) {
+            float oldVal = startQuadratic[entity];
+            float newVal = light.quadratic;
+            if (oldVal != newVal && UndoSystem::GetInstance().IsEnabled()) {
+                UndoSystem::GetInstance().RecordLambdaChange(
+                    [entity, newVal]() {
+                        ECSManager& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
+                        if (ecs.HasComponent<PointLightComponent>(entity)) {
+                            ecs.GetComponent<PointLightComponent>(entity).quadratic = newVal;
+                        }
+                    },
+                    [entity, oldVal]() {
+                        ECSManager& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
+                        if (ecs.HasComponent<PointLightComponent>(entity)) {
+                            ecs.GetComponent<PointLightComponent>(entity).quadratic = oldVal;
+                        }
+                    },
+                    "Change Light Quadratic"
+                );
+            }
+            isEditingQuadratic[entity] = false;
+        }
 
         ImGui::Separator();
         ImGui::Text("Lighting Properties");
 
+        // Ambient
         ImGui::Text("Ambient");
         ImGui::SameLine(labelWidth);
         ImGui::SetNextItemWidth(-1);
-        UndoableWidgets::ColorEdit3("##Ambient", &light.ambient.x);
+        float ambient[3] = {light.ambient.x, light.ambient.y, light.ambient.z};
+        if (!isEditingAmbient[entity]) startAmbient[entity] = light.ambient;
+        if (ImGui::IsItemActivated()) { startAmbient[entity] = light.ambient; isEditingAmbient[entity] = true; }
+        if (ImGui::ColorEdit3("##Ambient", ambient)) {
+            light.ambient = Vector3D(ambient[0], ambient[1], ambient[2]);
+            isEditingAmbient[entity] = true;
+        }
+        if (isEditingAmbient[entity] && !ImGui::IsItemActive()) {
+            Vector3D oldVal = startAmbient[entity];
+            Vector3D newVal = light.ambient;
+            if (oldVal != newVal && UndoSystem::GetInstance().IsEnabled()) {
+                UndoSystem::GetInstance().RecordLambdaChange(
+                    [entity, newVal]() {
+                        ECSManager& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
+                        if (ecs.HasComponent<PointLightComponent>(entity)) {
+                            ecs.GetComponent<PointLightComponent>(entity).ambient = newVal;
+                        }
+                    },
+                    [entity, oldVal]() {
+                        ECSManager& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
+                        if (ecs.HasComponent<PointLightComponent>(entity)) {
+                            ecs.GetComponent<PointLightComponent>(entity).ambient = oldVal;
+                        }
+                    },
+                    "Change Point Light Ambient"
+                );
+            }
+            isEditingAmbient[entity] = false;
+        }
 
+        // Diffuse
         ImGui::Text("Diffuse");
         ImGui::SameLine(labelWidth);
         ImGui::SetNextItemWidth(-1);
-        UndoableWidgets::ColorEdit3("##Diffuse", &light.diffuse.x);
+        float diffuse[3] = {light.diffuse.x, light.diffuse.y, light.diffuse.z};
+        if (!isEditingDiffuse[entity]) startDiffuse[entity] = light.diffuse;
+        if (ImGui::IsItemActivated()) { startDiffuse[entity] = light.diffuse; isEditingDiffuse[entity] = true; }
+        if (ImGui::ColorEdit3("##Diffuse", diffuse)) {
+            light.diffuse = Vector3D(diffuse[0], diffuse[1], diffuse[2]);
+            isEditingDiffuse[entity] = true;
+        }
+        if (isEditingDiffuse[entity] && !ImGui::IsItemActive()) {
+            Vector3D oldVal = startDiffuse[entity];
+            Vector3D newVal = light.diffuse;
+            if (oldVal != newVal && UndoSystem::GetInstance().IsEnabled()) {
+                UndoSystem::GetInstance().RecordLambdaChange(
+                    [entity, newVal]() {
+                        ECSManager& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
+                        if (ecs.HasComponent<PointLightComponent>(entity)) {
+                            ecs.GetComponent<PointLightComponent>(entity).diffuse = newVal;
+                        }
+                    },
+                    [entity, oldVal]() {
+                        ECSManager& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
+                        if (ecs.HasComponent<PointLightComponent>(entity)) {
+                            ecs.GetComponent<PointLightComponent>(entity).diffuse = oldVal;
+                        }
+                    },
+                    "Change Point Light Diffuse"
+                );
+            }
+            isEditingDiffuse[entity] = false;
+        }
 
+        // Specular
         ImGui::Text("Specular");
         ImGui::SameLine(labelWidth);
         ImGui::SetNextItemWidth(-1);
-        UndoableWidgets::ColorEdit3("##Specular", &light.specular.x);
+        float specular[3] = {light.specular.x, light.specular.y, light.specular.z};
+        if (!isEditingSpecular[entity]) startSpecular[entity] = light.specular;
+        if (ImGui::IsItemActivated()) { startSpecular[entity] = light.specular; isEditingSpecular[entity] = true; }
+        if (ImGui::ColorEdit3("##Specular", specular)) {
+            light.specular = Vector3D(specular[0], specular[1], specular[2]);
+            isEditingSpecular[entity] = true;
+        }
+        if (isEditingSpecular[entity] && !ImGui::IsItemActive()) {
+            Vector3D oldVal = startSpecular[entity];
+            Vector3D newVal = light.specular;
+            if (oldVal != newVal && UndoSystem::GetInstance().IsEnabled()) {
+                UndoSystem::GetInstance().RecordLambdaChange(
+                    [entity, newVal]() {
+                        ECSManager& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
+                        if (ecs.HasComponent<PointLightComponent>(entity)) {
+                            ecs.GetComponent<PointLightComponent>(entity).specular = newVal;
+                        }
+                    },
+                    [entity, oldVal]() {
+                        ECSManager& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
+                        if (ecs.HasComponent<PointLightComponent>(entity)) {
+                            ecs.GetComponent<PointLightComponent>(entity).specular = oldVal;
+                        }
+                    },
+                    "Change Point Light Specular"
+                );
+            }
+            isEditingSpecular[entity] = false;
+        }
 
+        // Cast Shadow checkbox
         ImGui::Text("Cast Shadow");
         ImGui::SameLine(labelWidth);
-        UndoableWidgets::Checkbox("##CastShadow", &light.castShadows);
+        startCastShadows[entity] = light.castShadows;
+        bool castShadowsVal = light.castShadows;
+        if (ImGui::Checkbox("##CastShadow", &castShadowsVal)) {
+            bool oldVal = startCastShadows[entity];
+            bool newVal = castShadowsVal;
+            light.castShadows = newVal;
+            if (oldVal != newVal && UndoSystem::GetInstance().IsEnabled()) {
+                UndoSystem::GetInstance().RecordLambdaChange(
+                    [entity, newVal]() {
+                        ECSManager& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
+                        if (ecs.HasComponent<PointLightComponent>(entity)) {
+                            ecs.GetComponent<PointLightComponent>(entity).castShadows = newVal;
+                        }
+                    },
+                    [entity, oldVal]() {
+                        ECSManager& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
+                        if (ecs.HasComponent<PointLightComponent>(entity)) {
+                            ecs.GetComponent<PointLightComponent>(entity).castShadows = oldVal;
+                        }
+                    },
+                    "Toggle Point Light Shadows"
+                );
+            }
+        }
 
         return true; // Return true to skip default field rendering
     });
 
     // ==================== SPOT LIGHT COMPONENT ====================
+    // Uses entity-aware lambda commands for proper undo/redo
 
     ReflectionRenderer::RegisterComponentRenderer("SpotLightComponent",
-    [](void *componentPtr, TypeDescriptor_Struct *, Entity, ECSManager &ecs)
+    [](void *componentPtr, TypeDescriptor_Struct *, Entity entity, ECSManager &ecs)
     {
-            ecs;
         SpotLightComponent &light = *static_cast<SpotLightComponent *>(componentPtr);
         const float labelWidth = EditorComponents::GetLabelWidth();
 
+        // Static tracking maps for entity-aware undo
+        static std::unordered_map<Entity, bool> startEnabled;
+        static std::unordered_map<Entity, Vector3D> startColor;
+        static std::unordered_map<Entity, bool> isEditingColor;
+        static std::unordered_map<Entity, float> startIntensity;
+        static std::unordered_map<Entity, bool> isEditingIntensity;
+        static std::unordered_map<Entity, float> startCutOff;
+        static std::unordered_map<Entity, bool> isEditingCutOff;
+        static std::unordered_map<Entity, float> startOuterCutOff;
+        static std::unordered_map<Entity, bool> isEditingOuterCutOff;
+        static std::unordered_map<Entity, float> startConstant;
+        static std::unordered_map<Entity, bool> isEditingConstant;
+        static std::unordered_map<Entity, float> startLinear;
+        static std::unordered_map<Entity, bool> isEditingLinear;
+        static std::unordered_map<Entity, float> startQuadratic;
+        static std::unordered_map<Entity, bool> isEditingQuadratic;
+        static std::unordered_map<Entity, Vector3D> startAmbient;
+        static std::unordered_map<Entity, bool> isEditingAmbient;
+        static std::unordered_map<Entity, Vector3D> startDiffuse;
+        static std::unordered_map<Entity, bool> isEditingDiffuse;
+        static std::unordered_map<Entity, Vector3D> startSpecular;
+        static std::unordered_map<Entity, bool> isEditingSpecular;
+
+        // Initialize tracking state
+        if (isEditingColor.find(entity) == isEditingColor.end()) isEditingColor[entity] = false;
+        if (isEditingIntensity.find(entity) == isEditingIntensity.end()) isEditingIntensity[entity] = false;
+        if (isEditingCutOff.find(entity) == isEditingCutOff.end()) isEditingCutOff[entity] = false;
+        if (isEditingOuterCutOff.find(entity) == isEditingOuterCutOff.end()) isEditingOuterCutOff[entity] = false;
+        if (isEditingConstant.find(entity) == isEditingConstant.end()) isEditingConstant[entity] = false;
+        if (isEditingLinear.find(entity) == isEditingLinear.end()) isEditingLinear[entity] = false;
+        if (isEditingQuadratic.find(entity) == isEditingQuadratic.end()) isEditingQuadratic[entity] = false;
+        if (isEditingAmbient.find(entity) == isEditingAmbient.end()) isEditingAmbient[entity] = false;
+        if (isEditingDiffuse.find(entity) == isEditingDiffuse.end()) isEditingDiffuse[entity] = false;
+        if (isEditingSpecular.find(entity) == isEditingSpecular.end()) isEditingSpecular[entity] = false;
+
+        // Enabled checkbox
         ImGui::AlignTextToFramePadding();
         ImGui::Text("Enabled");
         ImGui::SameLine(labelWidth);
-        UndoableWidgets::Checkbox("##Enabled", &light.enabled);
+        startEnabled[entity] = light.enabled;
+        bool enabledVal = light.enabled;
+        if (ImGui::Checkbox("##Enabled", &enabledVal)) {
+            bool oldVal = startEnabled[entity];
+            bool newVal = enabledVal;
+            light.enabled = newVal;
+            if (oldVal != newVal && UndoSystem::GetInstance().IsEnabled()) {
+                UndoSystem::GetInstance().RecordLambdaChange(
+                    [entity, newVal]() {
+                        ECSManager& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
+                        if (ecs.HasComponent<SpotLightComponent>(entity)) {
+                            ecs.GetComponent<SpotLightComponent>(entity).enabled = newVal;
+                        }
+                    },
+                    [entity, oldVal]() {
+                        ECSManager& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
+                        if (ecs.HasComponent<SpotLightComponent>(entity)) {
+                            ecs.GetComponent<SpotLightComponent>(entity).enabled = oldVal;
+                        }
+                    },
+                    "Toggle Spot Light"
+                );
+            }
+        }
 
+        // Color
         ImGui::Text("Color");
         ImGui::SameLine(labelWidth);
         ImGui::SetNextItemWidth(-1);
-        UndoableWidgets::ColorEdit3("##Color", &light.color.x);
+        float color[3] = {light.color.x, light.color.y, light.color.z};
+        if (!isEditingColor[entity]) startColor[entity] = light.color;
+        if (ImGui::IsItemActivated()) { startColor[entity] = light.color; isEditingColor[entity] = true; }
+        if (ImGui::ColorEdit3("##Color", color)) {
+            light.color = Vector3D(color[0], color[1], color[2]);
+            isEditingColor[entity] = true;
+        }
+        if (isEditingColor[entity] && !ImGui::IsItemActive()) {
+            Vector3D oldVal = startColor[entity];
+            Vector3D newVal = light.color;
+            if (oldVal != newVal && UndoSystem::GetInstance().IsEnabled()) {
+                UndoSystem::GetInstance().RecordLambdaChange(
+                    [entity, newVal]() {
+                        ECSManager& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
+                        if (ecs.HasComponent<SpotLightComponent>(entity)) {
+                            ecs.GetComponent<SpotLightComponent>(entity).color = newVal;
+                        }
+                    },
+                    [entity, oldVal]() {
+                        ECSManager& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
+                        if (ecs.HasComponent<SpotLightComponent>(entity)) {
+                            ecs.GetComponent<SpotLightComponent>(entity).color = oldVal;
+                        }
+                    },
+                    "Change Spot Light Color"
+                );
+            }
+            isEditingColor[entity] = false;
+        }
 
+        // Intensity
         ImGui::Text("Intensity");
         ImGui::SameLine(labelWidth);
         ImGui::SetNextItemWidth(-1);
-        UndoableWidgets::DragFloat("##Intensity", &light.intensity, 0.1f, 0.0f, 10.0f);
+        if (!isEditingIntensity[entity]) startIntensity[entity] = light.intensity;
+        if (ImGui::IsItemActivated()) { startIntensity[entity] = light.intensity; isEditingIntensity[entity] = true; }
+        if (ImGui::DragFloat("##Intensity", &light.intensity, 0.1f, 0.0f, 10.0f)) {
+            isEditingIntensity[entity] = true;
+        }
+        if (isEditingIntensity[entity] && !ImGui::IsItemActive()) {
+            float oldVal = startIntensity[entity];
+            float newVal = light.intensity;
+            if (oldVal != newVal && UndoSystem::GetInstance().IsEnabled()) {
+                UndoSystem::GetInstance().RecordLambdaChange(
+                    [entity, newVal]() {
+                        ECSManager& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
+                        if (ecs.HasComponent<SpotLightComponent>(entity)) {
+                            ecs.GetComponent<SpotLightComponent>(entity).intensity = newVal;
+                        }
+                    },
+                    [entity, oldVal]() {
+                        ECSManager& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
+                        if (ecs.HasComponent<SpotLightComponent>(entity)) {
+                            ecs.GetComponent<SpotLightComponent>(entity).intensity = oldVal;
+                        }
+                    },
+                    "Change Spot Light Intensity"
+                );
+            }
+            isEditingIntensity[entity] = false;
+        }
 
         // Note: Direction is controlled via Transform rotation
         ImGui::Separator();
@@ -2231,57 +4313,275 @@ void RegisterInspectorCustomRenderers()
         float cutOffDegrees = glm::degrees(glm::acos(light.cutOff));
         float outerCutOffDegrees = glm::degrees(glm::acos(light.outerCutOff));
 
+        // Inner Cutoff
         ImGui::Text("Inner Cutoff (degrees)");
         ImGui::SameLine(labelWidth);
         ImGui::SetNextItemWidth(-1);
-        if (UndoableWidgets::DragFloat("##InnerCutoff", &cutOffDegrees, 1.0f, 0.0f, 90.0f))
-        {
+        if (!isEditingCutOff[entity]) startCutOff[entity] = light.cutOff;
+        if (ImGui::IsItemActivated()) { startCutOff[entity] = light.cutOff; isEditingCutOff[entity] = true; }
+        if (ImGui::DragFloat("##InnerCutoff", &cutOffDegrees, 1.0f, 0.0f, 90.0f)) {
             light.cutOff = glm::cos(glm::radians(cutOffDegrees));
+            isEditingCutOff[entity] = true;
+        }
+        if (isEditingCutOff[entity] && !ImGui::IsItemActive()) {
+            float oldVal = startCutOff[entity];
+            float newVal = light.cutOff;
+            if (oldVal != newVal && UndoSystem::GetInstance().IsEnabled()) {
+                UndoSystem::GetInstance().RecordLambdaChange(
+                    [entity, newVal]() {
+                        ECSManager& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
+                        if (ecs.HasComponent<SpotLightComponent>(entity)) {
+                            ecs.GetComponent<SpotLightComponent>(entity).cutOff = newVal;
+                        }
+                    },
+                    [entity, oldVal]() {
+                        ECSManager& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
+                        if (ecs.HasComponent<SpotLightComponent>(entity)) {
+                            ecs.GetComponent<SpotLightComponent>(entity).cutOff = oldVal;
+                        }
+                    },
+                    "Change Spot Light Inner Cutoff"
+                );
+            }
+            isEditingCutOff[entity] = false;
         }
 
+        // Outer Cutoff
         ImGui::Text("Outer Cutoff (degrees)");
         ImGui::SameLine(labelWidth);
         ImGui::SetNextItemWidth(-1);
-        if (UndoableWidgets::DragFloat("##OuterCutoff", &outerCutOffDegrees, 1.0f, 0.0f, 90.0f))
-        {
+        if (!isEditingOuterCutOff[entity]) startOuterCutOff[entity] = light.outerCutOff;
+        if (ImGui::IsItemActivated()) { startOuterCutOff[entity] = light.outerCutOff; isEditingOuterCutOff[entity] = true; }
+        if (ImGui::DragFloat("##OuterCutoff", &outerCutOffDegrees, 1.0f, 0.0f, 90.0f)) {
             light.outerCutOff = glm::cos(glm::radians(outerCutOffDegrees));
+            isEditingOuterCutOff[entity] = true;
+        }
+        if (isEditingOuterCutOff[entity] && !ImGui::IsItemActive()) {
+            float oldVal = startOuterCutOff[entity];
+            float newVal = light.outerCutOff;
+            if (oldVal != newVal && UndoSystem::GetInstance().IsEnabled()) {
+                UndoSystem::GetInstance().RecordLambdaChange(
+                    [entity, newVal]() {
+                        ECSManager& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
+                        if (ecs.HasComponent<SpotLightComponent>(entity)) {
+                            ecs.GetComponent<SpotLightComponent>(entity).outerCutOff = newVal;
+                        }
+                    },
+                    [entity, oldVal]() {
+                        ECSManager& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
+                        if (ecs.HasComponent<SpotLightComponent>(entity)) {
+                            ecs.GetComponent<SpotLightComponent>(entity).outerCutOff = oldVal;
+                        }
+                    },
+                    "Change Spot Light Outer Cutoff"
+                );
+            }
+            isEditingOuterCutOff[entity] = false;
         }
 
         ImGui::Separator();
         ImGui::Text("Attenuation");
 
+        // Constant
         ImGui::Text("Constant");
         ImGui::SameLine(labelWidth);
         ImGui::SetNextItemWidth(-1);
-        UndoableWidgets::DragFloat("##Constant", &light.constant, 0.01f, 0.0f, 2.0f);
+        if (!isEditingConstant[entity]) startConstant[entity] = light.constant;
+        if (ImGui::IsItemActivated()) { startConstant[entity] = light.constant; isEditingConstant[entity] = true; }
+        if (ImGui::DragFloat("##Constant", &light.constant, 0.01f, 0.0f, 2.0f)) {
+            isEditingConstant[entity] = true;
+        }
+        if (isEditingConstant[entity] && !ImGui::IsItemActive()) {
+            float oldVal = startConstant[entity];
+            float newVal = light.constant;
+            if (oldVal != newVal && UndoSystem::GetInstance().IsEnabled()) {
+                UndoSystem::GetInstance().RecordLambdaChange(
+                    [entity, newVal]() {
+                        ECSManager& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
+                        if (ecs.HasComponent<SpotLightComponent>(entity)) {
+                            ecs.GetComponent<SpotLightComponent>(entity).constant = newVal;
+                        }
+                    },
+                    [entity, oldVal]() {
+                        ECSManager& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
+                        if (ecs.HasComponent<SpotLightComponent>(entity)) {
+                            ecs.GetComponent<SpotLightComponent>(entity).constant = oldVal;
+                        }
+                    },
+                    "Change Spot Light Constant"
+                );
+            }
+            isEditingConstant[entity] = false;
+        }
 
+        // Linear
         ImGui::Text("Linear");
         ImGui::SameLine(labelWidth);
         ImGui::SetNextItemWidth(-1);
-        UndoableWidgets::DragFloat("##Linear", &light.linear, 0.01f, 0.0f, 1.0f);
+        if (!isEditingLinear[entity]) startLinear[entity] = light.linear;
+        if (ImGui::IsItemActivated()) { startLinear[entity] = light.linear; isEditingLinear[entity] = true; }
+        if (ImGui::DragFloat("##Linear", &light.linear, 0.01f, 0.0f, 1.0f)) {
+            isEditingLinear[entity] = true;
+        }
+        if (isEditingLinear[entity] && !ImGui::IsItemActive()) {
+            float oldVal = startLinear[entity];
+            float newVal = light.linear;
+            if (oldVal != newVal && UndoSystem::GetInstance().IsEnabled()) {
+                UndoSystem::GetInstance().RecordLambdaChange(
+                    [entity, newVal]() {
+                        ECSManager& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
+                        if (ecs.HasComponent<SpotLightComponent>(entity)) {
+                            ecs.GetComponent<SpotLightComponent>(entity).linear = newVal;
+                        }
+                    },
+                    [entity, oldVal]() {
+                        ECSManager& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
+                        if (ecs.HasComponent<SpotLightComponent>(entity)) {
+                            ecs.GetComponent<SpotLightComponent>(entity).linear = oldVal;
+                        }
+                    },
+                    "Change Spot Light Linear"
+                );
+            }
+            isEditingLinear[entity] = false;
+        }
 
+        // Quadratic
         ImGui::Text("Quadratic");
         ImGui::SameLine(labelWidth);
         ImGui::SetNextItemWidth(-1);
-        UndoableWidgets::DragFloat("##Quadratic", &light.quadratic, 0.01f, 0.0f, 1.0f);
+        if (!isEditingQuadratic[entity]) startQuadratic[entity] = light.quadratic;
+        if (ImGui::IsItemActivated()) { startQuadratic[entity] = light.quadratic; isEditingQuadratic[entity] = true; }
+        if (ImGui::DragFloat("##Quadratic", &light.quadratic, 0.01f, 0.0f, 1.0f)) {
+            isEditingQuadratic[entity] = true;
+        }
+        if (isEditingQuadratic[entity] && !ImGui::IsItemActive()) {
+            float oldVal = startQuadratic[entity];
+            float newVal = light.quadratic;
+            if (oldVal != newVal && UndoSystem::GetInstance().IsEnabled()) {
+                UndoSystem::GetInstance().RecordLambdaChange(
+                    [entity, newVal]() {
+                        ECSManager& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
+                        if (ecs.HasComponent<SpotLightComponent>(entity)) {
+                            ecs.GetComponent<SpotLightComponent>(entity).quadratic = newVal;
+                        }
+                    },
+                    [entity, oldVal]() {
+                        ECSManager& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
+                        if (ecs.HasComponent<SpotLightComponent>(entity)) {
+                            ecs.GetComponent<SpotLightComponent>(entity).quadratic = oldVal;
+                        }
+                    },
+                    "Change Spot Light Quadratic"
+                );
+            }
+            isEditingQuadratic[entity] = false;
+        }
 
         ImGui::Separator();
         ImGui::Text("Lighting Properties");
 
+        // Ambient
         ImGui::Text("Ambient");
         ImGui::SameLine(labelWidth);
         ImGui::SetNextItemWidth(-1);
-        UndoableWidgets::ColorEdit3("##Ambient", &light.ambient.x);
+        float ambient[3] = {light.ambient.x, light.ambient.y, light.ambient.z};
+        if (!isEditingAmbient[entity]) startAmbient[entity] = light.ambient;
+        if (ImGui::IsItemActivated()) { startAmbient[entity] = light.ambient; isEditingAmbient[entity] = true; }
+        if (ImGui::ColorEdit3("##Ambient", ambient)) {
+            light.ambient = Vector3D(ambient[0], ambient[1], ambient[2]);
+            isEditingAmbient[entity] = true;
+        }
+        if (isEditingAmbient[entity] && !ImGui::IsItemActive()) {
+            Vector3D oldVal = startAmbient[entity];
+            Vector3D newVal = light.ambient;
+            if (oldVal != newVal && UndoSystem::GetInstance().IsEnabled()) {
+                UndoSystem::GetInstance().RecordLambdaChange(
+                    [entity, newVal]() {
+                        ECSManager& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
+                        if (ecs.HasComponent<SpotLightComponent>(entity)) {
+                            ecs.GetComponent<SpotLightComponent>(entity).ambient = newVal;
+                        }
+                    },
+                    [entity, oldVal]() {
+                        ECSManager& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
+                        if (ecs.HasComponent<SpotLightComponent>(entity)) {
+                            ecs.GetComponent<SpotLightComponent>(entity).ambient = oldVal;
+                        }
+                    },
+                    "Change Spot Light Ambient"
+                );
+            }
+            isEditingAmbient[entity] = false;
+        }
 
+        // Diffuse
         ImGui::Text("Diffuse");
         ImGui::SameLine(labelWidth);
         ImGui::SetNextItemWidth(-1);
-        UndoableWidgets::ColorEdit3("##Diffuse", &light.diffuse.x);
+        float diffuse[3] = {light.diffuse.x, light.diffuse.y, light.diffuse.z};
+        if (!isEditingDiffuse[entity]) startDiffuse[entity] = light.diffuse;
+        if (ImGui::IsItemActivated()) { startDiffuse[entity] = light.diffuse; isEditingDiffuse[entity] = true; }
+        if (ImGui::ColorEdit3("##Diffuse", diffuse)) {
+            light.diffuse = Vector3D(diffuse[0], diffuse[1], diffuse[2]);
+            isEditingDiffuse[entity] = true;
+        }
+        if (isEditingDiffuse[entity] && !ImGui::IsItemActive()) {
+            Vector3D oldVal = startDiffuse[entity];
+            Vector3D newVal = light.diffuse;
+            if (oldVal != newVal && UndoSystem::GetInstance().IsEnabled()) {
+                UndoSystem::GetInstance().RecordLambdaChange(
+                    [entity, newVal]() {
+                        ECSManager& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
+                        if (ecs.HasComponent<SpotLightComponent>(entity)) {
+                            ecs.GetComponent<SpotLightComponent>(entity).diffuse = newVal;
+                        }
+                    },
+                    [entity, oldVal]() {
+                        ECSManager& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
+                        if (ecs.HasComponent<SpotLightComponent>(entity)) {
+                            ecs.GetComponent<SpotLightComponent>(entity).diffuse = oldVal;
+                        }
+                    },
+                    "Change Spot Light Diffuse"
+                );
+            }
+            isEditingDiffuse[entity] = false;
+        }
 
+        // Specular
         ImGui::Text("Specular");
         ImGui::SameLine(labelWidth);
         ImGui::SetNextItemWidth(-1);
-        UndoableWidgets::ColorEdit3("##Specular", &light.specular.x);
+        float specular[3] = {light.specular.x, light.specular.y, light.specular.z};
+        if (!isEditingSpecular[entity]) startSpecular[entity] = light.specular;
+        if (ImGui::IsItemActivated()) { startSpecular[entity] = light.specular; isEditingSpecular[entity] = true; }
+        if (ImGui::ColorEdit3("##Specular", specular)) {
+            light.specular = Vector3D(specular[0], specular[1], specular[2]);
+            isEditingSpecular[entity] = true;
+        }
+        if (isEditingSpecular[entity] && !ImGui::IsItemActive()) {
+            Vector3D oldVal = startSpecular[entity];
+            Vector3D newVal = light.specular;
+            if (oldVal != newVal && UndoSystem::GetInstance().IsEnabled()) {
+                UndoSystem::GetInstance().RecordLambdaChange(
+                    [entity, newVal]() {
+                        ECSManager& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
+                        if (ecs.HasComponent<SpotLightComponent>(entity)) {
+                            ecs.GetComponent<SpotLightComponent>(entity).specular = newVal;
+                        }
+                    },
+                    [entity, oldVal]() {
+                        ECSManager& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
+                        if (ecs.HasComponent<SpotLightComponent>(entity)) {
+                            ecs.GetComponent<SpotLightComponent>(entity).specular = oldVal;
+                        }
+                    },
+                    "Change Spot Light Specular"
+                );
+            }
+            isEditingSpecular[entity] = false;
+        }
 
         return true;
     });
@@ -2614,25 +4914,56 @@ void RegisterInspectorCustomRenderers()
         return true; // Skip default field rendering
     });
 
+    // BrainComponent uses entity-aware lambda commands for proper undo/redo
     ReflectionRenderer::RegisterComponentRenderer("BrainComponent",
     [](void *componentPtr, TypeDescriptor_Struct *, Entity entity, ECSManager &ecs)
     {
-            ecs;
         BrainComponent &brain = *static_cast<BrainComponent *>(componentPtr);
         const float labelWidth = EditorComponents::GetLabelWidth();
 
-        // Combo for Kind
+        // Static tracking for entity-aware undo
+        static std::unordered_map<Entity, int> startKind;
+
+        // Combo for Kind with entity-aware undo
         ImGui::Text("Kind");
         ImGui::SameLine(labelWidth);
         ImGui::SetNextItemWidth(-1);
         static const char *kKinds[] = {"None", "Grunt", "Boss"};
         int kindIdx = static_cast<int>(brain.kind);
+        startKind[entity] = kindIdx;
         EditorComponents::PushComboColors();
-        if (UndoableWidgets::Combo("##Kind", &kindIdx, kKinds, IM_ARRAYSIZE(kKinds)))
-        {
-            brain.kind = static_cast<BrainKind>(kindIdx);
-            brain.kindInt = kindIdx;
-            // Mark as needing rebuild (optional UX)
+        if (ImGui::BeginCombo("##Kind", kKinds[kindIdx])) {
+            for (int i = 0; i < IM_ARRAYSIZE(kKinds); i++) {
+                bool isSelected = (kindIdx == i);
+                if (ImGui::Selectable(kKinds[i], isSelected)) {
+                    int oldVal = startKind[entity];
+                    int newVal = i;
+                    brain.kind = static_cast<BrainKind>(newVal);
+                    brain.kindInt = newVal;
+
+                    if (oldVal != newVal && UndoSystem::GetInstance().IsEnabled()) {
+                        UndoSystem::GetInstance().RecordLambdaChange(
+                            [entity, newVal, &ecs]() {
+                                if (ecs.HasComponent<BrainComponent>(entity)) {
+                                    auto& b = ecs.GetComponent<BrainComponent>(entity);
+                                    b.kind = static_cast<BrainKind>(newVal);
+                                    b.kindInt = newVal;
+                                }
+                            },
+                            [entity, oldVal, &ecs]() {
+                                if (ecs.HasComponent<BrainComponent>(entity)) {
+                                    auto& b = ecs.GetComponent<BrainComponent>(entity);
+                                    b.kind = static_cast<BrainKind>(oldVal);
+                                    b.kindInt = oldVal;
+                                }
+                            },
+                            "Change Brain Kind"
+                        );
+                    }
+                }
+                if (isSelected) ImGui::SetItemDefaultFocus();
+            }
+            ImGui::EndCombo();
         }
         EditorComponents::PopComboColors();
 
@@ -4113,10 +6444,14 @@ void RegisterInspectorCustomRenderers()
                                               { return true; });
 
     // ==================== BUTTON COMPONENT ====================
+    // Uses entity-aware lambda commands for proper undo/redo
     ReflectionRenderer::RegisterComponentRenderer("ButtonComponent",
-    [](void* componentPtr, TypeDescriptor_Struct*, Entity, ECSManager&) -> bool
+    [](void* componentPtr, TypeDescriptor_Struct*, Entity entity, ECSManager& ecs) -> bool
     {
         ButtonComponent& buttonComp = *static_cast<ButtonComponent*>(componentPtr);
+
+        // Static tracking for entity-aware undo
+        static std::unordered_map<Entity, bool> startInteractable;
         const float labelWidth = EditorComponents::GetLabelWidth();
 
         // Helper lambda: Parse Lua script to extract function names
@@ -4247,11 +6582,32 @@ void RegisterInspectorCustomRenderers()
         // Cache for script functions
         static std::unordered_map<std::string, std::vector<std::string>> scriptFunctionsCache;
 
-        // Interactable toggle
+        // Interactable toggle with entity-aware undo
         ImGui::Text("Interactable");
         ImGui::SameLine(labelWidth);
         ImGui::SetNextItemWidth(-1);
-        UndoableWidgets::Checkbox("##Interactable", &buttonComp.interactable);
+        startInteractable[entity] = buttonComp.interactable;
+        bool interactableVal = buttonComp.interactable;
+        if (ImGui::Checkbox("##Interactable", &interactableVal)) {
+            bool oldVal = startInteractable[entity];
+            bool newVal = interactableVal;
+            buttonComp.interactable = newVal;
+            if (oldVal != newVal && UndoSystem::GetInstance().IsEnabled()) {
+                UndoSystem::GetInstance().RecordLambdaChange(
+                    [entity, newVal, &ecs]() {
+                        if (ecs.HasComponent<ButtonComponent>(entity)) {
+                            ecs.GetComponent<ButtonComponent>(entity).interactable = newVal;
+                        }
+                    },
+                    [entity, oldVal, &ecs]() {
+                        if (ecs.HasComponent<ButtonComponent>(entity)) {
+                            ecs.GetComponent<ButtonComponent>(entity).interactable = oldVal;
+                        }
+                    },
+                    "Toggle Button Interactable"
+                );
+            }
+        }
 
         ImGui::Separator();
         ImGui::Text("On Click ()");
@@ -4375,11 +6731,28 @@ void RegisterInspectorCustomRenderers()
                                               { return true; });
 
     // ==================== SLIDER COMPONENT ====================
+    // Uses entity-aware lambda commands for proper undo/redo
     ReflectionRenderer::RegisterComponentRenderer("SliderComponent",
-    [](void* componentPtr, TypeDescriptor_Struct*, Entity, ECSManager& ecs) -> bool
+    [](void* componentPtr, TypeDescriptor_Struct*, Entity entity, ECSManager& ecs) -> bool
     {
         SliderComponent& sliderComp = *static_cast<SliderComponent*>(componentPtr);
         const float labelWidth = EditorComponents::GetLabelWidth();
+
+        // Static tracking maps for entity-aware undo
+        static std::unordered_map<Entity, float> startMinValue;
+        static std::unordered_map<Entity, bool> isEditingMinValue;
+        static std::unordered_map<Entity, float> startMaxValue;
+        static std::unordered_map<Entity, bool> isEditingMaxValue;
+        static std::unordered_map<Entity, float> startValue;
+        static std::unordered_map<Entity, bool> isEditingValue;
+        static std::unordered_map<Entity, bool> startWholeNumbers;
+        static std::unordered_map<Entity, bool> startInteractable;
+        static std::unordered_map<Entity, bool> startHorizontal;
+
+        // Initialize tracking state
+        if (isEditingMinValue.find(entity) == isEditingMinValue.end()) isEditingMinValue[entity] = false;
+        if (isEditingMaxValue.find(entity) == isEditingMaxValue.end()) isEditingMaxValue[entity] = false;
+        if (isEditingValue.find(entity) == isEditingValue.end()) isEditingValue[entity] = false;
 
         // Helper lambda: Parse Lua script to extract function names
         auto extractLuaFunctions = [](const std::string& scriptPath) -> std::vector<std::string> {
@@ -4484,45 +6857,186 @@ void RegisterInspectorCustomRenderers()
 
         static std::unordered_map<std::string, std::vector<std::string>> scriptFunctionsCache;
 
-        // Core slider fields
+        // Core slider fields with entity-aware undo
+        // Min Value
         ImGui::Text("Min Value");
         ImGui::SameLine(labelWidth);
         ImGui::SetNextItemWidth(-1);
-        UndoableWidgets::DragFloat("##SliderMin", &sliderComp.minValue, 0.1f);
+        if (!isEditingMinValue[entity]) startMinValue[entity] = sliderComp.minValue;
+        if (ImGui::IsItemActivated()) { startMinValue[entity] = sliderComp.minValue; isEditingMinValue[entity] = true; }
+        if (ImGui::DragFloat("##SliderMin", &sliderComp.minValue, 0.1f)) {
+            isEditingMinValue[entity] = true;
+        }
+        if (isEditingMinValue[entity] && !ImGui::IsItemActive()) {
+            float oldVal = startMinValue[entity];
+            float newVal = sliderComp.minValue;
+            if (oldVal != newVal && UndoSystem::GetInstance().IsEnabled()) {
+                UndoSystem::GetInstance().RecordLambdaChange(
+                    [entity, newVal, &ecs]() {
+                        if (ecs.HasComponent<SliderComponent>(entity)) {
+                            ecs.GetComponent<SliderComponent>(entity).minValue = newVal;
+                        }
+                    },
+                    [entity, oldVal, &ecs]() {
+                        if (ecs.HasComponent<SliderComponent>(entity)) {
+                            ecs.GetComponent<SliderComponent>(entity).minValue = oldVal;
+                        }
+                    },
+                    "Change Slider Min Value"
+                );
+            }
+            isEditingMinValue[entity] = false;
+        }
 
+        // Max Value
         ImGui::Text("Max Value");
         ImGui::SameLine(labelWidth);
         ImGui::SetNextItemWidth(-1);
-        UndoableWidgets::DragFloat("##SliderMax", &sliderComp.maxValue, 0.1f);
+        if (!isEditingMaxValue[entity]) startMaxValue[entity] = sliderComp.maxValue;
+        if (ImGui::IsItemActivated()) { startMaxValue[entity] = sliderComp.maxValue; isEditingMaxValue[entity] = true; }
+        if (ImGui::DragFloat("##SliderMax", &sliderComp.maxValue, 0.1f)) {
+            isEditingMaxValue[entity] = true;
+        }
+        if (isEditingMaxValue[entity] && !ImGui::IsItemActive()) {
+            float oldVal = startMaxValue[entity];
+            float newVal = sliderComp.maxValue;
+            if (oldVal != newVal && UndoSystem::GetInstance().IsEnabled()) {
+                UndoSystem::GetInstance().RecordLambdaChange(
+                    [entity, newVal, &ecs]() {
+                        if (ecs.HasComponent<SliderComponent>(entity)) {
+                            ecs.GetComponent<SliderComponent>(entity).maxValue = newVal;
+                        }
+                    },
+                    [entity, oldVal, &ecs]() {
+                        if (ecs.HasComponent<SliderComponent>(entity)) {
+                            ecs.GetComponent<SliderComponent>(entity).maxValue = oldVal;
+                        }
+                    },
+                    "Change Slider Max Value"
+                );
+            }
+            isEditingMaxValue[entity] = false;
+        }
 
         if (sliderComp.maxValue < sliderComp.minValue) {
             std::swap(sliderComp.maxValue, sliderComp.minValue);
         }
 
+        // Value
         ImGui::Text("Value");
         ImGui::SameLine(labelWidth);
         ImGui::SetNextItemWidth(-1);
-        UndoableWidgets::DragFloat("##SliderValue", &sliderComp.value, 0.1f, sliderComp.minValue, sliderComp.maxValue);
+        if (!isEditingValue[entity]) startValue[entity] = sliderComp.value;
+        if (ImGui::IsItemActivated()) { startValue[entity] = sliderComp.value; isEditingValue[entity] = true; }
+        if (ImGui::DragFloat("##SliderValue", &sliderComp.value, 0.1f, sliderComp.minValue, sliderComp.maxValue)) {
+            isEditingValue[entity] = true;
+        }
+        if (isEditingValue[entity] && !ImGui::IsItemActive()) {
+            float oldVal = startValue[entity];
+            float newVal = sliderComp.value;
+            if (oldVal != newVal && UndoSystem::GetInstance().IsEnabled()) {
+                UndoSystem::GetInstance().RecordLambdaChange(
+                    [entity, newVal, &ecs]() {
+                        if (ecs.HasComponent<SliderComponent>(entity)) {
+                            ecs.GetComponent<SliderComponent>(entity).value = newVal;
+                        }
+                    },
+                    [entity, oldVal, &ecs]() {
+                        if (ecs.HasComponent<SliderComponent>(entity)) {
+                            ecs.GetComponent<SliderComponent>(entity).value = oldVal;
+                        }
+                    },
+                    "Change Slider Value"
+                );
+            }
+            isEditingValue[entity] = false;
+        }
 
         sliderComp.value = std::max(sliderComp.minValue, std::min(sliderComp.maxValue, sliderComp.value));
         if (sliderComp.wholeNumbers) {
             sliderComp.value = std::round(sliderComp.value);
         }
 
+        // Whole Numbers checkbox
         ImGui::Text("Whole Numbers");
         ImGui::SameLine(labelWidth);
         ImGui::SetNextItemWidth(-1);
-        UndoableWidgets::Checkbox("##SliderWhole", &sliderComp.wholeNumbers);
+        startWholeNumbers[entity] = sliderComp.wholeNumbers;
+        bool wholeNumVal = sliderComp.wholeNumbers;
+        if (ImGui::Checkbox("##SliderWhole", &wholeNumVal)) {
+            bool oldVal = startWholeNumbers[entity];
+            bool newVal = wholeNumVal;
+            sliderComp.wholeNumbers = newVal;
+            if (oldVal != newVal && UndoSystem::GetInstance().IsEnabled()) {
+                UndoSystem::GetInstance().RecordLambdaChange(
+                    [entity, newVal, &ecs]() {
+                        if (ecs.HasComponent<SliderComponent>(entity)) {
+                            ecs.GetComponent<SliderComponent>(entity).wholeNumbers = newVal;
+                        }
+                    },
+                    [entity, oldVal, &ecs]() {
+                        if (ecs.HasComponent<SliderComponent>(entity)) {
+                            ecs.GetComponent<SliderComponent>(entity).wholeNumbers = oldVal;
+                        }
+                    },
+                    "Toggle Slider Whole Numbers"
+                );
+            }
+        }
 
+        // Interactable checkbox
         ImGui::Text("Interactable");
         ImGui::SameLine(labelWidth);
         ImGui::SetNextItemWidth(-1);
-        UndoableWidgets::Checkbox("##SliderInteractable", &sliderComp.interactable);
+        startInteractable[entity] = sliderComp.interactable;
+        bool interactableVal = sliderComp.interactable;
+        if (ImGui::Checkbox("##SliderInteractable", &interactableVal)) {
+            bool oldVal = startInteractable[entity];
+            bool newVal = interactableVal;
+            sliderComp.interactable = newVal;
+            if (oldVal != newVal && UndoSystem::GetInstance().IsEnabled()) {
+                UndoSystem::GetInstance().RecordLambdaChange(
+                    [entity, newVal, &ecs]() {
+                        if (ecs.HasComponent<SliderComponent>(entity)) {
+                            ecs.GetComponent<SliderComponent>(entity).interactable = newVal;
+                        }
+                    },
+                    [entity, oldVal, &ecs]() {
+                        if (ecs.HasComponent<SliderComponent>(entity)) {
+                            ecs.GetComponent<SliderComponent>(entity).interactable = oldVal;
+                        }
+                    },
+                    "Toggle Slider Interactable"
+                );
+            }
+        }
 
+        // Horizontal checkbox
         ImGui::Text("Horizontal");
         ImGui::SameLine(labelWidth);
         ImGui::SetNextItemWidth(-1);
-        UndoableWidgets::Checkbox("##SliderHorizontal", &sliderComp.horizontal);
+        startHorizontal[entity] = sliderComp.horizontal;
+        bool horizontalVal = sliderComp.horizontal;
+        if (ImGui::Checkbox("##SliderHorizontal", &horizontalVal)) {
+            bool oldVal = startHorizontal[entity];
+            bool newVal = horizontalVal;
+            sliderComp.horizontal = newVal;
+            if (oldVal != newVal && UndoSystem::GetInstance().IsEnabled()) {
+                UndoSystem::GetInstance().RecordLambdaChange(
+                    [entity, newVal, &ecs]() {
+                        if (ecs.HasComponent<SliderComponent>(entity)) {
+                            ecs.GetComponent<SliderComponent>(entity).horizontal = newVal;
+                        }
+                    },
+                    [entity, oldVal, &ecs]() {
+                        if (ecs.HasComponent<SliderComponent>(entity)) {
+                            ecs.GetComponent<SliderComponent>(entity).horizontal = oldVal;
+                        }
+                    },
+                    "Toggle Slider Horizontal"
+                );
+            }
+        }
 
         // Show track/handle info
         auto showChildName = [&](const char* label, const GUID_128& guid) {
@@ -4669,11 +7183,48 @@ void RegisterInspectorCustomRenderers()
                                               { return true; });
 
     // ==================== UI ANCHOR COMPONENT ====================
+    // Uses entity-aware lambda commands for proper undo/redo
     ReflectionRenderer::RegisterComponentRenderer("UIAnchorComponent",
-    [](void* componentPtr, TypeDescriptor_Struct*, Entity, ECSManager&) -> bool
+    [](void* componentPtr, TypeDescriptor_Struct*, Entity entity, ECSManager& ecs) -> bool
     {
         UIAnchorComponent& anchor = *static_cast<UIAnchorComponent*>(componentPtr);
         const float labelWidth = EditorComponents::GetLabelWidth();
+
+        // Static tracking maps for entity-aware undo
+        static std::unordered_map<Entity, int> startPreset;
+        static std::unordered_map<Entity, float> startAnchorX;
+        static std::unordered_map<Entity, bool> isEditingAnchorX;
+        static std::unordered_map<Entity, float> startAnchorY;
+        static std::unordered_map<Entity, bool> isEditingAnchorY;
+        static std::unordered_map<Entity, float> startOffsetX;
+        static std::unordered_map<Entity, bool> isEditingOffsetX;
+        static std::unordered_map<Entity, float> startOffsetY;
+        static std::unordered_map<Entity, bool> isEditingOffsetY;
+        static std::unordered_map<Entity, int> startSizeMode;
+        static std::unordered_map<Entity, float> startMarginLeft;
+        static std::unordered_map<Entity, bool> isEditingMarginLeft;
+        static std::unordered_map<Entity, float> startMarginRight;
+        static std::unordered_map<Entity, bool> isEditingMarginRight;
+        static std::unordered_map<Entity, float> startMarginTop;
+        static std::unordered_map<Entity, bool> isEditingMarginTop;
+        static std::unordered_map<Entity, float> startMarginBottom;
+        static std::unordered_map<Entity, bool> isEditingMarginBottom;
+        static std::unordered_map<Entity, float> startRefWidth;
+        static std::unordered_map<Entity, bool> isEditingRefWidth;
+        static std::unordered_map<Entity, float> startRefHeight;
+        static std::unordered_map<Entity, bool> isEditingRefHeight;
+
+        // Initialize tracking state
+        if (isEditingAnchorX.find(entity) == isEditingAnchorX.end()) isEditingAnchorX[entity] = false;
+        if (isEditingAnchorY.find(entity) == isEditingAnchorY.end()) isEditingAnchorY[entity] = false;
+        if (isEditingOffsetX.find(entity) == isEditingOffsetX.end()) isEditingOffsetX[entity] = false;
+        if (isEditingOffsetY.find(entity) == isEditingOffsetY.end()) isEditingOffsetY[entity] = false;
+        if (isEditingMarginLeft.find(entity) == isEditingMarginLeft.end()) isEditingMarginLeft[entity] = false;
+        if (isEditingMarginRight.find(entity) == isEditingMarginRight.end()) isEditingMarginRight[entity] = false;
+        if (isEditingMarginTop.find(entity) == isEditingMarginTop.end()) isEditingMarginTop[entity] = false;
+        if (isEditingMarginBottom.find(entity) == isEditingMarginBottom.end()) isEditingMarginBottom[entity] = false;
+        if (isEditingRefWidth.find(entity) == isEditingRefWidth.end()) isEditingRefWidth[entity] = false;
+        if (isEditingRefHeight.find(entity) == isEditingRefHeight.end()) isEditingRefHeight[entity] = false;
 
         // Anchor Preset dropdown
         ImGui::Text("Preset");
@@ -4686,40 +7237,151 @@ void RegisterInspectorCustomRenderers()
             "Bottom Left", "Bottom Center", "Bottom Right"
         };
         int currentPreset = static_cast<int>(anchor.GetCurrentPreset());
+        startPreset[entity] = currentPreset;
         if (ImGui::Combo("##AnchorPreset", &currentPreset, presetNames, IM_ARRAYSIZE(presetNames))) {
-            anchor.SetPreset(static_cast<UIAnchorPreset>(currentPreset));
-            SnapshotManager::GetInstance().TakeSnapshot("Change Anchor Preset");
+            int oldVal = startPreset[entity];
+            int newVal = currentPreset;
+            anchor.SetPreset(static_cast<UIAnchorPreset>(newVal));
+            if (oldVal != newVal && UndoSystem::GetInstance().IsEnabled()) {
+                UndoSystem::GetInstance().RecordLambdaChange(
+                    [entity, newVal, &ecs]() {
+                        if (ecs.HasComponent<UIAnchorComponent>(entity)) {
+                            ecs.GetComponent<UIAnchorComponent>(entity).SetPreset(static_cast<UIAnchorPreset>(newVal));
+                        }
+                    },
+                    [entity, oldVal, &ecs]() {
+                        if (ecs.HasComponent<UIAnchorComponent>(entity)) {
+                            ecs.GetComponent<UIAnchorComponent>(entity).SetPreset(static_cast<UIAnchorPreset>(oldVal));
+                        }
+                    },
+                    "Change Anchor Preset"
+                );
+            }
         }
 
         ImGui::Separator();
 
-        // Anchor position
+        // Anchor X
         ImGui::Text("Anchor X");
         ImGui::SameLine(labelWidth);
         ImGui::SetNextItemWidth(-1);
-        if (UndoableWidgets::SliderFloat("##AnchorX", &anchor.anchorX, 0.0f, 1.0f, "%.2f")) {
-            // Value changed
+        if (!isEditingAnchorX[entity]) startAnchorX[entity] = anchor.anchorX;
+        if (ImGui::IsItemActivated()) { startAnchorX[entity] = anchor.anchorX; isEditingAnchorX[entity] = true; }
+        if (ImGui::SliderFloat("##AnchorX", &anchor.anchorX, 0.0f, 1.0f, "%.2f")) {
+            isEditingAnchorX[entity] = true;
+        }
+        if (isEditingAnchorX[entity] && !ImGui::IsItemActive()) {
+            float oldVal = startAnchorX[entity];
+            float newVal = anchor.anchorX;
+            if (oldVal != newVal && UndoSystem::GetInstance().IsEnabled()) {
+                UndoSystem::GetInstance().RecordLambdaChange(
+                    [entity, newVal, &ecs]() {
+                        if (ecs.HasComponent<UIAnchorComponent>(entity)) {
+                            ecs.GetComponent<UIAnchorComponent>(entity).anchorX = newVal;
+                        }
+                    },
+                    [entity, oldVal, &ecs]() {
+                        if (ecs.HasComponent<UIAnchorComponent>(entity)) {
+                            ecs.GetComponent<UIAnchorComponent>(entity).anchorX = oldVal;
+                        }
+                    },
+                    "Change Anchor X"
+                );
+            }
+            isEditingAnchorX[entity] = false;
         }
 
+        // Anchor Y
         ImGui::Text("Anchor Y");
         ImGui::SameLine(labelWidth);
         ImGui::SetNextItemWidth(-1);
-        if (UndoableWidgets::SliderFloat("##AnchorY", &anchor.anchorY, 0.0f, 1.0f, "%.2f")) {
-            // Value changed
+        if (!isEditingAnchorY[entity]) startAnchorY[entity] = anchor.anchorY;
+        if (ImGui::IsItemActivated()) { startAnchorY[entity] = anchor.anchorY; isEditingAnchorY[entity] = true; }
+        if (ImGui::SliderFloat("##AnchorY", &anchor.anchorY, 0.0f, 1.0f, "%.2f")) {
+            isEditingAnchorY[entity] = true;
+        }
+        if (isEditingAnchorY[entity] && !ImGui::IsItemActive()) {
+            float oldVal = startAnchorY[entity];
+            float newVal = anchor.anchorY;
+            if (oldVal != newVal && UndoSystem::GetInstance().IsEnabled()) {
+                UndoSystem::GetInstance().RecordLambdaChange(
+                    [entity, newVal, &ecs]() {
+                        if (ecs.HasComponent<UIAnchorComponent>(entity)) {
+                            ecs.GetComponent<UIAnchorComponent>(entity).anchorY = newVal;
+                        }
+                    },
+                    [entity, oldVal, &ecs]() {
+                        if (ecs.HasComponent<UIAnchorComponent>(entity)) {
+                            ecs.GetComponent<UIAnchorComponent>(entity).anchorY = oldVal;
+                        }
+                    },
+                    "Change Anchor Y"
+                );
+            }
+            isEditingAnchorY[entity] = false;
         }
 
         ImGui::Separator();
 
-        // Offset
+        // Offset X
         ImGui::Text("Offset X");
         ImGui::SameLine(labelWidth);
         ImGui::SetNextItemWidth(-1);
-        UndoableWidgets::DragFloat("##OffsetX", &anchor.offsetX, 1.0f, -10000.0f, 10000.0f, "%.1f");
+        if (!isEditingOffsetX[entity]) startOffsetX[entity] = anchor.offsetX;
+        if (ImGui::IsItemActivated()) { startOffsetX[entity] = anchor.offsetX; isEditingOffsetX[entity] = true; }
+        if (ImGui::DragFloat("##OffsetX", &anchor.offsetX, 1.0f, -10000.0f, 10000.0f, "%.1f")) {
+            isEditingOffsetX[entity] = true;
+        }
+        if (isEditingOffsetX[entity] && !ImGui::IsItemActive()) {
+            float oldVal = startOffsetX[entity];
+            float newVal = anchor.offsetX;
+            if (oldVal != newVal && UndoSystem::GetInstance().IsEnabled()) {
+                UndoSystem::GetInstance().RecordLambdaChange(
+                    [entity, newVal, &ecs]() {
+                        if (ecs.HasComponent<UIAnchorComponent>(entity)) {
+                            ecs.GetComponent<UIAnchorComponent>(entity).offsetX = newVal;
+                        }
+                    },
+                    [entity, oldVal, &ecs]() {
+                        if (ecs.HasComponent<UIAnchorComponent>(entity)) {
+                            ecs.GetComponent<UIAnchorComponent>(entity).offsetX = oldVal;
+                        }
+                    },
+                    "Change Offset X"
+                );
+            }
+            isEditingOffsetX[entity] = false;
+        }
 
+        // Offset Y
         ImGui::Text("Offset Y");
         ImGui::SameLine(labelWidth);
         ImGui::SetNextItemWidth(-1);
-        UndoableWidgets::DragFloat("##OffsetY", &anchor.offsetY, 1.0f, -10000.0f, 10000.0f, "%.1f");
+        if (!isEditingOffsetY[entity]) startOffsetY[entity] = anchor.offsetY;
+        if (ImGui::IsItemActivated()) { startOffsetY[entity] = anchor.offsetY; isEditingOffsetY[entity] = true; }
+        if (ImGui::DragFloat("##OffsetY", &anchor.offsetY, 1.0f, -10000.0f, 10000.0f, "%.1f")) {
+            isEditingOffsetY[entity] = true;
+        }
+        if (isEditingOffsetY[entity] && !ImGui::IsItemActive()) {
+            float oldVal = startOffsetY[entity];
+            float newVal = anchor.offsetY;
+            if (oldVal != newVal && UndoSystem::GetInstance().IsEnabled()) {
+                UndoSystem::GetInstance().RecordLambdaChange(
+                    [entity, newVal, &ecs]() {
+                        if (ecs.HasComponent<UIAnchorComponent>(entity)) {
+                            ecs.GetComponent<UIAnchorComponent>(entity).offsetY = newVal;
+                        }
+                    },
+                    [entity, oldVal, &ecs]() {
+                        if (ecs.HasComponent<UIAnchorComponent>(entity)) {
+                            ecs.GetComponent<UIAnchorComponent>(entity).offsetY = oldVal;
+                        }
+                    },
+                    "Change Offset Y"
+                );
+            }
+            isEditingOffsetY[entity] = false;
+        }
 
         ImGui::Separator();
 
@@ -4732,9 +7394,26 @@ void RegisterInspectorCustomRenderers()
             "Fixed", "Stretch X", "Stretch Y", "Stretch Both", "Scale Uniform"
         };
         int currentSizeMode = static_cast<int>(anchor.sizeMode);
+        startSizeMode[entity] = currentSizeMode;
         if (ImGui::Combo("##SizeMode", &currentSizeMode, sizeModeNames, IM_ARRAYSIZE(sizeModeNames))) {
-            anchor.sizeMode = static_cast<UISizeMode>(currentSizeMode);
-            SnapshotManager::GetInstance().TakeSnapshot("Change Size Mode");
+            int oldVal = startSizeMode[entity];
+            int newVal = currentSizeMode;
+            anchor.sizeMode = static_cast<UISizeMode>(newVal);
+            if (oldVal != newVal && UndoSystem::GetInstance().IsEnabled()) {
+                UndoSystem::GetInstance().RecordLambdaChange(
+                    [entity, newVal, &ecs]() {
+                        if (ecs.HasComponent<UIAnchorComponent>(entity)) {
+                            ecs.GetComponent<UIAnchorComponent>(entity).sizeMode = static_cast<UISizeMode>(newVal);
+                        }
+                    },
+                    [entity, oldVal, &ecs]() {
+                        if (ecs.HasComponent<UIAnchorComponent>(entity)) {
+                            ecs.GetComponent<UIAnchorComponent>(entity).sizeMode = static_cast<UISizeMode>(oldVal);
+                        }
+                    },
+                    "Change Size Mode"
+                );
+            }
         }
 
         // Show margins for stretch modes
@@ -4745,25 +7424,125 @@ void RegisterInspectorCustomRenderers()
             ImGui::Separator();
             ImGui::TextColored(ImVec4(0.7f, 0.7f, 0.7f, 1.0f), "Margins");
 
+            // Margin Left
             ImGui::Text("Left");
             ImGui::SameLine(labelWidth);
             ImGui::SetNextItemWidth(-1);
-            UndoableWidgets::DragFloat("##MarginLeft", &anchor.marginLeft, 1.0f, 0.0f, 10000.0f, "%.0f");
+            if (!isEditingMarginLeft[entity]) startMarginLeft[entity] = anchor.marginLeft;
+            if (ImGui::IsItemActivated()) { startMarginLeft[entity] = anchor.marginLeft; isEditingMarginLeft[entity] = true; }
+            if (ImGui::DragFloat("##MarginLeft", &anchor.marginLeft, 1.0f, 0.0f, 10000.0f, "%.0f")) {
+                isEditingMarginLeft[entity] = true;
+            }
+            if (isEditingMarginLeft[entity] && !ImGui::IsItemActive()) {
+                float oldVal = startMarginLeft[entity];
+                float newVal = anchor.marginLeft;
+                if (oldVal != newVal && UndoSystem::GetInstance().IsEnabled()) {
+                    UndoSystem::GetInstance().RecordLambdaChange(
+                        [entity, newVal, &ecs]() {
+                            if (ecs.HasComponent<UIAnchorComponent>(entity)) {
+                                ecs.GetComponent<UIAnchorComponent>(entity).marginLeft = newVal;
+                            }
+                        },
+                        [entity, oldVal, &ecs]() {
+                            if (ecs.HasComponent<UIAnchorComponent>(entity)) {
+                                ecs.GetComponent<UIAnchorComponent>(entity).marginLeft = oldVal;
+                            }
+                        },
+                        "Change Margin Left"
+                    );
+                }
+                isEditingMarginLeft[entity] = false;
+            }
 
+            // Margin Right
             ImGui::Text("Right");
             ImGui::SameLine(labelWidth);
             ImGui::SetNextItemWidth(-1);
-            UndoableWidgets::DragFloat("##MarginRight", &anchor.marginRight, 1.0f, 0.0f, 10000.0f, "%.0f");
+            if (!isEditingMarginRight[entity]) startMarginRight[entity] = anchor.marginRight;
+            if (ImGui::IsItemActivated()) { startMarginRight[entity] = anchor.marginRight; isEditingMarginRight[entity] = true; }
+            if (ImGui::DragFloat("##MarginRight", &anchor.marginRight, 1.0f, 0.0f, 10000.0f, "%.0f")) {
+                isEditingMarginRight[entity] = true;
+            }
+            if (isEditingMarginRight[entity] && !ImGui::IsItemActive()) {
+                float oldVal = startMarginRight[entity];
+                float newVal = anchor.marginRight;
+                if (oldVal != newVal && UndoSystem::GetInstance().IsEnabled()) {
+                    UndoSystem::GetInstance().RecordLambdaChange(
+                        [entity, newVal, &ecs]() {
+                            if (ecs.HasComponent<UIAnchorComponent>(entity)) {
+                                ecs.GetComponent<UIAnchorComponent>(entity).marginRight = newVal;
+                            }
+                        },
+                        [entity, oldVal, &ecs]() {
+                            if (ecs.HasComponent<UIAnchorComponent>(entity)) {
+                                ecs.GetComponent<UIAnchorComponent>(entity).marginRight = oldVal;
+                            }
+                        },
+                        "Change Margin Right"
+                    );
+                }
+                isEditingMarginRight[entity] = false;
+            }
 
+            // Margin Top
             ImGui::Text("Top");
             ImGui::SameLine(labelWidth);
             ImGui::SetNextItemWidth(-1);
-            UndoableWidgets::DragFloat("##MarginTop", &anchor.marginTop, 1.0f, 0.0f, 10000.0f, "%.0f");
+            if (!isEditingMarginTop[entity]) startMarginTop[entity] = anchor.marginTop;
+            if (ImGui::IsItemActivated()) { startMarginTop[entity] = anchor.marginTop; isEditingMarginTop[entity] = true; }
+            if (ImGui::DragFloat("##MarginTop", &anchor.marginTop, 1.0f, 0.0f, 10000.0f, "%.0f")) {
+                isEditingMarginTop[entity] = true;
+            }
+            if (isEditingMarginTop[entity] && !ImGui::IsItemActive()) {
+                float oldVal = startMarginTop[entity];
+                float newVal = anchor.marginTop;
+                if (oldVal != newVal && UndoSystem::GetInstance().IsEnabled()) {
+                    UndoSystem::GetInstance().RecordLambdaChange(
+                        [entity, newVal, &ecs]() {
+                            if (ecs.HasComponent<UIAnchorComponent>(entity)) {
+                                ecs.GetComponent<UIAnchorComponent>(entity).marginTop = newVal;
+                            }
+                        },
+                        [entity, oldVal, &ecs]() {
+                            if (ecs.HasComponent<UIAnchorComponent>(entity)) {
+                                ecs.GetComponent<UIAnchorComponent>(entity).marginTop = oldVal;
+                            }
+                        },
+                        "Change Margin Top"
+                    );
+                }
+                isEditingMarginTop[entity] = false;
+            }
 
+            // Margin Bottom
             ImGui::Text("Bottom");
             ImGui::SameLine(labelWidth);
             ImGui::SetNextItemWidth(-1);
-            UndoableWidgets::DragFloat("##MarginBottom", &anchor.marginBottom, 1.0f, 0.0f, 10000.0f, "%.0f");
+            if (!isEditingMarginBottom[entity]) startMarginBottom[entity] = anchor.marginBottom;
+            if (ImGui::IsItemActivated()) { startMarginBottom[entity] = anchor.marginBottom; isEditingMarginBottom[entity] = true; }
+            if (ImGui::DragFloat("##MarginBottom", &anchor.marginBottom, 1.0f, 0.0f, 10000.0f, "%.0f")) {
+                isEditingMarginBottom[entity] = true;
+            }
+            if (isEditingMarginBottom[entity] && !ImGui::IsItemActive()) {
+                float oldVal = startMarginBottom[entity];
+                float newVal = anchor.marginBottom;
+                if (oldVal != newVal && UndoSystem::GetInstance().IsEnabled()) {
+                    UndoSystem::GetInstance().RecordLambdaChange(
+                        [entity, newVal, &ecs]() {
+                            if (ecs.HasComponent<UIAnchorComponent>(entity)) {
+                                ecs.GetComponent<UIAnchorComponent>(entity).marginBottom = newVal;
+                            }
+                        },
+                        [entity, oldVal, &ecs]() {
+                            if (ecs.HasComponent<UIAnchorComponent>(entity)) {
+                                ecs.GetComponent<UIAnchorComponent>(entity).marginBottom = oldVal;
+                            }
+                        },
+                        "Change Margin Bottom"
+                    );
+                }
+                isEditingMarginBottom[entity] = false;
+            }
         }
 
         // Show reference resolution for ScaleUniform mode
@@ -4771,15 +7550,65 @@ void RegisterInspectorCustomRenderers()
             ImGui::Separator();
             ImGui::TextColored(ImVec4(0.7f, 0.7f, 0.7f, 1.0f), "Reference Resolution");
 
+            // Ref Width
             ImGui::Text("Width");
             ImGui::SameLine(labelWidth);
             ImGui::SetNextItemWidth(-1);
-            UndoableWidgets::DragFloat("##RefWidth", &anchor.referenceWidth, 1.0f, 1.0f, 10000.0f, "%.0f");
+            if (!isEditingRefWidth[entity]) startRefWidth[entity] = anchor.referenceWidth;
+            if (ImGui::IsItemActivated()) { startRefWidth[entity] = anchor.referenceWidth; isEditingRefWidth[entity] = true; }
+            if (ImGui::DragFloat("##RefWidth", &anchor.referenceWidth, 1.0f, 1.0f, 10000.0f, "%.0f")) {
+                isEditingRefWidth[entity] = true;
+            }
+            if (isEditingRefWidth[entity] && !ImGui::IsItemActive()) {
+                float oldVal = startRefWidth[entity];
+                float newVal = anchor.referenceWidth;
+                if (oldVal != newVal && UndoSystem::GetInstance().IsEnabled()) {
+                    UndoSystem::GetInstance().RecordLambdaChange(
+                        [entity, newVal, &ecs]() {
+                            if (ecs.HasComponent<UIAnchorComponent>(entity)) {
+                                ecs.GetComponent<UIAnchorComponent>(entity).referenceWidth = newVal;
+                            }
+                        },
+                        [entity, oldVal, &ecs]() {
+                            if (ecs.HasComponent<UIAnchorComponent>(entity)) {
+                                ecs.GetComponent<UIAnchorComponent>(entity).referenceWidth = oldVal;
+                            }
+                        },
+                        "Change Reference Width"
+                    );
+                }
+                isEditingRefWidth[entity] = false;
+            }
 
+            // Ref Height
             ImGui::Text("Height");
             ImGui::SameLine(labelWidth);
             ImGui::SetNextItemWidth(-1);
-            UndoableWidgets::DragFloat("##RefHeight", &anchor.referenceHeight, 1.0f, 1.0f, 10000.0f, "%.0f");
+            if (!isEditingRefHeight[entity]) startRefHeight[entity] = anchor.referenceHeight;
+            if (ImGui::IsItemActivated()) { startRefHeight[entity] = anchor.referenceHeight; isEditingRefHeight[entity] = true; }
+            if (ImGui::DragFloat("##RefHeight", &anchor.referenceHeight, 1.0f, 1.0f, 10000.0f, "%.0f")) {
+                isEditingRefHeight[entity] = true;
+            }
+            if (isEditingRefHeight[entity] && !ImGui::IsItemActive()) {
+                float oldVal = startRefHeight[entity];
+                float newVal = anchor.referenceHeight;
+                if (oldVal != newVal && UndoSystem::GetInstance().IsEnabled()) {
+                    UndoSystem::GetInstance().RecordLambdaChange(
+                        [entity, newVal, &ecs]() {
+                            if (ecs.HasComponent<UIAnchorComponent>(entity)) {
+                                ecs.GetComponent<UIAnchorComponent>(entity).referenceHeight = newVal;
+                            }
+                        },
+                        [entity, oldVal, &ecs]() {
+                            if (ecs.HasComponent<UIAnchorComponent>(entity)) {
+                                ecs.GetComponent<UIAnchorComponent>(entity).referenceHeight = oldVal;
+                            }
+                        },
+                        "Change Reference Height"
+                    );
+                }
+                isEditingRefHeight[entity] = false;
+            }
         }
 
         return true; // Skip default reflection rendering

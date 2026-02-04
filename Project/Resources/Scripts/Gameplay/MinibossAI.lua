@@ -8,6 +8,8 @@ local ChooseState  = require("Gameplay.MinibossChooseState")
 local ExecuteState = require("Gameplay.MinibossExecuteState")
 local RecoverState = require("Gameplay.MinibossRecoverState")
 
+local KnifePool = require("Gameplay.KnifePool")
+
 -------------------------------------------------
 -- Helpers
 -------------------------------------------------
@@ -74,11 +76,18 @@ end
 -- Move definitions (DATA-DRIVEN)
 -------------------------------------------------
 local MOVES = {
-    Move1 = { cooldown = 2.0, weights = { [1]=50, [2]=40, [3]=10, [4]=0 }, execute = function(ai) print("[Miniboss] Move1: Knife Volley") ai:KnifeVolley() end },
-    Move2 = { cooldown = 2.5, weights = { [1]=50, [2]=30, [3]=30, [4]=0 }, execute = function(ai) print("[Miniboss] Move2: Knife Spin") ai:KnifeSpin() end },
-    Move3 = { cooldown = 3.0, weights = { [1]=0,  [2]=30, [3]=30, [4]=10 }, execute = function(ai) print("[Miniboss] Move3: Dash Slash") ai:DashSlash() end },
-    Move4 = { cooldown = 4.0, weights = { [1]=0,  [2]=0,  [3]=30, [4]=40 }, execute = function(ai) print("[Miniboss] Move4: Flight") ai:Flight() end },
-    Move5 = { cooldown = 5.0, weights = { [1]=0,  [2]=0,  [3]=0,  [4]=50 }, execute = function(ai) print("[Miniboss] Move5: Frenzy Combo") ai:FrenzyCombo() end },
+    Move1 = { cooldown = 2.0, weights = { [1]=50, [2]=20, [3]=10, [4]=0 }, execute = function(ai) print("[Miniboss] Move1: Basic Attack") ai:BasicAttack() end },
+    Move2 = { cooldown = 2.5, weights = { [1]=25, [2]=35, [3]=30, [4]=20 }, execute = function(ai) print("[Miniboss] Move2: Burst Fire") ai:BurstFire() end },
+    Move3 = { cooldown = 3.0, weights = { [1]=25,  [2]=35, [3]=30, [4]=20 }, execute = function(ai) print("[Miniboss] Move3: Anti Dodge") ai:AntiDodge() end },
+    Move4 = { cooldown = 4.0, weights = { [1]=0,  [2]=10,  [3]=30, [4]=30 }, execute = function(ai) print("[Miniboss] Move4: Fate Sealed") ai:FateSealed() end },
+    Move5 = { cooldown = 5.0, weights = { [1]=0,  [2]=0,  [3]=0,  [4]=30 }, execute = function(ai) print("[Miniboss] Move5: Death Lotus") ai:DeathLotus() end },
+
+    -- For testing individual moves 1 by 1
+    -- Move1 = { cooldown = 2.0, weights = { [1]=0, [2]=20, [3]=10, [4]=0 }, execute = function(ai) print("[Miniboss] Move1: Basic Attack") ai:BasicAttack() end },
+    -- Move2 = { cooldown = 2.5, weights = { [1]=0, [2]=35, [3]=30, [4]=20 }, execute = function(ai) print("[Miniboss] Move2: Burst Fire") ai:BurstFire() end },
+    -- Move3 = { cooldown = 3.0, weights = { [1]=10,  [2]=35, [3]=30, [4]=20 }, execute = function(ai) print("[Miniboss] Move3: Anti Dodge") ai:AntiDodge() end },
+    -- Move4 = { cooldown = 4.0, weights = { [1]=0,  [2]=10,  [3]=30, [4]=30 }, execute = function(ai) print("[Miniboss] Move4: Fate Sealed") ai:FateSealed() end },
+    -- Move5 = { cooldown = 5.0, weights = { [1]=0,  [2]=0,  [3]=0,  [4]=30 }, execute = function(ai) print("[Miniboss] Move5: Death Lotus") ai:DeathLotus() end },
 }
 
 local MOVE_ORDER = { "Move1", "Move2", "Move3", "Move4", "Move5" }
@@ -126,6 +135,19 @@ return Component {
         self.currentMoveDef = nil
         self._recoverTimer = 0
         self._hitLockTimer = 0
+
+        -- active move runtime
+        self._move = nil
+        self._moveFinished = true
+
+        -- dash state helpers
+        self._dash = nil
+
+        -- lotus state helpers
+        self._lotus = nil
+
+        -- knife volley counter (token uniqueness)
+        self._knifeVolleyId = 0
 
         -- action lock system (blocks Choose/Execute/etc)
         self._lockAction = false
@@ -286,7 +308,7 @@ return Component {
                 local pos = CharacterController.GetPosition(self._controller)
                 if pos then
                     self:SetPosition(pos.x, pos.y, pos.z)
-                    if self._lastFacingRot then
+                    if (not self:IsInMove("DeathLotus")) and self._lastFacingRot then
                         local r = self._lastFacingRot
                         self:SetRotation(r.w, r.x, r.y, r.z)
                     end
@@ -305,13 +327,14 @@ return Component {
         -- Run behaviour
         self.fsm:Update(dtSec)
 
+        self:TickMove(dtSec)
+
         if self._controller then
             local pos = CharacterController.GetPosition(self._controller)
             if pos then
                 self:SetPosition(pos.x, pos.y, pos.z)
 
-                -- restore yaw after CC sync
-                if self._lastFacingRot then
+                if (not self:IsInMove("DeathLotus")) and self._lastFacingRot then
                     local r = self._lastFacingRot
                     self:SetRotation(r.w, r.x, r.y, r.z)
                 end
@@ -516,8 +539,11 @@ return Component {
     end,
 
     IsCurrentMoveFinished = function(self)
-        -- TEMP: immediate completion, same as before
-        return true
+        return self._moveFinished == true
+    end,
+
+    IsInMove = function(self, kind)
+        return (self._moveFinished == false) and self._move and (self._move.kind == kind)
     end,
 
     GetNextMoveReadyTime = function(self)
@@ -676,12 +702,510 @@ return Component {
     end,
 
     -------------------------------------------------
-    -- Move implementations (stub)
-    -- IMPORTANT: moves can call self:FacePlayer() if needed.
+    -- Knife helpers (EnemyAI-style token reservation)
     -------------------------------------------------
-    KnifeVolley   = function(self) end,
-    KnifeSpin     = function(self) end,
-    DashSlash     = function(self) end,
-    Flight        = function(self) end,
-    FrenzyCombo   = function(self) end,
+    _NewVolleyToken = function(self)
+        self._knifeVolleyId = (self._knifeVolleyId or 0) + 1
+        return tostring(self.entityId) .. ":" .. tostring(self._knifeVolleyId)
+    end,
+
+    _FreeReserved = function(self, knives)
+        if not knives then return end
+        for i=1,#knives do
+            if knives[i] then
+                knives[i].reserved = false
+                knives[i]._reservedToken = nil
+            end
+        end
+    end,
+
+    _GetPlayerPos = function(self, yOffset)
+        local tr = self._playerTr
+        if not tr then
+            tr = Engine.FindTransformByName(self.PlayerName)
+            self._playerTr = tr
+        end
+        if not tr then return nil end
+
+        local pp = Engine.GetTransformPosition(tr)
+        if not pp then return nil end
+
+        yOffset = yOffset or 0.5
+        return pp[1], (pp[2] or 0) + yOffset, pp[3]
+    end,
+
+    _GetSpawnPos = function(self)
+        local ex, ey, ez
+        if self._controller then
+            local pos = CharacterController.GetPosition(self._controller)
+            if pos then ex, ey, ez = pos.x, pos.y, pos.z end
+        end
+        if not ex then
+            ex, ey, ez = self:GetPosition()
+        end
+        if not ex then return nil end
+        return ex, (ey or 0) + 1.0, ez
+    end,
+
+    _DirToPlayerXZ = function(self)
+        local px, py, pz = self:_GetPlayerPos()
+        if not px then return nil end
+
+        local ex, ez = self:GetEnemyPosXZ()
+        local dx, dz = (px - ex), (pz - ez)
+        local len = math.sqrt(dx*dx + dz*dz)
+        if len < 1e-6 then len = 1 end
+        return dx/len, dz/len
+    end,
+
+    _LaunchKnife = function(self, knife, sx, sy, sz, tx, ty, tz, token, tag)
+        if not knife then return false end
+        return knife:Launch(sx, sy, sz, tx, ty, tz, token, tag)
+    end,
+
+    -- 3-shot volley: center aimed + L/R perpendicular offsets
+    SpawnKnifeVolley3 = function(self, spread)
+        spread = spread or 1.0
+        local knives = KnifePool.RequestMany(3)
+        if not knives then return false end
+
+        local px, py, pz = self:_GetPlayerPos()
+        if not px then
+            self:_FreeReserved(knives)
+            return false
+        end
+
+        local sx, sy, sz = self:_GetSpawnPos()
+        if not sx then
+            self:_FreeReserved(knives)
+            return false
+        end
+
+        local ex, ez = self:GetEnemyPosXZ()
+        local dx, dz = (px - ex), (pz - ez)
+        local len = math.sqrt(dx*dx + dz*dz)
+        if len < 1e-6 then len = 1 end
+        dx, dz = dx / len, dz / len
+
+        local rx, rz = -dz, dx
+
+        local token = self:_NewVolleyToken()
+        for i=1,3 do
+            knives[i]._reservedToken = token
+            knives[i].reserved = true
+        end
+
+        local t0x, t0y, t0z = px, py, pz
+        local t1x, t1y, t1z = px - rx*spread, py, pz - rz*spread
+        local t2x, t2y, t2z = px + rx*spread, py, pz + rz*spread
+
+        local ok1 = self:_LaunchKnife(knives[1], sx, sy, sz, t0x, t0y, t0z, token, "C")
+        local ok2 = self:_LaunchKnife(knives[2], sx, sy, sz, t1x, t1y, t1z, token, "L")
+        local ok3 = self:_LaunchKnife(knives[3], sx, sy, sz, t2x, t2y, t2z, token, "R")
+
+        if not (ok1 and ok2 and ok3) then
+            for i=1,3 do if knives[i] then knives[i]:Reset() end end
+            return false
+        end
+        return true
+    end,
+
+    -- Single aimed knife at player's current position (aim locked per shot)
+    SpawnKnifeSingleAtPlayer = function(self)
+        local knives = KnifePool.RequestMany(1)
+        if not knives or not knives[1] then return false end
+        local k = knives[1]
+
+        local px, py, pz = self:_GetPlayerPos()
+        if not px then
+            k.reserved = false
+            k._reservedToken = nil
+            return false
+        end
+
+        local sx, sy, sz = self:_GetSpawnPos()
+        if not sx then
+            k.reserved = false
+            k._reservedToken = nil
+            return false
+        end
+
+        local token = self:_NewVolleyToken()
+        k._reservedToken = token
+        k.reserved = true
+
+        local ok = self:_LaunchKnife(k, sx, sy, sz, px, py, pz, token, "S")
+
+        if not ok then
+            k:Reset()
+            return false
+        end
+        return true
+    end,
+
+    -- 4-fan, no centered aimed shot: targets are perpendicular offsets only
+    SpawnKnifeFan4_NoCenter = function(self, spread1, spread2)
+        spread1 = spread1 or 0.8
+        spread2 = spread2 or 1.6
+
+        local knives = KnifePool.RequestMany(4)
+        if not knives then return false end
+
+        local px, py, pz = self:_GetPlayerPos()
+        if not px then
+            self:_FreeReserved(knives)
+            return false
+        end
+
+        local sx, sy, sz = self:_GetSpawnPos()
+        if not sx then
+            self:_FreeReserved(knives)
+            return false
+        end
+
+        local ex, ez = self:GetEnemyPosXZ()
+        local dx, dz = (px - ex), (pz - ez)
+        local len = math.sqrt(dx*dx + dz*dz)
+        if len < 1e-6 then len = 1 end
+        dx, dz = dx/len, dz/len
+
+        local rx, rz = -dz, dx
+
+        local token = self:_NewVolleyToken()
+        for i=1,4 do
+            knives[i]._reservedToken = token
+            knives[i].reserved = true
+        end
+
+        local targets = {
+            { px - rx*spread2, py, pz - rz*spread2, "L2" },
+            { px - rx*spread1, py, pz - rz*spread1, "L1" },
+            { px + rx*spread1, py, pz + rz*spread1, "R1" },
+            { px + rx*spread2, py, pz + rz*spread2, "R2" },
+        }
+
+        local okAll = true
+        for i=1,4 do
+            local t = targets[i]
+            okAll = self:_LaunchKnife(knives[i], sx, sy, sz, t[1], t[2], t[3], token, t[4]) and okAll
+        end
+
+        if not okAll then
+            for i=1,4 do if knives[i] then knives[i]:Reset() end end
+            return false
+        end
+        return true
+    end,
+
+    -- forward spray (not aimed): shoot 3 knives in facing direction with sideways offsets
+    SpawnForwardSpray3 = function(self, fx, fz, range, spread, yOffset)
+        range = range or 12.0
+        spread = spread or 0.6
+
+        local knives = KnifePool.RequestMany(3)
+        if not knives then return false end
+
+        local sx, sy, sz = self:_GetSpawnPos()
+        if not sx then
+            self:_FreeReserved(knives)
+            return false
+        end
+
+        local len = math.sqrt((fx or 0)*(fx or 0) + (fz or 0)*(fz or 0))
+        if len < 1e-6 then
+            self:_FreeReserved(knives)
+            return false
+        end
+        fx, fz = fx/len, fz/len
+        local rx, rz = -fz, fx
+
+        local token = self:_NewVolleyToken()
+        for i=1,3 do
+            knives[i]._reservedToken = token
+            knives[i].reserved = true
+        end
+
+        local _, py, _ = self:_GetPlayerPos(yOffset or 0.0)
+        local targetY = py or sy
+        local baseTx, baseTy, baseTz = sx + fx*range, targetY, sz + fz*range
+
+        local t0x, t0y, t0z = baseTx, baseTy, baseTz
+        local t1x, t1y, t1z = baseTx - rx*spread, baseTy, baseTz - rz*spread
+        local t2x, t2y, t2z = baseTx + rx*spread, baseTy, baseTz + rz*spread
+
+        local ok1 = self:_LaunchKnife(knives[1], sx, sy, sz, t0x, t0y, t0z, token, "F")
+        local ok2 = self:_LaunchKnife(knives[2], sx, sy, sz, t1x, t1y, t1z, token, "FL")
+        local ok3 = self:_LaunchKnife(knives[3], sx, sy, sz, t2x, t2y, t2z, token, "FR")
+
+        if not (ok1 and ok2 and ok3) then
+            for i=1,3 do if knives[i] then knives[i]:Reset() end end
+            return false
+        end
+        return true
+    end,
+
+    -------------------------------------------------
+    -- Move runtime
+    -------------------------------------------------
+    _BeginMove = function(self, kind, data)
+        self._move = data or {}
+        self._move.kind = kind
+        self._move.t = 0
+        self._move.step = 0
+        self._moveFinished = false
+    end,
+
+    _EndMove = function(self)
+        self._move = nil
+        self._moveFinished = true
+        self.currentMove = nil
+        self.currentMoveDef = nil
+    end,
+
+    TickMove = function(self, dtSec)
+        if self._moveFinished or not self._move then return end
+        local m = self._move
+        m.t = (m.t or 0) + dtSec
+
+        -------------------------------------------------
+        -- Move1: Basic Attack (single volley)
+        -------------------------------------------------
+        if m.kind == "Basic" then
+            -- fire once at start
+            if m.step == 0 then
+                self:FacePlayer()
+                self:SpawnKnifeVolley3(m.spread or 1.0)
+                m.step = 1
+                m.doneAt = m.t + (m.postDelay or 0.35)
+            end
+            if m.doneAt and m.t >= m.doneAt then
+                self:_EndMove()
+            end
+            return
+        end
+
+        -------------------------------------------------
+        -- Move2: 5 Bursts (aim per burst)
+        -------------------------------------------------
+        if m.kind == "BurstFire" then
+            local burstInterval = m.interval or 0.18
+            local bursts = m.bursts or 5
+
+            if m.step == 0 then
+                m.nextShotT = 0
+                m.shotsDone = 0
+                m.step = 1
+            end
+
+            if m.t >= (m.nextShotT or 0) and (m.shotsDone or 0) < bursts then
+                self:FacePlayer()
+                self:SpawnKnifeSingleAtPlayer()
+                m.shotsDone = m.shotsDone + 1
+                m.nextShotT = m.t + burstInterval
+            end
+
+            if (m.shotsDone or 0) >= bursts then
+                if not m.finishT then
+                    m.finishT = m.t + (m.postDelay or 0.45)
+                elseif m.t >= m.finishT then
+                    self:_EndMove()
+                end
+            end
+            return
+        end
+
+        -------------------------------------------------
+        -- Move3: 4 Fan (no center)
+        -------------------------------------------------
+        if m.kind == "AntiDodge" then
+            if m.step == 0 then
+                self:FacePlayer()
+                self:SpawnKnifeFan4_NoCenter(m.spread1 or 0.9, m.spread2 or 1.8)
+                m.step = 1
+                m.doneAt = m.t + (m.postDelay or 0.45)
+            end
+            if m.doneAt and m.t >= m.doneAt then
+                self:_EndMove()
+            end
+            return
+        end
+
+        -------------------------------------------------
+        -- Move4: Fate Sealed (charge-up -> dash -> slash -> recover)
+        -------------------------------------------------
+        if m.kind == "FateSealed" then
+
+            -- Step 0: charge-up (telegraph)
+            if m.step == 0 then
+                -- face player during charge (feels intentional)
+                self:FacePlayer()
+
+                m.chargeT = (m.chargeT or 0) + dtSec
+                local chargeDur = m.chargeDur or 0.45
+
+                -- OPTIONAL: play charge animation / VFX / SFX once
+                if not m.chargeStarted then
+                    m.chargeStarted = true
+                    -- Example hooks (only if you have them):
+                    -- if self.PlayClip and self.ClipCharge then self:PlayClip(self.ClipCharge, false) end
+                    -- if _G.event_bus and _G.event_bus.publish then _G.event_bus.publish("miniboss_charge", { entityId=self.entityId }) end
+                end
+
+                if m.chargeT >= chargeDur then
+                    -- lock dash direction at the END of charge (fair + readable)
+                    local dx, dz = self:_DirToPlayerXZ()
+                    if not dx then
+                        self:_EndMove()
+                        return
+                    end
+
+                    -- face dash direction
+                    local q = { yawQuatFromDir(dx, dz) }
+                    if #q > 0 then self:ApplyRotation(q[1], q[2], q[3], q[4]) end
+
+                    m.dx, m.dz = dx, dz
+                    m.dashT = 0
+                    m.step = 1
+                end
+
+                return
+            end
+
+            -- Step 1: dash phase
+            local dashDur   = m.dashDur or 0.22
+            local dashSpeed = m.dashSpeed or 18.0
+
+            if m.step == 1 then
+                m.dashT = (m.dashT or 0) + dtSec
+
+                if self._controller then
+                    CharacterController.Move(
+                        self._controller,
+                        m.dx * dashSpeed * dtSec,
+                        0,
+                        m.dz * dashSpeed * dtSec
+                    )
+                end
+
+                -- slash timing: you can do "at end" or "near end"
+                local slashAt = m.slashAt or 0.85 -- fraction of dash
+                if not m.slashed and m.dashT >= (dashDur * slashAt) then
+                    m.slashed = true
+
+                    if _G.event_bus and _G.event_bus.publish then
+                        local ex, ey, ez = self:GetPosition()
+                        _G.event_bus.publish("miniboss_slash", {
+                            entityId = self.entityId,
+                            x = ex, y = ey, z = ez,
+                            radius = m.slashRadius or 1.4,
+                            dmg = m.dmg or 1
+                        })
+                    end
+                end
+
+                if m.dashT >= dashDur then
+                    m.step = 2
+                    m.recoverT = 0
+                end
+
+                return
+            end
+
+            -- Step 2: recovery
+            if m.step == 2 then
+                m.recoverT = (m.recoverT or 0) + dtSec
+                if m.recoverT >= (m.postDelay or 0.55) then
+                    self:_EndMove()
+                end
+                return
+            end
+        end
+
+        -------------------------------------------------
+        -- Move5: Death Lotus (spin + forward sprays)
+        -------------------------------------------------
+        if m.kind == "DeathLotus" then
+            if m.step == 0 then
+                m.spinYaw = m.spinYaw or 0
+                m.fireAcc = 0
+                m.step = 1
+            end
+
+            local spinSpeed = m.spinSpeed or (math.pi * 1.8) -- rad/s
+            local dur = m.duration or 2.8
+            local fireInterval = m.fireInterval or 0.10
+
+            -- advance yaw
+            m.spinYaw = (m.spinYaw or 0) + spinSpeed * dtSec
+
+            -- apply rotation visually (yaw-only)
+            local half = (m.spinYaw or 0) * 0.5
+            self:ApplyRotation(math.cos(half), 0, math.sin(half), 0)
+
+            -- forward vector from yaw
+            local fx = math.sin(m.spinYaw or 0)
+            local fz = math.cos(m.spinYaw or 0)
+
+            -- shoot forward, not aimed
+            m.fireAcc = (m.fireAcc or 0) + dtSec
+            while m.fireAcc >= fireInterval do
+                m.fireAcc = m.fireAcc - fireInterval
+                self:SpawnForwardSpray3(fx, fz, m.range or 12.0, m.spread or 0.7, m.lotusYOffset or 0.0)
+            end
+
+            if m.t >= dur then
+                self:_EndMove()
+            end
+            return
+        end
+    end,
+
+    -------------------------------------------------
+    -- Move implementations (entry points)
+    -------------------------------------------------
+    BasicAttack = function(self)
+        self:_BeginMove("Basic", {
+            spread = 0.6,
+            postDelay = 0.35
+        })
+    end,
+
+    BurstFire = function(self)
+        self:_BeginMove("BurstFire", {
+            bursts = 5,
+            interval = 0.18,   -- adjust for difficulty
+            postDelay = 0.45
+        })
+    end,
+
+    AntiDodge = function(self)
+        self:_BeginMove("AntiDodge", {
+            spread1 = 0.25,
+            spread2 = 0.35,
+            postDelay = 0.45
+        })
+    end,
+
+    FateSealed = function(self)
+        self:_BeginMove("FateSealed", {
+            chargeDur = 2.00,
+            dashDur = 0.33,
+            dashSpeed = 290.0,
+            slashAt = 0.90,
+            slashRadius = 1.4,
+            dmg = 1,
+            postDelay = 2.60
+        })
+    end,
+
+    DeathLotus = function(self)
+        self:_BeginMove("DeathLotus", {
+            duration = 2.8,
+            spinSpeed = math.pi * 1.8,  -- rad/s
+            fireInterval = 0.10,
+            range = 12.0,
+            spread = 0.7,
+            lotusYOffset = -3.0,
+        })
+    end,
 }

@@ -10,10 +10,7 @@ local function toDtSec(dt)
 end
 
 function DeathState:Enter(ai)
-    ai.dead = true
-    if ai.PlayClip and ai.clips and ai.clips.Death then
-        ai:PlayClip(ai.clips.Death, false)
-    end
+    ai._animator:SetBool("Dead", true)
     if ai.DisableCombat then ai:DisableCombat() end
 
     -- init always
@@ -43,5 +40,8 @@ function DeathState:Update(ai, dt)
     end
 end
 
-function DeathState:Exit(ai) end
+function DeathState:Exit(ai) 
+    ai._animator:SetBool("Dead", false)
+end
+
 return DeathState
