@@ -1,8 +1,8 @@
 {
     "prefab_entities": [
         {
-            "id": 2545,
-            "guid": "007b21e4da3a67da-0004207f8200fc51",
+            "id": 0,
+            "guid": "007b294403487b0e-000420968400998b",
             "components": {
                 "PrefabLinkComponent": {
                     "type": "PrefabLinkComponent",

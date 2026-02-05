@@ -6,6 +6,9 @@ function ChaseState:Enter(ai)
     print("[GroundChaseState] ENTER")
     ai._animator:SetBool("PatrolEnabled", true)
     ai._pathRepathT = (ai.PathRepathInterval or 0.45)
+
+    -- Play alert SFX when first detecting player (entering chase)
+    if ai.PlayAlertSFX then ai:PlayAlertSFX() end
 end
 
 function ChaseState:Update(ai, dt)
