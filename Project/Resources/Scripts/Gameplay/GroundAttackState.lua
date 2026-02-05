@@ -64,6 +64,10 @@ function AttackState:Update(ai, dt)
             ai.attackTimer = 0
 
             print(string.format("Melee Attack!"))
+            -- Play melee attack SFX
+            if ai.PlayAttackSFX then ai:PlayAttackSFX() end
+            -- Play melee hit SFX when attack lands on player
+            if ai.PlayHitSFX then ai:PlayHitSFX() end
             --ai._animator:SetBool("Melee", true)
             -- MELEE HIT: emit event (keeps consistent with your event-bus approach)
             if _G.event_bus and _G.event_bus.publish then
