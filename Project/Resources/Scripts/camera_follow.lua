@@ -679,7 +679,9 @@ return Component {
             (Input.IsActionPressed and Input.IsActionPressed("Attack")) then
 
                 -- re-lock cursor (existing behaviour)
-                if Screen and Screen.SetCursorLocked and Screen.IsCursorLocked then
+                -- Only re-lock if game is NOT paused (pause menu keeps cursor unlocked)
+                local isPaused = Time and Time.IsPaused and Time.IsPaused()
+                if not isPaused and Screen and Screen.SetCursorLocked and Screen.IsCursorLocked then
                     if not Screen.IsCursorLocked() then
                         Screen.SetCursorLocked(true)
                         self._firstMouse = true

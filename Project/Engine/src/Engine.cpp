@@ -676,14 +676,20 @@ bool Engine::InitializeAssets() {
 void Engine::Update() {
     TimeManager::UpdateDeltaTime();
 
+    // Update input FIRST so systems have fresh input state this frame
+    // This fixes the 1-frame input delay that caused buttons to require double-clicks
+    if (g_inputManager) {
+        g_inputManager->Update(static_cast<float>(TimeManager::GetUnscaledDeltaTime()));
+    }
+
     ECSManager& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
 
     RunBrainInitSystem(ecs);
 
     RunBrainUpdateSystem(ecs, static_cast<float>(TimeManager::GetDeltaTime()));
-    
+
 	// Only update the scene if the game should be running (not paused)
-	if (ShouldRunGameLogic()) 
+	if (ShouldRunGameLogic())
     {
         SceneManager::GetInstance().UpdateScene(TimeManager::GetDeltaTime()); // REPLACE WITH DT LATER
 	}
@@ -778,15 +784,8 @@ void Engine::Draw() {
 void Engine::EndDraw() {
 	WindowManager::SwapBuffers();
 
-	// Only process input if the game should be running (not paused)
-	if (ShouldRunGameLogic()) {
-		// Update unified input system (NEW - platform-agnostic)
-		if (g_inputManager) {
-			g_inputManager->Update(static_cast<float>(TimeManager::GetDeltaTime()));
-		}
-
-		//InputManager::Update(); // Legacy input system (still needed for editor)
-	}
+	// Input is now updated at the start of Engine::Update() for immediate responsiveness
+	// This ensures ButtonSystem and other systems have fresh input state
 
 	WindowManager::PollEvents(); // Always poll events for UI and window management
 
