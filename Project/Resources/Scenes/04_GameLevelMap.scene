@@ -581,7 +581,7 @@
                 },
                 {
                     "id": 272,
-                    "guid": "001cbc0e895b6e7b-00041fdb8e0102eb",
+                    "guid": "00680e3dd08b31dd-00041ff4de0002ab",
                     "Name": "LeftDoor1",
                     "ParentComponent": {
                         "type": "ParentComponent",
@@ -928,7 +928,7 @@
                 },
                 {
                     "id": 273,
-                    "guid": "001cbc0e999f461d-00041fdb8e0102ed",
+                    "guid": "00680e3d9a30af92-00041ff4de0002ad",
                     "Name": "RightDoor2",
                     "ParentComponent": {
                         "type": "ParentComponent",
@@ -1274,7 +1274,7 @@
                     ]
                 },
                 {
-                    "id": 4969,
+                    "id": 361,
                     "guid": "001cbc0ede5644e9-00041fdc32012683",
                     "Name": "DoorTrigger",
                     "ParentComponent": {
@@ -1465,7 +1465,7 @@
         },
         {
             "PrefabPath": "../../Resources/Prefabs/LevelRooms/Path1.prefab",
-            "id": 359,
+            "id": 362,
             "guid": "001a962e4c735722-00040923b4000bbd",
             "Name": "Path1",
             "ParentComponent": {
@@ -1476,7 +1476,7 @@
             },
             "Children": [
                 {
-                    "id": 443,
+                    "id": 446,
                     "guid": "001cbc0eec48c7e9-00041fdb8e010441",
                     "Name": "Stairs",
                     "ParentComponent": {
@@ -1487,7 +1487,7 @@
                     },
                     "Children": [
                         {
-                            "id": 446,
+                            "id": 449,
                             "guid": "001cbc0e9d4b3681-00041fdb8e010447",
                             "Name": "LongStairsLandingArea",
                             "ParentComponent": {
@@ -1567,7 +1567,7 @@
         },
         {
             "PrefabPath": "../../Resources/Prefabs/LevelRooms/Room3-Study.prefab",
-            "id": 457,
+            "id": 460,
             "guid": "00366927685e1eec-00040aede605d6d9",
             "Name": "Room3-Study",
             "ParentComponent": {
@@ -1642,7 +1642,7 @@
             ],
             "Children": [
                 {
-                    "id": 459,
+                    "id": 462,
                     "guid": "004f036c62739ba3-00041873a6004a03",
                     "Name": "Ceilings",
                     "ParentComponent": {
@@ -1717,7 +1717,7 @@
                     ],
                     "Children": [
                         {
-                            "id": 704,
+                            "id": 707,
                             "guid": "001cbc0ef835d2af-00041fb9e4000839",
                             "Name": "Ceiling (1) (2) (2) (1) (1) (1) (1) (1) (1) (2) (1) (1) (1) (3) (2)",
                             "ParentComponent": {
@@ -2066,7 +2066,7 @@
                     ]
                 },
                 {
-                    "id": 488,
+                    "id": 491,
                     "guid": "00366927575da1fb-00040b0da4071caf",
                     "Name": "Ground",
                     "ParentComponent": {
@@ -2141,7 +2141,7 @@
                     ],
                     "Children": [
                         {
-                            "id": 705,
+                            "id": 708,
                             "guid": "001cbc0ef2513863-00041fb94e000837",
                             "Name": "FloorMainModel (1) (1) (3) (2) (1) (1) (1) (1) (2) (1) (2) (1) (1) (2) (1) (1) (1) (1) (1) (1) (2) (2)",
                             "ParentComponent": {
@@ -2490,7 +2490,7 @@
                     ]
                 },
                 {
-                    "id": 517,
+                    "id": 520,
                     "guid": "003669276a6435b4-00040aee1605df8d",
                     "Name": "Walls",
                     "ParentComponent": {
@@ -2565,7 +2565,7 @@
                     ],
                     "Children": [
                         {
-                            "id": 558,
+                            "id": 561,
                             "guid": "001cbc0eb0167cbf-00041fd4a400b3d1",
                             "Name": "WallMainCombinedV2 (1) (3) (1) (1) (1) (2) (2) (1) (4) (2) (1)",
                             "ParentComponent": {
@@ -2722,7 +2722,7 @@
                             ]
                         },
                         {
-                            "id": 706,
+                            "id": 709,
                             "guid": "001cbc0ed203f4cd-00041fb68c000825",
                             "Name": "WallMainCombinedV2 (1) (3) (1) (1) (1) (2) (2) (1) (4) (2) (1) (1)",
                             "ParentComponent": {
@@ -3069,7 +3069,7 @@
                             ]
                         },
                         {
-                            "id": 707,
+                            "id": 710,
                             "guid": "001cbc0ee796a0b2-00041fb6b200082b",
                             "Name": "WallMainCombinedV2 (1) (3) (1) (1) (1) (2) (2) (1) (2) (1) (1) (1) (1) (2) (2)",
                             "ParentComponent": {
@@ -3416,7 +3416,7 @@
                             ]
                         },
                         {
-                            "id": 708,
+                            "id": 711,
                             "guid": "001cbc0e970bc388-00041fb6c200082f",
                             "Name": "WallMainCombinedV2 (1) (3) (1) (1) (1) (2) (2) (1) (2) (1) (1) (1) (1) (2) (2) (1)",
                             "ParentComponent": {
@@ -3763,7 +3763,7 @@
                             ]
                         },
                         {
-                            "id": 709,
+                            "id": 712,
                             "guid": "001cbc0efec94d66-00041fb6d6000833",
                             "Name": "WallMainCombinedV2 (1) (3) (1) (1) (1) (2) (2) (1) (2) (1) (1) (1) (1) (2) (2) (1) (1)",
                             "ParentComponent": {
@@ -4110,7 +4110,7 @@
                             ]
                         },
                         {
-                            "id": 710,
+                            "id": 713,
                             "guid": "0048a869712d8aae-00040b53d400a97d",
                             "Name": "WallModulars",
                             "ParentComponent": {
@@ -4224,7 +4224,7 @@
                             ]
                         },
                         {
-                            "id": 711,
+                            "id": 714,
                             "guid": "0048a8690faa19b0-00040b651a030e0f",
                             "Name": "Columns",
                             "ParentComponent": {
@@ -4338,7 +4338,7 @@
                             ]
                         },
                         {
-                            "id": 712,
+                            "id": 715,
                             "guid": "001cbc0e9fdc6c96-00041fd4be00b3d3",
                             "Name": "WallMainCombinedV2 (1) (3) (1) (1) (1) (2) (2) (1) (4) (2) (1) (2)",
                             "ParentComponent": {
@@ -4687,7 +4687,7 @@
                     ]
                 },
                 {
-                    "id": 630,
+                    "id": 633,
                     "guid": "0006e84aacad8957-00040d09ce01786d",
                     "Name": "Decors",
                     "ParentComponent": {
@@ -4762,7 +4762,7 @@
                     ],
                     "Children": [
                         {
-                            "id": 635,
+                            "id": 638,
                             "guid": "0079821f8a3adfeb-00040e57f40c446d",
                             "Name": "Bookshelves",
                             "ParentComponent": {
@@ -4837,7 +4837,7 @@
                             ]
                         },
                         {
-                            "id": 647,
+                            "id": 650,
                             "guid": "0079821fa6ce6ce6-00040e58320c4d1f",
                             "Name": "Scrolls",
                             "ParentComponent": {
@@ -4912,7 +4912,7 @@
                             ],
                             "Children": [
                                 {
-                                    "id": 665,
+                                    "id": 668,
                                     "guid": "0079821fcab7b2a4-00040e59a20ca1e1",
                                     "Name": "Scroll (1) (1) (1) (1) (1) (2) (1) (2) (1) (1) (1) (1) (1)",
                                     "ParentComponent": {
@@ -4991,7 +4991,7 @@
                     ]
                 },
                 {
-                    "id": 686,
+                    "id": 689,
                     "guid": "0006e84ae3c6e37d-00040d13b601f8df",
                     "Name": "Lanterns",
                     "ParentComponent": {
@@ -5066,7 +5066,7 @@
                     ],
                     "Children": [
                         {
-                            "id": 690,
+                            "id": 693,
                             "guid": "001cbc0eb45a22a0-00041fbd1c005a89",
                             "Name": "LanternHolder",
                             "ParentComponent": {
@@ -5077,7 +5077,7 @@
                             },
                             "Children": [
                                 {
-                                    "id": 691,
+                                    "id": 694,
                                     "guid": "001cbc0ec11437ee-00041fbd1c005a8b",
                                     "Name": "Lantern (1)",
                                     "ParentComponent": {
@@ -5088,7 +5088,7 @@
                                     },
                                     "Children": [
                                         {
-                                            "id": 692,
+                                            "id": 695,
                                             "guid": "001cbc0eddf2ef9e-00041fbd1c005a8d",
                                             "Name": "Light (1)",
                                             "ParentComponent": {
@@ -5204,7 +5204,7 @@
                             ]
                         },
                         {
-                            "id": 699,
+                            "id": 702,
                             "guid": "001cbc0ee0b287ac-00041fbd1c005a9b",
                             "Name": "Lantern (2) (1)",
                             "ParentComponent": {
@@ -5215,7 +5215,7 @@
                             },
                             "Children": [
                                 {
-                                    "id": 700,
+                                    "id": 703,
                                     "guid": "001cbc0eb1b15ed9-00041fbd1c005a9d",
                                     "Name": "Light (1) (1) (1)",
                                     "ParentComponent": {
@@ -5334,7 +5334,7 @@
         },
         {
             "PrefabPath": "../../Resources/Prefabs/LevelRooms/Room5-Pitfall.prefab",
-            "id": 713,
+            "id": 716,
             "guid": "0073eb40b0d2ddb8-00040dc8cc005825",
             "Name": "Room5-Pitfall",
             "ParentComponent": {
@@ -5409,7 +5409,7 @@
             ],
             "Children": [
                 {
-                    "id": 714,
+                    "id": 717,
                     "guid": "001cbc0eab692be7-00041fbd1e005aa7",
                     "Name": "Ground",
                     "ParentComponent": {
@@ -5420,7 +5420,7 @@
                     },
                     "Children": [
                         {
-                            "id": 715,
+                            "id": 718,
                             "guid": "001cbc0e85aa2334-00041fbd1e005aa9",
                             "Name": "LongStairsLandingArea (1) (1) (1) (1) (1) (1)",
                             "ParentComponent": {
@@ -5495,7 +5495,7 @@
                             ]
                         },
                         {
-                            "id": 716,
+                            "id": 719,
                             "guid": "001cbc0e8980f0f3-00041fbd1e005aab",
                             "Name": "GroundedPlatform (1) (1)",
                             "ParentComponent": {
@@ -5570,7 +5570,7 @@
                             ],
                             "Children": [
                                 {
-                                    "id": 2115,
+                                    "id": 2118,
                                     "guid": "001cbc0e8da092d1-00041fbd1e005aaf",
                                     "Name": "Column (1) (1) (2) (1) (2) (2) (2) (1) (1) (3) (1) (1) (1) (1) (1) (1) (2)",
                                     "ParentComponent": {
@@ -5919,7 +5919,7 @@
                             ]
                         },
                         {
-                            "id": 719,
+                            "id": 722,
                             "guid": "001cbc0e93432ec5-00041fbd1e005ab1",
                             "Name": "GroundedPlatform (1) (1) (1)",
                             "ParentComponent": {
@@ -5994,7 +5994,7 @@
                             ],
                             "Children": [
                                 {
-                                    "id": 2116,
+                                    "id": 2119,
                                     "guid": "001cbc0efbf86fba-00041fbd1e005ab5",
                                     "Name": "Column (1) (1) (2) (1) (2) (2) (2) (1) (1) (3) (1) (1) (1) (1) (1) (1) (2) (1)",
                                     "ParentComponent": {
@@ -6343,7 +6343,7 @@
                             ]
                         },
                         {
-                            "id": 722,
+                            "id": 725,
                             "guid": "001cbc0e94293f0d-00041fbd1e005ab7",
                             "Name": "GroundedPlatform (1) (1) (1) (1)",
                             "ParentComponent": {
@@ -6418,7 +6418,7 @@
                             ],
                             "Children": [
                                 {
-                                    "id": 2117,
+                                    "id": 2120,
                                     "guid": "001cbc0ec84158e7-00041fbd1e005abb",
                                     "Name": "Column (1) (1) (2) (1) (2) (2) (2) (1) (1) (3) (1) (1) (1) (1) (1) (1) (2) (1) (1)",
                                     "ParentComponent": {
@@ -6767,7 +6767,7 @@
                             ]
                         },
                         {
-                            "id": 2118,
+                            "id": 2121,
                             "guid": "001cbc0e8bac2874-00041fbd1e005af9",
                             "Name": "GroundPlatform",
                             "ParentComponent": {
@@ -7114,7 +7114,7 @@
                             ]
                         },
                         {
-                            "id": 2119,
+                            "id": 2122,
                             "guid": "001cbc0e953c7022-00041fd04800b373",
                             "Name": "LongStairsLandingArea (1) (1) (1) (1) (1) (1) (1)",
                             "ParentComponent": {
@@ -7315,7 +7315,7 @@
                             ]
                         },
                         {
-                            "id": 2120,
+                            "id": 2123,
                             "guid": "001cbc0eae29cd0a-00041fd0d200b375",
                             "Name": "GroundedPlatform (1) (1) (2)",
                             "ParentComponent": {
@@ -7662,7 +7662,7 @@
                             ]
                         },
                         {
-                            "id": 2121,
+                            "id": 2124,
                             "guid": "001cbc0eead0707d-00041fd5c800b3d9",
                             "Name": "LongStairsLandingArea (1) (1) (1) (1) (1) (1) (1) (1)",
                             "ParentComponent": {
@@ -7863,7 +7863,7 @@
                             ]
                         },
                         {
-                            "id": 2122,
+                            "id": 2125,
                             "guid": "001cbc0ee3dd21c6-00041fd75200c6b7",
                             "Name": "GroundedPlatform (1) (1) (2) (1)",
                             "ParentComponent": {
@@ -8210,7 +8210,7 @@
                             ]
                         },
                         {
-                            "id": 2123,
+                            "id": 2126,
                             "guid": "001cbc0ef10728a2-00041fd76a00c6b9",
                             "Name": "GroundedPlatform (1) (1) (2) (1) (1)",
                             "ParentComponent": {
@@ -8559,7 +8559,7 @@
                     ]
                 },
                 {
-                    "id": 764,
+                    "id": 767,
                     "guid": "0073eb40afbbdace-00040dc922005835",
                     "Name": "Walls",
                     "ParentComponent": {
@@ -8570,7 +8570,7 @@
                     },
                     "Children": [
                         {
-                            "id": 1645,
+                            "id": 1648,
                             "guid": "001cbc0ec4860f17-00041fbd1e0061ed",
                             "Name": "WallNoHole (1) (1) (1) (1) (3) (1)",
                             "ParentComponent": {
@@ -8645,7 +8645,7 @@
                             ]
                         },
                         {
-                            "id": 2124,
+                            "id": 2127,
                             "guid": "001cbc0ec3e9b468-00041faff0000819",
                             "Name": "WallNoHole (2) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (2) (2)",
                             "ParentComponent": {
@@ -8992,7 +8992,7 @@
                             ]
                         },
                         {
-                            "id": 2125,
+                            "id": 2128,
                             "guid": "001cbc0e8c9f7517-00041fc55800a08d",
                             "Name": "WallNoHole (2) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (4)",
                             "ParentComponent": {
@@ -9339,7 +9339,7 @@
                             ]
                         },
                         {
-                            "id": 2126,
+                            "id": 2129,
                             "guid": "001cbc0ee02b93a2-00041fc55800a08f",
                             "Name": "WallNoHole (2) (1) (1) (1) (1) (1) (1) (1) (1) (1) (5)",
                             "ParentComponent": {
@@ -9686,7 +9686,7 @@
                             ]
                         },
                         {
-                            "id": 2127,
+                            "id": 2130,
                             "guid": "001cbc0eba9141bf-00041fc55800a091",
                             "Name": "WallNoHole (2) (1) (1) (1) (1) (1) (1) (1) (1) (5)",
                             "ParentComponent": {
@@ -10033,7 +10033,7 @@
                             ]
                         },
                         {
-                            "id": 2128,
+                            "id": 2131,
                             "guid": "001cbc0edfad537e-00041fc55800a095",
                             "Name": "WallNoHole (2) (1) (1) (1) (1) (1) (1) (5)",
                             "ParentComponent": {
@@ -10380,7 +10380,7 @@
                             ]
                         },
                         {
-                            "id": 2129,
+                            "id": 2132,
                             "guid": "001cbc0e8364d980-00041fc55800a097",
                             "Name": "WallNoHole (2) (1) (1) (1) (1) (1) (5)",
                             "ParentComponent": {
@@ -10727,7 +10727,7 @@
                             ]
                         },
                         {
-                            "id": 2130,
+                            "id": 2133,
                             "guid": "001cbc0e940aaae9-00041fc55800a099",
                             "Name": "WallNoHole (2) (1) (1) (1) (1) (5)",
                             "ParentComponent": {
@@ -11074,7 +11074,7 @@
                             ]
                         },
                         {
-                            "id": 2131,
+                            "id": 2134,
                             "guid": "001cbc0ed909d149-00041fd2d400b379",
                             "Name": "WallNoHole (2) (1) (1) (1) (1) (1) (1) (1) (5)",
                             "ParentComponent": {
@@ -11421,7 +11421,7 @@
                             ]
                         },
                         {
-                            "id": 2132,
+                            "id": 2135,
                             "guid": "001cbc0ea4447e80-00041fd3e400b37b",
                             "Name": "WallNoHole (5) (1)",
                             "ParentComponent": {
@@ -11768,7 +11768,7 @@
                             ]
                         },
                         {
-                            "id": 2133,
+                            "id": 2136,
                             "guid": "001cbc0edf1537a6-00041fd3e400b37d",
                             "Name": "WallNoHole (2) (1) (1) (1) (2)",
                             "ParentComponent": {
@@ -12115,7 +12115,7 @@
                             ]
                         },
                         {
-                            "id": 2134,
+                            "id": 2137,
                             "guid": "001cbc0efa490242-00041fd3e400b37f",
                             "Name": "WallNoHole (3) (1) (1) (1)",
                             "ParentComponent": {
@@ -12462,7 +12462,7 @@
                             ]
                         },
                         {
-                            "id": 2135,
+                            "id": 2138,
                             "guid": "001cbc0ef9c3eded-00041fd3e400b381",
                             "Name": "WallNoHole (2) (2) (1) (1)",
                             "ParentComponent": {
@@ -12809,7 +12809,7 @@
                             ]
                         },
                         {
-                            "id": 2136,
+                            "id": 2139,
                             "guid": "001cbc0ed3f0643c-00041fd3e400b383",
                             "Name": "WallNoHole (4) (1) (1)",
                             "ParentComponent": {
@@ -13156,7 +13156,7 @@
                             ]
                         },
                         {
-                            "id": 2137,
+                            "id": 2140,
                             "guid": "001cbc0ece6bac2a-00041fd3e400b385",
                             "Name": "WallNoHole (2) (3) (1)",
                             "ParentComponent": {
@@ -13503,7 +13503,7 @@
                             ]
                         },
                         {
-                            "id": 2138,
+                            "id": 2141,
                             "guid": "001cbc0e9b09b7aa-00041fd3e400b387",
                             "Name": "WallNoHole (3) (2) (1)",
                             "ParentComponent": {
@@ -13850,7 +13850,7 @@
                             ]
                         },
                         {
-                            "id": 2139,
+                            "id": 2142,
                             "guid": "001cbc0eeb019d57-00041fd44200b389",
                             "Name": "WallNoHole (5) (1) (1)",
                             "ParentComponent": {
@@ -14197,7 +14197,7 @@
                             ]
                         },
                         {
-                            "id": 2140,
+                            "id": 2143,
                             "guid": "001cbc0eadda6412-00041fd44200b38b",
                             "Name": "WallNoHole (2) (1) (1) (1) (2) (1)",
                             "ParentComponent": {
@@ -14544,7 +14544,7 @@
                             ]
                         },
                         {
-                            "id": 2141,
+                            "id": 2144,
                             "guid": "001cbc0e9684b0f9-00041fd44200b38d",
                             "Name": "WallNoHole (3) (1) (1) (1) (1)",
                             "ParentComponent": {
@@ -14891,7 +14891,7 @@
                             ]
                         },
                         {
-                            "id": 2142,
+                            "id": 2145,
                             "guid": "001cbc0e921cf32c-00041fd44200b38f",
                             "Name": "WallNoHole (2) (2) (1) (1) (1)",
                             "ParentComponent": {
@@ -15238,7 +15238,7 @@
                             ]
                         },
                         {
-                            "id": 2143,
+                            "id": 2146,
                             "guid": "001cbc0eb10f7671-00041fd44200b391",
                             "Name": "WallNoHole (4) (1) (1) (1)",
                             "ParentComponent": {
@@ -15585,7 +15585,7 @@
                             ]
                         },
                         {
-                            "id": 2144,
+                            "id": 2147,
                             "guid": "001cbc0ea5621480-00041fd44200b393",
                             "Name": "WallNoHole (2) (3) (1) (1)",
                             "ParentComponent": {
@@ -15932,7 +15932,7 @@
                             ]
                         },
                         {
-                            "id": 2145,
+                            "id": 2148,
                             "guid": "001cbc0e8b4d622c-00041fd44200b395",
                             "Name": "WallNoHole (3) (2) (1) (1)",
                             "ParentComponent": {
@@ -16279,7 +16279,7 @@
                             ]
                         },
                         {
-                            "id": 2146,
+                            "id": 2149,
                             "guid": "001cbc0e87191b3a-00041fd45000b397",
                             "Name": "WallNoHole (5) (1) (1) (1)",
                             "ParentComponent": {
@@ -16626,7 +16626,7 @@
                             ]
                         },
                         {
-                            "id": 2147,
+                            "id": 2150,
                             "guid": "001cbc0e91c63870-00041fd45000b399",
                             "Name": "WallNoHole (2) (1) (1) (1) (2) (1) (1)",
                             "ParentComponent": {
@@ -16973,7 +16973,7 @@
                             ]
                         },
                         {
-                            "id": 2148,
+                            "id": 2151,
                             "guid": "001cbc0ef22fa462-00041fd45000b39b",
                             "Name": "WallNoHole (3) (1) (1) (1) (1) (1)",
                             "ParentComponent": {
@@ -17320,7 +17320,7 @@
                             ]
                         },
                         {
-                            "id": 2149,
+                            "id": 2152,
                             "guid": "001cbc0ea809443c-00041fd45000b39d",
                             "Name": "WallNoHole (2) (2) (1) (1) (1) (1)",
                             "ParentComponent": {
@@ -17667,7 +17667,7 @@
                             ]
                         },
                         {
-                            "id": 2150,
+                            "id": 2153,
                             "guid": "001cbc0e87c0bc77-00041fd45000b39f",
                             "Name": "WallNoHole (4) (1) (1) (1) (1)",
                             "ParentComponent": {
@@ -18014,7 +18014,7 @@
                             ]
                         },
                         {
-                            "id": 2151,
+                            "id": 2154,
                             "guid": "001cbc0eb2047c69-00041fd45000b3a1",
                             "Name": "WallNoHole (2) (3) (1) (1) (1)",
                             "ParentComponent": {
@@ -18361,7 +18361,7 @@
                             ]
                         },
                         {
-                            "id": 2152,
+                            "id": 2155,
                             "guid": "001cbc0eed4a88bd-00041fd45000b3a3",
                             "Name": "WallNoHole (3) (2) (1) (1) (1)",
                             "ParentComponent": {
@@ -18708,7 +18708,7 @@
                             ]
                         },
                         {
-                            "id": 2153,
+                            "id": 2156,
                             "guid": "001cbc0ee20d7196-00041fd45c00b3a5",
                             "Name": "WallNoHole (5) (1) (1) (1) (1)",
                             "ParentComponent": {
@@ -19055,7 +19055,7 @@
                             ]
                         },
                         {
-                            "id": 2154,
+                            "id": 2157,
                             "guid": "001cbc0eb724c5f5-00041fd45c00b3a7",
                             "Name": "WallNoHole (2) (1) (1) (1) (2) (1) (1) (1)",
                             "ParentComponent": {
@@ -19402,7 +19402,7 @@
                             ]
                         },
                         {
-                            "id": 2155,
+                            "id": 2158,
                             "guid": "001cbc0ec5f4373b-00041fd45c00b3a9",
                             "Name": "WallNoHole (3) (1) (1) (1) (1) (1) (1)",
                             "ParentComponent": {
@@ -19749,7 +19749,7 @@
                             ]
                         },
                         {
-                            "id": 2156,
+                            "id": 2159,
                             "guid": "001cbc0ec7fe4a97-00041fd45c00b3ab",
                             "Name": "WallNoHole (2) (2) (1) (1) (1) (1) (1)",
                             "ParentComponent": {
@@ -20096,7 +20096,7 @@
                             ]
                         },
                         {
-                            "id": 2157,
+                            "id": 2160,
                             "guid": "001cbc0ed486bd23-00041fd45c00b3ad",
                             "Name": "WallNoHole (4) (1) (1) (1) (1) (1)",
                             "ParentComponent": {
@@ -20443,7 +20443,7 @@
                             ]
                         },
                         {
-                            "id": 2158,
+                            "id": 2161,
                             "guid": "001cbc0ec7b6faa3-00041fd45c00b3af",
                             "Name": "WallNoHole (2) (3) (1) (1) (1) (1)",
                             "ParentComponent": {
@@ -20790,7 +20790,7 @@
                             ]
                         },
                         {
-                            "id": 2159,
+                            "id": 2162,
                             "guid": "001cbc0ec1f6010c-00041fd45c00b3b1",
                             "Name": "WallNoHole (3) (2) (1) (1) (1) (1)",
                             "ParentComponent": {
@@ -21137,7 +21137,7 @@
                             ]
                         },
                         {
-                            "id": 2160,
+                            "id": 2163,
                             "guid": "001cbc0ef034c374-00041fd46400b3b3",
                             "Name": "WallNoHole (5) (1) (1) (1) (1) (1)",
                             "ParentComponent": {
@@ -21484,7 +21484,7 @@
                             ]
                         },
                         {
-                            "id": 2161,
+                            "id": 2164,
                             "guid": "001cbc0edc2e9f68-00041fd46400b3b5",
                             "Name": "WallNoHole (2) (1) (1) (1) (2) (1) (1) (1) (1)",
                             "ParentComponent": {
@@ -21831,7 +21831,7 @@
                             ]
                         },
                         {
-                            "id": 2162,
+                            "id": 2165,
                             "guid": "001cbc0e8ada142b-00041fd46400b3b7",
                             "Name": "WallNoHole (3) (1) (1) (1) (1) (1) (1) (1)",
                             "ParentComponent": {
@@ -22178,7 +22178,7 @@
                             ]
                         },
                         {
-                            "id": 2163,
+                            "id": 2166,
                             "guid": "001cbc0efb0ac854-00041fd46400b3b9",
                             "Name": "WallNoHole (2) (2) (1) (1) (1) (1) (1) (1)",
                             "ParentComponent": {
@@ -22525,7 +22525,7 @@
                             ]
                         },
                         {
-                            "id": 2164,
+                            "id": 2167,
                             "guid": "001cbc0e9b08c207-00041fd46400b3bb",
                             "Name": "WallNoHole (4) (1) (1) (1) (1) (1) (1)",
                             "ParentComponent": {
@@ -22872,7 +22872,7 @@
                             ]
                         },
                         {
-                            "id": 2165,
+                            "id": 2168,
                             "guid": "001cbc0e94d6efd7-00041fd46400b3bd",
                             "Name": "WallNoHole (2) (3) (1) (1) (1) (1) (1)",
                             "ParentComponent": {
@@ -23219,7 +23219,7 @@
                             ]
                         },
                         {
-                            "id": 2166,
+                            "id": 2169,
                             "guid": "001cbc0ebf105fb5-00041fd46400b3bf",
                             "Name": "WallNoHole (3) (2) (1) (1) (1) (1) (1)",
                             "ParentComponent": {
@@ -23566,7 +23566,7 @@
                             ]
                         },
                         {
-                            "id": 2167,
+                            "id": 2170,
                             "guid": "001cbc0e8b744a57-00041fd47400b3c1",
                             "Name": "WallNoHole (5) (1) (1) (1) (1) (1) (1)",
                             "ParentComponent": {
@@ -23913,7 +23913,7 @@
                             ]
                         },
                         {
-                            "id": 2168,
+                            "id": 2171,
                             "guid": "001cbc0eed8ec387-00041fd47400b3c3",
                             "Name": "WallNoHole (2) (1) (1) (1) (2) (1) (1) (1) (1) (1)",
                             "ParentComponent": {
@@ -24260,7 +24260,7 @@
                             ]
                         },
                         {
-                            "id": 2169,
+                            "id": 2172,
                             "guid": "001cbc0eae5fcefd-00041fd47400b3c5",
                             "Name": "WallNoHole (3) (1) (1) (1) (1) (1) (1) (1) (1)",
                             "ParentComponent": {
@@ -24607,7 +24607,7 @@
                             ]
                         },
                         {
-                            "id": 2170,
+                            "id": 2173,
                             "guid": "001cbc0efd9fa83d-00041fd47400b3c7",
                             "Name": "WallNoHole (2) (2) (1) (1) (1) (1) (1) (1) (1)",
                             "ParentComponent": {
@@ -24954,7 +24954,7 @@
                             ]
                         },
                         {
-                            "id": 2171,
+                            "id": 2174,
                             "guid": "001cbc0ef194a8d0-00041fd47400b3c9",
                             "Name": "WallNoHole (4) (1) (1) (1) (1) (1) (1) (1)",
                             "ParentComponent": {
@@ -25301,7 +25301,7 @@
                             ]
                         },
                         {
-                            "id": 2172,
+                            "id": 2175,
                             "guid": "001cbc0ef980ca79-00041fd47400b3cb",
                             "Name": "WallNoHole (2) (3) (1) (1) (1) (1) (1) (1)",
                             "ParentComponent": {
@@ -25648,7 +25648,7 @@
                             ]
                         },
                         {
-                            "id": 2173,
+                            "id": 2176,
                             "guid": "001cbc0ea1b82dc5-00041fd47400b3cd",
                             "Name": "WallNoHole (3) (2) (1) (1) (1) (1) (1) (1)",
                             "ParentComponent": {
@@ -25997,7 +25997,7 @@
                     ]
                 },
                 {
-                    "id": 2038,
+                    "id": 2041,
                     "guid": "001cbc0eb8bc690e-00041fbd1e0064ff",
                     "Name": "Columns",
                     "ParentComponent": {
@@ -26008,7 +26008,7 @@
                     },
                     "Children": [
                         {
-                            "id": 2063,
+                            "id": 2066,
                             "guid": "001cbc0ed1787ed9-00041fbd1e006531",
                             "Name": "Column (1) (1) (2) (1) (2) (2) (2) (1) (1) (3) (1) (1) (2) (1) (1) (2) (1)",
                             "ParentComponent": {
@@ -26083,7 +26083,7 @@
                             ]
                         },
                         {
-                            "id": 2064,
+                            "id": 2067,
                             "guid": "001cbc0ef919b599-00041fbd1e006533",
                             "Name": "Column (1) (1) (2) (1) (2) (2) (2) (1) (1) (3) (1) (1) (2) (1) (3) (1)",
                             "ParentComponent": {
@@ -26158,7 +26158,7 @@
                             ]
                         },
                         {
-                            "id": 2065,
+                            "id": 2068,
                             "guid": "001cbc0ec6c3bb2e-00041fbd1e006535",
                             "Name": "Column (1) (1) (2) (1) (2) (2) (2) (1) (1) (3) (1) (1) (2) (1) (2) (2) (1)",
                             "ParentComponent": {
@@ -26233,7 +26233,7 @@
                             ]
                         },
                         {
-                            "id": 2066,
+                            "id": 2069,
                             "guid": "001cbc0ec1997841-00041fbd1e006537",
                             "Name": "Column (1) (1) (2) (1) (2) (2) (2) (1) (1) (3) (1) (1) (2) (1) (2) (1) (2) (1)",
                             "ParentComponent": {
@@ -26308,7 +26308,7 @@
                             ]
                         },
                         {
-                            "id": 2067,
+                            "id": 2070,
                             "guid": "001cbc0eb7d30228-00041fbd1e006539",
                             "Name": "Column (1) (1) (2) (1) (2) (2) (2) (1) (1) (3) (1) (1) (2) (1) (2) (1) (1) (1) (1)",
                             "ParentComponent": {
@@ -26383,7 +26383,7 @@
                             ]
                         },
                         {
-                            "id": 2068,
+                            "id": 2071,
                             "guid": "001cbc0e8c1d29b8-00041fbd1e00653b",
                             "Name": "Column (1) (1) (2) (1) (2) (2) (2) (1) (1) (3) (1) (1) (2) (1) (1) (1) (1) (1) (1)",
                             "ParentComponent": {
@@ -26458,7 +26458,7 @@
                             ]
                         },
                         {
-                            "id": 2069,
+                            "id": 2072,
                             "guid": "001cbc0ed276645b-00041fbd1e00653d",
                             "Name": "Column (1) (1) (2) (1) (2) (2) (2) (1) (1) (3) (1) (1) (2) (1) (1) (1) (1) (1) (1) (1)",
                             "ParentComponent": {
@@ -26533,7 +26533,7 @@
                             ]
                         },
                         {
-                            "id": 2070,
+                            "id": 2073,
                             "guid": "001cbc0ebb1ce0fe-00041fbd1e00653f",
                             "Name": "Column (1) (1) (2) (1) (2) (2) (2) (1) (1) (3) (1) (1) (2) (1) (2) (1) (1) (1) (1) (1)",
                             "ParentComponent": {
@@ -26610,7 +26610,7 @@
                     ]
                 },
                 {
-                    "id": 2078,
+                    "id": 2081,
                     "guid": "001cbc0eecfb39db-00041fbd1e00654f",
                     "Name": "Ledges",
                     "ParentComponent": {
@@ -26621,7 +26621,7 @@
                     },
                     "Children": [
                         {
-                            "id": 2099,
+                            "id": 2102,
                             "guid": "001cbc0e914155f1-00041fbd1e006579",
                             "Name": "StartLedge (1) (1) (1) (1)",
                             "ParentComponent": {
@@ -26696,7 +26696,7 @@
                             ]
                         },
                         {
-                            "id": 2174,
+                            "id": 2177,
                             "guid": "001cbc0eeaf78634-00041fd65000b3db",
                             "Name": "MiddleLedge (2) (2)",
                             "ParentComponent": {
@@ -27043,12 +27043,225 @@
                             ]
                         }
                     ]
+                },
+                {
+                    "id": 2179,
+                    "guid": "00680e3dce8f2718-00041ff4e6001101",
+                    "Name": "Light",
+                    "ParentComponent": {
+                        "type": "ParentComponent",
+                        "data": [
+                            "0073eb40b0d2ddb8-00040dc8cc005825"
+                        ]
+                    },
+                    "ComponentOverrides": [
+                        {
+                            "Transform": {
+                                "type": "Transform",
+                                "data": [
+                                    {
+                                        "type": "Vector3D",
+                                        "data": [
+                                            {
+                                                "type": "float",
+                                                "data": -0.022974
+                                            },
+                                            {
+                                                "type": "float",
+                                                "data": 7.79998
+                                            },
+                                            {
+                                                "type": "float",
+                                                "data": -95.4697
+                                            }
+                                        ]
+                                    },
+                                    {
+                                        "type": "Vector3D",
+                                        "data": [
+                                            {
+                                                "type": "float",
+                                                "data": 1
+                                            },
+                                            {
+                                                "type": "float",
+                                                "data": 1
+                                            },
+                                            {
+                                                "type": "float",
+                                                "data": 1
+                                            }
+                                        ]
+                                    },
+                                    {
+                                        "type": "Quaternion",
+                                        "data": [
+                                            {
+                                                "type": "float",
+                                                "data": 1
+                                            },
+                                            {
+                                                "type": "float",
+                                                "data": -8.74228e-8
+                                            },
+                                            {
+                                                "type": "float",
+                                                "data": 0.000172645
+                                            },
+                                            {
+                                                "type": "float",
+                                                "data": -1.50919e-11
+                                            }
+                                        ]
+                                    }
+                                ]
+                            }
+                        },
+                        {
+                            "PointLightComponent": {
+                                "type": "PointLightComponent",
+                                "data": [
+                                    {
+                                        "type": "Vector3D",
+                                        "data": [
+                                            {
+                                                "type": "float",
+                                                "data": 1
+                                            },
+                                            {
+                                                "type": "float",
+                                                "data": 1
+                                            },
+                                            {
+                                                "type": "float",
+                                                "data": 1
+                                            }
+                                        ]
+                                    },
+                                    {
+                                        "type": "float",
+                                        "data": 10
+                                    },
+                                    {
+                                        "type": "bool",
+                                        "data": true
+                                    },
+                                    {
+                                        "type": "float",
+                                        "data": 0
+                                    },
+                                    {
+                                        "type": "float",
+                                        "data": 0.5
+                                    },
+                                    {
+                                        "type": "float",
+                                        "data": 0
+                                    },
+                                    {
+                                        "type": "Vector3D",
+                                        "data": [
+                                            {
+                                                "type": "float",
+                                                "data": 0.05
+                                            },
+                                            {
+                                                "type": "float",
+                                                "data": 0.05
+                                            },
+                                            {
+                                                "type": "float",
+                                                "data": 0.05
+                                            }
+                                        ]
+                                    },
+                                    {
+                                        "type": "Vector3D",
+                                        "data": [
+                                            {
+                                                "type": "float",
+                                                "data": 0.799228
+                                            },
+                                            {
+                                                "type": "float",
+                                                "data": 0.388814
+                                            },
+                                            {
+                                                "type": "float",
+                                                "data": 0.388814
+                                            }
+                                        ]
+                                    },
+                                    {
+                                        "type": "Vector3D",
+                                        "data": [
+                                            {
+                                                "type": "float",
+                                                "data": 1
+                                            },
+                                            {
+                                                "type": "float",
+                                                "data": 1
+                                            },
+                                            {
+                                                "type": "float",
+                                                "data": 1
+                                            }
+                                        ]
+                                    },
+                                    {
+                                        "type": "bool",
+                                        "data": true
+                                    }
+                                ]
+                            }
+                        },
+                        {
+                            "ActiveComponent": {
+                                "type": "ActiveComponent",
+                                "data": [
+                                    {
+                                        "type": "bool",
+                                        "data": true
+                                    }
+                                ]
+                            }
+                        },
+                        {
+                            "ParentComponent": {
+                                "type": "ParentComponent",
+                                "data": [
+                                    "0073eb40b0d2ddb8-00040dc8cc005825"
+                                ]
+                            }
+                        },
+                        {
+                            "NameComponent": {
+                                "name": "Light"
+                            }
+                        },
+                        {
+                            "TagComponent": {
+                                "tagIndex": 0
+                            }
+                        },
+                        {
+                            "LayerComponent": {
+                                "layerIndex": 0
+                            }
+                        },
+                        {
+                            "SiblingIndexComponent": {
+                                "siblingIndex": 57
+                            }
+                        }
+                    ]
                 }
             ]
         },
         {
             "PrefabPath": "../../Resources/Prefabs/LevelRooms/MinibossRoom.prefab",
-            "id": 2175,
+            "id": 2178,
             "guid": "004bc8ac9caa1ec7-00041b9f8000b4cb",
             "Name": "MinibossRoom",
             "ParentComponent": {
@@ -27057,9 +27270,161 @@
                     "002f74130b102c59-000361c1e4000009"
                 ]
             },
+            "ComponentOverrides": [
+                {
+                    "Transform": {
+                        "type": "Transform",
+                        "data": [
+                            {
+                                "type": "Vector3D",
+                                "data": [
+                                    {
+                                        "type": "float",
+                                        "data": -34.2
+                                    },
+                                    {
+                                        "type": "float",
+                                        "data": -6.8
+                                    },
+                                    {
+                                        "type": "float",
+                                        "data": -25.69
+                                    }
+                                ]
+                            },
+                            {
+                                "type": "Vector3D",
+                                "data": [
+                                    {
+                                        "type": "float",
+                                        "data": 1
+                                    },
+                                    {
+                                        "type": "float",
+                                        "data": 1
+                                    },
+                                    {
+                                        "type": "float",
+                                        "data": 1
+                                    }
+                                ]
+                            },
+                            {
+                                "type": "Quaternion",
+                                "data": [
+                                    {
+                                        "type": "float",
+                                        "data": 0.707107
+                                    },
+                                    {
+                                        "type": "float",
+                                        "data": 0
+                                    },
+                                    {
+                                        "type": "float",
+                                        "data": -0.707107
+                                    },
+                                    {
+                                        "type": "float",
+                                        "data": 0
+                                    }
+                                ]
+                            }
+                        ]
+                    }
+                }
+            ],
             "Children": [
                 {
-                    "id": 2285,
+                    "id": 2184,
+                    "guid": "00680e3dd570236f-00041ff4e600110b",
+                    "Name": "Ground (1)",
+                    "ParentComponent": {
+                        "type": "ParentComponent",
+                        "data": [
+                            "004bc8ac9caa1ec7-00041b9f8000b4cb"
+                        ]
+                    },
+                    "Children": [
+                        {
+                            "id": 2187,
+                            "guid": "00680e3d9dfcfc07-00041ff4e6001111",
+                            "Name": "GroundedPlatform (1) (1) (1) (1) (2) (1)",
+                            "ParentComponent": {
+                                "type": "ParentComponent",
+                                "data": [
+                                    "00680e3dd570236f-00041ff4e600110b"
+                                ]
+                            },
+                            "ComponentOverrides": [
+                                {
+                                    "Transform": {
+                                        "type": "Transform",
+                                        "data": [
+                                            {
+                                                "type": "Vector3D",
+                                                "data": [
+                                                    {
+                                                        "type": "float",
+                                                        "data": 0.000250697
+                                                    },
+                                                    {
+                                                        "type": "float",
+                                                        "data": 0.5
+                                                    },
+                                                    {
+                                                        "type": "float",
+                                                        "data": -84.8
+                                                    }
+                                                ]
+                                            },
+                                            {
+                                                "type": "Vector3D",
+                                                "data": [
+                                                    {
+                                                        "type": "float",
+                                                        "data": 1.2
+                                                    },
+                                                    {
+                                                        "type": "float",
+                                                        "data": 1.2
+                                                    },
+                                                    {
+                                                        "type": "float",
+                                                        "data": 1.2
+                                                    }
+                                                ]
+                                            },
+                                            {
+                                                "type": "Quaternion",
+                                                "data": [
+                                                    {
+                                                        "type": "float",
+                                                        "data": 1
+                                                    },
+                                                    {
+                                                        "type": "float",
+                                                        "data": 0
+                                                    },
+                                                    {
+                                                        "type": "float",
+                                                        "data": 0
+                                                    },
+                                                    {
+                                                        "type": "float",
+                                                        "data": 0
+                                                    }
+                                                ]
+                                            }
+                                        ]
+                                    }
+                                }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "id": 2288,
                     "guid": "004bc8ac8a99d88e-00041bc49200c507",
                     "Name": "Miniboss",
                     "ParentComponent": {
@@ -27206,11 +27571,224 @@
                             }
                         }
                     ]
+                },
+                {
+                    "id": 4917,
+                    "guid": "00680e3de3a6674f-00041ff73e0038f7",
+                    "Name": "Light (3)",
+                    "ParentComponent": {
+                        "type": "ParentComponent",
+                        "data": [
+                            "004bc8ac9caa1ec7-00041b9f8000b4cb"
+                        ]
+                    },
+                    "ComponentOverrides": [
+                        {
+                            "Transform": {
+                                "type": "Transform",
+                                "data": [
+                                    {
+                                        "type": "Vector3D",
+                                        "data": [
+                                            {
+                                                "type": "float",
+                                                "data": 0
+                                            },
+                                            {
+                                                "type": "float",
+                                                "data": 10.2
+                                            },
+                                            {
+                                                "type": "float",
+                                                "data": -68.5
+                                            }
+                                        ]
+                                    },
+                                    {
+                                        "type": "Vector3D",
+                                        "data": [
+                                            {
+                                                "type": "float",
+                                                "data": 1
+                                            },
+                                            {
+                                                "type": "float",
+                                                "data": 1
+                                            },
+                                            {
+                                                "type": "float",
+                                                "data": 1
+                                            }
+                                        ]
+                                    },
+                                    {
+                                        "type": "Quaternion",
+                                        "data": [
+                                            {
+                                                "type": "float",
+                                                "data": 1
+                                            },
+                                            {
+                                                "type": "float",
+                                                "data": 0
+                                            },
+                                            {
+                                                "type": "float",
+                                                "data": 0
+                                            },
+                                            {
+                                                "type": "float",
+                                                "data": 0
+                                            }
+                                        ]
+                                    }
+                                ]
+                            }
+                        },
+                        {
+                            "PointLightComponent": {
+                                "type": "PointLightComponent",
+                                "data": [
+                                    {
+                                        "type": "Vector3D",
+                                        "data": [
+                                            {
+                                                "type": "float",
+                                                "data": 1
+                                            },
+                                            {
+                                                "type": "float",
+                                                "data": 1
+                                            },
+                                            {
+                                                "type": "float",
+                                                "data": 1
+                                            }
+                                        ]
+                                    },
+                                    {
+                                        "type": "float",
+                                        "data": 10
+                                    },
+                                    {
+                                        "type": "bool",
+                                        "data": true
+                                    },
+                                    {
+                                        "type": "float",
+                                        "data": 0
+                                    },
+                                    {
+                                        "type": "float",
+                                        "data": 0.5
+                                    },
+                                    {
+                                        "type": "float",
+                                        "data": 0
+                                    },
+                                    {
+                                        "type": "Vector3D",
+                                        "data": [
+                                            {
+                                                "type": "float",
+                                                "data": 0.05
+                                            },
+                                            {
+                                                "type": "float",
+                                                "data": 0.05
+                                            },
+                                            {
+                                                "type": "float",
+                                                "data": 0.05
+                                            }
+                                        ]
+                                    },
+                                    {
+                                        "type": "Vector3D",
+                                        "data": [
+                                            {
+                                                "type": "float",
+                                                "data": 0.6139
+                                            },
+                                            {
+                                                "type": "float",
+                                                "data": 0.497756
+                                            },
+                                            {
+                                                "type": "float",
+                                                "data": 0.497756
+                                            }
+                                        ]
+                                    },
+                                    {
+                                        "type": "Vector3D",
+                                        "data": [
+                                            {
+                                                "type": "float",
+                                                "data": 1
+                                            },
+                                            {
+                                                "type": "float",
+                                                "data": 1
+                                            },
+                                            {
+                                                "type": "float",
+                                                "data": 1
+                                            }
+                                        ]
+                                    },
+                                    {
+                                        "type": "bool",
+                                        "data": false
+                                    }
+                                ]
+                            }
+                        },
+                        {
+                            "ActiveComponent": {
+                                "type": "ActiveComponent",
+                                "data": [
+                                    {
+                                        "type": "bool",
+                                        "data": true
+                                    }
+                                ]
+                            }
+                        },
+                        {
+                            "ParentComponent": {
+                                "type": "ParentComponent",
+                                "data": [
+                                    "004bc8ac9caa1ec7-00041b9f8000b4cb"
+                                ]
+                            }
+                        },
+                        {
+                            "NameComponent": {
+                                "name": "Light (3)"
+                            }
+                        },
+                        {
+                            "TagComponent": {
+                                "tagIndex": 0
+                            }
+                        },
+                        {
+                            "LayerComponent": {
+                                "layerIndex": 0
+                            }
+                        },
+                        {
+                            "SiblingIndexComponent": {
+                                "siblingIndex": 66
+                            }
+                        }
+                    ]
                 }
             ]
         },
         {
-            "id": 2286,
+            "id": 2289,
             "guid": "002048da5c289fdb-00036aa986000001",
             "components": {
                 "NameComponent": {
@@ -27297,7 +27875,7 @@
             }
         },
         {
-            "id": 2287,
+            "id": 2290,
             "guid": "002048da73c3f14d-00036aa992000003",
             "components": {
                 "NameComponent": {
@@ -27384,7 +27962,7 @@
             }
         },
         {
-            "id": 2288,
+            "id": 2291,
             "guid": "002048da65b57a56-00036aa992000005",
             "components": {
                 "NameComponent": {
@@ -27471,7 +28049,7 @@
             }
         },
         {
-            "id": 2289,
+            "id": 2292,
             "guid": "002048da0af7a474-00036aa992000007",
             "components": {
                 "NameComponent": {
@@ -27558,7 +28136,7 @@
             }
         },
         {
-            "id": 2290,
+            "id": 2293,
             "guid": "002048da0402504e-00036aa992000009",
             "components": {
                 "NameComponent": {
@@ -27645,7 +28223,7 @@
             }
         },
         {
-            "id": 2291,
+            "id": 2294,
             "guid": "002048da65414a36-00036aa99200000b",
             "components": {
                 "NameComponent": {
@@ -27732,7 +28310,7 @@
             }
         },
         {
-            "id": 2292,
+            "id": 2295,
             "guid": "002048da499a1077-00036aa99200000d",
             "components": {
                 "NameComponent": {
@@ -27819,7 +28397,7 @@
             }
         },
         {
-            "id": 2293,
+            "id": 2296,
             "guid": "002048da69f2a2a1-00036aa99200000f",
             "components": {
                 "NameComponent": {
@@ -27906,7 +28484,7 @@
             }
         },
         {
-            "id": 2294,
+            "id": 2297,
             "guid": "002048da28a90348-00036aa99a000011",
             "components": {
                 "NameComponent": {
@@ -27993,7 +28571,7 @@
             }
         },
         {
-            "id": 2295,
+            "id": 2298,
             "guid": "002048da29350435-00036aaa7a000013",
             "components": {
                 "NameComponent": {
@@ -28080,7 +28658,7 @@
             }
         },
         {
-            "id": 2296,
+            "id": 2299,
             "guid": "00717c64b8dc22a9-00036d0ef800010b",
             "components": {
                 "NameComponent": {
@@ -28183,7 +28761,7 @@
             }
         },
         {
-            "id": 2297,
+            "id": 2300,
             "guid": "00717c6493c0f819-00036d0f8600010f",
             "components": {
                 "NameComponent": {
@@ -28391,7 +28969,7 @@
             }
         },
         {
-            "id": 2298,
+            "id": 2301,
             "guid": "00717c648e7647ff-00036d108e000111",
             "components": {
                 "NameComponent": {
@@ -28599,7 +29177,7 @@
             }
         },
         {
-            "id": 2299,
+            "id": 2302,
             "guid": "00717c64db8bba79-00036d123c000115",
             "components": {
                 "NameComponent": {
@@ -28853,7 +29431,7 @@
             }
         },
         {
-            "id": 2300,
+            "id": 2303,
             "guid": "00717c64e86db6ba-00036d145c000117",
             "components": {
                 "NameComponent": {
@@ -29049,7 +29627,7 @@
             }
         },
         {
-            "id": 2301,
+            "id": 2304,
             "guid": "00717c64c18b30a8-00036d1544000119",
             "components": {
                 "NameComponent": {
@@ -29245,7 +29823,7 @@
             }
         },
         {
-            "id": 2302,
+            "id": 2305,
             "guid": "00717c64c96ca92d-00036d1b6000013d",
             "components": {
                 "NameComponent": {
@@ -29353,7 +29931,7 @@
             }
         },
         {
-            "id": 2303,
+            "id": 2306,
             "guid": "00717c64d6101c6c-00036d1b7e00013f",
             "components": {
                 "NameComponent": {
@@ -29549,7 +30127,7 @@
             }
         },
         {
-            "id": 2304,
+            "id": 2307,
             "guid": "00717c648c44ee5f-00036d1c48000141",
             "components": {
                 "NameComponent": {
@@ -29745,7 +30323,7 @@
             }
         },
         {
-            "id": 2305,
+            "id": 2308,
             "guid": "00717c64a725163f-00036d1c74000143",
             "components": {
                 "NameComponent": {
@@ -29941,7 +30519,7 @@
             }
         },
         {
-            "id": 2306,
+            "id": 2309,
             "guid": "00717c64d31cf79e-00036d1c8a000145",
             "components": {
                 "NameComponent": {
@@ -30137,7 +30715,7 @@
             }
         },
         {
-            "id": 2307,
+            "id": 2310,
             "guid": "00717c64ca0d9439-00036d1c8e000147",
             "components": {
                 "NameComponent": {
@@ -30333,7 +30911,7 @@
             }
         },
         {
-            "id": 2308,
+            "id": 2311,
             "guid": "00717c6496aa1ea4-00036d17be00011b",
             "components": {
                 "NameComponent": {
@@ -30373,11 +30951,11 @@
                             "data": [
                                 {
                                     "type": "float",
-                                    "data": 550
+                                    "data": 750
                                 },
                                 {
                                     "type": "float",
-                                    "data": 50
+                                    "data": 75
                                 },
                                 {
                                     "type": "float",
@@ -30542,219 +31120,11 @@
             }
         },
         {
-            "id": 2309,
+            "id": 2312,
             "guid": "00717c64ac5f0778-00036d18c600011d",
             "components": {
                 "NameComponent": {
                     "name": "HealthBarFillFollow"
-                },
-                "TagComponent": {
-                    "tagIndex": 0
-                },
-                "LayerComponent": {
-                    "layerIndex": 0
-                },
-                "SiblingIndexComponent": {
-                    "siblingIndex": 17
-                },
-                "Transform": {
-                    "type": "Transform",
-                    "data": [
-                        {
-                            "type": "Vector3D",
-                            "data": [
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                }
-                            ]
-                        },
-                        {
-                            "type": "Vector3D",
-                            "data": [
-                                {
-                                    "type": "float",
-                                    "data": 0.9
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0.25
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 1
-                                }
-                            ]
-                        },
-                        {
-                            "type": "Quaternion",
-                            "data": [
-                                {
-                                    "type": "float",
-                                    "data": 1
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                }
-                            ]
-                        }
-                    ]
-                },
-                "SpriteRenderComponent": {
-                    "type": "SpriteRenderComponent",
-                    "data": [
-                        {
-                            "type": "bool",
-                            "data": true
-                        },
-                        "001cbc0ea6569a17-00041fe252014c35",
-                        "00374a216e66dbbc-000331fc80000069",
-                        {
-                            "type": "Vector3D",
-                            "data": [
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                }
-                            ]
-                        },
-                        {
-                            "type": "Vector3D",
-                            "data": [
-                                {
-                                    "type": "float",
-                                    "data": 100
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 100
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 1
-                                }
-                            ]
-                        },
-                        {
-                            "type": "float",
-                            "data": 0
-                        },
-                        {
-                            "type": "Vector3D",
-                            "data": [
-                                {
-                                    "type": "float",
-                                    "data": 1
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 1
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 1
-                                }
-                            ]
-                        },
-                        {
-                            "type": "float",
-                            "data": 1
-                        },
-                        {
-                            "type": "bool",
-                            "data": false
-                        },
-                        {
-                            "type": "bool",
-                            "data": true
-                        },
-                        {
-                            "type": "int",
-                            "data": 0
-                        },
-                        {
-                            "type": "int",
-                            "data": 2
-                        },
-                        {
-                            "type": "Vector3D",
-                            "data": [
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                }
-                            ]
-                        }
-                    ]
-                },
-                "ParentComponent": {
-                    "type": "ParentComponent",
-                    "data": [
-                        "00717c6496aa1ea4-00036d17be00011b"
-                    ]
-                },
-                "ActiveComponent": {
-                    "type": "ActiveComponent",
-                    "data": [
-                        {
-                            "type": "bool",
-                            "data": true
-                        }
-                    ]
-                },
-                "ScriptComponent": {
-                    "scripts": [
-                        {
-                            "scriptGuidStr": "0069fbfdebf782a6-00041a2df4000363",
-                            "scriptPath": "../../Resources/Scripts/Gameplay/PlayerHealthBar.lua",
-                            "enabled": true,
-                            "preserveKeys": [],
-                            "entryFunction": "OnInit",
-                            "autoInvokeEntry": true
-                        }
-                    ]
-                }
-            }
-        },
-        {
-            "id": 2310,
-            "guid": "00717c64e308e56d-00036d193600011f",
-            "components": {
-                "NameComponent": {
-                    "name": "HealthBarFill"
                 },
                 "TagComponent": {
                     "tagIndex": 0
@@ -30907,6 +31277,214 @@
                         },
                         {
                             "type": "int",
+                            "data": 2
+                        },
+                        {
+                            "type": "Vector3D",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                }
+                            ]
+                        }
+                    ]
+                },
+                "ParentComponent": {
+                    "type": "ParentComponent",
+                    "data": [
+                        "00717c6496aa1ea4-00036d17be00011b"
+                    ]
+                },
+                "ActiveComponent": {
+                    "type": "ActiveComponent",
+                    "data": [
+                        {
+                            "type": "bool",
+                            "data": true
+                        }
+                    ]
+                },
+                "ScriptComponent": {
+                    "scripts": [
+                        {
+                            "scriptGuidStr": "0069fbfdebf782a6-00041a2df4000363",
+                            "scriptPath": "../../Resources/Scripts/Gameplay/PlayerHealthBar.lua",
+                            "enabled": true,
+                            "preserveKeys": [],
+                            "entryFunction": "OnInit",
+                            "autoInvokeEntry": true
+                        }
+                    ]
+                }
+            }
+        },
+        {
+            "id": 2313,
+            "guid": "00717c64e308e56d-00036d193600011f",
+            "components": {
+                "NameComponent": {
+                    "name": "HealthBarFill"
+                },
+                "TagComponent": {
+                    "tagIndex": 0
+                },
+                "LayerComponent": {
+                    "layerIndex": 0
+                },
+                "SiblingIndexComponent": {
+                    "siblingIndex": 17
+                },
+                "Transform": {
+                    "type": "Transform",
+                    "data": [
+                        {
+                            "type": "Vector3D",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                }
+                            ]
+                        },
+                        {
+                            "type": "Vector3D",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 0.9
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0.25
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                }
+                            ]
+                        },
+                        {
+                            "type": "Quaternion",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                }
+                            ]
+                        }
+                    ]
+                },
+                "SpriteRenderComponent": {
+                    "type": "SpriteRenderComponent",
+                    "data": [
+                        {
+                            "type": "bool",
+                            "data": true
+                        },
+                        "001cbc0ea6569a17-00041fe252014c35",
+                        "00374a216e66dbbc-000331fc80000069",
+                        {
+                            "type": "Vector3D",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                }
+                            ]
+                        },
+                        {
+                            "type": "Vector3D",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 100
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 100
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                }
+                            ]
+                        },
+                        {
+                            "type": "float",
+                            "data": 0
+                        },
+                        {
+                            "type": "Vector3D",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                }
+                            ]
+                        },
+                        {
+                            "type": "float",
+                            "data": 1
+                        },
+                        {
+                            "type": "bool",
+                            "data": false
+                        },
+                        {
+                            "type": "bool",
+                            "data": true
+                        },
+                        {
+                            "type": "int",
+                            "data": 0
+                        },
+                        {
+                            "type": "int",
                             "data": 1
                         },
                         {
@@ -30946,7 +31524,7 @@
             }
         },
         {
-            "id": 2311,
+            "id": 2314,
             "guid": "00717c64eb815917-00036d1aa000013b",
             "components": {
                 "NameComponent": {
@@ -31142,7 +31720,7 @@
             }
         },
         {
-            "id": 2312,
+            "id": 2315,
             "guid": "0005c2e4aee1d335-0003ee9a68000549",
             "components": {
                 "NameComponent": {
@@ -31376,7 +31954,7 @@
             }
         },
         {
-            "id": 2313,
+            "id": 2316,
             "guid": "0005c2e4fc24790c-0003ee9b4800054d",
             "components": {
                 "NameComponent": {
@@ -31572,7 +32150,7 @@
             }
         },
         {
-            "id": 2314,
+            "id": 2317,
             "guid": "0021a3528ea8c01b-00041a312403dfdd",
             "components": {
                 "NameComponent": {
@@ -31659,7 +32237,7 @@
             }
         },
         {
-            "id": 2315,
+            "id": 2318,
             "guid": "0021a352b79d5048-00041a312403e019",
             "components": {
                 "NameComponent": {
@@ -31746,7 +32324,7 @@
             }
         },
         {
-            "id": 2316,
+            "id": 2319,
             "guid": "0021a352802b2028-00041a312403e011",
             "components": {
                 "NameComponent": {
@@ -31833,7 +32411,7 @@
             }
         },
         {
-            "id": 2317,
+            "id": 2320,
             "guid": "0021a352fe66c19d-00041a312403e021",
             "components": {
                 "NameComponent": {
@@ -31920,7 +32498,7 @@
             }
         },
         {
-            "id": 2318,
+            "id": 2321,
             "guid": "0021a352eced3d3e-00041a312403dfdf",
             "components": {
                 "NameComponent": {
@@ -32007,7 +32585,7 @@
             }
         },
         {
-            "id": 2319,
+            "id": 2322,
             "guid": "0021a352aeb6b5f6-00041a312403e007",
             "components": {
                 "NameComponent": {
@@ -32094,7 +32672,7 @@
             }
         },
         {
-            "id": 2320,
+            "id": 2323,
             "guid": "0021a352ec7fe028-00041a312403dff7",
             "components": {
                 "NameComponent": {
@@ -32181,7 +32759,7 @@
             }
         },
         {
-            "id": 2321,
+            "id": 2324,
             "guid": "0021a352c307ee28-00041a312403dffd",
             "components": {
                 "NameComponent": {
@@ -32268,7 +32846,7 @@
             }
         },
         {
-            "id": 2322,
+            "id": 2325,
             "guid": "0021a352e39621a9-00041a312403dfe1",
             "components": {
                 "NameComponent": {
@@ -32355,7 +32933,7 @@
             }
         },
         {
-            "id": 2323,
+            "id": 2326,
             "guid": "0021a352d8e7b399-00041a312403e027",
             "components": {
                 "NameComponent": {
@@ -32442,7 +33020,7 @@
             }
         },
         {
-            "id": 2324,
+            "id": 2327,
             "guid": "0021a352a28f9294-00041a312403e00d",
             "components": {
                 "NameComponent": {
@@ -32529,7 +33107,7 @@
             }
         },
         {
-            "id": 2325,
+            "id": 2328,
             "guid": "0021a352a5b6b37e-00041a312403e00b",
             "components": {
                 "NameComponent": {
@@ -32616,7 +33194,7 @@
             }
         },
         {
-            "id": 2326,
+            "id": 2329,
             "guid": "0021a3529a62153c-00041a312403e01d",
             "components": {
                 "NameComponent": {
@@ -32703,7 +33281,7 @@
             }
         },
         {
-            "id": 2327,
+            "id": 2330,
             "guid": "0021a352a8dc53fd-00041a312403e023",
             "components": {
                 "NameComponent": {
@@ -32790,7 +33368,7 @@
             }
         },
         {
-            "id": 2328,
+            "id": 2331,
             "guid": "0021a352e0b083c2-00041a312403e025",
             "components": {
                 "NameComponent": {
@@ -32877,7 +33455,7 @@
             }
         },
         {
-            "id": 2329,
+            "id": 2332,
             "guid": "0021a352abbba25b-00041a312403dff5",
             "components": {
                 "NameComponent": {
@@ -32964,7 +33542,7 @@
             }
         },
         {
-            "id": 2330,
+            "id": 2333,
             "guid": "0021a352994456cc-00041a312403e005",
             "components": {
                 "NameComponent": {
@@ -33051,7 +33629,7 @@
             }
         },
         {
-            "id": 2331,
+            "id": 2334,
             "guid": "0021a352d078b1e6-00041a312403dff1",
             "components": {
                 "NameComponent": {
@@ -33138,7 +33716,7 @@
             }
         },
         {
-            "id": 2332,
+            "id": 2335,
             "guid": "0021a352c959b189-00041a312403e009",
             "components": {
                 "NameComponent": {
@@ -33225,7 +33803,7 @@
             }
         },
         {
-            "id": 2333,
+            "id": 2336,
             "guid": "0021a352e6371375-00041a312403e003",
             "components": {
                 "NameComponent": {
@@ -33312,7 +33890,7 @@
             }
         },
         {
-            "id": 2334,
+            "id": 2337,
             "guid": "0021a35280e39f20-00041a312403e01b",
             "components": {
                 "NameComponent": {
@@ -33399,7 +33977,7 @@
             }
         },
         {
-            "id": 2335,
+            "id": 2338,
             "guid": "0021a352a5c0e9c6-00041a312403e00f",
             "components": {
                 "NameComponent": {
@@ -33486,7 +34064,7 @@
             }
         },
         {
-            "id": 2336,
+            "id": 2339,
             "guid": "0021a3529016af8e-00041a312403e017",
             "components": {
                 "NameComponent": {
@@ -33573,7 +34151,7 @@
             }
         },
         {
-            "id": 2337,
+            "id": 2340,
             "guid": "0021a352fd670ab4-00041a312403dfeb",
             "components": {
                 "NameComponent": {
@@ -33660,7 +34238,7 @@
             }
         },
         {
-            "id": 2338,
+            "id": 2341,
             "guid": "0021a352d982cc8d-00041a312403dff9",
             "components": {
                 "NameComponent": {
@@ -33747,7 +34325,7 @@
             }
         },
         {
-            "id": 2339,
+            "id": 2342,
             "guid": "0021a35290b37064-00041a312403dfe9",
             "components": {
                 "NameComponent": {
@@ -33834,7 +34412,7 @@
             }
         },
         {
-            "id": 2340,
+            "id": 2343,
             "guid": "0021a35288bcb1e6-00041a312403dfe7",
             "components": {
                 "NameComponent": {
@@ -33921,7 +34499,7 @@
             }
         },
         {
-            "id": 2341,
+            "id": 2344,
             "guid": "0021a352c606438b-00041a312403dfe5",
             "components": {
                 "NameComponent": {
@@ -34008,7 +34586,7 @@
             }
         },
         {
-            "id": 2342,
+            "id": 2345,
             "guid": "0021a352dab9f130-00041a312403e013",
             "components": {
                 "NameComponent": {
@@ -34095,7 +34673,7 @@
             }
         },
         {
-            "id": 2343,
+            "id": 2346,
             "guid": "0021a352b42e48e8-00041a312403e015",
             "components": {
                 "NameComponent": {
@@ -34182,7 +34760,7 @@
             }
         },
         {
-            "id": 2344,
+            "id": 2347,
             "guid": "0021a3528e4f47d3-00041a312403dfdb",
             "components": {
                 "NameComponent": {
@@ -34269,7 +34847,7 @@
             }
         },
         {
-            "id": 2345,
+            "id": 2348,
             "guid": "0021a352db2dceb4-00041a312403dff3",
             "components": {
                 "NameComponent": {
@@ -34356,7 +34934,7 @@
             }
         },
         {
-            "id": 2346,
+            "id": 2349,
             "guid": "0021a352e7937e96-00041a312403dfe3",
             "components": {
                 "NameComponent": {
@@ -34443,7 +35021,7 @@
             }
         },
         {
-            "id": 2347,
+            "id": 2350,
             "guid": "0021a352bdf43ba0-00041a312403dfed",
             "components": {
                 "NameComponent": {
@@ -34530,7 +35108,7 @@
             }
         },
         {
-            "id": 2348,
+            "id": 2351,
             "guid": "0021a352b0500420-00041a312403dfef",
             "components": {
                 "NameComponent": {
@@ -34617,7 +35195,7 @@
             }
         },
         {
-            "id": 2349,
+            "id": 2352,
             "guid": "0021a352c8c6d6c7-00041a312403e01f",
             "components": {
                 "NameComponent": {
@@ -34704,7 +35282,7 @@
             }
         },
         {
-            "id": 2350,
+            "id": 2353,
             "guid": "0021a352ea2ed2bf-00041a312403dffb",
             "components": {
                 "NameComponent": {
@@ -34791,7 +35369,7 @@
             }
         },
         {
-            "id": 2351,
+            "id": 2354,
             "guid": "0021a3529fa9d8a2-00041a312403dfff",
             "components": {
                 "NameComponent": {
@@ -34878,7 +35456,7 @@
             }
         },
         {
-            "id": 2352,
+            "id": 2355,
             "guid": "0021a352fdb0e267-00041a312403e001",
             "components": {
                 "NameComponent": {
@@ -34966,7 +35544,7 @@
         },
         {
             "PrefabPath": "../../Resources/Prefabs/PauseMenu.prefab",
-            "id": 2353,
+            "id": 2356,
             "guid": "005c2f515ed0d226-00041dded6000f05",
             "Name": "PauseMenu",
             "ComponentOverrides": [
@@ -34975,11 +35553,112 @@
                         "siblingIndex": 56
                     }
                 }
+            ],
+            "Children": [
+                {
+                    "id": 2363,
+                    "guid": "00680e3de38c65be-00041ff4e80011eb",
+                    "Name": "SettingsUI",
+                    "ParentComponent": {
+                        "type": "ParentComponent",
+                        "data": [
+                            "005c2f515ed0d226-00041dded6000f05"
+                        ]
+                    },
+                    "Children": [
+                        {
+                            "id": 2382,
+                            "guid": "00680e3d9dc80e94-00041ff4e8001211",
+                            "Name": "SettingsUIButtons",
+                            "ParentComponent": {
+                                "type": "ParentComponent",
+                                "data": [
+                                    "00680e3de38c65be-00041ff4e80011eb"
+                                ]
+                            },
+                            "ComponentOverrides": [
+                                {
+                                    "ScriptComponent": {
+                                        "scripts": [
+                                            {
+                                                "scriptGuidStr": "0016265d77a7e85e-00040d2a18000031",
+                                                "scriptPath": "../../Resources/Scripts/UI/PauseMenuSettings/SettingsMenuButtonHandler.lua",
+                                                "enabled": true,
+                                                "preserveKeys": [],
+                                                "entryFunction": "OnInit",
+                                                "autoInvokeEntry": true,
+                                                "instanceState": {
+                                                    "__meta": {},
+                                                    "_call_lifecycle": null,
+                                                    "StartSafe": null,
+                                                    "UpdateSafe": null,
+                                                    "ResetSpriteGUIDs": [
+                                                        "007f7ae3843e20f3-0004059386000009",
+                                                        "007f7ae3b46a1078-000405939000000b"
+                                                    ],
+                                                    "AwakeSafe": null,
+                                                    "sfxBar": "SFXBar",
+                                                    "Every": null,
+                                                    "_private": {},
+                                                    "DisableSafe": null,
+                                                    "masterNotch": "MasterNotch",
+                                                    "UpdateSliderPositions": null,
+                                                    "Update": null,
+                                                    "bgmNotch": "BGMNotch",
+                                                    "Destroy": null,
+                                                    "bgmFill": "BGMFill",
+                                                    "__created_at": 1770282695.0,
+                                                    "OnClickBackButton": null,
+                                                    "Unsubscribe": null,
+                                                    "Subscribe": null,
+                                                    "DeserializeFields": null,
+                                                    "SerializeFields": null,
+                                                    "masterBar": "MasterBar",
+                                                    "OnClickResetButton": null,
+                                                    "After": null,
+                                                    "__field_list": {
+                                                        "BackSpriteGUIDs": {},
+                                                        "masterBar": "MasterBar",
+                                                        "ResetSpriteGUIDs": {},
+                                                        "masterNotch": "MasterNotch",
+                                                        "sfxBar": "SFXBar",
+                                                        "masterFill": "MasterFill",
+                                                        "bgmNotch": "BGMNotch",
+                                                        "buttonSFX": {},
+                                                        "bgmFill": "BGMFill",
+                                                        "bgmBar": "BGMBar",
+                                                        "sfxNotch": "SFXNotch",
+                                                        "sfxFill": "SFXFill"
+                                                    },
+                                                    "sfxFill": "SFXFill",
+                                                    "masterFill": "MasterFill",
+                                                    "_playClickSound": null,
+                                                    "buttonSFX": [
+                                                        "0037d81b0c6c0a46-000400f740000005",
+                                                        "0037d81b07b695ee-000400f740000007"
+                                                    ],
+                                                    "BackSpriteGUIDs": [
+                                                        "007f7ae3c3aa1383-000405939c00000d",
+                                                        "007f7ae3c031397b-00040593a600000f"
+                                                    ],
+                                                    "Start": null,
+                                                    "bgmBar": "BGMBar",
+                                                    "sfxNotch": "SFXNotch",
+                                                    "_subscriptions": {}
+                                                }
+                                            }
+                                        ]
+                                    }
+                                }
+                            ]
+                        }
+                    ]
+                }
             ]
         },
         {
             "PrefabPath": "../../Resources/Prefabs/GameManager.prefab",
-            "id": 2396,
+            "id": 2393,
             "guid": "001955a0bdae0c62-00041e45b2002e4d",
             "Name": "GameManager",
             "ComponentOverrides": [
@@ -35238,7 +35917,7 @@
         },
         {
             "PrefabPath": "../../Resources/Prefabs/Player (2).prefab",
-            "id": 2397,
+            "id": 2394,
             "guid": "001955a0e06b02a8-00041e45b8002e4f",
             "Name": "Player",
             "ComponentOverrides": [
@@ -35509,7 +36188,7 @@
             ],
             "Children": [
                 {
-                    "id": 2463,
+                    "id": 2460,
                     "guid": "001955a0f64150da-00041e45b8002ed3",
                     "Name": "Kusane_Player_Reference",
                     "ParentComponent": {
@@ -35520,7 +36199,7 @@
                     },
                     "Children": [
                         {
-                            "id": 2464,
+                            "id": 2461,
                             "guid": "001955a0adda8e3d-00041e45b8002ed5",
                             "Name": "Kusane_Player_Hips",
                             "ParentComponent": {
@@ -35531,7 +36210,7 @@
                             },
                             "Children": [
                                 {
-                                    "id": 2473,
+                                    "id": 2470,
                                     "guid": "001955a0e9ffb312-00041e45b8002ee7",
                                     "Name": "Kusane_Player_Spine",
                                     "ParentComponent": {
@@ -35542,7 +36221,7 @@
                                     },
                                     "Children": [
                                         {
-                                            "id": 2474,
+                                            "id": 2471,
                                             "guid": "001955a0f713236b-00041e45b8002ee9",
                                             "Name": "Kusane_Player_Spine1",
                                             "ParentComponent": {
@@ -35553,7 +36232,7 @@
                                             },
                                             "Children": [
                                                 {
-                                                    "id": 2475,
+                                                    "id": 2472,
                                                     "guid": "001955a0eff4d9e0-00041e45b8002eeb",
                                                     "Name": "Kusane_Player_Spine2",
                                                     "ParentComponent": {
@@ -35564,7 +36243,7 @@
                                                     },
                                                     "Children": [
                                                         {
-                                                            "id": 2500,
+                                                            "id": 2497,
                                                             "guid": "001955a0ee0ceda6-00041e45b8002f1d",
                                                             "Name": "Kusane_Player_RightShoulder",
                                                             "ParentComponent": {
@@ -35575,7 +36254,7 @@
                                                             },
                                                             "Children": [
                                                                 {
-                                                                    "id": 2501,
+                                                                    "id": 2498,
                                                                     "guid": "001955a0fb4b4497-00041e45b8002f1f",
                                                                     "Name": "Kusane_Player_RightArm",
                                                                     "ParentComponent": {
@@ -35586,7 +36265,7 @@
                                                                     },
                                                                     "Children": [
                                                                         {
-                                                                            "id": 2502,
+                                                                            "id": 2499,
                                                                             "guid": "001955a0f6a5d557-00041e45b8002f21",
                                                                             "Name": "Kusane_Player_RightForeArm",
                                                                             "ParentComponent": {
@@ -35597,7 +36276,7 @@
                                                                             },
                                                                             "Children": [
                                                                                 {
-                                                                                    "id": 2503,
+                                                                                    "id": 2500,
                                                                                     "guid": "001955a0c05ab45a-00041e45b8002f23",
                                                                                     "Name": "Kusane_Player_RightHand",
                                                                                     "ParentComponent": {
@@ -35672,7 +36351,7 @@
                                                                                     ],
                                                                                     "Children": [
                                                                                         {
-                                                                                            "id": 2516,
+                                                                                            "id": 2513,
                                                                                             "guid": "001955a0e9373db9-00041e45b8002f3d",
                                                                                             "Name": "Kusane_Player_RightHandRing1",
                                                                                             "ParentComponent": {
@@ -35683,7 +36362,7 @@
                                                                                             },
                                                                                             "Children": [
                                                                                                 {
-                                                                                                    "id": 2517,
+                                                                                                    "id": 2514,
                                                                                                     "guid": "001955a09573812d-00041e45b8002f3f",
                                                                                                     "Name": "Kusane_Player_RightHandRing2",
                                                                                                     "ParentComponent": {
@@ -35694,7 +36373,7 @@
                                                                                                     },
                                                                                                     "Children": [
                                                                                                         {
-                                                                                                            "id": 2518,
+                                                                                                            "id": 2515,
                                                                                                             "guid": "001955a083e0951b-00041e45b8002f41",
                                                                                                             "Name": "Kusane_Player_RightHandRing3",
                                                                                                             "ParentComponent": {
@@ -35791,7 +36470,7 @@
                     ]
                 },
                 {
-                    "id": 2540,
+                    "id": 2537,
                     "guid": "001955a0dd8af033-00041e45b8002f6d",
                     "Name": "AttackHitbox",
                     "ParentComponent": {
@@ -35859,7 +36538,7 @@
                     ]
                 },
                 {
-                    "id": 2541,
+                    "id": 2538,
                     "guid": "00169954d180064a-00041e9d60000b27",
                     "Name": "LowPolyFeatherChain",
                     "ParentComponent": {
@@ -36063,7 +36742,7 @@
         },
         {
             "PrefabPath": "../../Resources/Prefabs/ChainManager (1).prefab",
-            "id": 2542,
+            "id": 2539,
             "guid": "001955a0ca841345-00041e53e40052b7",
             "Name": "ChainManager",
             "ComponentOverrides": [
@@ -36142,7 +36821,7 @@
         },
         {
             "PrefabPath": "../../Resources/Prefabs/GameOverMenu.prefab",
-            "id": 2543,
+            "id": 2540,
             "guid": "001955a0ec89d9bc-00041e53fa0052b9",
             "Name": "GameOverMenu",
             "ComponentOverrides": [
@@ -36231,7 +36910,7 @@
             ]
         },
         {
-            "id": 2548,
+            "id": 2545,
             "guid": "001955a0975ad12d-00041e59a8006e41",
             "components": {
                 "NameComponent": {
@@ -36402,9 +37081,9 @@
                     "backgroundColor": {
                         "type": "glm::vec3",
                         "data": [
-                            0.0,
-                            0.0,
-                            0.0
+                            0.0810810923576355,
+                            0.0810810923576355,
+                            0.0810810923576355
                         ]
                     },
                     "clearFlags": 0,
@@ -36519,7 +37198,7 @@
         },
         {
             "PrefabPath": "../../Resources/Prefabs/Link.prefab",
-            "id": 2549,
+            "id": 2546,
             "guid": "001699548469af3e-00041ea1b6001829",
             "Name": "Link",
             "ComponentOverrides": [
@@ -36681,7 +37360,7 @@
         },
         {
             "PrefabPath": "../../Resources/Prefabs/Knife_01.prefab",
-            "id": 2550,
+            "id": 2547,
             "guid": "00169954d5ce4bb2-00041ea1d600182b",
             "Name": "Knife_01",
             "ComponentOverrides": [
@@ -36842,7 +37521,7 @@
             ]
         },
         {
-            "id": 2553,
+            "id": 2550,
             "guid": "00169954a18aa9f3-00041ea23e001831",
             "components": {
                 "NameComponent": {
@@ -37116,7 +37795,7 @@
             }
         },
         {
-            "id": 2554,
+            "id": 2551,
             "guid": "00169954c9377213-00041ea258001833",
             "components": {
                 "NameComponent": {
@@ -37391,7 +38070,7 @@
         },
         {
             "PrefabPath": "../../Resources/Prefabs/MeleeEnemy.prefab",
-            "id": 2555,
+            "id": 2552,
             "guid": "00190ce2cf64c56e-00041fa014002d91",
             "Name": "MeleeEnemy",
             "ComponentOverrides": [
@@ -37467,7 +38146,7 @@
                             },
                             {
                                 "type": "bool",
-                                "data": false
+                                "data": true
                             },
                             {
                                 "type": "bool",
