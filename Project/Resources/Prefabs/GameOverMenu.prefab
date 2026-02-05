@@ -1,9 +1,18 @@
 {
     "prefab_entities": [
         {
-            "id": 381,
-            "guid": "003736b76d722dc0-000417db62000123",
+            "id": 2402,
+            "guid": "001955a0ec89d9bc-00041e53fa0052b9",
             "components": {
+                "PrefabLinkComponent": {
+                    "type": "PrefabLinkComponent",
+                    "data": [
+                        {
+                            "type": "std::string",
+                            "data": "../../Resources/Prefabs/GameOverMenu.prefab"
+                        }
+                    ]
+                },
                 "NameComponent": {
                     "name": "GameOverMenu"
                 },
@@ -14,7 +23,7 @@
                     "layerIndex": 0
                 },
                 "SiblingIndexComponent": {
-                    "siblingIndex": 39
+                    "siblingIndex": 56
                 },
                 "Transform": {
                     "type": "Transform",
@@ -82,11 +91,82 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "003736b72c30aa4a-000417db9e000485",
-                                "003736b72f246555-000417df4c002bed",
-                                "0056a7a24c0a248c-000419b314001a81",
-                                "0056a7a27c1c0e8b-000419b488001de7"
+                                "00612e33fb2f8cc7-0004202edc003959",
+                                "00612e33d2015323-0004202edc00395b",
+                                "00612e33dddc7141-0004202edc00395d",
+                                "00612e33bf128eba-0004202edc00395f",
+                                "00612e33d83664b6-0004203198004d5b"
                             ]
+                        }
+                    ]
+                },
+                "AudioComponent": {
+                    "type": "AudioComponent",
+                    "data": [
+                        {
+                            "type": "bool",
+                            "data": true
+                        },
+                        "0000000000000000-0000000000000000",
+                        {
+                            "type": "bool",
+                            "data": false
+                        },
+                        {
+                            "type": "bool",
+                            "data": false
+                        },
+                        {
+                            "type": "bool",
+                            "data": false
+                        },
+                        {
+                            "type": "bool",
+                            "data": false
+                        },
+                        {
+                            "type": "int",
+                            "data": 128
+                        },
+                        {
+                            "type": "float",
+                            "data": 1
+                        },
+                        {
+                            "type": "float",
+                            "data": 1
+                        },
+                        {
+                            "type": "float",
+                            "data": 0
+                        },
+                        {
+                            "type": "float",
+                            "data": 1
+                        },
+                        {
+                            "type": "bool",
+                            "data": false
+                        },
+                        {
+                            "type": "float",
+                            "data": 0
+                        },
+                        {
+                            "type": "float",
+                            "data": 1
+                        },
+                        {
+                            "type": "float",
+                            "data": 1
+                        },
+                        {
+                            "type": "float",
+                            "data": 100
+                        },
+                        {
+                            "type": "std::string",
+                            "data": "SFX"
                         }
                     ]
                 },
@@ -109,29 +189,29 @@
                             "entryFunction": "OnInit",
                             "autoInvokeEntry": true,
                             "instanceState": {
+                                "_private": {},
+                                "__created_at": 1770048685.0,
+                                "__meta": {},
+                                "deathAnimationDelay": 3.5,
+                                "isFading": false,
+                                "playerDead": false,
                                 "fadeAlpha": 0.0,
                                 "fadeScreenName": "DeathScreenBG",
-                                "__meta": {},
-                                "isFading": false,
-                                "fadeDuration": 3.0,
                                 "_subscriptions": {},
-                                "playerDead": false,
                                 "_playerDeadSub": {
                                     "event": "playerDead",
                                     "id": 1.0
                                 },
-                                "deathAnimationDelay": 7.0,
                                 "_subs_map": {},
-                                "__created_at": 1770048685.0,
+                                "fadeDuration": 1.5,
                                 "__field_list": {
                                     "fadeAlpha": 0.0,
                                     "fadeScreenName": "DeathScreenBG",
                                     "deathAnimationDelay": 3.0,
-                                    "fadeDuration": 1.0,
                                     "isFading": false,
+                                    "fadeDuration": 1.0,
                                     "playerDead": false
-                                },
-                                "_private": {}
+                                }
                             }
                         },
                         {
@@ -140,15 +220,45 @@
                             "enabled": true,
                             "preserveKeys": [],
                             "entryFunction": "OnInit",
-                            "autoInvokeEntry": true
+                            "autoInvokeEntry": true,
+                            "instanceState": {
+                                "OnClickRespawnButton": null,
+                                "playerName": "Player",
+                                "fadeDuration": 3.0,
+                                "Start": null,
+                                "DisableSafe": null,
+                                "Every": null,
+                                "Update": null,
+                                "Awake": null,
+                                "After": null,
+                                "Destroy": null,
+                                "Unsubscribe": null,
+                                "_subscriptions": {},
+                                "__created_at": 1770237821.0,
+                                "_private": {},
+                                "SerializeFields": null,
+                                "UpdateSafe": null,
+                                "StartSafe": null,
+                                "AwakeSafe": null,
+                                "__meta": {},
+                                "_call_lifecycle": null,
+                                "Subscribe": null,
+                                "fadeScreenName": "GameOverFade",
+                                "__field_list": {
+                                    "playerName": "Player",
+                                    "fadeScreenName": "GameOverFade",
+                                    "fadeDuration": 3.0
+                                },
+                                "DeserializeFields": null
+                            }
                         }
                     ]
                 }
             }
         },
         {
-            "id": 382,
-            "guid": "003736b72c30aa4a-000417db9e000485",
+            "id": 2403,
+            "guid": "00612e33fb2f8cc7-0004202edc003959",
             "components": {
                 "NameComponent": {
                     "name": "DeathScreenBG"
@@ -328,7 +438,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "003736b76d722dc0-000417db62000123"
+                        "001955a0ec89d9bc-00041e53fa0052b9"
                     ]
                 },
                 "ActiveComponent": {
@@ -343,8 +453,8 @@
             }
         },
         {
-            "id": 383,
-            "guid": "003736b72f246555-000417df4c002bed",
+            "id": 2404,
+            "guid": "00612e33d2015323-0004202edc00395b",
             "components": {
                 "NameComponent": {
                     "name": "RespawnButton"
@@ -524,7 +634,77 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "003736b76d722dc0-000417db62000123"
+                        "001955a0ec89d9bc-00041e53fa0052b9"
+                    ]
+                },
+                "AudioComponent": {
+                    "type": "AudioComponent",
+                    "data": [
+                        {
+                            "type": "bool",
+                            "data": true
+                        },
+                        "0000000000000000-0000000000000000",
+                        {
+                            "type": "bool",
+                            "data": false
+                        },
+                        {
+                            "type": "bool",
+                            "data": false
+                        },
+                        {
+                            "type": "bool",
+                            "data": false
+                        },
+                        {
+                            "type": "bool",
+                            "data": false
+                        },
+                        {
+                            "type": "int",
+                            "data": 128
+                        },
+                        {
+                            "type": "float",
+                            "data": 1
+                        },
+                        {
+                            "type": "float",
+                            "data": 1
+                        },
+                        {
+                            "type": "float",
+                            "data": 0
+                        },
+                        {
+                            "type": "float",
+                            "data": 1
+                        },
+                        {
+                            "type": "bool",
+                            "data": false
+                        },
+                        {
+                            "type": "float",
+                            "data": 0
+                        },
+                        {
+                            "type": "float",
+                            "data": 1
+                        },
+                        {
+                            "type": "float",
+                            "data": 1
+                        },
+                        {
+                            "type": "float",
+                            "data": 100
+                        },
+                        {
+                            "type": "std::string",
+                            "data": "SFX"
+                        }
                     ]
                 },
                 "ActiveComponent": {
@@ -578,8 +758,8 @@
             }
         },
         {
-            "id": 384,
-            "guid": "0056a7a24c0a248c-000419b314001a81",
+            "id": 2405,
+            "guid": "00612e33dddc7141-0004202edc00395d",
             "components": {
                 "NameComponent": {
                     "name": "RespawnButtonHovered"
@@ -759,7 +939,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "003736b76d722dc0-000417db62000123"
+                        "001955a0ec89d9bc-00041e53fa0052b9"
                     ]
                 },
                 "ActiveComponent": {
@@ -787,8 +967,8 @@
             }
         },
         {
-            "id": 385,
-            "guid": "0056a7a27c1c0e8b-000419b488001de7",
+            "id": 2406,
+            "guid": "00612e33bf128eba-0004202edc00395f",
             "components": {
                 "NameComponent": {
                     "name": "GameOverFade"
@@ -968,7 +1148,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "003736b76d722dc0-000417db62000123"
+                        "001955a0ec89d9bc-00041e53fa0052b9"
                     ]
                 },
                 "ActiveComponent": {
@@ -977,6 +1157,169 @@
                         {
                             "type": "bool",
                             "data": false
+                        }
+                    ]
+                }
+            }
+        },
+        {
+            "id": 4965,
+            "guid": "00612e33d83664b6-0004203198004d5b",
+            "components": {
+                "NameComponent": {
+                    "name": "DeathScreenBGM"
+                },
+                "TagComponent": {
+                    "tagIndex": 0
+                },
+                "LayerComponent": {
+                    "layerIndex": 0
+                },
+                "SiblingIndexComponent": {
+                    "siblingIndex": 64
+                },
+                "Transform": {
+                    "type": "Transform",
+                    "data": [
+                        {
+                            "type": "Vector3D",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                }
+                            ]
+                        },
+                        {
+                            "type": "Vector3D",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                }
+                            ]
+                        },
+                        {
+                            "type": "Quaternion",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                }
+                            ]
+                        }
+                    ]
+                },
+                "ParentComponent": {
+                    "type": "ParentComponent",
+                    "data": [
+                        "001955a0ec89d9bc-00041e53fa0052b9"
+                    ]
+                },
+                "AudioComponent": {
+                    "type": "AudioComponent",
+                    "data": [
+                        {
+                            "type": "bool",
+                            "data": true
+                        },
+                        "0000000000000000-0000000000000000",
+                        {
+                            "type": "bool",
+                            "data": false
+                        },
+                        {
+                            "type": "bool",
+                            "data": false
+                        },
+                        {
+                            "type": "bool",
+                            "data": false
+                        },
+                        {
+                            "type": "bool",
+                            "data": false
+                        },
+                        {
+                            "type": "int",
+                            "data": 128
+                        },
+                        {
+                            "type": "float",
+                            "data": 1
+                        },
+                        {
+                            "type": "float",
+                            "data": 1
+                        },
+                        {
+                            "type": "float",
+                            "data": 0
+                        },
+                        {
+                            "type": "float",
+                            "data": 1
+                        },
+                        {
+                            "type": "bool",
+                            "data": false
+                        },
+                        {
+                            "type": "float",
+                            "data": 0
+                        },
+                        {
+                            "type": "float",
+                            "data": 1
+                        },
+                        {
+                            "type": "float",
+                            "data": 1
+                        },
+                        {
+                            "type": "float",
+                            "data": 100
+                        },
+                        {
+                            "type": "std::string",
+                            "data": "BGM"
+                        }
+                    ]
+                },
+                "ActiveComponent": {
+                    "type": "ActiveComponent",
+                    "data": [
+                        {
+                            "type": "bool",
+                            "data": true
                         }
                     ]
                 }

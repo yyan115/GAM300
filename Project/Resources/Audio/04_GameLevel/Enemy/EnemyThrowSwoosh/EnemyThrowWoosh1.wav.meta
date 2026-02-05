@@ -1,8 +1,8 @@
 {
     "AssetMetaData": {
         "version": 7,
-        "guid": "001cbc0ea8745b90-00041ff0120199b9",
-        "source": "../../Resources/Audio/04_GameLevel/Enemy/EnemyThrowSwoosh/EnemyThrowSwoosh/EnemyThrowWoosh1.wav",
-        "compiled": "../../Resources/Audio/04_GameLevel/Enemy/EnemyThrowSwoosh/EnemyThrowSwoosh/EnemyThrowWoosh1.wav"
+        "guid": "00612e33ad54fbe1-0004202e36000043",
+        "source": "../../Resources/Audio/04_GameLevel/Enemy/EnemyThrowSwoosh/EnemyThrowWoosh1.wav",
+        "compiled": "../../Resources/Audio/04_GameLevel/Enemy/EnemyThrowSwoosh/EnemyThrowWoosh1.wav"
     }
 }

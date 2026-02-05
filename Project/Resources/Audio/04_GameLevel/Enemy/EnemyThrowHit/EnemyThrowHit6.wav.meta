@@ -1,8 +1,8 @@
 {
     "AssetMetaData": {
         "version": 7,
-        "guid": "001cbc0ecf74a60c-00041ff0080199a7",
-        "source": "../../Resources/Audio/04_GameLevel/Enemy/EnemyThrowHit/EnemyThrowHit/EnemyThrowHit6.wav",
-        "compiled": "../../Resources/Audio/04_GameLevel/Enemy/EnemyThrowHit/EnemyThrowHit/EnemyThrowHit6.wav"
+        "guid": "00612e3385d4f0f5-0004202e36000041",
+        "source": "../../Resources/Audio/04_GameLevel/Enemy/EnemyThrowHit/EnemyThrowHit6.wav",
+        "compiled": "../../Resources/Audio/04_GameLevel/Enemy/EnemyThrowHit/EnemyThrowHit6.wav"
     }
 }

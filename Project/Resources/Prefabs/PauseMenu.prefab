@@ -4,6 +4,15 @@
             "id": 2919,
             "guid": "0010bb798f4d87f2-00041fb1d80001a9",
             "components": {
+                "PrefabLinkComponent": {
+                    "type": "PrefabLinkComponent",
+                    "data": [
+                        {
+                            "type": "std::string",
+                            "data": "../../Resources/Prefabs/PauseMenu.prefab"
+                        }
+                    ]
+                },
                 "NameComponent": {
                     "name": "PauseMenu"
                 },

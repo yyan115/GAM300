@@ -4762,7 +4762,7 @@
                     ],
                     "Children": [
                         {
-                            "id": 4663,
+                            "id": 716,
                             "guid": "003943452696ec6b-0004200098005e95",
                             "Name": "WallModular (1) (1) (1) (1) (1) (1) (1) (1) (1) (2) (1) (1) (2) (3) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (2) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (2) (2)",
                             "ParentComponent": {
@@ -5109,7 +5109,7 @@
                             ]
                         },
                         {
-                            "id": 4753,
+                            "id": 717,
                             "guid": "003943452a48063f-0004200098005e97",
                             "Name": "WallModular (1) (1) (1) (1) (1) (1) (1) (1) (1) (2) (1) (1) (2) (3) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (2) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (2) (1) (2)",
                             "ParentComponent": {
@@ -5456,7 +5456,7 @@
                             ]
                         },
                         {
-                            "id": 4754,
+                            "id": 718,
                             "guid": "0039434535069572-000420010e005e99",
                             "Name": "WallModular (1) (1) (1) (1) (1) (1) (1) (1) (1) (2) (1) (1) (2) (3) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (2) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (2) (1) (2) (1)",
                             "ParentComponent": {
@@ -8565,7 +8565,7 @@
         },
         {
             "PrefabPath": "../../Resources/Prefabs/LevelRooms/Room5-Pitfall.prefab",
-            "id": 716,
+            "id": 719,
             "guid": "0073eb40b0d2ddb8-00040dc8cc005825",
             "Name": "Room5-Pitfall",
             "ParentComponent": {
@@ -8640,7 +8640,7 @@
             ],
             "Children": [
                 {
-                    "id": 717,
+                    "id": 720,
                     "guid": "001cbc0eab692be7-00041fbd1e005aa7",
                     "Name": "Ground",
                     "ParentComponent": {
@@ -8651,7 +8651,7 @@
                     },
                     "Children": [
                         {
-                            "id": 718,
+                            "id": 721,
                             "guid": "001cbc0e85aa2334-00041fbd1e005aa9",
                             "Name": "LongStairsLandingArea (1) (1) (1) (1) (1) (1)",
                             "ParentComponent": {
@@ -8726,7 +8726,7 @@
                             ]
                         },
                         {
-                            "id": 719,
+                            "id": 722,
                             "guid": "001cbc0e8980f0f3-00041fbd1e005aab",
                             "Name": "GroundedPlatform (1) (1)",
                             "ParentComponent": {
@@ -8801,7 +8801,7 @@
                             ],
                             "Children": [
                                 {
-                                    "id": 2118,
+                                    "id": 2121,
                                     "guid": "001cbc0e8da092d1-00041fbd1e005aaf",
                                     "Name": "Column (1) (1) (2) (1) (2) (2) (2) (1) (1) (3) (1) (1) (1) (1) (1) (1) (2)",
                                     "ParentComponent": {
@@ -9150,7 +9150,7 @@
                             ]
                         },
                         {
-                            "id": 722,
+                            "id": 725,
                             "guid": "001cbc0e93432ec5-00041fbd1e005ab1",
                             "Name": "GroundedPlatform (1) (1) (1)",
                             "ParentComponent": {
@@ -9225,7 +9225,7 @@
                             ],
                             "Children": [
                                 {
-                                    "id": 2119,
+                                    "id": 2122,
                                     "guid": "001cbc0efbf86fba-00041fbd1e005ab5",
                                     "Name": "Column (1) (1) (2) (1) (2) (2) (2) (1) (1) (3) (1) (1) (1) (1) (1) (1) (2) (1)",
                                     "ParentComponent": {
@@ -9574,7 +9574,7 @@
                             ]
                         },
                         {
-                            "id": 725,
+                            "id": 728,
                             "guid": "001cbc0e94293f0d-00041fbd1e005ab7",
                             "Name": "GroundedPlatform (1) (1) (1) (1)",
                             "ParentComponent": {
@@ -9649,7 +9649,7 @@
                             ],
                             "Children": [
                                 {
-                                    "id": 2120,
+                                    "id": 2123,
                                     "guid": "001cbc0ec84158e7-00041fbd1e005abb",
                                     "Name": "Column (1) (1) (2) (1) (2) (2) (2) (1) (1) (3) (1) (1) (1) (1) (1) (1) (2) (1) (1)",
                                     "ParentComponent": {
@@ -9998,7 +9998,7 @@
                             ]
                         },
                         {
-                            "id": 2121,
+                            "id": 2124,
                             "guid": "001cbc0e8bac2874-00041fbd1e005af9",
                             "Name": "GroundPlatform",
                             "ParentComponent": {
@@ -10345,7 +10345,7 @@
                             ]
                         },
                         {
-                            "id": 2122,
+                            "id": 2125,
                             "guid": "001cbc0e953c7022-00041fd04800b373",
                             "Name": "LongStairsLandingArea (1) (1) (1) (1) (1) (1) (1)",
                             "ParentComponent": {
@@ -10546,7 +10546,7 @@
                             ]
                         },
                         {
-                            "id": 2123,
+                            "id": 2126,
                             "guid": "001cbc0eae29cd0a-00041fd0d200b375",
                             "Name": "GroundedPlatform (1) (1) (2)",
                             "ParentComponent": {
@@ -10893,7 +10893,7 @@
                             ]
                         },
                         {
-                            "id": 2124,
+                            "id": 2127,
                             "guid": "001cbc0eead0707d-00041fd5c800b3d9",
                             "Name": "LongStairsLandingArea (1) (1) (1) (1) (1) (1) (1) (1)",
                             "ParentComponent": {
@@ -11094,7 +11094,7 @@
                             ]
                         },
                         {
-                            "id": 2125,
+                            "id": 2128,
                             "guid": "001cbc0ee3dd21c6-00041fd75200c6b7",
                             "Name": "GroundedPlatform (1) (1) (2) (1)",
                             "ParentComponent": {
@@ -11441,7 +11441,7 @@
                             ]
                         },
                         {
-                            "id": 2126,
+                            "id": 2129,
                             "guid": "001cbc0ef10728a2-00041fd76a00c6b9",
                             "Name": "GroundedPlatform (1) (1) (2) (1) (1)",
                             "ParentComponent": {
@@ -11790,7 +11790,7 @@
                     ]
                 },
                 {
-                    "id": 767,
+                    "id": 770,
                     "guid": "0073eb40afbbdace-00040dc922005835",
                     "Name": "Walls",
                     "ParentComponent": {
@@ -11801,7 +11801,7 @@
                     },
                     "Children": [
                         {
-                            "id": 1648,
+                            "id": 1651,
                             "guid": "001cbc0ec4860f17-00041fbd1e0061ed",
                             "Name": "WallNoHole (1) (1) (1) (1) (3) (1)",
                             "ParentComponent": {
@@ -11876,7 +11876,7 @@
                             ]
                         },
                         {
-                            "id": 2127,
+                            "id": 2130,
                             "guid": "001cbc0ec3e9b468-00041faff0000819",
                             "Name": "WallNoHole (2) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (2) (2)",
                             "ParentComponent": {
@@ -12223,7 +12223,7 @@
                             ]
                         },
                         {
-                            "id": 2128,
+                            "id": 2131,
                             "guid": "001cbc0e8c9f7517-00041fc55800a08d",
                             "Name": "WallNoHole (2) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (4)",
                             "ParentComponent": {
@@ -12570,7 +12570,7 @@
                             ]
                         },
                         {
-                            "id": 2129,
+                            "id": 2132,
                             "guid": "001cbc0ee02b93a2-00041fc55800a08f",
                             "Name": "WallNoHole (2) (1) (1) (1) (1) (1) (1) (1) (1) (1) (5)",
                             "ParentComponent": {
@@ -12917,7 +12917,7 @@
                             ]
                         },
                         {
-                            "id": 2130,
+                            "id": 2133,
                             "guid": "001cbc0eba9141bf-00041fc55800a091",
                             "Name": "WallNoHole (2) (1) (1) (1) (1) (1) (1) (1) (1) (5)",
                             "ParentComponent": {
@@ -13264,7 +13264,7 @@
                             ]
                         },
                         {
-                            "id": 2131,
+                            "id": 2134,
                             "guid": "001cbc0edfad537e-00041fc55800a095",
                             "Name": "WallNoHole (2) (1) (1) (1) (1) (1) (1) (5)",
                             "ParentComponent": {
@@ -13611,7 +13611,7 @@
                             ]
                         },
                         {
-                            "id": 2132,
+                            "id": 2135,
                             "guid": "001cbc0e8364d980-00041fc55800a097",
                             "Name": "WallNoHole (2) (1) (1) (1) (1) (1) (5)",
                             "ParentComponent": {
@@ -13958,7 +13958,7 @@
                             ]
                         },
                         {
-                            "id": 2133,
+                            "id": 2136,
                             "guid": "001cbc0e940aaae9-00041fc55800a099",
                             "Name": "WallNoHole (2) (1) (1) (1) (1) (5)",
                             "ParentComponent": {
@@ -14305,7 +14305,7 @@
                             ]
                         },
                         {
-                            "id": 2134,
+                            "id": 2137,
                             "guid": "001cbc0ed909d149-00041fd2d400b379",
                             "Name": "WallNoHole (2) (1) (1) (1) (1) (1) (1) (1) (5)",
                             "ParentComponent": {
@@ -14652,7 +14652,7 @@
                             ]
                         },
                         {
-                            "id": 2135,
+                            "id": 2138,
                             "guid": "001cbc0ea4447e80-00041fd3e400b37b",
                             "Name": "WallNoHole (5) (1)",
                             "ParentComponent": {
@@ -14999,7 +14999,7 @@
                             ]
                         },
                         {
-                            "id": 2136,
+                            "id": 2139,
                             "guid": "001cbc0edf1537a6-00041fd3e400b37d",
                             "Name": "WallNoHole (2) (1) (1) (1) (2)",
                             "ParentComponent": {
@@ -15346,7 +15346,7 @@
                             ]
                         },
                         {
-                            "id": 2137,
+                            "id": 2140,
                             "guid": "001cbc0efa490242-00041fd3e400b37f",
                             "Name": "WallNoHole (3) (1) (1) (1)",
                             "ParentComponent": {
@@ -15693,7 +15693,7 @@
                             ]
                         },
                         {
-                            "id": 2138,
+                            "id": 2141,
                             "guid": "001cbc0ef9c3eded-00041fd3e400b381",
                             "Name": "WallNoHole (2) (2) (1) (1)",
                             "ParentComponent": {
@@ -16040,7 +16040,7 @@
                             ]
                         },
                         {
-                            "id": 2139,
+                            "id": 2142,
                             "guid": "001cbc0ed3f0643c-00041fd3e400b383",
                             "Name": "WallNoHole (4) (1) (1)",
                             "ParentComponent": {
@@ -16387,7 +16387,7 @@
                             ]
                         },
                         {
-                            "id": 2140,
+                            "id": 2143,
                             "guid": "001cbc0ece6bac2a-00041fd3e400b385",
                             "Name": "WallNoHole (2) (3) (1)",
                             "ParentComponent": {
@@ -16734,7 +16734,7 @@
                             ]
                         },
                         {
-                            "id": 2141,
+                            "id": 2144,
                             "guid": "001cbc0e9b09b7aa-00041fd3e400b387",
                             "Name": "WallNoHole (3) (2) (1)",
                             "ParentComponent": {
@@ -17081,7 +17081,7 @@
                             ]
                         },
                         {
-                            "id": 2142,
+                            "id": 2145,
                             "guid": "001cbc0eeb019d57-00041fd44200b389",
                             "Name": "WallNoHole (5) (1) (1)",
                             "ParentComponent": {
@@ -17428,7 +17428,7 @@
                             ]
                         },
                         {
-                            "id": 2143,
+                            "id": 2146,
                             "guid": "001cbc0eadda6412-00041fd44200b38b",
                             "Name": "WallNoHole (2) (1) (1) (1) (2) (1)",
                             "ParentComponent": {
@@ -17775,7 +17775,7 @@
                             ]
                         },
                         {
-                            "id": 2144,
+                            "id": 2147,
                             "guid": "001cbc0e9684b0f9-00041fd44200b38d",
                             "Name": "WallNoHole (3) (1) (1) (1) (1)",
                             "ParentComponent": {
@@ -18122,7 +18122,7 @@
                             ]
                         },
                         {
-                            "id": 2145,
+                            "id": 2148,
                             "guid": "001cbc0e921cf32c-00041fd44200b38f",
                             "Name": "WallNoHole (2) (2) (1) (1) (1)",
                             "ParentComponent": {
@@ -18469,7 +18469,7 @@
                             ]
                         },
                         {
-                            "id": 2146,
+                            "id": 2149,
                             "guid": "001cbc0eb10f7671-00041fd44200b391",
                             "Name": "WallNoHole (4) (1) (1) (1)",
                             "ParentComponent": {
@@ -18816,7 +18816,7 @@
                             ]
                         },
                         {
-                            "id": 2147,
+                            "id": 2150,
                             "guid": "001cbc0ea5621480-00041fd44200b393",
                             "Name": "WallNoHole (2) (3) (1) (1)",
                             "ParentComponent": {
@@ -19163,7 +19163,7 @@
                             ]
                         },
                         {
-                            "id": 2148,
+                            "id": 2151,
                             "guid": "001cbc0e8b4d622c-00041fd44200b395",
                             "Name": "WallNoHole (3) (2) (1) (1)",
                             "ParentComponent": {
@@ -19510,7 +19510,7 @@
                             ]
                         },
                         {
-                            "id": 2149,
+                            "id": 2152,
                             "guid": "001cbc0e87191b3a-00041fd45000b397",
                             "Name": "WallNoHole (5) (1) (1) (1)",
                             "ParentComponent": {
@@ -19857,7 +19857,7 @@
                             ]
                         },
                         {
-                            "id": 2150,
+                            "id": 2153,
                             "guid": "001cbc0e91c63870-00041fd45000b399",
                             "Name": "WallNoHole (2) (1) (1) (1) (2) (1) (1)",
                             "ParentComponent": {
@@ -20204,7 +20204,7 @@
                             ]
                         },
                         {
-                            "id": 2151,
+                            "id": 2154,
                             "guid": "001cbc0ef22fa462-00041fd45000b39b",
                             "Name": "WallNoHole (3) (1) (1) (1) (1) (1)",
                             "ParentComponent": {
@@ -20551,7 +20551,7 @@
                             ]
                         },
                         {
-                            "id": 2152,
+                            "id": 2155,
                             "guid": "001cbc0ea809443c-00041fd45000b39d",
                             "Name": "WallNoHole (2) (2) (1) (1) (1) (1)",
                             "ParentComponent": {
@@ -20898,7 +20898,7 @@
                             ]
                         },
                         {
-                            "id": 2153,
+                            "id": 2156,
                             "guid": "001cbc0e87c0bc77-00041fd45000b39f",
                             "Name": "WallNoHole (4) (1) (1) (1) (1)",
                             "ParentComponent": {
@@ -21245,7 +21245,7 @@
                             ]
                         },
                         {
-                            "id": 2154,
+                            "id": 2157,
                             "guid": "001cbc0eb2047c69-00041fd45000b3a1",
                             "Name": "WallNoHole (2) (3) (1) (1) (1)",
                             "ParentComponent": {
@@ -21592,7 +21592,7 @@
                             ]
                         },
                         {
-                            "id": 2155,
+                            "id": 2158,
                             "guid": "001cbc0eed4a88bd-00041fd45000b3a3",
                             "Name": "WallNoHole (3) (2) (1) (1) (1)",
                             "ParentComponent": {
@@ -21939,7 +21939,7 @@
                             ]
                         },
                         {
-                            "id": 2156,
+                            "id": 2159,
                             "guid": "001cbc0ee20d7196-00041fd45c00b3a5",
                             "Name": "WallNoHole (5) (1) (1) (1) (1)",
                             "ParentComponent": {
@@ -22286,7 +22286,7 @@
                             ]
                         },
                         {
-                            "id": 2157,
+                            "id": 2160,
                             "guid": "001cbc0eb724c5f5-00041fd45c00b3a7",
                             "Name": "WallNoHole (2) (1) (1) (1) (2) (1) (1) (1)",
                             "ParentComponent": {
@@ -22633,7 +22633,7 @@
                             ]
                         },
                         {
-                            "id": 2158,
+                            "id": 2161,
                             "guid": "001cbc0ec5f4373b-00041fd45c00b3a9",
                             "Name": "WallNoHole (3) (1) (1) (1) (1) (1) (1)",
                             "ParentComponent": {
@@ -22980,7 +22980,7 @@
                             ]
                         },
                         {
-                            "id": 2159,
+                            "id": 2162,
                             "guid": "001cbc0ec7fe4a97-00041fd45c00b3ab",
                             "Name": "WallNoHole (2) (2) (1) (1) (1) (1) (1)",
                             "ParentComponent": {
@@ -23327,7 +23327,7 @@
                             ]
                         },
                         {
-                            "id": 2160,
+                            "id": 2163,
                             "guid": "001cbc0ed486bd23-00041fd45c00b3ad",
                             "Name": "WallNoHole (4) (1) (1) (1) (1) (1)",
                             "ParentComponent": {
@@ -23674,7 +23674,7 @@
                             ]
                         },
                         {
-                            "id": 2161,
+                            "id": 2164,
                             "guid": "001cbc0ec7b6faa3-00041fd45c00b3af",
                             "Name": "WallNoHole (2) (3) (1) (1) (1) (1)",
                             "ParentComponent": {
@@ -24021,7 +24021,7 @@
                             ]
                         },
                         {
-                            "id": 2162,
+                            "id": 2165,
                             "guid": "001cbc0ec1f6010c-00041fd45c00b3b1",
                             "Name": "WallNoHole (3) (2) (1) (1) (1) (1)",
                             "ParentComponent": {
@@ -24368,7 +24368,7 @@
                             ]
                         },
                         {
-                            "id": 2163,
+                            "id": 2166,
                             "guid": "001cbc0ef034c374-00041fd46400b3b3",
                             "Name": "WallNoHole (5) (1) (1) (1) (1) (1)",
                             "ParentComponent": {
@@ -24715,7 +24715,7 @@
                             ]
                         },
                         {
-                            "id": 2164,
+                            "id": 2167,
                             "guid": "001cbc0edc2e9f68-00041fd46400b3b5",
                             "Name": "WallNoHole (2) (1) (1) (1) (2) (1) (1) (1) (1)",
                             "ParentComponent": {
@@ -25062,7 +25062,7 @@
                             ]
                         },
                         {
-                            "id": 2165,
+                            "id": 2168,
                             "guid": "001cbc0e8ada142b-00041fd46400b3b7",
                             "Name": "WallNoHole (3) (1) (1) (1) (1) (1) (1) (1)",
                             "ParentComponent": {
@@ -25409,7 +25409,7 @@
                             ]
                         },
                         {
-                            "id": 2166,
+                            "id": 2169,
                             "guid": "001cbc0efb0ac854-00041fd46400b3b9",
                             "Name": "WallNoHole (2) (2) (1) (1) (1) (1) (1) (1)",
                             "ParentComponent": {
@@ -25756,7 +25756,7 @@
                             ]
                         },
                         {
-                            "id": 2167,
+                            "id": 2170,
                             "guid": "001cbc0e9b08c207-00041fd46400b3bb",
                             "Name": "WallNoHole (4) (1) (1) (1) (1) (1) (1)",
                             "ParentComponent": {
@@ -26103,7 +26103,7 @@
                             ]
                         },
                         {
-                            "id": 2168,
+                            "id": 2171,
                             "guid": "001cbc0e94d6efd7-00041fd46400b3bd",
                             "Name": "WallNoHole (2) (3) (1) (1) (1) (1) (1)",
                             "ParentComponent": {
@@ -26450,7 +26450,7 @@
                             ]
                         },
                         {
-                            "id": 2169,
+                            "id": 2172,
                             "guid": "001cbc0ebf105fb5-00041fd46400b3bf",
                             "Name": "WallNoHole (3) (2) (1) (1) (1) (1) (1)",
                             "ParentComponent": {
@@ -26797,7 +26797,7 @@
                             ]
                         },
                         {
-                            "id": 2170,
+                            "id": 2173,
                             "guid": "001cbc0e8b744a57-00041fd47400b3c1",
                             "Name": "WallNoHole (5) (1) (1) (1) (1) (1) (1)",
                             "ParentComponent": {
@@ -27144,7 +27144,7 @@
                             ]
                         },
                         {
-                            "id": 2171,
+                            "id": 2174,
                             "guid": "001cbc0eed8ec387-00041fd47400b3c3",
                             "Name": "WallNoHole (2) (1) (1) (1) (2) (1) (1) (1) (1) (1)",
                             "ParentComponent": {
@@ -27491,7 +27491,7 @@
                             ]
                         },
                         {
-                            "id": 2172,
+                            "id": 2175,
                             "guid": "001cbc0eae5fcefd-00041fd47400b3c5",
                             "Name": "WallNoHole (3) (1) (1) (1) (1) (1) (1) (1) (1)",
                             "ParentComponent": {
@@ -27838,7 +27838,7 @@
                             ]
                         },
                         {
-                            "id": 2173,
+                            "id": 2176,
                             "guid": "001cbc0efd9fa83d-00041fd47400b3c7",
                             "Name": "WallNoHole (2) (2) (1) (1) (1) (1) (1) (1) (1)",
                             "ParentComponent": {
@@ -28185,7 +28185,7 @@
                             ]
                         },
                         {
-                            "id": 2174,
+                            "id": 2177,
                             "guid": "001cbc0ef194a8d0-00041fd47400b3c9",
                             "Name": "WallNoHole (4) (1) (1) (1) (1) (1) (1) (1)",
                             "ParentComponent": {
@@ -28532,7 +28532,7 @@
                             ]
                         },
                         {
-                            "id": 2175,
+                            "id": 2178,
                             "guid": "001cbc0ef980ca79-00041fd47400b3cb",
                             "Name": "WallNoHole (2) (3) (1) (1) (1) (1) (1) (1)",
                             "ParentComponent": {
@@ -28879,7 +28879,7 @@
                             ]
                         },
                         {
-                            "id": 2176,
+                            "id": 2179,
                             "guid": "001cbc0ea1b82dc5-00041fd47400b3cd",
                             "Name": "WallNoHole (3) (2) (1) (1) (1) (1) (1) (1)",
                             "ParentComponent": {
@@ -29226,7 +29226,7 @@
                             ]
                         },
                         {
-                            "id": 4750,
+                            "id": 2180,
                             "guid": "003943454a686b3f-00041ffff0005e91",
                             "Name": "WallNoHole (3) (2) (1) (1) (1) (1) (1) (1) (1)",
                             "ParentComponent": {
@@ -29573,7 +29573,7 @@
                             ]
                         },
                         {
-                            "id": 4755,
+                            "id": 2181,
                             "guid": "00394345094b5096-00041ffff0005e93",
                             "Name": "WallNoHole (2) (3) (1) (1) (1) (1) (1) (1) (1)",
                             "ParentComponent": {
@@ -29922,7 +29922,7 @@
                     ]
                 },
                 {
-                    "id": 2041,
+                    "id": 2044,
                     "guid": "001cbc0eb8bc690e-00041fbd1e0064ff",
                     "Name": "Columns",
                     "ParentComponent": {
@@ -29933,7 +29933,7 @@
                     },
                     "Children": [
                         {
-                            "id": 2066,
+                            "id": 2069,
                             "guid": "001cbc0ed1787ed9-00041fbd1e006531",
                             "Name": "Column (1) (1) (2) (1) (2) (2) (2) (1) (1) (3) (1) (1) (2) (1) (1) (2) (1)",
                             "ParentComponent": {
@@ -30008,7 +30008,7 @@
                             ]
                         },
                         {
-                            "id": 2067,
+                            "id": 2070,
                             "guid": "001cbc0ef919b599-00041fbd1e006533",
                             "Name": "Column (1) (1) (2) (1) (2) (2) (2) (1) (1) (3) (1) (1) (2) (1) (3) (1)",
                             "ParentComponent": {
@@ -30083,7 +30083,7 @@
                             ]
                         },
                         {
-                            "id": 2068,
+                            "id": 2071,
                             "guid": "001cbc0ec6c3bb2e-00041fbd1e006535",
                             "Name": "Column (1) (1) (2) (1) (2) (2) (2) (1) (1) (3) (1) (1) (2) (1) (2) (2) (1)",
                             "ParentComponent": {
@@ -30158,7 +30158,7 @@
                             ]
                         },
                         {
-                            "id": 2069,
+                            "id": 2072,
                             "guid": "001cbc0ec1997841-00041fbd1e006537",
                             "Name": "Column (1) (1) (2) (1) (2) (2) (2) (1) (1) (3) (1) (1) (2) (1) (2) (1) (2) (1)",
                             "ParentComponent": {
@@ -30233,7 +30233,7 @@
                             ]
                         },
                         {
-                            "id": 2070,
+                            "id": 2073,
                             "guid": "001cbc0eb7d30228-00041fbd1e006539",
                             "Name": "Column (1) (1) (2) (1) (2) (2) (2) (1) (1) (3) (1) (1) (2) (1) (2) (1) (1) (1) (1)",
                             "ParentComponent": {
@@ -30308,7 +30308,7 @@
                             ]
                         },
                         {
-                            "id": 2071,
+                            "id": 2074,
                             "guid": "001cbc0e8c1d29b8-00041fbd1e00653b",
                             "Name": "Column (1) (1) (2) (1) (2) (2) (2) (1) (1) (3) (1) (1) (2) (1) (1) (1) (1) (1) (1)",
                             "ParentComponent": {
@@ -30383,7 +30383,7 @@
                             ]
                         },
                         {
-                            "id": 2072,
+                            "id": 2075,
                             "guid": "001cbc0ed276645b-00041fbd1e00653d",
                             "Name": "Column (1) (1) (2) (1) (2) (2) (2) (1) (1) (3) (1) (1) (2) (1) (1) (1) (1) (1) (1) (1)",
                             "ParentComponent": {
@@ -30458,7 +30458,7 @@
                             ]
                         },
                         {
-                            "id": 2073,
+                            "id": 2076,
                             "guid": "001cbc0ebb1ce0fe-00041fbd1e00653f",
                             "Name": "Column (1) (1) (2) (1) (2) (2) (2) (1) (1) (3) (1) (1) (2) (1) (2) (1) (1) (1) (1) (1)",
                             "ParentComponent": {
@@ -30535,7 +30535,7 @@
                     ]
                 },
                 {
-                    "id": 2081,
+                    "id": 2084,
                     "guid": "001cbc0eecfb39db-00041fbd1e00654f",
                     "Name": "Ledges",
                     "ParentComponent": {
@@ -30546,7 +30546,7 @@
                     },
                     "Children": [
                         {
-                            "id": 2093,
+                            "id": 2096,
                             "guid": "003943452a0ecb0e-00041ffaa00010cd",
                             "Name": "StartLedge (1)",
                             "ParentComponent": {
@@ -30621,7 +30621,7 @@
                             ]
                         },
                         {
-                            "id": 2102,
+                            "id": 2105,
                             "guid": "001cbc0e914155f1-00041fbd1e006579",
                             "Name": "StartLedge (1) (1) (1) (1)",
                             "ParentComponent": {
@@ -30696,7 +30696,7 @@
                             ]
                         },
                         {
-                            "id": 2177,
+                            "id": 2182,
                             "guid": "001cbc0eeaf78634-00041fd65000b3db",
                             "Name": "MiddleLedge (2) (2)",
                             "ParentComponent": {
@@ -31045,7 +31045,7 @@
                     ]
                 },
                 {
-                    "id": 2178,
+                    "id": 2183,
                     "guid": "00680e3dce8f2718-00041ff4e6001101",
                     "Name": "Light",
                     "ParentComponent": {
@@ -31261,7 +31261,7 @@
         },
         {
             "PrefabPath": "../../Resources/Prefabs/LevelRooms/MinibossRoom.prefab",
-            "id": 2179,
+            "id": 2184,
             "guid": "004bc8ac9caa1ec7-00041b9f8000b4cb",
             "Name": "MinibossRoom",
             "ParentComponent": {
@@ -31336,7 +31336,7 @@
             ],
             "Children": [
                 {
-                    "id": 2185,
+                    "id": 2190,
                     "guid": "00680e3dd570236f-00041ff4e600110b",
                     "Name": "Ground (1)",
                     "ParentComponent": {
@@ -31347,7 +31347,7 @@
                     },
                     "Children": [
                         {
-                            "id": 2188,
+                            "id": 2193,
                             "guid": "00680e3d9dfcfc07-00041ff4e6001111",
                             "Name": "GroundedPlatform (1) (1) (1) (1) (2) (1)",
                             "ParentComponent": {
@@ -31424,7 +31424,7 @@
                     ]
                 },
                 {
-                    "id": 2289,
+                    "id": 2294,
                     "guid": "004bc8ac8a99d88e-00041bc49200c507",
                     "Name": "Miniboss",
                     "ParentComponent": {
@@ -31573,7 +31573,7 @@
                     ]
                 },
                 {
-                    "id": 2290,
+                    "id": 2295,
                     "guid": "00680e3de3a6674f-00041ff73e0038f7",
                     "Name": "Light (3)",
                     "ParentComponent": {
@@ -31788,7 +31788,7 @@
             ]
         },
         {
-            "id": 2291,
+            "id": 2296,
             "guid": "002048da5c289fdb-00036aa986000001",
             "components": {
                 "NameComponent": {
@@ -31875,7 +31875,7 @@
             }
         },
         {
-            "id": 2292,
+            "id": 2297,
             "guid": "002048da73c3f14d-00036aa992000003",
             "components": {
                 "NameComponent": {
@@ -31962,7 +31962,7 @@
             }
         },
         {
-            "id": 2293,
+            "id": 2298,
             "guid": "002048da65b57a56-00036aa992000005",
             "components": {
                 "NameComponent": {
@@ -32049,7 +32049,7 @@
             }
         },
         {
-            "id": 2294,
+            "id": 2299,
             "guid": "002048da0af7a474-00036aa992000007",
             "components": {
                 "NameComponent": {
@@ -32136,7 +32136,7 @@
             }
         },
         {
-            "id": 2295,
+            "id": 2300,
             "guid": "002048da0402504e-00036aa992000009",
             "components": {
                 "NameComponent": {
@@ -32223,7 +32223,7 @@
             }
         },
         {
-            "id": 2296,
+            "id": 2301,
             "guid": "002048da65414a36-00036aa99200000b",
             "components": {
                 "NameComponent": {
@@ -32310,7 +32310,7 @@
             }
         },
         {
-            "id": 2297,
+            "id": 2302,
             "guid": "002048da499a1077-00036aa99200000d",
             "components": {
                 "NameComponent": {
@@ -32397,7 +32397,7 @@
             }
         },
         {
-            "id": 2298,
+            "id": 2303,
             "guid": "002048da69f2a2a1-00036aa99200000f",
             "components": {
                 "NameComponent": {
@@ -32484,7 +32484,7 @@
             }
         },
         {
-            "id": 2299,
+            "id": 2304,
             "guid": "002048da28a90348-00036aa99a000011",
             "components": {
                 "NameComponent": {
@@ -32571,7 +32571,7 @@
             }
         },
         {
-            "id": 2300,
+            "id": 2305,
             "guid": "002048da29350435-00036aaa7a000013",
             "components": {
                 "NameComponent": {
@@ -32658,7 +32658,7 @@
             }
         },
         {
-            "id": 2301,
+            "id": 2306,
             "guid": "00717c64b8dc22a9-00036d0ef800010b",
             "components": {
                 "NameComponent": {
@@ -32761,7 +32761,7 @@
             }
         },
         {
-            "id": 2302,
+            "id": 2307,
             "guid": "00717c6493c0f819-00036d0f8600010f",
             "components": {
                 "NameComponent": {
@@ -32969,7 +32969,7 @@
             }
         },
         {
-            "id": 2303,
+            "id": 2308,
             "guid": "00717c648e7647ff-00036d108e000111",
             "components": {
                 "NameComponent": {
@@ -33177,7 +33177,7 @@
             }
         },
         {
-            "id": 2304,
+            "id": 2309,
             "guid": "00717c64db8bba79-00036d123c000115",
             "components": {
                 "NameComponent": {
@@ -33431,7 +33431,7 @@
             }
         },
         {
-            "id": 2305,
+            "id": 2310,
             "guid": "00717c64e86db6ba-00036d145c000117",
             "components": {
                 "NameComponent": {
@@ -33627,7 +33627,7 @@
             }
         },
         {
-            "id": 2306,
+            "id": 2311,
             "guid": "00717c64c18b30a8-00036d1544000119",
             "components": {
                 "NameComponent": {
@@ -33823,7 +33823,7 @@
             }
         },
         {
-            "id": 2307,
+            "id": 2312,
             "guid": "00717c64c96ca92d-00036d1b6000013d",
             "components": {
                 "NameComponent": {
@@ -33931,7 +33931,7 @@
             }
         },
         {
-            "id": 2308,
+            "id": 2313,
             "guid": "00717c64d6101c6c-00036d1b7e00013f",
             "components": {
                 "NameComponent": {
@@ -34127,7 +34127,7 @@
             }
         },
         {
-            "id": 2309,
+            "id": 2314,
             "guid": "00717c648c44ee5f-00036d1c48000141",
             "components": {
                 "NameComponent": {
@@ -34323,7 +34323,7 @@
             }
         },
         {
-            "id": 2310,
+            "id": 2315,
             "guid": "00717c64a725163f-00036d1c74000143",
             "components": {
                 "NameComponent": {
@@ -34519,7 +34519,7 @@
             }
         },
         {
-            "id": 2311,
+            "id": 2316,
             "guid": "00717c64d31cf79e-00036d1c8a000145",
             "components": {
                 "NameComponent": {
@@ -34715,7 +34715,7 @@
             }
         },
         {
-            "id": 2312,
+            "id": 2317,
             "guid": "00717c64ca0d9439-00036d1c8e000147",
             "components": {
                 "NameComponent": {
@@ -34911,7 +34911,7 @@
             }
         },
         {
-            "id": 2313,
+            "id": 2318,
             "guid": "00717c6496aa1ea4-00036d17be00011b",
             "components": {
                 "NameComponent": {
@@ -35120,7 +35120,7 @@
             }
         },
         {
-            "id": 2314,
+            "id": 2319,
             "guid": "00717c64ac5f0778-00036d18c600011d",
             "components": {
                 "NameComponent": {
@@ -35328,7 +35328,7 @@
             }
         },
         {
-            "id": 2315,
+            "id": 2320,
             "guid": "00717c64e308e56d-00036d193600011f",
             "components": {
                 "NameComponent": {
@@ -35524,7 +35524,7 @@
             }
         },
         {
-            "id": 2316,
+            "id": 2321,
             "guid": "00717c64eb815917-00036d1aa000013b",
             "components": {
                 "NameComponent": {
@@ -35720,7 +35720,7 @@
             }
         },
         {
-            "id": 2317,
+            "id": 2322,
             "guid": "0005c2e4aee1d335-0003ee9a68000549",
             "components": {
                 "NameComponent": {
@@ -35954,7 +35954,7 @@
             }
         },
         {
-            "id": 2318,
+            "id": 2323,
             "guid": "0005c2e4fc24790c-0003ee9b4800054d",
             "components": {
                 "NameComponent": {
@@ -36150,7 +36150,7 @@
             }
         },
         {
-            "id": 2319,
+            "id": 2324,
             "guid": "0021a3528ea8c01b-00041a312403dfdd",
             "components": {
                 "NameComponent": {
@@ -36237,7 +36237,7 @@
             }
         },
         {
-            "id": 2320,
+            "id": 2325,
             "guid": "0021a352b79d5048-00041a312403e019",
             "components": {
                 "NameComponent": {
@@ -36324,7 +36324,7 @@
             }
         },
         {
-            "id": 2321,
+            "id": 2326,
             "guid": "0021a352802b2028-00041a312403e011",
             "components": {
                 "NameComponent": {
@@ -36411,7 +36411,7 @@
             }
         },
         {
-            "id": 2322,
+            "id": 2327,
             "guid": "0021a352fe66c19d-00041a312403e021",
             "components": {
                 "NameComponent": {
@@ -36498,7 +36498,7 @@
             }
         },
         {
-            "id": 2323,
+            "id": 2328,
             "guid": "0021a352eced3d3e-00041a312403dfdf",
             "components": {
                 "NameComponent": {
@@ -36585,7 +36585,7 @@
             }
         },
         {
-            "id": 2324,
+            "id": 2329,
             "guid": "0021a352aeb6b5f6-00041a312403e007",
             "components": {
                 "NameComponent": {
@@ -36672,7 +36672,7 @@
             }
         },
         {
-            "id": 2325,
+            "id": 2330,
             "guid": "0021a352ec7fe028-00041a312403dff7",
             "components": {
                 "NameComponent": {
@@ -36759,7 +36759,7 @@
             }
         },
         {
-            "id": 2326,
+            "id": 2331,
             "guid": "0021a352c307ee28-00041a312403dffd",
             "components": {
                 "NameComponent": {
@@ -36846,7 +36846,7 @@
             }
         },
         {
-            "id": 2327,
+            "id": 2332,
             "guid": "0021a352e39621a9-00041a312403dfe1",
             "components": {
                 "NameComponent": {
@@ -36933,7 +36933,7 @@
             }
         },
         {
-            "id": 2328,
+            "id": 2333,
             "guid": "0021a352d8e7b399-00041a312403e027",
             "components": {
                 "NameComponent": {
@@ -37020,7 +37020,7 @@
             }
         },
         {
-            "id": 2329,
+            "id": 2334,
             "guid": "0021a352a28f9294-00041a312403e00d",
             "components": {
                 "NameComponent": {
@@ -37107,7 +37107,7 @@
             }
         },
         {
-            "id": 2330,
+            "id": 2335,
             "guid": "0021a352a5b6b37e-00041a312403e00b",
             "components": {
                 "NameComponent": {
@@ -37194,7 +37194,7 @@
             }
         },
         {
-            "id": 2331,
+            "id": 2336,
             "guid": "0021a3529a62153c-00041a312403e01d",
             "components": {
                 "NameComponent": {
@@ -37281,7 +37281,7 @@
             }
         },
         {
-            "id": 2332,
+            "id": 2337,
             "guid": "0021a352a8dc53fd-00041a312403e023",
             "components": {
                 "NameComponent": {
@@ -37368,7 +37368,7 @@
             }
         },
         {
-            "id": 2333,
+            "id": 2338,
             "guid": "0021a352e0b083c2-00041a312403e025",
             "components": {
                 "NameComponent": {
@@ -37455,7 +37455,7 @@
             }
         },
         {
-            "id": 2334,
+            "id": 2339,
             "guid": "0021a352abbba25b-00041a312403dff5",
             "components": {
                 "NameComponent": {
@@ -37542,7 +37542,7 @@
             }
         },
         {
-            "id": 2335,
+            "id": 2340,
             "guid": "0021a352994456cc-00041a312403e005",
             "components": {
                 "NameComponent": {
@@ -37629,7 +37629,7 @@
             }
         },
         {
-            "id": 2336,
+            "id": 2341,
             "guid": "0021a352d078b1e6-00041a312403dff1",
             "components": {
                 "NameComponent": {
@@ -37716,7 +37716,7 @@
             }
         },
         {
-            "id": 2337,
+            "id": 2342,
             "guid": "0021a352c959b189-00041a312403e009",
             "components": {
                 "NameComponent": {
@@ -37803,7 +37803,7 @@
             }
         },
         {
-            "id": 2338,
+            "id": 2343,
             "guid": "0021a352e6371375-00041a312403e003",
             "components": {
                 "NameComponent": {
@@ -37890,7 +37890,7 @@
             }
         },
         {
-            "id": 2339,
+            "id": 2344,
             "guid": "0021a35280e39f20-00041a312403e01b",
             "components": {
                 "NameComponent": {
@@ -37977,7 +37977,7 @@
             }
         },
         {
-            "id": 2340,
+            "id": 2345,
             "guid": "0021a352a5c0e9c6-00041a312403e00f",
             "components": {
                 "NameComponent": {
@@ -38064,7 +38064,7 @@
             }
         },
         {
-            "id": 2341,
+            "id": 2346,
             "guid": "0021a3529016af8e-00041a312403e017",
             "components": {
                 "NameComponent": {
@@ -38151,7 +38151,7 @@
             }
         },
         {
-            "id": 2342,
+            "id": 2347,
             "guid": "0021a352fd670ab4-00041a312403dfeb",
             "components": {
                 "NameComponent": {
@@ -38238,7 +38238,7 @@
             }
         },
         {
-            "id": 2343,
+            "id": 2348,
             "guid": "0021a352d982cc8d-00041a312403dff9",
             "components": {
                 "NameComponent": {
@@ -38325,7 +38325,7 @@
             }
         },
         {
-            "id": 2344,
+            "id": 2349,
             "guid": "0021a35290b37064-00041a312403dfe9",
             "components": {
                 "NameComponent": {
@@ -38412,7 +38412,7 @@
             }
         },
         {
-            "id": 2345,
+            "id": 2350,
             "guid": "0021a35288bcb1e6-00041a312403dfe7",
             "components": {
                 "NameComponent": {
@@ -38499,7 +38499,7 @@
             }
         },
         {
-            "id": 2346,
+            "id": 2351,
             "guid": "0021a352c606438b-00041a312403dfe5",
             "components": {
                 "NameComponent": {
@@ -38586,7 +38586,7 @@
             }
         },
         {
-            "id": 2347,
+            "id": 2352,
             "guid": "0021a352dab9f130-00041a312403e013",
             "components": {
                 "NameComponent": {
@@ -38673,7 +38673,7 @@
             }
         },
         {
-            "id": 2348,
+            "id": 2353,
             "guid": "0021a352b42e48e8-00041a312403e015",
             "components": {
                 "NameComponent": {
@@ -38760,7 +38760,7 @@
             }
         },
         {
-            "id": 2349,
+            "id": 2354,
             "guid": "0021a3528e4f47d3-00041a312403dfdb",
             "components": {
                 "NameComponent": {
@@ -38847,7 +38847,7 @@
             }
         },
         {
-            "id": 2350,
+            "id": 2355,
             "guid": "0021a352db2dceb4-00041a312403dff3",
             "components": {
                 "NameComponent": {
@@ -38934,7 +38934,7 @@
             }
         },
         {
-            "id": 2351,
+            "id": 2356,
             "guid": "0021a352e7937e96-00041a312403dfe3",
             "components": {
                 "NameComponent": {
@@ -39021,7 +39021,7 @@
             }
         },
         {
-            "id": 2352,
+            "id": 2357,
             "guid": "0021a352bdf43ba0-00041a312403dfed",
             "components": {
                 "NameComponent": {
@@ -39108,7 +39108,7 @@
             }
         },
         {
-            "id": 2353,
+            "id": 2358,
             "guid": "0021a352b0500420-00041a312403dfef",
             "components": {
                 "NameComponent": {
@@ -39195,7 +39195,7 @@
             }
         },
         {
-            "id": 2354,
+            "id": 2359,
             "guid": "0021a352c8c6d6c7-00041a312403e01f",
             "components": {
                 "NameComponent": {
@@ -39282,7 +39282,7 @@
             }
         },
         {
-            "id": 2355,
+            "id": 2360,
             "guid": "0021a352ea2ed2bf-00041a312403dffb",
             "components": {
                 "NameComponent": {
@@ -39369,7 +39369,7 @@
             }
         },
         {
-            "id": 2356,
+            "id": 2361,
             "guid": "0021a3529fa9d8a2-00041a312403dfff",
             "components": {
                 "NameComponent": {
@@ -39456,7 +39456,7 @@
             }
         },
         {
-            "id": 2357,
+            "id": 2362,
             "guid": "0021a352fdb0e267-00041a312403e001",
             "components": {
                 "NameComponent": {
@@ -39544,7 +39544,7 @@
         },
         {
             "PrefabPath": "../../Resources/Prefabs/PauseMenu.prefab",
-            "id": 2358,
+            "id": 2363,
             "guid": "005c2f515ed0d226-00041dded6000f05",
             "Name": "PauseMenu",
             "ComponentOverrides": [
@@ -39556,7 +39556,7 @@
             ],
             "Children": [
                 {
-                    "id": 2365,
+                    "id": 2370,
                     "guid": "00680e3de38c65be-00041ff4e80011eb",
                     "Name": "SettingsUI",
                     "ParentComponent": {
@@ -39567,7 +39567,7 @@
                     },
                     "Children": [
                         {
-                            "id": 2384,
+                            "id": 2389,
                             "guid": "00680e3d9dc80e94-00041ff4e8001211",
                             "Name": "SettingsUIButtons",
                             "ParentComponent": {
@@ -39658,7 +39658,7 @@
         },
         {
             "PrefabPath": "../../Resources/Prefabs/GameManager.prefab",
-            "id": 2395,
+            "id": 2400,
             "guid": "001955a0bdae0c62-00041e45b2002e4d",
             "Name": "GameManager",
             "ComponentOverrides": [
@@ -39916,833 +39916,8 @@
             ]
         },
         {
-            "PrefabPath": "../../Resources/Prefabs/Player (2).prefab",
-            "id": 2396,
-            "guid": "001955a0e06b02a8-00041e45b8002e4f",
-            "Name": "Player",
-            "ComponentOverrides": [
-                {
-                    "Transform": {
-                        "type": "Transform",
-                        "data": [
-                            {
-                                "type": "Vector3D",
-                                "data": [
-                                    {
-                                        "type": "float",
-                                        "data": 0
-                                    },
-                                    {
-                                        "type": "float",
-                                        "data": 1
-                                    },
-                                    {
-                                        "type": "float",
-                                        "data": 3.5
-                                    }
-                                ]
-                            },
-                            {
-                                "type": "Vector3D",
-                                "data": [
-                                    {
-                                        "type": "float",
-                                        "data": 1
-                                    },
-                                    {
-                                        "type": "float",
-                                        "data": 1
-                                    },
-                                    {
-                                        "type": "float",
-                                        "data": 1
-                                    }
-                                ]
-                            },
-                            {
-                                "type": "Quaternion",
-                                "data": [
-                                    {
-                                        "type": "float",
-                                        "data": -3.30012e-15
-                                    },
-                                    {
-                                        "type": "float",
-                                        "data": 4.37114e-8
-                                    },
-                                    {
-                                        "type": "float",
-                                        "data": -1
-                                    },
-                                    {
-                                        "type": "float",
-                                        "data": 7.54979e-8
-                                    }
-                                ]
-                            }
-                        ]
-                    }
-                },
-                {
-                    "AnimationComponent": {
-                        "type": "AnimationComponent",
-                        "data": [
-                            {
-                                "type": "bool",
-                                "data": true
-                            },
-                            {
-                                "type": "bool",
-                                "data": true
-                            },
-                            {
-                                "type": "bool",
-                                "data": true
-                            },
-                            {
-                                "type": "float",
-                                "data": 1
-                            },
-                            {
-                                "type": "int",
-                                "data": 11
-                            },
-                            {
-                                "type": "std::vector<std::string>",
-                                "data": [
-                                    {
-                                        "type": "std::string",
-                                        "data": "Resources/Animations/Player@Idle.fbx"
-                                    },
-                                    {
-                                        "type": "std::string",
-                                        "data": "Resources/Animations/Player@Jump.fbx"
-                                    },
-                                    {
-                                        "type": "std::string",
-                                        "data": "Resources/Animations/Player@Run.fbx"
-                                    },
-                                    {
-                                        "type": "std::string",
-                                        "data": "Resources/Animations/Player@Land.fbx"
-                                    },
-                                    {
-                                        "type": "std::string",
-                                        "data": "Resources/Animations/Player@Hurt.fbx"
-                                    },
-                                    {
-                                        "type": "std::string",
-                                        "data": "Resources/Animations/Player@Death.fbx"
-                                    },
-                                    {
-                                        "type": "std::string",
-                                        "data": "Resources/Animations/Player@Slash1.fbx"
-                                    },
-                                    {
-                                        "type": "std::string",
-                                        "data": "Resources/Animations/Player@Slash2.fbx"
-                                    },
-                                    {
-                                        "type": "std::string",
-                                        "data": "Resources/Animations/Player@Slash3.fbx"
-                                    },
-                                    {
-                                        "type": "std::string",
-                                        "data": "Resources/Animations/Player@Standing.fbx"
-                                    },
-                                    {
-                                        "type": "std::string",
-                                        "data": "Resources/Animations/Player@Roll.fbx"
-                                    }
-                                ]
-                            },
-                            {
-                                "type": "std::vector<GUID_128>",
-                                "data": [
-                                    "000b41a92a972704-00041a6842000009",
-                                    "000b41a908ef0e76-00041a684200000d",
-                                    "000b41a9494090bb-00041a6846000019",
-                                    "000b41a90e0212dc-00041a6844000011",
-                                    "000b41a92f11f7c5-00041a6840000005",
-                                    "000b41a9046ef9aa-00041a683e000001",
-                                    "000b41a9138f271b-00041a684600001d",
-                                    "000b41a93db26e79-00041a6848000021",
-                                    "000b41a92914f66b-00041a6848000025",
-                                    "000b41a932ed8fe3-00041a684a000029",
-                                    "000b41a9440c2fb5-00041a7b58006a8d"
-                                ]
-                            },
-                            {
-                                "type": "std::string",
-                                "data": "../../Resources/Animations/PlayerAC.animator"
-                            }
-                        ]
-                    }
-                },
-                {
-                    "TagComponent": {
-                        "tagIndex": 5
-                    }
-                },
-                {
-                    "LayerComponent": {
-                        "layerIndex": 5
-                    }
-                },
-                {
-                    "SiblingIndexComponent": {
-                        "siblingIndex": 1
-                    }
-                },
-                {
-                    "ScriptComponent": {
-                        "scripts": [
-                            {
-                                "scriptGuidStr": "00465fde5d0ebe89-00040ce56800002d",
-                                "scriptPath": "../../Resources/Scripts/Gameplay/PlayerMovement(Updated).lua",
-                                "enabled": true,
-                                "preserveKeys": [],
-                                "entryFunction": "OnInit",
-                                "autoInvokeEntry": true,
-                                "instanceState": {
-                                    "_currentRotW": 1.0,
-                                    "JumpHeight": 1.2,
-                                    "_playerHurtTriggeredSub": {
-                                        "event": "playerHurtTriggered",
-                                        "id": 3.0
-                                    },
-                                    "_transform_fetched": false,
-                                    "__meta": {},
-                                    "DamageStunDuration": 0.5,
-                                    "_playerDeadSub": {
-                                        "event": "playerDead",
-                                        "id": 2.0
-                                    },
-                                    "__created_at": 1769704807.0,
-                                    "_subscriptions": {},
-                                    "_currentRotX": 0.0,
-                                    "_currentRotY": 0.0,
-                                    "_currentRotZ": 0.0,
-                                    "_private": {},
-                                    "_cameraYaw": 180.0,
-                                    "__field_list": {
-                                        "DamageStunDuration": 1.0,
-                                        "Speed": 1.5,
-                                        "JumpHeight": 1.2
-                                    },
-                                    "_cameraYawSub": {
-                                        "event": "camera_yaw",
-                                        "id": 1.0
-                                    },
-                                    "Speed": 2.5,
-                                    "LandingDuration": 0.4
-                                }
-                            },
-                            {
-                                "scriptGuidStr": "00465fde2b22d5e3-00040ce56800002b",
-                                "scriptPath": "../../Resources/Scripts/Gameplay/PlayerHealth.lua",
-                                "enabled": true,
-                                "preserveKeys": [],
-                                "entryFunction": "OnInit",
-                                "autoInvokeEntry": true,
-                                "instanceState": {
-                                    "_subscriptions": {},
-                                    "IFrameDuration": 0.5,
-                                    "_transform_fetched": false,
-                                    "_private": {},
-                                    "Health": 10.0,
-                                    "__field_list": {
-                                        "Health": 10.0,
-                                        "IFrameDuration": 1.0
-                                    },
-                                    "_knifeHitPlayerDmgSub": {
-                                        "event": "knifeHitPlayerDmg",
-                                        "id": 4.0
-                                    },
-                                    "__created_at": 1769707349.0,
-                                    "__meta": {}
-                                }
-                            },
-                            {
-                                "scriptGuidStr": "006b0bd8f4458cdc-00041a0a6000302d",
-                                "scriptPath": "../../Resources/Scripts/Gameplay/PlayerCheckpointManager.lua",
-                                "enabled": true,
-                                "preserveKeys": [],
-                                "entryFunction": "OnInit",
-                                "autoInvokeEntry": true,
-                                "instanceState": {
-                                    "__field_list": {
-                                        "CheckpointRadius": 0.5
-                                    },
-                                    "_private": {},
-                                    "__meta": {},
-                                    "_subscriptions": {},
-                                    "__created_at": 1770216787.0,
-                                    "_transform_fetched": false,
-                                    "CheckpointRadius": 1.25
-                                }
-                            }
-                        ]
-                    }
-                }
-            ],
-            "Children": [
-                {
-                    "id": 2462,
-                    "guid": "001955a0f64150da-00041e45b8002ed3",
-                    "Name": "Kusane_Player_Reference",
-                    "ParentComponent": {
-                        "type": "ParentComponent",
-                        "data": [
-                            "001955a0e06b02a8-00041e45b8002e4f"
-                        ]
-                    },
-                    "Children": [
-                        {
-                            "id": 2463,
-                            "guid": "001955a0adda8e3d-00041e45b8002ed5",
-                            "Name": "Kusane_Player_Hips",
-                            "ParentComponent": {
-                                "type": "ParentComponent",
-                                "data": [
-                                    "001955a0f64150da-00041e45b8002ed3"
-                                ]
-                            },
-                            "Children": [
-                                {
-                                    "id": 2472,
-                                    "guid": "001955a0e9ffb312-00041e45b8002ee7",
-                                    "Name": "Kusane_Player_Spine",
-                                    "ParentComponent": {
-                                        "type": "ParentComponent",
-                                        "data": [
-                                            "001955a0adda8e3d-00041e45b8002ed5"
-                                        ]
-                                    },
-                                    "Children": [
-                                        {
-                                            "id": 2473,
-                                            "guid": "001955a0f713236b-00041e45b8002ee9",
-                                            "Name": "Kusane_Player_Spine1",
-                                            "ParentComponent": {
-                                                "type": "ParentComponent",
-                                                "data": [
-                                                    "001955a0e9ffb312-00041e45b8002ee7"
-                                                ]
-                                            },
-                                            "Children": [
-                                                {
-                                                    "id": 2474,
-                                                    "guid": "001955a0eff4d9e0-00041e45b8002eeb",
-                                                    "Name": "Kusane_Player_Spine2",
-                                                    "ParentComponent": {
-                                                        "type": "ParentComponent",
-                                                        "data": [
-                                                            "001955a0f713236b-00041e45b8002ee9"
-                                                        ]
-                                                    },
-                                                    "Children": [
-                                                        {
-                                                            "id": 2499,
-                                                            "guid": "001955a0ee0ceda6-00041e45b8002f1d",
-                                                            "Name": "Kusane_Player_RightShoulder",
-                                                            "ParentComponent": {
-                                                                "type": "ParentComponent",
-                                                                "data": [
-                                                                    "001955a0eff4d9e0-00041e45b8002eeb"
-                                                                ]
-                                                            },
-                                                            "Children": [
-                                                                {
-                                                                    "id": 2500,
-                                                                    "guid": "001955a0fb4b4497-00041e45b8002f1f",
-                                                                    "Name": "Kusane_Player_RightArm",
-                                                                    "ParentComponent": {
-                                                                        "type": "ParentComponent",
-                                                                        "data": [
-                                                                            "001955a0ee0ceda6-00041e45b8002f1d"
-                                                                        ]
-                                                                    },
-                                                                    "Children": [
-                                                                        {
-                                                                            "id": 2501,
-                                                                            "guid": "001955a0f6a5d557-00041e45b8002f21",
-                                                                            "Name": "Kusane_Player_RightForeArm",
-                                                                            "ParentComponent": {
-                                                                                "type": "ParentComponent",
-                                                                                "data": [
-                                                                                    "001955a0fb4b4497-00041e45b8002f1f"
-                                                                                ]
-                                                                            },
-                                                                            "Children": [
-                                                                                {
-                                                                                    "id": 2502,
-                                                                                    "guid": "001955a0c05ab45a-00041e45b8002f23",
-                                                                                    "Name": "Kusane_Player_RightHand",
-                                                                                    "ParentComponent": {
-                                                                                        "type": "ParentComponent",
-                                                                                        "data": [
-                                                                                            "001955a0f6a5d557-00041e45b8002f21"
-                                                                                        ]
-                                                                                    },
-                                                                                    "ComponentOverrides": [
-                                                                                        {
-                                                                                            "Transform": {
-                                                                                                "type": "Transform",
-                                                                                                "data": [
-                                                                                                    {
-                                                                                                        "type": "Vector3D",
-                                                                                                        "data": [
-                                                                                                            {
-                                                                                                                "type": "float",
-                                                                                                                "data": -0.109569
-                                                                                                            },
-                                                                                                            {
-                                                                                                                "type": "float",
-                                                                                                                "data": 3.72574e-7
-                                                                                                            },
-                                                                                                            {
-                                                                                                                "type": "float",
-                                                                                                                "data": 7.93404e-9
-                                                                                                            }
-                                                                                                        ]
-                                                                                                    },
-                                                                                                    {
-                                                                                                        "type": "Vector3D",
-                                                                                                        "data": [
-                                                                                                            {
-                                                                                                                "type": "float",
-                                                                                                                "data": 1
-                                                                                                            },
-                                                                                                            {
-                                                                                                                "type": "float",
-                                                                                                                "data": 1
-                                                                                                            },
-                                                                                                            {
-                                                                                                                "type": "float",
-                                                                                                                "data": 1
-                                                                                                            }
-                                                                                                        ]
-                                                                                                    },
-                                                                                                    {
-                                                                                                        "type": "Quaternion",
-                                                                                                        "data": [
-                                                                                                            {
-                                                                                                                "type": "float",
-                                                                                                                "data": 0.879403
-                                                                                                            },
-                                                                                                            {
-                                                                                                                "type": "float",
-                                                                                                                "data": 0.411494
-                                                                                                            },
-                                                                                                            {
-                                                                                                                "type": "float",
-                                                                                                                "data": 0.15309
-                                                                                                            },
-                                                                                                            {
-                                                                                                                "type": "float",
-                                                                                                                "data": 0.184086
-                                                                                                            }
-                                                                                                        ]
-                                                                                                    }
-                                                                                                ]
-                                                                                            }
-                                                                                        }
-                                                                                    ],
-                                                                                    "Children": [
-                                                                                        {
-                                                                                            "id": 2515,
-                                                                                            "guid": "001955a0e9373db9-00041e45b8002f3d",
-                                                                                            "Name": "Kusane_Player_RightHandRing1",
-                                                                                            "ParentComponent": {
-                                                                                                "type": "ParentComponent",
-                                                                                                "data": [
-                                                                                                    "001955a0c05ab45a-00041e45b8002f23"
-                                                                                                ]
-                                                                                            },
-                                                                                            "Children": [
-                                                                                                {
-                                                                                                    "id": 2516,
-                                                                                                    "guid": "001955a09573812d-00041e45b8002f3f",
-                                                                                                    "Name": "Kusane_Player_RightHandRing2",
-                                                                                                    "ParentComponent": {
-                                                                                                        "type": "ParentComponent",
-                                                                                                        "data": [
-                                                                                                            "001955a0e9373db9-00041e45b8002f3d"
-                                                                                                        ]
-                                                                                                    },
-                                                                                                    "Children": [
-                                                                                                        {
-                                                                                                            "id": 2517,
-                                                                                                            "guid": "001955a083e0951b-00041e45b8002f41",
-                                                                                                            "Name": "Kusane_Player_RightHandRing3",
-                                                                                                            "ParentComponent": {
-                                                                                                                "type": "ParentComponent",
-                                                                                                                "data": [
-                                                                                                                    "001955a09573812d-00041e45b8002f3f"
-                                                                                                                ]
-                                                                                                            },
-                                                                                                            "ComponentOverrides": [
-                                                                                                                {
-                                                                                                                    "Transform": {
-                                                                                                                        "type": "Transform",
-                                                                                                                        "data": [
-                                                                                                                            {
-                                                                                                                                "type": "Vector3D",
-                                                                                                                                "data": [
-                                                                                                                                    {
-                                                                                                                                        "type": "float",
-                                                                                                                                        "data": 0.0117582
-                                                                                                                                    },
-                                                                                                                                    {
-                                                                                                                                        "type": "float",
-                                                                                                                                        "data": 7.10543e-17
-                                                                                                                                    },
-                                                                                                                                    {
-                                                                                                                                        "type": "float",
-                                                                                                                                        "data": -1.06581e-16
-                                                                                                                                    }
-                                                                                                                                ]
-                                                                                                                            },
-                                                                                                                            {
-                                                                                                                                "type": "Vector3D",
-                                                                                                                                "data": [
-                                                                                                                                    {
-                                                                                                                                        "type": "float",
-                                                                                                                                        "data": 1
-                                                                                                                                    },
-                                                                                                                                    {
-                                                                                                                                        "type": "float",
-                                                                                                                                        "data": 1
-                                                                                                                                    },
-                                                                                                                                    {
-                                                                                                                                        "type": "float",
-                                                                                                                                        "data": 1
-                                                                                                                                    }
-                                                                                                                                ]
-                                                                                                                            },
-                                                                                                                            {
-                                                                                                                                "type": "Quaternion",
-                                                                                                                                "data": [
-                                                                                                                                    {
-                                                                                                                                        "type": "float",
-                                                                                                                                        "data": 0.914685
-                                                                                                                                    },
-                                                                                                                                    {
-                                                                                                                                        "type": "float",
-                                                                                                                                        "data": -0.0309224
-                                                                                                                                    },
-                                                                                                                                    {
-                                                                                                                                        "type": "float",
-                                                                                                                                        "data": 0.399364
-                                                                                                                                    },
-                                                                                                                                    {
-                                                                                                                                        "type": "float",
-                                                                                                                                        "data": 0.0538737
-                                                                                                                                    }
-                                                                                                                                ]
-                                                                                                                            }
-                                                                                                                        ]
-                                                                                                                    }
-                                                                                                                }
-                                                                                                            ]
-                                                                                                        }
-                                                                                                    ]
-                                                                                                }
-                                                                                            ]
-                                                                                        }
-                                                                                    ]
-                                                                                }
-                                                                            ]
-                                                                        }
-                                                                    ]
-                                                                }
-                                                            ]
-                                                        }
-                                                    ]
-                                                }
-                                            ]
-                                        }
-                                    ]
-                                }
-                            ]
-                        }
-                    ]
-                },
-                {
-                    "id": 2539,
-                    "guid": "001955a0dd8af033-00041e45b8002f6d",
-                    "Name": "AttackHitbox",
-                    "ParentComponent": {
-                        "type": "ParentComponent",
-                        "data": [
-                            "001955a0e06b02a8-00041e45b8002e4f"
-                        ]
-                    },
-                    "ComponentOverrides": [
-                        {
-                            "ScriptComponent": {
-                                "scripts": [
-                                    {
-                                        "scriptGuidStr": "00041cc89e9f4054-0004176a34000001",
-                                        "scriptPath": "../../Resources/Scripts/Gameplay/AttackHitboxDeprecated.lua",
-                                        "enabled": true,
-                                        "preserveKeys": [],
-                                        "entryFunction": "OnInit",
-                                        "autoInvokeEntry": true,
-                                        "instanceState": {
-                                            "GetRotation": null,
-                                            "__meta": {},
-                                            "GetScale": null,
-                                            "Update": null,
-                                            "After": null,
-                                            "__field_list": {
-                                                "hitboxRange": 1.5,
-                                                "maxEnemies": 4.0,
-                                                "isActive": false
-                                            },
-                                            "DeserializeFields": null,
-                                            "Destroy": null,
-                                            "_private": {},
-                                            "StartSafe": null,
-                                            "CheckForHits": null,
-                                            "UpdateSafe": null,
-                                            "SetRotation": null,
-                                            "DisableSafe": null,
-                                            "OnDisable": null,
-                                            "Unsubscribe": null,
-                                            "SetPosition": null,
-                                            "isActive": false,
-                                            "Every": null,
-                                            "GetTransform": null,
-                                            "AwakeSafe": null,
-                                            "OnAttackPerformed": null,
-                                            "Move": null,
-                                            "SerializeFields": null,
-                                            "_call_lifecycle": null,
-                                            "Subscribe": null,
-                                            "SetScale": null,
-                                            "__created_at": 1770235998.0,
-                                            "_transform_fetched": false,
-                                            "maxEnemies": 4.0,
-                                            "Start": null,
-                                            "hitboxRange": 1.5,
-                                            "GetPosition": null,
-                                            "DebugTransform": null,
-                                            "_subscriptions": {}
-                                        }
-                                    }
-                                ]
-                            }
-                        }
-                    ]
-                },
-                {
-                    "id": 2540,
-                    "guid": "00169954d180064a-00041e9d60000b27",
-                    "Name": "LowPolyFeatherChain",
-                    "ParentComponent": {
-                        "type": "ParentComponent",
-                        "data": [
-                            "001955a0e06b02a8-00041e45b8002e4f"
-                        ]
-                    },
-                    "ComponentOverrides": [
-                        {
-                            "Transform": {
-                                "type": "Transform",
-                                "data": [
-                                    {
-                                        "type": "Vector3D",
-                                        "data": [
-                                            {
-                                                "type": "float",
-                                                "data": -0.234004
-                                            },
-                                            {
-                                                "type": "float",
-                                                "data": 0.487617
-                                            },
-                                            {
-                                                "type": "float",
-                                                "data": 0.00757313
-                                            }
-                                        ]
-                                    },
-                                    {
-                                        "type": "Vector3D",
-                                        "data": [
-                                            {
-                                                "type": "float",
-                                                "data": 1
-                                            },
-                                            {
-                                                "type": "float",
-                                                "data": 0.999999
-                                            },
-                                            {
-                                                "type": "float",
-                                                "data": 0.999999
-                                            }
-                                        ]
-                                    },
-                                    {
-                                        "type": "Quaternion",
-                                        "data": [
-                                            {
-                                                "type": "float",
-                                                "data": -1.10807e-7
-                                            },
-                                            {
-                                                "type": "float",
-                                                "data": 9.59923e-7
-                                            },
-                                            {
-                                                "type": "float",
-                                                "data": -0.97407
-                                            },
-                                            {
-                                                "type": "float",
-                                                "data": -0.226246
-                                            }
-                                        ]
-                                    }
-                                ]
-                            }
-                        },
-                        {
-                            "ModelRenderComponent": {
-                                "type": "ModelRenderComponent",
-                                "data": [
-                                    "00169954ce50c4ad-00041e971c000329",
-                                    "0060f444e1e8808c-000337e664000011",
-                                    "00169954d3dc24da-00041e971c00032b",
-                                    {
-                                        "type": "Matrix4x4",
-                                        "data": [
-                                            {
-                                                "type": "float",
-                                                "data": 1
-                                            },
-                                            {
-                                                "type": "float",
-                                                "data": 0
-                                            },
-                                            {
-                                                "type": "float",
-                                                "data": 0
-                                            },
-                                            {
-                                                "type": "float",
-                                                "data": 0
-                                            },
-                                            {
-                                                "type": "float",
-                                                "data": 0
-                                            },
-                                            {
-                                                "type": "float",
-                                                "data": 1
-                                            },
-                                            {
-                                                "type": "float",
-                                                "data": 0
-                                            },
-                                            {
-                                                "type": "float",
-                                                "data": 0
-                                            },
-                                            {
-                                                "type": "float",
-                                                "data": 0
-                                            },
-                                            {
-                                                "type": "float",
-                                                "data": 0
-                                            },
-                                            {
-                                                "type": "float",
-                                                "data": 1
-                                            },
-                                            {
-                                                "type": "float",
-                                                "data": 0
-                                            },
-                                            {
-                                                "type": "float",
-                                                "data": 0
-                                            },
-                                            {
-                                                "type": "float",
-                                                "data": 0
-                                            },
-                                            {
-                                                "type": "float",
-                                                "data": 0
-                                            },
-                                            {
-                                                "type": "float",
-                                                "data": 1
-                                            }
-                                        ]
-                                    },
-                                    {
-                                        "type": "bool",
-                                        "data": true
-                                    },
-                                    {
-                                        "type": "bool",
-                                        "data": true
-                                    }
-                                ]
-                            }
-                        },
-                        {
-                            "ActiveComponent": {
-                                "type": "ActiveComponent",
-                                "data": [
-                                    {
-                                        "type": "bool",
-                                        "data": false
-                                    }
-                                ]
-                            }
-                        },
-                        {
-                            "ParentComponent": {
-                                "type": "ParentComponent",
-                                "data": [
-                                    "001955a0e06b02a8-00041e45b8002e4f"
-                                ]
-                            }
-                        },
-                        {
-                            "NameComponent": {
-                                "name": "LowPolyFeatherChain"
-                            }
-                        },
-                        {
-                            "TagComponent": {
-                                "tagIndex": 0
-                            }
-                        },
-                        {
-                            "LayerComponent": {
-                                "layerIndex": 0
-                            }
-                        },
-                        {
-                            "SiblingIndexComponent": {
-                                "siblingIndex": 60
-                            }
-                        }
-                    ]
-                }
-            ]
-        },
-        {
             "PrefabPath": "../../Resources/Prefabs/ChainManager (1).prefab",
-            "id": 2541,
+            "id": 2401,
             "guid": "001955a0ca841345-00041e53e40052b7",
             "Name": "ChainManager",
             "ComponentOverrides": [
@@ -40820,97 +39995,7 @@
             ]
         },
         {
-            "PrefabPath": "../../Resources/Prefabs/GameOverMenu.prefab",
-            "id": 2542,
-            "guid": "001955a0ec89d9bc-00041e53fa0052b9",
-            "Name": "GameOverMenu",
-            "ComponentOverrides": [
-                {
-                    "SiblingIndexComponent": {
-                        "siblingIndex": 56
-                    }
-                },
-                {
-                    "ScriptComponent": {
-                        "scripts": [
-                            {
-                                "scriptGuidStr": "003736b73cf35e3c-000417e2dc006801",
-                                "scriptPath": "../../Resources/Scripts/UI/GameOverMenu/GameOverMenu.lua",
-                                "enabled": true,
-                                "preserveKeys": [],
-                                "entryFunction": "OnInit",
-                                "autoInvokeEntry": true,
-                                "instanceState": {
-                                    "_private": {},
-                                    "__created_at": 1770048685.0,
-                                    "__meta": {},
-                                    "deathAnimationDelay": 3.5,
-                                    "isFading": false,
-                                    "playerDead": false,
-                                    "fadeAlpha": 0.0,
-                                    "fadeScreenName": "DeathScreenBG",
-                                    "_subscriptions": {},
-                                    "_playerDeadSub": {
-                                        "event": "playerDead",
-                                        "id": 1.0
-                                    },
-                                    "_subs_map": {},
-                                    "fadeDuration": 1.5,
-                                    "__field_list": {
-                                        "fadeAlpha": 0.0,
-                                        "fadeScreenName": "DeathScreenBG",
-                                        "deathAnimationDelay": 3.0,
-                                        "isFading": false,
-                                        "fadeDuration": 1.0,
-                                        "playerDead": false
-                                    }
-                                }
-                            },
-                            {
-                                "scriptGuidStr": "0056a7a2269c3d48-000419b378001cc5",
-                                "scriptPath": "../../Resources/Scripts/UI/GameOverMenu/GameOverButtonHandler.lua",
-                                "enabled": true,
-                                "preserveKeys": [],
-                                "entryFunction": "OnInit",
-                                "autoInvokeEntry": true,
-                                "instanceState": {
-                                    "OnClickRespawnButton": null,
-                                    "playerName": "Player",
-                                    "fadeDuration": 3.0,
-                                    "Start": null,
-                                    "DisableSafe": null,
-                                    "Every": null,
-                                    "Update": null,
-                                    "Awake": null,
-                                    "After": null,
-                                    "Destroy": null,
-                                    "Unsubscribe": null,
-                                    "_subscriptions": {},
-                                    "__created_at": 1770237821.0,
-                                    "_private": {},
-                                    "SerializeFields": null,
-                                    "UpdateSafe": null,
-                                    "StartSafe": null,
-                                    "AwakeSafe": null,
-                                    "__meta": {},
-                                    "_call_lifecycle": null,
-                                    "Subscribe": null,
-                                    "fadeScreenName": "GameOverFade",
-                                    "__field_list": {
-                                        "playerName": "Player",
-                                        "fadeScreenName": "GameOverFade",
-                                        "fadeDuration": 3.0
-                                    },
-                                    "DeserializeFields": null
-                                }
-                            }
-                        ]
-                    }
-                }
-            ]
-        },
-        {
-            "id": 2547,
+            "id": 2407,
             "guid": "001955a0975ad12d-00041e59a8006e41",
             "components": {
                 "NameComponent": {
@@ -41198,7 +40283,7 @@
         },
         {
             "PrefabPath": "../../Resources/Prefabs/Link.prefab",
-            "id": 2548,
+            "id": 2408,
             "guid": "001699548469af3e-00041ea1b6001829",
             "Name": "Link",
             "ComponentOverrides": [
@@ -41359,9 +40444,333 @@
             ]
         },
         {
+            "PrefabPath": "../../Resources/Prefabs/Player_GameLevelMap.prefab",
+            "id": 2413,
+            "guid": "001d95f7c1b5bfc0-0004202cbe001361",
+            "Name": "Player",
+            "Children": [
+                {
+                    "id": 2479,
+                    "guid": "001d95f786ee3214-0004202cbe0013e5",
+                    "Name": "Kusane_Player_Reference",
+                    "ParentComponent": {
+                        "type": "ParentComponent",
+                        "data": [
+                            "001d95f7c1b5bfc0-0004202cbe001361"
+                        ]
+                    },
+                    "Children": [
+                        {
+                            "id": 2480,
+                            "guid": "001d95f7b8e83637-0004202cbe0013e7",
+                            "Name": "Kusane_Player_Hips",
+                            "ParentComponent": {
+                                "type": "ParentComponent",
+                                "data": [
+                                    "001d95f786ee3214-0004202cbe0013e5"
+                                ]
+                            },
+                            "Children": [
+                                {
+                                    "id": 2489,
+                                    "guid": "001d95f78a616712-0004202cbe0013f9",
+                                    "Name": "Kusane_Player_Spine",
+                                    "ParentComponent": {
+                                        "type": "ParentComponent",
+                                        "data": [
+                                            "001d95f7b8e83637-0004202cbe0013e7"
+                                        ]
+                                    },
+                                    "Children": [
+                                        {
+                                            "id": 2490,
+                                            "guid": "001d95f795e440e2-0004202cbe0013fb",
+                                            "Name": "Kusane_Player_Spine1",
+                                            "ParentComponent": {
+                                                "type": "ParentComponent",
+                                                "data": [
+                                                    "001d95f78a616712-0004202cbe0013f9"
+                                                ]
+                                            },
+                                            "Children": [
+                                                {
+                                                    "id": 2491,
+                                                    "guid": "001d95f7af610804-0004202cbe0013fd",
+                                                    "Name": "Kusane_Player_Spine2",
+                                                    "ParentComponent": {
+                                                        "type": "ParentComponent",
+                                                        "data": [
+                                                            "001d95f795e440e2-0004202cbe0013fb"
+                                                        ]
+                                                    },
+                                                    "Children": [
+                                                        {
+                                                            "id": 2516,
+                                                            "guid": "001d95f7c58a3dd9-0004202cbe00142f",
+                                                            "Name": "Kusane_Player_RightShoulder",
+                                                            "ParentComponent": {
+                                                                "type": "ParentComponent",
+                                                                "data": [
+                                                                    "001d95f7af610804-0004202cbe0013fd"
+                                                                ]
+                                                            },
+                                                            "Children": [
+                                                                {
+                                                                    "id": 2517,
+                                                                    "guid": "001d95f7c79448e0-0004202cbe001431",
+                                                                    "Name": "Kusane_Player_RightArm",
+                                                                    "ParentComponent": {
+                                                                        "type": "ParentComponent",
+                                                                        "data": [
+                                                                            "001d95f7c58a3dd9-0004202cbe00142f"
+                                                                        ]
+                                                                    },
+                                                                    "Children": [
+                                                                        {
+                                                                            "id": 2518,
+                                                                            "guid": "001d95f78ef4e28c-0004202cbe001433",
+                                                                            "Name": "Kusane_Player_RightForeArm",
+                                                                            "ParentComponent": {
+                                                                                "type": "ParentComponent",
+                                                                                "data": [
+                                                                                    "001d95f7c79448e0-0004202cbe001431"
+                                                                                ]
+                                                                            },
+                                                                            "Children": [
+                                                                                {
+                                                                                    "id": 2519,
+                                                                                    "guid": "001d95f7d4ac91fb-0004202cbe001435",
+                                                                                    "Name": "Kusane_Player_RightHand",
+                                                                                    "ParentComponent": {
+                                                                                        "type": "ParentComponent",
+                                                                                        "data": [
+                                                                                            "001d95f78ef4e28c-0004202cbe001433"
+                                                                                        ]
+                                                                                    },
+                                                                                    "ComponentOverrides": [
+                                                                                        {
+                                                                                            "Transform": {
+                                                                                                "type": "Transform",
+                                                                                                "data": [
+                                                                                                    {
+                                                                                                        "type": "Vector3D",
+                                                                                                        "data": [
+                                                                                                            {
+                                                                                                                "type": "float",
+                                                                                                                "data": -0.109569
+                                                                                                            },
+                                                                                                            {
+                                                                                                                "type": "float",
+                                                                                                                "data": 3.72574e-7
+                                                                                                            },
+                                                                                                            {
+                                                                                                                "type": "float",
+                                                                                                                "data": 7.93404e-9
+                                                                                                            }
+                                                                                                        ]
+                                                                                                    },
+                                                                                                    {
+                                                                                                        "type": "Vector3D",
+                                                                                                        "data": [
+                                                                                                            {
+                                                                                                                "type": "float",
+                                                                                                                "data": 1
+                                                                                                            },
+                                                                                                            {
+                                                                                                                "type": "float",
+                                                                                                                "data": 1
+                                                                                                            },
+                                                                                                            {
+                                                                                                                "type": "float",
+                                                                                                                "data": 1
+                                                                                                            }
+                                                                                                        ]
+                                                                                                    },
+                                                                                                    {
+                                                                                                        "type": "Quaternion",
+                                                                                                        "data": [
+                                                                                                            {
+                                                                                                                "type": "float",
+                                                                                                                "data": 0.879403
+                                                                                                            },
+                                                                                                            {
+                                                                                                                "type": "float",
+                                                                                                                "data": 0.411494
+                                                                                                            },
+                                                                                                            {
+                                                                                                                "type": "float",
+                                                                                                                "data": 0.15309
+                                                                                                            },
+                                                                                                            {
+                                                                                                                "type": "float",
+                                                                                                                "data": 0.184086
+                                                                                                            }
+                                                                                                        ]
+                                                                                                    }
+                                                                                                ]
+                                                                                            }
+                                                                                        }
+                                                                                    ],
+                                                                                    "Children": [
+                                                                                        {
+                                                                                            "id": 2532,
+                                                                                            "guid": "001d95f7b438b58c-0004202cbe00144f",
+                                                                                            "Name": "Kusane_Player_RightHandRing1",
+                                                                                            "ParentComponent": {
+                                                                                                "type": "ParentComponent",
+                                                                                                "data": [
+                                                                                                    "001d95f7d4ac91fb-0004202cbe001435"
+                                                                                                ]
+                                                                                            },
+                                                                                            "Children": [
+                                                                                                {
+                                                                                                    "id": 2533,
+                                                                                                    "guid": "001d95f782d6d07b-0004202cbe001451",
+                                                                                                    "Name": "Kusane_Player_RightHandRing2",
+                                                                                                    "ParentComponent": {
+                                                                                                        "type": "ParentComponent",
+                                                                                                        "data": [
+                                                                                                            "001d95f7b438b58c-0004202cbe00144f"
+                                                                                                        ]
+                                                                                                    },
+                                                                                                    "Children": [
+                                                                                                        {
+                                                                                                            "id": 2534,
+                                                                                                            "guid": "001d95f7896fd126-0004202cbe001453",
+                                                                                                            "Name": "Kusane_Player_RightHandRing3",
+                                                                                                            "ParentComponent": {
+                                                                                                                "type": "ParentComponent",
+                                                                                                                "data": [
+                                                                                                                    "001d95f782d6d07b-0004202cbe001451"
+                                                                                                                ]
+                                                                                                            },
+                                                                                                            "ComponentOverrides": [
+                                                                                                                {
+                                                                                                                    "Transform": {
+                                                                                                                        "type": "Transform",
+                                                                                                                        "data": [
+                                                                                                                            {
+                                                                                                                                "type": "Vector3D",
+                                                                                                                                "data": [
+                                                                                                                                    {
+                                                                                                                                        "type": "float",
+                                                                                                                                        "data": 0.0117582
+                                                                                                                                    },
+                                                                                                                                    {
+                                                                                                                                        "type": "float",
+                                                                                                                                        "data": 7.10543e-17
+                                                                                                                                    },
+                                                                                                                                    {
+                                                                                                                                        "type": "float",
+                                                                                                                                        "data": -1.06581e-16
+                                                                                                                                    }
+                                                                                                                                ]
+                                                                                                                            },
+                                                                                                                            {
+                                                                                                                                "type": "Vector3D",
+                                                                                                                                "data": [
+                                                                                                                                    {
+                                                                                                                                        "type": "float",
+                                                                                                                                        "data": 1
+                                                                                                                                    },
+                                                                                                                                    {
+                                                                                                                                        "type": "float",
+                                                                                                                                        "data": 1
+                                                                                                                                    },
+                                                                                                                                    {
+                                                                                                                                        "type": "float",
+                                                                                                                                        "data": 1
+                                                                                                                                    }
+                                                                                                                                ]
+                                                                                                                            },
+                                                                                                                            {
+                                                                                                                                "type": "Quaternion",
+                                                                                                                                "data": [
+                                                                                                                                    {
+                                                                                                                                        "type": "float",
+                                                                                                                                        "data": 0.914685
+                                                                                                                                    },
+                                                                                                                                    {
+                                                                                                                                        "type": "float",
+                                                                                                                                        "data": -0.0309224
+                                                                                                                                    },
+                                                                                                                                    {
+                                                                                                                                        "type": "float",
+                                                                                                                                        "data": 0.399364
+                                                                                                                                    },
+                                                                                                                                    {
+                                                                                                                                        "type": "float",
+                                                                                                                                        "data": 0.0538737
+                                                                                                                                    }
+                                                                                                                                ]
+                                                                                                                            }
+                                                                                                                        ]
+                                                                                                                    }
+                                                                                                                }
+                                                                                                            ]
+                                                                                                        }
+                                                                                                    ]
+                                                                                                }
+                                                                                            ]
+                                                                                        }
+                                                                                    ]
+                                                                                }
+                                                                            ]
+                                                                        }
+                                                                    ]
+                                                                }
+                                                            ]
+                                                        }
+                                                    ]
+                                                }
+                                            ]
+                                        }
+                                    ]
+                                }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "id": 2556,
+                    "guid": "001d95f7ce94c254-0004202cbe00147f",
+                    "Name": "AttackHitbox",
+                    "ParentComponent": {
+                        "type": "ParentComponent",
+                        "data": [
+                            "001d95f7c1b5bfc0-0004202cbe001361"
+                        ]
+                    },
+                    "ComponentOverrides": [
+                        {
+                            "ScriptComponent": {
+                                "scripts": [
+                                    {
+                                        "scriptGuidStr": "00041cc89e9f4054-0004176a34000001",
+                                        "scriptPath": "../../Resources/Scripts/Gameplay/AttackHitboxDeprecated.lua",
+                                        "enabled": true,
+                                        "preserveKeys": [],
+                                        "entryFunction": "OnInit",
+                                        "autoInvokeEntry": true,
+                                        "instanceState": {
+                                            "__field_list": {},
+                                            "_subscriptions": {},
+                                            "__meta": {},
+                                            "_private": {},
+                                            "__created_at": 1770222532.0
+                                        }
+                                    }
+                                ]
+                            }
+                        }
+                    ]
+                }
+            ]
+        },
+        {
             "PrefabPath": "../../Resources/Prefabs/MeleeEnemy.prefab",
-            "id": 2554,
-            "guid": "00190ce2cf64c56e-00041fa014002d91",
+            "id": 4923,
+            "guid": "00612e339cce5be4-00042033da00603d",
             "Name": "MeleeEnemy",
             "ComponentOverrides": [
                 {
@@ -41373,11 +40782,11 @@
                                 "data": [
                                     {
                                         "type": "float",
-                                        "data": 0
+                                        "data": 5.802
                                     },
                                     {
                                         "type": "float",
-                                        "data": 2.103
+                                        "data": 2.03
                                     },
                                     {
                                         "type": "float",
@@ -41427,597 +40836,28 @@
                     }
                 },
                 {
-                    "AnimationComponent": {
-                        "type": "AnimationComponent",
-                        "data": [
-                            {
-                                "type": "bool",
-                                "data": true
-                            },
-                            {
-                                "type": "bool",
-                                "data": true
-                            },
-                            {
-                                "type": "bool",
-                                "data": true
-                            },
-                            {
-                                "type": "float",
-                                "data": 1
-                            },
-                            {
-                                "type": "int",
-                                "data": 8
-                            },
-                            {
-                                "type": "std::vector<std::string>",
-                                "data": [
-                                    {
-                                        "type": "std::string",
-                                        "data": "Resources/Animations/Enemy@Idle.fbx"
-                                    },
-                                    {
-                                        "type": "std::string",
-                                        "data": "Resources/Animations/Enemy@Death.fbx"
-                                    },
-                                    {
-                                        "type": "std::string",
-                                        "data": "Resources/Animations/Enemy@Walk.fbx"
-                                    },
-                                    {
-                                        "type": "std::string",
-                                        "data": "Resources/Animations/Enemy@AttackScratch.fbx"
-                                    },
-                                    {
-                                        "type": "std::string",
-                                        "data": "Resources/Animations/Enemy@AttackThrow.fbx"
-                                    },
-                                    {
-                                        "type": "std::string",
-                                        "data": "Resources/Animations/Enemy@Hurt1.fbx"
-                                    },
-                                    {
-                                        "type": "std::string",
-                                        "data": "Resources/Animations/Enemy@Hurt2.fbx"
-                                    },
-                                    {
-                                        "type": "std::string",
-                                        "data": "Resources/Animations/Enemy@Hurt3.fbx"
-                                    }
-                                ]
-                            },
-                            {
-                                "type": "std::vector<GUID_128>",
-                                "data": [
-                                    "001b9f1427965fe1-00041a38de000005",
-                                    "001b9f1475670420-00041a3ca4003e6f",
-                                    "001b9f140591dd23-00041a417e003e8d",
-                                    "001b9f146e3b530a-00041a3ca8003e7b",
-                                    "001b9f147d529815-00041a3ffe003e85",
-                                    "002b77b56a01f104-00041d333c000121",
-                                    "002b77b50bcbbef6-00041d334e000125",
-                                    "002b77b50b1ded08-00041d472a004681"
-                                ]
-                            },
-                            {
-                                "type": "std::string",
-                                "data": "C:\\Users\\USER\\Desktop\\GAM300\\Project\\Resources\\Animations\\EnemyAC.animator"
-                            }
-                        ]
-                    }
-                },
-                {
-                    "SiblingIndexComponent": {
-                        "siblingIndex": 60
-                    }
-                },
-                {
-                    "ScriptComponent": {
-                        "scripts": [
-                            {
-                                "scriptGuidStr": "0052baccd2678cdc-0003f3b4ba000001",
-                                "scriptPath": "../../Resources/Scripts/Gameplay/EnemyAI.lua",
-                                "enabled": true,
-                                "preserveKeys": [],
-                                "entryFunction": "OnInit",
-                                "autoInvokeEntry": true,
-                                "instanceState": {
-                                    "PatrolPointA_Z": -26.0,
-                                    "IsPassive": false,
-                                    "MeleeSpeed": 0.9,
-                                    "MeleeRange": 1.2,
-                                    "IsMelee": true,
-                                    "PatrolSpeed": 0.6,
-                                    "MeleeAttackCooldown": 2.3,
-                                    "EnablePatrol": true,
-                                    "WallOffset": 0.08,
-                                    "KnockbackStrength": 12.0,
-                                    "MeleeAnimDelay": 1.2,
-                                    "AttackDisengageRange": 4.0,
-                                    "PatrolPointA_X": -0.5,
-                                    "HurtDuration": 0.25,
-                                    "__meta": {},
-                                    "KnockbackDuration": 0.5,
-                                    "MaxHealth": 100.0,
-                                    "ClipAttack": 1.0,
-                                    "HookedDuration": 4.0,
-                                    "_subscriptions": {},
-                                    "PathRepathInterval": 10.0,
-                                    "PathGoalMoveThreshold": 0.9,
-                                    "__field_list": {
-                                        "PatrolPointA_Z": -1.1,
-                                        "IsPassive": false,
-                                        "MeleeSpeed": 0.9,
-                                        "MeleeRange": 1.2,
-                                        "PatrolPointB_Z": -1.1,
-                                        "PathGoalMoveThreshold": 0.9,
-                                        "MeleeAttackCooldown": 5.0,
-                                        "HitIFrame": 0.2,
-                                        "DetectionRange": 4.0,
-                                        "KnockbackStrength": 12.0,
-                                        "MeleeAnimDelay": 2.0,
-                                        "AttackDisengageRange": 4.0,
-                                        "PatrolPointA_X": 2.0,
-                                        "HurtDuration": 2.0,
-                                        "KnockbackDuration": 0.5,
-                                        "MaxHealth": 5.0,
-                                        "ClipAttack": 1.0,
-                                        "ClipHurt": 2.0,
-                                        "ClipIdle": 0.0,
-                                        "PathRepathInterval": 10.0,
-                                        "PlayerName": "Player",
-                                        "AttackCooldown": 3.0,
-                                        "PathWaypointRadius": 0.6,
-                                        "ChaseSpeed": 0.6,
-                                        "GroundRayLen": 3.0,
-                                        "UseKinematicGrounding": true,
-                                        "GroundRayUp": 0.35,
-                                        "Gravity": -9.81,
-                                        "ClipDeath": 3.0,
-                                        "HookedDuration": 4.0,
-                                        "MeleeDamage": 1.0,
-                                        "MinStep": 0.01,
-                                        "AttackRange": 3.0,
-                                        "WallOffset": 0.08,
-                                        "WallRayUp": 0.8,
-                                        "IsMelee": false,
-                                        "GroundEps": 0.08,
-                                        "MaxFallSpeed": -25.0,
-                                        "EnablePatrol": true,
-                                        "GroundSnapMax": 0.35,
-                                        "WallSkin": 0.18,
-                                        "PatrolSpeed": 0.3,
-                                        "PatrolPointB_X": -2.0,
-                                        "PatrolWait": 1.5,
-                                        "PatrolDistance": 3.0,
-                                        "PathStuckTime": 0.75
-                                    },
-                                    "GroundRayUp": 0.35,
-                                    "ClipIdle": 0.0,
-                                    "ClipHurt": 2.0,
-                                    "PathStuckTime": 0.75,
-                                    "AttackCooldown": 3.0,
-                                    "PathWaypointRadius": 0.5,
-                                    "ChaseSpeed": 1.2,
-                                    "MeleeDamage": 1.0,
-                                    "PatrolDistance": 3.0,
-                                    "__created_at": 1770211729.0,
-                                    "Gravity": -9.81,
-                                    "ClipDeath": 3.0,
-                                    "GroundRayLen": 3.0,
-                                    "HitIFrame": 0.2,
-                                    "MinStep": 0.01,
-                                    "AttackRange": 3.0,
-                                    "UseKinematicGrounding": true,
-                                    "PlayerName": "Player",
-                                    "PatrolPointB_Z": -26.0,
-                                    "GroundEps": 0.08,
-                                    "MaxFallSpeed": -25.0,
-                                    "_private": {},
-                                    "GroundSnapMax": 0.35,
-                                    "WallSkin": 0.18,
-                                    "PatrolPointB_X": 0.5,
-                                    "WallRayUp": 0.8,
-                                    "PatrolWait": 1.0,
-                                    "DetectionRange": 4.0,
-                                    "_transform_fetched": false
-                                }
-                            }
-                        ]
-                    }
-                }
-            ]
-        },
-        {
-            "PrefabPath": "../../Resources/Prefabs/MeleeEnemy.prefab",
-            "id": 3768,
-            "guid": "003943455b77717e-00042007040107af",
-            "Name": "RangedEnemy",
-            "ComponentOverrides": [
-                {
-                    "Transform": {
-                        "type": "Transform",
-                        "data": [
-                            {
-                                "type": "Vector3D",
-                                "data": [
-                                    {
-                                        "type": "float",
-                                        "data": 14.5
-                                    },
-                                    {
-                                        "type": "float",
-                                        "data": 2.03
-                                    },
-                                    {
-                                        "type": "float",
-                                        "data": -25.75
-                                    }
-                                ]
-                            },
-                            {
-                                "type": "Vector3D",
-                                "data": [
-                                    {
-                                        "type": "float",
-                                        "data": 1
-                                    },
-                                    {
-                                        "type": "float",
-                                        "data": 1
-                                    },
-                                    {
-                                        "type": "float",
-                                        "data": 1
-                                    }
-                                ]
-                            },
-                            {
-                                "type": "Quaternion",
-                                "data": [
-                                    {
-                                        "type": "float",
-                                        "data": 0.707107
-                                    },
-                                    {
-                                        "type": "float",
-                                        "data": 0
-                                    },
-                                    {
-                                        "type": "float",
-                                        "data": -0.707107
-                                    },
-                                    {
-                                        "type": "float",
-                                        "data": 0
-                                    }
-                                ]
-                            }
-                        ]
-                    }
-                },
-                {
-                    "NameComponent": {
-                        "name": "RangedEnemy"
-                    }
-                },
-                {
-                    "SiblingIndexComponent": {
-                        "siblingIndex": 63
-                    }
-                },
-                {
-                    "ScriptComponent": {
-                        "scripts": [
-                            {
-                                "scriptGuidStr": "0052baccd2678cdc-0003f3b4ba000001",
-                                "scriptPath": "../../Resources/Scripts/Gameplay/EnemyAI.lua",
-                                "enabled": true,
-                                "preserveKeys": [],
-                                "entryFunction": "OnInit",
-                                "autoInvokeEntry": true,
-                                "instanceState": {
-                                    "PatrolSpeed": 0.6,
-                                    "_private": {},
-                                    "MeleeAnimDelay": 2.0,
-                                    "__created_at": 1770211729.0,
-                                    "MinStep": 0.01,
-                                    "ClipDeath": 3.0,
-                                    "ClipAttack": 1.0,
-                                    "WallRayUp": 0.8,
-                                    "KnockbackStrength": 12.0,
-                                    "KnockbackDuration": 0.5,
-                                    "MeleeRange": 1.2,
-                                    "ClipHurt": 2.0,
-                                    "ClipIdle": 0.0,
-                                    "UseKinematicGrounding": true,
-                                    "AttackCooldown": 3.0,
-                                    "_transform_fetched": false,
-                                    "IsMelee": false,
-                                    "Gravity": -9.81,
-                                    "__field_list": {
-                                        "PatrolSpeed": 0.3,
-                                        "Gravity": -9.81,
-                                        "PatrolPointA_Z": -1.1,
-                                        "MinStep": 0.01,
-                                        "ClipDeath": 3.0,
-                                        "HitIFrame": 0.2,
-                                        "WallRayUp": 0.8,
-                                        "KnockbackStrength": 12.0,
-                                        "KnockbackDuration": 0.5,
-                                        "MeleeRange": 1.2,
-                                        "ClipHurt": 2.0,
-                                        "ClipIdle": 0.0,
-                                        "UseKinematicGrounding": true,
-                                        "AttackCooldown": 3.0,
-                                        "PatrolWait": 1.5,
-                                        "IsMelee": false,
-                                        "WallOffset": 0.08,
-                                        "MaxFallSpeed": -25.0,
-                                        "PlayerName": "Player",
-                                        "PatrolPointA_X": 2.0,
-                                        "PatrolPointB_X": -2.0,
-                                        "PathGoalMoveThreshold": 0.9,
-                                        "GroundRayUp": 0.35,
-                                        "EnablePatrol": true,
-                                        "WallSkin": 0.18,
-                                        "ClipAttack": 1.0,
-                                        "HurtDuration": 2.0,
-                                        "MeleeAttackCooldown": 5.0,
-                                        "AttackDisengageRange": 4.0,
-                                        "GroundRayLen": 3.0,
-                                        "MaxHealth": 5.0,
-                                        "IsPassive": false,
-                                        "PathWaypointRadius": 0.6,
-                                        "PathStuckTime": 0.75,
-                                        "PathRepathInterval": 10.0,
-                                        "MeleeDamage": 1.0,
-                                        "PatrolPointB_Z": -1.1,
-                                        "MeleeSpeed": 0.9,
-                                        "PatrolDistance": 3.0,
-                                        "ChaseSpeed": 0.6,
-                                        "GroundEps": 0.08,
-                                        "DetectionRange": 4.0,
-                                        "GroundSnapMax": 0.35,
-                                        "MeleeAnimDelay": 2.0,
-                                        "AttackRange": 3.0,
-                                        "HookedDuration": 4.0
-                                    },
-                                    "PatrolPointA_X": 10.5,
-                                    "PlayerName": "Player",
-                                    "PathWaypointRadius": 0.3,
-                                    "MaxFallSpeed": -25.0,
-                                    "PatrolPointA_Z": -23.75,
-                                    "AttackDisengageRange": 4.0,
-                                    "PathRepathInterval": 10.0,
-                                    "PatrolPointB_X": 15.5,
-                                    "PathGoalMoveThreshold": 0.9,
-                                    "GroundRayUp": 0.35,
-                                    "EnablePatrol": true,
-                                    "WallSkin": 0.18,
-                                    "GroundSnapMax": 0.35,
-                                    "HurtDuration": 0.5,
-                                    "MeleeAttackCooldown": 5.0,
-                                    "HitIFrame": 0.2,
-                                    "GroundRayLen": 3.0,
-                                    "MaxHealth": 100.0,
-                                    "IsPassive": false,
-                                    "WallOffset": 0.08,
-                                    "PathStuckTime": 0.75,
-                                    "__meta": {},
-                                    "MeleeDamage": 1.0,
-                                    "PatrolPointB_Z": -23.75,
-                                    "MeleeSpeed": 0.9,
-                                    "_subscriptions": {},
-                                    "ChaseSpeed": 1.2,
-                                    "PatrolWait": 1.5,
-                                    "DetectionRange": 4.0,
-                                    "GroundEps": 0.08,
-                                    "PatrolDistance": 3.0,
-                                    "AttackRange": 3.0,
-                                    "HookedDuration": 4.0
-                                }
-                            }
-                        ]
-                    }
-                }
-            ]
-        },
-        {
-            "PrefabPath": "../../Resources/Prefabs/MeleeEnemy.prefab",
-            "id": 4366,
-            "guid": "00394345170b2d94-000420032c00a9bb",
-            "Name": "MeleeEnemy",
-            "ComponentOverrides": [
-                {
-                    "Transform": {
-                        "type": "Transform",
-                        "data": [
-                            {
-                                "type": "Vector3D",
-                                "data": [
-                                    {
-                                        "type": "float",
-                                        "data": 5.80184
-                                    },
-                                    {
-                                        "type": "float",
-                                        "data": 2.02999
-                                    },
-                                    {
-                                        "type": "float",
-                                        "data": -21.6959
-                                    }
-                                ]
-                            },
-                            {
-                                "type": "Vector3D",
-                                "data": [
-                                    {
-                                        "type": "float",
-                                        "data": 1
-                                    },
-                                    {
-                                        "type": "float",
-                                        "data": 1
-                                    },
-                                    {
-                                        "type": "float",
-                                        "data": 1
-                                    }
-                                ]
-                            },
-                            {
-                                "type": "Quaternion",
-                                "data": [
-                                    {
-                                        "type": "float",
-                                        "data": -0.217292
-                                    },
-                                    {
-                                        "type": "float",
-                                        "data": -9.00991e-8
-                                    },
-                                    {
-                                        "type": "float",
-                                        "data": 0.976107
-                                    },
-                                    {
-                                        "type": "float",
-                                        "data": -9.00991e-8
-                                    }
-                                ]
-                            }
-                        ]
-                    }
-                },
-                {
                     "SiblingIndexComponent": {
                         "siblingIndex": 62
                     }
-                },
-                {
-                    "ScriptComponent": {
-                        "scripts": [
-                            {
-                                "scriptGuidStr": "0052baccd2678cdc-0003f3b4ba000001",
-                                "scriptPath": "../../Resources/Scripts/Gameplay/EnemyAI.lua",
-                                "enabled": true,
-                                "preserveKeys": [],
-                                "entryFunction": "OnInit",
-                                "autoInvokeEntry": true,
-                                "instanceState": {
-                                    "PatrolSpeed": 0.6,
-                                    "_private": {},
-                                    "MeleeAnimDelay": 2.0,
-                                    "__created_at": 1770211729.0,
-                                    "MinStep": 0.01,
-                                    "ClipDeath": 3.0,
-                                    "ClipAttack": 1.0,
-                                    "WallRayUp": 0.8,
-                                    "KnockbackStrength": 12.0,
-                                    "KnockbackDuration": 0.5,
-                                    "MeleeRange": 1.2,
-                                    "ClipHurt": 2.0,
-                                    "ClipIdle": 0.0,
-                                    "UseKinematicGrounding": true,
-                                    "AttackCooldown": 3.0,
-                                    "_transform_fetched": false,
-                                    "IsMelee": true,
-                                    "Gravity": -9.81,
-                                    "__field_list": {
-                                        "PatrolSpeed": 0.3,
-                                        "Gravity": -9.81,
-                                        "PatrolPointA_Z": -1.1,
-                                        "MinStep": 0.01,
-                                        "ClipDeath": 3.0,
-                                        "HitIFrame": 0.2,
-                                        "WallRayUp": 0.8,
-                                        "KnockbackStrength": 12.0,
-                                        "KnockbackDuration": 0.5,
-                                        "MeleeRange": 1.2,
-                                        "ClipHurt": 2.0,
-                                        "ClipIdle": 0.0,
-                                        "UseKinematicGrounding": true,
-                                        "AttackCooldown": 3.0,
-                                        "PatrolWait": 1.5,
-                                        "IsMelee": false,
-                                        "WallOffset": 0.08,
-                                        "MaxFallSpeed": -25.0,
-                                        "PlayerName": "Player",
-                                        "PatrolPointA_X": 2.0,
-                                        "PatrolPointB_X": -2.0,
-                                        "PathGoalMoveThreshold": 0.9,
-                                        "GroundRayUp": 0.35,
-                                        "EnablePatrol": true,
-                                        "WallSkin": 0.18,
-                                        "ClipAttack": 1.0,
-                                        "HurtDuration": 2.0,
-                                        "MeleeAttackCooldown": 5.0,
-                                        "AttackDisengageRange": 4.0,
-                                        "GroundRayLen": 3.0,
-                                        "MaxHealth": 5.0,
-                                        "IsPassive": false,
-                                        "PathWaypointRadius": 0.6,
-                                        "PathStuckTime": 0.75,
-                                        "PathRepathInterval": 10.0,
-                                        "MeleeDamage": 1.0,
-                                        "PatrolPointB_Z": -1.1,
-                                        "MeleeSpeed": 0.9,
-                                        "PatrolDistance": 3.0,
-                                        "ChaseSpeed": 0.6,
-                                        "GroundEps": 0.08,
-                                        "DetectionRange": 4.0,
-                                        "GroundSnapMax": 0.35,
-                                        "MeleeAnimDelay": 2.0,
-                                        "AttackRange": 3.0,
-                                        "HookedDuration": 4.0
-                                    },
-                                    "PatrolPointA_X": 2.0,
-                                    "PlayerName": "Player",
-                                    "PathWaypointRadius": 0.3,
-                                    "MaxFallSpeed": -25.0,
-                                    "PatrolPointA_Z": -1.1,
-                                    "AttackDisengageRange": 4.0,
-                                    "PathRepathInterval": 10.0,
-                                    "PatrolPointB_X": -2.0,
-                                    "PathGoalMoveThreshold": 0.9,
-                                    "GroundRayUp": 0.35,
-                                    "EnablePatrol": false,
-                                    "WallSkin": 0.18,
-                                    "GroundSnapMax": 0.35,
-                                    "HurtDuration": 0.5,
-                                    "MeleeAttackCooldown": 5.0,
-                                    "HitIFrame": 0.2,
-                                    "GroundRayLen": 3.0,
-                                    "MaxHealth": 100.0,
-                                    "IsPassive": false,
-                                    "WallOffset": 0.08,
-                                    "PathStuckTime": 0.75,
-                                    "__meta": {},
-                                    "MeleeDamage": 1.0,
-                                    "PatrolPointB_Z": -1.1,
-                                    "MeleeSpeed": 0.9,
-                                    "_subscriptions": {},
-                                    "ChaseSpeed": 1.2,
-                                    "PatrolWait": 1.5,
-                                    "DetectionRange": 4.0,
-                                    "GroundEps": 0.08,
-                                    "PatrolDistance": 3.0,
-                                    "AttackRange": 3.0,
-                                    "HookedDuration": 4.0
-                                }
-                            }
-                        ]
-                    }
                 }
             ]
         },
         {
+            "PrefabPath": "../../Resources/Prefabs/RangedEnemy.prefab",
+            "id": 4924,
+            "guid": "00612e33b2500a40-00042033aa00603b",
+            "Name": "RangedEnemy"
+        },
+        {
             "PrefabPath": "../../Resources/Prefabs/MeleeEnemy.prefab",
-            "id": 4899,
-            "guid": "003943457ef70840-00041ffc540038f7",
+            "id": 4925,
+            "guid": "00612e33e4cf2e77-0004203376006039",
+            "Name": "MeleeEnemy"
+        },
+        {
+            "PrefabPath": "../../Resources/Prefabs/RangedEnemy.prefab",
+            "id": 4955,
+            "guid": "00612e33e679f65c-000420342a00603f",
             "Name": "RangedEnemy",
             "ComponentOverrides": [
                 {
@@ -42029,7 +40869,7 @@
                                 "data": [
                                     {
                                         "type": "float",
-                                        "data": 6.21887
+                                        "data": 13.3582
                                     },
                                     {
                                         "type": "float",
@@ -42037,7 +40877,7 @@
                                     },
                                     {
                                         "type": "float",
-                                        "data": -28.0848
+                                        "data": -25.6517
                                     }
                                 ]
                             },
@@ -42083,131 +40923,17 @@
                     }
                 },
                 {
-                    "NameComponent": {
-                        "name": "RangedEnemy"
-                    }
-                },
-                {
                     "SiblingIndexComponent": {
-                        "siblingIndex": 61
-                    }
-                },
-                {
-                    "ScriptComponent": {
-                        "scripts": [
-                            {
-                                "scriptGuidStr": "0052baccd2678cdc-0003f3b4ba000001",
-                                "scriptPath": "../../Resources/Scripts/Gameplay/EnemyAI.lua",
-                                "enabled": true,
-                                "preserveKeys": [],
-                                "entryFunction": "OnInit",
-                                "autoInvokeEntry": true,
-                                "instanceState": {
-                                    "PatrolSpeed": 0.6,
-                                    "_private": {},
-                                    "MeleeAnimDelay": 2.0,
-                                    "__created_at": 1770211729.0,
-                                    "MinStep": 0.01,
-                                    "ClipDeath": 3.0,
-                                    "ClipAttack": 1.0,
-                                    "WallRayUp": 0.8,
-                                    "KnockbackStrength": 12.0,
-                                    "KnockbackDuration": 0.5,
-                                    "MeleeRange": 1.2,
-                                    "ClipHurt": 2.0,
-                                    "ClipIdle": 0.0,
-                                    "UseKinematicGrounding": true,
-                                    "AttackCooldown": 3.0,
-                                    "_transform_fetched": false,
-                                    "IsMelee": false,
-                                    "Gravity": -9.81,
-                                    "__field_list": {
-                                        "PatrolSpeed": 0.3,
-                                        "Gravity": -9.81,
-                                        "PatrolPointA_Z": -1.1,
-                                        "MinStep": 0.01,
-                                        "ClipDeath": 3.0,
-                                        "HitIFrame": 0.2,
-                                        "WallRayUp": 0.8,
-                                        "KnockbackStrength": 12.0,
-                                        "KnockbackDuration": 0.5,
-                                        "MeleeRange": 1.2,
-                                        "ClipHurt": 2.0,
-                                        "ClipIdle": 0.0,
-                                        "UseKinematicGrounding": true,
-                                        "AttackCooldown": 3.0,
-                                        "PatrolWait": 1.5,
-                                        "IsMelee": false,
-                                        "WallOffset": 0.08,
-                                        "MaxFallSpeed": -25.0,
-                                        "PlayerName": "Player",
-                                        "PatrolPointA_X": 2.0,
-                                        "PatrolPointB_X": -2.0,
-                                        "PathGoalMoveThreshold": 0.9,
-                                        "GroundRayUp": 0.35,
-                                        "EnablePatrol": true,
-                                        "WallSkin": 0.18,
-                                        "ClipAttack": 1.0,
-                                        "HurtDuration": 2.0,
-                                        "MeleeAttackCooldown": 5.0,
-                                        "AttackDisengageRange": 4.0,
-                                        "GroundRayLen": 3.0,
-                                        "MaxHealth": 5.0,
-                                        "IsPassive": false,
-                                        "PathWaypointRadius": 0.6,
-                                        "PathStuckTime": 0.75,
-                                        "PathRepathInterval": 10.0,
-                                        "MeleeDamage": 1.0,
-                                        "PatrolPointB_Z": -1.1,
-                                        "MeleeSpeed": 0.9,
-                                        "PatrolDistance": 3.0,
-                                        "ChaseSpeed": 0.6,
-                                        "GroundEps": 0.08,
-                                        "DetectionRange": 4.0,
-                                        "GroundSnapMax": 0.35,
-                                        "MeleeAnimDelay": 2.0,
-                                        "AttackRange": 3.0,
-                                        "HookedDuration": 4.0
-                                    },
-                                    "PatrolPointA_X": 2.0,
-                                    "PlayerName": "Player",
-                                    "PathWaypointRadius": 0.3,
-                                    "MaxFallSpeed": -25.0,
-                                    "PatrolPointA_Z": -1.1,
-                                    "AttackDisengageRange": 4.0,
-                                    "PathRepathInterval": 10.0,
-                                    "PatrolPointB_X": -2.0,
-                                    "PathGoalMoveThreshold": 0.9,
-                                    "GroundRayUp": 0.35,
-                                    "EnablePatrol": false,
-                                    "WallSkin": 0.18,
-                                    "GroundSnapMax": 0.35,
-                                    "HurtDuration": 0.5,
-                                    "MeleeAttackCooldown": 5.0,
-                                    "HitIFrame": 0.2,
-                                    "GroundRayLen": 3.0,
-                                    "MaxHealth": 100.0,
-                                    "IsPassive": false,
-                                    "WallOffset": 0.08,
-                                    "PathStuckTime": 0.75,
-                                    "__meta": {},
-                                    "MeleeDamage": 1.0,
-                                    "PatrolPointB_Z": -1.1,
-                                    "MeleeSpeed": 0.9,
-                                    "_subscriptions": {},
-                                    "ChaseSpeed": 1.2,
-                                    "PatrolWait": 1.5,
-                                    "DetectionRange": 4.0,
-                                    "GroundEps": 0.08,
-                                    "PatrolDistance": 3.0,
-                                    "AttackRange": 3.0,
-                                    "HookedDuration": 4.0
-                                }
-                            }
-                        ]
+                        "siblingIndex": 63
                     }
                 }
             ]
+        },
+        {
+            "PrefabPath": "../../Resources/Prefabs/GameOverMenu.prefab",
+            "id": 4966,
+            "guid": "00612e33e66d2b5f-000420326a004d5d",
+            "Name": "GameOverMenu"
         }
     ],
     "layers": [

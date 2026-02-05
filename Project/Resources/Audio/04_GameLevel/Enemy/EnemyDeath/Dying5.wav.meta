@@ -1,8 +1,8 @@
 {
     "AssetMetaData": {
         "version": 7,
-        "guid": "001cbc0e84d03c54-00041ff00e0199b1",
-        "source": "../../Resources/Audio/04_GameLevel/Enemy/EnemyDeath/EnemyDeath/Dying5.wav",
-        "compiled": "../../Resources/Audio/04_GameLevel/Enemy/EnemyDeath/EnemyDeath/Dying5.wav"
+        "guid": "00612e33f4282c47-0004202e36000009",
+        "source": "../../Resources/Audio/04_GameLevel/Enemy/EnemyDeath/Dying5.wav",
+        "compiled": "../../Resources/Audio/04_GameLevel/Enemy/EnemyDeath/Dying5.wav"
     }
 }
