@@ -1,0 +1,144 @@
+{
+    "prefab_entities": [
+        {
+            "id": 184,
+            "guid": "001bb91d79234f28-0003fd5772000015",
+            "components": {
+                "NameComponent": {
+                    "name": "ChainManager"
+                },
+                "TagComponent": {
+                    "tagIndex": 0
+                },
+                "LayerComponent": {
+                    "layerIndex": 0
+                },
+                "SiblingIndexComponent": {
+                    "siblingIndex": 34
+                },
+                "Transform": {
+                    "type": "Transform",
+                    "data": [
+                        {
+                            "type": "Vector3D",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                }
+                            ]
+                        },
+                        {
+                            "type": "Vector3D",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                }
+                            ]
+                        },
+                        {
+                            "type": "Quaternion",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                }
+                            ]
+                        }
+                    ]
+                },
+                "ActiveComponent": {
+                    "type": "ActiveComponent",
+                    "data": [
+                        {
+                            "type": "bool",
+                            "data": true
+                        }
+                    ]
+                },
+                "ScriptComponent": {
+                    "scripts": [
+                        {
+                            "scriptGuidStr": "0000000000000000-0000000000000000",
+                            "scriptPath": "../../Resources/Scripts/GamePlay/ChainBootstrap.lua",
+                            "enabled": true,
+                            "preserveKeys": [],
+                            "entryFunction": "OnInit",
+                            "autoInvokeEntry": true,
+                            "instanceState": {
+                                "__field_list": {
+                                    "TriggerKey": "G",
+                                    "PlayerName": "Kusane_Player_LeftHandMiddle1",
+                                    "AnchorAngleThresholdDeg": 45.0,
+                                    "IsElastic": true,
+                                    "EnableLogs": false,
+                                    "LinkName": "Link",
+                                    "ChainSpeed": 10.0,
+                                    "VerletDamping": 0.02,
+                                    "ConstraintIterations": 2.0,
+                                    "MaxLength": 0.0,
+                                    "SimulatedHitDistance": 0.0,
+                                    "PinEndWhenExtended": true,
+                                    "LinkMaxDistance": 0.025,
+                                    "VerletGravity": 9.81,
+                                    "AutoStart": false,
+                                    "NumberOfLinks": 200.0
+                                },
+                                "_subscriptions": {},
+                                "ChainSpeed": 10.0,
+                                "MaxLength": 5.0,
+                                "SimulatedHitDistance": 0.0,
+                                "__created_at": 1769925658.0,
+                                "VerletGravity": 0.5,
+                                "NumberOfLinks": 200.0,
+                                "AnchorAngleThresholdDeg": 45.0,
+                                "AutoStart": false,
+                                "EnableLogs": false,
+                                "PinEndWhenExtended": true,
+                                "LinkName": "Link",
+                                "VerletDamping": 0.02,
+                                "ConstraintIterations": 10.0,
+                                "TriggerKey": "G",
+                                "_private": {},
+                                "_subs_map": {},
+                                "LinkMaxDistance": 0.025,
+                                "IsElastic": true,
+                                "__meta": {},
+                                "PlayerName": "Kusane_Player_LeftHandMiddle1"
+                            }
+                        }
+                    ]
+                }
+            }
+        }
+    ]
+}

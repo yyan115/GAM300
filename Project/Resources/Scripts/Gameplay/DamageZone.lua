@@ -1,8 +1,4 @@
-<<<<<<< HEAD:Project/Resources/Scripts/Gameplay/DamageZone.lua
 -- Resources/Scripts/Gameplay/DamageZone.lua
-=======
--- Resources/Scripts/GamePlay/DamageZone.lua
->>>>>>> main:Project/Resources/Scripts/GamePlay/DamageZone.lua
 require("extension.engine_bootstrap")
 local Component = require("extension.mono_helper")
 local TransformMixin = require("extension.transform_mixin")

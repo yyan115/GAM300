@@ -495,13 +495,13 @@ void SceneManager::ReloadTempScene() {
         ecs.animationSystem->Initialise();
         ecs.scriptSystem->ReloadSystem();
 
-        // Reset all animation preview states to 0 (fresh editor state)
-        for (auto ent : ecs.GetActiveEntities()) {
-            if (ecs.HasComponent<AnimationComponent>(ent)) {
-                AnimationComponent& animComp = ecs.GetComponent<AnimationComponent>(ent);
-                animComp.ResetPreview(ent);
-            }
-        }
+        //// Reset all animation preview states to 0 (fresh editor state)
+        //for (auto ent : ecs.GetActiveEntities()) {
+        //    if (ecs.HasComponent<AnimationComponent>(ent)) {
+        //        AnimationComponent& animComp = ecs.GetComponent<AnimationComponent>(ent);
+        //        animComp.ResetPreview(ent);
+        //    }
+        //}
 	}
 	else {
 		// Handle the case where the temp file doesn't exist (e.g., for newly created scenes)

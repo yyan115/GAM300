@@ -82,7 +82,7 @@ return Component {
         enemyDetectionRange  = 8.0,
         enemyDisengageRange  = 10.0,
         enemyDisengageDelay  = 2.0,
-        enemyScriptNames = {"EnemyAI", "FlyingEnemyLogic"},
+        enemyNames = {"EnemyAI", "FlyingEnemyLogic"},
         cacheUpdateInterval = 1.0,  -- C++ cache update interval (seconds)
         debugEnemyDetection = false,       
     },
@@ -118,7 +118,8 @@ return Component {
 
         -- Configure C++ cache intervals
         if Engine and Engine.SetCacheUpdateInterval then
-            for _, scriptName in ipairs(self.enemyScriptNames) do
+            for _, scriptName in ipairs(self.enemyNames) do
+                print("[CameraFollow] Finding enemy script name: " .. tostring(scriptName))
                 Engine.SetCacheUpdateInterval(scriptName, self.cacheUpdateInterval)
                 if self.debugEnemyDetection then
                     print(string.format("[CameraFollow] Set cache interval for '%s' to %.1fs", 
@@ -193,7 +194,7 @@ return Component {
         local closestEnemy = nil
         
         -- C++ returns cached results (updated by UpdateCacheTiming)
-        for _, scriptName in ipairs(self.enemyScriptNames) do
+        for _, scriptName in ipairs(self.enemyNames) do
             local entities = Engine.FindEntitiesWithScript(scriptName)
             
             if entities and #entities > 0 then
@@ -460,7 +461,9 @@ return Component {
             (Input.IsActionPressed and Input.IsActionPressed("Attack")) then
 
                 -- re-lock cursor (existing behaviour)
-                if Screen and Screen.SetCursorLocked and Screen.IsCursorLocked then
+                -- Only re-lock if game is NOT paused (pause menu keeps cursor unlocked)
+                local isPaused = Time and Time.IsPaused and Time.IsPaused()
+                if not isPaused and Screen and Screen.SetCursorLocked and Screen.IsCursorLocked then
                     if not Screen.IsCursorLocked() then
                         Screen.SetCursorLocked(true)
                         self._firstMouse = true

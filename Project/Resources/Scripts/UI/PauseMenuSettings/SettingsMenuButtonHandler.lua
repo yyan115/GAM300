@@ -3,111 +3,60 @@ local Component = require("extension.mono_helper")
 
 return Component {
     fields = {
-        fadeDuration = 1.0,
-        fadeScreenName = "MenuFadeScreen",
+        -- Entity names for slider notches to update visual positions
+        masterNotch = "MasterNotch",
+        masterBar = "MasterBar",
+        masterFill = "MasterFill",
+        bgmNotch = "BGMNotch",
+        bgmBar = "BGMBar",
+        bgmFill = "BGMFill",
+        sfxNotch = "SFXNotch",
+        sfxBar = "SFXBar",
+        sfxFill = "SFXFill",
+        -- Audio: [1] = hover SFX, [2] = click SFX
+        buttonSFX = {},
+        -- Sprite GUIDs: [1] = normal, [2] = hover
+        ResetSpriteGUIDs = {},
+        BackSpriteGUIDs = {},
     },
 
-    OnClickResetButton = function(self)
-        --not sure why self._sliderData is empty when try accessing.. TEMP FIX
-        local sliderMapping = {
-            { notch = "MasterTip", bar = "MasterAudioBar", type = "master" },
-            { notch = "BGMTip",    bar = "BGMAudioBar",    type = "bgm"    },
-            { notch = "SFXTip",    bar = "SFXAudioBar",    type = "sfx"    }
-        }
-
-        for _, cfg in ipairs(sliderMapping) do
-            local notchEnt = Engine.GetEntityByName(cfg.notch)
-            local barEnt   = Engine.GetEntityByName(cfg.bar)
-
-            if notchEnt and barEnt then
-                local nTrans = GetComponent(notchEnt, "Transform")
-                local bTrans = GetComponent(barEnt, "Transform")
-                nTrans.localPosition.x = bTrans.localPosition.x
-                nTrans.isDirty = true 
-            end
-        end
-        --Set to 50% vol....
-    end,    
-    OnClickBackButton = function(self)
-        --DISABLE SETTINGS UI SCREEN, ENABLE PAUSE UI SCREEN
-        local SettingsUIEntity = Engine.GetEntityByName("SettingsUI")
-        local SettingsComp = GetComponent(SettingsUIEntity, "ActiveComponent")
-        SettingsComp.isActive = false
-
-        local PauseUIEntity = Engine.GetEntityByName("PauseMenuUI")
-        local PauseComp = GetComponent(PauseUIEntity, "ActiveComponent")
-        PauseComp.isActive = true
-
-    end,
-
     Start = function(self)
-        self._buttonData = {} 
-        self._sliderData = {}
+        -- Initialize GameSettings (safe to call multiple times)
+        if GameSettings then
+            GameSettings.Init()
+        end
+
+        -- Cache audio component from Buttons entity
+        self._audio = self:GetComponent("AudioComponent")
+
+        -- Setup button data with sprite swapping support
+        self._buttonData = {}
         local buttonMapping = {
-            { base = "ResetButton", hover = "HoveredResetButton" },
-            { base = "BackButton", hover = "HoveredBackButton" }
+            { base = "ResetButton", spriteGUIDs = self.ResetSpriteGUIDs },
+            { base = "BackButton", spriteGUIDs = self.BackSpriteGUIDs },
         }
 
-        for index, names in ipairs(buttonMapping) do
-            local baseEnt = Engine.GetEntityByName(names.base)
-            local hoverEnt = Engine.GetEntityByName(names.hover)
+        for index, config in ipairs(buttonMapping) do
+            local baseEnt = Engine.GetEntityByName(config.base)
 
-            if baseEnt and hoverEnt then
+            if baseEnt then
                 local transform = GetComponent(baseEnt, "Transform")
+                local sprite = GetComponent(baseEnt, "SpriteRenderComponent")
                 local pos = transform.localPosition
                 local scale = transform.localScale
-                local hoverSprite = GetComponent(hoverEnt, "SpriteRenderComponent")
 
                 self._buttonData[index] = {
-                    hoverSprite = hoverSprite,
+                    name = config.base,
+                    sprite = sprite,
+                    spriteGUIDs = config.spriteGUIDs,
                     minX = pos.x - (scale.x / 2),
                     maxX = pos.x + (scale.x / 2),
                     minY = pos.y - (scale.y / 2),
-                    maxY = pos.y + (scale.y / 2)
+                    maxY = pos.y + (scale.y / 2),
+                    wasHovered = false
                 }
-
-                -- Ensure they start hidden
-                if hoverSprite then hoverSprite.isVisible = false end
             else
-                print("Warning: Missing entities for " .. names.base)
-            end
-
-            local fillEnt = Engine.GetEntityByName("MasterAudioBarFill")
-            self._fillEnt = GetComponent(fillEnt, "Transform")
-
-        end
-
--- 2. Setup Sliders 
-        local sliderMapping = {
-            { notch = "MasterTip", bar = "MasterAudioBar", type = "master" },
-            { notch = "BGMTip",    bar = "BGMAudioBar",    type = "bgm"    },
-            { notch = "SFXTip",    bar = "SFXAudioBar",    type = "sfx"    }
-        }
-
-        for _, cfg in ipairs(sliderMapping) do
-            local notchEnt = Engine.GetEntityByName(cfg.notch)
-            local barEnt   = Engine.GetEntityByName(cfg.bar)
-
-            if notchEnt and barEnt then
-                local nTrans = GetComponent(notchEnt, "Transform")
-                local bTrans = GetComponent(barEnt, "Transform")
-                
-                -- Calculate bounds based on the specific bar for this slider
-                local offsetX = bTrans.localScale.x / 2.0
-                local offsetY = bTrans.localScale.y / 2.0 + 20
-
-                table.insert(self._sliderData, {
-                    notchTrans = nTrans,
-                    barTrans   = bTrans,
-                    type       = cfg.type,
-                    minX = bTrans.localPosition.x - offsetX,
-                    maxX = bTrans.localPosition.x + offsetX,
-                    minY = bTrans.localPosition.y - offsetY,
-                    maxY = bTrans.localPosition.y + offsetY
-                })
-                
-            else
-                print("Warning: Missing slider entities for " .. cfg.type)
+                print("[SettingsMenuButtonHandler] Warning: Missing entity " .. config.base)
             end
         end
     end,
@@ -121,46 +70,115 @@ return Component {
         local mouseCoordinate = Engine.GetGameCoordinate(pointerPos.x, pointerPos.y)
         local inputX, inputY = mouseCoordinate[1], mouseCoordinate[2]
 
-        -- Step 1: Hide EVERY hover sprite first
         for _, data in pairs(self._buttonData) do
-            if data.hoverSprite then
-                data.hoverSprite.isVisible = false
-            end
-        end
+            local isHovering = inputX >= data.minX and inputX <= data.maxX and
+                               inputY >= data.minY and inputY <= data.maxY
 
-        -- Step 2: Check if mouse is over any button
-        for _, data in pairs(self._buttonData) do
-            if inputX >= data.minX and inputX <= data.maxX and
-               inputY >= data.minY and inputY <= data.maxY then
-                
-                -- Show only this one
-                if data.hoverSprite then
-                    data.hoverSprite.isVisible = true
+            -- Handle hover enter
+            if isHovering and not data.wasHovered then
+                -- Play hover sound
+                if self._audio and self.buttonSFX and self.buttonSFX[1] then
+                    self._audio:PlayOneShot(self.buttonSFX[1])
+                end
+                -- Switch to hover sprite
+                if data.sprite and data.spriteGUIDs and data.spriteGUIDs[2] then
+                    data.sprite:SetTextureFromGUID(data.spriteGUIDs[2])
+                end
+            -- Handle hover exit
+            elseif not isHovering and data.wasHovered then
+                -- Switch back to normal sprite
+                if data.sprite and data.spriteGUIDs and data.spriteGUIDs[1] then
+                    data.sprite:SetTextureFromGUID(data.spriteGUIDs[1])
                 end
             end
+
+            data.wasHovered = isHovering
+        end
+    end,
+
+    -- Reset all settings to defaults
+    OnClickResetButton = function(self)
+        local audiocomp = GetComponent(Engine.GetEntityByName("ResetButton"), "AudioComponent")
+        if audiocomp then
+            audiocomp:Play()
         end
 
--- Check if the user is actually clicking/holding
-        if Input.IsPointerPressed() then
-            for _, s in ipairs(self._sliderData) do
+        -- Initialize GameSettings (safe to call multiple times)
+        GameSettings.Init()
 
-                if inputX >= s.minX and inputX <= s.maxX and
-                   inputY >= s.minY and inputY <= s.maxY then
-                    
-                    -- Clamp within the bar boundaries
-                    local clampedX = math.max(s.minX, math.min(inputX, s.maxX))
-                    s.notchTrans.localPosition.x = clampedX
-                    s.notchTrans.isDirty = true
+        -- Reset to defaults (this also applies and saves via C++)
+        GameSettings.ResetToDefaults()
 
-                    local range = s.maxX - s.minX
-                    local vol = (clampedX - s.minX) / range
-                    
-                --SNAPPING: Clean up the edges
-                    if vol < 0.01 then vol = 0 
-                    elseif vol > 0.99 then vol = 1.0 end
-                    -- Set the volume
+        -- Update slider visual positions to reflect default values
+        self:UpdateSliderPositions()
+
+        print("[SettingsMenuButtonHandler] All settings reset to defaults")
+    end,
+
+    OnClickBackButton = function(self)
+        local audiocomp = GetComponent(Engine.GetEntityByName("BackButton"), "AudioComponent")
+        if audiocomp then
+            audiocomp:Play()
+        end
+
+        -- Disable Settings UI, enable Pause UI
+        local SettingsUIEntity = Engine.GetEntityByName("SettingsUI")
+        local SettingsComp = GetComponent(SettingsUIEntity, "ActiveComponent")
+        if SettingsComp then SettingsComp.isActive = false end
+
+        local PauseUIEntity = Engine.GetEntityByName("PauseMenuUI")
+        local PauseComp = GetComponent(PauseUIEntity, "ActiveComponent")
+        if PauseComp then PauseComp.isActive = true end
+    end,
+
+    -- Helper function to update all slider visual positions
+    UpdateSliderPositions = function(self)
+        local function updateSlider(notchName, barName, fillName, value, minVal, maxVal)
+            local notchEntity = Engine.GetEntityByName(notchName)
+            local barEntity = Engine.GetEntityByName(barName)
+
+            if notchEntity and notchEntity ~= -1 and barEntity and barEntity ~= -1 then
+                local notchTransform = GetComponent(notchEntity, "Transform")
+                local barTransform = GetComponent(barEntity, "Transform")
+
+                if notchTransform and barTransform then
+                    local offsetX = barTransform.localScale.x / 2.0
+                    local minX = barTransform.localPosition.x - offsetX
+                    local maxX = barTransform.localPosition.x + offsetX
+
+                    -- Normalize value to 0-1 range
+                    local normalized = (value - minVal) / (maxVal - minVal)
+
+                    local newPosX = minX + (normalized * (maxX - minX))
+                    notchTransform.localPosition.x = newPosX
+                    notchTransform.isDirty = true
+
+                    -- Update fill bar if specified
+                    if fillName and fillName ~= "" then
+                        local fillEntity = Engine.GetEntityByName(fillName)
+                        if fillEntity and fillEntity ~= -1 then
+                            local fillTransform = GetComponent(fillEntity, "Transform")
+                            if fillTransform then
+                                local fillMaxWidth = barTransform.localScale.x
+                                local fillWidth = normalized * fillMaxWidth
+                                if fillWidth < 1 then fillWidth = 1 end
+
+                                fillTransform.localScale.x = fillWidth
+                                fillTransform.localPosition.x = minX + (fillWidth / 2)
+                                fillTransform.isDirty = true
+                            end
+                        end
+                    end
                 end
+            else
+                print("[SettingsMenuButtonHandler] Warning: Could not find " .. notchName .. " or " .. barName)
             end
         end
-    end
+
+        -- Update all sliders using default values from C++
+        -- Volume sliders: 0-1 range
+        updateSlider(self.masterNotch, self.masterBar, self.masterFill, GameSettings.GetDefaultMasterVolume(), 0, 1)
+        updateSlider(self.bgmNotch, self.bgmBar, self.bgmFill, GameSettings.GetDefaultBGMVolume(), 0, 1)
+        updateSlider(self.sfxNotch, self.sfxBar, self.sfxFill, GameSettings.GetDefaultSFXVolume(), 0, 1)
+    end,
 }

@@ -3,7 +3,7 @@ local Component = require("extension.mono_helper")
 
 return Component {
     fields = {
-        targetScene = "Resources/Scenes/04_GameLevel.scene"
+        targetScene = "Resources/Scenes/04_GameLevelMap.scene"
     },
     Start = function(self)
         self._videoComp = self:GetComponent("VideoComponent")

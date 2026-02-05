@@ -1,0 +1,11 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "00169954ce50c4ad-00041e971c000329",
+        "source": "../../Resources/Models/LowPolyFeatherChain.fbx",
+        "compiled": "../../Resources/Models/LowPolyFeatherChain.mesh"
+    },
+    "ModelMetaData": {
+        "optimizeMeshes": true
+    }
+}

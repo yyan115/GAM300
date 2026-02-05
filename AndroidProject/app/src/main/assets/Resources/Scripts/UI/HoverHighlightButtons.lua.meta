@@ -1,9 +1,0 @@
-{
-    "AssetMetaData": {
-        "version": 7,
-        "guid": "002132e8aa0fbd5c-0003ea960a000001",
-        "source": "../../Resources/Scripts/UI/HoverHighlightButtons.lua",
-        "compiled": "../../Resources/Scripts/UI/HoverHighlightButtons.lua",
-        "android_compiled": "Resources/Scripts/UI/HoverHighlightButtons.lua"
-    }
-}

@@ -1,0 +1,13 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "00169954ffc53974-00041e9700000321",
+        "source": "../../Resources/Textures/M4/SingleChain_baseColor.png",
+        "compiled": "../../Resources/Textures/M4/SingleChain_baseColor.dds"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true
+    }
+}

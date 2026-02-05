@@ -389,17 +389,17 @@ namespace Scripting {
         if (snapshotL) {
             // mark active user
             m_activeUsers.fetch_add(1);
-            // call update()
-            lua_getglobal(snapshotL, "update");
-            if (lua_isfunction(snapshotL, -1)) {
-                lua_pushnumber(snapshotL, static_cast<lua_Number>(dtSeconds));
-                if (!safe_pcall(snapshotL, 1, 0)) {
-                    if (m_logger) m_logger->Error("Error while calling update()");
-                }
-            }
-            else {
-                lua_pop(snapshotL, 1);
-            }
+            //// call update()
+            //lua_getglobal(snapshotL, "update");
+            //if (lua_isfunction(snapshotL, -1)) {
+            //    lua_pushnumber(snapshotL, static_cast<lua_Number>(dtSeconds));
+            //    if (!safe_pcall(snapshotL, 1, 0)) {
+            //        if (m_logger) m_logger->Error("Error while calling update()");
+            //    }
+            //}
+            //else {
+            //    lua_pop(snapshotL, 1);
+            //}
 
             // tick coroutine scheduler (scheduler pointer protected by mutex)
             {

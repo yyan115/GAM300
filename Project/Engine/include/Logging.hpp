@@ -24,6 +24,25 @@
 #endif
 #endif
 
+// =============================================================================
+// LOGGING CONTROL
+// =============================================================================
+// Uncomment the line below to disable ALL logging at compile time.
+// This eliminates all logging overhead - no function calls, no string formatting.
+// =============================================================================
+
+ //#define ENGINE_LOGGING_DISABLED
+
+// =============================================================================
+// LOGGING MACROS
+// =============================================================================
+// When ENGINE_LOGGING_DISABLED is defined, all logging macros compile to nothing.
+// The (void)0 is a standard idiom that:
+// - Produces no code
+// - Is syntactically valid where a statement is expected
+// - Suppresses "unused variable" warnings when logging is disabled
+// =============================================================================
+
 namespace EngineLogging {
         
     // Log levels matching spdlog levels

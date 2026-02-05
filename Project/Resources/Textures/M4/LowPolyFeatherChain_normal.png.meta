@@ -1,0 +1,13 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "00169954cd2fbd5f-00041e9702000327",
+        "source": "../../Resources/Textures/M4/LowPolyFeatherChain_normal.png",
+        "compiled": "../../Resources/Textures/M4/LowPolyFeatherChain_normal.dds"
+    },
+    "TextureMetaData": {
+        "type": "normal",
+        "flipUVs": false,
+        "generateMipmaps": true
+    }
+}

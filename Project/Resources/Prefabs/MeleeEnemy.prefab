@@ -1,0 +1,724 @@
+{
+    "prefab_entities": [
+        {
+            "id": 2409,
+            "guid": "00190ce2cf64c56e-00041fa014002d91",
+            "components": {
+                "PrefabLinkComponent": {
+                    "type": "PrefabLinkComponent",
+                    "data": [
+                        {
+                            "type": "std::string",
+                            "data": "../../Resources/Prefabs/MeleeEnemy.prefab"
+                        }
+                    ]
+                },
+                "NameComponent": {
+                    "name": "MeleeEnemy"
+                },
+                "TagComponent": {
+                    "tagIndex": 7
+                },
+                "LayerComponent": {
+                    "layerIndex": 0
+                },
+                "SiblingIndexComponent": {
+                    "siblingIndex": 60
+                },
+                "Transform": {
+                    "type": "Transform",
+                    "data": [
+                        {
+                            "type": "Vector3D",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 2.103
+                                },
+                                {
+                                    "type": "float",
+                                    "data": -26
+                                }
+                            ]
+                        },
+                        {
+                            "type": "Vector3D",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                }
+                            ]
+                        },
+                        {
+                            "type": "Quaternion",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                }
+                            ]
+                        }
+                    ]
+                },
+                "ModelRenderComponent": {
+                    "type": "ModelRenderComponent",
+                    "data": [
+                        "001b9f143526f465-00041a3900000013",
+                        "0060f444e1e8808c-000337e664000011",
+                        "001b9f1434b4dace-00041a3900000015",
+                        {
+                            "type": "Matrix4x4",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                }
+                            ]
+                        },
+                        {
+                            "type": "bool",
+                            "data": true
+                        },
+                        {
+                            "type": "bool",
+                            "data": true
+                        }
+                    ]
+                },
+                "ParticleComponent": {
+                    "type": "ParticleComponent",
+                    "data": [
+                        {
+                            "type": "bool",
+                            "data": true
+                        },
+                        "0067d7b772bde87a-00040b9528000069",
+                        {
+                            "type": "Vector3D",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0.5
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                }
+                            ]
+                        },
+                        {
+                            "type": "float",
+                            "data": 4
+                        },
+                        {
+                            "type": "int",
+                            "data": 1000
+                        },
+                        {
+                            "type": "float",
+                            "data": 2
+                        },
+                        {
+                            "type": "float",
+                            "data": 0.3
+                        },
+                        {
+                            "type": "float",
+                            "data": 0
+                        },
+                        {
+                            "type": "Vector3D",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                }
+                            ]
+                        },
+                        {
+                            "type": "float",
+                            "data": 1
+                        },
+                        {
+                            "type": "Vector3D",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                }
+                            ]
+                        },
+                        {
+                            "type": "float",
+                            "data": 1
+                        },
+                        {
+                            "type": "Vector3D",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": -9.8
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                }
+                            ]
+                        },
+                        {
+                            "type": "float",
+                            "data": 1
+                        },
+                        {
+                            "type": "Vector3D",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                }
+                            ]
+                        },
+                        {
+                            "type": "int",
+                            "data": 0
+                        },
+                        {
+                            "type": "int",
+                            "data": 0
+                        }
+                    ]
+                },
+                "AudioComponent": {
+                    "type": "AudioComponent",
+                    "data": [
+                        {
+                            "type": "bool",
+                            "data": true
+                        },
+                        "0000000000000000-0000000000000000",
+                        {
+                            "type": "bool",
+                            "data": false
+                        },
+                        {
+                            "type": "bool",
+                            "data": false
+                        },
+                        {
+                            "type": "bool",
+                            "data": false
+                        },
+                        {
+                            "type": "bool",
+                            "data": false
+                        },
+                        {
+                            "type": "int",
+                            "data": 128
+                        },
+                        {
+                            "type": "float",
+                            "data": 1
+                        },
+                        {
+                            "type": "float",
+                            "data": 1
+                        },
+                        {
+                            "type": "float",
+                            "data": 0
+                        },
+                        {
+                            "type": "float",
+                            "data": 1
+                        },
+                        {
+                            "type": "bool",
+                            "data": true
+                        },
+                        {
+                            "type": "float",
+                            "data": 0
+                        },
+                        {
+                            "type": "float",
+                            "data": 1
+                        },
+                        {
+                            "type": "float",
+                            "data": 1
+                        },
+                        {
+                            "type": "float",
+                            "data": 100
+                        },
+                        {
+                            "type": "std::string",
+                            "data": "SFX"
+                        }
+                    ]
+                },
+                "RigidBodyComponent": {
+                    "type": "RigidBodyComponent",
+                    "data": [
+                        {
+                            "type": "bool",
+                            "data": true
+                        },
+                        {
+                            "type": "int",
+                            "data": 0
+                        },
+                        {
+                            "type": "bool",
+                            "data": false
+                        },
+                        {
+                            "type": "float",
+                            "data": 1
+                        },
+                        {
+                            "type": "Vector3D",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                }
+                            ]
+                        },
+                        {
+                            "type": "Vector3D",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": -9.81
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                }
+                            ]
+                        },
+                        {
+                            "type": "bool",
+                            "data": false
+                        },
+                        {
+                            "type": "float",
+                            "data": 0
+                        },
+                        {
+                            "type": "float",
+                            "data": 0
+                        }
+                    ]
+                },
+                "ColliderComponent": {
+                    "type": "ColliderComponent",
+                    "data": [
+                        {
+                            "type": "bool",
+                            "data": true
+                        },
+                        {
+                            "type": "int",
+                            "data": 1
+                        },
+                        {
+                            "type": "unsigned",
+                            "data": 49
+                        },
+                        {
+                            "type": "int",
+                            "data": 0
+                        },
+                        {
+                            "type": "Vector3D",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 0.11
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0.51
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0.11
+                                }
+                            ]
+                        },
+                        {
+                            "type": "float",
+                            "data": 0.5
+                        },
+                        {
+                            "type": "float",
+                            "data": 0.5
+                        },
+                        {
+                            "type": "float",
+                            "data": 0.5
+                        },
+                        {
+                            "type": "float",
+                            "data": 0.5
+                        },
+                        {
+                            "type": "float",
+                            "data": 0.5
+                        },
+                        {
+                            "type": "Vector3D",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": -0.00166389
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0.57544
+                                },
+                                {
+                                    "type": "float",
+                                    "data": -0.00968052
+                                }
+                            ]
+                        }
+                    ]
+                },
+                "AnimationComponent": {
+                    "type": "AnimationComponent",
+                    "data": [
+                        {
+                            "type": "bool",
+                            "data": true
+                        },
+                        {
+                            "type": "bool",
+                            "data": true
+                        },
+                        {
+                            "type": "bool",
+                            "data": true
+                        },
+                        {
+                            "type": "float",
+                            "data": 1
+                        },
+                        {
+                            "type": "int",
+                            "data": 8
+                        },
+                        {
+                            "type": "std::vector<std::string>",
+                            "data": [
+                                {
+                                    "type": "std::string",
+                                    "data": ""
+                                },
+                                {
+                                    "type": "std::string",
+                                    "data": ""
+                                },
+                                {
+                                    "type": "std::string",
+                                    "data": ""
+                                },
+                                {
+                                    "type": "std::string",
+                                    "data": ""
+                                },
+                                {
+                                    "type": "std::string",
+                                    "data": ""
+                                },
+                                {
+                                    "type": "std::string",
+                                    "data": ""
+                                },
+                                {
+                                    "type": "std::string",
+                                    "data": ""
+                                },
+                                {
+                                    "type": "std::string",
+                                    "data": ""
+                                }
+                            ]
+                        },
+                        {
+                            "type": "std::vector<GUID_128>",
+                            "data": [
+                                "001b9f1427965fe1-00041a38de000005",
+                                "001b9f1475670420-00041a3ca4003e6f",
+                                "001b9f140591dd23-00041a417e003e8d",
+                                "001b9f146e3b530a-00041a3ca8003e7b",
+                                "001b9f147d529815-00041a3ffe003e85",
+                                "002b77b56a01f104-00041d333c000121",
+                                "002b77b50bcbbef6-00041d334e000125",
+                                "002b77b50b1ded08-00041d472a004681"
+                            ]
+                        },
+                        {
+                            "type": "std::string",
+                            "data": "C:\\Users\\USER\\Desktop\\GAM300\\Project\\Resources\\Animations\\EnemyAC.animator"
+                        }
+                    ]
+                },
+                "ActiveComponent": {
+                    "type": "ActiveComponent",
+                    "data": [
+                        {
+                            "type": "bool",
+                            "data": true
+                        }
+                    ]
+                },
+                "ScriptComponent": {
+                    "scripts": [
+                        {
+                            "scriptGuidStr": "0052baccd2678cdc-0003f3b4ba000001",
+                            "scriptPath": "../../Resources/Scripts/Gameplay/EnemyAI.lua",
+                            "enabled": true,
+                            "preserveKeys": [],
+                            "entryFunction": "OnInit",
+                            "autoInvokeEntry": true,
+                            "instanceState": {
+                                "PatrolPointA_Z": -26.0,
+                                "IsPassive": false,
+                                "MeleeSpeed": 0.9,
+                                "MeleeRange": 1.2,
+                                "IsMelee": true,
+                                "PatrolSpeed": 0.6,
+                                "MeleeAttackCooldown": 2.3,
+                                "EnablePatrol": true,
+                                "WallOffset": 0.08,
+                                "KnockbackStrength": 12.0,
+                                "MeleeAnimDelay": 1.2,
+                                "AttackDisengageRange": 4.0,
+                                "PatrolPointA_X": -0.5,
+                                "HurtDuration": 0.25,
+                                "__meta": {},
+                                "KnockbackDuration": 0.5,
+                                "MaxHealth": 100.0,
+                                "ClipAttack": 1.0,
+                                "HookedDuration": 4.0,
+                                "_subscriptions": {},
+                                "PathRepathInterval": 10.0,
+                                "PathGoalMoveThreshold": 0.9,
+                                "__field_list": {
+                                    "PatrolPointA_Z": -1.1,
+                                    "IsPassive": false,
+                                    "MeleeSpeed": 0.9,
+                                    "MeleeRange": 1.2,
+                                    "PatrolPointB_Z": -1.1,
+                                    "PathGoalMoveThreshold": 0.9,
+                                    "MeleeAttackCooldown": 5.0,
+                                    "HitIFrame": 0.2,
+                                    "DetectionRange": 4.0,
+                                    "KnockbackStrength": 12.0,
+                                    "MeleeAnimDelay": 2.0,
+                                    "AttackDisengageRange": 4.0,
+                                    "PatrolPointA_X": 2.0,
+                                    "HurtDuration": 2.0,
+                                    "KnockbackDuration": 0.5,
+                                    "MaxHealth": 5.0,
+                                    "ClipAttack": 1.0,
+                                    "ClipHurt": 2.0,
+                                    "ClipIdle": 0.0,
+                                    "PathRepathInterval": 10.0,
+                                    "PlayerName": "Player",
+                                    "AttackCooldown": 3.0,
+                                    "PathWaypointRadius": 0.6,
+                                    "ChaseSpeed": 0.6,
+                                    "GroundRayLen": 3.0,
+                                    "UseKinematicGrounding": true,
+                                    "GroundRayUp": 0.35,
+                                    "Gravity": -9.81,
+                                    "ClipDeath": 3.0,
+                                    "HookedDuration": 4.0,
+                                    "MeleeDamage": 1.0,
+                                    "MinStep": 0.01,
+                                    "AttackRange": 3.0,
+                                    "WallOffset": 0.08,
+                                    "WallRayUp": 0.8,
+                                    "IsMelee": false,
+                                    "GroundEps": 0.08,
+                                    "MaxFallSpeed": -25.0,
+                                    "EnablePatrol": true,
+                                    "GroundSnapMax": 0.35,
+                                    "WallSkin": 0.18,
+                                    "PatrolSpeed": 0.3,
+                                    "PatrolPointB_X": -2.0,
+                                    "PatrolWait": 1.5,
+                                    "PatrolDistance": 3.0,
+                                    "PathStuckTime": 0.75
+                                },
+                                "GroundRayUp": 0.35,
+                                "ClipIdle": 0.0,
+                                "ClipHurt": 2.0,
+                                "PathStuckTime": 0.75,
+                                "AttackCooldown": 3.0,
+                                "PathWaypointRadius": 0.5,
+                                "ChaseSpeed": 1.2,
+                                "MeleeDamage": 1.0,
+                                "PatrolDistance": 3.0,
+                                "__created_at": 1770211729.0,
+                                "Gravity": -9.81,
+                                "ClipDeath": 3.0,
+                                "GroundRayLen": 3.0,
+                                "HitIFrame": 0.2,
+                                "MinStep": 0.01,
+                                "AttackRange": 3.0,
+                                "UseKinematicGrounding": true,
+                                "PlayerName": "Player",
+                                "PatrolPointB_Z": -26.0,
+                                "GroundEps": 0.08,
+                                "MaxFallSpeed": -25.0,
+                                "_private": {},
+                                "GroundSnapMax": 0.35,
+                                "WallSkin": 0.18,
+                                "PatrolPointB_X": 0.5,
+                                "WallRayUp": 0.8,
+                                "PatrolWait": 1.0,
+                                "DetectionRange": 4.0,
+                                "_transform_fetched": false
+                            }
+                        }
+                    ]
+                }
+            }
+        }
+    ]
+}

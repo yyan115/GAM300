@@ -1,0 +1,13 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "00169954d86f8660-00041e9700000323",
+        "source": "../../Resources/Textures/M4/SingleChain_normal.png",
+        "compiled": "../../Resources/Textures/M4/SingleChain_normal.dds"
+    },
+    "TextureMetaData": {
+        "type": "normal",
+        "flipUVs": false,
+        "generateMipmaps": true
+    }
+}

@@ -556,6 +556,37 @@ std::vector<std::string> AssetManager::CompileAllAssetsForAndroid() {
 		}
 	}
 
+	// Copy prefab files to Android resources.
+	if (std::filesystem::exists(rootAssetDirectory + "/Prefabs")) {
+		for (auto p : std::filesystem::recursive_directory_iterator(rootAssetDirectory + "/Prefabs")) {
+			if (std::filesystem::is_regular_file(p)) {
+				std::string path = p.path().generic_string();
+				path = path.substr(path.find("Resources"));
+				std::filesystem::path newPath = FileUtilities::SanitizePathForAndroid(std::filesystem::path(path));
+				path = newPath.generic_string();
+				if (FileUtilities::CopyFile(p.path().generic_string(), (AssetManager::GetInstance().GetAndroidResourcesPath() / path).generic_string())) {
+					ENGINE_LOG_INFO("Copied prefab file to Android Resources: " + p.path().generic_string());
+				}
+			}
+		}
+	}
+
+	// Copy animator controller files (.animator) and animation FBX files to Android resources.
+	if (std::filesystem::exists(rootAssetDirectory + "/Animations")) {
+		for (auto p : std::filesystem::recursive_directory_iterator(rootAssetDirectory + "/Animations")) {
+			std::string ext = p.path().extension().generic_string();
+			if (std::filesystem::is_regular_file(p) && (ext == ".animator" || ext == ".fbx")) {
+				std::string path = p.path().generic_string();
+				path = path.substr(path.find("Resources"));
+				std::filesystem::path newPath = FileUtilities::SanitizePathForAndroid(std::filesystem::path(path));
+				path = newPath.generic_string();
+				if (FileUtilities::CopyFile(p.path().generic_string(), (AssetManager::GetInstance().GetAndroidResourcesPath() / path).generic_string())) {
+					ENGINE_LOG_INFO("Copied animation file to Android Resources: " + p.path().generic_string());
+				}
+			}
+		}
+	}
+
 	// Output the asset manifest for Android.
 	std::filesystem::path manifestFileP(GetAndroidResourcesPath() / "asset_manifest.txt");
 	std::ofstream out(manifestFileP.generic_string());
@@ -590,8 +621,35 @@ std::vector<std::string> AssetManager::CompileAllAssetsForAndroid() {
 		}
 	}
 
-	std::cout << "[AssetManager] Asset manifest written to " << manifestFileP.generic_string() << std::endl;
-	std::cout << "[AssetManager] Finished compiling assets except Shaders and Meshes for Android. Android Resources folder is in GAM300/AndroidProject/app/src/main/assets/Resources" << std::endl << std::endl;
+	// Add prefab files to manifest
+	if (std::filesystem::exists(rootAssetDirectory + "/Prefabs")) {
+		for (auto& p : std::filesystem::recursive_directory_iterator(rootAssetDirectory + "/Prefabs")) {
+			if (std::filesystem::is_regular_file(p)) {
+				std::string path = p.path().generic_string();
+				path = path.substr(path.find("Resources"));
+				std::filesystem::path newPath = FileUtilities::SanitizePathForAndroid(std::filesystem::path(path));
+				path = newPath.generic_string();
+				out << path << "\n";
+			}
+		}
+	}
+
+	// Add animator controller and animation FBX files to manifest
+	if (std::filesystem::exists(rootAssetDirectory + "/Animations")) {
+		for (auto& p : std::filesystem::recursive_directory_iterator(rootAssetDirectory + "/Animations")) {
+			std::string ext = p.path().extension().generic_string();
+			if (std::filesystem::is_regular_file(p) && (ext == ".animator" || ext == ".fbx")) {
+				std::string path = p.path().generic_string();
+				path = path.substr(path.find("Resources"));
+				std::filesystem::path newPath = FileUtilities::SanitizePathForAndroid(std::filesystem::path(path));
+				path = newPath.generic_string();
+				out << path << "\n";
+			}
+		}
+	}
+
+	ENGINE_PRINT("[AssetManager] Asset manifest written to {}", manifestFileP.generic_string());
+	ENGINE_PRINT("[AssetManager] Finished compiling assets except Shaders and Meshes for Android. Android Resources folder is in GAM300/AndroidProject/app/src/main/assets/Resources");
 	androidCompilationStatus.finishedCompiling = true;
 	return remainingPaths;
 }

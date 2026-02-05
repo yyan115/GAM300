@@ -1,0 +1,13 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "001cbc0ec774bcef-00041fe254014c37",
+        "source": "../../Resources/Sprites/PlayerHUD/HPBarBG.png",
+        "compiled": "../../Resources/Sprites/PlayerHUD/HPBarBG.dds"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true
+    }
+}

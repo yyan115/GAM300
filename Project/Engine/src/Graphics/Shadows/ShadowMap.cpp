@@ -14,7 +14,13 @@ bool DirectionalShadowMap::Initialize(int res)
     // Create depth texture
     glGenTextures(1, &depthTexture);
     glBindTexture(GL_TEXTURE_2D, depthTexture);
+#ifdef __ANDROID__
+    // OpenGL ES 3.0 requires sized internal format for depth textures.
+    // GL_DEPTH_COMPONENT24 with GL_UNSIGNED_INT is the most compatible combination for mobile GPUs.
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT24, resolution, resolution, 0, GL_DEPTH_COMPONENT, GL_UNSIGNED_INT, nullptr);
+#else
     glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, resolution, resolution, 0, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
+#endif
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 #ifdef __ANDROID__
@@ -142,4 +148,9 @@ void DirectionalShadowMap::Apply(Shader& shader, int textureUnit)
     shader.setFloat("shadowBias", bias);
     shader.setFloat("shadowNormalBias", normalBias);
     shader.setFloat("shadowSoftness", softness);
+
+#ifdef __ANDROID__
+    // Android shader uses pre-computed texel size instead of textureSize() for performance
+    shader.setVec2("shadowMapTexelSize", glm::vec2(1.0f / resolution, 1.0f / resolution));
+#endif
 }

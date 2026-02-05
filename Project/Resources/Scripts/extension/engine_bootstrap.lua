@@ -72,16 +72,9 @@ end)()
 -- Default global update if none provided: iterate __instances and call UpdateSafe(dt)
 if not _G.update then
     function _G.update(dt)
-        -- tick scheduler first
+        -- Only tick scheduler, don't iterate instances
         if scheduler and type(scheduler.tick) == "function" then
             scheduler.tick(dt)
-        end
-        if not _G.__instances then return end
-        for _, inst in ipairs(_G.__instances) do
-            if inst and type(inst.UpdateSafe) == "function" then
-                -- call per-instance UpdateSafe (which internally does pcall)
-                inst:UpdateSafe(dt)
-            end
         end
     end
 end
