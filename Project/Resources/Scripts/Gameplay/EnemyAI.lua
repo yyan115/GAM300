@@ -267,7 +267,6 @@ return Component {
                 self:ApplyHit(dmg, hitType)
             end)
             
-            -- NEW: Subscribe to deal_damage from AttackHitbox/ComboManager system
             self._comboDamageSub = _G.event_bus.subscribe("deal_damage", function(payload)
                 if not payload then return end
                 
