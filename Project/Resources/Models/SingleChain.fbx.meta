@@ -1,0 +1,11 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "0016995487ae5257-00041e971e00032d",
+        "source": "../../Resources/Models/SingleChain.fbx",
+        "compiled": "../../Resources/Models/SingleChain.mesh"
+    },
+    "ModelMetaData": {
+        "optimizeMeshes": true
+    }
+}

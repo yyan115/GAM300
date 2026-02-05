@@ -1,0 +1,13 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "00169954858c7f83-00041e9702000325",
+        "source": "../../Resources/Textures/M4/LowPolyFeatherChain_baseColor.png",
+        "compiled": "../../Resources/Textures/M4/LowPolyFeatherChain_baseColor.dds"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true
+    }
+}
