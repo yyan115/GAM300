@@ -77,7 +77,7 @@ return Component {
             light_1 = {
                 id = "light_1",
                 animParam = 1,
-                duration = 1.5,
+                duration = 1.0,
                 damage = 10,
                 knockback = 20.0,
                 canMove = false,
@@ -91,7 +91,7 @@ return Component {
             light_2 = {
                 id = "light_2",
                 animParam = 2,
-                duration = 1.5,
+                duration = 1.0,
                 damage = 12,
                 knockback = 20.0,
                 canMove = false,
@@ -105,7 +105,7 @@ return Component {
             light_3 = {
                 id = "light_3",
                 animParam = 3,
-                duration = 1.5,
+                duration = 0.8,
                 damage = 20,
                 knockback = 200.0,
                 canMove = false,

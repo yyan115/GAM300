@@ -160,7 +160,7 @@ static void ApplyOne(ECSManager& ecs,
 }
 
 // ============ INSTANTIATE (new entity) ============ 
-Entity SpawnPrefab(const rapidjson::Value& ents, ECSManager& ecs) {
+Entity SpawnPrefab(const rapidjson::Value& ents, ECSManager& ecs, bool isSerializing = false) {
     std::unordered_map<GUID_128, GUID_128> guidRemap;
     std::vector<Entity> newEntities;
 
@@ -199,7 +199,7 @@ Entity SpawnPrefab(const rapidjson::Value& ents, ECSManager& ecs) {
         // Deserialize standard non-prefab components.
         // Pass true for skipSpawnChildren since all entities (including bone children)
         // were created in the first pass above and shouldn't be spawned again
-        Serializer::DeserializeEntity(ecs, entObj, true, entity, true);
+        Serializer::DeserializeEntity(ecs, entObj, true, entity, true, !isSerializing);
 
 		// Fix parent/child references based on the GUID remapping.
         const rapidjson::Value& comps = entObj["components"];
@@ -225,7 +225,7 @@ Entity SpawnPrefab(const rapidjson::Value& ents, ECSManager& ecs) {
 	return newEntities.empty() ? static_cast<Entity>(-1) : newEntities[0];
 }
 
-ENGINE_API Entity InstantiatePrefabFromFile(const std::string& prefabPath)
+ENGINE_API Entity InstantiatePrefabFromFile(const std::string& prefabPath, bool isSerializing)
 {
     //ENGINE_LOG_INFO("[PrefabIO_v2] InstantiatePrefabFromFile called with: " + prefabPath);
     ECSManager& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
@@ -296,7 +296,7 @@ ENGINE_API Entity InstantiatePrefabFromFile(const std::string& prefabPath)
     }
 
     const rapidjson::Value& ents = doc["prefab_entities"];
-    Entity prefab = SpawnPrefab(ents, ecs);
+    Entity prefab = SpawnPrefab(ents, ecs, isSerializing);
     EnsurePrefabLinkOn(ecs, prefab, finalRelativePath);
 
     // Ensure the BoneNameToEntityMap is populated if the prefab has a ModelRenderComponent.

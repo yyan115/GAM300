@@ -16,7 +16,7 @@
             "defaultValue": 0.0
         },
         {
-            "name": "Melee",
+            "name": "Hurt1",
             "type": "Bool",
             "defaultValue": 0.0
         },
@@ -26,7 +26,7 @@
             "defaultValue": 0.0
         },
         {
-            "name": "Hurt1",
+            "name": "Melee",
             "type": "Bool",
             "defaultValue": 0.0
         },
@@ -110,7 +110,7 @@
             "id": "Melee Attack",
             "clipIndex": 3,
             "loop": true,
-            "speed": 1.0499999523162842,
+            "speed": 1.2000000476837158,
             "crossfadeDuration": 0.0,
             "nodePosition": {
                 "x": 428.5,

@@ -99,6 +99,7 @@ return Component {
         AttackRange          = 3.0,   -- actually allowed to shoot
         AttackDisengageRange = 4.0,   -- exit attack state (slightly bigger)
         AttackCooldown       = 3.0,
+        RangedAnimDelay      = 1.0,
         IsMelee              = false,
         IsPassive            = false,
         MeleeSpeed           = 0.9,
@@ -612,21 +613,21 @@ return Component {
     FollowPath = function(self, dtSec, speed)
         if not self._path or #self._path == 0 then
             -- NO FALLBACK - if there's no path, STOP
-            print("[FollowPath] NO PATH, STOPPING CC")
+            --print("[FollowPath] NO PATH, STOPPING CC")
             self:StopCC()
             return false
         end
         
         local idx = self._pathIndex or 1
         if idx > #self._path then
-            print("[FollowPath] REACHED GOAL, STOPPING CC")
+            --print("[FollowPath] REACHED GOAL, STOPPING CC")
             self:StopCC()
             return true
         end
 
         local wp = self._path[idx]
         if not wp then
-            print("[FollowPath] INVALID WAYPOINT, idx=", idx);
+            --print("[FollowPath] INVALID WAYPOINT, idx=", idx);
             self:StopCC()
             return true
         end
@@ -646,19 +647,19 @@ return Component {
 
         -- Advance waypoint if close enough
         if d2 <= arriveR2 then
-            print("[FollowPath] REACHED WAYPOINT ", idx)
+            --print("[FollowPath] REACHED WAYPOINT ", idx)
             self._pathIndex = idx + 1
             -- If that was the last waypoint, we arrived.
             if self._pathIndex > #self._path then
-                print("[FollowPath] REACHED GOAL, STOPPING CC")
+                --print("[FollowPath] REACHED GOAL, STOPPING CC")
                 self:StopCC()
                 return true
             end
             wp = self._path[self._pathIndex]
-            print("[FollowPath] NEW PATHINDEX: ", self._pathIndex)
-            print(string.format("[FollowPath] NEW WAYPOINT: %f %f %f", wp.x, wp.y, wp.z))
+            --print("[FollowPath] NEW PATHINDEX: ", self._pathIndex)
+            --print(string.format("[FollowPath] NEW WAYPOINT: %f %f %f", wp.x, wp.y, wp.z))
             if not wp then
-                print("[FollowPath] INVALID WAYPOINT, idx=", idx);
+                --print("[FollowPath] INVALID WAYPOINT, idx=", idx);
                 self:StopCC()
                 return true
             end
@@ -668,7 +669,7 @@ return Component {
             dz = (wp.z or 0) - ez
             d2 = dx*dx + dz*dz
             if d2 <= 1e-8 then
-                print("[FollowPath] REACHED NEW ENDPOINT")
+                --print("[FollowPath] REACHED NEW ENDPOINT")
                 self:StopCC()
                 return false
             end

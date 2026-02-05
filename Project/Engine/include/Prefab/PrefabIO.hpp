@@ -6,7 +6,7 @@
 
 ENGINE_API void EnsurePrefabLinkOn(ECSManager& ecs, Entity e, const std::string& canonicalPath);
 
-ENGINE_API Entity InstantiatePrefabFromFile(const std::string& prefabPath);
+ENGINE_API Entity InstantiatePrefabFromFile(const std::string& prefabPath, bool isSerializing = false);
 
 ENGINE_API Entity InstantiatePrefabIntoEntity(const std::string& prefabPath, Entity intoEntity);
 

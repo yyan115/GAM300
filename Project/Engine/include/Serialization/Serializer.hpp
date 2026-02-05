@@ -155,7 +155,7 @@ public:
     static void RestorePrefabHierarchy(ECSManager& ecs, Entity currentEntity, const rapidjson::Value& jsonNode);
     static void ApplyPrefabOverridesRecursive(ECSManager& ecs, Entity& currentEntity, const rapidjson::Value& jsonNode, bool isNewEntity = false);
 
-    static Entity DeserializeEntity(ECSManager& ecs, const rapidjson::Value& entObj, bool isPrefab = false, Entity entity = MAX_ENTITIES, bool skipSpawnChildren = false);
+    static Entity DeserializeEntity(ECSManager& ecs, const rapidjson::Value& entObj, bool isPrefab = false, Entity entity = MAX_ENTITIES, bool skipSpawnChildren = false, bool initialiseAnimation = true);
 	static void ENGINE_API DeserializeScene(const std::string& scenePath);
 	static void ENGINE_API ReloadScene(const std::string& tempScenePath, const std::string& currentScenePath);
 

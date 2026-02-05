@@ -1,9 +1,18 @@
 {
     "prefab_entities": [
         {
-            "id": 172,
-            "guid": "007f30f2eba20343-0003e0c7300001df",
+            "id": 0,
+            "guid": "007b21e4bb523e22-0004208520023861",
             "components": {
+                "PrefabLinkComponent": {
+                    "type": "PrefabLinkComponent",
+                    "data": [
+                        {
+                            "type": "std::string",
+                            "data": "../../Resources/Prefabs/Knife_01.prefab"
+                        }
+                    ]
+                },
                 "NameComponent": {
                     "name": "Knife_01"
                 },
@@ -167,8 +176,8 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "005c69cdd16a6ff3-0003ebdaf60002ab",
-                                "005c69cdc954d543-0003ebdaf60002ad"
+                                "007b21e4bbbe7a29-0004208520023863",
+                                "007b21e4d4e0d53c-0004208520023865"
                             ]
                         }
                     ]
@@ -267,18 +276,18 @@
                             "entryFunction": "OnInit",
                             "autoInvokeEntry": true,
                             "instanceState": {
-                                "Speed": 5.0,
-                                "_subscriptions": {},
-                                "_private": {},
+                                "__meta": {},
                                 "__field_list": {
                                     "Speed": 10.0,
-                                    "Lifetime": 1.2,
-                                    "Damage": 1.0
+                                    "Damage": 1.0,
+                                    "Lifetime": 1.2
                                 },
-                                "__created_at": 1769419004.0,
-                                "Lifetime": 1.2,
                                 "_transform_fetched": false,
-                                "__meta": {},
+                                "Speed": 5.0,
+                                "__created_at": 1769419004.0,
+                                "_subscriptions": {},
+                                "Lifetime": 1.2,
+                                "_private": {},
                                 "Damage": 1.0
                             }
                         }
@@ -287,8 +296,8 @@
             }
         },
         {
-            "id": 173,
-            "guid": "005c69cdd16a6ff3-0003ebdaf60002ab",
+            "id": 1,
+            "guid": "007b21e4bbbe7a29-0004208520023863",
             "components": {
                 "NameComponent": {
                     "name": "goose_handle"
@@ -365,7 +374,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "007f30f2eba20343-0003e0c7300001df"
+                        "007b21e4bb523e22-0004208520023861"
                     ]
                 },
                 "ActiveComponent": {
@@ -380,8 +389,8 @@
             }
         },
         {
-            "id": 174,
-            "guid": "005c69cdc954d543-0003ebdaf60002ad",
+            "id": 2,
+            "guid": "007b21e4d4e0d53c-0004208520023865",
             "components": {
                 "NameComponent": {
                     "name": "feather_blade"
@@ -458,7 +467,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "007f30f2eba20343-0003e0c7300001df"
+                        "007b21e4bb523e22-0004208520023861"
                     ]
                 },
                 "ActiveComponent": {
