@@ -1,0 +1,13 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "003943450e73e61a-00041ffeca005e8f",
+        "source": "../../Resources/Sprites/PlayerHUD/PickUpUI.png",
+        "compiled": "../../Resources/Sprites/PlayerHUD/PickUpUI.dds"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true
+    }
+}
