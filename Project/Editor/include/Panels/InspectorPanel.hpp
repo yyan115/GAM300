@@ -34,6 +34,11 @@ public:
         std::string componentType;
     };
 
+    struct MultiComponentRemovalRequest {
+        std::vector<Entity> entities;
+        std::string componentType;
+    };
+
     /**
      * @brief Render the inspector panel's ImGui content.
      */
@@ -64,6 +69,7 @@ private:
     static bool DrawComponentHeaderWithRemoval(const char* label, Entity entity, const std::string& componentType, void* componentPtr = nullptr, ImGuiTreeNodeFlags flags = 0);
     void ProcessPendingComponentRemovals();
     void ProcessPendingComponentResets();
+    void ProcessPendingMultiComponentRemovals();
 
     // Component addition functionality
     void DrawAddComponentButton(Entity entity);
@@ -87,6 +93,7 @@ private:
     // Component removal queue (processed after ImGui rendering)
     static std::vector<ComponentRemovalRequest> pendingComponentRemovals;
     static std::vector<ComponentResetRequest> pendingComponentResets;
+    static std::vector<MultiComponentRemovalRequest> pendingMultiComponentRemovals;
     GUID_128 lockedAsset = {0, 0};
 
     // Cache for currently edited material to persist changes across frames

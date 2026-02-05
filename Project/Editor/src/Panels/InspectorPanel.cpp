@@ -158,6 +158,7 @@ static inline bool IsPrefabInstance(ECSManager& ecs, Entity e) {
 
 std::vector<InspectorPanel::ComponentRemovalRequest> InspectorPanel::pendingComponentRemovals;
 std::vector<InspectorPanel::ComponentResetRequest> InspectorPanel::pendingComponentResets;
+std::vector<InspectorPanel::MultiComponentRemovalRequest> InspectorPanel::pendingMultiComponentRemovals;
 
 InspectorPanel::InspectorPanel()
 	: EditorPanel("Inspector", true) {
@@ -559,6 +560,7 @@ void InspectorPanel::OnImGuiRender() {
 	// Process any pending component removals after ImGui rendering is complete
 	ProcessPendingComponentRemovals();
 	ProcessPendingComponentResets();
+	ProcessPendingMultiComponentRemovals();
 
 	ImGui::End();
 
@@ -2803,6 +2805,141 @@ void InspectorPanel::ProcessPendingComponentResets() {
 	pendingComponentResets.clear();
 }
 
+void InspectorPanel::ProcessPendingMultiComponentRemovals() {
+	if (pendingMultiComponentRemovals.empty()) return;
+
+	// Take snapshot for undo before removing components
+	SnapshotManager::GetInstance().TakeSnapshot("Remove Component from Multiple Entities");
+
+	for (const auto& request : pendingMultiComponentRemovals) {
+		ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
+
+		for (Entity entity : request.entities) {
+			try {
+				// Remove the component based on type
+				if (request.componentType == "DirectionalLightComponent") {
+					if (ecsManager.HasComponent<DirectionalLightComponent>(entity)) {
+						ecsManager.RemoveComponent<DirectionalLightComponent>(entity);
+					}
+				}
+				else if (request.componentType == "PointLightComponent") {
+					if (ecsManager.HasComponent<PointLightComponent>(entity)) {
+						ecsManager.RemoveComponent<PointLightComponent>(entity);
+					}
+				}
+				else if (request.componentType == "SpotLightComponent") {
+					if (ecsManager.HasComponent<SpotLightComponent>(entity)) {
+						ecsManager.RemoveComponent<SpotLightComponent>(entity);
+					}
+				}
+				else if (request.componentType == "ModelRenderComponent") {
+					if (ecsManager.HasComponent<ModelRenderComponent>(entity)) {
+						ecsManager.RemoveComponent<ModelRenderComponent>(entity);
+					}
+				}
+				else if (request.componentType == "SpriteRenderComponent") {
+					if (ecsManager.HasComponent<SpriteRenderComponent>(entity)) {
+						ecsManager.RemoveComponent<SpriteRenderComponent>(entity);
+					}
+				}
+				else if (request.componentType == "SpriteAnimationComponent") {
+					if (ecsManager.HasComponent<SpriteAnimationComponent>(entity)) {
+						ecsManager.RemoveComponent<SpriteAnimationComponent>(entity);
+					}
+				}
+				else if (request.componentType == "TextRenderComponent") {
+					if (ecsManager.HasComponent<TextRenderComponent>(entity)) {
+						ecsManager.RemoveComponent<TextRenderComponent>(entity);
+					}
+				}
+				else if (request.componentType == "ParticleComponent") {
+					if (ecsManager.HasComponent<ParticleComponent>(entity)) {
+						ecsManager.RemoveComponent<ParticleComponent>(entity);
+					}
+				}
+				else if (request.componentType == "AudioComponent") {
+					if (ecsManager.HasComponent<AudioComponent>(entity)) {
+						ecsManager.RemoveComponent<AudioComponent>(entity);
+					}
+				}
+				else if (request.componentType == "AudioListenerComponent") {
+					if (ecsManager.HasComponent<AudioListenerComponent>(entity)) {
+						ecsManager.RemoveComponent<AudioListenerComponent>(entity);
+					}
+				}
+				else if (request.componentType == "AudioReverbZoneComponent") {
+					if (ecsManager.HasComponent<AudioReverbZoneComponent>(entity)) {
+						ecsManager.RemoveComponent<AudioReverbZoneComponent>(entity);
+					}
+				}
+				else if (request.componentType == "ColliderComponent") {
+					if (ecsManager.HasComponent<ColliderComponent>(entity)) {
+						ecsManager.RemoveComponent<ColliderComponent>(entity);
+					}
+				}
+				else if (request.componentType == "RigidBodyComponent") {
+					if (ecsManager.HasComponent<RigidBodyComponent>(entity)) {
+						ecsManager.RemoveComponent<RigidBodyComponent>(entity);
+					}
+				}
+				else if (request.componentType == "VideoComponent") {
+					if (ecsManager.HasComponent<VideoComponent>(entity)) {
+						ecsManager.RemoveComponent<VideoComponent>(entity);
+					}
+				}
+				else if (request.componentType == "CameraComponent") {
+					if (ecsManager.HasComponent<CameraComponent>(entity)) {
+						ecsManager.RemoveComponent<CameraComponent>(entity);
+					}
+				}
+				else if (request.componentType == "AnimationComponent") {
+					if (ecsManager.HasComponent<AnimationComponent>(entity)) {
+						ecsManager.RemoveComponent<AnimationComponent>(entity);
+					}
+				}
+				else if (request.componentType == "BrainComponent") {
+					if (ecsManager.HasComponent<BrainComponent>(entity)) {
+						ecsManager.RemoveComponent<BrainComponent>(entity);
+					}
+				}
+				else if (request.componentType == "ScriptComponentData") {
+					if (ecsManager.HasComponent<ScriptComponentData>(entity)) {
+						ecsManager.RemoveComponent<ScriptComponentData>(entity);
+					}
+				}
+				else if (request.componentType == "ButtonComponent") {
+					if (ecsManager.HasComponent<ButtonComponent>(entity)) {
+						ecsManager.RemoveComponent<ButtonComponent>(entity);
+					}
+				}
+				else if (request.componentType == "SliderComponent") {
+					if (ecsManager.HasComponent<SliderComponent>(entity)) {
+						ecsManager.RemoveComponent<SliderComponent>(entity);
+					}
+				}
+				else if (request.componentType == "UIAnchorComponent") {
+					if (ecsManager.HasComponent<UIAnchorComponent>(entity)) {
+						ecsManager.RemoveComponent<UIAnchorComponent>(entity);
+					}
+				}
+				else if (request.componentType == "Transform") {
+					// Cannot remove Transform component - all entities must have one
+					continue;
+				}
+			}
+			catch (const std::exception& e) {
+				std::cerr << "[Inspector] Failed to remove component " << request.componentType
+				          << " from entity " << entity << ": " << e.what() << std::endl;
+			}
+		}
+
+		ENGINE_PRINT("[Inspector] Removed ", request.componentType, " from ", request.entities.size(), " entities");
+	}
+
+	// Clear the queue after processing
+	pendingMultiComponentRemovals.clear();
+}
+
 void InspectorPanel::ApplyModelToRenderer(Entity entity, const GUID_128& modelGuid, const std::string& modelPath) {
 	try {
 		ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
@@ -2946,6 +3083,8 @@ void* InspectorPanel::GetComponentPtr(Entity entity, const std::string& componen
 		return &ecs.GetComponent<ColliderComponent>(entity);
 	if (componentType == "RigidBodyComponent" && ecs.HasComponent<RigidBodyComponent>(entity))
 		return &ecs.GetComponent<RigidBodyComponent>(entity);
+	if (componentType == "VideoComponent" && ecs.HasComponent<VideoComponent>(entity))
+		return &ecs.GetComponent<VideoComponent>(entity);
 	if (componentType == "CameraComponent" && ecs.HasComponent<CameraComponent>(entity))
 		return &ecs.GetComponent<CameraComponent>(entity);
 	if (componentType == "AnimationComponent" && ecs.HasComponent<AnimationComponent>(entity))
@@ -2983,11 +3122,13 @@ std::vector<std::string> InspectorPanel::GetSharedComponentTypes(const std::vect
 		"SpotLightComponent",
 		"ColliderComponent",
 		"RigidBodyComponent",
+		"VideoComponent",
 		"CameraComponent",
 		"AnimationComponent",
 		"BrainComponent",
 		"ScriptComponentData",
 		"ButtonComponent",
+		"SliderComponent",
 		"UIAnchorComponent"
 	};
 
@@ -3073,6 +3214,7 @@ void InspectorPanel::DrawSharedComponentGeneric(const std::vector<Entity>& entit
 		{"BrainComponent", "Brain"},
 		{"ScriptComponentData", "Script"},
 		{"ButtonComponent", "Button"},
+		{"SliderComponent", "Slider"},
 		{"UIAnchorComponent", "UI Anchor"}
 	};
 
@@ -3091,6 +3233,36 @@ void InspectorPanel::DrawSharedComponentGeneric(const std::vector<Entity>& entit
 
 	std::string headerLabel = displayName + " (Multi-Edit)";
 	bool isOpen = ImGui::CollapsingHeader(headerLabel.c_str(), ImGuiTreeNodeFlags_DefaultOpen);
+
+	// Check for right-click on the collapsing header
+	if (ImGui::IsItemClicked(ImGuiMouseButton_Right)) {
+		std::string popupName = "MultiComponentContextMenu_" + componentType;
+		ImGui::OpenPopup(popupName.c_str());
+	}
+
+	// Add gear button for context menu
+	ImGui::SameLine(ImGui::GetWindowWidth() - 40);
+	ImGui::PushID((headerLabel + std::string("_gear")).c_str());
+	if (ImGui::SmallButton(ICON_FA_GEAR)) {
+		std::string popupName = "MultiComponentContextMenu_" + componentType;
+		ImGui::OpenPopup(popupName.c_str());
+	}
+	ImGui::PopID();
+
+	// Context menu for multi-entity component operations
+	std::string popupName = "MultiComponentContextMenu_" + componentType;
+	if (ImGui::BeginPopup(popupName.c_str())) {
+		// Don't allow removing Transform component
+		if (componentType != "Transform") {
+			if (ImGui::MenuItem("Remove Component from All")) {
+				// Queue the multi-component removal for processing after ImGui rendering is complete
+				pendingMultiComponentRemovals.push_back({ entities, componentType });
+			}
+		} else {
+			ImGui::TextDisabled("Remove Component (Transform required)");
+		}
+		ImGui::EndPopup();
+	}
 
 	ImGui::PopStyleColor(3);
 
