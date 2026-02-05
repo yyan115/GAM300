@@ -176,6 +176,7 @@ return Component {
         -- Configure C++ cache intervals
         if Engine and Engine.SetCacheUpdateInterval then
             for _, scriptName in ipairs(self.enemyNames) do
+                print("[CameraFollow] Finding enemy script name: " .. tostring(scriptName))
                 Engine.SetCacheUpdateInterval(scriptName, self.cacheUpdateInterval)
                 if self.debugEnemyDetection then
                     print(string.format("[CameraFollow] Set cache interval for '%s' to %.1fs", 
@@ -282,7 +283,7 @@ return Component {
         local closestEnemy = nil
         
         -- C++ returns cached results (updated by UpdateCacheTiming)
-        for _, scriptName in ipairs(self.enemyScriptNames) do
+        for _, scriptName in ipairs(self.enemyNames) do
             local entities = Engine.FindEntitiesWithScript(scriptName)
             
             if entities and #entities > 0 then
