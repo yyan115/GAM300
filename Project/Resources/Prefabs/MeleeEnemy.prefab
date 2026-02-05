@@ -1,8 +1,8 @@
 {
     "prefab_entities": [
         {
-            "id": 2409,
-            "guid": "00190ce2cf64c56e-00041fa014002d91",
+            "id": 0,
+            "guid": "007b29441d9ce2b9-0004209388006119",
             "components": {
                 "PrefabLinkComponent": {
                     "type": "PrefabLinkComponent",
@@ -545,35 +545,35 @@
                             "data": [
                                 {
                                     "type": "std::string",
-                                    "data": ""
+                                    "data": "Resources/Animations/Enemy@Idle.fbx"
                                 },
                                 {
                                     "type": "std::string",
-                                    "data": ""
+                                    "data": "Resources/Animations/Enemy@Death.fbx"
                                 },
                                 {
                                     "type": "std::string",
-                                    "data": ""
+                                    "data": "Resources/Animations/Enemy@Walk.fbx"
                                 },
                                 {
                                     "type": "std::string",
-                                    "data": ""
+                                    "data": "Resources/Animations/Enemy@AttackScratch.fbx"
                                 },
                                 {
                                     "type": "std::string",
-                                    "data": ""
+                                    "data": "Resources/Animations/Enemy@AttackThrow.fbx"
                                 },
                                 {
                                     "type": "std::string",
-                                    "data": ""
+                                    "data": "Resources/Animations/Enemy@Hurt1.fbx"
                                 },
                                 {
                                     "type": "std::string",
-                                    "data": ""
+                                    "data": "Resources/Animations/Enemy@Hurt2.fbx"
                                 },
                                 {
                                     "type": "std::string",
-                                    "data": ""
+                                    "data": "Resources/Animations/Enemy@Hurt3.fbx"
                                 }
                             ]
                         },
@@ -592,7 +592,7 @@
                         },
                         {
                             "type": "std::string",
-                            "data": "C:\\Users\\USER\\Desktop\\GAM300\\Project\\Resources\\Animations\\EnemyAC.animator"
+                            "data": "C:\\GitHub\\School\\GAM300\\Project\\Resources\\Animations\\EnemyAC.animator"
                         }
                     ]
                 },
@@ -615,105 +615,194 @@
                             "entryFunction": "OnInit",
                             "autoInvokeEntry": true,
                             "instanceState": {
-                                "PatrolPointA_Z": -26.0,
-                                "IsPassive": false,
-                                "MeleeSpeed": 0.9,
-                                "MeleeRange": 1.2,
-                                "IsMelee": true,
-                                "PatrolSpeed": 0.6,
-                                "MeleeAttackCooldown": 2.3,
-                                "EnablePatrol": true,
-                                "WallOffset": 0.08,
-                                "KnockbackStrength": 12.0,
-                                "MeleeAnimDelay": 1.2,
-                                "AttackDisengageRange": 4.0,
                                 "PatrolPointA_X": -0.5,
-                                "HurtDuration": 0.25,
-                                "__meta": {},
-                                "KnockbackDuration": 0.5,
-                                "MaxHealth": 100.0,
-                                "ClipAttack": 1.0,
-                                "HookedDuration": 4.0,
-                                "_subscriptions": {},
-                                "PathRepathInterval": 10.0,
-                                "PathGoalMoveThreshold": 0.9,
+                                "PatrolWait": 1.0,
+                                "AttackCooldown": 3.0,
+                                "PlayerName": "Player",
                                 "__field_list": {
-                                    "PatrolPointA_Z": -1.1,
-                                    "IsPassive": false,
-                                    "MeleeSpeed": 0.9,
-                                    "MeleeRange": 1.2,
-                                    "PatrolPointB_Z": -1.1,
-                                    "PathGoalMoveThreshold": 0.9,
-                                    "MeleeAttackCooldown": 5.0,
-                                    "HitIFrame": 0.2,
-                                    "DetectionRange": 4.0,
-                                    "KnockbackStrength": 12.0,
-                                    "MeleeAnimDelay": 2.0,
-                                    "AttackDisengageRange": 4.0,
                                     "PatrolPointA_X": 2.0,
-                                    "HurtDuration": 2.0,
-                                    "KnockbackDuration": 0.5,
-                                    "MaxHealth": 5.0,
-                                    "ClipAttack": 1.0,
-                                    "ClipHurt": 2.0,
-                                    "ClipIdle": 0.0,
-                                    "PathRepathInterval": 10.0,
-                                    "PlayerName": "Player",
+                                    "PatrolWait": 1.5,
                                     "AttackCooldown": 3.0,
-                                    "PathWaypointRadius": 0.6,
-                                    "ChaseSpeed": 0.6,
-                                    "GroundRayLen": 3.0,
-                                    "UseKinematicGrounding": true,
-                                    "GroundRayUp": 0.35,
-                                    "Gravity": -9.81,
+                                    "PlayerName": "Player",
                                     "ClipDeath": 3.0,
-                                    "HookedDuration": 4.0,
+                                    "enemyRangedHitSFX": {},
+                                    "MeleeAttackCooldown": 5.0,
+                                    "GroundRayUp": 0.35,
+                                    "enemyMeleeAttackSFX": [
+                                        "00612e33c32385f0-0004202e3600002b",
+                                        "00612e33d68a0cf6-0004202e3600002d",
+                                        "00612e33f65abcca-0004202e3600002f",
+                                        "00612e33e7cab0dd-0004202e36000031",
+                                        "00612e33bc834dd4-0004202e36000033",
+                                        "00612e33d3f6a4c0-0004202e36000035"
+                                    ],
+                                    "enemyAlertSFX": [
+                                        "00612e33f0f92281-0004202e36000011",
+                                        "00612e33f6947b1d-0004202e36000013",
+                                        "00612e33ba1f7817-0004202e36000015"
+                                    ],
+                                    "IsPassive": false,
+                                    "AttackRange": 3.0,
+                                    "WallRayUp": 0.8,
+                                    "enemyRangedAttackSFX": {},
+                                    "Gravity": -9.81,
+                                    "MaxHealth": 5.0,
+                                    "enemyDeathSFX": [
+                                        "00612e33b44b692b-0004202e36000001",
+                                        "00612e33fe0848fe-0004202e36000003",
+                                        "00612e33fe9002ea-0004202e36000005",
+                                        "00612e33a91f6497-0004202e36000007",
+                                        "00612e33f4282c47-0004202e36000009",
+                                        "00612e33f2393295-0004202e3600000b"
+                                    ],
+                                    "AttackDisengageRange": 4.0,
+                                    "enemyMeleeHitSFX": [
+                                        "00612e33dde16695-0004202e3600001f",
+                                        "00612e33ee760ffa-0004202e36000021",
+                                        "00612e33c9ed7ce7-0004202e36000023",
+                                        "00612e3385b42307-0004202e36000025",
+                                        "00612e33bcf9fc04-0004202e36000027",
+                                        "00612e33fb3b1ead-0004202e36000029"
+                                    ],
+                                    "ClipIdle": 0.0,
+                                    "PatrolPointB_X": -2.0,
+                                    "MaxFallSpeed": -25.0,
+                                    "GroundRayLen": 3.0,
+                                    "PathRepathInterval": 10.0,
+                                    "ChaseSpeed": 0.6,
+                                    "EnablePatrol": true,
+                                    "UseKinematicGrounding": true,
+                                    "PatrolDistance": 3.0,
+                                    "MeleeSpeed": 0.9,
+                                    "KnockbackDuration": 0.5,
+                                    "KnockbackStrength": 12.0,
+                                    "PathGoalMoveThreshold": 0.9,
+                                    "WallOffset": 0.08,
+                                    "PathStuckTime": 0.75,
+                                    "HurtDuration": 2.0,
+                                    "PatrolSpeed": 0.3,
+                                    "PatrolPointB_Z": -1.1,
+                                    "PathWaypointRadius": 0.6,
+                                    "DetectionRange": 4.0,
+                                    "ClipAttack": 1.0,
                                     "MeleeDamage": 1.0,
                                     "MinStep": 0.01,
-                                    "AttackRange": 3.0,
-                                    "WallOffset": 0.08,
-                                    "WallRayUp": 0.8,
+                                    "WallSkin": 0.18,
+                                    "PatrolPointA_Z": -1.1,
+                                    "HitIFrame": 0.2,
+                                    "enemyHurtSFX": [
+                                        "00612e33851589d7-0004202e36000017",
+                                        "00612e33a555d31d-0004202e36000019",
+                                        "00612e33f05f8906-0004202e3600001b",
+                                        "00612e33840b6f61-0004202e3600001d"
+                                    ],
+                                    "GroundSnapMax": 0.35,
+                                    "HookedDuration": 4.0,
+                                    "MeleeRange": 1.2,
+                                    "MeleeAnimDelay": 2.0,
                                     "IsMelee": false,
                                     "GroundEps": 0.08,
-                                    "MaxFallSpeed": -25.0,
-                                    "EnablePatrol": true,
-                                    "GroundSnapMax": 0.35,
-                                    "WallSkin": 0.18,
-                                    "PatrolSpeed": 0.3,
-                                    "PatrolPointB_X": -2.0,
-                                    "PatrolWait": 1.5,
-                                    "PatrolDistance": 3.0,
-                                    "PathStuckTime": 0.75
+                                    "ClipHurt": 2.0
                                 },
+                                "WallSkin": 0.18,
+                                "MeleeAttackCooldown": 2.3,
                                 "GroundRayUp": 0.35,
-                                "ClipIdle": 0.0,
-                                "ClipHurt": 2.0,
-                                "PathStuckTime": 0.75,
-                                "AttackCooldown": 3.0,
-                                "PathWaypointRadius": 0.5,
-                                "ChaseSpeed": 1.2,
-                                "MeleeDamage": 1.0,
-                                "PatrolDistance": 3.0,
+                                "IsPassive": false,
+                                "AttackRange": 3.0,
+                                "WallRayUp": 0.8,
+                                "IsMelee": true,
+                                "PathRepathInterval": 10.0,
+                                "__meta": {},
+                                "MaxHealth": 100.0,
+                                "KnockbackStrength": 12.0,
                                 "__created_at": 1770211729.0,
-                                "Gravity": -9.81,
+                                "AttackDisengageRange": 4.0,
+                                "ClipIdle": 0.0,
+                                "PatrolPointB_X": 0.5,
                                 "ClipDeath": 3.0,
                                 "GroundRayLen": 3.0,
-                                "HitIFrame": 0.2,
-                                "MinStep": 0.01,
-                                "AttackRange": 3.0,
-                                "UseKinematicGrounding": true,
-                                "PlayerName": "Player",
-                                "PatrolPointB_Z": -26.0,
                                 "GroundEps": 0.08,
-                                "MaxFallSpeed": -25.0,
+                                "ChaseSpeed": 1.2,
+                                "EnablePatrol": true,
+                                "_subscriptions": {},
+                                "PatrolDistance": 3.0,
+                                "Gravity": -9.81,
+                                "MeleeSpeed": 0.9,
+                                "UseKinematicGrounding": true,
+                                "PathGoalMoveThreshold": 0.9,
+                                "WallOffset": 0.08,
+                                "PathStuckTime": 0.75,
+                                "HurtDuration": 0.25,
+                                "PatrolSpeed": 0.6,
+                                "PatrolPointB_Z": -26.0,
+                                "KnockbackDuration": 0.5,
                                 "_private": {},
+                                "ClipAttack": 1.0,
+                                "MeleeDamage": 1.0,
+                                "MinStep": 0.01,
+                                "MaxFallSpeed": -25.0,
+                                "PatrolPointA_Z": -26.0,
+                                "HitIFrame": 0.2,
+                                "_transform_fetched": false,
                                 "GroundSnapMax": 0.35,
-                                "WallSkin": 0.18,
-                                "PatrolPointB_X": 0.5,
-                                "WallRayUp": 0.8,
-                                "PatrolWait": 1.0,
+                                "HookedDuration": 4.0,
+                                "MeleeRange": 1.2,
+                                "MeleeAnimDelay": 1.2,
                                 "DetectionRange": 4.0,
-                                "_transform_fetched": false
+                                "PathWaypointRadius": 0.5,
+                                "ClipHurt": 2.0,
+                                "enemyHurtSFX": [
+                                    "00612e33851589d7-0004202e36000017",
+                                    "00612e33a555d31d-0004202e36000019",
+                                    "00612e33f05f8906-0004202e3600001b",
+                                    "00612e33840b6f61-0004202e3600001d"
+                                ],
+                                "enemyDeathSFX": [
+                                    "00612e33b44b692b-0004202e36000001",
+                                    "00612e33fe0848fe-0004202e36000003",
+                                    "00612e33fe9002ea-0004202e36000005",
+                                    "00612e33a91f6497-0004202e36000007",
+                                    "00612e33f4282c47-0004202e36000009",
+                                    "00612e33f2393295-0004202e3600000b",
+                                    "00612e33ea833541-0004202e3600000d",
+                                    "00612e33b2b10c8a-0004202e3600000f"
+                                ],
+                                "enemyAlertSFX": [
+                                    "00612e33f0f92281-0004202e36000011",
+                                    "00612e33f6947b1d-0004202e36000013",
+                                    "00612e33ba1f7817-0004202e36000015"
+                                ],
+                                "enemyMeleeAttackSFX": [
+                                    "00612e33c32385f0-0004202e3600002b",
+                                    "00612e33d68a0cf6-0004202e3600002d",
+                                    "00612e33f65abcca-0004202e3600002f",
+                                    "00612e33e7cab0dd-0004202e36000031",
+                                    "00612e33bc834dd4-0004202e36000033",
+                                    "00612e33d3f6a4c0-0004202e36000035"
+                                ],
+                                "enemyMeleeHitSFX": [
+                                    "00612e33dde16695-0004202e3600001f",
+                                    "00612e33ee760ffa-0004202e36000021",
+                                    "00612e33c9ed7ce7-0004202e36000023",
+                                    "00612e3385b42307-0004202e36000025",
+                                    "00612e33bcf9fc04-0004202e36000027",
+                                    "00612e33fb3b1ead-0004202e36000029"
+                                ],
+                                "enemyRangedAttackSFX": [
+                                    "00612e33ad54fbe1-0004202e36000043",
+                                    "00612e33c540ad27-0004202e36000045",
+                                    "00612e33d861849f-0004202e36000047",
+                                    "00612e339fed7d3e-0004202e36000049",
+                                    "00612e33c92234c1-0004202e3600004b"
+                                ],
+                                "enemyRangedHitSFX": [
+                                    "00612e33d64a7674-0004202e36000037",
+                                    "00612e33e920449b-0004202e36000039",
+                                    "00612e33abb711cc-0004202e3600003b",
+                                    "00612e33d85fb277-0004202e3600003d",
+                                    "00612e33cc4cc694-0004202e3600003f",
+                                    "00612e3385d4f0f5-0004202e36000041"
+                                ]
                             }
                         }
                     ]

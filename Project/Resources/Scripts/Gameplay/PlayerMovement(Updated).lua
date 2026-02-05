@@ -27,6 +27,14 @@ local function directionToQuaternion(dx, dz)
     return math.cos(halfAngle), 0, math.sin(halfAngle), 0
 end
 
+-- Helper: play random SFX from array
+local function playRandomSFX(audio, clips)
+    local count = clips and #clips or 0
+    if count > 0 and audio then
+        audio:PlayOneShot(clips[math.random(1, count)])
+    end
+end
+
 -- Helper: lerp quaternion for smooth rotation
 local function lerpQuaternion(w1, x1, y1, z1, w2, x2, y2, z2, t)
     if w1*w2 + x1*x2 + y1*y2 + z1*z2 < 0 then
@@ -48,6 +56,12 @@ return Component {
         JumpHeight = 1.2,
         DamageStunDuration = 1.0,
         LandingDuration = 0.5,
+        footstepInterval = 0.35,  -- Time between footstep sounds while running
+        playerFootstepSFX = {},
+        playerHurtSFX = {},
+        playerJumpSFX = {},
+        playerLandSFX = {},
+        playerDeadSFX = {},
     },
 
     Awake = function(self)
@@ -73,6 +87,8 @@ return Component {
                 if playerDead then
                     print("[PlayerMovement] Received playerDead")
                     self._playerDeadPending = playerDead
+                    -- Play death SFX
+                    playRandomSFX(self._audio, self.playerDeadSFX)
                 end
             end)
 
@@ -82,6 +98,8 @@ return Component {
                     print("[PlayerMovement] playerHurtTriggered received")
                     self._isDamageStun = true
                     if self._animator then self._animator:SetBool("IsJumping", false) end
+                    -- Play hurt SFX
+                    playRandomSFX(self._audio, self.playerHurtSFX)
                 end
             end)
 
@@ -118,6 +136,7 @@ return Component {
         self._collider  = self:GetComponent("ColliderComponent")
         self._animator  = self:GetComponent("AnimationComponent")
         self._transform = self:GetComponent("Transform")
+        self._audio     = self:GetComponent("AudioComponent")
 
         print("transform y here is ", self._transform.localPosition.y)
         self._controller = CharacterController.Create(self.entityId, self._collider, self._transform)
@@ -137,6 +156,10 @@ return Component {
         self._isDamageStun = false
 
         self._landingDuration = self.LandingDuration
+
+        -- SFX state
+        self._footstepTimer = 0
+        self._wasRunning = false
 
         self._initialSpawnPoint = self._transform.worldPosition
     end,
@@ -271,6 +294,8 @@ return Component {
             CharacterController.Jump(self._controller, self.JumpHeight)
             isJumping = true
             self._animator:SetBool("IsJumping", true)
+            -- Play jump SFX
+            playRandomSFX(self._audio, self.playerJumpSFX)
         end
 
         -- APPLY MOVEMENT
@@ -311,6 +336,8 @@ return Component {
                 self._isJumping = false
                 self._animator:SetBool("IsJumping", false)
                 self._isLanding = true
+                -- Play landing SFX
+                playRandomSFX(self._audio, self.playerLandSFX)
                 -- Resume proper state based on movement
                 if isMoving then
                     print("[PlayerMovement] SetBool(IsRunning, true)")
@@ -330,6 +357,24 @@ return Component {
                 self._isRunning = false
             end
         end
+
+        -- Footstep SFX while running (timer-based)
+        if self._isRunning and isGrounded and not self._isLanding then
+            -- Play immediately when running starts
+            if not self._wasRunning then
+                playRandomSFX(self._audio, self.playerFootstepSFX)
+                self._footstepTimer = 0
+            end
+            -- Timer-based footsteps
+            self._footstepTimer = self._footstepTimer + dt
+            if self._footstepTimer >= (self.footstepInterval or 0.35) then
+                playRandomSFX(self._audio, self.playerFootstepSFX)
+                self._footstepTimer = 0
+            end
+        else
+            self._footstepTimer = 0
+        end
+        self._wasRunning = self._isRunning
 
         -- ROTATION
         if isMoving and self.SetRotation then

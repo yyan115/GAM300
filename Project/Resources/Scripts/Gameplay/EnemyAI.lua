@@ -61,6 +61,14 @@ local function eulerToQuat(pitch, yaw, roll)
     }
 end
 
+-- Play random SFX from array
+local function playRandomSFX(audio, clips)
+    local count = clips and #clips or 0
+    if count > 0 and audio then
+        audio:PlayOneShot(clips[math.random(1, count)])
+    end
+end
+
 local function isDynamic(self)
     return self._rb and self._rb.motionID == 2
 end
@@ -150,6 +158,15 @@ return Component {
         WallSkin       = 0.18,
         WallOffset     = 0.08,
         MinStep        = 0.01,
+
+        -- SFX clip arrays (populate in editor with audio GUIDs)
+        enemyHurtSFX = {},
+        enemyDeathSFX = {},
+        enemyAlertSFX = {},         -- Growl when first detecting player
+        enemyMeleeAttackSFX = {},   -- Scratch woosh for melee enemies
+        enemyMeleeHitSFX = {},      -- Scratch hit when melee lands on player
+        enemyRangedAttackSFX = {},  -- Throw woosh for ranged enemies
+        enemyRangedHitSFX = {},     -- Throw hit when ranged lands on player
     },
 
     Awake = function(self)
@@ -761,6 +778,29 @@ return Component {
         end
     end,
 
+    -- Play attack SFX (melee or ranged based on IsMelee flag)
+    PlayAttackSFX = function(self)
+        if self.IsMelee then
+            playRandomSFX(self._audio, self.enemyMeleeAttackSFX)
+        else
+            playRandomSFX(self._audio, self.enemyRangedAttackSFX)
+        end
+    end,
+
+    -- Play alert SFX when first detecting player
+    PlayAlertSFX = function(self)
+        playRandomSFX(self._audio, self.enemyAlertSFX)
+    end,
+
+    -- Play hit SFX when attack lands on player (melee or ranged)
+    PlayHitSFX = function(self)
+        if self.IsMelee then
+            playRandomSFX(self._audio, self.enemyMeleeHitSFX)
+        else
+            playRandomSFX(self._audio, self.enemyRangedHitSFX)
+        end
+    end,
+
     IsPlayerInRange = function(self, range)
         local tr = self._playerTr
         if not tr then
@@ -807,6 +847,9 @@ return Component {
         if not knives then
             return false
         end
+
+        -- Play ranged attack SFX when throwing knives
+        playRandomSFX(self._audio, self.enemyRangedAttackSFX)
 
         local ex, ey, ez = self:GetPosition()
         -- Safety check: if position is nil, skip spawning
@@ -885,9 +928,14 @@ return Component {
 
         if self.health <= 0 then
             self.health = 0
+            -- Play death SFX
+            playRandomSFX(self._audio, self.enemyDeathSFX)
             self.fsm:Change("Death", self.states.Death)
             return
         end
+
+        -- Play hurt SFX (only if not dead)
+        playRandomSFX(self._audio, self.enemyHurtSFX)
 
         if self.fsm.currentName == "Hooked" then
             return

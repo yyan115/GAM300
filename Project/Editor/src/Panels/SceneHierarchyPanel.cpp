@@ -452,30 +452,36 @@ void SceneHierarchyPanel::DrawEntityNode(const std::string& entityName, Entity e
             }
         } catch (...) {}
 
-        // Apply gray color if inactive
-        if (!isEntityActive) {
-            ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.5f, 0.5f, 0.5f, 1.0f)); // Gray text
-        }
-
         std::string displayName = std::string(ICON_FA_CUBE) + " " + entityName;
-        
+
         // Set open state if force expanding
         if (forceOpen && hasChildren) {
             ImGui::SetNextItemOpen(true, ImGuiCond_Always);
         }
-        
-		// Draw the Blue prefab icon for prefab instances.
-        if (ecsManager.HasComponent<PrefabLinkComponent>(entityId)) {
-            ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.55f, 0.8f, 0.95f, 1.0f)); // R, G, B, A (Sky Blue)
-            opened = ImGui::TreeNodeEx((void*)(intptr_t)entityId, flags, "%s", displayName.c_str());
-            ImGui::PopStyleColor();
-        }
-        else {
-            opened = ImGui::TreeNodeEx((void*)(intptr_t)entityId, flags, "%s", displayName.c_str());
+
+        // Determine text color based on prefab status and active state
+        bool isPrefab = ecsManager.HasComponent<PrefabLinkComponent>(entityId);
+        bool pushedColor = false;
+
+        if (isPrefab) {
+            if (isEntityActive) {
+                // Active prefab: bright sky blue
+                ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.55f, 0.8f, 0.95f, 1.0f));
+            } else {
+                // Inactive prefab: darker/desaturated blue (like Unity)
+                ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.3f, 0.45f, 0.55f, 1.0f));
+            }
+            pushedColor = true;
+        } else if (!isEntityActive) {
+            // Inactive non-prefab: gray
+            ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.5f, 0.5f, 0.5f, 1.0f));
+            pushedColor = true;
         }
 
+        opened = ImGui::TreeNodeEx((void*)(intptr_t)entityId, flags, "%s", displayName.c_str());
+
         // Pop color if we pushed it
-        if (!isEntityActive) {
+        if (pushedColor) {
             ImGui::PopStyleColor();
         }
         if (ImGui::IsItemClicked()) {
