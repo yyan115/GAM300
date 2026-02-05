@@ -39995,7 +39995,7 @@
             ]
         },
         {
-            "id": 2407,
+            "id": 2402,
             "guid": "001955a0975ad12d-00041e59a8006e41",
             "components": {
                 "NameComponent": {
@@ -40283,7 +40283,7 @@
         },
         {
             "PrefabPath": "../../Resources/Prefabs/Link.prefab",
-            "id": 2408,
+            "id": 2403,
             "guid": "001699548469af3e-00041ea1b6001829",
             "Name": "Link",
             "ComponentOverrides": [
@@ -40445,12 +40445,12 @@
         },
         {
             "PrefabPath": "../../Resources/Prefabs/Player_GameLevelMap.prefab",
-            "id": 2413,
+            "id": 2404,
             "guid": "001d95f7c1b5bfc0-0004202cbe001361",
             "Name": "Player",
             "Children": [
                 {
-                    "id": 2479,
+                    "id": 2470,
                     "guid": "001d95f786ee3214-0004202cbe0013e5",
                     "Name": "Kusane_Player_Reference",
                     "ParentComponent": {
@@ -40461,7 +40461,7 @@
                     },
                     "Children": [
                         {
-                            "id": 2480,
+                            "id": 2471,
                             "guid": "001d95f7b8e83637-0004202cbe0013e7",
                             "Name": "Kusane_Player_Hips",
                             "ParentComponent": {
@@ -40472,7 +40472,7 @@
                             },
                             "Children": [
                                 {
-                                    "id": 2489,
+                                    "id": 2480,
                                     "guid": "001d95f78a616712-0004202cbe0013f9",
                                     "Name": "Kusane_Player_Spine",
                                     "ParentComponent": {
@@ -40483,7 +40483,7 @@
                                     },
                                     "Children": [
                                         {
-                                            "id": 2490,
+                                            "id": 2481,
                                             "guid": "001d95f795e440e2-0004202cbe0013fb",
                                             "Name": "Kusane_Player_Spine1",
                                             "ParentComponent": {
@@ -40494,7 +40494,7 @@
                                             },
                                             "Children": [
                                                 {
-                                                    "id": 2491,
+                                                    "id": 2482,
                                                     "guid": "001d95f7af610804-0004202cbe0013fd",
                                                     "Name": "Kusane_Player_Spine2",
                                                     "ParentComponent": {
@@ -40505,7 +40505,7 @@
                                                     },
                                                     "Children": [
                                                         {
-                                                            "id": 2516,
+                                                            "id": 2507,
                                                             "guid": "001d95f7c58a3dd9-0004202cbe00142f",
                                                             "Name": "Kusane_Player_RightShoulder",
                                                             "ParentComponent": {
@@ -40516,7 +40516,7 @@
                                                             },
                                                             "Children": [
                                                                 {
-                                                                    "id": 2517,
+                                                                    "id": 2508,
                                                                     "guid": "001d95f7c79448e0-0004202cbe001431",
                                                                     "Name": "Kusane_Player_RightArm",
                                                                     "ParentComponent": {
@@ -40527,7 +40527,7 @@
                                                                     },
                                                                     "Children": [
                                                                         {
-                                                                            "id": 2518,
+                                                                            "id": 2509,
                                                                             "guid": "001d95f78ef4e28c-0004202cbe001433",
                                                                             "Name": "Kusane_Player_RightForeArm",
                                                                             "ParentComponent": {
@@ -40538,7 +40538,7 @@
                                                                             },
                                                                             "Children": [
                                                                                 {
-                                                                                    "id": 2519,
+                                                                                    "id": 2510,
                                                                                     "guid": "001d95f7d4ac91fb-0004202cbe001435",
                                                                                     "Name": "Kusane_Player_RightHand",
                                                                                     "ParentComponent": {
@@ -40613,7 +40613,7 @@
                                                                                     ],
                                                                                     "Children": [
                                                                                         {
-                                                                                            "id": 2532,
+                                                                                            "id": 2523,
                                                                                             "guid": "001d95f7b438b58c-0004202cbe00144f",
                                                                                             "Name": "Kusane_Player_RightHandRing1",
                                                                                             "ParentComponent": {
@@ -40624,7 +40624,7 @@
                                                                                             },
                                                                                             "Children": [
                                                                                                 {
-                                                                                                    "id": 2533,
+                                                                                                    "id": 2524,
                                                                                                     "guid": "001d95f782d6d07b-0004202cbe001451",
                                                                                                     "Name": "Kusane_Player_RightHandRing2",
                                                                                                     "ParentComponent": {
@@ -40635,7 +40635,7 @@
                                                                                                     },
                                                                                                     "Children": [
                                                                                                         {
-                                                                                                            "id": 2534,
+                                                                                                            "id": 2525,
                                                                                                             "guid": "001d95f7896fd126-0004202cbe001453",
                                                                                                             "Name": "Kusane_Player_RightHandRing3",
                                                                                                             "ParentComponent": {
@@ -40732,7 +40732,7 @@
                     ]
                 },
                 {
-                    "id": 2556,
+                    "id": 2547,
                     "guid": "001d95f7ce94c254-0004202cbe00147f",
                     "Name": "AttackHitbox",
                     "ParentComponent": {
@@ -40769,7 +40769,7 @@
         },
         {
             "PrefabPath": "../../Resources/Prefabs/MeleeEnemy.prefab",
-            "id": 4923,
+            "id": 2549,
             "guid": "00612e339cce5be4-00042033da00603d",
             "Name": "MeleeEnemy",
             "ComponentOverrides": [
@@ -40844,19 +40844,19 @@
         },
         {
             "PrefabPath": "../../Resources/Prefabs/RangedEnemy.prefab",
-            "id": 4924,
+            "id": 2550,
             "guid": "00612e33b2500a40-00042033aa00603b",
             "Name": "RangedEnemy"
         },
         {
             "PrefabPath": "../../Resources/Prefabs/MeleeEnemy.prefab",
-            "id": 4925,
+            "id": 2551,
             "guid": "00612e33e4cf2e77-0004203376006039",
             "Name": "MeleeEnemy"
         },
         {
             "PrefabPath": "../../Resources/Prefabs/RangedEnemy.prefab",
-            "id": 4955,
+            "id": 2552,
             "guid": "00612e33e679f65c-000420342a00603f",
             "Name": "RangedEnemy",
             "ComponentOverrides": [
@@ -40931,9 +40931,760 @@
         },
         {
             "PrefabPath": "../../Resources/Prefabs/GameOverMenu.prefab",
-            "id": 4966,
+            "id": 2553,
             "guid": "00612e33e66d2b5f-000420326a004d5d",
-            "Name": "GameOverMenu"
+            "Name": "GameOverMenu",
+            "ComponentOverrides": [
+                {
+                    "ScriptComponent": {
+                        "scripts": [
+                            {
+                                "scriptGuidStr": "003736b73cf35e3c-000417e2dc006801",
+                                "scriptPath": "../../Resources/Scripts/UI/GameOverMenu/GameOverMenu.lua",
+                                "enabled": true,
+                                "preserveKeys": [],
+                                "entryFunction": "OnInit",
+                                "autoInvokeEntry": true,
+                                "instanceState": {
+                                    "_private": {},
+                                    "__created_at": 1770048685.0,
+                                    "__meta": {},
+                                    "deathAnimationDelay": 3.5,
+                                    "isFading": false,
+                                    "playerDead": false,
+                                    "fadeAlpha": 0.0,
+                                    "fadeScreenName": "DeathScreenBG",
+                                    "_subscriptions": {},
+                                    "_playerDeadSub": {
+                                        "event": "playerDead",
+                                        "id": 1.0
+                                    },
+                                    "_subs_map": {},
+                                    "fadeDuration": 1.5,
+                                    "__field_list": {
+                                        "fadeAlpha": 0.0,
+                                        "fadeScreenName": "DeathScreenBG",
+                                        "deathAnimationDelay": 3.0,
+                                        "isFading": false,
+                                        "fadeDuration": 1.0,
+                                        "playerDead": false
+                                    }
+                                }
+                            },
+                            {
+                                "scriptGuidStr": "0056a7a2269c3d48-000419b378001cc5",
+                                "scriptPath": "../../Resources/Scripts/UI/GameOverMenu/GameOverButtonHandler.lua",
+                                "enabled": true,
+                                "preserveKeys": [],
+                                "entryFunction": "OnInit",
+                                "autoInvokeEntry": true,
+                                "instanceState": {
+                                    "OnClickRespawnButton": null,
+                                    "playerName": "Player",
+                                    "fadeDuration": 3.0,
+                                    "Start": null,
+                                    "DisableSafe": null,
+                                    "Every": null,
+                                    "Update": null,
+                                    "Awake": null,
+                                    "After": null,
+                                    "Destroy": null,
+                                    "Unsubscribe": null,
+                                    "_subscriptions": {},
+                                    "__created_at": 1770237821.0,
+                                    "_private": {},
+                                    "SerializeFields": null,
+                                    "UpdateSafe": null,
+                                    "StartSafe": null,
+                                    "AwakeSafe": null,
+                                    "__meta": {},
+                                    "_call_lifecycle": null,
+                                    "Subscribe": null,
+                                    "fadeScreenName": "GameOverFade",
+                                    "__field_list": {
+                                        "playerName": "Player",
+                                        "fadeScreenName": "GameOverFade",
+                                        "fadeDuration": 3.0
+                                    },
+                                    "DeserializeFields": null
+                                }
+                            }
+                        ]
+                    }
+                }
+            ]
+        },
+        {
+            "id": 2559,
+            "guid": "005368ce029a4997-000420d14a0012d1",
+            "components": {
+                "NameComponent": {
+                    "name": "PlayerSlashVFX"
+                },
+                "TagComponent": {
+                    "tagIndex": 0
+                },
+                "LayerComponent": {
+                    "layerIndex": 0
+                },
+                "SiblingIndexComponent": {
+                    "siblingIndex": 64
+                },
+                "Transform": {
+                    "type": "Transform",
+                    "data": [
+                        {
+                            "type": "Vector3D",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                }
+                            ]
+                        },
+                        {
+                            "type": "Vector3D",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                }
+                            ]
+                        },
+                        {
+                            "type": "Quaternion",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                }
+                            ]
+                        }
+                    ]
+                },
+                "ModelRenderComponent": {
+                    "type": "ModelRenderComponent",
+                    "data": [
+                        "006298ac45b9e217-00041dbd0c000003",
+                        "0060f444e1e8808c-000337e664000011",
+                        "0049292f8735c307-00041d2ed4000003",
+                        {
+                            "type": "Matrix4x4",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                }
+                            ]
+                        },
+                        {
+                            "type": "bool",
+                            "data": true
+                        },
+                        {
+                            "type": "bool",
+                            "data": true
+                        }
+                    ]
+                },
+                "ChildrenComponent": {
+                    "type": "ChildrenComponent",
+                    "data": [
+                        {
+                            "type": "std::vector<GUID_128>",
+                            "data": [
+                                "005368ce6ca7689b-000420d23a003a03"
+                            ]
+                        }
+                    ]
+                },
+                "ActiveComponent": {
+                    "type": "ActiveComponent",
+                    "data": [
+                        {
+                            "type": "bool",
+                            "data": true
+                        }
+                    ]
+                },
+                "ScriptComponent": {
+                    "scripts": [
+                        {
+                            "scriptGuidStr": "00451924e85304f5-00041dc72a000001",
+                            "scriptPath": "../../Resources/Scripts/Gameplay/PlayerSlashVFX.lua",
+                            "enabled": true,
+                            "preserveKeys": [],
+                            "entryFunction": "OnInit",
+                            "autoInvokeEntry": true,
+                            "instanceState": {
+                                "StartRot": -60.0,
+                                "EndRot": 100.0,
+                                "Lifetime": 0.2,
+                                "Speed": 500.0,
+                                "__created_at": 1770319435.0,
+                                "__field_list": {
+                                    "StartRot": -60.0,
+                                    "EndRot": 100.0,
+                                    "AttackState": "light_1",
+                                    "Lifetime": 0.2,
+                                    "Speed": 100.0
+                                },
+                                "AttackState": "\"light_1\"",
+                                "__meta": {},
+                                "_subscriptions": {},
+                                "_transform_fetched": false,
+                                "_private": {}
+                            }
+                        }
+                    ]
+                }
+            }
+        },
+        {
+            "id": 2560,
+            "guid": "005368ce6ca7689b-000420d23a003a03",
+            "components": {
+                "NameComponent": {
+                    "name": "SlashMesh"
+                },
+                "TagComponent": {
+                    "tagIndex": 0
+                },
+                "LayerComponent": {
+                    "layerIndex": 0
+                },
+                "Transform": {
+                    "type": "Transform",
+                    "data": [
+                        {
+                            "type": "Vector3D",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0.493286
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                }
+                            ]
+                        },
+                        {
+                            "type": "Vector3D",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                }
+                            ]
+                        },
+                        {
+                            "type": "Quaternion",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                }
+                            ]
+                        }
+                    ]
+                },
+                "ParentComponent": {
+                    "type": "ParentComponent",
+                    "data": [
+                        "005368ce029a4997-000420d14a0012d1"
+                    ]
+                },
+                "ActiveComponent": {
+                    "type": "ActiveComponent",
+                    "data": [
+                        {
+                            "type": "bool",
+                            "data": true
+                        }
+                    ]
+                }
+            }
+        },
+        {
+            "id": 2561,
+            "guid": "005368ce0151087b-000420eadc0370fb",
+            "components": {
+                "NameComponent": {
+                    "name": "PlayerSlashVFX2"
+                },
+                "TagComponent": {
+                    "tagIndex": 0
+                },
+                "LayerComponent": {
+                    "layerIndex": 0
+                },
+                "SiblingIndexComponent": {
+                    "siblingIndex": 65
+                },
+                "Transform": {
+                    "type": "Transform",
+                    "data": [
+                        {
+                            "type": "Vector3D",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                }
+                            ]
+                        },
+                        {
+                            "type": "Vector3D",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                }
+                            ]
+                        },
+                        {
+                            "type": "Quaternion",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                }
+                            ]
+                        }
+                    ]
+                },
+                "ModelRenderComponent": {
+                    "type": "ModelRenderComponent",
+                    "data": [
+                        "006298ac45b9e217-00041dbd0c000003",
+                        "0060f444e1e8808c-000337e664000011",
+                        "0049292f8735c307-00041d2ed4000003",
+                        {
+                            "type": "Matrix4x4",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                }
+                            ]
+                        },
+                        {
+                            "type": "bool",
+                            "data": true
+                        },
+                        {
+                            "type": "bool",
+                            "data": true
+                        }
+                    ]
+                },
+                "ActiveComponent": {
+                    "type": "ActiveComponent",
+                    "data": [
+                        {
+                            "type": "bool",
+                            "data": true
+                        }
+                    ]
+                },
+                "ScriptComponent": {
+                    "scripts": [
+                        {
+                            "scriptGuidStr": "005368ce6c034428-000420e4c002ad09",
+                            "scriptPath": "../../Resources/Scripts/Gameplay/PlayerSlashVFX2.lua",
+                            "enabled": true,
+                            "preserveKeys": [],
+                            "entryFunction": "OnInit",
+                            "autoInvokeEntry": true
+                        }
+                    ]
+                }
+            }
+        },
+        {
+            "id": 2562,
+            "guid": "005368ce20cdcc47-000420eb0c0370fd",
+            "components": {
+                "NameComponent": {
+                    "name": "PlayerSlashVFX3"
+                },
+                "TagComponent": {
+                    "tagIndex": 0
+                },
+                "LayerComponent": {
+                    "layerIndex": 0
+                },
+                "SiblingIndexComponent": {
+                    "siblingIndex": 66
+                },
+                "Transform": {
+                    "type": "Transform",
+                    "data": [
+                        {
+                            "type": "Vector3D",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                }
+                            ]
+                        },
+                        {
+                            "type": "Vector3D",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                }
+                            ]
+                        },
+                        {
+                            "type": "Quaternion",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                }
+                            ]
+                        }
+                    ]
+                },
+                "ModelRenderComponent": {
+                    "type": "ModelRenderComponent",
+                    "data": [
+                        "006298ac45b9e217-00041dbd0c000003",
+                        "0060f444e1e8808c-000337e664000011",
+                        "0049292f8735c307-00041d2ed4000003",
+                        {
+                            "type": "Matrix4x4",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                }
+                            ]
+                        },
+                        {
+                            "type": "bool",
+                            "data": true
+                        },
+                        {
+                            "type": "bool",
+                            "data": true
+                        }
+                    ]
+                },
+                "ActiveComponent": {
+                    "type": "ActiveComponent",
+                    "data": [
+                        {
+                            "type": "bool",
+                            "data": true
+                        }
+                    ]
+                },
+                "ScriptComponent": {
+                    "scripts": [
+                        {
+                            "scriptGuidStr": "005368ce00b15193-000420eb3e037101",
+                            "scriptPath": "../../Resources/Scripts/Gameplay/PlayerSlashVFX3.lua",
+                            "enabled": true,
+                            "preserveKeys": [],
+                            "entryFunction": "OnInit",
+                            "autoInvokeEntry": true
+                        }
+                    ]
+                }
+            }
         }
     ],
     "layers": [

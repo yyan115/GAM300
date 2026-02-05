@@ -26,8 +26,8 @@ return Component {
     mixins = { TransformMixin },
     
     fields = {
-        StartRot = -60,        -- Starting angle offset (relative to player)
-        EndRot = 100,          -- Ending angle offset (relative to player)
+        StartRot = -30,        -- Starting angle offset (relative to player)
+        EndRot = 60,          -- Ending angle offset (relative to player)
         Speed = 500,           -- Degrees per second sweep speed
     },
     
@@ -50,11 +50,10 @@ return Component {
         if self.model then
             ModelRenderComponent.SetVisible(self.model, false)
         end
-
         -- Subscribe to attack events
         if event_bus then
             event_bus.subscribe("attack_performed", function(data)
-                if data.state == "light_1" then
+                if data.state == "light_3" then
                     self:TriggerSlash(self.StartRot, self.EndRot, self.Speed)   -- StartRot, EndRot, Speed (deg/s)
                 end
             end)
