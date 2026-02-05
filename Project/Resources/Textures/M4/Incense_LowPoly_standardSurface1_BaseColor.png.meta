@@ -1,0 +1,13 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "005e129f4fae37b7-0004211714006279",
+        "source": "../../Resources/Textures/M4/Incense_LowPoly_standardSurface1_BaseColor.png",
+        "compiled": "../../Resources/Textures/M4/Incense_LowPoly_standardSurface1_BaseColor.dds"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true
+    }
+}

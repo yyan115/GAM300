@@ -1,0 +1,13 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "005e129f053155ac-0004211712006275",
+        "source": "../../Resources/Textures/M4/tori_gate_low_tori_gate_BaseColor.png",
+        "compiled": "../../Resources/Textures/M4/tori_gate_low_tori_gate_BaseColor.dds"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true
+    }
+}

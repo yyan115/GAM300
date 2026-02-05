@@ -1,0 +1,13 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "005e129f2473ab81-0004211710006273",
+        "source": "../../Resources/Textures/M4/sword_holder_sword_Normal.png",
+        "compiled": "../../Resources/Textures/M4/sword_holder_sword_Normal.dds"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true
+    }
+}
