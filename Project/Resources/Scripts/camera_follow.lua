@@ -135,7 +135,7 @@ return Component {
         enemyDetectionRange  = 8.0,
         enemyDisengageRange  = 10.0,
         enemyDisengageDelay  = 2.0,
-        enemyScriptNames = {"EnemyAI", "FlyingEnemyLogic"},
+        enemyNames = {"EnemyAI", "FlyingEnemyLogic"},
         cacheUpdateInterval = 1.0,  -- C++ cache update interval (seconds)
         debugEnemyDetection = false,       
     },
@@ -175,7 +175,7 @@ return Component {
 
         -- Configure C++ cache intervals
         if Engine and Engine.SetCacheUpdateInterval then
-            for _, scriptName in ipairs(self.enemyScriptNames) do
+            for _, scriptName in ipairs(self.enemyNames) do
                 Engine.SetCacheUpdateInterval(scriptName, self.cacheUpdateInterval)
                 if self.debugEnemyDetection then
                     print(string.format("[CameraFollow] Set cache interval for '%s' to %.1fs", 
