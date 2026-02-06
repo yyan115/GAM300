@@ -28,7 +28,6 @@
 #include "Physics/RigidBodyComponent.hpp"
 #include "Physics/Kinematics/CharacterControllerSystem.hpp"
 #include "Transform/TransformComponent.hpp"
-#include "Logging.hpp"
 #include <cstdarg>
 
 #include <Jolt/Physics/Collision/NarrowPhaseQuery.h>
@@ -134,7 +133,7 @@ bool PhysicsSystem::InitialiseJolt() {
 
     // Only initialize THIS instance's physics system once (calling physics.Init() again would wipe all bodies!)
     if (!m_joltInitialized) {
-        ENGINE_PRINT("[Physics] InitialiseJolt: Creating physics world for this instance...");
+        std::cout << "[Physics] InitialiseJolt: Creating physics world for this instance..." << std::endl;
 
         if (!temp) temp = std::make_unique<JPH::TempAllocatorImpl>(16 * 1024 * 1024);
         if (!jobs) jobs = std::make_unique<JPH::JobSystemThreadPool>(
@@ -167,7 +166,7 @@ bool PhysicsSystem::InitialiseJolt() {
 
         m_joltInitialized = true;
     } else {
-        ENGINE_PRINT("[Physics] InitialiseJolt: This instance already initialized, skipping Init()");
+        std::cout << "[Physics] InitialiseJolt: This instance already initialized, skipping Init()" << std::endl;
     }
 
     return true;

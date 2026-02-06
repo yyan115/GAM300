@@ -203,7 +203,7 @@ namespace PhysicsSystemWrappers {
 
     // Simple test function to verify Lua bindings work
     inline float TestBinding() {
-		ENGINE_LOG_DEBUG("[Physics] TestBinding called from Lua!");
+        std::cout << "[Physics] TestBinding called from Lua!" << std::endl;
         return 42.0f;
     }
 
@@ -320,6 +320,7 @@ namespace CharacterControllerWrappers {
             std::cerr << "[ERROR] Cannot create CharacterController - CharacterControllerSystem unavailable!" << std::endl;
             return nullptr;
         }
+        std::cout << "UPDATED 0" << std::endl;
         //call system to create controller
         return ecsManager.characterControllerSystem->CreateController(id, *collider, *transform);
 

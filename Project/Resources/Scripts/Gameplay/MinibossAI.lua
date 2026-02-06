@@ -7,6 +7,7 @@ local StateMachine = require("Gameplay.StateMachine")
 local ChooseState  = require("Gameplay.MinibossChooseState")
 local ExecuteState = require("Gameplay.MinibossExecuteState")
 local RecoverState = require("Gameplay.MinibossRecoverState")
+local BattlecryState = require("Gameplay.MinibossBattlecryState")
 
 local KnifePool = require("Gameplay.KnifePool")
 
@@ -43,6 +44,33 @@ local function toDtSec(dt)
     if dtSec <= 0 then return 0 end
     if dtSec > 0.05 then dtSec = 0.05 end
     return dtSec
+end
+
+local function unpackPos(pp)
+    if not pp then return nil end
+
+    if type(pp) == "table" then
+        if (pp.x ~= nil or pp.y ~= nil or pp.z ~= nil) then
+            return pp.x, pp.y, pp.z
+        end
+        return pp[1], pp[2], pp[3]
+    end
+
+    -- NEW: userdata that supports numeric indexing
+    if type(pp) == "userdata" then
+        local ok, x, y, z = pcall(function() return pp[1], pp[2], pp[3] end)
+        if ok then return x, y, z end
+    end
+
+    return nil
+end
+
+local function requestUpTo(n)
+    for k = n, 1, -1 do
+        local knives = KnifePool.RequestMany(k)
+        if knives and #knives > 0 then return knives end
+    end
+    return nil
 end
 
 local function _lockPriority(reason)
@@ -85,8 +113,8 @@ local MOVES = {
     -- For testing individual moves 1 by 1
     -- Move1 = { cooldown = 2.0, weights = { [1]=0, [2]=20, [3]=10, [4]=0 }, execute = function(ai) print("[Miniboss] Move1: Basic Attack") ai:BasicAttack() end },
     -- Move2 = { cooldown = 2.5, weights = { [1]=0, [2]=35, [3]=30, [4]=20 }, execute = function(ai) print("[Miniboss] Move2: Burst Fire") ai:BurstFire() end },
-    -- Move3 = { cooldown = 3.0, weights = { [1]=10,  [2]=35, [3]=30, [4]=20 }, execute = function(ai) print("[Miniboss] Move3: Anti Dodge") ai:AntiDodge() end },
-    -- Move4 = { cooldown = 4.0, weights = { [1]=0,  [2]=10,  [3]=30, [4]=30 }, execute = function(ai) print("[Miniboss] Move4: Fate Sealed") ai:FateSealed() end },
+    -- Move3 = { cooldown = 3.0, weights = { [1]=0,  [2]=35, [3]=30, [4]=20 }, execute = function(ai) print("[Miniboss] Move3: Anti Dodge") ai:AntiDodge() end },
+    -- Move4 = { cooldown = 4.0, weights = { [1]=10,  [2]=10,  [3]=30, [4]=30 }, execute = function(ai) print("[Miniboss] Move4: Fate Sealed") ai:FateSealed() end },
     -- Move5 = { cooldown = 5.0, weights = { [1]=0,  [2]=0,  [3]=0,  [4]=30 }, execute = function(ai) print("[Miniboss] Move5: Death Lotus") ai:DeathLotus() end },
 }
 
@@ -102,7 +130,7 @@ return Component {
         MaxHealth = 30,
         RecoverDuration = 1.0,
 
-        -- Damage / Hook / Death (EnemyAI-style)
+        -- Damage / Hook / Death
         HitIFrame      = 0.2,
         HookedDuration = 4.0,
 
@@ -111,23 +139,29 @@ return Component {
 
         PlayerName = "Player",
 
-        -- Gravity tuning (copied style from EnemyAI)
+        -- Gravity tuning
         Gravity      = -9.81,
         MaxFallSpeed = -25.0,
 
         -- Optional: small “stick to ground” behaviour
         GroundStickVel = -0.2,
+
+        IntroDuration = 5.0,
+        AggroRange    = 15.0,  -- distance to trigger intro
+        ClipBattlecry = -1,    -- (optional) set in inspector
+
     },
 
     Awake = function(self)
         self.health = self.MaxHealth
-        self.dead = false
+        self.dead   = false
 
         self.fsm = StateMachine.new(self)
         self.states = {
-            Choose  = ChooseState,
-            Execute = ExecuteState,
-            Recover = RecoverState,
+            Choose    = ChooseState,
+            Execute   = ExecuteState,
+            Recover   = RecoverState,
+            Battlecry = BattlecryState
         }
 
         self._moveCooldowns = {}
@@ -150,6 +184,8 @@ return Component {
         self._knifeVolleyId = 0
 
         -- action lock system (blocks Choose/Execute/etc)
+        self._inIntro    = false
+        self._introDone  = false
         self._lockAction = false
         self._lockReason = nil
         self._lockTimer  = 0
@@ -184,6 +220,7 @@ return Component {
         self._collider  = self:GetComponent("ColliderComponent")
         self._transform = self:GetComponent("Transform")
         self._rb        = self:GetComponent("RigidBodyComponent")
+        self._animator  = self:GetComponent("AnimationComponent")
 
         -- (Re)create controller safely
         if self._controller then
@@ -240,9 +277,41 @@ return Component {
                 local hitType = payload.hitType or payload.src or "MELEE"
                 self:ApplyHit(dmg, hitType)
             end)
+
+            self._comboDamageSub = _G.event_bus.subscribe("deal_damage", function(payload)
+                if not payload then return end
+                
+                -- Check if this enemy is the target
+                if payload.targetEntityId ~= self.entityId then
+                    return
+                end
+                
+                -- Extract attack data from ComboManager
+                local attackData = payload.attackData or {}
+                local damage = attackData.damage or 10
+                local knockback = attackData.knockback or 0
+                local attackState = attackData.state or "unknown"
+                local direction = payload.direction or { x = 0, y = 0, z = 1 }
+                
+                print(string.format("[EnemyAI] Taking damage: %d from attack '%s' (knockback: %.1f)", 
+                                damage, attackState, knockback))
+                
+                -- Apply damage through existing system
+                self:ApplyHit(damage, "COMBO")
+                
+                -- Apply knockback using CC system, not RB impulse
+                if knockback and knockback > 0 then
+                    -- direction should be from attacker -> enemy (or similar)
+                    -- if it's opposite, just negate it
+                    local dir = direction or { x = 0, z = 1 }
+                    self._kbVX = (dir.x or 0) * knockback
+                    self._kbVZ = (dir.z or 0) * knockback
+                    self._kbT  = self.KnockbackDuration
+                end
+            end)
         end
 
-        -- === Hook event subscription (optional but matches your EnemyAI pattern) ===
+        -- === Hook event subscription ===
         self._hookSub = nil
         if _G.event_bus and _G.event_bus.subscribe then
             self._hookSub = _G.event_bus.subscribe("enemy_hook", function(payload)
@@ -260,25 +329,28 @@ return Component {
 
         self._phase = self:GetPhase()
 
-        self.fsm:Change("Choose", self.states.Choose)
+        self.fsm:Change("Recover", self.states.Recover)
+        self._recoverTimer = 999999 -- idle until aggro
+
+        print("[Miniboss] KnifePool size =", #KnifePool.knives)
+        print("[Miniboss KnifePool dbg] KnifePool table:", KnifePool, "activeCount:", KnifePool.activeCount, "poolSize:", KnifePool.poolSize)
     end,
 
     Update = function(self, dt)
-        --if Input.IsActionJustPressed("DebugHit") then self:ApplyHit(1) end
         local dtSec = toDtSec(dt)
 
-        -- tick hit i-frames
-        self._hitLockTimer = math.max(0, (self._hitLockTimer or 0) - dtSec)
+        -- 1. ALWAYS ENSURE COMPONENTS & APPLY GRAVITY
+        -- This ensures the boss falls to the ground immediately on game start.
+        self:EnsureController()
+        self:ApplyGravity(dtSec)
 
-        -- Tick move cooldowns
+        -- 2. TICK SYSTEM TIMERS (Always run)
+        self._hitLockTimer = math.max(0, (self._hitLockTimer or 0) - dtSec)
         for k, v in pairs(self._moveCooldowns) do
             self._moveCooldowns[k] = math.max(0, v - dtSec)
         end
 
-        -- Apply gravity via CC (so miniboss falls like EnemyAI CC users)
-        self:ApplyGravity(dtSec)
-
-        -- === Action lock timer ===
+        -- 3. ACTION LOCK SYSTEM
         if self._lockAction and (self._lockReason ~= "DEAD") then
             self._lockTimer = math.max(0, (self._lockTimer or 0) - dtSec)
 
@@ -288,57 +360,77 @@ return Component {
 
                 if reason == "PHASE_TRANSFORM" then
                     self:FinishPhaseTransform()
-                    -- after transform, go Recover to pace
                     self.fsm:Change("Recover", self.states.Recover)
                 elseif reason == "HOOKED" then
                     self._hooked = false
-                    print("[Miniboss][Hooked] END")
                     self._recoverTimer = math.max(self.RecoverDuration or 0.6, 0.35)
                     self.fsm:Change("Recover", self.states.Recover)
-                else
-                    -- e.g. HIT_STUN ends -> just continue
                 end
             end
         end
 
-        -- === If dead or locked, do NOT run normal behaviour ===
-        if self.dead or self:IsActionLocked() then
-            -- still sync transform from CC
-            if self._controller then
-                local pos = CharacterController.GetPosition(self._controller)
-                if pos then
-                    self:SetPosition(pos.x, pos.y, pos.z)
-                    if (not self:IsInMove("DeathLotus")) and self._lastFacingRot then
-                        local r = self._lastFacingRot
-                        self:SetRotation(r.w, r.x, r.y, r.z)
-                    end
-                end
-            end
-            return
-        end
-
-        -- check for phase threshold crossing during normal time (not only on hit)
-        self:CheckPhaseTransition()
-        if self:IsActionLocked() then
-            -- phase transform may have started
-            return
-        end
-
-        -- Run behaviour
-        self.fsm:Update(dtSec)
-
-        self:TickMove(dtSec)
-
+        -- 4. PHYSICS SYNC (Crucial for preventing teleports)
+        -- We sync the Transform to the CharacterController every frame.
         if self._controller then
             local pos = CharacterController.GetPosition(self._controller)
             if pos then
                 self:SetPosition(pos.x, pos.y, pos.z)
-
+                -- Only apply facing rotation if not in a special move like DeathLotus
                 if (not self:IsInMove("DeathLotus")) and self._lastFacingRot then
                     local r = self._lastFacingRot
                     self:SetRotation(r.w, r.x, r.y, r.z)
                 end
             end
+        end
+
+        -- 5. EARLY EXIT FOR DEATH OR NON-INTRO LOCKS
+        -- We allow the "INTRO" reason to pass through so the BattlecryState can update.
+        local locked = self:IsActionLocked()
+        local lockReason = self._lockReason
+        if self.dead or (locked and lockReason ~= "INTRO") then
+            return
+        end
+
+        -- 6. PHASE TRANSITION CHECK
+        self:CheckPhaseTransition()
+        if self:IsActionLocked() and self._lockReason == "PHASE_TRANSFORM" then
+            return
+        end
+
+        -- 7. AGGRO TRIGGER LOGIC
+        if not self._introDone then
+            self:FacePlayer() -- Keep facing while waiting
+
+            local px, py, pz = self:GetPlayerPosForAI()
+            if px then
+                local ex, ez = self:GetEnemyPosXZ()
+                local dx, dz = px - ex, pz - ez
+                local r = self.AggroRange or 15.0
+                
+                if (dx*dx + dz*dz) <= (r*r) then
+                    -- IMPORTANT: Set these BEFORE changing state to prevent re-triggering
+                    self._introDone = true 
+                    self._inIntro = true
+                    
+                    print(string.format("[Miniboss][Aggro] Player in range. Starting Battlecry."))
+                    self.fsm:Change("Battlecry", self.states.Battlecry)
+                    return
+                end
+            end
+            return -- Stay in Idle/Recover until player enters range
+        end
+
+        -- 8. NORMAL COMBAT BEHAVIOR
+        self.fsm:Update(dtSec)
+        self:TickMove(dtSec)
+
+        -- 9. EVENT BROADCAST
+        if _G.event_bus and _G.event_bus.publish then
+            local x, y, z = self:GetPosition()
+            _G.event_bus.publish("enemy_position", {
+                entityId = self.entityId,
+                x = x, y = y, z = z
+            })
         end
     end,
 
@@ -358,7 +450,7 @@ return Component {
         if self._vy < maxFall then self._vy = maxFall end
 
         -- move vertically (CC handles collision)
-        CharacterController.Move(self._controller, 0, self._vy, 0)
+        CharacterController.Move(self._controller, 0, self._vy * dtSec, 0)
 
         -- heuristic “grounded”: if Y didn’t change and we are falling, zero out vy
         local pos = CharacterController.GetPosition(self._controller)
@@ -375,6 +467,33 @@ return Component {
         end
     end,
 
+    EnsureController = function(self)
+        if self._controller then return true end
+
+        self._collider  = self._collider  or self:GetComponent("ColliderComponent")
+        self._transform = self._transform or self:GetComponent("Transform")
+
+        if not (self._collider and self._transform) then
+            return false
+        end
+
+        local ok, ctrl = pcall(function()
+            return CharacterController.Create(self.entityId, self._collider, self._transform)
+        end)
+
+        if ok and ctrl then
+            self._controller = ctrl
+            -- sync scripted position to CC immediately so there’s no later “snap”
+            local x, y, z = self:GetPosition()
+            pcall(function()
+                CharacterController.SetPosition(self._controller, x, y, z)
+            end)
+            return true
+        end
+
+        return false
+    end,
+
     -------------------------------------------------
     -- Facing (copied from EnemyAI)
     -------------------------------------------------
@@ -384,23 +503,24 @@ return Component {
     end,
 
     FacePlayer = function(self)
-        local tr = self._playerTr
-        if not tr then
-            tr = Engine.FindTransformByName(self.PlayerName)
-            self._playerTr = tr
+        local px, py, pz = self:GetPlayerPosForAI()
+        
+        -- If we can't find the player, don't try to rotate
+        if not px or not pz then 
+            print("[Miniboss] Can't find player")
+            return 
         end
-        if not tr then return end
-
-        local pp = Engine.GetTransformPosition(tr)
-        local px, pz = pp[1], pp[3]
 
         local ex, ez = self:GetEnemyPosXZ()
         local dx, dz = px - ex, pz - ez
 
-        local q = { yawQuatFromDir(dx, dz) }
-        if #q == 0 then return end
+        -- If the player is practically inside the boss, don't rotate (prevents snapping)
+        if (dx*dx + dz*dz) < 0.1 then return end
 
-        self:ApplyRotation(q[1], q[2], q[3], q[4])
+        local q = { yawQuatFromDir(dx, dz) }
+        if #q >= 4 then
+            self:ApplyRotation(q[1], q[2], q[3], q[4])
+        end
     end,
 
     GetEnemyPosXZ = function(self)
@@ -410,6 +530,21 @@ return Component {
         end
         local x, _, z = self:GetPosition()
         return x, z
+    end,
+
+    GetPlayerPosForAI = function(self)
+        local tr = self._playerTr
+        local pp = Engine.GetTransformPosition(tr)
+        local px, py, pz = unpackPos(pp)
+        if not px then
+            -- try reacquire once (stale handle)
+            tr = Engine.FindTransformByName(self.PlayerName)
+            self._playerTr = tr
+            pp = tr and Engine.GetTransformPosition(tr) or nil
+            px, py, pz = unpackPos(pp)
+        end
+        if not px then return nil end
+        return px, py, pz
     end,
 
     -------------------------------------------------
@@ -593,6 +728,7 @@ return Component {
 
     ApplyHit = function(self, dmg, hitType)
         if self.dead then return end
+        if self._inIntro then return end
         if (self._hitLockTimer or 0) > 0 then return end
 
         self._hitLockTimer = self.HitIFrame or 0.2
@@ -623,6 +759,8 @@ return Component {
 
     ApplyHook = function(self, duration)
         if self.dead then return end
+        if self._inIntro then return end
+
         self._hooked = true
 
         local dur = duration or self.HookedDuration or 4.0
@@ -650,9 +788,10 @@ return Component {
         end
         self._vy = 0
 
-        if self.ClipDeath and self.ClipDeath >= 0 and self.PlayClip then
-            self:PlayClip(self.ClipDeath, false)
-        end
+        -- if self.ClipDeath and self.ClipDeath >= 0 and self.PlayClip then
+        --     self:PlayClip(self.ClipDeath, false)
+        -- end
+        self._animator:SetTrigger("Death")
 
         print("[Miniboss][Death] DEAD")
     end,
@@ -678,9 +817,11 @@ return Component {
 
         if _G.event_bus and _G.event_bus.unsubscribe then
             if self._damageSub then pcall(function() _G.event_bus.unsubscribe(self._damageSub) end) end
+            if self._comboDamageSub then pcall(function() _G.event_bus.unsubscribe(self._comboDamageSub) end) end
             if self._hookSub then pcall(function() _G.event_bus.unsubscribe(self._hookSub) end) end
         end
         self._damageSub = nil
+        self._comboDamageSub = nil
         self._hookSub = nil
     end,
 
@@ -695,9 +836,11 @@ return Component {
 
         if _G.event_bus and _G.event_bus.unsubscribe then
             if self._damageSub then pcall(function() _G.event_bus.unsubscribe(self._damageSub) end) end
+            if self._comboDamageSub then pcall(function() _G.event_bus.unsubscribe(self._comboDamageSub) end) end
             if self._hookSub then pcall(function() _G.event_bus.unsubscribe(self._hookSub) end) end
         end
         self._damageSub = nil
+        self._comboDamageSub = nil
         self._hookSub = nil
     end,
 
@@ -728,10 +871,22 @@ return Component {
         if not tr then return nil end
 
         local pp = Engine.GetTransformPosition(tr)
-        if not pp then return nil end
+        local px, py, pz = unpackPos(pp)
+
+        if not px then
+            -- try reacquire once (stale handle)
+            tr = Engine.FindTransformByName(self.PlayerName)
+            self._playerTr = tr
+            if not tr then return nil end
+
+            pp = Engine.GetTransformPosition(tr)
+            px, py, pz = unpackPos(pp)
+        end
+
+        if not px then return nil end
 
         yOffset = yOffset or 0.5
-        return pp[1], (pp[2] or 0) + yOffset, pp[3]
+        return px, (py or 0) + yOffset, pz
     end,
 
     _GetSpawnPos = function(self)
@@ -759,15 +914,26 @@ return Component {
     end,
 
     _LaunchKnife = function(self, knife, sx, sy, sz, tx, ty, tz, token, tag)
-        if not knife then return false end
-        return knife:Launch(sx, sy, sz, tx, ty, tz, token, tag)
+        if not knife then
+            print("[Miniboss][Knife] Launch FAILED: knife=nil")
+            return false
+        end
+        local ok = knife:Launch(sx, sy, sz, tx, ty, tz, token, tag)
+        if not ok then
+            print(string.format("[Miniboss][Knife] Launch FAILED tag=%s token=%s", tostring(tag), tostring(token)))
+        end
+        return ok
     end,
 
     -- 3-shot volley: center aimed + L/R perpendicular offsets
     SpawnKnifeVolley3 = function(self, spread)
         spread = spread or 1.0
-        local knives = KnifePool.RequestMany(3)
-        if not knives then return false end
+
+        local knives = requestUpTo(3)
+        if not knives then
+            print("[Miniboss][Knife] No knives available in pool")
+            return false
+        end
 
         local px, py, pz = self:_GetPlayerPos()
         if not px then
@@ -786,34 +952,49 @@ return Component {
         local len = math.sqrt(dx*dx + dz*dz)
         if len < 1e-6 then len = 1 end
         dx, dz = dx / len, dz / len
-
         local rx, rz = -dz, dx
 
         local token = self:_NewVolleyToken()
-        for i=1,3 do
+
+        -- IMPORTANT: only stamp token onto the knives we actually got
+        for i=1, #knives do
             knives[i]._reservedToken = token
             knives[i].reserved = true
         end
 
-        local t0x, t0y, t0z = px, py, pz
-        local t1x, t1y, t1z = px - rx*spread, py, pz - rz*spread
-        local t2x, t2y, t2z = px + rx*spread, py, pz + rz*spread
+        local targets = {
+            { px,              py, pz,              "C" },
+            { px - rx*spread,  py, pz - rz*spread,  "L" },
+            { px + rx*spread,  py, pz + rz*spread,  "R" },
+        }
 
-        local ok1 = self:_LaunchKnife(knives[1], sx, sy, sz, t0x, t0y, t0z, token, "C")
-        local ok2 = self:_LaunchKnife(knives[2], sx, sy, sz, t1x, t1y, t1z, token, "L")
-        local ok3 = self:_LaunchKnife(knives[3], sx, sy, sz, t2x, t2y, t2z, token, "R")
+        local okAny = false
+        for i=1, #knives do
+            local t = targets[i]
+            local ok = self:_LaunchKnife(knives[i], sx, sy, sz, t[1], t[2], t[3], token, t[4])
+            okAny = okAny or ok
+            if not ok then
+                -- If this knife didn't launch, free it immediately
+                knives[i]:Reset("LAUNCH_FAIL")
+            end
+        end
 
-        if not (ok1 and ok2 and ok3) then
-            for i=1,3 do if knives[i] then knives[i]:Reset() end end
+        if not okAny then
+            -- Nothing launched -> make sure we don't leak reservations
+            self:_FreeReserved(knives)
             return false
         end
+
         return true
     end,
 
     -- Single aimed knife at player's current position (aim locked per shot)
     SpawnKnifeSingleAtPlayer = function(self)
         local knives = KnifePool.RequestMany(1)
-        if not knives or not knives[1] then return false end
+        if not knives or not knives[1] then 
+            print("[Miniboss][Knife] RequestMany(1) FAILED")
+            return false
+        end
         local k = knives[1]
 
         local px, py, pz = self:_GetPlayerPos()
@@ -849,7 +1030,10 @@ return Component {
         spread2 = spread2 or 1.6
 
         local knives = KnifePool.RequestMany(4)
-        if not knives then return false end
+        if not knives then
+            print("[Miniboss][Knife] RequestMany(3) FAILED")
+            return false
+        end
 
         local px, py, pz = self:_GetPlayerPos()
         if not px then
@@ -903,7 +1087,10 @@ return Component {
         spread = spread or 0.6
 
         local knives = KnifePool.RequestMany(3)
-        if not knives then return false end
+        if not knives then
+            print("[Miniboss][Knife] RequestMany(3) FAILED")
+            return false
+        end
 
         local sx, sy, sz = self:_GetSpawnPos()
         if not sx then
@@ -1098,7 +1285,10 @@ return Component {
                             entityId = self.entityId,
                             x = ex, y = ey, z = ez,
                             radius = m.slashRadius or 1.4,
-                            dmg = m.dmg or 1
+                            dmg = m.dmg or 1,
+
+                            kbStrength = m.kbStrength or 8.0,
+                            kbUp = 0.0,
                         })
                     end
                 end
@@ -1163,49 +1353,50 @@ return Component {
     -------------------------------------------------
     -- Move implementations (entry points)
     -------------------------------------------------
-    -- BasicAttack = function(self)
-    --     self:_BeginMove("Basic", {
-    --         spread = 0.6,
-    --         postDelay = 0.35
-    --     })
-    -- end,
+    BasicAttack = function(self)
+        self:_BeginMove("Basic", {
+            spread = 0.6,
+            postDelay = 0.35
+        })
+    end,
 
-    -- BurstFire = function(self)
-    --     self:_BeginMove("BurstFire", {
-    --         bursts = 5,
-    --         interval = 0.18,   -- adjust for difficulty
-    --         postDelay = 0.45
-    --     })
-    -- end,
+    BurstFire = function(self)
+        self:_BeginMove("BurstFire", {
+            bursts = 5,
+            interval = 0.18,   -- adjust for difficulty
+            postDelay = 0.45
+        })
+    end,
 
-    -- AntiDodge = function(self)
-    --     self:_BeginMove("AntiDodge", {
-    --         spread1 = 0.25,
-    --         spread2 = 0.35,
-    --         postDelay = 0.45
-    --     })
-    -- end,
+    AntiDodge = function(self)
+        self:_BeginMove("AntiDodge", {
+            spread1 = 0.25,
+            spread2 = 0.35,
+            postDelay = 0.45
+        })
+    end,
 
-    -- FateSealed = function(self)
-    --     self:_BeginMove("FateSealed", {
-    --         chargeDur = 2.00,
-    --         dashDur = 0.33,
-    --         dashSpeed = 290.0,
-    --         slashAt = 0.90,
-    --         slashRadius = 1.4,
-    --         dmg = 1,
-    --         postDelay = 2.60
-    --     })
-    -- end,
+    FateSealed = function(self)
+        self:_BeginMove("FateSealed", {
+            chargeDur = 2.00,
+            dashDur = 0.33,
+            dashSpeed = 290.0,
+            slashAt = 0.90,
+            slashRadius = 1.4,
+            dmg = 1,
+            kbStrength = 8.0,
+            postDelay = 2.60
+        })
+    end,
 
-    -- DeathLotus = function(self)
-    --     self:_BeginMove("DeathLotus", {
-    --         duration = 2.8,
-    --         spinSpeed = math.pi * 1.8,  -- rad/s
-    --         fireInterval = 0.10,
-    --         range = 12.0,
-    --         spread = 0.7,
-    --         lotusYOffset = -3.0,
-    --     })
-    -- end,
+    DeathLotus = function(self)
+        self:_BeginMove("DeathLotus", {
+            duration = 2.8,
+            spinSpeed = math.pi * 1.8,  -- rad/s
+            fireInterval = 0.10,
+            range = 12.0,
+            spread = 0.7,
+            lotusYOffset = -3.0,
+        })
+    end,
 }
