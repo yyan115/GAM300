@@ -49,6 +49,10 @@ return Component {
             self._fadeTimer = 0
             self._isHovered = false
         end
+        if isActive and not self._isFading then
+            self._sprite.isVisible = true   
+        end
+
 
         -- Update previous state
         self._wasCreditsActive = isActive
@@ -63,6 +67,7 @@ return Component {
 
         -- Handle fade out when manually closing
         if self._isFading and self._creditsBGSprite then
+            self._sprite.isVisible = false
             self._fadeTimer = self._fadeTimer + dt
             local fadeProgress = math.min(self._fadeTimer / self.fadeDuration, 1.0)
 

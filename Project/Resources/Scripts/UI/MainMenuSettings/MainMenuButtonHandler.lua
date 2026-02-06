@@ -193,6 +193,18 @@ return Component {
     Update = function(self, dt)
         -- Handle fade transition
         if self._isFading and self._fadeSprite then
+
+        local targetButtons = {"PlayGame", "Credits", "ExitGame", "Settings"}
+        for _, buttonName in ipairs(targetButtons) do
+            local entity = Engine.GetEntityByName(buttonName)
+            if entity then
+                local button = GetComponent(entity, "ButtonComponent")
+                if button then
+                    button.interactable = false
+                end
+            end
+        end
+
             self._fadeTimer = self._fadeTimer + dt
             local duration = self.fadeDuration or 1.0
             self._fadeAlpha = math.min(self._fadeTimer / duration, 1.0)
