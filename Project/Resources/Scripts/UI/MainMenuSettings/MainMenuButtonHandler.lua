@@ -6,6 +6,7 @@ return Component {
         fadeDuration = 1.0,
         fadeScreenName = "MenuFadeScreen",
         targetScene = "Resources/Scenes/02_IntroCutscene.scene",
+        androidTargetScene = "Resources/Scenes/04_GameLevelMap.scene",
         bgmEntityName = "BGM"
     },
     _pendingScene = nil,
@@ -80,7 +81,17 @@ return Component {
             end
         end
 
-        self._pendingScene = self.targetScene
+        -- On Android, skip cutscene and go directly to gameplay
+        local isAndroid = false
+        if Platform and Platform.IsAndroid then
+            isAndroid = Platform.IsAndroid()
+        end
+
+        if isAndroid then
+            self._pendingScene = self.androidTargetScene
+        else
+            self._pendingScene = self.targetScene
+        end
     end,
 
     -- Quit Button Function
