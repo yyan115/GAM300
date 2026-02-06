@@ -16,7 +16,7 @@
             "defaultValue": 0.0
         },
         {
-            "name": "Hurt1",
+            "name": "Melee",
             "type": "Bool",
             "defaultValue": 0.0
         },
@@ -26,7 +26,7 @@
             "defaultValue": 0.0
         },
         {
-            "name": "Melee",
+            "name": "Hurt1",
             "type": "Bool",
             "defaultValue": 0.0
         },
@@ -64,7 +64,7 @@
     "states": [
         {
             "id": "Hooked",
-            "clipIndex": 6,
+            "clipIndex": 5,
             "loop": false,
             "speed": 1.0,
             "crossfadeDuration": 0.0,
@@ -88,7 +88,7 @@
             "id": "Hurt1",
             "clipIndex": 5,
             "loop": false,
-            "speed": 1.100000023841858,
+            "speed": 2.000000238418579,
             "crossfadeDuration": 0.0,
             "nodePosition": {
                 "x": 279.0,
@@ -141,7 +141,7 @@
         },
         {
             "id": "Hurt2",
-            "clipIndex": 6,
+            "clipIndex": 5,
             "loop": false,
             "speed": 2.000000238418579,
             "crossfadeDuration": 0.0,
@@ -152,9 +152,9 @@
         },
         {
             "id": "Hurt3",
-            "clipIndex": 7,
+            "clipIndex": 5,
             "loop": false,
-            "speed": 1.8000001907348633,
+            "speed": 2.000000238418579,
             "crossfadeDuration": 0.0,
             "nodePosition": {
                 "x": 645.9998168945313,
@@ -167,9 +167,9 @@
             "from": "Idle",
             "to": "Move",
             "anyState": false,
-            "hasExitTime": false,
-            "exitTime": 1.0,
-            "transitionDuration": 0.0,
+            "hasExitTime": true,
+            "exitTime": 0.05999999865889549,
+            "transitionDuration": 0.05999999865889549,
             "conditions": [
                 {
                     "paramName": "PatrolEnabled",
@@ -839,8 +839,6 @@
         "Resources/Animations/Enemy@Walk.fbx",
         "Resources/Animations/Enemy@AttackScratch.fbx",
         "Resources/Animations/Enemy@AttackThrow.fbx",
-        "Resources/Animations/Enemy@Hurt1.fbx",
-        "Resources/Animations/Enemy@Hurt2.fbx",
-        "Resources/Animations/Enemy@Hurt3.fbx"
+        "Resources/Animations/Enemy@Hurt.fbx"
     ]
 }
