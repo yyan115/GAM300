@@ -1,6 +1,12 @@
 #include "pch.h"
 #include "Video/VideoComponent.hpp"
 #include <algorithm>
+#include <sstream>
+
+#ifdef ANDROID
+#include "WindowManager.hpp"
+#include "Platform/IPlatform.h"
+#endif
 
 #pragma region Reflection
 REFL_REGISTER_START(VideoComponent)
@@ -27,11 +33,16 @@ std::string VideoComponent::PadNumber(int num)
 
 //Called once
 bool VideoComponent::ProcessMetaData(std::string resourcePath) {
-	if (resourcePath.empty()) return false;
+	ENGINE_PRINT("[VideoComponent] ProcessMetaData called with path: '", resourcePath, "'\n");
+	if (resourcePath.empty()) {
+		ENGINE_PRINT("[VideoComponent] ProcessMetaData: path is empty, returning false\n");
+		return false;
+	}
 
 	Asset::Cutscene data(resourcePath);
 
 	if (data.cutscenes.empty()) {
+		ENGINE_PRINT("[VideoComponent] ProcessMetaData: cutscenes map is empty after parsing '", resourcePath, "'\n");
 		return false;
 	}
 	auto it = data.cutscenes.begin();
@@ -53,17 +64,48 @@ bool VideoComponent::ProcessMetaData(std::string resourcePath) {
 	this->preTime		= info.preTime;
 	this->duration		= info.duration;
 	this->postTime		= info.postTime;
+
+	ENGINE_PRINT("[VideoComponent] ProcessMetaData SUCCESS: cutSceneName='", this->cutSceneName,
+		"', frames=", this->frameStart, "-", this->frameEnd,
+		", fadeDuration=", this->fadeDuration, ", boardDuration=", this->boardDuration, "\n");
 	return true;
 }
 
 //Called Once
 bool VideoComponent::ProcessDialogueData(std::string dialoguePath)
 {
+	std::string fileContent;
+
+#ifdef ANDROID
+	IPlatform* platform = WindowManager::GetPlatform();
+	if (!platform) {
+		ENGINE_PRINT("[VideoComponent] ERROR: Platform is null, cannot read dialogue '", dialoguePath, "'\n");
+		return false;
+	}
+	std::string assetPath = dialoguePath;
+	std::replace(assetPath.begin(), assetPath.end(), '\\', '/');
+	while (assetPath.size() >= 3 && assetPath.substr(0, 3) == "../") {
+		assetPath = assetPath.substr(3);
+	}
+	ENGINE_PRINT("[VideoComponent] Reading dialogue asset: '", assetPath, "' (original: '", dialoguePath, "')\n");
+	std::vector<uint8_t> buffer = platform->ReadAsset(assetPath);
+	if (buffer.empty()) {
+		ENGINE_PRINT("[VideoComponent] ERROR: Failed to read dialogue '", assetPath, "' (buffer empty)\n");
+		return false;
+	}
+	fileContent.assign(buffer.begin(), buffer.end());
+	ENGINE_PRINT("[VideoComponent] Read ", fileContent.size(), " bytes of dialogue from '", assetPath, "'\n");
+#else
 	std::ifstream file(dialoguePath);
 	if (!file.is_open()) return false;
+	std::stringstream ss;
+	ss << file.rdbuf();
+	fileContent = ss.str();
+#endif
 
+	std::istringstream contentStream(fileContent);
 	std::string line;
-	while (std::getline(file, line))
+	while (std::getline(contentStream, line))
 	{
 		// Skip empty lines or comments
 		if (line.empty() || line[0] == '#')

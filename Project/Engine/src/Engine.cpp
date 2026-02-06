@@ -635,7 +635,7 @@ bool Engine::InitializeGraphicsResources() {
 // 	SceneManager::GetInstance().LoadScene(AssetManager::GetInstance().GetRootAssetDirectory() + "/Scenes/01_MainMenu.scene");
 // 	ENGINE_LOG_INFO("Loaded main menu scene");
 // #endif
-	SceneManager::GetInstance().LoadScene(AssetManager::GetInstance().GetRootAssetDirectory() + "/Scenes/04_GameLevel.scene");
+	SceneManager::GetInstance().LoadScene(AssetManager::GetInstance().GetRootAssetDirectory() + "/Scenes/01_MainMenu.scene");
 #endif
 
 #ifdef ANDROID
