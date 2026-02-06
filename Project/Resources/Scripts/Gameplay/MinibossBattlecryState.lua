@@ -4,13 +4,10 @@ local BattlecryState = {}
 function BattlecryState:Enter(ai)
     ai._introTimer = 0
     ai._inIntro = true
-    ai:LockActions("INTRO", ai.IntroDuration or 5.0) -- blocks combat states, but we’ll manually exit
+    ai:LockActions("INTRO", ai.IntroDuration or 5.0) -- blocks combat states
 
-    -- Optional: face player + play battlecry anim/audio
+    -- face player + play battlecry anim/audio
     ai:FacePlayer()
-    -- if ai.PlayClip and ai.ClipBattlecry and ai.ClipBattlecry >= 0 then
-    --     ai:PlayClip(ai.ClipBattlecry, false)
-    -- end
     ai._animator:SetTrigger("Taunt")
 
     print("[Miniboss] Intro START (battlecry)")
@@ -19,7 +16,7 @@ end
 function BattlecryState:Update(ai, dt)
     ai._introTimer = (ai._introTimer or 0) + (dt or 0)
 
-    -- keep facing player during intro (optional)
+    -- keep facing player during intro
     ai:FacePlayer()
 
     if ai._introTimer >= (ai.IntroDuration or 5.0) then
@@ -27,7 +24,7 @@ function BattlecryState:Update(ai, dt)
         ai:UnlockActions()
         ai._recoverTimer = math.max(ai.RecoverDuration or 0.6, 0.35)
         print("[Miniboss] Intro END -> Combat")
-        ai.fsm:Change("Recover", ai.states.Recover) -- small pacing before first move
+        ai.fsm:Change("Recover", ai.states.Recover) -- small recovery before first move
     end
 end
 

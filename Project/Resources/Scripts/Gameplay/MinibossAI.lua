@@ -1354,29 +1354,36 @@ return Component {
     -- Move implementations (entry points)
     -------------------------------------------------
     BasicAttack = function(self)
+        self._animator:SetBool("Ranged", true)
         self:_BeginMove("Basic", {
             spread = 0.6,
             postDelay = 0.35
         })
+        self._animator:SetBool("Ranged", false)
     end,
 
     BurstFire = function(self)
+        self._animator:SetBool("Ranged", true)
         self:_BeginMove("BurstFire", {
             bursts = 5,
             interval = 0.18,   -- adjust for difficulty
             postDelay = 0.45
         })
+        self._animator:SetBool("Ranged", false)
     end,
 
     AntiDodge = function(self)
+        self._animator:SetBool("Ranged", true)
         self:_BeginMove("AntiDodge", {
             spread1 = 0.25,
             spread2 = 0.35,
             postDelay = 0.45
         })
+        self._animator:SetBool("Ranged", false)
     end,
 
     FateSealed = function(self)
+        self._animator:SetBool("Melee", true)
         self:_BeginMove("FateSealed", {
             chargeDur = 2.00,
             dashDur = 0.33,
@@ -1387,9 +1394,11 @@ return Component {
             kbStrength = 8.0,
             postDelay = 2.60
         })
+        self._animator:SetBool("Melee", false)
     end,
 
     DeathLotus = function(self)
+        self._animator:SetBool("Ranged", true)
         self:_BeginMove("DeathLotus", {
             duration = 2.8,
             spinSpeed = math.pi * 1.8,  -- rad/s
@@ -1398,5 +1407,6 @@ return Component {
             spread = 0.7,
             lotusYOffset = -3.0,
         })
+        self._animator:SetBool("Ranged", false)
     end,
 }
