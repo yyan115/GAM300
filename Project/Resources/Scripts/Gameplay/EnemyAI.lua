@@ -235,8 +235,8 @@ return Component {
         end
 
         if self._animator then
-            print("[PlayerMovement] Animator found, playing IDLE clip")
-            self._animator:PlayClip(IDLE, true)
+            --print("[PlayerMovement] Animator found, playing IDLE clip")
+            --self._animator:PlayClip(IDLE, true)
         else
             print("[PlayerMovement] ERROR: Animator is nil!")
         end
