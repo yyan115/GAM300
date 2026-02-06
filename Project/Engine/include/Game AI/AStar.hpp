@@ -6,7 +6,6 @@
 #include "Game AI/NavGrid.hpp"
 #include "Math/Vector3D.hpp"
 #include "Game AI/GridPos.hpp"
-#include "Logging.hpp"
 
 class AStar {
 public:

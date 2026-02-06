@@ -114,9 +114,8 @@ return Component {
         MeleeRange           = 1.2,
         MeleeDamage          = 1,
         MeleeAttackCooldown  = 5.0,
-        MeleeAnimDelay       = 2.0,
 
-        HurtDuration      = 0.5,
+        HurtDuration      = 2.0,
         HitIFrame         = 0.2,
         HookedDuration    = 4.0,
         KnockbackStrength = 12.0,
@@ -172,12 +171,6 @@ return Component {
     },
 
     Awake = function(self)
-        self._animator  = self:GetComponent("AnimationComponent")
-        self._audio     = self:GetComponent("AudioComponent")
-        self._collider  = self:GetComponent("ColliderComponent")
-        self._transform = self:GetComponent("Transform")
-        self._rb        = self:GetComponent("RigidBodyComponent")
-        self.particles  = self:GetComponent("ParticleComponent")
 
         self.dead = false
         self.health = self.MaxHealth
@@ -229,16 +222,23 @@ return Component {
     end,
 
     Start = function(self)
+        self._animator  = self:GetComponent("AnimationComponent")
+        self._audio     = self:GetComponent("AudioComponent")
+        self._collider  = self:GetComponent("ColliderComponent")
+        self._transform = self:GetComponent("Transform")
+        self._rb        = self:GetComponent("RigidBodyComponent")
+        self.particles  = self:GetComponent("ParticleComponent")
+
         if self._controller then
             pcall(function() CharacterController.DestroyByEntity(self.entityId) end)
             self._controller = nil
         end
 
         if self._animator then
-            print("[EnemyAI] Animator found")
+            --print("[PlayerMovement] Animator found, playing IDLE clip")
             --self._animator:PlayClip(IDLE, true)
         else
-            print("[EnemyAI] ERROR: Animator is nil!")
+            print("[PlayerMovement] ERROR: Animator is nil!")
         end
 
         self._animator:SetBool("PatrolEnabled", EnablePatrol)
@@ -270,25 +270,22 @@ return Component {
         end
 
         -- === Damage event subscription ===
-        local myId = self.entityId -- Capture the ID in a local variable for the closure
         self._damageSub = nil
         if _G.event_bus and _G.event_bus.subscribe then
             self._damageSub = _G.event_bus.subscribe("enemy_damage", function(payload)
                 if not payload then return end
 
-                -- -- Correct key: DamageZone sends payload.entityId
-                -- if payload.entityId ~= nil and payload.entityId ~= self.entityId then
-                --     return
-                -- end
+                -- Correct key: DamageZone sends payload.entityId
+                if payload.entityId ~= nil and payload.entityId ~= self.entityId then
+                    return
+                end
 
                 local dmg = payload.dmg or 1
                 local hitType = payload.hitType or payload.src or "MELEE"
                 self:ApplyHit(dmg, hitType)
             end)
             
-            -- NEW: Subscribe to deal_damage from AttackHitbox/ComboManager system
             self._comboDamageSub = _G.event_bus.subscribe("deal_damage", function(payload)
-                print("[EnemyAI] Entity " .. myId .. " received deal_damage event")
                 if not payload then return end
                 
                 -- Check if this enemy is the target
@@ -352,13 +349,13 @@ return Component {
 
         self.fsm:Change("Idle", self.states.Idle)
 
-        --CharacterController.SetPosition(self._transform)
+        CharacterController.SetPosition()
     end,
 
     Update = function(self, dt)
         _G.__CC_UPDATED_THIS_FRAME = nil
 
-        if self.health and self.health <= 0 and not self.dead then
+        if self.health <= 0 and not self.dead then
             self.dead = true
         end
 
@@ -391,18 +388,12 @@ return Component {
         local dtSec = toDtSec(dt)
         self._hitLockTimer = math.max(0, (self._hitLockTimer or 0) - dtSec)
 
-        if not self.fsm then
-            --print("[EnemyAI] CRITICAL: Entity ID " .. tostring(self.entityId) .. " has a nil FSM!")
-            return
-        end
-
-        if not self.fsm or not self.fsm.current or not self.fsm.currentName then
-            print("[EnemyAI] Force change to Idle state")
+        if not self.fsm.current or not self.fsm.currentName then
             self.fsm:ForceChange("Idle", self.states.Idle)
         end
 
         -- FSM drives behaviour (may call MoveCC)
-        if self.fsm then self.fsm:Update(dtSec) end
+        self.fsm:Update(dtSec)
 
         -- Apply knockback movement regardless of current FSM state
         if self._kbT and self._kbT > 0 then
@@ -434,7 +425,6 @@ return Component {
         -- then sync your own transform from your controller
         if self._controller then
             local pos = CharacterController.GetPosition(self._controller)
-            --print(string.format("[EnemyAI] Update: CharacterController position: %f %f %f", pos.x, pos.y, pos.z))
             if pos then
                 -- TEMP HACK UNTIL PHYSICS IS FIXED
                 local groundY = Nav.GetGroundY(self.entityId)
@@ -930,16 +920,14 @@ return Component {
     end,
 
     ApplyHit = function(self, dmg, hitType)
-        print("[EnemyAI] ApplyHit")
-        -- if self.dead then return end
-        -- if (self._hitLockTimer or 0) > 0 then return end
-        -- self._hitLockTimer = self.config.HitIFrame or 0.1
+        if self.dead then return end
+        if (self._hitLockTimer or 0) > 0 then return end
+        self._hitLockTimer = self.config.HitIFrame or 0.1
 
         self.health = self.health - (dmg or 1)
-        --self:ApplyKnockback(self.KnockbackStrength, self.KnockbackDuration)
+        self:ApplyKnockback(self.KnockbackStrength, self.KnockbackDuration)
 
         if self.health <= 0 then
-            print("[EnemyAI] ApplyHit: Death")
             self.health = 0
             -- Play death SFX
             playRandomSFX(self._audio, self.enemyDeathSFX)
@@ -951,14 +939,9 @@ return Component {
         playRandomSFX(self._audio, self.enemyHurtSFX)
 
         if self.fsm.currentName == "Hooked" then
-            print("[EnemyAI] ApplyHit: Hooked")
             return
         end
-
-        self._animator:SetBool("Hurt1", false)
-        self._animator:SetBool("Hurt2", false)
-        self._animator:SetBool("Hurt3", false)
-        print("[EnemyAI] self.fsm:ForceChange(Hurt, self.states.Hurt)")
+        self._animator:SetBool("Hurt", false)
         self.fsm:ForceChange("Hurt", self.states.Hurt)
     end,
 
@@ -1059,15 +1042,6 @@ return Component {
                 self._comboDamageSub = nil
             end
         end
-    end,
-
-    DisableCombat = function(self)
-        local col = self:GetComponent("ColliderComponent")
-        if col then col.enabled = false end
-
-        local rb = self:GetComponent("RigidBodyComponent")
-        if rb then rb.enabled = false end
-        if rb then rb.isTrigger = true end
     end,
 
     Despawn = function(self)

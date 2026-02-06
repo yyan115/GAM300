@@ -1,7 +1,6 @@
 #include "pch.h"
 #include "Input/DesktopInputManager.h"
 #include "Platform/IPlatform.h"
-#include "Logging.hpp"
 #include <rapidjson/document.h>
 #include <rapidjson/error/en.h>
 #include <iostream>
@@ -140,23 +139,23 @@ void DesktopInputManager::Update(float deltaTime) {
 }
 
 bool DesktopInputManager::LoadConfig(const std::string& path) {
-    ENGINE_PRINT("[DesktopInputManager] Loading config from: {}", path);
+    std::cout << "[DesktopInputManager] Loading config from: " << path << std::endl;
 
     if (!m_platform) {
-        ENGINE_PRINT("[DesktopInputManager] ERROR: Platform is null!");
+        std::cerr << "[DesktopInputManager] ERROR: Platform is null!" << std::endl;
         return false;
     }
 
     // Check if file exists
     if (!m_platform->FileExists(path)) {
-        ENGINE_PRINT("[DesktopInputManager] ERROR: Config file not found: {}", path);
+        std::cerr << "[DesktopInputManager] ERROR: Config file not found: " << path << std::endl;
         return false;
     }
 
     // Load file using platform
     std::vector<uint8_t> configData = m_platform->ReadAsset(path);
     if (configData.empty()) {
-        ENGINE_PRINT("[DesktopInputManager] ERROR: Failed to read config file: {}", path);
+        std::cerr << "[DesktopInputManager] ERROR: Failed to read config file: " << path << std::endl;
         return false;
     }
 
@@ -165,8 +164,9 @@ bool DesktopInputManager::LoadConfig(const std::string& path) {
     doc.Parse(reinterpret_cast<const char*>(configData.data()), configData.size());
 
     if (doc.HasParseError()) {
-        ENGINE_PRINT("[DesktopInputManager] ERROR: JSON parse error at offset {}: {}", 
-            doc.GetErrorOffset(), rapidjson::GetParseError_En(doc.GetParseError()));
+        std::cerr << "[DesktopInputManager] ERROR: JSON parse error at offset "
+                  << doc.GetErrorOffset() << ": "
+                  << rapidjson::GetParseError_En(doc.GetParseError()) << std::endl;
         return false;
     }
 
@@ -181,7 +181,7 @@ bool DesktopInputManager::LoadConfig(const std::string& path) {
 
             // Skip if no desktop binding
             if (!actionData.HasMember("desktop") || !actionData["desktop"].IsObject()) {
-                ENGINE_PRINT("[DesktopInputManager] Skipping action '{}' (no desktop binding)", actionName);
+                std::cout << "[DesktopInputManager] Skipping action '" << actionName << "' (no desktop binding)" << std::endl;
                 continue;
             }
 
@@ -198,7 +198,7 @@ bool DesktopInputManager::LoadConfig(const std::string& path) {
                         if (key != Input::Key::UNKNOWN) {
                             binding.keys.push_back(key);
                         } else {
-                            ENGINE_PRINT("[DesktopInputManager] WARNING: Unknown key: {}", keyName);
+                            std::cerr << "[DesktopInputManager] WARNING: Unknown key: " << keyName << std::endl;
                         }
                     }
                 }
@@ -214,15 +214,16 @@ bool DesktopInputManager::LoadConfig(const std::string& path) {
                         if (button != Input::MouseButton::UNKNOWN) {
                             binding.mouseButtons.push_back(button);
                         } else {
-                            ENGINE_PRINT("[DesktopInputManager] WARNING: Unknown mouse button: {}", buttonName);
+                            std::cerr << "[DesktopInputManager] WARNING: Unknown mouse button: " << buttonName << std::endl;
                         }
                     }
                 }
             }
 
             m_actionBindings[actionName] = binding;
-            ENGINE_PRINT("[DesktopInputManager] Loaded action: {} ({} keys, {} buttons)", 
-                actionName, binding.keys.size(), binding.mouseButtons.size());
+            std::cout << "[DesktopInputManager] Loaded action: " << actionName
+                      << " (" << binding.keys.size() << " keys, "
+                      << binding.mouseButtons.size() << " buttons)" << std::endl;
         }
     }
 
@@ -237,7 +238,7 @@ bool DesktopInputManager::LoadConfig(const std::string& path) {
 
             // Skip if no desktop binding
             if (!axisData.HasMember("desktop") || !axisData["desktop"].IsObject()) {
-                ENGINE_PRINT("[DesktopInputManager] Skipping axis '{}' (no desktop binding)", axisName);
+                std::cout << "[DesktopInputManager] Skipping axis '" << axisName << "' (no desktop binding)" << std::endl;
                 continue;
             }
 
@@ -255,7 +256,8 @@ bool DesktopInputManager::LoadConfig(const std::string& path) {
                         binding.sensitivity = desktopBinding["sensitivity"].GetFloat();
                     }
 
-                    ENGINE_PRINT("[DesktopInputManager] Loaded axis: {} (mouse_delta, sensitivity={})", axisName, binding.sensitivity);
+                    std::cout << "[DesktopInputManager] Loaded axis: " << axisName
+                              << " (mouse_delta, sensitivity=" << binding.sensitivity << ")" << std::endl;
                 }
                 else if (type == "keyboard") {
                     binding.type = AxisType::KeyboardComposite;
@@ -280,11 +282,12 @@ bool DesktopInputManager::LoadConfig(const std::string& path) {
                     if (desktopBinding.HasMember("up")) parseKeyArray(desktopBinding["up"], binding.positiveY);
                     if (desktopBinding.HasMember("down")) parseKeyArray(desktopBinding["down"], binding.negativeY);
 
-                    ENGINE_PRINT("[DesktopInputManager] Loaded axis: {} (keyboard)", axisName);
+                    std::cout << "[DesktopInputManager] Loaded axis: " << axisName << " (keyboard)" << std::endl;
                 }
                 else if (type == "gamepad") {
                     binding.type = AxisType::Gamepad;
-                    ENGINE_PRINT("[DesktopInputManager] Loaded axis: {} (gamepad - not yet implemented)", axisName);
+                    std::cout << "[DesktopInputManager] Loaded axis: " << axisName
+                              << " (gamepad - not yet implemented)" << std::endl;
                 }
             }
 
@@ -292,8 +295,9 @@ bool DesktopInputManager::LoadConfig(const std::string& path) {
         }
     }
 
-    ENGINE_PRINT("[DesktopInputManager] Config loaded successfully. {} actions, {} axes", 
-        m_actionBindings.size(), m_axisBindings.size());
+    std::cout << "[DesktopInputManager] Config loaded successfully. "
+              << m_actionBindings.size() << " actions, "
+              << m_axisBindings.size() << " axes" << std::endl;
 
     return true;
 }

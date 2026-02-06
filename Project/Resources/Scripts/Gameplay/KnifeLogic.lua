@@ -71,6 +71,7 @@ return Component {
         self.model    = self:GetComponent("ModelRenderComponent")
         self.collider = self:GetComponent("ColliderComponent")
         self.rb       = self:GetComponent("RigidBodyComponent")
+        self.light    = self:GetComponent("PointLightComponent")
 
         self.active = false
         self.reserved = false
@@ -94,6 +95,10 @@ return Component {
 
         if self.model then
             ModelRenderComponent.SetVisible(self.model, false)
+        end
+
+        if self.light then
+            self.light.enabled = false
         end
 
         if self.collider then
@@ -171,6 +176,8 @@ return Component {
                     event_bus.publish("isKnifeHitPlayer", true)
                     event_bus.publish("knifeHitPlayerDmg", self.Damage)
                 end
+                self:Reset("HIT")
+                return
             end
         end
 
@@ -249,6 +256,11 @@ return Component {
             local v = self.model.isVisible
             --print(string.format("[Knife] VIS slot=%s tok=%s isVisible=%s", tostring(slot), tostring(token), tostring(v)))
         end
+        
+        if self.light then
+            self.light.enabled = true
+        end
+
         if self.collider then self.collider.enabled = false end
 
         return true
@@ -269,6 +281,11 @@ return Component {
         if self.model then
             ModelRenderComponent.SetVisible(self.model, false)
         end
+
+        if self.light then
+            self.light.enabled = false
+        end
+
         if self.collider then self.collider.enabled = false end
     end,
 

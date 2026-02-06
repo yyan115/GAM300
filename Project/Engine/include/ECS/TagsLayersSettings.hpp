@@ -1,7 +1,6 @@
 #pragma once
 #include <string>
 #include "Engine.h"
-#include "Logging.hpp"
 
 /**
  * @brief Manages project-wide settings for tags, layers, and sorting layers.
