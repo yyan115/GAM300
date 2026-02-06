@@ -220,6 +220,7 @@ return Component {
         self._collider  = self:GetComponent("ColliderComponent")
         self._transform = self:GetComponent("Transform")
         self._rb        = self:GetComponent("RigidBodyComponent")
+        self._animator  = self:GetComponent("AnimationComponent")
 
         -- (Re)create controller safely
         if self._controller then
@@ -506,6 +507,7 @@ return Component {
         
         -- If we can't find the player, don't try to rotate
         if not px or not pz then 
+            print("[Miniboss] Can't find player")
             return 
         end
 
@@ -786,9 +788,10 @@ return Component {
         end
         self._vy = 0
 
-        if self.ClipDeath and self.ClipDeath >= 0 and self.PlayClip then
-            self:PlayClip(self.ClipDeath, false)
-        end
+        -- if self.ClipDeath and self.ClipDeath >= 0 and self.PlayClip then
+        --     self:PlayClip(self.ClipDeath, false)
+        -- end
+        self._animator:SetTrigger("Death")
 
         print("[Miniboss][Death] DEAD")
     end,

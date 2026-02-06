@@ -1,6 +1,6 @@
 {
     "name": "New Animator",
-    "entryState": "Taunt",
+    "entryState": "Idle",
     "entryNodePosition": {
         "x": -200.0,
         "y": -100.0
@@ -9,8 +9,30 @@
         "x": -200.0,
         "y": 0.0
     },
-    "parameters": [],
+    "parameters": [
+        {
+            "name": "Taunt",
+            "type": "Trigger",
+            "defaultValue": 0.0
+        },
+        {
+            "name": "Death",
+            "type": "Trigger",
+            "defaultValue": 0.0
+        }
+    ],
     "states": [
+        {
+            "id": "Idle",
+            "clipIndex": 1,
+            "loop": true,
+            "speed": 1.0,
+            "crossfadeDuration": 0.0,
+            "nodePosition": {
+                "x": -150.0,
+                "y": -199.0
+            }
+        },
         {
             "id": "Taunt",
             "clipIndex": 0,
@@ -21,10 +43,54 @@
                 "x": -78.0,
                 "y": -117.0
             }
+        },
+        {
+            "id": "Death",
+            "clipIndex": 2,
+            "loop": false,
+            "speed": 1.0,
+            "crossfadeDuration": 0.0,
+            "nodePosition": {
+                "x": 105.0,
+                "y": -36.0
+            }
         }
     ],
-    "transitions": [],
+    "transitions": [
+        {
+            "from": "Idle",
+            "to": "Taunt",
+            "anyState": false,
+            "hasExitTime": true,
+            "exitTime": 0.07999999821186066,
+            "transitionDuration": 0.09000000357627869,
+            "conditions": [
+                {
+                    "paramName": "Taunt",
+                    "mode": "TriggerFired",
+                    "threshold": 0.0
+                }
+            ]
+        },
+        {
+            "from": "Taunt",
+            "to": "Death",
+            "anyState": false,
+            "hasExitTime": true,
+            "exitTime": 1.0,
+            "transitionDuration": 1.0,
+            "conditions": [
+                {
+                    "paramName": "Death",
+                    "mode": "TriggerFired",
+                    "threshold": 0.0
+                }
+            ]
+        }
+    ],
     "clipPaths": [
-        "Resources/Animations/Miniboss@Taunt.fbx"
+        "Resources/Animations/Miniboss@Taunt.fbx",
+        "Resources/Animations/Enemy@Idle.fbx",
+        "Resources/Animations/Enemy@Death.fbx"
     ]
 }

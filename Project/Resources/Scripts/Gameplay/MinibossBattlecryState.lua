@@ -8,9 +8,10 @@ function BattlecryState:Enter(ai)
 
     -- Optional: face player + play battlecry anim/audio
     ai:FacePlayer()
-    if ai.PlayClip and ai.ClipBattlecry and ai.ClipBattlecry >= 0 then
-        ai:PlayClip(ai.ClipBattlecry, false)
-    end
+    -- if ai.PlayClip and ai.ClipBattlecry and ai.ClipBattlecry >= 0 then
+    --     ai:PlayClip(ai.ClipBattlecry, false)
+    -- end
+    ai._animator:SetTrigger("Taunt")
 
     print("[Miniboss] Intro START (battlecry)")
 end
