@@ -2,7 +2,7 @@
 local HurtState = {}
 
 function HurtState:Enter(ai)
-    ai._animator:SetBool("Hurt", true)
+    ai._animator:SetBool("Hurt1", true)
 
     ai:FacePlayer()
 
@@ -41,7 +41,7 @@ function HurtState:Update(ai, dt)
 end
 
 function HurtState:Exit(ai)
-    ai._animator:SetBool("Hurt", false)
+    ai._animator:SetBool("Hurt1", false)
     if ai.particles then
         ai.particles.isEmitting   = false
         ai.particles.emissionRate = 0

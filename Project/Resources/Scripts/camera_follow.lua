@@ -471,8 +471,8 @@ return Component {
                 end
 
                 -- reset timer and enable action mode
-                self._actionModeTimer = extendedDuration
-                self._actionModeActive = true
+                -- self._actionModeTimer = extendedDuration
+                -- self._actionModeActive = true
             end
         end
 

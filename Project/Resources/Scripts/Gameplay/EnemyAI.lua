@@ -941,7 +941,7 @@ return Component {
         if self.fsm.currentName == "Hooked" then
             return
         end
-        self._animator:SetBool("Hurt", false)
+        --self._animator:SetBool("Hurt", false)
         self.fsm:ForceChange("Hurt", self.states.Hurt)
     end,
 

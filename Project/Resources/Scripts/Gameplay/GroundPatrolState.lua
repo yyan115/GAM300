@@ -43,6 +43,7 @@ local function switchTarget(ai)
 end
 
 function PatrolState:Enter(ai)
+    ai._animator:SetBool("PatrolEnabled", true)
     -- print(string.format("[Patrol][Enter] A=%s B=%s T=%s",
     -- tostring(ai._patrolA and (ai._patrolA.x .. "," .. ai._patrolA.z) or "nil"),
     -- tostring(ai._patrolB and (ai._patrolB.x .. "," .. ai._patrolB.z) or "nil"),
@@ -76,7 +77,7 @@ function PatrolState:Enter(ai)
         ai._patrolTarget = ai._patrolB
     end
 
-    ai:PlayClip((ai.clips and (ai.clips.Walk or ai.clips.Idle)) or 0, true)
+    --ai:PlayClip((ai.clips and (ai.clips.Walk or ai.clips.Idle)) or 0, true)
 
     ai._lastX, ai._lastZ = x, z
     stop(ai)
