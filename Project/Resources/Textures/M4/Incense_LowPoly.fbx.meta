@@ -1,0 +1,11 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "005e129f45d42fab-000421171800627d",
+        "source": "../../Resources/Textures/M4/Incense_LowPoly.fbx",
+        "compiled": "../../Resources/Textures/M4/Incense_LowPoly.mesh"
+    },
+    "ModelMetaData": {
+        "optimizeMeshes": true
+    }
+}

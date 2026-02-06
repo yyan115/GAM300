@@ -3,6 +3,8 @@ local ChaseState = {}
 
 function ChaseState:Enter(ai)
     -- Optional: force first repath on enter
+    print("[GroundChaseState] ENTER")
+    ai._animator:SetBool("PatrolEnabled", true)
     ai._pathRepathT = (ai.PathRepathInterval or 0.45)
 
     -- Play alert SFX when first detecting player (entering chase)

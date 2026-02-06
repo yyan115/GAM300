@@ -1,0 +1,11 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "005e129f047b02eb-0004211718006281",
+        "source": "../../Resources/Textures/M4/sword_holder.fbx",
+        "compiled": "../../Resources/Textures/M4/sword_holder.mesh"
+    },
+    "ModelMetaData": {
+        "optimizeMeshes": true
+    }
+}

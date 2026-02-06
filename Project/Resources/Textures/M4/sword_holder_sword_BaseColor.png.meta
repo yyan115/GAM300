@@ -1,0 +1,13 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "005e129f70c6b624-0004211710006271",
+        "source": "../../Resources/Textures/M4/sword_holder_sword_BaseColor.png",
+        "compiled": "../../Resources/Textures/M4/sword_holder_sword_BaseColor.dds"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true
+    }
+}

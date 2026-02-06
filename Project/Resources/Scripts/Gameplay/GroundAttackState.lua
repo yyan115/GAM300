@@ -10,7 +10,14 @@ end
 
 function AttackState:Enter(ai)
     ai._animator:SetBool("PlayerInRange", true)
+    -- if not ai.IsMelee then
+    --     ai._animator:SetBool("Ranged", true)
+    -- else
+    --     ai._animator:SetBool("Melee", true)
+    -- end
     ai.attackTimer = 0
+    ai.meleeAnimTriggered = false
+    ai.rangedAnimTriggered = false
 end
 
 function AttackState:Update(ai, dt)
@@ -49,6 +56,11 @@ function AttackState:Update(ai, dt)
     if ai.IsMelee then
         ai.attackTimer = (ai.attackTimer or 0) + dtSec
         local cd = ai.MeleeAttackCooldown or (ai.config.AttackCooldown or 1.0)
+        if not ai.meleeAnimTriggered and ai.attackTimer >= ai.MeleeAnimDelay then
+            ai._animator:SetBool("Melee", true)
+            MeleeAnimTriggered = true
+        end
+
         if ai.attackTimer >= cd then
             ai.attackTimer = 0
 
@@ -70,6 +82,10 @@ function AttackState:Update(ai, dt)
     else
         -- RANGED
         ai.attackTimer = (ai.attackTimer or 0) + dtSec
+        if not ai.rangedAnimTriggered and ai.attackTimer >= ai.RangedAnimDelay then
+            ai._animator:SetBool("Ranged", true)
+        end
+
         if ai.attackTimer >= (ai.config.AttackCooldown or 3.0) then
             local ok = ai:SpawnKnife()
             if ok then
@@ -83,6 +99,9 @@ end
 
 function AttackState:Exit(ai)
     ai._animator:SetBool("PlayerInRange", false)
+    ai._animator:SetBool("Ranged", false)
+    ai._animator:SetBool("Melee", false)
+    ai.meleeAnimTriggered = false
     stopCC(ai)
 end
 

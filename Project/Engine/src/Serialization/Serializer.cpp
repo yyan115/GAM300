@@ -311,7 +311,7 @@ void Serializer::SerializeEntityRecursively(Entity entity, rapidjson::Document::
         std::string path = ecs.GetComponent<PrefabLinkComponent>(entity).prefabPath;
 
         // Load the Original Prefab
-        Entity baselineRoot = InstantiatePrefabFromFile(path);
+        Entity baselineRoot = InstantiatePrefabFromFile(path, true);
 
         // Calculate Diffs
         rapidjson::Value prefabNode(rapidjson::kObjectType);
@@ -1039,6 +1039,11 @@ void Serializer::SerializePrefabOverridesRecursive(ECSManager& sceneECS, Entity 
         auto& instChildren = sceneECS.GetComponent<ChildrenComponent>(instanceEnt).children;
         auto& baseChildren = sceneECS.GetComponent<ChildrenComponent>(baselineEnt).children;
 
+        std::unordered_set<GUID_128> deletedBaseChildren{};
+        for (const auto& baseChild : baseChildren) {
+            deletedBaseChildren.insert(baseChild);
+        }
+
         rapidjson::Value childrenOverrides(rapidjson::kArrayType);
 
         // Match children by Name (or Index)
@@ -1053,6 +1058,7 @@ void Serializer::SerializePrefabOverridesRecursive(ECSManager& sceneECS, Entity 
                 // Actually, for a dummy world, you might just iterate entities directly.
                 if (sceneECS.GetComponent<NameComponent>(bChild).name == childName) {
                     baseChild = bChild;
+                    deletedBaseChildren.erase(baseChildGUID);
                     break;
                 }
             }
@@ -1061,9 +1067,32 @@ void Serializer::SerializePrefabOverridesRecursive(ECSManager& sceneECS, Entity 
             SerializePrefabOverridesRecursive(sceneECS, instChild, baseChild, alloc, childNode);
 
             // Only add to list if there was actually an override inside
-            if (childNode.HasMember("ComponentOverrides") || childNode.HasMember("Children")) {
+            if (childNode.HasMember("ComponentOverrides") || childNode.HasMember("Children") || childNode.HasMember("DeletedChildren")) {
                 childrenOverrides.PushBack(childNode, alloc);
             }
+        }
+
+        // For each of the deleted base child entities, mark them as 'deleted' in the JSON so that they can be deleted when deserialized later.
+        rapidjson::Value deletedChildrenNode(rapidjson::kArrayType);
+        for (const auto& deletedChild : deletedBaseChildren) {
+            Entity deletedEntity = EntityGUIDRegistry::GetInstance().GetEntityByGUID(deletedChild);
+            rapidjson::Value deletedChildNode(rapidjson::kObjectType);
+
+            // Serialize the information required to deserialize and restore the prefab hierarchy when deserializing later.
+            deletedChildNode = SerializeEntityGUID(deletedEntity, alloc, deletedChildNode);
+            if (sceneECS.HasComponent<NameComponent>(deletedEntity)) {
+                std::string& name = sceneECS.GetComponent<NameComponent>(deletedEntity).name;
+                rapidjson::Value nameVal;
+                nameVal.SetString(name.c_str(), static_cast<rapidjson::SizeType>(name.length()), alloc);
+
+                deletedChildNode.AddMember("Name", nameVal, alloc);
+            }
+
+            deletedChildrenNode.PushBack(deletedChildNode, alloc);
+        }
+
+        if (!deletedChildrenNode.Empty()) {
+            outEntityNode.AddMember("DeletedChildren", deletedChildrenNode, alloc);
         }
 
         if (!childrenOverrides.Empty()) {
@@ -1151,7 +1180,7 @@ void Serializer::RestorePrefabHierarchy(ECSManager& ecs, Entity currentEntity, c
     }
 }
 
-Entity Serializer::DeserializeEntity(ECSManager& ecs, const rapidjson::Value& entObj, bool isPrefab, Entity entity, bool skipSpawnChildren) {
+Entity Serializer::DeserializeEntity(ECSManager& ecs, const rapidjson::Value& entObj, bool isPrefab, Entity entity, bool skipSpawnChildren, bool initialiseAnimation) {
     if (!entObj.IsObject()) {
 		ENGINE_LOG_WARN("[Serializer] DeserializeEntity: Invalid entity JSON object.");
         return static_cast<Entity>(-1);
@@ -1423,7 +1452,7 @@ Entity Serializer::DeserializeEntity(ECSManager& ecs, const rapidjson::Value& en
         }
 
         // For prefabs, we need to initialise the animation component after deserialization.
-        if (isPrefab && ecs.HasComponent<ModelRenderComponent>(newEnt)) {
+        if (initialiseAnimation && isPrefab && ecs.HasComponent<ModelRenderComponent>(newEnt)) {
             auto& modelComp = ecs.GetComponent<ModelRenderComponent>(newEnt);
             auto& actualAnimComp = ecs.GetComponent<AnimationComponent>(newEnt);
             ecs.animationSystem->InitialiseAnimationComponent(newEnt, modelComp, actualAnimComp);
@@ -1635,6 +1664,55 @@ void Serializer::ApplyPrefabOverridesRecursive(ECSManager& ecs, Entity& currentE
                     DeserializeVideoComponent(ecs.GetComponent<VideoComponent>(currentEntity), data);
                 }
 
+            }
+        }
+    }
+
+    // =========================================================================================
+    // 1.5. Handle Deleted Children (NEW LOGIC)
+    // We do this BEFORE recursion to ensure we remove the entities before trying to process them.
+    // =========================================================================================
+    if (jsonNode.HasMember("DeletedChildren") && ecs.HasComponent<ChildrenComponent>(currentEntity)) {
+        const auto& deletedArray = jsonNode["DeletedChildren"];
+        auto& childrenComp = ecs.GetComponent<ChildrenComponent>(currentEntity);
+
+        // Iterate through the list of 'deleted' definitions from the JSON
+        for (const auto& deletedNode : deletedArray.GetArray()) {
+            if (!deletedNode.HasMember("Name")) continue;
+
+            std::string nameToDelete = deletedNode["Name"].GetString();
+
+            // Iterate the LIVE children to find the matching entity to destroy.
+            // We use a while loop with an iterator because we might erase from the vector.
+            auto it = childrenComp.children.begin();
+            while (it != childrenComp.children.end()) {
+                Entity childEntity = EntityGUIDRegistry::GetInstance().GetEntityByGUID(*it);
+
+                bool matchFound = false;
+                if (ecs.HasComponent<NameComponent>(childEntity)) {
+                    // Match by Name (standard approach for hierarchy overrides)
+                    if (ecs.GetComponent<NameComponent>(childEntity).name == nameToDelete) {
+                        matchFound = true;
+                    }
+                }
+
+                if (matchFound) {
+                    // 1. Destroy the entity from the ECS (Recursively destroys its children too usually)
+                    // Note: Ensure your ECS has a DestroyEntity function. 
+                    // If you have a specific "DestroyEntityDup" use that instead.
+                    ecs.DestroyEntity(childEntity);
+
+                    //// 2. Remove the GUID from the parent's children list
+                    //// erase returns the *next* valid iterator, so we update 'it' directly
+                    //it = childrenComp.children.erase(it);
+
+                    // We found and deleted the specific named child, break to process the next deletedNode
+                    break;
+                }
+                else {
+                    // Move to next child
+                    ++it;
+                }
             }
         }
     }

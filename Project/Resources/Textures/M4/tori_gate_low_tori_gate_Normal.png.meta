@@ -1,0 +1,13 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "005e129f16630c1a-0004211714006277",
+        "source": "../../Resources/Textures/M4/tori_gate_low_tori_gate_Normal.png",
+        "compiled": "../../Resources/Textures/M4/tori_gate_low_tori_gate_Normal.dds"
+    },
+    "TextureMetaData": {
+        "type": "normal",
+        "flipUVs": false,
+        "generateMipmaps": true
+    }
+}
