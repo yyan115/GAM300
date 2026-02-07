@@ -1,5 +1,4 @@
--- ChainController.lua (refactored, authoritative chain length, clear responsibilities)
--- Owns logical chain state (chainLen, extending/retracting), anchors, and prepares pure-physics params.
+-- ChainController.lua (refactored with raycast collision detection)
 local VerletAdapter = require("extension.verletAdapter")
 local M = {}
 
@@ -33,6 +32,10 @@ function M.New(params)
     self.lastForward = {0,0,1}  -- use component to set a different forward if desired (StartExtension(forward))
     self.startPos = {0,0,0}
     self.endPos = {0,0,0}
+    
+    -- NEW: Track if endpoint is locked to a collision point
+    self.endPointLocked = false
+    self.lockedEndPoint = {0,0,0}
 
     -- Verlet state is a thin wrapper over these arrays
     self.VerletState = VerletAdapter.Init{ positions = self.positions, prev = self.prev, invMass = self.invMass }
@@ -42,6 +45,7 @@ end
 function M:SetStartPos(x,y,z)
     self.startPos = {x or 0, y or 0, z or 0}
 end
+
 function M:SetEndPos(x,y,z)
     self.endPos = {x or 0, y or 0, z or 0}
 end
@@ -52,6 +56,11 @@ function M:StartExtension(forward)
     self.isRetracting = false
     self.extensionTime = 0
     self.chainLen = 0
+    
+    -- Reset endpoint lock when starting new extension
+    self.endPointLocked = false
+    self.lockedEndPoint = {0,0,0}
+    
     if forward and type(forward) == "table" and (#forward >= 3) then
         local fx,fy,fz = forward[1], forward[2], forward[3]
         local nx,ny,nz = normalize(fx,fy,fz)
@@ -67,6 +76,9 @@ function M:StartRetraction()
     if (self.chainLen or 0) <= 0 then return end
     self.isRetracting = true
     self.isExtending = false
+    
+    -- Unlock endpoint when retracting
+    self.endPointLocked = false
 end
 
 -- Detect anchors (corner detection) and record them without mutating invMass here.
@@ -90,6 +102,36 @@ function M:ComputeAnchors(angleThresholdRad)
             end
         end
     end
+end
+
+-- NEW: Perform raycast to detect collision and lock endpoint
+function M:PerformRaycast(sx, sy, sz, maxDistance)
+    if not Physics or not Physics.Raycast then
+        return nil
+    end
+    
+    local fx, fy, fz = self.lastForward[1] or 0, self.lastForward[2] or 0, self.lastForward[3] or 1
+    
+    -- Normalize direction
+    local nx, ny, nz = normalize(fx, fy, fz)
+    
+    -- Perform raycast
+    local hitDistance = Physics.Raycast(sx, sy, sz, nx, ny, nz, maxDistance)
+    
+    if hitDistance > 0 then
+        -- Hit something! Calculate hit point
+        local hitX = sx + nx * hitDistance
+        local hitY = sy + ny * hitDistance
+        local hitZ = sz + nz * hitDistance
+        
+        return {
+            hit = true,
+            distance = hitDistance,
+            hitPoint = {hitX, hitY, hitZ}
+        }
+    end
+    
+    return nil
 end
 
 -- Controller update: authoritative chainLen -> produce startPos/endPos, segmentLen and per-link invMass.
@@ -119,6 +161,7 @@ function M:Update(dt, settings)
         if self.chainLen <= 0 then
             self.isRetracting = false
             self.chainLen = 0
+            self.endPointLocked = false  -- Unlock when fully retracted
         end
     end
 
@@ -133,21 +176,53 @@ function M:Update(dt, settings)
     end
     self.startPos[1], self.startPos[2], self.startPos[3] = sx, sy, sz
 
-    -- 3) Determine end world position:
-    -- If an explicit endOverride passed, use it. Else derive from authoritative chainLen + lastForward.
+    -- 3) Determine end world position with raycast collision detection
     local ex,ey,ez
+    
     if settings.endOverride then
+        -- Explicit override takes priority
         ex,ey,ez = settings.endOverride[1] or 0, settings.endOverride[2] or 0, settings.endOverride[3] or 0
-    --elseif self.endPos and (self.endPos[1] ~= nil) and (self.endPos[2] ~= nil) and (self.endPos[3] ~= nil) and (not self.isExtending) then
-        -- keep previously set endPos when not actively extending (useful for pinned hit points)
-    --    ex,ey,ez = self.endPos[1], self.endPos[2], self.endPos[3]
+    elseif self.endPointLocked then
+        -- Use locked endpoint (doesn't follow player)
+        ex, ey, ez = self.lockedEndPoint[1], self.lockedEndPoint[2], self.lockedEndPoint[3]
     else
-        -- derive end from start + forward * chainLen
+        -- Calculate theoretical endpoint based on direction and chain length
         local fx,fy,fz = self.lastForward[1] or 0, self.lastForward[2] or 0, self.lastForward[3] or 1
-        ex = sx + (fx * (self.chainLen or 0))
-        ey = sy + (fy * (self.chainLen or 0))
-        ez = sz + (fz * (self.chainLen or 0))
+        local theoreticalDistance = self.chainLen or 0
+        
+        -- Perform raycast during extension to detect collisions
+        if self.isExtending and theoreticalDistance > 0 then
+            local raycastResult = self:PerformRaycast(sx, sy, sz, theoreticalDistance * 1.1) -- raycast slightly beyond chain length
+            
+            if raycastResult and raycastResult.hit then
+                -- Hit something! Lock the endpoint
+                self.endPointLocked = true
+                self.lockedEndPoint[1] = raycastResult.hitPoint[1]
+                self.lockedEndPoint[2] = raycastResult.hitPoint[2]
+                self.lockedEndPoint[3] = raycastResult.hitPoint[3]
+                
+                ex, ey, ez = raycastResult.hitPoint[1], raycastResult.hitPoint[2], raycastResult.hitPoint[3]
+                
+                -- Clamp chain length to hit distance
+                self.chainLen = raycastResult.distance
+                self.isExtending = false  -- Stop extending when we hit something
+                
+                print(string.format("[ChainController] Raycast HIT at distance %.3f, locked endpoint at (%.3f, %.3f, %.3f)", 
+                    raycastResult.distance, ex, ey, ez))
+            else
+                -- No hit, calculate theoretical endpoint
+                ex = sx + (fx * theoreticalDistance)
+                ey = sy + (fy * theoreticalDistance)
+                ez = sz + (fz * theoreticalDistance)
+            end
+        else
+            -- Not extending or chain length is zero
+            ex = sx + (fx * theoreticalDistance)
+            ey = sy + (fy * theoreticalDistance)
+            ez = sz + (fz * theoreticalDistance)
+        end
     end
+    
     self.endPos[1], self.endPos[2], self.endPos[3] = ex, ey, ez
 
     -- 4) Compute current physical distance and determine a "totalLen" and segmentLen that physics will try to satisfy.
@@ -180,8 +255,11 @@ function M:Update(dt, settings)
         end
     end
 
-    -- NEW: During extension, pin the last link to the endpoint so it extends in the right direction
-    if self.isExtending then
+    -- Pin first link to start (ALWAYS kinematic)
+    self.invMass[1] = 0
+
+    -- Pin last link to endpoint when extending OR when endpoint is locked
+    if self.isExtending or self.endPointLocked then
         self.positions[self.n][1], self.positions[self.n][2], self.positions[self.n][3] = ex, ey, ez
         self.prev[self.n][1], self.prev[self.n][2], self.prev[self.n][3] = ex, ey, ez
         self.invMass[self.n] = 0
@@ -208,16 +286,21 @@ function M:Update(dt, settings)
         totalLen = totalLen,
         segmentLen = segmentLen,
         ClampSegment = linkMax,
-        pinnedLast = (not self.isExtending) and ((self.chainLen or 0) + 1e-9 >= (self.n - 1) * segmentLen) and (settings.PinEndWhenExtended or self.params.PinEndWhenExtended),
+        pinnedLast = self.endPointLocked or ((not self.isExtending) and ((self.chainLen or 0) + 1e-9 >= (self.n - 1) * segmentLen) and (settings.PinEndWhenExtended or self.params.PinEndWhenExtended)),
         endPos = { ex, ey, ez },
         startPos = { sx, sy, sz }
     }
-
+    
     -- Step Verlet physics (in-place modification of self.positions/self.prev/self.invMass)
     VerletAdapter.Step(self.VerletState, dt, vparams)
 
-    -- 8) After physics, ensure anchors and undeployed links remain kinematic (defensive)
-    if vparams.pinnedLast and vparams.endPos then
+    -- 8) After physics, ensure locked endpoint and undeployed links remain kinematic
+    if self.endPointLocked then
+        local li = self.n
+        self.positions[li][1], self.positions[li][2], self.positions[li][3] = ex, ey, ez
+        self.prev[li][1], self.prev[li][2], self.prev[li][3] = ex, ey, ez
+        self.invMass[li] = 0
+    elseif vparams.pinnedLast and vparams.endPos then
         local li = self.n
         self.positions[li][1], self.positions[li][2], self.positions[li][3] = vparams.endPos[1], vparams.endPos[2], vparams.endPos[3]
         self.prev[li][1], self.prev[li][2], self.prev[li][3] = vparams.endPos[1], vparams.endPos[2], vparams.endPos[3]
@@ -241,7 +324,9 @@ function M:GetPublicState()
         IsExtending = self.isExtending,
         IsRetracting = self.isRetracting,
         LinkCount = self.n,
-        Anchors = self.anchors
+        Anchors = self.anchors,
+        EndPointLocked = self.endPointLocked,
+        LockedEndPoint = self.endPointLocked and {self.lockedEndPoint[1], self.lockedEndPoint[2], self.lockedEndPoint[3]} or nil
     }
 end
 
