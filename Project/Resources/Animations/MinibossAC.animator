@@ -184,9 +184,15 @@
             "to": "Death",
             "anyState": false,
             "hasExitTime": true,
-            "exitTime": 1.0,
-            "transitionDuration": 1.0,
-            "conditions": []
+            "exitTime": 0.0,
+            "transitionDuration": 0.0,
+            "conditions": [
+                {
+                    "paramName": "Death",
+                    "mode": "TriggerFired",
+                    "threshold": 0.0
+                }
+            ]
         },
         {
             "from": "Hurt1",
@@ -292,9 +298,15 @@
             "to": "Death",
             "anyState": false,
             "hasExitTime": true,
-            "exitTime": 1.0,
-            "transitionDuration": 1.0,
-            "conditions": []
+            "exitTime": 0.0,
+            "transitionDuration": 0.0,
+            "conditions": [
+                {
+                    "paramName": "Death",
+                    "mode": "TriggerFired",
+                    "threshold": 0.0
+                }
+            ]
         },
         {
             "from": "Melee Attack",
@@ -402,10 +414,16 @@
             "from": "Hooked",
             "to": "Death",
             "anyState": false,
-            "hasExitTime": false,
-            "exitTime": 1.0,
+            "hasExitTime": true,
+            "exitTime": 0.0,
             "transitionDuration": 0.0,
-            "conditions": []
+            "conditions": [
+                {
+                    "paramName": "Death",
+                    "mode": "TriggerFired",
+                    "threshold": 0.0
+                }
+            ]
         },
         {
             "from": "Recovery",
