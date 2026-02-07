@@ -2,7 +2,7 @@
     "prefab_entities": [
         {
             "id": 0,
-            "guid": "007b21e4bb523e22-0004208520023861",
+            "guid": "00300e0f764060bf-000425a824004fa9",
             "components": {
                 "PrefabLinkComponent": {
                     "type": "PrefabLinkComponent",
@@ -176,9 +176,79 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "007b21e4bbbe7a29-0004208520023863",
-                                "007b21e4d4e0d53c-0004208520023865"
+                                "00300e0f4e7473d4-000425a824004fab",
+                                "00300e0f6d1de0b1-000425a824004fad"
                             ]
+                        }
+                    ]
+                },
+                "AudioComponent": {
+                    "type": "AudioComponent",
+                    "data": [
+                        {
+                            "type": "bool",
+                            "data": true
+                        },
+                        "0000000000000000-0000000000000000",
+                        {
+                            "type": "bool",
+                            "data": false
+                        },
+                        {
+                            "type": "bool",
+                            "data": false
+                        },
+                        {
+                            "type": "bool",
+                            "data": false
+                        },
+                        {
+                            "type": "bool",
+                            "data": false
+                        },
+                        {
+                            "type": "int",
+                            "data": 128
+                        },
+                        {
+                            "type": "float",
+                            "data": 1
+                        },
+                        {
+                            "type": "float",
+                            "data": 1
+                        },
+                        {
+                            "type": "float",
+                            "data": 0
+                        },
+                        {
+                            "type": "float",
+                            "data": 1
+                        },
+                        {
+                            "type": "bool",
+                            "data": true
+                        },
+                        {
+                            "type": "float",
+                            "data": 1
+                        },
+                        {
+                            "type": "float",
+                            "data": 1
+                        },
+                        {
+                            "type": "float",
+                            "data": 8
+                        },
+                        {
+                            "type": "float",
+                            "data": 15
+                        },
+                        {
+                            "type": "std::string",
+                            "data": "SFX"
                         }
                     ]
                 },
@@ -276,19 +346,19 @@
                             "entryFunction": "OnInit",
                             "autoInvokeEntry": true,
                             "instanceState": {
-                                "__meta": {},
-                                "__field_list": {
-                                    "Speed": 10.0,
-                                    "Damage": 1.0,
-                                    "Lifetime": 1.2
-                                },
-                                "_transform_fetched": false,
-                                "Speed": 5.0,
-                                "__created_at": 1769419004.0,
-                                "_subscriptions": {},
                                 "Lifetime": 1.2,
+                                "Speed": 5.0,
+                                "_subscriptions": {},
+                                "_transform_fetched": false,
                                 "_private": {},
-                                "Damage": 1.0
+                                "Damage": 1.0,
+                                "__field_list": {
+                                    "Lifetime": 1.2,
+                                    "Speed": 10.0,
+                                    "Damage": 1.0
+                                },
+                                "__meta": {},
+                                "__created_at": 1769419004.0
                             }
                         }
                     ]
@@ -297,7 +367,7 @@
         },
         {
             "id": 1,
-            "guid": "007b21e4bbbe7a29-0004208520023863",
+            "guid": "00300e0f4e7473d4-000425a824004fab",
             "components": {
                 "NameComponent": {
                     "name": "goose_handle"
@@ -374,7 +444,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "007b21e4bb523e22-0004208520023861"
+                        "00300e0f764060bf-000425a824004fa9"
                     ]
                 },
                 "ActiveComponent": {
@@ -390,7 +460,7 @@
         },
         {
             "id": 2,
-            "guid": "007b21e4d4e0d53c-0004208520023865",
+            "guid": "00300e0f6d1de0b1-000425a824004fad",
             "components": {
                 "NameComponent": {
                     "name": "feather_blade"
@@ -467,7 +537,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "007b21e4bb523e22-0004208520023861"
+                        "00300e0f764060bf-000425a824004fa9"
                     ]
                 },
                 "ActiveComponent": {

@@ -110,7 +110,7 @@ return Component {
                 self._playerDead = false
                 self._fadeActive.isActive = true
                 self._respawnButtonActive.isActive = true
-                self._respawnButtonHoveredActive.isActive = true
+                self._respawnButtonHoveredActive.isActive = true               
 
                 if Screen and Screen.IsCursorLocked() then
                     Screen.SetCursorLocked(false)
@@ -129,6 +129,8 @@ return Component {
             -- Stop once fade is complete
             if self._fadeAlpha >= 1.0 then
                 self._isFading = false
+                -- Pause the game when death screen shows
+                Time.SetPaused(true)
             end
         end
     end

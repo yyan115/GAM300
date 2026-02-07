@@ -7,8 +7,11 @@ function ChaseState:Enter(ai)
     ai._animator:SetBool("PatrolEnabled", true)
     ai._pathRepathT = (ai.PathRepathInterval or 0.45)
 
-    -- Play alert SFX when first detecting player (entering chase)
-    if ai.PlayAlertSFX then ai:PlayAlertSFX() end
+    -- Play alert SFX once when first detecting player (entering chase)
+    if ai.PlayAlertSFX and not ai._alertSFXPlayed then
+        ai:PlayAlertSFX()
+        ai._alertSFXPlayed = true
+    end
 end
 
 function ChaseState:Update(ai, dt)
@@ -24,6 +27,7 @@ function ChaseState:Update(ai, dt)
     -- Too far -> Patrol
     if d2 > (diseng * diseng) then
         ai:StopCC()
+        ai._alertSFXPlayed = false
         ai.fsm:Change("Patrol", ai.states.Patrol)
         return
     end
@@ -34,6 +38,7 @@ function ChaseState:Update(ai, dt)
             if not ai.IsPassive then 
                 ai.fsm:Change("Attack", ai.states.Attack)
             else
+                ai._alertSFXPlayed = false
                 ai.fsm:Change("Idle", ai.states.Idle)
             end
             return
@@ -44,6 +49,7 @@ function ChaseState:Update(ai, dt)
             if not ai.IsPassive then 
                 ai.fsm:Change("Attack", ai.states.Attack)
             else
+                ai._alertSFXPlayed = false
                 ai.fsm:Change("Idle", ai.states.Idle)
             end
             return

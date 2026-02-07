@@ -36,7 +36,7 @@ void AudioSystem::Update(float deltaTime) {
 
             if (ecsManager.HasComponent<Transform>(entity)) {
                 const Transform& transform = ecsManager.GetComponent<Transform>(entity);
-                newPosition = transform.localPosition;
+                newPosition = transform.worldPosition;
             }
 
             if (ecsManager.HasComponent<CameraComponent>(entity)) {
@@ -50,7 +50,7 @@ void AudioSystem::Update(float deltaTime) {
                 Vector3D world_up(0.0f, 1.0f, 0.0f);
                 Vector3D right = newForward.Cross(world_up);
                 right.Normalize();
-                right = -right;  // Negate right to fix left/right inversion
+                right = -right;
                 newUp = right.Cross(newForward);
                 newUp.Normalize();
             }
@@ -68,7 +68,7 @@ void AudioSystem::Update(float deltaTime) {
             // Update position from Transform
             if (ecsManager.HasComponent<Transform>(entity)) {
                 const Transform& transform = ecsManager.GetComponent<Transform>(entity);
-                reverbZoneComp.OnTransformChanged(transform.localPosition);
+                reverbZoneComp.OnTransformChanged(transform.worldPosition);
             }
 
             // Update the reverb zone
@@ -103,7 +103,7 @@ void AudioSystem::Update(float deltaTime) {
             // Update spatial audio position from Transform if applicable
             if (audioComp.Spatialize && ecsManager.HasComponent<Transform>(entity)) {
                 const Transform& transform = ecsManager.GetComponent<Transform>(entity);
-                audioComp.OnTransformChanged(transform.localPosition);
+                audioComp.OnTransformChanged(transform.worldPosition);
             }
         }
     }

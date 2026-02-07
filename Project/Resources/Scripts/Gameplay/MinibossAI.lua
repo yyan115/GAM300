@@ -81,6 +81,16 @@ local function _lockPriority(reason)
     return 0
 end
 
+-- Play random SFX from array
+local function playRandomSFX(audio, clips)
+    local count = clips and #clips or 0
+    
+    if count > 0 and audio then
+        print("[MinibossAI] playRandomSFX count =", count)
+        audio:PlayOneShot(clips[math.random(1, count)])
+    end
+end
+
 -------------------------------------------------
 -- Phase definition (HP-based)
 -------------------------------------------------
@@ -148,6 +158,15 @@ return Component {
 
         IntroDuration = 5.0,
         AggroRange    = 15.0,  -- distance to trigger intro
+
+        -- SFX clip arrays (populate in editor with audio GUIDs)
+        enemyHurtSFX = {},          -- EnemyHurt
+        enemyDeathSFX = {},         -- Dying
+        enemyMeleeAttackSFX = {},   -- EnemyScratchWoosh
+        enemyMeleeHitSFX = {},      -- EnemyScratchHit
+        enemyRangedAttackSFX = {},  -- EnemyThrowWoosh
+        enemyRangedHitSFX = {},     -- EnemyThrowHit
+        enemyTauntSFX = {},         -- EnemyGrowlAlert
     },
 
     Awake = function(self)
@@ -219,6 +238,7 @@ return Component {
         self._transform = self:GetComponent("Transform")
         self._rb        = self:GetComponent("RigidBodyComponent")
         self._animator  = self:GetComponent("AnimationComponent")
+        self._audio     = self:GetComponent("AudioComponent")
 
         -- (Re)create controller safely
         if self._controller then
@@ -318,6 +338,19 @@ return Component {
                     return
                 end
                 self:ApplyHook(payload.duration or self.HookedDuration or 4.0)
+            end)
+        end
+
+        -- === Melee hit confirmation subscription ===
+        self._meleeHitSub = nil
+        if _G.event_bus and _G.event_bus.subscribe then
+            self._meleeHitSub = _G.event_bus.subscribe("miniboss_melee_hit_confirmed", function(payload)
+                if not payload then return end
+                if payload.entityId ~= nil and payload.entityId ~= self.entityId then
+                    return
+                end
+                -- Play melee hit SFX when slash hits player
+                playRandomSFX(self._audio, self.enemyMeleeHitSFX)
             end)
         end
 
@@ -587,7 +620,8 @@ return Component {
 
         local dur = self.PhaseTransformDuration or 1.2
         self:LockActions("PHASE_TRANSFORM", dur)
-
+        -- Play taunt SFX during phase transition
+        playRandomSFX(self._audio, self.enemyTauntSFX)
         print(string.format(
             "[Miniboss][Phase] START %d -> %d (%.2fs)",
             self._lastPhaseProcessed,
@@ -751,6 +785,9 @@ return Component {
             return
         end
 
+        -- Play hurt SFX
+        playRandomSFX(self._audio, self.enemyHurtSFX)
+
         -- if a hit causes a phase threshold to be crossed, transform immediately
         self:CheckPhaseTransition()
 
@@ -786,6 +823,9 @@ return Component {
     Die = function(self)
         if self.dead then return end
         self.dead = true
+
+        -- Play death SFX
+        playRandomSFX(self._audio, self.enemyDeathSFX)
 
         -- hard-lock forever
         self._lockAction = true
@@ -829,10 +869,12 @@ return Component {
             if self._damageSub then pcall(function() _G.event_bus.unsubscribe(self._damageSub) end) end
             if self._comboDamageSub then pcall(function() _G.event_bus.unsubscribe(self._comboDamageSub) end) end
             if self._hookSub then pcall(function() _G.event_bus.unsubscribe(self._hookSub) end) end
+            if self._meleeHitSub then pcall(function() _G.event_bus.unsubscribe(self._meleeHitSub) end) end
         end
         self._damageSub = nil
         self._comboDamageSub = nil
         self._hookSub = nil
+        self._meleeHitSub = nil
     end,
 
     OnDestroy = function(self)
@@ -848,10 +890,12 @@ return Component {
             if self._damageSub then pcall(function() _G.event_bus.unsubscribe(self._damageSub) end) end
             if self._comboDamageSub then pcall(function() _G.event_bus.unsubscribe(self._comboDamageSub) end) end
             if self._hookSub then pcall(function() _G.event_bus.unsubscribe(self._hookSub) end) end
+            if self._meleeHitSub then pcall(function() _G.event_bus.unsubscribe(self._meleeHitSub) end) end
         end
         self._damageSub = nil
         self._comboDamageSub = nil
         self._hookSub = nil
+        self._meleeHitSub = nil
     end,
 
     -------------------------------------------------
@@ -928,7 +972,13 @@ return Component {
             print("[Miniboss][Knife] Launch FAILED: knife=nil")
             return false
         end
-        local ok = knife:Launch(sx, sy, sz, tx, ty, tz, token, tag)
+        -- Pick a random ranged attack SFX for the knife to play from its position
+        local sfxClip = nil
+        local clips = self.enemyRangedAttackSFX
+        if clips and #clips > 0 then
+            sfxClip = clips[math.random(1, #clips)]
+        end
+        local ok = knife:Launch(sx, sy, sz, tx, ty, tz, token, tag, sfxClip)
         if not ok then
             print(string.format("[Miniboss][Knife] Launch FAILED tag=%s token=%s", tostring(tag), tostring(token)))
         end
@@ -1402,6 +1452,7 @@ return Component {
 
     FateSealed = function(self)
         self._animator:SetTrigger("Melee")
+        playRandomSFX(self._audio, self.enemyMeleeAttackSFX)
         self:_BeginMove("FateSealed", {
             chargeDur = 2.00,
             dashDur = 0.33,

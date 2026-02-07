@@ -10,6 +10,14 @@ function BattlecryState:Enter(ai)
     ai:FacePlayer()
     ai._animator:SetTrigger("Taunt")
 
+    -- Play taunt SFX (force full volume: temporarily disable 3D rolloff
+    -- so the dramatic battlecry is always clearly audible at aggro range)
+    local count = ai.enemyTauntSFX and #ai.enemyTauntSFX or 0
+    if count > 0 and ai._audio then
+        ai._audio.SpatialBlend = 0          -- play as 2D (bypasses distance rolloff)
+        ai._audio:PlayOneShot(ai.enemyTauntSFX[math.random(1, count)])
+    end
+
     print("[Miniboss] Intro START (battlecry)")
 end
 
@@ -25,6 +33,7 @@ function BattlecryState:Update(ai, dt)
         ai._recoverTimer = math.max(ai.RecoverDuration or 0.6, 0.35)
         print("[Miniboss] Intro END -> Combat")
         ai.fsm:Change("Recover", ai.states.Recover) -- small recovery before first move
+        ai._audio.SpatialBlend = 1
     end
 end
 

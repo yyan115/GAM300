@@ -49,6 +49,10 @@ return Component {
         DefaultComboWindow = 0.5,    -- Default time to continue combo
         HeavyChargeTime = 0.8,       -- Time to fully charge heavy
         DashDuration = 0.3,          -- Dash length
+
+        -- SFX clip arrays (populate in editor with audio GUIDs)
+        playerSlashSFX    = {},      -- FastSlash (whoosh on swing)
+        playerSlashHitSFX = {},      -- FastSlashHitonFlesh (impact on hit)
     },
 
     Awake = function(self)
@@ -254,11 +258,17 @@ return Component {
         end
         print("[ComboManager] InputInterpreter found")
 
+        -- Get AudioComponent from Player for attack SFX
+        self._playerAudio = GetComponent(self._playerEntityId, "AudioComponent")
+        if not self._playerAudio then
+            print("[ComboManager] WARNING: Player AudioComponent not found")
+        end
+
         -- Initialize animator parameters using the bound methods
         self._animator:SetInt("ComboStep", 0)        -- Note: SetInt, not SetInteger
         self._animator:SetBool("IsAttacking", false)
         self._animator:SetBool("IsHeavyCharging", false)
-        
+
         print("[ComboManager] Initialized successfully")
     end,
 
@@ -343,6 +353,7 @@ return Component {
         end
 
         if candidateStateId then
+            self:_playSlashSFX(self.playerSlashSFX)
             -- Consume the buffered input immediately so it doesn't re-fire repeatedly
             if input:HasBufferedAttack() then input:ConsumeBufferedAttack()
             elseif input:HasBufferedChain() then input:ConsumeBufferedChain()
@@ -465,8 +476,18 @@ return Component {
                     damage = newState.damage,
                     knockback = newState.knockback or 0
                 })
+                
             end
         end
+    end,
+
+    -- ===============================
+    -- SFX HELPERS
+    -- ===============================
+    _playSlashSFX = function(self, clips)
+        local audio = self._playerAudio
+        if not audio or not clips or #clips == 0 then return end
+        audio:PlayOneShot(clips[math.random(1, #clips)])
     end,
 
     -- ===============================
