@@ -11,6 +11,9 @@ return Component {
     },
 
     OnClickRespawnButton = function(self)
+         Time.SetPaused(false)
+         Time.SetTimeScale(1.0)
+
         if Screen and Screen.IsCursorLocked() then
             Screen.SetCursorLocked(true)
         end
@@ -25,6 +28,9 @@ return Component {
     end,
 
     Start = function(self)
+        -- Cache audio component for hover SFX
+        self._audio = self:GetComponent("AudioComponent")
+
         self._buttonData = {} 
         local buttonMapping = {
             { base = "RespawnButton", hover = "RespawnButtonHovered" }
@@ -45,7 +51,8 @@ return Component {
                     minX = pos.x - (scale.x / 2),
                     maxX = pos.x + (scale.x / 2),
                     minY = pos.y - (scale.y / 2),
-                    maxY = pos.y + (scale.y / 2)
+                    maxY = pos.y + (scale.y / 2),
+                    wasHovering = false
                 }
 
                 if hoverSprite then
@@ -55,7 +62,7 @@ return Component {
                 print("Warning: Missing entities for " .. names.base)
             end
         end
-
+        self._DeathBGActive = GetComponent(Engine.GetEntityByName("DeathScreenBG"), "ActiveComponent")
         self._fadeDuration = 0
         local fadeEntity = Engine.GetEntityByName(self.fadeScreenName)
         if fadeEntity then
@@ -81,10 +88,17 @@ return Component {
         local inputX, inputY = mouseCoordinate[1], mouseCoordinate[2]
 
         for _, data in pairs(self._buttonData) do
-            if data.hoverSprite then
+            if data.hoverSprite and self._DeathBGActive and self._DeathBGActive.isActive then
                 local isHovering = (inputX >= data.minX and inputX <= data.maxX and
                                    inputY >= data.minY and inputY <= data.maxY)
-                
+
+                -- Play hover SFX only when entering hover state
+                if isHovering and not data.wasHovering then
+                    if self._audio then
+                        self._audio:Play()
+                    end
+                end
+                data.wasHovering = isHovering
                 data.hoverSprite.isVisible = isHovering
             end
         end
