@@ -16,7 +16,7 @@
             "defaultValue": 0.0
         },
         {
-            "name": "Melee",
+            "name": "Hurt1",
             "type": "Bool",
             "defaultValue": 0.0
         },
@@ -26,7 +26,7 @@
             "defaultValue": 0.0
         },
         {
-            "name": "Hurt1",
+            "name": "Melee",
             "type": "Bool",
             "defaultValue": 0.0
         },
@@ -63,14 +63,14 @@
     ],
     "states": [
         {
-            "id": "Hooked",
+            "id": "Hurt1",
             "clipIndex": 5,
             "loop": false,
-            "speed": 1.0,
+            "speed": 2.499999761581421,
             "crossfadeDuration": 0.0,
             "nodePosition": {
-                "x": 428.5,
-                "y": 75.0
+                "x": 279.0,
+                "y": -25.5
             }
         },
         {
@@ -85,14 +85,14 @@
             }
         },
         {
-            "id": "Hurt1",
+            "id": "Hooked",
             "clipIndex": 5,
             "loop": false,
-            "speed": 2.000000238418579,
+            "speed": 1.0,
             "crossfadeDuration": 0.0,
             "nodePosition": {
-                "x": 279.0,
-                "y": -25.5
+                "x": 428.5,
+                "y": 75.0
             }
         },
         {
@@ -141,7 +141,7 @@
         },
         {
             "id": "Hurt2",
-            "clipIndex": 5,
+            "clipIndex": 6,
             "loop": false,
             "speed": 2.000000238418579,
             "crossfadeDuration": 0.0,
@@ -152,7 +152,7 @@
         },
         {
             "id": "Hurt3",
-            "clipIndex": 5,
+            "clipIndex": 7,
             "loop": false,
             "speed": 2.000000238418579,
             "crossfadeDuration": 0.0,
@@ -831,6 +831,51 @@
                     "threshold": 1.0
                 }
             ]
+        },
+        {
+            "from": "Idle",
+            "to": "Hurt1",
+            "anyState": false,
+            "hasExitTime": true,
+            "exitTime": 0.0,
+            "transitionDuration": 0.0,
+            "conditions": [
+                {
+                    "paramName": "Hurt1",
+                    "mode": "Equals",
+                    "threshold": 1.0
+                }
+            ]
+        },
+        {
+            "from": "Idle",
+            "to": "Hurt2",
+            "anyState": false,
+            "hasExitTime": true,
+            "exitTime": 0.0,
+            "transitionDuration": 0.0,
+            "conditions": [
+                {
+                    "paramName": "Hurt2",
+                    "mode": "Equals",
+                    "threshold": 1.0
+                }
+            ]
+        },
+        {
+            "from": "Idle",
+            "to": "Hurt3",
+            "anyState": false,
+            "hasExitTime": true,
+            "exitTime": 0.0,
+            "transitionDuration": 0.0,
+            "conditions": [
+                {
+                    "paramName": "Hurt3",
+                    "mode": "Equals",
+                    "threshold": 1.0
+                }
+            ]
         }
     ],
     "clipPaths": [
@@ -839,6 +884,8 @@
         "Resources/Animations/Enemy@Walk.fbx",
         "Resources/Animations/Enemy@AttackScratch.fbx",
         "Resources/Animations/Enemy@AttackThrow.fbx",
-        "Resources/Animations/Enemy@Hurt.fbx"
+        "Resources/Animations/Enemy@Hurt.fbx",
+        "Resources/Animations/Enemy@Hurt2.fbx",
+        "Resources/Animations/Enemy@Hurt3.fbx"
     ]
 }

@@ -935,6 +935,15 @@ return Component {
             return
         end
 
+        local myRandomValue = math.random(1, 3)
+        if myRandomValue == 1 then
+            self._animator:SetBool("Hurt1", true)
+        elseif myRandomValue == 2 then
+            self._animator:SetBool("Hurt2", true)
+        elseif myRandomValue == 3 then
+            self._animator:SetBool("Hurt3", true)
+        end
+
         -- Play hurt SFX (only if not dead)
         playRandomSFX(self._audio, self.enemyHurtSFX)
 

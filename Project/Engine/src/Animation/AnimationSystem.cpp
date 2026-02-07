@@ -37,6 +37,8 @@ bool AnimationSystem::Initialise()
 }
 
 void AnimationSystem::InitialiseAnimationComponent(Entity entity, ModelRenderComponent& modelComp, AnimationComponent& animComp) {
+	Animator* animator = animComp.EnsureAnimator();
+
 	if (animComp.GetClips().size() < animComp.clipPaths.size()) {
 		// Load animator controller if path is set
 		if (!animComp.controllerPath.empty()) {
@@ -58,29 +60,28 @@ void AnimationSystem::InitialiseAnimationComponent(Entity entity, ModelRenderCom
 			}
 		}
 
-		Animator* animator = animComp.EnsureAnimator();
 		modelComp.SetAnimator(animator);
 
 		if (modelComp.model && !animComp.clipPaths.empty()) {
 			animComp.LoadClipsFromPaths(modelComp.model->GetBoneInfoMap(), modelComp.model->GetBoneCount(), entity);
-
-			// Play the entry state's animation clip (not just first clip)
-			if (!animComp.GetClips().empty()) {
-				size_t clipToPlay = 0;
-				AnimationStateMachine* sm = animComp.GetStateMachine();
-				if (sm) {
-					std::string entryState = sm->GetEntryState();
-					const AnimStateConfig* entryConfig = sm->GetState(entryState);
-					if (entryConfig && entryConfig->clipIndex < animComp.GetClips().size()) {
-						clipToPlay = entryConfig->clipIndex;
-					}
-					// Initialize the state machine to the entry state
-					sm->SetInitialState(entryState, entity);
-				}
-				animComp.SetClip(clipToPlay, entity);
-				animator->PlayAnimation(animComp.GetClips()[clipToPlay].get(), entity);
-			}
 		}
+	}
+
+	// Play the entry state's animation clip (not just first clip)
+	if (!animComp.GetClips().empty()) {
+		size_t clipToPlay = 0;
+		AnimationStateMachine* sm = animComp.GetStateMachine();
+		if (sm) {
+			std::string entryState = sm->GetEntryState();
+			const AnimStateConfig* entryConfig = sm->GetState(entryState);
+			if (entryConfig && entryConfig->clipIndex < animComp.GetClips().size()) {
+				clipToPlay = entryConfig->clipIndex;
+			}
+			// Initialize the state machine to the entry state
+			sm->SetInitialState(entryState, entity);
+		}
+		animComp.SetClip(clipToPlay, entity);
+		animator->PlayAnimation(animComp.GetClips()[clipToPlay].get(), entity);
 	}
 
 	ENGINE_PRINT("[AnimationSystem] AnimationComponent initialized for entity ", entity, "\n");

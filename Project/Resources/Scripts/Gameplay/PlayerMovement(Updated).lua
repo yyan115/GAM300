@@ -95,7 +95,7 @@ return Component {
             print("[PlayerMovement] Subscribing to playerHurtTriggered")
             self._playerHurtTriggeredSub = event_bus.subscribe("playerHurtTriggered", function(hit)
                 if hit then
-                    print("[PlayerMovement] playerHurtTriggered received")
+                    --print("[PlayerMovement] playerHurtTriggered received")
                     self._isDamageStun = true
                     if self._animator then self._animator:SetBool("IsJumping", false) end
                     -- Play hurt SFX

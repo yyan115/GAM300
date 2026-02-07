@@ -11,6 +11,21 @@
     },
     "parameters": [
         {
+            "name": "Hurt1",
+            "type": "Trigger",
+            "defaultValue": 0.0
+        },
+        {
+            "name": "Melee",
+            "type": "Trigger",
+            "defaultValue": 0.0
+        },
+        {
+            "name": "Hooked",
+            "type": "Bool",
+            "defaultValue": 0.0
+        },
+        {
             "name": "Taunt",
             "type": "Trigger",
             "defaultValue": 0.0
@@ -21,31 +36,42 @@
             "defaultValue": 0.0
         },
         {
-            "name": "Hooked",
-            "type": "Bool",
-            "defaultValue": 0.0
-        },
-        {
-            "name": "Melee",
-            "type": "Bool",
-            "defaultValue": 0.0
-        },
-        {
             "name": "Ranged",
-            "type": "Bool",
+            "type": "Trigger",
+            "defaultValue": 0.0
+        },
+        {
+            "name": "Hurt2",
+            "type": "Trigger",
+            "defaultValue": 0.0
+        },
+        {
+            "name": "Hurt3",
+            "type": "Trigger",
             "defaultValue": 0.0
         }
     ],
     "states": [
         {
-            "id": "Taunt",
-            "clipIndex": 0,
+            "id": "Hurt1",
+            "clipIndex": 5,
+            "loop": false,
+            "speed": 2.000000238418579,
+            "crossfadeDuration": 0.0,
+            "nodePosition": {
+                "x": 169.0,
+                "y": -14.75
+            }
+        },
+        {
+            "id": "Hooked",
+            "clipIndex": 5,
             "loop": false,
             "speed": 1.0,
             "crossfadeDuration": 0.0,
             "nodePosition": {
-                "x": -55.0,
-                "y": -222.0
+                "x": 918.5,
+                "y": -149.0
             }
         },
         {
@@ -60,14 +86,14 @@
             }
         },
         {
-            "id": "Hooked",
-            "clipIndex": 5,
+            "id": "Taunt",
+            "clipIndex": 0,
             "loop": false,
-            "speed": 1.0,
+            "speed": 2.000000238418579,
             "crossfadeDuration": 0.0,
             "nodePosition": {
-                "x": 918.5,
-                "y": -149.0
+                "x": -55.0,
+                "y": -222.0
             }
         },
         {
@@ -85,7 +111,7 @@
             "id": "Ranged Attack",
             "clipIndex": 4,
             "loop": true,
-            "speed": 1.0,
+            "speed": 2.6999995708465576,
             "crossfadeDuration": 0.0,
             "nodePosition": {
                 "x": 610.5,
@@ -96,22 +122,11 @@
             "id": "Melee Attack",
             "clipIndex": 3,
             "loop": true,
-            "speed": 1.0,
+            "speed": 2.000000238418579,
             "crossfadeDuration": 0.0,
             "nodePosition": {
                 "x": 303.5,
                 "y": -431.0
-            }
-        },
-        {
-            "id": "Hurt",
-            "clipIndex": 5,
-            "loop": false,
-            "speed": 1.0,
-            "crossfadeDuration": 0.0,
-            "nodePosition": {
-                "x": 391.5,
-                "y": -16.0
             }
         },
         {
@@ -123,6 +138,28 @@
             "nodePosition": {
                 "x": 95.5,
                 "y": -305.0
+            }
+        },
+        {
+            "id": "Hurt2",
+            "clipIndex": 6,
+            "loop": false,
+            "speed": 1.7000001668930054,
+            "crossfadeDuration": 0.0,
+            "nodePosition": {
+                "x": 372.20135498046875,
+                "y": -14.744112014770508
+            }
+        },
+        {
+            "id": "Hurt3",
+            "clipIndex": 7,
+            "loop": false,
+            "speed": 1.7000001668930054,
+            "crossfadeDuration": 0.0,
+            "nodePosition": {
+                "x": 568.7233276367188,
+                "y": -13.607952117919922
             }
         }
     ],
@@ -149,21 +186,15 @@
             "hasExitTime": true,
             "exitTime": 1.0,
             "transitionDuration": 1.0,
-            "conditions": [
-                {
-                    "paramName": "Death",
-                    "mode": "TriggerFired",
-                    "threshold": 0.0
-                }
-            ]
+            "conditions": []
         },
         {
-            "from": "Hurt",
+            "from": "Hurt1",
             "to": "Death",
             "anyState": false,
             "hasExitTime": true,
-            "exitTime": 1.0,
-            "transitionDuration": 1.0,
+            "exitTime": 0.0,
+            "transitionDuration": 0.0,
             "conditions": [
                 {
                     "paramName": "Death",
@@ -177,8 +208,8 @@
             "to": "Death",
             "anyState": false,
             "hasExitTime": true,
-            "exitTime": 1.0,
-            "transitionDuration": 1.0,
+            "exitTime": 0.18000000715255737,
+            "transitionDuration": 0.1599999964237213,
             "conditions": [
                 {
                     "paramName": "Death",
@@ -192,8 +223,8 @@
             "to": "Death",
             "anyState": false,
             "hasExitTime": true,
-            "exitTime": 1.0,
-            "transitionDuration": 1.0,
+            "exitTime": 0.11999999731779099,
+            "transitionDuration": 0.14000000059604645,
             "conditions": [
                 {
                     "paramName": "Death",
@@ -206,23 +237,23 @@
             "from": "Taunt",
             "to": "Recovery",
             "anyState": false,
-            "hasExitTime": false,
+            "hasExitTime": true,
             "exitTime": 1.0,
-            "transitionDuration": 0.0,
+            "transitionDuration": 1.0,
             "conditions": []
         },
         {
             "from": "Recovery",
             "to": "Melee Attack",
             "anyState": false,
-            "hasExitTime": false,
-            "exitTime": 1.0,
+            "hasExitTime": true,
+            "exitTime": 0.0,
             "transitionDuration": 0.0,
             "conditions": [
                 {
                     "paramName": "Melee",
-                    "mode": "Equals",
-                    "threshold": 1.0
+                    "mode": "TriggerFired",
+                    "threshold": 0.0
                 }
             ]
         },
@@ -230,14 +261,14 @@
             "from": "Recovery",
             "to": "Ranged Attack",
             "anyState": false,
-            "hasExitTime": false,
-            "exitTime": 1.0,
+            "hasExitTime": true,
+            "exitTime": 0.0,
             "transitionDuration": 0.0,
             "conditions": [
                 {
                     "paramName": "Ranged",
-                    "mode": "Equals",
-                    "threshold": 1.0
+                    "mode": "TriggerFired",
+                    "threshold": 0.0
                 }
             ]
         },
@@ -246,8 +277,8 @@
             "to": "Death",
             "anyState": false,
             "hasExitTime": true,
-            "exitTime": 1.0,
-            "transitionDuration": 1.0,
+            "exitTime": 0.10000000149011612,
+            "transitionDuration": 0.14000000059604645,
             "conditions": [
                 {
                     "paramName": "Death",
@@ -263,109 +294,67 @@
             "hasExitTime": true,
             "exitTime": 1.0,
             "transitionDuration": 1.0,
+            "conditions": []
+        },
+        {
+            "from": "Melee Attack",
+            "to": "Recovery",
+            "anyState": false,
+            "hasExitTime": true,
+            "exitTime": 0.7900000214576721,
+            "transitionDuration": 0.7799999713897705,
+            "conditions": []
+        },
+        {
+            "from": "Ranged Attack",
+            "to": "Recovery",
+            "anyState": false,
+            "hasExitTime": true,
+            "exitTime": 0.8299999833106995,
+            "transitionDuration": 0.8399999737739563,
+            "conditions": []
+        },
+        {
+            "from": "Hurt1",
+            "to": "Recovery",
+            "anyState": false,
+            "hasExitTime": true,
+            "exitTime": 0.7799999713897705,
+            "transitionDuration": 0.7900000214576721,
+            "conditions": []
+        },
+        {
+            "from": "Hurt1",
+            "to": "Ranged Attack",
+            "anyState": false,
+            "hasExitTime": true,
+            "exitTime": 0.7799999713897705,
+            "transitionDuration": 0.75,
             "conditions": [
                 {
-                    "paramName": "Death",
+                    "paramName": "Ranged",
                     "mode": "TriggerFired",
                     "threshold": 0.0
                 }
             ]
         },
         {
-            "from": "Idle",
-            "to": "Hurt",
-            "anyState": false,
-            "hasExitTime": false,
-            "exitTime": 1.0,
-            "transitionDuration": 0.0,
-            "conditions": []
-        },
-        {
-            "from": "Recovery",
-            "to": "Hurt",
-            "anyState": false,
-            "hasExitTime": false,
-            "exitTime": 1.0,
-            "transitionDuration": 0.0,
-            "conditions": []
-        },
-        {
-            "from": "Melee Attack",
-            "to": "Hurt",
-            "anyState": false,
-            "hasExitTime": false,
-            "exitTime": 1.0,
-            "transitionDuration": 0.0,
-            "conditions": []
-        },
-        {
-            "from": "Ranged Attack",
-            "to": "Hurt",
-            "anyState": false,
-            "hasExitTime": false,
-            "exitTime": 1.0,
-            "transitionDuration": 0.0,
-            "conditions": []
-        },
-        {
-            "from": "Melee Attack",
-            "to": "Recovery",
-            "anyState": false,
-            "hasExitTime": false,
-            "exitTime": 1.0,
-            "transitionDuration": 0.0,
-            "conditions": []
-        },
-        {
-            "from": "Ranged Attack",
-            "to": "Recovery",
-            "anyState": false,
-            "hasExitTime": false,
-            "exitTime": 1.0,
-            "transitionDuration": 0.0,
-            "conditions": []
-        },
-        {
-            "from": "Hurt",
-            "to": "Recovery",
-            "anyState": false,
-            "hasExitTime": false,
-            "exitTime": 1.0,
-            "transitionDuration": 0.0,
-            "conditions": []
-        },
-        {
-            "from": "Hurt",
-            "to": "Ranged Attack",
-            "anyState": false,
-            "hasExitTime": false,
-            "exitTime": 1.0,
-            "transitionDuration": 0.0,
-            "conditions": [
-                {
-                    "paramName": "Ranged",
-                    "mode": "Equals",
-                    "threshold": 1.0
-                }
-            ]
-        },
-        {
-            "from": "Hurt",
+            "from": "Hurt1",
             "to": "Melee Attack",
             "anyState": false,
-            "hasExitTime": false,
-            "exitTime": 1.0,
-            "transitionDuration": 0.0,
+            "hasExitTime": true,
+            "exitTime": 0.75,
+            "transitionDuration": 0.75,
             "conditions": [
                 {
                     "paramName": "Melee",
-                    "mode": "Equals",
-                    "threshold": 1.0
+                    "mode": "TriggerFired",
+                    "threshold": 0.0
                 }
             ]
         },
         {
-            "from": "Hurt",
+            "from": "Hurt1",
             "to": "Hooked",
             "anyState": false,
             "hasExitTime": false,
@@ -452,14 +441,14 @@
             "from": "Hooked",
             "to": "Ranged Attack",
             "anyState": false,
-            "hasExitTime": false,
-            "exitTime": 1.0,
-            "transitionDuration": 0.0,
+            "hasExitTime": true,
+            "exitTime": 0.7300000190734863,
+            "transitionDuration": 0.75,
             "conditions": [
                 {
                     "paramName": "Ranged",
-                    "mode": "Equals",
-                    "threshold": 1.0
+                    "mode": "TriggerFired",
+                    "threshold": 0.0
                 }
             ]
         },
@@ -467,14 +456,14 @@
             "from": "Hooked",
             "to": "Melee Attack",
             "anyState": false,
-            "hasExitTime": false,
-            "exitTime": 1.0,
-            "transitionDuration": 0.0,
+            "hasExitTime": true,
+            "exitTime": 0.7400000095367432,
+            "transitionDuration": 0.7599999904632568,
             "conditions": [
                 {
                     "paramName": "Melee",
-                    "mode": "Equals",
-                    "threshold": 1.0
+                    "mode": "TriggerFired",
+                    "threshold": 0.0
                 }
             ]
         },
@@ -486,6 +475,354 @@
             "exitTime": 1.0,
             "transitionDuration": 0.0,
             "conditions": []
+        },
+        {
+            "from": "Recovery",
+            "to": "Hurt1",
+            "anyState": false,
+            "hasExitTime": true,
+            "exitTime": 0.0,
+            "transitionDuration": 0.0,
+            "conditions": [
+                {
+                    "paramName": "Hurt1",
+                    "mode": "TriggerFired",
+                    "threshold": 0.0
+                }
+            ]
+        },
+        {
+            "from": "Melee Attack",
+            "to": "Hurt1",
+            "anyState": false,
+            "hasExitTime": true,
+            "exitTime": 0.20000000298023224,
+            "transitionDuration": 0.20999999344348907,
+            "conditions": [
+                {
+                    "paramName": "Hurt1",
+                    "mode": "TriggerFired",
+                    "threshold": 0.0
+                }
+            ]
+        },
+        {
+            "from": "Ranged Attack",
+            "to": "Hurt1",
+            "anyState": false,
+            "hasExitTime": true,
+            "exitTime": 0.20000000298023224,
+            "transitionDuration": 0.1899999976158142,
+            "conditions": [
+                {
+                    "paramName": "Hurt1",
+                    "mode": "TriggerFired",
+                    "threshold": 0.0
+                }
+            ]
+        },
+        {
+            "from": "Taunt",
+            "to": "Hurt1",
+            "anyState": false,
+            "hasExitTime": true,
+            "exitTime": 0.10999999940395355,
+            "transitionDuration": 0.14000000059604645,
+            "conditions": [
+                {
+                    "paramName": "Hurt1",
+                    "mode": "TriggerFired",
+                    "threshold": 0.0
+                }
+            ]
+        },
+        {
+            "from": "Hurt1",
+            "to": "Taunt",
+            "anyState": false,
+            "hasExitTime": true,
+            "exitTime": 0.550000011920929,
+            "transitionDuration": 0.5699999928474426,
+            "conditions": [
+                {
+                    "paramName": "Taunt",
+                    "mode": "TriggerFired",
+                    "threshold": 0.0
+                }
+            ]
+        },
+        {
+            "from": "Recovery",
+            "to": "Taunt",
+            "anyState": false,
+            "hasExitTime": true,
+            "exitTime": 0.10000000149011612,
+            "transitionDuration": 0.10000000149011612,
+            "conditions": [
+                {
+                    "paramName": "Taunt",
+                    "mode": "TriggerFired",
+                    "threshold": 0.0
+                }
+            ]
+        },
+        {
+            "from": "Taunt",
+            "to": "Hurt2",
+            "anyState": false,
+            "hasExitTime": true,
+            "exitTime": 0.09000000357627869,
+            "transitionDuration": 0.11999999731779099,
+            "conditions": [
+                {
+                    "paramName": "Hurt2",
+                    "mode": "TriggerFired",
+                    "threshold": 0.0
+                }
+            ]
+        },
+        {
+            "from": "Hurt2",
+            "to": "Taunt",
+            "anyState": false,
+            "hasExitTime": true,
+            "exitTime": 0.6000000238418579,
+            "transitionDuration": 0.5899999737739563,
+            "conditions": [
+                {
+                    "paramName": "Taunt",
+                    "mode": "TriggerFired",
+                    "threshold": 0.0
+                }
+            ]
+        },
+        {
+            "from": "Recovery",
+            "to": "Hurt2",
+            "anyState": false,
+            "hasExitTime": true,
+            "exitTime": 0.0,
+            "transitionDuration": 0.0,
+            "conditions": [
+                {
+                    "paramName": "Hurt2",
+                    "mode": "TriggerFired",
+                    "threshold": 0.0
+                }
+            ]
+        },
+        {
+            "from": "Hurt2",
+            "to": "Recovery",
+            "anyState": false,
+            "hasExitTime": true,
+            "exitTime": 0.7599999904632568,
+            "transitionDuration": 0.7400000095367432,
+            "conditions": []
+        },
+        {
+            "from": "Melee Attack",
+            "to": "Hurt2",
+            "anyState": false,
+            "hasExitTime": true,
+            "exitTime": 0.2199999988079071,
+            "transitionDuration": 0.2199999988079071,
+            "conditions": [
+                {
+                    "paramName": "Hurt2",
+                    "mode": "TriggerFired",
+                    "threshold": 0.0
+                }
+            ]
+        },
+        {
+            "from": "Hurt2",
+            "to": "Melee Attack",
+            "anyState": false,
+            "hasExitTime": true,
+            "exitTime": 0.75,
+            "transitionDuration": 0.7400000095367432,
+            "conditions": [
+                {
+                    "paramName": "Melee",
+                    "mode": "TriggerFired",
+                    "threshold": 0.0
+                }
+            ]
+        },
+        {
+            "from": "Hurt2",
+            "to": "Death",
+            "anyState": false,
+            "hasExitTime": true,
+            "exitTime": 0.0,
+            "transitionDuration": 0.0,
+            "conditions": [
+                {
+                    "paramName": "Death",
+                    "mode": "TriggerFired",
+                    "threshold": 0.0
+                }
+            ]
+        },
+        {
+            "from": "Ranged Attack",
+            "to": "Hurt2",
+            "anyState": false,
+            "hasExitTime": true,
+            "exitTime": 0.20999999344348907,
+            "transitionDuration": 0.20999999344348907,
+            "conditions": [
+                {
+                    "paramName": "Hurt2",
+                    "mode": "TriggerFired",
+                    "threshold": 0.0
+                }
+            ]
+        },
+        {
+            "from": "Hurt2",
+            "to": "Ranged Attack",
+            "anyState": false,
+            "hasExitTime": true,
+            "exitTime": 0.75,
+            "transitionDuration": 0.7300000190734863,
+            "conditions": [
+                {
+                    "paramName": "Ranged",
+                    "mode": "TriggerFired",
+                    "threshold": 0.0
+                }
+            ]
+        },
+        {
+            "from": "Taunt",
+            "to": "Hurt3",
+            "anyState": false,
+            "hasExitTime": true,
+            "exitTime": 0.0,
+            "transitionDuration": 0.0,
+            "conditions": [
+                {
+                    "paramName": "Hurt3",
+                    "mode": "TriggerFired",
+                    "threshold": 0.0
+                }
+            ]
+        },
+        {
+            "from": "Hurt3",
+            "to": "Taunt",
+            "anyState": false,
+            "hasExitTime": true,
+            "exitTime": 0.7900000214576721,
+            "transitionDuration": 0.7599999904632568,
+            "conditions": [
+                {
+                    "paramName": "Taunt",
+                    "mode": "TriggerFired",
+                    "threshold": 0.0
+                }
+            ]
+        },
+        {
+            "from": "Recovery",
+            "to": "Hurt3",
+            "anyState": false,
+            "hasExitTime": true,
+            "exitTime": 0.0,
+            "transitionDuration": 0.0,
+            "conditions": [
+                {
+                    "paramName": "Hurt3",
+                    "mode": "TriggerFired",
+                    "threshold": 0.0
+                }
+            ]
+        },
+        {
+            "from": "Hurt3",
+            "to": "Recovery",
+            "anyState": false,
+            "hasExitTime": true,
+            "exitTime": 0.7900000214576721,
+            "transitionDuration": 0.7599999904632568,
+            "conditions": []
+        },
+        {
+            "from": "Hurt3",
+            "to": "Death",
+            "anyState": false,
+            "hasExitTime": true,
+            "exitTime": 0.0,
+            "transitionDuration": 0.0,
+            "conditions": [
+                {
+                    "paramName": "Death",
+                    "mode": "TriggerFired",
+                    "threshold": 0.0
+                }
+            ]
+        },
+        {
+            "from": "Melee Attack",
+            "to": "Hurt3",
+            "anyState": false,
+            "hasExitTime": true,
+            "exitTime": 0.2199999988079071,
+            "transitionDuration": 0.20999999344348907,
+            "conditions": [
+                {
+                    "paramName": "Hurt3",
+                    "mode": "TriggerFired",
+                    "threshold": 0.0
+                }
+            ]
+        },
+        {
+            "from": "Hurt3",
+            "to": "Melee Attack",
+            "anyState": false,
+            "hasExitTime": true,
+            "exitTime": 0.75,
+            "transitionDuration": 0.7699999809265137,
+            "conditions": [
+                {
+                    "paramName": "Melee",
+                    "mode": "TriggerFired",
+                    "threshold": 0.0
+                }
+            ]
+        },
+        {
+            "from": "Ranged Attack",
+            "to": "Hurt3",
+            "anyState": false,
+            "hasExitTime": true,
+            "exitTime": 0.2199999988079071,
+            "transitionDuration": 0.1899999976158142,
+            "conditions": [
+                {
+                    "paramName": "Hurt3",
+                    "mode": "TriggerFired",
+                    "threshold": 0.0
+                }
+            ]
+        },
+        {
+            "from": "Hurt3",
+            "to": "Ranged Attack",
+            "anyState": false,
+            "hasExitTime": true,
+            "exitTime": 0.7799999713897705,
+            "transitionDuration": 0.7599999904632568,
+            "conditions": [
+                {
+                    "paramName": "Ranged",
+                    "mode": "TriggerFired",
+                    "threshold": 0.0
+                }
+            ]
         }
     ],
     "clipPaths": [
@@ -494,6 +831,8 @@
         "Resources/Animations/Enemy@Death.fbx",
         "Resources/Animations/Enemy@AttackScratch.fbx",
         "Resources/Animations/Enemy@AttackThrow.fbx",
-        "Resources/Animations/Enemy@Hurt.fbx"
+        "Resources/Animations/Enemy@Hurt.fbx",
+        "Resources/Animations/Enemy@Hurt2.fbx",
+        "Resources/Animations/Enemy@Hurt3.fbx"
     ]
 }

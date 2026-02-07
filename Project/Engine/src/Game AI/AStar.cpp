@@ -46,24 +46,24 @@ GridPos AStar::FindNearestWalkable(const NavGrid& grid, const GridPos& target)
 
 std::vector<Vector3D> AStar::FindPath(const NavGrid& grid, float sx, float sz, float gx, float gz)
 {
-    std::cout << "[AStar] ========== PATH REQUEST ==========\n";
-    std::cout << "[AStar] World coords: (" << sx << "," << sz << ") -> (" << gx << "," << gz << ")\n";
+    //std::cout << "[AStar] ========== PATH REQUEST ==========\n";
+    //std::cout << "[AStar] World coords: (" << sx << "," << sz << ") -> (" << gx << "," << gz << ")\n";
 
     GridPos start = grid.WorldToCell(sx, sz);
     GridPos goal = grid.WorldToCell(gx, gz);
 
-    std::cout << "[AStar] Grid cells: [" << start.row << "," << start.col << "] -> ["
-        << goal.row << "," << goal.col << "]\n";
-    std::cout << "[AStar] Grid bounds: rows=" << grid.Rows() << " cols=" << grid.Cols() << "\n";
-    std::cout << "[AStar] Start in bounds: " << grid.InBounds(start.row, start.col) << "\n";
-    std::cout << "[AStar] Goal in bounds: " << grid.InBounds(goal.row, goal.col) << "\n";
-    std::cout << "[AStar] Start walkable: " << grid.Walkable(start.row, start.col) << "\n";
-    std::cout << "[AStar] Goal walkable: " << grid.Walkable(goal.row, goal.col) << "\n";
+    //std::cout << "[AStar] Grid cells: [" << start.row << "," << start.col << "] -> ["
+    //    << goal.row << "," << goal.col << "]\n";
+    //std::cout << "[AStar] Grid bounds: rows=" << grid.Rows() << " cols=" << grid.Cols() << "\n";
+    //std::cout << "[AStar] Start in bounds: " << grid.InBounds(start.row, start.col) << "\n";
+    //std::cout << "[AStar] Goal in bounds: " << grid.InBounds(goal.row, goal.col) << "\n";
+    //std::cout << "[AStar] Start walkable: " << grid.Walkable(start.row, start.col) << "\n";
+    //std::cout << "[AStar] Goal walkable: " << grid.Walkable(goal.row, goal.col) << "\n";
 
     // If goal is unwalkable, find nearest walkable cell
     if (!grid.Walkable(goal.row, goal.col))
     {
-        std::cout << "[AStar] Goal NOT walkable, finding nearest...\n";
+        //std::cout << "[AStar] Goal NOT walkable, finding nearest...\n";
 
         GridPos nearestGoal = FindNearestWalkable(grid, goal);
 
@@ -72,8 +72,8 @@ std::vector<Vector3D> AStar::FindPath(const NavGrid& grid, float sx, float sz, f
             return {};
         }
 
-        std::cout << "[AStar] Using nearest walkable: [" << nearestGoal.row << ","
-            << nearestGoal.col << "]\n";
+        //std::cout << "[AStar] Using nearest walkable: [" << nearestGoal.row << ","
+        //    << nearestGoal.col << "]\n";
         goal = nearestGoal;
     }
 

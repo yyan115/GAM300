@@ -8,12 +8,12 @@ local Input = _G.Input
 local HurtTrigger = "Hurt"
 
 local function PlayerTakeDmg(self, dmg)
-    print("[PlayerTakeDmg] Animator set trigger Hurt")
+    --print("[PlayerTakeDmg] Animator set trigger Hurt")
     self._animator:SetTrigger(HurtTrigger)
     self._hurtTriggered = true
 
     self._currentHealth = self._currentHealth - dmg
-    print(string.format("[PlayerTakeDmg] Player took %d damage. Remaining health: %d", dmg, self._currentHealth))
+    --print(string.format("[PlayerTakeDmg] Player took %d damage. Remaining health: %d", dmg, self._currentHealth))
     
     if self._currentHealth <= 0 then
         self._currentHealth = 0
@@ -177,7 +177,7 @@ return Component {
 
         if self._hurtTriggered then
             if event_bus and event_bus.publish then
-                print("[PlayerHealth] playerHurtTriggered published")
+                --print("[PlayerHealth] playerHurtTriggered published")
                 event_bus.publish("playerHurtTriggered", true)
                 self._hurtTriggered = false
             end

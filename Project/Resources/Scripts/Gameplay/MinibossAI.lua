@@ -148,8 +148,6 @@ return Component {
 
         IntroDuration = 5.0,
         AggroRange    = 15.0,  -- distance to trigger intro
-        ClipBattlecry = -1,    -- (optional) set in inspector
-
     },
 
     Awake = function(self)
@@ -596,6 +594,8 @@ return Component {
             newPhase,
             dur
         ))
+
+        self._animator:SetTrigger("Taunt")
     end,
 
     FinishPhaseTransform = function(self)
@@ -730,9 +730,19 @@ return Component {
         if self.dead then return end
         if self._inIntro then return end
         if (self._hitLockTimer or 0) > 0 then return end
+        if self._transforming then return end
 
         self._hitLockTimer = self.HitIFrame or 0.2
         self.health = math.max(0, (self.health or 0) - (dmg or 1))
+
+        local myRandomValue = math.random(1, 3)
+        if myRandomValue == 1 then
+            self._animator:SetTrigger("Hurt1")
+        elseif myRandomValue == 2 then
+            self._animator:SetTrigger("Hurt2")
+        else
+            self._animator:SetTrigger("Hurt3")
+        end
 
         print(string.format("[Miniboss][Hit] dmg=%s hp=%.1f/%.1f", tostring(dmg or 1), self.health, self.MaxHealth))
 
@@ -752,9 +762,9 @@ return Component {
         -- Optional: tiny hit-stun lock
         self:LockActions("HIT_STUN", 0.15)
 
-        if self.ClipHurt and self.ClipHurt >= 0 and self.PlayClip then
-            self:PlayClip(self.ClipHurt, false)
-        end
+        -- if self.ClipHurt and self.ClipHurt >= 0 and self.PlayClip then
+        --     self:PlayClip(self.ClipHurt, false)
+        -- end
     end,
 
     ApplyHook = function(self, duration)
@@ -1161,6 +1171,7 @@ return Component {
             -- fire once at start
             if m.step == 0 then
                 self:FacePlayer()
+                print("[MinibossAI] SPAWNING BASIC")
                 self:SpawnKnifeVolley3(m.spread or 1.0)
                 m.step = 1
                 m.doneAt = m.t + (m.postDelay or 0.35)
@@ -1186,6 +1197,7 @@ return Component {
 
             if m.t >= (m.nextShotT or 0) and (m.shotsDone or 0) < bursts then
                 self:FacePlayer()
+                print("[MinibossAI] SPAWNING BURSTFIRE")
                 self:SpawnKnifeSingleAtPlayer()
                 m.shotsDone = m.shotsDone + 1
                 m.nextShotT = m.t + burstInterval
@@ -1207,6 +1219,7 @@ return Component {
         if m.kind == "AntiDodge" then
             if m.step == 0 then
                 self:FacePlayer()
+                print("[MinibossAI] SPAWNING AntiDodge")
                 self:SpawnKnifeFan4_NoCenter(m.spread1 or 0.9, m.spread2 or 1.8)
                 m.step = 1
                 m.doneAt = m.t + (m.postDelay or 0.45)
@@ -1236,6 +1249,13 @@ return Component {
                     -- Example hooks (only if you have them):
                     -- if self.PlayClip and self.ClipCharge then self:PlayClip(self.ClipCharge, false) end
                     -- if _G.event_bus and _G.event_bus.publish then _G.event_bus.publish("miniboss_charge", { entityId=self.entityId }) end
+                    if _G.event_bus and _G.event_bus.publish then
+                        _G.event_bus.publish("meleeHitPlayerDmg", {
+                            dmg = 2,
+                            src = "Miniboss",
+                            enemyEntityId = self.entityId,
+                        })
+                    end
                 end
 
                 if m.chargeT >= chargeDur then
@@ -1340,6 +1360,7 @@ return Component {
             m.fireAcc = (m.fireAcc or 0) + dtSec
             while m.fireAcc >= fireInterval do
                 m.fireAcc = m.fireAcc - fireInterval
+                print("[MinibossAI] SPAWNING DEATHLOTUS")
                 self:SpawnForwardSpray3(fx, fz, m.range or 12.0, m.spread or 0.7, m.lotusYOffset or 0.0)
             end
 
@@ -1354,36 +1375,33 @@ return Component {
     -- Move implementations (entry points)
     -------------------------------------------------
     BasicAttack = function(self)
-        self._animator:SetBool("Ranged", true)
+        self._animator:SetTrigger("Ranged")
         self:_BeginMove("Basic", {
             spread = 0.6,
             postDelay = 0.35
         })
-        self._animator:SetBool("Ranged", false)
     end,
 
     BurstFire = function(self)
-        self._animator:SetBool("Ranged", true)
+        self._animator:SetTrigger("Ranged")
         self:_BeginMove("BurstFire", {
             bursts = 5,
             interval = 0.18,   -- adjust for difficulty
             postDelay = 0.45
         })
-        self._animator:SetBool("Ranged", false)
     end,
 
     AntiDodge = function(self)
-        self._animator:SetBool("Ranged", true)
+        self._animator:SetTrigger("Ranged")
         self:_BeginMove("AntiDodge", {
             spread1 = 0.25,
             spread2 = 0.35,
             postDelay = 0.45
         })
-        self._animator:SetBool("Ranged", false)
     end,
 
     FateSealed = function(self)
-        self._animator:SetBool("Melee", true)
+        self._animator:SetTrigger("Melee")
         self:_BeginMove("FateSealed", {
             chargeDur = 2.00,
             dashDur = 0.33,
@@ -1394,11 +1412,10 @@ return Component {
             kbStrength = 8.0,
             postDelay = 2.60
         })
-        self._animator:SetBool("Melee", false)
     end,
 
     DeathLotus = function(self)
-        self._animator:SetBool("Ranged", true)
+        self._animator:SetTrigger("Ranged")
         self:_BeginMove("DeathLotus", {
             duration = 2.8,
             spinSpeed = math.pi * 1.8,  -- rad/s
@@ -1407,6 +1424,5 @@ return Component {
             spread = 0.7,
             lotusYOffset = -3.0,
         })
-        self._animator:SetBool("Ranged", false)
     end,
 }

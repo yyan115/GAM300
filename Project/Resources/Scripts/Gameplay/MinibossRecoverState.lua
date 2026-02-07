@@ -3,7 +3,7 @@ local RecoverState = {}
 
 function RecoverState:Enter(ai)
     -- normalize to one timer variable
-    ai._recoverTimer = ai._recoverTimer or ai.RecoverDuration or 0.6
+    ai._recoverTimer = ai.RecoverDuration or 0.6
 end
 
 function RecoverState:Update(ai, dt)
