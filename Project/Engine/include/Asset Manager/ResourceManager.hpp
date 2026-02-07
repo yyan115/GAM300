@@ -18,6 +18,7 @@
 #include "Graphics/ShaderClass.h"
 #include "Graphics/TextRendering/Font.hpp"
 #include "Sound/Audio.hpp"
+#include "Animation/Animation.hpp"
 
 class ResourceManager {
 public:
@@ -68,6 +69,8 @@ public:
 	std::shared_ptr<T> GetResource(std::string assetPath, bool forceLoad = false) {
 		static_assert(!std::is_same_v<T, Font>,
 			"Calling ResourceManager::GetInstance().GetResource() to get a font is forbidden. Use GetFontResource() instead.");
+		static_assert(!std::is_same_v<T, Animation>,
+			"Calling ResourceManager::GetInstance().GetResource() to get an animation is forbidden. Use GetAnimationResource() instead.");
 
 		auto& resourceMap = GetResourceMap<T>();
 #ifndef EDITOR
@@ -128,6 +131,35 @@ public:
 		}
 		else {
 			return LoadFontResource(guid, resourcePath, assetPath, fontSize, forceLoad);
+		}
+	}
+
+	std::shared_ptr<Animation> GetAnimationResource(const std::string& assetPath, const std::map<std::string, BoneInfo>& boneInfoMap, int boneCount, bool forceLoad = false) {
+		auto& resourceMap = GetResourceMap<Animation>();
+		std::filesystem::path filePathObj(assetPath);
+		std::string filePath = filePathObj.generic_string();
+
+		GUID_128 guid{};
+		if (!MetaFilesManager::MetaFileExists(filePath)) {
+			GUID_string guidStr = GUIDUtilities::GenerateGUIDString();
+			guid = GUIDUtilities::ConvertStringToGUID128(guidStr);
+		}
+		else {
+			guid = MetaFilesManager::GetGUID128FromAssetFile(filePath);
+		}
+
+		// Return a shared pointer to the resource.
+		if (!forceLoad) {
+			auto it = resourceMap.find(guid);
+			if (it != resourceMap.end()) {
+				return it->second;
+			}
+			else {
+				return LoadAnimationResource(guid, assetPath, boneInfoMap, boneCount, forceLoad);
+			}
+		}
+		else {
+			return LoadAnimationResource(guid, assetPath, boneInfoMap, boneCount, forceLoad);
 		}
 	}
 
@@ -324,6 +356,30 @@ private:
 				resourceMap[guid] = font;
 				ENGINE_PRINT("[ResourceManager] Reloaded resource for: ", resourcePath, "\n");
 				return font;
+			}
+		}
+		ENGINE_PRINT(EngineLogging::LogLevel::Error, "[ResourceManager] ERROR: Failed to load resource: ", resourcePath, "\n");
+		return nullptr;
+	}
+
+	std::shared_ptr<Animation> LoadAnimationResource(const GUID_128& guid, const std::string& resourcePath, const std::map<std::string, BoneInfo>& boneInfoMap, int boneCount, bool reload = false) {
+		std::shared_ptr<Animation> animation;
+		if (!reload) {
+			animation = std::make_shared<Animation>();
+			if (animation->LoadResource(resourcePath, boneInfoMap, boneCount)) {
+				auto& resourceMap = GetResourceMap<Animation>();
+				resourceMap[guid] = animation;
+				ENGINE_PRINT("[ResourceManager] Loaded resource for: ", resourcePath, "\n");
+				return animation;
+			}
+		}
+		else {
+			animation = GetAnimationResource(resourcePath, boneInfoMap, boneCount);
+			if (animation->ReloadResource(resourcePath, boneInfoMap, boneCount)) {
+				auto& resourceMap = GetResourceMap<Animation>();
+				resourceMap[guid] = animation;
+				ENGINE_PRINT("[ResourceManager] Reloaded resource for: ", resourcePath, "\n");
+				return animation;
 			}
 		}
 		ENGINE_PRINT(EngineLogging::LogLevel::Error, "[ResourceManager] ERROR: Failed to load resource: ", resourcePath, "\n");

@@ -205,27 +205,8 @@ std::string Model::CompileToResource(const std::string& assetPath, bool forAndro
 	}
     // HANDLE ANIMATION FILES
     else if (scene->mNumMeshes == 0 && scene->mNumAnimations > 0) {
-        if (!forAndroid) {
-            return assetPath;
-        }
-        else {
-            std::string assetPathAndroid = assetPath.substr(assetPath.find("Resources"));
-            assetPathAndroid = (AssetManager::GetInstance().GetAndroidResourcesPath() / assetPathAndroid).generic_string();
-            // Ensure parent directories exist
-            std::filesystem::path outputPath = FileUtilities::SanitizePathForAndroid(std::filesystem::path(assetPathAndroid));
-            assetPathAndroid = outputPath.generic_string();
-            std::filesystem::create_directories(outputPath.parent_path());
-
-            try {
-                // Copy the file to the Android assets location
-                std::filesystem::copy_file(assetPath, assetPathAndroid, std::filesystem::copy_options::overwrite_existing);
-            }
-            catch (const std::filesystem::filesystem_error& e) {
-                ENGINE_PRINT(EngineLogging::LogLevel::Error, "[Model] Failed to copy model (animation) file for Android: ", e.what(), "\n");
-                return std::string{};
-            }
-            return assetPathAndroid;
-        }
+        Animation animation{};
+        return animation.CompileToResource(assetPath, forAndroid);
     }
 
 	directory = assetPath.substr(0, assetPath.find_last_of('/'));

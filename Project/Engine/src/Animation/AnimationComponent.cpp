@@ -137,67 +137,68 @@ void AnimationComponent::Update(float dt, Entity entity)
     }
 }
 
-std::unique_ptr<Animation> AnimationComponent::LoadClipFromPath(const std::string& path, const std::map<std::string, BoneInfo>& boneInfoMap, int boneCount)
+std::shared_ptr<Animation> AnimationComponent::LoadClipFromPath(const std::string& path, const std::map<std::string, BoneInfo>& boneInfoMap, int boneCount)
 {
-    if (path.empty()) return nullptr;
+    return ResourceManager::GetInstance().GetAnimationResource(path, boneInfoMap, boneCount);
+    //if (path.empty()) return nullptr;
 
-    IPlatform* platform = WindowManager::GetPlatform();
-    if (!platform) {
-        ENGINE_PRINT(EngineLogging::LogLevel::Error, "[AnimationComponent] ERROR: Platform not available for asset discovery!", "\n");
-        return nullptr;
-    }
+    //IPlatform* platform = WindowManager::GetPlatform();
+    //if (!platform) {
+    //    ENGINE_PRINT(EngineLogging::LogLevel::Error, "[AnimationComponent] ERROR: Platform not available for asset discovery!", "\n");
+    //    return nullptr;
+    //}
 
-    std::vector<uint8_t> buffer = platform->ReadAsset(path);
+    //std::vector<uint8_t> buffer = platform->ReadAsset(path);
 
-    Assimp::Importer importer;
+    //Assimp::Importer importer;
 
-    importer.SetPropertyBool(AI_CONFIG_IMPORT_FBX_PRESERVE_PIVOTS, false);
-    importer.SetPropertyInteger(AI_CONFIG_PP_RVC_FLAGS,
-        aiComponent_NORMALS | aiComponent_TANGENTS_AND_BITANGENTS);
+    //importer.SetPropertyBool(AI_CONFIG_IMPORT_FBX_PRESERVE_PIVOTS, false);
+    //importer.SetPropertyInteger(AI_CONFIG_PP_RVC_FLAGS,
+    //    aiComponent_NORMALS | aiComponent_TANGENTS_AND_BITANGENTS);
 
-    unsigned int postProcessFlags = aiProcess_Triangulate | aiProcess_FlipUVs;
+    //unsigned int postProcessFlags = aiProcess_Triangulate | aiProcess_FlipUVs;
 
-    const aiScene* scene = importer.ReadFileFromMemory(buffer.data(), buffer.size(), postProcessFlags, "fbx");
+    //const aiScene* scene = importer.ReadFileFromMemory(buffer.data(), buffer.size(), postProcessFlags, "fbx");
 
-    if (!scene) {
-        ENGINE_PRINT("[Anim] Buffer size: ", buffer.size());
-        ENGINE_PRINT("[Anim] ReadFile failed: ", importer.GetErrorString(), " path=", path, "\n");
-        return nullptr;
-    }
+    //if (!scene) {
+    //    ENGINE_PRINT("[Anim] Buffer size: ", buffer.size());
+    //    ENGINE_PRINT("[Anim] ReadFile failed: ", importer.GetErrorString(), " path=", path, "\n");
+    //    return nullptr;
+    //}
 
-    if (!scene->mRootNode) {
-        ENGINE_PRINT("[Anim] No root node\n");
-        return nullptr;
-    }
-    if (scene->mNumAnimations == 0) {
-        ENGINE_PRINT("[Anim] File has NO animations: ", path, "\n");
-        return nullptr;
-    }
+    //if (!scene->mRootNode) {
+    //    ENGINE_PRINT("[Anim] No root node\n");
+    //    return nullptr;
+    //}
+    //if (scene->mNumAnimations == 0) {
+    //    ENGINE_PRINT("[Anim] File has NO animations: ", path, "\n");
+    //    return nullptr;
+    //}
 
-    float scaleFactor = Model::CalculateAutoScale(scene);
+    //float scaleFactor = Model::CalculateAutoScale(scene);
 
-    // 3. MANUAL FIX: Iterate and multiply translation keys
-    if (std::abs(scaleFactor - 1.0f) > 0.001f)
-    {
-        ENGINE_LOG_INFO("[AnimationComponent] Auto-scaling animation by " + std::to_string(scaleFactor));
+    //// 3. MANUAL FIX: Iterate and multiply translation keys
+    //if (std::abs(scaleFactor - 1.0f) > 0.001f)
+    //{
+    //    ENGINE_LOG_INFO("[AnimationComponent] Auto-scaling animation by " + std::to_string(scaleFactor));
 
-        // Free the current scene
-        importer.FreeScene();
+    //    // Free the current scene
+    //    importer.FreeScene();
 
-        // Re-import with GlobalScale
-        importer.SetPropertyFloat(AI_CONFIG_GLOBAL_SCALE_FACTOR_KEY, scaleFactor);
-        postProcessFlags |= aiProcess_GlobalScale;
+    //    // Re-import with GlobalScale
+    //    importer.SetPropertyFloat(AI_CONFIG_GLOBAL_SCALE_FACTOR_KEY, scaleFactor);
+    //    postProcessFlags |= aiProcess_GlobalScale;
 
-        scene = importer.ReadFileFromMemory(buffer.data(), buffer.size(), postProcessFlags, "fbx");
+    //    scene = importer.ReadFileFromMemory(buffer.data(), buffer.size(), postProcessFlags, "fbx");
 
-        if (!scene || !scene->mRootNode || scene->mNumAnimations == 0) {
-            ENGINE_PRINT(EngineLogging::LogLevel::Error, "[AnimationComponent] Re-import with scaling failed\n");
-            return nullptr;
-        }
-    }
+    //    if (!scene || !scene->mRootNode || scene->mNumAnimations == 0) {
+    //        ENGINE_PRINT(EngineLogging::LogLevel::Error, "[AnimationComponent] Re-import with scaling failed\n");
+    //        return nullptr;
+    //    }
+    //}
 
-    aiAnimation* aiAnim = scene->mAnimations[0];
-    return std::make_unique<Animation>(aiAnim, scene->mRootNode, boneInfoMap, boneCount);
+    //aiAnimation* aiAnim = scene->mAnimations[0];
+    //return std::make_unique<Animation>(aiAnim, scene->mRootNode, boneInfoMap, boneCount);
 }
 
 void AnimationComponent::AddClipFromFile(const std::string& path, const std::map<std::string, BoneInfo>& boneInfoMap, int boneCount, Entity entity)
@@ -279,7 +280,7 @@ const Animation& AnimationComponent::GetClip(size_t i) const {
     }
     return *clips[i];
 }
-const std::vector<std::unique_ptr<Animation>>& AnimationComponent::GetClips() const { return clips; }
+const std::vector<std::shared_ptr<Animation>>& AnimationComponent::GetClips() const { return clips; }
 size_t AnimationComponent::GetActiveClipIndex() const
 {
     if (clips.empty())

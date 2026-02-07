@@ -4,6 +4,7 @@
 #include <pch.h>
 #include <assimp/scene.h>
 #include "Graphics/Model/BoneInfo.hpp"
+#include "Asset Manager/Asset.hpp"
 
 struct AssimpNodeData
 {
@@ -13,7 +14,7 @@ struct AssimpNodeData
     std::vector<AssimpNodeData> children{};
 };
 
-class Animation
+class Animation : public IAsset
 {
 private:
     float mDuration{};
@@ -30,6 +31,11 @@ public:
     Animation(aiAnimation* animation, const aiNode* rootNode, std::map<std::string, BoneInfo> boneInfoMap, int boneCount);
 
 	~Animation() = default;
+
+    std::string CompileToResource(const std::string& assetPath, bool forAndroid = false) override;
+    bool LoadResource(const std::string& resourcePath, const std::map<std::string, BoneInfo>& boneInfoMap, int boneCount);
+    bool ReloadResource(const std::string& resourcePath, const std::map<std::string, BoneInfo>& boneInfoMap, int boneCount);
+    std::shared_ptr<AssetMeta> ExtendMetaFile(const std::string& assetPath, std::shared_ptr<AssetMeta> currentMetaData, bool forAndroid = false) override;
 
     Bone* FindBone(const std::string& name);
     inline float GetTicksPerSecond() const { return (float)mTicksPerSecond; }
