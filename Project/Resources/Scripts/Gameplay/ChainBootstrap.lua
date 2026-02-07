@@ -8,16 +8,14 @@ return Component {
         NumberOfLinks = 200,
         LinkName = "Link",
         ChainSpeed = 10.0,
-        MaxLength = 0.0,
-        TriggerKey = "G",
+        MaxLength = 10.0,
         PlayerName = "Kusane_Player_LeftHandMiddle1",
-        SimulatedHitDistance = 0.0,
         EnableLogs = false,
         AutoStart = false,
-        VerletGravity = 9.81,
+        VerletGravity = 0.5,
         VerletDamping = 0.02,
-        ConstraintIterations = 2,
-        IsElastic = true,
+        ConstraintIterations = 20,
+        IsElastic = false,
         LinkMaxDistance = 0.025,
         PinEndWhenExtended = true,
         AnchorAngleThresholdDeg = 45
@@ -199,16 +197,6 @@ return Component {
                 self.controller.prev[i][1], self.controller.prev[i][2], self.controller.prev[i][3] = x, y, z
             end
         end
-
-        -- determine start position (cache player transform if present)
-        self.playerTransform = Engine.FindTransformByName(self.PlayerName)
-        if self.playerTransform then
-            local sx, sy, sz = self:_read_world_pos(self.playerTransform)
-            self.controller:SetStartPos(sx, sy, sz)
-        else
-            local sx, sy, sz = self:_unpack_pos(self:GetPosition())
-            self.controller:SetStartPos(sx, sy, sz)
-        end
         
         -- Initialize camera forward with fallback
         self._cameraForward = {0, 0, 1}
@@ -247,6 +235,16 @@ return Component {
 
     Update = function(self, dt)
         if not self.controller then return end
+        
+        -- determine start position (cache player transform if present)
+        self.playerTransform = Engine.FindTransformByName(self.PlayerName)
+        if self.playerTransform then
+            local sx, sy, sz = self:_read_world_pos(self.playerTransform)
+            self.controller:SetStartPos(sx, sy, sz)
+        else
+            print("Cannot find the bloody player, WHY. YOU NAMED WRONG IS IT OR ENGINE FAILING AGAIN.")
+        end
+
         
         -- quick debug dump (temporary)
         local function dump_state(ctrl)

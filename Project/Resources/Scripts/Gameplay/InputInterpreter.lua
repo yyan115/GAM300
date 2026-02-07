@@ -210,6 +210,30 @@ return Component {
         end
 
         -- ===============================
+        -- PUBLISH CHAIN EVENTS TO EVENT BUSS
+        -- ===============================
+        if _G.event_bus and _G.event_bus.publish then
+            if chainJustPressed then
+                _G.event_bus.publish("chain.down", {})
+            end
+            
+            if chainJustReleased then
+                _G.event_bus.publish("chain.up", {})
+            end
+            
+            -- Publish hold event if held past threshold
+            if self._holdTimers.chain >= self.HOLD_THRESHOLD and chainPressed then
+                -- Only publish once when threshold is crossed, not every frame
+                if not self._chainHoldPublished then
+                    _G.event_bus.publish("chain.hold", {})
+                    self._chainHoldPublished = true
+                end
+            else
+                self._chainHoldPublished = false
+            end
+        end
+
+        -- ===============================
         -- CLEANUP OLD HISTORY
         -- ===============================
         self:_cleanHistory(self._inputHistory.attack)

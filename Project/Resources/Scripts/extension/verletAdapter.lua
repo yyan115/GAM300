@@ -23,7 +23,32 @@ function M.Step(state, dt, params)
     local prev = state.prev
     local invMass = state.invMass
 
-    -- integrate dynamic particles (respect invMass array provided by controller; do not mutate it)
+    -- Determine if we need bidirectional constraint solving (both endpoints pinned)
+    local needsBidirectional = params and (not params.IsElastic) and params.pinnedLast and type(params.endPos) == "table"
+    
+    -- Calculate distance between start and end points
+    local startToEndDist = 0
+    if needsBidirectional and params.startPos and params.endPos then
+        local dx = params.endPos[1] - params.startPos[1]
+        local dy = params.endPos[2] - params.startPos[2]
+        local dz = params.endPos[3] - params.startPos[3]
+        startToEndDist = math.sqrt(dx*dx + dy*dy + dz*dz)
+    end
+    
+    -- Calculate total chain length
+    local totalChainLength = params.segmentLen and ((n - 1) * params.segmentLen) or 0
+    
+    -- Chain is only taut (no gravity) if distance >= chain length
+    -- If distance < chain length, there's slack and gravity should apply
+    local isTaut = needsBidirectional and (startToEndDist >= totalChainLength - EPS)
+    local applyGravity = not isTaut
+    
+    -- When chain just became taut, kill all velocity to prevent oscillation
+    if isTaut then
+        damping = 0.98  -- Very high damping when taut
+    end
+
+    -- integrate dynamic particles
     for i = 1, n do
         local inv = (invMass[i] ~= nil) and invMass[i] or 1
         if inv > 0 then
@@ -32,7 +57,13 @@ function M.Step(state, dt, params)
             local vx = (px - ppx) * (1 - damping)
             local vy = (py - ppy) * (1 - damping)
             local vz = (pz - ppz) * (1 - damping)
-            local ax,ay,az = 0, -gmag, 0
+            
+            -- Apply gravity only when chain has slack
+            local ax, ay, az = 0, 0, 0
+            if applyGravity then
+                ax, ay, az = 0, -gmag, 0
+            end
+            
             local nx = px + vx + ax * dt2
             local ny = py + vy + ay * dt2
             local nz = pz + vz + az * dt2
@@ -61,43 +92,115 @@ function M.Step(state, dt, params)
     local segLen = (params and params.segmentLen) or ( (n>1) and (math.max((params and params.totalLen) or 0.000001, EPS) / (n-1)) or 0 )
     if params and params.ClampSegment then segLen = math.min(segLen, params.ClampSegment) end
 
-    local iterations = math.max(1, math.min(8, tonumber((params and params.ConstraintIterations) or 2)))
+    -- Use MORE iterations when chain is taut to maintain straightness
+    local baseIterations = tonumber((params and params.ConstraintIterations) or 2)
+    local iterations = isTaut and math.min(40, baseIterations * 2) or math.min(20, baseIterations)
 
     for it = 1, iterations do
-        for i = 2, n do
-            local a = positions[i-1]
-            local b = positions[i]
-            local ax,ay,az = a[1], a[2], a[3]
-            local bx,by,bz = b[1], b[2], b[3]
-            local dx,dy,dz = bx - ax, by - ay, bz - az
-            local dist = vec_len(dx,dy,dz)
-            if dist < EPS then dist = EPS end
-            local target = segLen
-            -- respect a strict per-link clamp if provided (controller decided IsElastic / LinkMaxDistance)
-            if params and params.LinkMaxDistance and (not params.IsElastic) then
-                if target > params.LinkMaxDistance then target = params.LinkMaxDistance end
-            end
-            local diff = (dist - target) / dist
-            local invA = invMass[i-1] or 0
-            local invB = invMass[i] or 0
-            local w = invA + invB
-            if w > EPS then
-                local fa = (invA / w) * diff
-                local fb = (invB / w) * diff
-                if invA > 0 then
-                    a[1] = ax + dx * fa
-                    a[2] = ay + dy * fa
-                    a[3] = az + dz * fa
+        if needsBidirectional then
+            -- BIDIRECTIONAL PASS
+            
+            -- Forward pass (start to end)
+            for i = 2, n do
+                local a = positions[i-1]
+                local b = positions[i]
+                local ax,ay,az = a[1], a[2], a[3]
+                local bx,by,bz = b[1], b[2], b[3]
+                local dx,dy,dz = bx - ax, by - ay, bz - az
+                local dist = vec_len(dx,dy,dz)
+                if dist < EPS then dist = EPS end
+                local target = segLen
+                if params and params.LinkMaxDistance and (not params.IsElastic) then
+                    if target > params.LinkMaxDistance then target = params.LinkMaxDistance end
                 end
-                if invB > 0 then
-                    b[1] = bx - dx * fb
-                    b[2] = by - dy * fb
-                    b[3] = bz - dz * fb
+                local diff = (dist - target) / dist
+                local invA = invMass[i-1] or 0
+                local invB = invMass[i] or 0
+                local w = invA + invB
+                if w > EPS then
+                    local fa = (invA / w) * diff
+                    local fb = (invB / w) * diff
+                    if invA > 0 then
+                        a[1] = ax + dx * fa
+                        a[2] = ay + dy * fa
+                        a[3] = az + dz * fa
+                    end
+                    if invB > 0 then
+                        b[1] = bx - dx * fb
+                        b[2] = by - dy * fb
+                        b[3] = bz - dz * fb
+                    end
+                end
+            end
+            
+            -- Backward pass (end to start)
+            for i = n, 2, -1 do
+                local a = positions[i-1]
+                local b = positions[i]
+                local ax,ay,az = a[1], a[2], a[3]
+                local bx,by,bz = b[1], b[2], b[3]
+                local dx,dy,dz = bx - ax, by - ay, bz - az
+                local dist = vec_len(dx,dy,dz)
+                if dist < EPS then dist = EPS end
+                local target = segLen
+                if params and params.LinkMaxDistance and (not params.IsElastic) then
+                    if target > params.LinkMaxDistance then target = params.LinkMaxDistance end
+                end
+                local diff = (dist - target) / dist
+                local invA = invMass[i-1] or 0
+                local invB = invMass[i] or 0
+                local w = invA + invB
+                if w > EPS then
+                    local fa = (invA / w) * diff
+                    local fb = (invB / w) * diff
+                    if invA > 0 then
+                        a[1] = ax + dx * fa
+                        a[2] = ay + dy * fa
+                        a[3] = az + dz * fa
+                    end
+                    if invB > 0 then
+                        b[1] = bx - dx * fb
+                        b[2] = by - dy * fb
+                        b[3] = bz - dz * fb
+                    end
+                end
+            end
+        else
+            -- SINGLE FORWARD PASS
+            for i = 2, n do
+                local a = positions[i-1]
+                local b = positions[i]
+                local ax,ay,az = a[1], a[2], a[3]
+                local bx,by,bz = b[1], b[2], b[3]
+                local dx,dy,dz = bx - ax, by - ay, bz - az
+                local dist = vec_len(dx,dy,dz)
+                if dist < EPS then dist = EPS end
+                local target = segLen
+                if params and params.LinkMaxDistance and (not params.IsElastic) then
+                    if target > params.LinkMaxDistance then target = params.LinkMaxDistance end
+                end
+                local diff = (dist - target) / dist
+                local invA = invMass[i-1] or 0
+                local invB = invMass[i] or 0
+                local w = invA + invB
+                if w > EPS then
+                    local fa = (invA / w) * diff
+                    local fb = (invB / w) * diff
+                    if invA > 0 then
+                        a[1] = ax + dx * fa
+                        a[2] = ay + dy * fa
+                        a[3] = az + dz * fa
+                    end
+                    if invB > 0 then
+                        b[1] = bx - dx * fb
+                        b[2] = by - dy * fb
+                        b[3] = bz - dz * fb
+                    end
                 end
             end
         end
 
-        -- re-apply pinned anchors each iteration (positions/prev only)
+        -- re-apply pinned anchors each iteration
         if params and type(params.startPos) == "table" then
             positions[1][1], positions[1][2], positions[1][3] =
                 params.startPos[1], params.startPos[2], params.startPos[3]
@@ -113,7 +216,7 @@ function M.Step(state, dt, params)
         end
     end
 
-    -- final strict inelastic pass if controller requested per-link clamp (positions only)
+    -- final strict inelastic pass
     if params and (not params.IsElastic) and params.LinkMaxDistance and params.LinkMaxDistance > 0 then
         local maxd = params.LinkMaxDistance
         if (params.pinnedLast and params.endPos) then
