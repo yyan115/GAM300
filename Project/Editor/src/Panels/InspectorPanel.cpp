@@ -543,11 +543,9 @@ void InspectorPanel::OnImGuiRender() {
 					// ===================================================================
 					DrawComponentsViaReflection(displayEntity);
 
-					if (!PrefabEditor::IsInPrefabEditorMode()) {
-						// Add Component button
-						ImGui::Separator();
-						DrawAddComponentButton(displayEntity);
-					}
+					// Add Component button
+					ImGui::Separator();
+					DrawAddComponentButton(displayEntity);
 
 				}
 				catch (const std::exception& e) {
