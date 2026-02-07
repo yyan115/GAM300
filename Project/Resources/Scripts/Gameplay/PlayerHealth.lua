@@ -90,6 +90,12 @@ return Component {
             -- simple XZ circle hit
             if (dx*dx + dz*dz) <= (r*r) then
                 PlayerTakeDmg(self, payload.dmg or 1)
+
+                -- Publish hit confirmation for MiniBoss to play hit SFX
+                if event_bus and event_bus.publish then
+                    event_bus.publish("miniboss_melee_hit_confirmed", { entityId = payload.entityId })
+                end
+
                 if event_bus and event_bus.publish then
                     local strength = payload.kbStrength or 0
                     if strength > 0 then

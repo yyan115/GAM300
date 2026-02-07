@@ -30,6 +30,7 @@ return Component {
         for i, entityId in ipairs(self._checkpointEntities) do
             --print("[PlayerCheckpointManager] Checking entity", entityId)
             local transform = GetComponent(entityId, "Transform")
+            local audio = GetComponent(entityId, "AudioComponent")
             local pos = transform.worldPosition
 
             local kx = pos.x
@@ -51,6 +52,10 @@ return Component {
                 self._lightEnt = checkpointChildren[2]
                 local lightComp = GetComponent(self._lightEnt, "SpotLightComponent")
                 lightComp.enabled = true
+
+                if audio then
+                    audio:Play()
+                end
 
                 if event_bus and event_bus.publish then
                     event_bus.publish("activatedCheckpoint", respawnPointEnt)

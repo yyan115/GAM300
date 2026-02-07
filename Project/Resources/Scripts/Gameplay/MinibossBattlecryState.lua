@@ -10,6 +10,16 @@ function BattlecryState:Enter(ai)
     ai:FacePlayer()
     ai._animator:SetTrigger("Taunt")
 
+    -- Play taunt SFX (force full volume: temporarily disable 3D rolloff
+    -- so the dramatic battlecry is always clearly audible at aggro range)
+    local count = ai.enemyTauntSFX and #ai.enemyTauntSFX or 0
+    if count > 0 and ai._audio then
+        local savedBlend = ai._audio.SpatialBlend
+        ai._audio.SpatialBlend = 0          -- play as 2D (bypasses distance rolloff)
+        ai._audio:PlayOneShot(ai.enemyTauntSFX[math.random(1, count)])
+        ai._audio.SpatialBlend = savedBlend  -- restore 3D for combat SFX
+    end
+
     print("[Miniboss] Intro START (battlecry)")
 end
 
