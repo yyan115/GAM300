@@ -41,25 +41,31 @@ return Component {
             local r = self.CheckpointRadius
             --print("CheckpointRadius:", self.CheckpointRadius)
             if (dx*dx + dy*dy + dz*dz) <= (r*r) then
-                self._activatedCheckpoint = entityId
-                local checkpointChildren = Engine.GetChildrenEntities(self._activatedCheckpoint)
+                -- Only activate if this checkpoint isn't already active
+                if self._activatedCheckpoint ~= entityId then
+                    self._activatedCheckpoint = entityId
+                    local checkpointChildren = Engine.GetChildrenEntities(self._activatedCheckpoint)
 
-                local respawnPointEnt = checkpointChildren[3]
-                local respawnPointTr = GetComponent(respawnPointEnt, "Transform")
-                local respawnPos = Engine.GetTransformWorldPosition(respawnPointTr)
-                self._respawnPos = respawnPos
+                    local respawnPointEnt = checkpointChildren[3]
+                    local respawnPointTr = GetComponent(respawnPointEnt, "Transform")
+                    local respawnPos = Engine.GetTransformWorldPosition(respawnPointTr)
+                    self._respawnPos = respawnPos
 
-                self._lightEnt = checkpointChildren[2]
-                local lightComp = GetComponent(self._lightEnt, "SpotLightComponent")
-                lightComp.enabled = true
+                    self._lightEnt = checkpointChildren[2]
+                    local lightComp = GetComponent(self._lightEnt, "SpotLightComponent")
+                    lightComp.enabled = true
 
-                if audio then
-                    audio:Play()
+                    -- play audio only once when newly activated
+                    if audio then
+                        audio:Play()
+                    end
+
+                    if event_bus and event_bus.publish then
+                        event_bus.publish("activatedCheckpoint", respawnPointEnt)
+                    end
                 end
 
-                if event_bus and event_bus.publish then
-                    event_bus.publish("activatedCheckpoint", respawnPointEnt)
-                end
+                -- If it's already the active checkpoint, do nothing
             else
                 local checkpointChildren = Engine.GetChildrenEntities(entityId)
                 local lightEnt = checkpointChildren[2]

@@ -72,6 +72,7 @@ return Component {
         self.collider = self:GetComponent("ColliderComponent")
         self.rb       = self:GetComponent("RigidBodyComponent")
         self.light    = self:GetComponent("PointLightComponent")
+        self._audio   = self:GetComponent("AudioComponent")
 
         self.active = false
         self.reserved = false
@@ -192,7 +193,7 @@ return Component {
         -- end
     end,
 
-    Launch = function(self, spawnX, spawnY, spawnZ, targetX, targetY, targetZ, token, slot)
+    Launch = function(self, spawnX, spawnY, spawnZ, targetX, targetY, targetZ, token, slot, sfxGuid)
         -- already flying -> can't relaunch
         if self.active then
             -- debug
@@ -262,6 +263,11 @@ return Component {
         end
 
         if self.collider then self.collider.enabled = false end
+
+        -- Play ranged attack SFX from knife position (3D audio)
+        if sfxGuid and self._audio then
+            self._audio:PlayOneShot(sfxGuid)
+        end
 
         return true
     end,

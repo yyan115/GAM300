@@ -972,7 +972,13 @@ return Component {
             print("[Miniboss][Knife] Launch FAILED: knife=nil")
             return false
         end
-        local ok = knife:Launch(sx, sy, sz, tx, ty, tz, token, tag)
+        -- Pick a random ranged attack SFX for the knife to play from its position
+        local sfxClip = nil
+        local clips = self.enemyRangedAttackSFX
+        if clips and #clips > 0 then
+            sfxClip = clips[math.random(1, #clips)]
+        end
+        local ok = knife:Launch(sx, sy, sz, tx, ty, tz, token, tag, sfxClip)
         if not ok then
             print(string.format("[Miniboss][Knife] Launch FAILED tag=%s token=%s", tostring(tag), tostring(token)))
         end
@@ -1420,7 +1426,6 @@ return Component {
     -------------------------------------------------
     BasicAttack = function(self)
         self._animator:SetTrigger("Ranged")
-        playRandomSFX(self._audio, self.enemyRangedAttackSFX)
         self:_BeginMove("Basic", {
             spread = 0.6,
             postDelay = 0.35
@@ -1429,7 +1434,6 @@ return Component {
 
     BurstFire = function(self)
         self._animator:SetTrigger("Ranged")
-        playRandomSFX(self._audio, self.enemyRangedAttackSFX)
         self:_BeginMove("BurstFire", {
             bursts = 5,
             interval = 0.18,   -- adjust for difficulty
@@ -1439,7 +1443,6 @@ return Component {
 
     AntiDodge = function(self)
         self._animator:SetTrigger("Ranged")
-        playRandomSFX(self._audio, self.enemyRangedAttackSFX)
         self:_BeginMove("AntiDodge", {
             spread1 = 0.25,
             spread2 = 0.35,
@@ -1464,7 +1467,6 @@ return Component {
 
     DeathLotus = function(self)
         self._animator:SetTrigger("Ranged")
-        playRandomSFX(self._audio, self.enemyRangedAttackSFX)
         self:_BeginMove("DeathLotus", {
             duration = 2.8,
             spinSpeed = math.pi * 1.8,  -- rad/s

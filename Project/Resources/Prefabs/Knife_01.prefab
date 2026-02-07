@@ -2,7 +2,7 @@
     "prefab_entities": [
         {
             "id": 0,
-            "guid": "000a1a705b98adb5-0004259884010415",
+            "guid": "00300e0f764060bf-000425a824004fa9",
             "components": {
                 "PrefabLinkComponent": {
                     "type": "PrefabLinkComponent",
@@ -176,8 +176,8 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "000a1a700a9b6b7a-0004259884010417",
-                                "000a1a7066761c40-0004259884010419"
+                                "00300e0f4e7473d4-000425a824004fab",
+                                "00300e0f6d1de0b1-000425a824004fad"
                             ]
                         }
                     ]
@@ -240,11 +240,11 @@
                         },
                         {
                             "type": "float",
-                            "data": 5
+                            "data": 8
                         },
                         {
                             "type": "float",
-                            "data": 10
+                            "data": 15
                         },
                         {
                             "type": "std::string",
@@ -346,19 +346,19 @@
                             "entryFunction": "OnInit",
                             "autoInvokeEntry": true,
                             "instanceState": {
-                                "__meta": {},
                                 "Lifetime": 1.2,
-                                "Damage": 1.0,
-                                "_private": {},
-                                "__created_at": 1769419004.0,
                                 "Speed": 5.0,
                                 "_subscriptions": {},
                                 "_transform_fetched": false,
+                                "_private": {},
+                                "Damage": 1.0,
                                 "__field_list": {
-                                    "Damage": 1.0,
+                                    "Lifetime": 1.2,
                                     "Speed": 10.0,
-                                    "Lifetime": 1.2
-                                }
+                                    "Damage": 1.0
+                                },
+                                "__meta": {},
+                                "__created_at": 1769419004.0
                             }
                         }
                     ]
@@ -367,7 +367,7 @@
         },
         {
             "id": 1,
-            "guid": "000a1a700a9b6b7a-0004259884010417",
+            "guid": "00300e0f4e7473d4-000425a824004fab",
             "components": {
                 "NameComponent": {
                     "name": "goose_handle"
@@ -444,7 +444,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "000a1a705b98adb5-0004259884010415"
+                        "00300e0f764060bf-000425a824004fa9"
                     ]
                 },
                 "ActiveComponent": {
@@ -460,7 +460,7 @@
         },
         {
             "id": 2,
-            "guid": "000a1a7066761c40-0004259884010419",
+            "guid": "00300e0f6d1de0b1-000425a824004fad",
             "components": {
                 "NameComponent": {
                     "name": "feather_blade"
@@ -537,7 +537,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "000a1a705b98adb5-0004259884010415"
+                        "00300e0f764060bf-000425a824004fa9"
                     ]
                 },
                 "ActiveComponent": {
