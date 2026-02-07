@@ -161,9 +161,18 @@ namespace EngineLogging {
     
 }
 
-// Convenience macros for Engine logging  //SHOULDNT BE NEEDED ANYMORE, ALL CHANGE TO 
+#ifdef ENGINE_LOGGING_DISABLED
 
+// All logging compiles to nothing
+#define ENGINE_LOG_TRACE(msg)    ((void)0)
+#define ENGINE_LOG_DEBUG(msg)    ((void)0)
+#define ENGINE_LOG_INFO(msg)     ((void)0)
+#define ENGINE_LOG_WARN(msg)     ((void)0)
+#define ENGINE_LOG_ERROR(msg)    ((void)0)
+#define ENGINE_LOG_CRITICAL(msg) ((void)0)
+#define ENGINE_PRINT(...)        ((void)0)
 
+#else // ENGINE_LOGGING_DISABLED not defined - logging enabled
 #define ENGINE_LOG_TRACE(msg)    EngineLogging::LogTrace(msg)
 #define ENGINE_LOG_DEBUG(msg)    EngineLogging::LogDebug(msg)
 #define ENGINE_LOG_INFO(msg)     EngineLogging::LogInfo(msg)
@@ -193,3 +202,5 @@ namespace EngineLogging {
  * PrintOutput("Something went wrong!", LogLevel::Error, true);
  */
 #define ENGINE_PRINT(...) EngineLogging::PrintEditorVariadic(__VA_ARGS__)
+
+#endif // ENGINE_LOGGING_DISABLED
