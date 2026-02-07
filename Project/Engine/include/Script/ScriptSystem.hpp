@@ -55,6 +55,8 @@ private:
     void NotifyInstancesChanged(Entity e);
 
     bool EnsureInstanceForEntity(Entity e, ECSManager& ecsManager);
+    // Creates instances without calling Awake/Start - used for phased initialization
+    bool EnsureInstanceForEntityNoLifecycle(Entity e, ECSManager& ecsManager);
     void DestroyInstanceForEntity(Entity e);
     ScriptComponentData* GetScriptComponent(Entity e, ECSManager& ecsManager);
     const ScriptComponentData* GetScriptComponentConst(Entity e, const ECSManager& ecsManager) const;

@@ -739,7 +739,87 @@ void ScriptSystem::Update()
     // Use scaled delta time so coroutines respect pause state
     if (Scripting::GetLuaState()) Scripting::Tick(static_cast<float>(TimeManager::GetDeltaTime()));
 
-    // iterate over entities matched to this system (System::entities)
+    // ==========================================================================
+    // FIX: Create ALL script instances first before calling any Awake/Start.
+    // This ensures that when any script's Start() calls Engine.GetEntityByName()
+    // and tries to interact with another entity's script, that script exists.
+    // Previously, instances were created in EntityID order during the Update loop,
+    // so scripts with lower IDs couldn't find scripts with higher IDs during Start().
+    // ==========================================================================
+
+    // Phase 1: Create instances for all entities (no Awake/Start yet)
+    std::vector<Entity> newlyCreatedEntities;
+    for (Entity e : entities)
+    {
+        if (!m_ecs->IsEntityActiveInHierarchy(e)) {
+            continue;
+        }
+
+        ScriptComponentData* comp = GetScriptComponent(e, *m_ecs);
+        if (!comp) continue;
+
+        // Check if this entity needs new instances created
+        bool needsCreation = false;
+        {
+            std::lock_guard<std::mutex> lk(m_mutex);
+            auto it = m_runtimeMap.find(e);
+            if (it == m_runtimeMap.end()) {
+                needsCreation = true;
+            } else {
+                // Check if all scripts have instances
+                for (size_t i = 0; i < comp->scripts.size(); ++i) {
+                    if (comp->scripts[i].enabled && !comp->scripts[i].scriptPath.empty()) {
+                        if (i >= it->second.size() || !it->second[i]) {
+                            needsCreation = true;
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+
+        if (needsCreation) {
+            if (EnsureInstanceForEntityNoLifecycle(e, *m_ecs)) {
+                newlyCreatedEntities.push_back(e);
+            }
+        }
+    }
+
+    // Phase 2: Call Awake on all newly created instances
+    for (Entity e : newlyCreatedEntities)
+    {
+        std::lock_guard<std::mutex> lk(m_mutex);
+        auto it = m_runtimeMap.find(e);
+        if (it != m_runtimeMap.end())
+        {
+            for (auto& scriptInst : it->second)
+            {
+                if (scriptInst)
+                {
+                    scriptInst->Awake();
+                }
+            }
+        }
+    }
+
+    // Phase 3: Call Start on all newly created instances
+    for (Entity e : newlyCreatedEntities)
+    {
+        std::lock_guard<std::mutex> lk(m_mutex);
+        auto it = m_runtimeMap.find(e);
+        if (it != m_runtimeMap.end())
+        {
+            for (auto& scriptInst : it->second)
+            {
+                if (scriptInst)
+                {
+                    scriptInst->Start();
+                }
+            }
+        }
+    }
+
+    // Phase 4: Update all entities
     for (Entity e : entities)
     {
         // Skip entities that are inactive in hierarchy (checks parents too)
@@ -749,8 +829,6 @@ void ScriptSystem::Update()
 
         ScriptComponentData* comp = GetScriptComponent(e, *m_ecs);
         if (!comp) continue;
-
-        if (!EnsureInstanceForEntity(e, *m_ecs)) continue;
 
         // call Update(dt) on all script instances for this entity
         // Use scaled delta time so scripts receive dt=0 when paused
@@ -971,6 +1049,129 @@ bool ScriptSystem::EnsureInstanceForEntity(Entity e, ECSManager& ecsManager)
     return true;
 }
 
+// Creates script instances WITHOUT calling Awake/Start.
+// Used by the phased Update() to ensure all instances exist before any lifecycle callbacks.
+bool ScriptSystem::EnsureInstanceForEntityNoLifecycle(Entity e, ECSManager& ecsManager)
+{
+    ScriptComponentData* comp = GetScriptComponent(e, ecsManager);
+    if (!comp) return false;
+
+    // Must ensure Lua runtime available
+    if (!Scripting::GetLuaState())
+    {
+        ENGINE_PRINT(EngineLogging::LogLevel::Warn, "[ScriptSystem] runtime missing; cannot create scripts for entity ", e, "\n");
+        return false;
+    }
+
+    // Ensure we have a vector for this entity in the runtime map
+    {
+        std::lock_guard<std::mutex> lk(m_mutex);
+        if (m_runtimeMap.find(e) == m_runtimeMap.end())
+        {
+            m_runtimeMap[e] = std::vector<std::unique_ptr<Scripting::ScriptComponent>>();
+        }
+    }
+
+    bool anyCreated = false;
+
+    // Process each script in the component
+    for (size_t scriptIdx = 0; scriptIdx < comp->scripts.size(); ++scriptIdx)
+    {
+        ScriptData& script = comp->scripts[scriptIdx];
+
+        if (!script.enabled || script.scriptPath.empty()) continue;
+
+        // Check if runtime instance already exists for this script
+        bool alreadyExists = false;
+        {
+            std::lock_guard<std::mutex> lk(m_mutex);
+            auto& scriptVec = m_runtimeMap[e];
+            if (scriptIdx < scriptVec.size() && scriptVec[scriptIdx])
+            {
+                script.instanceId = scriptVec[scriptIdx]->GetInstanceRef();
+                script.instanceCreated = true;
+                alreadyExists = true;
+            }
+        }
+
+        if (alreadyExists) continue;
+
+        // Create new runtime instance
+        auto runtimeComp = std::make_unique<Scripting::ScriptComponent>();
+
+        if (!runtimeComp->AttachScript(script.scriptPath))
+        {
+            ENGINE_PRINT(EngineLogging::LogLevel::Error, "[ScriptSystem] AttachScript failed for ", script.scriptPath.c_str(), " entity=", e, "\n");
+            continue;
+        }
+
+        // Register preserve keys
+        if (!script.preserveKeys.empty())
+        {
+            Scripting::RegisterInstancePreserveKeys(runtimeComp->GetInstanceRef(), script.preserveKeys);
+        }
+
+        // Bind to entity
+        bool bound = false;
+        try {
+            bound = Scripting::BindInstanceToEntity(runtimeComp->GetInstanceRef(), static_cast<uint32_t>(e));
+        } catch (...) { bound = false; }
+
+        if (!bound)
+        {
+            lua_State* L = Scripting::GetLuaState();
+            if (L)
+            {
+                lua_rawgeti(L, LUA_REGISTRYINDEX, runtimeComp->GetInstanceRef());
+                if (lua_istable(L, -1))
+                {
+                    lua_pushinteger(L, static_cast<lua_Integer>(e));
+                    lua_setfield(L, -2, "entityId");
+                }
+                lua_pop(L, 1);
+            }
+        }
+
+        // Deserialize pending state
+        if (!script.pendingInstanceState.empty())
+        {
+            bool ok = false;
+            try {
+                ok = runtimeComp->DeserializeState(script.pendingInstanceState);
+            } catch (...) { ok = false; }
+
+            if (!ok)
+            {
+                ENGINE_PRINT(EngineLogging::LogLevel::Warn, "[ScriptSystem] Failed to deserialize pending state for script ", scriptIdx, " entity ", e, "\n");
+            }
+        }
+
+        // Store in runtime map
+        Scripting::ScriptComponent* scPtr = runtimeComp.get();
+        {
+            std::lock_guard<std::mutex> lk(m_mutex);
+            auto& scriptVec = m_runtimeMap[e];
+
+            // Resize vector if needed
+            if (scriptIdx >= scriptVec.size())
+            {
+                scriptVec.resize(scriptIdx + 1);
+            }
+
+            scriptVec[scriptIdx] = std::move(runtimeComp);
+            script.instanceId = scPtr ? scPtr->GetInstanceRef() : LUA_NOREF;
+            script.instanceCreated = (scPtr != nullptr);
+            // Notify listeners that instances for 'e' have been created/changed.
+            NotifyInstancesChanged(e);
+        }
+
+        anyCreated = true;
+        // NOTE: Awake/Start are NOT called here - caller is responsible for calling them
+    }
+
+    return anyCreated;
+}
+
 void ScriptSystem::DestroyInstanceForEntity(Entity e)
 {
     std::vector<std::unique_ptr<Scripting::ScriptComponent>> runtimePtrs;
@@ -1129,20 +1330,129 @@ void ScriptSystem::ReloadAllInstances()
 
     if (!m_ecs) return;
 
+    // ==========================================================================
+    // PHASED RELOAD: Create all instances first, then call Awake/Start
+    // This ensures all script instances exist before any lifecycle callbacks run,
+    // fixing the bug where scripts with lower EntityIDs couldn't find scripts
+    // with higher EntityIDs during their Awake/Start.
+    // ==========================================================================
+
+    // Phase 1: Collect preserved states and destroy old instances
+    std::unordered_map<Entity, std::vector<std::string>> preservedStatesMap;
+    std::vector<Entity> entitiesToReload;
+
     for (Entity e : entitySnapshot)
     {
-        // If the entity still has a ScriptComponentData, reload it; otherwise destroy any runtime instances
-        ScriptComponentData* sc = GetScriptComponent(e, *m_ecs);
-        if (sc)
-        {
-            // This will serialize/preserve state for preserveKeys and recreate instances
-            ReloadScriptForEntity(e, *m_ecs);
-        }
-        else
+        ScriptComponentData* comp = GetScriptComponent(e, *m_ecs);
+        if (!comp)
         {
             // If the entity lost its script component, ensure runtime is cleared
             DestroyInstanceForEntity(e);
+            continue;
         }
+
+        std::vector<std::string> preservedStates;
+
+        // extract state then destroy old runtimes
+        {
+            std::lock_guard<std::mutex> lk(m_mutex);
+            auto it = m_runtimeMap.find(e);
+            if (it != m_runtimeMap.end())
+            {
+                for (size_t i = 0; i < it->second.size(); ++i)
+                {
+                    auto& scriptInst = it->second[i];
+                    if (scriptInst)
+                    {
+                        if (i < comp->scripts.size() && !comp->scripts[i].preserveKeys.empty())
+                        {
+                            preservedStates.push_back(scriptInst->SerializeState());
+                        }
+                        else
+                        {
+                            preservedStates.push_back("");
+                        }
+
+                        if (Scripting::GetLuaState()) scriptInst->OnDisable();
+                    }
+                }
+                m_runtimeMap.erase(it);
+            }
+        }
+
+        // Reset all script instance flags
+        for (auto& script : comp->scripts)
+        {
+            script.instanceCreated = false;
+            script.instanceId = -1;
+        }
+
+        preservedStatesMap[e] = std::move(preservedStates);
+        entitiesToReload.push_back(e);
+    }
+
+    // Phase 2: Create all instances WITHOUT calling Awake/Start
+    for (Entity e : entitiesToReload)
+    {
+        if (!EnsureInstanceForEntityNoLifecycle(e, *m_ecs))
+        {
+            ENGINE_PRINT(EngineLogging::LogLevel::Error, "[ScriptSystem] Reload failed to create new instances for entity ", e, "\n");
+        }
+    }
+
+    // Phase 3: Reinject preserved states (before Awake/Start so state is available)
+    for (Entity e : entitiesToReload)
+    {
+        auto statesIt = preservedStatesMap.find(e);
+        if (statesIt == preservedStatesMap.end()) continue;
+
+        std::lock_guard<std::mutex> lk(m_mutex);
+        auto it = m_runtimeMap.find(e);
+        if (it != m_runtimeMap.end())
+        {
+            for (size_t i = 0; i < it->second.size() && i < statesIt->second.size(); ++i)
+            {
+                if (!statesIt->second[i].empty() && it->second[i])
+                {
+                    it->second[i]->DeserializeState(statesIt->second[i]);
+                }
+            }
+        }
+    }
+
+    // Phase 4: Call Awake on all instances
+    for (Entity e : entitiesToReload)
+    {
+        std::lock_guard<std::mutex> lk(m_mutex);
+        auto it = m_runtimeMap.find(e);
+        if (it != m_runtimeMap.end())
+        {
+            for (auto& scriptInst : it->second)
+            {
+                if (scriptInst)
+                {
+                    scriptInst->Awake();
+                }
+            }
+        }
+    }
+
+    // Phase 5: Call Start on all instances
+    for (Entity e : entitiesToReload)
+    {
+        std::lock_guard<std::mutex> lk(m_mutex);
+        auto it = m_runtimeMap.find(e);
+        if (it != m_runtimeMap.end())
+        {
+            for (auto& scriptInst : it->second)
+            {
+                if (scriptInst)
+                {
+                    scriptInst->Start();
+                }
+            }
+        }
+        NotifyInstancesChanged(e);
     }
 }
 
