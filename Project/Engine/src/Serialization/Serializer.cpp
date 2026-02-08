@@ -2694,6 +2694,9 @@ void Serializer::DeserializeAnimationComponent(AnimationComponent& animComp, con
         }
 
         animComp.controllerPath = Serializer::GetString(d, 7);
+#ifndef EDITOR
+        animComp.controllerPath = animComp.controllerPath.substr(animComp.controllerPath.find("Resources"));
+#endif
     }
 }
 

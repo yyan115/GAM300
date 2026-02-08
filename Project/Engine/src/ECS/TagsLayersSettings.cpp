@@ -27,7 +27,14 @@ std::string TagsLayersSettings::GetSettingsFilePath(const std::string& projectPa
     }
 
     fs::path settingsPath = basePath / settingsFolderName / settingsFileName;
-    return settingsPath.string();
+    if (fs::exists(settingsPath))
+        return settingsPath.string();
+    else {
+        // Fallback: Try looking at current path.
+        basePath = fs::current_path();
+        settingsPath = basePath / settingsFolderName / settingsFileName;
+        return settingsPath.string();
+    }
 }
 
 bool TagsLayersSettings::SaveSettings(const std::string& projectPath) {
