@@ -43,7 +43,11 @@ public:
 private:
     ECSManager* m_ecs = nullptr;
 
+#ifdef ANDROID
+    std::string rootDirectory   = "Resources/Cutscenes/Kusane_OpeningCutscene/";
+#else
     std::string rootDirectory   = "../../Resources/Cutscenes/Kusane_OpeningCutscene/";
+#endif
     std::string sceneToLoad     = "Resources/Scenes/04_GameLevel.scene";     //PROBABLY MAKE THIS A FIELD INSTEAD, DRAG SCENE TO BE LOADED
 
     std::string ConstructNewPath(VideoComponent& videoComp);

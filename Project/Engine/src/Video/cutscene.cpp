@@ -4,21 +4,53 @@
 #include <sstream>
 #include <algorithm>
 
+#ifdef ANDROID
+#include "WindowManager.hpp"
+#include "Platform/IPlatform.h"
+#endif
+
 namespace Asset
 {
     // Constructs a Cutscene instance by parsing a file path
     Cutscene::Cutscene(const std::string& metadataPath)
     {
+        std::string fileContent;
+
+#ifdef ANDROID
+        IPlatform* platform = WindowManager::GetPlatform();
+        if (!platform) {
+            ENGINE_PRINT("[Cutscene] ERROR: Platform is null, cannot read '", metadataPath, "'\n");
+            return;
+        }
+        // Normalize path for Android - strip leading "../"
+        std::string assetPath = metadataPath;
+        std::replace(assetPath.begin(), assetPath.end(), '\\', '/');
+        while (assetPath.size() >= 3 && assetPath.substr(0, 3) == "../") {
+            assetPath = assetPath.substr(3);
+        }
+        ENGINE_PRINT("[Cutscene] Reading asset: '", assetPath, "' (original: '", metadataPath, "')\n");
+        std::vector<uint8_t> buffer = platform->ReadAsset(assetPath);
+        if (buffer.empty()) {
+            ENGINE_PRINT("[Cutscene] ERROR: Failed to read asset '", assetPath, "' (buffer empty)\n");
+            return;
+        }
+        fileContent.assign(buffer.begin(), buffer.end());
+        ENGINE_PRINT("[Cutscene] Read ", fileContent.size(), " bytes from '", assetPath, "'\n");
+#else
         std::ifstream file(metadataPath);
         if (!file.is_open())
         {
-            // Log error: Could not open metadata file
             return;
         }
+        std::stringstream ss;
+        ss << file.rdbuf();
+        fileContent = ss.str();
+#endif
 
+        std::istringstream contentStream(fileContent);
         std::string line;
         // Process each line in the metadata file.
-        while (std::getline(file, line))
+        while (std::getline(contentStream, line))
         {
             // 1. Skip empty lines or comments
             if (line.empty() || line[0] == '#')
