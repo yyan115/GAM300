@@ -187,10 +187,14 @@ return Component {
 
                 if inRange then
                     if weaponPickupActive and weaponPickupActive.isActive then
-                        weaponPickupActive.isActive = false
+                        local weaponSFX = self:GetComponent("AudioComponent")
+                        if weaponSFX then
+                            weaponSFX:PlayOneShot(self.pickupSFX[1])
+                        end
+                        weaponPickupActive.isActive = false        
                     end
 
-                    if weaponOnHandActive and not weaponOnHandActive.isActive then
+                    if weaponOnHandActive and not weaponOnHandActive.isActive then                    
                         weaponOnHandActive.isActive = true
                     end
                 end
@@ -206,6 +210,10 @@ return Component {
             if self.triggerMode == DoorTriggerMode.AutoOnEnter then
                 if self.isActivatable then
                     OpenDoors(self)
+                    local doorSFX = GetComponent(self.leftDoorEnt, "AudioComponent")
+                    if doorSFX then
+                        doorSFX:Play()
+                    end
                 end
             end
 
