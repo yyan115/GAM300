@@ -53,15 +53,7 @@ return Component {
                     self._playerDead = false
                     -- Stop/reset BGM so it doesn't get spammed or continue playing
                     if self._BGMaudio then
-                        if type(self._BGMaudio.Stop) == "function" then
-                            pcall(function() self._BGMaudio:Stop() end)
-                        elseif self._BGMaudio.stop ~= nil then
-                            self._BGMaudio.stop = true
-                        end
-                        if self._BGMaudio.volume ~= nil then
-                            self._BGMaudio.volume = 0
-                        end
-                        self._bgmStarted = false
+                        self._BGMaudio:Stop()
                     end
                 end
             end)
@@ -111,8 +103,6 @@ return Component {
         end
 
         self._BGMaudio = GetComponent(Engine.GetEntityByName("DeathScreenBGM"), "AudioComponent")
-        -- Track whether the BGM has been started to prevent repeated Play calls
-        self._bgmStarted = false
     end,
 
     -- Update handles fade transition and scene loading
@@ -130,32 +120,18 @@ return Component {
                 if Screen and Screen.IsCursorLocked() then
                     Screen.SetCursorLocked(false)
                 end
-                    -- Stop main game BGM and ambience so DeathScreenBGM can play alone
-                    local bgm1 = GetComponent(Engine.GetEntityByName("BGM1"), "AudioComponent")
-                    if bgm1 then
-                        if type(bgm1.Stop) == "function" then pcall(function() bgm1:Stop() end) end
-                        if bgm1.volume ~= nil then bgm1.volume = 0 end
-                    end
-                    local ambience = GetComponent(Engine.GetEntityByName("Ambience"), "AudioComponent")
-                    if ambience then
-                        if type(ambience.Stop) == "function" then pcall(function() ambience:Stop() end) end
-                        if ambience.volume ~= nil then ambience.volume = 0 end
-                    end
-                    -- Start BGM once when the death screen is shown
-                    if self._BGMaudio and not self._bgmStarted then
-                        if type(self._BGMaudio.Play) == "function" then
-                            -- call Play method if available
-                            pcall(function() self._BGMaudio:Play() end)
-                        elseif self._BGMaudio.play ~= nil then
-                            -- fallback: set play flag if the component uses a property
-                            self._BGMaudio.play = true
-                        end
-                        -- prefer a looping background track if supported
-                        if self._BGMaudio.loop ~= nil then
-                            self._BGMaudio.loop = true
-                        end
-                        self._bgmStarted = true
-                    end
+
+                -- Stop main game BGM and ambience so DeathScreenBGM can play alone
+                local bgm1 = GetComponent(Engine.GetEntityByName("BGM1"), "AudioComponent")
+                local ambience = GetComponent(Engine.GetEntityByName("Ambience"), "AudioComponent")
+                if bgm1 and ambience then
+                    bgm1:Pause()
+                    ambience:Pause()
+                end
+                -- Start BGM once when the death screen is shown
+                if self._BGMaudio then
+                    self._BGMaudio:Play()
+                end
             end
         end
 
@@ -166,9 +142,6 @@ return Component {
             self._fadeAlpha = math.min(self._fadeTimer / duration, 1.0)
             self._fadeSprite.alpha = self._fadeAlpha
             self._respawnButtonSprite.alpha = self._fadeAlpha
-            if self._BGMaudio then
-                self._BGMaudio.volume = self._fadeAlpha
-            end
             -- Stop once fade is complete
             if self._fadeAlpha >= 1.0 then
                 self._isFading = false

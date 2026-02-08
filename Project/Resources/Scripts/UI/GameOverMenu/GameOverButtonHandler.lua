@@ -21,6 +21,20 @@ return Component {
         if event_bus and event_bus.publish then
             event_bus.publish("respawnPlayer", true)
         end
+
+        -- Restart main BGM and ambience when the player continues
+        local bgm1 = GetComponent(Engine.GetEntityByName("BGM1"), "AudioComponent")
+        if bgm1 then
+            bgm1:UnPause()
+        end
+        local ambience = GetComponent(Engine.GetEntityByName("Ambience"), "AudioComponent")
+        if ambience then
+            ambience:UnPause()
+        end
+        local DeathScreenBGM = GetComponent(Engine.GetEntityByName("DeathScreenBGM"), "AudioComponent")
+        if DeathScreenBGM then
+            DeathScreenBGM:Stop()
+        end
     end,
 
     Awake = function(self)
