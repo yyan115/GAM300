@@ -619,9 +619,7 @@ return Component {
         self._transforming = true
 
         local dur = self.PhaseTransformDuration or 1.2
-        self:LockActions("PHASE_TRANSFORM", dur)
-        -- Play taunt SFX during phase transition
-        playRandomSFX(self._audio, self.enemyTauntSFX)
+        self:LockActions("PHASE_TRANSFORM", dur)     
         print(string.format(
             "[Miniboss][Phase] START %d -> %d (%.2fs)",
             self._lastPhaseProcessed,
@@ -630,6 +628,8 @@ return Component {
         ))
 
         self._animator:SetTrigger("Taunt")
+        -- Play taunt SFX during phase transition
+        playRandomSFX(self._audio, self.enemyTauntSFX)
     end,
 
     FinishPhaseTransform = function(self)
