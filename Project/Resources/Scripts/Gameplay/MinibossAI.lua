@@ -414,11 +414,34 @@ return Component {
             end
         end
 
-        -- 5. EARLY EXIT FOR DEATH OR NON-INTRO LOCKS
+        -- 5. BOSS DEATH: fade to black then return to main menu
+        if self.dead then
+            self._deathFadeDelay = (self._deathFadeDelay or 4.0) - dtSec
+            if self._deathFadeDelay <= 0 then
+                if not self._deathFadeSprite then
+                    local fadeEntity = Engine.GetEntityByName("GameOverFade")
+                    if fadeEntity then
+                        local active = GetComponent(fadeEntity, "ActiveComponent")
+                        if active then active.isActive = true end
+                        self._deathFadeSprite = GetComponent(fadeEntity, "SpriteRenderComponent")
+                    end
+                end
+                if self._deathFadeSprite then
+                    self._deathFadeTimer = (self._deathFadeTimer or 0) + dtSec
+                    self._deathFadeSprite.alpha = math.min(self._deathFadeTimer / 1.0, 1.0)
+                    if self._deathFadeSprite.alpha >= 1.0 then
+                        Scene.Load("Resources/Scenes/01_MainMenu.scene")
+                    end
+                end
+            end
+            return
+        end
+
+        -- EARLY EXIT FOR NON-INTRO LOCKS
         -- We allow the "INTRO" reason to pass through so the BattlecryState can update.
         local locked = self:IsActionLocked()
         local lockReason = self._lockReason
-        if self.dead or (locked and lockReason ~= "INTRO") then
+        if locked and lockReason ~= "INTRO" then
             return
         end
 
