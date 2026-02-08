@@ -110,6 +110,9 @@ return Component {
             "EnemyMeleeC",
             "EnemyRangeD"
         },
+
+        pickupSFX = {},
+        doorOpenSFX = {}
     },
 
     -------------------------------------------------

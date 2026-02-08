@@ -51,8 +51,8 @@ return Component {
         DashDuration = 0.3,          -- Dash length
 
         -- SFX clip arrays (populate in editor with audio GUIDs)
-        playerSlashSFX    = {},      -- FastSlash (whoosh on swing)
-        playerSlashHitSFX = {},      -- FastSlashHitonFlesh (impact on hit)
+        playerSlashSFX = {},      -- FastSlash (whoosh on swing)
+        playerChainSFX = {},      -- FastSlashHitonFlesh (impact on hit)
     },
 
     Awake = function(self)
@@ -353,7 +353,6 @@ return Component {
         end
 
         if candidateStateId then
-            self:_playSlashSFX(self.playerSlashSFX)
             -- Consume the buffered input immediately so it doesn't re-fire repeatedly
             if input:HasBufferedAttack() then input:ConsumeBufferedAttack()
             elseif input:HasBufferedChain() then input:ConsumeBufferedChain()
@@ -447,6 +446,11 @@ return Component {
         -- Trigger transition (skip for idle to avoid unnecessary triggers)
         if stateId ~= "idle" then
             self._animator:SetTrigger("Attack")
+            if stateId == "chain_attack" then
+                self:_playRandomSFX(self.playerChainSFX)
+            else
+                self:_playRandomSFX(self.playerSlashSFX)
+            end
         end
 
         -- Broadcast state change
@@ -484,7 +488,7 @@ return Component {
     -- ===============================
     -- SFX HELPERS
     -- ===============================
-    _playSlashSFX = function(self, clips)
+    _playRandomSFX = function(self, clips)
         local audio = self._playerAudio
         if not audio or not clips or #clips == 0 then return end
         audio:PlayOneShot(clips[math.random(1, #clips)])
