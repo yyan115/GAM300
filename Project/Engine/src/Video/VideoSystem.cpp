@@ -80,16 +80,26 @@ bool VideoSystem::IsLastFrameInPanel(int frame) const
 
 void VideoSystem::Initialise(ECSManager& ecsManager) {
      std::cout << "VideoSystem Initialised" << std::endl;
+     ENGINE_PRINT("[VideoSystem] Initialise called\n");
      m_ecs = &ecsManager;
 }
 
 void VideoSystem::Update(float dt) {
     PROFILE_FUNCTION();
 
+    ENGINE_PRINT("[VideoSystem] Update called, dt=", dt, "\n");
+
     int dialogueTagIndex = TagManager::GetInstance().GetTagIndex("DialogueText");
     int dialogueBoxTagIndex = TagManager::GetInstance().GetTagIndex("DialogueBox");
     int blackScreenIndex = TagManager::GetInstance().GetTagIndex("BlackScreen");
     int skipButtonIndex = TagManager::GetInstance().GetTagIndex("SkipButton");
+
+    ENGINE_PRINT("[VideoSystem] Tag indices: DialogueText=", dialogueTagIndex, ", DialogueBox=", dialogueBoxTagIndex,
+        ", BlackScreen=", blackScreenIndex, ", SkipButton=", skipButtonIndex, "\n");
+
+    ENGINE_PRINT("[VideoSystem] Entity search state: foundText=", foundDialogueText, ", foundBox=", foundDialogueBox,
+        ", foundBlack=", foundBlackScreen, ", foundSkip=", foundSkipButton, "\n");
+    ENGINE_PRINT("[VideoSystem] Total entities: ", m_ecs->GetAllEntities().size(), "\n");
 
     // GET ENTITY VIA TAG
     for (const auto& entity : m_ecs->GetAllEntities())
@@ -134,8 +144,16 @@ void VideoSystem::Update(float dt) {
         }
     }
 
+    ENGINE_PRINT("[VideoSystem] After search: foundText=", foundDialogueText, ", foundBox=", foundDialogueBox,
+        ", foundBlack=", foundBlackScreen, ", foundSkip=", foundSkipButton, "\n");
+    ENGINE_PRINT("[VideoSystem] Entity IDs: text=", (int)dialogueText_Entity, ", box=", (int)dialogueBox_Entity,
+        ", black=", (int)blackScreen_Entity, ", skip=", (int)skipButton_Entity, "\n");
+
     if (m_ecs->HasComponent<TextRenderComponent>(dialogueText_Entity) == false)
+    {
+        ENGINE_PRINT("[VideoSystem] EARLY RETURN: dialogueText_Entity (", (int)dialogueText_Entity, ") has no TextRenderComponent\n");
         return;
+    }
 
     // GET RESPECTIVE COMPONENTS
     auto& textComp = m_ecs->GetComponent<TextRenderComponent>(dialogueText_Entity);
@@ -147,18 +165,36 @@ void VideoSystem::Update(float dt) {
     if (foundSkipButton && m_ecs->HasComponent<SpriteRenderComponent>(skipButton_Entity))
         skipButtonSprite = &m_ecs->GetComponent<SpriteRenderComponent>(skipButton_Entity);
 
+    ENGINE_PRINT("[VideoSystem] Got components. Now iterating VideoComponent entities...\n");
+    ENGINE_PRINT("[VideoSystem] entities.size() = ", entities.size(), "\n");
+
     // GET THE VIDEO COMP AND SPRITE COMPONENT FROM THE ENTITY
     for (const auto& entity : entities)
     {
         if (!m_ecs->HasComponent<VideoComponent>(entity) || !m_ecs->HasComponent<SpriteRenderComponent>(entity))
+        {
+            ENGINE_PRINT("[VideoSystem] Entity ", (int)entity, " skipped: hasVideoComp=", m_ecs->HasComponent<VideoComponent>(entity),
+                ", hasSpriteComp=", m_ecs->HasComponent<SpriteRenderComponent>(entity), "\n");
             continue;
+        }
+        // Skip entities that are inactive in hierarchy (checks parents too)
+        if (!m_ecs->IsEntityActiveInHierarchy(entity))
+        {
+            ENGINE_PRINT("[VideoSystem] Entity ", (int)entity, " skipped: inactive in hierarchy\n");
+            continue;
+        }
 
         auto& videoComp = m_ecs->GetComponent<VideoComponent>(entity);
         auto& spriteComp = m_ecs->GetComponent<SpriteRenderComponent>(entity);
+        ENGINE_PRINT("[VideoSystem] Processing entity ", (int)entity, ": cutSceneName='", videoComp.cutSceneName,
+            "', activeFrame=", videoComp.activeFrame, ", frameStart=", videoComp.frameStart,
+            ", frameEnd=", videoComp.frameEnd, ", asset_dirty=", videoComp.asset_dirty,
+            ", cutsceneEnded=", videoComp.cutsceneEnded, "\n");
 
         // SET UP THE FIRST CUTSCENE
         if (videoComp.asset_dirty)
         {
+            ENGINE_PRINT("[VideoSystem] asset_dirty=true, initializing cutscene for entity ", (int)entity, "\n");
             videoComp.activeFrame = videoComp.frameStart;
             videoComp.currentTime = 0;
             videoComp.currentPanel = GetPanelForFrame(videoComp.frameStart);
@@ -170,12 +206,16 @@ void VideoSystem::Update(float dt) {
             isSkipping = false;
 
             std::string firstPath = ConstructNewPath(videoComp);
+            ENGINE_PRINT("[VideoSystem] First frame path: '", firstPath, "'\n");
             m_dialogueManager.Reset();
             SwapCutscene(spriteComp, firstPath);
+            ENGINE_PRINT("[VideoSystem] SwapCutscene done. texture=", (spriteComp.texture ? "valid" : "NULL"),
+                ", texturePath='", spriteComp.texturePath, "'\n");
             isTransitioning = true;
             videoComp.cutsceneEnded = false;
             internalCutsceneEnded = false;
             blackScreenSprite.alpha = 1.0f;  // Start from black
+            ENGINE_PRINT("[VideoSystem] Init complete. isTransitioning=", isTransitioning, ", blackScreenAlpha=", blackScreenSprite.alpha, "\n");
         }
 
         videoComp.currentTime += dt;
@@ -192,9 +232,14 @@ void VideoSystem::Update(float dt) {
             videoComp.cutsceneEnded = false;  // Reset so we can use proper fade
         }
 
+        ENGINE_PRINT("[VideoSystem] State: fading=", m_isFading, ", transitioning=", isTransitioning,
+            ", ended=", internalCutsceneEnded, ", skipping=", isSkipping,
+            ", boardTimer=", m_boardTimer, ", fadeTimer=", m_fadeTimer, "\n");
+
         // ========== HANDLE FADE TRANSITIONS ==========
         if (m_isFading)
         {
+            ENGINE_PRINT("[VideoSystem] In fade: fadeTimer=", m_fadeTimer, ", fadeTargetFrame=", m_fadeTargetFrame, "\n");
             m_fadeTimer += dt;
             float fadeDuration = isSkipping ? videoComp.skipFadeDuration : videoComp.fadeDuration;
             float fadeProgress = std::clamp(m_fadeTimer / fadeDuration, 0.0f, 1.0f);
@@ -275,6 +320,7 @@ void VideoSystem::Update(float dt) {
         // ========== INITIAL TRANSITION ==========
         if (isTransitioning && !m_isFading)
         {
+            ENGINE_PRINT("[VideoSystem] Starting initial fade-in transition\n");
             m_isFading = true;
             m_fadeTimer = 0.0f;
             m_fadeTargetFrame = -1;  // No target, just fade in
@@ -385,8 +431,11 @@ render_text:
 
 void VideoSystem::SwapCutscene(SpriteRenderComponent& comp, std::string newCutscenePath)
 {
+    ENGINE_PRINT("[VideoSystem] SwapCutscene: loading texture '", newCutscenePath, "'\n");
     comp.texture = ResourceManager::GetInstance().GetResource<Texture>(newCutscenePath);
     comp.texturePath = newCutscenePath;
+    ENGINE_PRINT("[VideoSystem] SwapCutscene: texture ", (comp.texture ? "LOADED OK" : "FAILED/NULL"),
+        " for path '", newCutscenePath, "'\n");
 }
 
 std::string VideoSystem::ConstructNewPath(VideoComponent& videoComp)
@@ -394,6 +443,8 @@ std::string VideoSystem::ConstructNewPath(VideoComponent& videoComp)
     std::string numResult = "_" + videoComp.PadNumber(videoComp.activeFrame);
     std::string fileName = videoComp.cutSceneName + numResult + ".png";
     std::string newCutscenePath = rootDirectory + fileName;
+    ENGINE_PRINT("[VideoSystem] ConstructNewPath: rootDir='", rootDirectory, "', cutSceneName='", videoComp.cutSceneName,
+        "', frame=", videoComp.activeFrame, ", result='", newCutscenePath, "'\n");
     return newCutscenePath;
 }
 

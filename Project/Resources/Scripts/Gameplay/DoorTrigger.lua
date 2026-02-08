@@ -134,6 +134,7 @@ return Component {
 
         if not self.leftTransform or not self.rightTransform then
             print("[DoorTrigger] ERROR: Door transforms not found")
+            self.initFailed = true
             return
         end
 
@@ -162,6 +163,8 @@ return Component {
     -------------------------------------------------
 
     Update = function(self, dt)
+
+        if self.initFailed then return end
 
         -------------------------------------------------
         -- Player range detection
