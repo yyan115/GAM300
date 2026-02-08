@@ -475,7 +475,7 @@ std::string AssetManager::GetAssetPathFromGUID(const GUID_128 guid) {
 
 	auto it = assetMetaMap.find(guid);
 	if (it != assetMetaMap.end()) {
-#ifndef ANDROID
+#ifdef EDITOR
 		return it->second->sourceFilePath;
 #else
 		std::string path = it->second->sourceFilePath;
@@ -484,7 +484,9 @@ std::string AssetManager::GetAssetPathFromGUID(const GUID_128 guid) {
 		if (resourcesPos != std::string::npos) {
 			path = path.substr(resourcesPos);
 		}
+#ifdef ANDROID
 		path = FileUtilities::SanitizePathForAndroid(std::filesystem::path(path)).generic_string();
+#endif
 		return path;
 #endif
 	}
