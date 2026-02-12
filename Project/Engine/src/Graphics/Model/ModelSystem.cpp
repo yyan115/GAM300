@@ -125,11 +125,13 @@ void ModelSystem::Update()
         }
 
         // Passed culling test, create and submit render item
-        auto modelRenderItem = std::make_unique<ModelRenderComponent>(modelComponent); 
-        modelRenderItem->transform = ecsManager.GetComponent<Transform>(entity).worldMatrix;
+        auto modelRenderItem = std::make_unique<ModelRenderComponent>(modelComponent);
+        auto& entityTransform = ecsManager.GetComponent<Transform>(entity);
+        modelRenderItem->transform = entityTransform.worldMatrix;
 
         // If model doesn't have an animation controller, allow manual manipulation of bone entities.
         if (!modelRenderItem->HasAnimation()) {
+            glm::mat4 rootInverse = glm::inverse(entityTransform.worldMatrix.ConvertToGLM());
             for (const auto& [name, boneInfo] : modelRenderItem->model->mBoneInfoMap)
             {
                 // Get the child entity representing this bone.
@@ -137,9 +139,6 @@ void ModelSystem::Update()
 
 			    // Get the transform of the bone entity.
                 glm::mat4 currentWorld = ecsManager.GetComponent<Transform>(boneEntity).worldMatrix.ConvertToGLM();
-
-                // Get inverse root (mesh space).
-                glm::mat4 rootInverse = glm::inverse(ecsManager.GetComponent<Transform>(entity).worldMatrix.ConvertToGLM());
 
 			    // Write to the final bone matrices.
                 modelRenderItem->mFinalBoneMatrices[boneInfo.id] =

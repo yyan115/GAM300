@@ -3,6 +3,8 @@
 #include <Animation/Animation.hpp>
 #include "ECS/Entity.hpp"
 
+class ECSManager;
+
 class ENGINE_API Animator
 {
 public:
@@ -15,6 +17,8 @@ public:
 	bool HasAnimation() const { return mCurrentAnimation != nullptr; }
 
 	void CalculateBoneTransform(const AssimpNodeData* node, glm::mat4 parentTransform, Entity entity, bool bakeParent = false);
+	void CalculateBoneTransformInternal(const AssimpNodeData* node, glm::mat4 parentTransform, Entity entity, bool bakeParent,
+		ECSManager& ecsManager, const std::map<std::string, BoneInfo>& boneInfoMap, const glm::mat4& globalInverse);
 
 	//const std::vector<glm::mat4>& GetFinalBoneMatrices() const { return mFinalBoneMatrices; }
 	float GetCurrentTime() const { return mCurrentTime; }

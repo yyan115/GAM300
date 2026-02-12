@@ -1,6 +1,7 @@
 // ScriptSystem.cpp
 #include "pch.h"
 #include "Script/ScriptSystem.hpp"
+#include "Performance/PerformanceProfiler.hpp"
 #include "ECS/ECSManager.hpp"
 #include "Script/ScriptComponentData.hpp"
 #include "Script/LuaBindableComponents.hpp"
@@ -727,6 +728,7 @@ void ScriptSystem::Initialise(ECSManager& ecsManager)
 }
 void ScriptSystem::Update()
 {
+    PROFILE_FUNCTION();
     // one-shot reconcile on first update after initialise/play
     if (m_needsReconcile && m_ecs)
     {
@@ -747,11 +749,20 @@ void ScriptSystem::Update()
     // so scripts with lower IDs couldn't find scripts with higher IDs during Start().
     // ==========================================================================
 
+    // Cache active hierarchy check to avoid redundant parent-chain walks
+    std::unordered_set<Entity> activeEntities;
+    activeEntities.reserve(entities.size());
+    for (Entity e : entities) {
+        if (m_ecs->IsEntityActiveInHierarchy(e)) {
+            activeEntities.insert(e);
+        }
+    }
+
     // Phase 1: Create instances for all entities (no Awake/Start yet)
     std::vector<Entity> newlyCreatedEntities;
     for (Entity e : entities)
     {
-        if (!m_ecs->IsEntityActiveInHierarchy(e)) {
+        if (activeEntities.find(e) == activeEntities.end()) {
             continue;
         }
 
@@ -822,8 +833,8 @@ void ScriptSystem::Update()
     // Phase 4: Update all entities
     for (Entity e : entities)
     {
-        // Skip entities that are inactive in hierarchy (checks parents too)
-        if (!m_ecs->IsEntityActiveInHierarchy(e)) {
+        // Skip entities that are inactive in hierarchy (uses cached result)
+        if (activeEntities.find(e) == activeEntities.end()) {
             continue;
         }
 

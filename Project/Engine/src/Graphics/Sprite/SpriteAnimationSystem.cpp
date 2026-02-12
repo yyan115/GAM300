@@ -1,5 +1,6 @@
 #include "pch.h"
 #include "Graphics/Sprite/SpriteAnimationSystem.hpp"
+#include "Performance/PerformanceProfiler.hpp"
 #include "Graphics/Sprite/SpriteAnimationComponent.hpp"
 #include "Graphics/Sprite/SpriteRenderComponent.hpp"
 #include "ECS/ECSRegistry.hpp"
@@ -67,6 +68,7 @@ bool SpriteAnimationSystem::Initialise()
 
 void SpriteAnimationSystem::Update()
 {
+    PROFILE_FUNCTION();
     bool isEditMode = Engine::IsEditMode();
 
     // Check if we just entered play mode

@@ -9,16 +9,18 @@
 
 namespace {
 	template <typename T>
-	std::string GetReadableTypeName() {
-		const char* rawName = typeid(T).name();
-		std::string typeName = rawName;
-
-		if (typeName.find("struct ") == 0) {
-			typeName = typeName.substr(7);
-		}
-		else if (typeName.find("class ") == 0) {
-			typeName = typeName.substr(6);
-		}
+	const std::string& GetReadableTypeName() {
+		static const std::string typeName = []() {
+			const char* rawName = typeid(T).name();
+			std::string name = rawName;
+			if (name.find("struct ") == 0) {
+				name = name.substr(7);
+			}
+			else if (name.find("class ") == 0) {
+				name = name.substr(6);
+			}
+			return name;
+		}();
 		return typeName;
 	}
 }
@@ -27,7 +29,7 @@ class ComponentManager {
 public:
 	template <typename T>
 	void RegisterComponent() {
-		std::string typeName = GetReadableTypeName<T>();
+		const std::string& typeName = GetReadableTypeName<T>();
 		assert(components.find(typeName) == components.end() && "Registering component type more than once.");
 		components[typeName] = nextComponentID;
 		componentArrays[typeName] = std::make_shared<ComponentArray<T>>();
@@ -37,15 +39,16 @@ public:
 	template<typename T>
 	bool IsRegistered() const
 	{
-		const std::string typeName = GetReadableTypeName<T>();
+		const std::string& typeName = GetReadableTypeName<T>();
 		return components.find(typeName) != components.end();
 	}
 
 	template <typename T>
 	ComponentID GetComponentID() {
-		std::string typeName = GetReadableTypeName<T>();
-		assert(components.find(typeName) != components.end() && "Component not registered before use.");
-		return components[typeName];
+		const std::string& typeName = GetReadableTypeName<T>();
+		auto it = components.find(typeName);
+		assert(it != components.end() && "Component not registered before use.");
+		return it->second;
 	}
 
 	template <typename T>
@@ -89,10 +92,11 @@ private:
 
 	template<typename T>
 	std::shared_ptr<ComponentArray<T>> GetComponentArray() {
-		std::string typeName = GetReadableTypeName<T>();
+		const std::string& typeName = GetReadableTypeName<T>();
 
-		assert(components.find(typeName) != components.end() && "Component not registered before use.");
+		auto it = componentArrays.find(typeName);
+		assert(it != componentArrays.end() && "Component not registered before use.");
 
-		return std::static_pointer_cast<ComponentArray<T>>(componentArrays[typeName]);
+		return std::static_pointer_cast<ComponentArray<T>>(it->second);
 	}
 };

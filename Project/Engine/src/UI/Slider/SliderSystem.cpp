@@ -1,5 +1,6 @@
 #include "pch.h"
 #include "UI/Slider/SliderSystem.hpp"
+#include "Performance/PerformanceProfiler.hpp"
 #include "UI/Slider/SliderComponent.hpp"
 #include "ECS/ECSManager.hpp"
 #include "ECS/ECSRegistry.hpp"
@@ -349,6 +350,7 @@ void SliderSystem::InvokeOnValueChanged(Entity sliderEntity, SliderComponent& sl
 }
 
 void SliderSystem::Update() {
+    PROFILE_FUNCTION();
     if (!m_ecs || !g_inputManager) return;
 
     const bool mousePressed = g_inputManager->IsPointerJustPressed();

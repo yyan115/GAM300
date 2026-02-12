@@ -76,17 +76,20 @@ void Animator::SetCurrentTime(float time, Entity entity)
 
 void Animator::CalculateBoneTransform(const AssimpNodeData* node, glm::mat4 parentTransform, Entity entity, bool bakeParent)
 {
-    ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
+    CalculateBoneTransformInternal(node, parentTransform, entity, bakeParent,
+        ECSRegistry::GetInstance().GetActiveECSManager(),
+        mCurrentAnimation->GetBoneIDMap(),
+        mCurrentAnimation->GetGlobalInverse());
+}
 
+void Animator::CalculateBoneTransformInternal(const AssimpNodeData* node, glm::mat4 parentTransform, Entity entity, bool bakeParent,
+    ECSManager& ecsManager, const std::map<std::string, BoneInfo>& boneInfoMap, const glm::mat4& globalInverse)
+{
     bool isRoot = (node == &mCurrentAnimation->GetRootNode());
-    
-    std::string nodeName{};
-    if (isRoot) {
-        nodeName = ecsManager.GetComponent<NameComponent>(entity).name;
-    }
-    else {
-        nodeName = node->name;
-    }
+
+    const std::string& nodeName = isRoot
+        ? ecsManager.GetComponent<NameComponent>(entity).name
+        : node->name;
 
     glm::mat4 nodeTransform = node->transformation; // Default Bind Pose
 
@@ -100,9 +103,10 @@ void Animator::CalculateBoneTransform(const AssimpNodeData* node, glm::mat4 pare
 
     // 3. Update ECS Entity
     auto& modelComp = ecsManager.GetComponent<ModelRenderComponent>(entity);
-    if (modelComp.boneNameToEntityMap.find(nodeName) != modelComp.boneNameToEntityMap.end())
+    auto boneIt = modelComp.boneNameToEntityMap.find(nodeName);
+    if (boneIt != modelComp.boneNameToEntityMap.end())
     {
-        Entity boneEntity = modelComp.boneNameToEntityMap[nodeName];
+        Entity boneEntity = boneIt->second;
         if (boneEntity != MAX_ENTITIES && ecsManager.HasComponent<Transform>(boneEntity))
         {
             if (!isRoot)
@@ -136,24 +140,21 @@ void Animator::CalculateBoneTransform(const AssimpNodeData* node, glm::mat4 pare
     // 4. Calculate Global Transform for Recursion & Shader
     glm::mat4 globalTransformation = parentTransform * nodeTransform;
 
-    // 5. Update Shader Matrices (Standard Logic - Unchanged)
-    auto boneInfoMap = mCurrentAnimation->GetBoneIDMap();
-    if (boneInfoMap.find(nodeName) != boneInfoMap.end())
+    // 5. Update Shader Matrices
+    auto infoIt = boneInfoMap.find(nodeName);
+    if (infoIt != boneInfoMap.end())
     {
-        int index = boneInfoMap[nodeName].id;
-        glm::mat4 offset = boneInfoMap[nodeName].offset;
-        glm::mat4 globalInverse = mCurrentAnimation->GetGlobalInverse();
-        ecsManager.GetComponent<ModelRenderComponent>(entity).mFinalBoneMatrices[index] =
+        int index = infoIt->second.id;
+        const glm::mat4& offset = infoIt->second.offset;
+        modelComp.mFinalBoneMatrices[index] =
             globalInverse * globalTransformation * offset;
     }
 
     // 6. Recurse
     for (int i = 0; i < node->childrenCount; i++)
     {
-        // If WE are the root, tell our children to bake our transform.
-        // If we are NOT the root, pass 'false' (children behave normally).
         bool shouldChildBake = isRoot;
-
-        CalculateBoneTransform(&node->children[i], globalTransformation, entity, shouldChildBake);
+        CalculateBoneTransformInternal(&node->children[i], globalTransformation, entity, shouldChildBake,
+            ecsManager, boneInfoMap, globalInverse);
     }
 }

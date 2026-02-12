@@ -1,6 +1,7 @@
 // ButtonSystem.cpp
 #include "pch.h"
 #include "UI/Button/ButtonSystem.hpp"
+#include "Performance/PerformanceProfiler.hpp"
 #include "UI/Button/ButtonComponent.hpp"
 #include "ECS/ECSManager.hpp"
 #include "Logging.hpp"
@@ -15,6 +16,7 @@ void ButtonSystem::Initialise(ECSManager& ecsManager) {
 }
 
 void ButtonSystem::Update() {
+    PROFILE_FUNCTION();
     // This only runs during play mode in editor
     // Update any button-related state here
     UpdateButtonStates();

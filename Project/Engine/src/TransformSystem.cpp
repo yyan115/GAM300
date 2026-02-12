@@ -1,6 +1,7 @@
 #include "pch.h"
 #include "Transform/TransformComponent.hpp"
 #include "Transform/TransformSystem.hpp"
+#include "Logging.hpp"
 #include "Hierarchy/ParentComponent.hpp"
 #include "ECS/ECSRegistry.hpp"
 #include "ECS/ECSManager.hpp"
@@ -103,11 +104,9 @@ void TransformSystem::UpdateTransform(Entity entity) {
 			GUID_128 parentGUID = parentCompOpt->get().parent;
 			Entity parentEntity = guidRegistry.GetEntityByGUID(parentGUID);
 			if (parentEntity == static_cast<Entity>(-1)) {
-				std::cerr << "[TransformSystem] ERROR: Entity '" << ecsManager.GetComponent<NameComponent>(entity).name
-					<< "' (" << entity << ") has invalid parent GUID: "
-					<< GUIDUtilities::ConvertGUID128ToString(parentGUID) << "\n";
+				ENGINE_PRINT(EngineLogging::LogLevel::Error, "[TransformSystem] Entity ", entity, " has invalid parent GUID\n");
 			}
-			auto& parentTransform = ecsManager.GetComponent<Transform>(guidRegistry.GetEntityByGUID(parentCompOpt->get().parent));
+			auto& parentTransform = ecsManager.GetComponent<Transform>(parentEntity);
 			//auto& rootParentTransform = GetRootParentTransform(entity);
 			//transform.worldMatrix = parentTransform.worldMatrix * CalculateModelMatrix(transform.localPosition, transform.localScale, transform.localRotation);
 			

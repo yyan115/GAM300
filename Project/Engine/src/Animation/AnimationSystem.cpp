@@ -1,6 +1,7 @@
 
 #include "pch.h"
 #include "Animation/AnimationSystem.hpp"
+#include "Performance/PerformanceProfiler.hpp"
 #include "Animation/AnimatorController.hpp"
 #include "ECS/ECSRegistry.hpp"
 #include "ECS/ActiveComponent.hpp"
@@ -89,6 +90,7 @@ void AnimationSystem::InitialiseAnimationComponent(Entity entity, ModelRenderCom
 
 void AnimationSystem::Update()
 {
+	PROFILE_FUNCTION();
 	if (Engine::IsEditMode()) {
 		return;
 	}

@@ -1,5 +1,6 @@
 #include "pch.h"
 #include "UI/Anchor/UIAnchorSystem.hpp"
+#include "Performance/PerformanceProfiler.hpp"
 #include "UI/Anchor/UIAnchorComponent.hpp"
 #include "ECS/ECSRegistry.hpp"
 #include "ECS/ActiveComponent.hpp"
@@ -15,6 +16,7 @@ void UIAnchorSystem::Initialise(ECSManager& ecsManager)
 
 void UIAnchorSystem::Update()
 {
+    PROFILE_FUNCTION();
     if (!m_ecs) return;
 
     // Get current viewport size

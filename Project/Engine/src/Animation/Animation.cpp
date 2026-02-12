@@ -169,20 +169,15 @@ std::shared_ptr<AssetMeta> Animation::ExtendMetaFile(const std::string& assetPat
 
 Bone* Animation::FindBone(const std::string& name)
 {
-	auto iter = std::find_if(mBones.begin(), mBones.end(),
-		[&](const Bone& Bone)
-		{
-			return Bone.GetBoneName() == name;
-		}
-	);
-	if (iter == mBones.end()) return nullptr;
-	else return &(*iter);
+	auto it = mBoneLookup.find(name);
+	return it != mBoneLookup.end() ? it->second : nullptr;
 }
 
 void Animation::ReadMissingBones(const aiAnimation* animation,
-	std::map<std::string, BoneInfo> boneInfoMap,
+	const std::map<std::string, BoneInfo>& boneInfoMap,
 	int boneCount)
 {
+	mBoneInfoMap = boneInfoMap; // copy once upfront, modify our own copy
 	const int num = animation ? static_cast<int>(animation->mNumChannels) : 0;
 	mBones.reserve(mBones.size() + num);
 
@@ -195,15 +190,15 @@ void Animation::ReadMissingBones(const aiAnimation* animation,
 		const std::string boneName = NormalizeFbxName(channel->mNodeName.C_Str());
 
 		// Ensure the bone exists in the info map and has an ID
-		auto it = boneInfoMap.find(boneName);
-		if (it == boneInfoMap.end())
+		auto it = mBoneInfoMap.find(boneName);
+		if (it == mBoneInfoMap.end())
 		{
 			//ENGINE_LOG_WARN("[ReadMissingBones] Bone '" + boneName + "' NOT FOUND in model's boneInfoMap! Creating default.\n");
 
 			BoneInfo info;
 			info.id = boneCount++;
 			info.offset = glm::mat4(1.0f); // default if not in mesh
-			it = boneInfoMap.emplace(boneName, info).first;
+			it = mBoneInfoMap.emplace(boneName, info).first;
 		}
 		//else {
 		//	if (boneName == "mixamorig:Hips" || boneName == "mixamorig:Spine") {
@@ -214,7 +209,12 @@ void Animation::ReadMissingBones(const aiAnimation* animation,
 		mBones.emplace_back(boneName, it->second.id, channel);
 	}
 
-	mBoneInfoMap = std::move(boneInfoMap);
+	// Build O(1) bone lookup cache
+	mBoneLookup.clear();
+	mBoneLookup.reserve(mBones.size());
+	for (auto& bone : mBones) {
+		mBoneLookup[bone.GetBoneName()] = &bone;
+	}
 
 	//// FINAL CHECK: Log what ended up in mBoneInfoMap
 	//ENGINE_LOG_DEBUG("[ReadMissingBones] Final mBoneInfoMap has " + std::to_string(mBoneInfoMap.size()) + " bones\n");
