@@ -4,6 +4,8 @@
 #include <sstream>
 #include <algorithm>
 
+#include "Logging.hpp"
+
 #ifdef ANDROID
 #include "WindowManager.hpp"
 #include "Platform/IPlatform.h"

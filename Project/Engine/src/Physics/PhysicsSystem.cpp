@@ -146,7 +146,7 @@ bool PhysicsSystem::InitialiseJolt() {
 
         // Configure physics settings for better collision resolution
         JPH::PhysicsSettings settings;
-        settings.mNumVelocitySteps = 10;      // Increase from default (10) to 15-20
+        settings.mNumVelocitySteps = 6;       // 6 is sufficient for action game (default 10 is for heavy sims)
         settings.mNumPositionSteps = 2;       // Increase from default (2) to 3-4
         settings.mBaumgarte = 0.2f;           // Penetration correction factor
         settings.mSpeculativeContactDistance = 0.02f;  // Predict contacts earlier
@@ -545,7 +545,7 @@ void PhysicsSystem::Update(float fixedDt, ECSManager& ecsManager) {
     }
 
     // ========== RUN PHYSICS SIMULATION ==========
-    physics.Update(fixedDt, /*collisionSteps=*/4, temp.get(), jobs.get());
+    physics.Update(fixedDt, /*collisionSteps=*/1, temp.get(), jobs.get());
 
     // ========== SYNC JOLT -> ECS (after physics step) ==========
     PhysicsSyncBack(ecsManager);
@@ -580,7 +580,7 @@ void PhysicsSystem::PhysicsSyncBack(ECSManager& ecsManager) {
 #endif
 
     for (auto& e : entities) {
-        if (!ecsManager.IsEntityActiveInHierarchy(e)) return;
+        if (!ecsManager.IsEntityActiveInHierarchy(e)) continue;
 
         // Skip entities without a body in our map
         auto bodyIt = entityBodyMap.find(e);

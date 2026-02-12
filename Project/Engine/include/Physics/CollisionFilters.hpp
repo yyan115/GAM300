@@ -76,8 +76,22 @@ public:
     ~MyObjectLayerPairFilter() override = default;
 
     bool ShouldCollide(JPH::ObjectLayer a, JPH::ObjectLayer b) const override {
-        //if (a == Layers::NON_MOVING && b == Layers::NON_MOVING) return false;
+        // Static vs Static: both immovable, collision is pointless
+        if (a == Layers::NON_MOVING && b == Layers::NON_MOVING) return false;
+
+        // Debris vs Debris: skip
         if (a == Layers::DEBRIS && b == Layers::DEBRIS) return false;
+
+        // Sensor vs Sensor: trigger volumes don't need to detect each other
+        if (a == Layers::SENSOR && b == Layers::SENSOR) return false;
+
+        // Nav layers vs Nav layers: navigation geometry never collides with itself
+        if ((a == Layers::NAV_GROUND || a == Layers::NAV_OBSTACLE) &&
+            (b == Layers::NAV_GROUND || b == Layers::NAV_OBSTACLE)) return false;
+
+        // Nav layers vs static geometry: both immovable
+        if ((a == Layers::NAV_GROUND || a == Layers::NAV_OBSTACLE) && b == Layers::NON_MOVING) return false;
+        if (a == Layers::NON_MOVING && (b == Layers::NAV_GROUND || b == Layers::NAV_OBSTACLE)) return false;
 
         return true;
     }
