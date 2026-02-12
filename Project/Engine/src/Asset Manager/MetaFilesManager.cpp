@@ -161,31 +161,23 @@ void MetaFilesManager::InitializeAssetMetaFiles(const std::string& rootAssetFold
 
 		if (AssetManager::GetInstance().IsAssetExtensionSupported(extension)) {
 #ifdef EDITOR
-		ENGINE_PRINT("[MetaFilesManager] Editor recompiling ", assetPath, "...", "\n");
 		if (MetaFileExists(assetPath)) {
-			ENGINE_PRINT("[MetaFilesManager] .meta exists for: ", assetPath, ". Re-compiling...", "\n");
-			ENGINE_PRINT("[MetaFilesManager] Extension: ", extension, "\n");
 			if (AssetManager::GetInstance().IsExtensionShaderVertFrag(extension)) {
 				std::string shaderAssetPath = (filePath.parent_path() / filePath.stem()).generic_string();
 
 				GUID_128 guid128 = GetGUID128FromAssetFile(shaderAssetPath);
 				AddGUID128Mapping(shaderAssetPath, guid128);
 				auto assetMeta = AssetManager::GetInstance().AddAssetMetaToMap(shaderAssetPath);
-				AssetManager::GetInstance().CompileAsset(assetPath, true);
+				AssetManager::GetInstance().CompileAsset(assetPath, false);
 				continue;
 			}
 			GUID_128 guid128 = GetGUID128FromAssetFile(assetPath);
 			AddGUID128Mapping(assetPath, guid128);
-			ENGINE_PRINT("[MetaFilesManager] Added GUID_128 Mapping: ", GUIDUtilities::ConvertGUID128ToString(guid128), " to ", assetPath);
 			auto assetMeta = AssetManager::GetInstance().AddAssetMetaToMap(assetPath);
-			AssetManager::GetInstance().CompileAsset(assetMeta, true);
+			AssetManager::GetInstance().CompileAsset(assetMeta, false);
 		}
 		else {
-			ENGINE_PRINT("[MetaFilesManager] .meta missing for: ", assetPath, ". Compiling and generating...", "\n");
-			ENGINE_PRINT("[MetaFilesManager] Extension: ", extension, "\n");
-			//if (AssetManager::GetInstance().IsExtensionShaderVertFrag(extension)) {
-			//	assetPath = (filePath.parent_path() / filePath.stem()).generic_string();
-			//}
+			// .meta missing — must compile for the first time
 			AssetManager::GetInstance().CompileAsset(assetPath, true);
 		}
 //#if !defined(EDITOR) && !defined(ANDROID) 

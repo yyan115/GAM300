@@ -2126,9 +2126,10 @@ void ScenePanel::DrawColliderGizmos() {
         Transform& transform = ecsManager.GetComponent<Transform>(selectedEntity);
         ColliderComponent& collider = ecsManager.GetComponent<ColliderComponent>(selectedEntity);
 
-        // check if entity has ModelRender - only auto-calculate center if it's at default (0,0,0)
-        // This preserves manually set or pasted center values
-        if (ecsManager.HasComponent<ModelRenderComponent>(selectedEntity))
+        // Auto-calculate center from model AABB for primitive shapes only.
+        // MeshShape vertices already define geometry in model-space, so center should stay (0,0,0).
+        if (collider.shapeType != ColliderShapeType::MeshShape &&
+            ecsManager.HasComponent<ModelRenderComponent>(selectedEntity))
         {
             ModelRenderComponent& rc = ecsManager.GetComponent<ModelRenderComponent>(selectedEntity);
             if (rc.model && collider.center.x == 0.0f && collider.center.y == 0.0f && collider.center.z == 0.0f) {

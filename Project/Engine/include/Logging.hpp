@@ -31,7 +31,7 @@
 // This eliminates all logging overhead - no function calls, no string formatting.
 // =============================================================================
 
- #define ENGINE_LOGGING_DISABLED
+#define ENGINE_LOGGING_DISABLED
 
 // =============================================================================
 // LOGGING MACROS

@@ -302,19 +302,13 @@ void PhysicsSystem::Initialise(ECSManager& ecsManager) {
                         JPH::TriangleList triangles;
 
                         // Extract triangles from all meshes in the model
+                        // Uses sx, sy, sz from world matrix (line ~222) so parent transforms are included
                         for (const auto& mesh : rc.model->meshes) {
-                            // Assuming your mesh has vertices with positions
                             for (size_t i = 0; i < mesh.indices.size(); i += 3) {
-                                // Get the three vertices of the triangle
                                 const auto& v0 = mesh.vertices[mesh.indices[i]];
                                 const auto& v1 = mesh.vertices[mesh.indices[i + 1]];
                                 const auto& v2 = mesh.vertices[mesh.indices[i + 2]];
 
-                                float sx = std::abs(tr.localScale.x);
-                                float sy = std::abs(tr.localScale.y);
-                                float sz = std::abs(tr.localScale.z);
-
-                                // Apply local scale to vertices
                                 JPH::Float3 p0(v0.position.x * sx,
                                     v0.position.y * sy,
                                     v0.position.z * sz);
