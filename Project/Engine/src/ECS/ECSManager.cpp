@@ -335,11 +335,6 @@ bool ECSManager::IsEntityActiveInHierarchy(Entity entity) {
 	auto& guidRegistry = EntityGUIDRegistry::GetInstance();
 
 	while (HasComponent<ParentComponent>(currentEntity)) {
-		// Get current entity's name for debugging
-		std::string currentEntityName = HasComponent<NameComponent>(currentEntity)
-			? GetComponent<NameComponent>(currentEntity).name
-			: "Unnamed";
-
 		// Get parent entity
 		auto& parentComp = GetComponent<ParentComponent>(currentEntity);
 		GUID_128 parentGUID = parentComp.parent;
@@ -347,16 +342,8 @@ bool ECSManager::IsEntityActiveInHierarchy(Entity entity) {
 
 		// Check if parent is valid
 		if (parentEntity == static_cast<Entity>(-1) || parentEntity == UINT32_MAX) {
-			std::cerr << "[IsEntityActiveInHierarchy] ERROR: Entity '" << currentEntityName
-				<< "' (" << currentEntity << ") has invalid parent GUID: "
-				<< GUIDUtilities::ConvertGUID128ToString(parentGUID) << "\n";
 			break; // Invalid parent, stop traversal
 		}
-
-		// Get parent's name for debugging
-		std::string parentEntityName = HasComponent<NameComponent>(parentEntity)
-			? GetComponent<NameComponent>(parentEntity).name
-			: "Unnamed";
 
 		// Check if parent is active
 		if (HasComponent<ActiveComponent>(parentEntity)) {

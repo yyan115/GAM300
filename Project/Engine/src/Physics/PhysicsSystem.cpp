@@ -409,6 +409,13 @@ void PhysicsSystem::Update(float fixedDt, ECSManager& ecsManager) {
 
     JPH::BodyInterface& bi = physics.GetBodyInterface();
 
+    // Cache IsEntityActiveInHierarchy once per entity (expensive: walks parent hierarchy)
+    std::unordered_map<Entity, bool> activeCache;
+    activeCache.reserve(entities.size());
+    for (auto& e : entities) {
+        activeCache[e] = ecsManager.IsEntityActiveInHierarchy(e);
+    }
+
     // =========================================================================================
     // 1. MANAGE BODY ACTIVATION STATE (Add/Remove from World)
     //    This ensures that if an entity is disabled in the hierarchy OR the collider is disabled,
@@ -423,7 +430,7 @@ void PhysicsSystem::Update(float fixedDt, ECSManager& ecsManager) {
         auto& col = ecsManager.GetComponent<ColliderComponent>(e);
         auto& rb = ecsManager.GetComponent<RigidBodyComponent>(e);
         // Determine if this body SHOULD be in the physics world
-        bool shouldBeActive = ecsManager.IsEntityActiveInHierarchy(e) && col.enabled && rb.enabled;
+        bool shouldBeActive = activeCache[e] && col.enabled && rb.enabled;
         bool isCurrentlyAdded = bi.IsAdded(bodyId);
 
         if (shouldBeActive && !isCurrentlyAdded) {
@@ -440,7 +447,7 @@ void PhysicsSystem::Update(float fixedDt, ECSManager& ecsManager) {
     // 2. UPDATE KINEMATIC BODIES BEFORE PHYSICS STEP
     // =========================================================================================
     for (auto& e : entities) {
-        if (!ecsManager.IsEntityActiveInHierarchy(e)) continue;
+        if (!activeCache[e]) continue;
 
         auto bodyIt = entityBodyMap.find(e);
         if (bodyIt == entityBodyMap.end() || bodyIt->second.IsInvalid()) continue;
@@ -503,7 +510,7 @@ void PhysicsSystem::Update(float fixedDt, ECSManager& ecsManager) {
     // 3. SYNC ECS -> JOLT (for dynamic bodies)
     // =========================================================================================
     for (auto& e : entities) {
-        if (!ecsManager.IsEntityActiveInHierarchy(e)) continue;
+        if (!activeCache[e]) continue;
 
         auto bodyIt = entityBodyMap.find(e);
         if (bodyIt == entityBodyMap.end() || bodyIt->second.IsInvalid()) continue;
@@ -580,12 +587,13 @@ void PhysicsSystem::PhysicsSyncBack(ECSManager& ecsManager) {
 #endif
 
     for (auto& e : entities) {
-        if (!ecsManager.IsEntityActiveInHierarchy(e)) continue;
-
         // Skip entities without a body in our map
         auto bodyIt = entityBodyMap.find(e);
         if (bodyIt == entityBodyMap.end() || bodyIt->second.IsInvalid()) continue;
         JPH::BodyID bodyId = bodyIt->second;
+
+        // Skip if body was removed from world (inactive entities handled in step 1)
+        if (!bi.IsAdded(bodyId)) continue;
 
         if (!ecsManager.HasComponent<RigidBodyComponent>(e) ||
             !ecsManager.HasComponent<ColliderComponent>(e) ||
