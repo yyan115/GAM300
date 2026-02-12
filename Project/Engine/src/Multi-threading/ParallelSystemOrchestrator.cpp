@@ -11,7 +11,8 @@ void ParallelSystemOrchestrator::Update() {
     // Use actual delta time, not fixed - these are called once per frame, not in a fixed timestep loop
     auto& mainECS = ECSRegistry::GetInstance().GetActiveECSManager();
 
-    //
+    // Clear per-frame active-hierarchy cache
+    mainECS.ClearActiveHierarchyCache();
 
     bool gamePaused = TimeManager::IsPaused();
     if (!gamePaused)
@@ -27,6 +28,10 @@ void ParallelSystemOrchestrator::Update() {
     mainECS.uiAnchorSystem->Update();  // Must run before button/slider to update positions
     mainECS.videoSystem->Update((float)TimeManager::GetDeltaTime()); // must be run on the main thread due to call to OpenGL functions
     mainECS.scriptSystem->Update();
+    // Scripts may have changed entity active states; flush and pre-warm cache
+    // so parallel tasks below only do reads (thread-safe for unordered_map)
+    mainECS.ClearActiveHierarchyCache();
+    mainECS.PreWarmActiveHierarchyCache();
 
     if (!gamePaused)
     {
@@ -95,6 +100,9 @@ void ParallelSystemOrchestrator::Update() {
 void ParallelSystemOrchestrator::Draw() {
     xscheduler::task_group frameChannel{ xscheduler::str_v<"DrawChannel">, scheduler };
     auto& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
+
+    // Ensure cache is fully populated before parallel draw tasks (read-only is thread-safe)
+    ecs.PreWarmActiveHierarchyCache();
 
     frameChannel.Submit([&] {
         auto& ecs = ECSRegistry::GetInstance().GetActiveECSManager();

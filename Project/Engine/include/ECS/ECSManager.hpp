@@ -2,6 +2,7 @@
 
 #include <memory>
 #include <vector>
+#include <unordered_map>
 
 #include "EntityManager.hpp"
 #include "ComponentManager.hpp"
@@ -126,11 +127,22 @@ public:
 	 * @brief Check if an entity is active considering its entire parent hierarchy.
 	 * Returns false if the entity itself or ANY of its ancestors is inactive.
 	 * This is like Unity's activeInHierarchy property.
+	 * Results are cached per-frame; call ClearActiveHierarchyCache() at the start of each frame.
 	 * @param entity The entity to check
 	 * @return true if entity and all ancestors are active, false otherwise
 	 */
 	bool ENGINE_API IsEntityActiveInHierarchy(Entity entity);
-	
+
+	/** Clear the per-frame active-hierarchy cache. Call once at the start of each frame. */
+	void ClearActiveHierarchyCache() { m_activeHierarchyCache.clear(); }
+
+	/** Pre-warm the cache for ALL active entities so parallel systems only do reads (thread-safe). */
+	void PreWarmActiveHierarchyCache() {
+		for (Entity e : GetActiveEntities()) {
+			IsEntityActiveInHierarchy(e);
+		}
+	}
+
 	// Get system manager for profiling access
 	const SystemManager* GetSystemManager() const {
 		return systemManager.get();
@@ -165,4 +177,7 @@ private:
 	std::unique_ptr<EntityManager> entityManager;
 	std::unique_ptr<ComponentManager> componentManager;
 	std::unique_ptr<SystemManager> systemManager;
+
+	// Per-frame cache for IsEntityActiveInHierarchy (cleared each frame by orchestrator)
+	std::unordered_map<Entity, bool> m_activeHierarchyCache;
 };

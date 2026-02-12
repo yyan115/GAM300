@@ -70,7 +70,7 @@ private:
     std::unordered_map<std::string, std::unique_ptr<Scripting::ScriptComponent>> m_standaloneInstances;
 
     ECSManager* m_ecs = nullptr;
-    std::mutex m_mutex;
+    std::recursive_mutex m_mutex;
 
     bool m_needsReconcile = true;
 };

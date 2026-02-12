@@ -8,6 +8,9 @@
 void SequentialSystemOrchestrator::Update() {
 	auto& mainECS = ECSRegistry::GetInstance().GetActiveECSManager();
 
+	// Clear per-frame cache so all systems share the same hierarchy lookups
+	mainECS.ClearActiveHierarchyCache();
+
 	// Update systems.
 	// Use actual delta time, not fixed - these are called once per frame, not in a fixed timestep loop
 	mainECS.physicsSystem->Update((float)TimeManager::GetDeltaTime(), mainECS);
@@ -19,6 +22,8 @@ void SequentialSystemOrchestrator::Update() {
 	mainECS.cameraSystem->Update();
 	mainECS.lightingSystem->Update();
 	mainECS.scriptSystem->Update();
+	// Scripts may have changed entity active states; flush cache so subsequent systems see updates
+	mainECS.ClearActiveHierarchyCache();
 	mainECS.uiAnchorSystem->Update();  // Must run before button/slider to update positions
 	mainECS.buttonSystem->Update();
 	mainECS.sliderSystem->Update();

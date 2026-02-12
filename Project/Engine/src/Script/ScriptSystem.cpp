@@ -741,28 +741,15 @@ void ScriptSystem::Update()
     // Use scaled delta time so coroutines respect pause state
     if (Scripting::GetLuaState()) Scripting::Tick(static_cast<float>(TimeManager::GetDeltaTime()));
 
-    // ==========================================================================
-    // FIX: Create ALL script instances first before calling any Awake/Start.
-    // This ensures that when any script's Start() calls Engine.GetEntityByName()
-    // and tries to interact with another entity's script, that script exists.
-    // Previously, instances were created in EntityID order during the Update loop,
-    // so scripts with lower IDs couldn't find scripts with higher IDs during Start().
-    // ==========================================================================
+    // Single lock for entire Update — m_runtimeMap is only accessed from main thread
+    // (SequentialSystemOrchestrator::Update is single-threaded)
+    std::lock_guard<std::recursive_mutex> lk(m_mutex);
 
-    // Cache active hierarchy check to avoid redundant parent-chain walks
-    std::unordered_set<Entity> activeEntities;
-    activeEntities.reserve(entities.size());
-    for (Entity e : entities) {
-        if (m_ecs->IsEntityActiveInHierarchy(e)) {
-            activeEntities.insert(e);
-        }
-    }
-
-    // Phase 1: Create instances for all entities (no Awake/Start yet)
+    // Phase 1: Create instances for all entities that need them (no Awake/Start yet)
     std::vector<Entity> newlyCreatedEntities;
     for (Entity e : entities)
     {
-        if (activeEntities.find(e) == activeEntities.end()) {
+        if (!m_ecs->IsEntityActiveInHierarchy(e)) {
             continue;
         }
 
@@ -771,19 +758,15 @@ void ScriptSystem::Update()
 
         // Check if this entity needs new instances created
         bool needsCreation = false;
-        {
-            std::lock_guard<std::mutex> lk(m_mutex);
-            auto it = m_runtimeMap.find(e);
-            if (it == m_runtimeMap.end()) {
-                needsCreation = true;
-            } else {
-                // Check if all scripts have instances
-                for (size_t i = 0; i < comp->scripts.size(); ++i) {
-                    if (comp->scripts[i].enabled && !comp->scripts[i].scriptPath.empty()) {
-                        if (i >= it->second.size() || !it->second[i]) {
-                            needsCreation = true;
-                            break;
-                        }
+        auto it = m_runtimeMap.find(e);
+        if (it == m_runtimeMap.end()) {
+            needsCreation = true;
+        } else {
+            for (size_t i = 0; i < comp->scripts.size(); ++i) {
+                if (comp->scripts[i].enabled && !comp->scripts[i].scriptPath.empty()) {
+                    if (i >= it->second.size() || !it->second[i]) {
+                        needsCreation = true;
+                        break;
                     }
                 }
             }
@@ -799,7 +782,6 @@ void ScriptSystem::Update()
     // Phase 2: Call Awake on all newly created instances
     for (Entity e : newlyCreatedEntities)
     {
-        std::lock_guard<std::mutex> lk(m_mutex);
         auto it = m_runtimeMap.find(e);
         if (it != m_runtimeMap.end())
         {
@@ -816,7 +798,6 @@ void ScriptSystem::Update()
     // Phase 3: Call Start on all newly created instances
     for (Entity e : newlyCreatedEntities)
     {
-        std::lock_guard<std::mutex> lk(m_mutex);
         auto it = m_runtimeMap.find(e);
         if (it != m_runtimeMap.end())
         {
@@ -833,8 +814,8 @@ void ScriptSystem::Update()
     // Phase 4: Update all entities
     for (Entity e : entities)
     {
-        // Skip entities that are inactive in hierarchy (uses cached result)
-        if (activeEntities.find(e) == activeEntities.end()) {
+        // Skip entities that are inactive in hierarchy (centralized cache in ECSManager)
+        if (!m_ecs->IsEntityActiveInHierarchy(e)) {
             continue;
         }
 
@@ -844,17 +825,14 @@ void ScriptSystem::Update()
         // call Update(dt) on all script instances for this entity
         // Use scaled delta time so scripts receive dt=0 when paused
         // UI scripts that need to run during pause should use Time.GetUnscaledDeltaTime() directly
+        auto it = m_runtimeMap.find(e);
+        if (it != m_runtimeMap.end())
         {
-            std::lock_guard<std::mutex> lk(m_mutex);
-            auto it = m_runtimeMap.find(e);
-            if (it != m_runtimeMap.end())
+            for (auto& scriptInst : it->second)
             {
-                for (auto& scriptInst : it->second)
+                if (scriptInst)
                 {
-                    if (scriptInst)
-                    {
-                        scriptInst->Update(static_cast<float>(TimeManager::GetDeltaTime()));
-                    }
+                    scriptInst->Update(static_cast<float>(TimeManager::GetDeltaTime()));
                 }
             }
         }
@@ -862,7 +840,6 @@ void ScriptSystem::Update()
 
     // cleanup runtime instances for entities that no longer belong to this system
     {
-        std::lock_guard<std::mutex> lk(m_mutex);
         std::vector<Entity> toRemove;
         toRemove.reserve(8);
         for (auto& p : m_runtimeMap)
@@ -879,7 +856,7 @@ void ScriptSystem::Update()
 
 void ScriptSystem::Shutdown()
 {
-    std::lock_guard<std::mutex> lk(m_mutex);
+    std::lock_guard<std::recursive_mutex> lk(m_mutex);
 
     // best-effort: call OnDisable and release runtime objects
     for (auto& p : m_runtimeMap) {
@@ -939,7 +916,7 @@ bool ScriptSystem::EnsureInstanceForEntity(Entity e, ECSManager& ecsManager)
 
     // Ensure we have a vector for this entity in the runtime map
     {
-        std::lock_guard<std::mutex> lk(m_mutex);
+        std::lock_guard<std::recursive_mutex> lk(m_mutex);
         if (m_runtimeMap.find(e) == m_runtimeMap.end())
         {
             m_runtimeMap[e] = std::vector<std::unique_ptr<Scripting::ScriptComponent>>();
@@ -956,7 +933,7 @@ bool ScriptSystem::EnsureInstanceForEntity(Entity e, ECSManager& ecsManager)
         // Check if runtime instance already exists for this script
         bool alreadyExists = false;
         {
-            std::lock_guard<std::mutex> lk(m_mutex);
+            std::lock_guard<std::recursive_mutex> lk(m_mutex);
             auto& scriptVec = m_runtimeMap[e];
             if (scriptIdx < scriptVec.size() && scriptVec[scriptIdx])
             {
@@ -1023,7 +1000,7 @@ bool ScriptSystem::EnsureInstanceForEntity(Entity e, ECSManager& ecsManager)
         // Store in runtime map
         Scripting::ScriptComponent* scPtr = runtimeComp.get();
         {
-            std::lock_guard<std::mutex> lk(m_mutex);
+            std::lock_guard<std::recursive_mutex> lk(m_mutex);
             auto& scriptVec = m_runtimeMap[e];
 
             // Resize vector if needed
@@ -1066,7 +1043,7 @@ bool ScriptSystem::EnsureInstanceForEntityNoLifecycle(Entity e, ECSManager& ecsM
 
     // Ensure we have a vector for this entity in the runtime map
     {
-        std::lock_guard<std::mutex> lk(m_mutex);
+        std::lock_guard<std::recursive_mutex> lk(m_mutex);
         if (m_runtimeMap.find(e) == m_runtimeMap.end())
         {
             m_runtimeMap[e] = std::vector<std::unique_ptr<Scripting::ScriptComponent>>();
@@ -1085,7 +1062,7 @@ bool ScriptSystem::EnsureInstanceForEntityNoLifecycle(Entity e, ECSManager& ecsM
         // Check if runtime instance already exists for this script
         bool alreadyExists = false;
         {
-            std::lock_guard<std::mutex> lk(m_mutex);
+            std::lock_guard<std::recursive_mutex> lk(m_mutex);
             auto& scriptVec = m_runtimeMap[e];
             if (scriptIdx < scriptVec.size() && scriptVec[scriptIdx])
             {
@@ -1150,7 +1127,7 @@ bool ScriptSystem::EnsureInstanceForEntityNoLifecycle(Entity e, ECSManager& ecsM
         // Store in runtime map
         Scripting::ScriptComponent* scPtr = runtimeComp.get();
         {
-            std::lock_guard<std::mutex> lk(m_mutex);
+            std::lock_guard<std::recursive_mutex> lk(m_mutex);
             auto& scriptVec = m_runtimeMap[e];
 
             // Resize vector if needed
@@ -1177,7 +1154,7 @@ void ScriptSystem::DestroyInstanceForEntity(Entity e)
 {
     std::vector<std::unique_ptr<Scripting::ScriptComponent>> runtimePtrs;
     {
-        std::lock_guard<std::mutex> lk(m_mutex);
+        std::lock_guard<std::recursive_mutex> lk(m_mutex);
         auto it = m_runtimeMap.find(e);
         if (it == m_runtimeMap.end()) return;
         runtimePtrs = std::move(it->second);
@@ -1223,7 +1200,7 @@ void ScriptSystem::ReloadScriptForEntity(Entity e, ECSManager& ecsManager)
 
     // extract state then destroy old runtimes
     {
-        std::lock_guard<std::mutex> lk(m_mutex);
+        std::lock_guard<std::recursive_mutex> lk(m_mutex);
         auto it = m_runtimeMap.find(e);
         if (it != m_runtimeMap.end())
         {
@@ -1264,7 +1241,7 @@ void ScriptSystem::ReloadScriptForEntity(Entity e, ECSManager& ecsManager)
 
     // reinject preserved states
     {
-        std::lock_guard<std::mutex> lk(m_mutex);
+        std::lock_guard<std::recursive_mutex> lk(m_mutex);
         auto it = m_runtimeMap.find(e);
         if (it != m_runtimeMap.end())
         {
@@ -1292,7 +1269,7 @@ bool ScriptSystem::CallEntityFunction(Entity e, const std::string& funcName, ECS
 
     bool anySuccess = false;
     {
-        std::lock_guard<std::mutex> lk(m_mutex);
+        std::lock_guard<std::recursive_mutex> lk(m_mutex);
         auto it = m_runtimeMap.find(e);
         if (it != m_runtimeMap.end())
         {
@@ -1325,7 +1302,7 @@ void ScriptSystem::ReloadAllInstances()
     // collect entity list snapshot under lock to avoid iterator invalidation
     std::vector<Entity> entitySnapshot;
     {
-        std::lock_guard<std::mutex> lk(m_mutex);
+        std::lock_guard<std::recursive_mutex> lk(m_mutex);
         entitySnapshot.assign(entities.begin(), entities.end());
     }
 
@@ -1356,7 +1333,7 @@ void ScriptSystem::ReloadAllInstances()
 
         // extract state then destroy old runtimes
         {
-            std::lock_guard<std::mutex> lk(m_mutex);
+            std::lock_guard<std::recursive_mutex> lk(m_mutex);
             auto it = m_runtimeMap.find(e);
             if (it != m_runtimeMap.end())
             {
@@ -1407,7 +1384,7 @@ void ScriptSystem::ReloadAllInstances()
         auto statesIt = preservedStatesMap.find(e);
         if (statesIt == preservedStatesMap.end()) continue;
 
-        std::lock_guard<std::mutex> lk(m_mutex);
+        std::lock_guard<std::recursive_mutex> lk(m_mutex);
         auto it = m_runtimeMap.find(e);
         if (it != m_runtimeMap.end())
         {
@@ -1424,7 +1401,7 @@ void ScriptSystem::ReloadAllInstances()
     // Phase 4: Call Awake on all instances
     for (Entity e : entitiesToReload)
     {
-        std::lock_guard<std::mutex> lk(m_mutex);
+        std::lock_guard<std::recursive_mutex> lk(m_mutex);
         auto it = m_runtimeMap.find(e);
         if (it != m_runtimeMap.end())
         {
@@ -1441,7 +1418,7 @@ void ScriptSystem::ReloadAllInstances()
     // Phase 5: Call Start on all instances
     for (Entity e : entitiesToReload)
     {
-        std::lock_guard<std::mutex> lk(m_mutex);
+        std::lock_guard<std::recursive_mutex> lk(m_mutex);
         auto it = m_runtimeMap.find(e);
         if (it != m_runtimeMap.end())
         {
@@ -1504,7 +1481,7 @@ int ScriptSystem::GetInstanceRefForScript(Entity e, const std::string& scriptGui
     }
 
     // Fallback: inspect runtime map under lock (runtimeMap contains ScriptComponent instances)
-    std::lock_guard<std::mutex> lk(m_mutex);
+    std::lock_guard<std::recursive_mutex> lk(m_mutex);
     auto it = m_runtimeMap.find(e);
     if (it == m_runtimeMap.end()) return LUA_NOREF;
 
@@ -1547,13 +1524,13 @@ void ScriptSystem::RegisterInstancesChangedCallback(InstancesChangedCb cb)
     void* key = reinterpret_cast<void*>(cb.target<void>());
     // If target<void>() is null (e.g. capturing lambda), key will be nullptr.
     // That is acceptable with your current design as long as the client computes the same key.
-    std::lock_guard<std::mutex> lk(m_mutex);
+    std::lock_guard<std::recursive_mutex> lk(m_mutex);
     m_instancesChangedCbs.emplace_back(key, std::move(cb));
 }
 
 void ScriptSystem::UnregisterInstancesChangedCallback(void* cbId)
 {
-    std::lock_guard<std::mutex> lk(m_mutex);
+    std::lock_guard<std::recursive_mutex> lk(m_mutex);
     m_instancesChangedCbs.erase(
         std::remove_if(m_instancesChangedCbs.begin(), m_instancesChangedCbs.end(),
             [cbId](const auto& p) { return p.first == cbId; }),
@@ -1568,7 +1545,7 @@ void ScriptSystem::NotifyInstancesChanged(Entity e)
     // Copy callbacks under lock, then call outside lock to avoid reentrancy / deadlocks.
     //std::vector<InstancesChangedCb> callbacks;
     //{
-    //    std::lock_guard<std::mutex> lk(m_mutex);
+    //    std::lock_guard<std::recursive_mutex> lk(m_mutex);
     //    callbacks.reserve(m_instancesChangedCbs.size());
     //    for (const auto& p : m_instancesChangedCbs) {
     //        callbacks.push_back(p.second);
@@ -1610,7 +1587,7 @@ int ScriptSystem::GetOrCreateStandaloneInstance(const std::string& scriptPath, c
         return LUA_NOREF;
     }
 
-    std::lock_guard<std::mutex> lk(m_mutex);
+    std::lock_guard<std::recursive_mutex> lk(m_mutex);
 
     // Check if we already have an instance for this script
     auto it = m_standaloneInstances.find(scriptGuidStr);
