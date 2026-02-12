@@ -98,6 +98,11 @@ jobs:
       run: cmake --preset ${{ matrix.preset }}
       working-directory: Project
 
+    # Enable MSVC error annotations on PRs (file:line links in the diff)
+    - name: Setup MSVC problem matcher
+      run: |
+        echo '::add-matcher::${{ github.workspace }}/.github/matchers/msvc.json'
+
     - name: Build
       id: build
       run: |
@@ -106,30 +111,29 @@ jobs:
       working-directory: Project
       shell: pwsh
 
-    - name: Build Summary
+    - name: Extract errors
       if: always()
       run: |
-        echo "## Build Result: ${{ matrix.preset }}" >> $env:GITHUB_STEP_SUMMARY
-        if ("${{ steps.build.outcome }}" -eq "success") {
-          echo "**Status:** SUCCESS" >> $env:GITHUB_STEP_SUMMARY
-        } else {
-          echo "**Status:** FAILED" >> $env:GITHUB_STEP_SUMMARY
-          echo "" >> $env:GITHUB_STEP_SUMMARY
-          echo "### Error Log:" >> $env:GITHUB_STEP_SUMMARY
-          echo '```' >> $env:GITHUB_STEP_SUMMARY
-          Get-Content build.log -Tail 50 >> $env:GITHUB_STEP_SUMMARY
-          echo '```' >> $env:GITHUB_STEP_SUMMARY
-        }
-      working-directory: Project
-      shell: pwsh
+        echo "${{ steps.build.outcome }}" > Project/build-result.txt
+        # Extract MSVC error and fatal error lines (file(line): error Cxxxx: message)
+        grep -E ": (fatal )?error [A-Z][0-9]+:" Project/build.log > Project/build-errors.txt 2>/dev/null || true
+        # Also grab linker errors (LINK : fatal error LNKxxxx)
+        grep -Ei "^LINK : " Project/build.log >> Project/build-errors.txt 2>/dev/null || true
+        # Deduplicate
+        sort -u Project/build-errors.txt -o Project/build-errors.txt 2>/dev/null || true
+      shell: bash
 
-    - name: Upload build log on failure
-      if: failure()
+    - name: Upload build log
+      if: always()
       uses: actions/upload-artifact@v4
       with:
         name: build-log-${{ matrix.preset }}
-        path: Project/build.log
+        path: |
+          Project/build.log
+          Project/build-result.txt
+          Project/build-errors.txt
         retention-days: 7
+        if-no-files-found: ignore
 
     # Upload executable and required DLLs
     - name: Upload Artifacts
@@ -143,30 +147,167 @@ jobs:
         retention-days: 7
         if-no-files-found: error
 
-  # Summary job that runs after all builds complete
+  # Build Engine + Game for Android (arm64) to catch cross-platform breakages
+  android-build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v4
+      with:
+        lfs: true
+
+    - name: Cache Jolt Physics (FetchContent)
+      uses: actions/cache@v4
+      with:
+        path: Project/Build/android-ci/_deps
+        key: android-deps-${{ hashFiles('Project/ImportDependencies.cmake') }}
+
+    - name: Install NDK and Ninja
+      run: |
+        echo "y" | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager "ndk;29.0.14033849"
+        sudo apt-get update && sudo apt-get install -y ninja-build
+
+    # Enable GCC/Clang error annotations on PRs
+    - name: Setup GCC problem matcher
+      run: |
+        echo '::add-matcher::${{ github.workspace }}/.github/matchers/gcc.json'
+
+    - name: Configure CMake for Android
+      run: |
+        cmake -S Project -B Project/Build/android-ci \
+          -G Ninja \
+          -DCMAKE_TOOLCHAIN_FILE=$ANDROID_HOME/ndk/29.0.14033849/build/cmake/android.toolchain.cmake \
+          -DANDROID_ABI=arm64-v8a \
+          -DANDROID_PLATFORM=android-33 \
+          -DCMAKE_BUILD_TYPE=Release \
+          -DCMAKE_ANDROID_STL_TYPE=c++_shared
+
+    - name: Build
+      id: android-build
+      run: |
+        cmake --build Project/Build/android-ci --parallel 2>&1 | tee build-android.log
+        if [ ${PIPESTATUS[0]} -ne 0 ]; then exit 1; fi
+
+    - name: Extract errors
+      if: always()
+      run: |
+        echo "${{ steps.android-build.outcome }}" > build-result.txt
+        # Extract GCC/Clang error lines (file:line:col: error: message)
+        grep -E ": error:" build-android.log > build-errors.txt 2>/dev/null || true
+        # Also grab linker errors
+        grep -Ei "undefined reference to|ld: error:" build-android.log >> build-errors.txt 2>/dev/null || true
+        # Deduplicate
+        sort -u build-errors.txt -o build-errors.txt 2>/dev/null || true
+
+    - name: Upload build log
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: build-log-android
+        path: |
+          build-android.log
+          build-result.txt
+          build-errors.txt
+        retention-days: 7
+        if-no-files-found: ignore
+
+  # Aggregate summary with inline error details
   build-summary:
-    needs: build
+    needs: [build, android-build]
     runs-on: ubuntu-latest
     if: always()
     steps:
+      - name: Download all build logs
+        uses: actions/download-artifact@v4
+        with:
+          pattern: build-log-*
+          path: logs/
+
       - name: Build Results Summary
         run: |
           echo "## Build Summary" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Configuration | Status | Errors |" >> $GITHUB_STEP_SUMMARY
+          echo "|---|---|---|" >> $GITHUB_STEP_SUMMARY
 
-          if [ "${{ needs.build.result }}" == "success" ]; then
-            echo "### All builds completed successfully" >> $GITHUB_STEP_SUMMARY
-            echo "" >> $GITHUB_STEP_SUMMARY
-            echo "| Configuration | Status |" >> $GITHUB_STEP_SUMMARY
-            echo "|--------------|--------|" >> $GITHUB_STEP_SUMMARY
-            echo "| Debug | PASS |" >> $GITHUB_STEP_SUMMARY
-            echo "| Release | PASS |" >> $GITHUB_STEP_SUMMARY
-            echo "| Editor Debug | PASS |" >> $GITHUB_STEP_SUMMARY
-            echo "| Editor Release | PASS |" >> $GITHUB_STEP_SUMMARY
-          else
-            echo "### Build failures detected" >> $GITHUB_STEP_SUMMARY
-            echo "" >> $GITHUB_STEP_SUMMARY
-            echo "Check the individual job logs above for detailed error messages." >> $GITHUB_STEP_SUMMARY
-            echo "Build logs have been uploaded as artifacts for failed builds." >> $GITHUB_STEP_SUMMARY
+          HAS_FAILURES=false
+
+          for config in debug release editor-debug editor-release android; do
+            dir="logs/build-log-$config"
+            result_file="$dir/build-result.txt"
+            errors_file="$dir/build-errors.txt"
+
+            case $config in
+              debug)          display="Debug" ;;
+              release)        display="Release" ;;
+              editor-debug)   display="Editor Debug" ;;
+              editor-release) display="Editor Release" ;;
+              android)        display="Android (arm64)" ;;
+            esac
+
+            if [ ! -f "$result_file" ]; then
+              echo "| $display | SKIP | — |" >> $GITHUB_STEP_SUMMARY
+              continue
+            fi
+
+            result=$(cat "$result_file" | tr -d '[:space:]')
+            if [ "$result" = "success" ]; then
+              echo "| $display | PASS | 0 |" >> $GITHUB_STEP_SUMMARY
+            else
+              error_count=0
+              if [ -f "$errors_file" ] && [ -s "$errors_file" ]; then
+                error_count=$(wc -l < "$errors_file")
+              fi
+              echo "| $display | **FAIL** | $error_count |" >> $GITHUB_STEP_SUMMARY
+              HAS_FAILURES=true
+            fi
+          done
+
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          # Show error details for failed builds
+          if [ "$HAS_FAILURES" = true ]; then
+            echo "---" >> $GITHUB_STEP_SUMMARY
+            for config in debug release editor-debug editor-release android; do
+              dir="logs/build-log-$config"
+              result_file="$dir/build-result.txt"
+              errors_file="$dir/build-errors.txt"
+
+              [ -f "$result_file" ] || continue
+              result=$(cat "$result_file" | tr -d '[:space:]')
+              [ "$result" != "success" ] || continue
+
+              case $config in
+                debug)          display="Debug" ;;
+                release)        display="Release" ;;
+                editor-debug)   display="Editor Debug" ;;
+                editor-release) display="Editor Release" ;;
+                android)        display="Android (arm64)" ;;
+              esac
+
+              echo "" >> $GITHUB_STEP_SUMMARY
+              echo "### $display" >> $GITHUB_STEP_SUMMARY
+
+              if [ -f "$errors_file" ] && [ -s "$errors_file" ]; then
+                echo '```' >> $GITHUB_STEP_SUMMARY
+                cat "$errors_file" >> $GITHUB_STEP_SUMMARY
+                echo '```' >> $GITHUB_STEP_SUMMARY
+              else
+                # No parsed errors — show tail of full log as fallback
+                log_file=$(find "$dir" -name "*.log" 2>/dev/null | head -1)
+                if [ -f "$log_file" ]; then
+                  echo "Could not extract specific errors. Last 30 lines of build log:" >> $GITHUB_STEP_SUMMARY
+                  echo '```' >> $GITHUB_STEP_SUMMARY
+                  tail -30 "$log_file" >> $GITHUB_STEP_SUMMARY
+                  echo '```' >> $GITHUB_STEP_SUMMARY
+                fi
+              fi
+
+              echo "" >> $GITHUB_STEP_SUMMARY
+              echo "*Full log available in build-log-$config artifact.*" >> $GITHUB_STEP_SUMMARY
+            done
             exit 1
+          else
+            echo "All builds passed." >> $GITHUB_STEP_SUMMARY
           fi

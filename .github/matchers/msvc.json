@@ -1,0 +1,42 @@
+{
+  "problemMatcher": [
+    {
+      "owner": "msvc-error",
+      "pattern": [
+        {
+          "regexp": "^(.+)\\((\\d+)\\):\\s+(error|fatal error)\\s+(C\\d+):\\s+(.+)$",
+          "file": 1,
+          "line": 2,
+          "severity": "error",
+          "code": 4,
+          "message": 5
+        }
+      ]
+    },
+    {
+      "owner": "msvc-warning",
+      "pattern": [
+        {
+          "regexp": "^(.+)\\((\\d+)\\):\\s+warning\\s+(C\\d+):\\s+(.+)$",
+          "file": 1,
+          "line": 2,
+          "severity": "warning",
+          "code": 3,
+          "message": 4
+        }
+      ]
+    },
+    {
+      "owner": "msvc-linker",
+      "pattern": [
+        {
+          "regexp": "^(.+)\\s+:\\s+(fatal error)\\s+(LNK\\d+):\\s+(.+)$",
+          "file": 1,
+          "severity": "error",
+          "code": 3,
+          "message": 4
+        }
+      ]
+    }
+  ]
+}

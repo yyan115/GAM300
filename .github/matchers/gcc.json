@@ -1,0 +1,42 @@
+{
+  "problemMatcher": [
+    {
+      "owner": "gcc-error",
+      "pattern": [
+        {
+          "regexp": "^(.+):(\\d+):(\\d+):\\s+(error):\\s+(.+)$",
+          "file": 1,
+          "line": 2,
+          "column": 3,
+          "severity": "error",
+          "message": 5
+        }
+      ]
+    },
+    {
+      "owner": "gcc-warning",
+      "pattern": [
+        {
+          "regexp": "^(.+):(\\d+):(\\d+):\\s+(warning):\\s+(.+)$",
+          "file": 1,
+          "line": 2,
+          "column": 3,
+          "severity": "warning",
+          "message": 5
+        }
+      ]
+    },
+    {
+      "owner": "linker-error",
+      "pattern": [
+        {
+          "regexp": "^(.+):(\\d+): undefined reference to `(.+)'",
+          "file": 1,
+          "line": 2,
+          "message": 3,
+          "severity": "error"
+        }
+      ]
+    }
+  ]
+}
