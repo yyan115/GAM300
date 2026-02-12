@@ -812,6 +812,11 @@ void ScriptSystem::Update()
     }
 
     // Phase 4: Update all entities
+    float dt = static_cast<float>(TimeManager::GetDeltaTime());
+#if !DISABLE_PROFILING
+    auto& profiler = PerformanceProfiler::GetInstance();
+    bool scriptProfiling = profiler.IsProfilingEnabled();
+#endif
     for (Entity e : entities)
     {
         // Skip entities that are inactive in hierarchy (centralized cache in ECSManager)
@@ -832,7 +837,18 @@ void ScriptSystem::Update()
             {
                 if (scriptInst)
                 {
-                    scriptInst->Update(static_cast<float>(TimeManager::GetDeltaTime()));
+#if !DISABLE_PROFILING
+                    if (scriptProfiling) {
+                        auto start = std::chrono::high_resolution_clock::now();
+                        scriptInst->Update(dt);
+                        double ms = std::chrono::duration<double, std::milli>(
+                            std::chrono::high_resolution_clock::now() - start).count();
+                        profiler.EndZone(scriptInst->GetScriptPath().c_str(), ms);
+                    } else
+#endif
+                    {
+                        scriptInst->Update(dt);
+                    }
                 }
             }
         }
