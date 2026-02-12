@@ -18,10 +18,10 @@
 void AudioSystem::Update(float deltaTime) {
     PROFILE_FUNCTION();
     (void)deltaTime; // Unused for now
-    // First, update the AudioManager's internal FMOD system
-    AudioManager::GetInstance().Update();
+    // FMOD processing runs on a dedicated audio thread (AudioManager::AudioThreadLoop).
+    // This system only handles ECS component iteration.
 
-    // Then update all audio-related components in a single pass
+    // Update all audio-related components in a single pass
     ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
 
     for (const auto& entity : ecsManager.GetActiveEntities()) {

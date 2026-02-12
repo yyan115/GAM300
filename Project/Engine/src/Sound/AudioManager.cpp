@@ -59,6 +59,11 @@ bool AudioManager::Initialise() {
     }
 
     ENGINE_PRINT("[AudioManager] FMOD initialized successfully.\n");
+
+    // Start dedicated audio thread for FMOD processing
+    m_threadRunning.store(true);
+    m_audioThread = std::thread(&AudioManager::AudioThreadLoop, this);
+
     return true;
 }
 
@@ -66,6 +71,12 @@ void AudioManager::Shutdown() {
     // Use atomic exchange to ensure shutdown runs only once
     if (ShuttingDown.exchange(true)) {
         return; // Already shutting down or shut down
+    }
+
+    // Stop the audio thread before touching FMOD resources
+    m_threadRunning.store(false);
+    if (m_audioThread.joinable()) {
+        m_audioThread.join();
     }
 
     // Stop all channels and collect FMOD objects
@@ -114,19 +125,41 @@ void AudioManager::Shutdown() {
 }
 
 void AudioManager::Update() {
-    PROFILE_FUNCTION();
-    
-    if (ShuttingDown.load()) return;
+    // FMOD processing now runs on a dedicated audio thread.
+    // This function is kept for API compatibility but does no heavy work.
+}
 
-    std::shared_lock<std::shared_mutex> lock(Mutex);
-    if (!System) return;
+void AudioManager::AudioThreadLoop() {
+    using clock = std::chrono::steady_clock;
+    constexpr auto targetInterval = std::chrono::milliseconds(16); // ~60Hz
 
-    FMOD_System_Update(System);
-    CleanupStoppedChannels();
-    lock.unlock();
+    while (m_threadRunning.load(std::memory_order_relaxed)) {
+        auto start = clock::now();
 
-    // Apply batched updates outside of the read lock
-    ApplyBatchUpdates();
+        if (!ShuttingDown.load(std::memory_order_relaxed)) {
+            // FMOD_System_Update — FMOD is internally thread-safe.
+            // No engine mutex needed here; Shutdown joins this thread
+            // before destroying the System pointer.
+            if (System) {
+                FMOD_System_Update(System);
+            }
+
+            // Cleanup stopped channels (modifies ChannelMap, needs unique lock)
+            {
+                std::unique_lock<std::shared_mutex> lock(Mutex);
+                CleanupStoppedChannels();
+            }
+
+            // Apply queued property changes (has its own internal locking)
+            ApplyBatchUpdates();
+        }
+
+        auto elapsed = clock::now() - start;
+        auto sleepTime = targetInterval - elapsed;
+        if (sleepTime > std::chrono::milliseconds(0)) {
+            std::this_thread::sleep_for(sleepTime);
+        }
+    }
 }
 
 ChannelHandle AudioManager::PlayAudio(std::shared_ptr<Audio> audioAsset, bool loop, float volume) {
