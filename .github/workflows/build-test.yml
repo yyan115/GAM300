@@ -231,90 +231,72 @@ jobs:
           BASE="HEAD~1"
         fi
 
-        DIRS="Project/Engine/src/ Project/Engine/include/ Project/Scripting/src/ Project/Scripting/include/ Project/Game/src/ Project/Game/include/"
+        PATHS='Project/Engine/src/ Project/Engine/include/ Project/Scripting/src/ Project/Scripting/include/ Project/Game/src/ Project/Game/include/'
 
-        # Get only added lines (+) in Engine/Game/Scripting source files
-        DIFF=$(git diff "$BASE"...HEAD -- \
-          'Project/Engine/src/**' 'Project/Engine/include/**' \
-          'Project/Scripting/src/**' 'Project/Scripting/include/**' \
-          'Project/Game/src/**' 'Project/Game/include/**' \
-          | grep '^+' | grep -v '^+++' || true)
+        # Extract added lines with file:line from the diff
+        # Output format: file:line: content
+        ADDED_LINES=$(git diff -U0 "$BASE"...HEAD -- $PATHS | awk '
+          /^\+\+\+ b\//{file=substr($0,7)}
+          /^@@/{split($3,a,/[,+]/); line=a[2]}
+          /^\+[^+]/{print file":"line": "substr($0,2); line++}
+        ' || true)
 
         FAILED=false
-        REPORT=""
-
-        # Check: std::cout / std::cerr
-        COUT_HITS=$(echo "$DIFF" | grep 'std::cout\|std::cerr' || true)
-        if [ -n "$COUT_HITS" ]; then
-          FAILED=true
-          REPORT="${REPORT}
-        ### std::cout / std::cerr
-        Use \`ENGINE_PRINT(...)\` or \`ENGINE_LOG_INFO(msg)\` instead.
-        \`\`\`
-        ${COUT_HITS}
-        \`\`\`
-        "
-        fi
-
-        # Check: #include <iostream>
-        IOSTREAM_HITS=$(echo "$DIFF" | grep '#include.*<iostream>' || true)
-        if [ -n "$IOSTREAM_HITS" ]; then
-          FAILED=true
-          REPORT="${REPORT}
-        ### #include <iostream>
-        Not needed if using ENGINE_PRINT / ENGINE_LOG. Remove it.
-        \`\`\`
-        ${IOSTREAM_HITS}
-        \`\`\`
-        "
-        fi
-
-        # Check: std::ifstream / std::ofstream without platform guard (breaks Android)
-        FSTREAM_HITS=$(echo "$DIFF" | grep 'std::ifstream\|std::ofstream' || true)
-        if [ -n "$FSTREAM_HITS" ]; then
-          REPORT="${REPORT}
-        ### std::ifstream / std::ofstream (warning)
-        These break on Android. Use \`platform->ReadAsset()\` or guard with \`#ifdef ANDROID\`.
-        \`\`\`
-        ${FSTREAM_HITS}
-        \`\`\`
-        "
-        fi
-
-        # Check: #include <filesystem> (breaks Android NDK)
-        FILESYSTEM_HITS=$(echo "$DIFF" | grep '#include.*<filesystem>' || true)
-        if [ -n "$FILESYSTEM_HITS" ]; then
-          REPORT="${REPORT}
-        ### #include \<filesystem\> (warning)
-        Not available on Android NDK. Guard with \`#ifndef ANDROID\` or use platform file utilities.
-        \`\`\`
-        ${FILESYSTEM_HITS}
-        \`\`\`
-        "
-        fi
-
-        # Summary
         echo "## Lint" >> $GITHUB_STEP_SUMMARY
         echo "" >> $GITHUB_STEP_SUMMARY
 
+        check_pattern() {
+          local label="$1"
+          local pattern="$2"
+          local fix="$3"
+          local hits
+          hits=$(echo "$ADDED_LINES" | grep -i "$pattern" || true)
+          if [ -n "$hits" ]; then
+            FAILED=true
+            echo "### $label" >> $GITHUB_STEP_SUMMARY
+            echo "$fix" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+            echo "$hits" >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+          fi
+        }
+
+        check_pattern \
+          "std::cout / std::cerr" \
+          "std::cout\|std::cerr" \
+          "Use \`ENGINE_PRINT(...)\` or \`ENGINE_LOG_INFO()\` instead."
+
+        check_pattern \
+          "#include \`<iostream>\`" \
+          "#include.*<iostream>" \
+          "Not needed when using \`ENGINE_PRINT\` / \`ENGINE_LOG\`. Remove it."
+
+        check_pattern \
+          "std::ifstream / std::ofstream" \
+          "std::ifstream\|std::ofstream" \
+          "Breaks on Android. Use \`platform->ReadAsset()\` or guard with \`#ifndef ANDROID\`."
+
+        check_pattern \
+          "#include \`<filesystem>\`" \
+          "#include.*<filesystem>" \
+          "Not available on Android NDK. Guard with \`#ifndef ANDROID\` or use platform file utilities."
+
         if [ "$FAILED" = true ]; then
-          echo "Banned patterns found in new Engine/Game/Scripting code:" >> $GITHUB_STEP_SUMMARY
-          echo "$REPORT" >> $GITHUB_STEP_SUMMARY
-          echo ""
-          echo "FAILED: Banned patterns in new code"
-          echo "$REPORT"
+          echo "---" >> $GITHUB_STEP_SUMMARY
+          echo "FAILED: Banned patterns found in new Engine/Game/Scripting code."
           exit 1
         else
           echo "No banned patterns in new code." >> $GITHUB_STEP_SUMMARY
         fi
 
         # Info: total existing tech debt
-        TOTAL=$(grep -r 'std::cout\|std::cerr' \
-          $DIRS \
+        TOTAL=$(grep -r 'std::cout\|std::cerr' $PATHS \
           --include='*.cpp' --include='*.hpp' --include='*.h' \
           -c 2>/dev/null | awk -F: '{s+=$2} END {print s+0}')
         echo "" >> $GITHUB_STEP_SUMMARY
-        echo "*Tech debt: $TOTAL existing std::cout/cerr in Engine — clean up over time.*" >> $GITHUB_STEP_SUMMARY
+        echo "*Tech debt: $TOTAL existing std::cout/cerr in Engine.*" >> $GITHUB_STEP_SUMMARY
 
   # Aggregate summary with inline error details
   build-summary:
