@@ -1,5 +1,17 @@
 #include "pch.h"
 
+// === CI LINT TEST — DELETE THIS BLOCK ===
+#include <iostream>
+#include <filesystem>
+#include <fstream>
+void _ci_lint_test_() {
+    std::cout << "lint test" << std::endl;
+    std::cerr << "lint test" << std::endl;
+    std::ifstream f("test");
+    std::ofstream o("test");
+}
+// === END CI LINT TEST ===
+
 #include "Graphics/OpenGL.h"
 #include "Platform/Platform.h"
 
