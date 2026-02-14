@@ -32,7 +32,7 @@ struct ENGINE_API AnimStateConfig
 	std::size_t clipIndex = 0;
 	bool loop = true;
 	float speed = 1.0f;
-	float crossfadeDuration = 0.0f; // Maybe in future
+	float crossfadeDuration = 0.2f; // Default blend duration
 	glm::vec2 nodePosition = {0.0f, 0.0f}; // Position in node graph editor
 };
 
@@ -44,7 +44,7 @@ struct ENGINE_API AnimTransition
 	bool anyState = false;
 	bool hasExitTime = false;     // Wait for animation to finish before transitioning
 	float exitTime = 1.0f;        // Normalized time (0-1) when transition can occur
-	float transitionDuration = 0.0f; // Blend duration (future)
+	float transitionDuration = 0.2f; // Blend duration between states
 
 	// Serializable conditions (replaces lambda)
 	std::vector<AnimCondition> conditions;
@@ -107,7 +107,7 @@ public:
 	void Clear();
 
 private:
-	void EnterState(const AnimStateID& id, Entity entity);
+	void EnterState(const AnimStateID& id, Entity entity, float transitionCrossfade = 0.0f);
 	bool EvaluateTransitionConditions(const AnimTransition& transition) const;
 	void ConsumeTriggers(const AnimTransition& transition);
 
