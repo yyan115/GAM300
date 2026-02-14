@@ -390,6 +390,9 @@ void AnimationComponent::LoadClipsFromPaths(const std::map<std::string, BoneInfo
 }
 
 void AnimationComponent::PlayClip(std::size_t clipIndex, bool loop, Entity entity) {
+	bool hadAnimation = animator && animator->HasAnimation();
+	bool prevLoop = isLoop;
+
 	activeClip = clipIndex;
 	isLoop = loop;
 	isPlay = true;
@@ -398,11 +401,36 @@ void AnimationComponent::PlayClip(std::size_t clipIndex, bool loop, Entity entit
 	// Actually start playing the animation on the animator
 	if (!clips.empty() && clipIndex < clips.size()) {
 		EnsureAnimator();
-		animator->PlayAnimation(clips[clipIndex].get(), entity);
+		// Use crossfade by default when switching from an existing animation
+		if (hadAnimation) {
+			animator->StartCrossfade(clips[clipIndex].get(), 0.2f, prevLoop, entity);
+		} else {
+			animator->PlayAnimation(clips[clipIndex].get(), entity);
+		}
 		ENGINE_PRINT("[AnimationComponent] PlayClip: Playing clip ", clipIndex, " for entity ", entity, "\n");
 	} else {
 		ENGINE_PRINT(EngineLogging::LogLevel::Warn, "[AnimationComponent] PlayClip: Cannot play clip ", clipIndex,
 			" - clips.size()=", clips.size(), ", entity=", entity, "\n");
+	}
+}
+
+void AnimationComponent::PlayClipWithCrossfade(std::size_t clipIndex, bool loop, float crossfadeDuration, Entity entity) {
+	if (crossfadeDuration <= 0.0f)
+	{
+		PlayClip(clipIndex, loop, entity);
+		return;
+	}
+
+	bool prevLoop = isLoop;
+	activeClip = clipIndex;
+	isLoop = loop;
+	isPlay = true;
+	mLoopJustCompleted = false;
+
+	if (!clips.empty() && clipIndex < clips.size())
+	{
+		EnsureAnimator();
+		animator->StartCrossfade(clips[clipIndex].get(), crossfadeDuration, prevLoop, entity);
 	}
 }
 

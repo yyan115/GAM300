@@ -59,6 +59,7 @@ public:
     void SetClipCount(size_t count);
 
     void PlayClip(std::size_t clipIndex, bool loop, Entity entity);
+	void PlayClipWithCrossfade(std::size_t clipIndex, bool loop, float crossfadeDuration, Entity entity);
 	void PlayOnce(std::size_t clipIndex, Entity entity);
     bool IsPlaying() const;
 
