@@ -302,7 +302,9 @@ ENGINE_API Entity InstantiatePrefabFromFile(const std::string& prefabPath, bool 
     // Ensure the BoneNameToEntityMap is populated if the prefab has a ModelRenderComponent.
     if (ecs.HasComponent<ModelRenderComponent>(prefab)) {
         auto& modelComp = ecs.GetComponent<ModelRenderComponent>(prefab);
-        ModelFactory::PopulateBoneNameToEntityMap(prefab, modelComp.boneNameToEntityMap, *modelComp.model);
+        std::string entityName = ecs.GetComponent<NameComponent>(prefab).name;
+        modelComp.boneNameToEntityMap[entityName] = prefab;
+        ModelFactory::PopulateBoneNameToEntityMap(prefab, modelComp.boneNameToEntityMap, *modelComp.model, true);
     }
 
     // Ensure the root prefab object has no parent component.
@@ -393,7 +395,9 @@ ENGINE_API Entity InstantiatePrefabIntoEntity(const std::string& prefabPath, Ent
     // Ensure the BoneNameToEntityMap is populated if the prefab has a ModelRenderComponent.
     if (ecs.HasComponent<ModelRenderComponent>(prefab)) {
         auto& modelComp = ecs.GetComponent<ModelRenderComponent>(prefab);
-        ModelFactory::PopulateBoneNameToEntityMap(prefab, modelComp.boneNameToEntityMap, *modelComp.model);
+        std::string entityName = ecs.GetComponent<NameComponent>(prefab).name;
+        modelComp.boneNameToEntityMap[entityName] = prefab;
+        ModelFactory::PopulateBoneNameToEntityMap(prefab, modelComp.boneNameToEntityMap, *modelComp.model, true);
     }
 
     // Ensure the root prefab object has no parent component.

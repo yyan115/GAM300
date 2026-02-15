@@ -140,18 +140,24 @@ Entity ModelFactory::SpawnModelNode(const ModelNode& node, Entity parent,
     return currentEntt;
 }
 
-void ModelFactory::PopulateBoneNameToEntityMap(Entity rootEntity, std::map<std::string, Entity>& boneNameToEntityMap, const Model& model)
+void ModelFactory::PopulateBoneNameToEntityMap(Entity rootEntity, std::map<std::string, Entity>& boneNameToEntityMap, const Model& model, bool isRoot)
 {
     ECSManager& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
+
+    if (isRoot) {
+        auto& modelComp = ecs.GetComponent<ModelRenderComponent>(rootEntity);
+        std::string entityName = ecs.GetComponent<NameComponent>(rootEntity).name;
+        modelComp.boneNameToEntityMap[entityName] = rootEntity;
+    }
 
     if (ecs.HasComponent<ChildrenComponent>(rootEntity)) {
         auto& childComp = ecs.GetComponent<ChildrenComponent>(rootEntity);
         for (auto& childGUID : childComp.children) {
 			Entity child = EntityGUIDRegistry::GetInstance().GetEntityByGUID(childGUID);
 			std::string boneName = ecs.GetComponent<NameComponent>(child).name;
-            if (model.mBoneInfoMap.find(boneName) != model.mBoneInfoMap.end()) {
-                boneNameToEntityMap[boneName] = child;
-			}
+            //if (model.mBoneInfoMap.find(boneName) != model.mBoneInfoMap.end()) {
+            boneNameToEntityMap[boneName] = child;
+			//}
 			PopulateBoneNameToEntityMap(child, boneNameToEntityMap, model);
         }
     }

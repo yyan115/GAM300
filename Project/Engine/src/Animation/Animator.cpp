@@ -134,6 +134,22 @@ void Animator::CalculateBoneTransformInternal(const AssimpNodeData* node, glm::m
 
                 ecsManager.transformSystem->SetLocalScale(boneEntity, Vector3D::ConvertGLMToVector3D(scale));
             }
+            //else 
+            //{
+            //    glm::mat4 matrixToApply = nodeTransform;
+
+            //    // Decompose and Apply
+            //    glm::vec3 scale; glm::quat rotation; glm::vec3 translation; glm::vec3 skew; glm::vec4 perspective;
+            //    glm::decompose(matrixToApply, scale, rotation, translation, skew, perspective);
+
+            //    ecsManager.transformSystem->SetLocalPosition(boneEntity, Vector3D::ConvertGLMToVector3D(translation));
+
+            //    // Use (w, x, y, z) matching your struct
+            //    Quaternion engineRot(rotation.w, rotation.x, rotation.y, rotation.z);
+            //    ecsManager.transformSystem->SetLocalRotation(boneEntity, engineRot);
+
+            //    ecsManager.transformSystem->SetLocalScale(boneEntity, Vector3D::ConvertGLMToVector3D(scale));
+            //}
         }
     }
 

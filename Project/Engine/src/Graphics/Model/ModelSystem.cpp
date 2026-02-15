@@ -42,7 +42,7 @@ bool ModelSystem::Initialise()
         }
 
         if (modelComp.model) {
-            ModelFactory::PopulateBoneNameToEntityMap(entity, modelComp.boneNameToEntityMap, *modelComp.model);
+            ModelFactory::PopulateBoneNameToEntityMap(entity, modelComp.boneNameToEntityMap, *modelComp.model, true);
             modelComp.childBonesSaved = true;
         }
     }

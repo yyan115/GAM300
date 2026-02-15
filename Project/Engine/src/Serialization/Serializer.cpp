@@ -2241,10 +2241,11 @@ void Serializer::ReloadScene(const std::string& tempScenePath, const std::string
     for (const auto& entity : ecs.GetAllEntities()) {
         if (ecs.HasComponent<ModelRenderComponent>(entity)) {
             auto& modelComp = ecs.GetComponent<ModelRenderComponent>(entity);
+            std::string entityName = ecs.GetComponent<NameComponent>(entity).name;
             if (modelComp.model) {
-                modelComp.boneNameToEntityMap.clear();
-                modelComp.boneNameToEntityMap[modelComp.model->modelName] = entity;
-                ModelFactory::PopulateBoneNameToEntityMap(entity, modelComp.boneNameToEntityMap, *modelComp.model);
+                //modelComp.boneNameToEntityMap.clear();
+                //modelComp.boneNameToEntityMap[entityName] = entity;
+                ModelFactory::PopulateBoneNameToEntityMap(entity, modelComp.boneNameToEntityMap, *modelComp.model, true);
             }
         }
     }
