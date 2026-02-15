@@ -82,7 +82,7 @@ return Component {
         enemyDetectionRange  = 8.0,
         enemyDisengageRange  = 10.0,
         enemyDisengageDelay  = 2.0,
-        enemyNames = {"EnemyAI", "FlyingEnemyLogic"},
+        enemyNames = {"EnemyAI"},
         cacheUpdateInterval = 1.0,  -- C++ cache update interval (seconds)
         debugEnemyDetection = false,       
     },

@@ -87,7 +87,7 @@ void AnimationStateMachine::Update(float dt, Entity entity)
 		// Consume any triggers that were used in this transition
 		ConsumeTriggers(*triggeredTransition);
 
-		EnterState(nextState, entity);
+		EnterState(nextState, entity, triggeredTransition->transitionDuration);
 	}
 }
 
@@ -115,7 +115,7 @@ void AnimationStateMachine::ConsumeTriggers(const AnimTransition& transition)
 	}
 }
 
-void AnimationStateMachine::EnterState(const AnimStateID& id, Entity entity)
+void AnimationStateMachine::EnterState(const AnimStateID& id, Entity entity, float transitionCrossfade)
 {
 	mCurrentState = id;
 	mStateTime = 0.0f;
@@ -139,10 +139,20 @@ void AnimationStateMachine::EnterState(const AnimStateID& id, Entity entity)
 	// Apply speed
 	mOwner->SetSpeed(config.speed);
 
-	if (config.loop)
-		mOwner->PlayClip(config.clipIndex, true, entity);
+	// Use transition duration if set, otherwise fall back to state's crossfade duration
+	float crossfadeDur = (transitionCrossfade > 0.0f) ? transitionCrossfade : config.crossfadeDuration;
+
+	if (crossfadeDur > 0.0f)
+	{
+		mOwner->PlayClipWithCrossfade(config.clipIndex, config.loop, crossfadeDur, entity);
+	}
 	else
-		mOwner->PlayOnce(config.clipIndex, entity);
+	{
+		if (config.loop)
+			mOwner->PlayClip(config.clipIndex, true, entity);
+		else
+			mOwner->PlayOnce(config.clipIndex, entity);
+	}
 }
 
 void AnimationStateMachine::RemoveState(const AnimStateID& id)

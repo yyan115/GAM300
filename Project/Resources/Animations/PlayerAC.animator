@@ -116,7 +116,7 @@
             "id": "Jump",
             "clipIndex": 1,
             "loop": false,
-            "speed": 1.0,
+            "speed": 0.7999999523162842,
             "crossfadeDuration": 0.0,
             "nodePosition": {
                 "x": 100.50003051757813,
