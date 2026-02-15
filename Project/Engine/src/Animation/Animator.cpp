@@ -15,18 +15,21 @@ Animator::Animator(Animation* animation)
 	mCurrentAnimation = animation;
 }
 
-void Animator::UpdateAnimation(float dt, bool isLoop, Entity entity)
+void Animator::UpdateAnimation(float dt, bool isLoop, Entity entity, float speed)
 {
 	if (!mCurrentAnimation) return; // No animation to play
 
+	float animDt = dt * speed; // Speed-scaled dt for animation time advancement
+
 	if (mIsBlending)
 	{
+		// Use RAW dt for blend timing so crossfade duration is independent of animation speed
 		mBlendElapsed += dt;
 
-		// Advance current (new) animation time
+		// Advance current (new) animation time with speed scaling
 		float tps = mCurrentAnimation->GetTicksPerSecond();
 		if (tps <= 0.0f) tps = 25.0f;
-		mCurrentTime += tps * dt;
+		mCurrentTime += tps * animDt;
 
 		float duration = mCurrentAnimation->GetDuration();
 		if (isLoop)
@@ -34,12 +37,12 @@ void Animator::UpdateAnimation(float dt, bool isLoop, Entity entity)
 		else if (mCurrentTime > duration)
 			mCurrentTime = duration;
 
-		// Advance previous animation time
+		// Advance previous animation time with speed scaling
 		if (mPrevAnimation)
 		{
 			float prevTps = mPrevAnimation->GetTicksPerSecond();
 			if (prevTps <= 0.0f) prevTps = 25.0f;
-			mPrevTime += prevTps * dt;
+			mPrevTime += prevTps * animDt;
 
 			float prevDuration = mPrevAnimation->GetDuration();
 			if (mPrevIsLoop)
@@ -68,7 +71,7 @@ void Animator::UpdateAnimation(float dt, bool isLoop, Entity entity)
 		float tps = mCurrentAnimation->GetTicksPerSecond();
 		if (tps <= 0.0f) tps = 25.0f;
 
-		mCurrentTime += tps * dt;
+		mCurrentTime += tps * animDt;
 
 		float duration = mCurrentAnimation->GetDuration();
 		if (isLoop)
