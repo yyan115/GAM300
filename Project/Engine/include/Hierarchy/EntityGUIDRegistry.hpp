@@ -40,7 +40,7 @@ public:
 			return it->second;
 		}
 
-		std::cerr << "[EntityGUIDRegistry] ERROR: GUID not found in registry." << std::endl;
+		//ENGINE_LOG_ERROR("[EntityGUIDRegistry] ERROR: GUID not found in registry.");
 		return static_cast<Entity>(-1); // or some invalid entity value
 	}
 
@@ -50,7 +50,7 @@ public:
 			return it->second;
 		}
 
-		std::cerr << "[EntityGUIDRegistry] ERROR: Entity ID not found in registry." << std::endl;
+		//ENGINE_LOG_ERROR("[EntityGUIDRegistry] ERROR: Entity ID not found in registry.");
 		return GUID_128{ 0, 0 }; // or some invalid GUID value
 	}
 

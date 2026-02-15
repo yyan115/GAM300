@@ -1222,7 +1222,9 @@ Entity Serializer::DeserializeEntity(ECSManager& ecs, const rapidjson::Value& en
 
                     std::vector<Entity> realChildrenEntities;
                     for (auto& g : childComp.children) {
-                        realChildrenEntities.push_back(EntityGUIDRegistry::GetInstance().GetEntityByGUID(g));
+                        Entity realChildEntity = EntityGUIDRegistry::GetInstance().GetEntityByGUID(g);
+                        if (realChildEntity != MAX_ENTITIES)
+                            realChildrenEntities.push_back(realChildEntity);
                     }
 
                     for (size_t i = 0; i < realChildrenEntities.size(); ++i) {
