@@ -112,7 +112,7 @@ void AnimationComponent::Update(float dt, Entity entity)
         // Track time before update to detect loop completion
         float prevTime = animator->GetCurrentTime();
 
-        animator->UpdateAnimation(dt * speed, isLoop, entity);
+        animator->UpdateAnimation(dt, isLoop, entity, speed);
 
         float currTime = animator->GetCurrentTime();
 
