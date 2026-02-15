@@ -10,7 +10,7 @@ class ENGINE_API Animator
 public:
 	Animator(Animation* animation);
 
-	void UpdateAnimation(float dt, bool isLoop, Entity entity);
+	void UpdateAnimation(float dt, bool isLoop, Entity entity, float speed = 1.0f);
 
 	void PlayAnimation(Animation* pAnimation, Entity entity);
 	void ClearAnimation() { mCurrentAnimation = nullptr; mIsBlending = false; mPrevAnimation = nullptr; }
