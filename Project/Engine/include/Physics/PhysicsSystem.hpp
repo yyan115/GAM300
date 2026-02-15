@@ -42,6 +42,9 @@ public:
 	void PhysicsSyncBack(ECSManager& ecsManager);	//JOLT -> ECS
 	void Shutdown();
 
+	// Remove a single entity's physics body (used when CharacterVirtual takes over)
+	void RemoveBody(Entity entity);
+
 	JPH::PhysicsSystem& GetJoltSystem() { return physics; }
 
 	// Raycasting for camera collision, line-of-sight checks, etc.

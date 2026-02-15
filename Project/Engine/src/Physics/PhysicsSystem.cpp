@@ -294,15 +294,13 @@ void PhysicsSystem::Initialise(ECSManager& ecsManager) {
                 break;
             case ColliderShapeType::MeshShape:
             {
-                // Get the model's mesh data
+                bool shapeCreated = false;
                 if (ecsManager.HasComponent<ModelRenderComponent>(e)) {
                     auto& rc = ecsManager.GetComponent<ModelRenderComponent>(e);
 
                     if (rc.model && rc.model->meshes.size() > 0) {
                         JPH::TriangleList triangles;
 
-                        // Extract triangles from all meshes in the model
-                        // Uses sx, sy, sz from world matrix (line ~222) so parent transforms are included
                         for (const auto& mesh : rc.model->meshes) {
                             for (size_t i = 0; i < mesh.indices.size(); i += 3) {
                                 const auto& v0 = mesh.vertices[mesh.indices[i]];
@@ -323,26 +321,20 @@ void PhysicsSystem::Initialise(ECSManager& ecsManager) {
                             }
                         }
 
-                        // Create the mesh shape
                         JPH::MeshShapeSettings meshSettings(triangles);
                         JPH::Shape::ShapeResult result = meshSettings.Create();
 
                         if (result.IsValid()) {
                             col.shape = result.Get();
+                            shapeCreated = true;
                         }
-                        else {
-                            // Fallback to box if mesh creation fails
-                            col.shape = new JPH::BoxShape(JPH::Vec3(0.5f, 0.5f, 0.5f));
-                        }
-                    }
-                    else {
-                        // Fallback to box if mesh creation fails
-                        col.shape = new JPH::BoxShape(JPH::Vec3(0.5f, 0.5f, 0.5f));
                     }
                 }
-                else {
-                    // Fallback to box if mesh creation fails
-                    col.shape = new JPH::BoxShape(JPH::Vec3(0.5f, 0.5f, 0.5f));
+                // No fallback — if MeshShape fails, skip this entity entirely
+                if (!shapeCreated) {
+                    std::string name = ecsManager.HasComponent<NameComponent>(e) ? ecsManager.GetComponent<NameComponent>(e).name : std::to_string(e);
+                    std::cout << "[Physics] MeshShape FAILED for entity '" << name << "', skipping (no fallback box)" << std::endl;
+                    continue;
                 }
                 break;
             }
@@ -668,6 +660,21 @@ void PhysicsSystem::Shutdown() {
 
     // 5. Finally unregister types if you registered them
     // JPH::UnregisterTypes();
+}
+
+void PhysicsSystem::RemoveBody(Entity entity) {
+    auto it = entityBodyMap.find(entity);
+    if (it == entityBodyMap.end()) return;
+
+    JPH::BodyID bodyId = it->second;
+    JPH::BodyInterface& bi = physics.GetBodyInterface();
+
+    if (!bodyId.IsInvalid()) {
+        if (bi.IsAdded(bodyId))
+            bi.RemoveBody(bodyId);
+        bi.DestroyBody(bodyId);
+    }
+    entityBodyMap.erase(it);
 }
 
 // Custom filter that ignores sensors and character layer (for camera collision)

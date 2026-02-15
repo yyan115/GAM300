@@ -6,7 +6,11 @@
 #include "ECS/ECSManager.hpp"
 #include "ECS/ECSRegistry.hpp"
 #include "Physics/ColliderComponent.hpp"
+#include "Physics/RigidBodyComponent.hpp"
+#include "Physics/PhysicsSystem.hpp"
 #include "Transform/TransformComponent.hpp"
+#include "Transform/TransformSystem.hpp"
+#include "Hierarchy/ParentComponent.hpp"
 #include "Performance/PerformanceProfiler.hpp"
 
 
@@ -44,6 +48,13 @@ CharacterController* CharacterControllerSystem::CreateController(Entity id,
     //add into map
     m_controllers.emplace(id, std::move(controller));
 
+    // Disable the regular physics body — CharacterVirtual takes over collision for this entity
+    auto& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
+    if (ecs.physicsSystem)
+        ecs.physicsSystem->RemoveBody(id);
+    if (ecs.HasComponent<RigidBodyComponent>(id))
+        ecs.GetComponent<RigidBodyComponent>(id).enabled = false;
+
     return ptr;
 }
 
@@ -54,8 +65,18 @@ void CharacterControllerSystem::Update(float deltaTime, ECSManager& ecsManager) 
     PROFILE_FUNCTION();
 
     for (auto& [entityId, controller] : m_controllers) {
-        if (controller)
-            controller->Update(deltaTime);
+        if (!controller) continue;
+
+        controller->Update(deltaTime);
+
+        // Sync CharacterVirtual position back to Transform (same role as PhysicsSyncBack for regular bodies)
+        if (ecsManager.HasComponent<Transform>(entityId)) {
+            Vector3D pos = controller->GetPosition();
+            if (ecsManager.HasComponent<ParentComponent>(entityId))
+                ecsManager.transformSystem->SetWorldPosition(entityId, pos);
+            else
+                ecsManager.transformSystem->SetLocalPosition(entityId, pos);
+        }
     }
 }
 

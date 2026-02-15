@@ -44,7 +44,6 @@ bool CharacterController::Initialise(ColliderComponent& collider, Transform& tra
     collider.shapeType = ColliderShapeType::Capsule;
     collider.layer = Layers::CHARACTER;
 
-    //std::cout << "calculation for new offset Y is " << ((collider.capsuleHalfHeight + collider.capsuleRadius) * transform.localScale.y) << std::endl;
     collider.capsuleRadius = 0.25f;
     collider.capsuleHalfHeight = 0.4f;
     collider.center.y = collider.capsuleHalfHeight + collider.capsuleRadius;
@@ -87,12 +86,11 @@ bool CharacterController::Initialise(ColliderComponent& collider, Transform& tra
     settings->mEnhancedInternalEdgeRemoval = true;      //in-edge smoothing
 
 
-    // CRITICAL FIX: Add the offset when creating the character
-    // Transform position = feet position
-    // Physics needs the capsule CENTER position, which is offset upward
+    // Position the CharacterVirtual so the capsule center is above the feet.
+    // GetPosition() subtracts collider_offsetY, so this ensures it returns the scene position.
     JPH::RVec3 physicsPosition(
         transform.localPosition.x,
-        transform.localPosition.y,
+        transform.localPosition.y + collider_offsetY,
         transform.localPosition.z
     );
 
@@ -250,11 +248,6 @@ void CharacterController::Update(float deltaTime) {
         JPH::Vec3 groundNormal = mCharacter->GetGroundNormal();
         JPH::Vec3 groundVelocity = mCharacter->GetGroundVelocity();
         JPH::BodyID groundBodyID = mCharacter->GetGroundBodyID();
-
-        //std::cout << "[C++] ON GROUND! Normal: (" << groundNormal.GetX() << ", " 
-        //          << groundNormal.GetY() << ", " << groundNormal.GetZ() << ")" << std::endl;
-        //std::cout << "[C++] Ground Body ID: " << groundBodyID.GetIndex() << std::endl;
-        //std::cout << "[C++] Ground Velocity: " << groundVelocity.GetY() << std::endl;
     }
 
     //std::cout << "===================================" << std::endl;
