@@ -5853,9 +5853,58 @@ void RegisterInspectorCustomRenderers()
                                 syntheticField.type = Scripting::FieldType::String;
                                 syntheticField.defaultValueSerialized = "\"" + luaDefault.substr(1, luaDefault.size() - 2) + "\"";
                             } else if (luaDefault.front() == '{') {
-                                // Lua table - can't easily convert, treat as Table
+                                // Lua table - convert simple array literals to JSON
                                 syntheticField.type = Scripting::FieldType::Table;
-                                syntheticField.defaultValueSerialized = "{}";  // Placeholder
+                                // Try to parse Lua table literal like {"EnemyAI"} or {"a","b","c"}
+                                // Extract content between outer braces
+                                std::string inner = luaDefault.substr(1, luaDefault.size() - 2);
+                                // Trim whitespace
+                                size_t iStart = inner.find_first_not_of(" \t\r\n");
+                                size_t iEnd = inner.find_last_not_of(" \t\r\n");
+                                if (iStart == std::string::npos || iEnd == std::string::npos) {
+                                    // Empty table
+                                    syntheticField.defaultValueSerialized = "[]";
+                                } else {
+                                    inner = inner.substr(iStart, iEnd - iStart + 1);
+                                    // Check if it looks like a simple string array (quoted elements separated by commas)
+                                    bool isSimpleStringArray = true;
+                                    // Quick check: does it contain '=' (key-value pairs) or nested '{' ?
+                                    if (inner.find('=') != std::string::npos || inner.find('{') != std::string::npos) {
+                                        isSimpleStringArray = false;
+                                    }
+                                    if (isSimpleStringArray) {
+                                        // Parse comma-separated quoted strings: "a","b","c" or 'a','b'
+                                        std::string jsonArray = "[";
+                                        std::string remaining = inner;
+                                        bool first = true;
+                                        bool valid = true;
+                                        while (!remaining.empty()) {
+                                            // Trim leading whitespace and commas
+                                            size_t s = remaining.find_first_not_of(" \t\r\n,");
+                                            if (s == std::string::npos) break;
+                                            remaining = remaining.substr(s);
+                                            if (remaining.empty()) break;
+                                            char delim = remaining[0];
+                                            if (delim == '"' || delim == '\'') {
+                                                // Find closing quote
+                                                size_t closePos = remaining.find(delim, 1);
+                                                if (closePos == std::string::npos) { valid = false; break; }
+                                                std::string elem = remaining.substr(1, closePos - 1);
+                                                if (!first) jsonArray += ",";
+                                                jsonArray += "\"" + elem + "\"";
+                                                first = false;
+                                                remaining = remaining.substr(closePos + 1);
+                                            } else {
+                                                valid = false;
+                                                break;
+                                            }
+                                        }
+                                        jsonArray += "]";
+                                        syntheticField.defaultValueSerialized = valid ? jsonArray : "[]";
+                                    } else {
+                                        syntheticField.defaultValueSerialized = "{}";
+                                    }
+                                }
                             } else {
                                 // Assume it's a number
                                 syntheticField.type = Scripting::FieldType::Number;
@@ -6176,11 +6225,77 @@ void RegisterInspectorCustomRenderers()
                             }
                             else
                             {
-                                // Generic array - show as text for now
-                                ImGui::Text("%s: [Array with %zu elements]", displayName.c_str(), doc.Size());
-                                if (!field.meta.tooltip.empty() && ImGui::IsItemHovered())
+                                // Check if all elements are strings (or array is empty)
+                                bool allStrings = true;
+                                for (size_t i = 0; i < doc.Size(); ++i)
                                 {
-                                    ImGui::SetTooltip("%s", field.meta.tooltip.c_str());
+                                    if (!doc[i].IsString()) { allStrings = false; break; }
+                                }
+
+                                if (allStrings || doc.Size() == 0)
+                                {
+                                    // Render as editable string array with +/- buttons
+                                    renderLabelWithTooltip();
+                                    bool arrayModified = false;
+                                    rapidjson::Document newDoc;
+                                    newDoc.SetArray();
+                                    auto& alloc = newDoc.GetAllocator();
+
+                                    for (size_t i = 0; i < doc.Size(); ++i)
+                                    {
+                                        ImGui::PushID(static_cast<int>(i));
+
+                                        std::string elemStr = doc[i].IsString() ? doc[i].GetString() : "";
+
+                                        char buf[256];
+                                        strncpy(buf, elemStr.c_str(), sizeof(buf) - 1);
+                                        buf[sizeof(buf) - 1] = '\0';
+
+                                        ImGui::Text("[%zu]", i + 1);
+                                        ImGui::SameLine();
+                                        ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x - 30.0f);
+                                        if (ImGui::InputText(("##str_" + field.name + "_" + std::to_string(i)).c_str(), buf, sizeof(buf)))
+                                        {
+                                            elemStr = buf;
+                                            arrayModified = true;
+                                        }
+
+                                        ImGui::SameLine();
+                                        if (ImGui::SmallButton((std::string(ICON_FA_MINUS) + "##remove" + std::to_string(i)).c_str()))
+                                        {
+                                            arrayModified = true;
+                                        }
+                                        else
+                                        {
+                                            newDoc.PushBack(rapidjson::Value(elemStr.c_str(), alloc), alloc);
+                                        }
+
+                                        ImGui::PopID();
+                                    }
+
+                                    if (ImGui::Button((std::string(ICON_FA_PLUS) + "##add_" + field.name).c_str()))
+                                    {
+                                        newDoc.PushBack(rapidjson::Value("", alloc), alloc);
+                                        arrayModified = true;
+                                    }
+
+                                    if (arrayModified)
+                                    {
+                                        rapidjson::StringBuffer buffer;
+                                        rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
+                                        newDoc.Accept(writer);
+                                        newValue = buffer.GetString();
+                                        fieldModified = true;
+                                    }
+                                }
+                                else
+                                {
+                                    // Non-string generic array - show as text
+                                    ImGui::Text("%s: [Array with %zu elements]", displayName.c_str(), doc.Size());
+                                    if (!field.meta.tooltip.empty() && ImGui::IsItemHovered())
+                                    {
+                                        ImGui::SetTooltip("%s", field.meta.tooltip.c_str());
+                                    }
                                 }
                             }
                         }
@@ -6282,11 +6397,88 @@ void RegisterInspectorCustomRenderers()
                                 }
                                 else
                                 {
-                                    // Generic array-like table - show as text for now
-                                    ImGui::Text("%s: [Array with %zu elements]", displayName.c_str(), doc.GetObject().MemberCount());
-                                    if (ImGui::IsItemHovered()) {
-                                        std::string tooltip = !fieldComment.empty() ? fieldComment : field.meta.tooltip;
-                                        if (!tooltip.empty()) ImGui::SetTooltip("%s", tooltip.c_str());
+                                    // Check if all elements are strings (or table is empty)
+                                    size_t arraySize = doc.GetObject().MemberCount();
+                                    bool allStrings = true;
+                                    for (size_t i = 0; i < arraySize; ++i)
+                                    {
+                                        std::string key = std::to_string(i + 1);
+                                        auto it = doc.FindMember(key.c_str());
+                                        if (it == doc.MemberEnd() || !it->value.IsString())
+                                        {
+                                            allStrings = false;
+                                            break;
+                                        }
+                                    }
+
+                                    if (allStrings || arraySize == 0)
+                                    {
+                                        // Render as editable string array with +/- buttons
+                                        renderLabelWithTooltip();
+                                        bool arrayModified = false;
+                                        rapidjson::Document newDoc;
+                                        newDoc.SetArray();
+                                        auto& alloc = newDoc.GetAllocator();
+
+                                        for (size_t i = 0; i < arraySize; ++i)
+                                        {
+                                            std::string key = std::to_string(i + 1);
+                                            auto it = doc.FindMember(key.c_str());
+                                            if (it == doc.MemberEnd()) continue;
+
+                                            ImGui::PushID(static_cast<int>(i));
+
+                                            std::string elemStr = it->value.IsString() ? it->value.GetString() : "";
+
+                                            char buf[256];
+                                            strncpy(buf, elemStr.c_str(), sizeof(buf) - 1);
+                                            buf[sizeof(buf) - 1] = '\0';
+
+                                            ImGui::Text("[%zu]", i + 1);
+                                            ImGui::SameLine();
+                                            ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x - 30.0f);
+                                            if (ImGui::InputText(("##str_" + field.name + "_" + std::to_string(i)).c_str(), buf, sizeof(buf)))
+                                            {
+                                                elemStr = buf;
+                                                arrayModified = true;
+                                            }
+
+                                            ImGui::SameLine();
+                                            if (ImGui::SmallButton((std::string(ICON_FA_MINUS) + "##remove" + std::to_string(i)).c_str()))
+                                            {
+                                                arrayModified = true;
+                                            }
+                                            else
+                                            {
+                                                newDoc.PushBack(rapidjson::Value(elemStr.c_str(), alloc), alloc);
+                                            }
+
+                                            ImGui::PopID();
+                                        }
+
+                                        if (ImGui::Button((std::string(ICON_FA_PLUS) + "##add_" + field.name).c_str()))
+                                        {
+                                            newDoc.PushBack(rapidjson::Value("", alloc), alloc);
+                                            arrayModified = true;
+                                        }
+
+                                        if (arrayModified)
+                                        {
+                                            rapidjson::StringBuffer buffer;
+                                            rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
+                                            newDoc.Accept(writer);
+                                            newValue = buffer.GetString();
+                                            fieldModified = true;
+                                        }
+                                    }
+                                    else
+                                    {
+                                        // Non-string generic array-like table - show as text
+                                        ImGui::Text("%s: [Array with %zu elements]", displayName.c_str(), doc.GetObject().MemberCount());
+                                        if (ImGui::IsItemHovered()) {
+                                            std::string tooltip = !fieldComment.empty() ? fieldComment : field.meta.tooltip;
+                                            if (!tooltip.empty()) ImGui::SetTooltip("%s", tooltip.c_str());
+                                        }
                                     }
                                 }
                             }

@@ -88,15 +88,11 @@ bool ScriptSerializer::DeserializeJsonToInstance(lua_State* L, int instanceRef, 
         return false;
     }
 
-    // Replace registry slot with a fresh empty table (clears previous state safely)
-    lua_newtable(L);                               // push new table
-    lua_rawseti(L, LUA_REGISTRYINDEX, instanceRef); // registry[instanceRef] = new table  (pops table)
-
-    // Push the new instance table back so we can populate it
+    // Merge fields onto the existing instance table (preserves defaults not in JSON)
     lua_rawgeti(L, LUA_REGISTRYINDEX, instanceRef); // push registry[instanceRef]
     if (!lua_istable(L, -1)) {
         lua_pop(L, 1);
-        SS_LOG(EngineLogging::LogLevel::Warn, "ScriptSerializer::DeserializeJsonToInstance - registry slot is not a table after replacement");
+        SS_LOG(EngineLogging::LogLevel::Warn, "ScriptSerializer::DeserializeJsonToInstance - registry slot is not a table");
         return false;
     }
 
