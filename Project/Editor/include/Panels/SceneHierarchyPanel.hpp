@@ -7,6 +7,8 @@
 #include <ECS/SiblingIndexComponent.hpp>
 #include "../GUIManager.hpp"
 #include <set>
+#include <unordered_set>
+#include <string>
 
 /**
  * @brief Scene Hierarchy panel showing the structure of objects in the current scene.
@@ -96,4 +98,21 @@ private:
     // Helper to recursively delete an entity and all its children
     void DeleteEntityWithChildren(Entity entity, bool cleanupParentRef = true);
 
+    // Search functionality
+    void RebuildSearchCache();
+    bool EntityMatchesSearch(const std::string& name) const;
+    void CollectAncestors(Entity entity, std::unordered_set<Entity>& ancestors);
+
+    char searchBuffer[256] = {};
+    std::string searchQuery;
+    std::string searchQueryLower;
+    std::unordered_set<Entity> searchMatchedEntities;   // Entities whose names match
+    std::unordered_set<Entity> searchVisibleEntities;    // Matched + their ancestors
+    std::unordered_set<Entity> searchForceExpandedNodes; // Ancestors force-expanded by search
+    bool searchDirty = true;
+
+    // Collapse/Expand all
+    enum class CollapseExpandAction { None, CollapseAll, ExpandAll };
+    CollapseExpandAction collapseExpandAction = CollapseExpandAction::None;
+    std::set<Entity> forceCollapseExpandEntities; // Entities to force open/close this frame
 };

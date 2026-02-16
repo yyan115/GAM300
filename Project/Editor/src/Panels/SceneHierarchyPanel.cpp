@@ -46,6 +46,7 @@
 #include "SnapshotManager.hpp"
 #include "UndoableWidgets.hpp"
 #include <algorithm>
+#include <cctype>
 #include <Panels/PrefabEditorPanel.hpp>
 #include <Prefab/PrefabLinkComponent.hpp>
 
@@ -71,16 +72,19 @@ SceneHierarchyPanel::SceneHierarchyPanel()
 
 void SceneHierarchyPanel::MarkForRefresh() {
     needsRefresh = true;
+    searchDirty = true;
 }
 
 // Static set to track visited entities during hierarchy rendering (prevents infinite recursion from circular refs)
 static thread_local std::set<Entity> s_VisitedEntities;
 static thread_local int s_HierarchyDepth = 0;
+static thread_local int s_RowIndex = 0;
 
 void SceneHierarchyPanel::OnImGuiRender() {
     // Clear visited entities tracking at start of each frame
     s_VisitedEntities.clear();
     s_HierarchyDepth = 0;
+    s_RowIndex = 0;
 
     // Clear visible expanded nodes tracking (will be rebuilt during rendering)
     visibleExpandedNodes.clear();
@@ -157,8 +161,40 @@ void SceneHierarchyPanel::OnImGuiRender() {
             }
         }
 
+        // Search bar + Collapse/Expand buttons
+        {
+            float buttonWidth = ImGui::GetFrameHeight(); // square buttons
+            float spacing = ImGui::GetStyle().ItemSpacing.x;
+            float searchWidth = ImGui::GetContentRegionAvail().x - (buttonWidth * 2 + spacing * 2);
+
+            ImGui::SetNextItemWidth(searchWidth);
+            if (ImGui::InputTextWithHint("##HierarchySearch", ICON_FA_MAGNIFYING_GLASS " Search entities...",
+                                         searchBuffer, sizeof(searchBuffer))) {
+                searchQuery = searchBuffer;
+                searchDirty = true;
+            }
+
+            ImGui::SameLine();
+            if (ImGui::Button(ICON_FA_COMPRESS, ImVec2(buttonWidth, 0))) {
+                collapseExpandAction = CollapseExpandAction::CollapseAll;
+            }
+            if (ImGui::IsItemHovered()) ImGui::SetTooltip("Collapse All");
+
+            ImGui::SameLine();
+            if (ImGui::Button(ICON_FA_EXPAND, ImVec2(buttonWidth, 0))) {
+                collapseExpandAction = CollapseExpandAction::ExpandAll;
+            }
+            if (ImGui::IsItemHovered()) ImGui::SetTooltip("Expand All");
+        }
+        ImGui::Spacing();
+
         // Get the active ECS manager
         ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
+
+        // Rebuild search cache if needed
+        if (searchDirty) {
+            RebuildSearchCache();
+        }
 
 		std::string sceneDisplayName;
         if (!PrefabEditor::IsInPrefabEditorMode()) {
@@ -225,6 +261,11 @@ void SceneHierarchyPanel::OnImGuiRender() {
                         continue;
                     }
 
+                    // Skip entities not visible in search results
+                    if (!searchQuery.empty() && searchVisibleEntities.find(entity) == searchVisibleEntities.end()) {
+                        continue;
+                    }
+
                     DrawEntityNode(entityName, entity, ecsManager.TryGetComponent<ChildrenComponent>(entity).has_value());
                 }
 
@@ -260,6 +301,14 @@ void SceneHierarchyPanel::OnImGuiRender() {
 
             ImGui::TreePop();
         }
+
+        // Clear force-expanded tracking after tree is drawn (collapse applied for one frame)
+        if (searchQuery.empty() && !searchForceExpandedNodes.empty()) {
+            searchForceExpandedNodes.clear();
+        }
+
+        // Reset collapse/expand action after tree is fully drawn
+        collapseExpandAction = CollapseExpandAction::None;
 
         //ImGui::Separator();
 
@@ -373,6 +422,16 @@ void SceneHierarchyPanel::DrawEntityNode(const std::string& entityName, Entity e
     if (GUIManager::IsEntitySelected(entityId)) flags |= ImGuiTreeNodeFlags_Selected;
     if (forceOpen && hasChildren) flags |= ImGuiTreeNodeFlags_DefaultOpen;
 
+    // Zebra striping — draw alternating row background
+    {
+        ImVec2 rowMin = ImVec2(ImGui::GetWindowPos().x, ImGui::GetCursorScreenPos().y);
+        ImVec2 rowMax = ImVec2(rowMin.x + ImGui::GetWindowSize().x, rowMin.y + ImGui::GetTextLineHeightWithSpacing());
+        if (s_RowIndex % 2 == 1) {
+            ImGui::GetWindowDrawList()->AddRectFilled(rowMin, rowMax, IM_COL32(255, 255, 255, 6));
+        }
+        s_RowIndex++;
+    }
+
     // Get item position for drop zone detection
     ImVec2 cursorPos = ImGui::GetCursorScreenPos();
     float itemHeight = ImGui::GetTextLineHeightWithSpacing();
@@ -408,6 +467,8 @@ void SceneHierarchyPanel::DrawEntityNode(const std::string& entityName, Entity e
     }
 
     bool opened = false;
+    ImVec2 parentItemRectMin = ImVec2(0, 0);
+    ImVec2 parentItemRectMax = ImVec2(0, 0);
 
     if (renamingEntity == entityId)
     {
@@ -459,6 +520,25 @@ void SceneHierarchyPanel::DrawEntityNode(const std::string& entityName, Entity e
             ImGui::SetNextItemOpen(true, ImGuiCond_Always);
         }
 
+        // Auto-expand ancestor nodes during search (and track them for restore)
+        if (!searchQuery.empty() && hasChildren &&
+            searchVisibleEntities.count(entityId) && !searchMatchedEntities.count(entityId)) {
+            ImGui::SetNextItemOpen(true, ImGuiCond_Always);
+            searchForceExpandedNodes.insert(entityId);
+        }
+
+        // Collapse nodes that were force-expanded by search when search is cleared
+        if (searchQuery.empty() && hasChildren && searchForceExpandedNodes.count(entityId)) {
+            ImGui::SetNextItemOpen(false, ImGuiCond_Always);
+        }
+
+        // Collapse/Expand all action
+        if (hasChildren && collapseExpandAction == CollapseExpandAction::CollapseAll) {
+            ImGui::SetNextItemOpen(false, ImGuiCond_Always);
+        } else if (hasChildren && collapseExpandAction == CollapseExpandAction::ExpandAll) {
+            ImGui::SetNextItemOpen(true, ImGuiCond_Always);
+        }
+
         // Determine text color based on prefab status and active state
         bool isPrefab = ecsManager.HasComponent<PrefabLinkComponent>(entityId);
         bool pushedColor = false;
@@ -480,10 +560,15 @@ void SceneHierarchyPanel::DrawEntityNode(const std::string& entityName, Entity e
 
         opened = ImGui::TreeNodeEx((void*)(intptr_t)entityId, flags, "%s", displayName.c_str());
 
+        // Capture item rect for connector lines
+        parentItemRectMin = ImGui::GetItemRectMin();
+        parentItemRectMax = ImGui::GetItemRectMax();
+
         // Pop color if we pushed it
         if (pushedColor) {
             ImGui::PopStyleColor();
         }
+
         if (ImGui::IsItemClicked()) {
             ImGuiIO& io = ImGui::GetIO();
             if (io.KeyShift && lastClickedEntity != static_cast<Entity>(-1)) {
@@ -684,13 +769,40 @@ void SceneHierarchyPanel::DrawEntityNode(const std::string& entityName, Entity e
         // Child nodes would be drawn here in a real implementation
         if (ecsManager.HasComponent<ChildrenComponent>(entityId)) {
             const auto& children = ecsManager.GetComponent<ChildrenComponent>(entityId).children;
+
+            // Hierarchy connector lines setup
+            float indentSpacing = ImGui::GetStyle().IndentSpacing;
+            float lineX = ImGui::GetCursorScreenPos().x + indentSpacing * 0.5f;
+            ImDrawList* drawList = ImGui::GetWindowDrawList();
+            ImU32 lineColor = IM_COL32(255, 255, 255, 40);
+            // Start the vertical line from the bottom of the parent item
+            float parentBottomY = parentItemRectMax.y;
+            float lastChildY = parentBottomY;
+            bool hasVisibleChild = false;
+
             for (const auto& childGUID : children) {
                 Entity child = EntityGUIDRegistry::GetInstance().GetEntityByGUID(childGUID);
                 // Safety check: verify child entity is valid and has required components
                 if (child == static_cast<Entity>(-1) || !ecsManager.HasComponent<NameComponent>(child)) {
                     continue;  // Skip invalid children
                 }
+                // Skip children not visible in search results
+                if (!searchQuery.empty() && searchVisibleEntities.find(child) == searchVisibleEntities.end()) {
+                    continue;
+                }
+
+                // Draw horizontal connector line for this child
+                float childMidY = ImGui::GetCursorScreenPos().y + ImGui::GetTextLineHeight() * 0.5f;
+                lastChildY = childMidY;
+                hasVisibleChild = true;
+                drawList->AddLine(ImVec2(lineX, childMidY), ImVec2(lineX + 8.0f, childMidY), lineColor);
+
                 DrawEntityNode(ecsManager.GetComponent<NameComponent>(child).name, child, ecsManager.HasComponent<ChildrenComponent>(child));
+            }
+
+            // Draw vertical connector line from parent down to last child
+            if (hasVisibleChild) {
+                drawList->AddLine(ImVec2(lineX, parentBottomY), ImVec2(lineX, lastChildY), lineColor);
             }
         }
 
@@ -1706,6 +1818,60 @@ void SceneHierarchyPanel::DeleteSelectedEntities() {
         std::cout << "[SceneHierarchy] Entities deleted successfully" << std::endl;
     } catch (const std::exception& e) {
         std::cerr << "[SceneHierarchy] Failed to delete entities: " << e.what() << std::endl;
+    }
+}
+
+// ============================================================================
+// Search Functionality
+// ============================================================================
+
+void SceneHierarchyPanel::RebuildSearchCache() {
+    searchMatchedEntities.clear();
+    searchVisibleEntities.clear();
+    searchDirty = false;
+
+    if (searchQuery.empty()) return;
+
+    // Convert query to lowercase once
+    searchQueryLower = searchQuery;
+    std::transform(searchQueryLower.begin(), searchQueryLower.end(), searchQueryLower.begin(),
+                   [](unsigned char c) { return std::tolower(c); });
+
+    ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
+    std::vector<Entity> allEntities = ecsManager.GetActiveEntities();
+
+    // Find all matching entities
+    for (Entity entity : allEntities) {
+        if (!ecsManager.HasComponent<NameComponent>(entity)) continue;
+        const std::string& name = ecsManager.GetComponent<NameComponent>(entity).name;
+        if (EntityMatchesSearch(name)) {
+            searchMatchedEntities.insert(entity);
+            searchVisibleEntities.insert(entity);
+            // Walk up ancestor chain to make the path visible
+            CollectAncestors(entity, searchVisibleEntities);
+        }
+    }
+}
+
+bool SceneHierarchyPanel::EntityMatchesSearch(const std::string& name) const {
+    // Case-insensitive substring match
+    std::string nameLower = name;
+    std::transform(nameLower.begin(), nameLower.end(), nameLower.begin(),
+                   [](unsigned char c) { return std::tolower(c); });
+    return nameLower.find(searchQueryLower) != std::string::npos;
+}
+
+void SceneHierarchyPanel::CollectAncestors(Entity entity, std::unordered_set<Entity>& ancestors) {
+    ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
+    EntityGUIDRegistry& guidRegistry = EntityGUIDRegistry::GetInstance();
+
+    Entity current = entity;
+    while (ecsManager.HasComponent<ParentComponent>(current)) {
+        GUID_128 parentGUID = ecsManager.GetComponent<ParentComponent>(current).parent;
+        Entity parent = guidRegistry.GetEntityByGUID(parentGUID);
+        if (parent == static_cast<Entity>(-1)) break;
+        ancestors.insert(parent);
+        current = parent;
     }
 }
 
