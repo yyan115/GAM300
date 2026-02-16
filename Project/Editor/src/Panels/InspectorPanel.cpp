@@ -38,6 +38,8 @@
 #include <glm/glm.hpp>
 #include <FileWatch.hpp>
 #include "Video/VideoComponent.hpp"
+#include <ECS/ActiveComponent.hpp>
+#include "UndoSystem.hpp"
 
 // Global drag-drop state for cross-window material dragging
 extern GUID_128 DraggedMaterialGuid;
@@ -3151,6 +3153,105 @@ std::vector<std::string> InspectorPanel::GetSharedComponentTypes(const std::vect
 
 void InspectorPanel::DrawSharedComponentsHeader(const std::vector<Entity>& entities) {
 	ECSManager& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
+
+	// === Multi-entity active toggle ===
+	int activeCount = 0;
+	int totalWithActive = 0;
+	for (const Entity& e : entities) {
+		if (ecs.HasComponent<ActiveComponent>(e)) {
+			totalWithActive++;
+			if (ecs.GetComponent<ActiveComponent>(e).isActive) {
+				activeCount++;
+			}
+		}
+	}
+
+	if (totalWithActive > 0) {
+		bool allActive = (activeCount == totalWithActive);
+		bool noneActive = (activeCount == 0);
+		bool mixed = !allActive && !noneActive;
+
+		// Checkbox styling (matches single entity toggle in InspectorCustomRenderers.cpp)
+		ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(2, 2));
+		ImGui::PushStyleColor(ImGuiCol_CheckMark, ImVec4(1.0f, 1.0f, 1.0f, 1.0f));
+		ImGui::PushStyleColor(ImGuiCol_FrameBg, ImVec4(0.3f, 0.3f, 0.3f, 1.0f));
+		ImGui::PushStyleColor(ImGuiCol_FrameBgHovered, ImVec4(0.4f, 0.4f, 0.4f, 1.0f));
+		ImGui::PushStyleColor(ImGuiCol_FrameBgActive, ImVec4(0.5f, 0.5f, 0.5f, 1.0f));
+
+		if (mixed) {
+			// Amber tint to signal mixed state
+			ImGui::PushStyleColor(ImGuiCol_FrameBg, ImVec4(0.4f, 0.35f, 0.2f, 1.0f));
+		}
+
+		bool checkboxValue = allActive;
+		if (ImGui::Checkbox("##MultiEntityActive", &checkboxValue)) {
+			bool newActiveState = !allActive; // mixed/none -> all on; all on -> all off
+
+			// Capture previous states for undo
+			std::vector<std::pair<Entity, bool>> previousStates;
+			for (const Entity& e : entities) {
+				if (ecs.HasComponent<ActiveComponent>(e)) {
+					previousStates.push_back({e, ecs.GetComponent<ActiveComponent>(e).isActive});
+				}
+			}
+
+			// Apply change
+			for (const Entity& e : entities) {
+				if (ecs.HasComponent<ActiveComponent>(e)) {
+					ecs.GetComponent<ActiveComponent>(e).isActive = newActiveState;
+				}
+			}
+
+			// Record undo
+			if (UndoSystem::GetInstance().IsEnabled()) {
+				bool capturedNewState = newActiveState;
+				auto capturedPrevStates = previousStates;
+				UndoSystem::GetInstance().RecordLambdaChange(
+					[capturedPrevStates, capturedNewState]() {
+						ECSManager& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
+						for (const auto& [entity, oldVal] : capturedPrevStates) {
+							if (ecs.HasComponent<ActiveComponent>(entity)) {
+								ecs.GetComponent<ActiveComponent>(entity).isActive = capturedNewState;
+							}
+						}
+					},
+					[capturedPrevStates]() {
+						ECSManager& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
+						for (const auto& [entity, oldVal] : capturedPrevStates) {
+							if (ecs.HasComponent<ActiveComponent>(entity)) {
+								ecs.GetComponent<ActiveComponent>(entity).isActive = oldVal;
+							}
+						}
+					},
+					"Toggle Multi-Entity Active"
+				);
+			}
+		}
+
+		if (mixed) {
+			ImGui::PopStyleColor(); // pop the mixed-state FrameBg
+			// Draw a horizontal dash over the checkbox to indicate mixed state
+			ImVec2 rectMin = ImGui::GetItemRectMin();
+			ImVec2 rectMax = ImGui::GetItemRectMax();
+			float midY = (rectMin.y + rectMax.y) * 0.5f;
+			float padX = (rectMax.x - rectMin.x) * 0.2f;
+			ImGui::GetWindowDrawList()->AddLine(
+				ImVec2(rectMin.x + padX, midY), ImVec2(rectMax.x - padX, midY),
+				IM_COL32(255, 255, 255, 200), 2.0f);
+		}
+
+		ImGui::PopStyleColor(4);
+		ImGui::PopStyleVar();
+
+		// Tooltip
+		if (ImGui::IsItemHovered()) {
+			if (mixed) ImGui::SetTooltip("Mixed active state - click to activate all");
+			else if (allActive) ImGui::SetTooltip("Deactivate all selected entities");
+			else ImGui::SetTooltip("Activate all selected entities");
+		}
+
+		ImGui::SameLine();
+	}
 
 	// Display selection info
 	ImGui::Text("%zu entities selected", entities.size());
