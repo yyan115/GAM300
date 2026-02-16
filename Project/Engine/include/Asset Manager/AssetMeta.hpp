@@ -32,7 +32,16 @@ public:
 	bool flipUVs = false;
 	bool generateMipmaps = true;
 
-	void PopulateTextureMeta(const std::string& _type, bool _flipUVs, bool _generateMipmaps);
+	enum class TextureWrapMode {
+		Clamp = 0,
+		Repeat
+	};
+
+	static const std::array<std::string, 2> textureWrapModes;
+	TextureWrapMode textureWrapMode = TextureWrapMode::Clamp; // Set to Clamp by default
+	std::string textureWrapModeStr = "Clamp"; // String representation for serialization
+
+	void PopulateTextureMeta(const std::string& _type, bool _flipUVs, bool _generateMipmaps, const TextureWrapMode& _textureWrapMode);
 	void PopulateAssetMetaFromFile(const std::string& metaFilePath) override;
 	Type GetType() const override { return Type::Texture; }
 };

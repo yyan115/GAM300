@@ -82,6 +82,43 @@ static bool DrawColorComponent(const char* label, float color[3], const char* po
     return changed;
 }
 
+// Helper function to draw vector2 component with input fields
+static bool DrawVec2Component(const char* label, float vec2[2], const char* popupId) {
+    bool changed = false;
+
+    ImGui::Text("%s", label);
+    ImGui::SameLine();
+    ImGui::Text("X:");
+    ImGui::SameLine();
+
+    // Create unique IDs using the label
+    std::string xId = std::string("##x_") + label;
+    std::string yId = std::string("##y_") + label;
+
+    // X input field
+    float x = vec2[0];
+    ImGui::PushItemWidth(75);
+    if (ImGui::DragFloat(xId.c_str(), &x, 0.1f, -FLT_MAX, FLT_MAX, "%.2f")) {
+        vec2[0] = x;
+        changed = true;
+    }
+    ImGui::PopItemWidth();
+    ImGui::SameLine();
+    ImGui::Text("Y:");
+    ImGui::SameLine();
+
+    // Y input field
+    float y = vec2[1];
+    ImGui::PushItemWidth(75);
+    if (ImGui::DragFloat(yId.c_str(), &y, 0.1f, -FLT_MAX, FLT_MAX, "%.2f")) {
+        vec2[1] = y;
+        changed = true;
+    }
+    ImGui::PopItemWidth();
+
+    return changed;
+}
+
 void MaterialInspector::DrawMaterialAsset(std::shared_ptr<Material> material, const std::string& assetPath, bool showLockButton, bool* isLocked, std::function<void()> lockCallback) {
     if (!material) return;
 
@@ -182,7 +219,6 @@ void MaterialInspector::DrawMaterialAsset(std::shared_ptr<Material> material, co
                 currentPath = textureInfo->get().filePath;
             }
 
-            
             ImGui::Text("%s:", name.c_str());
             ImGui::SameLine();
 
@@ -197,13 +233,13 @@ void MaterialInspector::DrawMaterialAsset(std::shared_ptr<Material> material, co
             std::string textureDisplay;
             if (currentPath.empty()) {
                 textureDisplay = "None (Texture)";
-            } else {
+            }
+            else {
                 // Show just the filename for cleaner display
                 std::filesystem::path pathObj(currentPath);
                 textureDisplay = pathObj.filename().string();
             }
 
-            
             EditorComponents::DrawDragDropButton(textureDisplay.c_str(), textureFieldWidth);
 
             // Drag-drop target for textures with visual feedback
@@ -250,49 +286,49 @@ void MaterialInspector::DrawMaterialAsset(std::shared_ptr<Material> material, co
             std::string selectButtonLabel = std::string(ICON_FA_FOLDER_OPEN) + "##select_" + name;
             if (ImGui::Button(selectButtonLabel.c_str(), ImVec2(selectButtonWidth, ImGui::GetTextLineHeightWithSpacing()))) {
                 // Open file dialog
-                #ifdef _WIN32
-                    // Store current working directory to restore it later
-                    std::filesystem::path originalWorkingDir = std::filesystem::current_path();
+#ifdef _WIN32
+    // Store current working directory to restore it later
+                std::filesystem::path originalWorkingDir = std::filesystem::current_path();
 
-                    // Proper filter format with embedded nulls
-                    char filter[] = "Image Files (*.png;*.jpg;*.jpeg;*.bmp;*.tga)\0*.png;*.jpg;*.jpeg;*.bmp;*.tga\0All Files (*.*)\0*.*\0";
-                    char filename[260] = {0};
-                    std::string title = "Select " + name + " Texture";
+                // Proper filter format with embedded nulls
+                char filter[] = "Image Files (*.png;*.jpg;*.jpeg;*.bmp;*.tga)\0*.png;*.jpg;*.jpeg;*.bmp;*.tga\0All Files (*.*)\0*.*\0";
+                char filename[260] = { 0 };
+                std::string title = "Select " + name + " Texture";
 
-                    OPENFILENAMEA ofn;
-                    ZeroMemory(&filename, sizeof(filename));
-                    ZeroMemory(&ofn, sizeof(ofn));
-                    ofn.lStructSize = sizeof(ofn);
-                    ofn.lpstrFilter = filter;
-                    ofn.lpstrFile = filename;
-                    ofn.nMaxFile = sizeof(filename);
-                    ofn.lpstrTitle = title.c_str();
-                    ofn.Flags = OFN_DONTADDTORECENT | OFN_FILEMUSTEXIST | OFN_NOCHANGEDIR;
+                OPENFILENAMEA ofn;
+                ZeroMemory(&filename, sizeof(filename));
+                ZeroMemory(&ofn, sizeof(ofn));
+                ofn.lStructSize = sizeof(ofn);
+                ofn.lpstrFilter = filter;
+                ofn.lpstrFile = filename;
+                ofn.nMaxFile = sizeof(filename);
+                ofn.lpstrTitle = title.c_str();
+                ofn.Flags = OFN_DONTADDTORECENT | OFN_FILEMUSTEXIST | OFN_NOCHANGEDIR;
 
-                    if (GetOpenFileNameA(&ofn)) {
-                        std::string selectedPath = filename;
+                if (GetOpenFileNameA(&ofn)) {
+                    std::string selectedPath = filename;
 
-                        // Convert to relative path if possible (use original working dir as reference)
-                        std::filesystem::path absolutePath = std::filesystem::absolute(selectedPath);
-                        std::filesystem::path relativePath = std::filesystem::relative(absolutePath, originalWorkingDir);
+                    // Convert to relative path if possible (use original working dir as reference)
+                    std::filesystem::path absolutePath = std::filesystem::absolute(selectedPath);
+                    std::filesystem::path relativePath = std::filesystem::relative(absolutePath, originalWorkingDir);
 
-                        std::string finalPath = relativePath.string();
-                        std::replace(finalPath.begin(), finalPath.end(), '\\', '/');
+                    std::string finalPath = relativePath.string();
+                    std::replace(finalPath.begin(), finalPath.end(), '\\', '/');
 
-                        // Create a TextureInfo with the path
-                        auto textureInfo = std::make_unique<TextureInfo>(finalPath, nullptr);
-                        material->SetTexture(type, std::move(textureInfo));
-                        materialChanged = true;
-                        std::cout << "[MaterialInspector] Selected texture: " << finalPath << std::endl;
-                    }
+                    // Create a TextureInfo with the path
+                    auto textureInfo = std::make_unique<TextureInfo>(finalPath, nullptr);
+                    material->SetTexture(type, std::move(textureInfo));
+                    materialChanged = true;
+                    std::cout << "[MaterialInspector] Selected texture: " << finalPath << std::endl;
+                }
 
-                    // Restore the original working directory to ensure asset browser isn't affected
-                    std::filesystem::current_path(originalWorkingDir);
-                    std::cout << "[MaterialInspector] Restored working directory to: " << originalWorkingDir << std::endl;
-                #else
-                    // For non-Windows platforms, show a message
-                    std::cout << "[MaterialInspector] File dialog not implemented for this platform" << std::endl;
-                #endif
+                // Restore the original working directory to ensure asset browser isn't affected
+                std::filesystem::current_path(originalWorkingDir);
+                std::cout << "[MaterialInspector] Restored working directory to: " << originalWorkingDir << std::endl;
+#else
+    // For non-Windows platforms, show a message
+                std::cout << "[MaterialInspector] File dialog not implemented for this platform" << std::endl;
+#endif
             }
             ImGui::PopStyleVar(); // Pop ButtonTextAlign style
             if (ImGui::IsItemHovered()) {
@@ -302,6 +338,22 @@ void MaterialInspector::DrawMaterialAsset(std::shared_ptr<Material> material, co
             // Pop the unique ID
             ImGui::PopID();
         }
+
+        // Texture wrapping options (Tiling, Offset)
+        glm::vec2 tiling = material->GetTiling();
+        float tilingXY[2] = { tiling.x, tiling.y };
+        if (DrawVec2Component("Tiling", tilingXY, "tiling_popup")) {
+            material->SetTiling(glm::vec2(tilingXY[0], tilingXY[1]));
+			materialChanged = true;
+        }
+
+		glm::vec2 offset = material->GetOffset();
+		float offsetXY[2] = { offset.x, offset.y };
+        if (DrawVec2Component("Offset", offsetXY, "offset_popup")) {
+			material->SetOffset(glm::vec2(offsetXY[0], offsetXY[1]));
+			materialChanged = true;
+        }
+
     } else {
         ImGui::PopStyleColor(3); // Pop header colors if not open
     }

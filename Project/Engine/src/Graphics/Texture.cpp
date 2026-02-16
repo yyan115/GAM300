@@ -293,6 +293,23 @@ bool Texture::LoadResource(const std::string& resourcePath, const std::string& a
 		texture.data()
 	);
 
+	// Set texture wrapping mode.
+	switch (metaData->textureWrapMode) {
+		case TextureMeta::TextureWrapMode::Clamp: {
+			// S = X axis, T = Y axis
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE); // mode should be GL_CLAMP/REPEAT
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+			break;
+		}
+		
+		case TextureMeta::TextureWrapMode::Repeat: {
+			// S = X axis, T = Y axis
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT); // mode should be GL_CLAMP/REPEAT
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+			break;
+		}
+	}
+
 #ifndef ANDROID
 	// Generates MipMaps
 	if (metaData->generateMipmaps) {
@@ -377,6 +394,8 @@ std::shared_ptr<AssetMeta> Texture::ExtendMetaFile(const std::string& assetPath,
 	textureMetaData.AddMember("flipUVs", rapidjson::Value().SetBool(metaData->flipUVs), allocator);
 	// Add generate mipmaps
 	textureMetaData.AddMember("generateMipmaps", rapidjson::Value().SetBool(metaData->generateMipmaps), allocator);
+	// Add texture wrap mode
+	textureMetaData.AddMember("textureWrapMode", rapidjson::Value().SetString(metaData->textureWrapModeStr.c_str(), allocator), allocator);
 
 	doc.AddMember("TextureMetaData", textureMetaData, allocator);
 
@@ -390,7 +409,7 @@ std::shared_ptr<AssetMeta> Texture::ExtendMetaFile(const std::string& assetPath,
 
 	std::shared_ptr<TextureMeta> newMetaData = std::make_shared<TextureMeta>();
 	newMetaData->PopulateAssetMeta(currentMetaData->guid, currentMetaData->sourceFilePath, currentMetaData->compiledFilePath, currentMetaData->version);
-	newMetaData->PopulateTextureMeta(metaData->type, metaData->flipUVs, metaData->generateMipmaps);
+	newMetaData->PopulateTextureMeta(metaData->type, metaData->flipUVs, metaData->generateMipmaps, metaData->textureWrapMode);
 	return newMetaData;
 }
 

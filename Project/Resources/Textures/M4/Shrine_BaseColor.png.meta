@@ -6,8 +6,9 @@
         "compiled": "../../Resources/Textures/M4/Shrine_BaseColor.dds"
     },
     "TextureMetaData": {
-        "type": "",
+        "type": "diffuse",
         "flipUVs": false,
-        "generateMipmaps": true
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp"
     }
 }

@@ -7,7 +7,8 @@
     },
     "TextureMetaData": {
         "type": "diffuse",
-        "flipUVs": true,
-        "generateMipmaps": true
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp"
     }
 }

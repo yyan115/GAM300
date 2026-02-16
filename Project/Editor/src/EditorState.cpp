@@ -107,6 +107,8 @@ void EditorState::Play() {
             }
         }
     }
+
+	AssetManager::GetInstance().SetShouldRunEventQueue(false); // Disable asset event processing during play mode to prevent lag spikes while playing.
 }
 
 void EditorState::Pause() {
@@ -153,6 +155,7 @@ void EditorState::Stop() {
     }
 
     SetState(State::EDIT_MODE);
+	AssetManager::GetInstance().SetShouldRunEventQueue(true); // Re-enable asset event processing after exiting play mode.
 }
 
 void EditorState::SetSelectedEntity(Entity entity) {

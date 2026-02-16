@@ -7,6 +7,7 @@
 #include <WindowManager.hpp>
 
 const std::array<std::string, 3> TextureMeta::textureTypes = { "diffuse", "specular", "normal" };
+const std::array<std::string, 2> TextureMeta::textureWrapModes = { "Clamp", "Repeat" };
 
 void AssetMeta::PopulateAssetMeta(GUID_128 _guid, const std::string& _sourcePath, const std::string& _compiledPath, int _ver, const std::string& _androidCompiledPath)
 {
@@ -68,11 +69,13 @@ void AssetMeta::PopulateAssetMetaFromFile(const std::string& metaFilePath)
 	//lastCompileTime = MetaFilesManager::GetLastCompileTimeFromMetaFile(metaFilePath);
 }
 
-void TextureMeta::PopulateTextureMeta(const std::string& _type, bool _flipUVs, bool _generateMipmaps)
+void TextureMeta::PopulateTextureMeta(const std::string& _type, bool _flipUVs, bool _generateMipmaps, const TextureWrapMode& _textureWrapMode)
 {
 	type = _type;
 	flipUVs = _flipUVs;
 	generateMipmaps = _generateMipmaps;
+	textureWrapMode = _textureWrapMode;
+	textureWrapModeStr = textureWrapModes[static_cast<int>(_textureWrapMode)];
 }
 
 void TextureMeta::PopulateAssetMetaFromFile(const std::string& metaFilePath) {
@@ -103,6 +106,15 @@ void TextureMeta::PopulateAssetMetaFromFile(const std::string& metaFilePath) {
 	}
 	if (assetMetaData.HasMember("generateMipmaps")) {
 		generateMipmaps = assetMetaData["generateMipmaps"].GetBool();
+	}
+	if (assetMetaData.HasMember("textureWrapMode")) {
+		textureWrapModeStr = assetMetaData["textureWrapMode"].GetString();
+		for (size_t i = 0; i < textureWrapModes.size(); ++i) {
+			if (textureWrapModes[i] == textureWrapModeStr) {
+				textureWrapMode = static_cast<TextureWrapMode>(i);
+				break;
+			}
+		}
 	}
 }
 

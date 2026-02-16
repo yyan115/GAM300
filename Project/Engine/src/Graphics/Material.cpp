@@ -140,6 +140,10 @@ void Material::ApplyToShader(Shader& shader) const
 	//}
 	// Bind textures
 	BindTextures(shader);
+
+	// Set texture wrapping options
+	shader.setVec2("material.uTiling", tiling);
+	shader.setVec2("material.uOffset", offset);
 }
 
 void Material::BindTextures(Shader& shader) const
@@ -457,6 +461,22 @@ bool Material::GetMaterialPropertiesFromAsset(const std::string& assetPath) {
 				//	break;
 				//}
 			}
+
+			// Ensure we don't overflow the buffer as these are new material options that not all materials might have.
+			if (offset + (2 * sizeof(glm::vec2)) > buffer.size()) {
+				return true;
+			}
+
+			// Read texture wrapping options from file.
+			glm::vec2 tiling;
+			std::memcpy(&tiling, buffer.data() + offset, sizeof(tiling));
+			offset += sizeof(tiling);
+			SetTiling(tiling);
+
+			glm::vec2 textureOffset;
+			std::memcpy(&textureOffset, buffer.data() + offset, sizeof(textureOffset));
+			offset += sizeof(textureOffset);
+			SetOffset(textureOffset);
 		}
 		catch (const std::exception& e) {
 			ENGINE_LOG_ERROR("[Material] Failed to load material: " + std::string(e.what()));
@@ -579,6 +599,10 @@ std::string Material::CompileToResource(const std::string& assetPath, bool forAn
 			materialFile.write(it->second->filePath.data(), pathLength);
 		}
 
+		// Write texture wrapping options
+		materialFile.write(reinterpret_cast<const char*>(&tiling), sizeof(tiling));
+		materialFile.write(reinterpret_cast<const char*>(&offset), sizeof(offset));
+
 		materialFile.close();
 		return materialPath;
 	}
@@ -642,6 +666,10 @@ std::string Material::CompileUpdatedAssetToResource(const std::string& assetPath
 			materialFile.write(reinterpret_cast<const char*>(&pathLength), sizeof(pathLength));
 			materialFile.write(it->second->filePath.data(), pathLength);
 		}
+
+		// Write texture wrapping options
+		materialFile.write(reinterpret_cast<const char*>(&tiling), sizeof(tiling));
+		materialFile.write(reinterpret_cast<const char*>(&offset), sizeof(offset));
 
 		materialFile.close();
 		return materialPath;

@@ -6,8 +6,9 @@
         "compiled": "../../Resources/Textures/M4/WoodFloorMain_normal.dds"
     },
     "TextureMetaData": {
-        "type": "diffuse",
+        "type": "normal",
         "flipUVs": false,
-        "generateMipmaps": true
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp"
     }
 }

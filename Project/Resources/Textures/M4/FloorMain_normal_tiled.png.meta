@@ -1,0 +1,14 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "00111d14cb0f5bce-00043c5fc0000013",
+        "source": "../../Resources/Textures/M4/FloorMain_normal_tiled.png",
+        "compiled": "../../Resources/Textures/M4/FloorMain_normal_tiled.dds"
+    },
+    "TextureMetaData": {
+        "type": "normal",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Repeat"
+    }
+}

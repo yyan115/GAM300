@@ -6,8 +6,9 @@
         "compiled": "../../Resources/Textures/M4/ceilSurface1_occlusionRoughnessMetallic.dds"
     },
     "TextureMetaData": {
-        "type": "specular",
+        "type": "diffuse",
         "flipUVs": false,
-        "generateMipmaps": true
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp"
     }
 }

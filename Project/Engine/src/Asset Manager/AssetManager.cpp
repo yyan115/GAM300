@@ -3,6 +3,7 @@
 #include "Sound/Audio.hpp"
 #include <Platform/IPlatform.h>
 #include <WindowManager.hpp>
+#include "../../../Editor/include/EditorState.hpp"
 
 AssetManager& AssetManager::GetInstance() {
     static AssetManager instance; // lives only in the DLL
@@ -17,7 +18,7 @@ void AssetManager::AddToEventQueue(AssetManager::Event event, const std::filesys
 }
 
 void AssetManager::RunEventQueue() {
-    if (!assetEventQueue.empty()) {
+    if (shouldRunEventQueue && !assetEventQueue.empty()) {
         auto currentEvent = assetEventQueue.front();
         assetEventQueue.pop_front();
 
