@@ -791,6 +791,9 @@ void Engine::EndDraw() {
 
 	// Update cursor state at end of frame (enforces lock state, handles ImGui interference)
 	WindowManager::UpdateCursorState();
+
+	// Mark frame boundary for Tracy profiler
+	ENGINE_FRAME_MARK;
 }
 
 void Engine::Shutdown() {

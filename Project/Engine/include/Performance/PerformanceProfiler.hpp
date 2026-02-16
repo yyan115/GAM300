@@ -106,8 +106,13 @@ private:
 #if DISABLE_PROFILING
     #define PROFILE_SCOPE(name)
     #define PROFILE_FUNCTION()
+#elif defined(TRACY_ENABLE)
+    // Both internal profiler (for PerformancePanel) and Tracy (for external viewer)
+    #include "tracy/Tracy.hpp"
+    #define PROFILE_SCOPE(name) ProfileZone profileZone##__LINE__(name); ZoneScopedN(name)
+    #define PROFILE_FUNCTION() ProfileZone profileZone##__LINE__(__FUNCTION__); ZoneScoped
 #else
-    // Profiling enabled - works in both debug and release
+    // Internal profiler only
     #define PROFILE_SCOPE(name) ProfileZone profileZone##__LINE__(name)
     #define PROFILE_FUNCTION() ProfileZone profileZone##__LINE__(__FUNCTION__)
 #endif

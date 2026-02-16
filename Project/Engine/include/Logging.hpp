@@ -161,6 +161,29 @@ namespace EngineLogging {
     
 }
 
+// =============================================================================
+// TRACY FRAME PROFILER INTEGRATION
+// =============================================================================
+// When TRACY_ENABLE is defined (all builds except Release), these macros
+// forward to the Tracy profiler for timeline visualization in the Tracy GUI.
+// In Release builds, they compile to nothing (zero overhead).
+// =============================================================================
+
+#ifdef TRACY_ENABLE
+#include "tracy/Tracy.hpp"
+#define ENGINE_FRAME_MARK          FrameMark
+#define ENGINE_TRACY_ZONE          ZoneScoped
+#define ENGINE_TRACY_ZONE_N(name)  ZoneScopedN(name)
+#define ENGINE_TRACY_MESSAGE(msg, len) TracyMessage(msg, len)
+#define ENGINE_TRACY_PLOT(name, val)   TracyPlot(name, val)
+#else
+#define ENGINE_FRAME_MARK          ((void)0)
+#define ENGINE_TRACY_ZONE          ((void)0)
+#define ENGINE_TRACY_ZONE_N(name)  ((void)0)
+#define ENGINE_TRACY_MESSAGE(msg, len) ((void)0)
+#define ENGINE_TRACY_PLOT(name, val)   ((void)0)
+#endif
+
 #ifdef ENGINE_LOGGING_DISABLED
 
 // All logging compiles to nothing

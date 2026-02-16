@@ -19,7 +19,8 @@
     "spdlog",
     "rapidjson",
     "gli",
-    "meshoptimizer"
+    "meshoptimizer",
+    "tracy"
   ],
   "overrides": [
     {
