@@ -121,7 +121,7 @@ return Component {
         KnockbackStrength = 12.0,
         KnockbackDuration = 0.5,
 
-        HookPullSpeed     = 6.0,   -- units/sec toward player while hooked
+        HookPullSpeed     = 42.0,   -- units/sec toward player while hooked
         HookStopDistance  = 1.2,   -- stop pulling when within this distance
         HookMaxStep       = 0.25,
 
@@ -402,6 +402,10 @@ return Component {
         --     print("[EnemyAI] DEBUG forced move step")
         --     self:MoveCC(1.0, 0.0, dt) -- 1 unit/sec to +X
         -- end
+
+        if Input.IsActionJustPressed("Interact") then
+            self.fsm:Change("Hooked", self.states.Hooked)
+        end
 
         local dtSec = toDtSec(dt)
         self._hitLockTimer = math.max(0, (self._hitLockTimer or 0) - dtSec)
