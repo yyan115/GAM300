@@ -103,6 +103,8 @@ private:
     void DrawAudioGizmos();
     void DrawLightGizmos();
     void DrawSelectionOutline(Entity entity, int sceneWidth, int sceneHeight);
+    void DrawStencilOutline(Entity entity, int sceneWidth, int sceneHeight);
+    void InitOutlineShader();
 
     // 2D Gizmo system for screen-space manipulation
     void Handle2DGizmo(float sceneWidth, float sceneHeight);

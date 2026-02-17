@@ -12,6 +12,8 @@
 #include "Logging.hpp"
 #include <Graphics/PostProcessing/PostProcessingManager.hpp>
 #include "Physics/PhysicsSystem.hpp"
+#include "Graphics/ShaderClass.h"
+#include "Graphics/Model/Model.h"
 
 // Static member definitions for SCENE panel
 unsigned int SceneRenderer::sceneFrameBuffer = 0;
@@ -28,6 +30,8 @@ int SceneRenderer::gameWidth = 1920;
 int SceneRenderer::gameHeight = 1080;
 
 Camera* SceneRenderer::editorCamera = nullptr;
+std::shared_ptr<Shader> SceneRenderer::outlineShader = nullptr;
+bool SceneRenderer::outlineShaderInitialized = false;
 
 unsigned int SceneRenderer::CreateSceneFramebuffer(int width, int height)
 {
@@ -53,15 +57,15 @@ unsigned int SceneRenderer::CreateSceneFramebuffer(int width, int height)
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, sceneColorTexture, 0);
 
-    // Create depth texture
+    // Create depth-stencil texture (stencil needed for selection outline)
     glGenTextures(1, &sceneDepthTexture);
     glBindTexture(GL_TEXTURE_2D, sceneDepthTexture);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT24, width, height, 0, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH24_STENCIL8, width, height, 0, GL_DEPTH_STENCIL, GL_UNSIGNED_INT_24_8, nullptr);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, sceneDepthTexture, 0);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_TEXTURE_2D, sceneDepthTexture, 0);
 
     // Check framebuffer completeness
     if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
@@ -102,11 +106,20 @@ void SceneRenderer::DeleteSceneFramebuffer()
         editorCamera = nullptr;
         ENGINE_PRINT("[SceneRenderer] Editor camera deleted\n");
     }
+
+    // Clean up outline shader
+    outlineShader = nullptr;
+    outlineShaderInitialized = false;
 }
 
 unsigned int SceneRenderer::GetSceneTexture()
 {
     return sceneColorTexture;
+}
+
+unsigned int SceneRenderer::GetSceneFramebuffer()
+{
+    return sceneFrameBuffer;
 }
 
 void SceneRenderer::BeginSceneRender(int width, int height)
@@ -308,4 +321,132 @@ void SceneRenderer::EndGameRender()
 unsigned int SceneRenderer::GetGameTexture()
 {
     return gameColorTexture;
+}
+
+// ============================================================================
+// SELECTION OUTLINE (Stencil-based)
+// ============================================================================
+
+void SceneRenderer::InitOutlineShader()
+{
+    if (outlineShaderInitialized) return;
+    outlineShaderInitialized = true;
+
+    outlineShader = std::make_shared<Shader>();
+    std::string shaderPath = "Resources/Shaders/selection_outline.shader";
+    if (!outlineShader->LoadResource(shaderPath)) {
+        ENGINE_PRINT(EngineLogging::LogLevel::Error, "[SceneRenderer] Failed to load selection_outline shader\n");
+        outlineShader = nullptr;
+    }
+}
+
+void SceneRenderer::RenderSelectionOutline(Model* model,
+                                            const glm::mat4& modelMatrix,
+                                            const glm::mat4& view,
+                                            const glm::mat4& proj,
+                                            bool isAnimated,
+                                            const std::vector<glm::mat4>& boneMatrices,
+                                            float outlineThickness)
+{
+    try {
+        if (!model) return;
+
+        // Lazy-init the outline shader
+        InitOutlineShader();
+        if (!outlineShader) return;
+        if (sceneFrameBuffer == 0) return;
+
+        // Save GL state
+        GLboolean depthTestEnabled, depthWriteEnabled, stencilTestEnabled, cullFaceEnabled, blendEnabled;
+        GLint prevStencilFunc, prevStencilRef, prevStencilMask;
+        GLint prevStencilFail, prevStencilZFail, prevStencilZPass;
+        GLboolean colorMask[4];
+        glGetBooleanv(GL_DEPTH_TEST, &depthTestEnabled);
+        glGetBooleanv(GL_DEPTH_WRITEMASK, &depthWriteEnabled);
+        glGetBooleanv(GL_STENCIL_TEST, &stencilTestEnabled);
+        glGetBooleanv(GL_CULL_FACE, &cullFaceEnabled);
+        glGetBooleanv(GL_BLEND, &blendEnabled);
+        glGetBooleanv(GL_COLOR_WRITEMASK, colorMask);
+        glGetIntegerv(GL_STENCIL_FUNC, &prevStencilFunc);
+        glGetIntegerv(GL_STENCIL_REF, &prevStencilRef);
+        glGetIntegerv(GL_STENCIL_VALUE_MASK, &prevStencilMask);
+        glGetIntegerv(GL_STENCIL_FAIL, &prevStencilFail);
+        glGetIntegerv(GL_STENCIL_PASS_DEPTH_FAIL, &prevStencilZFail);
+        glGetIntegerv(GL_STENCIL_PASS_DEPTH_PASS, &prevStencilZPass);
+
+        // Bind the scene FBO
+        glBindFramebuffer(GL_FRAMEBUFFER, sceneFrameBuffer);
+        glViewport(0, 0, sceneWidth, sceneHeight);
+
+        // --- Pass 1: Stencil fill - mark mesh pixels with 1 ---
+        glEnable(GL_STENCIL_TEST);
+        glDisable(GL_DEPTH_TEST);  // Depth buffer has stale values from tone mapping; disable so all fragments pass
+        glClearStencil(0);
+        glStencilMask(0xFF);
+        glClear(GL_STENCIL_BUFFER_BIT);
+
+        glStencilFunc(GL_ALWAYS, 1, 0xFF);
+        glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
+        glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
+        glDepthMask(GL_FALSE);
+
+        outlineShader->Activate();
+        outlineShader->setMat4("model", modelMatrix);
+        outlineShader->setMat4("view", view);
+        outlineShader->setMat4("projection", proj);
+        outlineShader->setFloat("outlineThickness", 0.0f);
+        outlineShader->setBool("isAnimated", isAnimated);
+
+        if (isAnimated) {
+            for (size_t i = 0; i < boneMatrices.size(); ++i) {
+                outlineShader->setMat4("finalBonesMatrices[" + std::to_string(i) + "]", boneMatrices[i]);
+            }
+        }
+
+        model->DrawDepthOnly();
+
+        // --- Pass 2: Outline ---
+        glStencilFunc(GL_NOTEQUAL, 1, 0xFF);
+        glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
+        glStencilMask(0x00);
+        glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+        glDisable(GL_DEPTH_TEST);
+        glDisable(GL_CULL_FACE);
+        glEnable(GL_BLEND);
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+        outlineShader->Activate();
+        outlineShader->setMat4("model", modelMatrix);
+        outlineShader->setMat4("view", view);
+        outlineShader->setMat4("projection", proj);
+        outlineShader->setFloat("outlineThickness", outlineThickness);
+        outlineShader->setVec4("outlineColor", glm::vec4(1.0f, 0.647f, 0.0f, 1.0f));
+        outlineShader->setBool("isAnimated", isAnimated);
+
+        if (isAnimated) {
+            for (size_t i = 0; i < boneMatrices.size(); ++i) {
+                outlineShader->setMat4("finalBonesMatrices[" + std::to_string(i) + "]", boneMatrices[i]);
+            }
+        }
+
+        model->DrawDepthOnly();
+
+        // --- Restore GL state ---
+        glStencilMask(0xFF);
+        glDisable(GL_STENCIL_TEST);
+
+        if (depthTestEnabled) glEnable(GL_DEPTH_TEST); else glDisable(GL_DEPTH_TEST);
+        glDepthMask(depthWriteEnabled);
+        if (stencilTestEnabled) glEnable(GL_STENCIL_TEST); else glDisable(GL_STENCIL_TEST);
+        if (cullFaceEnabled) glEnable(GL_CULL_FACE); else glDisable(GL_CULL_FACE);
+        if (blendEnabled) glEnable(GL_BLEND); else glDisable(GL_BLEND);
+        glColorMask(colorMask[0], colorMask[1], colorMask[2], colorMask[3]);
+        glStencilFunc(prevStencilFunc, prevStencilRef, prevStencilMask);
+        glStencilOp(prevStencilFail, prevStencilZFail, prevStencilZPass);
+
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+    } catch (const std::exception& e) {
+        ENGINE_PRINT(EngineLogging::LogLevel::Error, "[SceneRenderer] Error in RenderSelectionOutline: ", e.what(), "\n");
+    }
 }

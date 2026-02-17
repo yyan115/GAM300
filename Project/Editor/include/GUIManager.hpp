@@ -105,6 +105,8 @@ public:
 	 */
 	static void SetSelectedAsset(const GUID_128& assetGuid) { selectedAsset = assetGuid; if (assetGuid != GUID_128{ 0, 0 }) selectedEntities.clear(); }
 
+	static bool IsSelectionOutlineEnabled() { return showSelectionOutline; }
+
 private:
 	/**
 	 * @brief Set up the default editor panels.
@@ -143,4 +145,5 @@ private:
 
 	static std::string notificationMessage;
 	static float notificationTimer;
+	static bool showSelectionOutline;
 };
