@@ -12,6 +12,10 @@ local GroundHookedState  = require("Gameplay.GroundHookedState")
 local GroundPatrolState  = require("Gameplay.GroundPatrolState")
 local GroundChaseState   = require("Gameplay.GroundChaseState")
 
+local FlyingIdleState   = require("Gameplay.FlyingIdleState")
+local FlyingChaseState  = require("Gameplay.FlyingChaseState")
+local FlyingHookedState = require("Gameplay.FlyingHookedState")
+
 local KnifePool = require("Gameplay.KnifePool")
 local Input = _G.Input
 local Time  = _G.Time
@@ -101,6 +105,8 @@ return Component {
     mixins = { TransformMixin },
 
     fields = {
+        EnemyType = "Ground",
+
         MaxHealth = 5,
 
         DetectionRange       = 4.0,
@@ -125,11 +131,14 @@ return Component {
         HookStopDistance  = 1.2,   -- stop pulling when within this distance
         HookMaxStep       = 0.25,
 
-        EnablePatrol   = true,
-        PatrolSpeed    = 0.3,
-        PatrolDistance = 3.0,
-        PatrolWait     = 1.5,
-        ChaseSpeed     = 0.6,
+        EnablePatrol     = true,
+        PatrolSpeed      = 0.3,
+        PatrolDistance   = 3.0,
+        PatrolWait       = 1.5,
+        ChaseSpeed       = 0.6,
+        HoverHeight      = 2.0,
+        HoverSnapSpeed   = 8.0,
+        FlyingChaseSpeed = 1.2,
 
         PathRepathInterval = 10,
         PathGoalMoveThreshold = 0.9,
@@ -182,15 +191,7 @@ return Component {
 
         self.fsm = StateMachine.new(self)
 
-        self.states = {
-            Idle   = GroundIdleState,
-            Attack = GroundAttackState,
-            Hurt   = GroundHurtState,
-            Death  = GroundDeathState,
-            Hooked = GroundHookedState,
-            Patrol = GroundPatrolState,
-            Chase  = GroundChaseState,
-        }
+        self:BuildStateProfile()
 
         self.clips = {
             Idle   = self.ClipIdle,
@@ -251,6 +252,7 @@ return Component {
         self._animator:SetBool("PatrolEnabled", EnablePatrol)
         self._animator:SetBool("Passive", IsPassive)
         self._animator:SetBool("Melee", IsMelee)
+        self._animator:SetBool("Flying", self:IsFlying())
 
         -- Create CC only if we have the right inputs, and only if we don't already have one
         if not self._controller and self._collider and self._transform then
@@ -364,7 +366,12 @@ return Component {
 
         self.fsm:Change("Idle", self.states.Idle)
 
-        CharacterController.SetPosition()
+        if self._controller and CharacterController.SetPosition then
+            local x, y, z = self:GetPosition()
+            pcall(function()
+                CharacterController.SetPosition(self._controller, x, y, z)
+            end)
+        end
     end,
 
     Update = function(self, dt)
@@ -444,16 +451,20 @@ return Component {
             --CharacterController.UpdateAll(dtSec)
         end
 
-        -- then sync your own transform from your controller
+        -- Sync Transform from CharacterController every frame (ground enemies),
+        -- and clamp Y to ground so they don't float.
         if self._controller then
             local pos = CharacterController.GetPosition(self._controller)
             if pos then
-                -- TEMP HACK UNTIL PHYSICS IS FIXED
-                local groundY = Nav.GetGroundY(self.entityId)
-                if pos.y ~= groundY  then
-                    pos.y = groundY
-                    --print(string.format("[EnemyAI] Force set position to: %f %f %f", pos.x, pos.y, pos.z))
-                    self:SetPosition(pos.x, pos.y, pos.z)
+                if (self.EnemyType ~= "Flying") then
+                    local groundY = (Nav and Nav.GetGroundY) and Nav.GetGroundY(self.entityId) or pos.y
+                    -- Always push XZ into Transform so visuals follow the CC
+                    self:SetPosition(pos.x, groundY, pos.z)
+                else
+                    -- Flying: do NOT clamp to ground (hover system controls Y)
+                    -- If you're moving flyers using SetPosition (not CC), you can skip this entirely.
+                    -- If you ever move flyers using CC, you can sync without clamping:
+                    -- self:SetPosition(pos.x, pos.y, pos.z)
                 end
             end
         end
@@ -805,6 +816,137 @@ return Component {
 
         CharacterController.Move(self._controller, mx, 0, mz)
         self:FaceDirection(dirX, dirZ)
+    end,
+
+    IsFlying = function(self)
+        return self.EnemyType == "Flying"
+    end,
+
+    BuildStateProfile = function(self)
+        if self:IsFlying() then
+            self.states = {
+                Idle   = FlyingIdleState,
+                Chase  = FlyingChaseState,
+                Hooked = FlyingHookedState,
+
+                -- Reuse existing states (works fine unless you later want custom flying attack/hurt)
+                Attack = GroundAttackState,
+                Hurt   = GroundHurtState,
+                Death  = GroundDeathState,
+
+                -- optional: flying patrol later
+                Patrol = nil,
+            }
+        else
+            self.states = {
+                Idle   = GroundIdleState,
+                Attack = GroundAttackState,
+                Hurt   = GroundHurtState,
+                Death  = GroundDeathState,
+                Hooked = GroundHookedState,
+                Patrol = GroundPatrolState,
+                Chase  = GroundChaseState,
+            }
+        end
+    end,
+
+    MaintainHover = function(self, dtSec)
+        dtSec = toDtSec(dtSec)
+        if dtSec <= 0 then return end
+
+        local x, y, z = self:GetPosition()
+        if x == nil then return end
+
+        local gy = y
+        if Nav and Nav.GetGroundY then
+            local g = Nav.GetGroundY(self.entityId)
+            if g ~= nil then gy = g end
+        end
+
+        local targetY = (gy or y) + (self.HoverHeight or 2.0)
+        local snap = self.HoverSnapSpeed or 8.0
+
+        local dy = targetY - y
+        local maxStep = snap * dtSec
+        if dy >  maxStep then dy =  maxStep end
+        if dy < -maxStep then dy = -maxStep end
+
+        self:SetPosition(x, y + dy, z)
+    end,
+
+    MoveTowardPlayerXZ_Flying = function(self, dtSec, speed)
+        dtSec = toDtSec(dtSec)
+        if dtSec <= 0 then return end
+
+        local tr = self._playerTr
+        if not tr then
+            tr = Engine.FindTransformByName(self.PlayerName)
+            self._playerTr = tr
+        end
+        if not tr then return end
+
+        local pp = Engine.GetTransformPosition(tr)
+        if not pp then return end
+        local px, pz = pp[1], pp[3]
+
+        local ex, _, ez = self:GetPosition()
+        if ex == nil then return end
+
+        local dx, dz = px - ex, pz - ez
+        local d2 = dx*dx + dz*dz
+        if d2 < 1e-8 then return end
+
+        local d = math.sqrt(d2)
+        local dirX, dirZ = dx / d, dz / d
+
+        local spd = speed or (self.FlyingChaseSpeed or 1.2)
+        local step = spd * dtSec
+
+        -- clamp to avoid teleporting
+        local maxStep = 0.25
+        if step > maxStep then step = maxStep end
+
+        -- Keep current Y (hover handled separately)
+        local _, y, _ = self:GetPosition()
+        self:SetPosition(ex + dirX * step, y, ez + dirZ * step)
+        self:FaceDirection(dirX, dirZ)
+    end,
+
+    ConvertToGroundEnemy = function(self, opts)
+        opts = opts or {}
+        if not self:IsFlying() then return end
+
+        -- flip profile first
+        self.EnemyType = "Ground"
+
+        -- stop movement + clear path
+        self._kbT = 0
+        self._kbVX, self._kbVZ = 0, 0
+        if self.ClearPath then self:ClearPath() end
+        if self.StopCC then self:StopCC() end
+
+        -- snap to ground (authoritative)
+        local x, y, z = self:GetPosition()
+        if Nav and Nav.GetGroundY then
+            local gy = Nav.GetGroundY(self.entityId)
+            if gy ~= nil then
+                y = gy
+                self:SetPosition(x, y, z)
+            end
+        end
+
+        -- animator (wings close)
+        if self._animator then
+            self._animator:SetBool("Flying", false)
+        end
+
+        -- rebuild states for ground
+        self:BuildStateProfile()
+
+        -- enter requested state (default: Hooked on ground)
+        local nextName = opts.nextState or "Hooked"
+        local nextState = self.states[nextName] or self.states.Idle
+        self.fsm:ForceChange(nextName, nextState)
     end,
 
     ApplyRotation = function(self, w, x, y, z)
