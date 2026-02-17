@@ -58,11 +58,13 @@ return Component {
         minZoom          = 2.0,
         maxZoom          = 15.0,
         zoomSpeed        = 1.0,
+
         -- Camera collision settings
         collisionEnabled = true,
         collisionOffset  = 0.2,    -- How far to pull camera in front of hit point
         collisionLerpIn  = 20.0,   -- Fast snap when hitting wall
         collisionLerpOut = 5.0,    -- Slower ease when wall clears
+
         -- Action mode settings
         actionModeEnabled   = false,
         actionModeDuration  = 3.0,
@@ -70,10 +72,12 @@ return Component {
         actionModeDistance  = 3.5,
         actionModeTransition = 8.0,
         actionModeLockRotation = false,  -- Set to true to lock camera rotation when in action mode
+
         -- Chain mode aim settings
         chainAimPosName = "ChainAimPointLeft",
         chainAimTargetName = "ChainAimPointLeftEnd",
         chainAimTransitionSpeed = 5.0,
+
         -- Camera rotation lock
         lockCameraRotation  = false,
         
@@ -82,8 +86,10 @@ return Component {
         enemyDetectionRange  = 8.0,
         enemyDisengageRange  = 10.0,
         enemyDisengageDelay  = 2.0,
+
         enemyNames = {"EnemyAI"},
         cacheUpdateInterval = 1.0,  -- C++ cache update interval (seconds)
+
         debugEnemyDetection = false,       
     },
 
