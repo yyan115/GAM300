@@ -17,7 +17,14 @@ local function PlayerTakeDmg(self, dmg)
     
     if self._currentHealth <= 0 then
         self._currentHealth = 0
+        self._isDead = true
         self._animator:SetBool("IsDead", true)
+
+        -- Disable body collider so enemies stop hitting the dead player
+        if self._collider then
+            if self._collider.SetEnabled then self._collider:SetEnabled(false)
+            elseif self._collider.enabled ~= nil then self._collider.enabled = false end
+        end
 
         event_bus.publish("playerDead", true)
     end
@@ -41,13 +48,15 @@ return Component {
     Awake = function(self)
         self._iFrameDuration = self.IFrameDuration
         self._animator  = self:GetComponent("AnimationComponent")
+        self._collider  = self:GetComponent("ColliderComponent")
         self._maxHealth = self.Health
         self._currentHealth = self._maxHealth
+        self._isDead = false
 
         if event_bus and event_bus.subscribe then
             print("[PlayerHealth] Subscribing to knifeHitPlayerDmg")
             self._knifeHitPlayerDmgSub = event_bus.subscribe("knifeHitPlayerDmg", function(dmg)
-                if dmg then
+                if dmg and not self._isDead then
                     if self._isIFrame == false then
                         PlayerTakeDmg(self, dmg)
                     end
@@ -60,6 +69,7 @@ return Component {
         print("[PlayerHealth] Subscribing to meleeHitPlayerDmg")
         self._meleeHitPlayerDmgSub = event_bus.subscribe("meleeHitPlayerDmg", function(payload)
             if not payload then return end
+            if self._isDead then return end
             if self._isIFrame then return end
 
             local dmg = payload
@@ -77,6 +87,7 @@ return Component {
         print("[PlayerHealth] Subscribing to miniboss_slash")
             self._minibossSlashSub = event_bus.subscribe("miniboss_slash", function(payload)
             if not payload then return end
+            if self._isDead then return end
             if self._isIFrame then return end
 
             -- payload: x,y,z,radius,dmg,entityId
@@ -168,6 +179,14 @@ return Component {
 
     RespawnPlayer = function(self)
         self._currentHealth = self._maxHealth
+        self._isDead = false
+
+        -- Re-enable collider on respawn
+        if self._collider then
+            if self._collider.SetEnabled then self._collider:SetEnabled(true)
+            elseif self._collider.enabled ~= nil then self._collider.enabled = true end
+        end
+
         if event_bus and event_bus.publish then
             event_bus.publish("playerMaxhealth", self._maxHealth)
             event_bus.publish("playerCurrentHealth", self._currentHealth)
