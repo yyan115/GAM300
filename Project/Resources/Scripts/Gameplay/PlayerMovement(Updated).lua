@@ -127,6 +127,13 @@ return Component {
                 end
             end)
             print("[PlayerMovement] Subscription token: " .. tostring(self._activatedCheckpointSub))
+
+            print("[PlayerMovement] Subscribing to freeze_player")
+            self._frozenBycinematic = false
+            self._freezePlayerSub = event_bus.subscribe("freeze_player", function(frozen)
+                self._frozenBycinematic = frozen
+                print("[PlayerMovement] Frozen = " .. tostring(frozen))
+            end)
         else
             print("[PlayerMovement] ERROR: event_bus not available!")
         end
@@ -202,6 +209,19 @@ return Component {
         end
 
         if not self._collider or not self._transform or not self._controller or self._playerDead then
+            return
+        end
+
+        -- Freeze movement during cinematic
+        if self._frozenBycinematic then
+            -- Still sync position and broadcast it, but skip all input/movement
+            local position = CharacterController.GetPosition(self._controller)
+            if position then
+                self:SetPosition(position.x, position.y, position.z)
+                if event_bus and event_bus.publish then
+                    event_bus.publish("player_position", position)
+                end
+            end
             return
         end
 
@@ -402,9 +422,16 @@ return Component {
     end,
 
     OnDisable = function(self)
-        if event_bus and event_bus.unsubscribe and self._cameraYawSub then
-            event_bus.unsubscribe(self._cameraYawSub)
-            self._cameraYawSub = nil
+        if event_bus and event_bus.unsubscribe then
+            if self._cameraYawSub then
+                event_bus.unsubscribe(self._cameraYawSub)
+                self._cameraYawSub = nil
+            end
+            if self._freezePlayerSub then
+                event_bus.unsubscribe(self._freezePlayerSub)
+                self._freezePlayerSub = nil
+            end
         end
+        self._frozenBycinematic = false
     end,
 }
