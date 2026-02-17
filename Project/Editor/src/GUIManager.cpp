@@ -47,6 +47,7 @@ std::vector<Entity> GUIManager::selectedEntities = {};
 GUID_128 GUIManager::selectedAsset = GUID_128{0, 0};
 std::string GUIManager::notificationMessage = "";
 float GUIManager::notificationTimer = 0.0f;
+bool GUIManager::showSelectionOutline = true;
 
 // Function definitions
 void GUIManager::SetSelectedEntities(const std::vector<Entity>& entities) { selectedEntities = entities; selectedAsset = GUID_128{0, 0}; }
@@ -361,6 +362,7 @@ void GUIManager::RenderMenuBar() {
 				// Reset to default docking layout
 				dockspaceInitialized = false;
 			}
+			ImGui::MenuItem(ICON_FA_VECTOR_SQUARE " Selection Outline", nullptr, &showSelectionOutline);
 			ImGui::EndMenu();
 		}
 
