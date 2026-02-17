@@ -843,6 +843,8 @@ namespace NavWrappers {
 
 #include "Script/ScriptComponentData.hpp"
 #include "ECS/NameComponent.hpp"
+#include "Hierarchy/ParentComponent.hpp"
+#include "Hierarchy/EntityGUIDRegistry.hpp"
 
 namespace EntityQueryWrappers {
 
@@ -1145,6 +1147,22 @@ namespace EntityQueryWrappers {
     inline bool IsEntityActive(Entity entity) {
         ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
         return ecsManager.IsEntityActiveInHierarchy(entity);
+    }
+
+    // Return the parent entity ID (or -1 if no parent)
+    // Args: entityId
+    inline int GetParentEntity(lua_State* L) {
+        Entity entity = static_cast<Entity>(luaL_checkinteger(L, 1));
+
+        ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
+        if (ecsManager.HasComponent<ParentComponent>(entity)) {
+            auto& parentComp = ecsManager.GetComponent<ParentComponent>(entity);
+            Entity parentEntity = EntityGUIDRegistry::GetInstance().GetEntityByGUID(parentComp.parent);
+            lua_pushinteger(L, static_cast<lua_Integer>(parentEntity));
+        } else {
+            lua_pushinteger(L, -1);
+        }
+        return 1;
     }
 
     // Return all children entities

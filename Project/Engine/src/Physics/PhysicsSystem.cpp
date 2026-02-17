@@ -35,6 +35,7 @@
 #include <Jolt/Physics/Body/BodyFilter.h>          // BodyFilter
 #include <Jolt/Physics/Collision/ShapeFilter.h>    // ShapeFilter
 #include "Game AI/NavSystem.hpp"
+#include "ECS/ECSManager.hpp"
 
 
 #ifdef __ANDROID__
@@ -253,11 +254,19 @@ void PhysicsSystem::Initialise(ECSManager& ecsManager) {
         const int groundIdx = LayerManager::GetInstance().GetLayerIndex("Ground");
         const int obstacleIdx = LayerManager::GetInstance().GetLayerIndex("Obstacle");
 
-        if (ecsLayerIndex == groundIdx) col.layer = Layers::NAV_GROUND;
-        else if (ecsLayerIndex == obstacleIdx) col.layer = Layers::NAV_OBSTACLE;
+        if (col.layer == Layers::HURTBOX) { /* respect editor-set HURTBOX layer */ }
+        else if (rb.isTrigger)                          col.layer = Layers::SENSOR;
+        else if (ecsLayerIndex == groundIdx)       col.layer = Layers::NAV_GROUND;
+        else if (ecsLayerIndex == obstacleIdx)     col.layer = Layers::NAV_OBSTACLE;
         else {
             if (rb.motion == Motion::Static) col.layer = Layers::NON_MOVING;
             else col.layer = Layers::MOVING;
+        }
+
+        // DEBUG: Log trigger body creation
+        if (rb.isTrigger) {
+            std::string name = ecsManager.HasComponent<NameComponent>(e) ? ecsManager.GetComponent<NameComponent>(e).name : std::to_string(e);
+            ENGINE_PRINT("[Physics] Trigger body CREATED: '", name, "' (entity ", (int)e, "), layer=", (int)col.layer, "\n");
         }
 
         {
@@ -347,6 +356,7 @@ void PhysicsSystem::Initialise(ECSManager& ecsManager) {
             JPH::EMotionType::Dynamic;
 
         JPH::BodyCreationSettings bcs(col.shape.GetPtr(), updatedPos, rot, motionType, col.layer);
+        bcs.mAllowDynamicOrKinematic = true;  // Allow runtime motion type changes (needed for hurtbox conversion)
 
         if (motionType == JPH::EMotionType::Dynamic)
             bcs.mMotionQuality = rb.ccd ? JPH::EMotionQuality::LinearCast : JPH::EMotionQuality::Discrete;
@@ -415,6 +425,11 @@ void PhysicsSystem::Update(float fixedDt, ECSManager& ecsManager) {
         if (shouldBeActive && !isCurrentlyAdded) {
             // Re-add to the world (Wake it up)
             bi.AddBody(bodyId, JPH::EActivation::Activate);
+            // DEBUG: Log body re-activation
+            if (rb.isTrigger) {
+                std::string name = ecsManager.HasComponent<NameComponent>(e) ? ecsManager.GetComponent<NameComponent>(e).name : std::to_string(e);
+                ENGINE_PRINT("[Physics] Trigger body RE-ADDED: '", name, "' (entity ", (int)e, ")\n");
+            }
         }
         else if (!shouldBeActive && isCurrentlyAdded) {
             // Remove from the world (Stops all collisions and processing)
@@ -532,6 +547,51 @@ void PhysicsSystem::Update(float fixedDt, ECSManager& ecsManager) {
 
     // ========== RUN PHYSICS SIMULATION ==========
     physics.Update(fixedDt, /*collisionSteps=*/1, temp.get(), jobs.get());
+
+    // ========== DISPATCH COLLISION/TRIGGER EVENTS TO LUA ==========
+    if (contactListener && ecsManager.scriptSystem) {
+        std::vector<CollisionEvent> enters, exits;
+        contactListener->DrainEvents(enters, exits);
+
+        // DEBUG: Log event counts if non-zero
+        if (!enters.empty()) {
+            ENGINE_PRINT("[Physics] Dispatching ", (int)enters.size(), " trigger/collision ENTER events\n");
+        }
+
+        for (const auto& evt : enters) {
+            Entity a = static_cast<Entity>(evt.entityA);
+            Entity b = static_cast<Entity>(evt.entityB);
+
+            bool aIsTrigger = false, bIsTrigger = false;
+            if (ecsManager.HasComponent<RigidBodyComponent>(a))
+                aIsTrigger = ecsManager.GetComponent<RigidBodyComponent>(a).isTrigger;
+            if (ecsManager.HasComponent<RigidBodyComponent>(b))
+                bIsTrigger = ecsManager.GetComponent<RigidBodyComponent>(b).isTrigger;
+
+            const std::string fn = (aIsTrigger || bIsTrigger) ? "OnTriggerEnter" : "OnCollisionEnter";
+            // DEBUG: Log trigger dispatches
+            if (aIsTrigger || bIsTrigger) {
+                ENGINE_PRINT("[Physics] Calling ", fn, " on entities ", (int)a, " and ", (int)b, " (triggers: a=", aIsTrigger, ", b=", bIsTrigger, ")\n");
+            }
+            ecsManager.scriptSystem->CallEntityFunctionWithInt(a, fn, evt.entityB, ecsManager);
+            ecsManager.scriptSystem->CallEntityFunctionWithInt(b, fn, evt.entityA, ecsManager);
+        }
+
+        for (const auto& evt : exits) {
+            Entity a = static_cast<Entity>(evt.entityA);
+            Entity b = static_cast<Entity>(evt.entityB);
+
+            bool aIsTrigger = false, bIsTrigger = false;
+            if (ecsManager.HasComponent<RigidBodyComponent>(a))
+                aIsTrigger = ecsManager.GetComponent<RigidBodyComponent>(a).isTrigger;
+            if (ecsManager.HasComponent<RigidBodyComponent>(b))
+                bIsTrigger = ecsManager.GetComponent<RigidBodyComponent>(b).isTrigger;
+
+            const std::string fn = (aIsTrigger || bIsTrigger) ? "OnTriggerExit" : "OnCollisionExit";
+            ecsManager.scriptSystem->CallEntityFunctionWithInt(a, fn, evt.entityB, ecsManager);
+            ecsManager.scriptSystem->CallEntityFunctionWithInt(b, fn, evt.entityA, ecsManager);
+        }
+    }
 
     // ========== SYNC JOLT -> ECS (after physics step) ==========
     PhysicsSyncBack(ecsManager);
@@ -677,6 +737,26 @@ void PhysicsSystem::RemoveBody(Entity entity) {
     entityBodyMap.erase(it);
 }
 
+JPH::BodyID PhysicsSystem::GetBodyID(Entity entity) const {
+    auto it = entityBodyMap.find(entity);
+    if (it == entityBodyMap.end()) return JPH::BodyID();
+    return it->second;
+}
+
+void PhysicsSystem::ConvertToKinematicHurtbox(Entity entity) {
+    auto it = entityBodyMap.find(entity);
+    if (it == entityBodyMap.end() || it->second.IsInvalid()) return;
+
+    JPH::BodyID bodyId = it->second;
+    JPH::BodyInterface& bi = physics.GetBodyInterface();
+
+    // Convert to kinematic so it doesn't respond to forces but stays in broadphase
+    bi.SetMotionType(bodyId, JPH::EMotionType::Kinematic, JPH::EActivation::Activate);
+
+    // Move to MOVING layer so broadphase handles kinematic updates correctly
+    bi.SetObjectLayer(bodyId, Layers::MOVING);
+}
+
 // Custom filter that ignores sensors and character layer (for camera collision)
 class CameraRaycastBroadPhaseFilter : public JPH::BroadPhaseLayerFilter {
 public:
@@ -689,8 +769,11 @@ public:
 class CameraRaycastObjectFilter : public JPH::ObjectLayerFilter {
 public:
     bool ShouldCollide(JPH::ObjectLayer inLayer) const override {
-        // Ignore sensors and character - only hit solid geometry
-        return inLayer != Layers::SENSOR && inLayer != Layers::CHARACTER;
+        // Only hit solid geometry — ignore sensors, characters, hurtboxes, and kinematic bodies
+        return inLayer != Layers::SENSOR
+            && inLayer != Layers::CHARACTER
+            && inLayer != Layers::MOVING
+            && inLayer != Layers::HURTBOX;
     }
 };
 
@@ -710,9 +793,11 @@ PhysicsSystem::RaycastResult PhysicsSystem::Raycast(const Vector3D& origin, cons
     // Get the narrow phase query interface
     const JPH::NarrowPhaseQuery& query = physics.GetNarrowPhaseQuery();
 
-    // Use default filters (hit everything) for debugging
+    // Filter out sensors, characters, and kinematic hurtboxes (MOVING layer)
+    CameraRaycastBroadPhaseFilter bpFilter;
+    CameraRaycastObjectFilter objFilter;
     JPH::RayCastResult hit;
-    if (query.CastRay(ray, hit)) {
+    if (query.CastRay(ray, hit, bpFilter, objFilter)) {
         result.hit = true;
         result.distance = hit.mFraction * maxDistance;
 

@@ -219,7 +219,7 @@ std::string Texture::CompileToResource(const std::string& assetPath, bool forAnd
 }
 
 bool Texture::LoadResource(const std::string& resourcePath, const std::string& assetPath) {
-	ENGINE_LOG_DEBUG("[TEXTURE] Texture::LoadResource()");
+	//ENGINE_LOG_DEBUG("[TEXTURE] Texture::LoadResource()");
 	// Use platform abstraction to get asset list (works on Windows, Linux, Android)
 	IPlatform* platform = WindowManager::GetPlatform();
 	if (!platform) {

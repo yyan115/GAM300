@@ -25,6 +25,7 @@ public:
     void Shutdown();
     void ReloadScriptForEntity(Entity e, ECSManager& ecsManager);
     bool CallEntityFunction(Entity e, const std::string& funcName, ECSManager& ecsManager);
+    bool CallEntityFunctionWithInt(Entity e, const std::string& funcName, int intArg, ECSManager& ecsManager);
     void ReloadSystem();
     void ReloadAllInstances();
 

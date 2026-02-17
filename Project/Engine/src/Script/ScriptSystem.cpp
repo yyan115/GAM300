@@ -1307,6 +1307,38 @@ bool ScriptSystem::CallEntityFunction(Entity e, const std::string& funcName, ECS
     return anySuccess;
 }
 
+bool ScriptSystem::CallEntityFunctionWithInt(Entity e, const std::string& funcName, int intArg, ECSManager& ecsManager)
+{
+    ScriptComponentData* comp = GetScriptComponent(e, ecsManager);
+    if (!comp) return false;
+
+    if (!EnsureInstanceForEntity(e, ecsManager)) return false;
+
+    if (!Scripting::GetLuaState()) return false;
+
+    bool anySuccess = false;
+    {
+        std::lock_guard<std::recursive_mutex> lk(m_mutex);
+        auto it = m_runtimeMap.find(e);
+        if (it != m_runtimeMap.end())
+        {
+            for (auto& scriptInst : it->second)
+            {
+                if (scriptInst)
+                {
+                    int instRef = scriptInst->GetInstanceRef();
+                    if (Scripting::CallInstanceFunctionWithInt(instRef, funcName, intArg))
+                    {
+                        anySuccess = true;
+                    }
+                }
+            }
+        }
+    }
+
+    return anySuccess;
+}
+
 void ScriptSystem::ReloadSystem()
 {
     Shutdown();

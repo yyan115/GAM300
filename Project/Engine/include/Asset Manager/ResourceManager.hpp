@@ -310,11 +310,11 @@ private:
 		std::shared_ptr<T> resource;
 		if (!reload) {
 			resource = std::make_shared<T>();
-			ENGINE_LOG_DEBUG("resource->LoadResource(resourcePath, assetPath)");
+			//ENGINE_LOG_DEBUG("resource->LoadResource(resourcePath, assetPath)");
 			if (resource->LoadResource(resourcePath, assetPath)) {
 				auto& resourceMap = GetResourceMap<T>();
 				resourceMap[guid] = resource;
-				ENGINE_LOG_DEBUG("[ResourceManager] Loaded resource for: " + resourcePath);
+				//ENGINE_LOG_DEBUG("[ResourceManager] Loaded resource for: " + resourcePath);
 #ifdef ANDROID
 			__android_log_print(ANDROID_LOG_INFO, "GAM300", "[ResourceManager] Successfully loaded resource: %s", assetPath.c_str());
 #endif
@@ -331,7 +331,7 @@ private:
 			}
 		}
 
-		ENGINE_PRINT(EngineLogging::LogLevel::Error, "[ResourceManager] ERROR: Failed to load resource: ", resourcePath, "\n");
+		//ENGINE_PRINT(EngineLogging::LogLevel::Error, "[ResourceManager] ERROR: Failed to load resource: ", resourcePath, "\n");
 #ifdef ANDROID
 		__android_log_print(ANDROID_LOG_ERROR, "GAM300", "[ResourceManager] ERROR: Failed to load resource: %s", assetPath.c_str());
 #endif
@@ -358,7 +358,7 @@ private:
 				return font;
 			}
 		}
-		ENGINE_PRINT(EngineLogging::LogLevel::Error, "[ResourceManager] ERROR: Failed to load resource: ", resourcePath, "\n");
+		//ENGINE_PRINT(EngineLogging::LogLevel::Error, "[ResourceManager] ERROR: Failed to load resource: ", resourcePath, "\n");
 		return nullptr;
 	}
 
@@ -382,7 +382,7 @@ private:
 				return animation;
 			}
 		}
-		ENGINE_PRINT(EngineLogging::LogLevel::Error, "[ResourceManager] ERROR: Failed to load resource: ", resourcePath, "\n");
+		//ENGINE_PRINT(EngineLogging::LogLevel::Error, "[ResourceManager] ERROR: Failed to load resource: ", resourcePath, "\n");
 		return nullptr;
 	}
 };
