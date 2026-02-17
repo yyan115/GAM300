@@ -63,16 +63,21 @@ return Component {
         targetTransformName = "",
         targetPosition = {x = -2, y = 1, z = -2},
         targetRotation = {x = 0, y = 0, z = 0},
-        transitionSpeed = 0.5,
+
+        -- seconds to lerp to target
+        transitionDuration = 3.0,
+        -- seconds to stay at target before auto-disabling
+        stayDuration = 3.0,
+
         useSequence = false,
         sequenceWaypoints = {},
         sequenceInterval = 3.0,
         sequenceLoop = false,
-        
-        -- Timer settings
-        useDuration = false,
-        cinematicDuration = 5.0,
-        
+
+        -- Freeze movement during cinematic
+        freezePlayer = false,
+        freezeEnemy = false,
+
         debugMode = true,
     },
 
@@ -80,8 +85,10 @@ return Component {
         self._wasCinematicActive = false
         self._currentWaypointIndex = 1
         self._waypointTimer = 0.0
-        self._durationTimer = 0.0
-        
+        self._transitionTimer = 0.0
+        self._stayTimer = 0.0
+        self._phase = "transition"  -- "transition" or "staying"
+
         print("[CinematicCamera] Initialized")
     end,
 
@@ -92,10 +99,20 @@ return Component {
             
             if self.cinematicActive then
                 print("[CinematicCamera] Cinematic mode ENABLED")
-                self._durationTimer = 0.0
-                
+                self._transitionTimer = 0.0
+                self._stayTimer = 0.0
+                self._phase = "transition"
+
                 if event_bus and event_bus.publish then
                     event_bus.publish("cinematic.active", true)
+                    if self.freezePlayer then
+                        event_bus.publish("freeze_player", true)
+                        print("[CinematicCamera] Player movement FROZEN")
+                    end
+                    if self.freezeEnemy then
+                        event_bus.publish("freeze_enemy", true)
+                        print("[CinematicCamera] Enemy movement FROZEN")
+                    end
                 end
                 if self.useSequence then
                     self._currentWaypointIndex = 1
@@ -105,6 +122,14 @@ return Component {
                 print("[CinematicCamera] Cinematic mode DISABLED")
                 if event_bus and event_bus.publish then
                     event_bus.publish("cinematic.active", false)
+                    if self.freezePlayer then
+                        event_bus.publish("freeze_player", false)
+                        print("[CinematicCamera] Player movement UNFROZEN")
+                    end
+                    if self.freezeEnemy then
+                        event_bus.publish("freeze_enemy", false)
+                        print("[CinematicCamera] Enemy movement UNFROZEN")
+                    end
                 end
             end
         end
@@ -112,14 +137,21 @@ return Component {
         if not self.cinematicActive then
             return
         end
-        
-        -- Duration timer
-        if self.useDuration then
-            self._durationTimer = self._durationTimer + dt
-            
-            if self._durationTimer >= self.cinematicDuration then
-                print(string.format("[CinematicCamera] Duration timeout (%.2fs) - disabling", 
-                                  self._durationTimer))
+
+        -- Phase timing
+        if self._phase == "transition" then
+            self._transitionTimer = self._transitionTimer + dt
+            if self._transitionTimer >= self.transitionDuration then
+                self._phase = "staying"
+                self._stayTimer = 0.0
+                if self.debugMode then
+                    print(string.format("[CinematicCamera] Transition complete (%.2fs), now staying", self._transitionTimer))
+                end
+            end
+        elseif self._phase == "staying" then
+            self._stayTimer = self._stayTimer + dt
+            if self._stayTimer >= self.stayDuration then
+                print(string.format("[CinematicCamera] Stay complete (%.2fs) - disabling", self._stayTimer))
                 self.cinematicActive = false
                 return
             end
@@ -190,7 +222,7 @@ return Component {
                         print("[CinematicCamera] Attempting to get rotation...")
                     end
                     
-                    -- METHOD 1: Try accessing worldRotation property directly from Transform
+                    -- METHOD 1: Try accessing localRotation property from Transform
                     if targetTransform.localRotation then
                         local rot = targetTransform.localRotation
                         if self.debugMode then
@@ -262,10 +294,18 @@ return Component {
         
         -- Publish to camera
         if event_bus and event_bus.publish then
+            local t = 0.0
+            if self.transitionDuration > 0 then
+                t = math.min(self._transitionTimer / self.transitionDuration, 1.0)
+            else
+                t = 1.0
+            end
+
             event_bus.publish("cinematic.target", {
                 position = targetPos,
                 rotation = targetRot,
-                transitionSpeed = self.transitionSpeed
+                lerpT = t,
+                phase = self._phase,
             })
             
             if self.debugMode and targetRot then

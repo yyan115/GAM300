@@ -131,9 +131,31 @@ return Component {
         if self.debugEnemyDetection then
             print("[CameraFollow] Initialized with enemy detection enabled (NO CACHING)")
         end
+        -- Cinematic mode state
+        self._cinematicActive = false
+        self._cinematicTarget = nil
+        self._cinematicStartPosX = nil
+        self._cinematicStartRotW = nil
+
         self._chainAimInitialized = false
 
         if event_bus and event_bus.subscribe then
+            self._cinematicActiveSub = event_bus.subscribe("cinematic.active", function(active)
+                self._cinematicActive = active
+                if active then
+                    print("[CameraFollow] Cinematic mode ACTIVE")
+                else
+                    print("[CameraFollow] Cinematic mode INACTIVE")
+                    self._cinematicTarget = nil
+                    self._cinematicStartPosX = nil
+                    self._cinematicStartRotW = nil
+                end
+            end)
+
+            self._cinematicTargetSub = event_bus.subscribe("cinematic.target", function(payload)
+                if not payload then return end
+                self._cinematicTarget = payload
+            end)
             self._posSub = event_bus.subscribe("player_position", function(payload)
                 if not payload then return end
                 local x = payload.x or payload[1] or 0.0
@@ -166,15 +188,26 @@ return Component {
     end,
 
     OnDisable = function(self)
-        if event_bus and event_bus.unsubscribe and self._posSub then
-            event_bus.unsubscribe(self._posSub)
-            self._posSub = nil
+        if event_bus and event_bus.unsubscribe then
+            if self._posSub then
+                event_bus.unsubscribe(self._posSub)
+                self._posSub = nil
+            end
+            if self._chainAimSub then
+                event_bus.unsubscribe(self._chainAimSub)
+                self._chainAimSub = nil
+            end
+            if self._cinematicActiveSub then
+                event_bus.unsubscribe(self._cinematicActiveSub)
+                self._cinematicActiveSub = nil
+            end
+            if self._cinematicTargetSub then
+                event_bus.unsubscribe(self._cinematicTargetSub)
+                self._cinematicTargetSub = nil
+            end
         end
-
-        if event_bus and event_bus.unsubscribe and self._chainAimSub then
-            event_bus.unsubscribe(self._chainAimSub)
-            self._chainAimSub = nil
-        end
+        self._cinematicActive = false
+        self._cinematicTarget = nil
 
         -- Unlock cursor when camera is disabled
         if Screen and Screen.SetCursorLocked then
@@ -495,16 +528,18 @@ return Component {
             self._loggedPlatform = true
         end
 
-        if isAndroid or (Screen and Screen.IsCursorLocked and Screen.IsCursorLocked()) then
-            local shouldLockRotation = self.lockCameraRotation or (self._actionModeActive and self.actionModeLockRotation)
-            
-            if not shouldLockRotation then
-                self:_updateMouseLook(dt)
-            end
-        end
+        if not self._cinematicActive then
+            if isAndroid or (Screen and Screen.IsCursorLocked and Screen.IsCursorLocked()) then
+                local shouldLockRotation = self.lockCameraRotation or (self._actionModeActive and self.actionModeLockRotation)
 
-        -- Update scroll zoom
-        self:_updateScrollZoom()
+                if not shouldLockRotation then
+                    self:_updateMouseLook(dt)
+                end
+            end
+
+            -- Update scroll zoom
+            self:_updateScrollZoom()
+        end
 
         -- Action mode smooth transition
         local targetPitch = self._actionModeActive and self.actionModePitch or self._normalPitch
@@ -515,6 +550,84 @@ return Component {
         self._pitch = self._pitch + (targetPitch - self._pitch) * t
         self.followDistance = self.followDistance + (targetDistance - self.followDistance) * t
 
+
+        -- ==========================================
+        -- CINEMATIC MODE OVERRIDE
+        -- ==========================================
+        if self._cinematicActive and self._cinematicTarget then
+            local target = self._cinematicTarget
+            local pos = target.position
+            local rot = target.rotation
+            local lerpT = target.lerpT or 1.0
+            local phase = target.phase or "transition"
+
+            if pos then
+                -- Capture start position/rotation on first frame
+                if not self._cinematicStartPosX then
+                    local px, py, pz = self:GetPosition()
+                    if type(px) == "table" then
+                        self._cinematicStartPosX = px.x or 0.0
+                        self._cinematicStartPosY = px.y or 0.0
+                        self._cinematicStartPosZ = px.z or 0.0
+                    else
+                        self._cinematicStartPosX = px or 0.0
+                        self._cinematicStartPosY = py or 0.0
+                        self._cinematicStartPosZ = pz or 0.0
+                    end
+
+                    local curQuat = eulerToQuat(self._pitch, self._yaw, 0.0)
+                    self._cinematicStartRotW = curQuat.w
+                    self._cinematicStartRotX = curQuat.x
+                    self._cinematicStartRotY = curQuat.y
+                    self._cinematicStartRotZ = curQuat.z
+                end
+
+                -- Smooth-step for nicer easing
+                local st = lerpT * lerpT * (3.0 - 2.0 * lerpT)
+
+                if phase == "transition" then
+                    -- Lerp position from start to target
+                    local sx, sy, sz = self._cinematicStartPosX, self._cinematicStartPosY, self._cinematicStartPosZ
+                    local newX = sx + (pos.x - sx) * st
+                    local newY = sy + (pos.y - sy) * st
+                    local newZ = sz + (pos.z - sz) * st
+                    self:SetPosition(newX, newY, newZ)
+
+                    -- Lerp rotation from start to target
+                    if rot then
+                        local tw, tx, ty, tz = rot.qw or 1, rot.qx or 0, rot.qy or 0, rot.qz or 0
+                        local sw, sx2, sy2, sz2 = self._cinematicStartRotW, self._cinematicStartRotX, self._cinematicStartRotY, self._cinematicStartRotZ
+
+                        -- Ensure shortest path
+                        if sw*tw + sx2*tx + sy2*ty + sz2*tz < 0 then
+                            tw, tx, ty, tz = -tw, -tx, -ty, -tz
+                        end
+
+                        local nw = sw + (tw - sw) * st
+                        local nx = sx2 + (tx - sx2) * st
+                        local ny = sy2 + (ty - sy2) * st
+                        local nz = sz2 + (tz - sz2) * st
+                        local invLen = 1.0 / math.sqrt(nw*nw + nx*nx + ny*ny + nz*nz + 0.0001)
+                        self:SetRotation(nw * invLen, nx * invLen, ny * invLen, nz * invLen)
+                    end
+                else
+                    -- Staying phase: hold at target position and rotation
+                    self:SetPosition(pos.x, pos.y, pos.z)
+                    if rot then
+                        local tw, tx, ty, tz = rot.qw or 1, rot.qx or 0, rot.qy or 0, rot.qz or 0
+                        local len = math.sqrt(tw*tw + tx*tx + ty*ty + tz*tz + 0.0001)
+                        self:SetRotation(tw / len, tx / len, ty / len, tz / len)
+                    end
+                end
+
+                self.isDirty = true
+            end
+            return -- Skip normal camera logic during cinematic
+        else
+            -- Clear cinematic start state when not in cinematic
+            self._cinematicStartPosX = nil
+            self._cinematicStartRotW = nil
+        end
 
         -- ==========================================
         -- CAMERA TARGET CALCULATION (Extensible)
