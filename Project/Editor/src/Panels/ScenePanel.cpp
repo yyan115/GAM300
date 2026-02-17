@@ -1201,25 +1201,8 @@ void ScenePanel::OnImGuiRender()
         if (sceneViewWidth < 100) sceneViewWidth = 100;
         if (sceneViewHeight < 100) sceneViewHeight = 100;
 
-        // Optimize: Reduce render frequency when window is not focused
-        bool isFocused = ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows);
-        static int unfocusedFrameCounter = 0;
-        bool shouldRender = true;
-
-        if (!isFocused) {
-            unfocusedFrameCounter++;
-            // Render unfocused panel every 3rd frame instead of every frame
-            if (unfocusedFrameCounter % 3 != 0) {
-                shouldRender = false;
-            }
-        } else {
-            unfocusedFrameCounter = 0;
-        }
-
-        // Render the scene with our editor camera to the framebuffer
-        if (shouldRender) {
-            RenderSceneWithEditorCamera(sceneViewWidth, sceneViewHeight);
-        }
+        // Always render the scene with our editor camera to the framebuffer
+        RenderSceneWithEditorCamera(sceneViewWidth, sceneViewHeight);
 
         // Scene texture from renderer
         unsigned int sceneTexture = SceneRenderer::GetSceneTexture();
