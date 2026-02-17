@@ -119,6 +119,9 @@ return Component {
         Update = function(self, dt)
         self._time = self._time + dt
 
+        -- ---- Skip all attack logic if player has no weapon ----
+        if not _G.playerHasWeapon then return end
+
         -- ---- Input handling (unified input system) ----
         local leftDown,  leftPressed  = false, false
         local rightDown, rightPressed = false, false

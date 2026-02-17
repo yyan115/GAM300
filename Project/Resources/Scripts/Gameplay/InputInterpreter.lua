@@ -212,15 +212,15 @@ return Component {
         -- ===============================
         -- PUBLISH CHAIN EVENTS TO EVENT BUSS
         -- ===============================
-        if _G.event_bus and _G.event_bus.publish then
+        if _G.playerHasWeapon and _G.event_bus and _G.event_bus.publish then
             if chainJustPressed then
                 _G.event_bus.publish("chain.down", {})
             end
-            
+
             if chainJustReleased then
                 _G.event_bus.publish("chain.up", {})
             end
-            
+
             -- Publish hold event if held past threshold
             if self._holdTimers.chain >= self.HOLD_THRESHOLD and chainPressed then
                 -- Only publish once when threshold is crossed, not every frame
@@ -279,8 +279,14 @@ return Component {
     GetDashHoldTime = function(self) return self._holdTimers.dash end,
 
     -- Buffered input (remembers recent presses even if released)
-    HasBufferedAttack = function(self) return self._bufferedInputs.attack > 0 end,
-    HasBufferedChain = function(self) return self._bufferedInputs.chain > 0 end,
+    HasBufferedAttack = function(self)
+        if not _G.playerHasWeapon then return false end
+        return self._bufferedInputs.attack > 0
+    end,
+    HasBufferedChain = function(self)
+        if not _G.playerHasWeapon then return false end
+        return self._bufferedInputs.chain > 0
+    end,
     HasBufferedDash = function(self) return self._bufferedInputs.dash > 0 end,
 
     -- Consume buffered input (combo system should call this when using a buffered input)
