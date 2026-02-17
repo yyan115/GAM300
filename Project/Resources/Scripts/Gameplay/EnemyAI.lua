@@ -121,6 +121,10 @@ return Component {
         KnockbackStrength = 12.0,
         KnockbackDuration = 0.5,
 
+        HookPullSpeed     = 6.0,   -- units/sec toward player while hooked
+        HookStopDistance  = 1.2,   -- stop pulling when within this distance
+        HookMaxStep       = 0.25,
+
         EnablePatrol   = true,
         PatrolSpeed    = 0.3,
         PatrolDistance = 3.0,
@@ -207,6 +211,9 @@ return Component {
             HurtDuration         = self.HurtDuration,
             HitIFrame            = self.HitIFrame,
             HookedDuration       = self.HookedDuration,
+            HookPullSpeed        = self.HookPullSpeed,
+            HookStopDistance     = self.HookStopDistance,
+            HookMaxStep          = self.HookMaxStep,
             PatrolSpeed          = self.PatrolSpeed,
             PatrolDistance       = self.PatrolDistance,
             PatrolWait           = self.PatrolWait,
@@ -739,6 +746,61 @@ return Component {
         self:MoveCC(dirX * (speed or 0), dirZ * (speed or 0))
         self:FaceDirection(dirX, dirZ)
         return false
+    end,
+
+     -- Pull enemy toward player 
+    PullTowardPlayer = function(self, dtSec)
+        if not self._controller then return end
+        if (self._kbT or 0) > 0 then
+            -- let knockback override hook pull
+            return
+        end
+
+        local tr = self._playerTr
+        if not tr then
+            tr = Engine.FindTransformByName(self.PlayerName)
+            self._playerTr = tr
+        end
+        if not tr then return end
+
+        local pp = Engine.GetTransformPosition(tr)
+        if not pp then return end
+        local px, pz = pp[1], pp[3]
+
+        local ex, ez = self:GetEnemyPosXZ()
+        if ex == nil or ez == nil then return end
+
+        local dx, dz = px - ex, pz - ez
+        local d2 = dx*dx + dz*dz
+
+        -- stop once close enough (prevents jitter at the end)
+        local stopR = self.HookStopDistance or 1.2
+        if d2 <= (stopR * stopR) then
+            self:StopCC()
+            return
+        end
+
+        local d = math.sqrt(d2)
+        if d < 1e-6 then
+            self:StopCC()
+            return
+        end
+
+        local dirX, dirZ = dx / d, dz / d
+
+        -- Treat HookPullSpeed as "units per second", then convert to per-frame displacement
+        local pullSpeed = self.HookPullSpeed or 4.0
+        local step = pullSpeed * (dtSec or 0)
+
+        -- Clamp per-frame movement so it never looks like a teleport
+        local maxStep = self.HookMaxStep or 0.25
+        if step > maxStep then step = maxStep end
+
+        local mx = dirX * step
+        local mz = dirZ * step
+
+        CharacterController.Move(self._controller, mx, 0, mz)
+        self:FaceDirection(dirX, dirZ)
     end,
 
     ApplyRotation = function(self, w, x, y, z)
