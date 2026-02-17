@@ -285,6 +285,14 @@ return Component {
                 self:ApplyHit(dmg, hitType)
             end)
             
+            self._frozenBycinematic = false
+            self._freezeEnemySub = _G.event_bus.subscribe("freeze_enemy", function(frozen)
+                self._frozenBycinematic = frozen
+                if frozen then
+                    self:StopCC()
+                end
+            end)
+
             self._comboDamageSub = _G.event_bus.subscribe("deal_damage", function(payload)
                 if not payload then return end
                 
@@ -364,6 +372,9 @@ return Component {
         end
 
         if self._freezeAI or self._despawned or self._softDespawned then return end
+
+        -- Freeze movement during cinematic
+        if self._frozenBycinematic then return end
 
         self._motionID = self._rb and self._rb.motionID or nil
 
@@ -1042,7 +1053,7 @@ return Component {
                 end)
                 self._damageSub = nil
             end
-            
+
             -- NEW: Unsubscribe from combo damage
             if self._comboDamageSub then
                 pcall(function()
@@ -1050,7 +1061,15 @@ return Component {
                 end)
                 self._comboDamageSub = nil
             end
+
+            if self._freezeEnemySub then
+                pcall(function()
+                    _G.event_bus.unsubscribe(self._freezeEnemySub)
+                end)
+                self._freezeEnemySub = nil
+            end
         end
+        self._frozenBycinematic = false
     end,
 
     Despawn = function(self)
@@ -1129,7 +1148,7 @@ return Component {
     end,
 
     OnDestroy = function(self)
-        -- Prevent “0xDDDDDDDD” shape pointer crashes on subsequent plays:
+        -- Prevent "0xDDDDDDDD" shape pointer crashes on subsequent plays:
         -- Lua must stop calling Update/GetPosition on an old controller pointer.
         if self._controller then
             pcall(function()
@@ -1144,12 +1163,19 @@ return Component {
                 end)
                 self._damageSub = nil
             end
-            
+
             if self._comboDamageSub then
                 pcall(function()
                     _G.event_bus.unsubscribe(self._comboDamageSub)
                 end)
                 self._comboDamageSub = nil
+            end
+
+            if self._freezeEnemySub then
+                pcall(function()
+                    _G.event_bus.unsubscribe(self._freezeEnemySub)
+                end)
+                self._freezeEnemySub = nil
             end
         end
     end,
