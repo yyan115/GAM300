@@ -16,6 +16,7 @@ function HookedState:Enter(ai)
 
     ai._hookedTimer = 0
     ai.attackTimer = 0
+    ai._hookPullT = 0
 
     -- Delay only if this hook was entered due to flying->ground conversion
     if ai._justConvertedFromFlying then

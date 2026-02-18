@@ -127,9 +127,12 @@ return Component {
         KnockbackStrength = 12.0,
         KnockbackDuration = 0.5,
 
-        HookPullSpeed     = 42.0,
-        HookStopDistance  = 1.2,
-        HookMaxStep       = 0.25,
+        HookStopDistance    = 1.2,
+        HookStaggerTime     = 1.0,
+        HookStaggerSpeed    = 50.0,
+        HookStaggerMaxStep  = 25.0,
+        HookHardSpeed       = 1200.0,
+        HookHardMaxStep     = 600.0,
 
         EnablePatrol     = true,
         PatrolSpeed      = 0.3,
@@ -142,8 +145,8 @@ return Component {
 
         HoverBobAmp        = 0.02,
         HoverBobFreq       = 0.9,
-        SlamDownSpeed      = 3.0,
-        HookedLandingDelay = 1.0,
+        SlamDownSpeed      = 16.0,
+        HookedLandingDelay = 5.0,
 
         PathRepathInterval = 10,
         PathGoalMoveThreshold = 0.9,
@@ -852,12 +855,21 @@ return Component {
 
         local dirX, dirZ = dx / d, dz / d
 
-        -- Treat HookPullSpeed as "units per second", then convert to per-frame displacement
-        local pullSpeed = self.HookPullSpeed or 4.0
-        local step = pullSpeed * (dtSec or 0)
+        -- Two-phase pull: short stagger, then hard pull into melee range
+        self._hookPullT = (self._hookPullT or 0) + (dtSec or 0)
 
-        -- Clamp per-frame movement so it never looks like a teleport
-        local maxStep = self.HookMaxStep or 0.25
+        local staggerTime = tonumber(self.HookStaggerTime) or 1.0
+
+        local pullSpeed, maxStep
+        if self._hookPullT < staggerTime then
+            pullSpeed = tonumber(self.HookStaggerSpeed) or 10.0
+            maxStep   = tonumber(self.HookStaggerMaxStep) or 0.08
+        else
+            pullSpeed = tonumber(self.HookHardSpeed) or (tonumber(self.HookPullSpeed) or 60.0)
+            maxStep   = tonumber(self.HookHardMaxStep) or 0.35
+        end
+
+        local step = pullSpeed * (dtSec or 0)
         if step > maxStep then step = maxStep end
 
         local mx = dirX * step
