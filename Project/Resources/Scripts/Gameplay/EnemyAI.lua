@@ -1029,6 +1029,8 @@ return Component {
         -- rebuild states for ground
         self:BuildStateProfile()
 
+        self._justConvertedFromFlying = true
+
         -- enter requested state (default: Hooked on ground)
         local nextName = opts.nextState or "Hooked"
         local nextState = self.states[nextName] or self.states.Idle

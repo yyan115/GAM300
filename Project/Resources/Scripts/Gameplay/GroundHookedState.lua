@@ -17,12 +17,18 @@ function HookedState:Enter(ai)
     ai._hookedTimer = 0
     ai.attackTimer = 0
 
-    ai._hookedLandingTimer = tonumber(ai.HookedLandingDelay) or 0
+    -- Delay only if this hook was entered due to flying->ground conversion
+    if ai._justConvertedFromFlying then
+        ai._hookedLandingTimer = tonumber(ai.HookedLandingDelay) or 0
+        ai._justConvertedFromFlying = false
+    else
+        ai._hookedLandingTimer = 0
+    end
 
-    -- While hooked, don't follow nav / patrol leftovers
     if ai.ClearPath then ai:ClearPath() end
     if ai.StopCC then ai:StopCC() end
 end
+
 
 function HookedState:Update(ai, dt)
     local dtSec = toDtSec(dt)
