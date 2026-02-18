@@ -163,6 +163,8 @@ void GraphicsManager::Submit(std::unique_ptr<IRenderComponent> renderItem)
 
 void GraphicsManager::UpdateFrustum()
 {
+	PROFILE_FUNCTION();
+
 	if (!currentCamera)
 	{
 		return;
@@ -208,6 +210,8 @@ void GraphicsManager::UpdateFrustum()
 
 void GraphicsManager::Render()
 {
+	PROFILE_FUNCTION();
+
 	if (auto* platform = WindowManager::GetPlatform()) {
 		platform->MakeContextCurrent();
 	}

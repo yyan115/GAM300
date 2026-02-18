@@ -2,6 +2,7 @@
 #include "Graphics/PostProcessing/PostProcessingManager.hpp"
 #include "Logging.hpp"
 #include <WindowManager.hpp>
+#include <Performance/PerformanceProfiler.hpp>
 
 // Add to PostProcessingManager.cpp
 void CheckGLError(const char* location) {
@@ -182,6 +183,8 @@ void PostProcessingManager::DeleteHDRFramebuffer()
 
 void PostProcessingManager::BeginHDRRender(int width, int height)
 {
+    PROFILE_FUNCTION();
+
     // Create or resize HDR framebuffer if needed
     if (hdrFramebuffer == 0 || width != hdrWidth || height != hdrHeight) 
     {
@@ -200,6 +203,8 @@ void PostProcessingManager::BeginHDRRender(int width, int height)
 
 void PostProcessingManager::EndHDRRender(unsigned int outputFBO, int width, int height)
 {
+    PROFILE_FUNCTION();
+
     // Unbind HDR framebuffer
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 

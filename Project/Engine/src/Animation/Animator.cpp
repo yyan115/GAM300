@@ -239,10 +239,11 @@ void Animator::CalculateBlendedBoneTransformInternal(const AssimpNodeData* node,
 				glm::vec3 scale; glm::quat rotation; glm::vec3 translation; glm::vec3 skew; glm::vec4 perspective;
 				glm::decompose(matrixToApply, scale, rotation, translation, skew, perspective);
 
-				ecsManager.transformSystem->SetLocalPosition(boneEntity, Vector3D::ConvertGLMToVector3D(translation));
 				Quaternion engineRot(rotation.w, rotation.x, rotation.y, rotation.z);
+				ecsManager.transformSystem->SetLocalTransform(boneEntity, Vector3D::ConvertGLMToVector3D(translation), engineRot, Vector3D::ConvertGLMToVector3D(scale));
+				/*ecsManager.transformSystem->SetLocalPosition(boneEntity, Vector3D::ConvertGLMToVector3D(translation));
 				ecsManager.transformSystem->SetLocalRotation(boneEntity, engineRot);
-				ecsManager.transformSystem->SetLocalScale(boneEntity, Vector3D::ConvertGLMToVector3D(scale));
+				ecsManager.transformSystem->SetLocalScale(boneEntity, Vector3D::ConvertGLMToVector3D(scale));*/
 			}
 		}
 	}
@@ -321,13 +322,13 @@ void Animator::CalculateBoneTransformInternal(const AssimpNodeData* node, glm::m
                 glm::vec3 scale; glm::quat rotation; glm::vec3 translation; glm::vec3 skew; glm::vec4 perspective;
                 glm::decompose(matrixToApply, scale, rotation, translation, skew, perspective);
 
-                ecsManager.transformSystem->SetLocalPosition(boneEntity, Vector3D::ConvertGLMToVector3D(translation));
 
                 // Use (w, x, y, z) matching your struct
                 Quaternion engineRot(rotation.w, rotation.x, rotation.y, rotation.z);
-                ecsManager.transformSystem->SetLocalRotation(boneEntity, engineRot);
-
-                ecsManager.transformSystem->SetLocalScale(boneEntity, Vector3D::ConvertGLMToVector3D(scale));
+				ecsManager.transformSystem->SetLocalTransform(boneEntity, Vector3D::ConvertGLMToVector3D(translation), engineRot, Vector3D::ConvertGLMToVector3D(scale));
+                /*ecsManager.transformSystem->SetLocalRotation(boneEntity, engineRot);
+                ecsManager.transformSystem->SetLocalPosition(boneEntity, Vector3D::ConvertGLMToVector3D(translation));
+                ecsManager.transformSystem->SetLocalScale(boneEntity, Vector3D::ConvertGLMToVector3D(scale));*/
             }
             //else 
             //{

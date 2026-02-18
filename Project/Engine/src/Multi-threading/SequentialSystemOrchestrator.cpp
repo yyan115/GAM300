@@ -13,6 +13,7 @@ void SequentialSystemOrchestrator::Update() {
 
 	// Update systems.
 	// Use actual delta time, not fixed - these are called once per frame, not in a fixed timestep loop
+	mainECS.scriptSystem->Update();
 	mainECS.physicsSystem->Update((float)TimeManager::GetDeltaTime(), mainECS);
 	mainECS.characterControllerSystem->Update((float)TimeManager::GetDeltaTime(), mainECS);
 	mainECS.transformSystem->Update();
@@ -21,7 +22,6 @@ void SequentialSystemOrchestrator::Update() {
 
 	mainECS.cameraSystem->Update();
 	mainECS.lightingSystem->Update();
-	mainECS.scriptSystem->Update();
 	// Scripts may have changed entity active states; flush cache so subsequent systems see updates
 	mainECS.ClearActiveHierarchyCache();
 	mainECS.uiAnchorSystem->Update();  // Must run before button/slider to update positions

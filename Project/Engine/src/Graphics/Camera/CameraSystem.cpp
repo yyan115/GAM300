@@ -55,6 +55,8 @@ bool CameraSystem::Initialise()
 
 void CameraSystem::Update()
 {
+	PROFILE_FUNCTION();
+
 	ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
 
 	// Validate that active camera entity still exists
