@@ -143,9 +143,7 @@ return Component {
         HoverBobAmp   = 0.02,
         HoverBobFreq  = 0.9,
 
-        SlamDownOffset   = 0.5,
-        SlamDownAccel    = 0.2,
-        SlamDownMaxSpeed = 0.1,
+        SlamDownSpeed    = 3.0,
 
         PathRepathInterval = 10,
         PathGoalMoveThreshold = 0.9,
@@ -1003,7 +1001,7 @@ return Component {
         local x, y, z = self:GetPosition()
         if Nav and Nav.GetGroundY then
             local gy = Nav.GetGroundY(self.entityId)
-            if gy ~= nil then y = gy + (tonumber(self.SlamDownOffset) or 0.5) end
+            if gy ~= nil then y = gy end
         end
         self:SetPosition(x, y, z)
 
@@ -1058,16 +1056,10 @@ return Component {
             if g ~= nil then gy = g end
         end
 
-        local targetY = gy + (tonumber(self.SlamDownOffset) or 0.5)
+        local targetY = gy
 
-        -- accelerate downward
-        local accel = tonumber(self.SlamDownAccel) or 45.0
-        local maxSp = tonumber(self.SlamDownMaxSpeed) or 30.0
-
-        self._slamVy = (self._slamVy or 0) + accel * dtSec
-        if self._slamVy > maxSp then self._slamVy = maxSp end
-
-        local newY = y - self._slamVy * dtSec
+        local speed = tonumber(self.SlamDownSpeed) or 3.0
+        local newY = y - speed * dtSec
 
         -- landed
         if newY <= targetY then

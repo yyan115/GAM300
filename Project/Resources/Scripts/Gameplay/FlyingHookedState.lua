@@ -9,14 +9,20 @@ function FlyingHooked:Enter(ai)
     ai._hookedTimer = 0
     ai.attackTimer = 0
 
-    -- Convert immediately: flying enemy becomes ground enemy
-    if ai.ConvertToGroundEnemy then
-        ai:ConvertToGroundEnemy({ nextState = "Hooked" })
+    -- START slam instead of converting instantly
+    if ai.BeginSlamDown then
+        ai:BeginSlamDown()
+    else
+        -- fallback (if slam isn't present for some reason)
+        if ai.ConvertToGroundEnemy then
+            ai:ConvertToGroundEnemy({ nextState = "Hooked" })
+        end
     end
 end
 
 function FlyingHooked:Update(ai, dt)
-    -- usually won't run (we convert on enter)
+    -- While slamming, do nothing here.
+    -- EnemyAI.Update() will call UpdateSlamDown() and convert on landing.
     if ai.health <= 0 then ai.dead = true return end
 end
 
