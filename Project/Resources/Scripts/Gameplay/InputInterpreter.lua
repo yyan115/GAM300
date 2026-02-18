@@ -78,7 +78,15 @@ return Component {
     Awake = function(self)
         -- Register as global singleton (only one player input system)
         _G.InputInterpreter = self
-        
+
+        -- Cinematic freeze flag
+        self._frozenByCinematic = false
+        if _G.event_bus and _G.event_bus.subscribe then
+            self._cinematicSub = _G.event_bus.subscribe("cinematic.active", function(active)
+                self._frozenByCinematic = active
+            end)
+        end
+
         -- Current frame states (updated every frame)
         self._currentFrame = {
             attack = false,
@@ -123,6 +131,7 @@ return Component {
 
     Update = function(self, dt)
         if not Input then return end
+        if self._frozenByCinematic then return end
 
         self._frameCount = self._frameCount + 1
 
