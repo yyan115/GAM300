@@ -9,7 +9,6 @@ function FlyingHooked:Enter(ai)
     ai._hookedTimer = 0
     ai.attackTimer = 0
 
-    -- START slam instead of converting instantly
     if ai.BeginSlamDown then
         ai:BeginSlamDown()
     else

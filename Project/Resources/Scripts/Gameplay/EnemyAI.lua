@@ -140,10 +140,10 @@ return Component {
         HoverSnapSpeed   = 8.0,
         FlyingChaseSpeed = 1.2,
 
-        HoverBobAmp   = 0.02,
-        HoverBobFreq  = 0.9,
-
-        SlamDownSpeed    = 3.0,
+        HoverBobAmp        = 0.02,
+        HoverBobFreq       = 0.9,
+        SlamDownSpeed      = 3.0,
+        HookedLandingDelay = 1.0,
 
         PathRepathInterval = 10,
         PathGoalMoveThreshold = 0.9,

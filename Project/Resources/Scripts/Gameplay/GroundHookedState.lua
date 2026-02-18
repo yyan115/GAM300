@@ -1,6 +1,14 @@
 -- Resources/Scripts/GamePlay/GroundHookedState.lua
 local HookedState = {}
 
+local function toDtSec(dt)
+    local dtSec = dt or 0
+    if dtSec > 1.0 then dtSec = dtSec * 0.001 end
+    if dtSec <= 0 then return 0 end
+    if dtSec > 0.05 then dtSec = 0.05 end
+    return dtSec
+end
+
 function HookedState:Enter(ai)
     if ai._animator then
         ai._animator:SetBool("Hooked", true)
@@ -9,13 +17,18 @@ function HookedState:Enter(ai)
     ai._hookedTimer = 0
     ai.attackTimer = 0
 
+    ai._hookedLandingTimer = tonumber(ai.HookedLandingDelay) or 0
+
     -- While hooked, don't follow nav / patrol leftovers
     if ai.ClearPath then ai:ClearPath() end
     if ai.StopCC then ai:StopCC() end
 end
 
 function HookedState:Update(ai, dt)
-    ai._hookedTimer = (ai._hookedTimer or 0) + (dt or 0)
+    local dtSec = toDtSec(dt)
+    if dtSec <= 0 then return end
+
+    ai._hookedTimer = (ai._hookedTimer or 0) + dtSec
 
     -- Still allow death to override
     if ai.health <= 0 then
@@ -23,9 +36,18 @@ function HookedState:Update(ai, dt)
         return
     end
 
+    -- Wait a short moment before pull starts
+    if ai._hookedLandingTimer and ai._hookedLandingTimer > 0 then
+        ai._hookedLandingTimer = ai._hookedLandingTimer - dtSec
+        if ai._hookedLandingTimer < 0 then ai._hookedLandingTimer = 0 end
+        -- keep enemy still during this “impact / stagger” window
+        if ai.StopCC then ai:StopCC() end
+        return
+    end
+
     -- PULL toward player every frame while hooked
     if ai.PullTowardPlayer then
-        ai:PullTowardPlayer(dt)
+        ai:PullTowardPlayer(dtSec)
     end
 
     -- Exit hooked after duration
@@ -47,8 +69,9 @@ function HookedState:Exit(ai)
         ai._animator:SetBool("Hooked", false)
     end
 
-    -- stop any tiny residual motion when hook ends
     if ai.StopCC then ai:StopCC() end
+
+    ai._hookedLandingTimer = nil
 end
 
 return HookedState
