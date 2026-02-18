@@ -101,6 +101,14 @@ return Component {
     Start = function(self)
         self._animator = self:GetComponent("AnimationComponent")
         self._audio    = self:GetComponent("AudioComponent")
+
+        -- Listen for cinematic mode so chain (and melee) attacks are blocked
+        self._frozenByCinematic = false
+        if event_bus and event_bus.subscribe then
+            self._cinematicSub = event_bus.subscribe("cinematic.active", function(active)
+                self._frozenByCinematic = active
+            end)
+        end
     end,
 
     OnDisable = function(self)
@@ -121,6 +129,9 @@ return Component {
 
         -- ---- Skip all attack logic if player has no weapon ----
         if not _G.playerHasWeapon then return end
+
+        -- ---- Skip all attack logic during cinematic ----
+        if self._frozenByCinematic then return end
 
         -- ---- Input handling (unified input system) ----
         local leftDown,  leftPressed  = false, false
