@@ -25,47 +25,6 @@ bool FileUtilities::RemoveFile(const std::string& filePath) {
 	return true;
 }
 
-//const std::filesystem::path& FileUtilities::GetSolutionRootDir() {
-//	if (solutionRootDir.empty()) {
-//		auto dir = std::filesystem::current_path();
-//		bool found = false;
-//		while (!dir.empty()) {
-//			for (auto& entry : std::filesystem::directory_iterator(dir)) {
-//				if (entry.path().extension() == ".sln") {
-//					solutionRootDir = dir;
-//					found = true;
-//					break;
-//				}
-//			}
-//
-//			if (found)
-//				break;
-//
-//			dir = dir.parent_path();
-//		}
-//	}
-//
-//	return solutionRootDir;
-//}
-
-//bool FileUtilities::RemoveFromSolutionRootDir(const std::string& filePath) {
-//	std::filesystem::path p(GetSolutionRootDir() / filePath);
-//	if (std::filesystem::exists(p) == false) {
-//		ENGINE_PRINT(EngineLogging::LogLevel::Error, "[FileUtilities] WARNING: Attempted to delete non-existent file: ", p.generic_string(), "\n");
-//		return true; // Consider it a success since the file doesn't exist.
-//	}
-//
-//	std::error_code ec;
-//	bool success = std::filesystem::remove(p, ec);
-//	if (!success || ec) {
-//		ENGINE_PRINT(EngineLogging::LogLevel::Error, "[FileUtilities] ERROR: Failed to delete file: ", p.generic_string(), " (", ec.message(), ")", "\n");
-//		return false;
-//	}
-//
-//	ENGINE_PRINT("[FileUtilities] Successfully deleted file: " , p.generic_string(), "\n");
-//	return true;
-//}
-
 bool FileUtilities::CopyFile(const std::string& srcPath, const std::string& dstPath) {
 	// Ensure parent directories exist.
 	std::filesystem::path p(dstPath);
@@ -106,6 +65,45 @@ std::filesystem::path FileUtilities::SanitizePathForAndroid(const std::filesyste
 	}
 
 	return result;
+}
+
+// Sanitizes a single file or folder name (strips non-ASCII and forbidden chars)
+std::string FileUtilities::SanitizeFileName(const std::string& name) {
+    std::string safeName = name;
+
+    // Lambda to identify invalid or non-standard characters
+    auto isInvalid = [](unsigned char c) {
+        // Keep standard alphanumeric characters (A-Z, a-z, 0-9)
+        if (std::isalnum(c)) return false;
+        // Keep safe, common symbols
+        if (c == ' ' || c == '.' || c == '-' || c == '_') return false;
+        // Flag everything else (including extended ASCII like æ, è, and forbidden Windows chars < > : " / \ | ? *)
+        return true;
+        };
+
+    // Replace all invalid characters with an underscore
+    std::replace_if(safeName.begin(), safeName.end(), isInvalid, '_');
+
+    // Windows restriction: Filenames cannot end with a space or a period
+    while (!safeName.empty() && (safeName.back() == ' ' || safeName.back() == '.')) {
+        safeName.pop_back();
+    }
+
+    return safeName.empty() ? "unnamed_file" : safeName;
+}
+
+// Helper to sanitize only the filename portion of a full absolute/relative path
+std::string FileUtilities::SanitizeFilePath(const std::string& fullPath) {
+    std::filesystem::path pathObj(fullPath);
+
+    // Extract the directory and the original filename
+    std::filesystem::path dir = pathObj.parent_path();
+    std::string originalFilename = pathObj.filename().string();
+
+    // Sanitize only the filename, then recombine with the valid directory path
+    std::string safeFilename = SanitizeFileName(originalFilename);
+
+    return (dir / safeFilename).string();
 }
 
 bool FileUtilities::StrictExists(const std::filesystem::path& p) {

@@ -67,6 +67,10 @@ int main()
         //WindowManager::SwapBuffers();
     }
 
+    // Disable profiling before shutdown so ProfileZone destructors in the shutdown
+    // path are no-ops and cannot crash when the stack is partially unwound.
+    PerformanceProfiler::GetInstance().EnableProfiling(false);
+
 	GUIManager::Exit();
     GameManager::Shutdown();
 
