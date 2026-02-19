@@ -69,10 +69,11 @@ return Component {
         -- seconds to stay at target before auto-disabling
         stayDuration = 3.0,
 
-        useSequence = false,
-        sequenceWaypoints = {},
-        sequenceInterval = 3.0,
-        sequenceLoop = false,
+        -- Camera position names to cycle through on each cinematic trigger.
+        -- Order matches trigger order (0-based).
+        cinematicPositionNames = { "DoorCameraTarget", "Player" },
+        -- Override which index fires next (1-based). Resets to this value on play.
+        cinematicPositionIndex = 1,
 
         -- Freeze movement during cinematic
         freezePlayer = false,
@@ -83,13 +84,12 @@ return Component {
 
     Awake = function(self)
         self._wasCinematicActive = false
-        self._currentWaypointIndex = 1
-        self._waypointTimer = 0.0
         self._transitionTimer = 0.0
         self._stayTimer = 0.0
         self._phase = "transition"  -- "transition" or "staying"
+        self._cinematicPositionIndex = 1  -- always start at index 1 on play
 
-        -- Allow external scripts (e.g. DoorTrigger) to activate/deactivate cinematic mode
+        -- Allow external scripts (e.g. DoorTrigger) to activate cinematic mode.
         if event_bus and event_bus.subscribe then
             self._cinematicTriggerSub = event_bus.subscribe("cinematic.trigger", function(active)
                 self.cinematicActive = active
@@ -111,6 +111,21 @@ return Component {
                 self._stayTimer = 0.0
                 self._phase = "transition"
 
+                -- Cycle to the next position name (1-based array)
+                local names = self.cinematicPositionNames
+                local idx   = self._cinematicPositionIndex
+                local name  = names and names[idx]
+                if name and name ~= "" then
+                    self.targetTransformName = name
+                    print("[CinematicCamera] Camera target set to: " .. name)
+                end
+                if names then
+                    local nextIdx = idx + 1
+                    if names[nextIdx] == nil then nextIdx = 1 end
+                    self._cinematicPositionIndex = nextIdx
+                    self.cinematicPositionIndex  = nextIdx  -- keep editor field in sync
+                end
+
                 if event_bus and event_bus.publish then
                     event_bus.publish("cinematic.active", true)
                     if self.freezePlayer then
@@ -121,10 +136,6 @@ return Component {
                         event_bus.publish("freeze_enemy", true)
                         print("[CinematicCamera] Enemy movement FROZEN")
                     end
-                end
-                if self.useSequence then
-                    self._currentWaypointIndex = 1
-                    self._waypointTimer = 0.0
                 end
             else
                 print("[CinematicCamera] Cinematic mode DISABLED")
@@ -162,27 +173,6 @@ return Component {
                 print(string.format("[CinematicCamera] Stay complete (%.2fs) - disabling", self._stayTimer))
                 self.cinematicActive = false
                 return
-            end
-        end
-        
-        -- Sequence mode
-        if self.useSequence and self.sequenceWaypoints and #self.sequenceWaypoints > 0 then
-            self._waypointTimer = self._waypointTimer + dt
-            
-            if self._waypointTimer >= self.sequenceInterval then
-                self._waypointTimer = 0.0
-                self._currentWaypointIndex = self._currentWaypointIndex + 1
-                
-                if self._currentWaypointIndex > #self.sequenceWaypoints then
-                    if self.sequenceLoop then
-                        self._currentWaypointIndex = 1
-                    else
-                        self.cinematicActive = false
-                        return
-                    end
-                end
-                
-                self.targetTransformName = self.sequenceWaypoints[self._currentWaypointIndex]
             end
         end
         
