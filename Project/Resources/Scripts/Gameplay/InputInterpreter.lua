@@ -87,6 +87,22 @@ return Component {
             end)
         end
 
+        -- UI button press - should not trigger attacks.
+        self._uiButtonPressed = false
+        self._uiButtonPressedSub = _G.event_bus.subscribe("uiButtonPressed", function(pressed)
+            self._uiButtonPressed = pressed
+        end)
+
+        -- Player dead - should not be able to trigger attacks.
+        self._playerDeadSub = event_bus.subscribe("playerDead", function(dead)
+            self._playerDead = dead
+        end)
+
+        -- Player respawn - enable back attacks.
+        self._respawnPlayerSub = event_bus.subscribe("respawnPlayer", function(respawn)
+            self._playerDead = false
+        end)
+
         -- Current frame states (updated every frame)
         self._currentFrame = {
             attack = false,
@@ -132,6 +148,7 @@ return Component {
     Update = function(self, dt)
         if not Input then return end
         if self._frozenByCinematic then return end
+        if Time.IsPaused() or self._playerDead then return end
 
         self._frameCount = self._frameCount + 1
 
@@ -177,9 +194,16 @@ return Component {
         -- ===============================
         -- INPUT BUFFERING
         -- ===============================
-        if attackJustPressed then
+
+        -- If attack (LMB) was pressed and a UI button was not pressed first, safely trigger the attack.
+        if attackJustPressed and self._uiButtonPressed == false then
             self._bufferedInputs.attack = self.INPUT_BUFFER_FRAMES
             table.insert(self._inputHistory.attack, self._frameCount)
+        end
+
+        -- If a UI button was pressed, set the UIButtonPressed flag to false when LMB is released.
+        if attackJustReleased and self._uiButtonPressed == true then
+            self._uiButtonPressed = false
         end
 
         if chainJustPressed then

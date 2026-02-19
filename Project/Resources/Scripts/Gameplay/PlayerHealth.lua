@@ -8,6 +8,8 @@ local Input = _G.Input
 local HurtTrigger = "Hurt"
 
 local function PlayerTakeDmg(self, dmg)
+    if self._currentHealth <= 0 then return end
+    
     --print("[PlayerTakeDmg] Animator set trigger Hurt")
     self._animator:SetTrigger(HurtTrigger)
     self._hurtTriggered = true
