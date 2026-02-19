@@ -59,6 +59,11 @@
             "name": "Hurt3",
             "type": "Bool",
             "defaultValue": 0.0
+        },
+        {
+            "name": "Flying",
+            "type": "Bool",
+            "defaultValue": 0.0
         }
     ],
     "states": [
@@ -186,11 +191,6 @@
             "exitTime": 0.07000000029802322,
             "transitionDuration": 0.03999999910593033,
             "conditions": [
-                {
-                    "paramName": "Passive",
-                    "mode": "Equals",
-                    "threshold": 1.0
-                },
                 {
                     "paramName": "PatrolEnabled",
                     "mode": "Equals",

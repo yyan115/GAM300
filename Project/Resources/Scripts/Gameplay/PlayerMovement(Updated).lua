@@ -198,6 +198,7 @@ return Component {
         self._playerDeadPending = false
         print("self._animator:SetBool(IsDead, false)")
         self._animator:SetBool("IsDead", false)
+        self._justRespawnedPlayer = true
 
         print(string.format("[PlayerMovement] Respawned player to %f %f %f", checkpointPos.x, checkpointPos.y, checkpointPos.z))
     end,
@@ -206,6 +207,12 @@ return Component {
         if self._respawnPlayer then
             self.RespawnPlayer(self)
             return
+        end
+
+        if self._justRespawnedPlayer then
+            self._animator:Stop(self.entityId)
+            self._animator:Play(self.entityId)
+            self._justRespawnedPlayer = false
         end
 
         if not self._collider or not self._transform or not self._controller or self._playerDead then

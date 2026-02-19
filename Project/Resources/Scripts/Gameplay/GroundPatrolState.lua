@@ -150,6 +150,7 @@ function PatrolState:Update(ai, dt)
         ai._patrolWaitT = (ai.config and ai.config.PatrolWait) or ai.PatrolWait or 1.5
         stop(ai)
         ai._isPatrolWait = true
+        ai._animator:SetBool("PatrolEnabled", false)
         return
     end
 
@@ -159,6 +160,7 @@ function PatrolState:Update(ai, dt)
             --print("[GroundPatrolState] Switching patrol targets")
             switchTarget(ai)
             ai._isPatrolWait = false
+            ai._animator:SetBool("PatrolEnabled", true)
 
             t = ai._patrolTarget
             ai:RequestPathToXZ(t.x, t.z)

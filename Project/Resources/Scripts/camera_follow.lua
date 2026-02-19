@@ -113,6 +113,9 @@ return Component {
 
         -- Chain mode aim settings
         self._chainAiming = false
+        self._chainAimBlend = 0.0   -- 0 = full orbit, 1 = full chain aim
+        self._chainAimYaw = nil
+        self._chainAimPitch = nil
         self._chainAimPos = nil
         self._normalCameraPos = nil
         
@@ -438,7 +441,13 @@ return Component {
             -- Normal behavior - update yaw and pitch
             self._yaw   = self._yaw   - xoffset  -- Subtract for correct left/right direction
             self._pitch = clamp(self._pitch + yoffset, self.minPitch or -80.0, self.maxPitch or 80.0)  -- Add for correct up/down direction
-            
+
+            -- Also update chain aim yaw/pitch when aiming so mouse look works in aim mode
+            if self._chainAimYaw then
+                self._chainAimYaw   = self._chainAimYaw   - xoffset
+                self._chainAimPitch = clamp(self._chainAimPitch + yoffset, self.minPitch or -80.0, self.maxPitch or 80.0)
+            end
+
             -- Track normal pitch when not in action mode
             if not self._actionModeActive then
                 self._normalPitch = self._pitch
@@ -643,14 +652,27 @@ return Component {
         local useOrbitFollow = true                    -- Default: orbit around player
         local useFreeRotation = false                  -- Use yaw/pitch for look direction
         
-        -- PRIORITY 1: Chain aiming mode (overrides orbit)
-        if self._chainAiming then
-          -- Get both transform positions
+        -- PRIORITY 1: Chain aiming mode (smooth blend between orbit and aim)
+        -- Update blend factor smoothly towards target
+        local chainAimTarget = self._chainAiming and 1.0 or 0.0
+        local blendSpeed = self.chainAimTransitionSpeed or 5.0
+        local blendT = 1.0 - math.exp(-blendSpeed * dt)
+        self._chainAimBlend = self._chainAimBlend + (chainAimTarget - self._chainAimBlend) * blendT
+
+        -- Snap to 0/1 when very close to avoid lingering micro-lerps
+        if self._chainAimBlend < 0.001 then self._chainAimBlend = 0.0 end
+        if self._chainAimBlend > 0.999 then self._chainAimBlend = 1.0 end
+
+        -- Chain aim position / rotation (computed when blending in or fully aimed)
+        local chainDesiredX, chainDesiredY, chainDesiredZ
+        local chainAimActive = self._chainAimBlend > 0.0
+
+        if chainAimActive then
           local aimPos = Engine.FindTransformByName(self.chainAimPosName)
           local aimTarget = Engine.FindTransformByName(self.chainAimTargetName)
-          
+
           if aimPos and aimTarget then
-            -- Get position of camera anchor point (where camera should be)
+            -- Get position of camera anchor point
             local camX, camY, camZ = 0, 0, 0
             local ok, a, b, c = pcall(function()
               if Engine and Engine.GetTransformWorldPosition then
@@ -658,7 +680,7 @@ return Component {
               end
               return nil
             end)
-            
+
             if ok and a ~= nil then
               if type(a) == "table" then
                 camX, camY, camZ = a[1] or a.x or 0, a[2] or a.y or 0, a[3] or a.z or 0
@@ -666,10 +688,9 @@ return Component {
                 camX, camY, camZ = a, b, c
               end
             end
-            
+
             -- ONLY ON FIRST FRAME: Lock camera rotation to look at target
             if not self._chainAimInitialized then
-              -- Get position of look-at target
               local targetX, targetY, targetZ = 0, 0, 0
               ok, a, b, c = pcall(function()
                 if Engine and Engine.GetTransformWorldPosition then
@@ -677,7 +698,7 @@ return Component {
                 end
                 return nil
               end)
-              
+
               if ok and a ~= nil then
                 if type(a) == "table" then
                   targetX, targetY, targetZ = a[1] or a.x or 0, a[2] or a.y or 0, a[3] or a.z or 0
@@ -685,53 +706,43 @@ return Component {
                   targetX, targetY, targetZ = a, b, c
                 end
               end
-              
-              -- Calculate direction from camera position to target
+
               local dirX = targetX - camX
               local dirY = targetY - camY
               local dirZ = targetZ - camZ
-              
               local dirLen = math.sqrt(dirX*dirX + dirY*dirY + dirZ*dirZ)
-              
+
               if dirLen > 0.0001 then
-                -- Normalize direction
                 dirX, dirY, dirZ = dirX/dirLen, dirY/dirLen, dirZ/dirLen
-                
-                -- Calculate yaw (rotation around Y axis)
-                self._yaw = math.deg(atan2(dirX, dirZ))
-                
-                -- Calculate pitch (rotation around X axis)
-                self._pitch = -math.deg(math.asin(dirY))
-                
-                -- Mark as initialized so we don't re-lock
+                self._chainAimYaw = math.deg(atan2(dirX, dirZ))
+                self._chainAimPitch = -math.deg(math.asin(dirY))
                 self._chainAimInitialized = true
               end
             end
-            
-            -- Set camera position (every frame)
-            desiredX = camX
-            desiredY = camY
-            desiredZ = camZ
-            
-            -- Camera now uses free rotation (yaw/pitch from mouse input)
-            useOrbitFollow = false
-            useFreeRotation = true
 
-            -- Publish camera basis for chain
-            local yaw_rad = math.rad(self._yaw)
-            local pitch_rad = math.rad(self._pitch)
-            local fx = math.sin(yaw_rad) * math.cos(pitch_rad)
-            local fy = -math.sin(pitch_rad)  -- negative if pitch up = negative
-            local fz = math.cos(yaw_rad) * math.cos(pitch_rad)
-            if event_bus and event_bus.publish then
-                event_bus.publish("ChainAim_basis", {
-                    forward = { x = fx, y = fy, z = fz },
-                })
+            chainDesiredX = camX
+            chainDesiredY = camY
+            chainDesiredZ = camZ
+
+            -- Publish camera basis for chain when actively aiming
+            if self._chainAiming then
+                local aimYaw = self._chainAimYaw or self._yaw
+                local aimPitch = self._chainAimPitch or self._pitch
+                local yaw_rad = math.rad(aimYaw)
+                local pitch_rad = math.rad(aimPitch)
+                local fx = math.sin(yaw_rad) * math.cos(pitch_rad)
+                local fy = -math.sin(pitch_rad)
+                local fz = math.cos(yaw_rad) * math.cos(pitch_rad)
+                if event_bus and event_bus.publish then
+                    event_bus.publish("ChainAim_basis", {
+                        forward = { x = fx, y = fy, z = fz },
+                    })
+                end
             end
           else
-            -- Transforms not found, fall back to orbit
-            useOrbitFollow = true
-            useFreeRotation = false
+            -- Transforms not found, cancel blend
+            chainAimActive = false
+            self._chainAimBlend = 0.0
           end
         end
         
@@ -818,6 +829,17 @@ return Component {
         end
 
         -- ==========================================
+        -- BLEND ORBIT + CHAIN AIM POSITIONS
+        -- ==========================================
+        -- If chain aim blend is active, interpolate between orbit and chain aim positions
+        local blend = self._chainAimBlend
+        if chainAimActive and blend > 0.0 and chainDesiredX then
+            desiredX = desiredX + (chainDesiredX - desiredX) * blend
+            desiredY = desiredY + (chainDesiredY - desiredY) * blend
+            desiredZ = desiredZ + (chainDesiredZ - desiredZ) * blend
+        end
+
+        -- ==========================================
         -- SMOOTH FOLLOW & ROTATION
         -- ==========================================
         local cx, cy, cz = 0.0, 0.0, 0.0
@@ -829,20 +851,33 @@ return Component {
         end
 
         -- Smooth lerp to desired position
-        local followSpeed = self._chainAiming and (self.chainAimTransitionSpeed or 5.0) or (self.followLerp or 10.0)
+        local followSpeed = self.followLerp or 10.0
         local lerpT = 1.0 - math.exp(-followSpeed * dt)
         local newX = cx + (desiredX - cx) * lerpT
         local newY = cy + (desiredY - cy) * lerpT
         local newZ = cz + (desiredZ - cz) * lerpT
         self:SetPosition(newX, newY, newZ)
 
-        -- Set rotation based on mode
-        if useFreeRotation then
-            -- Use current yaw/pitch directly (camera looks forward from its position)
-            local quat = eulerToQuat(self._pitch, self._yaw, 0.0)
+        -- Set rotation: blend between orbit look-at and chain aim yaw/pitch
+        if chainAimActive and blend > 0.0 and self._chainAimYaw then
+            -- Compute orbit rotation (look at target)
+            local ofx, ofy, ofz = cameraTarget.x - newX, cameraTarget.y - newY, cameraTarget.z - newZ
+            local olen = math.sqrt(ofx*ofx + ofy*ofy + ofz*ofz)
+            local orbitYaw, orbitPitch = self._yaw, self._pitch
+            if olen > 0.0001 then
+                ofx, ofy, ofz = ofx/olen, ofy/olen, ofz/olen
+                orbitYaw   = math.deg(atan2(ofx, ofz))
+                orbitPitch = -math.deg(math.asin(ofy))
+            end
+
+            -- Blend yaw and pitch between orbit and chain aim
+            local blendedYaw   = orbitYaw   + (self._chainAimYaw   - orbitYaw)   * blend
+            local blendedPitch = orbitPitch + (self._chainAimPitch - orbitPitch) * blend
+
+            local quat = eulerToQuat(blendedPitch, blendedYaw, 0.0)
             self:SetRotation(quat.w, quat.x, quat.y, quat.z)
         else
-            -- Look at target (orbit mode)
+            -- Pure orbit mode: look at target
             local fx, fy, fz = cameraTarget.x - newX, cameraTarget.y - newY, cameraTarget.z - newZ
             local flen = math.sqrt(fx*fx + fy*fy + fz*fz)
             if flen > 0.0001 then

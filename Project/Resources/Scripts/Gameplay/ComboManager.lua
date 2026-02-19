@@ -273,7 +273,7 @@ return Component {
     end,
 
     Update = function(self, dt)
-        if not self._inputInterpreter or not self._animator then return end
+        if not self._inputInterpreter or not self._animator or Time.IsPaused() then return end
 
         self._stateTimer = self._stateTimer + dt
         local state = self._currentStateData

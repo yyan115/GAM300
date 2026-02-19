@@ -314,6 +314,16 @@ return Component {
                     self:StopCC()
                 end
             end)
+            
+            self._playerRespawned = false
+            self._respawnPlayerSub = _G.event_bus.subscribe("respawnPlayer", function(respawn)
+                self._playerRespawned = respawn
+            end)
+
+            self._playerDead = false
+            self._playerDeadSub = _G.event_bus.subscribe("playerDead", function(playerDead)
+                self._playerDead = playerDead
+            end)
 
             self._comboDamageSub = _G.event_bus.subscribe("deal_damage", function(payload)
                 if not payload then return end
@@ -386,6 +396,9 @@ return Component {
                 CharacterController.SetPosition(self._controller, x, y, z)
             end)
         end
+
+        -- Save the initial spawn position so the enemy can teleport back here when player respawns.
+        self._initialPos = CharacterController.GetPosition(self._controller)
     end,
 
     Update = function(self, dt)
@@ -403,6 +416,16 @@ return Component {
 
         -- Freeze movement during cinematic
         if self._frozenBycinematic then return end
+
+        -- When player respawns, teleport the enemy back to its initial position.
+        if self._playerRespawned and self._initialPos then
+            CharacterController.SetPosition(self._controller, self._transform)
+            self:SetPosition(self._initialPos.x, self._initialPos.y, self._initialPos.z)
+
+            self._playerRespawned = false
+            self._playerDead = false
+            return
+        end
 
         self._motionID = self._rb and self._rb.motionID or nil
 
@@ -522,6 +545,11 @@ return Component {
     end,
 
     GetPlayerDistanceSq = function(self)
+        -- If the player is dead, this function always returns a huge value so the enemy exits the chase/attack state.
+        if self._playerDead then
+            return math.huge
+        end
+
         local tr = self._playerTr
         if not tr then
             tr = Engine.FindTransformByName(self.PlayerName)

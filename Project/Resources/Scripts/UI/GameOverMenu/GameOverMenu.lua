@@ -48,6 +48,7 @@ return Component {
                         self._respawnButtonHoveredActive.isActive = false
                     end
 
+                    self._isFading = false
                     self._fadeTimer = 0
                     self._deathAnimationDelay = self.deathAnimationDelay
                     self._playerDead = false

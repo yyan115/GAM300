@@ -31,25 +31,25 @@ function AttackState:Update(ai, dt)
     local attackR, meleeR, diseng = ai:GetRanges()
     local d2 = ai:GetPlayerDistanceSq()
 
-    if d2 > (diseng * diseng) then
-        if ai.MoveCC then ai:MoveCC(0, 0) end
-        ai.fsm:Change("Patrol", ai.states.Patrol)
-        return
-    end
+    -- if d2 > (diseng * diseng) then
+    --     if ai.MoveCC then ai:MoveCC(0, 0) end
+    --     ai.fsm:Change("Patrol", ai.states.Patrol)
+    --     return
+    -- end
 
-    if ai.IsMelee then
-        if d2 > (meleeR * meleeR) then
-            if ai.MoveCC then ai:MoveCC(0, 0) end
-            ai.fsm:Change("Chase", ai.states.Chase)
-            return
-        end
-    else
-        if d2 >= (attackR * attackR) then
-            if ai.MoveCC then ai:MoveCC(0, 0) end
-            ai.fsm:Change("Chase", ai.states.Chase)
-            return
-        end
-    end
+    -- if ai.IsMelee then
+    --     if d2 > (meleeR * meleeR) then
+    --         if ai.MoveCC then ai:MoveCC(0, 0) end
+    --         ai.fsm:Change("Chase", ai.states.Chase)
+    --         return
+    --     end
+    -- else
+    --     if d2 >= (attackR * attackR) then
+    --         if ai.MoveCC then ai:MoveCC(0, 0) end
+    --         ai.fsm:Change("Chase", ai.states.Chase)
+    --         return
+    --     end
+    -- end
 
     if ai.MoveCC then ai:MoveCC(0, 0) end
 
@@ -57,8 +57,18 @@ function AttackState:Update(ai, dt)
         ai.attackTimer = (ai.attackTimer or 0) + dtSec
         local cd = ai.MeleeAttackCooldown or (ai.config.AttackCooldown or 1.0)
         if not ai.meleeAnimTriggered and ai.attackTimer >= ai.MeleeAnimDelay then
-            ai._animator:SetBool("Melee", true)
-            MeleeAnimTriggered = true
+            if d2 <= (meleeR * meleeR) then
+                ai._animator:SetBool("Melee", true)
+                MeleeAnimTriggered = true
+            elseif d2 > (diseng * diseng) then
+                if ai.MoveCC then ai:MoveCC(0, 0) end
+                ai.fsm:Change("Patrol", ai.states.Patrol)
+                return
+            elseif d2 >= (meleeR * meleeR) then
+                if ai.MoveCC then ai:MoveCC(0, 0) end
+                ai.fsm:Change("Chase", ai.states.Chase)
+                return
+            end
         end
 
         if ai.attackTimer >= cd then
@@ -83,7 +93,17 @@ function AttackState:Update(ai, dt)
         -- RANGED
         ai.attackTimer = (ai.attackTimer or 0) + dtSec
         if not ai.rangedAnimTriggered and ai.attackTimer >= ai.RangedAnimDelay then
-            ai._animator:SetBool("Ranged", true)
+            if d2 <= (attackR * attackR) then
+                ai._animator:SetBool("Ranged", true)
+            elseif d2 > (diseng * diseng) then
+                if ai.MoveCC then ai:MoveCC(0, 0) end
+                ai.fsm:Change("Patrol", ai.states.Patrol)
+                return
+            elseif d2 >= (attackR * attackR) then
+                if ai.MoveCC then ai:MoveCC(0, 0) end
+                ai.fsm:Change("Chase", ai.states.Chase)
+                return
+            end
         end
 
         if ai.attackTimer >= (ai.config.AttackCooldown or 3.0) then
