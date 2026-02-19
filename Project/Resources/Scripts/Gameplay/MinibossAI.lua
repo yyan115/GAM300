@@ -114,18 +114,18 @@ end
 -- Move definitions (DATA-DRIVEN)
 -------------------------------------------------
 local MOVES = {
-    Move1 = { cooldown = 2.0, weights = { [1]=50, [2]=20, [3]=10, [4]=0 }, execute = function(ai) print("[Miniboss] Move1: Basic Attack") ai:BasicAttack() end },
-    Move2 = { cooldown = 2.5, weights = { [1]=25, [2]=35, [3]=30, [4]=20 }, execute = function(ai) print("[Miniboss] Move2: Burst Fire") ai:BurstFire() end },
-    Move3 = { cooldown = 3.0, weights = { [1]=25,  [2]=35, [3]=30, [4]=20 }, execute = function(ai) print("[Miniboss] Move3: Anti Dodge") ai:AntiDodge() end },
-    Move4 = { cooldown = 4.0, weights = { [1]=0,  [2]=10,  [3]=30, [4]=30 }, execute = function(ai) print("[Miniboss] Move4: Fate Sealed") ai:FateSealed() end },
-    Move5 = { cooldown = 5.0, weights = { [1]=0,  [2]=0,  [3]=0,  [4]=30 }, execute = function(ai) print("[Miniboss] Move5: Death Lotus") ai:DeathLotus() end },
+    -- Move1 = { cooldown = 2.0, weights = { [1]=50, [2]=20, [3]=10, [4]=0 }, execute = function(ai) print("[Miniboss] Move1: Basic Attack") ai:BasicAttack() end },
+    -- Move2 = { cooldown = 2.5, weights = { [1]=25, [2]=35, [3]=30, [4]=20 }, execute = function(ai) print("[Miniboss] Move2: Burst Fire") ai:BurstFire() end },
+    -- Move3 = { cooldown = 3.0, weights = { [1]=25,  [2]=35, [3]=30, [4]=20 }, execute = function(ai) print("[Miniboss] Move3: Anti Dodge") ai:AntiDodge() end },
+    -- Move4 = { cooldown = 4.0, weights = { [1]=0,  [2]=10,  [3]=30, [4]=30 }, execute = function(ai) print("[Miniboss] Move4: Fate Sealed") ai:FateSealed() end },
+    -- Move5 = { cooldown = 5.0, weights = { [1]=0,  [2]=0,  [3]=0,  [4]=30 }, execute = function(ai) print("[Miniboss] Move5: Death Lotus") ai:DeathLotus() end },
 
     -- For testing individual moves 1 by 1
-    -- Move1 = { cooldown = 2.0, weights = { [1]=0, [2]=20, [3]=10, [4]=0 }, execute = function(ai) print("[Miniboss] Move1: Basic Attack") ai:BasicAttack() end },
-    -- Move2 = { cooldown = 2.5, weights = { [1]=0, [2]=35, [3]=30, [4]=20 }, execute = function(ai) print("[Miniboss] Move2: Burst Fire") ai:BurstFire() end },
-    -- Move3 = { cooldown = 3.0, weights = { [1]=0,  [2]=35, [3]=30, [4]=20 }, execute = function(ai) print("[Miniboss] Move3: Anti Dodge") ai:AntiDodge() end },
-    -- Move4 = { cooldown = 4.0, weights = { [1]=10,  [2]=10,  [3]=30, [4]=30 }, execute = function(ai) print("[Miniboss] Move4: Fate Sealed") ai:FateSealed() end },
-    -- Move5 = { cooldown = 5.0, weights = { [1]=0,  [2]=0,  [3]=0,  [4]=30 }, execute = function(ai) print("[Miniboss] Move5: Death Lotus") ai:DeathLotus() end },
+    Move1 = { cooldown = 2.0, weights = { [1]=0, [2]=20, [3]=10, [4]=0 }, execute = function(ai) print("[Miniboss] Move1: Basic Attack") ai:BasicAttack() end },
+    Move2 = { cooldown = 2.5, weights = { [1]=0, [2]=35, [3]=30, [4]=20 }, execute = function(ai) print("[Miniboss] Move2: Burst Fire") ai:BurstFire() end },
+    Move3 = { cooldown = 3.0, weights = { [1]=0,  [2]=35, [3]=30, [4]=20 }, execute = function(ai) print("[Miniboss] Move3: Anti Dodge") ai:AntiDodge() end },
+    Move4 = { cooldown = 4.0, weights = { [1]=0,  [2]=10,  [3]=30, [4]=30 }, execute = function(ai) print("[Miniboss] Move4: Fate Sealed") ai:FateSealed() end },
+    Move5 = { cooldown = 5.0, weights = { [1]=10,  [2]=0,  [3]=0,  [4]=30 }, execute = function(ai) print("[Miniboss] Move5: Death Lotus") ai:DeathLotus() end },
 }
 
 local MOVE_ORDER = { "Move1", "Move2", "Move3", "Move4", "Move5" }
@@ -1336,16 +1336,6 @@ return Component {
                 -- OPTIONAL: play charge animation / VFX / SFX once
                 if not m.chargeStarted then
                     m.chargeStarted = true
-                    -- Example hooks (only if you have them):
-                    -- if self.PlayClip and self.ClipCharge then self:PlayClip(self.ClipCharge, false) end
-                    -- if _G.event_bus and _G.event_bus.publish then _G.event_bus.publish("miniboss_charge", { entityId=self.entityId }) end
-                    if _G.event_bus and _G.event_bus.publish then
-                        _G.event_bus.publish("meleeHitPlayerDmg", {
-                            dmg = 2,
-                            src = "Miniboss",
-                            enemyEntityId = self.entityId,
-                        })
-                    end
                 end
 
                 if m.chargeT >= chargeDur then
@@ -1508,11 +1498,11 @@ return Component {
     DeathLotus = function(self)
         self._animator:SetTrigger("Ranged")
         self:_BeginMove("DeathLotus", {
-            duration = 6.8,
-            spinSpeed = math.pi * 3.8,  -- rad/s
-            fireInterval = 0.60,
+            duration = 11.8,
+            spinSpeed = math.pi * 5.8,  -- rad/s
+            fireInterval = 0.10,
             range = 12.0,
-            spread = 0.7,
+            spread = 7.7,
             lotusYOffset = -3.0,
         })
     end,
