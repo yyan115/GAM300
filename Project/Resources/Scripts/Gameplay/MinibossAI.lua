@@ -95,9 +95,9 @@ end
 -- Phase definition (HP-based)
 -------------------------------------------------
 local PHASE_THRESHOLDS = {
-    { id = 4, hpPct = 0.10 },
+    { id = 4, hpPct = 0.11 },
     { id = 3, hpPct = 0.35 },
-    { id = 2, hpPct = 0.70 },
+    { id = 2, hpPct = 0.71 },
 }
 
 local function _phaseThresholdPct(phaseId)
@@ -1508,9 +1508,9 @@ return Component {
     DeathLotus = function(self)
         self._animator:SetTrigger("Ranged")
         self:_BeginMove("DeathLotus", {
-            duration = 2.8,
-            spinSpeed = math.pi * 1.8,  -- rad/s
-            fireInterval = 0.10,
+            duration = 6.8,
+            spinSpeed = math.pi * 3.8,  -- rad/s
+            fireInterval = 0.60,
             range = 12.0,
             spread = 0.7,
             lotusYOffset = -3.0,
