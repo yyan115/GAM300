@@ -89,6 +89,14 @@ return Component {
         self._stayTimer = 0.0
         self._phase = "transition"  -- "transition" or "staying"
 
+        -- Allow external scripts (e.g. DoorTrigger) to activate/deactivate cinematic mode
+        if event_bus and event_bus.subscribe then
+            self._cinematicTriggerSub = event_bus.subscribe("cinematic.trigger", function(active)
+                self.cinematicActive = active
+                print("[CinematicCamera] cinematicActive set to " .. tostring(active) .. " via event")
+            end)
+        end
+
         print("[CinematicCamera] Initialized")
     end,
 
