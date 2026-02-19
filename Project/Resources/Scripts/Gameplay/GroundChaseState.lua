@@ -8,10 +8,7 @@ function ChaseState:Enter(ai)
     ai._pathRepathT = (ai.PathRepathInterval or 0.45)
 
     -- Play alert SFX once when first detecting player (entering chase)
-    if ai.PlayAlertSFX and not ai._alertSFXPlayed then
-        ai:PlayAlertSFX()
-        ai._alertSFXPlayed = true
-    end
+    ai:PlayAlertSFX()
 end
 
 function ChaseState:Update(ai, dt)
