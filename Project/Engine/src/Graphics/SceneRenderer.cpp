@@ -139,7 +139,7 @@ void SceneRenderer::BeginSceneRender(int width, int height)
     // Bind framebuffer and set viewport
     //glBindFramebuffer(GL_FRAMEBUFFER, sceneFrameBuffer);
     //glViewport(0, 0, width, height);
-    PostProcessingManager::GetInstance().BeginHDRRender(width, height);
+    //PostProcessingManager::GetInstance().BeginHDRRender(width, height);
 
     // Enable depth testing for 3D rendering
     glEnable(GL_DEPTH_TEST);
@@ -169,6 +169,8 @@ void SceneRenderer::RenderSceneForEditor()
 
 void SceneRenderer::RenderSceneForEditor(const glm::vec3& cameraPos, const glm::vec3& cameraFront, const glm::vec3& cameraUp, float cameraZoom, float orthoZoomLevel)
 {
+    PostProcessingManager::GetInstance().BeginHDRRender(sceneWidth, sceneHeight);
+
     try {
         // Initialize static editor camera if not already done
         if (!editorCamera) {
@@ -305,7 +307,7 @@ void SceneRenderer::BeginGameRender(int width, int height)
     // Bind game framebuffer and set viewport
     /*glBindFramebuffer(GL_FRAMEBUFFER, gameFrameBuffer);
     glViewport(0, 0, width, height);*/
-    PostProcessingManager::GetInstance().BeginHDRRender(width, height);
+    //PostProcessingManager::GetInstance().BeginHDRRender(width, height);
 
     // Enable depth testing for 3D rendering
     glEnable(GL_DEPTH_TEST);

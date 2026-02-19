@@ -124,6 +124,7 @@ void PostProcessingManager::Process(unsigned int inputTexture, unsigned int outp
 
 unsigned int PostProcessingManager::CreateHDRFramebuffer(int width, int height)
 {
+    std::cout << "[PostProcessingManager] Reallocating HDR Framebuffer: " << width << " x " << height << std::endl;
     // Delete existing framebuffer if it exists
     if (hdrFramebuffer != 0) 
     {
@@ -197,8 +198,8 @@ void PostProcessingManager::BeginHDRRender(int width, int height)
 
     // Clear HDR buffer
     // Clear HDR buffer with BLACK (very important!)
-    glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    //glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+    //glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 }
 
 void PostProcessingManager::EndHDRRender(unsigned int outputFBO, int width, int height)

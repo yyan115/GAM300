@@ -167,19 +167,25 @@ void Animator::CalculateBlendedBoneTransformInternal(const AssimpNodeData* node,
 
 	glm::mat4 nodeTransform = node->transformation; // Default bind pose
 
+	// 1. Hoist these variables so the ECS update can use them!
+	glm::vec3 finalPos;
+	glm::quat finalRot;
+	glm::vec3 finalScale;
+	bool hasBlendedTRS = false; // Track if we actually calculated a blend
+
 	// Look up bone in both animations
 	Bone* oldBone = mPrevAnimation ? mPrevAnimation->FindBone(nodeName) : nullptr;
 	Bone* newBone = mCurrentAnimation->FindBone(nodeName);
 
 	if (oldBone && newBone)
 	{
-		// Both animations have this bone - blend directly
 		oldBone->Update(mPrevTime);
 		newBone->Update(mCurrentTime);
 
-		glm::vec3 finalPos = glm::mix(oldBone->GetLocalPosition(), newBone->GetLocalPosition(), blendFactor);
-		glm::quat finalRot = glm::slerp(oldBone->GetLocalRotation(), newBone->GetLocalRotation(), blendFactor);
-		glm::vec3 finalScale = glm::mix(oldBone->GetLocalScale(), newBone->GetLocalScale(), blendFactor);
+		finalPos = glm::mix(oldBone->GetLocalPosition(), newBone->GetLocalPosition(), blendFactor);
+		finalRot = glm::slerp(oldBone->GetLocalRotation(), newBone->GetLocalRotation(), blendFactor);
+		finalScale = glm::mix(oldBone->GetLocalScale(), newBone->GetLocalScale(), blendFactor);
+		hasBlendedTRS = true;
 
 		nodeTransform = glm::translate(glm::mat4(1.0f), finalPos)
 			* glm::mat4_cast(finalRot)
@@ -187,7 +193,6 @@ void Animator::CalculateBlendedBoneTransformInternal(const AssimpNodeData* node,
 	}
 	else if (oldBone || newBone)
 	{
-		// One bone missing - blend between available bone and bind pose
 		glm::vec3 bindPos, bindScale, skew;
 		glm::quat bindRot;
 		glm::vec4 perspective;
@@ -209,17 +214,17 @@ void Animator::CalculateBlendedBoneTransformInternal(const AssimpNodeData* node,
 			dstPos = newBone->GetLocalPosition(); dstRot = newBone->GetLocalRotation(); dstScale = newBone->GetLocalScale();
 		}
 
-		glm::vec3 finalPos = glm::mix(srcPos, dstPos, blendFactor);
-		glm::quat finalRot = glm::slerp(srcRot, dstRot, blendFactor);
-		glm::vec3 finalScale = glm::mix(srcScale, dstScale, blendFactor);
+		finalPos = glm::mix(srcPos, dstPos, blendFactor);
+		finalRot = glm::slerp(srcRot, dstRot, blendFactor);
+		finalScale = glm::mix(srcScale, dstScale, blendFactor);
+		hasBlendedTRS = true;
 
 		nodeTransform = glm::translate(glm::mat4(1.0f), finalPos)
 			* glm::mat4_cast(finalRot)
 			* glm::scale(glm::mat4(1.0f), finalScale);
 	}
-	// else: neither bone exists in either animation, keep bind pose
 
-	// Update ECS entity (same logic as CalculateBoneTransformInternal)
+	// 2. ECS Update (The Optimized Part)
 	auto& modelComp = ecsManager.GetComponent<ModelRenderComponent>(entity);
 	auto boneIt = modelComp.boneNameToEntityMap.find(nodeName);
 	if (boneIt != modelComp.boneNameToEntityMap.end())
@@ -229,39 +234,57 @@ void Animator::CalculateBlendedBoneTransformInternal(const AssimpNodeData* node,
 		{
 			if (!isRoot)
 			{
-				glm::mat4 matrixToApply = nodeTransform;
-
 				if (bakeParent)
 				{
-					matrixToApply = parentTransform * nodeTransform;
+					// SLOW PATH: We must multiply and decompose
+					glm::mat4 matrixToApply = parentTransform * nodeTransform;
+					glm::vec3 scale; glm::quat rotation; glm::vec3 translation; glm::vec3 skew; glm::vec4 perspective;
+					glm::decompose(matrixToApply, scale, rotation, translation, skew, perspective);
+
+					Quaternion engineRot(rotation.w, rotation.x, rotation.y, rotation.z);
+					ecsManager.transformSystem->SetLocalTransform(boneEntity, Vector3D::ConvertGLMToVector3D(translation), engineRot, Vector3D::ConvertGLMToVector3D(scale));
 				}
+				else
+				{
+					// FAST PATH
+					if (hasBlendedTRS)
+					{
+						// We already have the math! Just plug it straight into the engine.
+						Quaternion engineRot(finalRot.w, finalRot.x, finalRot.y, finalRot.z);
+						ecsManager.transformSystem->SetLocalTransform(
+							boneEntity,
+							Vector3D::ConvertGLMToVector3D(finalPos),
+							engineRot,
+							Vector3D::ConvertGLMToVector3D(finalScale)
+						);
+					}
+					else
+					{
+						// Fallback: This is a static bind-pose bone (not animated in either clip)
+						glm::vec3 scale; glm::quat rotation; glm::vec3 translation; glm::vec3 skew; glm::vec4 perspective;
+						glm::decompose(node->transformation, scale, rotation, translation, skew, perspective);
 
-				glm::vec3 scale; glm::quat rotation; glm::vec3 translation; glm::vec3 skew; glm::vec4 perspective;
-				glm::decompose(matrixToApply, scale, rotation, translation, skew, perspective);
-
-				Quaternion engineRot(rotation.w, rotation.x, rotation.y, rotation.z);
-				ecsManager.transformSystem->SetLocalTransform(boneEntity, Vector3D::ConvertGLMToVector3D(translation), engineRot, Vector3D::ConvertGLMToVector3D(scale));
-				/*ecsManager.transformSystem->SetLocalPosition(boneEntity, Vector3D::ConvertGLMToVector3D(translation));
-				ecsManager.transformSystem->SetLocalRotation(boneEntity, engineRot);
-				ecsManager.transformSystem->SetLocalScale(boneEntity, Vector3D::ConvertGLMToVector3D(scale));*/
+						Quaternion engineRot(rotation.w, rotation.x, rotation.y, rotation.z);
+						ecsManager.transformSystem->SetLocalTransform(boneEntity, Vector3D::ConvertGLMToVector3D(translation), engineRot, Vector3D::ConvertGLMToVector3D(scale));
+					}
+				}
 			}
 		}
 	}
 
-	// Calculate global transform for recursion and shader
+	// 3. Calculate global transform for recursion and shader
 	glm::mat4 globalTransformation = parentTransform * nodeTransform;
 
-	// Update shader matrices
+	// 4. Update shader matrices
 	auto infoIt = boneInfoMap.find(nodeName);
 	if (infoIt != boneInfoMap.end())
 	{
 		int index = infoIt->second.id;
 		const glm::mat4& offset = infoIt->second.offset;
-		modelComp.mFinalBoneMatrices[index] =
-			globalInverse * globalTransformation * offset;
+		modelComp.mFinalBoneMatrices[index] = globalInverse * globalTransformation * offset;
 	}
 
-	// Recurse into children
+	// 5. Recurse into children
 	for (int i = 0; i < node->childrenCount; i++)
 	{
 		bool shouldChildBake = isRoot;
@@ -307,28 +330,41 @@ void Animator::CalculateBoneTransformInternal(const AssimpNodeData* node, glm::m
         {
             if (!isRoot)
             {
-                // [CHILD STRATEGY]
-                glm::mat4 matrixToApply = nodeTransform;
+				if (bakeParent)
+				{
+					// SLOW PATH: We must multiply and decompose
+					glm::mat4 matrixToApply = parentTransform * nodeTransform;
+					glm::vec3 scale; glm::quat rotation; glm::vec3 translation; glm::vec3 skew; glm::vec4 perspective;
+					glm::decompose(matrixToApply, scale, rotation, translation, skew, perspective);
 
-                // CRITICAL FIX: If the parent was the Root (and we forced it to identity),
-                // we must "Bake" the parent's transform into this child so the motion isn't lost.
-                if (bakeParent)
-                {
-                    // parentTransform here IS the Root's animation transform
-                    matrixToApply = parentTransform * nodeTransform;
-                }
+					Quaternion engineRot(rotation.w, rotation.x, rotation.y, rotation.z);
+					ecsManager.transformSystem->SetLocalTransform(boneEntity, Vector3D::ConvertGLMToVector3D(translation), engineRot, Vector3D::ConvertGLMToVector3D(scale));
+				}
+				else
+				{
+					// FAST PATH: Skip matrix math completely! Get TRS directly from the Bone.
+					if (bone)
+					{
+						// The bone was animated this frame. Use its direct values.
+						Quaternion engineRot(bone->GetLocalRotation().w, bone->GetLocalRotation().x, bone->GetLocalRotation().y, bone->GetLocalRotation().z);
 
-                // Decompose and Apply
-                glm::vec3 scale; glm::quat rotation; glm::vec3 translation; glm::vec3 skew; glm::vec4 perspective;
-                glm::decompose(matrixToApply, scale, rotation, translation, skew, perspective);
-
-
-                // Use (w, x, y, z) matching your struct
-                Quaternion engineRot(rotation.w, rotation.x, rotation.y, rotation.z);
-				ecsManager.transformSystem->SetLocalTransform(boneEntity, Vector3D::ConvertGLMToVector3D(translation), engineRot, Vector3D::ConvertGLMToVector3D(scale));
-                /*ecsManager.transformSystem->SetLocalRotation(boneEntity, engineRot);
-                ecsManager.transformSystem->SetLocalPosition(boneEntity, Vector3D::ConvertGLMToVector3D(translation));
-                ecsManager.transformSystem->SetLocalScale(boneEntity, Vector3D::ConvertGLMToVector3D(scale));*/
+						ecsManager.transformSystem->SetLocalTransform(
+							boneEntity,
+							Vector3D::ConvertGLMToVector3D(bone->GetLocalPosition()),
+							engineRot,
+							Vector3D::ConvertGLMToVector3D(bone->GetLocalScale())
+						);
+					}
+					else
+					{
+						// Fallback: This is a static bind-pose bone (no animation). 
+						// We only decompose it once (or you can cache this in AssimpNodeData!)
+						glm::vec3 scale; glm::quat rotation; glm::vec3 translation; glm::vec3 skew; glm::vec4 perspective;
+						glm::decompose(node->transformation, scale, rotation, translation, skew, perspective);
+						Quaternion engineRot(rotation.w, rotation.x, rotation.y, rotation.z);
+						ecsManager.transformSystem->SetLocalTransform(boneEntity, Vector3D::ConvertGLMToVector3D(translation), engineRot, Vector3D::ConvertGLMToVector3D(scale));
+					}
+				}
             }
             //else 
             //{
