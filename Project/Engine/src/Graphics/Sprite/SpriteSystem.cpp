@@ -9,7 +9,6 @@
 #include "Graphics/EBO.h"
 #include "Asset Manager/AssetManager.hpp"
 #include "Asset Manager/ResourceManager.hpp"
-#include "Performance/PerformanceProfiler.hpp"
 
 bool SpriteSystem::Initialise()
 {

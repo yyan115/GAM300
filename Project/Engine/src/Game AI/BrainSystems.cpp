@@ -1,6 +1,5 @@
 #include "pch.h"
 #include "Game AI/BrainSystems.hpp"
-#include "Performance/PerformanceProfiler.hpp"
 #include "Game AI/BrainComponent.hpp"
 #include "Game AI/BrainFactory.hpp"
 

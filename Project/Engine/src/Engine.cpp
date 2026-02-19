@@ -25,7 +25,6 @@
 #include "TimeManager.hpp"
 #include "Sound/AudioManager.hpp"
 #include "Graphics/GraphicsManager.hpp"
-#include "Performance/PerformanceProfiler.hpp"
 #include "Settings/GameSettings.hpp"
 #include "ECS/TagsLayersSettings.hpp"
 

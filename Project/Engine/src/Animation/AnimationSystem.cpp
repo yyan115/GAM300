@@ -1,7 +1,6 @@
 
 #include "pch.h"
 #include "Animation/AnimationSystem.hpp"
-#include "Performance/PerformanceProfiler.hpp"
 #include "Animation/AnimatorController.hpp"
 #include "ECS/ECSRegistry.hpp"
 #include "ECS/ActiveComponent.hpp"

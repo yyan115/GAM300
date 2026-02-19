@@ -8,7 +8,6 @@
 #include "Graphics/Camera/CameraComponent.hpp"
 #include "ECS/ECSRegistry.hpp"
 #include "ECS/ActiveComponent.hpp"
-#include "Performance/PerformanceProfiler.hpp"
 #include <cmath>
 
 #ifndef M_PI

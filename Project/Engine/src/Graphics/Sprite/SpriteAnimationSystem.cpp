@@ -1,6 +1,5 @@
 #include "pch.h"
 #include "Graphics/Sprite/SpriteAnimationSystem.hpp"
-#include "Performance/PerformanceProfiler.hpp"
 #include "Graphics/Sprite/SpriteAnimationComponent.hpp"
 #include "Graphics/Sprite/SpriteRenderComponent.hpp"
 #include "ECS/ECSRegistry.hpp"

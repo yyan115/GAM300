@@ -1,6 +1,5 @@
 #include "pch.h"
 #include "UI/Anchor/UIAnchorSystem.hpp"
-#include "Performance/PerformanceProfiler.hpp"
 #include "UI/Anchor/UIAnchorComponent.hpp"
 #include "ECS/ECSRegistry.hpp"
 #include "ECS/ActiveComponent.hpp"

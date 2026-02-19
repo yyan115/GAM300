@@ -5,7 +5,6 @@
 #include "ECS/ECSRegistry.hpp"
 #include "Video/VideoSystem.hpp"
 #include "Video/VideoComponent.hpp"
-#include "Performance/PerformanceProfiler.hpp"
 #include "Graphics/Sprite/SpriteRenderComponent.hpp"
 #include "Asset Manager/AssetManager.hpp"
 #include "Input/InputManager.h"

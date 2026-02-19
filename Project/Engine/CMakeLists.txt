@@ -99,6 +99,7 @@ target_compile_definitions(Engine PUBLIC
 
 # Enable Tracy profiler for all builds except Release
 # Tracy compiles to no-ops when TRACY_ENABLE is not defined (zero overhead)
+# TRACY_ON_DEMAND is baked into the Tracy DLL via vcpkg feature (see vcpkg.json)
 if(NOT ANDROID)
     target_compile_definitions(Engine PUBLIC
         $<$<NOT:$<CONFIG:Release>>:TRACY_ENABLE>

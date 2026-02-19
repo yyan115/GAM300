@@ -20,7 +20,10 @@
     "rapidjson",
     "gli",
     "meshoptimizer",
-    "tracy"
+    {
+      "name": "tracy",
+      "features": ["on-demand"]
+    }
   ],
   "overrides": [
     {

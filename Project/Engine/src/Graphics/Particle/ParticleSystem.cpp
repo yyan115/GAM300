@@ -25,7 +25,6 @@ prior written consent of DigiPen Institute of Technology is prohibited.
 #include "Platform/IPlatform.h"
 #include "Engine.h"
 #include "Asset Manager/AssetManager.hpp"
-#include "Performance/PerformanceProfiler.hpp"
 #include "ECS/ActiveComponent.hpp"
 
 /******************************************************************************/
