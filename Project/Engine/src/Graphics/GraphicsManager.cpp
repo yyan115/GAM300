@@ -6,6 +6,17 @@
 #ifdef ANDROID
 #include <android/log.h>
 #endif
+
+// Tracy GPU profiling (desktop only)
+#if defined(TRACY_ENABLE) && !defined(ANDROID) && !defined(__APPLE__)
+#include "tracy/TracyOpenGL.hpp"
+#define PROFILE_GPU_CONTEXT   TracyGpuContext
+#define PROFILE_GPU_ZONE(name) TracyGpuZone(name)
+#else
+#define PROFILE_GPU_CONTEXT   ((void)0)
+#define PROFILE_GPU_ZONE(name) ((void)0)
+#endif
+
 #include <Transform/TransformSystem.hpp>
 #include <ECS/ECSManager.hpp>
 #include <ECS/ECSRegistry.hpp>
@@ -42,6 +53,9 @@ bool GraphicsManager::Initialize(int window_width, int window_height)
 	GLenum fFace = GL_CCW;
 	if (frontFace == FrontFace::CW) fFace = GL_CW;
 	glFrontFace(fFace);      // Counter-clockwise winding = front face
+
+	// Initialize Tracy GPU profiling context (must be after GL is ready)
+	PROFILE_GPU_CONTEXT;
 
 	// Initialize skybox
 	InitializeSkybox();
@@ -211,6 +225,7 @@ void GraphicsManager::UpdateFrustum()
 void GraphicsManager::Render()
 {
 	PROFILE_FUNCTION();
+	PROFILE_GPU_ZONE("Render");
 
 	if (auto* platform = WindowManager::GetPlatform()) {
 		platform->MakeContextCurrent();

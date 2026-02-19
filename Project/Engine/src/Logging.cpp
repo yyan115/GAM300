@@ -11,6 +11,10 @@
 #include <android/log.h>
 #endif
 
+#if defined(TRACY_ENABLE) && !defined(ANDROID)
+#include "tracy/Tracy.hpp"
+#endif
+
 #include <filesystem>
 
 namespace EngineLogging {
@@ -251,6 +255,23 @@ namespace EngineLogging {
                 case LogLevel::Critical: logger->critical(message); break;
             }
         }
+
+#if defined(TRACY_ENABLE) && !defined(ANDROID)
+        // Forward log messages to Tracy timeline with color coding by severity
+        {
+            uint32_t color;
+            switch (level) {
+                case LogLevel::Trace:    color = 0x888888; break; // Gray
+                case LogLevel::Debug:    color = 0x88BBFF; break; // Light blue
+                case LogLevel::Info:     color = 0xFFFFFF; break; // White
+                case LogLevel::Warn:     color = 0xFFCC00; break; // Yellow
+                case LogLevel::Error:    color = 0xFF4444; break; // Red
+                case LogLevel::Critical: color = 0xFF0000; break; // Bright red
+                default:                 color = 0xFFFFFF; break;
+            }
+            TracyMessageC(message.c_str(), message.size(), color);
+        }
+#endif
     }
     
     void PrintOutput(const std::string& message, LogLevel logType, bool toEditor)

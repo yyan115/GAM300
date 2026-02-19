@@ -7,7 +7,6 @@
 #include "TimeManager.hpp"
 #include "Asset Manager/MetaFilesManager.hpp"
 #include "Logging.hpp"
-#include "Performance/PerformanceProfiler.hpp"
 #include "Scripting.h"
 #include "ECS/TagsLayersSettings.hpp"
 
@@ -52,9 +51,6 @@ int main()
 
     while (Engine::IsRunning()) 
     {
-        // Begin frame profiling
-        PerformanceProfiler::GetInstance().BeginFrame();
-        
         //Update deltaTime at start of Frame
         //TimeManager::UpdateDeltaTime();
 
@@ -66,17 +62,10 @@ int main()
             //Engine::Draw();
             GUIManager::Render();
             Engine::EndDraw();
-		
+
         // WindowManager handles buffer swapping for editor
         //WindowManager::SwapBuffers();
-     
-        // End frame profiling
-        PerformanceProfiler::GetInstance().EndFrame();
     }
-
-    // Disable profiling before shutdown so ProfileZone destructors in the shutdown
-    // path are no-ops and cannot crash when the stack is partially unwound.
-    PerformanceProfiler::GetInstance().EnableProfiling(false);
 
 	GUIManager::Exit();
     GameManager::Shutdown();

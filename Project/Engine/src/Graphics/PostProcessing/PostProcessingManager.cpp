@@ -2,7 +2,6 @@
 #include "Graphics/PostProcessing/PostProcessingManager.hpp"
 #include "Logging.hpp"
 #include <WindowManager.hpp>
-#include <Performance/PerformanceProfiler.hpp>
 
 // Add to PostProcessingManager.cpp
 void CheckGLError(const char* location) {

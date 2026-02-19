@@ -97,6 +97,15 @@ target_compile_definitions(Engine PUBLIC
     $<$<OR:$<CONFIG:EditorDebug>,$<CONFIG:EditorRelease>>:EDITOR>
 )
 
+# Enable Tracy profiler for all builds except Release
+# Tracy compiles to no-ops when TRACY_ENABLE is not defined (zero overhead)
+# TRACY_ON_DEMAND is baked into the Tracy DLL via vcpkg feature (see vcpkg.json)
+if(NOT ANDROID)
+    target_compile_definitions(Engine PUBLIC
+        $<$<NOT:$<CONFIG:Release>>:TRACY_ENABLE>
+    )
+endif()
+
 # Jolt Physics compile definitions:
 # For Android: Jolt's CMakeLists.txt exports all defines as INTERFACE (via patch in ImportDependencies.cmake)
 #              Engine gets them automatically when linking to Jolt
@@ -178,6 +187,7 @@ else()
     find_package(RapidJSON CONFIG REQUIRED)
     find_package(gli CONFIG REQUIRED)
     find_package(meshoptimizer CONFIG REQUIRED)
+    find_package(Tracy CONFIG REQUIRED)
 endif()
 
 # Manual libraries that aren't available in vcpkg or need custom versions
@@ -269,6 +279,7 @@ else()
             spdlog::spdlog
             gli
             meshoptimizer::meshoptimizer
+            Tracy::TracyClient
     )
 
     # Platform-specific FMOD and system libraries

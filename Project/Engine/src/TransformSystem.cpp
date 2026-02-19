@@ -8,7 +8,6 @@
 #include <Hierarchy/ChildrenComponent.hpp>
 #include "Hierarchy/EntityGUIDRegistry.hpp"
 #include <Math/Matrix3x3.hpp>
-#include "Performance/PerformanceProfiler.hpp"
 #include <ECS/NameComponent.hpp>
 
 // --- HELPER: recursive update without repeated lookups ---

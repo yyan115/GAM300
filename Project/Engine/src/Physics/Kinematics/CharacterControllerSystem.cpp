@@ -11,7 +11,6 @@
 #include "Transform/TransformComponent.hpp"
 #include "Transform/TransformSystem.hpp"
 #include "Hierarchy/ParentComponent.hpp"
-#include "Performance/PerformanceProfiler.hpp"
 
 
 CharacterController* CharacterControllerSystem::CreateController(Entity id,
