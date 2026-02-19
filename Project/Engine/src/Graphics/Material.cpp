@@ -12,6 +12,7 @@
 #include <WindowManager.hpp>
 #include <Platform/IPlatform.h>
 #include <Asset Manager/AssetManager.hpp>
+#include "Utilities/FileUtilities.hpp"
 
 Material::Material() : m_name("DefaultMaterial") {
 }
@@ -557,6 +558,7 @@ std::string Material::CompileToResource(const std::string& assetPath, bool forAn
 		materialPath = newPath.generic_string();
 	}
 
+	materialPath = FileUtilities::SanitizeFilePath(materialPath);
 	std::cout << "[Material] SAVE - Input path: " << assetPath << std::endl;
 	std::cout << "[Material] SAVE - Computed path: " << materialPath << std::endl;
 	std::cout << "[Material] SAVE - Working directory: " << std::filesystem::current_path() << std::endl;
@@ -625,6 +627,7 @@ std::string Material::CompileUpdatedAssetToResource(const std::string& assetPath
 		materialPath = newPath.generic_string();
 	}
 
+	materialPath = FileUtilities::SanitizeFilePath(materialPath);
 	ENGINE_PRINT("[Material] SAVE - Input path: ", assetPath, "\n");
 	ENGINE_PRINT("[Material] SAVE - Computed path: ", materialPath, "\n");
 	ENGINE_PRINT("[Material] SAVE - Working directory: ", std::filesystem::current_path(), "\n");

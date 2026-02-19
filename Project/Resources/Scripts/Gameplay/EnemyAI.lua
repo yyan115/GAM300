@@ -419,8 +419,10 @@ return Component {
 
         -- When player respawns, teleport the enemy back to its initial position.
         if self._playerRespawned and self._initialPos then
+            self:SetPosition(self._initialPos.x, self._initialPos.y + 1.0, self._initialPos.z)
             CharacterController.SetPosition(self._controller, self._transform)
-            self:SetPosition(self._initialPos.x, self._initialPos.y, self._initialPos.z)
+            print(string.format("[EnemyAI] Teleported enemy %d to %f %f %f", self.entityId, self._initialPos.x, self._initialPos.y, self._initialPos.z))
+            self.fsm:ForceChange("Idle", self.states.Idle)
 
             self._playerRespawned = false
             self._playerDead = false
