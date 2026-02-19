@@ -9,6 +9,14 @@
 #include "Platform/IPlatform.h"
 #endif
 
+// Tracy GPU profiling (desktop only — GL ES lacks GL_TIMESTAMP)
+#if defined(TRACY_ENABLE) && !defined(ANDROID) && !defined(__APPLE__)
+#include "tracy/TracyOpenGL.hpp"
+#define PROFILE_GPU_COLLECT TracyGpuCollect
+#else
+#define PROFILE_GPU_COLLECT ((void)0)
+#endif
+
 #include "Engine.h"
 #include "Logging.hpp"
 
@@ -790,6 +798,9 @@ void Engine::EndDraw() {
 
 	// Update cursor state at end of frame (enforces lock state, handles ImGui interference)
 	WindowManager::UpdateCursorState();
+
+	// Collect GPU profiling queries for Tracy
+	PROFILE_GPU_COLLECT;
 
 	// Mark frame boundary for Tracy profiler
 	ENGINE_FRAME_MARK;
