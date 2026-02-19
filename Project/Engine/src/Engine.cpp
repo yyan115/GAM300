@@ -684,9 +684,9 @@ void Engine::Update() {
 
     ECSManager& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
 
-    RunBrainInitSystem(ecs);
+    //RunBrainInitSystem(ecs);
 
-    RunBrainUpdateSystem(ecs, static_cast<float>(TimeManager::GetDeltaTime()));
+    //RunBrainUpdateSystem(ecs, static_cast<float>(TimeManager::GetDeltaTime()));
 
 	// Only update the scene if the game should be running (not paused)
 	if (ShouldRunGameLogic())

@@ -43,7 +43,7 @@ struct FrameTimingHistory {
 };
 
 // RAII-based profiling zone (optimized - no BeginZone call needed)
-class ProfileZone {
+class ENGINE_API ProfileZone {
 public:
     explicit ProfileZone(const char* zoneName);
     ~ProfileZone();

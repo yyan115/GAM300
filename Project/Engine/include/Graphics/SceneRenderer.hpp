@@ -2,6 +2,11 @@
 
 #include "Graphics/OpenGL.h"
 #include <glm/glm.hpp>
+#include <vector>
+#include <memory>
+
+class Shader;
+class Model;
 
 #ifdef _WIN32
 #ifdef ENGINE_EXPORTS
@@ -46,6 +51,21 @@ public:
      * @return OpenGL texture ID
      */
     static unsigned int GetSceneTexture();
+    static unsigned int GetSceneFramebuffer();
+    static int GetSceneWidth() { return sceneWidth; }
+    static int GetSceneHeight() { return sceneHeight; }
+
+    /**
+     * @brief Render a stencil-based selection outline for a model into the scene FBO.
+     * All GL calls happen inside the Engine DLL where GLAD is initialized.
+     */
+    static void RenderSelectionOutline(Model* model,
+                                       const glm::mat4& modelMatrix,
+                                       const glm::mat4& view,
+                                       const glm::mat4& proj,
+                                       bool isAnimated,
+                                       const std::vector<glm::mat4>& boneMatrices,
+                                       float outlineThickness);
 
     /**
      * @brief Begin rendering to scene framebuffer
@@ -105,6 +125,11 @@ private:
 
     // Static editor camera for rendering
     static Camera* editorCamera;
+
+    // Outline shader (lazy-loaded)
+    static std::shared_ptr<Shader> outlineShader;
+    static bool outlineShaderInitialized;
+    static void InitOutlineShader();
 
     // Private constructor - static class
     SceneRenderer() = delete;

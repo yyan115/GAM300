@@ -11,6 +11,64 @@
 #include "Performance/PerformanceProfiler.hpp"
 #include <ECS/NameComponent.hpp>
 
+// --- HELPER: recursive update without repeated lookups ---
+static void UpdateTransformRecursive(
+	ECSManager& ecs,
+	Entity entity,
+	const Matrix4x4* parentMatrix, // Pointer to allow nullptr for roots
+	bool parentChanged)
+{
+	// 1. Get Transform (Direct Array Access ideally, but GetComponent is okay)
+	auto& transform = ecs.GetComponent<Transform>(entity);
+
+	// 2. Determine if we need to recalculate
+	// We update if WE are dirty OR if our PARENT moved
+	bool needsUpdate = transform.isDirty || parentChanged;
+
+	if (needsUpdate) {
+		// Calculate Local Matrix (TRS)
+		Matrix4x4 localMatrix = TransformSystem::CalculateModelMatrix(
+			transform.localPosition,
+			transform.localScale,
+			transform.localRotation.ToEulerDegrees() // Ensure this conversion is cheap!
+		);
+
+		// Calculate World Matrix
+		if (parentMatrix) {
+			transform.worldMatrix = (*parentMatrix) * localMatrix;
+		}
+		else {
+			transform.worldMatrix = localMatrix;
+		}
+
+		// Decompose ONLY if necessary (Optimization: consider removing this if not used by Physics/Audio)
+		transform.worldPosition = Matrix4x4::ExtractTranslation(transform.worldMatrix);
+		transform.worldRotation = Quaternion::FromEulerDegrees(Matrix4x4::ExtractRotation(transform.worldMatrix));
+		transform.worldScale = Matrix4x4::ExtractScale(transform.worldMatrix);
+
+		// Reset dirty flag immediately
+		transform.isDirty = false;
+	}
+
+	// 3. Recurse to Children
+	// We pass 'needsUpdate' as 'parentChanged' to the children.
+	// If we updated, children MUST update.
+	if (ecs.HasComponent<ChildrenComponent>(entity)) {
+		const auto& childrenComp = ecs.GetComponent<ChildrenComponent>(entity);
+		auto& guidRegistry = EntityGUIDRegistry::GetInstance();
+
+		// Pass OUR new world matrix to children
+		const Matrix4x4& myWorldMatrix = transform.worldMatrix;
+
+		for (const auto& childGUID : childrenComp.children) {
+			Entity child = guidRegistry.GetEntityByGUID(childGUID);
+			if (child != static_cast<Entity>(-1)) {
+				UpdateTransformRecursive(ecs, child, &myWorldMatrix, needsUpdate);
+			}
+		}
+	}
+}
+
 void TransformSystem::Initialise() {
 	isInitialised = false;
 
@@ -65,19 +123,59 @@ void TransformSystem::Update() {
 	//	transform.lastScale = transform.localScale;
 	//}
 
-	// Update entities' transform starting from root entities, in a depth-first manner.
 	ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
-	// Update entities' transform starting from root entities, in a depth-first manner.
+
+	// 1. Collect Roots
+	// We only iterate the top-level entities. The recursion handles the rest.
+	std::vector<Entity> rootEntities;
+	rootEntities.reserve(entities.size() / 4); // Heuristic reservation
+
 	for (const auto& entity : entities) {
+		// If no parent, it's a root
 		if (!ecsManager.HasComponent<ParentComponent>(entity)) {
-			TraverseHierarchy(entity, [this](Entity _entity) {
-				UpdateTransform(_entity);
-			});
+			rootEntities.push_back(entity);
 		}
 	}
+
+	// 2. Process Roots in Parallel
+	// Since hierarchy trees don't touch each other, this is thread-safe!
+
+	// Assuming you have access to your scheduler here (e.g., via singleton or passing it in)
+	// If not, use std::for_each with std::execution::par, or simple sequential loop if roots are few.
+
+	// Example using your existing xscheduler syntax:
+	/*
+	xscheduler::task_group transformGroup{ xscheduler::str_v<"TransformGroup">, scheduler };
+
+	size_t batchSize = 10; // Group small roots together
+	for (size_t i = 0; i < rootEntities.size(); i += batchSize) {
+		transformGroup.Submit([&, i]() {
+			for (size_t j = i; j < std::min(i + batchSize, rootEntities.size()); j++) {
+				UpdateTransformRecursive(ecsManager, rootEntities[j], nullptr, false);
+			}
+		});
+	}
+	transformGroup.join();
+	*/
+
+	// SEQUENTIAL FALLBACK (Still much faster than your original code):
+	for (const auto& root : rootEntities) {
+		// Pass nullptr for parent matrix, false for parentChanged (unless root is dirty)
+		UpdateTransformRecursive(ecsManager, root, nullptr, false);
+	}
+
+	//// Update entities' transform starting from root entities, in a depth-first manner.
+	//for (const auto& entity : entities) {
+	//	if (!ecsManager.HasComponent<ParentComponent>(entity)) {
+	//		TraverseHierarchy(entity, [this](Entity _entity) {
+	//			UpdateTransform(_entity);
+	//		});
+	//	}
+	//}
 }
 
 void TransformSystem::PostUpdate() {
+	PROFILE_FUNCTION();
 	// Clear all isDirty flags after all systems have had their turn this frame.
 	ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
 	for (const auto& entity : entities) {
@@ -141,13 +239,13 @@ void TransformSystem::UpdateTransform(Entity entity) {
 }
 
 // Internal helper for TraverseHierarchy with cycle detection
-static void TraverseHierarchyInternal(Entity entity, std::function<void(Entity)>& updateTransform, std::set<Entity>& visited) {
-	// Cycle detection - prevent infinite recursion
-	if (visited.count(entity) > 0) {
-		std::cerr << "[TransformSystem] ERROR: Circular hierarchy reference detected in TraverseHierarchy for entity " << entity << std::endl;
-		return;
-	}
-	visited.insert(entity);
+static void TraverseHierarchyInternal(Entity entity, std::function<void(Entity)>& updateTransform) {
+	//// Cycle detection - prevent infinite recursion
+	//if (visited.count(entity) > 0) {
+	//	std::cerr << "[TransformSystem] ERROR: Circular hierarchy reference detected in TraverseHierarchy for entity " << entity << std::endl;
+	//	return;
+	//}
+	//visited.insert(entity);
 
 	updateTransform(entity);
 
@@ -161,14 +259,14 @@ static void TraverseHierarchyInternal(Entity entity, std::function<void(Entity)>
 			if (child == static_cast<Entity>(-1)) {
 				continue; // Skip this invalid child
 			}
-			TraverseHierarchyInternal(child, updateTransform, visited);
+			TraverseHierarchyInternal(child, updateTransform);
 		}
 	}
 }
 
 void TransformSystem::TraverseHierarchy(Entity entity, std::function<void(Entity)> updateTransform) {
-	std::set<Entity> visited;
-	TraverseHierarchyInternal(entity, updateTransform, visited);
+	//std::set<Entity> visited;
+	TraverseHierarchyInternal(entity, updateTransform);
 }
 
 Matrix4x4 TransformSystem::CalculateModelMatrix(Vector3D const& position, Vector3D const& scale, Vector3D rotation) {
@@ -308,6 +406,19 @@ Quaternion& TransformSystem::GetWorldRotation(Entity entity) {
 Vector3D& TransformSystem::GetWorldScale(Entity entity) {
 	auto& transform = ECSRegistry::GetInstance().GetActiveECSManager().GetComponent<Transform>(entity);
 	return transform.worldScale;
+}
+
+void TransformSystem::SetLocalTransform(Entity entity, const Vector3D& pos, const Quaternion& rot, const Vector3D& scale) {
+	ECSManager& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
+	auto& tr = ecs.GetComponent<Transform>(entity);
+
+	// Set all values directly
+	tr.localPosition = pos;
+	tr.localRotation = rot;
+	tr.localScale = scale;
+
+	// Trigger dirty flag only ONCE
+	SetDirtyRecursive(entity);
 }
 
 // Internal helper for SetDirtyRecursive with cycle detection

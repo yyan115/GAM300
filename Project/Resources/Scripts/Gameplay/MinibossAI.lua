@@ -329,6 +329,15 @@ return Component {
             end)
         end
 
+        -- === Freeze during cinematic ===
+        self._frozenBycinematic = false
+        self._freezeEnemySub = nil
+        if _G.event_bus and _G.event_bus.subscribe then
+            self._freezeEnemySub = _G.event_bus.subscribe("freeze_enemy", function(frozen)
+                self._frozenBycinematic = frozen
+            end)
+        end
+
         -- === Hook event subscription ===
         self._hookSub = nil
         if _G.event_bus and _G.event_bus.subscribe then
@@ -374,6 +383,9 @@ return Component {
         -- This ensures the boss falls to the ground immediately on game start.
         self:EnsureController()
         self:ApplyGravity(dtSec)
+
+        -- Freeze movement during cinematic
+        if self._frozenBycinematic then return end
 
         -- 2. TICK SYSTEM TIMERS (Always run)
         self._hitLockTimer = math.max(0, (self._hitLockTimer or 0) - dtSec)
@@ -893,11 +905,14 @@ return Component {
             if self._comboDamageSub then pcall(function() _G.event_bus.unsubscribe(self._comboDamageSub) end) end
             if self._hookSub then pcall(function() _G.event_bus.unsubscribe(self._hookSub) end) end
             if self._meleeHitSub then pcall(function() _G.event_bus.unsubscribe(self._meleeHitSub) end) end
+            if self._freezeEnemySub then pcall(function() _G.event_bus.unsubscribe(self._freezeEnemySub) end) end
         end
         self._damageSub = nil
         self._comboDamageSub = nil
         self._hookSub = nil
         self._meleeHitSub = nil
+        self._freezeEnemySub = nil
+        self._frozenBycinematic = false
     end,
 
     OnDestroy = function(self)
@@ -914,11 +929,13 @@ return Component {
             if self._comboDamageSub then pcall(function() _G.event_bus.unsubscribe(self._comboDamageSub) end) end
             if self._hookSub then pcall(function() _G.event_bus.unsubscribe(self._hookSub) end) end
             if self._meleeHitSub then pcall(function() _G.event_bus.unsubscribe(self._meleeHitSub) end) end
+            if self._freezeEnemySub then pcall(function() _G.event_bus.unsubscribe(self._freezeEnemySub) end) end
         end
         self._damageSub = nil
         self._comboDamageSub = nil
         self._hookSub = nil
         self._meleeHitSub = nil
+        self._freezeEnemySub = nil
     end,
 
     -------------------------------------------------

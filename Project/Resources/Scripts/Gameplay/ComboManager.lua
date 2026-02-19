@@ -443,8 +443,8 @@ return Component {
             self._animator:SetBool("IsHeavyCharging", false)
         end
         
-        -- Trigger transition (skip for idle to avoid unnecessary triggers)
-        if stateId ~= "idle" then
+        -- Trigger transition (skip for idle and dash to avoid unnecessary triggers/SFX)
+        if stateId ~= "idle" and stateId ~= "dash" then
             self._animator:SetTrigger("Attack")
             if stateId == "chain_attack" then
                 self:_playRandomSFX(self.playerChainSFX)

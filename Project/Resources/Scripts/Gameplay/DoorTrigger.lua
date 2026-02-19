@@ -197,8 +197,9 @@ return Component {
                         weaponPickupActive.isActive = false        
                     end
 
-                    if weaponOnHandActive and not weaponOnHandActive.isActive then                    
+                    if weaponOnHandActive and not weaponOnHandActive.isActive then
                         weaponOnHandActive.isActive = true
+                        _G.playerHasWeapon = true
                     end
                 end
             end
