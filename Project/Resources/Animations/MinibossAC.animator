@@ -53,25 +53,14 @@
     ],
     "states": [
         {
-            "id": "Hurt1",
-            "clipIndex": 5,
+            "id": "Taunt",
+            "clipIndex": 0,
             "loop": false,
             "speed": 2.000000238418579,
             "crossfadeDuration": 0.0,
             "nodePosition": {
-                "x": 169.0,
-                "y": -14.75
-            }
-        },
-        {
-            "id": "Hooked",
-            "clipIndex": 5,
-            "loop": false,
-            "speed": 1.0,
-            "crossfadeDuration": 0.0,
-            "nodePosition": {
-                "x": 918.5,
-                "y": -149.0
+                "x": -55.0,
+                "y": -222.0
             }
         },
         {
@@ -86,14 +75,25 @@
             }
         },
         {
-            "id": "Taunt",
-            "clipIndex": 0,
+            "id": "Hooked",
+            "clipIndex": 5,
+            "loop": false,
+            "speed": 1.0,
+            "crossfadeDuration": 0.0,
+            "nodePosition": {
+                "x": 918.5,
+                "y": -149.0
+            }
+        },
+        {
+            "id": "Hurt1",
+            "clipIndex": 5,
             "loop": false,
             "speed": 2.000000238418579,
             "crossfadeDuration": 0.0,
             "nodePosition": {
-                "x": -55.0,
-                "y": -222.0
+                "x": 169.0,
+                "y": -14.75
             }
         },
         {
@@ -121,7 +121,7 @@
         {
             "id": "Melee Attack",
             "clipIndex": 3,
-            "loop": true,
+            "loop": false,
             "speed": 2.000000238418579,
             "crossfadeDuration": 0.0,
             "nodePosition": {

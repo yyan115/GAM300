@@ -123,9 +123,9 @@ local MOVES = {
     -- For testing individual moves 1 by 1
     Move1 = { cooldown = 2.0, weights = { [1]=0, [2]=20, [3]=10, [4]=0 }, execute = function(ai) print("[Miniboss] Move1: Basic Attack") ai:BasicAttack() end },
     Move2 = { cooldown = 2.5, weights = { [1]=0, [2]=35, [3]=30, [4]=20 }, execute = function(ai) print("[Miniboss] Move2: Burst Fire") ai:BurstFire() end },
-    Move3 = { cooldown = 3.0, weights = { [1]=0,  [2]=35, [3]=30, [4]=20 }, execute = function(ai) print("[Miniboss] Move3: Anti Dodge") ai:AntiDodge() end },
+    Move3 = { cooldown = 3.0, weights = { [1]=10,  [2]=35, [3]=30, [4]=20 }, execute = function(ai) print("[Miniboss] Move3: Anti Dodge") ai:AntiDodge() end },
     Move4 = { cooldown = 4.0, weights = { [1]=0,  [2]=10,  [3]=30, [4]=30 }, execute = function(ai) print("[Miniboss] Move4: Fate Sealed") ai:FateSealed() end },
-    Move5 = { cooldown = 5.0, weights = { [1]=10,  [2]=0,  [3]=0,  [4]=30 }, execute = function(ai) print("[Miniboss] Move5: Death Lotus") ai:DeathLotus() end },
+    Move5 = { cooldown = 5.0, weights = { [1]=0,  [2]=0,  [3]=0,  [4]=30 }, execute = function(ai) print("[Miniboss] Move5: Death Lotus") ai:DeathLotus() end },
 }
 
 local MOVE_ORDER = { "Move1", "Move2", "Move3", "Move4", "Move5" }
@@ -1124,14 +1124,16 @@ return Component {
         return true
     end,
 
-    -- 4-fan, no centered aimed shot: targets are perpendicular offsets only
-    SpawnKnifeFan4_NoCenter = function(self, spread1, spread2)
+    -- 8-fan, no centered aimed shot: targets are perpendicular offsets only
+    SpawnKnifeFan8_NoCenter = function(self, spread1, spread2, spread3, spread4)
         spread1 = spread1 or 0.8
         spread2 = spread2 or 1.6
+        spread3 = spread3 or 2.4
+        spread4 = spread4 or 3.2
 
-        local knives = KnifePool.RequestMany(4)
+        local knives = KnifePool.RequestMany(8)
         if not knives then
-            print("[Miniboss][Knife] RequestMany(3) FAILED")
+            print("[Miniboss][Knife] RequestMany(8) FAILED")
             return false
         end
 
@@ -1156,26 +1158,30 @@ return Component {
         local rx, rz = -dz, dx
 
         local token = self:_NewVolleyToken()
-        for i=1,4 do
+        for i=1,8 do
             knives[i]._reservedToken = token
             knives[i].reserved = true
         end
 
         local targets = {
+            { px - rx*spread4, py, pz - rz*spread4, "L4" },
+            { px - rx*spread3, py, pz - rz*spread3, "L3" },
             { px - rx*spread2, py, pz - rz*spread2, "L2" },
             { px - rx*spread1, py, pz - rz*spread1, "L1" },
             { px + rx*spread1, py, pz + rz*spread1, "R1" },
             { px + rx*spread2, py, pz + rz*spread2, "R2" },
+            { px + rx*spread3, py, pz + rz*spread3, "R3" },
+            { px + rx*spread4, py, pz + rz*spread4, "R4" },
         }
 
         local okAll = true
-        for i=1,4 do
+        for i=1,8 do
             local t = targets[i]
             okAll = self:_LaunchKnife(knives[i], sx, sy, sz, t[1], t[2], t[3], token, t[4]) and okAll
         end
 
         if not okAll then
-            for i=1,4 do if knives[i] then knives[i]:Reset() end end
+            for i=1,8 do if knives[i] then knives[i]:Reset() end end
             return false
         end
         return true
@@ -1310,7 +1316,7 @@ return Component {
             if m.step == 0 then
                 self:FacePlayer()
                 print("[MinibossAI] SPAWNING AntiDodge")
-                self:SpawnKnifeFan4_NoCenter(m.spread1 or 0.9, m.spread2 or 1.8)
+                self:SpawnKnifeFan8_NoCenter(m.spread1 or 0.9, m.spread2 or 1.8, m.spread3 or 2.7, m.spread2 or 3.6)
                 m.step = 1
                 m.doneAt = m.t + (m.postDelay or 0.45)
             end
@@ -1352,6 +1358,8 @@ return Component {
 
                     m.dx, m.dz = dx, dz
                     m.dashT = 0
+
+                    self._animator:SetTrigger("Melee")
                     m.step = 1
                 end
 
@@ -1476,12 +1484,14 @@ return Component {
         self:_BeginMove("AntiDodge", {
             spread1 = 0.25,
             spread2 = 0.35,
+            spread3 = 0.65,
+            spread4 = 1.15,
             postDelay = 0.45
         })
     end,
 
     FateSealed = function(self)
-        self._animator:SetTrigger("Melee")
+        
         playRandomSFX(self._audio, self.enemyMeleeAttackSFX)
         self:_BeginMove("FateSealed", {
             chargeDur = 2.00,
