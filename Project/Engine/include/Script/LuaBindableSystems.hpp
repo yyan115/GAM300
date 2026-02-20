@@ -494,20 +494,18 @@ namespace TimeWrappers {
         return static_cast<float>(TimeManager::GetFps());
     }
     
-    // Time scale for slow-motion/fast-forward effects (static variable)
-    static float s_timeScale = 1.0f;
-    
     inline float GetTimeScale() {
-        return s_timeScale;
+        return TimeManager::GetTimeScale();
     }
-    
+
     inline void SetTimeScale(float scale) {
-        s_timeScale = scale;
+        TimeManager::SetTimeScale(scale);
     }
-    
+
     // Scaled delta time for gameplay (respects time scale)
+    // TimeManager::GetDeltaTime() is already scaled, so this just returns it.
     inline float GetScaledDeltaTime() {
-        return static_cast<float>(TimeManager::GetDeltaTime()) * s_timeScale;
+        return static_cast<float>(TimeManager::GetDeltaTime());
     }
 
     // Unscaled delta time - NOT affected by pause (always real frame time)

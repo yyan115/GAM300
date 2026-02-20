@@ -89,9 +89,11 @@ public:
         // Sensor vs Sensor: trigger volumes don't need to detect each other
         if (a == Layers::SENSOR && b == Layers::SENSOR) return false;
 
-        // Sensor vs Character: allow contact reporting (sensors don't apply forces due to SetIsSensor)
-        // This lets weapon triggers detect overlap with enemy character controllers
-
+        // Sensor vs Character: block — weapon sensors detect enemies via HURTBOX child entities,
+        // not via the CHARACTER body. This prevents the weapon collider from interacting with
+        // the player's own character controller and causing unwanted pushes/jitter.
+        if ((a == Layers::SENSOR && b == Layers::CHARACTER) ||
+            (a == Layers::CHARACTER && b == Layers::SENSOR)) return false;
 
         // Nav layers vs Nav layers: navigation geometry never collides with itself
         if ((a == Layers::NAV_GROUND || a == Layers::NAV_OBSTACLE) &&
