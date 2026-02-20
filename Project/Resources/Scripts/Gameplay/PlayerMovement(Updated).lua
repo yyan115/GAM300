@@ -168,7 +168,8 @@ return Component {
         self._footstepTimer = 0
         self._wasRunning = false
 
-        self._initialSpawnPoint = self._transform.worldPosition
+        local pos = self._transform.worldPosition
+        self._initialSpawnPoint = { x = pos.x, y = pos.y, z = pos.z }
     end,
 
     RespawnPlayer = function(self)
@@ -184,10 +185,12 @@ return Component {
             --print("[PlayerMovement] RespawnPlayer: self._activatedCheckpoint is null")
         end
 
+        local respawnPos = self._initialSpawnPoint
         if self._activatedCheckpoint then
             local checkpointTransform = GetComponent(self._activatedCheckpoint, "Transform")
             local checkpointPos = checkpointTransform.worldPosition
             self:SetPosition(checkpointPos.x, checkpointPos.y, checkpointPos.z)
+            respawnPos = checkpointPos
         elseif self._initialSpawnPoint then
             self:SetPosition(self._initialSpawnPoint.x, self._initialSpawnPoint.y, self._initialSpawnPoint.z)
         end
@@ -200,12 +203,16 @@ return Component {
         self._animator:SetBool("IsDead", false)
         self._justRespawnedPlayer = true
 
-        print(string.format("[PlayerMovement] Respawned player to %f %f %f", checkpointPos.x, checkpointPos.y, checkpointPos.z))
+        if event_bus and event_bus.publish then
+            event_bus.publish("playerRespawned", respawnPos)
+            print(string.format("[PlayerMovement] Respawned player to %f %f %f", respawnPos.x, respawnPos.y, respawnPos.z))
+        end
+
     end,
 
     Update = function(self, dt)
         if self._respawnPlayer then
-            self.RespawnPlayer(self)
+            self:RespawnPlayer()
             return
         end
 

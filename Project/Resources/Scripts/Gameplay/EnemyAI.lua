@@ -398,7 +398,7 @@ return Component {
         end
 
         -- Save the initial spawn position so the enemy can teleport back here when player respawns.
-        self._initialPos = CharacterController.GetPosition(self._controller)
+        self._initialPos = { x = self._spawnX, y = self._spawnY, z = self._spawnZ }
     end,
 
     Update = function(self, dt)

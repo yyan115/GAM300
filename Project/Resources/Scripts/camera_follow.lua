@@ -193,6 +193,18 @@ return Component {
                 self._chainAimInitialized = false
             end
             end)
+
+            self._teleportToPlayer = false
+            self._playerRespawnedSub = event_bus.subscribe("playerRespawned", function(payload)
+                if not payload then return end
+                local x = payload.x or payload[1] or 0.0
+                local y = payload.y or payload[2] or 0.0
+                local z = payload.z or payload[3] or 0.0
+                self._targetPos.x = x
+                self._targetPos.y = y
+                self._targetPos.z = z
+                self._teleportToPlayer = true
+            end)
         end
     end,
 
@@ -467,6 +479,12 @@ return Component {
     Update = function(self, dt)
         if not (self.GetPosition and self.SetPosition and self.SetRotation) then return end
         if not self._hasTarget then return end
+        if self._teleportToPlayer then
+            print(string.format("[CameraFollow] Teleporting camera to %f %f %f", self._targetPos.x, self._targetPos.y, self._targetPos.z))
+            self:SetPosition(self._targetPos.x, self._targetPos.y, self._targetPos.z)
+            self._teleportToPlayer = false
+            return
+        end
 
         -- ==========================================
         -- CRITICAL: Update C++ cache timing FIRST
