@@ -273,7 +273,7 @@ return Component {
     end,
 
     Update = function(self, dt)
-        if not self._inputInterpreter or not self._animator then return end
+        if not self._inputInterpreter or not self._animator or Time.IsPaused() then return end
 
         self._stateTimer = self._stateTimer + dt
         local state = self._currentStateData
@@ -443,8 +443,8 @@ return Component {
             self._animator:SetBool("IsHeavyCharging", false)
         end
         
-        -- Trigger transition (skip for idle to avoid unnecessary triggers)
-        if stateId ~= "idle" then
+        -- Trigger transition (skip for idle and dash to avoid unnecessary triggers/SFX)
+        if stateId ~= "idle" and stateId ~= "dash" then
             self._animator:SetTrigger("Attack")
             if stateId == "chain_attack" then
                 self:_playRandomSFX(self.playerChainSFX)

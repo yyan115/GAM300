@@ -102,6 +102,15 @@ else()
     endif()
 endif()
 
+# Pass Tracy profiler GUI path to Editor code
+if(WIN32 AND EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/../Libraries/tracy/tracy-profiler.exe")
+    # Use forward slashes for C++ string compatibility
+    file(TO_CMAKE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/../Libraries/tracy" TRACY_GUI_DIR_CMAKE)
+    target_compile_definitions(Editor PRIVATE
+        TRACY_PROFILER_PATH="${TRACY_GUI_DIR_CMAKE}/tracy-profiler.exe"
+    )
+endif()
+
 # Copy resources to editor output directory
 # TODO: Ideally Editor should use ../../Resources directly (single source of truth for editing)
 # and not copy resources, but there's a bug currently requiring this workaround.

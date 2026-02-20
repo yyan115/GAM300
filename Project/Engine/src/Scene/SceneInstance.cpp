@@ -184,7 +184,6 @@ void SceneInstance::Update(double dt)
 
 void SceneInstance::Draw()
 {
-
 	ECSManager &mainECS = ECSRegistry::GetInstance().GetECSManager(scenePath);
 
 	GraphicsManager &gfxManager = GraphicsManager::GetInstance();
@@ -212,11 +211,11 @@ void SceneInstance::Draw()
 	}
 
 	// Update transforms before camera (camera needs up-to-date transform matrices)
-	mainECS.transformSystem->Update();
+	//mainECS.transformSystem->Update();
 
 	// Update camera system (detects camera changes, switches cameras, updates from components)
 	// This needs to run even in edit mode so the game panel shows the correct camera
-	mainECS.cameraSystem->Update();
+	//mainECS.cameraSystem->Update();
 
 	gfxManager.SetCamera(mainECS.cameraSystem->GetActiveCamera());
 

@@ -1,4 +1,5 @@
 require("extension.engine_bootstrap")
+local event_bus = _G.event_bus
 local Component = require("extension.mono_helper")
 
 return Component {
@@ -114,6 +115,10 @@ return Component {
         end
 
         Time.SetPaused(false)
+
+        if event_bus and event_bus.publish then
+            event_bus.publish("uiButtonPressed", true)
+        end
     end,
 
     OnClickSettingButton = function(self)

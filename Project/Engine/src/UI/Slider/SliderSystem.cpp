@@ -1,6 +1,5 @@
 #include "pch.h"
 #include "UI/Slider/SliderSystem.hpp"
-#include "Performance/PerformanceProfiler.hpp"
 #include "UI/Slider/SliderComponent.hpp"
 #include "ECS/ECSManager.hpp"
 #include "ECS/ECSRegistry.hpp"

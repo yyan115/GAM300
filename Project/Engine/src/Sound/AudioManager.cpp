@@ -6,7 +6,6 @@
 #include <atomic>
 #include <shared_mutex>
 #include "Logging.hpp"
-#include "Performance/PerformanceProfiler.hpp"
 
 #ifdef ANDROID
 #include <android/log.h>

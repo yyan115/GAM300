@@ -717,16 +717,11 @@ void SceneHierarchyPanel::DrawEntityNode(const std::string& entityName, Entity e
         ImGui::Separator();
 
         if (ImGui::MenuItem("Duplicate", "Ctrl+D")) {
-            if (isMultiSelect) {
-                std::vector<Entity> duplicated = DuplicateEntities(selectedEntities);
-                if (!duplicated.empty()) {
-                    GUIManager::SetSelectedEntities(duplicated);
-                }
-            } else {
-                Entity duplicatedEntity = DuplicateEntity(entityId);
-                if (duplicatedEntity != static_cast<Entity>(-1)) {
-                    GUIManager::SetSelectedEntity(duplicatedEntity);
-                }
+            // Always route through DuplicateEntities so children are included
+            std::vector<Entity> entitiesToDup = isMultiSelect ? selectedEntities : std::vector<Entity>{ entityId };
+            std::vector<Entity> duplicated = DuplicateEntities(entitiesToDup);
+            if (!duplicated.empty()) {
+                GUIManager::SetSelectedEntities(duplicated);
             }
         }
         if (ImGui::MenuItem("Rename", "F2", false, !isMultiSelect)) {
@@ -1718,6 +1713,60 @@ void SceneHierarchyPanel::PasteEntities() {
     // Note: Clipboard is NOT cleared after paste, allowing multiple pastes
 }
 
+Entity SceneHierarchyPanel::DuplicateEntityWithChildren(Entity sourceEntity, Entity newParentOverride) {
+    ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
+    EntityGUIDRegistry& guidRegistry = EntityGUIDRegistry::GetInstance();
+
+    // Duplicate the entity itself (all components, snapshot already taken by caller)
+    Entity newEntity = DuplicateEntity(sourceEntity, false);
+    if (newEntity == static_cast<Entity>(-1)) return newEntity;
+
+    // If a new parent is specified, reparent the new entity there instead of where
+    // DuplicateEntity() placed it (which is under the source's original parent).
+    if (newParentOverride != static_cast<Entity>(-1)) {
+        GUID_128 newParentGUID = guidRegistry.GetGUIDByEntity(newParentOverride);
+        GUID_128 newEntityGUID = guidRegistry.GetGUIDByEntity(newEntity);
+
+        // Remove newEntity from the parent that DuplicateEntity() assigned it to
+        if (ecsManager.HasComponent<ParentComponent>(newEntity)) {
+            GUID_128 currentParentGUID = ecsManager.GetComponent<ParentComponent>(newEntity).parent;
+            Entity currentParent = guidRegistry.GetEntityByGUID(currentParentGUID);
+            if (currentParent != static_cast<Entity>(-1) &&
+                ecsManager.HasComponent<ChildrenComponent>(currentParent)) {
+                auto& children = ecsManager.GetComponent<ChildrenComponent>(currentParent).children;
+                children.erase(std::remove(children.begin(), children.end(), newEntityGUID), children.end());
+            }
+            ecsManager.GetComponent<ParentComponent>(newEntity).parent = newParentGUID;
+        } else {
+            ecsManager.AddComponent<ParentComponent>(newEntity, ParentComponent{ newParentGUID });
+        }
+
+        // Register newEntity as a child of newParentOverride
+        if (ecsManager.HasComponent<ChildrenComponent>(newParentOverride)) {
+            ecsManager.GetComponent<ChildrenComponent>(newParentOverride).children.push_back(newEntityGUID);
+        } else {
+            ChildrenComponent childrenComp;
+            childrenComp.children.push_back(newEntityGUID);
+            ecsManager.AddComponent<ChildrenComponent>(newParentOverride, childrenComp);
+        }
+    }
+
+    // Recursively duplicate all children of the source, parented under newEntity
+    if (ecsManager.HasComponent<ChildrenComponent>(sourceEntity)) {
+        // Copy the list before recursing - DuplicateEntity temporarily modifies it
+        const std::vector<GUID_128> childGUIDs =
+            ecsManager.GetComponent<ChildrenComponent>(sourceEntity).children;
+        for (const GUID_128& childGUID : childGUIDs) {
+            Entity child = guidRegistry.GetEntityByGUID(childGUID);
+            if (child != static_cast<Entity>(-1)) {
+                DuplicateEntityWithChildren(child, newEntity);
+            }
+        }
+    }
+
+    return newEntity;
+}
+
 std::vector<Entity> SceneHierarchyPanel::DuplicateEntities(const std::vector<Entity>& sourceEntities) {
     std::vector<Entity> duplicatedEntities;
     ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
@@ -1732,9 +1781,31 @@ std::vector<Entity> SceneHierarchyPanel::DuplicateEntities(const std::vector<Ent
     // Take snapshot before duplicating (for undo)
     SnapshotManager::GetInstance().TakeSnapshot(snapshotDesc);
 
-    for (Entity sourceEntity : sourceEntities) {
-        // Pass false to skip internal snapshot (we already took one)
-        Entity duplicated = DuplicateEntity(sourceEntity, false);
+    // When multiple entities are selected, skip those whose ancestor is also selected -
+    // they will be duplicated recursively as part of their ancestor's copy.
+    EntityGUIDRegistry& guidRegistry = EntityGUIDRegistry::GetInstance();
+    std::unordered_set<Entity> selectionSet(sourceEntities.begin(), sourceEntities.end());
+    std::vector<Entity> rootsOfSelection;
+    for (Entity entity : sourceEntities) {
+        bool hasAncestorInSelection = false;
+        Entity current = entity;
+        while (ecsManager.HasComponent<ParentComponent>(current)) {
+            GUID_128 parentGUID = ecsManager.GetComponent<ParentComponent>(current).parent;
+            Entity parent = guidRegistry.GetEntityByGUID(parentGUID);
+            if (parent == static_cast<Entity>(-1)) break;
+            if (selectionSet.count(parent)) {
+                hasAncestorInSelection = true;
+                break;
+            }
+            current = parent;
+        }
+        if (!hasAncestorInSelection) {
+            rootsOfSelection.push_back(entity);
+        }
+    }
+
+    for (Entity sourceEntity : rootsOfSelection) {
+        Entity duplicated = DuplicateEntityWithChildren(sourceEntity, static_cast<Entity>(-1));
         if (duplicated != static_cast<Entity>(-1)) {
             duplicatedEntities.push_back(duplicated);
         }

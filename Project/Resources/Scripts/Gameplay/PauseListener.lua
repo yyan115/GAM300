@@ -1,9 +1,8 @@
 require("extension.engine_bootstrap")
 
 local Component = require("extension.mono_helper")
-
 local TransformMixin = require("extension.transform_mixin")
-
+local event_bus = _G.event_bus
 
 return Component {
     mixins = { TransformMixin },
@@ -47,6 +46,16 @@ return Component {
                 end
             end
         end
+
+        -- Subscribe to player dead and player respawn events to prevent pausing when the player is dead.
+        self._playerDead = false
+        self._playerDeadSub = event_bus.subscribe("playerDead", function(dead)
+            self._playerDead = true
+        end)
+
+        self._respawnPlayerSub = event_bus.subscribe("respawnPlayer", function(respawn)
+            self._playerDead = false
+        end)
     end,
 
     Update = function(self, dt)
@@ -61,8 +70,8 @@ return Component {
         end
 
         local isPressed = Input.IsActionJustPressed("Pause")
-        -- Only fire if the button is pressed AND our cooldown has expired
-        if isPressed and self._pauseTimer <= 0 then
+        -- Only fire if the button is pressed AND our cooldown has expired AND the player is not dead
+        if isPressed and self._pauseTimer <= 0 and not self._playerDead then
             self._pauseTimer = 0.1  -- Cooldown to prevent double-fire
 
             if self._confirmComp.isActive then

@@ -161,6 +161,39 @@ namespace EngineLogging {
     
 }
 
+// =============================================================================
+// TRACY FRAME PROFILER INTEGRATION
+// =============================================================================
+// When TRACY_ENABLE is defined (all builds except Release), these macros
+// forward to the Tracy profiler for timeline visualization in the Tracy GUI.
+// In Release builds, they compile to nothing (zero overhead).
+// =============================================================================
+
+#ifdef TRACY_ENABLE
+#include "tracy/Tracy.hpp"
+#include <chrono>
+#define ENGINE_FRAME_MARK          FrameMark
+#define PROFILE_FUNCTION()          ZoneScoped
+#define PROFILE_SCOPED(name)  ZoneScopedN(name)
+#define PROFILE_MESSAGE(msg, len) TracyMessage(msg, len)
+#define PROFILE_PLOT(name, val)   TracyPlot(name, val)
+#define PROFILE_PLOT_TIMED(name, stmt) do {                                  \
+        auto _t = std::chrono::high_resolution_clock::now();                 \
+        stmt;                                                                \
+        auto _elapsed = std::chrono::high_resolution_clock::now() - _t;      \
+        auto _us = std::chrono::duration_cast<std::chrono::microseconds>(    \
+            _elapsed).count();                                               \
+        TracyPlot(name, _us / 1000.0);                                       \
+    } while (0)
+#else
+#define ENGINE_FRAME_MARK          ((void)0)
+#define PROFILE_FUNCTION()          ((void)0)
+#define PROFILE_SCOPED(name)  ((void)0)
+#define PROFILE_MESSAGE(msg, len) ((void)0)
+#define PROFILE_PLOT(name, val)   ((void)0)
+#define PROFILE_PLOT_TIMED(name, stmt) stmt
+#endif
+
 #ifdef ENGINE_LOGGING_DISABLED
 
 // All logging compiles to nothing

@@ -4,6 +4,7 @@
 #include <Physics/PhysicsSystem.hpp>
 #include <Physics/Kinematics/CharacterControllerSystem.hpp>
 #include <TimeManager.hpp>
+#include "Logging.hpp"
 
 void SequentialSystemOrchestrator::Update() {
 	auto& mainECS = ECSRegistry::GetInstance().GetActiveECSManager();
@@ -12,28 +13,27 @@ void SequentialSystemOrchestrator::Update() {
 	mainECS.ClearActiveHierarchyCache();
 
 	// Update systems.
-	// Use actual delta time, not fixed - these are called once per frame, not in a fixed timestep loop
-	mainECS.physicsSystem->Update((float)TimeManager::GetDeltaTime(), mainECS);
-	mainECS.characterControllerSystem->Update((float)TimeManager::GetDeltaTime(), mainECS);
-	mainECS.transformSystem->Update();
+	PROFILE_PLOT_TIMED("Script",              mainECS.scriptSystem->Update());
+	PROFILE_PLOT_TIMED("Physics",             mainECS.physicsSystem->Update((float)TimeManager::GetDeltaTime(), mainECS));
+	PROFILE_PLOT_TIMED("CharacterController", mainECS.characterControllerSystem->Update((float)TimeManager::GetDeltaTime(), mainECS));
+	PROFILE_PLOT_TIMED("Transform",           mainECS.transformSystem->Update());
+	PROFILE_PLOT_TIMED("Animation",           mainECS.animationSystem->Update());
+	PROFILE_PLOT_TIMED("Camera",              mainECS.cameraSystem->Update());
+	PROFILE_PLOT_TIMED("Lighting",            mainECS.lightingSystem->Update());
 
-	mainECS.animationSystem->Update();
-
-	mainECS.cameraSystem->Update();
-	mainECS.lightingSystem->Update();
-	mainECS.scriptSystem->Update();
 	// Scripts may have changed entity active states; flush cache so subsequent systems see updates
 	mainECS.ClearActiveHierarchyCache();
-	mainECS.uiAnchorSystem->Update();  // Must run before button/slider to update positions
-	mainECS.buttonSystem->Update();
-	mainECS.sliderSystem->Update();
-	mainECS.videoSystem->Update((float)TimeManager::GetFixedDeltaTime());
-	mainECS.spriteAnimationSystem->Update();
+
+	PROFILE_PLOT_TIMED("UIAnchor",        mainECS.uiAnchorSystem->Update());
+	PROFILE_PLOT_TIMED("Button",          mainECS.buttonSystem->Update());
+	PROFILE_PLOT_TIMED("Slider",          mainECS.sliderSystem->Update());
+	PROFILE_PLOT_TIMED("Video",           mainECS.videoSystem->Update((float)TimeManager::GetFixedDeltaTime()));
+	PROFILE_PLOT_TIMED("SpriteAnimation", mainECS.spriteAnimationSystem->Update());
 
 	// Update audio (handles AudioManager FMOD update + AudioComponent updates)
 	if (mainECS.audioSystem)
 	{
-		mainECS.audioSystem->Update((float)TimeManager::GetDeltaTime());
+		PROFILE_PLOT_TIMED("Audio", mainECS.audioSystem->Update((float)TimeManager::GetDeltaTime()));
 	}
 }
 
@@ -41,24 +41,13 @@ void SequentialSystemOrchestrator::Draw() {
 	auto& mainECS = ECSRegistry::GetInstance().GetActiveECSManager();
 
 	if (mainECS.modelSystem)
-	{
-		mainECS.modelSystem->Update();
-	}
+		PROFILE_PLOT_TIMED("Model", mainECS.modelSystem->Update());
 	if (mainECS.textSystem)
-	{
-		mainECS.textSystem->Update();
-	}
-
+		PROFILE_PLOT_TIMED("Text", mainECS.textSystem->Update());
 	if (mainECS.spriteSystem)
-	{
-		mainECS.spriteSystem->Update();
-	}
-
+		PROFILE_PLOT_TIMED("Sprite", mainECS.spriteSystem->Update());
 	if (mainECS.particleSystem)
-	{
-		mainECS.particleSystem->Update();
-	}
-
+		PROFILE_PLOT_TIMED("Particle", mainECS.particleSystem->Update());
 	if (mainECS.debugDrawSystem)
 	{
 		mainECS.debugDrawSystem->Update();

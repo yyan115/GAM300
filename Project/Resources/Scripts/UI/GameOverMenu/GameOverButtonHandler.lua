@@ -20,6 +20,7 @@ return Component {
         
         if event_bus and event_bus.publish then
             event_bus.publish("respawnPlayer", true)
+            event_bus.publish("uiButtonPressed", true)
         end
 
         -- Restart main BGM and ambience when the player continues

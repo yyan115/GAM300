@@ -1,7 +1,6 @@
 #pragma once
 // ButtonSystem.hpp
 #include "ECS/System.hpp"
-#include <Performance/PerformanceProfiler.hpp>
 #include <Graphics/GraphicsManager.hpp>
 #include <Input/InputManager.h>
 class ECSManager;

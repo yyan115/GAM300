@@ -4,7 +4,6 @@
 #include "ECS/ECSRegistry.hpp"
 #include "Transform/TransformComponent.hpp"
 #include "Graphics/GraphicsManager.hpp"
-#include "Performance/PerformanceProfiler.hpp"
 #include "ECS/ActiveComponent.hpp"
 #include "Asset Manager/ResourceManager.hpp"
 

@@ -1,7 +1,6 @@
 // ButtonSystem.cpp
 #include "pch.h"
 #include "UI/Button/ButtonSystem.hpp"
-#include "Performance/PerformanceProfiler.hpp"
 #include "UI/Button/ButtonComponent.hpp"
 #include "ECS/ECSManager.hpp"
 #include "Logging.hpp"

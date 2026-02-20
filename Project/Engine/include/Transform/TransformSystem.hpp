@@ -31,6 +31,8 @@ public:
 	void ENGINE_API SetWorldScale(Entity entity, Vector3D scale);
 	void ENGINE_API SetLocalScale(Entity entity, Vector3D scale);
 
+	void SetLocalTransform(Entity entity, const Vector3D& pos, const Quaternion& rot, const Vector3D& scale);
+
 	Vector3D& GetWorldPosition(Entity entity);
 	Quaternion& GetWorldRotation(Entity entity);
 	Vector3D& GetWorldScale(Entity entity);

@@ -1,12 +1,12 @@
 
 #include "pch.h"
 #include "Animation/AnimationSystem.hpp"
-#include "Performance/PerformanceProfiler.hpp"
 #include "Animation/AnimatorController.hpp"
 #include "ECS/ECSRegistry.hpp"
 #include "ECS/ActiveComponent.hpp"
 #include "TimeManager.hpp"
 #include "Engine.h"
+#include <execution>
 
 bool AnimationSystem::Initialise()
 {
@@ -98,6 +98,62 @@ void AnimationSystem::Update()
 	float dt = static_cast<float>(TimeManager::GetDeltaTime());
 
 	ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
+
+	//// ------------------------------------------------------------------------
+	//// STEP 1: COLLECTION PHASE (Sequential)
+	//// ------------------------------------------------------------------------
+	//// Safely gather all entities that actually need animation updates.
+	//// We do this sequentially because checking hierarchy and pushing to a vector
+	//// is extremely fast, and doing it in parallel requires expensive mutex locks.
+
+	//std::vector<Entity> activeEntities;
+	//activeEntities.reserve(entities.size()); // Prevent reallocation
+
+	//for (const auto& entity : entities)
+	//{
+	//	if (!ecsManager.IsEntityActiveInHierarchy(entity)) {
+	//		continue;
+	//	}
+
+	//	auto& animComp = ecsManager.GetComponent<AnimationComponent>(entity);
+	//	if (!animComp.enabled) {
+	//		continue;
+	//	}
+
+	//	auto& transform = ecsManager.GetComponent<Transform>(entity);
+	//	auto camera = ecsManager.cameraSystem->GetActiveCamera(); // Assuming you can get the camera pos
+
+	//	// Simple distance-based frustum check
+	//	float distSq = glm::length(transform.worldPosition.ConvertToGLM() - camera->Position);
+
+	//	// If the entity is more than 30 units away, don't update its animation this frame!
+	//	if (distSq > 30.0f) {
+	//		//std::cout << "[AnimationSystem] Entity > 100 units away, skipping animation update." << std::endl;
+	//		continue;
+	//	}
+
+	//	activeEntities.push_back(entity);
+	//}
+
+	//// ------------------------------------------------------------------------
+	//// STEP 2: PROCESSING PHASE (Parallel)
+	//// ------------------------------------------------------------------------
+	//// Divide the heavy matrix math across all available CPU cores.
+
+	//std::for_each(std::execution::par, activeEntities.begin(), activeEntities.end(),
+	//	[&ecsManager, dt](Entity entity)
+	//	{
+	//		// This lambda is executed simultaneously across multiple threads
+	//		auto& animComp = ecsManager.GetComponent<AnimationComponent>(entity);
+
+	//		if (auto* fsm = animComp.GetStateMachine())
+	//		{
+	//			fsm->Update(dt, entity);
+	//		}
+
+	//		animComp.Update(dt, entity);
+	//	});
+
 	for (const auto& entity : entities)
 	{
 		// Skip entities that are inactive in hierarchy (checks parents too)
@@ -108,6 +164,18 @@ void AnimationSystem::Update()
 		auto& animComp = ecsManager.GetComponent<AnimationComponent>(entity);
 
 		if (!animComp.enabled) {
+			continue;
+		}
+
+		auto& transform = ecsManager.GetComponent<Transform>(entity);
+		auto camera = ecsManager.cameraSystem->GetActiveCamera(); // Assuming you can get the camera pos
+
+		// Simple distance-based frustum check
+		float distSq = glm::length(transform.worldPosition.ConvertToGLM() - camera->Position);
+
+		// If the entity is more than 30 units away, don't update its animation this frame!
+		if (distSq > 30.0f) {
+			//std::cout << "[AnimationSystem] Entity > 100 units away, skipping animation update." << std::endl;
 			continue;
 		}
 

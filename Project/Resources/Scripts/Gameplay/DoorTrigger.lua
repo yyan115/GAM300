@@ -4,9 +4,10 @@ require("extension.engine_bootstrap")
 local Component = require("extension.mono_helper")
 local TransformMixin = require("extension.transform_mixin")
 
-local Engine = _G.Engine
-local Input  = _G.Input
-local Time   = _G.Time
+local Engine    = _G.Engine
+local Input     = _G.Input
+local Time      = _G.Time
+local event_bus = _G.event_bus
 
 local DoorTriggerMode = {
     InputKeyDown = 1,
@@ -31,6 +32,11 @@ local function OpenDoors(self)
     self.isOpening = true
     self.openingTime = 0.0
     self.isActivatable = false
+
+    if event_bus and event_bus.publish then
+        event_bus.publish("cinematic.trigger", true)
+        print("[DoorTrigger] Cinematic mode ENABLED")
+    end
 end
 
 local function Lerp(a, b, t)
@@ -197,8 +203,9 @@ return Component {
                         weaponPickupActive.isActive = false        
                     end
 
-                    if weaponOnHandActive and not weaponOnHandActive.isActive then                    
+                    if weaponOnHandActive and not weaponOnHandActive.isActive then
                         weaponOnHandActive.isActive = true
+                        _G.playerHasWeapon = true
                     end
                 end
             end

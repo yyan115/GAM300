@@ -9,7 +9,6 @@
 #include "Asset Manager/AssetManager.hpp"
 #include "Asset Manager/ResourceManager.hpp"
 #include "Logging.hpp"
-#include "Performance/PerformanceProfiler.hpp"
 
 #ifdef ANDROID
 #include <android/log.h>

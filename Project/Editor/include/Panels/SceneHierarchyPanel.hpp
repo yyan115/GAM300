@@ -64,6 +64,10 @@ private:
     // Entity duplication (takeSnapshot = true for single entity, false when called from DuplicateEntities)
     Entity DuplicateEntity(Entity sourceEntity, bool takeSnapshot = true);
 
+    // Recursively duplicates an entity and all its children.
+    // newParentOverride: if valid, reparents the new entity under this entity instead of the source's parent.
+    Entity DuplicateEntityWithChildren(Entity sourceEntity, Entity newParentOverride);
+
     // Entity clipboard (for copy/paste) - private helpers
 
     // Range selection helper

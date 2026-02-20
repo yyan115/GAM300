@@ -8,6 +8,8 @@ local Input = _G.Input
 local HurtTrigger = "Hurt"
 
 local function PlayerTakeDmg(self, dmg)
+    if self._currentHealth <= 0 then return end
+    
     --print("[PlayerTakeDmg] Animator set trigger Hurt")
     self._animator:SetTrigger(HurtTrigger)
     self._hurtTriggered = true
@@ -36,13 +38,17 @@ return Component {
     fields = {
         Health = 10,
         IFrameDuration = 1.0,
+        YDeathThreshold = -3.0,
     },
 
     Awake = function(self)
         self._iFrameDuration = self.IFrameDuration
         self._animator  = self:GetComponent("AnimationComponent")
+        self._transform = self:GetComponent("Transform")
         self._maxHealth = self.Health
         self._currentHealth = self._maxHealth
+        self._yDeathThreshold = self.YDeathThreshold
+        self._playerDeathTriggered = false
 
         if event_bus and event_bus.subscribe then
             print("[PlayerHealth] Subscribing to knifeHitPlayerDmg")
@@ -174,11 +180,13 @@ return Component {
         end
 
         self._respawnPlayer = false
+        self._playerDeathTriggered = false
     end,
 
     Update = function(self, dt)
         if self._respawnPlayer then
             self.RespawnPlayer(self)
+            return
         end
 
         if self._hurtTriggered then
@@ -194,6 +202,19 @@ return Component {
             if self._iFrameDuration <= 0 then
                 self._iFrameDuration = self.IFrameDuration
                 self._isIFrame = false
+            end
+        end
+
+        -- Fall out of map -> death
+        if self._transform then
+            local y = self._transform.worldPosition.y
+            if y <= self._yDeathThreshold and not self._playerDeathTriggered then
+                self._currentHealth = 0
+                self._animator:SetBool("IsDead", true)
+                event_bus.publish("playerDead", true)
+                event_bus.publish("playerMaxhealth", self._maxHealth)
+                event_bus.publish("playerCurrentHealth", self._currentHealth)
+                self._playerDeathTriggered = true
             end
         end
     end,

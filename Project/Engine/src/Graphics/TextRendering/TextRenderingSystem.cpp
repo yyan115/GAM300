@@ -7,7 +7,6 @@
 #include "Transform/TransformComponent.hpp"
 #include <Asset Manager/AssetManager.hpp>
 #include <Asset Manager/MetaFilesManager.hpp>
-#include "Performance/PerformanceProfiler.hpp"
 #include "ECS/ActiveComponent.hpp"
 
 bool TextRenderingSystem::Initialise()

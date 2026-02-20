@@ -1,0 +1,8 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "004f6f28f8e6c35f-00043f0e4a000001",
+        "source": "../../Resources/Shaders/selection_outline",
+        "compiled": "../../Resources/Shaders/selection_outline.shader"
+    }
+}

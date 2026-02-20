@@ -95,9 +95,9 @@ end
 -- Phase definition (HP-based)
 -------------------------------------------------
 local PHASE_THRESHOLDS = {
-    { id = 4, hpPct = 0.10 },
+    { id = 4, hpPct = 0.11 },
     { id = 3, hpPct = 0.35 },
-    { id = 2, hpPct = 0.70 },
+    { id = 2, hpPct = 0.71 },
 }
 
 local function _phaseThresholdPct(phaseId)
@@ -124,8 +124,8 @@ local MOVES = {
     -- Move1 = { cooldown = 2.0, weights = { [1]=0, [2]=20, [3]=10, [4]=0 }, execute = function(ai) print("[Miniboss] Move1: Basic Attack") ai:BasicAttack() end },
     -- Move2 = { cooldown = 2.5, weights = { [1]=0, [2]=35, [3]=30, [4]=20 }, execute = function(ai) print("[Miniboss] Move2: Burst Fire") ai:BurstFire() end },
     -- Move3 = { cooldown = 3.0, weights = { [1]=0,  [2]=35, [3]=30, [4]=20 }, execute = function(ai) print("[Miniboss] Move3: Anti Dodge") ai:AntiDodge() end },
-    -- Move4 = { cooldown = 4.0, weights = { [1]=10,  [2]=10,  [3]=30, [4]=30 }, execute = function(ai) print("[Miniboss] Move4: Fate Sealed") ai:FateSealed() end },
-    -- Move5 = { cooldown = 5.0, weights = { [1]=0,  [2]=0,  [3]=0,  [4]=30 }, execute = function(ai) print("[Miniboss] Move5: Death Lotus") ai:DeathLotus() end },
+    -- Move4 = { cooldown = 4.0, weights = { [1]=0,  [2]=10,  [3]=30, [4]=30 }, execute = function(ai) print("[Miniboss] Move4: Fate Sealed") ai:FateSealed() end },
+    -- Move5 = { cooldown = 5.0, weights = { [1]=10,  [2]=0,  [3]=0,  [4]=30 }, execute = function(ai) print("[Miniboss] Move5: Death Lotus") ai:DeathLotus() end },
 }
 
 local MOVE_ORDER = { "Move1", "Move2", "Move3", "Move4", "Move5" }
@@ -329,6 +329,15 @@ return Component {
             end)
         end
 
+        -- === Freeze during cinematic ===
+        self._frozenBycinematic = false
+        self._freezeEnemySub = nil
+        if _G.event_bus and _G.event_bus.subscribe then
+            self._freezeEnemySub = _G.event_bus.subscribe("freeze_enemy", function(frozen)
+                self._frozenBycinematic = frozen
+            end)
+        end
+
         -- === Hook event subscription ===
         self._hookSub = nil
         if _G.event_bus and _G.event_bus.subscribe then
@@ -374,6 +383,9 @@ return Component {
         -- This ensures the boss falls to the ground immediately on game start.
         self:EnsureController()
         self:ApplyGravity(dtSec)
+
+        -- Freeze movement during cinematic
+        if self._frozenBycinematic then return end
 
         -- 2. TICK SYSTEM TIMERS (Always run)
         self._hitLockTimer = math.max(0, (self._hitLockTimer or 0) - dtSec)
@@ -893,11 +905,14 @@ return Component {
             if self._comboDamageSub then pcall(function() _G.event_bus.unsubscribe(self._comboDamageSub) end) end
             if self._hookSub then pcall(function() _G.event_bus.unsubscribe(self._hookSub) end) end
             if self._meleeHitSub then pcall(function() _G.event_bus.unsubscribe(self._meleeHitSub) end) end
+            if self._freezeEnemySub then pcall(function() _G.event_bus.unsubscribe(self._freezeEnemySub) end) end
         end
         self._damageSub = nil
         self._comboDamageSub = nil
         self._hookSub = nil
         self._meleeHitSub = nil
+        self._freezeEnemySub = nil
+        self._frozenBycinematic = false
     end,
 
     OnDestroy = function(self)
@@ -914,11 +929,13 @@ return Component {
             if self._comboDamageSub then pcall(function() _G.event_bus.unsubscribe(self._comboDamageSub) end) end
             if self._hookSub then pcall(function() _G.event_bus.unsubscribe(self._hookSub) end) end
             if self._meleeHitSub then pcall(function() _G.event_bus.unsubscribe(self._meleeHitSub) end) end
+            if self._freezeEnemySub then pcall(function() _G.event_bus.unsubscribe(self._freezeEnemySub) end) end
         end
         self._damageSub = nil
         self._comboDamageSub = nil
         self._hookSub = nil
         self._meleeHitSub = nil
+        self._freezeEnemySub = nil
     end,
 
     -------------------------------------------------
@@ -1107,14 +1124,16 @@ return Component {
         return true
     end,
 
-    -- 4-fan, no centered aimed shot: targets are perpendicular offsets only
-    SpawnKnifeFan4_NoCenter = function(self, spread1, spread2)
+    -- 8-fan, no centered aimed shot: targets are perpendicular offsets only
+    SpawnKnifeFan8_NoCenter = function(self, spread1, spread2, spread3, spread4)
         spread1 = spread1 or 0.8
         spread2 = spread2 or 1.6
+        spread3 = spread3 or 2.4
+        spread4 = spread4 or 3.2
 
-        local knives = KnifePool.RequestMany(4)
+        local knives = KnifePool.RequestMany(8)
         if not knives then
-            print("[Miniboss][Knife] RequestMany(3) FAILED")
+            print("[Miniboss][Knife] RequestMany(8) FAILED")
             return false
         end
 
@@ -1139,26 +1158,30 @@ return Component {
         local rx, rz = -dz, dx
 
         local token = self:_NewVolleyToken()
-        for i=1,4 do
+        for i=1,8 do
             knives[i]._reservedToken = token
             knives[i].reserved = true
         end
 
         local targets = {
+            { px - rx*spread4, py, pz - rz*spread4, "L4" },
+            { px - rx*spread3, py, pz - rz*spread3, "L3" },
             { px - rx*spread2, py, pz - rz*spread2, "L2" },
             { px - rx*spread1, py, pz - rz*spread1, "L1" },
             { px + rx*spread1, py, pz + rz*spread1, "R1" },
             { px + rx*spread2, py, pz + rz*spread2, "R2" },
+            { px + rx*spread3, py, pz + rz*spread3, "R3" },
+            { px + rx*spread4, py, pz + rz*spread4, "R4" },
         }
 
         local okAll = true
-        for i=1,4 do
+        for i=1,8 do
             local t = targets[i]
             okAll = self:_LaunchKnife(knives[i], sx, sy, sz, t[1], t[2], t[3], token, t[4]) and okAll
         end
 
         if not okAll then
-            for i=1,4 do if knives[i] then knives[i]:Reset() end end
+            for i=1,8 do if knives[i] then knives[i]:Reset() end end
             return false
         end
         return true
@@ -1293,7 +1316,7 @@ return Component {
             if m.step == 0 then
                 self:FacePlayer()
                 print("[MinibossAI] SPAWNING AntiDodge")
-                self:SpawnKnifeFan4_NoCenter(m.spread1 or 0.9, m.spread2 or 1.8)
+                self:SpawnKnifeFan8_NoCenter(m.spread1 or 0.9, m.spread2 or 1.8, m.spread3 or 2.7, m.spread2 or 3.6)
                 m.step = 1
                 m.doneAt = m.t + (m.postDelay or 0.45)
             end
@@ -1319,16 +1342,6 @@ return Component {
                 -- OPTIONAL: play charge animation / VFX / SFX once
                 if not m.chargeStarted then
                     m.chargeStarted = true
-                    -- Example hooks (only if you have them):
-                    -- if self.PlayClip and self.ClipCharge then self:PlayClip(self.ClipCharge, false) end
-                    -- if _G.event_bus and _G.event_bus.publish then _G.event_bus.publish("miniboss_charge", { entityId=self.entityId }) end
-                    if _G.event_bus and _G.event_bus.publish then
-                        _G.event_bus.publish("meleeHitPlayerDmg", {
-                            dmg = 2,
-                            src = "Miniboss",
-                            enemyEntityId = self.entityId,
-                        })
-                    end
                 end
 
                 if m.chargeT >= chargeDur then
@@ -1345,6 +1358,8 @@ return Component {
 
                     m.dx, m.dz = dx, dz
                     m.dashT = 0
+
+                    self._animator:SetTrigger("Melee")
                     m.step = 1
                 end
 
@@ -1469,12 +1484,14 @@ return Component {
         self:_BeginMove("AntiDodge", {
             spread1 = 0.25,
             spread2 = 0.35,
+            spread3 = 0.65,
+            spread4 = 1.15,
             postDelay = 0.45
         })
     end,
 
     FateSealed = function(self)
-        self._animator:SetTrigger("Melee")
+        
         playRandomSFX(self._audio, self.enemyMeleeAttackSFX)
         self:_BeginMove("FateSealed", {
             chargeDur = 2.00,
@@ -1491,11 +1508,11 @@ return Component {
     DeathLotus = function(self)
         self._animator:SetTrigger("Ranged")
         self:_BeginMove("DeathLotus", {
-            duration = 2.8,
-            spinSpeed = math.pi * 1.8,  -- rad/s
+            duration = 11.8,
+            spinSpeed = math.pi * 5.8,  -- rad/s
             fireInterval = 0.10,
             range = 12.0,
-            spread = 0.7,
+            spread = 7.7,
             lotusYOffset = -3.0,
         })
     end,

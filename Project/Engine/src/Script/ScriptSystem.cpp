@@ -1,7 +1,6 @@
 // ScriptSystem.cpp
 #include "pch.h"
 #include "Script/ScriptSystem.hpp"
-#include "Performance/PerformanceProfiler.hpp"
 #include "ECS/ECSManager.hpp"
 #include "Script/ScriptComponentData.hpp"
 #include "Script/LuaBindableComponents.hpp"
@@ -728,7 +727,6 @@ void ScriptSystem::Initialise(ECSManager& ecsManager)
 }
 void ScriptSystem::Update()
 {
-    PROFILE_FUNCTION();
     // one-shot reconcile on first update after initialise/play
     if (m_needsReconcile && m_ecs)
     {
@@ -813,10 +811,6 @@ void ScriptSystem::Update()
 
     // Phase 4: Update all entities
     float dt = static_cast<float>(TimeManager::GetDeltaTime());
-#if !DISABLE_PROFILING
-    auto& profiler = PerformanceProfiler::GetInstance();
-    bool scriptProfiling = profiler.IsProfilingEnabled();
-#endif
     for (Entity e : entities)
     {
         // Skip entities that are inactive in hierarchy (centralized cache in ECSManager)
@@ -837,18 +831,16 @@ void ScriptSystem::Update()
             {
                 if (scriptInst)
                 {
-#if !DISABLE_PROFILING
-                    if (scriptProfiling) {
-                        auto start = std::chrono::high_resolution_clock::now();
-                        scriptInst->Update(dt);
-                        double ms = std::chrono::duration<double, std::milli>(
-                            std::chrono::high_resolution_clock::now() - start).count();
-                        profiler.EndZone(scriptInst->GetScriptPath().c_str(), ms);
-                    } else
-#endif
+#if defined(TRACY_ENABLE)
                     {
+                        PROFILE_FUNCTION();
+                        const auto& path = scriptInst->GetScriptPath();
+                        ZoneName(path.c_str(), path.size());
                         scriptInst->Update(dt);
                     }
+#else
+                    scriptInst->Update(dt);
+#endif
                 }
             }
         }

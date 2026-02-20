@@ -21,7 +21,6 @@
 #include "ECS/NameComponent.hpp"
 #include "ECS/LayerManager.hpp"
 //#include "Physics/JoltInclude.hpp"
-#include "Performance/PerformanceProfiler.hpp"
 
 #include "Physics/PhysicsSystem.hpp"
 #include "Physics/CollisionFilters.hpp"

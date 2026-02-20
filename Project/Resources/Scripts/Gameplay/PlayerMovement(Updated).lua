@@ -127,6 +127,13 @@ return Component {
                 end
             end)
             print("[PlayerMovement] Subscription token: " .. tostring(self._activatedCheckpointSub))
+
+            print("[PlayerMovement] Subscribing to freeze_player")
+            self._frozenBycinematic = false
+            self._freezePlayerSub = event_bus.subscribe("freeze_player", function(frozen)
+                self._frozenBycinematic = frozen
+                print("[PlayerMovement] Frozen = " .. tostring(frozen))
+            end)
         else
             print("[PlayerMovement] ERROR: event_bus not available!")
         end
@@ -161,7 +168,8 @@ return Component {
         self._footstepTimer = 0
         self._wasRunning = false
 
-        self._initialSpawnPoint = self._transform.worldPosition
+        local pos = self._transform.worldPosition
+        self._initialSpawnPoint = { x = pos.x, y = pos.y, z = pos.z }
     end,
 
     RespawnPlayer = function(self)
@@ -177,10 +185,12 @@ return Component {
             --print("[PlayerMovement] RespawnPlayer: self._activatedCheckpoint is null")
         end
 
+        local respawnPos = self._initialSpawnPoint
         if self._activatedCheckpoint then
             local checkpointTransform = GetComponent(self._activatedCheckpoint, "Transform")
             local checkpointPos = checkpointTransform.worldPosition
             self:SetPosition(checkpointPos.x, checkpointPos.y, checkpointPos.z)
+            respawnPos = checkpointPos
         elseif self._initialSpawnPoint then
             self:SetPosition(self._initialSpawnPoint.x, self._initialSpawnPoint.y, self._initialSpawnPoint.z)
         end
@@ -191,17 +201,41 @@ return Component {
         self._playerDeadPending = false
         print("self._animator:SetBool(IsDead, false)")
         self._animator:SetBool("IsDead", false)
+        self._justRespawnedPlayer = true
 
-        print(string.format("[PlayerMovement] Respawned player to %f %f %f", checkpointPos.x, checkpointPos.y, checkpointPos.z))
+        if event_bus and event_bus.publish then
+            event_bus.publish("playerRespawned", respawnPos)
+            print(string.format("[PlayerMovement] Respawned player to %f %f %f", respawnPos.x, respawnPos.y, respawnPos.z))
+        end
+
     end,
 
     Update = function(self, dt)
         if self._respawnPlayer then
-            self.RespawnPlayer(self)
+            self:RespawnPlayer()
             return
         end
 
+        if self._justRespawnedPlayer then
+            self._animator:Stop(self.entityId)
+            self._animator:Play(self.entityId)
+            self._justRespawnedPlayer = false
+        end
+
         if not self._collider or not self._transform or not self._controller or self._playerDead then
+            return
+        end
+
+        -- Freeze movement during cinematic
+        if self._frozenBycinematic then
+            -- Still sync position and broadcast it, but skip all input/movement
+            local position = CharacterController.GetPosition(self._controller)
+            if position then
+                self:SetPosition(position.x, position.y, position.z)
+                if event_bus and event_bus.publish then
+                    event_bus.publish("player_position", position)
+                end
+            end
             return
         end
 
@@ -402,9 +436,16 @@ return Component {
     end,
 
     OnDisable = function(self)
-        if event_bus and event_bus.unsubscribe and self._cameraYawSub then
-            event_bus.unsubscribe(self._cameraYawSub)
-            self._cameraYawSub = nil
+        if event_bus and event_bus.unsubscribe then
+            if self._cameraYawSub then
+                event_bus.unsubscribe(self._cameraYawSub)
+                self._cameraYawSub = nil
+            end
+            if self._freezePlayerSub then
+                event_bus.unsubscribe(self._freezePlayerSub)
+                self._freezePlayerSub = nil
+            end
         end
+        self._frozenBycinematic = false
     end,
 }

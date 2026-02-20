@@ -61,20 +61,6 @@ void GamePanel::OnImGuiRender() {
         if (availableWidth < 100) availableWidth = 100;
         if (availableHeight < 100) availableHeight = 100;
 
-        // Optimize: Reduce render frequency when window is not focused
-        bool isFocused = ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows);
-        static int unfocusedFrameCounter = 0;
-        bool shouldRender = true;
-
-        if (!isFocused) {
-            unfocusedFrameCounter++;
-            // Render unfocused panel every 3rd frame instead of every frame
-            if (unfocusedFrameCounter % 3 != 0) {
-                shouldRender = false;
-            }
-        } else {
-            unfocusedFrameCounter = 0;
-        }
 
         // Calculate display viewport dimensions with aspect ratio preservation
         int displayWidth, displayHeight;
@@ -100,8 +86,7 @@ void GamePanel::OnImGuiRender() {
         ImVec2 startPos = ImGui::GetCursorPos();
         ImGui::SetCursorPos(ImVec2(startPos.x + offsetX, startPos.y + offsetY));
 
-        // Only render if we should (optimization for unfocused panels)
-        if (shouldRender) {
+        {
             auto& gfx = GraphicsManager::GetInstance();
 
             // Set viewport to actual render dimensions
