@@ -19,6 +19,8 @@
 #include <functional>
 #include <unordered_map>
 #include <unordered_set>
+#include <mutex>
+#include <vector>
 #include "Logging.hpp"
 
 // Collision event data structure
@@ -53,6 +55,13 @@ public:
     bool AreEntitiesColliding(int entityA, int entityB) const {
         uint64_t key = MakeCollisionKey(entityA, entityB);
         return activeCollisions.find(key) != activeCollisions.end();
+    }
+
+    // Drain buffered collision events (call from main thread after physics.Update())
+    void DrainEvents(std::vector<CollisionEvent>& outEnter, std::vector<CollisionEvent>& outExit) {
+        std::lock_guard<std::mutex> lock(m_eventMutex);
+        outEnter.swap(m_pendingEnter);
+        outExit.swap(m_pendingExit);
     }
 
     // Called when a contact point is being validated
@@ -93,15 +102,23 @@ public:
                     " (", GetMotionTypeName(inBody2), ")\n");
             }
 
-            if (onCollisionEnter && inManifold.mRelativeContactPointsOn1.size() > 0) {
-                CollisionEvent event;
-                event.entityA = entityA;
-                event.entityB = entityB;
+            CollisionEvent event;
+            event.entityA = entityA;
+            event.entityB = entityB;
+            if (inManifold.mRelativeContactPointsOn1.size() > 0) {
                 event.contactPoint = inManifold.GetWorldSpaceContactPointOn1(0);
                 event.contactNormal = inManifold.mWorldSpaceNormal;
                 event.penetrationDepth = inManifold.mPenetrationDepth;
+            }
 
+            if (onCollisionEnter) {
                 onCollisionEnter(event);
+            }
+
+            // Buffer for main-thread dispatch (Lua callbacks)
+            {
+                std::lock_guard<std::mutex> lock(m_eventMutex);
+                m_pendingEnter.push_back(event);
             }
 
             if (enableDetailedLogging) {
@@ -126,12 +143,18 @@ public:
                     " <-> Entity ", entityB, "\n");
             }
 
-            if (onCollisionExit) {
-                CollisionEvent event;
-                event.entityA = entityA;
-                event.entityB = entityB;
+            CollisionEvent event;
+            event.entityA = entityA;
+            event.entityB = entityB;
 
+            if (onCollisionExit) {
                 onCollisionExit(event);
+            }
+
+            // Buffer for main-thread dispatch (Lua callbacks)
+            {
+                std::lock_guard<std::mutex> lock(m_eventMutex);
+                m_pendingExit.push_back(event);
             }
         }
     }
@@ -150,6 +173,11 @@ private:
 
     bool enableLogging;
     bool enableDetailedLogging;
+
+    // Thread-safe event buffers for main-thread dispatch
+    std::mutex m_eventMutex;
+    std::vector<CollisionEvent> m_pendingEnter;
+    std::vector<CollisionEvent> m_pendingExit;
 
     // Helper: Get entity ID from body
     int GetEntityID(const JPH::Body& body) const {

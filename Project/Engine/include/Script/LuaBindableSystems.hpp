@@ -494,20 +494,18 @@ namespace TimeWrappers {
         return static_cast<float>(TimeManager::GetFps());
     }
     
-    // Time scale for slow-motion/fast-forward effects (static variable)
-    static float s_timeScale = 1.0f;
-    
     inline float GetTimeScale() {
-        return s_timeScale;
+        return TimeManager::GetTimeScale();
     }
-    
+
     inline void SetTimeScale(float scale) {
-        s_timeScale = scale;
+        TimeManager::SetTimeScale(scale);
     }
-    
+
     // Scaled delta time for gameplay (respects time scale)
+    // TimeManager::GetDeltaTime() is already scaled, so this just returns it.
     inline float GetScaledDeltaTime() {
-        return static_cast<float>(TimeManager::GetDeltaTime()) * s_timeScale;
+        return static_cast<float>(TimeManager::GetDeltaTime());
     }
 
     // Unscaled delta time - NOT affected by pause (always real frame time)
@@ -841,6 +839,8 @@ namespace NavWrappers {
 
 #include "Script/ScriptComponentData.hpp"
 #include "ECS/NameComponent.hpp"
+#include "Hierarchy/ParentComponent.hpp"
+#include "Hierarchy/EntityGUIDRegistry.hpp"
 
 namespace EntityQueryWrappers {
 
@@ -1143,6 +1143,22 @@ namespace EntityQueryWrappers {
     inline bool IsEntityActive(Entity entity) {
         ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
         return ecsManager.IsEntityActiveInHierarchy(entity);
+    }
+
+    // Return the parent entity ID (or -1 if no parent)
+    // Args: entityId
+    inline int GetParentEntity(lua_State* L) {
+        Entity entity = static_cast<Entity>(luaL_checkinteger(L, 1));
+
+        ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
+        if (ecsManager.HasComponent<ParentComponent>(entity)) {
+            auto& parentComp = ecsManager.GetComponent<ParentComponent>(entity);
+            Entity parentEntity = EntityGUIDRegistry::GetInstance().GetEntityByGUID(parentComp.parent);
+            lua_pushinteger(L, static_cast<lua_Integer>(parentEntity));
+        } else {
+            lua_pushinteger(L, -1);
+        }
+        return 1;
     }
 
     // Return all children entities

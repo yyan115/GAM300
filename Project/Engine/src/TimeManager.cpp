@@ -35,6 +35,10 @@ void TimeManager::UpdateDeltaTime() {
     {
         RunTimeVar::deltaTime = 0;
     }
+    else if (timeScale != 1.0f)
+    {
+        RunTimeVar::deltaTime *= timeScale;
+    }
 }
 
 double TimeManager::GetDeltaTime() {

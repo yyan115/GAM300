@@ -630,6 +630,78 @@ bool Scripting::CallInstanceFunction(int instanceRef, const std::string& funcNam
 }
 
 
+bool Scripting::CallInstanceFunctionWithInt(int instanceRef, const std::string& funcName, int intArg) {
+    if (!g_runtime) return false;
+    if (instanceRef == LUA_NOREF) return false;
+
+    std::lock_guard<std::mutex> lock(g_luaStateMutex);
+
+    lua_State* L = g_runtime->GetLuaState();
+    if (!L) return false;
+
+    int base = lua_gettop(L);
+
+    // push instance from registry
+    lua_rawgeti(L, LUA_REGISTRYINDEX, instanceRef);
+    if (lua_gettop(L) == base) {
+        return false;
+    }
+
+    int instIndex = lua_gettop(L);
+
+    // Look up the function
+    lua_getfield(L, instIndex, funcName.c_str());
+    if (lua_isnil(L, -1)) {
+        // try _returned wrapper
+        lua_pop(L, 1);
+        if (lua_istable(L, instIndex)) {
+            lua_getfield(L, instIndex, "_returned");
+            if (!lua_isnil(L, -1) && (lua_istable(L, -1) || lua_isuserdata(L, -1))) {
+                lua_getfield(L, -1, funcName.c_str());
+            } else {
+                lua_pop(L, 1);
+            }
+        }
+    }
+
+    // If still nil, method not found - that's OK (script simply doesn't handle this event)
+    if (lua_isnil(L, -1)) {
+        lua_settop(L, base);
+        return false;
+    }
+
+    if (!lua_isfunction(L, -1)) {
+        lua_settop(L, base);
+        return false;
+    }
+
+    // Push self
+    int funcPos = lua_gettop(L);
+    int candidateSelfPos = funcPos - 1;
+    if (candidateSelfPos >= base + 1 &&
+        (lua_type(L, candidateSelfPos) == LUA_TTABLE || lua_type(L, candidateSelfPos) == LUA_TUSERDATA)) {
+        lua_pushvalue(L, candidateSelfPos);
+    } else {
+        lua_pushvalue(L, instIndex);
+    }
+
+    // Push the integer argument
+    lua_pushinteger(L, static_cast<lua_Integer>(intArg));
+
+    int nargs = 2; // self + intArg
+    int msgh = PushMessageHandlerBelowFunction(L, nargs);
+    int status = lua_pcall(L, nargs, 0, msgh);
+
+    if (status != LUA_OK) {
+        const char* err = lua_tostring(L, -1);
+        ENGINE_PRINT(EngineLogging::LogLevel::Error, "CallInstanceFunctionWithInt: lua_pcall error: ", err ? err : "(null)");
+        lua_pop(L, 1);
+    }
+
+    lua_settop(L, base);
+    return status == LUA_OK;
+}
+
 void Scripting::SetHostLogHandler(HostLogFn fn) {
     auto sp = std::make_shared<HostLogFn>(std::move(fn));
 #ifdef ANDROID

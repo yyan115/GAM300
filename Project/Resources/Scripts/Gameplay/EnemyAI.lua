@@ -316,7 +316,7 @@ return Component {
                     self:StopCC()
                 end
             end)
-            
+
             self._playerRespawned = false
             self._respawnPlayerSub = _G.event_bus.subscribe("respawnPlayer", function(respawn)
                 self._playerRespawned = respawn
@@ -327,36 +327,15 @@ return Component {
                 self._playerDead = playerDead
             end)
 
-            self._comboDamageSub = _G.event_bus.subscribe("deal_damage", function(payload)
+            self._comboDamageSub = _G.event_bus.subscribe("deal_damage_to_entity", function(payload)
                 if not payload then return end
-                
-                -- Check if this enemy is the target
-                if payload.targetEntityId ~= self.entityId then
+
+                if payload.entityId ~= self.entityId then
                     return
                 end
-                
-                -- Extract attack data from ComboManager
-                local attackData = payload.attackData or {}
-                local damage = attackData.damage or 10
-                local knockback = attackData.knockback or 0
-                local attackState = attackData.state or "unknown"
-                local direction = payload.direction or { x = 0, y = 0, z = 1 }
-                
-                print(string.format("[EnemyAI] Taking damage: %d from attack '%s' (knockback: %.1f)", 
-                                damage, attackState, knockback))
-                
-                -- Apply damage through existing system
+
+                local damage = payload.damage or 10
                 self:ApplyHit(damage, "COMBO")
-                
-                -- Apply knockback using CC system, not RB impulse
-                if knockback and knockback > 0 then
-                    -- direction should be from attacker -> enemy (or similar)
-                    -- if it's opposite, just negate it
-                    local dir = direction or { x = 0, z = 1 }
-                    self._kbVX = (dir.x or 0) * knockback
-                    self._kbVZ = (dir.z or 0) * knockback
-                    self._kbT  = self.KnockbackDuration
-                end
             end)
         end
 

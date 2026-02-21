@@ -47,12 +47,17 @@ CharacterController* CharacterControllerSystem::CreateController(Entity id,
     //add into map
     m_controllers.emplace(id, std::move(controller));
 
-    // Disable the regular physics body — CharacterVirtual takes over collision for this entity
+    // Remove the regular physics body — CharacterVirtual handles movement.
+    // Hurtboxes are separate bone-attached colliders on the HURTBOX layer (set up in editor).
     auto& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
-    if (ecs.physicsSystem)
+    if (ecs.physicsSystem) {
         ecs.physicsSystem->RemoveBody(id);
-    if (ecs.HasComponent<RigidBodyComponent>(id))
-        ecs.GetComponent<RigidBodyComponent>(id).enabled = false;
+    }
+    if (ecs.HasComponent<RigidBodyComponent>(id)) {
+        auto& rb = ecs.GetComponent<RigidBodyComponent>(id);
+        rb.enabled = false;
+        rb.gravityFactor = 0.0f;
+    }
 
     return ptr;
 }

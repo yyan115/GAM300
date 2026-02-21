@@ -43,8 +43,15 @@ public:
 	void Shutdown();
 
 	void CreatePhysicsBody(Entity e, ECSManager& ecsManager);
+	
 	// Remove a single entity's physics body (used when CharacterVirtual takes over)
 	void RemoveBody(Entity entity);
+
+	// Convert entity's body to kinematic hurtbox (keeps body in broadphase for trigger detection)
+	void ConvertToKinematicHurtbox(Entity entity);
+
+	// Get the Jolt body ID for an entity (returns invalid ID if not found)
+	JPH::BodyID GetBodyID(Entity entity) const;
 
 	JPH::PhysicsSystem& GetJoltSystem() { return physics; }
 

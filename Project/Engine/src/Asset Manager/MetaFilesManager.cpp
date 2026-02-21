@@ -28,7 +28,7 @@ bool MetaFilesManager::MetaFileExists(const std::string& assetPath) {
 	}
 
 	//return std::filesystem::exists(metaFilePath.generic_string()); && std::filesystem::exists(rootMetaFilePath.generic_string());
-	ENGINE_LOG_INFO("Meta file path: " + metaFilePath.generic_string());
+	//ENGINE_LOG_INFO("Meta file path: " + metaFilePath.generic_string());
 	return std::filesystem::exists(metaFilePath.generic_string());
 #endif
 
@@ -41,7 +41,7 @@ bool MetaFilesManager::MetaFileExists(const std::string& assetPath) {
 	}
 
 	metaFilePath = assetPath + ".meta";
-	ENGINE_LOG_INFO("Meta file path: " + metaFilePath.generic_string());
+	//ENGINE_LOG_INFO("Meta file path: " + metaFilePath.generic_string());
 	return platform->FileExists(metaFilePath);
 
 	//std::vector<std::string> assetFiles = platform->ListAssets("Resources", true);
@@ -222,7 +222,7 @@ void MetaFilesManager::InitializeAssetMetaFiles(const std::string& rootAssetFold
 }
 
 GUID_128 MetaFilesManager::GetGUID128FromAssetFile(const std::string& assetPath) {
-	ENGINE_LOG_DEBUG("[MetaFilesManager]: GetGUID128FromAssetFile: " + assetPath);
+	//ENGINE_LOG_DEBUG("[MetaFilesManager]: GetGUID128FromAssetFile: " + assetPath);
 	if (assetPathToGUID128.find(assetPath) == assetPathToGUID128.end()) {
 		ENGINE_LOG_DEBUG("[MetaFilesManager]: GetGUIDFromAssetFile: " + assetPath);
 		GUID_string guidStr = GetGUIDFromAssetFile(assetPath);
