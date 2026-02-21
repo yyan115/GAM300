@@ -118,7 +118,9 @@ return Component {
         local isExt = self.controller.isExtending or false
         local isRet = self.controller.isRetracting or false
 
-        if not isExt and not isRet and len <= 1e-4 then self.controller:StartExtension(self._cameraForward) end
+        if not isExt and not isRet and len <= 1e-4 then
+            self.controller:StartExtension(self._cameraForward, self.MaxLength, self.LinkMaxDistance)
+        end
 
         if len > 1e-4 and (not isRet) then
             self.controller:StartRetraction()
@@ -212,9 +214,6 @@ return Component {
                     print(fx)
                     print(fy)
                     print(fz)
-                    -- Negate to get the direction the camera is looking (not towards camera)
-                    --fx = -fx
-                    --fz = -fz
 
                     -- Normalize to be safe
                     local mag = math.sqrt(fx*fx + fy*fy + fz*fz)
@@ -229,7 +228,7 @@ return Component {
         end
 
         if self.AutoStart then
-            self.controller:StartExtension(self._cameraForward)
+            self.controller:StartExtension(self._cameraForward, self.MaxLength, self.LinkMaxDistance)
         end
     end,
 
@@ -249,10 +248,10 @@ return Component {
         -- quick debug dump (temporary)
         local function dump_state(ctrl)
             if not ctrl then return end
-            local n = ctrl.n or 0
+            local n = ctrl.activeN or ctrl.n or 0
             local first = ctrl.positions[1]; local last = ctrl.positions[n]
-            print(string.format("[CHAIN DEBUG] len=%.3f extend=%s retract=%s start=(%.3f,%.3f,%.3f) end=(%.3f,%.3f,%.3f)",
-                ctrl.chainLen or 0, tostring(ctrl.isExtending), tostring(ctrl.isRetracting),
+            print(string.format("[CHAIN DEBUG] len=%.3f extend=%s retract=%s activeN=%d start=(%.3f,%.3f,%.3f) end=(%.3f,%.3f,%.3f)",
+                ctrl.chainLen or 0, tostring(ctrl.isExtending), tostring(ctrl.isRetracting), n,
                 ctrl.startPos[1] or 0, ctrl.startPos[2] or 0, ctrl.startPos[3] or 0,
                 ctrl.endPos[1] or 0, ctrl.endPos[2] or 0, ctrl.endPos[3] or 0))
             if first and last then
@@ -295,16 +294,19 @@ return Component {
 
         local positions, startPos, endPos = self.controller:Update(dt, settings)
 
-        self.linkHandler:ApplyPositions(positions)
+        local activeN = self.controller.activeN
+
+        self.linkHandler:ApplyPositions(positions, activeN)
 
         local maxStep = (self.RotationMaxStepRadians or (self.RotationMaxStep and math.rad(self.RotationMaxStep))) or math.rad(60)
-        self.linkHandler:ApplyRotations(positions, startPos, endPos, maxStep, true)
+        self.linkHandler:ApplyRotations(positions, startPos, endPos, maxStep, true, activeN)
 
         local public = self.controller:GetPublicState()
         self.m_CurrentLength = public.ChainLength
         self.m_IsExtending = public.IsExtending
         self.m_IsRetracting = public.IsRetracting
         self.m_LinkCount = public.LinkCount
+        self.m_ActiveLinkCount = public.ActiveLinkCount
 
         if self.EnableLogs then
             dump_state(self.controller)
@@ -323,8 +325,12 @@ return Component {
         end
     end,
 
-    StartExtension = function(self) if self.controller then self.controller:StartExtension(self._cameraForward) end end,
+    StartExtension = function(self)
+        if self.controller then
+            self.controller:StartExtension(self._cameraForward, self.MaxLength, self.LinkMaxDistance)
+        end
+    end,
     StartRetraction = function(self) if self.controller then self.controller:StartRetraction() end end,
     StopExtension = function(self) if self.controller then self.controller:StopExtension() end end,
-    GetChainState = function(self) return { Length = self.m_CurrentLength, Count = self.m_LinkCount } end
+    GetChainState = function(self) return { Length = self.m_CurrentLength, Count = self.m_LinkCount, ActiveCount = self.m_ActiveLinkCount } end
 }

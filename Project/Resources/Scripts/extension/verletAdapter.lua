@@ -14,7 +14,8 @@ end
 
 function M.Step(state, dt, params)
     if not state or dt <= 0 or (state.n or 0) == 0 then return end
-    local n = state.n
+    -- Use activeN from params if provided, otherwise fall back to full state.n
+    local n = (params and params.n) or state.n
     local gmag = math.abs((params and params.VerletGravity) or 9.81)
     local damping = math.max(0, math.min(1, (params and params.VerletDamping) or 0.02))
     local dt2 = dt * dt
@@ -38,17 +39,17 @@ function M.Step(state, dt, params)
     -- Calculate total chain length
     local totalChainLength = params.segmentLen and ((n - 1) * params.segmentLen) or 0
     
-    -- Chain is only taut (no gravity) if distance >= chain length
-    -- If distance < chain length, there's slack and gravity should apply
-    local isTaut = needsBidirectional and (startToEndDist >= totalChainLength - EPS)
+    -- Chain is only taut (no gravity) if distance >= chain length.
+    -- Also force taut when endpoint is locked to a surface so player movement doesn't cause sag oscillation.
+    local isTaut = needsBidirectional and ((startToEndDist >= totalChainLength - EPS) or (params.endPointLocked == true))
     local applyGravity = not isTaut
     
     -- When chain just became taut, kill all velocity to prevent oscillation
     if isTaut then
-        damping = 0.98  -- Very high damping when taut
+        damping = 0.98
     end
 
-    -- integrate dynamic particles
+    -- integrate dynamic particles (only active n links)
     for i = 1, n do
         local inv = (invMass[i] ~= nil) and invMass[i] or 1
         if inv > 0 then
@@ -58,7 +59,6 @@ function M.Step(state, dt, params)
             local vy = (py - ppy) * (1 - damping)
             local vz = (pz - ppz) * (1 - damping)
             
-            -- Apply gravity only when chain has slack
             local ax, ay, az = 0, 0, 0
             if applyGravity then
                 ax, ay, az = 0, -gmag, 0
@@ -81,10 +81,9 @@ function M.Step(state, dt, params)
     end
 
     if params and params.pinnedLast and type(params.endPos) == "table" then
-        local li = n
-        positions[li][1], positions[li][2], positions[li][3] =
+        positions[n][1], positions[n][2], positions[n][3] =
             params.endPos[1], params.endPos[2], params.endPos[3]
-        prev[li][1], prev[li][2], prev[li][3] =
+        prev[n][1], prev[n][2], prev[n][3] =
             params.endPos[1], params.endPos[2], params.endPos[3]
     end
 
@@ -208,15 +207,14 @@ function M.Step(state, dt, params)
                 params.startPos[1], params.startPos[2], params.startPos[3]
         end
         if params and params.pinnedLast and type(params.endPos) == "table" then
-            local li = n
-            positions[li][1], positions[li][2], positions[li][3] =
+            positions[n][1], positions[n][2], positions[n][3] =
                 params.endPos[1], params.endPos[2], params.endPos[3]
-            prev[li][1], prev[li][2], prev[li][3] =
+            prev[n][1], prev[n][2], prev[n][3] =
                 params.endPos[1], params.endPos[2], params.endPos[3]
         end
     end
 
-    -- final strict inelastic pass
+    -- final strict inelastic pass (only over active n links)
     if params and (not params.IsElastic) and params.LinkMaxDistance and params.LinkMaxDistance > 0 then
         local maxd = params.LinkMaxDistance
         if (params.pinnedLast and params.endPos) then

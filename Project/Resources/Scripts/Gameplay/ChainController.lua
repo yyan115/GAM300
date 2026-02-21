@@ -24,6 +24,7 @@ function M.New(params)
         self.invMass[i] = 1
     end
 
+    self.activeN = self.n      -- how many links from the pool are currently active; set on StartExtension
     self.anchors = {}           -- map index->true; ComputeAnchors only marks anchors (does not mutate invMass)
     self.chainLen = 0.0         -- authoritative logical chain length (meters)
     self.extensionTime = 0.0
@@ -33,7 +34,7 @@ function M.New(params)
     self.startPos = {0,0,0}
     self.endPos = {0,0,0}
     
-    -- NEW: Track if endpoint is locked to a collision point
+    -- Track if endpoint is locked to a collision point
     self.endPointLocked = false
     self.lockedEndPoint = {0,0,0}
 
@@ -50,8 +51,8 @@ function M:SetEndPos(x,y,z)
     self.endPos = {x or 0, y or 0, z or 0}
 end
 
--- Accept optional forward vector when starting extension to preserve component-level forward
-function M:StartExtension(forward)
+-- Accept optional forward vector, maxLength and linkMaxDistance to compute active link count from pool
+function M:StartExtension(forward, maxLength, linkMaxDistance)
     self.isExtending = true
     self.isRetracting = false
     self.extensionTime = 0
@@ -60,7 +61,21 @@ function M:StartExtension(forward)
     -- Reset endpoint lock when starting new extension
     self.endPointLocked = false
     self.lockedEndPoint = {0,0,0}
-    
+
+    -- Calculate how many links are needed from the pool based on max length and link max distance
+    local maxLen = tonumber(maxLength) or tonumber(self.params.MaxLength) or 0
+    local linkMax = tonumber(linkMaxDistance) or tonumber(self.params.LinkMaxDistance) or 0
+    if linkMax > 0 and maxLen > 0 then
+        local needed = math.ceil(maxLen / linkMax) + 1  -- +1 for the start/anchor link
+        self.activeN = math.min(needed, self.n)
+        print(string.format("[ChainController] StartExtension: MaxLength=%.3f LinkMaxDistance=%.4f needed=%d poolSize=%d activeN=%d",
+            maxLen, linkMax, needed, self.n, self.activeN))
+    else
+        self.activeN = self.n
+        print(string.format("[ChainController] StartExtension: MaxLength=%.3f LinkMaxDistance=%.4f invalid, using full pool activeN=%d",
+            maxLen, linkMax, self.activeN))
+    end
+
     if forward and type(forward) == "table" and (#forward >= 3) then
         local fx,fy,fz = forward[1], forward[2], forward[3]
         local nx,ny,nz = normalize(fx,fy,fz)
@@ -86,8 +101,9 @@ end
 function M:ComputeAnchors(angleThresholdRad)
     angleThresholdRad = angleThresholdRad or math.rad(45)
     self.anchors = {}
-    if self.n < 3 then return end
-    for i = 2, self.n - 1 do
+    local aN = self.activeN
+    if aN < 3 then return end
+    for i = 2, aN - 1 do
         local a = self.positions[i-1]; local b = self.positions[i]; local c = self.positions[i+1]
         local v1x,v1y,v1z = b[1]-a[1], b[2]-a[2], b[3]-a[3]
         local v2x,v2y,v2z = c[1]-b[1], c[2]-b[2], c[3]-b[3]
@@ -104,7 +120,7 @@ function M:ComputeAnchors(angleThresholdRad)
     end
 end
 
--- NEW: Perform raycast to detect collision and lock endpoint
+-- Perform raycast to detect collision and lock endpoint
 function M:PerformRaycast(sx, sy, sz, maxDistance)
     if not Physics or not Physics.Raycast then
         return nil
@@ -144,13 +160,16 @@ function M:Update(dt, settings)
     local isElastic = (settings.IsElastic ~= nil) and settings.IsElastic or (self.params.IsElastic == true)
     local linkMax = tonumber(settings.LinkMaxDistance) or tonumber(self.params.LinkMaxDistance) or nil
 
+    -- Use activeN for all per-link operations
+    local aN = self.activeN
+
     -- 1) Update authoritative chainLen based on extending/retracting
     if self.isExtending then
         self.extensionTime = self.extensionTime + dt
         local desired = chainSpeed * self.extensionTime
         if maxLenSetting and maxLenSetting > 0 then desired = math.min(desired, maxLenSetting) end
         if not isElastic and linkMax and linkMax > 0 then
-            local maxAllowed = linkMax * math.max(1, (self.n - 1))
+            local maxAllowed = linkMax * math.max(1, (aN - 1))
             if desired > maxAllowed then desired = maxAllowed end
         end
         self.chainLen = desired
@@ -161,7 +180,7 @@ function M:Update(dt, settings)
         if self.chainLen <= 0 then
             self.isRetracting = false
             self.chainLen = 0
-            self.endPointLocked = false  -- Unlock when fully retracted
+            self.endPointLocked = false
         end
     end
 
@@ -180,22 +199,17 @@ function M:Update(dt, settings)
     local ex,ey,ez
     
     if settings.endOverride then
-        -- Explicit override takes priority
         ex,ey,ez = settings.endOverride[1] or 0, settings.endOverride[2] or 0, settings.endOverride[3] or 0
     elseif self.endPointLocked then
-        -- Use locked endpoint (doesn't follow player)
         ex, ey, ez = self.lockedEndPoint[1], self.lockedEndPoint[2], self.lockedEndPoint[3]
     else
-        -- Calculate theoretical endpoint based on direction and chain length
         local fx,fy,fz = self.lastForward[1] or 0, self.lastForward[2] or 0, self.lastForward[3] or 1
         local theoreticalDistance = self.chainLen or 0
         
-        -- Perform raycast during extension to detect collisions
         if self.isExtending and theoreticalDistance > 0 then
-            local raycastResult = self:PerformRaycast(sx, sy, sz, theoreticalDistance * 1.1) -- raycast slightly beyond chain length
+            local raycastResult = self:PerformRaycast(sx, sy, sz, theoreticalDistance * 1.1)
             
             if raycastResult and raycastResult.hit then
-                -- Hit something! Lock the endpoint
                 self.endPointLocked = true
                 self.lockedEndPoint[1] = raycastResult.hitPoint[1]
                 self.lockedEndPoint[2] = raycastResult.hitPoint[2]
@@ -203,20 +217,27 @@ function M:Update(dt, settings)
                 
                 ex, ey, ez = raycastResult.hitPoint[1], raycastResult.hitPoint[2], raycastResult.hitPoint[3]
                 
-                -- Clamp chain length to hit distance
                 self.chainLen = raycastResult.distance
-                self.isExtending = false  -- Stop extending when we hit something
-                
-                print(string.format("[ChainController] Raycast HIT at distance %.3f, locked endpoint at (%.3f, %.3f, %.3f)", 
-                    raycastResult.distance, ex, ey, ez))
+                self.isExtending = false
+
+                -- Recalculate activeN based on actual hit distance instead of MaxLength
+                local linkMax = tonumber(settings.LinkMaxDistance) or tonumber(self.params.LinkMaxDistance) or 0
+                if linkMax > 0 then
+                    local needed = math.ceil(raycastResult.distance / linkMax) + 1
+                    local prevActiveN = self.activeN
+                    self.activeN = math.min(needed, self.n)
+                    print(string.format("[ChainController] Raycast HIT at distance %.3f, locked endpoint at (%.3f, %.3f, %.3f) | activeN recalculated: %d -> %d",
+                        raycastResult.distance, ex, ey, ez, prevActiveN, self.activeN))
+                else
+                    print(string.format("[ChainController] Raycast HIT at distance %.3f, locked endpoint at (%.3f, %.3f, %.3f)",
+                        raycastResult.distance, ex, ey, ez))
+                end
             else
-                -- No hit, calculate theoretical endpoint
                 ex = sx + (fx * theoreticalDistance)
                 ey = sy + (fy * theoreticalDistance)
                 ez = sz + (fz * theoreticalDistance)
             end
         else
-            -- Not extending or chain length is zero
             ex = sx + (fx * theoreticalDistance)
             ey = sy + (fy * theoreticalDistance)
             ez = sz + (fz * theoreticalDistance)
@@ -225,32 +246,38 @@ function M:Update(dt, settings)
     
     self.endPos[1], self.endPos[2], self.endPos[3] = ex, ey, ez
 
-    -- 4) Compute current physical distance and determine a "totalLen" and segmentLen that physics will try to satisfy.
+    -- 4) Compute current physical distance and determine totalLen and segmentLen
     local curEndDist = vec_len(ex - sx, ey - sy, ez - sz)
-    -- Prefer authoritative chainLen when > 0; fallback to current end distance
     local totalLen = (self.chainLen and self.chainLen > 1e-8) and self.chainLen or math.max(curEndDist, 1e-6)
-    -- However, respect MaxLength if configured (physics shouldn't expand beyond this)
     if maxLenSetting and maxLenSetting > 0 then totalLen = math.min(totalLen, maxLenSetting) end
 
-    local segmentLen = (self.n > 1) and (totalLen / (self.n - 1)) or 0
+    local segmentLen = (aN > 1) and (totalLen / (aN - 1)) or 0
     if (not isElastic) and linkMax and linkMax > 0 and segmentLen > linkMax then
         segmentLen = linkMax
     end
 
     -- 5) Determine per-link kinematic state based on authoritative chainLen and anchors.
+    -- Links beyond activeN are snapped to start and marked kinematic (pool links not in use).
     for i = 1, self.n do
-        local requiredDist = (i - 1) * segmentLen
-        if (self.chainLen + 1e-9) < requiredDist then
-            -- not deployed -> snap to start and mark kinematic (invMass=0)
+        if i > aN then
+            -- Pool link not in use: snap to start, mark kinematic
             self.positions[i][1], self.positions[i][2], self.positions[i][3] = sx, sy, sz
             self.prev[i][1], self.prev[i][2], self.prev[i][3] = sx, sy, sz
             self.invMass[i] = 0
         else
-            -- deployed => dynamic unless explicitly anchored by corner detection
-            if self.anchors[i] then
+            local requiredDist = (i - 1) * segmentLen
+            if (self.chainLen + 1e-9) < requiredDist then
+                -- not deployed yet -> snap to start and mark kinematic
+                self.positions[i][1], self.positions[i][2], self.positions[i][3] = sx, sy, sz
+                self.prev[i][1], self.prev[i][2], self.prev[i][3] = sx, sy, sz
                 self.invMass[i] = 0
             else
-                self.invMass[i] = 1
+                -- deployed => dynamic unless explicitly anchored
+                if self.anchors[i] then
+                    self.invMass[i] = 0
+                else
+                    self.invMass[i] = 1
+                end
             end
         end
     end
@@ -258,26 +285,25 @@ function M:Update(dt, settings)
     -- Pin first link to start (ALWAYS kinematic)
     self.invMass[1] = 0
 
-    -- Pin last link to endpoint when extending OR when endpoint is locked
+    -- Pin last active link to endpoint when extending OR when endpoint is locked
     if self.isExtending or self.endPointLocked then
-        self.positions[self.n][1], self.positions[self.n][2], self.positions[self.n][3] = ex, ey, ez
-        self.prev[self.n][1], self.prev[self.n][2], self.prev[self.n][3] = ex, ey, ez
-        self.invMass[self.n] = 0
+        self.positions[aN][1], self.positions[aN][2], self.positions[aN][3] = ex, ey, ez
+        self.prev[aN][1], self.prev[aN][2], self.prev[aN][3] = ex, ey, ez
+        self.invMass[aN] = 0
     end
 
-    -- 6) Compute anchors from current geometry; anchors only set marker table (ComputeAnchors won't mutate invMass)
+    -- 6) Re-apply anchors as kinematic overrides
     --TAKE NOTE THIS FUNCTION IS BUGGED
     --self:ComputeAnchors(settings.AnchorAngleThresholdRad or self.params.AnchorAngleThresholdRad or math.rad(45))
-
-    -- Re-apply anchors as kinematic overrides (anchors should always be kinematic)
     for idx, _ in pairs(self.anchors) do
-        if idx >= 1 and idx <= self.n then
+        if idx >= 1 and idx <= aN then
             self.invMass[idx] = 0
         end
     end
 
     -- 7) Build Verlet params and step physics
     local vparams = {
+        n = aN,
         VerletGravity = settings.VerletGravity or self.params.VerletGravity,
         VerletDamping = settings.VerletDamping or self.params.VerletDamping,
         ConstraintIterations = settings.ConstraintIterations or self.params.ConstraintIterations,
@@ -286,7 +312,8 @@ function M:Update(dt, settings)
         totalLen = totalLen,
         segmentLen = segmentLen,
         ClampSegment = linkMax,
-        pinnedLast = self.endPointLocked or ((not self.isExtending) and ((self.chainLen or 0) + 1e-9 >= (self.n - 1) * segmentLen) and (settings.PinEndWhenExtended or self.params.PinEndWhenExtended)),
+        endPointLocked = self.endPointLocked,
+        pinnedLast = self.endPointLocked or ((not self.isExtending) and ((self.chainLen or 0) + 1e-9 >= (aN - 1) * segmentLen) and (settings.PinEndWhenExtended or self.params.PinEndWhenExtended)),
         endPos = { ex, ey, ez },
         startPos = { sx, sy, sz }
     }
@@ -296,20 +323,18 @@ function M:Update(dt, settings)
 
     -- 8) After physics, ensure locked endpoint and undeployed links remain kinematic
     if self.endPointLocked then
-        local li = self.n
-        self.positions[li][1], self.positions[li][2], self.positions[li][3] = ex, ey, ez
-        self.prev[li][1], self.prev[li][2], self.prev[li][3] = ex, ey, ez
-        self.invMass[li] = 0
+        self.positions[aN][1], self.positions[aN][2], self.positions[aN][3] = ex, ey, ez
+        self.prev[aN][1], self.prev[aN][2], self.prev[aN][3] = ex, ey, ez
+        self.invMass[aN] = 0
     elseif vparams.pinnedLast and vparams.endPos then
-        local li = self.n
-        self.positions[li][1], self.positions[li][2], self.positions[li][3] = vparams.endPos[1], vparams.endPos[2], vparams.endPos[3]
-        self.prev[li][1], self.prev[li][2], self.prev[li][3] = vparams.endPos[1], vparams.endPos[2], vparams.endPos[3]
-        self.invMass[li] = 0
+        self.positions[aN][1], self.positions[aN][2], self.positions[aN][3] = vparams.endPos[1], vparams.endPos[2], vparams.endPos[3]
+        self.prev[aN][1], self.prev[aN][2], self.prev[aN][3] = vparams.endPos[1], vparams.endPos[2], vparams.endPos[3]
+        self.invMass[aN] = 0
     end
 
-    -- ensure anchors are preserved
+    -- Ensure anchors are preserved post-physics
     for idx, _ in pairs(self.anchors) do
-        if idx >= 1 and idx <= self.n then
+        if idx >= 1 and idx <= aN then
             self.invMass[idx] = 0
         end
     end
@@ -324,6 +349,7 @@ function M:GetPublicState()
         IsExtending = self.isExtending,
         IsRetracting = self.isRetracting,
         LinkCount = self.n,
+        ActiveLinkCount = self.activeN,
         Anchors = self.anchors,
         EndPointLocked = self.endPointLocked,
         LockedEndPoint = self.endPointLocked and {self.lockedEndPoint[1], self.lockedEndPoint[2], self.lockedEndPoint[3]} or nil
