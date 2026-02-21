@@ -18,7 +18,9 @@ return Component {
         IsElastic = false,
         LinkMaxDistance = 0.025,
         PinEndWhenExtended = true,
-        AnchorAngleThresholdDeg = 45
+        AnchorAngleThresholdDeg = 45,
+        SubSteps = 4,
+        ChainEndpointName = "ChainEndpoint"
     },
 
     _unpack_pos = function(self, a, b, c)
@@ -118,7 +120,9 @@ return Component {
         local isExt = self.controller.isExtending or false
         local isRet = self.controller.isRetracting or false
 
-        if not isExt and not isRet and len <= 1e-4 then self.controller:StartExtension(self._cameraForward) end
+        if not isExt and not isRet and len <= 1e-4 then
+            self.controller:StartExtension(self._cameraForward, self.MaxLength, self.LinkMaxDistance)
+        end
 
         if len > 1e-4 and (not isRet) then
             self.controller:StartRetraction()
@@ -201,6 +205,15 @@ return Component {
         -- Initialize camera forward with fallback
         self._cameraForward = {0, 0, 1}
 
+        -- Find chain endpoint object
+        self._endpointTransform = nil
+        if self.ChainEndpointName and self.ChainEndpointName ~= "" then
+            self._endpointTransform = Engine.FindTransformByName(self.ChainEndpointName)
+            if not self._endpointTransform then
+                print("[ChainBootstrap] WARNING: ChainEndpoint object not found: " .. tostring(self.ChainEndpointName))
+            end
+        end
+
         -- fallback to global event bus if Subscribe unavailable (defensive)
         if _G.event_bus and _G.event_bus.subscribe then
             self._cameraForwardSub = _G.event_bus.subscribe("ChainAim_basis", function(payload)
@@ -212,9 +225,6 @@ return Component {
                     print(fx)
                     print(fy)
                     print(fz)
-                    -- Negate to get the direction the camera is looking (not towards camera)
-                    --fx = -fx
-                    --fz = -fz
 
                     -- Normalize to be safe
                     local mag = math.sqrt(fx*fx + fy*fy + fz*fz)
@@ -229,7 +239,7 @@ return Component {
         end
 
         if self.AutoStart then
-            self.controller:StartExtension(self._cameraForward)
+            self.controller:StartExtension(self._cameraForward, self.MaxLength, self.LinkMaxDistance)
         end
     end,
 
@@ -249,10 +259,10 @@ return Component {
         -- quick debug dump (temporary)
         local function dump_state(ctrl)
             if not ctrl then return end
-            local n = ctrl.n or 0
+            local n = ctrl.activeN or ctrl.n or 0
             local first = ctrl.positions[1]; local last = ctrl.positions[n]
-            print(string.format("[CHAIN DEBUG] len=%.3f extend=%s retract=%s start=(%.3f,%.3f,%.3f) end=(%.3f,%.3f,%.3f)",
-                ctrl.chainLen or 0, tostring(ctrl.isExtending), tostring(ctrl.isRetracting),
+            print(string.format("[CHAIN DEBUG] len=%.3f extend=%s retract=%s activeN=%d start=(%.3f,%.3f,%.3f) end=(%.3f,%.3f,%.3f)",
+                ctrl.chainLen or 0, tostring(ctrl.isExtending), tostring(ctrl.isRetracting), n,
                 ctrl.startPos[1] or 0, ctrl.startPos[2] or 0, ctrl.startPos[3] or 0,
                 ctrl.endPos[1] or 0, ctrl.endPos[2] or 0, ctrl.endPos[3] or 0))
             if first and last then
@@ -279,6 +289,7 @@ return Component {
             VerletGravity = self.VerletGravity,
             VerletDamping = self.VerletDamping,
             ConstraintIterations = self.ConstraintIterations,
+            SubSteps = self.SubSteps,
             AnchorAngleThresholdRad = math.rad(self.AnchorAngleThresholdDeg or 45),
             PinEndWhenExtended = self.PinEndWhenExtended,
             getStart = function()
@@ -295,16 +306,113 @@ return Component {
 
         local positions, startPos, endPos = self.controller:Update(dt, settings)
 
-        self.linkHandler:ApplyPositions(positions)
+        local activeN = self.controller.activeN
+
+        self.linkHandler:ApplyPositions(positions, activeN)
 
         local maxStep = (self.RotationMaxStepRadians or (self.RotationMaxStep and math.rad(self.RotationMaxStep))) or math.rad(60)
-        self.linkHandler:ApplyRotations(positions, startPos, endPos, maxStep, true)
+        self.linkHandler:ApplyRotations(positions, startPos, endPos, maxStep, true, activeN)
 
         local public = self.controller:GetPublicState()
         self.m_CurrentLength = public.ChainLength
         self.m_IsExtending = public.IsExtending
         self.m_IsRetracting = public.IsRetracting
         self.m_LinkCount = public.LinkCount
+        self.m_ActiveLinkCount = public.ActiveLinkCount
+
+        -- Update chain endpoint object position
+        -- Re-lookup if not cached (defensive, object may have been late-spawned)
+        if not self._endpointTransform and self.ChainEndpointName and self.ChainEndpointName ~= "" then
+            self._endpointTransform = Engine.FindTransformByName(self.ChainEndpointName)
+        end
+
+        if self._endpointTransform then
+            local chainIsActive = (self.m_CurrentLength or 0) > 1e-4 or self.m_IsExtending
+            if chainIsActive then
+                -- Move endpoint obj to the tip of the chain
+                self:_write_world_pos(self._endpointTransform, endPos[1], endPos[2], endPos[3])
+
+                -- Rotate endpoint obj so its local UP axis points in the throw direction.
+                -- The knife model faces upward by default, so we align UP -> lastForward.
+                local fwd = self.controller.lastForward
+                local fx, fy, fz = fwd[1] or 0, fwd[2] or 0, fwd[3] or 1
+
+                -- Build a rotation that takes world UP {0,1,0} to the throw direction.
+                -- Cross product gives the rotation axis; dot gives the angle.
+                local ux, uy, uz = 0, 1, 0
+                local dot = ux*fx + uy*fy + uz*fz
+                -- Rotation axis = UP x forward
+                local rx = uy*fz - uz*fy
+                local ry = uz*fx - ux*fz
+                local rz = ux*fy - uy*fx
+                local axisLen = math.sqrt(rx*rx + ry*ry + rz*rz)
+
+                local qw, qx, qy, qz
+                if axisLen < 1e-6 then
+                    if dot > 0 then
+                        -- Already aligned: identity
+                        qw, qx, qy, qz = 1, 0, 0, 0
+                    else
+                        -- Exactly opposite (knife pointing straight down): rotate 180 around X
+                        qw, qx, qy, qz = 0, 1, 0, 0
+                    end
+                else
+                    -- Half-angle quaternion from axis-angle
+                    rx, ry, rz = rx/axisLen, ry/axisLen, rz/axisLen
+                    local angle = math.acos(math.max(-1, math.min(1, dot)))
+                    local halfAngle = angle * 0.5
+                    local s = math.sin(halfAngle)
+                    qw = math.cos(halfAngle)
+                    qx = rx * s
+                    qy = ry * s
+                    qz = rz * s
+                end
+
+                -- Normalize
+                local qlen = math.sqrt(qw*qw + qx*qx + qy*qy + qz*qz)
+                if qlen > 1e-12 then
+                    qw, qx, qy, qz = qw/qlen, qx/qlen, qy/qlen, qz/qlen
+                else
+                    qw, qx, qy, qz = 1, 0, 0, 0
+                end
+
+                pcall(function()
+                    local rot = self._endpointTransform.localRotation
+                    if rot and (type(rot) == "table" or type(rot) == "userdata") then
+                        rot.w, rot.x, rot.y, rot.z = qw, qx, qy, qz
+                        self._endpointTransform.isDirty = true
+                    end
+                end)
+
+                -- Publish endpoint state to bus so scripts on the endpoint obj can react
+                if _G.event_bus and _G.event_bus.publish then
+                    _G.event_bus.publish("chain.endpoint_moved", {
+                        position = { x = endPos[1], y = endPos[2], z = endPos[3] },
+                        isLocked = public.EndPointLocked,
+                        chainLength = self.m_CurrentLength,
+                        isExtending = self.m_IsExtending,
+                        isRetracting = self.m_IsRetracting,
+                    })
+                end
+
+                -- Track previous active state to detect transition
+                self._wasChainActive = true
+            else
+                -- Chain fully retracted: move endpoint back to start so it is hidden at the hand
+                local sp = self.controller.startPos
+                self:_write_world_pos(self._endpointTransform, sp[1], sp[2], sp[3])
+
+                -- Only publish retracted once on the transition, not every frame while idle
+                if self._wasChainActive then
+                    self._wasChainActive = false
+                    if _G.event_bus and _G.event_bus.publish then
+                        _G.event_bus.publish("chain.endpoint_retracted", {
+                            position = { x = sp[1], y = sp[2], z = sp[3] },
+                        })
+                    end
+                end
+            end
+        end
 
         if self.EnableLogs then
             dump_state(self.controller)
@@ -323,8 +431,12 @@ return Component {
         end
     end,
 
-    StartExtension = function(self) if self.controller then self.controller:StartExtension(self._cameraForward) end end,
+    StartExtension = function(self)
+        if self.controller then
+            self.controller:StartExtension(self._cameraForward, self.MaxLength, self.LinkMaxDistance)
+        end
+    end,
     StartRetraction = function(self) if self.controller then self.controller:StartRetraction() end end,
     StopExtension = function(self) if self.controller then self.controller:StopExtension() end end,
-    GetChainState = function(self) return { Length = self.m_CurrentLength, Count = self.m_LinkCount } end
+    GetChainState = function(self) return { Length = self.m_CurrentLength, Count = self.m_LinkCount, ActiveCount = self.m_ActiveLinkCount } end
 }
