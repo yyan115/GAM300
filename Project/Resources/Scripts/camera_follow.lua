@@ -608,11 +608,11 @@ return Component {
                         self._cinematicStartPosZ = pz or 0.0
                     end
 
-                    local curQuat = eulerToQuat(self._pitch, self._yaw, 0.0)
-                    self._cinematicStartRotW = curQuat.w
-                    self._cinematicStartRotX = curQuat.x
-                    self._cinematicStartRotY = curQuat.y
-                    self._cinematicStartRotZ = curQuat.z
+                    local rw, rx, ry, rz = self:GetRotation()
+                    self._cinematicStartRotW = rw or 1
+                    self._cinematicStartRotX = rx or 0
+                    self._cinematicStartRotY = ry or 0
+                    self._cinematicStartRotZ = rz or 0
                 end
 
                 -- Smooth-step for nicer easing
