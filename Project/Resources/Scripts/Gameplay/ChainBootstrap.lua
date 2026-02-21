@@ -18,7 +18,8 @@ return Component {
         IsElastic = false,
         LinkMaxDistance = 0.025,
         PinEndWhenExtended = true,
-        AnchorAngleThresholdDeg = 45
+        AnchorAngleThresholdDeg = 45,
+        SubSteps = 4
     },
 
     _unpack_pos = function(self, a, b, c)
@@ -278,6 +279,7 @@ return Component {
             VerletGravity = self.VerletGravity,
             VerletDamping = self.VerletDamping,
             ConstraintIterations = self.ConstraintIterations,
+            SubSteps = self.SubSteps,
             AnchorAngleThresholdRad = math.rad(self.AnchorAngleThresholdDeg or 45),
             PinEndWhenExtended = self.PinEndWhenExtended,
             getStart = function()

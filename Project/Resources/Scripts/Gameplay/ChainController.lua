@@ -221,9 +221,9 @@ function M:Update(dt, settings)
                 self.isExtending = false
 
                 -- Recalculate activeN based on actual hit distance instead of MaxLength
-                local linkMax = tonumber(settings.LinkMaxDistance) or tonumber(self.params.LinkMaxDistance) or 0
-                if linkMax > 0 then
-                    local needed = math.ceil(raycastResult.distance / linkMax) + 1
+                local linkMaxForSnap = tonumber(settings.LinkMaxDistance) or tonumber(self.params.LinkMaxDistance) or 0
+                if linkMaxForSnap > 0 then
+                    local needed = math.ceil(raycastResult.distance / linkMaxForSnap) + 1
                     local prevActiveN = self.activeN
                     self.activeN = math.min(needed, self.n)
                     print(string.format("[ChainController] Raycast HIT at distance %.3f, locked endpoint at (%.3f, %.3f, %.3f) | activeN recalculated: %d -> %d",
@@ -232,6 +232,7 @@ function M:Update(dt, settings)
                     print(string.format("[ChainController] Raycast HIT at distance %.3f, locked endpoint at (%.3f, %.3f, %.3f)",
                         raycastResult.distance, ex, ey, ez))
                 end
+
             else
                 ex = sx + (fx * theoreticalDistance)
                 ey = sy + (fy * theoreticalDistance)
