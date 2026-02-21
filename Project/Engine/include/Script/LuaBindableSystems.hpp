@@ -835,8 +835,6 @@ namespace NavWrappers {
     }
 }
 
-
-
 // ============================================================================
 // 
 // ============================================================================
@@ -1165,5 +1163,16 @@ namespace EntityQueryWrappers {
 		}
 
         return 1;
+    }
+}
+
+// ============================================================================
+// PREFAB WRAPPERS
+// ============================================================================
+#include "Prefab/PrefabIO.hpp"
+
+namespace PrefabWrappers {
+    inline Entity InstantiatePrefab(const std::string& prefabPath) {
+        return InstantiatePrefabFromFile(prefabPath);
     }
 }

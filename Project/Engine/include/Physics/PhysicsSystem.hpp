@@ -42,6 +42,7 @@ public:
 	void PhysicsSyncBack(ECSManager& ecsManager);	//JOLT -> ECS
 	void Shutdown();
 
+	void CreatePhysicsBody(Entity e, ECSManager& ecsManager);
 	// Remove a single entity's physics body (used when CharacterVirtual takes over)
 	void RemoveBody(Entity entity);
 

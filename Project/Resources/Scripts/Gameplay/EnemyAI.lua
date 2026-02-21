@@ -165,6 +165,8 @@ return Component {
 
         PlayerName = "Player",
 
+        FeatherPrefabPath = "Resources/Prefabs/Feather.prefab",
+
         -- === Kinematic grounding tuning ===
         UseKinematicGrounding = true,
 
@@ -1397,6 +1399,16 @@ return Component {
         if self.fsm.currentName ~= "Hooked" then
             self.fsm:Change("Hooked", self.states.Hooked)
         end
+    end,
+
+    SpawnFeather = function(self)
+        if not self.FeatherPrefabPath then return end
+        local featherEntt = Prefab.InstantiatePrefab(self.FeatherPrefabPath)
+        local featherTr = GetComponent(featherEntt, "Transform")
+        --print(string.format("[EnemyAI] SpawnFeather - self.worldPosition: %f %f %f", self._transform.worldPosition.x, self._transform.worldPosition.y, self._transform.worldPosition.z))
+        featherTr.localPosition = self._transform.worldPosition
+        featherTr.localPosition.y = featherTr.localPosition.y + 0.5
+        featherTr.isDirty = true
     end,
 
     OnDisable = function(self)

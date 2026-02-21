@@ -16,6 +16,8 @@ function DeathState:Enter(ai)
     -- init always
     ai._deathTimer = 0
     ai._deathLifetime = tonumber(ai.deathLifetime) or 8.0
+
+    ai:SpawnFeather()
 end
 
 function DeathState:Update(ai, dt)

@@ -336,6 +336,13 @@ BEGIN_SYSTEM("Nav")
     FUNCTION("GetGroundY", NavWrappers::GetGroundY)
 END_SYSTEM()
 
+// ============================================================================
+// PREFAB INSTANTIATION
+// ============================================================================
+BEGIN_SYSTEM("Prefab")
+    FUNCTION("InstantiatePrefab", &PrefabWrappers::InstantiatePrefab)
+END_SYSTEM()
+
 
 // ============================================================================
 // FUTURE SYSTEMS (Examples)
