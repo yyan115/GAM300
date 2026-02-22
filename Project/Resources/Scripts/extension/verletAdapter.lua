@@ -209,6 +209,21 @@ local function stepOnce(state, dt, params)
             end
         end
     end
+
+    -- Ground clamp: prevent links from going below terrain.
+    -- Uses a single pre-computed groundY from ChainController (one raycast per frame, O(1)).
+    -- Only a simple Y comparison per link here, no additional raycasts.
+    if params and params.GroundClamp and params.groundY ~= nil then
+        local groundY = params.groundY
+        for i = 1, n do
+            if (invMass[i] or 0) > 0 then  -- only clamp dynamic links
+                if positions[i][2] < groundY then
+                    positions[i][2] = groundY
+                    prev[i][2] = groundY  -- kill downward velocity at ground
+                end
+            end
+        end
+    end
 end
 
 function M.Step(state, dt, params)

@@ -20,7 +20,9 @@ return Component {
         PinEndWhenExtended = true,
         AnchorAngleThresholdDeg = 45,
         SubSteps = 4,
-        ChainEndpointName = "ChainEndpoint"
+        ChainEndpointName = "ChainEndpoint",
+        GroundClamp = true,
+        GroundClampOffset = 0.1
     },
 
     _unpack_pos = function(self, a, b, c)
@@ -290,6 +292,8 @@ return Component {
             VerletDamping = self.VerletDamping,
             ConstraintIterations = self.ConstraintIterations,
             SubSteps = self.SubSteps,
+            GroundClamp = self.GroundClamp,
+            GroundClampOffset = self.GroundClampOffset,
             AnchorAngleThresholdRad = math.rad(self.AnchorAngleThresholdDeg or 45),
             PinEndWhenExtended = self.PinEndWhenExtended,
             getStart = function()
