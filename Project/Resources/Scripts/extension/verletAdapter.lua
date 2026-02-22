@@ -12,9 +12,9 @@ function M.Init(state)
     return state
 end
 
-function M.Step(state, dt, params)
-    if not state or dt <= 0 or (state.n or 0) == 0 then return end
-    local n = state.n
+-- Single substep of integration + constraints. Called multiple times per frame by M.Step.
+local function stepOnce(state, dt, params)
+    local n = (params and params.n) or state.n
     local gmag = math.abs((params and params.VerletGravity) or 9.81)
     local damping = math.max(0, math.min(1, (params and params.VerletDamping) or 0.02))
     local dt2 = dt * dt
@@ -25,28 +25,6 @@ function M.Step(state, dt, params)
 
     -- Determine if we need bidirectional constraint solving (both endpoints pinned)
     local needsBidirectional = params and (not params.IsElastic) and params.pinnedLast and type(params.endPos) == "table"
-    
-    -- Calculate distance between start and end points
-    local startToEndDist = 0
-    if needsBidirectional and params.startPos and params.endPos then
-        local dx = params.endPos[1] - params.startPos[1]
-        local dy = params.endPos[2] - params.startPos[2]
-        local dz = params.endPos[3] - params.startPos[3]
-        startToEndDist = math.sqrt(dx*dx + dy*dy + dz*dz)
-    end
-    
-    -- Calculate total chain length
-    local totalChainLength = params.segmentLen and ((n - 1) * params.segmentLen) or 0
-    
-    -- Chain is only taut (no gravity) if distance >= chain length
-    -- If distance < chain length, there's slack and gravity should apply
-    local isTaut = needsBidirectional and (startToEndDist >= totalChainLength - EPS)
-    local applyGravity = not isTaut
-    
-    -- When chain just became taut, kill all velocity to prevent oscillation
-    if isTaut then
-        damping = 0.98  -- Very high damping when taut
-    end
 
     -- integrate dynamic particles
     for i = 1, n do
@@ -57,22 +35,15 @@ function M.Step(state, dt, params)
             local vx = (px - ppx) * (1 - damping)
             local vy = (py - ppy) * (1 - damping)
             local vz = (pz - ppz) * (1 - damping)
-            
-            -- Apply gravity only when chain has slack
-            local ax, ay, az = 0, 0, 0
-            if applyGravity then
-                ax, ay, az = 0, -gmag, 0
-            end
-            
-            local nx = px + vx + ax * dt2
-            local ny = py + vy + ay * dt2
-            local nz = pz + vz + az * dt2
+            local nx = px + vx
+            local ny = py + vy + (-gmag) * dt2
+            local nz = pz + vz
             prev[i][1], prev[i][2], prev[i][3] = px, py, pz
             positions[i][1], positions[i][2], positions[i][3] = nx, ny, nz
         end
     end
 
-    -- enforce pinned start/end positions if provided (do not change invMass)
+    -- enforce pinned start position
     if params and type(params.startPos) == "table" then
         positions[1][1], positions[1][2], positions[1][3] =
             params.startPos[1], params.startPos[2], params.startPos[3]
@@ -80,27 +51,23 @@ function M.Step(state, dt, params)
             params.startPos[1], params.startPos[2], params.startPos[3]
     end
 
+    -- enforce pinned end position
     if params and params.pinnedLast and type(params.endPos) == "table" then
-        local li = n
-        positions[li][1], positions[li][2], positions[li][3] =
+        positions[n][1], positions[n][2], positions[n][3] =
             params.endPos[1], params.endPos[2], params.endPos[3]
-        prev[li][1], prev[li][2], prev[li][3] =
+        prev[n][1], prev[n][2], prev[n][3] =
             params.endPos[1], params.endPos[2], params.endPos[3]
     end
 
-    -- constraints: prefer explicit segmentLen from params; fallback to totalLen/(n-1)
+    -- constraints
     local segLen = (params and params.segmentLen) or ( (n>1) and (math.max((params and params.totalLen) or 0.000001, EPS) / (n-1)) or 0 )
     if params and params.ClampSegment then segLen = math.min(segLen, params.ClampSegment) end
 
-    -- Use MORE iterations when chain is taut to maintain straightness
-    local baseIterations = tonumber((params and params.ConstraintIterations) or 2)
-    local iterations = isTaut and math.min(40, baseIterations * 2) or math.min(20, baseIterations)
+    local iterations = math.min(20, tonumber((params and params.ConstraintIterations) or 2))
 
     for it = 1, iterations do
         if needsBidirectional then
-            -- BIDIRECTIONAL PASS
-            
-            -- Forward pass (start to end)
+            -- Forward pass
             for i = 2, n do
                 local a = positions[i-1]
                 local b = positions[i]
@@ -132,8 +99,8 @@ function M.Step(state, dt, params)
                     end
                 end
             end
-            
-            -- Backward pass (end to start)
+
+            -- Backward pass
             for i = n, 2, -1 do
                 local a = positions[i-1]
                 local b = positions[i]
@@ -166,7 +133,7 @@ function M.Step(state, dt, params)
                 end
             end
         else
-            -- SINGLE FORWARD PASS
+            -- Single forward pass
             for i = 2, n do
                 local a = positions[i-1]
                 local b = positions[i]
@@ -200,7 +167,7 @@ function M.Step(state, dt, params)
             end
         end
 
-        -- re-apply pinned anchors each iteration
+        -- re-pin anchors every iteration
         if params and type(params.startPos) == "table" then
             positions[1][1], positions[1][2], positions[1][3] =
                 params.startPos[1], params.startPos[2], params.startPos[3]
@@ -208,18 +175,17 @@ function M.Step(state, dt, params)
                 params.startPos[1], params.startPos[2], params.startPos[3]
         end
         if params and params.pinnedLast and type(params.endPos) == "table" then
-            local li = n
-            positions[li][1], positions[li][2], positions[li][3] =
+            positions[n][1], positions[n][2], positions[n][3] =
                 params.endPos[1], params.endPos[2], params.endPos[3]
-            prev[li][1], prev[li][2], prev[li][3] =
+            prev[n][1], prev[n][2], prev[n][3] =
                 params.endPos[1], params.endPos[2], params.endPos[3]
         end
     end
 
-    -- final strict inelastic pass
+    -- final strict inelastic clamp
     if params and (not params.IsElastic) and params.LinkMaxDistance and params.LinkMaxDistance > 0 then
         local maxd = params.LinkMaxDistance
-        if (params.pinnedLast and params.endPos) then
+        if params.pinnedLast and params.endPos then
             for i = n-1, 1, -1 do
                 local a = positions[i+1]; local b = positions[i]
                 local dx,dy,dz = b[1]-a[1], b[2]-a[2], b[3]-a[3]
@@ -243,8 +209,19 @@ function M.Step(state, dt, params)
             end
         end
     end
+end
 
-    return positions, prev, invMass
+function M.Step(state, dt, params)
+    if not state or dt <= 0 or (state.n or 0) == 0 then return end
+
+    local subSteps = math.max(1, tonumber((params and params.SubSteps) or 4))
+    local subDt = dt / subSteps
+
+    for step = 1, subSteps do
+        stepOnce(state, subDt, params)
+    end
+
+    return state.positions, state.prev, state.invMass
 end
 
 return M

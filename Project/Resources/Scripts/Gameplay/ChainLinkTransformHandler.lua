@@ -79,23 +79,36 @@ function M:InitTransforms(transformArray)
     end
 end
 
-function M:ApplyPositions(positions)
-    -- positions: table indexed 1..n each {x,y,z}
-    for i, proxy in ipairs(self.proxies) do
-        local p = positions[i]
-        if p and proxy and proxy.SetPosition then
-            proxy:SetPosition(p[1], p[2], p[3])
+-- activeN: number of links from the pool that are currently in use.
+-- Links beyond activeN are snapped to the start position (hidden in pool).
+function M:ApplyPositions(positions, activeN)
+    activeN = activeN or #self.proxies
+    for i = 1, #self.proxies do
+        local proxy = self.proxies[i]
+        if not proxy then break end
+        if i <= activeN then
+            local p = positions[i]
+            if p then
+                proxy:SetPosition(p[1], p[2], p[3])
+            end
+        else
+            -- Pool link not in use: snap to start position to hide it
+            local p = positions[1]
+            if p then
+                proxy:SetPosition(p[1], p[2], p[3])
+            end
         end
     end
 end
 
--- Expose UpdateRotations using parallel-transport-based implementation derived from original
-function M:ApplyRotations(positions, startPos, endPos, maxStepRad, altTwist)
-    -- positions: array 1..n; startPos/endPos optional; maxStepRad optional
-    local n = #self.proxies
+-- activeN: only compute and apply rotations for the active links.
+-- Pool links beyond activeN are left at whatever rotation they last had (they are hidden at start pos).
+function M:ApplyRotations(positions, startPos, endPos, maxStepRad, altTwist, activeN)
+    activeN = activeN or #self.proxies
+    local n = activeN
     if n == 0 then return end
-    local rt = {}
-    -- build forward array
+
+    -- build forward array only for active links
     local forward = {}
     for i = 1, n do
         local fx,fy,fz = 0,0,0
@@ -116,7 +129,6 @@ function M:ApplyRotations(positions, startPos, endPos, maxStepRad, altTwist)
         end
         local nfx, nfy, nfz = normalize(fx,fy,fz)
         if nfx == 0 and nfy == 0 and nfz == 0 then
-            -- fallback
             nfx, nfy, nfz = 1,0,0
         end
         forward[i] = {nfx, nfy, nfz}
@@ -143,10 +155,7 @@ function M:ApplyRotations(positions, startPos, endPos, maxStepRad, altTwist)
         ux,uy,uz = normalize(ux,uy,uz)
 
         if altTwist and (i % 2) == 0 then
-            -- rotate rx,ux by +90 degrees about forward
             local angle = math.pi * 0.5
-            -- small local quat rotate (fast path)
-            -- convert axis-angle to rotation of vector v: v' = v*cos + (axis x v)*sin + axis*(axis·v)*(1-cos)
             local ca = math.cos(angle); local sa = math.sin(angle)
             local ax,ay,az = fx,fy,fz
             local cross_rx_x = (ay * rz - az * ry)
@@ -156,7 +165,6 @@ function M:ApplyRotations(positions, startPos, endPos, maxStepRad, altTwist)
             rx = rx*ca + cross_rx_x*sa + ax*(dota*(1-ca))
             ry = ry*ca + cross_rx_y*sa + ay*(dota*(1-ca))
             rz = rz*ca + cross_rx_z*sa + az*(dota*(1-ca))
-            -- same for ux
             local cross_ux_x = (ay * uz - az * uy)
             local cross_ux_y = (az * ux - ax * uz)
             local cross_ux_z = (ax * uy - ay * ux)
@@ -169,8 +177,7 @@ function M:ApplyRotations(positions, startPos, endPos, maxStepRad, altTwist)
         end
 
         -- build matrix columns RIGHT(rx,ry,rz), UP(ux,uy,uz), FORWARD(fx,fy,fz)
-        -- convert to quaternion via a compact mat->quat
-        -- inline mat3_to_quat (same logic as original) - keep identical math for stability
+        -- convert to quaternion via compact mat->quat
         local m00,m10,m20 = rx,ry,rz
         local m01,m11,m21 = ux,uy,uz
         local m02,m12,m22 = fx,fy,fz
@@ -250,13 +257,13 @@ function M:ApplyRotations(positions, startPos, endPos, maxStepRad, altTwist)
         end
 
         -- write rotation to transform safely
-        local tr = self.transforms[i]
+        local transform = self.transforms[i]
         pcall(function()
-            if tr and tr.localRotation then
-                local rot = tr.localRotation
+            if transform and transform.localRotation then
+                local rot = transform.localRotation
                 if type(rot) == "table" or type(rot) == "userdata" then
                     rot.w, rot.x, rot.y, rot.z = final_w, final_x, final_y, final_z
-                    tr.isDirty = true
+                    transform.isDirty = true
                 end
             end
         end)
