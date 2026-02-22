@@ -195,6 +195,20 @@ function M:Update(dt, settings)
     end
     self.startPos[1], self.startPos[2], self.startPos[3] = sx, sy, sz
 
+    -- Single downward raycast from start point to get global ground floor for chain clamping.
+    -- Only one raycast per frame regardless of link count (O(1)).
+    if settings.GroundClamp and Physics and Physics.Raycast then
+        local rayLen = 20.0
+        local hitDist = Physics.Raycast(sx, sy, sz, 0, -1, 0, rayLen)
+        if hitDist and hitDist > 0 then
+            self._groundY = sy - hitDist + (settings.GroundClampOffset or 0.1)
+        else
+            self._groundY = nil
+        end
+    else
+        self._groundY = nil
+    end
+
     -- 3) Determine end world position with raycast collision detection
     local ex,ey,ez
     
@@ -314,6 +328,9 @@ function M:Update(dt, settings)
         segmentLen = segmentLen,
         ClampSegment = linkMax,
         endPointLocked = self.endPointLocked,
+        GroundClamp = settings.GroundClamp,
+        GroundClampOffset = settings.GroundClampOffset,
+        groundY = self._groundY,
         pinnedLast = self.endPointLocked or ((not self.isExtending) and ((self.chainLen or 0) + 1e-9 >= (aN - 1) * segmentLen) and (settings.PinEndWhenExtended or self.params.PinEndWhenExtended)),
         endPos = { ex, ey, ez },
         startPos = { sx, sy, sz }
@@ -321,6 +338,14 @@ function M:Update(dt, settings)
     
     -- Step Verlet physics (in-place modification of self.positions/self.prev/self.invMass)
     VerletAdapter.Step(self.VerletState, dt, vparams)
+
+    -- Wall clamp: interval raycast between every WallClampInterval links, once per frame
+    if settings.WallClamp then
+        vparams.WallClamp = true
+        vparams.WallClampInterval = settings.WallClampInterval or 10
+        vparams.WallClampRadius = settings.WallClampRadius or 0
+        VerletAdapter.ApplyWallClamp(self.VerletState, vparams)
+    end
 
     -- 8) After physics, ensure locked endpoint and undeployed links remain kinematic
     if self.endPointLocked then
