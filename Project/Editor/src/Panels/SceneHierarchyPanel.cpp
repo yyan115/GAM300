@@ -361,7 +361,7 @@ void SceneHierarchyPanel::OnImGuiRender() {
                 if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("PREFAB_PATH")) {
                     const char* prefabPath = static_cast<const char*>(payload->Data);
                     const Entity entity = InstantiatePrefabFromFile(prefabPath);
-                    if (entity == MAX_ENTITIES) {
+                    if (entity == INVALID_ENTITY) {
                         std::cerr << "[ScenePanel] Failed to instantiate prefab: " << prefabPath << "\n";
                     }
                     else {

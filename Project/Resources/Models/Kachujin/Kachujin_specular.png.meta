@@ -6,8 +6,9 @@
         "compiled": "../../Resources/Models/Kachujin/Kachujin_specular.dds"
     },
     "TextureMetaData": {
-        "type": "specular",
+        "type": "diffuse",
         "flipUVs": false,
-        "generateMipmaps": true
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp"
     }
 }

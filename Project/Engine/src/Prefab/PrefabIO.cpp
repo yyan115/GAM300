@@ -277,7 +277,7 @@ ENGINE_API Entity InstantiatePrefabFromFile(const std::string& prefabPath, bool 
         buffer = platform->ReadAsset(assetPath);
         if (buffer.empty()) {
             ENGINE_LOG_ERROR("[PrefabIO] Failed to read prefab: " + prefabPath);
-            return MAX_ENTITIES;
+            return INVALID_ENTITY;
         }
         finalRelativePath = assetPath; // Use the working path for PrefabLinkComponent
     }
@@ -288,12 +288,12 @@ ENGINE_API Entity InstantiatePrefabFromFile(const std::string& prefabPath, bool 
     rapidjson::Document doc;
     doc.Parse(json.c_str());
     if (doc.HasParseError() || !doc.IsObject()) {
-        std::cerr << "[PrefabIO] Invalid JSON in " << finalRelativePath << "\n"; return MAX_ENTITIES;
+        std::cerr << "[PrefabIO] Invalid JSON in " << finalRelativePath << "\n"; return INVALID_ENTITY;
     }
-    if (doc.MemberCount() == 0) { std::cout << "[PrefabIO] Prefab has no components (empty): " << finalRelativePath << "\n"; return MAX_ENTITIES; }
+    if (doc.MemberCount() == 0) { std::cout << "[PrefabIO] Prefab has no components (empty): " << finalRelativePath << "\n"; return INVALID_ENTITY; }
     if (!doc.HasMember("prefab_entities") || !doc["prefab_entities"].IsArray()) {
         ENGINE_LOG_WARN("[PrefabIO] Doc has no prefab_entities array.");
-        return MAX_ENTITIES;
+        return INVALID_ENTITY;
     }
 
     const rapidjson::Value& ents = doc["prefab_entities"];
@@ -357,7 +357,7 @@ ENGINE_API Entity InstantiatePrefabIntoEntity(const std::string& prefabPath, Ent
         buffer = platform->ReadAsset(assetPath);
         if (buffer.empty()) {
             std::cerr << "[PrefabIO] Failed to read prefab: " << prefabPath << " (tried: " << finalRelativePath << ", " << assetPath << ")\n";
-            return MAX_ENTITIES;
+            return INVALID_ENTITY;
         }
         finalRelativePath = assetPath;
     }
@@ -367,12 +367,12 @@ ENGINE_API Entity InstantiatePrefabIntoEntity(const std::string& prefabPath, Ent
     rapidjson::Document doc;
     doc.Parse(json.c_str());
     if (doc.HasParseError() || !doc.IsObject()) {
-        std::cerr << "[PrefabIO] Invalid JSON in " << finalRelativePath << "\n"; return MAX_ENTITIES;
+        std::cerr << "[PrefabIO] Invalid JSON in " << finalRelativePath << "\n"; return INVALID_ENTITY;
     }
-    if (doc.MemberCount() == 0) { std::cout << "[PrefabIO] Prefab has no components (empty): " << finalRelativePath << "\n"; return MAX_ENTITIES; }
+    if (doc.MemberCount() == 0) { std::cout << "[PrefabIO] Prefab has no components (empty): " << finalRelativePath << "\n"; return INVALID_ENTITY; }
     if (!doc.HasMember("prefab_entities") || !doc["prefab_entities"].IsArray()) {
         ENGINE_LOG_WARN("[PrefabIO] Doc has no prefab_entities array.");
-        return MAX_ENTITIES;
+        return INVALID_ENTITY;
     }
 
     const rapidjson::Value& ents = doc["prefab_entities"];

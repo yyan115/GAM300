@@ -166,6 +166,7 @@ return Component {
         PlayerName = "Player",
 
         FeatherPrefabPath = "Resources/Prefabs/Feather.prefab",
+        NumFeathersSpawnedPerHit = 5,
 
         -- === Kinematic grounding tuning ===
         UseKinematicGrounding = true,
@@ -246,6 +247,7 @@ return Component {
         self._transform = self:GetComponent("Transform")
         self._rb        = self:GetComponent("RigidBodyComponent")
         self.particles  = self:GetComponent("ParticleComponent")
+        self._featherEntities = {}
 
         if self._controller then
             pcall(function() CharacterController.DestroyByEntity(self.entityId) end)
@@ -514,6 +516,12 @@ return Component {
                 entityId = self.entityId,
                 x = x, y = y, z = z
             })
+        end
+
+        -- [CRITICAL ADDITION] Ensure the scheduler actually runs!
+        -- If your engine doesn't call _G.update(dt) automatically, the feathers will never spawn.
+        if _G.scheduler and _G.scheduler.tick then
+             _G.scheduler.tick(dt)
         end
     end,
 
@@ -1380,14 +1388,80 @@ return Component {
         end
     end,
 
-    SpawnFeather = function(self)
+    GetHitDirection = function(self)
+        -- 1. Get Player Position (Source of the hit)
+        local tr = self._playerTr
+        if not tr then
+            tr = Engine.FindTransformByName(self.PlayerName)
+            self._playerTr = tr
+        end
+        if not tr then return 0, 0, 1 end -- Default forward if player missing
+
+        local pp = Engine.GetTransformPosition(tr)
+        if not pp then return 0, 0, 1 end
+        local px, py, pz = pp[1], pp[2], pp[3]
+
+        -- 2. Get Enemy Position (Target of the hit)
+        local ex, ey, ez = self:GetPosition()
+        if not ex then return 0, 0, 1 end
+
+        -- 3. Subtract (Target - Source)
+        local dx = ex - px
+        local dy = ey - py
+        local dz = ez - pz
+
+        -- 4. Normalize (Make length 1.0)
+        local lenSq = dx*dx + dy*dy + dz*dz
+        if lenSq < 1e-8 or lenSq > 1e12 then 
+            return 0, 0, 1 
+        end
+
+        local len = math.sqrt(lenSq)
+        return dx / len, dy / len, dz / len
+    end,
+
+    SpawnFeather = function(self, featherIndex)
         if not self.FeatherPrefabPath then return end
-        local featherEntt = Prefab.InstantiatePrefab(self.FeatherPrefabPath)
-        local featherTr = GetComponent(featherEntt, "Transform")
-        --print(string.format("[EnemyAI] SpawnFeather - self.worldPosition: %f %f %f", self._transform.worldPosition.x, self._transform.worldPosition.y, self._transform.worldPosition.z))
-        featherTr.localPosition = self._transform.worldPosition
-        featherTr.localPosition.y = featherTr.localPosition.y + 0.5
-        featherTr.isDirty = true
+        
+        -- Capture data NOW (before next frame)
+        local spawnPos = { x=0, y=0, z=0 }
+        local x,y,z = self:GetPosition()
+        if x then spawnPos = {x=x, y=y, z=z} end
+        
+        local hx, hy, hz = self:GetHitDirection()
+        --print("[EnemyAI] SpawnFeather - GOT HIT DIRECTION")
+
+        -- Stagger slightly
+        local delay = featherIndex * 0.02
+
+        if _G.scheduler then
+            _G.scheduler.after(delay, function()
+                -- 1. Instantiate
+                local ent = Prefab.InstantiatePrefab(self.FeatherPrefabPath)
+
+                if ent then
+                    -- [FIX] Store data in a global registry keyed by ID
+                    -- This survives even if the engine resets the script instance 'self'
+                    _G.PendingFeatherData = _G.PendingFeatherData or {}
+                    _G.PendingFeatherData[ent] = { x = hx, y = hy, z = hz }
+        
+                    local featherTr = GetComponent(ent, "Transform")
+                    
+                    -- 2. Position [FIXED: Don't use a table!]
+                    -- Get the existing Vector3D from the new feather
+                    local pos = featherTr.localPosition 
+                    
+                    -- Modify its values
+                    pos.x = spawnPos.x
+                    pos.y = spawnPos.y + 0.5
+                    pos.z = spawnPos.z
+                    
+                    -- Assign the Vector3D back to the transform
+                    featherTr.localPosition = pos
+                    featherTr.isDirty = true
+                end
+            end)
+        end    
     end,
 
     OnDisable = function(self)

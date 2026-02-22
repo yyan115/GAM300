@@ -94,6 +94,10 @@ public:
 
         uint64_t key = MakeCollisionKey(entityA, entityB);
 
+        // [FIX] LOCK THE MUTEX AT THE START
+        // This protects 'activeCollisions', the vectors, AND your logging/callbacks.
+        std::lock_guard<std::mutex> lock(m_eventMutex);
+
         // Only trigger callback if this is a new collision
         if (activeCollisions.insert(key).second) {
             if (enableLogging) {
@@ -116,10 +120,7 @@ public:
             }
 
             // Buffer for main-thread dispatch (Lua callbacks)
-            {
-                std::lock_guard<std::mutex> lock(m_eventMutex);
-                m_pendingEnter.push_back(event);
-            }
+            m_pendingEnter.push_back(event);
 
             if (enableDetailedLogging) {
                 LogCollisionDetails(inBody1, inBody2, inManifold);
@@ -137,6 +138,9 @@ public:
 
         uint64_t key = MakeCollisionKey(entityA, entityB);
 
+        // [FIX] LOCK THE MUTEX AT THE START
+        std::lock_guard<std::mutex> lock(m_eventMutex);
+
         if (activeCollisions.erase(key) > 0) {
             if (enableLogging) {
                 ENGINE_PRINT("[Collision] Exit: Entity ", entityA,
@@ -152,10 +156,7 @@ public:
             }
 
             // Buffer for main-thread dispatch (Lua callbacks)
-            {
-                std::lock_guard<std::mutex> lock(m_eventMutex);
-                m_pendingExit.push_back(event);
-            }
+            m_pendingExit.push_back(event);
         }
     }
 

@@ -310,6 +310,7 @@ BEGIN_SYSTEM("Engine")
     FUNCTION("GetGameCoordinate", &Lua_ScreenToGameCoordinates)
     FUNCTION("CreateEntityDup", &Lua_CreateEntityDup)
     FUNCTION("DestroyEntityDup", &Lua_DestroyEntityDup)
+    FUNCTION("DestroyEntity", &Lua_DestroyEntity)
     FUNCTION("FindAnimatorByName", &Lua_FindAnimatorByName)
 
     FUNCTION("FindEntitiesWithScript", &EntityQueryWrappers::FindEntitiesWithScript)

@@ -2,6 +2,7 @@ require("extension.engine_bootstrap")
 local event_bus = _G.event_bus
 local Component = require("extension.mono_helper")
 
+-- [CRITICAL FIX] Ensure we call Component with { } to return a TABLE, not the function.
 return Component {
     fields = {
         -- Audio: [1] = hover SFX, [2] = click SFX
@@ -30,19 +31,25 @@ return Component {
             if baseEnt then
                 local transform = GetComponent(baseEnt, "Transform")
                 local sprite = GetComponent(baseEnt, "SpriteRenderComponent")
-                local pos = transform.localPosition
-                local scale = transform.localScale
+                
+                -- Guard against missing components
+                if transform and sprite then
+                    local pos = transform.localPosition
+                    local scale = transform.localScale
 
-                self._buttonData[index] = {
-                    name = config.base,
-                    sprite = sprite,
-                    spriteGUIDs = config.spriteGUIDs,
-                    minX = pos.x - (scale.x / 2),
-                    maxX = pos.x + (scale.x / 2),
-                    minY = pos.y - (scale.y / 2),
-                    maxY = pos.y + (scale.y / 2),
-                    wasHovered = false
-                }
+                    self._buttonData[index] = {
+                        name = config.base,
+                        sprite = sprite,
+                        spriteGUIDs = config.spriteGUIDs,
+                        minX = pos.x - (scale.x / 2),
+                        maxX = pos.x + (scale.x / 2),
+                        minY = pos.y - (scale.y / 2),
+                        maxY = pos.y + (scale.y / 2),
+                        wasHovered = false
+                    }
+                else
+                    print("[PauseMenuButtonHandler] Warning: Missing Transform or Sprite on " .. config.base)
+                end
             else
                 print("[PauseMenuButtonHandler] Warning: Missing entity " .. config.base)
             end
@@ -85,15 +92,13 @@ return Component {
     end,
 
     OnClickContinueButton = function(self)
-        local audiocomp = GetComponent(Engine.GetEntityByName("ContinueButton"), "AudioComponent")
-        if audiocomp then
-            audiocomp:Play()
+        local btn = Engine.GetEntityByName("ContinueButton")
+        if btn then
+            local audiocomp = GetComponent(btn, "AudioComponent")
+            if audiocomp then audiocomp:Play() end
         end
         
-        -- Lock cursor for gameplay (FPS camera control)
-        if Screen then
-            Screen.SetCursorLocked(true)
-        end
+        if Screen then Screen.SetCursorLocked(true) end
 
         -- Hide pause menu
         local pauseUIEntity = Engine.GetEntityByName("PauseMenuUI")
@@ -122,9 +127,10 @@ return Component {
     end,
 
     OnClickSettingButton = function(self)
-        local audiocomp = GetComponent(Engine.GetEntityByName("SettingsButton"), "AudioComponent")
-        if audiocomp then
-            audiocomp:Play()
+        local btn = Engine.GetEntityByName("SettingsButton")
+        if btn then
+            local audiocomp = GetComponent(btn, "AudioComponent")
+            if audiocomp then audiocomp:Play() end
         end
 
         local PauseUIEntity = Engine.GetEntityByName("PauseMenuUI")
@@ -141,9 +147,10 @@ return Component {
     end,
 
     OnClickMainMenuButton = function(self)
-        local audiocomp = GetComponent(Engine.GetEntityByName("MainMenuButton"), "AudioComponent")
-        if audiocomp then
-            audiocomp:Play()
+        local btn = Engine.GetEntityByName("MainMenuButton")
+        if btn then
+            local audiocomp = GetComponent(btn, "AudioComponent")
+            if audiocomp then audiocomp:Play() end
         end
 
         local pauseUIEntity = Engine.GetEntityByName("PauseMenuUI")
