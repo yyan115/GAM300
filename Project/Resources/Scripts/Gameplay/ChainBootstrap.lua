@@ -22,7 +22,10 @@ return Component {
         SubSteps = 4,
         ChainEndpointName = "ChainEndpoint",
         GroundClamp = true,
-        GroundClampOffset = 0.1
+        GroundClampOffset = 0.1,
+        WallClamp = false,
+        WallClampInterval = 10,
+        WallClampRadius = 0
     },
 
     _unpack_pos = function(self, a, b, c)
@@ -294,6 +297,9 @@ return Component {
             SubSteps = self.SubSteps,
             GroundClamp = self.GroundClamp,
             GroundClampOffset = self.GroundClampOffset,
+            WallClamp = self.WallClamp,
+            WallClampInterval = self.WallClampInterval,
+            WallClampRadius = self.WallClampRadius,
             AnchorAngleThresholdRad = math.rad(self.AnchorAngleThresholdDeg or 45),
             PinEndWhenExtended = self.PinEndWhenExtended,
             getStart = function()

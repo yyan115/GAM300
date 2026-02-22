@@ -339,6 +339,14 @@ function M:Update(dt, settings)
     -- Step Verlet physics (in-place modification of self.positions/self.prev/self.invMass)
     VerletAdapter.Step(self.VerletState, dt, vparams)
 
+    -- Wall clamp: interval raycast between every WallClampInterval links, once per frame
+    if settings.WallClamp then
+        vparams.WallClamp = true
+        vparams.WallClampInterval = settings.WallClampInterval or 10
+        vparams.WallClampRadius = settings.WallClampRadius or 0
+        VerletAdapter.ApplyWallClamp(self.VerletState, vparams)
+    end
+
     -- 8) After physics, ensure locked endpoint and undeployed links remain kinematic
     if self.endPointLocked then
         self.positions[aN][1], self.positions[aN][2], self.positions[aN][3] = ex, ey, ez
