@@ -33,13 +33,14 @@ return Component {
     mixins = { TransformMixin },
     
     fields = {
-        StartRot = -60,     --Adjust StartEndRot for Left-Right Orientation
-        EndRot = 60,    
-        RollOffset = -45,    --Adjust RollOffset for Top - Down Orientation 
-        OffsetHeight = 0.23, --Adjust OffsetHeight for dagger starting height
-        Speed = 500,
+        StartRot = 60,     --Adjust StartEndRot for Left-Right Orientation
+        EndRot = -200,    
+        RollOffset = 0,    --Adjust RollOffset for Top - Down Orientation 
+        OffsetHeight = 0, --Adjust OffsetHeight for dagger starting height
+        OffsetDistance = -0.2, --Adjust where VFX spawn based on player position
+        Speed = 750,
         Delay = 0.14,
-        AttackState = "NA1"
+        AttackState = "NA3",
     },
     
     Start = function(self)
@@ -67,9 +68,14 @@ return Component {
     
     Update = function(self, dt)
         local currentState = self._playerAnimation:GetCurrentState()
-        local isAttacking = currentState == self.AttackState
-        
+        local cleanAttackState = self.AttackState:gsub('"', '')
+        local isAttacking = currentState == cleanAttackState
+
+        print("current state is ", currentState)
+        print("AttackState is ", cleanAttackState)
+
         if isAttacking and not self._wasAttacking then
+            print("Slash Triggered")
             self:TriggerSlash(self.StartRot, self.EndRot, self.Speed, self.Delay)
         end
         
@@ -134,10 +140,9 @@ return Component {
         
         -- Position logic
         local daggerPos = self._daggerTransform.worldPosition
-        local offsetDistance = 1.0
-        self._transform.localPosition.x = daggerPos.x + (math.sin(playerYawRad) * offsetDistance)           
+        self._transform.localPosition.x = daggerPos.x + (math.sin(playerYawRad) * self.OffsetDistance)           
         self._transform.localPosition.y = daggerPos.y + self.OffsetHeight
-        self._transform.localPosition.z = daggerPos.z + (math.cos(playerYawRad) * offsetDistance)
+        self._transform.localPosition.z = daggerPos.z + (math.cos(playerYawRad) * self.OffsetDistance)
         
         self.delaying = self._currentDelay > 0
         self.delayTimer = 0
