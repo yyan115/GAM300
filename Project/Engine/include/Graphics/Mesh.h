@@ -100,10 +100,17 @@ public:
 
 		boundingBox = AABB(min, max);
 	}
+
+	// Instanced rendering methods
+	void DrawInstanced(Shader& shader, VBO& instanceVBO, GLsizei instanceCount);
+	void DrawInstancedDepthOnly(VBO& instanceVBO, GLsizei instanceCount);
+
 private:
 	VAO vao;
 	EBO ebo;
 	bool vaoSetup;
 	void setupMesh();
 	AABB boundingBox;
+	bool instanceAttributesSetup = false;
+	void SetupInstanceAttributes(VBO& instanceVBO);
 };

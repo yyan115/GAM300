@@ -15,6 +15,7 @@
 #include <android/log.h>
 #endif
 #include <Graphics/Model/ModelFactory.hpp>
+#include <Graphics/Instancing/InstancingManager.hpp>
 
 bool ModelSystem::Initialise() 
 {
@@ -54,12 +55,10 @@ bool ModelSystem::Initialise()
 void ModelSystem::Update()
 {
     PROFILE_FUNCTION(); // Will automatically show as "Model" in profiler UI
-    
-#ifdef ANDROID
-    //__android_log_print(ANDROID_LOG_INFO, "GAM300", "ModelSystem::Update() called");
-#endif
+
     ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
     GraphicsManager& gfxManager = GraphicsManager::GetInstance();
+    InstancingManager& instancing = InstancingManager::GetInstance();
 
     // Get current view mode and check if rendering for editor
     bool isRenderingForEditor = gfxManager.IsRenderingForEditor();
@@ -71,9 +70,6 @@ void ModelSystem::Update()
     // Reset stats each frame
     cullingStats.Reset();
 
-#ifdef ANDROID
-    //__android_log_print(ANDROID_LOG_INFO, "GAM300", "ModelSystem entities count: %zu", entities.size());
-#endif
 
     // Submit all visible models to the graphics manager
     for (const auto& entity : entities)
@@ -89,37 +85,43 @@ void ModelSystem::Update()
             continue;
         }
 
-#ifdef ANDROID
-        //__android_log_print(ANDROID_LOG_INFO, "GAM300", "Processing entity: %u", entity);
-#endif
         auto& modelComponent = ecsManager.GetComponent<ModelRenderComponent>(entity);
 
-#ifdef ANDROID
-        //__android_log_print(ANDROID_LOG_INFO, "GAM300", "Entity %u: isVisible=%d, model=%p, shader=%p",
-         //                 entity, modelComponent.isVisible, modelComponent.model.get(), modelComponent.shader.get());
-#endif
         if (!modelComponent.isVisible || !modelComponent.model || !modelComponent.shader)
         {
             continue;
         }
 
-        // FRUSTUM CULLING - ADD THIS BLOCK:
-        if (enableCulling && modelComponent.model) 
+        // Get world transform
+        Matrix4x4 worldMatrix = ecsManager.GetComponent<Transform>(entity).worldMatrix;
+        glm::mat4 glmWorldMatrix = worldMatrix.ConvertToGLM();
+
+        // =====================================================================
+        // NEW: Try to add to instancing system first
+        // =====================================================================
+        if (instancing.IsEnabled()) 
         {
-            // Get world transform
-            Matrix4x4 worldMatrix = ecsManager.GetComponent<Transform>(entity).worldMatrix;
+            bool wasInstanced = instancing.TryAddInstance(modelComponent, glmWorldMatrix);
 
-            // Get model's bounding box and transform to world space
-            AABB worldBounds = modelComponent.model->GetBoundingBox().Transform(worldMatrix.ConvertToGLM());
+            if (wasInstanced) 
+            {
+                // Instance was added to a batch (or culled), skip individual submission
+                cullingStats.renderedObjects++;  // Count as handled
+                continue;
+            }
+        }
 
+        // =====================================================================
+        // Fallback: Not instanceable, render individually
+        // =====================================================================
+
+        // Frustum culling for non-instanced objects
+        if (enableCulling && modelComponent.model)
+        {
+            AABB worldBounds = modelComponent.model->GetBoundingBox().Transform(glmWorldMatrix);
             if (!frustum.IsBoxVisible(worldBounds))
             {
-                cullingStats.culledObjects++;  // Count as culled
-
-                // Log which entity was culled
-#ifdef _DEBUG
-                //std::cout << "Entity " << entity << " culled\n";
-#endif
+                cullingStats.culledObjects++;
                 continue;
             }
         }
