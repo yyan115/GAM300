@@ -100,6 +100,7 @@ public:
     int GetInt(const std::string& name) const;
     float GetFloat(const std::string& name) const;
 
+    float GetStateTime() const;
     // Get current state name from state machine
     std::string GetCurrentState() const;
 
