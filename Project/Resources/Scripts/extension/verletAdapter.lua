@@ -209,6 +209,21 @@ local function stepOnce(state, dt, params)
             end
         end
     end
+
+    -- Ground clamp: prevent links from going below terrain.
+    -- Uses a single pre-computed groundY from ChainController (one raycast per frame, O(1)).
+    -- Only a simple Y comparison per link here, no additional raycasts.
+    if params and params.GroundClamp and params.groundY ~= nil then
+        local groundY = params.groundY
+        for i = 1, n do
+            if (invMass[i] or 0) > 0 then  -- only clamp dynamic links
+                if positions[i][2] < groundY then
+                    positions[i][2] = groundY
+                    prev[i][2] = groundY  -- kill downward velocity at ground
+                end
+            end
+        end
+    end
 end
 
 function M.Step(state, dt, params)
@@ -222,6 +237,57 @@ function M.Step(state, dt, params)
     end
 
     return state.positions, state.prev, state.invMass
+end
+
+-- Wall collision: raycast between every WallClampInterval links once per frame.
+-- If a segment hits geometry, links between the sample points are nudged back
+-- by WallClampRadius along the reverse ray direction.
+-- Default radius is 0 (no nudge), tune upward if links clip into walls.
+function M.ApplyWallClamp(state, params)
+    if not params or not params.WallClamp then return end
+    if not Physics or not Physics.Raycast then return end
+
+    local n = params.n or state.n
+    local interval = math.max(2, tonumber(params.WallClampInterval) or 10)
+    local radius = tonumber(params.WallClampRadius) or 0
+    local positions = state.positions
+    local prev = state.prev
+    local invMass = state.invMass
+
+    local i = 1
+    while i <= n do
+        local j = math.min(i + interval, n)
+
+        local ax, ay, az = positions[i][1], positions[i][2], positions[i][3]
+        local bx, by, bz = positions[j][1], positions[j][2], positions[j][3]
+
+        local dx, dy, dz = bx - ax, by - ay, bz - az
+        local dist = math.sqrt(dx*dx + dy*dy + dz*dz)
+
+        if dist > 1e-6 then
+            local nx, ny, nz = dx/dist, dy/dist, dz/dist
+            local hitDist = Physics.Raycast(ax, ay, az, nx, ny, nz, dist)
+
+            if hitDist and hitDist > 0 and hitDist < dist then
+                local pushX = -nx * radius
+                local pushY = -ny * radius
+                local pushZ = -nz * radius
+
+                for k = i, j do
+                    if (invMass[k] or 0) > 0 then
+                        positions[k][1] = positions[k][1] + pushX
+                        positions[k][2] = positions[k][2] + pushY
+                        positions[k][3] = positions[k][3] + pushZ
+                        prev[k][1] = prev[k][1] + pushX
+                        prev[k][2] = prev[k][2] + pushY
+                        prev[k][3] = prev[k][3] + pushZ
+                    end
+                end
+            end
+        end
+
+        i = i + interval
+    end
 end
 
 return M

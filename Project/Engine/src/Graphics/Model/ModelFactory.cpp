@@ -42,7 +42,7 @@ Entity ModelFactory::SpawnModelHierarchy(const Model& model, const std::string& 
 	// Check if model has bone info (indicates it's an animated model)
 	bool hasAnimations = !modelRenderer.model->mBoneInfoMap.empty();
 
-	SpawnModelNode(model.rootNode, MAX_ENTITIES, modelRenderer.boneNameToEntityMap, root); // Pass hasAnimations flag
+	SpawnModelNode(model.rootNode, INVALID_ENTITY, modelRenderer.boneNameToEntityMap, root); // Pass hasAnimations flag
 	ecs.AddComponent<ModelRenderComponent>(root, modelRenderer);
 	return root;
 }
@@ -70,17 +70,17 @@ Entity ModelFactory::SpawnModelNode(const ModelNode& node, Entity parent,
         // Recurse to children immediately, passing the 'parent' (skipping this node)
         // and the 'newAccumulator'.
         for (const auto& childNode : node.children) {
-            SpawnModelNode(childNode, parent, boneNameToEntityMap, MAX_ENTITIES, newAccumulator);
+            SpawnModelNode(childNode, parent, boneNameToEntityMap, INVALID_ENTITY, newAccumulator);
         }
 
-        // Return MAX_ENTITIES because we didn't create anything here
-        return MAX_ENTITIES;
+        // Return INVALID_ENTITY because we didn't create anything here
+        return INVALID_ENTITY;
     }
 
     // 2. CREATE ENTITY
     std::string finalName = node.name;
 
-    if (currentEntt == MAX_ENTITIES) {
+    if (currentEntt == INVALID_ENTITY) {
         currentEntt = ecs.CreateEntity();
 
         if (ecs.TryGetComponent<NameComponent>(currentEntt).has_value()) {
@@ -105,7 +105,7 @@ Entity ModelFactory::SpawnModelNode(const ModelNode& node, Entity parent,
     boneNameToEntityMap[finalName] = currentEntt;
 
     // 3. REGISTER WITH PARENT (The Lazy Logic)
-    if (parent != MAX_ENTITIES)
+    if (parent != INVALID_ENTITY)
     {
         // A. Ensure ParentComponent
         if (!ecs.HasComponent<ParentComponent>(currentEntt)) {
@@ -133,7 +133,7 @@ Entity ModelFactory::SpawnModelNode(const ModelNode& node, Entity parent,
     // 4. RECURSE (Removed the proactive AddComponent here)
     if (!node.children.empty()) {
         for (const auto& childNode : node.children) {
-            SpawnModelNode(childNode, currentEntt, boneNameToEntityMap, MAX_ENTITIES, Matrix4x4::Identity());
+            SpawnModelNode(childNode, currentEntt, boneNameToEntityMap, INVALID_ENTITY, Matrix4x4::Identity());
         }
     }
 

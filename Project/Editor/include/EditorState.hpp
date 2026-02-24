@@ -5,7 +5,7 @@
 #include <ECS/Entity.hpp>
 
 // Define invalid entity constant for editor use
-constexpr Entity INVALID_ENTITY = 0xFFFFFFFF;
+//constexpr Entity INVALID_ENTITY = 0xFFFFFFFF;
 
 /**
  * @brief Manages the overall state of the editor (play/pause/stop) and selected entities.

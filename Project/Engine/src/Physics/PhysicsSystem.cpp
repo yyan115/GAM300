@@ -193,205 +193,19 @@ void PhysicsSystem::Initialise(ECSManager& ecsManager) {
     entityBodyMap.clear();
     bodyToEntityMap.clear();
 
+    // Create bodies for all existing entities
     for (auto& e : entities) {
-        if (!ecsManager.HasComponent<RigidBodyComponent>(e) ||
-            !ecsManager.HasComponent<ColliderComponent>(e) ||
-            !ecsManager.HasComponent<Transform>(e)) {
-            continue;
-        }
-
-        auto& tr = ecsManager.GetComponent<Transform>(e);
-        auto& col = ecsManager.GetComponent<ColliderComponent>(e);
-        auto& rb = ecsManager.GetComponent<RigidBodyComponent>(e);
-
-        rb.motion = static_cast<Motion>(rb.motionID);
-
-        // =========================================================
-        // FIX: MATCH SCENE PANEL GIZMO LOGIC
-        // Instead of using tr.worldRotation/Scale (which might be stale),
-        // we extract the authoritative data directly from the WorldMatrix.
-        // =========================================================
-
-        // 1. Extract Raw Axes (Columns) from the Matrix
-        // This captures Rotation AND Scale AND Parent transforms exactly as the renderer sees them.
-        JPH::Vec3 axisX(tr.worldMatrix.m.m00, tr.worldMatrix.m.m10, tr.worldMatrix.m.m20);
-        JPH::Vec3 axisY(tr.worldMatrix.m.m01, tr.worldMatrix.m.m11, tr.worldMatrix.m.m21);
-        JPH::Vec3 axisZ(tr.worldMatrix.m.m02, tr.worldMatrix.m.m12, tr.worldMatrix.m.m22);
-
-        // 2. Extract Scale (Magnitude of the axes)
-        float sx = axisX.Length();
-        float sy = axisY.Length();
-        float sz = axisZ.Length();
-
-        // 3. Extract Rotation (Normalize the axes to get pure rotation)
-        // We handle small scales to prevent divide-by-zero
-        JPH::Vec3 normX = (sx > 0.0001f) ? axisX / sx : JPH::Vec3(1, 0, 0);
-        JPH::Vec3 normY = (sy > 0.0001f) ? axisY / sy : JPH::Vec3(0, 1, 0);
-        JPH::Vec3 normZ = (sz > 0.0001f) ? axisZ / sz : JPH::Vec3(0, 0, 1);
-
-        JPH::Mat44 rotationMatrix = JPH::Mat44::sIdentity();
-        rotationMatrix.SetColumn3(0, normX);
-        rotationMatrix.SetColumn3(1, normY);
-        rotationMatrix.SetColumn3(2, normZ);
-        JPH::Quat rot = rotationMatrix.GetRotation().GetQuaternion();
-
-        // 4. Calculate Center Position
-        // Gizmo Logic: WorldMatrix * LocalCenter
-        // Math: WorldPos + (AxisX * cx) + (AxisY * cy) + (AxisZ * cz)
-        // Note: We use the RAW un-normalized axes here because they contain the scale.
-        JPH::Vec3 centerOffset = (axisX * col.center.x) + (axisY * col.center.y) + (axisZ * col.center.z);
-
-        // Final World Position for the Physics Body
-        JPH::RVec3 updatedPos = JPH::RVec3(tr.worldPosition.x, tr.worldPosition.y, tr.worldPosition.z) + centerOffset;
-
-
-        // ... Layer Logic ...
-        int ecsLayerIndex = -1;
-        if (ecsManager.HasComponent<LayerComponent>(e))
-            ecsLayerIndex = ecsManager.GetComponent<LayerComponent>(e).layerIndex;
-
-        const int groundIdx = LayerManager::GetInstance().GetLayerIndex("Ground");
-        const int obstacleIdx = LayerManager::GetInstance().GetLayerIndex("Obstacle");
-
-        if (col.layer == Layers::HURTBOX) { /* respect editor-set HURTBOX layer */ }
-        else if (rb.isTrigger)                          col.layer = Layers::SENSOR;
-        else if (ecsLayerIndex == groundIdx)       col.layer = Layers::NAV_GROUND;
-        else if (ecsLayerIndex == obstacleIdx)     col.layer = Layers::NAV_OBSTACLE;
-        else {
-            if (rb.motion == Motion::Static) col.layer = Layers::NON_MOVING;
-            else col.layer = Layers::MOVING;
-        }
-
-        // DEBUG: Log trigger body creation
-        if (rb.isTrigger) {
-            std::string name = ecsManager.HasComponent<NameComponent>(e) ? ecsManager.GetComponent<NameComponent>(e).name : std::to_string(e);
-            ENGINE_PRINT("[Physics] Trigger body CREATED: '", name, "' (entity ", (int)e, "), layer=", (int)col.layer, "\n");
-        }
-
-        {
-            // Create Shape using the EXTRACTED Scale (sx, sy, sz)
-            switch (col.shapeType) {
-            case ColliderShapeType::Box:
-            {
-                // Apply extracted scale to half extents
-                float hx = std::abs(col.boxHalfExtents.x) * sx;
-                float hy = std::abs(col.boxHalfExtents.y) * sy;
-                float hz = std::abs(col.boxHalfExtents.z) * sz;
-
-                constexpr float kMinHalf = 0.05f;
-                hx = std::max(hx, kMinHalf);
-                hy = std::max(hy, kMinHalf);
-                hz = std::max(hz, kMinHalf);
-
-                JPH::BoxShapeSettings settings(JPH::Vec3(hx, hy, hz));
-                settings.mConvexRadius = 0.0f;
-                JPH::Shape::ShapeResult result = settings.Create();
-
-                col.shape = result.IsValid() ? result.Get() : new JPH::BoxShape(JPH::Vec3(hx, hy, hz));
-                break;
-            }
-            case ColliderShapeType::Sphere:
-                col.shape = new JPH::SphereShape(col.sphereRadius * std::max({ sx, sy, sz }));
-                break;
-            case ColliderShapeType::Capsule:
-                // Radius scales by X/Z, Height by Y
-                col.shape = new JPH::CapsuleShape(col.capsuleHalfHeight * sy, col.capsuleRadius * std::max(sx, sz));
-                break;
-            case ColliderShapeType::Cylinder:
-                col.shape = new JPH::CylinderShape(col.cylinderHalfHeight * sy, col.cylinderRadius * std::max(sx, sz));
-                break;
-            case ColliderShapeType::MeshShape:
-            {
-                bool shapeCreated = false;
-                if (ecsManager.HasComponent<ModelRenderComponent>(e)) {
-                    auto& rc = ecsManager.GetComponent<ModelRenderComponent>(e);
-
-                    if (rc.model && rc.model->meshes.size() > 0) {
-                        JPH::TriangleList triangles;
-
-                        for (const auto& mesh : rc.model->meshes) {
-                            for (size_t i = 0; i < mesh.indices.size(); i += 3) {
-                                const auto& v0 = mesh.vertices[mesh.indices[i]];
-                                const auto& v1 = mesh.vertices[mesh.indices[i + 1]];
-                                const auto& v2 = mesh.vertices[mesh.indices[i + 2]];
-
-                                JPH::Float3 p0(v0.position.x * sx,
-                                    v0.position.y * sy,
-                                    v0.position.z * sz);
-                                JPH::Float3 p1(v1.position.x * sx,
-                                    v1.position.y * sy,
-                                    v1.position.z * sz);
-                                JPH::Float3 p2(v2.position.x * sx,
-                                    v2.position.y * sy,
-                                    v2.position.z * sz);
-
-                                triangles.push_back(JPH::Triangle(p0, p1, p2));
-                            }
-                        }
-
-                        JPH::MeshShapeSettings meshSettings(triangles);
-                        JPH::Shape::ShapeResult result = meshSettings.Create();
-
-                        if (result.IsValid()) {
-                            col.shape = result.Get();
-                            shapeCreated = true;
-                        }
-                    }
-                }
-                // No fallback — if MeshShape fails, skip this entity entirely
-                if (!shapeCreated) {
-                    std::string name = ecsManager.HasComponent<NameComponent>(e) ? ecsManager.GetComponent<NameComponent>(e).name : std::to_string(e);
-                    std::cout << "[Physics] MeshShape FAILED for entity '" << name << "', skipping (no fallback box)" << std::endl;
-                    continue;
-                }
-                break;
-            }
-            }
-        }
-
-        const auto motionType =
-            rb.motion == Motion::Static ? JPH::EMotionType::Static :
-            rb.motion == Motion::Kinematic ? JPH::EMotionType::Kinematic :
-            JPH::EMotionType::Dynamic;
-
-        JPH::BodyCreationSettings bcs(col.shape.GetPtr(), updatedPos, rot, motionType, col.layer);
-        bcs.mAllowDynamicOrKinematic = true;  // Allow runtime motion type changes (needed for hurtbox conversion)
-
-        if (motionType == JPH::EMotionType::Dynamic)
-            bcs.mMotionQuality = rb.ccd ? JPH::EMotionQuality::LinearCast : JPH::EMotionQuality::Discrete;
-
-        if (motionType == JPH::EMotionType::Kinematic) {
-            bcs.mCollideKinematicVsNonDynamic = true;
-            bcs.mMotionQuality = JPH::EMotionQuality::LinearCast;
-        }
-
-        bcs.mRestitution = 0.2f;
-        bcs.mFriction = 0.5f;
-        bcs.mLinearDamping = rb.linearDamping;
-        bcs.mAngularDamping = rb.angularDamping;
-        bcs.mGravityFactor = rb.gravityFactor;
-
-        JPH::BodyID newBodyId = bi.CreateAndAddBody(bcs, JPH::EActivation::Activate);
-        entityBodyMap[e] = newBodyId;
-        bodyToEntityMap[newBodyId] = e;
-        rb.id = newBodyId;
-        rb.collider_seen_version = col.version;
-        rb.transform_dirty = rb.motion_dirty = false;
-        bi.SetMaxAngularVelocity(newBodyId, 2.0f);
+        CreatePhysicsBody(e, ecsManager);
     }
 }
+
 void PhysicsSystem::PostInitialize(ECSManager& ecsManager) {
     NavSystem::Get().Build(*this, ecsManager);
 }
 
-
 //KINEMATIC: NOT AFFECTED BY GRAVITY, FORCES, IMPULSES, OTHER BODIES MOVING IT.
 //MOVE MANUALLY VIA POS, ROTATION E.T.C
-
-
 //DYNAMIC: USE PHYSICS SIMULATION. IF ANY CHANGES TO BE MADE, ADJUST VIA FORCES, NOT POS
-
-
 void PhysicsSystem::Update(float fixedDt, ECSManager& ecsManager) {
     PROFILE_FUNCTION();
 #ifdef __ANDROID__
@@ -410,6 +224,11 @@ void PhysicsSystem::Update(float fixedDt, ECSManager& ecsManager) {
     //    it is removed from the physics simulation entirely.
     // =========================================================================================
     for (auto& e : entities) {
+        // --- NEW: CHECK FOR MISSING BODIES (Runtime Creation) ---
+        if (entityBodyMap.find(e) == entityBodyMap.end()) {
+            CreatePhysicsBody(e, ecsManager);
+        }
+
         auto bodyIt = entityBodyMap.find(e);
         if (bodyIt == entityBodyMap.end() || bodyIt->second.IsInvalid()) continue;
         JPH::BodyID bodyId = bodyIt->second;
@@ -521,6 +340,36 @@ void PhysicsSystem::Update(float fixedDt, ECSManager& ecsManager) {
 
         if (rb.motion == Motion::Dynamic)
         {
+            if (rb.isTeleporting && ecsManager.HasComponent<Transform>(e))
+            {
+                auto& tr = ecsManager.GetComponent<Transform>(e);
+                // 1. Read the Transform you set in Lua
+                JPH::Vec3 newPos;
+                JPH::Quat newRot;
+
+                if (tr.isDirty) {
+                    // Lua just set this, so World values are STALE. Use LOCAL values.
+                    // (Assuming feather is a root object with no parent)
+                    newPos = JPH::Vec3(tr.localPosition.x, tr.localPosition.y, tr.localPosition.z);
+                    newRot = JPH::Quat(tr.localRotation.x, tr.localRotation.y, tr.localRotation.z, tr.localRotation.w);
+                }
+                else {
+                    // Safe to use World values
+                    newPos = JPH::Vec3(tr.worldPosition.x, tr.worldPosition.y, tr.worldPosition.z);
+                    newRot = JPH::Quat(tr.worldRotation.x, tr.worldRotation.y, tr.worldRotation.z, tr.worldRotation.w);
+                }
+
+                // 2. Force the Physics Body to match it
+                bi.SetPositionAndRotation(bodyId, newPos, newRot, JPH::EActivation::Activate);
+
+                // 3. Reset the flag
+                rb.isTeleporting = false;
+
+                // 4. Important: Clear velocity so it doesn't "fling"
+                bi.SetLinearVelocity(bodyId, JPH::Vec3::sZero());
+                bi.SetAngularVelocity(bodyId, JPH::Vec3::sZero());
+            }
+
             if (rb.linearVel.x != 0.0f || rb.linearVel.y != 0.0f || rb.linearVel.z != 0.0f) {
                 bi.SetLinearVelocity(bodyId, ToJoltVec3(rb.linearVel));
                 rb.linearVel = Vector3D(0, 0, 0);
@@ -719,6 +568,154 @@ void PhysicsSystem::Shutdown() {
 
     // 5. Finally unregister types if you registered them
     // JPH::UnregisterTypes();
+}
+
+void PhysicsSystem::CreatePhysicsBody(Entity e, ECSManager& ecsManager) {
+    if (!ecsManager.HasComponent<RigidBodyComponent>(e) ||
+        !ecsManager.HasComponent<ColliderComponent>(e) ||
+        !ecsManager.HasComponent<Transform>(e)) {
+        return;
+    }
+
+    auto& tr = ecsManager.GetComponent<Transform>(e);
+    auto& col = ecsManager.GetComponent<ColliderComponent>(e);
+    auto& rb = ecsManager.GetComponent<RigidBodyComponent>(e);
+    JPH::BodyInterface& bi = physics.GetBodyInterface();
+
+    rb.motion = static_cast<Motion>(rb.motionID);
+
+    // --- FIX FOR NEWLY SPAWNED ENTITIES ---
+    // If an entity is spawned in a script, its worldMatrix might still be Identity 
+    // because TransformSystem hasn't run yet. We calculate a temporary one here 
+    // to ensure the body spawns at the correct position/rotation.
+    Matrix4x4 spawnMatrix = tr.worldMatrix;
+    if (tr.isDirty) {
+        // Simple TRS calculation (ignoring parent for frame 1 stability)
+        spawnMatrix = TransformSystem::CalculateModelMatrix(
+            tr.localPosition, tr.localScale, tr.localRotation.ToEulerDegrees()
+        );
+    }
+
+    // 1. Extract Raw Axes from the Matrix
+    JPH::Vec3 axisX(spawnMatrix.m.m00, spawnMatrix.m.m10, spawnMatrix.m.m20);
+    JPH::Vec3 axisY(spawnMatrix.m.m01, spawnMatrix.m.m11, spawnMatrix.m.m21);
+    JPH::Vec3 axisZ(spawnMatrix.m.m02, spawnMatrix.m.m12, spawnMatrix.m.m22);
+
+    // 2. Extract Scale
+    float sx = axisX.Length();
+    float sy = axisY.Length();
+    float sz = axisZ.Length();
+
+    // 3. Extract Rotation
+    JPH::Vec3 normX = (sx > 0.0001f) ? axisX / sx : JPH::Vec3(1, 0, 0);
+    JPH::Vec3 normY = (sy > 0.0001f) ? axisY / sy : JPH::Vec3(0, 1, 0);
+    JPH::Vec3 normZ = (sz > 0.0001f) ? axisZ / sz : JPH::Vec3(0, 0, 1);
+
+    JPH::Mat44 rotationMatrix = JPH::Mat44::sIdentity();
+    rotationMatrix.SetColumn3(0, normX);
+    rotationMatrix.SetColumn3(1, normY);
+    rotationMatrix.SetColumn3(2, normZ);
+    JPH::Quat rot = rotationMatrix.GetRotation().GetQuaternion();
+
+    // 4. Calculate Center Position
+    JPH::Vec3 centerOffset = (axisX * col.center.x) + (axisY * col.center.y) + (axisZ * col.center.z);
+    JPH::RVec3 updatedPos = JPH::RVec3(spawnMatrix.m.m03, spawnMatrix.m.m13, spawnMatrix.m.m23) + centerOffset;
+
+    // ... Layer Logic ...
+    int ecsLayerIndex = -1;
+    if (ecsManager.HasComponent<LayerComponent>(e))
+        ecsLayerIndex = ecsManager.GetComponent<LayerComponent>(e).layerIndex;
+
+    const int groundIdx = LayerManager::GetInstance().GetLayerIndex("Ground");
+    const int obstacleIdx = LayerManager::GetInstance().GetLayerIndex("Obstacle");
+
+    if (col.layer == Layers::HURTBOX) { /*...*/ }
+    else if (rb.isTrigger) col.layer = Layers::SENSOR;
+    else if (ecsLayerIndex == groundIdx) col.layer = Layers::NAV_GROUND;
+    else if (ecsLayerIndex == obstacleIdx) col.layer = Layers::NAV_OBSTACLE;
+    else {
+        if (rb.motion == Motion::Static) col.layer = Layers::NON_MOVING;
+        else col.layer = Layers::MOVING;
+    }
+
+    // Create Shape (Copied logic)
+    {
+        switch (col.shapeType) {
+        case ColliderShapeType::Box: {
+            float hx = std::abs(col.boxHalfExtents.x) * sx;
+            float hy = std::abs(col.boxHalfExtents.y) * sy;
+            float hz = std::abs(col.boxHalfExtents.z) * sz;
+            constexpr float kMinHalf = 0.05f;
+            JPH::BoxShapeSettings settings(JPH::Vec3(std::max(hx, kMinHalf), std::max(hy, kMinHalf), std::max(hz, kMinHalf)));
+            settings.mConvexRadius = 0.0f;
+            JPH::Shape::ShapeResult result = settings.Create();
+            col.shape = result.IsValid() ? result.Get() : new JPH::BoxShape(JPH::Vec3(hx, hy, hz));
+            break;
+        }
+        case ColliderShapeType::Sphere:
+            col.shape = new JPH::SphereShape(col.sphereRadius * std::max({ sx, sy, sz }));
+            break;
+        case ColliderShapeType::Capsule:
+            col.shape = new JPH::CapsuleShape(col.capsuleHalfHeight * sy, col.capsuleRadius * std::max(sx, sz));
+            break;
+        case ColliderShapeType::Cylinder:
+            col.shape = new JPH::CylinderShape(col.cylinderHalfHeight * sy, col.cylinderRadius * std::max(sx, sz));
+            break;
+        case ColliderShapeType::MeshShape: {
+            if (ecsManager.HasComponent<ModelRenderComponent>(e)) {
+                auto& rc = ecsManager.GetComponent<ModelRenderComponent>(e);
+                if (rc.model && rc.model->meshes.size() > 0) {
+                    JPH::TriangleList triangles;
+                    for (const auto& mesh : rc.model->meshes) {
+                        for (size_t i = 0; i < mesh.indices.size(); i += 3) {
+                            const auto& v0 = mesh.vertices[mesh.indices[i]];
+                            const auto& v1 = mesh.vertices[mesh.indices[i + 1]];
+                            const auto& v2 = mesh.vertices[mesh.indices[i + 2]];
+                            JPH::Float3 p0(v0.position.x * sx, v0.position.y * sy, v0.position.z * sz);
+                            JPH::Float3 p1(v1.position.x * sx, v1.position.y * sy, v1.position.z * sz);
+                            JPH::Float3 p2(v2.position.x * sx, v2.position.y * sy, v2.position.z * sz);
+                            triangles.push_back(JPH::Triangle(p0, p1, p2));
+                        }
+                    }
+                    JPH::MeshShapeSettings meshSettings(triangles);
+                    JPH::Shape::ShapeResult result = meshSettings.Create();
+                    if (result.IsValid()) col.shape = result.Get();
+                }
+            }
+            if (!col.shape) return; // Skip if mesh failed
+            break;
+        }
+        }
+    }
+
+    const auto motionType =
+        rb.motion == Motion::Static ? JPH::EMotionType::Static :
+        rb.motion == Motion::Kinematic ? JPH::EMotionType::Kinematic :
+        JPH::EMotionType::Dynamic;
+
+    JPH::BodyCreationSettings bcs(col.shape.GetPtr(), updatedPos, rot, motionType, col.layer);
+    bcs.mAllowDynamicOrKinematic = true;  // Allow runtime motion type changes (needed for hurtbox conversion)
+
+    if (motionType == JPH::EMotionType::Dynamic)
+        bcs.mMotionQuality = rb.ccd ? JPH::EMotionQuality::LinearCast : JPH::EMotionQuality::Discrete;
+    if (motionType == JPH::EMotionType::Kinematic) {
+        bcs.mCollideKinematicVsNonDynamic = true;
+        bcs.mMotionQuality = JPH::EMotionQuality::LinearCast;
+    }
+
+    bcs.mRestitution = 0.2f;
+    bcs.mFriction = 0.5f;
+    bcs.mLinearDamping = rb.linearDamping;
+    bcs.mAngularDamping = rb.angularDamping;
+    bcs.mGravityFactor = rb.gravityFactor;
+
+    JPH::BodyID newBodyId = bi.CreateAndAddBody(bcs, JPH::EActivation::Activate);
+    entityBodyMap[e] = newBodyId;
+    bodyToEntityMap[newBodyId] = e;
+    rb.id = newBodyId;
+    rb.collider_seen_version = col.version;
+    rb.transform_dirty = rb.motion_dirty = false;
+    //bi.SetMaxAngularVelocity(newBodyId, 2.0f);
 }
 
 void PhysicsSystem::RemoveBody(Entity entity) {

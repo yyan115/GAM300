@@ -310,6 +310,7 @@ BEGIN_SYSTEM("Engine")
     FUNCTION("GetGameCoordinate", &Lua_ScreenToGameCoordinates)
     FUNCTION("CreateEntityDup", &Lua_CreateEntityDup)
     FUNCTION("DestroyEntityDup", &Lua_DestroyEntityDup)
+    FUNCTION("DestroyEntity", &Lua_DestroyEntity)
     FUNCTION("FindAnimatorByName", &Lua_FindAnimatorByName)
 
     FUNCTION("FindEntitiesWithScript", &EntityQueryWrappers::FindEntitiesWithScript)
@@ -335,6 +336,13 @@ END_SYSTEM()
 BEGIN_SYSTEM("Nav")
     FUNCTION("RequestPathXZ", NavWrappers::RequestPathXZ)
     FUNCTION("GetGroundY", NavWrappers::GetGroundY)
+END_SYSTEM()
+
+// ============================================================================
+// PREFAB INSTANTIATION
+// ============================================================================
+BEGIN_SYSTEM("Prefab")
+    FUNCTION("InstantiatePrefab", &PrefabWrappers::InstantiatePrefab)
 END_SYSTEM()
 
 

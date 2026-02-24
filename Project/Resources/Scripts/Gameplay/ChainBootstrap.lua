@@ -20,7 +20,12 @@ return Component {
         PinEndWhenExtended = true,
         AnchorAngleThresholdDeg = 45,
         SubSteps = 4,
-        ChainEndpointName = "ChainEndpoint"
+        ChainEndpointName = "ChainEndpoint",
+        GroundClamp = true,
+        GroundClampOffset = 0.1,
+        WallClamp = false,
+        WallClampInterval = 10,
+        WallClampRadius = 0
     },
 
     _unpack_pos = function(self, a, b, c)
@@ -236,6 +241,39 @@ return Component {
             self._chainSubDown = _G.event_bus.subscribe("chain.down", function(payload) if not payload then return end pcall(function() self:_on_chain_down(payload) end) end)
             self._chainSubUp = _G.event_bus.subscribe("chain.up", function(payload) if not payload then return end pcall(function() self:_on_chain_up(payload) end) end)
             self._chainSubHold = _G.event_bus.subscribe("chain.hold", function(payload) if not payload then return end pcall(function() self:_on_chain_hold(payload) end) end)
+
+            -- When endpoint hits a dynamic entity, lock the chain endpoint to that entity's position
+            self._subHookedPos = _G.event_bus.subscribe("chain.endpoint_hooked_position", function(payload)
+                if not payload then return end
+                pcall(function()
+                    if self.controller then
+                        local aN = self.controller.activeN
+                        local x, y, z = payload.x, payload.y, payload.z
+                        -- Override the locked endpoint position to follow the entity
+                        self.controller.lockedEndPoint[1] = x
+                        self.controller.lockedEndPoint[2] = y
+                        self.controller.lockedEndPoint[3] = z
+                        -- Also snap the last active link so Verlet doesn't fight it
+                        self.controller.positions[aN][1] = x
+                        self.controller.positions[aN][2] = y
+                        self.controller.positions[aN][3] = z
+                        self.controller.prev[aN][1] = x
+                        self.controller.prev[aN][2] = y
+                        self.controller.prev[aN][3] = z
+                    end
+                end)
+            end)
+
+            -- When endpoint first hits an entity, force endPointLocked so chain treats it as pinned
+            self._subHitEntity = _G.event_bus.subscribe("chain.endpoint_hit_entity", function(payload)
+                if not payload then return end
+                pcall(function()
+                    if self.controller then
+                        print("[ChainBootstrap] Endpoint hit entity " .. tostring(payload.entityId) .. " — locking endpoint")
+                        self.controller.endPointLocked = true
+                    end
+                end)
+            end)
         end
 
         if self.AutoStart then
@@ -290,6 +328,11 @@ return Component {
             VerletDamping = self.VerletDamping,
             ConstraintIterations = self.ConstraintIterations,
             SubSteps = self.SubSteps,
+            GroundClamp = self.GroundClamp,
+            GroundClampOffset = self.GroundClampOffset,
+            WallClamp = self.WallClamp,
+            WallClampInterval = self.WallClampInterval,
+            WallClampRadius = self.WallClampRadius,
             AnchorAngleThresholdRad = math.rad(self.AnchorAngleThresholdDeg or 45),
             PinEndWhenExtended = self.PinEndWhenExtended,
             getStart = function()
@@ -425,9 +468,11 @@ return Component {
         -- fallback: if manual tokens were used, attempt to unsubscribe them defensively
         if _G.event_bus and _G.event_bus.unsubscribe then
             if self._cameraForwardSub then pcall(function() _G.event_bus.unsubscribe(self._cameraForwardSub) end) end
-            if self._chainSubDown then pcall(function() _G.event_bus.unsubscribe(self._chainSubDown) end) end
-            if self._chainSubUp then pcall(function() _G.event_bus.unsubscribe(self._chainSubUp) end) end
-            if self._chainSubHold then pcall(function() _G.event_bus.unsubscribe(self._chainSubHold) end) end
+            if self._chainSubDown     then pcall(function() _G.event_bus.unsubscribe(self._chainSubDown)     end) end
+            if self._chainSubUp       then pcall(function() _G.event_bus.unsubscribe(self._chainSubUp)       end) end
+            if self._chainSubHold     then pcall(function() _G.event_bus.unsubscribe(self._chainSubHold)     end) end
+            if self._subHookedPos     then pcall(function() _G.event_bus.unsubscribe(self._subHookedPos)     end) end
+            if self._subHitEntity     then pcall(function() _G.event_bus.unsubscribe(self._subHitEntity)     end) end
         end
     end,
 

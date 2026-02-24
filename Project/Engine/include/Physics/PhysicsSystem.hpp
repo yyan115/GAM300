@@ -42,7 +42,9 @@ public:
 	void PhysicsSyncBack(ECSManager& ecsManager);	//JOLT -> ECS
 	void Shutdown();
 
-	// Remove a single entity's physics body
+	void CreatePhysicsBody(Entity e, ECSManager& ecsManager);
+	
+	// Remove a single entity's physics body (used when CharacterVirtual takes over)
 	void RemoveBody(Entity entity);
 
 	// Convert entity's body to kinematic hurtbox (keeps body in broadphase for trigger detection)

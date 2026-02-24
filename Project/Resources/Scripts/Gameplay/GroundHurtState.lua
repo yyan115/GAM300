@@ -2,15 +2,23 @@
 local HurtState = {}
 
 function HurtState:Enter(ai)
+    print("[GroundHurtState] ENTER")
     ai:FacePlayer()
+
+    --print("[GroundHurtState] FACED PLAYER")
 
     -- Lock out attacks briefly
     ai._hurtTimer = 0
 
-    if ai.particles then
-        ai.particles.isEmitting   = true
-        ai.particles.emissionRate = 180
+    -- if ai.particles then
+    --     ai.particles.isEmitting   = true
+    --     ai.particles.emissionRate = 180
+    -- end
+
+    for i = 1, ai.NumFeathersSpawnedPerHit do
+        ai:SpawnFeather(i)
     end
+    --print("[GroundHurtState] SPAWNED FEATHERS")
 end
 
 function HurtState:Update(ai, dt)
@@ -42,10 +50,10 @@ function HurtState:Exit(ai)
     ai._animator:SetBool("Hurt1", false)
     ai._animator:SetBool("Hurt2", false)
     ai._animator:SetBool("Hurt3", false)
-    if ai.particles then
-        ai.particles.isEmitting   = false
-        ai.particles.emissionRate = 0
-    end
+    -- if ai.particles then
+    --     ai.particles.isEmitting   = false
+    --     ai.particles.emissionRate = 0
+    -- end
 end
 
 return HurtState

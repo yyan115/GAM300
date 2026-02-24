@@ -41,7 +41,7 @@ public:
 		}
 
 		//ENGINE_LOG_ERROR("[EntityGUIDRegistry] ERROR: GUID not found in registry.");
-		return static_cast<Entity>(-1); // or some invalid entity value
+		return INVALID_ENTITY; // or some invalid entity value
 	}
 
 	GUID_128 GetGUIDByEntity(Entity entityID) const {

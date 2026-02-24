@@ -230,7 +230,7 @@ void Animator::CalculateBlendedBoneTransformInternal(const AssimpNodeData* node,
 	if (boneIt != modelComp.boneNameToEntityMap.end())
 	{
 		Entity boneEntity = boneIt->second;
-		if (boneEntity != MAX_ENTITIES && ecsManager.HasComponent<Transform>(boneEntity))
+		if (boneEntity != INVALID_ENTITY && ecsManager.HasComponent<Transform>(boneEntity))
 		{
 			if (!isRoot)
 			{
@@ -326,7 +326,7 @@ void Animator::CalculateBoneTransformInternal(const AssimpNodeData* node, glm::m
     if (boneIt != modelComp.boneNameToEntityMap.end())
     {
         Entity boneEntity = boneIt->second;
-        if (boneEntity != MAX_ENTITIES && ecsManager.HasComponent<Transform>(boneEntity))
+        if (boneEntity != INVALID_ENTITY && ecsManager.HasComponent<Transform>(boneEntity))
         {
             if (!isRoot)
             {

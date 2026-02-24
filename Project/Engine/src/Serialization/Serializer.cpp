@@ -1223,7 +1223,7 @@ Entity Serializer::DeserializeEntity(ECSManager& ecs, const rapidjson::Value& en
                     std::vector<Entity> realChildrenEntities;
                     for (auto& g : childComp.children) {
                         Entity realChildEntity = EntityGUIDRegistry::GetInstance().GetEntityByGUID(g);
-                        if (realChildEntity != MAX_ENTITIES)
+                        if (realChildEntity != INVALID_ENTITY)
                             realChildrenEntities.push_back(realChildEntity);
                     }
 
@@ -2466,7 +2466,7 @@ void Serializer::DeserializeModelComponent(ModelRenderComponent& modelComp, cons
                 // During ReloadScene, all entities including children are in the JSON,
                 // so we must not spawn them here to avoid duplication.
                 if (!modelComp.childBonesSaved && !skipSpawnChildren) {
-                    ModelFactory::SpawnModelNode(modelComp.model->rootNode, MAX_ENTITIES, modelComp.boneNameToEntityMap, root);
+                    ModelFactory::SpawnModelNode(modelComp.model->rootNode, INVALID_ENTITY, modelComp.boneNameToEntityMap, root);
                 }
             }
         }

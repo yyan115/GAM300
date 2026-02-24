@@ -277,7 +277,7 @@ ENGINE_API Entity InstantiatePrefabFromFile(const std::string& prefabPath, bool 
         buffer = platform->ReadAsset(assetPath);
         if (buffer.empty()) {
             ENGINE_LOG_ERROR("[PrefabIO] Failed to read prefab: " + prefabPath);
-            return MAX_ENTITIES;
+            return INVALID_ENTITY;
         }
         finalRelativePath = assetPath; // Use the working path for PrefabLinkComponent
     }
@@ -288,12 +288,12 @@ ENGINE_API Entity InstantiatePrefabFromFile(const std::string& prefabPath, bool 
     rapidjson::Document doc;
     doc.Parse(json.c_str());
     if (doc.HasParseError() || !doc.IsObject()) {
-        std::cerr << "[PrefabIO] Invalid JSON in " << finalRelativePath << "\n"; return MAX_ENTITIES;
+        std::cerr << "[PrefabIO] Invalid JSON in " << finalRelativePath << "\n"; return INVALID_ENTITY;
     }
-    if (doc.MemberCount() == 0) { std::cout << "[PrefabIO] Prefab has no components (empty): " << finalRelativePath << "\n"; return MAX_ENTITIES; }
+    if (doc.MemberCount() == 0) { std::cout << "[PrefabIO] Prefab has no components (empty): " << finalRelativePath << "\n"; return INVALID_ENTITY; }
     if (!doc.HasMember("prefab_entities") || !doc["prefab_entities"].IsArray()) {
         ENGINE_LOG_WARN("[PrefabIO] Doc has no prefab_entities array.");
-        return MAX_ENTITIES;
+        return INVALID_ENTITY;
     }
 
     const rapidjson::Value& ents = doc["prefab_entities"];
@@ -357,7 +357,7 @@ ENGINE_API Entity InstantiatePrefabIntoEntity(const std::string& prefabPath, Ent
         buffer = platform->ReadAsset(assetPath);
         if (buffer.empty()) {
             std::cerr << "[PrefabIO] Failed to read prefab: " << prefabPath << " (tried: " << finalRelativePath << ", " << assetPath << ")\n";
-            return MAX_ENTITIES;
+            return INVALID_ENTITY;
         }
         finalRelativePath = assetPath;
     }
@@ -367,12 +367,12 @@ ENGINE_API Entity InstantiatePrefabIntoEntity(const std::string& prefabPath, Ent
     rapidjson::Document doc;
     doc.Parse(json.c_str());
     if (doc.HasParseError() || !doc.IsObject()) {
-        std::cerr << "[PrefabIO] Invalid JSON in " << finalRelativePath << "\n"; return MAX_ENTITIES;
+        std::cerr << "[PrefabIO] Invalid JSON in " << finalRelativePath << "\n"; return INVALID_ENTITY;
     }
-    if (doc.MemberCount() == 0) { std::cout << "[PrefabIO] Prefab has no components (empty): " << finalRelativePath << "\n"; return MAX_ENTITIES; }
+    if (doc.MemberCount() == 0) { std::cout << "[PrefabIO] Prefab has no components (empty): " << finalRelativePath << "\n"; return INVALID_ENTITY; }
     if (!doc.HasMember("prefab_entities") || !doc["prefab_entities"].IsArray()) {
         ENGINE_LOG_WARN("[PrefabIO] Doc has no prefab_entities array.");
-        return MAX_ENTITIES;
+        return INVALID_ENTITY;
     }
 
     const rapidjson::Value& ents = doc["prefab_entities"];
@@ -571,5 +571,44 @@ ENGINE_API bool SaveEntityToPrefabFile(
     std::ofstream f(outPath, std::ios::binary);
     if (!f) return false;
     f.write(sb.GetString(), static_cast<std::streamsize>(sb.GetSize()));
+    f.close();
+
+    // Save to BOTH the Editor/Resources folder and the ROOT PROJECT Resources folder to ensure ALL prefab files are synced when saved.
+    std::filesystem::path editorResourcesPath(outPath.substr(outPath.find("Resources")));
+    if (outPath != editorResourcesPath.generic_string()) {
+        if (FileUtilities::StrictExists(editorResourcesPath)) {
+            if (FileUtilities::CopyFile(outPath, editorResourcesPath.generic_string())) {
+                ENGINE_LOG_INFO("[PrefabIO] Prefab saved to Editor/Resources: " + editorResourcesPath.generic_string());
+            }
+            else {
+                ENGINE_LOG_WARN("[PrefabIO] Failed to copy prefab to Editor/Resources: " + editorResourcesPath.generic_string());
+            }
+        }
+        else {
+            ENGINE_LOG_WARN("[PrefabIO] Editor/Resources path does not exist: " + editorResourcesPath.generic_string());
+        }
+    }
+    else {
+        ENGINE_LOG_DEBUG("[PrefabIO] Current prefab path is already in Editor/Resources: " + outPath);
+    }
+
+    std::filesystem::path projectRootPath(std::filesystem::path(AssetManager::GetInstance().GetRootAssetDirectory()) / std::filesystem::path(outPath.substr(outPath.find("Resources") + 10)));
+    if (outPath != projectRootPath.generic_string()) {
+        if (FileUtilities::StrictExists(projectRootPath)) {
+            if (FileUtilities::CopyFile(outPath, projectRootPath.generic_string())) {
+                ENGINE_LOG_INFO("[PrefabIO] Prefab saved to Root Project/Resources: " + projectRootPath.generic_string());
+            }
+            else {
+                ENGINE_LOG_WARN("[PrefabIO] Failed to copy prefab to Root Project/Resources: " + projectRootPath.generic_string());
+            }
+        }
+        else {
+            ENGINE_LOG_WARN("[PrefabIO] Root Project/Resources path does not exist: " + projectRootPath.generic_string());
+        }
+    }
+    else {
+        ENGINE_LOG_DEBUG("[PrefabIO] Current prefab path is already in Root Project/Resources: " + outPath);
+    }
+
     return true;
 }

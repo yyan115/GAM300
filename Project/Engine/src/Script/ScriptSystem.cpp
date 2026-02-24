@@ -312,6 +312,19 @@ static void Lua_CreateEntityDup(const std::string& source_name, const std::strin
         }
     }
 }
+
+static void Lua_DestroyEntity(Entity entity)
+{
+    if (!g_ecsManager) {
+        ENGINE_PRINT(EngineLogging::LogLevel::Error, "[ScriptSystem] ECSManager is null");
+        return;
+	}
+
+    // Add the entity to the entitiesPendingDestroy queue for deletion in the next ScriptSystem::Update.
+    ECSManager& ecs = *g_ecsManager;
+    ecs.scriptSystem->AddEntityPendingDestroy(entity);
+}
+
 static void Lua_DestroyEntityDup(const std::string& base_name, int numToDestroy)
 {
     if (!g_ecsManager) {
@@ -727,6 +740,14 @@ void ScriptSystem::Initialise(ECSManager& ecsManager)
 }
 void ScriptSystem::Update()
 {
+    // If there are script entities that are pending destruction, destroy them first.
+    while (!entitiesPendingDestroy.empty()) {
+        Entity entityToDestroy = entitiesPendingDestroy.front();
+        entitiesPendingDestroy.pop();
+
+        m_ecs->DestroyEntity(entityToDestroy);
+    }
+
     // one-shot reconcile on first update after initialise/play
     if (m_needsReconcile && m_ecs)
     {
@@ -1726,4 +1747,14 @@ bool ScriptSystem::CallStandaloneScriptFunctionWithEntity(const std::string& scr
     ENGINE_PRINT(EngineLogging::LogLevel::Debug, "[DEBUG] CallStandaloneScriptFunctionWithEntity END");
 
     return success;
+}
+
+void ScriptSystem::AddEntityPendingDestroy(Entity entity) {
+    entitiesPendingDestroy.push(entity);
+}
+
+void ScriptSystem::ClearEntitiesPendingDestroy() {
+    while (!entitiesPendingDestroy.empty()) {
+        entitiesPendingDestroy.pop();
+    }
 }

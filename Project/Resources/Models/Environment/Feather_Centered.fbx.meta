@@ -1,0 +1,11 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "004d3b4c6a4729fd-0004481c80000001",
+        "source": "../../Resources/Models/Environment/Feather_Centered.fbx",
+        "compiled": "../../Resources/Models/Environment/Feather_Centered.mesh"
+    },
+    "ModelMetaData": {
+        "optimizeMeshes": true
+    }
+}
