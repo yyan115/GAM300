@@ -70,12 +70,7 @@ return Component {
         local currentState = self._playerAnimation:GetCurrentState()
         local cleanAttackState = self.AttackState:gsub('"', '')
         local isAttacking = currentState == cleanAttackState
-
-        print("current state is ", currentState)
-        print("AttackState is ", cleanAttackState)
-
         if isAttacking and not self._wasAttacking then
-            print("Slash Triggered")
             self:TriggerSlash(self.StartRot, self.EndRot, self.Speed, self.Delay)
         end
         
