@@ -23,7 +23,7 @@ public:
 
     ENGINE_API static bool MetaFileUpdated(const std::string& assetPath);
 
-    //static bool AssetFileUpdated(const std::string& assetPath);
+    static bool AssetFileUpdated(const std::string& assetPath, bool isShader = false);
 
 	// ENGINE_API static GUID_128 UpdateMetaFile(const std::string& assetPath);
 

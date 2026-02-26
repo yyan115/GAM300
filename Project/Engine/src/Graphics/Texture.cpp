@@ -170,7 +170,13 @@ std::string Texture::CompileToResource(const std::string& assetPath, bool forAnd
 
 	if (!forAndroid) {
 		outPath = (p.parent_path() / p.stem()).generic_string() + ".dds";
-		gli::save(tex, outPath);
+		if (!gli::save(tex, outPath)) {
+			ENGINE_PRINT(EngineLogging::LogLevel::Error, "[TEXTURE] FATAL: gli::save failed to write to ", outPath, "\n");
+			outPath = ""; // Invalidate return to signal failure
+		}
+		else {
+			ENGINE_PRINT(EngineLogging::LogLevel::Info, "[TEXTURE] Successfully compiled and saved: ", outPath, "\n");
+		}
 
 		//// Save to the root project directory as well.
 		//p = (FileUtilities::GetSolutionRootDir() / outPath);
