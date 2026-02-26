@@ -48,10 +48,33 @@ bool InstancingManager::TryAddInstance(const ModelRenderComponent& component, co
         return false;
     }
 
+    // DEBUG: Track the floor
+    if (component.model && component.model->modelName.find("Floor") != std::string::npos)
+    {
+        std::cout << "[Floor Debug] TryAddInstance called" << std::endl;
+        std::cout << "  - m_enabled: " << m_enabled << std::endl;
+        std::cout << "  - IsInstanceable: " << IsInstanceable(component) << std::endl;
+    }
+
     if (!IsInstanceable(component))
     {
         m_stats.nonInstancedObjects++;
         return false;
+    }
+
+    // DEBUG: Check frustum culling
+    if (component.model && component.model->modelName.find("Floor") != std::string::npos)
+    {
+        if (m_frustum)
+        {
+            AABB worldBounds = component.model->GetBoundingBox().Transform(worldMatrix);
+            bool visible = m_frustum->IsBoxVisible(worldBounds);
+            std::cout << "  - Frustum visible: " << visible << std::endl;
+        }
+        else
+        {
+            std::cout << "  - No frustum set" << std::endl;
+        }
     }
 
     if (m_frustum && component.model)
@@ -113,10 +136,33 @@ void InstancingManager::RenderBatches(const glm::mat4& view, const glm::mat4& pr
     // Build sorted batch list (only non-empty batches)
     m_sortedBatches.clear();
     for (auto& [key, batch] : m_batches) {
-        // Only render batches that meet minimum instance threshold
-        if (batch.GetInstanceCount() >= static_cast<size_t>(m_minInstancesForBatching)) 
+        // Render ALL non-empty batches, not just those >= minInstances
+        if (!batch.IsEmpty())
         {
+            // DEBUG: Check what's in each batch
+            static bool once = false;
+            if (!once) {
+                std::cout << "[RenderBatches] Batch with " << batch.GetInstanceCount()
+                    << " instances, model: " << batch.GetModel()->modelName << std::endl;
+            }
+
             m_sortedBatches.push_back(&batch);
+        }
+    }
+
+    static bool once = false;
+    if (!once) {
+        std::cout << "[RenderBatches] Total batches to render: " << m_sortedBatches.size() << std::endl;
+        once = true;
+    }
+
+    static int frameCount = 0;
+    if (++frameCount % 300 == 0)
+    {
+        std::cout << "[Instancing] Batches: " << m_sortedBatches.size() << std::endl;
+        for (auto* batch : m_sortedBatches)
+        {
+            std::cout << "  Batch: " << batch->GetInstanceCount() << " instances" << std::endl;
         }
     }
 

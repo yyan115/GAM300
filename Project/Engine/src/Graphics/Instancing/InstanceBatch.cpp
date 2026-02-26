@@ -72,6 +72,14 @@ void InstanceBatch::Clear()
 
 void InstanceBatch::AddInstance(const glm::mat4& modelMatrix)
 {
+    // Debug: print first few transforms
+    static int count = 0;
+    if (count++ < 5) {
+        std::cout << "Instance pos: "
+            << modelMatrix[3][0] << ", "
+            << modelMatrix[3][1] << ", "
+            << modelMatrix[3][2] << std::endl;
+    }
     InstanceData data;
     data.modelMatrix = modelMatrix;
     data.normalMatrix = glm::mat4(glm::transpose(glm::inverse(glm::mat3(modelMatrix))));
@@ -88,6 +96,8 @@ void InstanceBatch::Render(const glm::mat4& view, const glm::mat4& projection, c
     }
 
     UpdateInstanceBuffer();
+    m_shader->Activate();
+    m_shader->setBool("useInstancing", true);
 
     for (auto& mesh : m_model->meshes)
     {

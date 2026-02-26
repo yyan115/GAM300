@@ -47,6 +47,12 @@ void Mesh::DrawInstanced(Shader& shader, VBO& instanceVBO, GLsizei instanceCount
 		return;
 	}
 
+	if (!vaoSetup)
+	{
+		setupMesh();
+		vaoSetup = true;
+	}
+
 	// Setup instance attributes if not already done
 	SetupInstanceAttributes(instanceVBO);
 
@@ -111,6 +117,12 @@ void Mesh::DrawInstancedDepthOnly(VBO& instanceVBO, GLsizei instanceCount)
 	if (instanceCount == 0) 
 	{
 		return;
+	}
+
+	if (!vaoSetup)
+	{
+		setupMesh();
+		vaoSetup = true;
 	}
 
 	// Setup instance attributes if not already done

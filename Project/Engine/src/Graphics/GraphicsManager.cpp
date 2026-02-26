@@ -329,7 +329,6 @@ void GraphicsManager::Render()
 		// Skip if it was handled by instancing
 	   // (InstancingManager sets a flag or we check IsInstanceable)
 		if (instancing.IsEnabled() &&
-			InstancingManager::GetInstance().IsEnabled() &&
 			!modelItem->HasAnimation() &&
 			modelItem->model &&
 			modelItem->model->mBoneInfoMap.empty()) 

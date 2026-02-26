@@ -96,9 +96,7 @@ void ModelSystem::Update()
         Matrix4x4 worldMatrix = ecsManager.GetComponent<Transform>(entity).worldMatrix;
         glm::mat4 glmWorldMatrix = worldMatrix.ConvertToGLM();
 
-        // =====================================================================
-        // NEW: Try to add to instancing system first
-        // =====================================================================
+       
         if (instancing.IsEnabled()) 
         {
             bool wasInstanced = instancing.TryAddInstance(modelComponent, glmWorldMatrix);
