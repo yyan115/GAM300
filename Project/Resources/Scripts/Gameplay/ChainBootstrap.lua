@@ -7,15 +7,13 @@ return Component {
     fields = {
         NumberOfLinks = 200,
         LinkName = "Link",
-        ChainSpeed = 10.0,
+        ChainSpeed = 100.0,
         MaxLength = 10.0,
         PlayerName = "Kusane_Player_LeftHandMiddle1",
-        EnableLogs = false,
-        AutoStart = false,
         VerletGravity = 0.5,
         VerletDamping = 0.02,
         ConstraintIterations = 20,
-        IsElastic = false,
+        IsElastic = true,
         LinkMaxDistance = 0.025,
         PinEndWhenExtended = true,
         AnchorAngleThresholdDeg = 45,
@@ -23,7 +21,7 @@ return Component {
         ChainEndpointName = "ChainEndpoint",
         GroundClamp = true,
         GroundClampOffset = 0.1,
-        WallClamp = false,
+        WallClamp = true,
         WallClampInterval = 10,
         WallClampRadius = 0
     },
@@ -72,20 +70,15 @@ return Component {
     -- Attempt to set world position robustly. Falls back to SetPosition/localPosition.
     _write_world_pos = function(self, tr, x, y, z)
         if not tr then return false end
-        -- Preferred engine API
         local ok = false
         if Engine and type(Engine.SetTransformWorldPosition) == "function" then
             ok = pcall(function() Engine.SetTransformWorldPosition(tr, x, y, z) end)
             if ok then return true end
         end
-
-        -- Some engines expose SetPosition on transform expecting world coordinates
         if type(tr.SetPosition) == "function" then
             local suc = pcall(function() tr:SetPosition(x, y, z) end)
             if suc then return true end
         end
-
-        -- Last resort: write localPosition (component may be in world-space already)
         if type(tr.localPosition) ~= "nil" then
             pcall(function()
                 local pos = tr.localPosition
@@ -99,10 +92,9 @@ return Component {
             end)
             return true
         end
-
         return false
     end,
-    
+
     _on_chain_down = function(self, payload)
         print("down")
         self._chain_pressing = true
@@ -112,27 +104,46 @@ return Component {
     _on_chain_up = function(self, payload)
         print("up chain control")
         self._chain_pressing = false
-        self._chain_held = false
-        
+
         -- Deactivate camera aiming
-        if event_bus and event_bus.publish then
-            event_bus.publish("chain.aim_camera", {active = false})
+        if _G.event_bus and _G.event_bus.publish then
+            _G.event_bus.publish("chain.aim_camera", {active = false})
         end
-        
-        if not self.controller then return end
+
+        if not self.controller then
+            self._chain_held = false
+            return
+        end
 
         local len = (self.controller.chainLen or 0)
         local isExt = self.controller.isExtending or false
         local isRet = self.controller.isRetracting or false
 
+        print(string.format("[ChainBootstrap] _on_chain_up: len=%.4f isExt=%s isRet=%s chain_held=%s",
+            len, tostring(isExt), tostring(isRet), tostring(self._chain_held)))
+
         if not isExt and not isRet and len <= 1e-4 then
-            self.controller:StartExtension(self._cameraForward, self.MaxLength, self.LinkMaxDistance)
+            if not self._chain_held then
+                -- Quick tap: request player forward from PlayerMovement via event bus, fire on next Update
+                self._pendingPlayerForward = nil
+                self._pendingTapFire = true
+                if _G.event_bus and _G.event_bus.publish then
+                    _G.event_bus.publish("request_player_forward", true)
+                end
+                print("[ChainBootstrap] TAP -> requested player_forward_response")
+            else
+                -- Held then released: fire in camera aim direction
+                local direction = self._cameraForward
+                print(string.format("[ChainBootstrap] HOLD release -> camera forward: (%.3f, %.3f, %.3f)",
+                    direction[1], direction[2], direction[3]))
+                self.controller:StartExtension(direction, self.MaxLength, self.LinkMaxDistance)
+            end
+        elseif len > 1e-4 and (not isRet) then
+            self.controller:StartRetraction()
         end
 
-        if len > 1e-4 and (not isRet) then
-            self.controller:StartRetraction()
-            return
-        end
+        -- Reset held flag AFTER we've used it above
+        self._chain_held = false
     end,
 
     _on_chain_hold = function(self, payload)
@@ -143,11 +154,9 @@ return Component {
         if self.controller then
             local len = (self.controller.chainLen or 0)
             local isExt = self.controller.isExtending or false
-            
             if len <= 1e-4 and not isExt then
-                -- Chain is retracted, activate camera aiming
-                if event_bus and event_bus.publish then
-                    event_bus.publish("chain.aim_camera", {active = true})
+                if _G.event_bus and _G.event_bus.publish then
+                    _G.event_bus.publish("chain.aim_camera", {active = true})
                 end
             end
         end
@@ -187,7 +196,6 @@ return Component {
         -- seed positions to current transform world positions (world-space)
         for i, tr in ipairs(self._runtime.childTransforms) do
             local x,y,z
-            -- prefer engine world getter when available
             local ok, a,b,c = pcall(function() 
                 if Engine and Engine.GetTransformWorldPosition then 
                     return Engine.GetTransformWorldPosition(tr) 
@@ -210,6 +218,14 @@ return Component {
         -- Initialize camera forward with fallback
         self._cameraForward = {0, 0, 1}
 
+        -- Init tap/hold state
+        self._chain_pressing = false
+        self._chain_held = false
+
+        -- Pending tap-fire state (deferred one frame until player_forward_response arrives)
+        self._pendingTapFire = false
+        self._pendingPlayerForward = nil
+
         -- Find chain endpoint object
         self._endpointTransform = nil
         if self.ChainEndpointName and self.ChainEndpointName ~= "" then
@@ -219,7 +235,6 @@ return Component {
             end
         end
 
-        -- fallback to global event bus if Subscribe unavailable (defensive)
         if _G.event_bus and _G.event_bus.subscribe then
             self._cameraForwardSub = _G.event_bus.subscribe("ChainAim_basis", function(payload)
                 if payload and payload.forward then
@@ -227,11 +242,6 @@ return Component {
                     local fx = fwd.x or fwd[1] or 0
                     local fy = fwd.y or fwd[2] or 0
                     local fz = fwd.z or fwd[3] or 0
-                    print(fx)
-                    print(fy)
-                    print(fz)
-
-                    -- Normalize to be safe
                     local mag = math.sqrt(fx*fx + fy*fy + fz*fz)
                     if mag > 0.0001 then
                         self._cameraForward = {fx/mag, fy/mag, fz/mag}
@@ -239,21 +249,30 @@ return Component {
                 end
             end)
             self._chainSubDown = _G.event_bus.subscribe("chain.down", function(payload) if not payload then return end pcall(function() self:_on_chain_down(payload) end) end)
-            self._chainSubUp = _G.event_bus.subscribe("chain.up", function(payload) if not payload then return end pcall(function() self:_on_chain_up(payload) end) end)
+            self._chainSubUp   = _G.event_bus.subscribe("chain.up",   function(payload) if not payload then return end pcall(function() self:_on_chain_up(payload)   end) end)
             self._chainSubHold = _G.event_bus.subscribe("chain.hold", function(payload) if not payload then return end pcall(function() self:_on_chain_hold(payload) end) end)
 
-            -- When endpoint hits a dynamic entity, lock the chain endpoint to that entity's position
+            -- Receive player forward direction response for tap-fire.
+            -- Multiple PlayerMovement instances may respond (stale ones have nil _facingX/_facingZ
+            -- and send 0,0,1). Only accept the first response that carries real values.
+            self._subPlayerForward = _G.event_bus.subscribe("player_forward_response", function(payload)
+                if not payload then return end
+                if self._pendingPlayerForward then return end
+                local x = payload.x
+                local z = payload.z
+                if not x or not z then return end
+                self._pendingPlayerForward = { x, payload.y or 0, z }
+            end)
+
             self._subHookedPos = _G.event_bus.subscribe("chain.endpoint_hooked_position", function(payload)
                 if not payload then return end
                 pcall(function()
                     if self.controller then
                         local aN = self.controller.activeN
                         local x, y, z = payload.x, payload.y, payload.z
-                        -- Override the locked endpoint position to follow the entity
                         self.controller.lockedEndPoint[1] = x
                         self.controller.lockedEndPoint[2] = y
                         self.controller.lockedEndPoint[3] = z
-                        -- Also snap the last active link so Verlet doesn't fight it
                         self.controller.positions[aN][1] = x
                         self.controller.positions[aN][2] = y
                         self.controller.positions[aN][3] = z
@@ -264,7 +283,6 @@ return Component {
                 end)
             end)
 
-            -- When endpoint first hits an entity, force endPointLocked so chain treats it as pinned
             self._subHitEntity = _G.event_bus.subscribe("chain.endpoint_hit_entity", function(payload)
                 if not payload then return end
                 pcall(function()
@@ -275,16 +293,24 @@ return Component {
                 end)
             end)
         end
-
-        if self.AutoStart then
-            self.controller:StartExtension(self._cameraForward, self.MaxLength, self.LinkMaxDistance)
-        end
     end,
 
     Update = function(self, dt)
         if not self.controller then return end
+
+        -- Deferred tap-fire: wait until player_forward_response arrives from PlayerMovement
+        if self._pendingTapFire then
+            if self._pendingPlayerForward then
+                local direction = self._pendingPlayerForward
+                print(string.format("[ChainBootstrap] TAP (deferred) -> player forward: (%.3f, %.3f, %.3f)",
+                    direction[1], direction[2], direction[3]))
+                self.controller:StartExtension(direction, self.MaxLength, self.LinkMaxDistance)
+                self._pendingTapFire = false
+                self._pendingPlayerForward = nil
+            end
+            -- else: still waiting for response, will retry next frame
+        end
         
-        -- determine start position (cache player transform if present)
         self.playerTransform = Engine.FindTransformByName(self.PlayerName)
         if self.playerTransform then
             local sx, sy, sz = self:_read_world_pos(self.playerTransform)
@@ -293,32 +319,6 @@ return Component {
             print("Cannot find the bloody player, WHY. YOU NAMED WRONG IS IT OR ENGINE FAILING AGAIN.")
         end
 
-        
-        -- quick debug dump (temporary)
-        local function dump_state(ctrl)
-            if not ctrl then return end
-            local n = ctrl.activeN or ctrl.n or 0
-            local first = ctrl.positions[1]; local last = ctrl.positions[n]
-            print(string.format("[CHAIN DEBUG] len=%.3f extend=%s retract=%s activeN=%d start=(%.3f,%.3f,%.3f) end=(%.3f,%.3f,%.3f)",
-                ctrl.chainLen or 0, tostring(ctrl.isExtending), tostring(ctrl.isRetracting), n,
-                ctrl.startPos[1] or 0, ctrl.startPos[2] or 0, ctrl.startPos[3] or 0,
-                ctrl.endPos[1] or 0, ctrl.endPos[2] or 0, ctrl.endPos[3] or 0))
-            if first and last then
-                print(string.format("[CHAIN DEBUG] p1=(%.3f,%.3f,%.3f) pn=(%.3f,%.3f,%.3f)", first[1],first[2],first[3], last[1],last[2],last[3]))
-            end
-            -- invMass summary
-            local k=0
-            for i=1,math.min(10,#ctrl.invMass) do if ctrl.invMass[i]==0 then k=k+1 end end
-            print("[CHAIN DEBUG] front-kinematic-count(first10):", k)
-            -- anchors
-            local a={}
-            for idx,_ in pairs(ctrl.anchors) do table.insert(a, idx) end
-            if #a>0 then print("[CHAIN DEBUG] anchors:", table.concat(a, ",")) end
-            print(self._cameraForward[1]);
-            print(self._cameraForward[2]);
-            print(self._cameraForward[3]);
-        end
-        -- call: dump_state(self.controller)
         local settings = {
             ChainSpeed = self.ChainSpeed,
             MaxLength = self.MaxLength,
@@ -348,7 +348,6 @@ return Component {
         }
 
         local positions, startPos, endPos = self.controller:Update(dt, settings)
-
         local activeN = self.controller.activeN
 
         self.linkHandler:ApplyPositions(positions, activeN)
@@ -363,8 +362,6 @@ return Component {
         self.m_LinkCount = public.LinkCount
         self.m_ActiveLinkCount = public.ActiveLinkCount
 
-        -- Update chain endpoint object position
-        -- Re-lookup if not cached (defensive, object may have been late-spawned)
         if not self._endpointTransform and self.ChainEndpointName and self.ChainEndpointName ~= "" then
             self._endpointTransform = Engine.FindTransformByName(self.ChainEndpointName)
         end
@@ -372,19 +369,13 @@ return Component {
         if self._endpointTransform then
             local chainIsActive = (self.m_CurrentLength or 0) > 1e-4 or self.m_IsExtending
             if chainIsActive then
-                -- Move endpoint obj to the tip of the chain
                 self:_write_world_pos(self._endpointTransform, endPos[1], endPos[2], endPos[3])
 
-                -- Rotate endpoint obj so its local UP axis points in the throw direction.
-                -- The knife model faces upward by default, so we align UP -> lastForward.
                 local fwd = self.controller.lastForward
                 local fx, fy, fz = fwd[1] or 0, fwd[2] or 0, fwd[3] or 1
 
-                -- Build a rotation that takes world UP {0,1,0} to the throw direction.
-                -- Cross product gives the rotation axis; dot gives the angle.
                 local ux, uy, uz = 0, 1, 0
                 local dot = ux*fx + uy*fy + uz*fz
-                -- Rotation axis = UP x forward
                 local rx = uy*fz - uz*fy
                 local ry = uz*fx - ux*fz
                 local rz = ux*fy - uy*fx
@@ -393,14 +384,11 @@ return Component {
                 local qw, qx, qy, qz
                 if axisLen < 1e-6 then
                     if dot > 0 then
-                        -- Already aligned: identity
                         qw, qx, qy, qz = 1, 0, 0, 0
                     else
-                        -- Exactly opposite (knife pointing straight down): rotate 180 around X
                         qw, qx, qy, qz = 0, 1, 0, 0
                     end
                 else
-                    -- Half-angle quaternion from axis-angle
                     rx, ry, rz = rx/axisLen, ry/axisLen, rz/axisLen
                     local angle = math.acos(math.max(-1, math.min(1, dot)))
                     local halfAngle = angle * 0.5
@@ -411,7 +399,6 @@ return Component {
                     qz = rz * s
                 end
 
-                -- Normalize
                 local qlen = math.sqrt(qw*qw + qx*qx + qy*qy + qz*qz)
                 if qlen > 1e-12 then
                     qw, qx, qy, qz = qw/qlen, qx/qlen, qy/qlen, qz/qlen
@@ -427,7 +414,6 @@ return Component {
                     end
                 end)
 
-                -- Publish endpoint state to bus so scripts on the endpoint obj can react
                 if _G.event_bus and _G.event_bus.publish then
                     _G.event_bus.publish("chain.endpoint_moved", {
                         position = { x = endPos[1], y = endPos[2], z = endPos[3] },
@@ -438,14 +424,11 @@ return Component {
                     })
                 end
 
-                -- Track previous active state to detect transition
                 self._wasChainActive = true
             else
-                -- Chain fully retracted: move endpoint back to start so it is hidden at the hand
                 local sp = self.controller.startPos
                 self:_write_world_pos(self._endpointTransform, sp[1], sp[2], sp[3])
 
-                -- Only publish retracted once on the transition, not every frame while idle
                 if self._wasChainActive then
                     self._wasChainActive = false
                     if _G.event_bus and _G.event_bus.publish then
@@ -456,21 +439,15 @@ return Component {
                 end
             end
         end
-
-        if self.EnableLogs then
-            dump_state(self.controller)
-            --self.linkHandler:Dump()
-        end
     end,
 
     OnDisable = function(self)
-        -- mono_helper will automatically unsubscribe tokens registered via self:Subscribe
-        -- fallback: if manual tokens were used, attempt to unsubscribe them defensively
         if _G.event_bus and _G.event_bus.unsubscribe then
             if self._cameraForwardSub then pcall(function() _G.event_bus.unsubscribe(self._cameraForwardSub) end) end
             if self._chainSubDown     then pcall(function() _G.event_bus.unsubscribe(self._chainSubDown)     end) end
             if self._chainSubUp       then pcall(function() _G.event_bus.unsubscribe(self._chainSubUp)       end) end
             if self._chainSubHold     then pcall(function() _G.event_bus.unsubscribe(self._chainSubHold)     end) end
+            if self._subPlayerForward then pcall(function() _G.event_bus.unsubscribe(self._subPlayerForward) end) end
             if self._subHookedPos     then pcall(function() _G.event_bus.unsubscribe(self._subHookedPos)     end) end
             if self._subHitEntity     then pcall(function() _G.event_bus.unsubscribe(self._subHitEntity)     end) end
         end
@@ -482,6 +459,6 @@ return Component {
         end
     end,
     StartRetraction = function(self) if self.controller then self.controller:StartRetraction() end end,
-    StopExtension = function(self) if self.controller then self.controller:StopExtension() end end,
-    GetChainState = function(self) return { Length = self.m_CurrentLength, Count = self.m_LinkCount, ActiveCount = self.m_ActiveLinkCount } end
+    StopExtension   = function(self) if self.controller then self.controller:StopExtension()   end end,
+    GetChainState   = function(self) return { Length = self.m_CurrentLength, Count = self.m_LinkCount, ActiveCount = self.m_ActiveLinkCount } end
 }
