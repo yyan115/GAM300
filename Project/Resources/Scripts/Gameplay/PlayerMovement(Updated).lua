@@ -134,6 +134,19 @@ return Component {
                 self._frozenBycinematic = frozen
                 print("[PlayerMovement] Frozen = " .. tostring(frozen))
             end)
+
+            -- Respond to chain tap requests for player forward direction
+            print("[PlayerMovement] Subscribing to request_player_forward")
+            self._requestPlayerForwardSub = event_bus.subscribe("request_player_forward", function(_)
+                if not self._facingX or not self._facingZ then return end
+                if event_bus and event_bus.publish then
+                    event_bus.publish("player_forward_response", {
+                        x = self._facingX,
+                        y = 0,
+                        z = self._facingZ
+                    })
+                end
+            end)
         else
             print("[PlayerMovement] ERROR: event_bus not available!")
         end
@@ -411,7 +424,12 @@ return Component {
         self._wasRunning = self._isRunning
 
         -- ROTATION
-        if isMoving and self.SetRotation then
+        if isMoving then
+            -- Store facing direction directly for use by other systems (e.g. chain tap-fire)
+            local mag = math.sqrt(moveX * moveX + moveZ * moveZ)
+            self._facingX = moveX / mag
+            self._facingZ = moveZ / mag
+
             local targetW, targetX, targetY, targetZ = directionToQuaternion(moveX, moveZ)
             local t = math.min(self.rotationSpeed * dt, 1.0)
             local newW, newX, newY, newZ = lerpQuaternion(
@@ -444,6 +462,10 @@ return Component {
             if self._freezePlayerSub then
                 event_bus.unsubscribe(self._freezePlayerSub)
                 self._freezePlayerSub = nil
+            end
+            if self._requestPlayerForwardSub then
+                event_bus.unsubscribe(self._requestPlayerForwardSub)
+                self._requestPlayerForwardSub = nil
             end
         end
         self._frozenBycinematic = false
