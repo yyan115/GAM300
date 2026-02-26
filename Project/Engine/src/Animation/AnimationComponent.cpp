@@ -521,6 +521,14 @@ float AnimationComponent::GetFloat(const std::string& name) const
     return 0.0f;
 }
 
+float AnimationComponent::GetStateTime() const
+{
+    if (stateMachine) {
+        return stateMachine->GetStateTime();
+    }
+    return 0.0f;
+}
+
 std::string AnimationComponent::GetCurrentState() const
 {
     if (stateMachine) {
