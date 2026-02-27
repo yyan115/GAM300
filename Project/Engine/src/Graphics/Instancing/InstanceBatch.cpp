@@ -99,6 +99,11 @@ void InstanceBatch::Render(const glm::mat4& view, const glm::mat4& projection, c
     m_shader->Activate();
     m_shader->setBool("useInstancing", true);
 
+    if (m_material)
+    {
+        m_material->ApplyToShader(*m_shader);
+    }
+
     for (auto& mesh : m_model->meshes)
     {
         mesh.DrawInstanced(*m_shader, m_instanceVBO, static_cast<GLsizei>(m_instances.size()));

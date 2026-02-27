@@ -97,12 +97,6 @@ void Mesh::DrawInstanced(Shader& shader, VBO& instanceVBO, GLsizei instanceCount
 		glBindTexture(GL_TEXTURE_2D, textures[i]->ID);
 	}
 
-	// Apply mesh material if available
-	if (material)
-	{
-		material->ApplyToShader(shader);
-	}
-
 	// Bind VAO and draw instanced
 	vao.Bind();
 	glDrawElementsInstanced(GL_TRIANGLES, static_cast<GLsizei>(indices.size()), GL_UNSIGNED_INT, 0, instanceCount);
