@@ -9,11 +9,10 @@ function FlyingAttack:Enter(ai)
     -- if you want to reuse the same cooldown variable:
     ai._attackCooldownT = ai._attackCooldownT or 0
 
-    if ai._animator then
-        ai._animator:SetBool("Attacking", true)
-        -- optional: play your attack clip here if you use clip indices
-        -- ai:PlayClip(ai.clips.Attack, false)
-    end
+    ai._animator:SetBool("Flying", true)
+    ai._animator:SetBool("PlayerInAttackRange", true)
+    ai._animator:SetBool("PlayerInDetectionRange", false)
+    ai._animator:SetBool("PatrolEnabled", false)
 end
 
 function FlyingAttack:Update(ai, dt)
@@ -56,27 +55,13 @@ function FlyingAttack:Update(ai, dt)
     end
     ai._didAttackThisCycle = true
 
-    if ai.IsMelee then
-        -- Melee hit if within melee range
-        if ai:IsPlayerInRange(meleeR) then
-            if _G.event_bus and _G.event_bus.publish then
-                _G.event_bus.publish("meleeHitPlayerDmg", {
-                    dmg = (ai.MeleeDamage or 1),
-                    src = "FlyingEnemy",
-                    enemyEntityId = ai.entityId,
-                })
-            end
-            if ai.PlayHitSFX then ai:PlayHitSFX() end
-        end
-        if ai.PlayAttackSFX then ai:PlayAttackSFX() end
-    else
-        -- Ranged: throw knives
-        local ok = ai:SpawnKnife()
-        if ok and ai.PlayAttackSFX then
-            -- SpawnKnife already plays ranged SFX in your EnemyAI,
-            -- but leaving this harmless if you change later.
-            -- ai:PlayAttackSFX()
-        end
+    -- Ranged: throw knives
+    ai._animator:SetBool("Ranged", true)
+    local ok = ai:SpawnKnife()
+    if ok and ai.PlayAttackSFX then
+        -- SpawnKnife already plays ranged SFX in your EnemyAI,
+        -- but leaving this harmless if you change later.
+        -- ai:PlayAttackSFX()
     end
 
     -- restart cooldown
@@ -88,9 +73,8 @@ function FlyingAttack:Update(ai, dt)
 end
 
 function FlyingAttack:Exit(ai)
-    if ai._animator then
-        ai._animator:SetBool("Attacking", false)
-    end
+    ai._animator:SetBool("PlayerInAttackRange", false)
+    ai._animator:SetBool("Ranged", false)
 end
 
 return FlyingAttack

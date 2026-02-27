@@ -8,9 +8,9 @@ function FlyingChase:Enter(ai)
         if ai.PlayAlertSFX then ai:PlayAlertSFX() end
     end
 
-    if ai._animator then
-        ai._animator:SetBool("Moving", true)
-    end
+    ai._animator:SetBool("Flying", true)
+    ai._animator:SetBool("PatrolEnabled", true)
+    ai._animator:SetBool("PlayerInDetectionRange", true)
 end
 
 function FlyingChase:Update(ai, dt)
@@ -36,12 +36,6 @@ function FlyingChase:Update(ai, dt)
     -- chase
     local spd = ai.FlyingChaseSpeed or 1.2
     ai:MoveTowardPlayerXZ_Flying(dt, spd)
-end
-
-function FlyingChase:Exit(ai)
-    if ai._animator then
-        ai._animator:SetBool("Moving", false)
-    end
 end
 
 return FlyingChase
