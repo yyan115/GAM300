@@ -376,7 +376,9 @@ bool MetaFilesManager::AssetFileUpdated(const std::string& assetPath, bool isSha
 		if (!fs::exists(sourcePath)) return false;
 
 		// 2. Find the Meta File and get the compiled resource path from it.
-		const auto& compiledPath = GetResourceNameFromAssetFile(assetPath);
+		std::string compiledPath = GetResourceNameFromAssetFile(assetPath);
+
+		if (!fs::exists(compiledPath)) return true;
 
 		// If the source file path is the same as the compiled file path, it means the asset is a "raw" asset that doesn't require compilation.
 		// In this case, we can skip the timestamp comparison and consider the asset up to date as long as the source file exists.
@@ -406,6 +408,9 @@ bool MetaFilesManager::AssetFileUpdated(const std::string& assetPath, bool isSha
 			else {
 				metaFilePath = std::filesystem::path(assetPath + ".meta");
 			}
+
+			if (!fs::exists(metaFilePath)) return true;
+
 			auto metaTime = fs::last_write_time(metaFilePath);
 			if (metaTime > compiledTime + gracePeriod) {
 				ENGINE_LOG_DEBUG("[MetaFilesManager] Meta file is newer than compiled resource: " + assetPath);
@@ -427,7 +432,9 @@ bool MetaFilesManager::AssetFileUpdated(const std::string& assetPath, bool isSha
 		if (!fs::exists(vertPath) || !fs::exists(fragPath)) return false;
 
 		// 2. Find the Meta File and get the compiled resource path from it.
-		const auto& compiledPath = GetResourceNameFromAssetFile(assetPath);
+		std::string compiledPath = GetResourceNameFromAssetFile(assetPath);
+
+		if (!fs::exists(compiledPath)) return true;
 
 		if (compiledPath != "") {
 			// 3. The Golden Check: Is Source newer than Compiled?
