@@ -11,6 +11,15 @@ layout (location = 4) in vec3 aTangent;
 layout (location = 5) in ivec4 aBoneIds;
 layout (location = 6) in vec4 aWeights;
 
+// Instance attributes (only used when useInstancing is true)
+layout (location = 7)  in vec4 aInstanceModelCol0;
+layout (location = 8)  in vec4 aInstanceModelCol1;
+layout (location = 9)  in vec4 aInstanceModelCol2;
+layout (location = 10) in vec4 aInstanceModelCol3;
+layout (location = 11) in vec4 aInstanceNormalCol0;
+layout (location = 12) in vec4 aInstanceNormalCol1;
+layout (location = 13) in vec4 aInstanceNormalCol2;
+
 out vec3 FragPos;
 out vec3 Normal;
 out vec3 Tangent;
@@ -24,6 +33,8 @@ uniform mat4 projection;
 uniform mat4 lightSpaceMatrix;
 uniform mat3 normalMatrix;  // Pass this from CPU instead of computing inverse()
 
+uniform bool useInstancing;
+
 const int MAX_BONES = 100;
 const int MAX_BONE_INFLUENCE = 4;
 uniform mat4 finalBonesMatrices[MAX_BONES];
@@ -31,19 +42,46 @@ uniform bool hasBones;
 
 void main()
 {
+    // Determine which model matrix to use
+    mat4 modelMatrix;
+    mat3 nrmMatrix;
+
+    if (useInstancing)
+    {
+        // Reconstruct model matrix from instance attributes
+        modelMatrix = mat4(
+            aInstanceModelCol0,
+            aInstanceModelCol1,
+            aInstanceModelCol2,
+            aInstanceModelCol3
+        );
+
+        // Reconstruct normal matrix from instance attributes
+        nrmMatrix = mat3(
+            aInstanceNormalCol0.xyz,
+            aInstanceNormalCol1.xyz,
+            aInstanceNormalCol2.xyz
+        );
+    }
+    else
+    {
+        modelMatrix = model;
+        nrmMatrix = normalMatrix;
+    }
+
     // Start in object space
     vec4 pos = vec4(aPos, 1.0);
     vec3 nrm = aNormal;
     vec3 tan = aTangent;
 
-    if (hasBones)
+    if (hasBones && !useInstancing)
     {
         // LBS skinning
         mat4 skin = mat4(0.0);
         float wsum = 0.0;
         for (int i = 0; i < MAX_BONE_INFLUENCE; ++i)
         {
-            // Cast float to int for bone index
+            // Cast float to int for bone index (required in GLSL ES)
             int id = int(aBoneIds[i]);
             float w = aWeights[i];
             if (id >= 0 && id < MAX_BONES && w > 0.0)
@@ -60,11 +98,11 @@ void main()
     }
 
     // Transform to world space
-    vec4 worldPos = model * pos;
+    vec4 worldPos = modelMatrix * pos;
 
     FragPos = worldPos.xyz;
-    Normal  = normalize(normalMatrix * nrm);
-    Tangent = normalize(normalMatrix * tan);
+    Normal  = normalize(nrmMatrix * nrm);
+    Tangent = normalize(nrmMatrix * tan);
     TexCoords = aTexCoord;
     color = aColor;
 
