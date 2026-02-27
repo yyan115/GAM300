@@ -98,6 +98,14 @@ void GraphicsManager::BeginFrame()
 	if (InstancingManager::GetInstance().IsEnabled())
 	{
 		InstancingManager::GetInstance().BeginFrame();
+
+		// Update frustum NOW so TryAddInstance (called during Update) uses the
+		// current-frame frustum rather than the previous frame's frustum.
+		// Without this, frustum-culled instanceable models silently disappear:
+		// they are neither added to a batch nor submitted to the render queue.
+		UpdateFrustum();
+		InstancingManager::GetInstance().SetFrustum(
+			frustumCullingEnabled ? &viewFrustum : nullptr);
 	}
 }
 
@@ -261,11 +269,8 @@ void GraphicsManager::Render()
 	}
 	InstancingManager& instancing = InstancingManager::GetInstance();
 
-	if (instancing.IsEnabled()) 
+	if (instancing.IsEnabled())
 	{
-		// Set frustum for culling
-		instancing.SetFrustum(frustumCullingEnabled ? &viewFrustum : nullptr);
-
 		// Get view/projection matrices
 		glm::mat4 view = currentCamera->GetViewMatrix();
 		float aspectRatio = currentFrameViewport.aspectRatio;

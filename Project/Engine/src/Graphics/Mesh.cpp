@@ -178,9 +178,9 @@ void Mesh::setupMesh()
 
 void Mesh::SetupInstanceAttributes(VBO& instanceVBO)
 {
-	if (instanceAttributesSetup) 
+	if (instanceVBO.ID == m_instanceVBOId)
 	{
-		return;  // Already set up for this VAO
+		return;  // Already set up for this VBO
 	}
 
 	// Bind the mesh's VAO
@@ -248,7 +248,7 @@ void Mesh::SetupInstanceAttributes(VBO& instanceVBO)
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 	vao.Unbind();
 
-	instanceAttributesSetup = true;
+	m_instanceVBOId = instanceVBO.ID;
 }
 
 void Mesh::Draw(Shader& shader, const Camera& camera)

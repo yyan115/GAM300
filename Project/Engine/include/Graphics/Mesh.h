@@ -111,6 +111,6 @@ private:
 	bool vaoSetup;
 	void setupMesh();
 	AABB boundingBox;
-	bool instanceAttributesSetup = false;
+	GLuint m_instanceVBOId = 0;
 	void SetupInstanceAttributes(VBO& instanceVBO);
 };
