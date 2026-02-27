@@ -286,9 +286,25 @@ void GraphicsManager::Render()
 		// End instancing frame
 		instancing.EndFrame();
 
-		// Update stats
-		const auto& instStats = instancing.GetStats();
-		// log stats
+		//// Print stats every 300 frames
+		//static int frameCount = 0;
+		//if (++frameCount % 300 == 0)
+		//{
+		//	const auto& stats = instancing.GetStats();
+		//	std::cout << "[Instancing Stats]" << std::endl;
+		//	std::cout << "  Total objects: " << stats.totalObjects << std::endl;
+		//	std::cout << "  Instanced: " << stats.instancedObjects << std::endl;
+		//	std::cout << "  Non-instanced: " << stats.nonInstancedObjects << std::endl;
+		//	std::cout << "  Batches: " << stats.batchCount << std::endl;
+		//	std::cout << "  Draw calls: " << stats.drawCalls << std::endl;
+		//	std::cout << "  Culled: " << stats.culledObjects << std::endl;
+		//	std::cout << "  Efficiency: " << stats.GetBatchEfficiency() << "%" << std::endl;
+		//}
+
+		//// Update stats
+		//const auto& instStats = instancing.GetStats();
+		//// log stats
+		//std::cout << "Instanced: " << instStats.instancedObjects << ", Batches: " << instStats.batchCount << std::endl;
 	}
 
 	// Sort models by state (shader -> material -> mesh)
