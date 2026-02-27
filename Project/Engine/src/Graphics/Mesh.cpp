@@ -8,6 +8,7 @@
 #ifdef ANDROID
 #include <android/log.h>
 #endif
+#include "Graphics/Instancing/InstanceBatch.hpp"
 
 #pragma region Reflection
 REFL_REGISTER_START(Mesh)
@@ -40,28 +41,106 @@ Mesh::~Mesh()
 	ebo.Delete();
 }
 
+void Mesh::DrawInstanced(Shader& shader, VBO& instanceVBO, GLsizei instanceCount)
+{
+	if (instanceCount == 0) {
+		return;
+	}
+
+	if (!vaoSetup)
+	{
+		setupMesh();
+		vaoSetup = true;
+	}
+
+	// Setup instance attributes if not already done
+	SetupInstanceAttributes(instanceVBO);
+
+	// Bind textures
+	unsigned int diffuseNr = 1;
+	unsigned int specularNr = 1;
+	unsigned int normalNr = 1;
+	unsigned int emissiveNr = 1;
+
+	for (unsigned int i = 0; i < textures.size(); i++) 
+	{
+		glActiveTexture(GL_TEXTURE0 + i);
+
+		std::string number;
+		std::string name = textures[i]->GetType();
+
+		if (name == "diffuse") 
+		{
+			number = std::to_string(diffuseNr++);
+			shader.setBool("material.hasDiffuseMap", true);
+			shader.setInt("material.diffuseMap", i);
+		}
+		else if (name == "specular") 
+		{
+			number = std::to_string(specularNr++);
+			shader.setBool("material.hasSpecularMap", true);
+			shader.setInt("material.specularMap", i);
+		}
+		else if (name == "normal") 
+		{
+			number = std::to_string(normalNr++);
+			shader.setBool("material.hasNormalMap", true);
+			shader.setInt("material.normalMap", i);
+		}
+		else if (name == "emissive") 
+		{
+			number = std::to_string(emissiveNr++);
+			shader.setBool("material.hasEmissiveMap", true);
+			shader.setInt("material.emissiveMap", i);
+		}
+
+		glBindTexture(GL_TEXTURE_2D, textures[i]->ID);
+	}
+
+	// Bind VAO and draw instanced
+	vao.Bind();
+	glDrawElementsInstanced(GL_TRIANGLES, static_cast<GLsizei>(indices.size()), GL_UNSIGNED_INT, 0, instanceCount);
+	vao.Unbind();
+
+	// Reset texture bindings
+	glActiveTexture(GL_TEXTURE0);
+}
+
+void Mesh::DrawInstancedDepthOnly(VBO& instanceVBO, GLsizei instanceCount)
+{
+	if (instanceCount == 0) 
+	{
+		return;
+	}
+
+	if (!vaoSetup)
+	{
+		setupMesh();
+		vaoSetup = true;
+	}
+
+	// Setup instance attributes if not already done
+	SetupInstanceAttributes(instanceVBO);
+
+	// Bind VAO and draw instanced (no textures or materials for depth pass)
+	vao.Bind();
+	glDrawElementsInstanced(GL_TRIANGLES,
+		static_cast<GLsizei>(indices.size()),
+		GL_UNSIGNED_INT,
+		0,
+		instanceCount);
+	vao.Unbind();
+}
+
 void Mesh::setupMesh()
 {
-//#ifdef __ANDROID__
-//	__android_log_print(ANDROID_LOG_INFO, "GAM300", "[MESH] Starting setupMesh - vertices=%zu, indices=%zu", vertices.size(), indices.size());
-//#endif
-
 	// Generates Vertex Array Object and binds it
 	vao.Bind();
-//#ifdef __ANDROID__
-//	__android_log_print(ANDROID_LOG_INFO, "GAM300", "[MESH] VAO bound - VAO.ID=%u", vao.ID);
-//#endif
 
 	VBO vbo(vertices);
 	vbo.Bind();
-//#ifdef __ANDROID__
-//	__android_log_print(ANDROID_LOG_INFO, "GAM300", "[MESH] VBO created and bound - VBO.ID=%u", vbo.ID);
-//#endif
 
 	ebo.Bind();
-//#ifdef __ANDROID__
-//	__android_log_print(ANDROID_LOG_INFO, "GAM300", "[MESH] EBO bound - EBO.ID=%u", ebo.ID);
-//#endif
 
 	// Position
 	vao.LinkAttrib(vbo, 0, 3, GL_FLOAT, sizeof(Vertex), (void*)offsetof(Vertex, position)); // Compiler knows the exact size of your Vertex struct (including any padding) no need 11 * sizeof(float)
@@ -83,18 +162,87 @@ void Mesh::setupMesh()
 	ENGINE_LOG_DEBUG("[MESH] sizeof(Vertex) = " + std::to_string(sizeof(Vertex)) + "\n");
 	ENGINE_LOG_DEBUG("[MESH] offsetof = " + std::to_string(offsetof(Vertex, mBoneIDs)) + "\n");
 
-//#ifdef __ANDROID__
-//	__android_log_print(ANDROID_LOG_INFO, "GAM300", "[MESH] Vertex attributes linked successfully");
-//#endif
 
 	vbo.Unbind();
 	vao.Unbind();
 	ebo.Unbind();
 
 	CalculateBoundingBox();
-//#ifdef __ANDROID__
-//	__android_log_print(ANDROID_LOG_INFO, "GAM300", "[MESH] setupMesh completed successfully");
-//#endif
+}
+
+void Mesh::SetupInstanceAttributes(VBO& instanceVBO)
+{
+	if (instanceVBO.ID == m_instanceVBOId)
+	{
+		return;  // Already set up for this VBO
+	}
+
+	// Bind the mesh's VAO
+	vao.Bind();
+
+	// Bind the instance buffer
+	instanceVBO.Bind(); 
+
+	// Instance model matrix (mat4 = 4 vec4s, locations 7-10)
+	// The model matrix is 64 bytes (16 floats), sent as 4 vec4 attributes
+
+	// Location 7: model matrix column 0
+	glEnableVertexAttribArray(7);
+	glVertexAttribPointer(7, 4, GL_FLOAT, GL_FALSE,
+		sizeof(InstanceData),  // Stride = size of InstanceData struct
+		(void*)0);             // Offset = 0 (start of modelMatrix)
+	glVertexAttribDivisor(7, 1);  // Advance once per instance
+
+	// Location 8: model matrix column 1
+	glEnableVertexAttribArray(8);
+	glVertexAttribPointer(8, 4, GL_FLOAT, GL_FALSE,
+		sizeof(InstanceData),
+		(void*)(1 * sizeof(glm::vec4)));
+	glVertexAttribDivisor(8, 1);
+
+	// Location 9: model matrix column 2
+	glEnableVertexAttribArray(9);
+	glVertexAttribPointer(9, 4, GL_FLOAT, GL_FALSE,
+		sizeof(InstanceData),
+		(void*)(2 * sizeof(glm::vec4)));
+	glVertexAttribDivisor(9, 1);
+
+	// Location 10: model matrix column 3
+	glEnableVertexAttribArray(10);
+	glVertexAttribPointer(10, 4, GL_FLOAT, GL_FALSE,
+		sizeof(InstanceData),
+		(void*)(3 * sizeof(glm::vec4)));
+	glVertexAttribDivisor(10, 1);
+
+	// Instance normal matrix (mat4 stored for alignment, only mat3 used in shader)
+	// Offset starts after modelMatrix (64 bytes = 4 vec4s)
+	size_t normalMatrixOffset = sizeof(glm::mat4);  // 64 bytes
+
+	// Location 11: normal matrix column 0
+	glEnableVertexAttribArray(11);
+	glVertexAttribPointer(11, 4, GL_FLOAT, GL_FALSE,
+		sizeof(InstanceData),
+		(void*)normalMatrixOffset);
+	glVertexAttribDivisor(11, 1);
+
+	// Location 12: normal matrix column 1
+	glEnableVertexAttribArray(12);
+	glVertexAttribPointer(12, 4, GL_FLOAT, GL_FALSE,
+		sizeof(InstanceData),
+		(void*)(normalMatrixOffset + sizeof(glm::vec4)));
+	glVertexAttribDivisor(12, 1);
+
+	// Location 13: normal matrix column 2
+	glEnableVertexAttribArray(13);
+	glVertexAttribPointer(13, 4, GL_FLOAT, GL_FALSE,
+		sizeof(InstanceData),
+		(void*)(normalMatrixOffset + 2 * sizeof(glm::vec4)));
+	glVertexAttribDivisor(13, 1);
+
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	vao.Unbind();
+
+	m_instanceVBOId = instanceVBO.ID;
 }
 
 void Mesh::Draw(Shader& shader, const Camera& camera)
@@ -118,32 +266,14 @@ void Mesh::Draw(Shader& shader, const Camera& camera)
 #endif
 
 	// Setup VAO on first draw when we have active OpenGL context
-	if (!vaoSetup) {
-//#ifdef __ANDROID__
-//		__android_log_print(ANDROID_LOG_INFO, "GAM300", "[MESH] Setting up mesh VAO/VBO for first time");
-//#endif
+	if (!vaoSetup) 
+	{
 		setupMesh();
 		vaoSetup = true;
-//#ifdef __ANDROID__
-//		__android_log_print(ANDROID_LOG_INFO, "GAM300", "[MESH] VAO/VBO setup completed - VAO.ID=%u, EBO.ID=%u", vao.ID, ebo.ID);
-//#endif
 	}
 
-//#ifdef __ANDROID__
-//	__android_log_print(ANDROID_LOG_INFO, "GAM300", "[MESH] About to activate shader - shader.ID=%u", shader.ID);
-//#endif
 	shader.Activate();
-//#ifdef __ANDROID__
-//	__android_log_print(ANDROID_LOG_INFO, "GAM300", "[MESH] Shader activated successfully");
-//#endif
-
-//#ifdef __ANDROID__
-//	__android_log_print(ANDROID_LOG_INFO, "GAM300", "[MESH] About to bind VAO - VAO.ID=%u", vao.ID);
-//#endif
 	vao.Bind();
-//#ifdef __ANDROID__
-//	__android_log_print(ANDROID_LOG_INFO, "GAM300", "[MESH] VAO bound successfully");
-//#endif
 
 	// Set camera matrices
 	glm::mat4 view = camera.GetViewMatrix();
@@ -160,37 +290,19 @@ void Mesh::Draw(Shader& shader, const Camera& camera)
 	shader.setVec3("cameraPos", camera.Position);
 
 	// Apply material if available
-//#ifdef __ANDROID__
-//	__android_log_print(ANDROID_LOG_INFO, "GAM300", "[MESH] About to apply material - material=%p", material.get());
-//#endif
 	if (!material)
 	{
 		// Create default material if none exists
-//#ifdef __ANDROID__
-//		__android_log_print(ANDROID_LOG_INFO, "GAM300", "[MESH] No material found, creating default material");
-//#endif
 		material = Material::CreateDefault();
-//#ifdef __ANDROID__
-//		__android_log_print(ANDROID_LOG_INFO, "GAM300", "[MESH] Created default material for rendering: %p", material.get());
-//#endif
 	}
 
 	if (material)
 	{
-//#ifdef __ANDROID__
-//		__android_log_print(ANDROID_LOG_INFO, "GAM300", "[MESH] Applying material to shader");
-//#endif
 		//material->debugPrintProperties();
 		material->ApplyToShader(shader);
-//#ifdef __ANDROID__
-//		__android_log_print(ANDROID_LOG_INFO, "GAM300", "[MESH] Material applied successfully");
-//#endif
 	}
 	else
 	{
-//#ifdef __ANDROID__
-//		__android_log_print(ANDROID_LOG_INFO, "GAM300", "[MESH] Material creation failed, using fallback texture system");
-//#endif
 		// Fallback to old texture system for backward compatibility
 		unsigned int textureUnit = 0;
 		unsigned int numDiffuse = 0, numSpecular = 0;
@@ -252,17 +364,9 @@ void Mesh::Draw(Shader& shader, const Camera& camera)
 	}
 #endif
 
-//#ifdef __ANDROID__
-//	__android_log_print(ANDROID_LOG_INFO, "GAM300", "[MESH] About to call glDrawElements with %zu indices", indices.size());
-//#endif
 
 	glDrawElements(GL_TRIANGLES, static_cast<GLsizei>(indices.size()), GL_UNSIGNED_INT, 0);
 
-	//std::cout << "drawn mesh\n";
-	
-//#ifdef __ANDROID__
-//	__android_log_print(ANDROID_LOG_INFO, "GAM300", "[MESH] glDrawElements called successfully");
-//#endif
 
 #ifdef __ANDROID__
 GLenum err2;
