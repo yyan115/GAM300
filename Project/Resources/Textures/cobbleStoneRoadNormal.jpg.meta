@@ -8,6 +8,7 @@
     "TextureMetaData": {
         "type": "normal",
         "flipUVs": false,
-        "generateMipmaps": true
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp"
     }
 }
