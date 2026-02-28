@@ -1073,10 +1073,12 @@ void Serializer::SerializePrefabOverridesRecursive(ECSManager& sceneECS, Entity 
         }
 
         // For each of the deleted base child entities, mark them as 'deleted' in the JSON so that they can be deleted when deserialized later.
+        std::vector<std::string> deletedChildrenNames{};
+
         rapidjson::Value deletedChildrenNode(rapidjson::kArrayType);
         for (const auto& deletedChild : deletedBaseChildren) {
             Entity deletedEntity = EntityGUIDRegistry::GetInstance().GetEntityByGUID(deletedChild);
-            rapidjson::Value deletedChildNode(rapidjson::kObjectType);
+            //rapidjson::Value deletedChildNode(rapidjson::kObjectType);
 
             // Serialize the information required to deserialize and restore the prefab hierarchy when deserializing later.
             //deletedChildNode = SerializeEntityGUID(deletedEntity, alloc, deletedChildNode);
@@ -1085,9 +1087,22 @@ void Serializer::SerializePrefabOverridesRecursive(ECSManager& sceneECS, Entity 
                 rapidjson::Value nameVal;
                 nameVal.SetString(name.c_str(), static_cast<rapidjson::SizeType>(name.length()), alloc);
 
-                deletedChildNode.AddMember("Name", nameVal, alloc);
+				deletedChildrenNames.push_back(name);
+                //deletedChildNode.AddMember("Name", nameVal, alloc);
             }
 
+            //deletedChildrenNode.PushBack(deletedChildNode, alloc);
+        }
+
+        // Sort the deletedChildrenNames vector alphabetically to ensure consistent order in the scene file.
+        std::sort(deletedChildrenNames.begin(), deletedChildrenNames.end());
+
+        // Now add the sorted deleted children names to the scene JSON.
+        for (const auto& name : deletedChildrenNames) {
+            rapidjson::Value deletedChildNode(rapidjson::kObjectType);
+            rapidjson::Value nameVal;
+            nameVal.SetString(name.c_str(), static_cast<rapidjson::SizeType>(name.length()), alloc);
+            deletedChildNode.AddMember("Name", nameVal, alloc);
             deletedChildrenNode.PushBack(deletedChildNode, alloc);
         }
 
