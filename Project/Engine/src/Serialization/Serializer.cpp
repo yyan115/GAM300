@@ -3632,46 +3632,29 @@ void Serializer::DeserializeVideoComponent(VideoComponent& videoComp, const rapi
     if (videoJSON.HasMember("data") && videoJSON["data"].IsArray()) {
         const auto& d = videoJSON["data"];
 
-        // Index 0: enabled
-        videoComp.enabled = Serializer::GetBool(d, 0);
+        // Detect old format: index 1 was "isPlaying" (bool type)
+        // New format: index 1 is "cutsceneName" (string type)
+        bool isOldFormat = (d.Size() > 1 && d[1].HasMember("type") &&
+                           std::string(d[1]["type"].GetString()) == "bool");
 
-        // Index 1: isPlaying
-        videoComp.isPlaying = Serializer::GetBool(d, 1);
+        if (isOldFormat) {
+            // Legacy scene file — old VideoComponent format
+            // These fields no longer exist; load with defaults
+            ENGINE_PRINT("[Serializer] WARNING: Old VideoComponent format detected. "
+                         "Please re-save the scene to migrate to the new format.\n");
 
-        // Index 2: loop
-        videoComp.loop = Serializer::GetBool(d, 2);
+            // Try to salvage loop from old index 2
+            if (d.Size() > 2)
+                videoComp.loop = Serializer::GetBool(d, 2);
 
-        // Index 3: playbackSpeed
-        videoComp.playbackSpeed = Serializer::GetFloat(d, 3);
-
-        // Index 4: currentTime
-        videoComp.currentTime = Serializer::GetFloat(d, 4);
-
-        // Index 5: videoPath
-        if (d.Size() > 5 && d[5].HasMember("data") && d[5]["data"].IsString()) {
-            videoComp.videoPath = d[5]["data"].GetString();
-            if (videoComp.videoPath.find("../../Resources") == 0) {
-                videoComp.videoPath = videoComp.videoPath.substr(6);
-            }
-
-            // IMPORTANT: Process the configuration file after loading the path
-            if (!videoComp.videoPath.empty()) {
-                videoComp.ProcessMetaData(videoComp.videoPath);
-                videoComp.asset_dirty = true;
-            }
+            videoComp.needsInit = true;
+            return;
         }
 
-        // Index 6: dialoguePath
-        if (d.Size() > 6 && d[6].HasMember("data") && d[6]["data"].IsString()) {
-            videoComp.dialoguePath = d[6]["data"].GetString();
-            if (videoComp.dialoguePath.find("../../Resources") == 0) {
-                videoComp.dialoguePath = videoComp.dialoguePath.substr(6);
-            }
-
-            // IMPORTANT: Process the dialogue file after loading the path
-            if (!videoComp.dialoguePath.empty()) {
-                videoComp.ProcessDialogueData(videoComp.dialoguePath);
-            }
+        // New format: use reflection-based deserialization
+        TypeDescriptor* td = TypeResolver<VideoComponent>::Get();
+        if (td) {
+            td->Deserialize(&videoComp, videoJSON);
         }
     }
 }

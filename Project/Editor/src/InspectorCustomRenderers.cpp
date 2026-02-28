@@ -1535,177 +1535,335 @@ void RegisterInspectorCustomRenderers()
         return true; // skip default reflection
     });
 
-    //ReflectionRenderer::RegisterComponentRenderer("VideoComponent",
-    //    [](void* ptr, TypeDescriptor_Struct* type, Entity entity, ECSManager& ecs)
-    //    {
-    //        // 1. Cast to the actual component type
-    //        auto& videoComp = *static_cast<VideoComponent*>(ptr);
-    //        const float labelWidth = EditorComponents::GetLabelWidth();
+    // ==================== VIDEO COMPONENT ====================
+    // Full custom renderer (like DialogueComponent) — inspector-driven cutscene system
 
-    //        ImGui::Text("Configuration File");
-    //        ImGui::SameLine(labelWidth);
-    //        ImGui::SetNextItemWidth(-1);
+    ReflectionRenderer::RegisterComponentRenderer("VideoComponent",
+    [](void* componentPtr, TypeDescriptor_Struct*, Entity entity, ECSManager& ecs) -> bool
+    {
+        VideoComponent& vc = *static_cast<VideoComponent*>(componentPtr);
+        const float labelWidth = EditorComponents::GetLabelWidth();
 
-    //        // 2. Use the path stored in the component to show the display text
-    //        std::string texPath = videoComp.videoPath;
-    //        videoComp.inputFilePath = texPath;
-    //        std::string displayText = texPath.empty() ? "None (Text)" : texPath.substr(texPath.find_last_of("/\\") + 1);
-
-    //        float buttonWidth = ImGui::GetContentRegionAvail().x;
-    //        EditorComponents::DrawDragDropButton(displayText.c_str(), buttonWidth);
-
-    //        if (EditorComponents::BeginDragDropTarget())
-    //        {
-    //            if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("TEXT_PAYLOAD"))
-    //            {
-    //                SnapshotManager::GetInstance().TakeSnapshot("Assign Cutscene File");
-
-    //                const char* payloadPath = (const char*)payload->Data;
-    //                std::string pathStr(payloadPath, payload->DataSize);
-    //                pathStr.erase(std::find(pathStr.begin(), pathStr.end(), '\0'), pathStr.end());
-
-    //                // 3. Update the component directly
-
-    //                videoComp.ProcessMetaData(pathStr);     //split path accordingly.
-    //                videoComp.asset_dirty = true; // Mark for reload      
-
-    //                EditorComponents::EndDragDropTarget();
-    //                return true;
-    //            }
-    //            EditorComponents::EndDragDropTarget();
-    //        }
-
-    //        ImGui::Spacing(); // Add some space between the two inputs
-
-    //        // --- 2. DIALOGUE FILE (New) ---
-    //        ImGui::Text("Dialogue File");
-    //        ImGui::SameLine(labelWidth);
-    //        ImGui::SetNextItemWidth(-1);
-
-    //        // Assuming you add 'dialoguePath' to your VideoComponent
-    //        std::string diagPath = videoComp.dialoguePath;
-    //        std::string diagDisplay = diagPath.empty() ? "None (Dialogue)" : diagPath.substr(diagPath.find_last_of("/\\") + 1);
-
-    //        EditorComponents::DrawDragDropButton(diagDisplay.c_str(), buttonWidth);
-
-    //        if (EditorComponents::BeginDragDropTarget())
-    //        {
-    //            if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("TEXT_PAYLOAD"))
-    //            {
-    //                SnapshotManager::GetInstance().TakeSnapshot("Assign Dialogue File");
-    //                const char* payloadPath = (const char*)payload->Data;
-    //                std::string pathStr(payloadPath, payload->DataSize);
-    //                pathStr.erase(std::find(pathStr.begin(), pathStr.end(), '\0'), pathStr.end());
-
-    //                // Store the path and trigger the parser you wrote in the DialogueManager
-    //                videoComp.dialoguePath = pathStr;   
-    //                videoComp.ProcessDialogueData(pathStr);
-
-    //                EditorComponents::EndDragDropTarget();
-    //                return true;
-    //            }
-    //            EditorComponents::EndDragDropTarget();
-    //        }
-
-    //        return false;
-    //    });
-
-
-    ReflectionRenderer::RegisterFieldRenderer("VideoComponent", "videoPath",
-        [](const char*, void* ptr, Entity entity, ECSManager& ecs)
+        // --- Cutscene Name ---
+        ImGui::Text("Cutscene Name");
+        ImGui::SameLine(labelWidth);
+        ImGui::SetNextItemWidth(-1);
         {
-            std::string* pathPtr = static_cast<std::string*>(ptr);
-            const float labelWidth = EditorComponents::GetLabelWidth();
+            static std::unordered_map<ImGuiID, std::string> startName;
+            static std::unordered_map<ImGuiID, bool> isEditing;
+            ImGuiID id = ImGui::GetID("##CutsceneName");
+            if (!isEditing[id]) startName[id] = vc.cutsceneName;
+            char nameBuf[256];
+            strncpy(nameBuf, vc.cutsceneName.c_str(), sizeof(nameBuf) - 1);
+            nameBuf[sizeof(nameBuf) - 1] = '\0';
+            if (ImGui::InputText("##CutsceneName", nameBuf, sizeof(nameBuf))) {
+                vc.cutsceneName = nameBuf;
+            }
+            if (ImGui::IsItemActivated()) { startName[id] = vc.cutsceneName; isEditing[id] = true; }
+            if (isEditing[id] && !ImGui::IsItemActive()) {
+                isEditing[id] = false;
+                if (startName[id] != vc.cutsceneName && UndoSystem::GetInstance().IsEnabled())
+                    UndoSystem::GetInstance().RecordStringChange(&vc.cutsceneName, startName[id], vc.cutsceneName, "Change Cutscene Name");
+            }
+        }
 
-            ImGui::Text("Configuration File");
+        ImGui::Spacing();
+        ImGui::Separator();
+        ImGui::Text("Entity References");
+        ImGui::Spacing();
+
+        // Helper lambda for GUID entity drag-drop
+        auto DrawEntityRef = [&](const char* label, std::string& guidStr, Entity& resolvedEntity, bool requireSprite, bool requireText) {
+            ImGui::Text("%s", label);
             ImGui::SameLine(labelWidth);
-            ImGui::SetNextItemWidth(-1);
+            float fieldWidth = ImGui::GetContentRegionAvail().x;
 
-            std::string displayText = pathPtr->empty() ? "None (Text)" : pathPtr->substr(pathPtr->find_last_of("/\\") + 1);
-            float buttonWidth = ImGui::GetContentRegionAvail().x;
-            EditorComponents::DrawDragDropButton(displayText.c_str(), buttonWidth);
-
-            if (EditorComponents::BeginDragDropTarget())
-            {
-                ImGui::SetTooltip("Drop configuration file here");
-                if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("TEXT_PAYLOAD"))
-                {
-                    // Take snapshot before changing file
-                    SnapshotManager::GetInstance().TakeSnapshot("Assign Configuration File");
-
-                    const char* filePath = (const char*)payload->Data;
-                    std::string pathStr(filePath, payload->DataSize);
-                    pathStr.erase(std::find(pathStr.begin(), pathStr.end(), '\0'), pathStr.end());
-
-                    std::cout << "Configuration PathStr is " << pathStr << std::endl;
-
-                    // Update the videoPath directly
-                    *pathPtr = pathStr;
-
-                    // Get the component and process the metadata
-                    auto& videoComp = ecs.GetComponent<VideoComponent>(entity);
-                    videoComp.videoPath = pathStr;
-                    videoComp.ProcessMetaData(pathStr);
-                    videoComp.asset_dirty = true;
-
-                    EditorComponents::EndDragDropTarget();
-                    return true; // Field was modified
+            std::string display = "None";
+            if (!guidStr.empty()) {
+                GUID_128 guid = GUIDUtilities::ConvertStringToGUID128(guidStr);
+                Entity ent = EntityGUIDRegistry::GetInstance().GetEntityByGUID(guid);
+                if (ent != 0 && ecs.HasComponent<NameComponent>(ent)) {
+                    display = ecs.GetComponent<NameComponent>(ent).name;
                 }
-                EditorComponents::EndDragDropTarget();
             }
 
-            return false;
-        });
+            EditorComponents::DrawDragDropButton(display.c_str(), fieldWidth);
+            if (ImGui::BeginDragDropTarget()) {
+                if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("HIERARCHY_ENTITY")) {
+                    Entity dropped = *(Entity*)payload->Data;
+                    bool valid = true;
+                    if (requireText && !ecs.HasComponent<TextRenderComponent>(dropped)) valid = false;
+                    if (requireSprite && !ecs.HasComponent<SpriteRenderComponent>(dropped)) valid = false;
 
-
-
-
-    ReflectionRenderer::RegisterFieldRenderer("VideoComponent", "dialoguePath",
-        [](const char*, void* ptr, Entity entity, ECSManager& ecs)
-        {
-            std::string* pathPtr = static_cast<std::string*>(ptr);
-            const float labelWidth = EditorComponents::GetLabelWidth();
-
-            ImGui::Text("Dialogue File");
-            ImGui::SameLine(labelWidth);
-            ImGui::SetNextItemWidth(-1);
-
-            std::string displayText = pathPtr->empty() ? "None (Dialogue)" : pathPtr->substr(pathPtr->find_last_of("/\\") + 1);
-            float buttonWidth = ImGui::GetContentRegionAvail().x;
-            EditorComponents::DrawDragDropButton(displayText.c_str(), buttonWidth);
-
-            if (EditorComponents::BeginDragDropTarget())
-            {
-                ImGui::SetTooltip("Drop dialogue file here");
-                if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("TEXT_PAYLOAD"))
-                {
-                    // Take snapshot before changing file
-                    SnapshotManager::GetInstance().TakeSnapshot("Assign Dialogue File");
-
-                    const char* filePath = (const char*)payload->Data;
-                    std::string pathStr(filePath, payload->DataSize);
-                    pathStr.erase(std::find(pathStr.begin(), pathStr.end(), '\0'), pathStr.end());
-
-                    std::cout << "Dialogue PathStr is " << pathStr << std::endl;
-
-                    // Update the dialoguePath directly
-                    *pathPtr = pathStr;
-
-                    // Get the component and process the dialogue data
-                    auto& videoComp = ecs.GetComponent<VideoComponent>(entity);
-                    videoComp.dialoguePath = pathStr;
-                    videoComp.ProcessDialogueData(pathStr);
-
-                    EditorComponents::EndDragDropTarget();
-                    return true; // Field was modified
+                    if (valid) {
+                        std::string oldGuid = guidStr;
+                        GUID_128 guid = EntityGUIDRegistry::GetInstance().GetGUIDByEntity(dropped);
+                        std::string newGuid = GUIDUtilities::ConvertGUID128ToString(guid);
+                        guidStr = newGuid;
+                        resolvedEntity = dropped;
+                        if (UndoSystem::GetInstance().IsEnabled())
+                            UndoSystem::GetInstance().RecordStringChange(&guidStr, oldGuid, newGuid, "Assign Entity Reference");
+                    }
                 }
-                EditorComponents::EndDragDropTarget();
+                ImGui::EndDragDropTarget();
+            }
+        };
+
+        DrawEntityRef("Text Entity", vc.textEntityGuidStr, vc.textEntity, false, true);
+        if (ImGui::IsItemHovered()) ImGui::SetTooltip("Entity with TextRenderComponent to display dialogue text");
+        DrawEntityRef("Black Screen", vc.blackScreenEntityGuidStr, vc.blackScreenEntity, true, false);
+        if (ImGui::IsItemHovered()) ImGui::SetTooltip("Entity with SpriteRenderComponent used as fade overlay (black)");
+        DrawEntityRef("Skip Button", vc.skipButtonEntityGuidStr, vc.skipButtonEntity, true, false);
+        if (ImGui::IsItemHovered()) ImGui::SetTooltip("Optional entity shown as a skip button (SpriteRenderComponent)");
+
+        ImGui::Spacing();
+        ImGui::Separator();
+        ImGui::Text("Settings");
+        ImGui::Spacing();
+
+        // --- Start Delay ---
+        ImGui::Text("Start Delay");
+        if (ImGui::IsItemHovered()) ImGui::SetTooltip("Seconds to wait before starting the cutscene.\nUse this to wait for a scene transition fade to finish.");
+        ImGui::SameLine(labelWidth);
+        ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x * 0.45f);
+        UndoableWidgets::DragFloat("##StartDelay", &vc.startDelay, 0.05f, 0.0f, 30.0f, "%.2f sec");
+        ImGui::SameLine();
+
+        // --- Skip Fade Duration ---
+        ImGui::Text("Skip Fade");
+        if (ImGui::IsItemHovered()) ImGui::SetTooltip("How long the fade-to-black takes when the cutscene is skipped (seconds)");
+        ImGui::SameLine();
+        ImGui::SetNextItemWidth(-1);
+        UndoableWidgets::DragFloat("##SkipFadeDur", &vc.skipFadeDuration, 0.05f, 0.1f, 10.0f, "%.2f sec");
+
+        // --- Auto Start ---
+        ImGui::Text("Auto Start");
+        if (ImGui::IsItemHovered()) ImGui::SetTooltip("Automatically begin the cutscene when the scene loads");
+        ImGui::SameLine(labelWidth);
+        UndoableWidgets::Checkbox("##AutoStart", &vc.autoStart);
+
+        // --- Loop ---
+        ImGui::Text("Loop");
+        if (ImGui::IsItemHovered()) ImGui::SetTooltip("Restart the cutscene from the first board after finishing");
+        ImGui::SameLine(labelWidth);
+        UndoableWidgets::Checkbox("##Loop", &vc.loop);
+
+        ImGui::Spacing();
+        ImGui::Separator();
+
+        // --- Boards header + Add button ---
+        ImGui::Text("Boards (%zu)", vc.boards.size());
+        ImGui::SameLine(ImGui::GetContentRegionAvail().x - 60);
+        if (ImGui::SmallButton(ICON_FA_PLUS " Add")) {
+            vc.boards.push_back(CutsceneBoard{});
+            if (UndoSystem::GetInstance().IsEnabled()) {
+                UndoSystem::GetInstance().RecordLambdaChange(
+                    [entity]() { auto& e = ECSRegistry::GetInstance().GetActiveECSManager(); if (e.HasComponent<VideoComponent>(entity)) e.GetComponent<VideoComponent>(entity).boards.push_back(CutsceneBoard{}); },
+                    [entity]() { auto& e = ECSRegistry::GetInstance().GetActiveECSManager(); if (e.HasComponent<VideoComponent>(entity)) { auto& b = e.GetComponent<VideoComponent>(entity).boards; if (!b.empty()) b.pop_back(); } },
+                    "Add Cutscene Board");
+            }
+        }
+
+        ImGui::Spacing();
+
+        // --- Render each board ---
+        int boardToRemove = -1;
+        for (size_t i = 0; i < vc.boards.size(); ++i) {
+            CutsceneBoard& board = vc.boards[i];
+            ImGui::PushID(static_cast<int>(i));
+
+            // Collapsible header
+            std::string boardLabel = "Board " + std::to_string(i);
+            bool boardOpen = ImGui::CollapsingHeader(boardLabel.c_str(),
+                ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_AllowOverlap);
+
+            // Remove button on same line
+            ImGui::SameLine(ImGui::GetContentRegionAvail().x + ImGui::GetCursorPosX() - 25);
+            if (ImGui::SmallButton(ICON_FA_TRASH "##RemoveBoard")) {
+                boardToRemove = static_cast<int>(i);
+            }
+            if (ImGui::IsItemHovered()) {
+                ImGui::SetTooltip("Remove this board");
             }
 
-            return false;
-        });
+            if (boardOpen) {
+                ImGui::Indent(10.0f);
 
+                // --- Image (drag-drop) ---
+                ImGui::Text("Image");
+                if (ImGui::IsItemHovered()) ImGui::SetTooltip("Background image for this board (drag-drop a texture from Asset Browser)");
+                ImGui::SameLine(labelWidth);
+                std::string imgDisplay = board.imagePath.empty() ? "None (Texture)"
+                    : board.imagePath.substr(board.imagePath.find_last_of("/\\") + 1);
+                float btnWidth = ImGui::GetContentRegionAvail().x;
+                EditorComponents::DrawDragDropButton(imgDisplay.c_str(), btnWidth);
 
+                if (EditorComponents::BeginDragDropTarget()) {
+                    ImGui::SetTooltip("Drop texture here");
+                    if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("TEXTURE_PAYLOAD")) {
+                        const char* texPath = (const char*)payload->Data;
+                        std::string pathStr(texPath, payload->DataSize);
+                        pathStr.erase(std::find(pathStr.begin(), pathStr.end(), '\0'), pathStr.end());
+                        std::string oldPath = board.imagePath;
+                        board.imagePath = pathStr;
+                        if (UndoSystem::GetInstance().IsEnabled()) {
+                            size_t idx = i;
+                            UndoSystem::GetInstance().RecordLambdaChange(
+                                [entity, idx, pathStr]() { auto& e = ECSRegistry::GetInstance().GetActiveECSManager(); if (e.HasComponent<VideoComponent>(entity)) { auto& b = e.GetComponent<VideoComponent>(entity).boards; if (idx < b.size()) b[idx].imagePath = pathStr; } },
+                                [entity, idx, oldPath]() { auto& e = ECSRegistry::GetInstance().GetActiveECSManager(); if (e.HasComponent<VideoComponent>(entity)) { auto& b = e.GetComponent<VideoComponent>(entity).boards; if (idx < b.size()) b[idx].imagePath = oldPath; } },
+                                "Assign Board Image");
+                        }
+                    }
+                    EditorComponents::EndDragDropTarget();
+                }
+
+                // --- Duration + Fade Duration (same line) ---
+                ImGui::Text("Duration");
+                if (ImGui::IsItemHovered()) ImGui::SetTooltip("How long this board stays on screen before auto-advancing (seconds).\nAlso controls blur animation timing if Animate is checked.");
+                ImGui::SameLine(labelWidth);
+                ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x * 0.45f);
+                UndoableWidgets::DragFloat("##Duration", &board.duration, 0.1f, 0.1f, 60.0f, "%.1f sec");
+                ImGui::SameLine();
+                ImGui::Text("Fade");
+                if (ImGui::IsItemHovered()) ImGui::SetTooltip("Fade-in/out transition time when entering this board (seconds).\nThe transition fades to black, swaps the image, then fades back in.\nTotal transition = this value (half out, half in).");
+                ImGui::SameLine();
+                ImGui::SetNextItemWidth(-1);
+                UndoableWidgets::DragFloat("##FadeDur", &board.fadeDuration, 0.05f, 0.0f, 10.0f, "%.2f sec");
+
+                // --- Text (multiline) ---
+                ImGui::Text("Text");
+                if (ImGui::IsItemHovered()) ImGui::SetTooltip("Dialogue text shown via typewriter effect on the Text Entity");
+                ImGui::SameLine(labelWidth);
+                ImGui::SetNextItemWidth(-1);
+                {
+                    static std::unordered_map<ImGuiID, std::string> startText;
+                    static std::unordered_map<ImGuiID, bool> isEditingText;
+                    ImGuiID tid = ImGui::GetID("##BoardText");
+                    if (!isEditingText[tid]) startText[tid] = board.text;
+                    char textBuf[1024];
+                    strncpy(textBuf, board.text.c_str(), sizeof(textBuf) - 1);
+                    textBuf[sizeof(textBuf) - 1] = '\0';
+                    if (ImGui::InputTextMultiline("##BoardText", textBuf, sizeof(textBuf),
+                        ImVec2(-1, ImGui::GetTextLineHeight() * 3))) {
+                        board.text = textBuf;
+                    }
+                    if (ImGui::IsItemActivated()) { startText[tid] = board.text; isEditingText[tid] = true; }
+                    if (isEditingText[tid] && !ImGui::IsItemActive()) {
+                        isEditingText[tid] = false;
+                        if (startText[tid] != board.text && UndoSystem::GetInstance().IsEnabled()) {
+                            size_t idx = i;
+                            std::string oldVal = startText[tid], newVal = board.text;
+                            UndoSystem::GetInstance().RecordLambdaChange(
+                                [entity, idx, newVal]() { auto& e = ECSRegistry::GetInstance().GetActiveECSManager(); if (e.HasComponent<VideoComponent>(entity)) { auto& b = e.GetComponent<VideoComponent>(entity).boards; if (idx < b.size()) b[idx].text = newVal; } },
+                                [entity, idx, oldVal]() { auto& e = ECSRegistry::GetInstance().GetActiveECSManager(); if (e.HasComponent<VideoComponent>(entity)) { auto& b = e.GetComponent<VideoComponent>(entity).boards; if (idx < b.size()) b[idx].text = oldVal; } },
+                                "Change Board Text");
+                        }
+                    }
+                }
+
+                // --- Text Speed + Continue Text ---
+                ImGui::Text("Text Speed");
+                if (ImGui::IsItemHovered()) ImGui::SetTooltip("Typewriter speed in characters per second.\n0 = instant (all text appears at once).");
+                ImGui::SameLine(labelWidth);
+                ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x * 0.5f);
+                UndoableWidgets::DragFloat("##TextSpeed", &board.textSpeed, 1.0f, 0.0f, 200.0f, "%.0f ch/s");
+                ImGui::SameLine();
+                ImGui::Text("Continue");
+                if (ImGui::IsItemHovered()) ImGui::SetTooltip("Continue the typewriter from where the previous board left off.\nKeeps the revealed character count instead of resetting to 0.");
+                ImGui::SameLine();
+                UndoableWidgets::Checkbox("##ContinueText", &board.continueText);
+
+                // --- Blur ---
+                bool animateBlur = (board.blurIntensityEnd >= 0.0f);
+                ImGui::Text("Blur Start");
+                if (ImGui::IsItemHovered()) ImGui::SetTooltip("Blur intensity at the start of this board.\n0 = sharp, higher = more blurred.\nIf Animate is off, this value is used for the entire board.");
+                ImGui::SameLine(labelWidth);
+                ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x * 0.5f);
+                UndoableWidgets::DragFloat("##BlurIntensity", &board.blurIntensity, 0.05f, 0.0f, 10.0f, "%.2f");
+                ImGui::SameLine();
+                {
+                    float oldEnd = board.blurIntensityEnd;
+                    if (ImGui::Checkbox("Animate##BlurAnim", &animateBlur)) {
+                        board.blurIntensityEnd = animateBlur ? board.blurIntensity : -1.0f;
+                        if (UndoSystem::GetInstance().IsEnabled()) {
+                            float newEnd = board.blurIntensityEnd;
+                            size_t idx = i;
+                            UndoSystem::GetInstance().RecordLambdaChange(
+                                [entity, idx, newEnd]() { auto& e = ECSRegistry::GetInstance().GetActiveECSManager(); if (e.HasComponent<VideoComponent>(entity)) { auto& b = e.GetComponent<VideoComponent>(entity).boards; if (idx < b.size()) b[idx].blurIntensityEnd = newEnd; } },
+                                [entity, idx, oldEnd]() { auto& e = ECSRegistry::GetInstance().GetActiveECSManager(); if (e.HasComponent<VideoComponent>(entity)) { auto& b = e.GetComponent<VideoComponent>(entity).boards; if (idx < b.size()) b[idx].blurIntensityEnd = oldEnd; } },
+                                "Toggle Blur Animation");
+                        }
+                    }
+                }
+                if (ImGui::IsItemHovered()) ImGui::SetTooltip("Animate blur from Start to End over this board's Duration.\nUseful for focus/consciousness effects.");
+                if (animateBlur) {
+                    ImGui::Text("Blur End");
+                    if (ImGui::IsItemHovered()) ImGui::SetTooltip("Blur intensity at the end of this board.\nInterpolates linearly from Blur Start to this value over Duration.");
+                    ImGui::SameLine(labelWidth);
+                    ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x * 0.5f);
+                    UndoableWidgets::DragFloat("##BlurIntensityEnd", &board.blurIntensityEnd, 0.05f, 0.0f, 10.0f, "%.2f");
+                }
+                ImGui::Text("Blur Radius");
+                if (ImGui::IsItemHovered()) ImGui::SetTooltip("Size of the blur kernel.\nHigher = wider/softer blur, but more expensive.");
+                ImGui::SameLine(labelWidth);
+                ImGui::SetNextItemWidth(60);
+                UndoableWidgets::DragFloat("##BlurRadius", &board.blurRadius, 0.1f, 0.1f, 20.0f, "%.1f");
+                ImGui::SameLine();
+                ImGui::Text("Passes");
+                if (ImGui::IsItemHovered()) ImGui::SetTooltip("Number of blur iterations.\nMore passes = smoother blur but heavier on GPU.");
+                ImGui::SameLine();
+                ImGui::SetNextItemWidth(40);
+                UndoableWidgets::DragInt("##BlurPasses", &board.blurPasses, 1, 1, 5);
+
+                ImGui::Unindent(10.0f);
+            }
+
+            ImGui::PopID();
+        }
+
+        // Process removal after loop
+        if (boardToRemove >= 0 && boardToRemove < static_cast<int>(vc.boards.size())) {
+            CutsceneBoard removedBoard = vc.boards[boardToRemove];
+            int removeIdx = boardToRemove;
+            vc.boards.erase(vc.boards.begin() + boardToRemove);
+            if (UndoSystem::GetInstance().IsEnabled()) {
+                UndoSystem::GetInstance().RecordLambdaChange(
+                    [entity, removeIdx]() { auto& e = ECSRegistry::GetInstance().GetActiveECSManager(); if (e.HasComponent<VideoComponent>(entity)) { auto& b = e.GetComponent<VideoComponent>(entity).boards; if (removeIdx < static_cast<int>(b.size())) b.erase(b.begin() + removeIdx); } },
+                    [entity, removeIdx, removedBoard]() { auto& e = ECSRegistry::GetInstance().GetActiveECSManager(); if (e.HasComponent<VideoComponent>(entity)) { auto& b = e.GetComponent<VideoComponent>(entity).boards; b.insert(b.begin() + std::min(removeIdx, static_cast<int>(b.size())), removedBoard); } },
+                    "Remove Cutscene Board");
+            }
+        }
+
+        return true; // Skip default reflection rendering
+    });
+
+    // Hide all VideoComponent fields from default rendering (handled by custom renderer above)
+    ReflectionRenderer::RegisterFieldRenderer("VideoComponent", "enabled",
+        [](const char*, void*, Entity, ECSManager&) { return true; });
+    ReflectionRenderer::RegisterFieldRenderer("VideoComponent", "cutsceneName",
+        [](const char*, void*, Entity, ECSManager&) { return true; });
+    ReflectionRenderer::RegisterFieldRenderer("VideoComponent", "textEntityGuidStr",
+        [](const char*, void*, Entity, ECSManager&) { return true; });
+    ReflectionRenderer::RegisterFieldRenderer("VideoComponent", "blackScreenEntityGuidStr",
+        [](const char*, void*, Entity, ECSManager&) { return true; });
+    ReflectionRenderer::RegisterFieldRenderer("VideoComponent", "skipButtonEntityGuidStr",
+        [](const char*, void*, Entity, ECSManager&) { return true; });
+    ReflectionRenderer::RegisterFieldRenderer("VideoComponent", "startDelay",
+        [](const char*, void*, Entity, ECSManager&) { return true; });
+    ReflectionRenderer::RegisterFieldRenderer("VideoComponent", "skipFadeDuration",
+        [](const char*, void*, Entity, ECSManager&) { return true; });
+    ReflectionRenderer::RegisterFieldRenderer("VideoComponent", "autoStart",
+        [](const char*, void*, Entity, ECSManager&) { return true; });
+    ReflectionRenderer::RegisterFieldRenderer("VideoComponent", "loop",
+        [](const char*, void*, Entity, ECSManager&) { return true; });
+    ReflectionRenderer::RegisterFieldRenderer("VideoComponent", "nextScenePath",
+        [](const char*, void*, Entity, ECSManager&) { return true; });
+    ReflectionRenderer::RegisterFieldRenderer("VideoComponent", "boards",
+        [](const char*, void*, Entity, ECSManager&) { return true; });
+    ReflectionRenderer::RegisterFieldRenderer("VideoComponent", "cutsceneEnded",
+        [](const char*, void*, Entity, ECSManager&) { return true; });
+    ReflectionRenderer::RegisterFieldRenderer("VideoComponent", "skipRequested",
+        [](const char*, void*, Entity, ECSManager&) { return true; });
 
 
 
@@ -7951,12 +8109,24 @@ void RegisterInspectorCustomRenderers()
         ImGui::Text("Dialogue Name");
         ImGui::SameLine(labelWidth);
         ImGui::SetNextItemWidth(-1);
-        char nameBuf[256];
-        strncpy(nameBuf, dialogue.dialogueName.c_str(), sizeof(nameBuf) - 1);
-        nameBuf[sizeof(nameBuf) - 1] = '\0';
-        if (ImGui::InputText("##DialogueName", nameBuf, sizeof(nameBuf))) {
-            dialogue.dialogueName = nameBuf;
-            dialogue.registeredWithManager = false; // Re-register with new name
+        {
+            static std::unordered_map<ImGuiID, std::string> startDlgName;
+            static std::unordered_map<ImGuiID, bool> isEditingDlgName;
+            ImGuiID dnId = ImGui::GetID("##DialogueName");
+            if (!isEditingDlgName[dnId]) startDlgName[dnId] = dialogue.dialogueName;
+            char nameBuf[256];
+            strncpy(nameBuf, dialogue.dialogueName.c_str(), sizeof(nameBuf) - 1);
+            nameBuf[sizeof(nameBuf) - 1] = '\0';
+            if (ImGui::InputText("##DialogueName", nameBuf, sizeof(nameBuf))) {
+                dialogue.dialogueName = nameBuf;
+                dialogue.registeredWithManager = false;
+            }
+            if (ImGui::IsItemActivated()) { startDlgName[dnId] = dialogue.dialogueName; isEditingDlgName[dnId] = true; }
+            if (isEditingDlgName[dnId] && !ImGui::IsItemActive()) {
+                isEditingDlgName[dnId] = false;
+                if (startDlgName[dnId] != dialogue.dialogueName && UndoSystem::GetInstance().IsEnabled())
+                    UndoSystem::GetInstance().RecordStringChange(&dialogue.dialogueName, startDlgName[dnId], dialogue.dialogueName, "Change Dialogue Name");
+            }
         }
 
         // --- Text Entity (drag-drop target) ---
@@ -7977,12 +8147,14 @@ void RegisterInspectorCustomRenderers()
         if (ImGui::BeginDragDropTarget()) {
             if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("HIERARCHY_ENTITY")) {
                 Entity droppedEntity = *(Entity*)payload->Data;
-                // Verify it has a TextRenderComponent
                 if (ecs.HasComponent<TextRenderComponent>(droppedEntity)) {
-                    SnapshotManager::GetInstance().TakeSnapshot("Assign Dialogue Text Entity");
+                    std::string oldGuid = dialogue.textEntityGuidStr;
                     GUID_128 guid = EntityGUIDRegistry::GetInstance().GetGUIDByEntity(droppedEntity);
-                    dialogue.textEntityGuidStr = GUIDUtilities::ConvertGUID128ToString(guid);
+                    std::string newGuid = GUIDUtilities::ConvertGUID128ToString(guid);
+                    dialogue.textEntityGuidStr = newGuid;
                     dialogue.textEntity = droppedEntity;
+                    if (UndoSystem::GetInstance().IsEnabled())
+                        UndoSystem::GetInstance().RecordStringChange(&dialogue.textEntityGuidStr, oldGuid, newGuid, "Assign Dialogue Text Entity");
                 }
             }
             ImGui::EndDragDropTarget();
@@ -7994,9 +8166,7 @@ void RegisterInspectorCustomRenderers()
         ImGui::SetNextItemWidth(-1);
         const char* appearanceModes[] = { "Fade In / Out", "Typewriter", "Instant" };
         EditorComponents::PushComboColors();
-        if (ImGui::Combo("##AppearanceMode", &dialogue.appearanceModeID, appearanceModes, IM_ARRAYSIZE(appearanceModes))) {
-            SnapshotManager::GetInstance().TakeSnapshot("Change Dialogue Appearance");
-        }
+        UndoableWidgets::Combo("##AppearanceMode", &dialogue.appearanceModeID, appearanceModes, IM_ARRAYSIZE(appearanceModes));
         EditorComponents::PopComboColors();
 
         // --- Fade Duration (only if FadeInOut) ---
@@ -8027,9 +8197,13 @@ void RegisterInspectorCustomRenderers()
         ImGui::Text("Dialogue Entries");
         ImGui::SameLine(ImGui::GetContentRegionAvail().x - 60);
         if (ImGui::SmallButton(ICON_FA_PLUS " Add")) {
-            SnapshotManager::GetInstance().TakeSnapshot("Add Dialogue Entry");
-            DialogueEntry newEntry;
-            dialogue.entries.push_back(newEntry);
+            dialogue.entries.push_back(DialogueEntry{});
+            if (UndoSystem::GetInstance().IsEnabled()) {
+                UndoSystem::GetInstance().RecordLambdaChange(
+                    [entity]() { auto& e = ECSRegistry::GetInstance().GetActiveECSManager(); if (e.HasComponent<DialogueComponent>(entity)) e.GetComponent<DialogueComponent>(entity).entries.push_back(DialogueEntry{}); },
+                    [entity]() { auto& e = ECSRegistry::GetInstance().GetActiveECSManager(); if (e.HasComponent<DialogueComponent>(entity)) { auto& b = e.GetComponent<DialogueComponent>(entity).entries; if (!b.empty()) b.pop_back(); } },
+                    "Add Dialogue Entry");
+            }
         }
 
         ImGui::Spacing();
@@ -8060,12 +8234,30 @@ void RegisterInspectorCustomRenderers()
                 ImGui::Text("Text");
                 ImGui::SameLine(labelWidth);
                 ImGui::SetNextItemWidth(-1);
-                char textBuf[1024];
-                strncpy(textBuf, entry.text.c_str(), sizeof(textBuf) - 1);
-                textBuf[sizeof(textBuf) - 1] = '\0';
-                if (ImGui::InputTextMultiline("##EntryText", textBuf, sizeof(textBuf),
-                    ImVec2(-1, ImGui::GetTextLineHeight() * 3))) {
-                    entry.text = textBuf;
+                {
+                    static std::unordered_map<ImGuiID, std::string> startEntryText;
+                    static std::unordered_map<ImGuiID, bool> isEditingEntryText;
+                    ImGuiID etid = ImGui::GetID("##EntryText");
+                    if (!isEditingEntryText[etid]) startEntryText[etid] = entry.text;
+                    char textBuf[1024];
+                    strncpy(textBuf, entry.text.c_str(), sizeof(textBuf) - 1);
+                    textBuf[sizeof(textBuf) - 1] = '\0';
+                    if (ImGui::InputTextMultiline("##EntryText", textBuf, sizeof(textBuf),
+                        ImVec2(-1, ImGui::GetTextLineHeight() * 3))) {
+                        entry.text = textBuf;
+                    }
+                    if (ImGui::IsItemActivated()) { startEntryText[etid] = entry.text; isEditingEntryText[etid] = true; }
+                    if (isEditingEntryText[etid] && !ImGui::IsItemActive()) {
+                        isEditingEntryText[etid] = false;
+                        if (startEntryText[etid] != entry.text && UndoSystem::GetInstance().IsEnabled()) {
+                            size_t idx = i;
+                            std::string oldVal = startEntryText[etid], newVal = entry.text;
+                            UndoSystem::GetInstance().RecordLambdaChange(
+                                [entity, idx, newVal]() { auto& e = ECSRegistry::GetInstance().GetActiveECSManager(); if (e.HasComponent<DialogueComponent>(entity)) { auto& b = e.GetComponent<DialogueComponent>(entity).entries; if (idx < b.size()) b[idx].text = newVal; } },
+                                [entity, idx, oldVal]() { auto& e = ECSRegistry::GetInstance().GetActiveECSManager(); if (e.HasComponent<DialogueComponent>(entity)) { auto& b = e.GetComponent<DialogueComponent>(entity).entries; if (idx < b.size()) b[idx].text = oldVal; } },
+                                "Change Dialogue Text");
+                        }
+                    }
                 }
 
                 // --- Advance By dropdown ---
@@ -8074,9 +8266,7 @@ void RegisterInspectorCustomRenderers()
                 ImGui::SetNextItemWidth(-1);
                 const char* scrollTypes[] = { "Time", "Action", "Trigger" };
                 EditorComponents::PushComboColors();
-                if (ImGui::Combo("##ScrollType", &entry.scrollTypeID, scrollTypes, IM_ARRAYSIZE(scrollTypes))) {
-                    SnapshotManager::GetInstance().TakeSnapshot("Change Dialogue Scroll Type");
-                }
+                UndoableWidgets::Combo("##ScrollType", &entry.scrollTypeID, scrollTypes, IM_ARRAYSIZE(scrollTypes));
                 EditorComponents::PopComboColors();
 
                 // --- Conditional fields based on scroll type ---
@@ -8106,9 +8296,17 @@ void RegisterInspectorCustomRenderers()
                     if (ImGui::BeginDragDropTarget()) {
                         if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("HIERARCHY_ENTITY")) {
                             Entity droppedEntity = *(Entity*)payload->Data;
-                            SnapshotManager::GetInstance().TakeSnapshot("Assign Dialogue Trigger Entity");
+                            std::string oldGuid = entry.triggerEntityGuidStr;
                             GUID_128 guid = EntityGUIDRegistry::GetInstance().GetGUIDByEntity(droppedEntity);
-                            entry.triggerEntityGuidStr = GUIDUtilities::ConvertGUID128ToString(guid);
+                            std::string newGuid = GUIDUtilities::ConvertGUID128ToString(guid);
+                            entry.triggerEntityGuidStr = newGuid;
+                            if (UndoSystem::GetInstance().IsEnabled()) {
+                                size_t idx = i;
+                                UndoSystem::GetInstance().RecordLambdaChange(
+                                    [entity, idx, newGuid]() { auto& e = ECSRegistry::GetInstance().GetActiveECSManager(); if (e.HasComponent<DialogueComponent>(entity)) { auto& b = e.GetComponent<DialogueComponent>(entity).entries; if (idx < b.size()) b[idx].triggerEntityGuidStr = newGuid; } },
+                                    [entity, idx, oldGuid]() { auto& e = ECSRegistry::GetInstance().GetActiveECSManager(); if (e.HasComponent<DialogueComponent>(entity)) { auto& b = e.GetComponent<DialogueComponent>(entity).entries; if (idx < b.size()) b[idx].triggerEntityGuidStr = oldGuid; } },
+                                    "Assign Dialogue Trigger Entity");
+                            }
                         }
                         ImGui::EndDragDropTarget();
                     }
@@ -8123,8 +8321,15 @@ void RegisterInspectorCustomRenderers()
 
         // Process removal after loop
         if (entryToRemove >= 0 && entryToRemove < static_cast<int>(dialogue.entries.size())) {
-            SnapshotManager::GetInstance().TakeSnapshot("Remove Dialogue Entry");
+            DialogueEntry removedEntry = dialogue.entries[entryToRemove];
+            int removeIdx = entryToRemove;
             dialogue.entries.erase(dialogue.entries.begin() + entryToRemove);
+            if (UndoSystem::GetInstance().IsEnabled()) {
+                UndoSystem::GetInstance().RecordLambdaChange(
+                    [entity, removeIdx]() { auto& e = ECSRegistry::GetInstance().GetActiveECSManager(); if (e.HasComponent<DialogueComponent>(entity)) { auto& b = e.GetComponent<DialogueComponent>(entity).entries; if (removeIdx < static_cast<int>(b.size())) b.erase(b.begin() + removeIdx); } },
+                    [entity, removeIdx, removedEntry]() { auto& e = ECSRegistry::GetInstance().GetActiveECSManager(); if (e.HasComponent<DialogueComponent>(entity)) { auto& b = e.GetComponent<DialogueComponent>(entity).entries; b.insert(b.begin() + std::min(removeIdx, static_cast<int>(b.size())), removedEntry); } },
+                    "Remove Dialogue Entry");
+            }
         }
 
         return true; // Skip default reflection rendering
