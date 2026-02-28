@@ -130,6 +130,9 @@ return Component {
         -- ---- Skip all attack logic if player has no weapon ----
         if not _G.playerHasWeapon then return end
 
+        -- ---- Skip all attack logic during dash ----
+        if _G.player_is_dashing then return end
+
         -- ---- Skip all attack logic during cinematic ----
         if self._frozenByCinematic then return end
 

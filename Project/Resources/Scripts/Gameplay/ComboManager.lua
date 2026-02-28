@@ -275,6 +275,9 @@ return Component {
     Update = function(self, dt)
         if not self._inputInterpreter or not self._animator or Time.IsPaused() then return end
 
+        -- Block all combo input during dash
+        if _G.player_is_dashing then return end
+
         self._stateTimer = self._stateTimer + dt
         local state = self._currentStateData
         

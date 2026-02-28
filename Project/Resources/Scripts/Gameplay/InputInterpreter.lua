@@ -195,8 +195,11 @@ return Component {
         -- INPUT BUFFERING
         -- ===============================
 
+        -- Block combat inputs (attack/chain) while dashing
+        local blockCombat = _G.player_is_dashing
+
         -- If attack (LMB) was pressed and a UI button was not pressed first, safely trigger the attack.
-        if attackJustPressed and self._uiButtonPressed == false then
+        if attackJustPressed and self._uiButtonPressed == false and not blockCombat then
             self._bufferedInputs.attack = self.INPUT_BUFFER_FRAMES
             table.insert(self._inputHistory.attack, self._frameCount)
         end
@@ -206,7 +209,7 @@ return Component {
             self._uiButtonPressed = false
         end
 
-        if chainJustPressed then
+        if chainJustPressed and not blockCombat then
             self._bufferedInputs.chain = self.INPUT_BUFFER_FRAMES
             table.insert(self._inputHistory.chain, self._frameCount)
         end
@@ -243,9 +246,9 @@ return Component {
         end
 
         -- ===============================
-        -- PUBLISH CHAIN EVENTS TO EVENT BUSS
+        -- PUBLISH CHAIN EVENTS TO EVENT BUS
         -- ===============================
-        if _G.playerHasWeapon and _G.event_bus and _G.event_bus.publish then
+        if _G.playerHasWeapon and not blockCombat and _G.event_bus and _G.event_bus.publish then
             if chainJustPressed then
                 _G.event_bus.publish("chain.down", {})
             end

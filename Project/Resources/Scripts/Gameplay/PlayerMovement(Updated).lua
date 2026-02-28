@@ -57,6 +57,11 @@ return Component {
         DamageStunDuration = 1.0,
         LandingDuration = 0.5,
         footstepInterval = 0.35,  -- Time between footstep sounds while running
+        DashSpeed = 5.0,
+        DashDuration = 0.3,
+        DashCooldown = 2.0,
+        AirDashSpeedMultiplier = 1.5,  -- Air dash travels further than ground dash
+        AirDashLift = 2.0,             -- Upward force during air dash to counteract gravity
         playerFootstepSFX = {},
         playerHurtSFX = {},
         playerJumpSFX = {},
@@ -163,6 +168,15 @@ return Component {
         self._isDamageStun = false
 
         self._landingDuration = self.LandingDuration
+
+        -- Dash state
+        self._isDashing = false
+        self._dashTimer = 0
+        self._dashCooldownTimer = 0
+        self._dashDirX = 0
+        self._dashDirZ = 0
+        self._wasDashingInAir = false
+        _G.player_is_dashing = false
 
         -- SFX state
         self._footstepTimer = 0
@@ -286,6 +300,11 @@ return Component {
             return
         end
 
+        -- DASH COOLDOWN
+        if self._dashCooldownTimer > 0 then
+            self._dashCooldownTimer = self._dashCooldownTimer - dt
+        end
+
         -- RAW INPUT (LOCAL SPACE)
         local axis = Input and Input.GetAxis and Input.GetAxis("Movement") or { x = 0, y = 0 }
         local rawX = -axis.x
@@ -308,7 +327,7 @@ return Component {
 
         local isMoving = (moveX ~= 0 or moveZ ~= 0)
 
-        -- JUMP
+        -- GROUNDED CHECK
         local isGrounded = CharacterController.IsGrounded(self._controller)
         local isJumping = false
         self._animator:SetBool("IsGrounded", isGrounded)
@@ -324,6 +343,118 @@ return Component {
             return -- Exit immediately so we don't process movement on the death frame
         end
 
+        -- ==============================
+        -- DASH LOGIC
+        -- ==============================
+        -- Start dash
+        if not self._isDashing
+            and self._dashCooldownTimer <= 0
+            and not self._isDamageStun
+            and not self._isLanding
+            and Input and Input.IsActionJustPressed and Input.IsActionJustPressed("Dash")
+        then
+            self._isDashing = true
+            self._dashTimer = self.DashDuration
+            _G.player_is_dashing = true
+            self._wasDashingInAir = not isGrounded
+
+            -- Lock dash direction: use movement direction if moving, else use facing direction
+            if isMoving then
+                local len = math.sqrt(moveX * moveX + moveZ * moveZ)
+                self._dashDirX = moveX / len
+                self._dashDirZ = moveZ / len
+            else
+                -- Use current facing direction from rotation
+                local halfAngle = math.acos(math.max(-1, math.min(1, self._currentRotW)))
+                local sinHalf = math.sin(halfAngle)
+                if sinHalf > 0.001 then
+                    local yAxis = self._currentRotY / sinHalf
+                    local angle = 2 * halfAngle * (yAxis >= 0 and 1 or -1)
+                    self._dashDirX = math.sin(angle)
+                    self._dashDirZ = math.cos(angle)
+                else
+                    self._dashDirX = 0
+                    self._dashDirZ = 1
+                end
+            end
+
+            -- Clear jump state so Dash→Jump doesn't fire immediately
+            self._animator:SetBool("IsJumping", false)
+            self._isJumping = false
+
+            self._animator:SetBool("IsDashing", true)
+            print("[PlayerMovement] Dash started")
+        end
+
+        -- During dash
+        if self._isDashing then
+            self._dashTimer = self._dashTimer - dt
+
+            -- Jump cancel during dash
+            if Input and Input.IsActionJustPressed and Input.IsActionJustPressed("Jump") and isGrounded then
+                -- End dash immediately, start jump
+                self._isDashing = false
+                _G.player_is_dashing = false
+                self._animator:SetBool("IsDashing", false)
+                self._dashCooldownTimer = self.DashCooldown
+                CharacterController.Jump(self._controller, self.JumpHeight)
+                self._animator:SetBool("IsJumping", true)
+                playRandomSFX(self._audio, self.playerJumpSFX)
+                print("[PlayerMovement] Dash jump-cancelled")
+            elseif self._dashTimer <= 0 then
+                -- Dash expired
+                self._isDashing = false
+                _G.player_is_dashing = false
+                self._animator:SetBool("IsDashing", false)
+                self._dashCooldownTimer = self.DashCooldown
+
+                -- Always trigger roll after dash (ground or air)
+                -- Set IsRunning so Roll→Run transition works; Roll→Idle handles IsRunning==0
+                self._isLanding = true
+                self._isRolling = true
+                self._wasDashingInAir = false
+                print("[PlayerMovement] Dash ended")
+            else
+                -- Move in locked dash direction
+                local speed = self.DashSpeed
+                local liftY = 0
+                if not isGrounded or self._wasDashingInAir then
+                    -- Air dash: faster + lift to counteract gravity
+                    speed = self.DashSpeed * self.AirDashSpeedMultiplier
+                    liftY = self.AirDashLift
+                end
+                CharacterController.Move(
+                    self._controller,
+                    self._dashDirX * speed,
+                    liftY,
+                    self._dashDirZ * speed
+                )
+            end
+
+            -- Track if we were in air during dash
+            if not isGrounded then
+                self._wasDashingInAir = true
+            end
+
+            -- Rotate to face dash direction
+            if self.SetRotation then
+                local targetW, targetX, targetY, targetZ = directionToQuaternion(self._dashDirX, self._dashDirZ)
+                self._currentRotW, self._currentRotX, self._currentRotY, self._currentRotZ = targetW, targetX, targetY, targetZ
+                pcall(self.SetRotation, self, targetW, targetX, targetY, targetZ)
+            end
+
+            -- Sync position and broadcast
+            local position = CharacterController.GetPosition(self._controller)
+            if position then
+                self:SetPosition(position.x, position.y, position.z)
+                if event_bus and event_bus.publish then
+                    event_bus.publish("player_position", position)
+                end
+            end
+            return  -- Skip normal movement/animation while dashing
+        end
+
+        -- JUMP
         if not self._isLanding and Input and Input.IsActionJustPressed and Input.IsActionJustPressed("Jump") and isGrounded then
             CharacterController.Jump(self._controller, self.JumpHeight)
             isJumping = true
