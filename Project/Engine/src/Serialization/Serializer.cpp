@@ -338,7 +338,7 @@ void Serializer::SerializeEntityRecursively(Entity entity, rapidjson::Document::
         //          overridesArray.PushBack(wrapper, alloc);
         //      }
 
-              // D. Save recursive overrides
+        // D. Save recursive overrides
         SerializePrefabOverridesRecursive(ecs, entity, baselineRoot, alloc, prefabNode);
 
         ecs.DestroyEntity(baselineRoot); // clean up baseline prefab entity
@@ -1079,7 +1079,7 @@ void Serializer::SerializePrefabOverridesRecursive(ECSManager& sceneECS, Entity 
             rapidjson::Value deletedChildNode(rapidjson::kObjectType);
 
             // Serialize the information required to deserialize and restore the prefab hierarchy when deserializing later.
-            deletedChildNode = SerializeEntityGUID(deletedEntity, alloc, deletedChildNode);
+            //deletedChildNode = SerializeEntityGUID(deletedEntity, alloc, deletedChildNode);
             if (sceneECS.HasComponent<NameComponent>(deletedEntity)) {
                 std::string& name = sceneECS.GetComponent<NameComponent>(deletedEntity).name;
                 rapidjson::Value nameVal;
