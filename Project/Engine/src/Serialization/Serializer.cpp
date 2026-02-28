@@ -319,6 +319,25 @@ void Serializer::SerializeEntityRecursively(Entity entity, rapidjson::Document::
         pathVal.SetString(path.c_str(), static_cast<rapidjson::SizeType>(path.length()), alloc);
         prefabNode.AddMember("PrefabPath", pathVal, alloc);
 
+        //      // Always save Root Transform (Position/Rot) as it's always an override
+              //rapidjson::Value overridesArray(rapidjson::kArrayType);
+        //      if (ecs.HasComponent<NameComponent>(entity)) {
+        //          auto& c = ecs.GetComponent<NameComponent>(entity);
+        //          rapidjson::Value valInst = SerializeComponentToValue(c, alloc);
+
+        //          rapidjson::Value wrapper(rapidjson::kObjectType);
+        //          wrapper.AddMember(rapidjson::StringRef("NameComponent"), valInst, alloc);
+        //          overridesArray.PushBack(wrapper, alloc);
+        //      }
+        //      if (ecs.HasComponent<Transform>(entity)) {
+        //          auto& c = ecs.GetComponent<Transform>(entity);
+        //          rapidjson::Value valInst = SerializeComponentToValue(c, alloc);
+
+        //          rapidjson::Value wrapper(rapidjson::kObjectType);
+        //          wrapper.AddMember(rapidjson::StringRef("Transform"), valInst, alloc);
+        //          overridesArray.PushBack(wrapper, alloc);
+        //      }
+
         // D. Save recursive overrides
         SerializePrefabOverridesRecursive(ecs, entity, baselineRoot, alloc, prefabNode);
 
@@ -755,7 +774,7 @@ void Serializer::SerializePrefabInstanceDelta(ECSManager& sceneECS, Entity insta
     // Note: ChildrenComponent and ParentComponent are intentionally SKIPPED.
     if (baselineEnt == static_cast<Entity>(-1)) {
         CheckAndSerializeDelta<ChildrenComponent>("ChildrenComponent", sceneECS, instanceEnt, baselineEnt, alloc, outComponentsArray, standardSerializer);
-		CheckAndSerializeDelta<ParentComponent>("ParentComponent", sceneECS, instanceEnt, baselineEnt, alloc, outComponentsArray, standardSerializer);
+        CheckAndSerializeDelta<ParentComponent>("ParentComponent", sceneECS, instanceEnt, baselineEnt, alloc, outComponentsArray, standardSerializer);
     }
 
     // --- 2. Manual Components (Name, Tag, Layer, Sibling) ---
@@ -1035,12 +1054,6 @@ void Serializer::SerializePrefabOverridesRecursive(ECSManager& sceneECS, Entity 
             // Find matching child in Baseline
             Entity baseChild = static_cast<Entity>(-1);
             for (const auto& baseChildGUID : baseChildren) {
-                // Check if this baseline child is still available
-                // If it's not in the deleted set, it means we already matched it to a previous sibling in this loop.
-                if (deletedBaseChildren.find(baseChildGUID) == deletedBaseChildren.end()) {
-                    continue;
-                }
-
                 Entity bChild = EntityGUIDRegistry::GetInstance().GetEntityByGUID(baseChildGUID); // Note: Need separate registry for baseline?
                 // Actually, for a dummy world, you might just iterate entities directly.
                 if (sceneECS.GetComponent<NameComponent>(bChild).name == childName) {
@@ -1053,24 +1066,17 @@ void Serializer::SerializePrefabOverridesRecursive(ECSManager& sceneECS, Entity 
             rapidjson::Value childNode(rapidjson::kObjectType);
             SerializePrefabOverridesRecursive(sceneECS, instChild, baseChild, alloc, childNode);
 
-            //// Only add to list if there was actually an override inside
-            //if (childNode.HasMember("ComponentOverrides") || childNode.HasMember("Children") || childNode.HasMember("DeletedChildren")) {
-            //    childrenOverrides.PushBack(childNode, alloc);
-            //}
-
-            // NEW: Always add the child. 
-            // 'childNode' always contains the "guid" (added by SerializeEntityGUID at the start of the function).
-            // Saving it ensures RestorePrefabHierarchy will find this child and restore its stable GUID.
-            childrenOverrides.PushBack(childNode, alloc);
+            // Only add to list if there was actually an override inside
+            if (childNode.HasMember("ComponentOverrides") || childNode.HasMember("Children") || childNode.HasMember("DeletedChildren")) {
+                childrenOverrides.PushBack(childNode, alloc);
+            }
         }
 
         // For each of the deleted base child entities, mark them as 'deleted' in the JSON so that they can be deleted when deserialized later.
-        std::vector<std::string> deletedChildrenNames{};
-
         rapidjson::Value deletedChildrenNode(rapidjson::kArrayType);
         for (const auto& deletedChild : deletedBaseChildren) {
             Entity deletedEntity = EntityGUIDRegistry::GetInstance().GetEntityByGUID(deletedChild);
-            //rapidjson::Value deletedChildNode(rapidjson::kObjectType);
+            rapidjson::Value deletedChildNode(rapidjson::kObjectType);
 
             // Serialize the information required to deserialize and restore the prefab hierarchy when deserializing later.
             //deletedChildNode = SerializeEntityGUID(deletedEntity, alloc, deletedChildNode);
@@ -1079,22 +1085,9 @@ void Serializer::SerializePrefabOverridesRecursive(ECSManager& sceneECS, Entity 
                 rapidjson::Value nameVal;
                 nameVal.SetString(name.c_str(), static_cast<rapidjson::SizeType>(name.length()), alloc);
 
-				deletedChildrenNames.push_back(name);
-                //deletedChildNode.AddMember("Name", nameVal, alloc);
+                deletedChildNode.AddMember("Name", nameVal, alloc);
             }
 
-            //deletedChildrenNode.PushBack(deletedChildNode, alloc);
-        }
-
-        // Sort the deletedChildrenNames vector alphabetically to ensure consistent order in the scene file.
-        std::sort(deletedChildrenNames.begin(), deletedChildrenNames.end());
-
-        // Now add the sorted deleted children names to the scene JSON.
-        for (const auto& name : deletedChildrenNames) {
-            rapidjson::Value deletedChildNode(rapidjson::kObjectType);
-            rapidjson::Value nameVal;
-            nameVal.SetString(name.c_str(), static_cast<rapidjson::SizeType>(name.length()), alloc);
-            deletedChildNode.AddMember("Name", nameVal, alloc);
             deletedChildrenNode.PushBack(deletedChildNode, alloc);
         }
 
@@ -1165,9 +1158,6 @@ void Serializer::RestorePrefabHierarchy(ECSManager& ecs, Entity currentEntity, c
             realChildrenEntities.push_back(EntityGUIDRegistry::GetInstance().GetEntityByGUID(g));
         }
 
-        // Track which entities have been matched to prevent double-matching
-        std::unordered_set<Entity> matchedEntities;
-
         // Iterate JSON children
         for (const auto& jsonChild : jsonChildren.GetArray()) {
             if (!jsonChild.HasMember("Name")) continue;
@@ -1176,15 +1166,8 @@ void Serializer::RestorePrefabHierarchy(ECSManager& ecs, Entity currentEntity, c
             // Find match in real hierarchy by Name
             Entity match = static_cast<Entity>(-1);
             for (Entity ent : realChildrenEntities) {
-                // Skip if this entity was already used by a previous sibling
-                if (matchedEntities.find((int)ent) != matchedEntities.end()) {
-                    continue;
-                }
-
                 if (ent != static_cast<Entity>(-1) && ecs.GetComponent<NameComponent>(ent).name == nameToFind) {
                     match = ent;
-                    // Mark as used
-                    matchedEntities.insert((int)ent);
                     break;
                 }
             }
@@ -1199,7 +1182,7 @@ void Serializer::RestorePrefabHierarchy(ECSManager& ecs, Entity currentEntity, c
 
 Entity Serializer::DeserializeEntity(ECSManager& ecs, const rapidjson::Value& entObj, bool isPrefab, Entity entity, bool skipSpawnChildren, bool initialiseAnimation) {
     if (!entObj.IsObject()) {
-		ENGINE_LOG_WARN("[Serializer] DeserializeEntity: Invalid entity JSON object.");
+        ENGINE_LOG_WARN("[Serializer] DeserializeEntity: Invalid entity JSON object.");
         return static_cast<Entity>(-1);
     }
 
@@ -2698,7 +2681,7 @@ void Serializer::DeserializeAnimationComponent(AnimationComponent& animComp, con
         animComp.isLoop = Serializer::GetBool(d, 2);
         animComp.speed = Serializer::GetFloat(d, 3);
         animComp.clipCount = Serializer::GetInt(d, 4);
-        
+
         const auto& clipPathsJSON = animJSON["data"][5]["data"].GetArray();
         size_t index = 0;
         for (const auto& clipPathJSON : clipPathsJSON) {
@@ -3320,13 +3303,13 @@ void Serializer::DeserializeScriptComponent(Entity entity, const rapidjson::Valu
                 }
             }
 
-			// Check if the ScriptComponent already has a script with the same path. If so, skip adding this one to avoid duplicates.
-			bool duplicateFound = false;
+            // Check if the ScriptComponent already has a script with the same path. If so, skip adding this one to avoid duplicates.
+            bool duplicateFound = false;
             for (const auto& existingScript : scriptComp.scripts) {
                 if (existingScript.scriptPath == sd.scriptPath) {
                     duplicateFound = true;
                     break;
-				}
+                }
             }
             if (duplicateFound) continue;
 
