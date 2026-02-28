@@ -2425,6 +2425,103 @@ void RegisterInspectorCustomRenderers()
                                               [](const char *, void *, Entity, ECSManager &)
                                               { return true; });
 
+    // Fill Mode dropdown for SpriteRenderComponent
+    ReflectionRenderer::RegisterFieldRenderer("SpriteRenderComponent", "fillMode",
+    [](const char*, void* ptr, Entity entity, ECSManager& ecs) {
+        int* mode = static_cast<int*>(ptr);
+        const float labelWidth = EditorComponents::GetLabelWidth();
+
+        ImGui::Text("Fill Mode");
+        ImGui::SameLine(labelWidth);
+        ImGui::SetNextItemWidth(-1);
+
+        const char* items[] = { "Solid", "Radial" };
+        EditorComponents::PushComboColors();
+        bool changed = ImGui::Combo("##FillMode", mode, items, 2);
+        EditorComponents::PopComboColors();
+
+        if (changed) {
+            SnapshotManager::GetInstance().TakeSnapshot("Change Fill Mode");
+        }
+        return true;
+    });
+
+    // Fill Max Value - only visible when fillMode == Radial
+    ReflectionRenderer::RegisterFieldRenderer("SpriteRenderComponent", "fillMaxValue",
+    [](const char*, void* ptr, Entity entity, ECSManager& ecs) {
+        auto& sprite = ecs.GetComponent<SpriteRenderComponent>(entity);
+        if (sprite.fillMode != 1) return true; // Hide when Solid
+
+        float* val = static_cast<float*>(ptr);
+        const float labelWidth = EditorComponents::GetLabelWidth();
+
+        ImGui::Text("Fill Max");
+        ImGui::SameLine(labelWidth);
+        ImGui::SetNextItemWidth(-1);
+        bool changed = ImGui::DragFloat("##FillMax", val, 0.1f, 0.001f, 1000.0f);
+        if (changed) {
+            SnapshotManager::GetInstance().TakeSnapshot("Change Fill Max");
+        }
+        return true;
+    });
+
+    // Fill Value slider - only visible when fillMode == Radial
+    ReflectionRenderer::RegisterFieldRenderer("SpriteRenderComponent", "fillValue",
+    [](const char*, void* ptr, Entity entity, ECSManager& ecs) {
+        auto& sprite = ecs.GetComponent<SpriteRenderComponent>(entity);
+        if (sprite.fillMode != 1) return true; // Hide when Solid
+
+        float* val = static_cast<float*>(ptr);
+        const float labelWidth = EditorComponents::GetLabelWidth();
+
+        ImGui::Text("Fill Value");
+        ImGui::SameLine(labelWidth);
+        ImGui::SetNextItemWidth(-1);
+        bool changed = ImGui::SliderFloat("##FillValue", val, 0.0f, sprite.fillMaxValue);
+        if (changed) {
+            SnapshotManager::GetInstance().TakeSnapshot("Change Fill Value");
+        }
+        return true;
+    });
+
+    // Fill Edge Glow slider - only visible when fillMode == Radial
+    ReflectionRenderer::RegisterFieldRenderer("SpriteRenderComponent", "fillGlow",
+    [](const char*, void* ptr, Entity entity, ECSManager& ecs) {
+        auto& sprite = ecs.GetComponent<SpriteRenderComponent>(entity);
+        if (sprite.fillMode != 1) return true; // Hide when Solid
+
+        float* val = static_cast<float*>(ptr);
+        const float labelWidth = EditorComponents::GetLabelWidth();
+
+        ImGui::Text("Edge Glow");
+        ImGui::SameLine(labelWidth);
+        ImGui::SetNextItemWidth(-1);
+        bool changed = ImGui::SliderFloat("##FillGlow", val, 0.0f, 1.0f);
+        if (changed) {
+            SnapshotManager::GetInstance().TakeSnapshot("Change Edge Glow");
+        }
+        return true;
+    });
+
+    // Fill Background brightness slider - only visible when fillMode == Radial
+    ReflectionRenderer::RegisterFieldRenderer("SpriteRenderComponent", "fillBackground",
+    [](const char*, void* ptr, Entity entity, ECSManager& ecs) {
+        auto& sprite = ecs.GetComponent<SpriteRenderComponent>(entity);
+        if (sprite.fillMode != 1) return true; // Hide when Solid
+
+        float* val = static_cast<float*>(ptr);
+        const float labelWidth = EditorComponents::GetLabelWidth();
+
+        ImGui::Text("Background");
+        ImGui::SameLine(labelWidth);
+        ImGui::SetNextItemWidth(-1);
+        bool changed = ImGui::SliderFloat("##FillBG", val, 0.0f, 1.0f);
+        if (changed) {
+            SnapshotManager::GetInstance().TakeSnapshot("Change Fill Background");
+        }
+        return true;
+    });
+
     // Particle texture GUID
     ReflectionRenderer::RegisterFieldRenderer("ParticleComponent", "textureGUID",
     [](const char *, void *ptr, Entity entity, ECSManager &ecs)

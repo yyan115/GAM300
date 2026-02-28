@@ -2590,6 +2590,22 @@ void Serializer::DeserializeSpriteComponent(SpriteRenderComponent& spriteComp, c
                     if (d.Size() > static_cast<rapidjson::SizeType>(startIdx + 11)) {
                         readVec3Generic(d[startIdx + 11], spriteComp.saved3DPosition);
                     }
+                    // Fill properties (backward compatible - defaults to Solid/1.0/1.0)
+                    if (d.Size() > static_cast<rapidjson::SizeType>(startIdx + 12)) {
+                        spriteComp.fillMode = Serializer::GetInt(d, startIdx + 12, 0);
+                    }
+                    if (d.Size() > static_cast<rapidjson::SizeType>(startIdx + 13)) {
+                        spriteComp.fillMaxValue = Serializer::GetFloat(d, startIdx + 13, 1.0f);
+                    }
+                    if (d.Size() > static_cast<rapidjson::SizeType>(startIdx + 14)) {
+                        spriteComp.fillValue = Serializer::GetFloat(d, startIdx + 14, 1.0f);
+                    }
+                    if (d.Size() > static_cast<rapidjson::SizeType>(startIdx + 15)) {
+                        spriteComp.fillGlow = Serializer::GetFloat(d, startIdx + 15, 0.5f);
+                    }
+                    if (d.Size() > static_cast<rapidjson::SizeType>(startIdx + 16)) {
+                        spriteComp.fillBackground = Serializer::GetFloat(d, startIdx + 16, 0.3f);
+                    }
                 }
                 else {
                     // Old format - this is saved3DPosition
