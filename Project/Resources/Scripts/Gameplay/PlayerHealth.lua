@@ -8,25 +8,25 @@ local Input = _G.Input
 local HurtTrigger = "Hurt"
 
 local function PlayerTakeDmg(self, dmg)
-    if self._currentHealth <= 0 then return end
+    if self.CurrentHealth <= 0 then return end
     
     --print("[PlayerTakeDmg] Animator set trigger Hurt")
     self._animator:SetTrigger(HurtTrigger)
     self._hurtTriggered = true
 
-    self._currentHealth = self._currentHealth - dmg
-    --print(string.format("[PlayerTakeDmg] Player took %d damage. Remaining health: %d", dmg, self._currentHealth))
+    self.CurrentHealth = self.CurrentHealth - dmg
+    --print(string.format("[PlayerTakeDmg] Player took %d damage. Remaining health: %d", dmg, self.CurrentHealth))
     
-    if self._currentHealth <= 0 then
-        self._currentHealth = 0
+    if self.CurrentHealth <= 0 then
+        self.CurrentHealth = 0
         self._animator:SetBool("IsDead", true)
 
         event_bus.publish("playerDead", true)
     end
 
     if event_bus and event_bus.publish then
-        event_bus.publish("playerMaxhealth", self._maxHealth)
-        event_bus.publish("playerCurrentHealth", self._currentHealth)
+        event_bus.publish("playerMaxhealth", self.MaxHealth)
+        event_bus.publish("playerCurrentHealth", self.CurrentHealth)
     end
 
     self._knifeHitPlayer = false
@@ -36,7 +36,8 @@ return Component {
     mixins = { TransformMixin },
 
     fields = {
-        Health = 10,
+        MaxHealth = 10,
+        CurrentHealth = 10,
         IFrameDuration = 1.0,
         YDeathThreshold = -3.0,
     },
@@ -45,8 +46,7 @@ return Component {
         self._iFrameDuration = self.IFrameDuration
         self._animator  = self:GetComponent("AnimationComponent")
         self._transform = self:GetComponent("Transform")
-        self._maxHealth = self.Health
-        self._currentHealth = self._maxHealth
+        self.CurrentHealth = self.MaxHealth
         self._yDeathThreshold = self.YDeathThreshold
         self._playerDeathTriggered = false
 
@@ -153,6 +153,16 @@ return Component {
         end)
         print("[PlayerHealth] Subscribed to miniboss_slash: " .. tostring(self._minibossSlashSub))
 
+        print("[PlayerHealth] Subscribing to playerHeal")
+        self._playerHealSub = event_bus.subscribe("playerHeal", function(amount)
+            if not amount or self.CurrentHealth <= 0 then return end
+            self.CurrentHealth = math.min(self.CurrentHealth + amount, self.MaxHealth)
+            if event_bus and event_bus.publish then
+                event_bus.publish("playerMaxhealth", self.MaxHealth)
+                event_bus.publish("playerCurrentHealth", self.CurrentHealth)
+            end
+        end)
+
         print("[PlayerHealth] Subscribing to respawnPlayer")
         self._respawnPlayerSub = event_bus.subscribe("respawnPlayer", function(respawn)
             if respawn then
@@ -167,16 +177,16 @@ return Component {
 
     Start = function(self)
         if event_bus and event_bus.publish then
-            event_bus.publish("playerMaxhealth", self._maxHealth)
-            event_bus.publish("playerCurrentHealth", self._currentHealth)
+            event_bus.publish("playerMaxhealth", self.MaxHealth)
+            event_bus.publish("playerCurrentHealth", self.CurrentHealth)
         end
     end,
 
     RespawnPlayer = function(self)
-        self._currentHealth = self._maxHealth
+        self.CurrentHealth = self.MaxHealth
         if event_bus and event_bus.publish then
-            event_bus.publish("playerMaxhealth", self._maxHealth)
-            event_bus.publish("playerCurrentHealth", self._currentHealth)
+            event_bus.publish("playerMaxhealth", self.MaxHealth)
+            event_bus.publish("playerCurrentHealth", self.CurrentHealth)
         end
 
         self._respawnPlayer = false
@@ -209,11 +219,11 @@ return Component {
         if self._transform then
             local y = self._transform.worldPosition.y
             if y <= self._yDeathThreshold and not self._playerDeathTriggered then
-                self._currentHealth = 0
+                self.CurrentHealth = 0
                 self._animator:SetBool("IsDead", true)
                 event_bus.publish("playerDead", true)
-                event_bus.publish("playerMaxhealth", self._maxHealth)
-                event_bus.publish("playerCurrentHealth", self._currentHealth)
+                event_bus.publish("playerMaxhealth", self.MaxHealth)
+                event_bus.publish("playerCurrentHealth", self.CurrentHealth)
                 self._playerDeathTriggered = true
             end
         end

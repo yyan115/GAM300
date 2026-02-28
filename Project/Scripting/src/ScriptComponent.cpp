@@ -597,24 +597,36 @@ namespace Scripting {
             lua_rawgeti(L, LUA_REGISTRYINDEX, tmpRef); // push populated table
             lua_setfield(L, -2, "fields"); // set on instance; pops table
             
-            //|| Claude code addition:
-            // Additionally, flatten the fields onto the instance table
-            // This ensures that self.fieldName works in Lua scripts
-            lua_rawgeti(L, LUA_REGISTRYINDEX, tmpRef); // push fields table again
-            // Iterate over the fields table and set each field on the instance
-            lua_pushnil(L); // first key
-            while (lua_next(L, -2) != 0) {
-                // key at -2, value at -1
-                if (lua_type(L, -2) == LUA_TSTRING) {
-                    // Duplicate key and value for setting on instance
-                    lua_pushvalue(L, -2); // duplicate key
-                    lua_pushvalue(L, -2); // duplicate value
-                    lua_settable(L, -6); // set on instance table (at -6: instance, fields, key, value)
+            // Flatten ONLY declared field values onto the instance table.
+            // We read __field_list from the INSTANCE (set by mono_helper) to know which
+            // keys are user-facing fields. This avoids overwriting internal keys like
+            // __field_list, __meta, _private, _subscriptions with stale serialized data.
+            lua_getfield(L, -1, "__field_list"); // push instance.__field_list
+            if (lua_istable(L, -1)) {
+                int fieldListIdx = lua_gettop(L);
+                lua_rawgeti(L, LUA_REGISTRYINDEX, tmpRef); // push deserialized table
+                int tmpTableIdx = lua_gettop(L);
+                // For each key in __field_list, copy the value from deserialized table to instance
+                lua_pushnil(L);
+                while (lua_next(L, fieldListIdx) != 0) {
+                    lua_pop(L, 1); // pop value, we only need the key
+                    if (lua_type(L, -1) == LUA_TSTRING) {
+                        // Check if deserialized table has this field
+                        lua_pushvalue(L, -1); // duplicate key
+                        lua_gettable(L, tmpTableIdx); // get deserialized[key]
+                        if (!lua_isnil(L, -1)) {
+                            // Set instance[key] = deserialized[key]
+                            lua_pushvalue(L, -2); // push key
+                            lua_pushvalue(L, -2); // push value
+                            // instance is below fieldListIdx: at fieldListIdx - 1
+                            lua_settable(L, fieldListIdx - 1);
+                        }
+                        lua_pop(L, 1); // pop value (or nil)
+                    }
                 }
-                lua_pop(L, 1); // pop value, keep key for next iteration
+                lua_pop(L, 1); // pop deserialized table
             }
-            lua_pop(L, 1); // pop fields table
-            //|| Claude code addition end
+            lua_pop(L, 1); // pop __field_list (or nil)
         }
         else {
             // leave instance.fields as-is (we created a temp table; no assignment)
