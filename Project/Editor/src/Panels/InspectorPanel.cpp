@@ -38,6 +38,7 @@
 #include <glm/glm.hpp>
 #include <FileWatch.hpp>
 #include "Video/VideoComponent.hpp"
+#include "Dialogue/DialogueComponent.hpp"
 #include <ECS/ActiveComponent.hpp>
 #include "UndoSystem.hpp"
 
@@ -357,6 +358,12 @@ void InspectorPanel::DrawComponentsViaReflection(Entity entity) {
 			[&]() { return ecs.HasComponent<UIAnchorComponent>(entity) ?
 				(void*)&ecs.GetComponent<UIAnchorComponent>(entity) : nullptr; },
 			[&]() { return ecs.HasComponent<UIAnchorComponent>(entity); }},
+
+		// Dialogue component
+		{"Dialogue", "DialogueComponent",
+			[&]() { return ecs.HasComponent<DialogueComponent>(entity) ?
+				(void*)&ecs.GetComponent<DialogueComponent>(entity) : nullptr; },
+			[&]() { return ecs.HasComponent<DialogueComponent>(entity); }},
 	};
 
 	// Render each component that exists
@@ -1387,6 +1394,9 @@ void InspectorPanel::DrawAddComponentButton(Entity entity) {
 			if (!ecsManager.HasComponent<UIAnchorComponent>(entity)) {
 				allComponents.push_back({ "UI Anchor", "UIAnchorComponent", "UI" });
 			}
+			if (!ecsManager.HasComponent<DialogueComponent>(entity)) {
+				allComponents.push_back({ "Dialogue", "DialogueComponent", "UI" });
+			}
 
 		// Cache scripts to avoid filesystem scanning every frame
 		std::string scriptsFolder = AssetManager::GetInstance().GetRootAssetDirectory() + "/Scripts";
@@ -1670,6 +1680,9 @@ void InspectorPanel::DrawAddComponentButtonMulti(const std::vector<Entity>& enti
 		}
 		if (allEntitiesLackComponent([&](Entity e) { return ecsManager.HasComponent<UIAnchorComponent>(e); })) {
 			allComponents.push_back({ "UI Anchor", "UIAnchorComponent", "UI" });
+		}
+		if (allEntitiesLackComponent([&](Entity e) { return ecsManager.HasComponent<DialogueComponent>(e); })) {
+			allComponents.push_back({ "Dialogue", "DialogueComponent", "UI" });
 		}
 
 		// Cache scripts
@@ -2275,6 +2288,11 @@ void InspectorPanel::AddComponent(Entity entity, const std::string& componentTyp
 
 			std::cout << "[Inspector] Added UIAnchorComponent to entity " << entity << std::endl;
 		}
+		else if (componentType == "DialogueComponent") {
+			DialogueComponent component;
+			ecsManager.AddComponent<DialogueComponent>(entity, component);
+			std::cout << "[Inspector] Added DialogueComponent to entity " << entity << std::endl;
+		}
 		else {
 			std::cerr << "[Inspector] Unknown component type: " << componentType << std::endl;
 		}
@@ -2665,6 +2683,10 @@ void InspectorPanel::ProcessPendingComponentRemovals() {
 				ecsManager.RemoveComponent<UIAnchorComponent>(request.entity);
 				std::cout << "[Inspector] Removed UIAnchorComponent from entity " << request.entity << std::endl;
 			}
+			else if (request.componentType == "DialogueComponent") {
+				ecsManager.RemoveComponent<DialogueComponent>(request.entity);
+				std::cout << "[Inspector] Removed DialogueComponent from entity " << request.entity << std::endl;
+			}
 			else if (request.componentType == "TransformComponent") {
 				std::cerr << "[Inspector] Cannot remove TransformComponent - all entities must have one" << std::endl;
 			}
@@ -2767,6 +2789,10 @@ void InspectorPanel::ProcessPendingComponentResets() {
 			else if (request.componentType == "UIAnchorComponent") {
 				ecsManager.GetComponent<UIAnchorComponent>(request.entity) = UIAnchorComponent{};
 				std::cout << "[Inspector] Reset UIAnchorComponent on entity " << request.entity << std::endl;
+			}
+			else if (request.componentType == "DialogueComponent") {
+				ecsManager.GetComponent<DialogueComponent>(request.entity) = DialogueComponent{};
+				std::cout << "[Inspector] Reset DialogueComponent on entity " << request.entity << std::endl;
 			}
 			else if (request.componentType == "Transform") {
 				// Reset transform to default values
@@ -2920,6 +2946,11 @@ void InspectorPanel::ProcessPendingMultiComponentRemovals() {
 				else if (request.componentType == "UIAnchorComponent") {
 					if (ecsManager.HasComponent<UIAnchorComponent>(entity)) {
 						ecsManager.RemoveComponent<UIAnchorComponent>(entity);
+					}
+				}
+				else if (request.componentType == "DialogueComponent") {
+					if (ecsManager.HasComponent<DialogueComponent>(entity)) {
+						ecsManager.RemoveComponent<DialogueComponent>(entity);
 					}
 				}
 				else if (request.componentType == "Transform") {
@@ -3581,6 +3612,9 @@ void InspectorPanel::DrawSharedComponentGeneric(const std::vector<Entity>& entit
 				}
 				else if (componentType == "UIAnchorComponent" && ecs.HasComponent<UIAnchorComponent>(otherEntity)) {
 					otherComponentPtr = &ecs.GetComponent<UIAnchorComponent>(otherEntity);
+				}
+				else if (componentType == "DialogueComponent" && ecs.HasComponent<DialogueComponent>(otherEntity)) {
+					otherComponentPtr = &ecs.GetComponent<DialogueComponent>(otherEntity);
 				}
 				else if (componentType == "AudioListenerComponent" && ecs.HasComponent<AudioListenerComponent>(otherEntity)) {
 					otherComponentPtr = &ecs.GetComponent<AudioListenerComponent>(otherEntity);

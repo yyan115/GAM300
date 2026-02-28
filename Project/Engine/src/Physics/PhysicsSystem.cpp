@@ -35,6 +35,7 @@
 #include <Jolt/Physics/Collision/ShapeFilter.h>    // ShapeFilter
 #include "Game AI/NavSystem.hpp"
 #include "ECS/ECSManager.hpp"
+#include "Dialogue/DialogueManager.hpp"
 
 
 #ifdef __ANDROID__
@@ -423,6 +424,12 @@ void PhysicsSystem::Update(float fixedDt, ECSManager& ecsManager) {
             }
             ecsManager.scriptSystem->CallEntityFunctionWithInt(a, fn, evt.entityB, ecsManager);
             ecsManager.scriptSystem->CallEntityFunctionWithInt(b, fn, evt.entityA, ecsManager);
+
+            // Notify DialogueManager for trigger-based dialogue advancement
+            if (aIsTrigger || bIsTrigger) {
+                if (aIsTrigger) NarrativeDialogueManager::GetInstance().OnTriggerEnter(a, b);
+                if (bIsTrigger) NarrativeDialogueManager::GetInstance().OnTriggerEnter(b, a);
+            }
         }
 
         for (const auto& evt : exits) {

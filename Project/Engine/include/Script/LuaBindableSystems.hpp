@@ -1192,3 +1192,29 @@ namespace PrefabWrappers {
         return InstantiatePrefabFromFile(prefabPath);
     }
 }
+
+// ============================================================================
+// DIALOGUE MANAGER WRAPPERS
+// ============================================================================
+#include "Dialogue/DialogueManager.hpp"
+
+namespace DialogueManagerWrappers {
+    inline void StartDialogue(const std::string& name) {
+        NarrativeDialogueManager::GetInstance().StartDialogue(name);
+    }
+    inline void StopDialogue(const std::string& name) {
+        NarrativeDialogueManager::GetInstance().StopDialogue(name);
+    }
+    inline void ScrollNext(const std::string& name) {
+        NarrativeDialogueManager::GetInstance().ScrollNext(name);
+    }
+    inline bool IsDialogueActive(const std::string& name) {
+        return NarrativeDialogueManager::GetInstance().IsDialogueActive(name);
+    }
+    inline bool IsAnyDialogueActive() {
+        return NarrativeDialogueManager::GetInstance().IsAnyDialogueActive();
+    }
+    inline int GetCurrentIndex(const std::string& name) {
+        return NarrativeDialogueManager::GetInstance().GetCurrentIndex(name);
+    }
+}

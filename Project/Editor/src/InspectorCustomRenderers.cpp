@@ -67,6 +67,7 @@ prior written consent of DigiPen Institute of Technology is prohibited.
 #include "UI/Button/ButtonComponent.hpp"
 #include "UI/Slider/SliderComponent.hpp"
 #include "UI/Anchor/UIAnchorComponent.hpp"
+#include "Dialogue/DialogueComponent.hpp"
 #include "Scripting.h"
 #include "ScriptInspector.h"
 #include "Panels/TagsLayersPanel.hpp"
@@ -7841,4 +7842,217 @@ void RegisterInspectorCustomRenderers()
     // ==================== SPRITE ANIMATION COMPONENT ====================
     // Register the sprite animation inspector (defined in SpriteAnimationInspector.cpp)
     RegisterSpriteAnimationInspector();
+
+    // ==================== DIALOGUE COMPONENT ====================
+    ReflectionRenderer::RegisterComponentRenderer("DialogueComponent",
+    [](void* componentPtr, TypeDescriptor_Struct*, Entity entity, ECSManager& ecs) -> bool
+    {
+        DialogueComponent& dialogue = *static_cast<DialogueComponent*>(componentPtr);
+        const float labelWidth = EditorComponents::GetLabelWidth();
+
+        // --- Dialogue Name ---
+        ImGui::Text("Dialogue Name");
+        ImGui::SameLine(labelWidth);
+        ImGui::SetNextItemWidth(-1);
+        char nameBuf[256];
+        strncpy(nameBuf, dialogue.dialogueName.c_str(), sizeof(nameBuf) - 1);
+        nameBuf[sizeof(nameBuf) - 1] = '\0';
+        if (ImGui::InputText("##DialogueName", nameBuf, sizeof(nameBuf))) {
+            dialogue.dialogueName = nameBuf;
+            dialogue.registeredWithManager = false; // Re-register with new name
+        }
+
+        // --- Text Entity (drag-drop target) ---
+        ImGui::Text("Text Entity");
+        ImGui::SameLine(labelWidth);
+        float fieldWidth = ImGui::GetContentRegionAvail().x;
+
+        std::string textEntityDisplay = "None (TextRender)";
+        if (!dialogue.textEntityGuidStr.empty()) {
+            GUID_128 guid = GUIDUtilities::ConvertStringToGUID128(dialogue.textEntityGuidStr);
+            Entity textEntity = EntityGUIDRegistry::GetInstance().GetEntityByGUID(guid);
+            if (textEntity != 0 && ecs.HasComponent<NameComponent>(textEntity)) {
+                textEntityDisplay = ecs.GetComponent<NameComponent>(textEntity).name;
+            }
+        }
+
+        EditorComponents::DrawDragDropButton(textEntityDisplay.c_str(), fieldWidth);
+        if (ImGui::BeginDragDropTarget()) {
+            if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("HIERARCHY_ENTITY")) {
+                Entity droppedEntity = *(Entity*)payload->Data;
+                // Verify it has a TextRenderComponent
+                if (ecs.HasComponent<TextRenderComponent>(droppedEntity)) {
+                    SnapshotManager::GetInstance().TakeSnapshot("Assign Dialogue Text Entity");
+                    GUID_128 guid = EntityGUIDRegistry::GetInstance().GetGUIDByEntity(droppedEntity);
+                    dialogue.textEntityGuidStr = GUIDUtilities::ConvertGUID128ToString(guid);
+                    dialogue.textEntity = droppedEntity;
+                }
+            }
+            ImGui::EndDragDropTarget();
+        }
+
+        // --- Appearance Mode dropdown ---
+        ImGui::Text("Appearance");
+        ImGui::SameLine(labelWidth);
+        ImGui::SetNextItemWidth(-1);
+        const char* appearanceModes[] = { "Fade In / Out", "Instant" };
+        EditorComponents::PushComboColors();
+        if (ImGui::Combo("##AppearanceMode", &dialogue.appearanceModeID, appearanceModes, IM_ARRAYSIZE(appearanceModes))) {
+            SnapshotManager::GetInstance().TakeSnapshot("Change Dialogue Appearance");
+        }
+        EditorComponents::PopComboColors();
+
+        // --- Fade Duration (only if FadeInOut) ---
+        if (dialogue.appearanceModeID == 0) {
+            ImGui::Text("Fade Duration");
+            ImGui::SameLine(labelWidth);
+            ImGui::SetNextItemWidth(-1);
+            UndoableWidgets::DragFloat("##FadeDuration", &dialogue.fadeDuration, 0.01f, 0.0f, 10.0f, "%.2f sec");
+        }
+
+        // --- Typewriter checkbox ---
+        ImGui::Text("Typewriter");
+        ImGui::SameLine(labelWidth);
+        UndoableWidgets::Checkbox("##Typewriter", &dialogue.typewriterEnabled);
+
+        // --- Text Speed (only if typewriter enabled) ---
+        if (dialogue.typewriterEnabled) {
+            ImGui::Text("Text Speed");
+            ImGui::SameLine(labelWidth);
+            ImGui::SetNextItemWidth(-1);
+            UndoableWidgets::DragFloat("##TextSpeed", &dialogue.textSpeed, 1.0f, 1.0f, 200.0f, "%.0f chars/sec");
+        }
+
+        // --- Auto Start checkbox ---
+        ImGui::Text("Auto Start");
+        ImGui::SameLine(labelWidth);
+        UndoableWidgets::Checkbox("##AutoStart", &dialogue.autoStart);
+
+        ImGui::Spacing();
+        ImGui::Separator();
+
+        // --- Dialogue Entries header ---
+        ImGui::Text("Dialogue Entries");
+        ImGui::SameLine(ImGui::GetContentRegionAvail().x - 60);
+        if (ImGui::SmallButton(ICON_FA_PLUS " Add")) {
+            SnapshotManager::GetInstance().TakeSnapshot("Add Dialogue Entry");
+            DialogueEntry newEntry;
+            dialogue.entries.push_back(newEntry);
+        }
+
+        ImGui::Spacing();
+
+        // --- Render each entry ---
+        int entryToRemove = -1;
+        for (size_t i = 0; i < dialogue.entries.size(); ++i) {
+            DialogueEntry& entry = dialogue.entries[i];
+            ImGui::PushID(static_cast<int>(i));
+
+            // Collapsible header for each entry
+            std::string entryLabel = "Entry " + std::to_string(i);
+            bool entryOpen = ImGui::CollapsingHeader(entryLabel.c_str(), ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_AllowOverlap);
+
+            // Remove button on same line
+            ImGui::SameLine(ImGui::GetContentRegionAvail().x + ImGui::GetCursorPosX() - 25);
+            if (ImGui::SmallButton(ICON_FA_TRASH "##RemoveEntry")) {
+                entryToRemove = static_cast<int>(i);
+            }
+            if (ImGui::IsItemHovered()) {
+                ImGui::SetTooltip("Remove this entry");
+            }
+
+            if (entryOpen) {
+                ImGui::Indent(10.0f);
+
+                // --- Text content (multiline) ---
+                ImGui::Text("Text");
+                ImGui::SameLine(labelWidth);
+                ImGui::SetNextItemWidth(-1);
+                char textBuf[1024];
+                strncpy(textBuf, entry.text.c_str(), sizeof(textBuf) - 1);
+                textBuf[sizeof(textBuf) - 1] = '\0';
+                if (ImGui::InputTextMultiline("##EntryText", textBuf, sizeof(textBuf),
+                    ImVec2(-1, ImGui::GetTextLineHeight() * 3))) {
+                    entry.text = textBuf;
+                }
+
+                // --- Advance By dropdown ---
+                ImGui::Text("Advance By");
+                ImGui::SameLine(labelWidth);
+                ImGui::SetNextItemWidth(-1);
+                const char* scrollTypes[] = { "Time", "Action", "Trigger" };
+                EditorComponents::PushComboColors();
+                if (ImGui::Combo("##ScrollType", &entry.scrollTypeID, scrollTypes, IM_ARRAYSIZE(scrollTypes))) {
+                    SnapshotManager::GetInstance().TakeSnapshot("Change Dialogue Scroll Type");
+                }
+                EditorComponents::PopComboColors();
+
+                // --- Conditional fields based on scroll type ---
+                if (entry.scrollTypeID == 0) {
+                    // Time mode: show duration
+                    ImGui::Text("Duration");
+                    ImGui::SameLine(labelWidth);
+                    ImGui::SetNextItemWidth(-1);
+                    UndoableWidgets::DragFloat("##AutoTime", &entry.autoTime, 0.1f, 0.1f, 60.0f, "%.1f sec");
+                }
+                else if (entry.scrollTypeID == 2) {
+                    // Trigger mode: show entity drag-drop
+                    ImGui::Text("Trigger Entity");
+                    ImGui::SameLine(labelWidth);
+                    float triggerFieldWidth = ImGui::GetContentRegionAvail().x;
+
+                    std::string triggerDisplay = "None (Trigger)";
+                    if (!entry.triggerEntityGuidStr.empty()) {
+                        GUID_128 guid = GUIDUtilities::ConvertStringToGUID128(entry.triggerEntityGuidStr);
+                        Entity triggerEntity = EntityGUIDRegistry::GetInstance().GetEntityByGUID(guid);
+                        if (triggerEntity != 0 && ecs.HasComponent<NameComponent>(triggerEntity)) {
+                            triggerDisplay = ecs.GetComponent<NameComponent>(triggerEntity).name;
+                        }
+                    }
+
+                    EditorComponents::DrawDragDropButton(triggerDisplay.c_str(), triggerFieldWidth);
+                    if (ImGui::BeginDragDropTarget()) {
+                        if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("HIERARCHY_ENTITY")) {
+                            Entity droppedEntity = *(Entity*)payload->Data;
+                            SnapshotManager::GetInstance().TakeSnapshot("Assign Dialogue Trigger Entity");
+                            GUID_128 guid = EntityGUIDRegistry::GetInstance().GetGUIDByEntity(droppedEntity);
+                            entry.triggerEntityGuidStr = GUIDUtilities::ConvertGUID128ToString(guid);
+                        }
+                        ImGui::EndDragDropTarget();
+                    }
+                }
+                // Action mode: no extra fields needed
+
+                ImGui::Unindent(10.0f);
+            }
+
+            ImGui::PopID();
+        }
+
+        // Process removal after loop
+        if (entryToRemove >= 0 && entryToRemove < static_cast<int>(dialogue.entries.size())) {
+            SnapshotManager::GetInstance().TakeSnapshot("Remove Dialogue Entry");
+            dialogue.entries.erase(dialogue.entries.begin() + entryToRemove);
+        }
+
+        return true; // Skip default reflection rendering
+    });
+
+    // Hide all DialogueComponent fields from default rendering (handled by custom renderer)
+    ReflectionRenderer::RegisterFieldRenderer("DialogueComponent", "dialogueName",
+                                              [](const char*, void*, Entity, ECSManager&) { return true; });
+    ReflectionRenderer::RegisterFieldRenderer("DialogueComponent", "textEntityGuidStr",
+                                              [](const char*, void*, Entity, ECSManager&) { return true; });
+    ReflectionRenderer::RegisterFieldRenderer("DialogueComponent", "appearanceModeID",
+                                              [](const char*, void*, Entity, ECSManager&) { return true; });
+    ReflectionRenderer::RegisterFieldRenderer("DialogueComponent", "fadeDuration",
+                                              [](const char*, void*, Entity, ECSManager&) { return true; });
+    ReflectionRenderer::RegisterFieldRenderer("DialogueComponent", "typewriterEnabled",
+                                              [](const char*, void*, Entity, ECSManager&) { return true; });
+    ReflectionRenderer::RegisterFieldRenderer("DialogueComponent", "textSpeed",
+                                              [](const char*, void*, Entity, ECSManager&) { return true; });
+    ReflectionRenderer::RegisterFieldRenderer("DialogueComponent", "entries",
+                                              [](const char*, void*, Entity, ECSManager&) { return true; });
+    ReflectionRenderer::RegisterFieldRenderer("DialogueComponent", "autoStart",
+                                              [](const char*, void*, Entity, ECSManager&) { return true; });
 }

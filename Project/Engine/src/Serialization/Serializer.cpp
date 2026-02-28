@@ -735,6 +735,11 @@ rapidjson::Value Serializer::SerializeEntity(Entity entity, rapidjson::Document:
         rapidjson::Value v = SerializeComponentToValue(c, alloc);
         compsObj.AddMember("VideoComponent", v, alloc);
     }
+    if (ecs.HasComponent<DialogueComponent>(entity)) {
+        auto& c = ecs.GetComponent<DialogueComponent>(entity);
+        rapidjson::Value v = SerializeComponentToValue(c, alloc);
+        compsObj.AddMember("DialogueComponent", v, alloc);
+    }
 
 
     entObj.AddMember("components", compsObj, alloc);
@@ -770,6 +775,7 @@ void Serializer::SerializePrefabInstanceDelta(ECSManager& sceneECS, Entity insta
     CheckAndSerializeDelta<ButtonComponent>("ButtonComponent", sceneECS, instanceEnt, baselineEnt, alloc, outComponentsArray, standardSerializer);
     CheckAndSerializeDelta<SliderComponent>("SliderComponent", sceneECS, instanceEnt, baselineEnt, alloc, outComponentsArray, standardSerializer);
     CheckAndSerializeDelta<VideoComponent>("VideoComponent", sceneECS, instanceEnt, baselineEnt, alloc, outComponentsArray, standardSerializer);
+    CheckAndSerializeDelta<DialogueComponent>("DialogueComponent", sceneECS, instanceEnt, baselineEnt, alloc, outComponentsArray, standardSerializer);
 
     // Note: ChildrenComponent and ParentComponent are intentionally SKIPPED.
     if (baselineEnt == static_cast<Entity>(-1)) {
@@ -1503,6 +1509,14 @@ Entity Serializer::DeserializeEntity(ECSManager& ecs, const rapidjson::Value& en
         auto& videoComp = ecs.GetComponent<VideoComponent>(newEnt);
         DeserializeVideoComponent(videoComp, videoCompJSON);
     }
+    // DialogueComponent
+    if (comps.HasMember("DialogueComponent") && comps["DialogueComponent"].IsObject()) {
+        const auto& dialogueCompJSON = comps["DialogueComponent"];
+        ecs.AddComponent<DialogueComponent>(newEnt, DialogueComponent{});
+        auto& dialogueComp = ecs.GetComponent<DialogueComponent>(newEnt);
+        TypeDescriptor* td = TypeResolver<DialogueComponent>::Get();
+        if (td) td->Deserialize(&dialogueComp, dialogueCompJSON);
+    }
 
 
     // Ensure all entities have TagComponent and LayerComponent
@@ -1664,6 +1678,11 @@ void Serializer::ApplyPrefabOverridesRecursive(ECSManager& ecs, Entity& currentE
                 else if (typeName == "VideoComponent") {
                     if (!ecs.HasComponent<VideoComponent>(currentEntity)) ecs.AddComponent<VideoComponent>(currentEntity, VideoComponent{});
                     DeserializeVideoComponent(ecs.GetComponent<VideoComponent>(currentEntity), data);
+                }
+                else if (typeName == "DialogueComponent") {
+                    if (!ecs.HasComponent<DialogueComponent>(currentEntity)) ecs.AddComponent<DialogueComponent>(currentEntity, DialogueComponent{});
+                    TypeDescriptor* td = TypeResolver<DialogueComponent>::Get();
+                    if (td) td->Deserialize(&ecs.GetComponent<DialogueComponent>(currentEntity), data);
                 }
 
             }
@@ -2762,32 +2781,62 @@ void Serializer::DeserializeTextComponent(TextRenderComponent& textComp, const r
         readVec3Generic(d[startIdx + 4], textComp.position);
         readVec3Generic(d[startIdx + 5], textComp.color);
 
-        // Detect old vs new format by checking if index 6 is float (old scale) or bool (new is3D)
+        // Detect format by checking what's at index startIdx+6:
+        //   - bool  → "middle" format (no scale, no alpha): is3D at +6
+        //   - float → could be old "scale" or new "alpha"; differentiate by remaining field count
+        //     Old format (scale):  9 fields from startIdx  (text..alignmentInt)
+        //     Newest format (alpha): 15 fields from startIdx (text..lineSpacing)
+        int remainingFields = static_cast<int>(d.Size()) - startIdx;
+        bool hasAlpha = false;
         bool hasOldScaleField = false;
+
         if (d.Size() > static_cast<rapidjson::SizeType>(startIdx + 6) &&
             d[startIdx + 6].IsObject() && d[startIdx + 6].HasMember("type") &&
             d[startIdx + 6]["type"].GetString() == std::string("float")) {
-            // OLD format with scale field - read and discard it
-            hasOldScaleField = true;
-            // float oldScale = d[startIdx + 6]["data"].GetFloat();
+            if (remainingFields >= 12) {
+                // Newest format: alpha field at +6 (many fields follow)
+                hasAlpha = true;
+            } else {
+                // OLD format: scale field at +6 (few fields follow)
+                hasOldScaleField = true;
+            }
         }
 
-        if (hasOldScaleField) {
+        if (hasAlpha) {
+            // Newest format indices (with alpha)
+            // Order: text, fontSize, fontGUID, shaderGUID, position, color, alpha, is3D, sortingLayer, sortingOrder, transform, alignmentInt, wordWrap, maxWidth, lineSpacing
+            textComp.alpha = Serializer::GetFloat(d, startIdx + 6, 1.0f);
+            textComp.is3D = Serializer::GetBool(d, startIdx + 7);
+            textComp.sortingLayer = Serializer::GetInt(d, startIdx + 8);
+            textComp.sortingOrder = Serializer::GetInt(d, startIdx + 9);
+            // Skip transform at index 10 (Matrix4x4 - handled elsewhere)
+            textComp.alignmentInt = Serializer::GetInt(d, startIdx + 11);
+
+            if (d.Size() > static_cast<rapidjson::SizeType>(startIdx + 12)) {
+                textComp.wordWrap = Serializer::GetBool(d, startIdx + 12, false);
+            }
+            if (d.Size() > static_cast<rapidjson::SizeType>(startIdx + 13)) {
+                textComp.maxWidth = Serializer::GetFloat(d, startIdx + 13, 0.0f);
+            }
+            if (d.Size() > static_cast<rapidjson::SizeType>(startIdx + 14)) {
+                textComp.lineSpacing = Serializer::GetFloat(d, startIdx + 14, 1.2f);
+            }
+        }
+        else if (hasOldScaleField) {
             // OLD format indices (with scale at 6)
             // Old order: text, fontSize, fontGUID, shaderGUID, position, color, scale, is3D, alignmentInt
             textComp.is3D = Serializer::GetBool(d, startIdx + 7);
-            // sortingLayer and sortingOrder didn't exist in old format - use defaults
             textComp.sortingLayer = 0;
             textComp.sortingOrder = 0;
             textComp.alignmentInt = Serializer::GetInt(d, startIdx + 8);
         }
         else {
-            // NEW format indices (without scale)
-            // New order: text, fontSize, fontGUID, shaderGUID, position, color, is3D, sortingLayer, sortingOrder, transform, alignmentInt
+            // Middle format indices (no scale, no alpha)
+            // Order: text, fontSize, fontGUID, shaderGUID, position, color, is3D, sortingLayer, sortingOrder, transform, alignmentInt
             textComp.is3D = Serializer::GetBool(d, startIdx + 6);
             textComp.sortingLayer = Serializer::GetInt(d, startIdx + 7);
             textComp.sortingOrder = Serializer::GetInt(d, startIdx + 8);
-            // Skip transform at index 9 (Matrix4x4 - not used, handled elsewhere)
+            // Skip transform at index 9 (Matrix4x4 - handled elsewhere)
             textComp.alignmentInt = Serializer::GetInt(d, startIdx + 10);
 
             // LINE WRAPPING PROPERTIES (indices 11, 12, 13)

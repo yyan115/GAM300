@@ -41,6 +41,8 @@
 #include <Graphics/Sprite/SpriteAnimationComponent.hpp>
 #include "Video/VideoComponent.hpp"
 #include "Video/VideoSystem.hpp"
+#include "Dialogue/DialogueComponent.hpp"
+#include "Dialogue/DialogueSystem.hpp"
 
 void ECSManager::Initialize() {
 	entityManager = std::make_unique<EntityManager>();
@@ -81,6 +83,7 @@ void ECSManager::Initialize() {
 	RegisterComponent<ButtonComponent>();
 	RegisterComponent<SliderComponent>();
 	RegisterComponent<UIAnchorComponent>();
+	RegisterComponent<DialogueComponent>();
 
 	// REGISTER ALL SYSTEMS AND ITS SIGNATURES HERE
 	// e.g.,
@@ -228,7 +231,12 @@ void ECSManager::Initialize() {
 		SetSystemSignature<VideoSystem>(signature);
 	}
 
-
+	dialogueSystem = RegisterSystem<DialogueSystem>();
+	{
+		Signature signature;
+		signature.set(GetComponentID<DialogueComponent>());
+		SetSystemSignature<DialogueSystem>(signature);
+	}
 
 }
 

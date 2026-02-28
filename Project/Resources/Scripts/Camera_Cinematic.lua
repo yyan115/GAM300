@@ -1,4 +1,4 @@
--- CinematicCamera.lua 
+-- CinematicCamera.lua
 -- Handles cinematic camera mode with position/rotation tracking and automatic timeout
 -- FIXED: Uses Engine.GetTransformRotation instead of GetTransformWorldRotation
 
@@ -104,7 +104,7 @@ return Component {
         -- Detect activation/deactivation
         if self.cinematicActive ~= self._wasCinematicActive then
             self._wasCinematicActive = self.cinematicActive
-            
+
             if self.cinematicActive then
                 print("[CinematicCamera] Cinematic mode ENABLED")
                 self._transitionTimer = 0.0
@@ -152,7 +152,7 @@ return Component {
                 end
             end
         end
-        
+
         if not self.cinematicActive then
             return
         end
@@ -171,41 +171,43 @@ return Component {
             self._stayTimer = self._stayTimer + dt
             if self._stayTimer >= self.stayDuration then
                 print(string.format("[CinematicCamera] Stay complete (%.2fs) - disabling", self._stayTimer))
+                -- Advance dialogue after cinematic pan completes
+                DialogueManager.ScrollNext("Intro")
                 self.cinematicActive = false
                 return
             end
         end
-        
+
         -- Get target position & rotation
         local targetPos = nil
         local targetRot = nil
-        
+
         if self.targetTransformName and self.targetTransformName ~= "" then
             -- STRIP QUOTES AND WHITESPACE
             local cleanName = self.targetTransformName
             cleanName = cleanName:gsub('"', ''):gsub("'", ''):gsub("^%s*(.-)%s*$", "%1")
-            
+
             if self.debugMode then
                 print(string.format("[CinematicCamera] Searching for: '%s'", cleanName))
             end
-            
+
             if Engine and Engine.FindTransformByName then
                 local targetTransform = Engine.FindTransformByName(cleanName)
-                
+
                 if targetTransform then
                     if self.debugMode then
                         print("[CinematicCamera] Transform FOUND!")
                     end
-                    
+
                     -- Get Position
                     if Engine.GetTransformWorldPosition then
                         local positionTable = Engine.GetTransformWorldPosition(targetTransform)
-    
+
                         if positionTable and type(positionTable) == "table" then
                             local x = positionTable[1] or positionTable.x or positionTable._1
                             local y = positionTable[2] or positionTable.y or positionTable._2
                             local z = positionTable[3] or positionTable.z or positionTable._3
-        
+
                             if x and y and z then
                                 targetPos = {x = x, y = y, z = z}
                                 if self.debugMode then
@@ -214,12 +216,12 @@ return Component {
                             end
                         end
                     end
-                    
+
                     -- Get Rotation - TRY MULTIPLE METHODS
                     if self.debugMode then
                         print("[CinematicCamera] Attempting to get rotation...")
                     end
-                    
+
                     -- METHOD 1: Try accessing localRotation property from Transform
                     if targetTransform.localRotation then
                         local rot = targetTransform.localRotation
@@ -230,7 +232,7 @@ return Component {
                                     tostring(rot.w), tostring(rot.x), tostring(rot.y), tostring(rot.z)))
                             end
                         end
-                        
+
                         if rot and (rot.w or rot.x or rot.y or rot.z) then
                             targetRot = {
                                 qw = rot.w or 1,
@@ -238,18 +240,18 @@ return Component {
                                 qy = rot.y or 0,
                                 qz = rot.z or 0
                             }
-                            
+
                             if self.debugMode then
                                 local pitch, yaw, roll = quatToEuler(targetRot.qw, targetRot.qx, targetRot.qy, targetRot.qz)
-                                print(string.format("[CinematicCamera] Rotation (quat): w=%.3f, x=%.3f, y=%.3f, z=%.3f", 
+                                print(string.format("[CinematicCamera] Rotation (quat): w=%.3f, x=%.3f, y=%.3f, z=%.3f",
                                     targetRot.qw, targetRot.qx, targetRot.qy, targetRot.qz))
-                                print(string.format("[CinematicCamera] Rotation (euler): y=%.1f, x=%.1f, z=%.1f", 
+                                print(string.format("[CinematicCamera] Rotation (euler): y=%.1f, x=%.1f, z=%.1f",
                                     pitch, yaw, roll))
                             end
                         end
                     end
-                    
-                    
+
+
                     if not targetRot and self.debugMode then
                         print("[CinematicCamera] WARNING: Could not extract rotation from transform!")
                     end
@@ -258,7 +260,7 @@ return Component {
                 end
             end
         end
-        
+
         -- Fallback to manual position
         if not targetPos then
             targetPos = {
@@ -267,11 +269,11 @@ return Component {
                 z = self.targetPosition.z or 0
             }
         end
-        
+
         -- Fallback to manual rotation
         if not targetRot then
             if self.debugMode then
-                print(string.format("[CinematicCamera] Using manual rotation: x=%.1f, y=%.1f, z=%.1f", 
+                print(string.format("[CinematicCamera] Using manual rotation: x=%.1f, y=%.1f, z=%.1f",
                     self.targetRotation.x, self.targetRotation.y, self.targetRotation.z))
             end
             local quat = eulerToQuat(
@@ -284,12 +286,12 @@ return Component {
 
         -- Debug print position and Rotation
         if self.debugMode then
-           print(string.format("[CinematicCamera] Target Pos: (%.2f, %.2f, %.2f)", 
+           print(string.format("[CinematicCamera] Target Pos: (%.2f, %.2f, %.2f)",
                 targetPos.x, targetPos.y, targetPos.z))
-           print(string.format("[CinematicCamera] Target Rot (quat): w=%.3f, x=%.3f, y=%.3f, z=%.3f", 
+           print(string.format("[CinematicCamera] Target Rot (quat): w=%.3f, x=%.3f, y=%.3f, z=%.3f",
                 targetRot.qw, targetRot.qx, targetRot.qy, targetRot.qz))
         end
-        
+
         -- Publish to camera
         if event_bus and event_bus.publish then
             local t = 0.0
@@ -305,10 +307,10 @@ return Component {
                 lerpT = t,
                 phase = self._phase,
             })
-            
+
             if self.debugMode and targetRot then
                 local pitch, yaw, roll = quatToEuler(targetRot.qw, targetRot.qx, targetRot.qy, targetRot.qz)
-                print(string.format("[CinematicCamera] Publishing - Pos: (%.2f, %.2f, %.2f), Euler: (%.1f, %.1f, %.1f)", 
+                print(string.format("[CinematicCamera] Publishing - Pos: (%.2f, %.2f, %.2f), Euler: (%.1f, %.1f, %.1f)",
                     targetPos.x, targetPos.y, targetPos.z, pitch, yaw, roll))
             end
         end

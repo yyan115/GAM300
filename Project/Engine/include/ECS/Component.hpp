@@ -3,4 +3,4 @@
 #include <stdint.h>
 
 using ComponentID = uint8_t;
-const ComponentID MAX_COMPONENTS = 32;
+const ComponentID MAX_COMPONENTS = 64;
