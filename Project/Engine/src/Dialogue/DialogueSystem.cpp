@@ -92,26 +92,14 @@ void DialogueSystem::Update(float dt) {
                 if (dialogue.stateTimer <= dt && dialogue.currentIndex >= 0 &&
                     dialogue.currentIndex < static_cast<int>(dialogue.entries.size())) {
                     auto& entry = dialogue.entries[dialogue.currentIndex];
-                    if (dialogue.typewriterEnabled) {
-                        TextUtils::SetText(*textComp, "");
-                        dialogue.revealedChars = 0;
-                        dialogue.typewriterTimer = 0.0f;
-                    } else {
-                        TextUtils::SetText(*textComp, entry.text);
-                    }
+                    TextUtils::SetText(*textComp, entry.text);
                     textComp->isVisible = true;
                 }
             }
 
             if (progress >= 1.0f) {
-                if (dialogue.typewriterEnabled) {
-                    dialogue.phase = DialogueComponent::Phase::Typing;
-                    dialogue.typewriterTimer = 0.0f;
-                    dialogue.revealedChars = 0;
-                } else {
-                    dialogue.phase = DialogueComponent::Phase::Displaying;
-                    dialogue.stateTimer = 0.0f;
-                }
+                dialogue.phase = DialogueComponent::Phase::Displaying;
+                dialogue.stateTimer = 0.0f;
             }
             break;
         }
@@ -206,16 +194,8 @@ void DialogueSystem::Update(float dt) {
             }
 
             if (progress >= 1.0f) {
-                // Check if we're fading out between entries or ending
-                int nextIndex = dialogue.currentIndex + 1;
-                if (nextIndex < static_cast<int>(dialogue.entries.size())) {
-                    // Move to next entry
-                    dialogue.currentIndex = nextIndex;
-                    BeginEntry(dialogue);
-                } else {
-                    // Dialogue is done
-                    EndDialogue(dialogue);
-                }
+                // FadingOut only happens on last entry now - end dialogue
+                EndDialogue(dialogue);
             }
             break;
         }
@@ -247,7 +227,7 @@ void DialogueSystem::AdvanceToNextEntry(DialogueComponent& dialogue) {
     auto mode = static_cast<DialogueAppearanceMode>(dialogue.appearanceModeID);
 
     if (nextIndex >= static_cast<int>(dialogue.entries.size())) {
-        // This was the last entry - end the dialogue
+        // Last entry done - fade out if FadeInOut, else end immediately
         if (mode == DialogueAppearanceMode::FadeInOut && dialogue.fadeDuration > 0.0f) {
             dialogue.phase = DialogueComponent::Phase::FadingOut;
             dialogue.stateTimer = 0.0f;
@@ -257,16 +237,9 @@ void DialogueSystem::AdvanceToNextEntry(DialogueComponent& dialogue) {
         return;
     }
 
-    // Transition to next entry
-    if (mode == DialogueAppearanceMode::FadeInOut && dialogue.fadeDuration > 0.0f) {
-        // Fade out current, then fade in next (handled in FadingOut phase)
-        dialogue.phase = DialogueComponent::Phase::FadingOut;
-        dialogue.stateTimer = 0.0f;
-    } else {
-        // Instant mode - directly go to next entry
-        dialogue.currentIndex = nextIndex;
-        BeginEntry(dialogue);
-    }
+    // Between entries - always instant transition
+    dialogue.currentIndex = nextIndex;
+    BeginEntry(dialogue);
 }
 
 void DialogueSystem::BeginEntry(DialogueComponent& dialogue) {
@@ -285,31 +258,33 @@ void DialogueSystem::BeginEntry(DialogueComponent& dialogue) {
         textComp = &m_ecs->GetComponent<TextRenderComponent>(dialogue.textEntity);
     }
 
-    if (mode == DialogueAppearanceMode::FadeInOut && dialogue.fadeDuration > 0.0f) {
+    bool isFirstEntry = (dialogue.currentIndex == 0);
+
+    if (mode == DialogueAppearanceMode::FadeInOut && dialogue.fadeDuration > 0.0f && isFirstEntry) {
+        // Fade in only on the first entry
         dialogue.phase = DialogueComponent::Phase::FadingIn;
         if (textComp) {
             textComp->alpha = 0.0f;
-            if (dialogue.typewriterEnabled) {
-                TextUtils::SetText(*textComp, "");
-            } else if (dialogue.currentIndex >= 0 &&
-                       dialogue.currentIndex < static_cast<int>(dialogue.entries.size())) {
+            if (dialogue.currentIndex >= 0 &&
+                dialogue.currentIndex < static_cast<int>(dialogue.entries.size())) {
                 TextUtils::SetText(*textComp, dialogue.entries[dialogue.currentIndex].text);
             }
             textComp->isVisible = true;
         }
-    } else {
-        // Instant or no fade
+    } else if (mode == DialogueAppearanceMode::Typewriter) {
+        dialogue.phase = DialogueComponent::Phase::Typing;
         if (textComp) {
             textComp->alpha = 1.0f;
             textComp->isVisible = true;
+            TextUtils::SetText(*textComp, "");
         }
-
-        if (dialogue.typewriterEnabled) {
-            dialogue.phase = DialogueComponent::Phase::Typing;
-            if (textComp) TextUtils::SetText(*textComp, "");
-        } else {
-            dialogue.phase = DialogueComponent::Phase::Displaying;
-            if (textComp && dialogue.currentIndex >= 0 &&
+    } else {
+        // Instant
+        dialogue.phase = DialogueComponent::Phase::Displaying;
+        if (textComp) {
+            textComp->alpha = 1.0f;
+            textComp->isVisible = true;
+            if (dialogue.currentIndex >= 0 &&
                 dialogue.currentIndex < static_cast<int>(dialogue.entries.size())) {
                 TextUtils::SetText(*textComp, dialogue.entries[dialogue.currentIndex].text);
             }

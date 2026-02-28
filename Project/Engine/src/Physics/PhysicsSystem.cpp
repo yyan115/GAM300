@@ -244,11 +244,6 @@ void PhysicsSystem::Update(float fixedDt, ECSManager& ecsManager) {
         if (shouldBeActive && !isCurrentlyAdded) {
             // Re-add to the world (Wake it up)
             bi.AddBody(bodyId, JPH::EActivation::Activate);
-            // DEBUG: Log body re-activation
-            if (rb.isTrigger) {
-                std::string name = ecsManager.HasComponent<NameComponent>(e) ? ecsManager.GetComponent<NameComponent>(e).name : std::to_string(e);
-                ENGINE_PRINT("[Physics] Trigger body RE-ADDED: '", name, "' (entity ", (int)e, ")\n");
-            }
         }
         else if (!shouldBeActive && isCurrentlyAdded) {
             // Remove from the world (Stops all collisions and processing)
@@ -402,11 +397,6 @@ void PhysicsSystem::Update(float fixedDt, ECSManager& ecsManager) {
         std::vector<CollisionEvent> enters, exits;
         contactListener->DrainEvents(enters, exits);
 
-        // DEBUG: Log event counts if non-zero
-        if (!enters.empty()) {
-            ENGINE_PRINT("[Physics] Dispatching ", (int)enters.size(), " trigger/collision ENTER events\n");
-        }
-
         for (const auto& evt : enters) {
             Entity a = static_cast<Entity>(evt.entityA);
             Entity b = static_cast<Entity>(evt.entityB);
@@ -418,10 +408,6 @@ void PhysicsSystem::Update(float fixedDt, ECSManager& ecsManager) {
                 bIsTrigger = ecsManager.GetComponent<RigidBodyComponent>(b).isTrigger;
 
             const std::string fn = (aIsTrigger || bIsTrigger) ? "OnTriggerEnter" : "OnCollisionEnter";
-            // DEBUG: Log trigger dispatches
-            if (aIsTrigger || bIsTrigger) {
-                ENGINE_PRINT("[Physics] Calling ", fn, " on entities ", (int)a, " and ", (int)b, " (triggers: a=", aIsTrigger, ", b=", bIsTrigger, ")\n");
-            }
             ecsManager.scriptSystem->CallEntityFunctionWithInt(a, fn, evt.entityB, ecsManager);
             ecsManager.scriptSystem->CallEntityFunctionWithInt(b, fn, evt.entityA, ecsManager);
 

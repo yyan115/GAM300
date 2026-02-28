@@ -457,7 +457,7 @@ END_COMPONENT()
 BEGIN_COMPONENT(DialogueComponent, "DialogueComponent")
     PROPERTY("dialogueName", &DialogueComponent::dialogueName)
     PROPERTY("currentIndex", &DialogueComponent::currentIndex)
-    PROPERTY("typewriterEnabled", &DialogueComponent::typewriterEnabled)
+    PROPERTY("appearanceModeID", &DialogueComponent::appearanceModeID)
     PROPERTY("textSpeed", &DialogueComponent::textSpeed)
 END_COMPONENT()
 

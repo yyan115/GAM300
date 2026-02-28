@@ -14,8 +14,9 @@ enum class DialogueScrollType : int {
 
 // How text appears/disappears (top-level setting for entire dialogue)
 enum class DialogueAppearanceMode : int {
-    FadeInOut = 0,  // Fade text alpha in/out
-    Instant = 1     // Instantly appear/disappear
+    FadeInOut = 0,    // Fade text alpha in/out
+    Typewriter = 1,   // Letter-by-letter text reveal
+    Instant = 2       // Instantly appear/disappear
 };
 
 // A single dialogue line with its advancement settings
@@ -37,7 +38,7 @@ struct DialogueComponent {
     std::string textEntityGuidStr;        // GUID of entity with TextRenderComponent
     int appearanceModeID = 0;             // Maps to DialogueAppearanceMode
     float fadeDuration = 0.5f;            // Duration of fade in/out (seconds)
-    bool typewriterEnabled = false;       // Enable letter-by-letter text reveal
+    bool _deprecated_typewriter = false;  // Kept for serialization backward compat (do not use)
     float textSpeed = 50.0f;             // Characters per second (typewriter mode)
     std::vector<DialogueEntry> entries;   // The dialogue entries array
     bool autoStart = false;               // Automatically start this dialogue on scene load

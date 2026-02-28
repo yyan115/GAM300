@@ -7895,7 +7895,7 @@ void RegisterInspectorCustomRenderers()
         ImGui::Text("Appearance");
         ImGui::SameLine(labelWidth);
         ImGui::SetNextItemWidth(-1);
-        const char* appearanceModes[] = { "Fade In / Out", "Instant" };
+        const char* appearanceModes[] = { "Fade In / Out", "Typewriter", "Instant" };
         EditorComponents::PushComboColors();
         if (ImGui::Combo("##AppearanceMode", &dialogue.appearanceModeID, appearanceModes, IM_ARRAYSIZE(appearanceModes))) {
             SnapshotManager::GetInstance().TakeSnapshot("Change Dialogue Appearance");
@@ -7910,13 +7910,8 @@ void RegisterInspectorCustomRenderers()
             UndoableWidgets::DragFloat("##FadeDuration", &dialogue.fadeDuration, 0.01f, 0.0f, 10.0f, "%.2f sec");
         }
 
-        // --- Typewriter checkbox ---
-        ImGui::Text("Typewriter");
-        ImGui::SameLine(labelWidth);
-        UndoableWidgets::Checkbox("##Typewriter", &dialogue.typewriterEnabled);
-
-        // --- Text Speed (only if typewriter enabled) ---
-        if (dialogue.typewriterEnabled) {
+        // --- Text Speed (only if Typewriter) ---
+        if (dialogue.appearanceModeID == 1) {
             ImGui::Text("Text Speed");
             ImGui::SameLine(labelWidth);
             ImGui::SetNextItemWidth(-1);
@@ -8046,8 +8041,6 @@ void RegisterInspectorCustomRenderers()
     ReflectionRenderer::RegisterFieldRenderer("DialogueComponent", "appearanceModeID",
                                               [](const char*, void*, Entity, ECSManager&) { return true; });
     ReflectionRenderer::RegisterFieldRenderer("DialogueComponent", "fadeDuration",
-                                              [](const char*, void*, Entity, ECSManager&) { return true; });
-    ReflectionRenderer::RegisterFieldRenderer("DialogueComponent", "typewriterEnabled",
                                               [](const char*, void*, Entity, ECSManager&) { return true; });
     ReflectionRenderer::RegisterFieldRenderer("DialogueComponent", "textSpeed",
                                               [](const char*, void*, Entity, ECSManager&) { return true; });

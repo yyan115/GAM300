@@ -2,6 +2,9 @@
 #include "Dialogue/DialogueManager.hpp"
 #include "Dialogue/DialogueComponent.hpp"
 #include "ECS/ECSManager.hpp"
+#include "ECS/ActiveComponent.hpp"
+#include "Graphics/TextRendering/TextRenderComponent.hpp"
+#include "Graphics/TextRendering/TextUtils.hpp"
 #include "Hierarchy/EntityGUIDRegistry.hpp"
 #include "Utilities/GUID.hpp"
 #include "Logging.hpp"
@@ -67,8 +70,6 @@ void NarrativeDialogueManager::StartDialogue(const std::string& name) {
         // Retry lookup
         it = m_dialogues.find(name);
         if (it == m_dialogues.end()) {
-            ENGINE_PRINT(EngineLogging::LogLevel::Warn,
-                "[NarrativeDialogueManager] Dialogue not found: ", name);
             return;
         }
     }
@@ -84,8 +85,6 @@ void NarrativeDialogueManager::StartDialogue(const std::string& name) {
     auto& dialogue = m_ecs->GetComponent<DialogueComponent>(entity);
 
     if (dialogue.entries.empty()) {
-        ENGINE_PRINT(EngineLogging::LogLevel::Warn,
-            "[NarrativeDialogueManager] Dialogue has no entries: ", name);
         return;
     }
 
@@ -97,11 +96,34 @@ void NarrativeDialogueManager::StartDialogue(const std::string& name) {
     dialogue.triggerActivated = false;
     dialogue.scrollNextRequested = false;
 
+    // Activate text entity and initialize text component before first frame
+    if (dialogue.textEntity != 0) {
+        if (m_ecs->HasComponent<ActiveComponent>(dialogue.textEntity)) {
+            m_ecs->GetComponent<ActiveComponent>(dialogue.textEntity).isActive = true;
+        }
+        if (m_ecs->HasComponent<TextRenderComponent>(dialogue.textEntity)) {
+            auto& textComp = m_ecs->GetComponent<TextRenderComponent>(dialogue.textEntity);
+            auto mode = static_cast<DialogueAppearanceMode>(dialogue.appearanceModeID);
+
+            if (mode == DialogueAppearanceMode::FadeInOut && dialogue.fadeDuration > 0.0f) {
+                textComp.alpha = 0.0f;
+                TextUtils::SetText(textComp, dialogue.entries[0].text);
+            } else if (mode == DialogueAppearanceMode::Typewriter) {
+                textComp.alpha = 1.0f;
+                TextUtils::SetText(textComp, "");
+            } else {
+                textComp.alpha = 1.0f;
+                TextUtils::SetText(textComp, dialogue.entries[0].text);
+            }
+            textComp.isVisible = true;
+        }
+    }
+
     // Determine starting phase based on appearance mode
     auto mode = static_cast<DialogueAppearanceMode>(dialogue.appearanceModeID);
     if (mode == DialogueAppearanceMode::FadeInOut && dialogue.fadeDuration > 0.0f) {
         dialogue.phase = DialogueComponent::Phase::FadingIn;
-    } else if (dialogue.typewriterEnabled) {
+    } else if (mode == DialogueAppearanceMode::Typewriter) {
         dialogue.phase = DialogueComponent::Phase::Typing;
     } else {
         dialogue.phase = DialogueComponent::Phase::Displaying;
