@@ -562,8 +562,8 @@ void GraphicsManager::RenderText(const TextRenderComponent& item)
 
 	// Activate shader and set uniforms
 	item.shader->Activate();
-	item.shader->setVec3("textColor", item.color.ConvertToGLM());
-	item.shader->setFloat("textAlpha", item.alpha);
+	glm::vec4 textColorWithAlpha = glm::vec4(item.color.ConvertToGLM(), item.alpha);
+	item.shader->setVec4("textColor", textColorWithAlpha);
 
 	// Set up matrices based on whether it's 2D or 3D text
 	if (item.is3D)
