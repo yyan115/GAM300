@@ -681,6 +681,19 @@ void PhysicsSystem::CreatePhysicsBody(Entity e, ECSManager& ecsManager) {
         }
     }
 
+    // Apply local shape rotation if set (Euler degrees → quaternion, wrapped via RotatedTranslatedShape)
+    {
+        const auto& sr = col.shapeRotation;
+        if (sr.x != 0.0f || sr.y != 0.0f || sr.z != 0.0f) {
+            constexpr float kDeg2Rad = 0.01745329252f;
+            JPH::Quat shapeRot = JPH::Quat::sEulerAngles(
+                JPH::Vec3(sr.x * kDeg2Rad, sr.y * kDeg2Rad, sr.z * kDeg2Rad));
+            JPH::RotatedTranslatedShapeSettings rts(JPH::Vec3::sZero(), shapeRot, col.shape);
+            auto result = rts.Create();
+            if (result.IsValid()) col.shape = result.Get();
+        }
+    }
+
     const auto motionType =
         rb.motion == Motion::Static ? JPH::EMotionType::Static :
         rb.motion == Motion::Kinematic ? JPH::EMotionType::Kinematic :
