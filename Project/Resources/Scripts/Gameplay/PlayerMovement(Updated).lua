@@ -378,9 +378,11 @@ return Component {
                 end
             end
 
-            -- Clear jump state so Dash→Jump doesn't fire immediately
+            -- Clear jump/run state so Dash transitions cleanly
             self._animator:SetBool("IsJumping", false)
             self._isJumping = false
+            self._animator:SetBool("IsRunning", false)
+            self._isRunning = false
 
             self._animator:SetBool("IsDashing", true)
             print("[PlayerMovement] Dash started")
