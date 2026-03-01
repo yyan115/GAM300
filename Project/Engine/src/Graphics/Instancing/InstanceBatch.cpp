@@ -144,6 +144,14 @@ void InstanceBatch::UpdateInstanceBuffer()
         return;
     }
 
+    // If the VBO hasn't been created yet (ID 0), we MUST initialize it 
+    // with the full m_bufferCapacity, otherwise VBO::UpdateData will 
+    // create a tiny buffer that matches only the current frame's data size.
+    if (m_instanceVBO.ID == 0)
+    {
+        m_instanceVBO.InitializeBuffer(m_bufferCapacity * sizeof(InstanceData), GL_DYNAMIC_DRAW);
+    }
+
     // Check if we need to grow the buffer
     if (m_instances.size() > m_bufferCapacity) 
     {

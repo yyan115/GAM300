@@ -165,8 +165,10 @@ void MetaFilesManager::InitializeAssetMetaFiles(const std::string& rootAssetFold
 		if (MetaFileExists(assetPath)) {
 			// Check if asset file was updated since the resource file's last compilation time.
 			bool needsUpdate = false;
+			bool isShader = false;
 			if (AssetManager::GetInstance().IsExtensionShaderVertFrag(extension)) {
 				// Handle special shader logic (checking the stem instead of the specific file)
+				isShader = true;
 				assetPath = (filePath.parent_path() / filePath.stem()).generic_string();
 				if (AssetFileUpdated(assetPath, true)) {
 					needsUpdate = true;
@@ -180,16 +182,32 @@ void MetaFilesManager::InitializeAssetMetaFiles(const std::string& rootAssetFold
 			}
 
 			if (!needsUpdate) {
-				GUID_128 guid128 = GetGUID128FromAssetFile(assetPath);
-				AddGUID128Mapping(assetPath, guid128);
-				auto assetMeta = AssetManager::GetInstance().AddAssetMetaToMap(assetPath);
-				AssetManager::GetInstance().CompileAsset(assetMeta, false);
+				if (!isShader) {
+					GUID_128 guid128 = GetGUID128FromAssetFile(assetPath);
+					AddGUID128Mapping(assetPath, guid128);
+					auto assetMeta = AssetManager::GetInstance().AddAssetMetaToMap(assetPath);
+					AssetManager::GetInstance().CompileAsset(assetMeta, false);
+				}
+				else {
+					GUID_128 guid128 = GetGUID128FromAssetFile(assetPath);
+					AddGUID128Mapping(assetPath, guid128);
+					auto assetMeta = AssetManager::GetInstance().AddAssetMetaToMap(assetPath);
+					AssetManager::GetInstance().CompileAsset(assetPath + ".vert", false);
+				}
 			}
 			else {
-				// Asset file was updated since last compilation - must re-compile using existing meta data.
-				ENGINE_LOG_DEBUG("[MetaFilesManager] Asset file was updated: " + assetPath + ". Re-compiling using existing meta data...");
-				auto assetMeta = AssetManager::GetInstance().AddAssetMetaToMap(assetPath);
-				AssetManager::GetInstance().CompileAsset(assetMeta, true);
+				if (!isShader) {
+					// Asset file was updated since last compilation - must re-compile using existing meta data.
+					ENGINE_LOG_DEBUG("[MetaFilesManager] Asset file was updated: " + assetPath + ". Re-compiling using existing meta data...");
+					auto assetMeta = AssetManager::GetInstance().AddAssetMetaToMap(assetPath);
+					AssetManager::GetInstance().CompileAsset(assetMeta, true);
+				}
+				else {
+					GUID_128 guid128 = GetGUID128FromAssetFile(assetPath);
+					AddGUID128Mapping(assetPath, guid128);
+					auto assetMeta = AssetManager::GetInstance().AddAssetMetaToMap(assetPath);
+					AssetManager::GetInstance().CompileAsset(assetPath + ".vert", true);
+				}
 			}
 		}
 		else {
