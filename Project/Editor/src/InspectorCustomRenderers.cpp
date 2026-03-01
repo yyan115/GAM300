@@ -1299,6 +1299,71 @@ void RegisterInspectorCustomRenderers()
         return changed;
     });
 
+    // ColliderComponent shapeRotation field - entity-aware undo
+    ReflectionRenderer::RegisterFieldRenderer("ColliderComponent", "shapeRotation",
+    [](const char*, void*, Entity entity, ECSManager& ecs)
+    {
+        static std::unordered_map<Entity, Vector3D> startRot;
+        static std::unordered_map<Entity, bool> isEditingRot;
+
+        auto& collider = ecs.GetComponent<ColliderComponent>(entity);
+        const float labelWidth = EditorComponents::GetLabelWidth();
+
+        if (isEditingRot.find(entity) == isEditingRot.end()) {
+            isEditingRot[entity] = false;
+        }
+
+        ImGui::Text("Rotation");
+        ImGui::SameLine(labelWidth);
+        ImGui::SetNextItemWidth(-1);
+
+        float rot[3] = { collider.shapeRotation.x, collider.shapeRotation.y, collider.shapeRotation.z };
+
+        if (!isEditingRot[entity]) {
+            startRot[entity] = collider.shapeRotation;
+        }
+        if (ImGui::IsItemActivated()) {
+            startRot[entity] = collider.shapeRotation;
+            isEditingRot[entity] = true;
+        }
+
+        bool changed = false;
+        if (ImGui::DragFloat3("##ShapeRotation", rot, 1.0f)) {
+            collider.shapeRotation = Vector3D(rot[0], rot[1], rot[2]);
+            collider.version++;
+            isEditingRot[entity] = true;
+            changed = true;
+        }
+
+        if (isEditingRot[entity] && !ImGui::IsItemActive()) {
+            Vector3D oldVal = startRot[entity];
+            Vector3D newVal = collider.shapeRotation;
+            if ((oldVal.x != newVal.x || oldVal.y != newVal.y || oldVal.z != newVal.z) &&
+                UndoSystem::GetInstance().IsEnabled()) {
+                UndoSystem::GetInstance().RecordLambdaChange(
+                    [entity, newVal]() {
+                        ECSManager& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
+                        if (ecs.HasComponent<ColliderComponent>(entity)) {
+                            ecs.GetComponent<ColliderComponent>(entity).shapeRotation = newVal;
+                            ecs.GetComponent<ColliderComponent>(entity).version++;
+                        }
+                    },
+                    [entity, oldVal]() {
+                        ECSManager& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
+                        if (ecs.HasComponent<ColliderComponent>(entity)) {
+                            ecs.GetComponent<ColliderComponent>(entity).shapeRotation = oldVal;
+                            ecs.GetComponent<ColliderComponent>(entity).version++;
+                        }
+                    },
+                    "Edit Collider Rotation"
+                );
+            }
+            isEditingRot[entity] = false;
+        }
+
+        return changed;
+    });
+
     // ==================== RIGIDBODY COMPONENT ====================
     ReflectionRenderer::RegisterComponentRenderer("RigidBodyComponent",
     [](void *, TypeDescriptor_Struct *, Entity entity, ECSManager &ecs)
