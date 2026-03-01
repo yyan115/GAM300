@@ -49,6 +49,7 @@ return Component {
         DefaultComboWindow = 0.5,    -- Default time to continue combo
         HeavyChargeTime = 0.8,       -- Time to fully charge heavy
         DashDuration = 0.3,          -- Dash length
+        MaxComboAnimSpeed = 2.0,     -- Max animation speed when chaining quickly (multiplied on top of base)
 
         -- SFX clip arrays (populate in editor with audio GUIDs)
         playerSlashSFX = {},      -- FastSlash (whoosh on swing)
@@ -278,7 +279,11 @@ return Component {
         -- Block all combo input during dash
         if _G.player_is_dashing then return end
 
-        self._stateTimer = self._stateTimer + dt
+        -- Advance logical timer at the same rate as the animation playback.
+        -- When boosted (e.g. speed=4.0), timer runs 4x faster so the combo
+        -- window and auto-transition fire at the right moment instead of lagging behind.
+        local animSpeed = self._animator.speed or 1.0
+        self._stateTimer = self._stateTimer + dt * animSpeed
         local state = self._currentStateData
         
         -- Create state object for callbacks
@@ -315,12 +320,11 @@ return Component {
             timeRemaining = state.duration - self._stateTimer
         end
 
-        -- Combo window for this state (seconds). nil means "no continuation allowed".
+        -- Combo window for this state (real-time seconds). nil means "no continuation allowed".
+        -- Scale by animSpeed so the real-time window stays constant regardless of playback rate.
         local window = state.comboWindow
-        if window == nil then
-            window = nil  -- keep nil to indicate no continuation
-        else
-            window = window or self.DefaultComboWindow
+        if window ~= nil then
+            window = (window or self.DefaultComboWindow) * animSpeed
         end
 
         -- If we have a queued combo input, try to execute it once the window opens (or immediately if idle)
@@ -386,6 +390,20 @@ return Component {
                 data = candidateData,
                 requestedAt = self._stateTimer
             }
+
+            -- Speed up current animation based on how early the input came in.
+            -- earlyFactor=1 (pressed right at start) → maxSpeed, earlyFactor=0 (pressed at window) → 1.0
+            if timeRemaining and state.duration and state.duration > 0 and self._animator then
+                -- window is already in animation-time (scaled by animSpeed above).
+                -- earlyFactor: 1.0 = pressed at the very start, 0.0 = pressed right at window open.
+                local earlyTime = math.max(0, timeRemaining - (window or 0))
+                local earlyFactor = math.min(1.0, earlyTime / math.max(0.001, state.duration - (window or 0)))
+                -- Read the state machine's configured speed for this state (e.g. 2.0).
+                -- Boost is a multiplier on top of that: MaxComboAnimSpeed=2 means "up to 2x faster than normal".
+                local base = self._animator.speed
+                local speedMult = base * (1.0 + (self.MaxComboAnimSpeed - 1.0) * earlyFactor)
+                self._animator:SetSpeed(speedMult)
+            end
         end
 
         -- ===============================
@@ -421,6 +439,9 @@ return Component {
         self._currentStateId = stateId
         self._currentStateData = newState
         self._stateTimer = 0
+
+        -- Update global attacking flag so PlayerMovement can lock movement
+        _G.player_is_attacking = (stateId ~= "idle" and stateId ~= "dash")
 
         -- Update combo chain tracking
         if stateId ~= "idle" and stateId ~= "dash" then

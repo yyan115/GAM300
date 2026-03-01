@@ -305,6 +305,20 @@ return Component {
             self._dashCooldownTimer = self._dashCooldownTimer - dt
         end
 
+        -- ATTACK: lock movement input while attacking (knockback/lunge still handled above)
+        if _G.player_is_attacking then
+            self._animator:SetBool("IsRunning", false)
+            self._isRunning = false
+            local position = CharacterController.GetPosition(self._controller)
+            if position then
+                self:SetPosition(position.x, position.y, position.z)
+                if event_bus and event_bus.publish then
+                    event_bus.publish("player_position", position)
+                end
+            end
+            return
+        end
+
         -- RAW INPUT (LOCAL SPACE)
         local axis = Input and Input.GetAxis and Input.GetAxis("Movement") or { x = 0, y = 0 }
         local rawX = -axis.x
