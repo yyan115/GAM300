@@ -47,12 +47,12 @@ return Component {
                 if self._rb then self._rb:SetEnabled(true) end
             end)
 
-            -- Hit window closes: pull the body out — clears all contact state
+            -- Hit window closes: pull the body out on every state change — clears all contact state.
+            -- This means attack→attack transitions also cycle the RB off, so OnTriggerEnter
+            -- fires fresh for the next swing even if the enemy is already inside the collider.
             self._subState = event_bus.subscribe("combat_state_changed", function(data)
-                if data and data.state == "idle" then
-                    self._active = false
-                    if self._rb then self._rb:SetEnabled(false) end
-                end
+                self._active = false
+                if self._rb then self._rb:SetEnabled(false) end
             end)
         end
     end,
