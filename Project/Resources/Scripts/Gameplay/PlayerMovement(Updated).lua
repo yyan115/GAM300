@@ -60,6 +60,7 @@ return Component {
         DashSpeed = 5.0,
         DashDuration = 0.3,
         DashCooldown = 2.0,
+        CinematicSettleTime = 0.8,
         AirDashSpeedMultiplier = 1.5,  -- Air dash travels further than ground dash
         AirDashLift = 2.0,             -- Upward force during air dash to counteract gravity
         playerFootstepSFX = {},
@@ -135,8 +136,17 @@ return Component {
 
             print("[PlayerMovement] Subscribing to freeze_player")
             self._frozenBycinematic = false
+            self._freezePending = false
+            self._freezeSettleTimer = 0.0
             self._freezePlayerSub = event_bus.subscribe("freeze_player", function(frozen)
-                self._frozenBycinematic = frozen
+                if frozen then
+                    -- Block input immediately but let physics settle before hard freeze
+                    self._freezePending = true
+                    self._freezeSettleTimer = self.CinematicSettleTime or 0.8
+                else
+                    self._frozenBycinematic = false
+                    self._freezePending = false
+                end
                 print("[PlayerMovement] Frozen = " .. tostring(frozen))
             end)
         else
@@ -240,6 +250,15 @@ return Component {
             return
         end
 
+        -- Count down settle timer: input is already blocked, wait for physics to stop
+        if self._freezePending then
+            self._freezeSettleTimer = self._freezeSettleTimer - dt
+            if self._freezeSettleTimer <= 0 then
+                self._freezePending = false
+                self._frozenBycinematic = true
+            end
+        end
+
         -- Freeze movement during cinematic
         if self._frozenBycinematic then
             -- Still sync position and broadcast it, but skip all input/movement
@@ -306,7 +325,12 @@ return Component {
         end
 
         -- RAW INPUT (LOCAL SPACE)
-        local axis = Input and Input.GetAxis and Input.GetAxis("Movement") or { x = 0, y = 0 }
+        local axis
+        if self._freezePending then
+            axis = { x = 0, y = 0 }
+        else
+            axis = Input and Input.GetAxis and Input.GetAxis("Movement") or { x = 0, y = 0 }
+        end
         local rawX = -axis.x
         local rawZ = axis.y
 
@@ -351,6 +375,7 @@ return Component {
             and self._dashCooldownTimer <= 0
             and not self._isDamageStun
             and not self._isLanding
+            and not self._freezePending
             and Input and Input.IsActionJustPressed and Input.IsActionJustPressed("Dash")
         then
             self._isDashing = true
@@ -457,7 +482,7 @@ return Component {
         end
 
         -- JUMP
-        if not self._isLanding and Input and Input.IsActionJustPressed and Input.IsActionJustPressed("Jump") and isGrounded then
+        if not self._isLanding and not self._freezePending and Input and Input.IsActionJustPressed and Input.IsActionJustPressed("Jump") and isGrounded then
             CharacterController.Jump(self._controller, self.JumpHeight)
             isJumping = true
             self._animator:SetBool("IsJumping", true)
