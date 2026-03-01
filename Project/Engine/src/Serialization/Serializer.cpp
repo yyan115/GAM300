@@ -1079,10 +1079,7 @@ void Serializer::SerializePrefabOverridesRecursive(ECSManager& sceneECS, Entity 
             rapidjson::Value childNode(rapidjson::kObjectType);
             SerializePrefabOverridesRecursive(sceneECS, instChild, baseChild, alloc, childNode);
 
-            // Only add to list if there was actually an override inside
-            if (childNode.HasMember("ComponentOverrides") || childNode.HasMember("Children") || childNode.HasMember("DeletedChildren") || childNode.HasMember("Name")) {
-                childrenOverrides.PushBack(childNode, alloc);
-            }
+            childrenOverrides.PushBack(childNode, alloc);
         }
 
         // For each of the deleted base child entities, mark them as 'deleted' in the JSON so that they can be deleted when deserialized later.
