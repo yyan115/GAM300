@@ -1067,12 +1067,15 @@ void Serializer::SerializePrefabOverridesRecursive(ECSManager& sceneECS, Entity 
             SerializePrefabOverridesRecursive(sceneECS, instChild, baseChild, alloc, childNode);
 
             // Only add to list if there was actually an override inside
-            if (childNode.HasMember("ComponentOverrides") || childNode.HasMember("Children") || childNode.HasMember("DeletedChildren")) {
+            if (childNode.HasMember("ComponentOverrides") || childNode.HasMember("Children") || childNode.HasMember("DeletedChildren") || childNode.HasMember("Name")) {
                 childrenOverrides.PushBack(childNode, alloc);
             }
         }
 
         // For each of the deleted base child entities, mark them as 'deleted' in the JSON so that they can be deleted when deserialized later.
+        // CHANGED: We must add the child if it has a "Name" (which is added at the start of this function).
+        // This ensures that even if there are no component overrides, the Child is saved so its 
+        // GUID can be restored reliably by RestorePrefabHierarchy on load.
         rapidjson::Value deletedChildrenNode(rapidjson::kArrayType);
         for (const auto& deletedChild : deletedBaseChildren) {
             Entity deletedEntity = EntityGUIDRegistry::GetInstance().GetEntityByGUID(deletedChild);
