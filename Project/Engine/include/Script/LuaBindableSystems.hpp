@@ -393,6 +393,13 @@ namespace CharacterControllerWrappers {
             ecsManager.characterControllerSystem->RemoveController(id);
     }
 
+    inline void DisableCollision(Entity id)
+    {
+        auto& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
+        if (ecsManager.characterControllerSystem)
+            ecsManager.characterControllerSystem->DisableCollision(id);
+    }
+
     inline void UpdateAll(float dt)
     {
         auto& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();

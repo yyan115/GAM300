@@ -120,3 +120,14 @@ CharacterController* CharacterControllerSystem::GetController(Entity entity)
     auto it = m_controllers.find(entity);
     return (it != m_controllers.end()) ? it->second.get() : nullptr;
 }
+
+void CharacterControllerSystem::DisableCollision(Entity entity)
+{
+    auto it = m_controllers.find(entity);
+    if (it == m_controllers.end()) return;
+    JPH::CharacterVirtual* ch = const_cast<JPH::CharacterVirtual*>(it->second->GetCharacterVirtual());
+    if (!ch) return;
+    if (m_charVsCharCollision)
+        m_charVsCharCollision->Remove(ch);
+    ch->SetCharacterVsCharacterCollision(nullptr);
+}
