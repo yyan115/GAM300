@@ -1076,21 +1076,36 @@ void Serializer::SerializePrefabOverridesRecursive(ECSManager& sceneECS, Entity 
         // CHANGED: We must add the child if it has a "Name" (which is added at the start of this function).
         // This ensures that even if there are no component overrides, the Child is saved so its 
         // GUID can be restored reliably by RestorePrefabHierarchy on load.
+        std::vector<std::string> deletedChildrenNames{};
+
         rapidjson::Value deletedChildrenNode(rapidjson::kArrayType);
         for (const auto& deletedChild : deletedBaseChildren) {
             Entity deletedEntity = EntityGUIDRegistry::GetInstance().GetEntityByGUID(deletedChild);
-            rapidjson::Value deletedChildNode(rapidjson::kObjectType);
+            //rapidjson::Value deletedChildNode(rapidjson::kObjectType);
 
             // Serialize the information required to deserialize and restore the prefab hierarchy when deserializing later.
             //deletedChildNode = SerializeEntityGUID(deletedEntity, alloc, deletedChildNode);
             if (sceneECS.HasComponent<NameComponent>(deletedEntity)) {
                 std::string& name = sceneECS.GetComponent<NameComponent>(deletedEntity).name;
-                rapidjson::Value nameVal;
-                nameVal.SetString(name.c_str(), static_cast<rapidjson::SizeType>(name.length()), alloc);
+				deletedChildrenNames.push_back(name);
+                //rapidjson::Value nameVal;
+                //nameVal.SetString(name.c_str(), static_cast<rapidjson::SizeType>(name.length()), alloc);
 
-                deletedChildNode.AddMember("Name", nameVal, alloc);
+                //deletedChildNode.AddMember("Name", nameVal, alloc);
             }
 
+            //deletedChildrenNode.PushBack(deletedChildNode, alloc);
+        }
+
+        // Sort the deletedChildrenNames vector alphabetically to ensure consistent order in the scene file.
+        std::sort(deletedChildrenNames.begin(), deletedChildrenNames.end());
+
+        // Now add the sorted deleted children names to the scene JSON.
+        for (const auto& name : deletedChildrenNames) {
+            rapidjson::Value deletedChildNode(rapidjson::kObjectType);
+            rapidjson::Value nameVal;
+            nameVal.SetString(name.c_str(), static_cast<rapidjson::SizeType>(name.length()), alloc);
+            deletedChildNode.AddMember("Name", nameVal, alloc);
             deletedChildrenNode.PushBack(deletedChildNode, alloc);
         }
 
