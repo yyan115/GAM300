@@ -1019,7 +1019,16 @@ void Serializer::SerializePrefabOverridesRecursive(ECSManager& sceneECS, Entity 
     // We usually save the Name or Sibling Index to identify the entity on load.
     outEntityNode = SerializeEntityGUID(instanceEnt, alloc, outEntityNode);
     if (sceneECS.HasComponent<NameComponent>(instanceEnt)) {
-        outEntityNode.AddMember("Name", rapidjson::StringRef(sceneECS.GetComponent<NameComponent>(instanceEnt).name.c_str()), alloc);
+        const std::string& entityName = sceneECS.GetComponent<NameComponent>(instanceEnt).name;
+        rapidjson::Value nameVal;
+        nameVal.SetString(entityName.c_str(), static_cast<rapidjson::SizeType>(entityName.size()), alloc);
+        outEntityNode.AddMember("Name", nameVal, alloc);
+    }
+    // NEW: Always save sibling index so RestorePrefabHierarchy can use it as a tiebreaker
+    if (sceneECS.HasComponent<SiblingIndexComponent>(instanceEnt)) {
+        outEntityNode.AddMember("SiblingIndex",
+            sceneECS.GetComponent<SiblingIndexComponent>(instanceEnt).siblingIndex,
+            alloc);
     }
     if (sceneECS.HasComponent<ParentComponent>(instanceEnt)) {
         rapidjson::Value v = SerializeComponentToValue(sceneECS.GetComponent<ParentComponent>(instanceEnt), alloc);
@@ -1037,6 +1046,10 @@ void Serializer::SerializePrefabOverridesRecursive(ECSManager& sceneECS, Entity 
     // 3. Recurse Children
     if (sceneECS.HasComponent<ChildrenComponent>(instanceEnt)) {
         auto& instChildren = sceneECS.GetComponent<ChildrenComponent>(instanceEnt).children;
+        if (baselineEnt == static_cast<Entity>(-1) || !sceneECS.HasComponent<ChildrenComponent>(baselineEnt)) {
+            // No baseline — serialize all instance children as new additions
+            return;
+        }
         auto& baseChildren = sceneECS.GetComponent<ChildrenComponent>(baselineEnt).children;
 
         std::unordered_set<GUID_128> deletedBaseChildren{};
@@ -1157,8 +1170,7 @@ void Serializer::UpdateEntityGUID_Safe(ECSManager& ecs, Entity entity, GUID_128 
 
 void Serializer::RestorePrefabHierarchy(ECSManager& ecs, Entity currentEntity, const rapidjson::Value& jsonNode) {
     // 1. Restore GUID for THIS entity
-    // (This calls the safe swapper we wrote above)
-    if (jsonNode.HasMember("guid")) { // Ensure this key matches your save format ("guid" vs "GUID")
+    if (jsonNode.HasMember("guid")) {
         GUID_128 savedGUID = DeserializeEntityGUID(jsonNode);
         UpdateEntityGUID_Safe(ecs, currentEntity, savedGUID);
     }
@@ -1168,31 +1180,56 @@ void Serializer::RestorePrefabHierarchy(ECSManager& ecs, Entity currentEntity, c
         const auto& jsonChildren = jsonNode["Children"];
         auto& childrenComp = ecs.GetComponent<ChildrenComponent>(currentEntity);
 
-        // COPY the real children entities to a vector first.
-        // Why? Because 'UpdateEntityGUID_Safe' modifies the GUIDs, which effectively modifies
-        // the map/registry lookups. We want a stable list of Entity IDs to iterate.
-        std::vector<Entity> realChildrenEntities;
-        for (auto& g : childrenComp.children) {
-            realChildrenEntities.push_back(EntityGUIDRegistry::GetInstance().GetEntityByGUID(g));
+        // Build candidate pool from live children
+        std::list<Entity> candidates;
+        for (auto& childGUID : childrenComp.children) {
+            Entity childEnt = EntityGUIDRegistry::GetInstance().GetEntityByGUID(childGUID);
+            if (childEnt != static_cast<Entity>(-1))
+                candidates.push_back(childEnt);
         }
 
-        // Iterate JSON children
         for (const auto& jsonChild : jsonChildren.GetArray()) {
             if (!jsonChild.HasMember("Name")) continue;
-            std::string nameToFind = jsonChild["Name"].GetString();
+            std::string savedName = jsonChild["Name"].GetString();
 
-            // Find match in real hierarchy by Name
+            // Read saved sibling index if present
+            bool hasSavedSiblingIndex = jsonChild.HasMember("SiblingIndex");
+            int savedSiblingIndex = hasSavedSiblingIndex ? jsonChild["SiblingIndex"].GetInt() : -1;
+
             Entity match = static_cast<Entity>(-1);
-            for (Entity ent : realChildrenEntities) {
-                if (ent != static_cast<Entity>(-1) && ecs.GetComponent<NameComponent>(ent).name == nameToFind) {
-                    match = ent;
-                    break;
+            auto matchIt = candidates.end();
+
+            // Pass 1: Match by Name AND SiblingIndex (exact, unambiguous)
+            if (hasSavedSiblingIndex) {
+                for (auto it = candidates.begin(); it != candidates.end(); ++it) {
+                    if (!ecs.HasComponent<NameComponent>(*it)) continue;
+                    if (ecs.GetComponent<NameComponent>(*it).name != savedName) continue;
+
+                    if (ecs.HasComponent<SiblingIndexComponent>(*it) &&
+                        ecs.GetComponent<SiblingIndexComponent>(*it).siblingIndex == savedSiblingIndex) {
+                        match = *it;
+                        matchIt = it;
+                        break;
+                    }
                 }
             }
 
-            // If found, recurse down
+            // Pass 2: Fallback — name only (for old scene files that lack SiblingIndex,
+            //         or entities that genuinely have unique names)
+            if (match == static_cast<Entity>(-1)) {
+                for (auto it = candidates.begin(); it != candidates.end(); ++it) {
+                    if (!ecs.HasComponent<NameComponent>(*it)) continue;
+                    if (ecs.GetComponent<NameComponent>(*it).name == savedName) {
+                        match = *it;
+                        matchIt = it;
+                        break;
+                    }
+                }
+            }
+
             if (match != static_cast<Entity>(-1)) {
                 RestorePrefabHierarchy(ecs, match, jsonChild);
+                candidates.erase(matchIt);
             }
         }
     }
