@@ -63,6 +63,8 @@ return Component {
         CinematicSettleTime = 0.8,
         AirDashSpeedMultiplier = 1.5,  -- Air dash travels further than ground dash
         AirDashLift = 2.0,             -- Upward force during air dash to counteract gravity
+        AttackLungeSpeed = 3.0,        -- Forward speed burst when an attack starts
+        AttackLungeDuration = 0.12,    -- How long (real seconds) the lunge lasts
         playerFootstepSFX = {},
         playerHurtSFX = {},
         playerJumpSFX = {},
@@ -124,6 +126,25 @@ return Component {
                 if respawn then
                     self._respawnPlayer = true
                 end
+            end)
+
+            -- Attack lunge: burst forward in facing direction when any attack fires
+            self._lungeTimer = 0
+            self._lungeDirX  = 0
+            self._lungeDirZ  = 0
+            self._attackLungeSub = event_bus.subscribe("attack_performed", function(data)
+                -- Forward direction from the current Y-axis rotation quaternion (W, 0, Y, 0).
+                -- Double-angle identity: sin(2θ)=2·W·Y, cos(2θ)=W²−Y²
+                local w = self._currentRotW
+                local y = self._currentRotY
+                local fwdX = 2.0 * w * y
+                local fwdZ = w * w - y * y
+                local len = math.sqrt(fwdX * fwdX + fwdZ * fwdZ)
+                if len > 0.001 then
+                    self._lungeDirX = fwdX / len
+                    self._lungeDirZ = fwdZ / len
+                end
+                self._lungeTimer = self.AttackLungeDuration or 0.12
             end)
 
             print("[PlayerMovement] Subscribing to activatedCheckpoint")
@@ -322,6 +343,17 @@ return Component {
         -- DASH COOLDOWN
         if self._dashCooldownTimer > 0 then
             self._dashCooldownTimer = self._dashCooldownTimer - dt
+        end
+
+        -- ATTACK LUNGE: forward burst for the first AttackLungeDuration seconds of each attack
+        if self._lungeTimer and self._lungeTimer > 0 then
+            self._lungeTimer = self._lungeTimer - dt
+            CharacterController.Move(
+                self._controller,
+                self._lungeDirX * (self.AttackLungeSpeed or 3.0),
+                0,
+                self._lungeDirZ * (self.AttackLungeSpeed or 3.0)
+            )
         end
 
         -- ATTACK: lock movement input while attacking (knockback/lunge still handled above)
@@ -616,6 +648,10 @@ return Component {
             if self._freezePlayerSub then
                 event_bus.unsubscribe(self._freezePlayerSub)
                 self._freezePlayerSub = nil
+            end
+            if self._attackLungeSub then
+                event_bus.unsubscribe(self._attackLungeSub)
+                self._attackLungeSub = nil
             end
         end
         self._frozenBycinematic = false
