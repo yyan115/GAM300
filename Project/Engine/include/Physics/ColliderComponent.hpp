@@ -32,6 +32,7 @@ struct ColliderComponent {
 	JPH::RefConst<JPH::Shape> shape;
 
 	Vector3D center = { 0,0,0 };
+	Vector3D shapeRotation = { 0,0,0 };  // Local rotation offset in degrees (Euler XYZ)
 
 	//Vector3D offset = { 0,0,0 };
 
