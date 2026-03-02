@@ -1,10 +1,19 @@
 -- ChainEndpointController.lua
 local Component = require("extension.mono_helper")
 
+-- Toggle this global at runtime to enable all chain endpoint debug logs:
+-- _G.CHAIN_DEBUG = true
+local function dbg(msg)
+    if _G.CHAIN_DEBUG then
+        print(msg)
+    end
+end
+
 return Component {
     fields = {
         PlayerName = "Player",
         HookSnapDistance = 0.0,  -- max offset from hooked entity pivot; 0 = snap exactly to pivot
+        DebugLogs = false,       -- enable debug logs from inspector
     },
 
     Start = function(self)
@@ -23,7 +32,7 @@ return Component {
         self._playerEntityId = nil
         if Engine and Engine.GetEntityByName then
             self._playerEntityId = Engine.GetEntityByName(self.PlayerName)
-            print("[ChainEndpointController] Player entity resolved: '" .. self:_getEntityDebugName(self._playerEntityId) .. "'")
+            self:_dbg("[ChainEndpointController] Player entity resolved: '" .. self:_getEntityDebugName(self._playerEntityId) .. "'")
         else
             print("[ChainEndpointController] WARNING: Engine.GetEntityByName not available")
         end
@@ -31,8 +40,8 @@ return Component {
         self._isVisible       = false
         self._isExtending     = false
         self._hookedEntityId  = nil
-        self._hookedTransform = nil  -- ROOT transform for position tracking
-        self._hookedColliderTransform = nil  -- collided part transform for rotation
+        self._hookedTransform = nil
+        self._hookedColliderTransform = nil
         self._hookedOffsetX   = 0
         self._hookedOffsetY   = 0
         self._hookedOffsetZ   = 0
@@ -69,6 +78,13 @@ return Component {
     -- Helpers
     -- -------------------------------------------------------------------------
 
+    -- Internal debug print — checks both the inspector field and the global toggle
+    _dbg = function(self, msg)
+        if self.DebugLogs or _G.CHAIN_DEBUG then
+            print(msg)
+        end
+    end,
+
     _getEntityDebugName = function(self, entityId)
         if not entityId then return "nil" end
         if Engine and Engine.GetEntityName then
@@ -85,7 +101,7 @@ return Component {
             while true do
                 depth = depth + 1
                 if depth > 32 then
-                    print("[ChainEndpointController] WARNING: _getRootEntityId hit depth limit at '" .. self:_getEntityDebugName(targetId) .. "'")
+                    self:_dbg("[ChainEndpointController] WARNING: _getRootEntityId hit depth limit at '" .. self:_getEntityDebugName(targetId) .. "'")
                     break
                 end
                 local parentId = Engine.GetParentEntity(targetId)
@@ -97,7 +113,7 @@ return Component {
     end,
 
     _clearHook = function(self)
-        print("[ChainEndpointController] _clearHook — releasing '" .. self:_getEntityDebugName(self._hookedEntityId) .. "'")
+        self:_dbg("[ChainEndpointController] _clearHook — releasing '" .. self:_getEntityDebugName(self._hookedEntityId) .. "'")
         self._hookedEntityId          = nil
         self._hookedTransform         = nil
         self._hookedColliderTransform = nil
@@ -110,7 +126,7 @@ return Component {
         if not self._modelRender then return end
         pcall(function() ModelRenderComponent.SetVisible(self._modelRender, visible) end)
         self._isVisible = visible
-        print("[ChainEndpointController] Model visible=" .. tostring(visible))
+        self:_dbg("[ChainEndpointController] Model visible=" .. tostring(visible))
     end,
 
     -- -------------------------------------------------------------------------
@@ -133,18 +149,18 @@ return Component {
             self._isExtending = true
             self._rbKeepAliveFrames = 0
             if self._rb then self._rb:SetEnabled(true) end
-            print("[ChainEndpointController] Extending — trigger enabled")
+            self:_dbg("[ChainEndpointController] Extending — trigger enabled")
         elseif not extending and self._isExtending then
             self._isExtending = false
             self._rbKeepAliveFrames = 3
-            print("[ChainEndpointController] No longer extending — trigger window open (3 frames)")
+            self:_dbg("[ChainEndpointController] No longer extending — trigger window open (3 frames)")
         end
 
         if not self._isExtending and self._rbKeepAliveFrames and self._rbKeepAliveFrames > 0 then
             self._rbKeepAliveFrames = self._rbKeepAliveFrames - 1
             if self._rbKeepAliveFrames == 0 and not self._hookedEntityId then
                 if self._rb then self._rb:SetEnabled(false) end
-                print("[ChainEndpointController] Trigger window closed — RB disabled")
+                self:_dbg("[ChainEndpointController] Trigger window closed — RB disabled")
             end
         end
 
@@ -164,18 +180,15 @@ return Component {
                     elseif type(a) == "number" then
                         px, py, pz = a, b, c
                     end
-                    print(string.format("[ChainEndpointController] TRACK '%s' root pivot=(%.3f,%.3f,%.3f)", hookedName, px, py, pz))
+                    self:_dbg(string.format("[ChainEndpointController] TRACK '%s' root pivot=(%.3f,%.3f,%.3f)", hookedName, px, py, pz))
                 else
-                    print("[ChainEndpointController] WARNING: GetTransformWorldPosition failed for '" .. hookedName .. "'")
+                    self:_dbg("[ChainEndpointController] WARNING: GetTransformWorldPosition failed for '" .. hookedName .. "'")
                 end
             else
-                print("[ChainEndpointController] WARNING: no root transform for '" .. hookedName .. "'")
+                self:_dbg("[ChainEndpointController] WARNING: no root transform for '" .. hookedName .. "'")
             end
 
             if px then
-                -- HookSnapDistance: clamp offset magnitude
-                -- 0 = snap exactly to pivot (zero offset)
-                -- >0 = allow up to that distance from pivot
                 local ox = self._hookedOffsetX or 0
                 local oy = self._hookedOffsetY or 0
                 local oz = self._hookedOffsetZ or 0
@@ -190,7 +203,7 @@ return Component {
                         oy = oy * scale
                         oz = oz * scale
                     end
-                    print(string.format("[ChainEndpointController] Offset clamped: snapDist=%.3f offLen=%.3f -> new offset=(%.3f,%.3f,%.3f)",
+                    self:_dbg(string.format("[ChainEndpointController] Offset clamped: snapDist=%.3f offLen=%.3f -> new offset=(%.3f,%.3f,%.3f)",
                         snapDist, offLen, ox, oy, oz))
                 end
 
@@ -198,7 +211,7 @@ return Component {
                 local wy = py + oy
                 local wz = pz + oz
 
-                print(string.format("[ChainEndpointController] HOOK '%s' world pos=(%.3f,%.3f,%.3f) final offset=(%.3f,%.3f,%.3f)",
+                self:_dbg(string.format("[ChainEndpointController] HOOK '%s' world pos=(%.3f,%.3f,%.3f) final offset=(%.3f,%.3f,%.3f)",
                     hookedName, wx, wy, wz, ox, oy, oz))
 
                 if _G.event_bus and _G.event_bus.publish then
@@ -208,7 +221,6 @@ return Component {
                     })
                 end
 
-                -- Publish collider transform for ChainBootstrap to apply rotation
                 if self._hookedColliderTransform then
                     if _G.event_bus and _G.event_bus.publish then
                         _G.event_bus.publish("chain.endpoint_hooked_rotation", {
@@ -217,7 +229,7 @@ return Component {
                     end
                 end
             else
-                print("[ChainEndpointController] ERROR: Could not resolve position for '" .. hookedName .. "'")
+                self:_dbg("[ChainEndpointController] ERROR: Could not resolve position for '" .. hookedName .. "'")
             end
         end
     end,
@@ -226,7 +238,21 @@ return Component {
         if self._isVisible then
             self:_setModelVisible(false)
         end
-        print("[ChainEndpointController] Endpoint retracted — clearing hook state")
+        self:_dbg("[ChainEndpointController] Endpoint retracted — clearing hook state")
+
+        if self._hookedEntityId then
+            local hookedName = self:_getEntityDebugName(self._hookedEntityId)
+            local rootId = self:_getRootEntityId(self._hookedEntityId)
+            local rootName = self:_getEntityDebugName(rootId)
+            self:_dbg("[ChainEndpointController] Was hooked to '" .. hookedName .. "' (root='" .. rootName .. "') on retract — publishing chain.enemy_hooked")
+            if _G.event_bus and _G.event_bus.publish then
+                _G.event_bus.publish("chain.enemy_hooked", {
+                    entityId = rootId,
+                    duration = 2.0, --4.0 equivalent to humping
+                })
+            end
+        end
+
         self._isExtending = false
         self:_clearHook()
         if self._rb then self._rb:SetEnabled(false) end
@@ -241,64 +267,60 @@ return Component {
 
         local rbActive = self._rb and self._rb:IsEnabled()
         if not rbActive then
-            print("[ChainEndpointController] OnTriggerEnter ignored — RB not active | entity='" .. otherName .. "'")
+            self:_dbg("[ChainEndpointController] OnTriggerEnter ignored — RB not active | entity='" .. otherName .. "'")
             return
         end
         if self._hookedEntityId then
-            print("[ChainEndpointController] OnTriggerEnter ignored — already hooked to '" .. self:_getEntityDebugName(self._hookedEntityId) .. "' | new contact='" .. otherName .. "'")
+            self:_dbg("[ChainEndpointController] OnTriggerEnter ignored — already hooked to '" .. self:_getEntityDebugName(self._hookedEntityId) .. "' | new contact='" .. otherName .. "'")
             return
         end
 
         if self._playerEntityId and otherEntityId == self._playerEntityId then
-            print("[ChainEndpointController] OnTriggerEnter ignored — hit player '" .. otherName .. "'")
+            self:_dbg("[ChainEndpointController] OnTriggerEnter ignored — hit player '" .. otherName .. "'")
             return
         end
 
-        -- Tag check via root
         local rootId = self:_getRootEntityId(otherEntityId)
         local rootName = self:_getEntityDebugName(rootId)
         local tag = nil
         if Engine and Engine.GetEntityTag then
             local ok, t = pcall(function() return Engine.GetEntityTag(rootId) end)
             if ok then tag = t else
-                print("[ChainEndpointController] WARNING: GetEntityTag failed for root '" .. rootName .. "'")
+                self:_dbg("[ChainEndpointController] WARNING: GetEntityTag failed for root '" .. rootName .. "'")
             end
         end
 
-        print("[ChainEndpointController] OnTriggerEnter entity='" .. otherName .. "' root='" .. rootName .. "' tag='" .. tostring(tag) .. "'")
+        self:_dbg("[ChainEndpointController] OnTriggerEnter entity='" .. otherName .. "' root='" .. rootName .. "' tag='" .. tostring(tag) .. "'")
 
         -- To add more hookable types extend here:
         -- local isHookable = (tag == "Enemy") or (tag == "Hookable")
         local isHookable = (tag == "Enemy")
         if not isHookable then
-            print("[ChainEndpointController] OnTriggerEnter ignored — root='" .. rootName .. "' tag='" .. tostring(tag) .. "' not hookable")
+            self:_dbg("[ChainEndpointController] OnTriggerEnter ignored — root='" .. rootName .. "' tag='" .. tostring(tag) .. "' not hookable")
             return
         end
 
-        print("[ChainEndpointController] OnTriggerEnter HOOKING — entity='" .. otherName .. "' root='" .. rootName .. "'")
+        self:_dbg("[ChainEndpointController] OnTriggerEnter HOOKING — entity='" .. otherName .. "' root='" .. rootName .. "'")
 
         self._hookedEntityId = otherEntityId
         self._isExtending = false
         if self._rb then self._rb:SetEnabled(false) end
 
-        -- ROOT transform for position tracking (root is what moves)
         self._hookedTransform = Engine.FindTransformByName(rootName)
         if self._hookedTransform then
-            print("[ChainEndpointController] Root transform cached: '" .. rootName .. "'")
+            self:_dbg("[ChainEndpointController] Root transform cached: '" .. rootName .. "'")
         else
-            print("[ChainEndpointController] WARNING: FindTransformByName failed for root '" .. rootName .. "'")
+            self:_dbg("[ChainEndpointController] WARNING: FindTransformByName failed for root '" .. rootName .. "'")
         end
 
-        -- COLLIDER transform for rotation (the actual part that was hit)
         self._hookedColliderTransform = Engine.FindTransformByName(otherName)
         if self._hookedColliderTransform then
-            print("[ChainEndpointController] Collider transform cached for rotation: '" .. otherName .. "'")
+            self:_dbg("[ChainEndpointController] Collider transform cached for rotation: '" .. otherName .. "'")
         else
-            print("[ChainEndpointController] WARNING: FindTransformByName failed for collider '" .. otherName .. "' — rotation fallback to root")
+            self:_dbg("[ChainEndpointController] WARNING: FindTransformByName failed for collider '" .. otherName .. "' — rotation fallback to root")
             self._hookedColliderTransform = self._hookedTransform
         end
 
-        -- Impact offset from root pivot
         local impactX = self._lastEndpointX or 0
         local impactY = self._lastEndpointY or 0
         local impactZ = self._lastEndpointZ or 0
@@ -316,9 +338,9 @@ return Component {
                 elseif type(a) == "number" then
                     rootPivotX, rootPivotY, rootPivotZ = a, b, c
                 end
-                print(string.format("[ChainEndpointController] Root pivot='%s' (%.3f,%.3f,%.3f)", rootName, rootPivotX, rootPivotY, rootPivotZ))
+                self:_dbg(string.format("[ChainEndpointController] Root pivot='%s' (%.3f,%.3f,%.3f)", rootName, rootPivotX, rootPivotY, rootPivotZ))
             else
-                print("[ChainEndpointController] WARNING: GetTransformWorldPosition failed for root '" .. rootName .. "'")
+                self:_dbg("[ChainEndpointController] WARNING: GetTransformWorldPosition failed for root '" .. rootName .. "'")
             end
         end
 
@@ -326,7 +348,6 @@ return Component {
         local oy = impactY - rootPivotY
         local oz = impactZ - rootPivotZ
 
-        -- Clamp offset to HookSnapDistance immediately on hook
         local snapDist = tonumber(self.HookSnapDistance) or 0
         local offLen = math.sqrt(ox*ox + oy*oy + oz*oz)
         if offLen > snapDist then
@@ -338,7 +359,7 @@ return Component {
                 oy = oy * scale
                 oz = oz * scale
             end
-            print(string.format("[ChainEndpointController] Initial offset clamped: snapDist=%.3f offLen=%.3f -> (%.3f,%.3f,%.3f)",
+            self:_dbg(string.format("[ChainEndpointController] Initial offset clamped: snapDist=%.3f offLen=%.3f -> (%.3f,%.3f,%.3f)",
                 snapDist, offLen, ox, oy, oz))
         end
 
@@ -346,7 +367,7 @@ return Component {
         self._hookedOffsetY = oy
         self._hookedOffsetZ = oz
 
-        print(string.format("[ChainEndpointController] Hook locked on '%s' (root='%s') impact=(%.3f,%.3f,%.3f) rootPivot=(%.3f,%.3f,%.3f) offset=(%.3f,%.3f,%.3f)",
+        self:_dbg(string.format("[ChainEndpointController] Hook locked on '%s' (root='%s') impact=(%.3f,%.3f,%.3f) rootPivot=(%.3f,%.3f,%.3f) offset=(%.3f,%.3f,%.3f)",
             otherName, rootName,
             impactX, impactY, impactZ,
             rootPivotX, rootPivotY, rootPivotZ,
@@ -362,15 +383,15 @@ return Component {
     end,
 
     _onAttach = function(self, payload)
-        print("[ChainEndpointController] _onAttach called")
+        self:_dbg("[ChainEndpointController] _onAttach called")
     end,
 
     _onDetach = function(self, payload)
-        print("[ChainEndpointController] _onDetach called")
+        self:_dbg("[ChainEndpointController] _onDetach called")
     end,
 
     _onCheckCollision = function(self, payload)
-        print("[ChainEndpointController] _onCheckCollision called")
+        self:_dbg("[ChainEndpointController] _onCheckCollision called")
     end,
 
     OnDisable = function(self)
