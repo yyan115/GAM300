@@ -1,0 +1,11 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "0007b7a60f9508b3-000462b83a000043",
+        "source": "../../Resources/Models/Environment/GongDrum.fbx",
+        "compiled": "../../Resources/Models/Environment/GongDrum.mesh"
+    },
+    "ModelMetaData": {
+        "optimizeMeshes": true
+    }
+}
