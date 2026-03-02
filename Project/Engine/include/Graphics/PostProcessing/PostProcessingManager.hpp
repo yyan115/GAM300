@@ -2,6 +2,7 @@
 
 #include "PostProcessEffect.hpp"
 #include "HDR/HDREffect.hpp"
+#include "Blur/BlurEffect.hpp"
 #include <memory>
 #include <vector>
 #include "Engine.h"
@@ -29,6 +30,7 @@ public:
     void EndHDRRender(unsigned int outputFBO, int width, int height);
 
     HDREffect* GetHDREffect() { return hdrEffect.get(); }
+    BlurEffect* GetBlurEffect() { return blurEffect.get(); }
 
     void RenderScreenQuad();
 
@@ -43,6 +45,7 @@ private:
     void DeleteScreenQuad();
 
     // Effects (in order of application)
+    std::unique_ptr<BlurEffect> blurEffect;
     std::unique_ptr<HDREffect> hdrEffect;
     // std::unique_ptr<BloomEffect> bloomEffect; // We'll add this next
     // Add more effects here as needed

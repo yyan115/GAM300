@@ -36,7 +36,7 @@
             "defaultValue": 0.0
         },
         {
-            "name": "PlayerInRange",
+            "name": "PlayerInAttackRange",
             "type": "Bool",
             "defaultValue": 0.0
         },
@@ -62,6 +62,11 @@
         },
         {
             "name": "Flying",
+            "type": "Bool",
+            "defaultValue": 0.0
+        },
+        {
+            "name": "PlayerInDetectionRange",
             "type": "Bool",
             "defaultValue": 0.0
         }
@@ -107,8 +112,19 @@
             "speed": 1.0,
             "crossfadeDuration": 0.0,
             "nodePosition": {
-                "x": 306.9285888671875,
+                "x": 321.9285888671875,
                 "y": -292.39288330078125
+            }
+        },
+        {
+            "id": "Hurt3",
+            "clipIndex": 7,
+            "loop": false,
+            "speed": 2.000000238418579,
+            "crossfadeDuration": 0.0,
+            "nodePosition": {
+                "x": 645.9998168945313,
+                "y": -123.99993896484375
             }
         },
         {
@@ -118,8 +134,8 @@
             "speed": 1.2000000476837158,
             "crossfadeDuration": 0.0,
             "nodePosition": {
-                "x": 428.5,
-                "y": -504.0
+                "x": 438.5,
+                "y": -546.0
             }
         },
         {
@@ -134,17 +150,6 @@
             }
         },
         {
-            "id": "Move",
-            "clipIndex": 2,
-            "loop": true,
-            "speed": 1.0,
-            "crossfadeDuration": 0.0,
-            "nodePosition": {
-                "x": 30.5,
-                "y": -301.0
-            }
-        },
-        {
             "id": "Hurt2",
             "clipIndex": 6,
             "loop": false,
@@ -156,21 +161,54 @@
             }
         },
         {
-            "id": "Hurt3",
-            "clipIndex": 7,
-            "loop": false,
-            "speed": 2.000000238418579,
+            "id": "Ground Chase",
+            "clipIndex": 8,
+            "loop": true,
+            "speed": 1.0,
+            "crossfadeDuration": 0.20000000298023224,
+            "nodePosition": {
+                "x": 98.0,
+                "y": -471.0
+            }
+        },
+        {
+            "id": "Ground Patrol",
+            "clipIndex": 2,
+            "loop": true,
+            "speed": 1.0,
             "crossfadeDuration": 0.0,
             "nodePosition": {
-                "x": 645.9998168945313,
-                "y": -123.99993896484375
+                "x": -73.5,
+                "y": -286.0
+            }
+        },
+        {
+            "id": "Flying Patrol",
+            "clipIndex": 0,
+            "loop": true,
+            "speed": 1.0,
+            "crossfadeDuration": 0.20000000298023224,
+            "nodePosition": {
+                "x": -294.5,
+                "y": -432.0
+            }
+        },
+        {
+            "id": "Flying Chase",
+            "clipIndex": 0,
+            "loop": true,
+            "speed": 1.0,
+            "crossfadeDuration": 0.20000000298023224,
+            "nodePosition": {
+                "x": 64.9876708984375,
+                "y": -580.2098999023438
             }
         }
     ],
     "transitions": [
         {
             "from": "Idle",
-            "to": "Move",
+            "to": "Ground Patrol",
             "anyState": false,
             "hasExitTime": true,
             "exitTime": 0.05999999865889549,
@@ -180,11 +218,16 @@
                     "paramName": "PatrolEnabled",
                     "mode": "Equals",
                     "threshold": 1.0
+                },
+                {
+                    "paramName": "Flying",
+                    "mode": "Equals",
+                    "threshold": 0.0
                 }
             ]
         },
         {
-            "from": "Move",
+            "from": "Ground Patrol",
             "to": "Idle",
             "anyState": false,
             "hasExitTime": true,
@@ -193,66 +236,6 @@
             "conditions": [
                 {
                     "paramName": "PatrolEnabled",
-                    "mode": "Equals",
-                    "threshold": 0.0
-                }
-            ]
-        },
-        {
-            "from": "Move",
-            "to": "Melee Attack",
-            "anyState": false,
-            "hasExitTime": true,
-            "exitTime": 0.05000000074505806,
-            "transitionDuration": 0.03999999910593033,
-            "conditions": [
-                {
-                    "paramName": "Passive",
-                    "mode": "Equals",
-                    "threshold": 0.0
-                },
-                {
-                    "paramName": "Melee",
-                    "mode": "Equals",
-                    "threshold": 1.0
-                }
-            ]
-        },
-        {
-            "from": "Melee Attack",
-            "to": "Move",
-            "anyState": false,
-            "hasExitTime": true,
-            "exitTime": 0.9100000262260437,
-            "transitionDuration": 0.8999999761581421,
-            "conditions": [
-                {
-                    "paramName": "Melee",
-                    "mode": "Equals",
-                    "threshold": 0.0
-                },
-                {
-                    "paramName": "Dead",
-                    "mode": "Equals",
-                    "threshold": 0.0
-                },
-                {
-                    "paramName": "Passive",
-                    "mode": "Equals",
-                    "threshold": 0.0
-                },
-                {
-                    "paramName": "Hurt1",
-                    "mode": "Equals",
-                    "threshold": 0.0
-                },
-                {
-                    "paramName": "Hurt2",
-                    "mode": "Equals",
-                    "threshold": 0.0
-                },
-                {
-                    "paramName": "Hurt3",
                     "mode": "Equals",
                     "threshold": 0.0
                 }
@@ -323,31 +306,6 @@
             "conditions": []
         },
         {
-            "from": "Move",
-            "to": "Ranged Attack",
-            "anyState": false,
-            "hasExitTime": true,
-            "exitTime": 0.03999999910593033,
-            "transitionDuration": 0.05000000074505806,
-            "conditions": [
-                {
-                    "paramName": "Passive",
-                    "mode": "Equals",
-                    "threshold": 0.0
-                },
-                {
-                    "paramName": "Dead",
-                    "mode": "Equals",
-                    "threshold": 0.0
-                },
-                {
-                    "paramName": "Ranged",
-                    "mode": "Equals",
-                    "threshold": 1.0
-                }
-            ]
-        },
-        {
             "from": "Hurt1",
             "to": "Ranged Attack",
             "anyState": false,
@@ -384,46 +342,6 @@
         },
         {
             "from": "Ranged Attack",
-            "to": "Move",
-            "anyState": false,
-            "hasExitTime": true,
-            "exitTime": 0.9300000071525574,
-            "transitionDuration": 0.949999988079071,
-            "conditions": [
-                {
-                    "paramName": "Hurt1",
-                    "mode": "Equals",
-                    "threshold": 0.0
-                },
-                {
-                    "paramName": "Dead",
-                    "mode": "Equals",
-                    "threshold": 0.0
-                },
-                {
-                    "paramName": "Passive",
-                    "mode": "Equals",
-                    "threshold": 0.0
-                },
-                {
-                    "paramName": "Ranged",
-                    "mode": "Equals",
-                    "threshold": 0.0
-                },
-                {
-                    "paramName": "Hurt2",
-                    "mode": "Equals",
-                    "threshold": 0.0
-                },
-                {
-                    "paramName": "Hurt3",
-                    "mode": "Equals",
-                    "threshold": 0.0
-                }
-            ]
-        },
-        {
-            "from": "Ranged Attack",
             "to": "Hurt1",
             "anyState": false,
             "hasExitTime": true,
@@ -453,7 +371,7 @@
             ]
         },
         {
-            "from": "Move",
+            "from": "Ground Patrol",
             "to": "Death",
             "anyState": false,
             "hasExitTime": true,
@@ -788,7 +706,7 @@
             ]
         },
         {
-            "from": "Move",
+            "from": "Ground Patrol",
             "to": "Hurt1",
             "anyState": false,
             "hasExitTime": true,
@@ -803,7 +721,7 @@
             ]
         },
         {
-            "from": "Move",
+            "from": "Ground Patrol",
             "to": "Hurt2",
             "anyState": false,
             "hasExitTime": true,
@@ -818,7 +736,7 @@
             ]
         },
         {
-            "from": "Move",
+            "from": "Ground Patrol",
             "to": "Hurt3",
             "anyState": false,
             "hasExitTime": true,
@@ -876,6 +794,411 @@
                     "threshold": 1.0
                 }
             ]
+        },
+        {
+            "from": "Ground Patrol",
+            "to": "Ground Chase",
+            "anyState": false,
+            "hasExitTime": true,
+            "exitTime": 0.05000000074505806,
+            "transitionDuration": 0.03999999910593033,
+            "conditions": [
+                {
+                    "paramName": "PlayerInDetectionRange",
+                    "mode": "Equals",
+                    "threshold": 1.0
+                },
+                {
+                    "paramName": "Flying",
+                    "mode": "Equals",
+                    "threshold": 0.0
+                }
+            ]
+        },
+        {
+            "from": "Ground Chase",
+            "to": "Melee Attack",
+            "anyState": false,
+            "hasExitTime": true,
+            "exitTime": 0.05000000074505806,
+            "transitionDuration": 0.03999999910593033,
+            "conditions": [
+                {
+                    "paramName": "Passive",
+                    "mode": "Equals",
+                    "threshold": 0.0
+                },
+                {
+                    "paramName": "Melee",
+                    "mode": "Equals",
+                    "threshold": 1.0
+                },
+                {
+                    "paramName": "PlayerInAttackRange",
+                    "mode": "Equals",
+                    "threshold": 1.0
+                }
+            ]
+        },
+        {
+            "from": "Melee Attack",
+            "to": "Ground Chase",
+            "anyState": false,
+            "hasExitTime": true,
+            "exitTime": 0.9100000262260437,
+            "transitionDuration": 0.8999999761581421,
+            "conditions": [
+                {
+                    "paramName": "Melee",
+                    "mode": "Equals",
+                    "threshold": 0.0
+                },
+                {
+                    "paramName": "Dead",
+                    "mode": "Equals",
+                    "threshold": 0.0
+                },
+                {
+                    "paramName": "Passive",
+                    "mode": "Equals",
+                    "threshold": 0.0
+                },
+                {
+                    "paramName": "PlayerInAttackRange",
+                    "mode": "Equals",
+                    "threshold": 0.0
+                },
+                {
+                    "paramName": "Hurt1",
+                    "mode": "Equals",
+                    "threshold": 0.0
+                },
+                {
+                    "paramName": "Hurt2",
+                    "mode": "Equals",
+                    "threshold": 0.0
+                },
+                {
+                    "paramName": "Hurt3",
+                    "mode": "Equals",
+                    "threshold": 0.0
+                }
+            ]
+        },
+        {
+            "from": "Ground Chase",
+            "to": "Ground Patrol",
+            "anyState": false,
+            "hasExitTime": true,
+            "exitTime": 0.05000000074505806,
+            "transitionDuration": 0.03999999910593033,
+            "conditions": [
+                {
+                    "paramName": "PlayerInDetectionRange",
+                    "mode": "Equals",
+                    "threshold": 0.0
+                },
+                {
+                    "paramName": "PlayerInAttackRange",
+                    "mode": "Equals",
+                    "threshold": 0.0
+                }
+            ]
+        },
+        {
+            "from": "Ground Chase",
+            "to": "Ranged Attack",
+            "anyState": false,
+            "hasExitTime": true,
+            "exitTime": 0.03999999910593033,
+            "transitionDuration": 0.05000000074505806,
+            "conditions": [
+                {
+                    "paramName": "Passive",
+                    "mode": "Equals",
+                    "threshold": 0.0
+                },
+                {
+                    "paramName": "Dead",
+                    "mode": "Equals",
+                    "threshold": 0.0
+                },
+                {
+                    "paramName": "Ranged",
+                    "mode": "Equals",
+                    "threshold": 1.0
+                },
+                {
+                    "paramName": "PlayerInAttackRange",
+                    "mode": "Equals",
+                    "threshold": 1.0
+                }
+            ]
+        },
+        {
+            "from": "Ranged Attack",
+            "to": "Ground Chase",
+            "anyState": false,
+            "hasExitTime": true,
+            "exitTime": 0.9300000071525574,
+            "transitionDuration": 0.949999988079071,
+            "conditions": [
+                {
+                    "paramName": "PlayerInAttackRange",
+                    "mode": "Equals",
+                    "threshold": 0.0
+                },
+                {
+                    "paramName": "Dead",
+                    "mode": "Equals",
+                    "threshold": 0.0
+                },
+                {
+                    "paramName": "Ranged",
+                    "mode": "Equals",
+                    "threshold": 0.0
+                },
+                {
+                    "paramName": "Hurt1",
+                    "mode": "Equals",
+                    "threshold": 0.0
+                },
+                {
+                    "paramName": "Hurt2",
+                    "mode": "Equals",
+                    "threshold": 0.0
+                },
+                {
+                    "paramName": "Hurt3",
+                    "mode": "Equals",
+                    "threshold": 0.0
+                },
+                {
+                    "paramName": "Passive",
+                    "mode": "Equals",
+                    "threshold": 0.0
+                },
+                {
+                    "paramName": "Flying",
+                    "mode": "Equals",
+                    "threshold": 0.0
+                }
+            ]
+        },
+        {
+            "from": "Idle",
+            "to": "Flying Patrol",
+            "anyState": false,
+            "hasExitTime": true,
+            "exitTime": 0.05999999865889549,
+            "transitionDuration": 0.05999999865889549,
+            "conditions": [
+                {
+                    "paramName": "PatrolEnabled",
+                    "mode": "Equals",
+                    "threshold": 1.0
+                },
+                {
+                    "paramName": "Flying",
+                    "mode": "Equals",
+                    "threshold": 1.0
+                }
+            ]
+        },
+        {
+            "from": "Flying Patrol",
+            "to": "Idle",
+            "anyState": false,
+            "hasExitTime": true,
+            "exitTime": 0.07000000029802322,
+            "transitionDuration": 0.03999999910593033,
+            "conditions": [
+                {
+                    "paramName": "PatrolEnabled",
+                    "mode": "Equals",
+                    "threshold": 0.0
+                }
+            ]
+        },
+        {
+            "from": "Flying Patrol",
+            "to": "Flying Chase",
+            "anyState": false,
+            "hasExitTime": true,
+            "exitTime": 0.05000000074505806,
+            "transitionDuration": 0.03999999910593033,
+            "conditions": [
+                {
+                    "paramName": "PlayerInDetectionRange",
+                    "mode": "Equals",
+                    "threshold": 1.0
+                },
+                {
+                    "paramName": "Flying",
+                    "mode": "Equals",
+                    "threshold": 1.0
+                }
+            ]
+        },
+        {
+            "from": "Flying Chase",
+            "to": "Flying Patrol",
+            "anyState": false,
+            "hasExitTime": true,
+            "exitTime": 0.05000000074505806,
+            "transitionDuration": 0.03999999910593033,
+            "conditions": [
+                {
+                    "paramName": "PlayerInDetectionRange",
+                    "mode": "Equals",
+                    "threshold": 0.0
+                },
+                {
+                    "paramName": "PlayerInAttackRange",
+                    "mode": "Equals",
+                    "threshold": 0.0
+                }
+            ]
+        },
+        {
+            "from": "Flying Chase",
+            "to": "Ranged Attack",
+            "anyState": false,
+            "hasExitTime": true,
+            "exitTime": 0.03999999910593033,
+            "transitionDuration": 0.05000000074505806,
+            "conditions": [
+                {
+                    "paramName": "Passive",
+                    "mode": "Equals",
+                    "threshold": 0.0
+                },
+                {
+                    "paramName": "Dead",
+                    "mode": "Equals",
+                    "threshold": 0.0
+                },
+                {
+                    "paramName": "Ranged",
+                    "mode": "Equals",
+                    "threshold": 1.0
+                },
+                {
+                    "paramName": "PlayerInAttackRange",
+                    "mode": "Equals",
+                    "threshold": 1.0
+                },
+                {
+                    "paramName": "Flying",
+                    "mode": "Equals",
+                    "threshold": 1.0
+                }
+            ]
+        },
+        {
+            "from": "Ranged Attack",
+            "to": "Flying Chase",
+            "anyState": false,
+            "hasExitTime": true,
+            "exitTime": 0.9300000071525574,
+            "transitionDuration": 0.949999988079071,
+            "conditions": [
+                {
+                    "paramName": "Flying",
+                    "mode": "Equals",
+                    "threshold": 1.0
+                },
+                {
+                    "paramName": "PlayerInAttackRange",
+                    "mode": "Equals",
+                    "threshold": 0.0
+                },
+                {
+                    "paramName": "Ranged",
+                    "mode": "Equals",
+                    "threshold": 0.0
+                },
+                {
+                    "paramName": "Hurt1",
+                    "mode": "Equals",
+                    "threshold": 0.0
+                },
+                {
+                    "paramName": "Hurt2",
+                    "mode": "Equals",
+                    "threshold": 0.0
+                },
+                {
+                    "paramName": "Hurt3",
+                    "mode": "Equals",
+                    "threshold": 0.0
+                },
+                {
+                    "paramName": "Passive",
+                    "mode": "Equals",
+                    "threshold": 0.0
+                }
+            ]
+        },
+        {
+            "from": "Ground Chase",
+            "to": "Death",
+            "anyState": false,
+            "hasExitTime": true,
+            "exitTime": 0.05000000074505806,
+            "transitionDuration": 0.07000000029802322,
+            "conditions": [
+                {
+                    "paramName": "Dead",
+                    "mode": "Equals",
+                    "threshold": 1.0
+                }
+            ]
+        },
+        {
+            "from": "Ground Chase",
+            "to": "Hurt1",
+            "anyState": false,
+            "hasExitTime": true,
+            "exitTime": 0.029999999329447746,
+            "transitionDuration": 0.05999999865889549,
+            "conditions": [
+                {
+                    "paramName": "Hurt1",
+                    "mode": "Equals",
+                    "threshold": 1.0
+                }
+            ]
+        },
+        {
+            "from": "Ground Chase",
+            "to": "Hurt2",
+            "anyState": false,
+            "hasExitTime": true,
+            "exitTime": 0.03999999910593033,
+            "transitionDuration": 0.07000000029802322,
+            "conditions": [
+                {
+                    "paramName": "Hurt2",
+                    "mode": "Equals",
+                    "threshold": 1.0
+                }
+            ]
+        },
+        {
+            "from": "Ground Chase",
+            "to": "Hurt3",
+            "anyState": false,
+            "hasExitTime": true,
+            "exitTime": 0.05999999865889549,
+            "transitionDuration": 0.07000000029802322,
+            "conditions": [
+                {
+                    "paramName": "Hurt3",
+                    "mode": "Equals",
+                    "threshold": 1.0
+                }
+            ]
         }
     ],
     "clipPaths": [
@@ -886,6 +1209,7 @@
         "Resources/Animations/Enemy@AttackThrow.fbx",
         "Resources/Animations/Enemy@Hurt.fbx",
         "Resources/Animations/Enemy@Hurt2.fbx",
-        "Resources/Animations/Enemy@Hurt3.fbx"
+        "Resources/Animations/Enemy@Hurt3.fbx",
+        "Resources/Animations/Enemy@Run.fbx"
     ]
 }

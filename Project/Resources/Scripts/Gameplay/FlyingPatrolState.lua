@@ -12,9 +12,9 @@ function FlyingPatrol:Enter(ai)
         ai._patrolTarget = (ai._patrolWhich == 1) and ai._patrolA or ai._patrolB
     end
 
-    if ai._animator then
-        ai._animator:SetBool("Moving", true)
-    end
+    ai._animator:SetBool("Flying", true)
+    ai._animator:SetBool("PlayerInDetectionRange", false)
+    ai._animator:SetBool("PatrolEnabled", true)
 end
 
 function FlyingPatrol:Update(ai, dt)
@@ -39,6 +39,7 @@ function FlyingPatrol:Update(ai, dt)
         ai._patrolWaitT = (ai._patrolWaitT or 0) - dt
         if ai._patrolWaitT <= 0 then
             ai._isPatrolWait = false
+            ai._animator:SetBool("PatrolEnabled", true)
             ai._patrolWaitT = ai.PatrolWait or 1.5
 
             -- flip target
@@ -46,6 +47,7 @@ function FlyingPatrol:Update(ai, dt)
             ai._patrolTarget = (ai._patrolWhich == 1) and ai._patrolA or ai._patrolB
         else
             -- stand still while waiting
+            ai._animator:SetBool("PatrolEnabled", false)
             return
         end
     end
@@ -80,12 +82,6 @@ function FlyingPatrol:Update(ai, dt)
     local _, y, _ = ai:GetPosition()
     ai:SetPosition(ex + dirX * step, y, ez + dirZ * step)
     ai:FaceDirection(dirX, dirZ)
-end
-
-function FlyingPatrol:Exit(ai)
-    if ai._animator then
-        ai._animator:SetBool("Moving", false)
-    end
 end
 
 return FlyingPatrol

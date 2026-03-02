@@ -562,7 +562,8 @@ void GraphicsManager::RenderText(const TextRenderComponent& item)
 
 	// Activate shader and set uniforms
 	item.shader->Activate();
-	item.shader->setVec3("textColor", item.color.ConvertToGLM());
+	glm::vec4 textColorWithAlpha = glm::vec4(item.color.ConvertToGLM(), item.alpha);
+	item.shader->setVec4("textColor", textColorWithAlpha);
 
 	// Set up matrices based on whether it's 2D or 3D text
 	if (item.is3D)
@@ -883,6 +884,15 @@ void GraphicsManager::RenderSprite(const SpriteRenderComponent& item)
 	item.shader->setVec4("spriteColor", spriteColor);
 	item.shader->setVec2("uvOffset", item.uvOffset);
 	item.shader->setVec2("uvScale", item.uvScale);
+	item.shader->setInt("fillMode", item.fillMode);
+	if (item.fillMode == 1) {
+		float fillAmount = (item.fillMaxValue > 0.0f)
+			? glm::clamp(item.fillValue / item.fillMaxValue, 0.0f, 1.0f)
+			: 0.0f;
+		item.shader->setFloat("fillAmount", fillAmount);
+		item.shader->setFloat("fillGlow", item.fillGlow);
+		item.shader->setFloat("fillBackground", item.fillBackground);
+	}
 
 	// Set up matrices based on rendering mode
 	if (item.is3D)

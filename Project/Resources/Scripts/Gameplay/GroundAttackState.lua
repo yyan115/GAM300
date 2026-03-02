@@ -9,7 +9,9 @@ local function stopCC(ai)
 end
 
 function AttackState:Enter(ai)
-    ai._animator:SetBool("PlayerInRange", true)
+    ai._animator:SetBool("PlayerInAttackRange", true)
+    ai._animator:SetBool("PlayerInDetectionRange", false)
+    ai._animator:SetBool("PatrolEnabled", false)
     -- if not ai.IsMelee then
     --     ai._animator:SetBool("Ranged", true)
     -- else
@@ -118,7 +120,7 @@ function AttackState:Update(ai, dt)
 end
 
 function AttackState:Exit(ai)
-    ai._animator:SetBool("PlayerInRange", false)
+    ai._animator:SetBool("PlayerInAttackRange", false)
     ai._animator:SetBool("Ranged", false)
     ai._animator:SetBool("Melee", false)
     ai.meleeAnimTriggered = false

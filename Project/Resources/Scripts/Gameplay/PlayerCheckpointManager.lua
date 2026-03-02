@@ -62,6 +62,7 @@ return Component {
 
                     if event_bus and event_bus.publish then
                         event_bus.publish("activatedCheckpoint", respawnPointEnt)
+                        event_bus.publish("playerHeal", 5)
                     end
                 end
 

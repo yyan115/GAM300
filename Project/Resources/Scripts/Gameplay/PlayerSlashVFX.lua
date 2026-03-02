@@ -75,7 +75,8 @@ return Component {
         end
         
         self._wasAttacking = isAttacking
-        if not isAttacking then return end
+        -- Let an in-progress sweep finish even if the attack state ended early
+        if not isAttacking and not self.active and not self.delaying then return end
 
         if self.delaying then
             self.delayTimer = self.delayTimer + dt

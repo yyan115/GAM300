@@ -27,6 +27,8 @@
 #include <ECS/ECSRegistry.hpp>
 #include <Serialization/Serializer.hpp>
 #include <Graphics/Model/ModelFactory.hpp>
+#include <Physics/ColliderComponent.hpp>
+#include <Physics/RigidBodyComponent.hpp>
 
 // ---------- helpers ----------
 static inline bool IsZeroGUID(const GUID_128& g) { return g.high == 0 && g.low == 0; }
@@ -153,6 +155,19 @@ static void ApplyOne(ECSManager& ecs,
 
         if (ecs.HasComponent<ModelRenderComponent>(e)) ecs.GetComponent<ModelRenderComponent>(e) = mrc;
         else                                           ecs.AddComponent<ModelRenderComponent>(e, mrc);
+        return;
+    }
+
+    if (strcmp(typeName, "ColliderComponent") == 0) {
+        ColliderComponent comp{};
+        Serializer::DeserializeColliderComponent(comp, val);
+        if (ecs.HasComponent<ColliderComponent>(e)) ecs.GetComponent<ColliderComponent>(e) = comp;
+        else                                        ecs.AddComponent<ColliderComponent>(e, comp);
+        return;
+    }
+
+    if (strcmp(typeName, "RigidBodyComponent") == 0) {
+        ApplyReflectedComponent<RigidBodyComponent>(ecs, e, val, fromPrefabUpdate);
         return;
     }
 

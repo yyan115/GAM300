@@ -315,6 +315,12 @@ void SceneRenderer::BeginGameRender(int width, int height)
 
 void SceneRenderer::EndGameRender()
 {
+    // Prevent double blur: SceneInstance::Draw already applied blur in its own
+    // EndHDRRender pass. Running blur again here with different dimensions would
+    // partially overwrite hdrColorTexture, causing a double image artifact.
+    BlurEffect* blur = PostProcessingManager::GetInstance().GetBlurEffect();
+    if (blur) blur->SetIntensity(0.0f);
+
     PostProcessingManager::GetInstance().EndHDRRender(gameFrameBuffer, gameWidth, gameHeight);
     // Unbind framebuffer (render to screen again)
     glBindFramebuffer(GL_FRAMEBUFFER, 0);

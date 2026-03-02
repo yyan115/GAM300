@@ -23,6 +23,7 @@
 #include "UI/Slider/SliderSystem.hpp"
 #include "UI/Anchor/UIAnchorSystem.hpp"
 #include "Video/VideoSystem.hpp"
+#include "Dialogue/DialogueSystem.hpp"
 #include "Script/ScriptSystem.hpp"
 class PhysicsSystem;
 class CharacterControllerSystem;
@@ -168,6 +169,7 @@ public:
 	std::shared_ptr<SliderSystem> sliderSystem;
 	std::shared_ptr<UIAnchorSystem> uiAnchorSystem;
 	std::shared_ptr<VideoSystem> videoSystem;
+	std::shared_ptr<DialogueSystem> dialogueSystem;
 private:
 	template <typename T>
 	ComponentID GetComponentID() {

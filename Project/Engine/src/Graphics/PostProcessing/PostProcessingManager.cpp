@@ -48,6 +48,14 @@ bool PostProcessingManager::Initialize()
         return false;
     }
 
+    // Initialize Blur effect (applied before HDR tonemapping)
+    blurEffect = std::make_unique<BlurEffect>();
+    if (!blurEffect->Initialize())
+    {
+        ENGINE_PRINT(EngineLogging::LogLevel::Error, "[PostProcessingManager] Failed to initialize Blur effect!\n");
+        return false;
+    }
+
     // Future effects will be initialized here
     // bloomEffect = std::make_unique<BloomEffect>();
     // if (!bloomEffect->Initialize()) { return false; }
@@ -59,7 +67,13 @@ bool PostProcessingManager::Initialize()
 
 void PostProcessingManager::Shutdown()
 {
-    if (hdrEffect) 
+    if (blurEffect)
+    {
+        blurEffect->Shutdown();
+        blurEffect.reset();
+    }
+
+    if (hdrEffect)
     {
         hdrEffect->Shutdown();
         hdrEffect.reset();
@@ -83,19 +97,17 @@ void PostProcessingManager::Process(unsigned int inputTexture, unsigned int outp
         return;
     }
 
-    // Current pipeline: HDR tone mapping only
-    // Future pipeline: Bloom -> HDR -> Color Grading -> Output
+    // Current pipeline: Blur -> HDR tone mapping -> Output
 
     unsigned int currentInput = inputTexture;
     unsigned int currentOutput = outputFBO;
 
-    // Future: Apply bloom before tone mapping (extracts and blurs bright areas)
-    // if (bloomEffect && bloomEffect->IsEnabled()) {
-    //     // Bloom needs to output to an intermediate buffer
-    //     // Then that becomes input to HDR
-    //     bloomEffect->Apply(currentInput, bloomIntermediateBuffer, width, height);
-    //     currentInput = bloomIntermediateBuffer;
-    // }
+    // Apply blur before tonemapping (modifies HDR framebuffer in-place)
+    if (blurEffect && blurEffect->IsEnabled() && blurEffect->GetIntensity() > 0.01f)
+    {
+        blurEffect->Apply(currentInput, hdrFramebuffer, width, height);
+        // hdrColorTexture now contains blurred image, currentInput still points to it
+    }
 
     // Apply HDR effect (shader will bypass tonemapping if disabled)
     if (hdrEffect)

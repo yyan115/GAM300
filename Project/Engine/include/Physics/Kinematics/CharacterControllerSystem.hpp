@@ -41,6 +41,7 @@ public:
 
     void RemoveController(Entity entity);
     CharacterController* GetController(Entity entity);
+    void DisableCollision(Entity entity);
 
 
 private:

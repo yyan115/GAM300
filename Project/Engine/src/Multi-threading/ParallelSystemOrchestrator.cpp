@@ -83,6 +83,7 @@ void ParallelSystemOrchestrator::Update() {
     PROFILE_PLOT_TIMED("Lighting", mainECS.lightingSystem->Update());
     PROFILE_PLOT_TIMED("Button",   mainECS.buttonSystem->Update());
     PROFILE_PLOT_TIMED("Slider",   mainECS.sliderSystem->Update());
+    PROFILE_PLOT_TIMED("Dialogue", mainECS.dialogueSystem->Update((float)TimeManager::GetDeltaTime()));
 }
 
 void ParallelSystemOrchestrator::Draw() {

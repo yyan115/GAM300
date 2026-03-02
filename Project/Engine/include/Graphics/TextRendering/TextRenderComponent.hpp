@@ -19,6 +19,7 @@ public:
     GUID_128 shaderGUID{};
     Vector3D position{};
     Vector3D color{ 1.0f, 1.0f, 1.0f };
+    float alpha = 1.0f; // 0.0 = invisible, 1.0 = fully visible
     bool is3D = false; // false for screen space, true for world space
     int sortingLayer = 0; // Sorting layer (higher = drawn on top)
     int sortingOrder = 0; // Order within the sorting layer (higher = drawn on top)
@@ -62,6 +63,7 @@ public:
         shaderGUID(other.shaderGUID),
         position(other.position),
         color(other.color),
+        alpha(other.alpha),
         is3D(other.is3D),
         sortingLayer(other.sortingLayer),
         sortingOrder(other.sortingOrder),
@@ -90,6 +92,7 @@ public:
             shader = other.shader;
             position = other.position;
             color = other.color;
+            alpha = other.alpha;
             is3D = other.is3D;
             sortingLayer = other.sortingLayer;
             sortingOrder = other.sortingOrder;
