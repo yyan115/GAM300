@@ -2,8 +2,17 @@
     "prefab_entities": [
         {
             "id": 0,
-            "guid": "002fa2440d714d5d-000402304e0000b5",
+            "guid": "00345ceb2f6dd66d-000460ded20087db",
             "components": {
+                "PrefabLinkComponent": {
+                    "type": "PrefabLinkComponent",
+                    "data": [
+                        {
+                            "type": "std::string",
+                            "data": "../../Resources/Prefabs/Camera (1).prefab"
+                        }
+                    ]
+                },
                 "NameComponent": {
                     "name": "Camera"
                 },
@@ -201,13 +210,149 @@
                             "entryFunction": "OnInit",
                             "autoInvokeEntry": true,
                             "instanceState": {
-                                "enemyDisengageRange": 3.0,
-                                "followDistance": 0.1,
-                                "enemyDetectionRange": 2.0,
-                                "maxPitch": 30.0,
-                                "minPitch": -20.0,
+                                "chainAimTargetName": "ChainAimPointLeftEnd",
+                                "_transform_fetched": false,
                                 "followLerp": 15.0,
-                                "actionModePitch": 40.0
+                                "Move": null,
+                                "cacheUpdateInterval": 1.0,
+                                "_yaw": 180.0,
+                                "SetRotation": null,
+                                "actionModeLockRotation": false,
+                                "_enemyInRange": false,
+                                "_cinematicActive": false,
+                                "SetScale": null,
+                                "After": null,
+                                "heightOffset": 1.0,
+                                "StartSafe": null,
+                                "maxZoom": 15.0,
+                                "_hasTarget": false,
+                                "Unsubscribe": null,
+                                "_private": {},
+                                "_firstMouse": true,
+                                "_posSub": {
+                                    "event": "player_position",
+                                    "id": 16.0
+                                },
+                                "zoomSpeed": 1.0,
+                                "enemyDetectionRange": 2.0,
+                                "_updateMouseLook": null,
+                                "enemyDisengageRange": 3.0,
+                                "_updateScrollZoom": null,
+                                "mouseSensitivity": 0.15,
+                                "DeserializeFields": null,
+                                "_updateEnemyProximity": null,
+                                "minPitch": -20.0,
+                                "DisableSafe": null,
+                                "Awake": null,
+                                "_getDistanceToEnemy": null,
+                                "GetRotation": null,
+                                "_chainAimBlend": 0.0,
+                                "_lastMouseX": 0.0,
+                                "Destroy": null,
+                                "minZoom": 2.0,
+                                "_playerRespawnedSub": {
+                                    "event": "playerRespawned",
+                                    "id": 18.0
+                                },
+                                "__meta": {},
+                                "SerializeFields": null,
+                                "_subscriptions": {},
+                                "_chainAimSub": {
+                                    "event": "chain.aim_camera",
+                                    "id": 17.0
+                                },
+                                "actionModeDuration": 3.0,
+                                "enemyDisengageDelay": 2.0,
+                                "_cinematicTargetSub": {
+                                    "event": "cinematic.target",
+                                    "id": 15.0
+                                },
+                                "actionModePitch": 40.0,
+                                "DebugTransform": null,
+                                "_cinematicActiveSub": {
+                                    "event": "cinematic.active",
+                                    "id": 14.0
+                                },
+                                "_chainAimInitialized": false,
+                                "AwakeSafe": null,
+                                "_enemyTriggeredActionMode": false,
+                                "actionModeEnabled": false,
+                                "_chainAiming": false,
+                                "Update": null,
+                                "lockCameraRotation": false,
+                                "_toggleCooldown": 0.0,
+                                "enemyNames": [
+                                    "EnemyAI"
+                                ],
+                                "_normalPitch": 15.0,
+                                "_actionModeActive": false,
+                                "maxPitch": 30.0,
+                                "GetPosition": null,
+                                "GetScale": null,
+                                "chainAimPosName": "ChainAimPointLeft",
+                                "__field_list": {
+                                    "chainAimTargetName": "ChainAimPointLeftEnd",
+                                    "maxPitch": 60.0,
+                                    "followDistance": 2.0,
+                                    "collisionLerpOut": 5.0,
+                                    "followLerp": 10.0,
+                                    "cacheUpdateInterval": 1.0,
+                                    "enableEnemyDetection": true,
+                                    "minZoom": 2.0,
+                                    "enemyDetectionRange": 8.0,
+                                    "chainAimTransitionSpeed": 5.0,
+                                    "enemyDisengageRange": 10.0,
+                                    "debugEnemyDetection": false,
+                                    "collisionEnabled": true,
+                                    "collisionLerpIn": 20.0,
+                                    "collisionOffset": 0.2,
+                                    "mouseSensitivity": 0.15,
+                                    "enemyDisengageDelay": 2.0,
+                                    "zoomSpeed": 1.0,
+                                    "heightOffset": 1.0,
+                                    "actionModeDuration": 3.0,
+                                    "minPitch": -30.0,
+                                    "actionModePitch": 25.0,
+                                    "maxZoom": 15.0,
+                                    "actionModeDistance": 3.5,
+                                    "actionModeTransition": 8.0,
+                                    "chainAimPosName": "ChainAimPointLeft",
+                                    "lockCameraRotation": false,
+                                    "enemyNames": [
+                                        "EnemyAI"
+                                    ],
+                                    "actionModeLockRotation": false,
+                                    "actionModeEnabled": false
+                                },
+                                "_targetPos": {
+                                    "z": 0.0,
+                                    "y": 0.0,
+                                    "x": 0.0
+                                },
+                                "_lastMouseY": 0.0,
+                                "_pitch": 15.0,
+                                "_enemyDisengageTimer": 0.0,
+                                "chainAimTransitionSpeed": 5.0,
+                                "_normalDistance": 2.0,
+                                "debugEnemyDetection": false,
+                                "actionModeDistance": 3.5,
+                                "SetPosition": null,
+                                "collisionLerpIn": 20.0,
+                                "_teleportToPlayer": false,
+                                "actionModeTransition": 8.0,
+                                "_findClosestEnemy": null,
+                                "Subscribe": null,
+                                "OnDisable": null,
+                                "collisionEnabled": true,
+                                "UpdateSafe": null,
+                                "__created_at": 1772418281.0,
+                                "enableEnemyDetection": true,
+                                "collisionOffset": 0.2,
+                                "collisionLerpOut": 5.0,
+                                "followDistance": 0.1,
+                                "GetTransform": null,
+                                "_call_lifecycle": null,
+                                "Every": null
                             }
                         },
                         {
@@ -218,57 +363,97 @@
                             "entryFunction": "OnInit",
                             "autoInvokeEntry": true,
                             "instanceState": {
-                                "sequenceWaypoints": {},
-                                "_durationTimer": 0.0,
-                                "targetPosition": {
-                                    "x": -2.0,
-                                    "y": 1.0,
-                                    "z": -2.0
-                                },
-                                "targetTransformName": "\"CamPos1\"",
-                                "_subscriptions": {},
-                                "__field_list": {
-                                    "sequenceWaypoints": {},
-                                    "sequenceInterval": 3.0,
-                                    "useSequence": false,
-                                    "useDuration": false,
-                                    "transitionSpeed": 0.5,
-                                    "debugMode": true,
-                                    "targetPosition": {
-                                        "x": -2.0,
-                                        "y": 1.0,
-                                        "z": -2.0
-                                    },
-                                    "cinematicActive": false,
-                                    "targetRotation": {
-                                        "x": 0.0,
-                                        "y": 0.0,
-                                        "z": 0.0
-                                    },
-                                    "targetTransformName": "",
-                                    "cinematicDuration": 5.0,
-                                    "sequenceLoop": false
-                                },
+                                "freezePlayer": false,
+                                "_transform_fetched": false,
+                                "_cinematicPositionIndex": 1.0,
+                                "stayDuration": 3.0,
+                                "Every": null,
                                 "_wasCinematicActive": false,
-                                "__created_at": 1770201442.0,
-                                "useDuration": true,
-                                "useSequence": false,
-                                "__meta": {},
-                                "sequenceLoop": false,
-                                "targetRotation": {
-                                    "x": 0.0,
-                                    "y": 0.0,
-                                    "z": 0.0
-                                },
-                                "debugMode": true,
-                                "sequenceInterval": 3.0,
+                                "cinematicPositionIndex": 1.0,
+                                "SetRotation": null,
+                                "freezeEnemy": false,
+                                "_subscriptions": {},
+                                "SetScale": null,
+                                "After": null,
+                                "targetTransformName": "\"CamPos1\"",
+                                "_durationTimer": 0.0,
+                                "DebugTransform": null,
+                                "StartSafe": null,
+                                "GetTransform": null,
+                                "AwakeSafe": null,
+                                "transitionDuration": 3.0,
+                                "Unsubscribe": null,
+                                "Update": null,
+                                "_waypointTimer": 0.0,
                                 "_currentWaypointIndex": 1.0,
                                 "cinematicDuration": 30.0,
-                                "cinematicActive": false,
-                                "_transform_fetched": false,
+                                "useDuration": true,
+                                "sequenceInterval": 3.0,
+                                "sequenceLoop": false,
+                                "GetPosition": null,
+                                "GetScale": null,
+                                "useSequence": false,
+                                "__field_list": {
+                                    "useDuration": false,
+                                    "targetTransformName": "",
+                                    "sequenceInterval": 3.0,
+                                    "debugMode": true,
+                                    "targetRotation": {
+                                        "z": 0.0,
+                                        "y": 0.0,
+                                        "x": 0.0
+                                    },
+                                    "useSequence": false,
+                                    "cinematicDuration": 5.0,
+                                    "sequenceLoop": false,
+                                    "sequenceWaypoints": {},
+                                    "targetPosition": {
+                                        "z": -2.0,
+                                        "y": 1.0,
+                                        "x": -2.0
+                                    },
+                                    "transitionSpeed": 0.5,
+                                    "cinematicActive": false
+                                },
+                                "sequenceWaypoints": {},
+                                "_cinematicTriggerSub": {
+                                    "event": "cinematic.trigger",
+                                    "id": 19.0
+                                },
+                                "_phase": "transition",
+                                "__created_at": 1770201442.0,
                                 "_private": {},
-                                "_waypointTimer": 0.0,
-                                "transitionSpeed": 0.5
+                                "_transitionTimer": 0.0,
+                                "Destroy": null,
+                                "transitionSpeed": 0.5,
+                                "cinematicActive": false,
+                                "SerializeFields": null,
+                                "DisableSafe": null,
+                                "targetRotation": {
+                                    "z": 0.0,
+                                    "y": 0.0,
+                                    "x": 0.0
+                                },
+                                "DeserializeFields": null,
+                                "Subscribe": null,
+                                "Move": null,
+                                "targetPosition": {
+                                    "z": -2.0,
+                                    "y": 1.0,
+                                    "x": -2.0
+                                },
+                                "UpdateSafe": null,
+                                "Awake": null,
+                                "__meta": {},
+                                "cinematicPositionNames": [
+                                    "DoorCameraTarget",
+                                    "Player"
+                                ],
+                                "_stayTimer": 0.0,
+                                "debugMode": true,
+                                "SetPosition": null,
+                                "_call_lifecycle": null,
+                                "GetRotation": null
                             }
                         }
                     ]

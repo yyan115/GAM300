@@ -1,9 +1,18 @@
 {
     "prefab_entities": [
         {
-            "id": 586,
-            "guid": "00097d1d4e1e1318-000402510a0000c9",
+            "id": 0,
+            "guid": "00345ceb269794ef-000460dee400f407",
             "components": {
+                "PrefabLinkComponent": {
+                    "type": "PrefabLinkComponent",
+                    "data": [
+                        {
+                            "type": "std::string",
+                            "data": "../../Resources/Prefabs/Chain Prefab (Move children to global).prefab"
+                        }
+                    ]
+                },
                 "NameComponent": {
                     "name": "Chain Prefab (Move children to global)"
                 },
@@ -73,79 +82,6 @@
                                     "data": 0
                                 }
                             ]
-                        },
-                        {
-                            "type": "bool",
-                            "data": false
-                        },
-                        {
-                            "type": "Matrix4x4",
-                            "data": [
-                                {
-                                    "type": "float",
-                                    "data": 1
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 1
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 1
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 1
-                                }
-                            ]
                         }
                     ]
                 },
@@ -155,8 +91,8 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "005c1713489ae9fd-0003fd530c000001",
-                                "001bb91d79234f28-0003fd5772000015"
+                                "00345ceb7fb74d84-000460dee400f409",
+                                "00345ceb12929192-000460dee400f40b"
                             ]
                         }
                     ]
@@ -173,8 +109,8 @@
             }
         },
         {
-            "id": 484,
-            "guid": "005c1713489ae9fd-0003fd530c000001",
+            "id": 1,
+            "guid": "00345ceb7fb74d84-000460dee400f409",
             "components": {
                 "NameComponent": {
                     "name": "Link"
@@ -243,79 +179,6 @@
                                 {
                                     "type": "float",
                                     "data": 0
-                                }
-                            ]
-                        },
-                        {
-                            "type": "bool",
-                            "data": false
-                        },
-                        {
-                            "type": "Matrix4x4",
-                            "data": [
-                                {
-                                    "type": "float",
-                                    "data": 0.005
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 1
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0.005
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 1
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0.005
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 1
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 1
                                 }
                             ]
                         }
@@ -409,7 +272,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "00097d1d4e1e1318-000402510a0000c9"
+                        "00345ceb269794ef-000460dee400f407"
                     ]
                 },
                 "ActiveComponent": {
@@ -424,8 +287,8 @@
             }
         },
         {
-            "id": 485,
-            "guid": "001bb91d79234f28-0003fd5772000015",
+            "id": 2,
+            "guid": "00345ceb12929192-000460dee400f40b",
             "components": {
                 "NameComponent": {
                     "name": "ChainCreation"
@@ -496,86 +359,13 @@
                                     "data": 0
                                 }
                             ]
-                        },
-                        {
-                            "type": "bool",
-                            "data": false
-                        },
-                        {
-                            "type": "Matrix4x4",
-                            "data": [
-                                {
-                                    "type": "float",
-                                    "data": 1
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 1
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 1
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 1
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 1
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 1
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 1
-                                }
-                            ]
                         }
                     ]
                 },
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "00097d1d4e1e1318-000402510a0000c9"
+                        "00345ceb269794ef-000460dee400f407"
                     ]
                 },
                 "ActiveComponent": {
@@ -597,10 +387,107 @@
                             "entryFunction": "OnInit",
                             "autoInvokeEntry": true,
                             "instanceState": {
-                                "MaxLength": 2.0,
+                                "GetChainLength": null,
+                                "__field_list": {
+                                    "EnableLogs": false,
+                                    "m_IsRetracting": false,
+                                    "m_CurrentState": "COMPLETELY_LAX",
+                                    "VerletDamping": 0.02,
+                                    "NumberOfLinks": 100.0,
+                                    "MaxLength": 0.0,
+                                    "m_CurrentLength": 0.0,
+                                    "LinkMaxDistance": 0.025,
+                                    "m_IsExtending": false,
+                                    "DumpEveryFrame": false,
+                                    "AutoStart": false,
+                                    "LinkName": "Link",
+                                    "PlayerName": "mixamorig:LeftHand",
+                                    "ConstraintIterations": 2.0,
+                                    "ChainSpeed": 10.0,
+                                    "TriggerKey": "G",
+                                    "VerletGravity": 9.81,
+                                    "EnableVerletPhysics": true,
+                                    "SimulatedHitDistance": 0.0,
+                                    "m_LinkCount": 0.0,
+                                    "IsElastic": true
+                                },
+                                "SetPosition": null,
+                                "m_CurrentState": "COMPLETELY_LAX",
+                                "GetChainState": null,
+                                "GetTransform": null,
+                                "__created_at": 1772418290.0,
+                                "GetScale": null,
+                                "DumpEveryFrame": false,
+                                "_sync_to_aliases": null,
+                                "GetLinkPositions": null,
+                                "After": null,
+                                "StartRetraction": null,
+                                "GetPosition": null,
+                                "GetEndPosition": null,
+                                "m_LinkCount": 0.0,
+                                "GetRotation": null,
+                                "__meta": {},
+                                "m_IsRetracting": false,
+                                "UpdateLinkRotations": null,
+                                "SetScale": null,
+                                "IsElastic": true,
+                                "Move": null,
+                                "SetRotation": null,
+                                "PositionLinksSimple": null,
                                 "AutoStart": true,
+                                "_call_lifecycle": null,
+                                "_sync_from_aliases": null,
+                                "_private": {},
+                                "EnableLogs": false,
+                                "ExtendChain": null,
+                                "GetLinkCount": null,
+                                "Log": null,
+                                "MaxLength": 2.0,
+                                "Start": null,
+                                "m_IsExtending": false,
+                                "AwakeSafe": null,
+                                "LinkName": "Link",
+                                "UpdateSafe": null,
+                                "_subscriptions": {},
+                                "SerializeFields": null,
+                                "DisableSafe": null,
+                                "VerletGravity": 9.81,
+                                "Destroy": null,
+                                "SimulatedHitDistance": 0.0,
+                                "StartSafe": null,
+                                "Every": null,
+                                "Unsubscribe": null,
+                                "VerletDamping": 0.02,
+                                "DebugTransform": null,
+                                "GetLinkPosition": null,
+                                "DumpLinkPositions": null,
+                                "_transform_fetched": false,
+                                "UpdateEditorFields": null,
+                                "ChainSpeed": 10.0,
+                                "RetractChain": null,
+                                "TriggerKey": "G",
+                                "_unpack_pos": null,
+                                "Subscribe": null,
+                                "m_CurrentLength": 0.0,
                                 "NumberOfLinks": 100.0,
-                                "LinkName": "Link"
+                                "DeserializeFields": null,
+                                "EnableVerletPhysics": true,
+                                "GetChainStateString": null,
+                                "GetForwardDirection": null,
+                                "_read_transform_position": null,
+                                "StartExtension": null,
+                                "Update": null,
+                                "OnDisable": null,
+                                "CheckState": null,
+                                "PlayerName": "mixamorig:LeftHand",
+                                "ConstraintIterations": 2.0,
+                                "_write_world_pos": null,
+                                "IsExtending": null,
+                                "_get_start_world": null,
+                                "_read_world_pos": null,
+                                "LinkMaxDistance": 0.025,
+                                "IsRetracting": null,
+                                "StopExtension": null
                             }
                         }
                     ]

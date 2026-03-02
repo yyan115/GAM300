@@ -1,9 +1,18 @@
 {
     "prefab_entities": [
         {
-            "id": 183,
-            "guid": "005c1713489ae9fd-0003fd530c000001",
+            "id": 0,
+            "guid": "00345ceb500a39a3-000460df340311d7",
             "components": {
+                "PrefabLinkComponent": {
+                    "type": "PrefabLinkComponent",
+                    "data": [
+                        {
+                            "type": "std::string",
+                            "data": "../../Resources/Prefabs/Link.prefab"
+                        }
+                    ]
+                },
                 "NameComponent": {
                     "name": "Link"
                 },

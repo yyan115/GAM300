@@ -1,15 +1,15 @@
 {
     "prefab_entities": [
         {
-            "id": 262,
-            "guid": "002936801107bf75-00040d569e004657",
+            "id": 0,
+            "guid": "00345ceb3f9e9104-000460df6a04ca8b",
             "components": {
                 "PrefabLinkComponent": {
                     "type": "PrefabLinkComponent",
                     "data": [
                         {
                             "type": "std::string",
-                            "data": "../../Resources/Prefabs/Player (11).prefab"
+                            "data": "../../Resources/Prefabs/Player (12).prefab"
                         }
                     ]
                 },
@@ -176,13 +176,13 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "0056e20b0e827d54-000415d3d40003d5",
-                                "0056e20b0b921f3b-000415d3d4000455",
-                                "002936802db7574c-00040d569e0046db",
-                                "0056e20b4649c6f1-000415d3d40004e7",
-                                "0056e20b7f0c7605-000415d3d40004e9",
-                                "0056e20b7458c1d2-000415d3d40004ed",
-                                "0056e20b33f6c64d-000415d3d40004f1"
+                                "00345ceb56d36dad-000460df6a04ca8d",
+                                "00345ceb459ab7ea-000460df6a04cb0d",
+                                "00345ceb19e77b60-000460df6a04cb0f",
+                                "00345ceb55629d0e-000460df6a04cb9f",
+                                "00345ceb7c07b309-000460df6a04cba1",
+                                "00345ceb1ca1e894-000460df6a04cba5",
+                                "00345ceb14d55206-000460df6a04cba9"
                             ]
                         }
                     ]
@@ -350,50 +350,54 @@
                         },
                         {
                             "type": "int",
-                            "data": 10
+                            "data": 11
                         },
                         {
                             "type": "std::vector<std::string>",
                             "data": [
                                 {
                                     "type": "std::string",
-                                    "data": "Resources/Animations/Kusane@Idle.fbx"
+                                    "data": "Resources/Animations/Player@Idle.fbx"
                                 },
                                 {
                                     "type": "std::string",
-                                    "data": "Resources/Animations/Kusane@Hurt.fbx"
+                                    "data": "Resources/Animations/Player@Jump.fbx"
                                 },
                                 {
                                     "type": "std::string",
-                                    "data": "Resources/Animations/Kusane@Run.fbx"
+                                    "data": "Resources/Animations/Player@Run.fbx"
                                 },
                                 {
                                     "type": "std::string",
-                                    "data": "Resources/Animations/Kusane@Death.fbx"
+                                    "data": "Resources/Animations/Player@Land.fbx"
                                 },
                                 {
                                     "type": "std::string",
-                                    "data": "Resources/Animations/Kusane@Jump.fbx"
+                                    "data": "Resources/Animations/Player@Hurt.fbx"
                                 },
                                 {
                                     "type": "std::string",
-                                    "data": "Resources/Animations/Kusane@Land.fbx"
+                                    "data": "Resources/Animations/Player@Death.fbx"
                                 },
                                 {
                                     "type": "std::string",
-                                    "data": "Resources/Animations/Kusane@Roll.fbx"
+                                    "data": "Resources/Animations/Player@Slash1.fbx"
                                 },
                                 {
                                     "type": "std::string",
-                                    "data": "Resources/Animations/Kusane@Slash1.fbx"
+                                    "data": "Resources/Animations/Player@Slash2.fbx"
                                 },
                                 {
                                     "type": "std::string",
-                                    "data": "Resources/Animations/Kusane@Slash2.fbx"
+                                    "data": "Resources/Animations/Player@Slash3.fbx"
                                 },
                                 {
                                     "type": "std::string",
-                                    "data": "Resources/Animations/Kusane@Slash3.fbx"
+                                    "data": "Resources/Animations/Player@Standing.fbx"
+                                },
+                                {
+                                    "type": "std::string",
+                                    "data": "Resources/Animations/Player@Roll.fbx"
                                 }
                             ]
                         },
@@ -407,6 +411,7 @@
                                 "00293680445a81bd-00040d31fc000191",
                                 "006c6ee2251c2d11-00040fc31e0029d3",
                                 "00485ed685fc886a-0004104122005d8d",
+                                "0000000000000000-0000000000000000",
                                 "0000000000000000-0000000000000000",
                                 "0000000000000000-0000000000000000",
                                 "0000000000000000-0000000000000000"
@@ -437,37 +442,89 @@
                             "entryFunction": "OnInit",
                             "autoInvokeEntry": true,
                             "instanceState": {
-                                "_currentRotZ": 0.0,
-                                "Speed": 1.5,
-                                "_currentRotX": 0.0,
-                                "_subscriptions": {},
-                                "_cameraYaw": 180.0,
-                                "__created_at": 1769704807.0,
-                                "JumpHeight": 1.2,
-                                "_currentRotY": 0.0,
-                                "_playerHurtTriggeredSub": {
-                                    "event": "playerHurtTriggered",
-                                    "id": 3.0
-                                },
-                                "_playerDeadSub": {
-                                    "event": "playerDead",
-                                    "id": 2.0
-                                },
-                                "__meta": {},
-                                "_private": {},
-                                "_cameraYawSub": {
-                                    "event": "camera_yaw",
-                                    "id": 1.0
-                                },
-                                "_currentRotW": 1.0,
-                                "DamageStunDuration": 1.0,
-                                "_transform_fetched": false,
+                                "SerializeFields": null,
                                 "__field_list": {
                                     "JumpHeight": 1.2,
-                                    "Speed": 1.5,
-                                    "DamageStunDuration": 1.0
+                                    "DamageStunDuration": 1.0,
+                                    "Speed": 1.5
                                 },
-                                "LandingDuration": 0.85
+                                "playerFootstepSFX": {},
+                                "SetScale": null,
+                                "StartSafe": null,
+                                "_freezePlayerSub": {
+                                    "event": "freeze_player",
+                                    "id": 20.0
+                                },
+                                "_subscriptions": {},
+                                "SetPosition": null,
+                                "DisableSafe": null,
+                                "playerJumpSFX": {},
+                                "UpdateSafe": null,
+                                "_frozenBycinematic": false,
+                                "_activatedCheckpointSub": {
+                                    "event": "activatedCheckpoint",
+                                    "id": 19.0
+                                },
+                                "_respawnPlayerSub": {
+                                    "event": "respawnPlayer",
+                                    "id": 18.0
+                                },
+                                "playerDeadSFX": {},
+                                "_currentRotZ": 0.0,
+                                "GetRotation": null,
+                                "_kbX": 0.0,
+                                "_kbZ": 0.0,
+                                "Unsubscribe": null,
+                                "_playerHurtTriggeredSub": {
+                                    "id": 3.0,
+                                    "event": "playerHurtTriggered"
+                                },
+                                "_playerDeadSub": {
+                                    "id": 2.0,
+                                    "event": "playerDead"
+                                },
+                                "_cameraYawSub": {
+                                    "id": 1.0,
+                                    "event": "camera_yaw"
+                                },
+                                "_cameraYaw": 180.0,
+                                "_currentRotX": 0.0,
+                                "_knockSub": {
+                                    "event": "player_knockback",
+                                    "id": 17.0
+                                },
+                                "LandingDuration": 0.85,
+                                "_transform_fetched": false,
+                                "_currentRotY": 0.0,
+                                "__meta": {},
+                                "After": null,
+                                "_kbPending": false,
+                                "DeserializeFields": null,
+                                "Every": null,
+                                "AwakeSafe": null,
+                                "_call_lifecycle": null,
+                                "SetRotation": null,
+                                "DamageStunDuration": 1.0,
+                                "_currentRotW": 1.0,
+                                "Destroy": null,
+                                "__created_at": 1769704807.0,
+                                "footstepInterval": 0.35,
+                                "GetTransform": null,
+                                "GetPosition": null,
+                                "playerLandSFX": {},
+                                "_private": {},
+                                "Awake": null,
+                                "JumpHeight": 1.2,
+                                "Subscribe": null,
+                                "playerHurtSFX": {},
+                                "Move": null,
+                                "RespawnPlayer": null,
+                                "DebugTransform": null,
+                                "Speed": 1.5,
+                                "GetScale": null,
+                                "Update": null,
+                                "Start": null,
+                                "OnDisable": null
                             }
                         },
                         {
@@ -478,21 +535,49 @@
                             "entryFunction": "OnInit",
                             "autoInvokeEntry": true,
                             "instanceState": {
-                                "__meta": {},
-                                "__created_at": 1769707349.0,
-                                "_knifeHitPlayerDmgSub": {
-                                    "event": "knifeHitPlayerDmg",
-                                    "id": 4.0
-                                },
-                                "_subscriptions": {},
-                                "_transform_fetched": false,
-                                "Health": 5.0,
-                                "_private": {},
-                                "IFrameDuration": 1.0,
+                                "SerializeFields": null,
                                 "__field_list": {
                                     "Health": 10.0,
                                     "IFrameDuration": 1.0
-                                }
+                                },
+                                "SetScale": null,
+                                "StartSafe": null,
+                                "_subscriptions": {},
+                                "SetPosition": null,
+                                "DisableSafe": null,
+                                "AwakeSafe": null,
+                                "UpdateSafe": null,
+                                "IFrameDuration": 1.0,
+                                "GetRotation": null,
+                                "_iFrameDuration": 1.0,
+                                "_knifeHitPlayerDmgSub": {
+                                    "id": 4.0,
+                                    "event": "knifeHitPlayerDmg"
+                                },
+                                "Unsubscribe": null,
+                                "_transform_fetched": false,
+                                "Health": 5.0,
+                                "__meta": {},
+                                "Every": null,
+                                "_call_lifecycle": null,
+                                "SetRotation": null,
+                                "Destroy": null,
+                                "After": null,
+                                "__created_at": 1769707349.0,
+                                "DeserializeFields": null,
+                                "YDeathThreshold": -3.0,
+                                "GetTransform": null,
+                                "GetPosition": null,
+                                "Subscribe": null,
+                                "Move": null,
+                                "RespawnPlayer": null,
+                                "Awake": null,
+                                "DebugTransform": null,
+                                "_private": {},
+                                "GetScale": null,
+                                "Update": null,
+                                "Start": null,
+                                "OnDisable": null
                             }
                         }
                     ]
@@ -500,8 +585,8 @@
             }
         },
         {
-            "id": 263,
-            "guid": "0056e20b0e827d54-000415d3d40003d5",
+            "id": 1,
+            "guid": "00345ceb56d36dad-000460df6a04ca8d",
             "components": {
                 "NameComponent": {
                     "name": "Player"
@@ -512,6 +597,9 @@
                 "LayerComponent": {
                     "layerIndex": 0
                 },
+                "SiblingIndexComponent": {
+                    "siblingIndex": 0
+                },
                 "Transform": {
                     "type": "Transform",
                     "data": [
@@ -578,19 +666,19 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "0056e20b7812d25d-000415d3d40003d7",
-                                "0056e20b4d79b17b-000415d3d40003d9",
-                                "0056e20b65cee05b-000415d3d40003db",
-                                "0056e20b53bdadf3-000415d3d40003dd",
-                                "0056e20b5486578d-000415d3d40003eb",
-                                "0056e20b1e0ffa1d-000415d3d40003f5",
-                                "0056e20b5074921a-000415d3d40003ff",
-                                "0056e20b4c817266-000415d3d4000409",
-                                "0056e20b2ae0c4b9-000415d3d4000415",
-                                "0056e20b1b6bee67-000415d3d4000419",
-                                "0056e20b629fff5d-000415d3d4000425",
-                                "0056e20b283452d3-000415d3d400042b",
-                                "0056e20b2da151e3-000415d3d4000431"
+                                "00345ceb6ef4924c-000460df6a04ca8f",
+                                "00345ceb12945502-000460df6a04ca91",
+                                "00345ceb63cb11f9-000460df6a04ca93",
+                                "00345ceb1137c4d2-000460df6a04ca95",
+                                "00345ceb3f3e8463-000460df6a04caa3",
+                                "00345ceb40fa07b4-000460df6a04caad",
+                                "00345ceb447dc706-000460df6a04cab7",
+                                "00345ceb79a7cb8d-000460df6a04cac1",
+                                "00345ceb2363b9b6-000460df6a04cacd",
+                                "00345ceb1834cb8e-000460df6a04cad1",
+                                "00345ceb6c8175e5-000460df6a04cadd",
+                                "00345ceb3c7d40a9-000460df6a04cae3",
+                                "00345ceb31c5c9db-000460df6a04cae9"
                             ]
                         }
                     ]
@@ -598,7 +686,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "002936801107bf75-00040d569e004657"
+                        "00345ceb3f9e9104-000460df6a04ca8b"
                     ]
                 },
                 "ActiveComponent": {
@@ -613,8 +701,8 @@
             }
         },
         {
-            "id": 264,
-            "guid": "0056e20b7812d25d-000415d3d40003d7",
+            "id": 2,
+            "guid": "00345ceb6ef4924c-000460df6a04ca8f",
             "components": {
                 "NameComponent": {
                     "name": "Head"
@@ -625,6 +713,9 @@
                 "LayerComponent": {
                     "layerIndex": 0
                 },
+                "SiblingIndexComponent": {
+                    "siblingIndex": 0
+                },
                 "Transform": {
                     "type": "Transform",
                     "data": [
@@ -688,7 +779,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "0056e20b0e827d54-000415d3d40003d5"
+                        "00345ceb56d36dad-000460df6a04ca8d"
                     ]
                 },
                 "ActiveComponent": {
@@ -703,8 +794,8 @@
             }
         },
         {
-            "id": 265,
-            "guid": "0056e20b4d79b17b-000415d3d40003d9",
+            "id": 3,
+            "guid": "00345ceb12945502-000460df6a04ca91",
             "components": {
                 "NameComponent": {
                     "name": "Ring"
@@ -715,6 +806,9 @@
                 "LayerComponent": {
                     "layerIndex": 0
                 },
+                "SiblingIndexComponent": {
+                    "siblingIndex": 1
+                },
                 "Transform": {
                     "type": "Transform",
                     "data": [
@@ -778,7 +872,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "0056e20b0e827d54-000415d3d40003d5"
+                        "00345ceb56d36dad-000460df6a04ca8d"
                     ]
                 },
                 "ActiveComponent": {
@@ -793,8 +887,8 @@
             }
         },
         {
-            "id": 266,
-            "guid": "0056e20b65cee05b-000415d3d40003db",
+            "id": 4,
+            "guid": "00345ceb63cb11f9-000460df6a04ca93",
             "components": {
                 "NameComponent": {
                     "name": "Obi"
@@ -805,6 +899,9 @@
                 "LayerComponent": {
                     "layerIndex": 0
                 },
+                "SiblingIndexComponent": {
+                    "siblingIndex": 2
+                },
                 "Transform": {
                     "type": "Transform",
                     "data": [
@@ -868,7 +965,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "0056e20b0e827d54-000415d3d40003d5"
+                        "00345ceb56d36dad-000460df6a04ca8d"
                     ]
                 },
                 "ActiveComponent": {
@@ -883,8 +980,8 @@
             }
         },
         {
-            "id": 267,
-            "guid": "0056e20b53bdadf3-000415d3d40003dd",
+            "id": 5,
+            "guid": "00345ceb1137c4d2-000460df6a04ca95",
             "components": {
                 "NameComponent": {
                     "name": "Rope"
@@ -895,6 +992,9 @@
                 "LayerComponent": {
                     "layerIndex": 0
                 },
+                "SiblingIndexComponent": {
+                    "siblingIndex": 3
+                },
                 "Transform": {
                     "type": "Transform",
                     "data": [
@@ -961,12 +1061,12 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "0056e20b2b8e3f3a-000415d3d40003df",
-                                "0056e20b4d0e0799-000415d3d40003e1",
-                                "0056e20b42b74e11-000415d3d40003e3",
-                                "0056e20b1d9ab5b0-000415d3d40003e5",
-                                "0056e20b42f2c4f0-000415d3d40003e7",
-                                "0056e20b086ff444-000415d3d40003e9"
+                                "00345ceb40954883-000460df6a04ca97",
+                                "00345ceb049f23c4-000460df6a04ca99",
+                                "00345ceb38bcc85a-000460df6a04ca9b",
+                                "00345ceb023c1f47-000460df6a04ca9d",
+                                "00345ceb49d8c41f-000460df6a04ca9f",
+                                "00345ceb1acb7013-000460df6a04caa1"
                             ]
                         }
                     ]
@@ -974,7 +1074,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "0056e20b0e827d54-000415d3d40003d5"
+                        "00345ceb56d36dad-000460df6a04ca8d"
                     ]
                 },
                 "ActiveComponent": {
@@ -989,8 +1089,8 @@
             }
         },
         {
-            "id": 268,
-            "guid": "0056e20b2b8e3f3a-000415d3d40003df",
+            "id": 6,
+            "guid": "00345ceb40954883-000460df6a04ca97",
             "components": {
                 "NameComponent": {
                     "name": "kusanemask:polySurface5"
@@ -1001,6 +1101,9 @@
                 "LayerComponent": {
                     "layerIndex": 0
                 },
+                "SiblingIndexComponent": {
+                    "siblingIndex": 0
+                },
                 "Transform": {
                     "type": "Transform",
                     "data": [
@@ -1064,7 +1167,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "0056e20b53bdadf3-000415d3d40003dd"
+                        "00345ceb1137c4d2-000460df6a04ca95"
                     ]
                 },
                 "ActiveComponent": {
@@ -1079,8 +1182,8 @@
             }
         },
         {
-            "id": 269,
-            "guid": "0056e20b4d0e0799-000415d3d40003e1",
+            "id": 7,
+            "guid": "00345ceb049f23c4-000460df6a04ca99",
             "components": {
                 "NameComponent": {
                     "name": "kusanemask:polySurface1"
@@ -1091,6 +1194,9 @@
                 "LayerComponent": {
                     "layerIndex": 0
                 },
+                "SiblingIndexComponent": {
+                    "siblingIndex": 1
+                },
                 "Transform": {
                     "type": "Transform",
                     "data": [
@@ -1154,7 +1260,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "0056e20b53bdadf3-000415d3d40003dd"
+                        "00345ceb1137c4d2-000460df6a04ca95"
                     ]
                 },
                 "ActiveComponent": {
@@ -1169,8 +1275,8 @@
             }
         },
         {
-            "id": 270,
-            "guid": "0056e20b42b74e11-000415d3d40003e3",
+            "id": 8,
+            "guid": "00345ceb38bcc85a-000460df6a04ca9b",
             "components": {
                 "NameComponent": {
                     "name": "kusanemask:polySurface6"
@@ -1181,6 +1287,9 @@
                 "LayerComponent": {
                     "layerIndex": 0
                 },
+                "SiblingIndexComponent": {
+                    "siblingIndex": 2
+                },
                 "Transform": {
                     "type": "Transform",
                     "data": [
@@ -1244,7 +1353,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "0056e20b53bdadf3-000415d3d40003dd"
+                        "00345ceb1137c4d2-000460df6a04ca95"
                     ]
                 },
                 "ActiveComponent": {
@@ -1259,8 +1368,8 @@
             }
         },
         {
-            "id": 271,
-            "guid": "0056e20b1d9ab5b0-000415d3d40003e5",
+            "id": 9,
+            "guid": "00345ceb023c1f47-000460df6a04ca9d",
             "components": {
                 "NameComponent": {
                     "name": "kusanemask:polySurface2"
@@ -1271,6 +1380,9 @@
                 "LayerComponent": {
                     "layerIndex": 0
                 },
+                "SiblingIndexComponent": {
+                    "siblingIndex": 3
+                },
                 "Transform": {
                     "type": "Transform",
                     "data": [
@@ -1334,7 +1446,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "0056e20b53bdadf3-000415d3d40003dd"
+                        "00345ceb1137c4d2-000460df6a04ca95"
                     ]
                 },
                 "ActiveComponent": {
@@ -1349,8 +1461,8 @@
             }
         },
         {
-            "id": 272,
-            "guid": "0056e20b42f2c4f0-000415d3d40003e7",
+            "id": 10,
+            "guid": "00345ceb49d8c41f-000460df6a04ca9f",
             "components": {
                 "NameComponent": {
                     "name": "kusanemask:polySurface3"
@@ -1361,6 +1473,9 @@
                 "LayerComponent": {
                     "layerIndex": 0
                 },
+                "SiblingIndexComponent": {
+                    "siblingIndex": 4
+                },
                 "Transform": {
                     "type": "Transform",
                     "data": [
@@ -1424,7 +1539,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "0056e20b53bdadf3-000415d3d40003dd"
+                        "00345ceb1137c4d2-000460df6a04ca95"
                     ]
                 },
                 "ActiveComponent": {
@@ -1439,8 +1554,8 @@
             }
         },
         {
-            "id": 273,
-            "guid": "0056e20b086ff444-000415d3d40003e9",
+            "id": 11,
+            "guid": "00345ceb1acb7013-000460df6a04caa1",
             "components": {
                 "NameComponent": {
                     "name": "kusanemask:polySurface4"
@@ -1451,6 +1566,9 @@
                 "LayerComponent": {
                     "layerIndex": 0
                 },
+                "SiblingIndexComponent": {
+                    "siblingIndex": 5
+                },
                 "Transform": {
                     "type": "Transform",
                     "data": [
@@ -1514,7 +1632,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "0056e20b53bdadf3-000415d3d40003dd"
+                        "00345ceb1137c4d2-000460df6a04ca95"
                     ]
                 },
                 "ActiveComponent": {
@@ -1529,8 +1647,8 @@
             }
         },
         {
-            "id": 274,
-            "guid": "0056e20b5486578d-000415d3d40003eb",
+            "id": 12,
+            "guid": "00345ceb3f3e8463-000460df6a04caa3",
             "components": {
                 "NameComponent": {
                     "name": "Mask"
@@ -1541,6 +1659,9 @@
                 "LayerComponent": {
                     "layerIndex": 0
                 },
+                "SiblingIndexComponent": {
+                    "siblingIndex": 4
+                },
                 "Transform": {
                     "type": "Transform",
                     "data": [
@@ -1607,10 +1728,10 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "0056e20b45ca8d0a-000415d3d40003ed",
-                                "0056e20b05c23ee9-000415d3d40003ef",
-                                "0056e20b436ffaab-000415d3d40003f1",
-                                "0056e20b4002663d-000415d3d40003f3"
+                                "00345ceb642fa329-000460df6a04caa5",
+                                "00345ceb40dfdf91-000460df6a04caa7",
+                                "00345ceb53d90e8e-000460df6a04caa9",
+                                "00345ceb5430f429-000460df6a04caab"
                             ]
                         }
                     ]
@@ -1618,7 +1739,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "0056e20b0e827d54-000415d3d40003d5"
+                        "00345ceb56d36dad-000460df6a04ca8d"
                     ]
                 },
                 "ActiveComponent": {
@@ -1633,8 +1754,8 @@
             }
         },
         {
-            "id": 275,
-            "guid": "0056e20b45ca8d0a-000415d3d40003ed",
+            "id": 13,
+            "guid": "00345ceb642fa329-000460df6a04caa5",
             "components": {
                 "NameComponent": {
                     "name": "eyebrows:EyeBrow"
@@ -1645,6 +1766,9 @@
                 "LayerComponent": {
                     "layerIndex": 0
                 },
+                "SiblingIndexComponent": {
+                    "siblingIndex": 0
+                },
                 "Transform": {
                     "type": "Transform",
                     "data": [
@@ -1708,7 +1832,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "0056e20b5486578d-000415d3d40003eb"
+                        "00345ceb3f3e8463-000460df6a04caa3"
                     ]
                 },
                 "ActiveComponent": {
@@ -1723,8 +1847,8 @@
             }
         },
         {
-            "id": 276,
-            "guid": "0056e20b05c23ee9-000415d3d40003ef",
+            "id": 14,
+            "guid": "00345ceb40dfdf91-000460df6a04caa7",
             "components": {
                 "NameComponent": {
                     "name": "kusanemask:Mask"
@@ -1735,6 +1859,9 @@
                 "LayerComponent": {
                     "layerIndex": 0
                 },
+                "SiblingIndexComponent": {
+                    "siblingIndex": 1
+                },
                 "Transform": {
                     "type": "Transform",
                     "data": [
@@ -1798,7 +1925,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "0056e20b5486578d-000415d3d40003eb"
+                        "00345ceb3f3e8463-000460df6a04caa3"
                     ]
                 },
                 "ActiveComponent": {
@@ -1813,8 +1940,8 @@
             }
         },
         {
-            "id": 277,
-            "guid": "0056e20b436ffaab-000415d3d40003f1",
+            "id": 15,
+            "guid": "00345ceb53d90e8e-000460df6a04caa9",
             "components": {
                 "NameComponent": {
                     "name": "kusanemask:Fangs"
@@ -1825,6 +1952,9 @@
                 "LayerComponent": {
                     "layerIndex": 0
                 },
+                "SiblingIndexComponent": {
+                    "siblingIndex": 2
+                },
                 "Transform": {
                     "type": "Transform",
                     "data": [
@@ -1888,7 +2018,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "0056e20b5486578d-000415d3d40003eb"
+                        "00345ceb3f3e8463-000460df6a04caa3"
                     ]
                 },
                 "ActiveComponent": {
@@ -1903,8 +2033,8 @@
             }
         },
         {
-            "id": 278,
-            "guid": "0056e20b4002663d-000415d3d40003f3",
+            "id": 16,
+            "guid": "00345ceb5430f429-000460df6a04caab",
             "components": {
                 "NameComponent": {
                     "name": "kusanemask:Teeth"
@@ -1915,6 +2045,9 @@
                 "LayerComponent": {
                     "layerIndex": 0
                 },
+                "SiblingIndexComponent": {
+                    "siblingIndex": 3
+                },
                 "Transform": {
                     "type": "Transform",
                     "data": [
@@ -1978,7 +2111,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "0056e20b5486578d-000415d3d40003eb"
+                        "00345ceb3f3e8463-000460df6a04caa3"
                     ]
                 },
                 "ActiveComponent": {
@@ -1993,8 +2126,8 @@
             }
         },
         {
-            "id": 279,
-            "guid": "0056e20b1e0ffa1d-000415d3d40003f5",
+            "id": 17,
+            "guid": "00345ceb40fa07b4-000460df6a04caad",
             "components": {
                 "NameComponent": {
                     "name": "R_Feet"
@@ -2005,6 +2138,9 @@
                 "LayerComponent": {
                     "layerIndex": 0
                 },
+                "SiblingIndexComponent": {
+                    "siblingIndex": 5
+                },
                 "Transform": {
                     "type": "Transform",
                     "data": [
@@ -2071,10 +2207,10 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "0056e20b0a3dc59c-000415d3d40003f7",
-                                "0056e20b33f9bf5f-000415d3d40003f9",
-                                "0056e20b08b6fbfc-000415d3d40003fb",
-                                "0056e20b11fd90a2-000415d3d40003fd"
+                                "00345ceb1306e6d5-000460df6a04caaf",
+                                "00345ceb5571d308-000460df6a04cab1",
+                                "00345ceb2aa370a0-000460df6a04cab3",
+                                "00345ceb7b53f5e8-000460df6a04cab5"
                             ]
                         }
                     ]
@@ -2082,7 +2218,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "0056e20b0e827d54-000415d3d40003d5"
+                        "00345ceb56d36dad-000460df6a04ca8d"
                     ]
                 },
                 "ActiveComponent": {
@@ -2097,8 +2233,8 @@
             }
         },
         {
-            "id": 280,
-            "guid": "0056e20b0a3dc59c-000415d3d40003f7",
+            "id": 18,
+            "guid": "00345ceb1306e6d5-000460df6a04caaf",
             "components": {
                 "NameComponent": {
                     "name": "R_Shoe"
@@ -2109,6 +2245,9 @@
                 "LayerComponent": {
                     "layerIndex": 0
                 },
+                "SiblingIndexComponent": {
+                    "siblingIndex": 0
+                },
                 "Transform": {
                     "type": "Transform",
                     "data": [
@@ -2172,7 +2311,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "0056e20b1e0ffa1d-000415d3d40003f5"
+                        "00345ceb40fa07b4-000460df6a04caad"
                     ]
                 },
                 "ActiveComponent": {
@@ -2187,8 +2326,8 @@
             }
         },
         {
-            "id": 281,
-            "guid": "0056e20b33f9bf5f-000415d3d40003f9",
+            "id": 19,
+            "guid": "00345ceb5571d308-000460df6a04cab1",
             "components": {
                 "NameComponent": {
                     "name": "R_Sock"
@@ -2199,6 +2338,9 @@
                 "LayerComponent": {
                     "layerIndex": 0
                 },
+                "SiblingIndexComponent": {
+                    "siblingIndex": 1
+                },
                 "Transform": {
                     "type": "Transform",
                     "data": [
@@ -2262,7 +2404,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "0056e20b1e0ffa1d-000415d3d40003f5"
+                        "00345ceb40fa07b4-000460df6a04caad"
                     ]
                 },
                 "ActiveComponent": {
@@ -2277,8 +2419,8 @@
             }
         },
         {
-            "id": 282,
-            "guid": "0056e20b08b6fbfc-000415d3d40003fb",
+            "id": 20,
+            "guid": "00345ceb2aa370a0-000460df6a04cab3",
             "components": {
                 "NameComponent": {
                     "name": "R_Shoe_String"
@@ -2289,6 +2431,9 @@
                 "LayerComponent": {
                     "layerIndex": 0
                 },
+                "SiblingIndexComponent": {
+                    "siblingIndex": 2
+                },
                 "Transform": {
                     "type": "Transform",
                     "data": [
@@ -2352,7 +2497,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "0056e20b1e0ffa1d-000415d3d40003f5"
+                        "00345ceb40fa07b4-000460df6a04caad"
                     ]
                 },
                 "ActiveComponent": {
@@ -2367,8 +2512,8 @@
             }
         },
         {
-            "id": 283,
-            "guid": "0056e20b11fd90a2-000415d3d40003fd",
+            "id": 21,
+            "guid": "00345ceb7b53f5e8-000460df6a04cab5",
             "components": {
                 "NameComponent": {
                     "name": "R_Ankle_Bandage"
@@ -2379,6 +2524,9 @@
                 "LayerComponent": {
                     "layerIndex": 0
                 },
+                "SiblingIndexComponent": {
+                    "siblingIndex": 3
+                },
                 "Transform": {
                     "type": "Transform",
                     "data": [
@@ -2442,7 +2590,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "0056e20b1e0ffa1d-000415d3d40003f5"
+                        "00345ceb40fa07b4-000460df6a04caad"
                     ]
                 },
                 "ActiveComponent": {
@@ -2457,8 +2605,8 @@
             }
         },
         {
-            "id": 284,
-            "guid": "0056e20b5074921a-000415d3d40003ff",
+            "id": 22,
+            "guid": "00345ceb447dc706-000460df6a04cab7",
             "components": {
                 "NameComponent": {
                     "name": "L_Feet"
@@ -2469,6 +2617,9 @@
                 "LayerComponent": {
                     "layerIndex": 0
                 },
+                "SiblingIndexComponent": {
+                    "siblingIndex": 6
+                },
                 "Transform": {
                     "type": "Transform",
                     "data": [
@@ -2535,10 +2686,10 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "0056e20b669bf667-000415d3d4000401",
-                                "0056e20b406588b2-000415d3d4000403",
-                                "0056e20b3b9743ab-000415d3d4000405",
-                                "0056e20b266cc5d8-000415d3d4000407"
+                                "00345ceb49cc1f55-000460df6a04cab9",
+                                "00345ceb1695ec9c-000460df6a04cabb",
+                                "00345ceb30e8a9bd-000460df6a04cabd",
+                                "00345ceb0b09bb3e-000460df6a04cabf"
                             ]
                         }
                     ]
@@ -2546,7 +2697,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "0056e20b0e827d54-000415d3d40003d5"
+                        "00345ceb56d36dad-000460df6a04ca8d"
                     ]
                 },
                 "ActiveComponent": {
@@ -2561,8 +2712,8 @@
             }
         },
         {
-            "id": 285,
-            "guid": "0056e20b669bf667-000415d3d4000401",
+            "id": 23,
+            "guid": "00345ceb49cc1f55-000460df6a04cab9",
             "components": {
                 "NameComponent": {
                     "name": "L_Shoe"
@@ -2573,6 +2724,9 @@
                 "LayerComponent": {
                     "layerIndex": 0
                 },
+                "SiblingIndexComponent": {
+                    "siblingIndex": 0
+                },
                 "Transform": {
                     "type": "Transform",
                     "data": [
@@ -2636,7 +2790,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "0056e20b5074921a-000415d3d40003ff"
+                        "00345ceb447dc706-000460df6a04cab7"
                     ]
                 },
                 "ActiveComponent": {
@@ -2651,8 +2805,8 @@
             }
         },
         {
-            "id": 286,
-            "guid": "0056e20b406588b2-000415d3d4000403",
+            "id": 24,
+            "guid": "00345ceb1695ec9c-000460df6a04cabb",
             "components": {
                 "NameComponent": {
                     "name": "L_Sock"
@@ -2663,6 +2817,9 @@
                 "LayerComponent": {
                     "layerIndex": 0
                 },
+                "SiblingIndexComponent": {
+                    "siblingIndex": 1
+                },
                 "Transform": {
                     "type": "Transform",
                     "data": [
@@ -2726,7 +2883,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "0056e20b5074921a-000415d3d40003ff"
+                        "00345ceb447dc706-000460df6a04cab7"
                     ]
                 },
                 "ActiveComponent": {
@@ -2741,8 +2898,8 @@
             }
         },
         {
-            "id": 287,
-            "guid": "0056e20b3b9743ab-000415d3d4000405",
+            "id": 25,
+            "guid": "00345ceb30e8a9bd-000460df6a04cabd",
             "components": {
                 "NameComponent": {
                     "name": "L_Shoe_String"
@@ -2753,6 +2910,9 @@
                 "LayerComponent": {
                     "layerIndex": 0
                 },
+                "SiblingIndexComponent": {
+                    "siblingIndex": 2
+                },
                 "Transform": {
                     "type": "Transform",
                     "data": [
@@ -2816,7 +2976,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "0056e20b5074921a-000415d3d40003ff"
+                        "00345ceb447dc706-000460df6a04cab7"
                     ]
                 },
                 "ActiveComponent": {
@@ -2831,8 +2991,8 @@
             }
         },
         {
-            "id": 288,
-            "guid": "0056e20b266cc5d8-000415d3d4000407",
+            "id": 26,
+            "guid": "00345ceb0b09bb3e-000460df6a04cabf",
             "components": {
                 "NameComponent": {
                     "name": "L_Ankle_Bandage"
@@ -2843,6 +3003,9 @@
                 "LayerComponent": {
                     "layerIndex": 0
                 },
+                "SiblingIndexComponent": {
+                    "siblingIndex": 3
+                },
                 "Transform": {
                     "type": "Transform",
                     "data": [
@@ -2906,7 +3069,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "0056e20b5074921a-000415d3d40003ff"
+                        "00345ceb447dc706-000460df6a04cab7"
                     ]
                 },
                 "ActiveComponent": {
@@ -2921,8 +3084,8 @@
             }
         },
         {
-            "id": 289,
-            "guid": "0056e20b4c817266-000415d3d4000409",
+            "id": 27,
+            "guid": "00345ceb79a7cb8d-000460df6a04cac1",
             "components": {
                 "NameComponent": {
                     "name": "Hair1"
@@ -2933,6 +3096,9 @@
                 "LayerComponent": {
                     "layerIndex": 0
                 },
+                "SiblingIndexComponent": {
+                    "siblingIndex": 7
+                },
                 "Transform": {
                     "type": "Transform",
                     "data": [
@@ -2999,8 +3165,8 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "0056e20b0ba39cb8-000415d3d400040b",
-                                "0056e20b087322f8-000415d3d4000413"
+                                "00345ceb037d8cb5-000460df6a04cac3",
+                                "00345ceb3ebd912b-000460df6a04cacb"
                             ]
                         }
                     ]
@@ -3008,7 +3174,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "0056e20b0e827d54-000415d3d40003d5"
+                        "00345ceb56d36dad-000460df6a04ca8d"
                     ]
                 },
                 "ActiveComponent": {
@@ -3023,8 +3189,8 @@
             }
         },
         {
-            "id": 290,
-            "guid": "0056e20b0ba39cb8-000415d3d400040b",
+            "id": 28,
+            "guid": "00345ceb037d8cb5-000460df6a04cac3",
             "components": {
                 "NameComponent": {
                     "name": "Front_Hair"
@@ -3035,6 +3201,9 @@
                 "LayerComponent": {
                     "layerIndex": 0
                 },
+                "SiblingIndexComponent": {
+                    "siblingIndex": 0
+                },
                 "Transform": {
                     "type": "Transform",
                     "data": [
@@ -3101,9 +3270,9 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "0056e20b6a5a950b-000415d3d400040d",
-                                "0056e20b34c973dd-000415d3d400040f",
-                                "0056e20b19ebf787-000415d3d4000411"
+                                "00345ceb2e2f0716-000460df6a04cac5",
+                                "00345ceb24d64d4c-000460df6a04cac7",
+                                "00345ceb2739d3fb-000460df6a04cac9"
                             ]
                         }
                     ]
@@ -3111,7 +3280,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "0056e20b4c817266-000415d3d4000409"
+                        "00345ceb79a7cb8d-000460df6a04cac1"
                     ]
                 },
                 "ActiveComponent": {
@@ -3126,8 +3295,8 @@
             }
         },
         {
-            "id": 291,
-            "guid": "0056e20b6a5a950b-000415d3d400040d",
+            "id": 29,
+            "guid": "00345ceb2e2f0716-000460df6a04cac5",
             "components": {
                 "NameComponent": {
                     "name": "L_Hair_Piece"
@@ -3138,6 +3307,9 @@
                 "LayerComponent": {
                     "layerIndex": 0
                 },
+                "SiblingIndexComponent": {
+                    "siblingIndex": 0
+                },
                 "Transform": {
                     "type": "Transform",
                     "data": [
@@ -3201,7 +3373,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "0056e20b0ba39cb8-000415d3d400040b"
+                        "00345ceb037d8cb5-000460df6a04cac3"
                     ]
                 },
                 "ActiveComponent": {
@@ -3216,8 +3388,8 @@
             }
         },
         {
-            "id": 292,
-            "guid": "0056e20b34c973dd-000415d3d400040f",
+            "id": 30,
+            "guid": "00345ceb24d64d4c-000460df6a04cac7",
             "components": {
                 "NameComponent": {
                     "name": "Front_Hair_Piece"
@@ -3228,6 +3400,9 @@
                 "LayerComponent": {
                     "layerIndex": 0
                 },
+                "SiblingIndexComponent": {
+                    "siblingIndex": 1
+                },
                 "Transform": {
                     "type": "Transform",
                     "data": [
@@ -3291,7 +3466,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "0056e20b0ba39cb8-000415d3d400040b"
+                        "00345ceb037d8cb5-000460df6a04cac3"
                     ]
                 },
                 "ActiveComponent": {
@@ -3306,8 +3481,8 @@
             }
         },
         {
-            "id": 293,
-            "guid": "0056e20b19ebf787-000415d3d4000411",
+            "id": 31,
+            "guid": "00345ceb2739d3fb-000460df6a04cac9",
             "components": {
                 "NameComponent": {
                     "name": "R_Hair_Piece"
@@ -3318,6 +3493,9 @@
                 "LayerComponent": {
                     "layerIndex": 0
                 },
+                "SiblingIndexComponent": {
+                    "siblingIndex": 2
+                },
                 "Transform": {
                     "type": "Transform",
                     "data": [
@@ -3381,7 +3559,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "0056e20b0ba39cb8-000415d3d400040b"
+                        "00345ceb037d8cb5-000460df6a04cac3"
                     ]
                 },
                 "ActiveComponent": {
@@ -3396,8 +3574,8 @@
             }
         },
         {
-            "id": 294,
-            "guid": "0056e20b087322f8-000415d3d4000413",
+            "id": 32,
+            "guid": "00345ceb3ebd912b-000460df6a04cacb",
             "components": {
                 "NameComponent": {
                     "name": "Back_Hair"
@@ -3408,6 +3586,9 @@
                 "LayerComponent": {
                     "layerIndex": 0
                 },
+                "SiblingIndexComponent": {
+                    "siblingIndex": 1
+                },
                 "Transform": {
                     "type": "Transform",
                     "data": [
@@ -3471,7 +3652,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "0056e20b4c817266-000415d3d4000409"
+                        "00345ceb79a7cb8d-000460df6a04cac1"
                     ]
                 },
                 "ActiveComponent": {
@@ -3486,8 +3667,8 @@
             }
         },
         {
-            "id": 295,
-            "guid": "0056e20b2ae0c4b9-000415d3d4000415",
+            "id": 33,
+            "guid": "00345ceb2363b9b6-000460df6a04cacd",
             "components": {
                 "NameComponent": {
                     "name": "Pants"
@@ -3498,6 +3679,9 @@
                 "LayerComponent": {
                     "layerIndex": 0
                 },
+                "SiblingIndexComponent": {
+                    "siblingIndex": 8
+                },
                 "Transform": {
                     "type": "Transform",
                     "data": [
@@ -3564,7 +3748,7 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "0056e20b74d20fcb-000415d3d4000417"
+                                "00345ceb309c55c3-000460df6a04cacf"
                             ]
                         }
                     ]
@@ -3572,7 +3756,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "0056e20b0e827d54-000415d3d40003d5"
+                        "00345ceb56d36dad-000460df6a04ca8d"
                     ]
                 },
                 "ActiveComponent": {
@@ -3587,8 +3771,8 @@
             }
         },
         {
-            "id": 296,
-            "guid": "0056e20b74d20fcb-000415d3d4000417",
+            "id": 34,
+            "guid": "00345ceb309c55c3-000460df6a04cacf",
             "components": {
                 "NameComponent": {
                     "name": "polySurface56"
@@ -3599,6 +3783,9 @@
                 "LayerComponent": {
                     "layerIndex": 0
                 },
+                "SiblingIndexComponent": {
+                    "siblingIndex": 0
+                },
                 "Transform": {
                     "type": "Transform",
                     "data": [
@@ -3662,7 +3849,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "0056e20b2ae0c4b9-000415d3d4000415"
+                        "00345ceb2363b9b6-000460df6a04cacd"
                     ]
                 },
                 "ActiveComponent": {
@@ -3677,8 +3864,8 @@
             }
         },
         {
-            "id": 297,
-            "guid": "0056e20b1b6bee67-000415d3d4000419",
+            "id": 35,
+            "guid": "00345ceb1834cb8e-000460df6a04cad1",
             "components": {
                 "NameComponent": {
                     "name": "Kimono"
@@ -3689,6 +3876,9 @@
                 "LayerComponent": {
                     "layerIndex": 0
                 },
+                "SiblingIndexComponent": {
+                    "siblingIndex": 9
+                },
                 "Transform": {
                     "type": "Transform",
                     "data": [
@@ -3755,11 +3945,11 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "0056e20b4922c4b0-000415d3d400041b",
-                                "0056e20b50c9b3a2-000415d3d400041d",
-                                "0056e20b3be426bd-000415d3d400041f",
-                                "0056e20b67d50dea-000415d3d4000421",
-                                "0056e20b0a05a4dc-000415d3d4000423"
+                                "00345ceb7e3a8d61-000460df6a04cad3",
+                                "00345ceb2b029317-000460df6a04cad5",
+                                "00345ceb4097c1d4-000460df6a04cad7",
+                                "00345ceb7a09fd42-000460df6a04cad9",
+                                "00345ceb25662fb9-000460df6a04cadb"
                             ]
                         }
                     ]
@@ -3767,7 +3957,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "0056e20b0e827d54-000415d3d40003d5"
+                        "00345ceb56d36dad-000460df6a04ca8d"
                     ]
                 },
                 "ActiveComponent": {
@@ -3782,8 +3972,8 @@
             }
         },
         {
-            "id": 298,
-            "guid": "0056e20b4922c4b0-000415d3d400041b",
+            "id": 36,
+            "guid": "00345ceb7e3a8d61-000460df6a04cad3",
             "components": {
                 "NameComponent": {
                     "name": "Outer_Kimono"
@@ -3794,6 +3984,9 @@
                 "LayerComponent": {
                     "layerIndex": 0
                 },
+                "SiblingIndexComponent": {
+                    "siblingIndex": 0
+                },
                 "Transform": {
                     "type": "Transform",
                     "data": [
@@ -3857,7 +4050,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "0056e20b1b6bee67-000415d3d4000419"
+                        "00345ceb1834cb8e-000460df6a04cad1"
                     ]
                 },
                 "ActiveComponent": {
@@ -3872,8 +4065,8 @@
             }
         },
         {
-            "id": 299,
-            "guid": "0056e20b50c9b3a2-000415d3d400041d",
+            "id": 37,
+            "guid": "00345ceb2b029317-000460df6a04cad5",
             "components": {
                 "NameComponent": {
                     "name": "Inner_Kimono"
@@ -3884,6 +4077,9 @@
                 "LayerComponent": {
                     "layerIndex": 0
                 },
+                "SiblingIndexComponent": {
+                    "siblingIndex": 1
+                },
                 "Transform": {
                     "type": "Transform",
                     "data": [
@@ -3947,7 +4143,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "0056e20b1b6bee67-000415d3d4000419"
+                        "00345ceb1834cb8e-000460df6a04cad1"
                     ]
                 },
                 "ActiveComponent": {
@@ -3962,8 +4158,8 @@
             }
         },
         {
-            "id": 300,
-            "guid": "0056e20b3be426bd-000415d3d400041f",
+            "id": 38,
+            "guid": "00345ceb4097c1d4-000460df6a04cad7",
             "components": {
                 "NameComponent": {
                     "name": "Gear_Strap"
@@ -3974,6 +4170,9 @@
                 "LayerComponent": {
                     "layerIndex": 0
                 },
+                "SiblingIndexComponent": {
+                    "siblingIndex": 2
+                },
                 "Transform": {
                     "type": "Transform",
                     "data": [
@@ -4037,7 +4236,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "0056e20b1b6bee67-000415d3d4000419"
+                        "00345ceb1834cb8e-000460df6a04cad1"
                     ]
                 },
                 "ActiveComponent": {
@@ -4052,8 +4251,8 @@
             }
         },
         {
-            "id": 301,
-            "guid": "0056e20b67d50dea-000415d3d4000421",
+            "id": 39,
+            "guid": "00345ceb7a09fd42-000460df6a04cad9",
             "components": {
                 "NameComponent": {
                     "name": "Threads"
@@ -4064,6 +4263,9 @@
                 "LayerComponent": {
                     "layerIndex": 0
                 },
+                "SiblingIndexComponent": {
+                    "siblingIndex": 3
+                },
                 "Transform": {
                     "type": "Transform",
                     "data": [
@@ -4127,7 +4329,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "0056e20b1b6bee67-000415d3d4000419"
+                        "00345ceb1834cb8e-000460df6a04cad1"
                     ]
                 },
                 "ActiveComponent": {
@@ -4142,8 +4344,8 @@
             }
         },
         {
-            "id": 302,
-            "guid": "0056e20b0a05a4dc-000415d3d4000423",
+            "id": 40,
+            "guid": "00345ceb25662fb9-000460df6a04cadb",
             "components": {
                 "NameComponent": {
                     "name": "Skirt"
@@ -4154,6 +4356,9 @@
                 "LayerComponent": {
                     "layerIndex": 0
                 },
+                "SiblingIndexComponent": {
+                    "siblingIndex": 4
+                },
                 "Transform": {
                     "type": "Transform",
                     "data": [
@@ -4217,7 +4422,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "0056e20b1b6bee67-000415d3d4000419"
+                        "00345ceb1834cb8e-000460df6a04cad1"
                     ]
                 },
                 "ActiveComponent": {
@@ -4232,8 +4437,8 @@
             }
         },
         {
-            "id": 303,
-            "guid": "0056e20b629fff5d-000415d3d4000425",
+            "id": 41,
+            "guid": "00345ceb6c8175e5-000460df6a04cadd",
             "components": {
                 "NameComponent": {
                     "name": "L_Eyelash"
@@ -4244,6 +4449,9 @@
                 "LayerComponent": {
                     "layerIndex": 0
                 },
+                "SiblingIndexComponent": {
+                    "siblingIndex": 10
+                },
                 "Transform": {
                     "type": "Transform",
                     "data": [
@@ -4310,8 +4518,8 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "0056e20b38b1532b-000415d3d4000427",
-                                "0056e20b671660d9-000415d3d4000429"
+                                "00345ceb6be79a5c-000460df6a04cadf",
+                                "00345ceb1047bb7e-000460df6a04cae1"
                             ]
                         }
                     ]
@@ -4319,7 +4527,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "0056e20b0e827d54-000415d3d40003d5"
+                        "00345ceb56d36dad-000460df6a04ca8d"
                     ]
                 },
                 "ActiveComponent": {
@@ -4334,8 +4542,8 @@
             }
         },
         {
-            "id": 304,
-            "guid": "0056e20b38b1532b-000415d3d4000427",
+            "id": 42,
+            "guid": "00345ceb6be79a5c-000460df6a04cadf",
             "components": {
                 "NameComponent": {
                     "name": "L_Lower_Eyelash"
@@ -4346,6 +4554,9 @@
                 "LayerComponent": {
                     "layerIndex": 0
                 },
+                "SiblingIndexComponent": {
+                    "siblingIndex": 0
+                },
                 "Transform": {
                     "type": "Transform",
                     "data": [
@@ -4409,7 +4620,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "0056e20b629fff5d-000415d3d4000425"
+                        "00345ceb6c8175e5-000460df6a04cadd"
                     ]
                 },
                 "ActiveComponent": {
@@ -4424,8 +4635,8 @@
             }
         },
         {
-            "id": 305,
-            "guid": "0056e20b671660d9-000415d3d4000429",
+            "id": 43,
+            "guid": "00345ceb1047bb7e-000460df6a04cae1",
             "components": {
                 "NameComponent": {
                     "name": "L_Upper_Eyelash"
@@ -4436,6 +4647,9 @@
                 "LayerComponent": {
                     "layerIndex": 0
                 },
+                "SiblingIndexComponent": {
+                    "siblingIndex": 1
+                },
                 "Transform": {
                     "type": "Transform",
                     "data": [
@@ -4499,7 +4713,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "0056e20b629fff5d-000415d3d4000425"
+                        "00345ceb6c8175e5-000460df6a04cadd"
                     ]
                 },
                 "ActiveComponent": {
@@ -4514,8 +4728,8 @@
             }
         },
         {
-            "id": 306,
-            "guid": "0056e20b283452d3-000415d3d400042b",
+            "id": 44,
+            "guid": "00345ceb3c7d40a9-000460df6a04cae3",
             "components": {
                 "NameComponent": {
                     "name": "R_Eyelash"
@@ -4526,6 +4740,9 @@
                 "LayerComponent": {
                     "layerIndex": 0
                 },
+                "SiblingIndexComponent": {
+                    "siblingIndex": 11
+                },
                 "Transform": {
                     "type": "Transform",
                     "data": [
@@ -4592,8 +4809,8 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "0056e20b525b2fd3-000415d3d400042d",
-                                "0056e20b6814b379-000415d3d400042f"
+                                "00345ceb6e817579-000460df6a04cae5",
+                                "00345ceb4597a391-000460df6a04cae7"
                             ]
                         }
                     ]
@@ -4601,7 +4818,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "0056e20b0e827d54-000415d3d40003d5"
+                        "00345ceb56d36dad-000460df6a04ca8d"
                     ]
                 },
                 "ActiveComponent": {
@@ -4616,8 +4833,8 @@
             }
         },
         {
-            "id": 307,
-            "guid": "0056e20b525b2fd3-000415d3d400042d",
+            "id": 45,
+            "guid": "00345ceb6e817579-000460df6a04cae5",
             "components": {
                 "NameComponent": {
                     "name": "R_Upper_Eyelash"
@@ -4628,6 +4845,9 @@
                 "LayerComponent": {
                     "layerIndex": 0
                 },
+                "SiblingIndexComponent": {
+                    "siblingIndex": 0
+                },
                 "Transform": {
                     "type": "Transform",
                     "data": [
@@ -4691,7 +4911,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "0056e20b283452d3-000415d3d400042b"
+                        "00345ceb3c7d40a9-000460df6a04cae3"
                     ]
                 },
                 "ActiveComponent": {
@@ -4706,8 +4926,8 @@
             }
         },
         {
-            "id": 308,
-            "guid": "0056e20b6814b379-000415d3d400042f",
+            "id": 46,
+            "guid": "00345ceb4597a391-000460df6a04cae7",
             "components": {
                 "NameComponent": {
                     "name": "R_Lower_Eyelash"
@@ -4718,6 +4938,9 @@
                 "LayerComponent": {
                     "layerIndex": 0
                 },
+                "SiblingIndexComponent": {
+                    "siblingIndex": 1
+                },
                 "Transform": {
                     "type": "Transform",
                     "data": [
@@ -4781,7 +5004,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "0056e20b283452d3-000415d3d400042b"
+                        "00345ceb3c7d40a9-000460df6a04cae3"
                     ]
                 },
                 "ActiveComponent": {
@@ -4796,8 +5019,8 @@
             }
         },
         {
-            "id": 309,
-            "guid": "0056e20b2da151e3-000415d3d4000431",
+            "id": 47,
+            "guid": "00345ceb31c5c9db-000460df6a04cae9",
             "components": {
                 "NameComponent": {
                     "name": "Top_Torso"
@@ -4807,6 +5030,9 @@
                 },
                 "LayerComponent": {
                     "layerIndex": 0
+                },
+                "SiblingIndexComponent": {
+                    "siblingIndex": 12
                 },
                 "Transform": {
                     "type": "Transform",
@@ -4874,23 +5100,23 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "0056e20b1cac51aa-000415d3d4000433",
-                                "0056e20b70c19aca-000415d3d4000435",
-                                "0056e20b5d75412e-000415d3d4000437",
-                                "0056e20b657d5e2d-000415d3d4000439",
-                                "0056e20b3fae0e8f-000415d3d400043b",
-                                "0056e20b6f4fa309-000415d3d400043d",
-                                "0056e20b5a21d566-000415d3d400043f",
-                                "0056e20b72f7be41-000415d3d4000441",
-                                "0056e20b4adc2a2f-000415d3d4000443",
-                                "0056e20b5e74d111-000415d3d4000445",
-                                "0056e20b3e419b61-000415d3d4000447",
-                                "0056e20b06b9f939-000415d3d4000449",
-                                "0056e20b66f7879e-000415d3d400044b",
-                                "0056e20b2b1f6483-000415d3d400044d",
-                                "0056e20b3aaecc10-000415d3d400044f",
-                                "0056e20b6199a893-000415d3d4000451",
-                                "0056e20b06c2292c-000415d3d4000453"
+                                "00345ceb575b4f8f-000460df6a04caeb",
+                                "00345ceb368262f9-000460df6a04caed",
+                                "00345ceb3ea642ed-000460df6a04caef",
+                                "00345ceb3f665d2f-000460df6a04caf1",
+                                "00345ceb247b20e2-000460df6a04caf3",
+                                "00345ceb39ba3e9a-000460df6a04caf5",
+                                "00345ceb51afea21-000460df6a04caf7",
+                                "00345ceb648a6584-000460df6a04caf9",
+                                "00345ceb144b3a82-000460df6a04cafb",
+                                "00345ceb1b71c460-000460df6a04cafd",
+                                "00345ceb0acc3844-000460df6a04caff",
+                                "00345ceb1970c1cf-000460df6a04cb01",
+                                "00345ceb1207908b-000460df6a04cb03",
+                                "00345ceb5498dcdc-000460df6a04cb05",
+                                "00345ceb7a698a3a-000460df6a04cb07",
+                                "00345ceb55cc9de7-000460df6a04cb09",
+                                "00345ceb0d463a20-000460df6a04cb0b"
                             ]
                         }
                     ]
@@ -4898,7 +5124,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "0056e20b0e827d54-000415d3d40003d5"
+                        "00345ceb56d36dad-000460df6a04ca8d"
                     ]
                 },
                 "ActiveComponent": {
@@ -4913,8 +5139,8 @@
             }
         },
         {
-            "id": 310,
-            "guid": "0056e20b1cac51aa-000415d3d4000433",
+            "id": 48,
+            "guid": "00345ceb575b4f8f-000460df6a04caeb",
             "components": {
                 "NameComponent": {
                     "name": "polySurface234"
@@ -4925,6 +5151,9 @@
                 "LayerComponent": {
                     "layerIndex": 0
                 },
+                "SiblingIndexComponent": {
+                    "siblingIndex": 0
+                },
                 "Transform": {
                     "type": "Transform",
                     "data": [
@@ -4988,7 +5217,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "0056e20b2da151e3-000415d3d4000431"
+                        "00345ceb31c5c9db-000460df6a04cae9"
                     ]
                 },
                 "ActiveComponent": {
@@ -5003,8 +5232,8 @@
             }
         },
         {
-            "id": 311,
-            "guid": "0056e20b70c19aca-000415d3d4000435",
+            "id": 49,
+            "guid": "00345ceb368262f9-000460df6a04caed",
             "components": {
                 "NameComponent": {
                     "name": "polySurface235"
@@ -5015,6 +5244,9 @@
                 "LayerComponent": {
                     "layerIndex": 0
                 },
+                "SiblingIndexComponent": {
+                    "siblingIndex": 1
+                },
                 "Transform": {
                     "type": "Transform",
                     "data": [
@@ -5078,7 +5310,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "0056e20b2da151e3-000415d3d4000431"
+                        "00345ceb31c5c9db-000460df6a04cae9"
                     ]
                 },
                 "ActiveComponent": {
@@ -5093,8 +5325,8 @@
             }
         },
         {
-            "id": 312,
-            "guid": "0056e20b5d75412e-000415d3d4000437",
+            "id": 50,
+            "guid": "00345ceb3ea642ed-000460df6a04caef",
             "components": {
                 "NameComponent": {
                     "name": "polySurface236"
@@ -5105,6 +5337,9 @@
                 "LayerComponent": {
                     "layerIndex": 0
                 },
+                "SiblingIndexComponent": {
+                    "siblingIndex": 2
+                },
                 "Transform": {
                     "type": "Transform",
                     "data": [
@@ -5168,7 +5403,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "0056e20b2da151e3-000415d3d4000431"
+                        "00345ceb31c5c9db-000460df6a04cae9"
                     ]
                 },
                 "ActiveComponent": {
@@ -5183,8 +5418,8 @@
             }
         },
         {
-            "id": 313,
-            "guid": "0056e20b657d5e2d-000415d3d4000439",
+            "id": 51,
+            "guid": "00345ceb3f665d2f-000460df6a04caf1",
             "components": {
                 "NameComponent": {
                     "name": "polySurface237"
@@ -5195,6 +5430,9 @@
                 "LayerComponent": {
                     "layerIndex": 0
                 },
+                "SiblingIndexComponent": {
+                    "siblingIndex": 3
+                },
                 "Transform": {
                     "type": "Transform",
                     "data": [
@@ -5258,7 +5496,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "0056e20b2da151e3-000415d3d4000431"
+                        "00345ceb31c5c9db-000460df6a04cae9"
                     ]
                 },
                 "ActiveComponent": {
@@ -5273,8 +5511,8 @@
             }
         },
         {
-            "id": 314,
-            "guid": "0056e20b3fae0e8f-000415d3d400043b",
+            "id": 52,
+            "guid": "00345ceb247b20e2-000460df6a04caf3",
             "components": {
                 "NameComponent": {
                     "name": "polySurface238"
@@ -5285,6 +5523,9 @@
                 "LayerComponent": {
                     "layerIndex": 0
                 },
+                "SiblingIndexComponent": {
+                    "siblingIndex": 4
+                },
                 "Transform": {
                     "type": "Transform",
                     "data": [
@@ -5348,7 +5589,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "0056e20b2da151e3-000415d3d4000431"
+                        "00345ceb31c5c9db-000460df6a04cae9"
                     ]
                 },
                 "ActiveComponent": {
@@ -5363,8 +5604,8 @@
             }
         },
         {
-            "id": 315,
-            "guid": "0056e20b6f4fa309-000415d3d400043d",
+            "id": 53,
+            "guid": "00345ceb39ba3e9a-000460df6a04caf5",
             "components": {
                 "NameComponent": {
                     "name": "polySurface239"
@@ -5375,6 +5616,9 @@
                 "LayerComponent": {
                     "layerIndex": 0
                 },
+                "SiblingIndexComponent": {
+                    "siblingIndex": 5
+                },
                 "Transform": {
                     "type": "Transform",
                     "data": [
@@ -5438,7 +5682,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "0056e20b2da151e3-000415d3d4000431"
+                        "00345ceb31c5c9db-000460df6a04cae9"
                     ]
                 },
                 "ActiveComponent": {
@@ -5453,8 +5697,8 @@
             }
         },
         {
-            "id": 316,
-            "guid": "0056e20b5a21d566-000415d3d400043f",
+            "id": 54,
+            "guid": "00345ceb51afea21-000460df6a04caf7",
             "components": {
                 "NameComponent": {
                     "name": "polySurface240"
@@ -5465,6 +5709,9 @@
                 "LayerComponent": {
                     "layerIndex": 0
                 },
+                "SiblingIndexComponent": {
+                    "siblingIndex": 6
+                },
                 "Transform": {
                     "type": "Transform",
                     "data": [
@@ -5528,7 +5775,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "0056e20b2da151e3-000415d3d4000431"
+                        "00345ceb31c5c9db-000460df6a04cae9"
                     ]
                 },
                 "ActiveComponent": {
@@ -5543,8 +5790,8 @@
             }
         },
         {
-            "id": 317,
-            "guid": "0056e20b72f7be41-000415d3d4000441",
+            "id": 55,
+            "guid": "00345ceb648a6584-000460df6a04caf9",
             "components": {
                 "NameComponent": {
                     "name": "polySurface241"
@@ -5555,6 +5802,9 @@
                 "LayerComponent": {
                     "layerIndex": 0
                 },
+                "SiblingIndexComponent": {
+                    "siblingIndex": 7
+                },
                 "Transform": {
                     "type": "Transform",
                     "data": [
@@ -5618,7 +5868,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "0056e20b2da151e3-000415d3d4000431"
+                        "00345ceb31c5c9db-000460df6a04cae9"
                     ]
                 },
                 "ActiveComponent": {
@@ -5633,8 +5883,8 @@
             }
         },
         {
-            "id": 318,
-            "guid": "0056e20b4adc2a2f-000415d3d4000443",
+            "id": 56,
+            "guid": "00345ceb144b3a82-000460df6a04cafb",
             "components": {
                 "NameComponent": {
                     "name": "polySurface242"
@@ -5645,6 +5895,9 @@
                 "LayerComponent": {
                     "layerIndex": 0
                 },
+                "SiblingIndexComponent": {
+                    "siblingIndex": 8
+                },
                 "Transform": {
                     "type": "Transform",
                     "data": [
@@ -5708,7 +5961,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "0056e20b2da151e3-000415d3d4000431"
+                        "00345ceb31c5c9db-000460df6a04cae9"
                     ]
                 },
                 "ActiveComponent": {
@@ -5723,8 +5976,8 @@
             }
         },
         {
-            "id": 319,
-            "guid": "0056e20b5e74d111-000415d3d4000445",
+            "id": 57,
+            "guid": "00345ceb1b71c460-000460df6a04cafd",
             "components": {
                 "NameComponent": {
                     "name": "polySurface243"
@@ -5735,6 +5988,9 @@
                 "LayerComponent": {
                     "layerIndex": 0
                 },
+                "SiblingIndexComponent": {
+                    "siblingIndex": 9
+                },
                 "Transform": {
                     "type": "Transform",
                     "data": [
@@ -5798,7 +6054,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "0056e20b2da151e3-000415d3d4000431"
+                        "00345ceb31c5c9db-000460df6a04cae9"
                     ]
                 },
                 "ActiveComponent": {
@@ -5813,8 +6069,8 @@
             }
         },
         {
-            "id": 320,
-            "guid": "0056e20b3e419b61-000415d3d4000447",
+            "id": 58,
+            "guid": "00345ceb0acc3844-000460df6a04caff",
             "components": {
                 "NameComponent": {
                     "name": "polySurface244"
@@ -5825,6 +6081,9 @@
                 "LayerComponent": {
                     "layerIndex": 0
                 },
+                "SiblingIndexComponent": {
+                    "siblingIndex": 10
+                },
                 "Transform": {
                     "type": "Transform",
                     "data": [
@@ -5888,7 +6147,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "0056e20b2da151e3-000415d3d4000431"
+                        "00345ceb31c5c9db-000460df6a04cae9"
                     ]
                 },
                 "ActiveComponent": {
@@ -5903,8 +6162,8 @@
             }
         },
         {
-            "id": 321,
-            "guid": "0056e20b06b9f939-000415d3d4000449",
+            "id": 59,
+            "guid": "00345ceb1970c1cf-000460df6a04cb01",
             "components": {
                 "NameComponent": {
                     "name": "polySurface245"
@@ -5915,6 +6174,9 @@
                 "LayerComponent": {
                     "layerIndex": 0
                 },
+                "SiblingIndexComponent": {
+                    "siblingIndex": 11
+                },
                 "Transform": {
                     "type": "Transform",
                     "data": [
@@ -5978,7 +6240,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "0056e20b2da151e3-000415d3d4000431"
+                        "00345ceb31c5c9db-000460df6a04cae9"
                     ]
                 },
                 "ActiveComponent": {
@@ -5993,8 +6255,8 @@
             }
         },
         {
-            "id": 322,
-            "guid": "0056e20b66f7879e-000415d3d400044b",
+            "id": 60,
+            "guid": "00345ceb1207908b-000460df6a04cb03",
             "components": {
                 "NameComponent": {
                     "name": "polySurface246"
@@ -6005,6 +6267,9 @@
                 "LayerComponent": {
                     "layerIndex": 0
                 },
+                "SiblingIndexComponent": {
+                    "siblingIndex": 12
+                },
                 "Transform": {
                     "type": "Transform",
                     "data": [
@@ -6068,7 +6333,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "0056e20b2da151e3-000415d3d4000431"
+                        "00345ceb31c5c9db-000460df6a04cae9"
                     ]
                 },
                 "ActiveComponent": {
@@ -6083,8 +6348,8 @@
             }
         },
         {
-            "id": 323,
-            "guid": "0056e20b2b1f6483-000415d3d400044d",
+            "id": 61,
+            "guid": "00345ceb5498dcdc-000460df6a04cb05",
             "components": {
                 "NameComponent": {
                     "name": "polySurface247"
@@ -6095,6 +6360,9 @@
                 "LayerComponent": {
                     "layerIndex": 0
                 },
+                "SiblingIndexComponent": {
+                    "siblingIndex": 13
+                },
                 "Transform": {
                     "type": "Transform",
                     "data": [
@@ -6158,7 +6426,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "0056e20b2da151e3-000415d3d4000431"
+                        "00345ceb31c5c9db-000460df6a04cae9"
                     ]
                 },
                 "ActiveComponent": {
@@ -6173,8 +6441,8 @@
             }
         },
         {
-            "id": 324,
-            "guid": "0056e20b3aaecc10-000415d3d400044f",
+            "id": 62,
+            "guid": "00345ceb7a698a3a-000460df6a04cb07",
             "components": {
                 "NameComponent": {
                     "name": "polySurface248"
@@ -6185,6 +6453,9 @@
                 "LayerComponent": {
                     "layerIndex": 0
                 },
+                "SiblingIndexComponent": {
+                    "siblingIndex": 14
+                },
                 "Transform": {
                     "type": "Transform",
                     "data": [
@@ -6248,7 +6519,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "0056e20b2da151e3-000415d3d4000431"
+                        "00345ceb31c5c9db-000460df6a04cae9"
                     ]
                 },
                 "ActiveComponent": {
@@ -6263,8 +6534,8 @@
             }
         },
         {
-            "id": 325,
-            "guid": "0056e20b6199a893-000415d3d4000451",
+            "id": 63,
+            "guid": "00345ceb55cc9de7-000460df6a04cb09",
             "components": {
                 "NameComponent": {
                     "name": "polySurface249"
@@ -6275,6 +6546,9 @@
                 "LayerComponent": {
                     "layerIndex": 0
                 },
+                "SiblingIndexComponent": {
+                    "siblingIndex": 15
+                },
                 "Transform": {
                     "type": "Transform",
                     "data": [
@@ -6338,7 +6612,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "0056e20b2da151e3-000415d3d4000431"
+                        "00345ceb31c5c9db-000460df6a04cae9"
                     ]
                 },
                 "ActiveComponent": {
@@ -6353,8 +6627,8 @@
             }
         },
         {
-            "id": 326,
-            "guid": "0056e20b06c2292c-000415d3d4000453",
+            "id": 64,
+            "guid": "00345ceb0d463a20-000460df6a04cb0b",
             "components": {
                 "NameComponent": {
                     "name": "polySurface250"
@@ -6365,6 +6639,9 @@
                 "LayerComponent": {
                     "layerIndex": 0
                 },
+                "SiblingIndexComponent": {
+                    "siblingIndex": 16
+                },
                 "Transform": {
                     "type": "Transform",
                     "data": [
@@ -6428,7 +6705,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "0056e20b2da151e3-000415d3d4000431"
+                        "00345ceb31c5c9db-000460df6a04cae9"
                     ]
                 },
                 "ActiveComponent": {
@@ -6443,8 +6720,8 @@
             }
         },
         {
-            "id": 327,
-            "guid": "0056e20b0b921f3b-000415d3d4000455",
+            "id": 65,
+            "guid": "00345ceb459ab7ea-000460df6a04cb0d",
             "components": {
                 "NameComponent": {
                     "name": "Hair:backhair1"
@@ -6455,6 +6732,9 @@
                 "LayerComponent": {
                     "layerIndex": 0
                 },
+                "SiblingIndexComponent": {
+                    "siblingIndex": 1
+                },
                 "Transform": {
                     "type": "Transform",
                     "data": [
@@ -6518,7 +6798,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "002936801107bf75-00040d569e004657"
+                        "00345ceb3f9e9104-000460df6a04ca8b"
                     ]
                 },
                 "ActiveComponent": {
@@ -6533,8 +6813,8 @@
             }
         },
         {
-            "id": 328,
-            "guid": "002936802db7574c-00040d569e0046db",
+            "id": 66,
+            "guid": "00345ceb19e77b60-000460df6a04cb0f",
             "components": {
                 "NameComponent": {
                     "name": "Kusane_Player_Reference"
@@ -6544,6 +6824,9 @@
                 },
                 "LayerComponent": {
                     "layerIndex": 0
+                },
+                "SiblingIndexComponent": {
+                    "siblingIndex": 2
                 },
                 "Transform": {
                     "type": "Transform",
@@ -6611,7 +6894,7 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "0029368039f2f89c-00040d569e0046dd"
+                                "00345ceb138898d6-000460df6a04cb11"
                             ]
                         }
                     ]
@@ -6619,7 +6902,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "002936801107bf75-00040d569e004657"
+                        "00345ceb3f9e9104-000460df6a04ca8b"
                     ]
                 },
                 "ActiveComponent": {
@@ -6634,8 +6917,8 @@
             }
         },
         {
-            "id": 329,
-            "guid": "0029368039f2f89c-00040d569e0046dd",
+            "id": 67,
+            "guid": "00345ceb138898d6-000460df6a04cb11",
             "components": {
                 "NameComponent": {
                     "name": "Kusane_Player_Hips"
@@ -6645,6 +6928,9 @@
                 },
                 "LayerComponent": {
                     "layerIndex": 0
+                },
+                "SiblingIndexComponent": {
+                    "siblingIndex": 0
                 },
                 "Transform": {
                     "type": "Transform",
@@ -6712,9 +6998,9 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "0056e20b4fbc4eae-000415d3d400045b",
-                                "002936806739deb3-00040d569e0046e7",
-                                "002936801e1986f0-00040d569e0046ef"
+                                "00345ceb77a67687-000460df6a04cb13",
+                                "00345ceb3ff59dac-000460df6a04cb1b",
+                                "00345ceb4733fb28-000460df6a04cb23"
                             ]
                         }
                     ]
@@ -6722,7 +7008,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "002936802db7574c-00040d569e0046db"
+                        "00345ceb19e77b60-000460df6a04cb0f"
                     ]
                 },
                 "ActiveComponent": {
@@ -6737,8 +7023,8 @@
             }
         },
         {
-            "id": 330,
-            "guid": "0056e20b4fbc4eae-000415d3d400045b",
+            "id": 68,
+            "guid": "00345ceb77a67687-000460df6a04cb13",
             "components": {
                 "NameComponent": {
                     "name": "Kusane_Player_LeftUpLeg"
@@ -6748,6 +7034,9 @@
                 },
                 "LayerComponent": {
                     "layerIndex": 0
+                },
+                "SiblingIndexComponent": {
+                    "siblingIndex": 0
                 },
                 "Transform": {
                     "type": "Transform",
@@ -6815,7 +7104,7 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "0056e20b700165b7-000415d3d400045d"
+                                "00345ceb15770508-000460df6a04cb15"
                             ]
                         }
                     ]
@@ -6823,7 +7112,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "0029368039f2f89c-00040d569e0046dd"
+                        "00345ceb138898d6-000460df6a04cb11"
                     ]
                 },
                 "ActiveComponent": {
@@ -6838,8 +7127,8 @@
             }
         },
         {
-            "id": 331,
-            "guid": "0056e20b700165b7-000415d3d400045d",
+            "id": 69,
+            "guid": "00345ceb15770508-000460df6a04cb15",
             "components": {
                 "NameComponent": {
                     "name": "Kusane_Player_LeftLeg"
@@ -6849,6 +7138,9 @@
                 },
                 "LayerComponent": {
                     "layerIndex": 0
+                },
+                "SiblingIndexComponent": {
+                    "siblingIndex": 0
                 },
                 "Transform": {
                     "type": "Transform",
@@ -6916,7 +7208,7 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "0056e20b7ec31064-000415d3d400045f"
+                                "00345ceb5b7dd155-000460df6a04cb17"
                             ]
                         }
                     ]
@@ -6924,7 +7216,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "0056e20b4fbc4eae-000415d3d400045b"
+                        "00345ceb77a67687-000460df6a04cb13"
                     ]
                 },
                 "ActiveComponent": {
@@ -6939,8 +7231,8 @@
             }
         },
         {
-            "id": 332,
-            "guid": "0056e20b7ec31064-000415d3d400045f",
+            "id": 70,
+            "guid": "00345ceb5b7dd155-000460df6a04cb17",
             "components": {
                 "NameComponent": {
                     "name": "Kusane_Player_LeftFoot"
@@ -6950,6 +7242,9 @@
                 },
                 "LayerComponent": {
                     "layerIndex": 0
+                },
+                "SiblingIndexComponent": {
+                    "siblingIndex": 0
                 },
                 "Transform": {
                     "type": "Transform",
@@ -7017,7 +7312,7 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "0056e20b67be31ea-000415d3d4000461"
+                                "00345ceb39282353-000460df6a04cb19"
                             ]
                         }
                     ]
@@ -7025,7 +7320,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "0056e20b700165b7-000415d3d400045d"
+                        "00345ceb15770508-000460df6a04cb15"
                     ]
                 },
                 "ActiveComponent": {
@@ -7040,8 +7335,8 @@
             }
         },
         {
-            "id": 333,
-            "guid": "0056e20b67be31ea-000415d3d4000461",
+            "id": 71,
+            "guid": "00345ceb39282353-000460df6a04cb19",
             "components": {
                 "NameComponent": {
                     "name": "Kusane_Player_LeftToeBase"
@@ -7051,6 +7346,9 @@
                 },
                 "LayerComponent": {
                     "layerIndex": 0
+                },
+                "SiblingIndexComponent": {
+                    "siblingIndex": 0
                 },
                 "Transform": {
                     "type": "Transform",
@@ -7115,7 +7413,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "0056e20b7ec31064-000415d3d400045f"
+                        "00345ceb5b7dd155-000460df6a04cb17"
                     ]
                 },
                 "ActiveComponent": {
@@ -7130,8 +7428,8 @@
             }
         },
         {
-            "id": 334,
-            "guid": "002936806739deb3-00040d569e0046e7",
+            "id": 72,
+            "guid": "00345ceb3ff59dac-000460df6a04cb1b",
             "components": {
                 "NameComponent": {
                     "name": "Kusane_Player_RightUpLeg"
@@ -7141,6 +7439,9 @@
                 },
                 "LayerComponent": {
                     "layerIndex": 0
+                },
+                "SiblingIndexComponent": {
+                    "siblingIndex": 1
                 },
                 "Transform": {
                     "type": "Transform",
@@ -7208,7 +7509,7 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "0029368072892aa3-00040d569e0046e9"
+                                "00345ceb14c16b58-000460df6a04cb1d"
                             ]
                         }
                     ]
@@ -7216,7 +7517,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "0029368039f2f89c-00040d569e0046dd"
+                        "00345ceb138898d6-000460df6a04cb11"
                     ]
                 },
                 "ActiveComponent": {
@@ -7231,8 +7532,8 @@
             }
         },
         {
-            "id": 335,
-            "guid": "0029368072892aa3-00040d569e0046e9",
+            "id": 73,
+            "guid": "00345ceb14c16b58-000460df6a04cb1d",
             "components": {
                 "NameComponent": {
                     "name": "Kusane_Player_RightLeg"
@@ -7242,6 +7543,9 @@
                 },
                 "LayerComponent": {
                     "layerIndex": 0
+                },
+                "SiblingIndexComponent": {
+                    "siblingIndex": 0
                 },
                 "Transform": {
                     "type": "Transform",
@@ -7309,7 +7613,7 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "002936805b193947-00040d569e0046eb"
+                                "00345ceb05b407f0-000460df6a04cb1f"
                             ]
                         }
                     ]
@@ -7317,7 +7621,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "002936806739deb3-00040d569e0046e7"
+                        "00345ceb3ff59dac-000460df6a04cb1b"
                     ]
                 },
                 "ActiveComponent": {
@@ -7332,8 +7636,8 @@
             }
         },
         {
-            "id": 336,
-            "guid": "002936805b193947-00040d569e0046eb",
+            "id": 74,
+            "guid": "00345ceb05b407f0-000460df6a04cb1f",
             "components": {
                 "NameComponent": {
                     "name": "Kusane_Player_RightFoot"
@@ -7343,6 +7647,9 @@
                 },
                 "LayerComponent": {
                     "layerIndex": 0
+                },
+                "SiblingIndexComponent": {
+                    "siblingIndex": 0
                 },
                 "Transform": {
                     "type": "Transform",
@@ -7410,7 +7717,7 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "0029368002e58e12-00040d569e0046ed"
+                                "00345ceb376e2032-000460df6a04cb21"
                             ]
                         }
                     ]
@@ -7418,7 +7725,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "0029368072892aa3-00040d569e0046e9"
+                        "00345ceb14c16b58-000460df6a04cb1d"
                     ]
                 },
                 "ActiveComponent": {
@@ -7433,8 +7740,8 @@
             }
         },
         {
-            "id": 337,
-            "guid": "0029368002e58e12-00040d569e0046ed",
+            "id": 75,
+            "guid": "00345ceb376e2032-000460df6a04cb21",
             "components": {
                 "NameComponent": {
                     "name": "Kusane_Player_RightToeBase"
@@ -7444,6 +7751,9 @@
                 },
                 "LayerComponent": {
                     "layerIndex": 0
+                },
+                "SiblingIndexComponent": {
+                    "siblingIndex": 0
                 },
                 "Transform": {
                     "type": "Transform",
@@ -7487,7 +7797,7 @@
                             "data": [
                                 {
                                     "type": "float",
-                                    "data": 0.999569
+                                    "data": 0.99957
                                 },
                                 {
                                     "type": "float",
@@ -7508,7 +7818,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "002936805b193947-00040d569e0046eb"
+                        "00345ceb05b407f0-000460df6a04cb1f"
                     ]
                 },
                 "ActiveComponent": {
@@ -7523,8 +7833,8 @@
             }
         },
         {
-            "id": 338,
-            "guid": "002936801e1986f0-00040d569e0046ef",
+            "id": 76,
+            "guid": "00345ceb4733fb28-000460df6a04cb23",
             "components": {
                 "NameComponent": {
                     "name": "Kusane_Player_Spine"
@@ -7534,6 +7844,9 @@
                 },
                 "LayerComponent": {
                     "layerIndex": 0
+                },
+                "SiblingIndexComponent": {
+                    "siblingIndex": 2
                 },
                 "Transform": {
                     "type": "Transform",
@@ -7601,7 +7914,7 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "0029368040c1c1c1-00040d569e0046f1"
+                                "00345ceb4d8d3c69-000460df6a04cb25"
                             ]
                         }
                     ]
@@ -7609,7 +7922,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "0029368039f2f89c-00040d569e0046dd"
+                        "00345ceb138898d6-000460df6a04cb11"
                     ]
                 },
                 "ActiveComponent": {
@@ -7624,8 +7937,8 @@
             }
         },
         {
-            "id": 339,
-            "guid": "0029368040c1c1c1-00040d569e0046f1",
+            "id": 77,
+            "guid": "00345ceb4d8d3c69-000460df6a04cb25",
             "components": {
                 "NameComponent": {
                     "name": "Kusane_Player_Spine1"
@@ -7635,6 +7948,9 @@
                 },
                 "LayerComponent": {
                     "layerIndex": 0
+                },
+                "SiblingIndexComponent": {
+                    "siblingIndex": 0
                 },
                 "Transform": {
                     "type": "Transform",
@@ -7702,7 +8018,7 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "002936807da0a558-00040d569e0046f3"
+                                "00345ceb516acf6d-000460df6a04cb27"
                             ]
                         }
                     ]
@@ -7710,7 +8026,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "002936801e1986f0-00040d569e0046ef"
+                        "00345ceb4733fb28-000460df6a04cb23"
                     ]
                 },
                 "ActiveComponent": {
@@ -7725,8 +8041,8 @@
             }
         },
         {
-            "id": 340,
-            "guid": "002936807da0a558-00040d569e0046f3",
+            "id": 78,
+            "guid": "00345ceb516acf6d-000460df6a04cb27",
             "components": {
                 "NameComponent": {
                     "name": "Kusane_Player_Spine2"
@@ -7736,6 +8052,9 @@
                 },
                 "LayerComponent": {
                     "layerIndex": 0
+                },
+                "SiblingIndexComponent": {
+                    "siblingIndex": 0
                 },
                 "Transform": {
                     "type": "Transform",
@@ -7803,9 +8122,9 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "0056e20b2a202d07-000415d3d4000471",
-                                "00293680529515ec-00040d569e004725",
-                                "0056e20b4ac67a7a-000415d3d40004d1"
+                                "00345ceb6ab5fb66-000460df6a04cb29",
+                                "00345ceb11b11407-000460df6a04cb59",
+                                "00345ceb318b2efc-000460df6a04cb89"
                             ]
                         }
                     ]
@@ -7813,7 +8132,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "0029368040c1c1c1-00040d569e0046f1"
+                        "00345ceb4d8d3c69-000460df6a04cb25"
                     ]
                 },
                 "ActiveComponent": {
@@ -7828,8 +8147,8 @@
             }
         },
         {
-            "id": 341,
-            "guid": "0056e20b2a202d07-000415d3d4000471",
+            "id": 79,
+            "guid": "00345ceb6ab5fb66-000460df6a04cb29",
             "components": {
                 "NameComponent": {
                     "name": "Kusane_Player_LeftShoulder"
@@ -7839,6 +8158,9 @@
                 },
                 "LayerComponent": {
                     "layerIndex": 0
+                },
+                "SiblingIndexComponent": {
+                    "siblingIndex": 0
                 },
                 "Transform": {
                     "type": "Transform",
@@ -7906,7 +8228,7 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "0056e20b293bcb51-000415d3d4000473"
+                                "00345ceb62da8c09-000460df6a04cb2b"
                             ]
                         }
                     ]
@@ -7914,7 +8236,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "002936807da0a558-00040d569e0046f3"
+                        "00345ceb516acf6d-000460df6a04cb27"
                     ]
                 },
                 "ActiveComponent": {
@@ -7929,8 +8251,8 @@
             }
         },
         {
-            "id": 342,
-            "guid": "0056e20b293bcb51-000415d3d4000473",
+            "id": 80,
+            "guid": "00345ceb62da8c09-000460df6a04cb2b",
             "components": {
                 "NameComponent": {
                     "name": "Kusane_Player_LeftArm"
@@ -7940,6 +8262,9 @@
                 },
                 "LayerComponent": {
                     "layerIndex": 0
+                },
+                "SiblingIndexComponent": {
+                    "siblingIndex": 0
                 },
                 "Transform": {
                     "type": "Transform",
@@ -8007,7 +8332,7 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "0056e20b08b74c9b-000415d3d4000475"
+                                "00345ceb57f973f0-000460df6a04cb2d"
                             ]
                         }
                     ]
@@ -8015,7 +8340,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "0056e20b2a202d07-000415d3d4000471"
+                        "00345ceb6ab5fb66-000460df6a04cb29"
                     ]
                 },
                 "ActiveComponent": {
@@ -8030,8 +8355,8 @@
             }
         },
         {
-            "id": 343,
-            "guid": "0056e20b08b74c9b-000415d3d4000475",
+            "id": 81,
+            "guid": "00345ceb57f973f0-000460df6a04cb2d",
             "components": {
                 "NameComponent": {
                     "name": "Kusane_Player_LeftForeArm"
@@ -8041,6 +8366,9 @@
                 },
                 "LayerComponent": {
                     "layerIndex": 0
+                },
+                "SiblingIndexComponent": {
+                    "siblingIndex": 0
                 },
                 "Transform": {
                     "type": "Transform",
@@ -8108,7 +8436,7 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "0056e20b1d08e0cd-000415d3d4000477"
+                                "00345ceb034d0622-000460df6a04cb2f"
                             ]
                         }
                     ]
@@ -8116,7 +8444,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "0056e20b293bcb51-000415d3d4000473"
+                        "00345ceb62da8c09-000460df6a04cb2b"
                     ]
                 },
                 "ActiveComponent": {
@@ -8131,8 +8459,8 @@
             }
         },
         {
-            "id": 344,
-            "guid": "0056e20b1d08e0cd-000415d3d4000477",
+            "id": 82,
+            "guid": "00345ceb034d0622-000460df6a04cb2f",
             "components": {
                 "NameComponent": {
                     "name": "Kusane_Player_LeftHand"
@@ -8142,6 +8470,9 @@
                 },
                 "LayerComponent": {
                     "layerIndex": 0
+                },
+                "SiblingIndexComponent": {
+                    "siblingIndex": 0
                 },
                 "Transform": {
                     "type": "Transform",
@@ -8209,11 +8540,11 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "0056e20b710f2ec4-000415d3d4000479",
-                                "0056e20b3d82a44d-000415d3d4000481",
-                                "0056e20b0f10d62b-000415d3d4000489",
-                                "0056e20b15e72645-000415d3d4000491",
-                                "0056e20b1997b98b-000415d3d4000499"
+                                "00345ceb5afe4643-000460df6a04cb31",
+                                "00345ceb2f033800-000460df6a04cb39",
+                                "00345ceb0a0e83c5-000460df6a04cb41",
+                                "00345ceb78656a49-000460df6a04cb49",
+                                "00345ceb43e432bf-000460df6a04cb51"
                             ]
                         }
                     ]
@@ -8221,7 +8552,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "0056e20b08b74c9b-000415d3d4000475"
+                        "00345ceb57f973f0-000460df6a04cb2d"
                     ]
                 },
                 "ActiveComponent": {
@@ -8236,8 +8567,8 @@
             }
         },
         {
-            "id": 345,
-            "guid": "0056e20b710f2ec4-000415d3d4000479",
+            "id": 83,
+            "guid": "00345ceb5afe4643-000460df6a04cb31",
             "components": {
                 "NameComponent": {
                     "name": "Kusane_Player_LeftHandThumb1"
@@ -8247,6 +8578,9 @@
                 },
                 "LayerComponent": {
                     "layerIndex": 0
+                },
+                "SiblingIndexComponent": {
+                    "siblingIndex": 0
                 },
                 "Transform": {
                     "type": "Transform",
@@ -8314,7 +8648,7 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "0056e20b77dbb8b3-000415d3d400047b"
+                                "00345ceb1b9a6ef7-000460df6a04cb33"
                             ]
                         }
                     ]
@@ -8322,7 +8656,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "0056e20b1d08e0cd-000415d3d4000477"
+                        "00345ceb034d0622-000460df6a04cb2f"
                     ]
                 },
                 "ActiveComponent": {
@@ -8337,8 +8671,8 @@
             }
         },
         {
-            "id": 346,
-            "guid": "0056e20b77dbb8b3-000415d3d400047b",
+            "id": 84,
+            "guid": "00345ceb1b9a6ef7-000460df6a04cb33",
             "components": {
                 "NameComponent": {
                     "name": "Kusane_Player_LeftHandThumb2"
@@ -8348,6 +8682,9 @@
                 },
                 "LayerComponent": {
                     "layerIndex": 0
+                },
+                "SiblingIndexComponent": {
+                    "siblingIndex": 0
                 },
                 "Transform": {
                     "type": "Transform",
@@ -8415,7 +8752,7 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "0056e20b29b51c55-000415d3d400047d"
+                                "00345ceb2cd87dd3-000460df6a04cb35"
                             ]
                         }
                     ]
@@ -8423,7 +8760,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "0056e20b710f2ec4-000415d3d4000479"
+                        "00345ceb5afe4643-000460df6a04cb31"
                     ]
                 },
                 "ActiveComponent": {
@@ -8438,8 +8775,8 @@
             }
         },
         {
-            "id": 347,
-            "guid": "0056e20b29b51c55-000415d3d400047d",
+            "id": 85,
+            "guid": "00345ceb2cd87dd3-000460df6a04cb35",
             "components": {
                 "NameComponent": {
                     "name": "Kusane_Player_LeftHandThumb3"
@@ -8449,6 +8786,9 @@
                 },
                 "LayerComponent": {
                     "layerIndex": 0
+                },
+                "SiblingIndexComponent": {
+                    "siblingIndex": 0
                 },
                 "Transform": {
                     "type": "Transform",
@@ -8516,7 +8856,7 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "0056e20b04f911a4-000415d3d400047f"
+                                "00345ceb0793844b-000460df6a04cb37"
                             ]
                         }
                     ]
@@ -8524,7 +8864,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "0056e20b77dbb8b3-000415d3d400047b"
+                        "00345ceb1b9a6ef7-000460df6a04cb33"
                     ]
                 },
                 "ActiveComponent": {
@@ -8539,8 +8879,8 @@
             }
         },
         {
-            "id": 348,
-            "guid": "0056e20b04f911a4-000415d3d400047f",
+            "id": 86,
+            "guid": "00345ceb0793844b-000460df6a04cb37",
             "components": {
                 "NameComponent": {
                     "name": "Kusane_Player_LeftHandThumb4"
@@ -8550,6 +8890,9 @@
                 },
                 "LayerComponent": {
                     "layerIndex": 0
+                },
+                "SiblingIndexComponent": {
+                    "siblingIndex": 0
                 },
                 "Transform": {
                     "type": "Transform",
@@ -8614,7 +8957,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "0056e20b29b51c55-000415d3d400047d"
+                        "00345ceb2cd87dd3-000460df6a04cb35"
                     ]
                 },
                 "ActiveComponent": {
@@ -8629,8 +8972,8 @@
             }
         },
         {
-            "id": 349,
-            "guid": "0056e20b3d82a44d-000415d3d4000481",
+            "id": 87,
+            "guid": "00345ceb2f033800-000460df6a04cb39",
             "components": {
                 "NameComponent": {
                     "name": "Kusane_Player_LeftHandIndex1"
@@ -8640,6 +8983,9 @@
                 },
                 "LayerComponent": {
                     "layerIndex": 0
+                },
+                "SiblingIndexComponent": {
+                    "siblingIndex": 1
                 },
                 "Transform": {
                     "type": "Transform",
@@ -8707,7 +9053,7 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "0056e20b3781a3f6-000415d3d4000483"
+                                "00345ceb47c8ab89-000460df6a04cb3b"
                             ]
                         }
                     ]
@@ -8715,7 +9061,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "0056e20b1d08e0cd-000415d3d4000477"
+                        "00345ceb034d0622-000460df6a04cb2f"
                     ]
                 },
                 "ActiveComponent": {
@@ -8730,8 +9076,8 @@
             }
         },
         {
-            "id": 350,
-            "guid": "0056e20b3781a3f6-000415d3d4000483",
+            "id": 88,
+            "guid": "00345ceb47c8ab89-000460df6a04cb3b",
             "components": {
                 "NameComponent": {
                     "name": "Kusane_Player_LeftHandIndex2"
@@ -8741,6 +9087,9 @@
                 },
                 "LayerComponent": {
                     "layerIndex": 0
+                },
+                "SiblingIndexComponent": {
+                    "siblingIndex": 0
                 },
                 "Transform": {
                     "type": "Transform",
@@ -8808,7 +9157,7 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "0056e20b656c4bd3-000415d3d4000485"
+                                "00345ceb385241a5-000460df6a04cb3d"
                             ]
                         }
                     ]
@@ -8816,7 +9165,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "0056e20b3d82a44d-000415d3d4000481"
+                        "00345ceb2f033800-000460df6a04cb39"
                     ]
                 },
                 "ActiveComponent": {
@@ -8831,8 +9180,8 @@
             }
         },
         {
-            "id": 351,
-            "guid": "0056e20b656c4bd3-000415d3d4000485",
+            "id": 89,
+            "guid": "00345ceb385241a5-000460df6a04cb3d",
             "components": {
                 "NameComponent": {
                     "name": "Kusane_Player_LeftHandIndex3"
@@ -8842,6 +9191,9 @@
                 },
                 "LayerComponent": {
                     "layerIndex": 0
+                },
+                "SiblingIndexComponent": {
+                    "siblingIndex": 0
                 },
                 "Transform": {
                     "type": "Transform",
@@ -8909,7 +9261,7 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "0056e20b68b1b01a-000415d3d4000487"
+                                "00345ceb0aafa147-000460df6a04cb3f"
                             ]
                         }
                     ]
@@ -8917,7 +9269,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "0056e20b3781a3f6-000415d3d4000483"
+                        "00345ceb47c8ab89-000460df6a04cb3b"
                     ]
                 },
                 "ActiveComponent": {
@@ -8932,8 +9284,8 @@
             }
         },
         {
-            "id": 352,
-            "guid": "0056e20b68b1b01a-000415d3d4000487",
+            "id": 90,
+            "guid": "00345ceb0aafa147-000460df6a04cb3f",
             "components": {
                 "NameComponent": {
                     "name": "Kusane_Player_LeftHandIndex4"
@@ -8943,6 +9295,9 @@
                 },
                 "LayerComponent": {
                     "layerIndex": 0
+                },
+                "SiblingIndexComponent": {
+                    "siblingIndex": 0
                 },
                 "Transform": {
                     "type": "Transform",
@@ -9007,7 +9362,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "0056e20b656c4bd3-000415d3d4000485"
+                        "00345ceb385241a5-000460df6a04cb3d"
                     ]
                 },
                 "ActiveComponent": {
@@ -9022,8 +9377,8 @@
             }
         },
         {
-            "id": 353,
-            "guid": "0056e20b0f10d62b-000415d3d4000489",
+            "id": 91,
+            "guid": "00345ceb0a0e83c5-000460df6a04cb41",
             "components": {
                 "NameComponent": {
                     "name": "Kusane_Player_LeftHandMiddle1"
@@ -9033,6 +9388,9 @@
                 },
                 "LayerComponent": {
                     "layerIndex": 0
+                },
+                "SiblingIndexComponent": {
+                    "siblingIndex": 2
                 },
                 "Transform": {
                     "type": "Transform",
@@ -9100,7 +9458,7 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "0056e20b4b763bba-000415d3d400048b"
+                                "00345ceb36650191-000460df6a04cb43"
                             ]
                         }
                     ]
@@ -9108,7 +9466,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "0056e20b1d08e0cd-000415d3d4000477"
+                        "00345ceb034d0622-000460df6a04cb2f"
                     ]
                 },
                 "ActiveComponent": {
@@ -9123,8 +9481,8 @@
             }
         },
         {
-            "id": 354,
-            "guid": "0056e20b4b763bba-000415d3d400048b",
+            "id": 92,
+            "guid": "00345ceb36650191-000460df6a04cb43",
             "components": {
                 "NameComponent": {
                     "name": "Kusane_Player_LeftHandMiddle2"
@@ -9134,6 +9492,9 @@
                 },
                 "LayerComponent": {
                     "layerIndex": 0
+                },
+                "SiblingIndexComponent": {
+                    "siblingIndex": 0
                 },
                 "Transform": {
                     "type": "Transform",
@@ -9201,7 +9562,7 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "0056e20b595957cc-000415d3d400048d"
+                                "00345ceb4beba735-000460df6a04cb45"
                             ]
                         }
                     ]
@@ -9209,7 +9570,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "0056e20b0f10d62b-000415d3d4000489"
+                        "00345ceb0a0e83c5-000460df6a04cb41"
                     ]
                 },
                 "ActiveComponent": {
@@ -9224,8 +9585,8 @@
             }
         },
         {
-            "id": 355,
-            "guid": "0056e20b595957cc-000415d3d400048d",
+            "id": 93,
+            "guid": "00345ceb4beba735-000460df6a04cb45",
             "components": {
                 "NameComponent": {
                     "name": "Kusane_Player_LeftHandMiddle3"
@@ -9235,6 +9596,9 @@
                 },
                 "LayerComponent": {
                     "layerIndex": 0
+                },
+                "SiblingIndexComponent": {
+                    "siblingIndex": 0
                 },
                 "Transform": {
                     "type": "Transform",
@@ -9302,7 +9666,7 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "0056e20b0665d96a-000415d3d400048f"
+                                "00345ceb532657ad-000460df6a04cb47"
                             ]
                         }
                     ]
@@ -9310,7 +9674,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "0056e20b4b763bba-000415d3d400048b"
+                        "00345ceb36650191-000460df6a04cb43"
                     ]
                 },
                 "ActiveComponent": {
@@ -9325,8 +9689,8 @@
             }
         },
         {
-            "id": 356,
-            "guid": "0056e20b0665d96a-000415d3d400048f",
+            "id": 94,
+            "guid": "00345ceb532657ad-000460df6a04cb47",
             "components": {
                 "NameComponent": {
                     "name": "Kusane_Player_LeftHandMiddle4"
@@ -9336,6 +9700,9 @@
                 },
                 "LayerComponent": {
                     "layerIndex": 0
+                },
+                "SiblingIndexComponent": {
+                    "siblingIndex": 0
                 },
                 "Transform": {
                     "type": "Transform",
@@ -9400,7 +9767,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "0056e20b595957cc-000415d3d400048d"
+                        "00345ceb4beba735-000460df6a04cb45"
                     ]
                 },
                 "ActiveComponent": {
@@ -9415,8 +9782,8 @@
             }
         },
         {
-            "id": 357,
-            "guid": "0056e20b15e72645-000415d3d4000491",
+            "id": 95,
+            "guid": "00345ceb78656a49-000460df6a04cb49",
             "components": {
                 "NameComponent": {
                     "name": "Kusane_Player_LeftHandRing1"
@@ -9426,6 +9793,9 @@
                 },
                 "LayerComponent": {
                     "layerIndex": 0
+                },
+                "SiblingIndexComponent": {
+                    "siblingIndex": 3
                 },
                 "Transform": {
                     "type": "Transform",
@@ -9493,7 +9863,7 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "0056e20b06a3c5a8-000415d3d4000493"
+                                "00345ceb27ae8383-000460df6a04cb4b"
                             ]
                         }
                     ]
@@ -9501,7 +9871,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "0056e20b1d08e0cd-000415d3d4000477"
+                        "00345ceb034d0622-000460df6a04cb2f"
                     ]
                 },
                 "ActiveComponent": {
@@ -9516,8 +9886,8 @@
             }
         },
         {
-            "id": 358,
-            "guid": "0056e20b06a3c5a8-000415d3d4000493",
+            "id": 96,
+            "guid": "00345ceb27ae8383-000460df6a04cb4b",
             "components": {
                 "NameComponent": {
                     "name": "Kusane_Player_LeftHandRing2"
@@ -9527,6 +9897,9 @@
                 },
                 "LayerComponent": {
                     "layerIndex": 0
+                },
+                "SiblingIndexComponent": {
+                    "siblingIndex": 0
                 },
                 "Transform": {
                     "type": "Transform",
@@ -9594,7 +9967,7 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "0056e20b0c31ce6e-000415d3d4000495"
+                                "00345ceb506f0308-000460df6a04cb4d"
                             ]
                         }
                     ]
@@ -9602,7 +9975,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "0056e20b15e72645-000415d3d4000491"
+                        "00345ceb78656a49-000460df6a04cb49"
                     ]
                 },
                 "ActiveComponent": {
@@ -9617,8 +9990,8 @@
             }
         },
         {
-            "id": 359,
-            "guid": "0056e20b0c31ce6e-000415d3d4000495",
+            "id": 97,
+            "guid": "00345ceb506f0308-000460df6a04cb4d",
             "components": {
                 "NameComponent": {
                     "name": "Kusane_Player_LeftHandRing3"
@@ -9628,6 +10001,9 @@
                 },
                 "LayerComponent": {
                     "layerIndex": 0
+                },
+                "SiblingIndexComponent": {
+                    "siblingIndex": 0
                 },
                 "Transform": {
                     "type": "Transform",
@@ -9695,7 +10071,7 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "0056e20b218853c1-000415d3d4000497"
+                                "00345ceb6bfa8f1f-000460df6a04cb4f"
                             ]
                         }
                     ]
@@ -9703,7 +10079,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "0056e20b06a3c5a8-000415d3d4000493"
+                        "00345ceb27ae8383-000460df6a04cb4b"
                     ]
                 },
                 "ActiveComponent": {
@@ -9718,8 +10094,8 @@
             }
         },
         {
-            "id": 360,
-            "guid": "0056e20b218853c1-000415d3d4000497",
+            "id": 98,
+            "guid": "00345ceb6bfa8f1f-000460df6a04cb4f",
             "components": {
                 "NameComponent": {
                     "name": "Kusane_Player_LeftHandRing4"
@@ -9729,6 +10105,9 @@
                 },
                 "LayerComponent": {
                     "layerIndex": 0
+                },
+                "SiblingIndexComponent": {
+                    "siblingIndex": 0
                 },
                 "Transform": {
                     "type": "Transform",
@@ -9793,7 +10172,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "0056e20b0c31ce6e-000415d3d4000495"
+                        "00345ceb506f0308-000460df6a04cb4d"
                     ]
                 },
                 "ActiveComponent": {
@@ -9808,8 +10187,8 @@
             }
         },
         {
-            "id": 361,
-            "guid": "0056e20b1997b98b-000415d3d4000499",
+            "id": 99,
+            "guid": "00345ceb43e432bf-000460df6a04cb51",
             "components": {
                 "NameComponent": {
                     "name": "Kusane_Player_LeftHandPinky1"
@@ -9819,6 +10198,9 @@
                 },
                 "LayerComponent": {
                     "layerIndex": 0
+                },
+                "SiblingIndexComponent": {
+                    "siblingIndex": 4
                 },
                 "Transform": {
                     "type": "Transform",
@@ -9886,7 +10268,7 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "0056e20b46d1e159-000415d3d400049b"
+                                "00345ceb6ef57c57-000460df6a04cb53"
                             ]
                         }
                     ]
@@ -9894,7 +10276,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "0056e20b1d08e0cd-000415d3d4000477"
+                        "00345ceb034d0622-000460df6a04cb2f"
                     ]
                 },
                 "ActiveComponent": {
@@ -9909,8 +10291,8 @@
             }
         },
         {
-            "id": 362,
-            "guid": "0056e20b46d1e159-000415d3d400049b",
+            "id": 100,
+            "guid": "00345ceb6ef57c57-000460df6a04cb53",
             "components": {
                 "NameComponent": {
                     "name": "Kusane_Player_LeftHandPinky2"
@@ -9920,6 +10302,9 @@
                 },
                 "LayerComponent": {
                     "layerIndex": 0
+                },
+                "SiblingIndexComponent": {
+                    "siblingIndex": 0
                 },
                 "Transform": {
                     "type": "Transform",
@@ -9987,7 +10372,7 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "0056e20b0397bf05-000415d3d400049d"
+                                "00345ceb305fd8c9-000460df6a04cb55"
                             ]
                         }
                     ]
@@ -9995,7 +10380,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "0056e20b1997b98b-000415d3d4000499"
+                        "00345ceb43e432bf-000460df6a04cb51"
                     ]
                 },
                 "ActiveComponent": {
@@ -10010,8 +10395,8 @@
             }
         },
         {
-            "id": 363,
-            "guid": "0056e20b0397bf05-000415d3d400049d",
+            "id": 101,
+            "guid": "00345ceb305fd8c9-000460df6a04cb55",
             "components": {
                 "NameComponent": {
                     "name": "Kusane_Player_LeftHandPinky3"
@@ -10021,6 +10406,9 @@
                 },
                 "LayerComponent": {
                     "layerIndex": 0
+                },
+                "SiblingIndexComponent": {
+                    "siblingIndex": 0
                 },
                 "Transform": {
                     "type": "Transform",
@@ -10088,7 +10476,7 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "0056e20b749ceba5-000415d3d400049f"
+                                "00345ceb0894199f-000460df6a04cb57"
                             ]
                         }
                     ]
@@ -10096,7 +10484,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "0056e20b46d1e159-000415d3d400049b"
+                        "00345ceb6ef57c57-000460df6a04cb53"
                     ]
                 },
                 "ActiveComponent": {
@@ -10111,8 +10499,8 @@
             }
         },
         {
-            "id": 364,
-            "guid": "0056e20b749ceba5-000415d3d400049f",
+            "id": 102,
+            "guid": "00345ceb0894199f-000460df6a04cb57",
             "components": {
                 "NameComponent": {
                     "name": "Kusane_Player_LeftHandPinky4"
@@ -10122,6 +10510,9 @@
                 },
                 "LayerComponent": {
                     "layerIndex": 0
+                },
+                "SiblingIndexComponent": {
+                    "siblingIndex": 0
                 },
                 "Transform": {
                     "type": "Transform",
@@ -10186,7 +10577,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "0056e20b0397bf05-000415d3d400049d"
+                        "00345ceb305fd8c9-000460df6a04cb55"
                     ]
                 },
                 "ActiveComponent": {
@@ -10201,8 +10592,8 @@
             }
         },
         {
-            "id": 365,
-            "guid": "00293680529515ec-00040d569e004725",
+            "id": 103,
+            "guid": "00345ceb11b11407-000460df6a04cb59",
             "components": {
                 "NameComponent": {
                     "name": "Kusane_Player_RightShoulder"
@@ -10212,6 +10603,9 @@
                 },
                 "LayerComponent": {
                     "layerIndex": 0
+                },
+                "SiblingIndexComponent": {
+                    "siblingIndex": 1
                 },
                 "Transform": {
                     "type": "Transform",
@@ -10279,7 +10673,7 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "002936800f158904-00040d569e004727"
+                                "00345ceb4bdd39b1-000460df6a04cb5b"
                             ]
                         }
                     ]
@@ -10287,7 +10681,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "002936807da0a558-00040d569e0046f3"
+                        "00345ceb516acf6d-000460df6a04cb27"
                     ]
                 },
                 "ActiveComponent": {
@@ -10302,8 +10696,8 @@
             }
         },
         {
-            "id": 366,
-            "guid": "002936800f158904-00040d569e004727",
+            "id": 104,
+            "guid": "00345ceb4bdd39b1-000460df6a04cb5b",
             "components": {
                 "NameComponent": {
                     "name": "Kusane_Player_RightArm"
@@ -10313,6 +10707,9 @@
                 },
                 "LayerComponent": {
                     "layerIndex": 0
+                },
+                "SiblingIndexComponent": {
+                    "siblingIndex": 0
                 },
                 "Transform": {
                     "type": "Transform",
@@ -10380,7 +10777,7 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "0029368058c3f943-00040d569e004729"
+                                "00345ceb0ae279c7-000460df6a04cb5d"
                             ]
                         }
                     ]
@@ -10388,7 +10785,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "00293680529515ec-00040d569e004725"
+                        "00345ceb11b11407-000460df6a04cb59"
                     ]
                 },
                 "ActiveComponent": {
@@ -10403,8 +10800,8 @@
             }
         },
         {
-            "id": 367,
-            "guid": "0029368058c3f943-00040d569e004729",
+            "id": 105,
+            "guid": "00345ceb0ae279c7-000460df6a04cb5d",
             "components": {
                 "NameComponent": {
                     "name": "Kusane_Player_RightForeArm"
@@ -10414,6 +10811,9 @@
                 },
                 "LayerComponent": {
                     "layerIndex": 0
+                },
+                "SiblingIndexComponent": {
+                    "siblingIndex": 0
                 },
                 "Transform": {
                     "type": "Transform",
@@ -10481,7 +10881,7 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "002936802088e943-00040d569e00472b"
+                                "00345ceb2b443bd9-000460df6a04cb5f"
                             ]
                         }
                     ]
@@ -10489,7 +10889,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "002936800f158904-00040d569e004727"
+                        "00345ceb4bdd39b1-000460df6a04cb5b"
                     ]
                 },
                 "ActiveComponent": {
@@ -10504,8 +10904,8 @@
             }
         },
         {
-            "id": 368,
-            "guid": "002936802088e943-00040d569e00472b",
+            "id": 106,
+            "guid": "00345ceb2b443bd9-000460df6a04cb5f",
             "components": {
                 "NameComponent": {
                     "name": "Kusane_Player_RightHand"
@@ -10515,6 +10915,9 @@
                 },
                 "LayerComponent": {
                     "layerIndex": 0
+                },
+                "SiblingIndexComponent": {
+                    "siblingIndex": 0
                 },
                 "Transform": {
                     "type": "Transform",
@@ -10582,11 +10985,11 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "002936807d829235-00040d569e00472d",
-                                "0056e20b3fa2a9ed-000415d3d40004b1",
-                                "0056e20b217da8f3-000415d3d40004b9",
-                                "0056e20b11a045ae-000415d3d40004c1",
-                                "0029368062ec0663-00040d569e00474d"
+                                "00345ceb2976c144-000460df6a04cb61",
+                                "00345ceb0b71e8ef-000460df6a04cb69",
+                                "00345ceb7b384049-000460df6a04cb71",
+                                "00345ceb38691661-000460df6a04cb79",
+                                "00345ceb46417d83-000460df6a04cb81"
                             ]
                         }
                     ]
@@ -10594,7 +10997,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "0029368058c3f943-00040d569e004729"
+                        "00345ceb0ae279c7-000460df6a04cb5d"
                     ]
                 },
                 "ActiveComponent": {
@@ -10609,8 +11012,8 @@
             }
         },
         {
-            "id": 369,
-            "guid": "002936807d829235-00040d569e00472d",
+            "id": 107,
+            "guid": "00345ceb2976c144-000460df6a04cb61",
             "components": {
                 "NameComponent": {
                     "name": "Kusane_Player_RightHandThumb1"
@@ -10620,6 +11023,9 @@
                 },
                 "LayerComponent": {
                     "layerIndex": 0
+                },
+                "SiblingIndexComponent": {
+                    "siblingIndex": 0
                 },
                 "Transform": {
                     "type": "Transform",
@@ -10687,7 +11093,7 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "00293680175cb4f0-00040d569e00472f"
+                                "00345ceb126262b8-000460df6a04cb63"
                             ]
                         }
                     ]
@@ -10695,7 +11101,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "002936802088e943-00040d569e00472b"
+                        "00345ceb2b443bd9-000460df6a04cb5f"
                     ]
                 },
                 "ActiveComponent": {
@@ -10710,8 +11116,8 @@
             }
         },
         {
-            "id": 370,
-            "guid": "00293680175cb4f0-00040d569e00472f",
+            "id": 108,
+            "guid": "00345ceb126262b8-000460df6a04cb63",
             "components": {
                 "NameComponent": {
                     "name": "Kusane_Player_RightHandThumb2"
@@ -10721,6 +11127,9 @@
                 },
                 "LayerComponent": {
                     "layerIndex": 0
+                },
+                "SiblingIndexComponent": {
+                    "siblingIndex": 0
                 },
                 "Transform": {
                     "type": "Transform",
@@ -10764,7 +11173,7 @@
                             "data": [
                                 {
                                     "type": "float",
-                                    "data": 0.846673
+                                    "data": 0.846674
                                 },
                                 {
                                     "type": "float",
@@ -10788,7 +11197,7 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "0056e20b36b6457c-000415d3d40004ad"
+                                "00345ceb0088d31b-000460df6a04cb65"
                             ]
                         }
                     ]
@@ -10796,7 +11205,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "002936807d829235-00040d569e00472d"
+                        "00345ceb2976c144-000460df6a04cb61"
                     ]
                 },
                 "ActiveComponent": {
@@ -10811,8 +11220,8 @@
             }
         },
         {
-            "id": 371,
-            "guid": "0056e20b36b6457c-000415d3d40004ad",
+            "id": 109,
+            "guid": "00345ceb0088d31b-000460df6a04cb65",
             "components": {
                 "NameComponent": {
                     "name": "Kusane_Player_RightHandThumb3"
@@ -10822,6 +11231,9 @@
                 },
                 "LayerComponent": {
                     "layerIndex": 0
+                },
+                "SiblingIndexComponent": {
+                    "siblingIndex": 0
                 },
                 "Transform": {
                     "type": "Transform",
@@ -10889,7 +11301,7 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "0056e20b3bcb0dd2-000415d3d40004af"
+                                "00345ceb3535dbeb-000460df6a04cb67"
                             ]
                         }
                     ]
@@ -10897,7 +11309,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "00293680175cb4f0-00040d569e00472f"
+                        "00345ceb126262b8-000460df6a04cb63"
                     ]
                 },
                 "ActiveComponent": {
@@ -10912,8 +11324,8 @@
             }
         },
         {
-            "id": 372,
-            "guid": "0056e20b3bcb0dd2-000415d3d40004af",
+            "id": 110,
+            "guid": "00345ceb3535dbeb-000460df6a04cb67",
             "components": {
                 "NameComponent": {
                     "name": "Kusane_Player_RightHandThumb4"
@@ -10923,6 +11335,9 @@
                 },
                 "LayerComponent": {
                     "layerIndex": 0
+                },
+                "SiblingIndexComponent": {
+                    "siblingIndex": 0
                 },
                 "Transform": {
                     "type": "Transform",
@@ -10987,7 +11402,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "0056e20b36b6457c-000415d3d40004ad"
+                        "00345ceb0088d31b-000460df6a04cb65"
                     ]
                 },
                 "ActiveComponent": {
@@ -11002,8 +11417,8 @@
             }
         },
         {
-            "id": 373,
-            "guid": "0056e20b3fa2a9ed-000415d3d40004b1",
+            "id": 111,
+            "guid": "00345ceb0b71e8ef-000460df6a04cb69",
             "components": {
                 "NameComponent": {
                     "name": "Kusane_Player_RightHandIndex1"
@@ -11013,6 +11428,9 @@
                 },
                 "LayerComponent": {
                     "layerIndex": 0
+                },
+                "SiblingIndexComponent": {
+                    "siblingIndex": 1
                 },
                 "Transform": {
                     "type": "Transform",
@@ -11080,7 +11498,7 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "0056e20b45b58e52-000415d3d40004b3"
+                                "00345ceb4d732d16-000460df6a04cb6b"
                             ]
                         }
                     ]
@@ -11088,7 +11506,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "002936802088e943-00040d569e00472b"
+                        "00345ceb2b443bd9-000460df6a04cb5f"
                     ]
                 },
                 "ActiveComponent": {
@@ -11103,8 +11521,8 @@
             }
         },
         {
-            "id": 374,
-            "guid": "0056e20b45b58e52-000415d3d40004b3",
+            "id": 112,
+            "guid": "00345ceb4d732d16-000460df6a04cb6b",
             "components": {
                 "NameComponent": {
                     "name": "Kusane_Player_RightHandIndex2"
@@ -11114,6 +11532,9 @@
                 },
                 "LayerComponent": {
                     "layerIndex": 0
+                },
+                "SiblingIndexComponent": {
+                    "siblingIndex": 0
                 },
                 "Transform": {
                     "type": "Transform",
@@ -11181,7 +11602,7 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "0056e20b0cdcbb0d-000415d3d40004b5"
+                                "00345ceb6065e948-000460df6a04cb6d"
                             ]
                         }
                     ]
@@ -11189,7 +11610,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "0056e20b3fa2a9ed-000415d3d40004b1"
+                        "00345ceb0b71e8ef-000460df6a04cb69"
                     ]
                 },
                 "ActiveComponent": {
@@ -11204,8 +11625,8 @@
             }
         },
         {
-            "id": 375,
-            "guid": "0056e20b0cdcbb0d-000415d3d40004b5",
+            "id": 113,
+            "guid": "00345ceb6065e948-000460df6a04cb6d",
             "components": {
                 "NameComponent": {
                     "name": "Kusane_Player_RightHandIndex3"
@@ -11215,6 +11636,9 @@
                 },
                 "LayerComponent": {
                     "layerIndex": 0
+                },
+                "SiblingIndexComponent": {
+                    "siblingIndex": 0
                 },
                 "Transform": {
                     "type": "Transform",
@@ -11282,7 +11706,7 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "0056e20b049def4e-000415d3d40004b7"
+                                "00345ceb4df73421-000460df6a04cb6f"
                             ]
                         }
                     ]
@@ -11290,7 +11714,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "0056e20b45b58e52-000415d3d40004b3"
+                        "00345ceb4d732d16-000460df6a04cb6b"
                     ]
                 },
                 "ActiveComponent": {
@@ -11305,8 +11729,8 @@
             }
         },
         {
-            "id": 376,
-            "guid": "0056e20b049def4e-000415d3d40004b7",
+            "id": 114,
+            "guid": "00345ceb4df73421-000460df6a04cb6f",
             "components": {
                 "NameComponent": {
                     "name": "Kusane_Player_RightHandIndex4"
@@ -11316,6 +11740,9 @@
                 },
                 "LayerComponent": {
                     "layerIndex": 0
+                },
+                "SiblingIndexComponent": {
+                    "siblingIndex": 0
                 },
                 "Transform": {
                     "type": "Transform",
@@ -11380,7 +11807,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "0056e20b0cdcbb0d-000415d3d40004b5"
+                        "00345ceb6065e948-000460df6a04cb6d"
                     ]
                 },
                 "ActiveComponent": {
@@ -11395,8 +11822,8 @@
             }
         },
         {
-            "id": 377,
-            "guid": "0056e20b217da8f3-000415d3d40004b9",
+            "id": 115,
+            "guid": "00345ceb7b384049-000460df6a04cb71",
             "components": {
                 "NameComponent": {
                     "name": "Kusane_Player_RightHandMiddle1"
@@ -11406,6 +11833,9 @@
                 },
                 "LayerComponent": {
                     "layerIndex": 0
+                },
+                "SiblingIndexComponent": {
+                    "siblingIndex": 2
                 },
                 "Transform": {
                     "type": "Transform",
@@ -11473,7 +11903,7 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "0056e20b2ea3ea14-000415d3d40004bb"
+                                "00345ceb2026560d-000460df6a04cb73"
                             ]
                         }
                     ]
@@ -11481,7 +11911,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "002936802088e943-00040d569e00472b"
+                        "00345ceb2b443bd9-000460df6a04cb5f"
                     ]
                 },
                 "ActiveComponent": {
@@ -11496,8 +11926,8 @@
             }
         },
         {
-            "id": 378,
-            "guid": "0056e20b2ea3ea14-000415d3d40004bb",
+            "id": 116,
+            "guid": "00345ceb2026560d-000460df6a04cb73",
             "components": {
                 "NameComponent": {
                     "name": "Kusane_Player_RightHandMiddle2"
@@ -11507,6 +11937,9 @@
                 },
                 "LayerComponent": {
                     "layerIndex": 0
+                },
+                "SiblingIndexComponent": {
+                    "siblingIndex": 0
                 },
                 "Transform": {
                     "type": "Transform",
@@ -11574,7 +12007,7 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "0056e20b32f1abf0-000415d3d40004bd"
+                                "00345ceb7518dc0e-000460df6a04cb75"
                             ]
                         }
                     ]
@@ -11582,7 +12015,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "0056e20b217da8f3-000415d3d40004b9"
+                        "00345ceb7b384049-000460df6a04cb71"
                     ]
                 },
                 "ActiveComponent": {
@@ -11597,8 +12030,8 @@
             }
         },
         {
-            "id": 379,
-            "guid": "0056e20b32f1abf0-000415d3d40004bd",
+            "id": 117,
+            "guid": "00345ceb7518dc0e-000460df6a04cb75",
             "components": {
                 "NameComponent": {
                     "name": "Kusane_Player_RightHandMiddle3"
@@ -11608,6 +12041,9 @@
                 },
                 "LayerComponent": {
                     "layerIndex": 0
+                },
+                "SiblingIndexComponent": {
+                    "siblingIndex": 0
                 },
                 "Transform": {
                     "type": "Transform",
@@ -11675,7 +12111,7 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "0056e20b6fc93866-000415d3d40004bf"
+                                "00345ceb1751d429-000460df6a04cb77"
                             ]
                         }
                     ]
@@ -11683,7 +12119,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "0056e20b2ea3ea14-000415d3d40004bb"
+                        "00345ceb2026560d-000460df6a04cb73"
                     ]
                 },
                 "ActiveComponent": {
@@ -11698,8 +12134,8 @@
             }
         },
         {
-            "id": 380,
-            "guid": "0056e20b6fc93866-000415d3d40004bf",
+            "id": 118,
+            "guid": "00345ceb1751d429-000460df6a04cb77",
             "components": {
                 "NameComponent": {
                     "name": "Kusane_Player_RightHandMiddle4"
@@ -11709,6 +12145,9 @@
                 },
                 "LayerComponent": {
                     "layerIndex": 0
+                },
+                "SiblingIndexComponent": {
+                    "siblingIndex": 0
                 },
                 "Transform": {
                     "type": "Transform",
@@ -11773,7 +12212,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "0056e20b32f1abf0-000415d3d40004bd"
+                        "00345ceb7518dc0e-000460df6a04cb75"
                     ]
                 },
                 "ActiveComponent": {
@@ -11788,8 +12227,8 @@
             }
         },
         {
-            "id": 381,
-            "guid": "0056e20b11a045ae-000415d3d40004c1",
+            "id": 119,
+            "guid": "00345ceb38691661-000460df6a04cb79",
             "components": {
                 "NameComponent": {
                     "name": "Kusane_Player_RightHandRing1"
@@ -11799,6 +12238,9 @@
                 },
                 "LayerComponent": {
                     "layerIndex": 0
+                },
+                "SiblingIndexComponent": {
+                    "siblingIndex": 3
                 },
                 "Transform": {
                     "type": "Transform",
@@ -11866,7 +12308,7 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "0056e20b241adc90-000415d3d40004c3"
+                                "00345ceb08783bd1-000460df6a04cb7b"
                             ]
                         }
                     ]
@@ -11874,7 +12316,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "002936802088e943-00040d569e00472b"
+                        "00345ceb2b443bd9-000460df6a04cb5f"
                     ]
                 },
                 "ActiveComponent": {
@@ -11889,8 +12331,8 @@
             }
         },
         {
-            "id": 382,
-            "guid": "0056e20b241adc90-000415d3d40004c3",
+            "id": 120,
+            "guid": "00345ceb08783bd1-000460df6a04cb7b",
             "components": {
                 "NameComponent": {
                     "name": "Kusane_Player_RightHandRing2"
@@ -11900,6 +12342,9 @@
                 },
                 "LayerComponent": {
                     "layerIndex": 0
+                },
+                "SiblingIndexComponent": {
+                    "siblingIndex": 0
                 },
                 "Transform": {
                     "type": "Transform",
@@ -11967,7 +12412,7 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "0056e20b42282793-000415d3d40004c5"
+                                "00345ceb73a0c417-000460df6a04cb7d"
                             ]
                         }
                     ]
@@ -11975,7 +12420,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "0056e20b11a045ae-000415d3d40004c1"
+                        "00345ceb38691661-000460df6a04cb79"
                     ]
                 },
                 "ActiveComponent": {
@@ -11990,8 +12435,8 @@
             }
         },
         {
-            "id": 383,
-            "guid": "0056e20b42282793-000415d3d40004c5",
+            "id": 121,
+            "guid": "00345ceb73a0c417-000460df6a04cb7d",
             "components": {
                 "NameComponent": {
                     "name": "Kusane_Player_RightHandRing3"
@@ -12001,6 +12446,9 @@
                 },
                 "LayerComponent": {
                     "layerIndex": 0
+                },
+                "SiblingIndexComponent": {
+                    "siblingIndex": 0
                 },
                 "Transform": {
                     "type": "Transform",
@@ -12068,7 +12516,7 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "0056e20b6dc0618a-000415d3d40004c7"
+                                "00345ceb4ff83deb-000460df6a04cb7f"
                             ]
                         }
                     ]
@@ -12076,7 +12524,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "0056e20b241adc90-000415d3d40004c3"
+                        "00345ceb08783bd1-000460df6a04cb7b"
                     ]
                 },
                 "ActiveComponent": {
@@ -12091,8 +12539,8 @@
             }
         },
         {
-            "id": 384,
-            "guid": "0056e20b6dc0618a-000415d3d40004c7",
+            "id": 122,
+            "guid": "00345ceb4ff83deb-000460df6a04cb7f",
             "components": {
                 "NameComponent": {
                     "name": "Kusane_Player_RightHandRing4"
@@ -12102,6 +12550,9 @@
                 },
                 "LayerComponent": {
                     "layerIndex": 0
+                },
+                "SiblingIndexComponent": {
+                    "siblingIndex": 0
                 },
                 "Transform": {
                     "type": "Transform",
@@ -12166,7 +12617,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "0056e20b42282793-000415d3d40004c5"
+                        "00345ceb73a0c417-000460df6a04cb7d"
                     ]
                 },
                 "ActiveComponent": {
@@ -12181,8 +12632,8 @@
             }
         },
         {
-            "id": 385,
-            "guid": "0029368062ec0663-00040d569e00474d",
+            "id": 123,
+            "guid": "00345ceb46417d83-000460df6a04cb81",
             "components": {
                 "NameComponent": {
                     "name": "Kusane_Player_RightHandPinky1"
@@ -12192,6 +12643,9 @@
                 },
                 "LayerComponent": {
                     "layerIndex": 0
+                },
+                "SiblingIndexComponent": {
+                    "siblingIndex": 4
                 },
                 "Transform": {
                     "type": "Transform",
@@ -12259,7 +12713,7 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "0029368023386d27-00040d569e00474f"
+                                "00345ceb3f2fc651-000460df6a04cb83"
                             ]
                         }
                     ]
@@ -12267,7 +12721,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "002936802088e943-00040d569e00472b"
+                        "00345ceb2b443bd9-000460df6a04cb5f"
                     ]
                 },
                 "ActiveComponent": {
@@ -12282,8 +12736,8 @@
             }
         },
         {
-            "id": 386,
-            "guid": "0029368023386d27-00040d569e00474f",
+            "id": 124,
+            "guid": "00345ceb3f2fc651-000460df6a04cb83",
             "components": {
                 "NameComponent": {
                     "name": "Kusane_Player_RightHandPinky2"
@@ -12293,6 +12747,9 @@
                 },
                 "LayerComponent": {
                     "layerIndex": 0
+                },
+                "SiblingIndexComponent": {
+                    "siblingIndex": 0
                 },
                 "Transform": {
                     "type": "Transform",
@@ -12336,7 +12793,7 @@
                             "data": [
                                 {
                                     "type": "float",
-                                    "data": 0.996187
+                                    "data": 0.996186
                                 },
                                 {
                                     "type": "float",
@@ -12360,7 +12817,7 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "0056e20b5332ee6c-000415d3d40004cd"
+                                "00345ceb2669f77a-000460df6a04cb85"
                             ]
                         }
                     ]
@@ -12368,7 +12825,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "0029368062ec0663-00040d569e00474d"
+                        "00345ceb46417d83-000460df6a04cb81"
                     ]
                 },
                 "ActiveComponent": {
@@ -12383,8 +12840,8 @@
             }
         },
         {
-            "id": 387,
-            "guid": "0056e20b5332ee6c-000415d3d40004cd",
+            "id": 125,
+            "guid": "00345ceb2669f77a-000460df6a04cb85",
             "components": {
                 "NameComponent": {
                     "name": "Kusane_Player_RightHandPinky3"
@@ -12394,6 +12851,9 @@
                 },
                 "LayerComponent": {
                     "layerIndex": 0
+                },
+                "SiblingIndexComponent": {
+                    "siblingIndex": 0
                 },
                 "Transform": {
                     "type": "Transform",
@@ -12461,7 +12921,7 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "0056e20b6e9b7e11-000415d3d40004cf"
+                                "00345ceb65a47b8f-000460df6a04cb87"
                             ]
                         }
                     ]
@@ -12469,7 +12929,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "0029368023386d27-00040d569e00474f"
+                        "00345ceb3f2fc651-000460df6a04cb83"
                     ]
                 },
                 "ActiveComponent": {
@@ -12484,8 +12944,8 @@
             }
         },
         {
-            "id": 388,
-            "guid": "0056e20b6e9b7e11-000415d3d40004cf",
+            "id": 126,
+            "guid": "00345ceb65a47b8f-000460df6a04cb87",
             "components": {
                 "NameComponent": {
                     "name": "Kusane_Player_RightHandPinky4"
@@ -12495,6 +12955,9 @@
                 },
                 "LayerComponent": {
                     "layerIndex": 0
+                },
+                "SiblingIndexComponent": {
+                    "siblingIndex": 0
                 },
                 "Transform": {
                     "type": "Transform",
@@ -12559,7 +13022,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "0056e20b5332ee6c-000415d3d40004cd"
+                        "00345ceb2669f77a-000460df6a04cb85"
                     ]
                 },
                 "ActiveComponent": {
@@ -12574,8 +13037,8 @@
             }
         },
         {
-            "id": 389,
-            "guid": "0056e20b4ac67a7a-000415d3d40004d1",
+            "id": 127,
+            "guid": "00345ceb318b2efc-000460df6a04cb89",
             "components": {
                 "NameComponent": {
                     "name": "Kusane_Player_Neck"
@@ -12585,6 +13048,9 @@
                 },
                 "LayerComponent": {
                     "layerIndex": 0
+                },
+                "SiblingIndexComponent": {
+                    "siblingIndex": 2
                 },
                 "Transform": {
                     "type": "Transform",
@@ -12652,7 +13118,7 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "0056e20b2ec34edb-000415d3d40004d3"
+                                "00345ceb2834d9e9-000460df6a04cb8b"
                             ]
                         }
                     ]
@@ -12660,7 +13126,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "002936807da0a558-00040d569e0046f3"
+                        "00345ceb516acf6d-000460df6a04cb27"
                     ]
                 },
                 "ActiveComponent": {
@@ -12675,8 +13141,8 @@
             }
         },
         {
-            "id": 390,
-            "guid": "0056e20b2ec34edb-000415d3d40004d3",
+            "id": 128,
+            "guid": "00345ceb2834d9e9-000460df6a04cb8b",
             "components": {
                 "NameComponent": {
                     "name": "Kusane_Player_Head"
@@ -12686,6 +13152,9 @@
                 },
                 "LayerComponent": {
                     "layerIndex": 0
+                },
+                "SiblingIndexComponent": {
+                    "siblingIndex": 0
                 },
                 "Transform": {
                     "type": "Transform",
@@ -12753,7 +13222,7 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "0056e20b1ef4f698-000415d3d40004d5"
+                                "00345ceb55c2ba14-000460df6a04cb8d"
                             ]
                         }
                     ]
@@ -12761,7 +13230,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "0056e20b4ac67a7a-000415d3d40004d1"
+                        "00345ceb318b2efc-000460df6a04cb89"
                     ]
                 },
                 "ActiveComponent": {
@@ -12776,8 +13245,8 @@
             }
         },
         {
-            "id": 391,
-            "guid": "0056e20b1ef4f698-000415d3d40004d5",
+            "id": 129,
+            "guid": "00345ceb55c2ba14-000460df6a04cb8d",
             "components": {
                 "NameComponent": {
                     "name": "joint49"
@@ -12787,6 +13256,9 @@
                 },
                 "LayerComponent": {
                     "layerIndex": 0
+                },
+                "SiblingIndexComponent": {
+                    "siblingIndex": 0
                 },
                 "Transform": {
                     "type": "Transform",
@@ -12854,9 +13326,9 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "0056e20b315832a8-000415d3d40004d7",
-                                "0056e20b2e994561-000415d3d40004e3",
-                                "0056e20b14d03580-000415d3d40004e5"
+                                "00345ceb3a6b347c-000460df6a04cb8f",
+                                "00345ceb71ac8613-000460df6a04cb9b",
+                                "00345ceb5a2f5395-000460df6a04cb9d"
                             ]
                         }
                     ]
@@ -12864,7 +13336,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "0056e20b2ec34edb-000415d3d40004d3"
+                        "00345ceb2834d9e9-000460df6a04cb8b"
                     ]
                 },
                 "ActiveComponent": {
@@ -12879,8 +13351,8 @@
             }
         },
         {
-            "id": 392,
-            "guid": "0056e20b315832a8-000415d3d40004d7",
+            "id": 130,
+            "guid": "00345ceb3a6b347c-000460df6a04cb8f",
             "components": {
                 "NameComponent": {
                     "name": "joint50"
@@ -12890,6 +13362,9 @@
                 },
                 "LayerComponent": {
                     "layerIndex": 0
+                },
+                "SiblingIndexComponent": {
+                    "siblingIndex": 0
                 },
                 "Transform": {
                     "type": "Transform",
@@ -12957,7 +13432,7 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "0056e20b39599111-000415d3d40004d9"
+                                "00345ceb79687586-000460df6a04cb91"
                             ]
                         }
                     ]
@@ -12965,7 +13440,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "0056e20b1ef4f698-000415d3d40004d5"
+                        "00345ceb55c2ba14-000460df6a04cb8d"
                     ]
                 },
                 "ActiveComponent": {
@@ -12980,8 +13455,8 @@
             }
         },
         {
-            "id": 393,
-            "guid": "0056e20b39599111-000415d3d40004d9",
+            "id": 131,
+            "guid": "00345ceb79687586-000460df6a04cb91",
             "components": {
                 "NameComponent": {
                     "name": "joint52"
@@ -12991,6 +13466,9 @@
                 },
                 "LayerComponent": {
                     "layerIndex": 0
+                },
+                "SiblingIndexComponent": {
+                    "siblingIndex": 0
                 },
                 "Transform": {
                     "type": "Transform",
@@ -13058,7 +13536,7 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "0056e20b5a2043a7-000415d3d40004db"
+                                "00345ceb1f771cc6-000460df6a04cb93"
                             ]
                         }
                     ]
@@ -13066,7 +13544,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "0056e20b315832a8-000415d3d40004d7"
+                        "00345ceb3a6b347c-000460df6a04cb8f"
                     ]
                 },
                 "ActiveComponent": {
@@ -13081,8 +13559,8 @@
             }
         },
         {
-            "id": 394,
-            "guid": "0056e20b5a2043a7-000415d3d40004db",
+            "id": 132,
+            "guid": "00345ceb1f771cc6-000460df6a04cb93",
             "components": {
                 "NameComponent": {
                     "name": "joint53"
@@ -13092,6 +13570,9 @@
                 },
                 "LayerComponent": {
                     "layerIndex": 0
+                },
+                "SiblingIndexComponent": {
+                    "siblingIndex": 0
                 },
                 "Transform": {
                     "type": "Transform",
@@ -13159,7 +13640,7 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "0056e20b4f136296-000415d3d40004dd"
+                                "00345ceb5be543ef-000460df6a04cb95"
                             ]
                         }
                     ]
@@ -13167,7 +13648,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "0056e20b39599111-000415d3d40004d9"
+                        "00345ceb79687586-000460df6a04cb91"
                     ]
                 },
                 "ActiveComponent": {
@@ -13182,8 +13663,8 @@
             }
         },
         {
-            "id": 395,
-            "guid": "0056e20b4f136296-000415d3d40004dd",
+            "id": 133,
+            "guid": "00345ceb5be543ef-000460df6a04cb95",
             "components": {
                 "NameComponent": {
                     "name": "joint54"
@@ -13193,6 +13674,9 @@
                 },
                 "LayerComponent": {
                     "layerIndex": 0
+                },
+                "SiblingIndexComponent": {
+                    "siblingIndex": 0
                 },
                 "Transform": {
                     "type": "Transform",
@@ -13260,7 +13744,7 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "0056e20b795004ab-000415d3d40004df"
+                                "00345ceb42d574a0-000460df6a04cb97"
                             ]
                         }
                     ]
@@ -13268,7 +13752,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "0056e20b5a2043a7-000415d3d40004db"
+                        "00345ceb1f771cc6-000460df6a04cb93"
                     ]
                 },
                 "ActiveComponent": {
@@ -13283,8 +13767,8 @@
             }
         },
         {
-            "id": 396,
-            "guid": "0056e20b795004ab-000415d3d40004df",
+            "id": 134,
+            "guid": "00345ceb42d574a0-000460df6a04cb97",
             "components": {
                 "NameComponent": {
                     "name": "joint55"
@@ -13294,6 +13778,9 @@
                 },
                 "LayerComponent": {
                     "layerIndex": 0
+                },
+                "SiblingIndexComponent": {
+                    "siblingIndex": 0
                 },
                 "Transform": {
                     "type": "Transform",
@@ -13361,7 +13848,7 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "0056e20b45c0e671-000415d3d40004e1"
+                                "00345ceb6785be67-000460df6a04cb99"
                             ]
                         }
                     ]
@@ -13369,7 +13856,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "0056e20b4f136296-000415d3d40004dd"
+                        "00345ceb5be543ef-000460df6a04cb95"
                     ]
                 },
                 "ActiveComponent": {
@@ -13384,8 +13871,8 @@
             }
         },
         {
-            "id": 397,
-            "guid": "0056e20b45c0e671-000415d3d40004e1",
+            "id": 135,
+            "guid": "00345ceb6785be67-000460df6a04cb99",
             "components": {
                 "NameComponent": {
                     "name": "joint56"
@@ -13395,6 +13882,9 @@
                 },
                 "LayerComponent": {
                     "layerIndex": 0
+                },
+                "SiblingIndexComponent": {
+                    "siblingIndex": 0
                 },
                 "Transform": {
                     "type": "Transform",
@@ -13459,7 +13949,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "0056e20b795004ab-000415d3d40004df"
+                        "00345ceb42d574a0-000460df6a04cb97"
                     ]
                 },
                 "ActiveComponent": {
@@ -13474,8 +13964,8 @@
             }
         },
         {
-            "id": 398,
-            "guid": "0056e20b2e994561-000415d3d40004e3",
+            "id": 136,
+            "guid": "00345ceb71ac8613-000460df6a04cb9b",
             "components": {
                 "NameComponent": {
                     "name": "joint47"
@@ -13485,6 +13975,9 @@
                 },
                 "LayerComponent": {
                     "layerIndex": 0
+                },
+                "SiblingIndexComponent": {
+                    "siblingIndex": 1
                 },
                 "Transform": {
                     "type": "Transform",
@@ -13549,7 +14042,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "0056e20b1ef4f698-000415d3d40004d5"
+                        "00345ceb55c2ba14-000460df6a04cb8d"
                     ]
                 },
                 "ActiveComponent": {
@@ -13564,8 +14057,8 @@
             }
         },
         {
-            "id": 399,
-            "guid": "0056e20b14d03580-000415d3d40004e5",
+            "id": 137,
+            "guid": "00345ceb5a2f5395-000460df6a04cb9d",
             "components": {
                 "NameComponent": {
                     "name": "joint51"
@@ -13575,6 +14068,9 @@
                 },
                 "LayerComponent": {
                     "layerIndex": 0
+                },
+                "SiblingIndexComponent": {
+                    "siblingIndex": 2
                 },
                 "Transform": {
                     "type": "Transform",
@@ -13639,7 +14135,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "0056e20b1ef4f698-000415d3d40004d5"
+                        "00345ceb55c2ba14-000460df6a04cb8d"
                     ]
                 },
                 "ActiveComponent": {
@@ -13654,8 +14150,8 @@
             }
         },
         {
-            "id": 400,
-            "guid": "0056e20b4649c6f1-000415d3d40004e7",
+            "id": 138,
+            "guid": "00345ceb55629d0e-000460df6a04cb9f",
             "components": {
                 "NameComponent": {
                     "name": "Kusane_Player_Ctrl_Reference"
@@ -13665,6 +14161,9 @@
                 },
                 "LayerComponent": {
                     "layerIndex": 0
+                },
+                "SiblingIndexComponent": {
+                    "siblingIndex": 3
                 },
                 "Transform": {
                     "type": "Transform",
@@ -13729,7 +14228,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "002936801107bf75-00040d569e004657"
+                        "00345ceb3f9e9104-000460df6a04ca8b"
                     ]
                 },
                 "ActiveComponent": {
@@ -13744,8 +14243,8 @@
             }
         },
         {
-            "id": 401,
-            "guid": "0056e20b7f0c7605-000415d3d40004e9",
+            "id": 139,
+            "guid": "00345ceb7c07b309-000460df6a04cba1",
             "components": {
                 "NameComponent": {
                     "name": "ChainAimPointLeft"
@@ -13910,7 +14409,7 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "0056e20b023957b4-000415d3d40004eb"
+                                "00345ceb621d656c-000460df6a04cba3"
                             ]
                         }
                     ]
@@ -13918,7 +14417,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "002936801107bf75-00040d569e004657"
+                        "00345ceb3f9e9104-000460df6a04ca8b"
                     ]
                 },
                 "ActiveComponent": {
@@ -13933,8 +14432,8 @@
             }
         },
         {
-            "id": 402,
-            "guid": "0056e20b023957b4-000415d3d40004eb",
+            "id": 140,
+            "guid": "00345ceb621d656c-000460df6a04cba3",
             "components": {
                 "NameComponent": {
                     "name": "ChainAimPointLeftEnd"
@@ -14096,7 +14595,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "0056e20b7f0c7605-000415d3d40004e9"
+                        "00345ceb7c07b309-000460df6a04cba1"
                     ]
                 },
                 "ActiveComponent": {
@@ -14111,8 +14610,8 @@
             }
         },
         {
-            "id": 403,
-            "guid": "0056e20b7458c1d2-000415d3d40004ed",
+            "id": 141,
+            "guid": "00345ceb1ca1e894-000460df6a04cba5",
             "components": {
                 "NameComponent": {
                     "name": "ChainAimPointRight"
@@ -14277,7 +14776,7 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "0056e20b1d3d386b-000415d3d40004ef"
+                                "00345ceb5ef7fba6-000460df6a04cba7"
                             ]
                         }
                     ]
@@ -14285,7 +14784,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "002936801107bf75-00040d569e004657"
+                        "00345ceb3f9e9104-000460df6a04ca8b"
                     ]
                 },
                 "ActiveComponent": {
@@ -14300,8 +14799,8 @@
             }
         },
         {
-            "id": 404,
-            "guid": "0056e20b1d3d386b-000415d3d40004ef",
+            "id": 142,
+            "guid": "00345ceb5ef7fba6-000460df6a04cba7",
             "components": {
                 "NameComponent": {
                     "name": "ChainAimPointRightEnd"
@@ -14463,7 +14962,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "0056e20b7458c1d2-000415d3d40004ed"
+                        "00345ceb1ca1e894-000460df6a04cba5"
                     ]
                 },
                 "ActiveComponent": {
@@ -14478,8 +14977,8 @@
             }
         },
         {
-            "id": 405,
-            "guid": "0056e20b33f6c64d-000415d3d40004f1",
+            "id": 143,
+            "guid": "00345ceb14d55206-000460df6a04cba9",
             "components": {
                 "NameComponent": {
                     "name": "AttackHitbox"
@@ -14556,7 +15055,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "002936801107bf75-00040d569e004657"
+                        "00345ceb3f9e9104-000460df6a04ca8b"
                     ]
                 },
                 "ColliderComponent": {
@@ -14651,7 +15150,38 @@
                             "enabled": true,
                             "preserveKeys": [],
                             "entryFunction": "OnInit",
-                            "autoInvokeEntry": true
+                            "autoInvokeEntry": true,
+                            "instanceState": {
+                                "Unsubscribe": null,
+                                "SerializeFields": null,
+                                "__field_list": {
+                                    "damage": 10.0
+                                },
+                                "Every": null,
+                                "_call_lifecycle": null,
+                                "_subscribed": false,
+                                "_currentDamage": 10.0,
+                                "_subscriptions": {},
+                                "Destroy": null,
+                                "DisableSafe": null,
+                                "After": null,
+                                "UpdateSafe": null,
+                                "__created_at": 1772418357.0,
+                                "_toRoot": null,
+                                "_hitThisSwing": {},
+                                "_active": false,
+                                "OnTriggerEnter": null,
+                                "Subscribe": null,
+                                "DeserializeFields": null,
+                                "StartSafe": null,
+                                "damage": 10.0,
+                                "Awake": null,
+                                "_private": {},
+                                "AwakeSafe": null,
+                                "__meta": {},
+                                "Start": null,
+                                "OnDisable": null
+                            }
                         }
                     ]
                 }

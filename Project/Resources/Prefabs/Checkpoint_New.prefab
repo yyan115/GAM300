@@ -2,7 +2,7 @@
     "prefab_entities": [
         {
             "id": 0,
-            "guid": "003d65b4eb2a7fad-00041dd1c400507f",
+            "guid": "00345ceb78066ae3-000460df0c01cc67",
             "components": {
                 "PrefabLinkComponent": {
                     "type": "PrefabLinkComponent",
@@ -176,9 +176,9 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "003d65b4ab65f1b9-00041dd1c4005081",
-                                "003d65b4c817a770-00041dd1c4005083",
-                                "003d65b490859281-00041dd1c4005085"
+                                "00345ceb1f1f7432-000460df0c01cc69",
+                                "00345ceb15efe785-000460df0c01cc6b",
+                                "00345ceb31eb0103-000460df0c01cc6d"
                             ]
                         }
                     ]
@@ -338,7 +338,7 @@
         },
         {
             "id": 1,
-            "guid": "003d65b4ab65f1b9-00041dd1c4005081",
+            "guid": "00345ceb1f1f7432-000460df0c01cc69",
             "components": {
                 "NameComponent": {
                     "name": "Shrine3"
@@ -348,6 +348,9 @@
                 },
                 "LayerComponent": {
                     "layerIndex": 0
+                },
+                "SiblingIndexComponent": {
+                    "siblingIndex": 0
                 },
                 "Transform": {
                     "type": "Transform",
@@ -412,7 +415,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "003d65b4eb2a7fad-00041dd1c400507f"
+                        "00345ceb78066ae3-000460df0c01cc67"
                     ]
                 },
                 "ActiveComponent": {
@@ -428,7 +431,7 @@
         },
         {
             "id": 2,
-            "guid": "003d65b4c817a770-00041dd1c4005083",
+            "guid": "00345ceb15efe785-000460df0c01cc6b",
             "components": {
                 "NameComponent": {
                     "name": "Light (2) (1) (1) (1)"
@@ -505,7 +508,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "003d65b4eb2a7fad-00041dd1c400507f"
+                        "00345ceb78066ae3-000460df0c01cc67"
                     ]
                 },
                 "SpotLightComponent": {
@@ -639,7 +642,7 @@
         },
         {
             "id": 3,
-            "guid": "003d65b490859281-00041dd1c4005085",
+            "guid": "00345ceb31eb0103-000460df0c01cc6d",
             "components": {
                 "NameComponent": {
                     "name": "RespawnPoint"
@@ -716,7 +719,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "003d65b4eb2a7fad-00041dd1c400507f"
+                        "00345ceb78066ae3-000460df0c01cc67"
                     ]
                 },
                 "ActiveComponent": {

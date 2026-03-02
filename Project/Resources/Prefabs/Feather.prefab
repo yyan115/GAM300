@@ -2,7 +2,7 @@
     "prefab_entities": [
         {
             "id": 0,
-            "guid": "0014d1fc3d1bcbc4-00045a069e003615",
+            "guid": "00345ceb4193d34b-000460df1a02396f",
             "components": {
                 "PrefabLinkComponent": {
                     "type": "PrefabLinkComponent",
@@ -176,7 +176,7 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "0014d1fc353d6cbb-00045a069e003617"
+                                "00345ceb6eb20888-000460df1a023971"
                             ]
                         }
                     ]
@@ -342,52 +342,26 @@
                             "entryFunction": "OnInit",
                             "autoInvokeEntry": true,
                             "instanceState": {
-                                "Update": null,
-                                "_aliveDuration": 5.0,
-                                "MinSpawnTorque": 8.0,
-                                "__meta": {},
-                                "SetScale": null,
-                                "TriggerDuration": 0.6,
-                                "After": null,
-                                "AliveDuration": 5.0,
-                                "Start": null,
-                                "DebugTransform": null,
-                                "Unsubscribe": null,
-                                "GetScale": null,
-                                "SpawnForceY": 0.1,
-                                "GetRotation": null,
-                                "_triggerDuration": 0.3,
-                                "_isTriggerDisabled": false,
-                                "UpdateSafe": null,
-                                "__created_at": 1771686171.0,
-                                "GetPosition": null,
-                                "OnDisable": null,
-                                "_private": {},
-                                "GetRandomTorque": null,
-                                "StartSafe": null,
-                                "SetRotation": null,
-                                "DisableSafe": null,
-                                "_call_lifecycle": null,
-                                "Move": null,
-                                "DeserializeFields": null,
-                                "SerializeFields": null,
-                                "Destroy": null,
-                                "Every": null,
-                                "Subscribe": null,
                                 "_transform_fetched": false,
-                                "AwakeSafe": null,
-                                "SetPosition": null,
-                                "SpawnForce": 0.2,
                                 "__field_list": {
-                                    "MinSpawnTorque": 2.0,
                                     "SpawnForce": 5.0,
-                                    "TriggerDuration": 0.3,
-                                    "MaxSpawnTorque": 10.0
+                                    "MaxSpawnTorque": 10.0,
+                                    "MinSpawnTorque": 2.0,
+                                    "TriggerDuration": 0.3
                                 },
-                                "Awake": null,
-                                "_subscriptions": {},
                                 "MaxSpawnTorque": 10.0,
-                                "GetTransform": null
+                                "__created_at": 1771686171.0,
+                                "TriggerDuration": 0.6,
+                                "MinSpawnTorque": 8.0,
+                                "_subscriptions": {},
+                                "SpawnForceY": 0.1,
+                                "_aliveDuration": 5.0,
+                                "AliveDuration": 5.0,
+                                "_isTriggerDisabled": false,
+                                "_triggerDuration": 0.3,
+                                "__meta": {},
+                                "_private": {},
+                                "SpawnForce": 0.2
                             }
                         }
                     ]
@@ -396,7 +370,7 @@
         },
         {
             "id": 1,
-            "guid": "0014d1fc353d6cbb-00045a069e003617",
+            "guid": "00345ceb6eb20888-000460df1a023971",
             "components": {
                 "NameComponent": {
                     "name": "Feather"
@@ -406,6 +380,9 @@
                 },
                 "LayerComponent": {
                     "layerIndex": 0
+                },
+                "SiblingIndexComponent": {
+                    "siblingIndex": 0
                 },
                 "Transform": {
                     "type": "Transform",
@@ -470,7 +447,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "0014d1fc3d1bcbc4-00045a069e003615"
+                        "00345ceb4193d34b-000460df1a02396f"
                     ]
                 },
                 "RigidBodyComponent": {
@@ -634,19 +611,47 @@
                             "entryFunction": "OnInit",
                             "autoInvokeEntry": true,
                             "instanceState": {
-                                "__field_list": {
-                                    "CollectionSpeed": 10.0,
-                                    "CollectionRadius": 0.1,
-                                    "InitialInactiveDuration": 0.5
-                                },
-                                "__created_at": 1772126813.0,
-                                "_private": {},
-                                "CollectionRadius": 0.05,
                                 "InitialInactiveDuration": 1.0,
+                                "__field_list": {
+                                    "CollectionRadius": 0.1,
+                                    "InitialInactiveDuration": 0.5,
+                                    "CollectionSpeed": 10.0
+                                },
+                                "GetPosition": null,
+                                "__created_at": 1772126813.0,
+                                "Move": null,
+                                "_private": {},
+                                "StartSafe": null,
+                                "DebugTransform": null,
+                                "_subscriptions": {},
+                                "GetScale": null,
+                                "CollectionRadius": 0.05,
+                                "After": null,
+                                "Subscribe": null,
+                                "OnDisable": null,
+                                "SetScale": null,
+                                "Start": null,
+                                "Destroy": null,
                                 "_transform_fetched": false,
-                                "CollectionSpeed": 3.0,
+                                "SerializeFields": null,
+                                "OnCollected": null,
+                                "Every": null,
+                                "AwakeSafe": null,
+                                "GetRotation": null,
+                                "SetPosition": null,
+                                "_toRoot": null,
+                                "Unsubscribe": null,
                                 "__meta": {},
-                                "_subscriptions": {}
+                                "UpdateSafe": null,
+                                "CollectionSpeed": 3.0,
+                                "Awake": null,
+                                "SetRotation": null,
+                                "DisableSafe": null,
+                                "GetTransform": null,
+                                "Update": null,
+                                "DeserializeFields": null,
+                                "OnTriggerEnter": null,
+                                "_call_lifecycle": null
                             }
                         }
                     ]

@@ -2,7 +2,7 @@
     "prefab_entities": [
         {
             "id": 0,
-            "guid": "0009bdc94afc1502-00040253aa002e99",
+            "guid": "00345ceb24906769-000460dfde091761",
             "components": {
                 "PrefabLinkComponent": {
                     "type": "PrefabLinkComponent",
@@ -176,9 +176,9 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "0009bdc9238dcb18-00040253aa002e9b",
-                                "0009bdc96d9a6301-00040253aa002e9d",
-                                "0009bdc94d92f914-00040253aa002e9f"
+                                "00345ceb2f3867bb-000460dfde091763",
+                                "00345ceb72ec265b-000460dfde091765",
+                                "00345ceb3d04d689-000460dfde091767"
                             ]
                         }
                     ]
@@ -305,6 +305,23 @@
                         {
                             "type": "float",
                             "data": 0.5
+                        },
+                        {
+                            "type": "Vector3D",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                }
+                            ]
                         }
                     ]
                 },
@@ -321,7 +338,7 @@
         },
         {
             "id": 1,
-            "guid": "0009bdc9238dcb18-00040253aa002e9b",
+            "guid": "00345ceb2f3867bb-000460dfde091763",
             "components": {
                 "NameComponent": {
                     "name": "PointLight"
@@ -398,7 +415,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "0009bdc94afc1502-00040253aa002e99"
+                        "00345ceb24906769-000460dfde091761"
                     ]
                 },
                 "PointLightComponent": {
@@ -511,7 +528,7 @@
         },
         {
             "id": 2,
-            "guid": "0009bdc96d9a6301-00040253aa002e9d",
+            "guid": "00345ceb72ec265b-000460dfde091765",
             "components": {
                 "NameComponent": {
                     "name": "Pedestal"
@@ -588,7 +605,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "0009bdc94afc1502-00040253aa002e99"
+                        "00345ceb24906769-000460dfde091761"
                     ]
                 },
                 "ActiveComponent": {
@@ -604,7 +621,7 @@
         },
         {
             "id": 3,
-            "guid": "0009bdc94d92f914-00040253aa002e9f",
+            "guid": "00345ceb3d04d689-000460dfde091767",
             "components": {
                 "NameComponent": {
                     "name": "Camera"
@@ -681,7 +698,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "0009bdc94afc1502-00040253aa002e99"
+                        "00345ceb24906769-000460dfde091761"
                     ]
                 },
                 "ActiveComponent": {
