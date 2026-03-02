@@ -275,6 +275,11 @@ void InspectorPanel::DrawComponentsViaReflection(Entity entity) {
 				(void*)&ecs.GetComponent<ParticleComponent>(entity) : nullptr; },
 			[&]() { return ecs.HasComponent<ParticleComponent>(entity); }},
 
+		{"Fog Volume", "FogVolumeComponent",
+			[&]() { return ecs.HasComponent<FogVolumeComponent>(entity) ?
+				(void*)&ecs.GetComponent<FogVolumeComponent>(entity) : nullptr; },
+			[&]() { return ecs.HasComponent<FogVolumeComponent>(entity); }},
+
 		// Audio component
 		{"Audio Source", "AudioComponent",
 			[&]() { return ecs.HasComponent<AudioComponent>(entity) ?

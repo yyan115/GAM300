@@ -137,7 +137,7 @@ void SceneInstance::Initialize()
 	ecsManager.fogSystem->Initialise();
 	ENGINE_LOG_INFO("Fog system initialized");
 
-	testing(ecsManager);
+	//testing(ecsManager);
 
 	if (!multithreadSystems)
 	{
