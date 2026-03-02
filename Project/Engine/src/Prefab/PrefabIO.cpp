@@ -221,6 +221,30 @@ Entity SpawnPrefab(const rapidjson::Value& ents, ECSManager& ecs, bool isSeriali
             auto& childComp = ecs.GetComponent<ChildrenComponent>(entity);
             Serializer::DeserializeChildrenComponent(childComp, childrenCompJSON, &guidRemap);
         }
+
+        // Ensure ALL entities have a SiblingIndexComponent.
+        if (!ecs.HasComponent<SiblingIndexComponent>(entity)) {
+            int nextIndex = 0;
+
+            // Check if the entity has a parent to determine sibling context
+            if (ecs.HasComponent<ParentComponent>(entity)) {
+                GUID_128 parentGUID = ecs.GetComponent<ParentComponent>(entity).parent;
+                Entity parentEnt = EntityGUIDRegistry::GetInstance().GetEntityByGUID(parentGUID);
+
+                // If parent exists and has children, find the highest current index
+                if (parentEnt != static_cast<Entity>(-1) && ecs.HasComponent<ChildrenComponent>(parentEnt)) {
+                    auto& siblings = ecs.GetComponent<ChildrenComponent>(parentEnt).children;
+                    for (const auto& sibGUID : siblings) {
+                        Entity sibEnt = EntityGUIDRegistry::GetInstance().GetEntityByGUID(sibGUID);
+                        if (sibEnt != static_cast<Entity>(-1) && ecs.HasComponent<SiblingIndexComponent>(sibEnt)) {
+                            nextIndex = std::max(nextIndex, ecs.GetComponent<SiblingIndexComponent>(sibEnt).siblingIndex + 1);
+                        }
+                    }
+                }
+            }
+            // Add the component with the calculated unique index
+            ecs.AddComponent<SiblingIndexComponent>(entity, SiblingIndexComponent{ nextIndex });
+        }
     }
 
 	return newEntities.empty() ? static_cast<Entity>(-1) : newEntities[0];

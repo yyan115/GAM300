@@ -1024,12 +1024,35 @@ void Serializer::SerializePrefabOverridesRecursive(ECSManager& sceneECS, Entity 
         nameVal.SetString(entityName.c_str(), static_cast<rapidjson::SizeType>(entityName.size()), alloc);
         outEntityNode.AddMember("Name", nameVal, alloc);
     }
+
     // NEW: Always save sibling index so RestorePrefabHierarchy can use it as a tiebreaker
-    if (sceneECS.HasComponent<SiblingIndexComponent>(instanceEnt)) {
-        outEntityNode.AddMember("SiblingIndex",
-            sceneECS.GetComponent<SiblingIndexComponent>(instanceEnt).siblingIndex,
-            alloc);
+    // Ensure ALL entities have a SiblingIndexComponent.
+    if (!sceneECS.HasComponent<SiblingIndexComponent>(instanceEnt)) {
+        int nextIndex = 0;
+
+        // Check if the entity has a parent to determine sibling context
+        if (sceneECS.HasComponent<ParentComponent>(instanceEnt)) {
+            GUID_128 parentGUID = sceneECS.GetComponent<ParentComponent>(instanceEnt).parent;
+            Entity parentEnt = EntityGUIDRegistry::GetInstance().GetEntityByGUID(parentGUID);
+
+            // If parent exists and has children, find the highest current index
+            if (parentEnt != static_cast<Entity>(-1) && sceneECS.HasComponent<ChildrenComponent>(parentEnt)) {
+                auto& siblings = sceneECS.GetComponent<ChildrenComponent>(parentEnt).children;
+                for (const auto& sibGUID : siblings) {
+                    Entity sibEnt = EntityGUIDRegistry::GetInstance().GetEntityByGUID(sibGUID);
+                    if (sibEnt != static_cast<Entity>(-1) && sceneECS.HasComponent<SiblingIndexComponent>(sibEnt)) {
+                        nextIndex = std::max(nextIndex, sceneECS.GetComponent<SiblingIndexComponent>(sibEnt).siblingIndex + 1);
+                    }
+                }
+            }
+        }
+        // Add the component with the calculated unique index
+        sceneECS.AddComponent<SiblingIndexComponent>(instanceEnt, SiblingIndexComponent{ nextIndex });
     }
+    outEntityNode.AddMember("SiblingIndex",
+        sceneECS.GetComponent<SiblingIndexComponent>(instanceEnt).siblingIndex,
+        alloc);
+
     if (sceneECS.HasComponent<ParentComponent>(instanceEnt)) {
         rapidjson::Value v = SerializeComponentToValue(sceneECS.GetComponent<ParentComponent>(instanceEnt), alloc);
         outEntityNode.AddMember("ParentComponent", v, alloc);
@@ -1086,7 +1109,7 @@ void Serializer::SerializePrefabOverridesRecursive(ECSManager& sceneECS, Entity 
         // CHANGED: We must add the child if it has a "Name" (which is added at the start of this function).
         // This ensures that even if there are no component overrides, the Child is saved so its 
         // GUID can be restored reliably by RestorePrefabHierarchy on load.
-        std::vector<std::string> deletedChildrenNames{};
+        std::vector<Entity> deletedChildren{};
 
         rapidjson::Value deletedChildrenNode(rapidjson::kArrayType);
         for (const auto& deletedChild : deletedBaseChildren) {
@@ -1097,7 +1120,7 @@ void Serializer::SerializePrefabOverridesRecursive(ECSManager& sceneECS, Entity 
             //deletedChildNode = SerializeEntityGUID(deletedEntity, alloc, deletedChildNode);
             if (sceneECS.HasComponent<NameComponent>(deletedEntity)) {
                 std::string& name = sceneECS.GetComponent<NameComponent>(deletedEntity).name;
-				deletedChildrenNames.push_back(name);
+                deletedChildren.push_back(deletedEntity);
                 //rapidjson::Value nameVal;
                 //nameVal.SetString(name.c_str(), static_cast<rapidjson::SizeType>(name.length()), alloc);
 
@@ -1107,15 +1130,35 @@ void Serializer::SerializePrefabOverridesRecursive(ECSManager& sceneECS, Entity 
             //deletedChildrenNode.PushBack(deletedChildNode, alloc);
         }
 
-        // Sort the deletedChildrenNames vector alphabetically to ensure consistent order in the scene file.
-        std::sort(deletedChildrenNames.begin(), deletedChildrenNames.end());
+        // Sort the deletedChildrenNames vector by entity id to ensure consistent order in the scene file.
+        std::sort(deletedChildren.begin(), deletedChildren.end());
 
-        // Now add the sorted deleted children names to the scene JSON.
-        for (const auto& name : deletedChildrenNames) {
+        // Now add the sorted deleted children guid, name and sibling index to the scene JSON.
+        for (const auto& deletedChild : deletedChildren) {
             rapidjson::Value deletedChildNode(rapidjson::kObjectType);
+
+            // Add GUID and Entity ID.
+            deletedChildNode = SerializeEntityGUID(deletedChild, alloc, deletedChildNode);
+
+            // Add entity name.
             rapidjson::Value nameVal;
+            std::string name{};
+            if (sceneECS.HasComponent<NameComponent>(deletedChild)) {
+                 name = sceneECS.GetComponent<NameComponent>(deletedChild).name;
+			}
             nameVal.SetString(name.c_str(), static_cast<rapidjson::SizeType>(name.length()), alloc);
             deletedChildNode.AddMember("Name", nameVal, alloc);
+
+			// Add sibling index (if it exists) so we can restore the original hierarchy order on load. If it doesn't exist, add a default value of 0.
+            rapidjson::Value siblingIndexVal;
+            int siblingIndex{};
+            if (sceneECS.HasComponent<SiblingIndexComponent>(deletedChild)) {
+                siblingIndex = sceneECS.GetComponent<SiblingIndexComponent>(deletedChild).siblingIndex;
+			}
+            siblingIndexVal.SetInt(siblingIndex);
+            deletedChildNode.AddMember("SiblingIndex", siblingIndexVal, alloc);
+
+			// Push the deleted child node to the DeletedChildren array in the JSON.
             deletedChildrenNode.PushBack(deletedChildNode, alloc);
         }
 
