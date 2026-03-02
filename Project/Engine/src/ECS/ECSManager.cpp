@@ -81,6 +81,7 @@ void ECSManager::Initialize() {
 	RegisterComponent<ButtonComponent>();
 	RegisterComponent<SliderComponent>();
 	RegisterComponent<UIAnchorComponent>();
+	RegisterComponent<FogVolumeComponent>();
 
 	// REGISTER ALL SYSTEMS AND ITS SIGNATURES HERE
 	// e.g.,
@@ -228,7 +229,12 @@ void ECSManager::Initialize() {
 		SetSystemSignature<VideoSystem>(signature);
 	}
 
-
+	fogSystem = RegisterSystem<FogSystem>();
+	{
+		Signature signature;
+		signature.set(GetComponentID<FogVolumeComponent>());
+		SetSystemSignature<FogSystem>(signature);
+	}
 
 }
 

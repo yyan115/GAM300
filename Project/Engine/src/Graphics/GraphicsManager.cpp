@@ -26,6 +26,7 @@
 #include "Graphics/Camera/CameraSystem.hpp"
 #include "Asset Manager/ResourceManager.hpp"
 #include "Graphics/Instancing/InstancingManager.hpp"
+#include "TimeManager.hpp"
 
 GraphicsManager& GraphicsManager::GetInstance()
 {
@@ -390,6 +391,9 @@ void GraphicsManager::Render()
 		}
 		else if (auto* particleItem = dynamic_cast<ParticleComponent*>(item)) {
 			RenderParticles(*particleItem);
+		}
+		else if (auto* fogItem = dynamic_cast<FogVolumeComponent*>(item)) {
+			RenderFogVolume(*fogItem);
 		}
 	}
 
@@ -1337,4 +1341,85 @@ void GraphicsManager::RenderModelOptimized(const ModelRenderComponent& item)
 	}
 
 	m_sortingStats.drawCalls++;
+}
+
+void GraphicsManager::RenderFogVolume(const FogVolumeComponent& item)
+{
+	if (!item.isVisible || !item.fogShader || !item.fogVAO) 
+	{
+		return;
+	}
+
+	// --- Blending setup (same pattern as RenderParticles) ---
+	glDisable(GL_CULL_FACE);        // See fog from inside the volume too
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);  // Standard alpha blend
+	glDepthMask(GL_FALSE);          // Don't write to depth buffer
+
+	item.fogShader->Activate();
+
+	// --- Transform (uses worldTransform set by FogSystem) ---
+	glm::mat4 modelMatrix = item.worldTransform.ConvertToGLM();
+	item.fogShader->setMat4("model", modelMatrix);
+
+	// --- Camera matrices ---
+	if (currentCamera)
+	{
+		float aspectRatio = currentFrameViewport.aspectRatio;
+		glm::mat4 view = currentCamera->GetViewMatrix();
+		glm::mat4 projection = glm::perspective(
+			glm::radians(currentCamera->Zoom),
+			aspectRatio,
+			0.1f, 100.0f
+		);
+		item.fogShader->setMat4("view", view);
+		item.fogShader->setMat4("projection", projection);
+		item.fogShader->setVec3("cameraPos", currentCamera->Position);
+	}
+
+	// --- Fog properties (all from FogVolumeComponent) ---
+	item.fogShader->setVec3("fogColor", item.fogColor.ConvertToGLM());
+	item.fogShader->setFloat("density", item.density);
+	item.fogShader->setFloat("opacity", item.opacity);
+
+	// --- Time for noise animation ---
+	static float fogTime = 0.0f;
+	fogTime += static_cast<float>(TimeManager::GetDeltaTime());
+	item.fogShader->setFloat("time", fogTime);
+
+	item.fogShader->setFloat("scrollSpeedX", item.scrollSpeedX);
+	item.fogShader->setFloat("scrollSpeedY", item.scrollSpeedY);
+	item.fogShader->setFloat("noiseScale", item.noiseScale);
+	item.fogShader->setFloat("noiseStrength", item.noiseStrength);
+
+	// --- Height fade ---
+	item.fogShader->setBool("useHeightFade", item.useHeightFade);
+	item.fogShader->setFloat("heightFadeStart", item.heightFadeStart);
+	item.fogShader->setFloat("heightFadeEnd", item.heightFadeEnd);
+
+	// --- Edge softness ---
+	item.fogShader->setFloat("edgeSoftness", item.edgeSoftness);
+
+	// --- Noise texture ---
+	bool hasNoiseMap = (item.noiseTexture != nullptr);
+	item.fogShader->setBool("hasNoiseMap", hasNoiseMap);
+	if (hasNoiseMap)
+	{
+		glActiveTexture(GL_TEXTURE0);
+		item.noiseTexture->Bind(0);
+		item.fogShader->setInt("noiseMap", 0);
+	}
+
+	// --- Draw ---
+	item.fogVAO->Bind();
+	glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
+	item.fogVAO->Unbind();
+
+	// --- Restore state (same pattern as RenderParticles) ---
+	if (hasNoiseMap) {
+		item.noiseTexture->Unbind(0);
+	}
+	glDepthMask(GL_TRUE);
+	glDisable(GL_BLEND);
+	if (faceCullingEnabled) glEnable(GL_CULL_FACE);
 }

@@ -52,4 +52,6 @@ void SequentialSystemOrchestrator::Draw() {
 	{
 		mainECS.debugDrawSystem->Update();
 	}
+	if (mainECS.fogSystem)
+		PROFILE_PLOT_TIMED("Fog", mainECS.fogSystem->Update());
 }

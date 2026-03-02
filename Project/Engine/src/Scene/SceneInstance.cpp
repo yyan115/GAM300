@@ -134,7 +134,8 @@ void SceneInstance::Initialize()
 	ENGINE_LOG_INFO("Slider system initialized");
 	ecsManager.videoSystem->Initialise(ecsManager);
 	ENGINE_LOG_INFO("Video system initialized");
-
+	ecsManager.fogSystem->Initialise();
+	ENGINE_LOG_INFO("Fog system initialized");
 
 	if (!multithreadSystems)
 	{
@@ -264,6 +265,7 @@ void SceneInstance::Exit()
 	PostProcessingManager::GetInstance().Shutdown();
 	ECSRegistry::GetInstance().GetECSManager(scenePath).particleSystem->Shutdown();
 	ECSRegistry::GetInstance().GetECSManager(scenePath).scriptSystem->Shutdown();
+	ECSRegistry::GetInstance().GetECSManager(scenePath).fogSystem->Shutdown();
 	systemOrchestrator.reset();
 	ENGINE_PRINT("TestScene Exited\n");
 }
