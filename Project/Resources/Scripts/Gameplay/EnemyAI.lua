@@ -116,6 +116,7 @@ return Component {
         AttackDisengageRange = 4.0,   -- exit attack state (slightly bigger)
         AttackCooldown       = 3.0,
         RangedAnimDelay      = 1.0,
+        MeleeAnimDelay       = 1.2,
         IsMelee              = false,
         IsPassive            = false,
         MeleeSpeed           = 0.9,
