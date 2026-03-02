@@ -1098,9 +1098,9 @@ void Serializer::SerializePrefabOverridesRecursive(ECSManager& sceneECS, Entity 
         }
         auto& baseChildren = sceneECS.GetComponent<ChildrenComponent>(baselineEnt).children;
 
-        std::unordered_set<GUID_128> deletedBaseChildren{};
+        std::list<GUID_128> deletedBaseChildren{};
         for (const auto& baseChild : baseChildren) {
-            deletedBaseChildren.insert(baseChild);
+            deletedBaseChildren.push_back(baseChild);
         }
 
         rapidjson::Value childrenOverrides(rapidjson::kArrayType);
@@ -1117,7 +1117,7 @@ void Serializer::SerializePrefabOverridesRecursive(ECSManager& sceneECS, Entity 
                 // Actually, for a dummy world, you might just iterate entities directly.
                 if (sceneECS.GetComponent<NameComponent>(bChild).name == childName) {
                     baseChild = bChild;
-                    deletedBaseChildren.erase(baseChildGUID);
+                    deletedBaseChildren.remove(baseChildGUID);
                     break;
                 }
             }
