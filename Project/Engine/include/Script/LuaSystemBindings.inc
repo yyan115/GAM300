@@ -246,6 +246,7 @@ BEGIN_SYSTEM("CharacterController")
     FUNCTION("GetGravity", CharacterControllerWrappers::GetGravity)
     FUNCTION("SetGravity", CharacterControllerWrappers::SetGravity)
     FUNCTION("DestroyByEntity", CharacterControllerWrappers::DestroyByEntity)
+    FUNCTION("DisableCollision", CharacterControllerWrappers::DisableCollision)
     FUNCTION("UpdateAll", CharacterControllerWrappers::UpdateAll)
     FUNCTION("ClearAll", CharacterControllerWrappers::ClearAll)
 END_SYSTEM()
@@ -345,6 +346,18 @@ BEGIN_SYSTEM("Prefab")
     FUNCTION("InstantiatePrefab", &PrefabWrappers::InstantiatePrefab)
 END_SYSTEM()
 
+// ============================================================================
+// DIALOGUE MANAGER
+// ============================================================================
+
+BEGIN_SYSTEM("DialogueManager")
+    FUNCTION("StartDialogue", &DialogueManagerWrappers::StartDialogue)
+    FUNCTION("StopDialogue", &DialogueManagerWrappers::StopDialogue)
+    FUNCTION("ScrollNext", &DialogueManagerWrappers::ScrollNext)
+    FUNCTION("IsDialogueActive", &DialogueManagerWrappers::IsDialogueActive)
+    FUNCTION("IsAnyDialogueActive", &DialogueManagerWrappers::IsAnyDialogueActive)
+    FUNCTION("GetCurrentIndex", &DialogueManagerWrappers::GetCurrentIndex)
+END_SYSTEM()
 
 // ============================================================================
 // FUTURE SYSTEMS (Examples)

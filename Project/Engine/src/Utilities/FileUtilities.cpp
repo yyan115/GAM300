@@ -100,10 +100,20 @@ std::string FileUtilities::SanitizeFilePath(const std::string& fullPath) {
     std::filesystem::path dir = pathObj.parent_path();
     std::string originalFilename = pathObj.filename().string();
 
-    // Sanitize only the filename, then recombine with the valid directory path
+    // Sanitize only the filename
     std::string safeFilename = SanitizeFileName(originalFilename);
 
-    return (dir / safeFilename).string();
+    // Recombine the path with the sanitized filename
+    std::filesystem::path finalPathObj = dir / safeFilename;
+
+    // 1. Use generic_string() to prefer forward slashes (standard C++ feature)
+    std::string finalPathStr = finalPathObj.generic_string();
+
+    // 2. Explicitly replace any remaining backslashes with forward slashes 
+    // (This guarantees consistency even if the input 'fullPath' had mixed separators)
+    std::replace(finalPathStr.begin(), finalPathStr.end(), '\\', '/');
+
+    return finalPathStr;
 }
 
 bool FileUtilities::StrictExists(const std::filesystem::path& p) {

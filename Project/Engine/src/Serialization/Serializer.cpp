@@ -338,7 +338,7 @@ void Serializer::SerializeEntityRecursively(Entity entity, rapidjson::Document::
         //          overridesArray.PushBack(wrapper, alloc);
         //      }
 
-              // D. Save recursive overrides
+        // D. Save recursive overrides
         SerializePrefabOverridesRecursive(ecs, entity, baselineRoot, alloc, prefabNode);
 
         ecs.DestroyEntity(baselineRoot); // clean up baseline prefab entity
@@ -409,6 +409,29 @@ rapidjson::Value Serializer::SerializeEntity(Entity entity, rapidjson::Document:
         indexVal.SetInt(c.layerIndex);
         layerObj.AddMember(rapidjson::Value("layerIndex", alloc).Move(), indexVal, alloc);
         compsObj.AddMember(rapidjson::Value("LayerComponent", alloc).Move(), layerObj, alloc);
+    }
+    // Ensure ALL entities have a SiblingIndexComponent.
+    if (!ecs.HasComponent<SiblingIndexComponent>(entity)) {
+        int nextIndex = 0;
+
+        // Check if the entity has a parent to determine sibling context
+        if (ecs.HasComponent<ParentComponent>(entity)) {
+            GUID_128 parentGUID = ecs.GetComponent<ParentComponent>(entity).parent;
+            Entity parentEnt = EntityGUIDRegistry::GetInstance().GetEntityByGUID(parentGUID);
+
+            // If parent exists and has children, find the highest current index
+            if (parentEnt != static_cast<Entity>(-1) && ecs.HasComponent<ChildrenComponent>(parentEnt)) {
+                auto& siblings = ecs.GetComponent<ChildrenComponent>(parentEnt).children;
+                for (const auto& sibGUID : siblings) {
+                    Entity sibEnt = EntityGUIDRegistry::GetInstance().GetEntityByGUID(sibGUID);
+                    if (sibEnt != static_cast<Entity>(-1) && ecs.HasComponent<SiblingIndexComponent>(sibEnt)) {
+                        nextIndex = std::max(nextIndex, ecs.GetComponent<SiblingIndexComponent>(sibEnt).siblingIndex + 1);
+                    }
+                }
+            }
+        }
+        // Add the component with the calculated unique index
+        ecs.AddComponent<SiblingIndexComponent>(entity, SiblingIndexComponent{ nextIndex });
     }
     if (ecs.HasComponent<SiblingIndexComponent>(entity)) {
         auto& c = ecs.GetComponent<SiblingIndexComponent>(entity);
@@ -735,6 +758,11 @@ rapidjson::Value Serializer::SerializeEntity(Entity entity, rapidjson::Document:
         rapidjson::Value v = SerializeComponentToValue(c, alloc);
         compsObj.AddMember("VideoComponent", v, alloc);
     }
+    if (ecs.HasComponent<DialogueComponent>(entity)) {
+        auto& c = ecs.GetComponent<DialogueComponent>(entity);
+        rapidjson::Value v = SerializeComponentToValue(c, alloc);
+        compsObj.AddMember("DialogueComponent", v, alloc);
+    }
 
 
     entObj.AddMember("components", compsObj, alloc);
@@ -770,11 +798,12 @@ void Serializer::SerializePrefabInstanceDelta(ECSManager& sceneECS, Entity insta
     CheckAndSerializeDelta<ButtonComponent>("ButtonComponent", sceneECS, instanceEnt, baselineEnt, alloc, outComponentsArray, standardSerializer);
     CheckAndSerializeDelta<SliderComponent>("SliderComponent", sceneECS, instanceEnt, baselineEnt, alloc, outComponentsArray, standardSerializer);
     CheckAndSerializeDelta<VideoComponent>("VideoComponent", sceneECS, instanceEnt, baselineEnt, alloc, outComponentsArray, standardSerializer);
+    CheckAndSerializeDelta<DialogueComponent>("DialogueComponent", sceneECS, instanceEnt, baselineEnt, alloc, outComponentsArray, standardSerializer);
 
     // Note: ChildrenComponent and ParentComponent are intentionally SKIPPED.
     if (baselineEnt == static_cast<Entity>(-1)) {
         CheckAndSerializeDelta<ChildrenComponent>("ChildrenComponent", sceneECS, instanceEnt, baselineEnt, alloc, outComponentsArray, standardSerializer);
-		CheckAndSerializeDelta<ParentComponent>("ParentComponent", sceneECS, instanceEnt, baselineEnt, alloc, outComponentsArray, standardSerializer);
+        CheckAndSerializeDelta<ParentComponent>("ParentComponent", sceneECS, instanceEnt, baselineEnt, alloc, outComponentsArray, standardSerializer);
     }
 
     // --- 2. Manual Components (Name, Tag, Layer, Sibling) ---
@@ -1019,8 +1048,40 @@ void Serializer::SerializePrefabOverridesRecursive(ECSManager& sceneECS, Entity 
     // We usually save the Name or Sibling Index to identify the entity on load.
     outEntityNode = SerializeEntityGUID(instanceEnt, alloc, outEntityNode);
     if (sceneECS.HasComponent<NameComponent>(instanceEnt)) {
-        outEntityNode.AddMember("Name", rapidjson::StringRef(sceneECS.GetComponent<NameComponent>(instanceEnt).name.c_str()), alloc);
+        const std::string& entityName = sceneECS.GetComponent<NameComponent>(instanceEnt).name;
+        rapidjson::Value nameVal;
+        nameVal.SetString(entityName.c_str(), static_cast<rapidjson::SizeType>(entityName.size()), alloc);
+        outEntityNode.AddMember("Name", nameVal, alloc);
     }
+
+    // NEW: Always save sibling index so RestorePrefabHierarchy can use it as a tiebreaker
+    // Ensure ALL entities have a SiblingIndexComponent.
+    if (!sceneECS.HasComponent<SiblingIndexComponent>(instanceEnt)) {
+        int nextIndex = 0;
+
+        // Check if the entity has a parent to determine sibling context
+        if (sceneECS.HasComponent<ParentComponent>(instanceEnt)) {
+            GUID_128 parentGUID = sceneECS.GetComponent<ParentComponent>(instanceEnt).parent;
+            Entity parentEnt = EntityGUIDRegistry::GetInstance().GetEntityByGUID(parentGUID);
+
+            // If parent exists and has children, find the highest current index
+            if (parentEnt != static_cast<Entity>(-1) && sceneECS.HasComponent<ChildrenComponent>(parentEnt)) {
+                auto& siblings = sceneECS.GetComponent<ChildrenComponent>(parentEnt).children;
+                for (const auto& sibGUID : siblings) {
+                    Entity sibEnt = EntityGUIDRegistry::GetInstance().GetEntityByGUID(sibGUID);
+                    if (sibEnt != static_cast<Entity>(-1) && sceneECS.HasComponent<SiblingIndexComponent>(sibEnt)) {
+                        nextIndex = std::max(nextIndex, sceneECS.GetComponent<SiblingIndexComponent>(sibEnt).siblingIndex + 1);
+                    }
+                }
+            }
+        }
+        // Add the component with the calculated unique index
+        sceneECS.AddComponent<SiblingIndexComponent>(instanceEnt, SiblingIndexComponent{ nextIndex });
+    }
+    outEntityNode.AddMember("SiblingIndex",
+        sceneECS.GetComponent<SiblingIndexComponent>(instanceEnt).siblingIndex,
+        alloc);
+
     if (sceneECS.HasComponent<ParentComponent>(instanceEnt)) {
         rapidjson::Value v = SerializeComponentToValue(sceneECS.GetComponent<ParentComponent>(instanceEnt), alloc);
         outEntityNode.AddMember("ParentComponent", v, alloc);
@@ -1037,11 +1098,15 @@ void Serializer::SerializePrefabOverridesRecursive(ECSManager& sceneECS, Entity 
     // 3. Recurse Children
     if (sceneECS.HasComponent<ChildrenComponent>(instanceEnt)) {
         auto& instChildren = sceneECS.GetComponent<ChildrenComponent>(instanceEnt).children;
+        if (baselineEnt == static_cast<Entity>(-1) || !sceneECS.HasComponent<ChildrenComponent>(baselineEnt)) {
+            // No baseline — serialize all instance children as new additions
+            return;
+        }
         auto& baseChildren = sceneECS.GetComponent<ChildrenComponent>(baselineEnt).children;
 
-        std::unordered_set<GUID_128> deletedBaseChildren{};
+        std::list<GUID_128> deletedBaseChildren{};
         for (const auto& baseChild : baseChildren) {
-            deletedBaseChildren.insert(baseChild);
+            deletedBaseChildren.push_back(baseChild);
         }
 
         rapidjson::Value childrenOverrides(rapidjson::kArrayType);
@@ -1058,7 +1123,7 @@ void Serializer::SerializePrefabOverridesRecursive(ECSManager& sceneECS, Entity 
                 // Actually, for a dummy world, you might just iterate entities directly.
                 if (sceneECS.GetComponent<NameComponent>(bChild).name == childName) {
                     baseChild = bChild;
-                    deletedBaseChildren.erase(baseChildGUID);
+                    deletedBaseChildren.remove(baseChildGUID);
                     break;
                 }
             }
@@ -1066,28 +1131,66 @@ void Serializer::SerializePrefabOverridesRecursive(ECSManager& sceneECS, Entity 
             rapidjson::Value childNode(rapidjson::kObjectType);
             SerializePrefabOverridesRecursive(sceneECS, instChild, baseChild, alloc, childNode);
 
-            // Only add to list if there was actually an override inside
-            if (childNode.HasMember("ComponentOverrides") || childNode.HasMember("Children") || childNode.HasMember("DeletedChildren")) {
-                childrenOverrides.PushBack(childNode, alloc);
-            }
+            childrenOverrides.PushBack(childNode, alloc);
         }
 
         // For each of the deleted base child entities, mark them as 'deleted' in the JSON so that they can be deleted when deserialized later.
+        // CHANGED: We must add the child if it has a "Name" (which is added at the start of this function).
+        // This ensures that even if there are no component overrides, the Child is saved so its 
+        // GUID can be restored reliably by RestorePrefabHierarchy on load.
+        std::vector<std::pair<Entity, std::string>> deletedChildren{};
+
         rapidjson::Value deletedChildrenNode(rapidjson::kArrayType);
         for (const auto& deletedChild : deletedBaseChildren) {
             Entity deletedEntity = EntityGUIDRegistry::GetInstance().GetEntityByGUID(deletedChild);
-            rapidjson::Value deletedChildNode(rapidjson::kObjectType);
+            //rapidjson::Value deletedChildNode(rapidjson::kObjectType);
 
             // Serialize the information required to deserialize and restore the prefab hierarchy when deserializing later.
-            deletedChildNode = SerializeEntityGUID(deletedEntity, alloc, deletedChildNode);
+            //deletedChildNode = SerializeEntityGUID(deletedEntity, alloc, deletedChildNode);
             if (sceneECS.HasComponent<NameComponent>(deletedEntity)) {
                 std::string& name = sceneECS.GetComponent<NameComponent>(deletedEntity).name;
-                rapidjson::Value nameVal;
-                nameVal.SetString(name.c_str(), static_cast<rapidjson::SizeType>(name.length()), alloc);
+                deletedChildren.push_back({ deletedEntity, name });
+                //rapidjson::Value nameVal;
+                //nameVal.SetString(name.c_str(), static_cast<rapidjson::SizeType>(name.length()), alloc);
 
-                deletedChildNode.AddMember("Name", nameVal, alloc);
+                //deletedChildNode.AddMember("Name", nameVal, alloc);
             }
 
+            //deletedChildrenNode.PushBack(deletedChildNode, alloc);
+        }
+
+        // Sort the deletedChildrenNames vector by entity id to ensure consistent order in the scene file.
+        std::sort(deletedChildren.begin(), deletedChildren.end(),
+            [](const auto& a, const auto& b) {
+                return a.second < b.second;
+            });
+
+        // Now add the sorted deleted children name and sibling index to the scene JSON.
+        for (const auto& deletedChild : deletedChildren) {
+            rapidjson::Value deletedChildNode(rapidjson::kObjectType);
+
+            //// Add GUID and Entity ID.
+            //deletedChildNode = SerializeEntityGUID(deletedChild, alloc, deletedChildNode);
+
+            // Add entity name.
+            rapidjson::Value nameVal;
+            std::string name{};
+            if (sceneECS.HasComponent<NameComponent>(deletedChild.first)) {
+                 name = sceneECS.GetComponent<NameComponent>(deletedChild.first).name;
+			}
+            nameVal.SetString(name.c_str(), static_cast<rapidjson::SizeType>(name.length()), alloc);
+            deletedChildNode.AddMember("Name", nameVal, alloc);
+
+			// Add sibling index (if it exists) so we can restore the original hierarchy order on load. If it doesn't exist, add a default value of 0.
+            rapidjson::Value siblingIndexVal;
+            int siblingIndex{};
+            if (sceneECS.HasComponent<SiblingIndexComponent>(deletedChild.first)) {
+                siblingIndex = sceneECS.GetComponent<SiblingIndexComponent>(deletedChild.first).siblingIndex;
+			}
+            siblingIndexVal.SetInt(siblingIndex);
+            deletedChildNode.AddMember("SiblingIndex", siblingIndexVal, alloc);
+
+			// Push the deleted child node to the DeletedChildren array in the JSON.
             deletedChildrenNode.PushBack(deletedChildNode, alloc);
         }
 
@@ -1139,8 +1242,7 @@ void Serializer::UpdateEntityGUID_Safe(ECSManager& ecs, Entity entity, GUID_128 
 
 void Serializer::RestorePrefabHierarchy(ECSManager& ecs, Entity currentEntity, const rapidjson::Value& jsonNode) {
     // 1. Restore GUID for THIS entity
-    // (This calls the safe swapper we wrote above)
-    if (jsonNode.HasMember("guid")) { // Ensure this key matches your save format ("guid" vs "GUID")
+    if (jsonNode.HasMember("guid")) {
         GUID_128 savedGUID = DeserializeEntityGUID(jsonNode);
         UpdateEntityGUID_Safe(ecs, currentEntity, savedGUID);
     }
@@ -1150,31 +1252,56 @@ void Serializer::RestorePrefabHierarchy(ECSManager& ecs, Entity currentEntity, c
         const auto& jsonChildren = jsonNode["Children"];
         auto& childrenComp = ecs.GetComponent<ChildrenComponent>(currentEntity);
 
-        // COPY the real children entities to a vector first.
-        // Why? Because 'UpdateEntityGUID_Safe' modifies the GUIDs, which effectively modifies
-        // the map/registry lookups. We want a stable list of Entity IDs to iterate.
-        std::vector<Entity> realChildrenEntities;
-        for (auto& g : childrenComp.children) {
-            realChildrenEntities.push_back(EntityGUIDRegistry::GetInstance().GetEntityByGUID(g));
+        // Build candidate pool from live children
+        std::list<Entity> candidates;
+        for (auto& childGUID : childrenComp.children) {
+            Entity childEnt = EntityGUIDRegistry::GetInstance().GetEntityByGUID(childGUID);
+            if (childEnt != static_cast<Entity>(-1))
+                candidates.push_back(childEnt);
         }
 
-        // Iterate JSON children
         for (const auto& jsonChild : jsonChildren.GetArray()) {
             if (!jsonChild.HasMember("Name")) continue;
-            std::string nameToFind = jsonChild["Name"].GetString();
+            std::string savedName = jsonChild["Name"].GetString();
 
-            // Find match in real hierarchy by Name
+            // Read saved sibling index if present
+            bool hasSavedSiblingIndex = jsonChild.HasMember("SiblingIndex");
+            int savedSiblingIndex = hasSavedSiblingIndex ? jsonChild["SiblingIndex"].GetInt() : -1;
+
             Entity match = static_cast<Entity>(-1);
-            for (Entity ent : realChildrenEntities) {
-                if (ent != static_cast<Entity>(-1) && ecs.GetComponent<NameComponent>(ent).name == nameToFind) {
-                    match = ent;
-                    break;
+            auto matchIt = candidates.end();
+
+            // Pass 1: Match by Name AND SiblingIndex (exact, unambiguous)
+            if (hasSavedSiblingIndex) {
+                for (auto it = candidates.begin(); it != candidates.end(); ++it) {
+                    if (!ecs.HasComponent<NameComponent>(*it)) continue;
+                    if (ecs.GetComponent<NameComponent>(*it).name != savedName) continue;
+
+                    if (ecs.HasComponent<SiblingIndexComponent>(*it) &&
+                        ecs.GetComponent<SiblingIndexComponent>(*it).siblingIndex == savedSiblingIndex) {
+                        match = *it;
+                        matchIt = it;
+                        break;
+                    }
                 }
             }
 
-            // If found, recurse down
+            // Pass 2: Fallback — name only (for old scene files that lack SiblingIndex,
+            //         or entities that genuinely have unique names)
+            if (match == static_cast<Entity>(-1)) {
+                for (auto it = candidates.begin(); it != candidates.end(); ++it) {
+                    if (!ecs.HasComponent<NameComponent>(*it)) continue;
+                    if (ecs.GetComponent<NameComponent>(*it).name == savedName) {
+                        match = *it;
+                        matchIt = it;
+                        break;
+                    }
+                }
+            }
+
             if (match != static_cast<Entity>(-1)) {
                 RestorePrefabHierarchy(ecs, match, jsonChild);
+                candidates.erase(matchIt);
             }
         }
     }
@@ -1182,7 +1309,7 @@ void Serializer::RestorePrefabHierarchy(ECSManager& ecs, Entity currentEntity, c
 
 Entity Serializer::DeserializeEntity(ECSManager& ecs, const rapidjson::Value& entObj, bool isPrefab, Entity entity, bool skipSpawnChildren, bool initialiseAnimation) {
     if (!entObj.IsObject()) {
-		ENGINE_LOG_WARN("[Serializer] DeserializeEntity: Invalid entity JSON object.");
+        ENGINE_LOG_WARN("[Serializer] DeserializeEntity: Invalid entity JSON object.");
         return static_cast<Entity>(-1);
     }
 
@@ -1503,6 +1630,14 @@ Entity Serializer::DeserializeEntity(ECSManager& ecs, const rapidjson::Value& en
         auto& videoComp = ecs.GetComponent<VideoComponent>(newEnt);
         DeserializeVideoComponent(videoComp, videoCompJSON);
     }
+    // DialogueComponent
+    if (comps.HasMember("DialogueComponent") && comps["DialogueComponent"].IsObject()) {
+        const auto& dialogueCompJSON = comps["DialogueComponent"];
+        ecs.AddComponent<DialogueComponent>(newEnt, DialogueComponent{});
+        auto& dialogueComp = ecs.GetComponent<DialogueComponent>(newEnt);
+        TypeDescriptor* td = TypeResolver<DialogueComponent>::Get();
+        if (td) td->Deserialize(&dialogueComp, dialogueCompJSON);
+    }
 
 
     // Ensure all entities have TagComponent and LayerComponent
@@ -1664,6 +1799,11 @@ void Serializer::ApplyPrefabOverridesRecursive(ECSManager& ecs, Entity& currentE
                 else if (typeName == "VideoComponent") {
                     if (!ecs.HasComponent<VideoComponent>(currentEntity)) ecs.AddComponent<VideoComponent>(currentEntity, VideoComponent{});
                     DeserializeVideoComponent(ecs.GetComponent<VideoComponent>(currentEntity), data);
+                }
+                else if (typeName == "DialogueComponent") {
+                    if (!ecs.HasComponent<DialogueComponent>(currentEntity)) ecs.AddComponent<DialogueComponent>(currentEntity, DialogueComponent{});
+                    TypeDescriptor* td = TypeResolver<DialogueComponent>::Get();
+                    if (td) td->Deserialize(&ecs.GetComponent<DialogueComponent>(currentEntity), data);
                 }
 
             }
@@ -2571,6 +2711,22 @@ void Serializer::DeserializeSpriteComponent(SpriteRenderComponent& spriteComp, c
                     if (d.Size() > static_cast<rapidjson::SizeType>(startIdx + 11)) {
                         readVec3Generic(d[startIdx + 11], spriteComp.saved3DPosition);
                     }
+                    // Fill properties (backward compatible - defaults to Solid/1.0/1.0)
+                    if (d.Size() > static_cast<rapidjson::SizeType>(startIdx + 12)) {
+                        spriteComp.fillMode = Serializer::GetInt(d, startIdx + 12, 0);
+                    }
+                    if (d.Size() > static_cast<rapidjson::SizeType>(startIdx + 13)) {
+                        spriteComp.fillMaxValue = Serializer::GetFloat(d, startIdx + 13, 1.0f);
+                    }
+                    if (d.Size() > static_cast<rapidjson::SizeType>(startIdx + 14)) {
+                        spriteComp.fillValue = Serializer::GetFloat(d, startIdx + 14, 1.0f);
+                    }
+                    if (d.Size() > static_cast<rapidjson::SizeType>(startIdx + 15)) {
+                        spriteComp.fillGlow = Serializer::GetFloat(d, startIdx + 15, 0.5f);
+                    }
+                    if (d.Size() > static_cast<rapidjson::SizeType>(startIdx + 16)) {
+                        spriteComp.fillBackground = Serializer::GetFloat(d, startIdx + 16, 0.3f);
+                    }
                 }
                 else {
                     // Old format - this is saved3DPosition
@@ -2681,7 +2837,7 @@ void Serializer::DeserializeAnimationComponent(AnimationComponent& animComp, con
         animComp.isLoop = Serializer::GetBool(d, 2);
         animComp.speed = Serializer::GetFloat(d, 3);
         animComp.clipCount = Serializer::GetInt(d, 4);
-        
+
         const auto& clipPathsJSON = animJSON["data"][5]["data"].GetArray();
         size_t index = 0;
         for (const auto& clipPathJSON : clipPathsJSON) {
@@ -2762,32 +2918,62 @@ void Serializer::DeserializeTextComponent(TextRenderComponent& textComp, const r
         readVec3Generic(d[startIdx + 4], textComp.position);
         readVec3Generic(d[startIdx + 5], textComp.color);
 
-        // Detect old vs new format by checking if index 6 is float (old scale) or bool (new is3D)
+        // Detect format by checking what's at index startIdx+6:
+        //   - bool  â†’ "middle" format (no scale, no alpha): is3D at +6
+        //   - float â†’ could be old "scale" or new "alpha"; differentiate by remaining field count
+        //     Old format (scale):  9 fields from startIdx  (text..alignmentInt)
+        //     Newest format (alpha): 15 fields from startIdx (text..lineSpacing)
+        int remainingFields = static_cast<int>(d.Size()) - startIdx;
+        bool hasAlpha = false;
         bool hasOldScaleField = false;
+
         if (d.Size() > static_cast<rapidjson::SizeType>(startIdx + 6) &&
             d[startIdx + 6].IsObject() && d[startIdx + 6].HasMember("type") &&
             d[startIdx + 6]["type"].GetString() == std::string("float")) {
-            // OLD format with scale field - read and discard it
-            hasOldScaleField = true;
-            // float oldScale = d[startIdx + 6]["data"].GetFloat();
+            if (remainingFields >= 12) {
+                // Newest format: alpha field at +6 (many fields follow)
+                hasAlpha = true;
+            } else {
+                // OLD format: scale field at +6 (few fields follow)
+                hasOldScaleField = true;
+            }
         }
 
-        if (hasOldScaleField) {
+        if (hasAlpha) {
+            // Newest format indices (with alpha)
+            // Order: text, fontSize, fontGUID, shaderGUID, position, color, alpha, is3D, sortingLayer, sortingOrder, transform, alignmentInt, wordWrap, maxWidth, lineSpacing
+            textComp.alpha = Serializer::GetFloat(d, startIdx + 6, 1.0f);
+            textComp.is3D = Serializer::GetBool(d, startIdx + 7);
+            textComp.sortingLayer = Serializer::GetInt(d, startIdx + 8);
+            textComp.sortingOrder = Serializer::GetInt(d, startIdx + 9);
+            // Skip transform at index 10 (Matrix4x4 - handled elsewhere)
+            textComp.alignmentInt = Serializer::GetInt(d, startIdx + 11);
+
+            if (d.Size() > static_cast<rapidjson::SizeType>(startIdx + 12)) {
+                textComp.wordWrap = Serializer::GetBool(d, startIdx + 12, false);
+            }
+            if (d.Size() > static_cast<rapidjson::SizeType>(startIdx + 13)) {
+                textComp.maxWidth = Serializer::GetFloat(d, startIdx + 13, 0.0f);
+            }
+            if (d.Size() > static_cast<rapidjson::SizeType>(startIdx + 14)) {
+                textComp.lineSpacing = Serializer::GetFloat(d, startIdx + 14, 1.2f);
+            }
+        }
+        else if (hasOldScaleField) {
             // OLD format indices (with scale at 6)
             // Old order: text, fontSize, fontGUID, shaderGUID, position, color, scale, is3D, alignmentInt
             textComp.is3D = Serializer::GetBool(d, startIdx + 7);
-            // sortingLayer and sortingOrder didn't exist in old format - use defaults
             textComp.sortingLayer = 0;
             textComp.sortingOrder = 0;
             textComp.alignmentInt = Serializer::GetInt(d, startIdx + 8);
         }
         else {
-            // NEW format indices (without scale)
-            // New order: text, fontSize, fontGUID, shaderGUID, position, color, is3D, sortingLayer, sortingOrder, transform, alignmentInt
+            // Middle format indices (no scale, no alpha)
+            // Order: text, fontSize, fontGUID, shaderGUID, position, color, is3D, sortingLayer, sortingOrder, transform, alignmentInt
             textComp.is3D = Serializer::GetBool(d, startIdx + 6);
             textComp.sortingLayer = Serializer::GetInt(d, startIdx + 7);
             textComp.sortingOrder = Serializer::GetInt(d, startIdx + 8);
-            // Skip transform at index 9 (Matrix4x4 - not used, handled elsewhere)
+            // Skip transform at index 9 (Matrix4x4 - handled elsewhere)
             textComp.alignmentInt = Serializer::GetInt(d, startIdx + 10);
 
             // LINE WRAPPING PROPERTIES (indices 11, 12, 13)
@@ -3025,8 +3211,7 @@ void Serializer::DeserializeColliderComponent(ColliderComponent& colliderComp, c
         colliderComp.cylinderRadius = Serializer::GetFloat(d, 8);
         colliderComp.cylinderHalfHeight = Serializer::GetFloat(d, 9);
         colliderComp.center = Serializer::GetVector3D(d, 10);
-        //readVec3Generic(d[10], colliderComp.center);
-        //readVec3Generic(d[11], colliderComp.offset);
+        if (d.Size() > 11) colliderComp.shapeRotation = Serializer::GetVector3D(d, 11);
     }
 }
 
@@ -3303,13 +3488,13 @@ void Serializer::DeserializeScriptComponent(Entity entity, const rapidjson::Valu
                 }
             }
 
-			// Check if the ScriptComponent already has a script with the same path. If so, skip adding this one to avoid duplicates.
-			bool duplicateFound = false;
+            // Check if the ScriptComponent already has a script with the same path. If so, skip adding this one to avoid duplicates.
+            bool duplicateFound = false;
             for (const auto& existingScript : scriptComp.scripts) {
                 if (existingScript.scriptPath == sd.scriptPath) {
                     duplicateFound = true;
                     break;
-				}
+                }
             }
             if (duplicateFound) continue;
 
@@ -3567,46 +3752,29 @@ void Serializer::DeserializeVideoComponent(VideoComponent& videoComp, const rapi
     if (videoJSON.HasMember("data") && videoJSON["data"].IsArray()) {
         const auto& d = videoJSON["data"];
 
-        // Index 0: enabled
-        videoComp.enabled = Serializer::GetBool(d, 0);
+        // Detect old format: index 1 was "isPlaying" (bool type)
+        // New format: index 1 is "cutsceneName" (string type)
+        bool isOldFormat = (d.Size() > 1 && d[1].HasMember("type") &&
+                           std::string(d[1]["type"].GetString()) == "bool");
 
-        // Index 1: isPlaying
-        videoComp.isPlaying = Serializer::GetBool(d, 1);
+        if (isOldFormat) {
+            // Legacy scene file â€” old VideoComponent format
+            // These fields no longer exist; load with defaults
+            ENGINE_PRINT("[Serializer] WARNING: Old VideoComponent format detected. "
+                         "Please re-save the scene to migrate to the new format.\n");
 
-        // Index 2: loop
-        videoComp.loop = Serializer::GetBool(d, 2);
+            // Try to salvage loop from old index 2
+            if (d.Size() > 2)
+                videoComp.loop = Serializer::GetBool(d, 2);
 
-        // Index 3: playbackSpeed
-        videoComp.playbackSpeed = Serializer::GetFloat(d, 3);
-
-        // Index 4: currentTime
-        videoComp.currentTime = Serializer::GetFloat(d, 4);
-
-        // Index 5: videoPath
-        if (d.Size() > 5 && d[5].HasMember("data") && d[5]["data"].IsString()) {
-            videoComp.videoPath = d[5]["data"].GetString();
-            if (videoComp.videoPath.find("../../Resources") == 0) {
-                videoComp.videoPath = videoComp.videoPath.substr(6);
-            }
-
-            // IMPORTANT: Process the configuration file after loading the path
-            if (!videoComp.videoPath.empty()) {
-                videoComp.ProcessMetaData(videoComp.videoPath);
-                videoComp.asset_dirty = true;
-            }
+            videoComp.needsInit = true;
+            return;
         }
 
-        // Index 6: dialoguePath
-        if (d.Size() > 6 && d[6].HasMember("data") && d[6]["data"].IsString()) {
-            videoComp.dialoguePath = d[6]["data"].GetString();
-            if (videoComp.dialoguePath.find("../../Resources") == 0) {
-                videoComp.dialoguePath = videoComp.dialoguePath.substr(6);
-            }
-
-            // IMPORTANT: Process the dialogue file after loading the path
-            if (!videoComp.dialoguePath.empty()) {
-                videoComp.ProcessDialogueData(videoComp.dialoguePath);
-            }
+        // New format: use reflection-based deserialization
+        TypeDescriptor* td = TypeResolver<VideoComponent>::Get();
+        if (td) {
+            td->Deserialize(&videoComp, videoJSON);
         }
     }
 }

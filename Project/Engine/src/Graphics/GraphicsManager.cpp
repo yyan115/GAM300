@@ -25,6 +25,7 @@
 #include "Graphics/Camera/CameraComponent.hpp"
 #include "Graphics/Camera/CameraSystem.hpp"
 #include "Asset Manager/ResourceManager.hpp"
+#include "Graphics/Instancing/InstancingManager.hpp"
 
 GraphicsManager& GraphicsManager::GetInstance()
 {
@@ -107,6 +108,19 @@ void GraphicsManager::BeginFrame()
 	m_currentShader = nullptr;
 	m_currentMaterial = nullptr;
 	m_sortingStats.Reset();
+
+	if (InstancingManager::GetInstance().IsEnabled())
+	{
+		InstancingManager::GetInstance().BeginFrame();
+
+		// Update frustum NOW so TryAddInstance (called during Update) uses the
+		// current-frame frustum rather than the previous frame's frustum.
+		// Without this, frustum-culled instanceable models silently disappear:
+		// they are neither added to a batch nor submitted to the render queue.
+		UpdateFrustum();
+		InstancingManager::GetInstance().SetFrustum(
+			frustumCullingEnabled ? &viewFrustum : nullptr);
+	}
 }
 
 void GraphicsManager::EndFrame()
@@ -257,13 +271,55 @@ void GraphicsManager::Render()
 	std::vector<IRenderComponent*> modelItems;
 	std::vector<IRenderComponent*> otherItems;
 
-	for (auto& item : renderQueue) {
-		if (dynamic_cast<ModelRenderComponent*>(item.get())) {
+	for (auto& item : renderQueue) 
+	{
+		if (dynamic_cast<ModelRenderComponent*>(item.get())) 
+		{
 			modelItems.push_back(item.get());
 		}
-		else {
+		else 
+		{
 			otherItems.push_back(item.get());
 		}
+	}
+	InstancingManager& instancing = InstancingManager::GetInstance();
+
+	if (instancing.IsEnabled())
+	{
+		// Get view/projection matrices
+		glm::mat4 view = currentCamera->GetViewMatrix();
+		float aspectRatio = currentFrameViewport.aspectRatio;
+		glm::mat4 projection = glm::perspective(
+			glm::radians(currentCamera->Zoom),
+			aspectRatio,
+			0.1f, 100.0f
+		);
+
+		// Render all batched instances
+		instancing.RenderBatches(view, projection, currentCamera->Position);
+
+		// End instancing frame
+		instancing.EndFrame();
+
+		//// Print stats every 300 frames
+		//static int frameCount = 0;
+		//if (++frameCount % 300 == 0)
+		//{
+		//	const auto& stats = instancing.GetStats();
+		//	std::cout << "[Instancing Stats]" << std::endl;
+		//	std::cout << "  Total objects: " << stats.totalObjects << std::endl;
+		//	std::cout << "  Instanced: " << stats.instancedObjects << std::endl;
+		//	std::cout << "  Non-instanced: " << stats.nonInstancedObjects << std::endl;
+		//	std::cout << "  Batches: " << stats.batchCount << std::endl;
+		//	std::cout << "  Draw calls: " << stats.drawCalls << std::endl;
+		//	std::cout << "  Culled: " << stats.culledObjects << std::endl;
+		//	std::cout << "  Efficiency: " << stats.GetBatchEfficiency() << "%" << std::endl;
+		//}
+
+		//// Update stats
+		//const auto& instStats = instancing.GetStats();
+		//// log stats
+		//std::cout << "Instanced: " << instStats.instancedObjects << ", Batches: " << instStats.batchCount << std::endl;
 	}
 
 	// Sort models by state (shader -> material -> mesh)
@@ -290,7 +346,7 @@ void GraphicsManager::Render()
 				m_idCache.GetMaterialId(modelB->material.get()),
 				m_idCache.GetModelId(modelB->model.get()));
 
-			return keyA < keyB;
+			return false;
 		});
 
 	// Sort other items by their existing sorting logic (sprites, text, etc.)
@@ -303,8 +359,18 @@ void GraphicsManager::Render()
 	// =========================================================================
 	// Render models with state tracking
 	// =========================================================================
-	for (IRenderComponent* item : modelItems) {
+	for (IRenderComponent* item : modelItems) 
+	{
 		ModelRenderComponent* modelItem = static_cast<ModelRenderComponent*>(item);
+		// Skip if it was handled by instancing
+	   // (InstancingManager sets a flag or we check IsInstanceable)
+		if (instancing.IsEnabled() &&
+			!modelItem->HasAnimation() &&
+			modelItem->model &&
+			modelItem->model->mBoneInfoMap.empty()) 
+		{
+			continue;  // Already rendered via instancing
+		}
 		RenderModelOptimized(*modelItem);  // New optimized render method
 	}
 
@@ -496,7 +562,8 @@ void GraphicsManager::RenderText(const TextRenderComponent& item)
 
 	// Activate shader and set uniforms
 	item.shader->Activate();
-	item.shader->setVec3("textColor", item.color.ConvertToGLM());
+	glm::vec4 textColorWithAlpha = glm::vec4(item.color.ConvertToGLM(), item.alpha);
+	item.shader->setVec4("textColor", textColorWithAlpha);
 
 	// Set up matrices based on whether it's 2D or 3D text
 	if (item.is3D)
@@ -817,6 +884,15 @@ void GraphicsManager::RenderSprite(const SpriteRenderComponent& item)
 	item.shader->setVec4("spriteColor", spriteColor);
 	item.shader->setVec2("uvOffset", item.uvOffset);
 	item.shader->setVec2("uvScale", item.uvScale);
+	item.shader->setInt("fillMode", item.fillMode);
+	if (item.fillMode == 1) {
+		float fillAmount = (item.fillMaxValue > 0.0f)
+			? glm::clamp(item.fillValue / item.fillMaxValue, 0.0f, 1.0f)
+			: 0.0f;
+		item.shader->setFloat("fillAmount", fillAmount);
+		item.shader->setFloat("fillGlow", item.fillGlow);
+		item.shader->setFloat("fillBackground", item.fillBackground);
+	}
 
 	// Set up matrices based on rendering mode
 	if (item.is3D)
@@ -1232,6 +1308,7 @@ void GraphicsManager::RenderModelOptimized(const ModelRenderComponent& item)
 		shader->Activate();
 		m_currentShader = shader;
 		m_sortingStats.shaderSwitches++;
+		shader->setBool("useInstancing", false);
 
 		// Set view/projection (only need to do this on shader switch)
 		SetupMatrices(*shader, modelMatrix, true);
@@ -1260,10 +1337,12 @@ void GraphicsManager::RenderModelOptimized(const ModelRenderComponent& item)
 	}
 
 	// Draw the model
-	if (item.HasAnimation()) {
+	if (item.HasAnimation()) 
+	{
 		item.model->Draw(*shader, *currentCamera, item.material, item, item.animator);
 	}
-	else {
+	else 
+	{
 		item.model->Draw(*shader, *currentCamera, item.material, item);
 	}
 

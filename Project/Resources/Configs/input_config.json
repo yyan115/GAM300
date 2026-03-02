@@ -13,7 +13,7 @@
         "keys": ["SPACE"]
       },
       "android": {
-        "entity": "ChainIcon"
+        "entity": "(ANDROID)Jump"
       }
     },
 

@@ -11,6 +11,7 @@
 #include "Physics/PhysicsSystem.hpp"
 #include "Animation/AnimationComponent.hpp"
 #include "Video/VideoComponent.hpp"
+#include "Asset Manager/AssetManager.hpp"
 
 
 EditorState& EditorState::GetInstance() {
@@ -87,7 +88,9 @@ void EditorState::Play() {
         for (auto ent : ecs.GetActiveEntities()) {
             if (ecs.HasComponent<VideoComponent>(ent)) {
                 VideoComponent& videoComp = ecs.GetComponent<VideoComponent>(ent);
-                videoComp.asset_dirty = true;
+                videoComp.needsInit = true;
+                videoComp.phase = VideoComponent::Phase::Inactive;
+                videoComp.cutsceneEnded = false;
             }
         }
 

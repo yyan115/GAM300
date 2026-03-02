@@ -34,6 +34,7 @@
 #include <UI/Slider/SliderComponent.hpp>
 #include <Prefab/PrefabLinkComponent.hpp>
 #include <Video/VideoComponent.hpp>
+#include <Dialogue/DialogueComponent.hpp>
 
 class Serializer {
 public:

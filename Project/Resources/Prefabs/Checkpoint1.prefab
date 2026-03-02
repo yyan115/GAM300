@@ -1,9 +1,18 @@
 {
     "prefab_entities": [
         {
-            "id": 3271,
-            "guid": "0021a352e0f3880d-00041a03da000463",
+            "id": 0,
+            "guid": "00345ceb1f009cae-000460df0201964d",
             "components": {
+                "PrefabLinkComponent": {
+                    "type": "PrefabLinkComponent",
+                    "data": [
+                        {
+                            "type": "std::string",
+                            "data": "../../Resources/Prefabs/Checkpoint1.prefab"
+                        }
+                    ]
+                },
                 "NameComponent": {
                     "name": "Checkpoint1"
                 },
@@ -167,16 +176,10 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "0021a3528af05747-00041a03da000465",
-                                "0021a352e6ad3f57-00041a05d6005b47"
+                                "00345ceb755add5f-000460df0201964f",
+                                "00345ceb51b68fd0-000460df02019651"
                             ]
                         }
-                    ]
-                },
-                "ParentComponent": {
-                    "type": "ParentComponent",
-                    "data": [
-                        "001a962e4c735722-00040923b4000bbd"
                     ]
                 },
                 "RigidBodyComponent": {
@@ -333,8 +336,8 @@
             }
         },
         {
-            "id": 3272,
-            "guid": "0021a3528af05747-00041a03da000465",
+            "id": 1,
+            "guid": "00345ceb755add5f-000460df0201964f",
             "components": {
                 "NameComponent": {
                     "name": "Shrine3"
@@ -344,6 +347,9 @@
                 },
                 "LayerComponent": {
                     "layerIndex": 0
+                },
+                "SiblingIndexComponent": {
+                    "siblingIndex": 0
                 },
                 "Transform": {
                     "type": "Transform",
@@ -408,7 +414,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "0021a352e0f3880d-00041a03da000463"
+                        "00345ceb1f009cae-000460df0201964d"
                     ]
                 },
                 "ActiveComponent": {
@@ -423,8 +429,8 @@
             }
         },
         {
-            "id": 4388,
-            "guid": "0021a352e6ad3f57-00041a05d6005b47",
+            "id": 2,
+            "guid": "00345ceb51b68fd0-000460df02019651",
             "components": {
                 "NameComponent": {
                     "name": "Light (2) (1) (1) (1)"
@@ -501,7 +507,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "0021a352e0f3880d-00041a03da000463"
+                        "00345ceb1f009cae-000460df0201964d"
                     ]
                 },
                 "SpotLightComponent": {

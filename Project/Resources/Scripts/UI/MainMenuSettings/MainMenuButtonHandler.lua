@@ -81,17 +81,7 @@ return Component {
             end
         end
 
-        -- On Android, skip cutscene and go directly to gameplay
-        local isAndroid = false
-        if Platform and Platform.IsAndroid then
-            isAndroid = Platform.IsAndroid()
-        end
-
-        if isAndroid then
-            self._pendingScene = self.androidTargetScene
-        else
-            self._pendingScene = self.targetScene
-        end
+        self._pendingScene = self.targetScene
     end,
 
     -- Quit Button Function

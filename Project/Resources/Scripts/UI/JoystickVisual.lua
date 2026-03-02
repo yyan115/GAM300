@@ -33,14 +33,11 @@ function M:Start()
         self._isAndroid = false
     end
 
-    if not self._isAndroid then
-        -- Hide on desktop
-        local activeComp = self:GetComponent("ActiveComponent")
-        if activeComp then
-            activeComp.isActive = false
-        end
-        return
+    local activeComp = self:GetComponent("ActiveComponent")
+    if activeComp then
+        activeComp.isActive = self._isAndroid
     end
+    if not self._isAndroid then return end
 
     -- Find inner joystick transform
     self._innerTransform = Engine.FindTransformByName(self.innerJoystickName)

@@ -27,6 +27,8 @@
 #include <ECS/ECSRegistry.hpp>
 #include <Serialization/Serializer.hpp>
 #include <Graphics/Model/ModelFactory.hpp>
+#include <Physics/ColliderComponent.hpp>
+#include <Physics/RigidBodyComponent.hpp>
 
 // ---------- helpers ----------
 static inline bool IsZeroGUID(const GUID_128& g) { return g.high == 0 && g.low == 0; }
@@ -156,6 +158,19 @@ static void ApplyOne(ECSManager& ecs,
         return;
     }
 
+    if (strcmp(typeName, "ColliderComponent") == 0) {
+        ColliderComponent comp{};
+        Serializer::DeserializeColliderComponent(comp, val);
+        if (ecs.HasComponent<ColliderComponent>(e)) ecs.GetComponent<ColliderComponent>(e) = comp;
+        else                                        ecs.AddComponent<ColliderComponent>(e, comp);
+        return;
+    }
+
+    if (strcmp(typeName, "RigidBodyComponent") == 0) {
+        ApplyReflectedComponent<RigidBodyComponent>(ecs, e, val, fromPrefabUpdate);
+        return;
+    }
+
     std::cerr << "[PrefabIO] No applier for component '" << typeName << "'\n";
 }
 
@@ -220,6 +235,30 @@ Entity SpawnPrefab(const rapidjson::Value& ents, ECSManager& ecs, bool isSeriali
             }
             auto& childComp = ecs.GetComponent<ChildrenComponent>(entity);
             Serializer::DeserializeChildrenComponent(childComp, childrenCompJSON, &guidRemap);
+        }
+
+        // Ensure ALL entities have a SiblingIndexComponent.
+        if (!ecs.HasComponent<SiblingIndexComponent>(entity)) {
+            int nextIndex = 0;
+
+            // Check if the entity has a parent to determine sibling context
+            if (ecs.HasComponent<ParentComponent>(entity)) {
+                GUID_128 parentGUID = ecs.GetComponent<ParentComponent>(entity).parent;
+                Entity parentEnt = EntityGUIDRegistry::GetInstance().GetEntityByGUID(parentGUID);
+
+                // If parent exists and has children, find the highest current index
+                if (parentEnt != static_cast<Entity>(-1) && ecs.HasComponent<ChildrenComponent>(parentEnt)) {
+                    auto& siblings = ecs.GetComponent<ChildrenComponent>(parentEnt).children;
+                    for (const auto& sibGUID : siblings) {
+                        Entity sibEnt = EntityGUIDRegistry::GetInstance().GetEntityByGUID(sibGUID);
+                        if (sibEnt != static_cast<Entity>(-1) && ecs.HasComponent<SiblingIndexComponent>(sibEnt)) {
+                            nextIndex = std::max(nextIndex, ecs.GetComponent<SiblingIndexComponent>(sibEnt).siblingIndex + 1);
+                        }
+                    }
+                }
+            }
+            // Add the component with the calculated unique index
+            ecs.AddComponent<SiblingIndexComponent>(entity, SiblingIndexComponent{ nextIndex });
         }
     }
 

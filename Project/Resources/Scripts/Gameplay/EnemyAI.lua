@@ -13,7 +13,9 @@ local GroundPatrolState  = require("Gameplay.GroundPatrolState")
 local GroundChaseState   = require("Gameplay.GroundChaseState")
 
 local FlyingIdleState   = require("Gameplay.FlyingIdleState")
+local FlyingPatrolState = require("Gameplay.FlyingPatrolState")
 local FlyingChaseState  = require("Gameplay.FlyingChaseState")
+local FlyingAttackState = require("Gameplay.FlyingAttackState")
 local FlyingHookedState = require("Gameplay.FlyingHookedState")
 
 local KnifePool = require("Gameplay.KnifePool")
@@ -114,6 +116,7 @@ return Component {
         AttackDisengageRange = 4.0,   -- exit attack state (slightly bigger)
         AttackCooldown       = 3.0,
         RangedAnimDelay      = 1.0,
+        MeleeAnimDelay       = 1.2,
         IsMelee              = false,
         IsPassive            = false,
         MeleeSpeed           = 0.9,
@@ -141,7 +144,7 @@ return Component {
         ChaseSpeed       = 0.6,
         HoverHeight      = 2.0,
         HoverSnapSpeed   = 8.0,
-        FlyingChaseSpeed = 1.2,
+        FlyingChaseSpeed = 0.8,
 
         HoverBobAmp        = 0.02,
         HoverBobFreq       = 0.9,
@@ -516,12 +519,6 @@ return Component {
                 entityId = self.entityId,
                 x = x, y = y, z = z
             })
-        end
-
-        -- [CRITICAL ADDITION] Ensure the scheduler actually runs!
-        -- If your engine doesn't call _G.update(dt) automatically, the feathers will never spawn.
-        if _G.scheduler and _G.scheduler.tick then
-             _G.scheduler.tick(dt)
         end
     end,
 
@@ -908,16 +905,14 @@ return Component {
         if self:IsFlying() then
             self.states = {
                 Idle   = FlyingIdleState,
+                Patrol = FlyingPatrolState,
                 Chase  = FlyingChaseState,
+                Attack = FlyingAttackState,
                 Hooked = FlyingHookedState,
 
-                -- Reuse existing states (works fine unless you later want custom flying attack/hurt)
-                Attack = GroundAttackState,
+                -- reuse existing
                 Hurt   = GroundHurtState,
                 Death  = GroundDeathState,
-
-                -- optional: flying patrol later
-                Patrol = nil,
             }
         else
             self.states = {

@@ -54,6 +54,11 @@
             "name": "ComboStep",
             "type": "Int",
             "defaultValue": 1.0
+        },
+        {
+            "name": "IsDashing",
+            "type": "Bool",
+            "defaultValue": 0.0
         }
     ],
     "states": [
@@ -102,17 +107,6 @@
             }
         },
         {
-            "id": "Death",
-            "clipIndex": 5,
-            "loop": false,
-            "speed": 1.0,
-            "crossfadeDuration": 0.0,
-            "nodePosition": {
-                "x": 450.529541015625,
-                "y": -2.4705915451049805
-            }
-        },
-        {
             "id": "Jump",
             "clipIndex": 1,
             "loop": false,
@@ -121,6 +115,17 @@
             "nodePosition": {
                 "x": 100.50003051757813,
                 "y": -2.4705705642700195
+            }
+        },
+        {
+            "id": "Death",
+            "clipIndex": 5,
+            "loop": false,
+            "speed": 1.0,
+            "crossfadeDuration": 0.0,
+            "nodePosition": {
+                "x": 450.529541015625,
+                "y": -2.4705915451049805
             }
         },
         {
@@ -176,6 +181,17 @@
             "nodePosition": {
                 "x": -141.25021362304688,
                 "y": -61.19632339477539
+            }
+        },
+        {
+            "id": "Dash",
+            "clipIndex": 11,
+            "loop": true,
+            "speed": 1.8000000715255737,
+            "crossfadeDuration": 0.0,
+            "nodePosition": {
+                "x": -300.0,
+                "y": -130.0
             }
         }
     ],
@@ -739,6 +755,86 @@
                     "threshold": 0.0
                 }
             ]
+        },
+        {
+            "from": "Idle",
+            "to": "Dash",
+            "anyState": false,
+            "hasExitTime": false,
+            "exitTime": 0.0,
+            "transitionDuration": 0.0,
+            "conditions": [
+                {
+                    "paramName": "IsDashing",
+                    "mode": "Equals",
+                    "threshold": 1.0
+                }
+            ]
+        },
+        {
+            "from": "Run",
+            "to": "Dash",
+            "anyState": false,
+            "hasExitTime": false,
+            "exitTime": 0.0,
+            "transitionDuration": 0.0,
+            "conditions": [
+                {
+                    "paramName": "IsDashing",
+                    "mode": "Equals",
+                    "threshold": 1.0
+                }
+            ]
+        },
+        {
+            "from": "Dash",
+            "to": "Jump",
+            "anyState": false,
+            "hasExitTime": false,
+            "exitTime": 0.0,
+            "transitionDuration": 0.0,
+            "conditions": [
+                {
+                    "paramName": "IsJumping",
+                    "mode": "Equals",
+                    "threshold": 1.0
+                }
+            ]
+        },
+        {
+            "from": "Jump",
+            "to": "Dash",
+            "anyState": false,
+            "hasExitTime": false,
+            "exitTime": 0.0,
+            "transitionDuration": 0.0,
+            "conditions": [
+                {
+                    "paramName": "IsDashing",
+                    "mode": "Equals",
+                    "threshold": 1.0
+                }
+            ]
+        },
+        {
+            "from": "Dash",
+            "to": "Roll",
+            "anyState": false,
+            "hasExitTime": false,
+            "exitTime": 0.5,
+            "transitionDuration": 0.20000000298023224,
+            "conditions": [
+                {
+                    "paramName": "IsDashing",
+                    "mode": "Equals",
+                    "threshold": 0.0
+                },
+                {
+                    "paramName": "IsGrounded",
+                    "mode": "Equals",
+                    "threshold": 1.0
+                }
+            ]
         }
     ],
     "clipPaths": [
@@ -752,6 +848,7 @@
         "Resources/Animations/Player@Slash2.fbx",
         "Resources/Animations/Player@Slash3.fbx",
         "Resources/Animations/Player@Standing.fbx",
-        "Resources/Animations/Player@Roll.fbx"
+        "Resources/Animations/Player@Roll.fbx",
+        "Resources/Animations/Player@Dash.fbx"
     ]
 }

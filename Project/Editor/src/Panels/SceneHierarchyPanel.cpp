@@ -1461,13 +1461,16 @@ Entity SceneHierarchyPanel::DuplicateEntity(Entity sourceEntity, bool takeSnapsh
         if (ecsManager.HasComponent<VideoComponent>(sourceEntity)) {
             VideoComponent sourceVideo = ecsManager.GetComponent<VideoComponent>(sourceEntity);
             // Reset playback state
-            sourceVideo.isPlaying = false;
-            sourceVideo.currentTime = 0.0f;
-            sourceVideo.activeFrame = sourceVideo.frameStart;
-            sourceVideo.textureID = 0;
-            sourceVideo.asset_dirty = true;
-            sourceVideo.seek_dirty = false;
+            sourceVideo.phase = VideoComponent::Phase::Inactive;
+            sourceVideo.currentBoardIndex = -1;
+            sourceVideo.startDelayTimer = 0.0f;
+            sourceVideo.stateTimer = 0.0f;
+            sourceVideo.typewriterTimer = 0.0f;
+            sourceVideo.revealedChars = 0;
+            sourceVideo.previousBoardChars = 0;
             sourceVideo.cutsceneEnded = false;
+            sourceVideo.skipRequested = false;
+            sourceVideo.needsInit = true;
             ecsManager.AddComponent<VideoComponent>(newEntity, sourceVideo);
         }
 

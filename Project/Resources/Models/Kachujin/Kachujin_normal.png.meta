@@ -6,7 +6,7 @@
         "compiled": "../../Resources/Models/Kachujin/Kachujin_normal.dds"
     },
     "TextureMetaData": {
-        "type": "diffuse",
+        "type": "normal",
         "flipUVs": false,
         "generateMipmaps": true,
         "textureWrapMode": "Clamp"

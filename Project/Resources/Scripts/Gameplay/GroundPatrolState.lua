@@ -43,6 +43,7 @@ local function switchTarget(ai)
 end
 
 function PatrolState:Enter(ai)
+    ai._animator:SetBool("PlayerInDetectionRange", false)
     ai._animator:SetBool("PatrolEnabled", true)
     -- print(string.format("[Patrol][Enter] A=%s B=%s T=%s",
     -- tostring(ai._patrolA and (ai._patrolA.x .. "," .. ai._patrolA.z) or "nil"),

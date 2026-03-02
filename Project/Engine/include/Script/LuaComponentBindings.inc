@@ -272,6 +272,7 @@ BEGIN_COMPONENT(TextRenderComponent, "TextRenderComponent")
     PROPERTY("fontSize", &TextRenderComponent::fontSize)
     PROPERTY("position", &TextRenderComponent::position)
     PROPERTY("color", &TextRenderComponent::color)
+    PROPERTY("alpha", &TextRenderComponent::alpha)
     PROPERTY("is3D", &TextRenderComponent::is3D)
     PROPERTY("sortingLayer", &TextRenderComponent::sortingLayer)
     PROPERTY("sortingOrder", &TextRenderComponent::sortingOrder)
@@ -436,6 +437,7 @@ END_COMPONENT()
 
 BEGIN_COMPONENT(VideoComponent, "VideoComponent")
     PROPERTY("cutsceneEnded", &VideoComponent::cutsceneEnded)
+    PROPERTY("skipRequested", &VideoComponent::skipRequested)
 END_COMPONENT()
 
 
@@ -447,6 +449,17 @@ END_COMPONENT()
 
 BEGIN_COMPONENT(SiblingIndexComponent, "SiblingIndexComponent")
     PROPERTY("siblingIndex", &SiblingIndexComponent::siblingIndex)
+END_COMPONENT()
+
+// ============================================================================
+// Dialogue Components
+// ============================================================================
+
+BEGIN_COMPONENT(DialogueComponent, "DialogueComponent")
+    PROPERTY("dialogueName", &DialogueComponent::dialogueName)
+    PROPERTY("currentIndex", &DialogueComponent::currentIndex)
+    PROPERTY("appearanceModeID", &DialogueComponent::appearanceModeID)
+    PROPERTY("textSpeed", &DialogueComponent::textSpeed)
 END_COMPONENT()
 
 // Add more BEGIN_COMPONENT(...) ... PROPERTY(...) ... METHOD(...) ... END_COMPONENT() blocks here.

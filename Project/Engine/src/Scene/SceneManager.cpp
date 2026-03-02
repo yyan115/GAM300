@@ -476,7 +476,8 @@ void SceneManager::ShutDownScenePhysics() {
 void SceneManager::SaveTempScene() {
 	// Serialize the current scene data to a temporary file.
 	std::string tempScenePath = currentScenePath + ".temp";
-	Serializer::SerializeScene(tempScenePath);
+    FileUtilities::CopyFile(currentScenePath, tempScenePath);
+	//Serializer::SerializeScene(tempScenePath);
 }
 
 void SceneManager::ReloadTempScene() {

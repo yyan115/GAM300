@@ -28,6 +28,7 @@ void SequentialSystemOrchestrator::Update() {
 	PROFILE_PLOT_TIMED("Button",          mainECS.buttonSystem->Update());
 	PROFILE_PLOT_TIMED("Slider",          mainECS.sliderSystem->Update());
 	PROFILE_PLOT_TIMED("Video",           mainECS.videoSystem->Update((float)TimeManager::GetFixedDeltaTime()));
+	PROFILE_PLOT_TIMED("Dialogue",        mainECS.dialogueSystem->Update((float)TimeManager::GetDeltaTime()));
 	PROFILE_PLOT_TIMED("SpriteAnimation", mainECS.spriteAnimationSystem->Update());
 
 	// Update audio (handles AudioManager FMOD update + AudioComponent updates)

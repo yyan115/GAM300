@@ -233,10 +233,12 @@ void AssetBrowserPanel::ProcessFileChange(const std::string& relativePath, const
                     RemoveThumbnailFromCache(guid);
                 }
             }
-            AssetManager::GetInstance().UnloadAsset(fullPath);
+            // Route through event queue so RunEventQueue can check for a
+            // subsequent 'added' event (editors often delete-then-recreate).
+            AssetManager::GetInstance().AddToEventQueue(AssetManager::Event::removed, fullPathObj);
         }
         else if (event == filewatch::Event::renamed_old) {
-            AssetManager::GetInstance().UnloadAsset(fullPath);
+            AssetManager::GetInstance().AddToEventQueue(AssetManager::Event::renamed_old, fullPathObj);
         }
         else if (event == filewatch::Event::renamed_new) {
             AssetManager::GetInstance().AddToEventQueue(AssetManager::Event::modified, fullPathObj);

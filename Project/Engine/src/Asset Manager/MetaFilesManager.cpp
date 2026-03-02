@@ -161,23 +161,58 @@ void MetaFilesManager::InitializeAssetMetaFiles(const std::string& rootAssetFold
 
 		if (AssetManager::GetInstance().IsAssetExtensionSupported(extension)) {
 #ifdef EDITOR
+		// Check if .meta file exists.
 		if (MetaFileExists(assetPath)) {
+			// Check if asset file was updated since the resource file's last compilation time.
+			bool needsUpdate = false;
+			bool isShader = false;
 			if (AssetManager::GetInstance().IsExtensionShaderVertFrag(extension)) {
-				std::string shaderAssetPath = (filePath.parent_path() / filePath.stem()).generic_string();
-
-				GUID_128 guid128 = GetGUID128FromAssetFile(shaderAssetPath);
-				AddGUID128Mapping(shaderAssetPath, guid128);
-				auto assetMeta = AssetManager::GetInstance().AddAssetMetaToMap(shaderAssetPath);
-				AssetManager::GetInstance().CompileAsset(assetPath, false);
-				continue;
+				// Handle special shader logic (checking the stem instead of the specific file)
+				isShader = true;
+				assetPath = (filePath.parent_path() / filePath.stem()).generic_string();
+				if (AssetFileUpdated(assetPath, true)) {
+					needsUpdate = true;
+				}
 			}
-			GUID_128 guid128 = GetGUID128FromAssetFile(assetPath);
-			AddGUID128Mapping(assetPath, guid128);
-			auto assetMeta = AssetManager::GetInstance().AddAssetMetaToMap(assetPath);
-			AssetManager::GetInstance().CompileAsset(assetMeta, false);
+			else {
+				// Standard asset check
+				if (AssetFileUpdated(assetPath)) {
+					needsUpdate = true;
+				}
+			}
+
+			if (!needsUpdate) {
+				if (!isShader) {
+					GUID_128 guid128 = GetGUID128FromAssetFile(assetPath);
+					AddGUID128Mapping(assetPath, guid128);
+					auto assetMeta = AssetManager::GetInstance().AddAssetMetaToMap(assetPath);
+					AssetManager::GetInstance().CompileAsset(assetMeta, false);
+				}
+				else {
+					GUID_128 guid128 = GetGUID128FromAssetFile(assetPath);
+					AddGUID128Mapping(assetPath, guid128);
+					auto assetMeta = AssetManager::GetInstance().AddAssetMetaToMap(assetPath);
+					AssetManager::GetInstance().CompileAsset(assetPath + ".vert", false);
+				}
+			}
+			else {
+				if (!isShader) {
+					// Asset file was updated since last compilation - must re-compile using existing meta data.
+					ENGINE_LOG_DEBUG("[MetaFilesManager] Asset file was updated: " + assetPath + ". Re-compiling using existing meta data...");
+					auto assetMeta = AssetManager::GetInstance().AddAssetMetaToMap(assetPath);
+					AssetManager::GetInstance().CompileAsset(assetMeta, true);
+				}
+				else {
+					GUID_128 guid128 = GetGUID128FromAssetFile(assetPath);
+					AddGUID128Mapping(assetPath, guid128);
+					auto assetMeta = AssetManager::GetInstance().AddAssetMetaToMap(assetPath);
+					AssetManager::GetInstance().CompileAsset(assetPath + ".vert", true);
+				}
+			}
 		}
 		else {
-			// .meta missing — must compile for the first time
+			// .meta missing — must compile.
+			ENGINE_LOG_DEBUG("[MetaFilesManager] .meta missing for: " + assetPath + ". Compiling and generating...");
 			AssetManager::GetInstance().CompileAsset(assetPath, true);
 		}
 //#if !defined(EDITOR) && !defined(ANDROID) 
@@ -350,41 +385,98 @@ bool MetaFilesManager::MetaFileUpdated(const std::string& assetPath) {
 	}
 }
 
-//bool MetaFilesManager::AssetFileUpdated(const std::string& assetPath) {
-//	// Get the last modified time for the asset file.
-//	std::filesystem::path assetFile(assetPath);
-//	auto ftime = std::filesystem::last_write_time(assetFile);
-//#ifndef ANDROID
-//	auto lastModifiedTime = std::chrono::clock_cast<std::chrono::system_clock>(ftime);
-//#endif
-//#ifdef ANDROID
-//	using namespace std::chrono;
-//	auto lastModifiedTime = time_point_cast<system_clock::duration>(
-//		ftime - decltype(ftime)::clock::now() + system_clock::now()
-//	);
-//#endif
-//
-//	// Compare the last modified time with the meta file's last compile time.
-//	// If it was modified after the last compile time, the asset file was updated and requires re-compilation.
-//	std::string extension = assetFile.extension().string();
-//	std::string metaFilePath{};
-//	//std::string metaFilePathRoot{};
-//	if (AssetManager::GetInstance().IsExtensionShaderVertFrag(extension)) {
-//		metaFilePath = (assetFile.parent_path() / assetFile.stem()).generic_string() + ".meta";
-//		//metaFilePathRoot = (FileUtilities::GetSolutionRootDir() / assetFile.parent_path() / assetFile.stem()).generic_string() + ".meta";
-//	}
-//	else {
-//		metaFilePath = assetPath + ".meta";
-//		//metaFilePathRoot = (FileUtilities::GetSolutionRootDir() / assetPath).generic_string() + ".meta";
-//	}
-//
-//	//auto lastCompileTime = GetLastCompileTimeFromMetaFile(metaFilePath);
-//	//if (lastModifiedTime > lastCompileTime) {
-//	//	return true;
-//	//}
-//
-//	return false;
-//}
+bool MetaFilesManager::AssetFileUpdated(const std::string& assetPath, bool isShader) {
+	namespace fs = std::filesystem;
+
+	// 1. Check Source File
+	if (!isShader) {
+		fs::path sourcePath(assetPath);
+		if (!fs::exists(sourcePath)) return false;
+
+		// 2. Find the Meta File and get the compiled resource path from it.
+		std::string compiledPath = GetResourceNameFromAssetFile(assetPath);
+
+		if (!fs::exists(compiledPath)) return true;
+
+		// If the source file path is the same as the compiled file path, it means the asset is a "raw" asset that doesn't require compilation.
+		// In this case, we can skip the timestamp comparison and consider the asset up to date as long as the source file exists.
+		if (assetPath == compiledPath) return false;
+
+		if (compiledPath != "") {
+			// 3. The Golden Check: Is Source newer than Compiled?
+			auto sourceTime = fs::last_write_time(sourcePath);
+			auto compiledTime = fs::last_write_time(compiledPath);
+
+			// Define a grace period (e.g., 2 seconds). 
+			// This handles OS flush delays and the fact that you just wrote both files.
+			auto gracePeriod = std::chrono::seconds(2);
+
+			if (sourceTime > compiledTime + gracePeriod) {
+				ENGINE_LOG_DEBUG("[MetaFilesManager] Asset file is newer than compiled resource: " + assetPath);
+				return true; // Source changed recently. Recompile.
+			}
+
+			// 4. Edge case check: Is Meta newer than Compiled?
+			// If the user changes an Importer setting (e.g. toggles "Flip UVs" for a texture) but doesn't change the source file, we still need to recompile.
+			std::filesystem::path metaFilePath(assetPath);
+			std::string extension = metaFilePath.extension().string();
+			if (AssetManager::GetInstance().IsExtensionShaderVertFrag(extension)) {
+				metaFilePath = (metaFilePath.parent_path() / metaFilePath.stem()).generic_string() + ".meta";
+			}
+			else {
+				metaFilePath = std::filesystem::path(assetPath + ".meta");
+			}
+
+			if (!fs::exists(metaFilePath)) return true;
+
+			auto metaTime = fs::last_write_time(metaFilePath);
+			if (metaTime > compiledTime + gracePeriod) {
+				ENGINE_LOG_DEBUG("[MetaFilesManager] Meta file is newer than compiled resource: " + assetPath);
+				return true; // Meta changed recently. Recompile.
+			}
+
+			return false; // Up to date. Skip.
+		}
+		else {
+			// Missing meta or compiled resource? Recompile.
+			return true;
+		}
+	}
+	else {
+		// 1. Check shader source files.
+		fs::path sourcePath(assetPath);
+		fs::path vertPath = std::filesystem::path(assetPath + ".vert");
+		fs::path fragPath = std::filesystem::path(assetPath + ".frag");
+		if (!fs::exists(vertPath) || !fs::exists(fragPath)) return false;
+
+		// 2. Find the Meta File and get the compiled resource path from it.
+		std::string compiledPath = GetResourceNameFromAssetFile(assetPath);
+
+		if (!fs::exists(compiledPath)) return true;
+
+		if (compiledPath != "") {
+			// 3. The Golden Check: Is Source newer than Compiled?
+			auto vertSourceTime = fs::last_write_time(vertPath);
+			auto fragSourceTime = fs::last_write_time(fragPath);
+			auto compiledTime = fs::last_write_time(compiledPath);
+
+			// Define a grace period (e.g., 2 seconds). 
+			// This handles OS flush delays and the fact that you just wrote both files.
+			auto gracePeriod = std::chrono::seconds(2);
+
+			if (vertSourceTime > compiledTime + gracePeriod || fragSourceTime > compiledTime + gracePeriod) {
+				ENGINE_LOG_DEBUG("[MetaFilesManager] Asset file is newer than compiled resource: " + assetPath);
+				return true; // Source changed recently. Recompile.
+			}
+
+			return false; // Up to date. Skip.
+		}
+		else {
+			// Missing meta or compiled resource? Recompile.
+			return true;
+		}
+	}
+}
 
 //GUID_128 MetaFilesManager::UpdateMetaFile(const std::string& assetPath) {
 //	std::filesystem::path metaPath = std::filesystem::path(assetPath + ".meta");

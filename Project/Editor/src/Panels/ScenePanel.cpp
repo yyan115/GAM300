@@ -2147,11 +2147,16 @@ void ScenePanel::DrawColliderGizmos() {
         // Define the local center offset
         glm::vec3 localCenter = glm::vec3(collider.center.x, collider.center.y, collider.center.z);
 
-        // Lambda to transform a point: WorldMatrix * (Center + Point)
-        // This handles Rotation, Scale (including parent scale), and Translation correctly.
+        // Build local rotation matrix from shapeRotation (Euler degrees XYZ)
+        glm::mat4 shapeRotMat = glm::mat4(1.0f);
+        shapeRotMat = glm::rotate(shapeRotMat, glm::radians(collider.shapeRotation.x), glm::vec3(1, 0, 0));
+        shapeRotMat = glm::rotate(shapeRotMat, glm::radians(collider.shapeRotation.y), glm::vec3(0, 1, 0));
+        shapeRotMat = glm::rotate(shapeRotMat, glm::radians(collider.shapeRotation.z), glm::vec3(0, 0, 1));
+
+        // Lambda to transform a point: WorldMatrix * (Center + RotatedPoint)
         auto TransformPoint = [&](const glm::vec3& pointRelativeToCenter) -> glm::vec3 {
-            // Apply local center offset, then full world transform
-            glm::vec4 localPos = glm::vec4(localCenter + pointRelativeToCenter, 1.0f);
+            glm::vec3 rotatedPoint = glm::vec3(shapeRotMat * glm::vec4(pointRelativeToCenter, 0.0f));
+            glm::vec4 localPos = glm::vec4(localCenter + rotatedPoint, 1.0f);
             return glm::vec3(transformMatrix * localPos);
             };
         // --- FIX END ---

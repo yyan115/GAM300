@@ -2,7 +2,7 @@
     "prefab_entities": [
         {
             "id": 0,
-            "guid": "00300e0f764060bf-000425a824004fa9",
+            "guid": "00345ceb3425911f-000460df2e02dbbd",
             "components": {
                 "PrefabLinkComponent": {
                     "type": "PrefabLinkComponent",
@@ -176,8 +176,8 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "00300e0f4e7473d4-000425a824004fab",
-                                "00300e0f6d1de0b1-000425a824004fad"
+                                "00345ceb6fb287cd-000460df2e02dbbf",
+                                "00345ceb5766ad86-000460df2e02dbc1"
                             ]
                         }
                     ]
@@ -346,19 +346,51 @@
                             "entryFunction": "OnInit",
                             "autoInvokeEntry": true,
                             "instanceState": {
+                                "OnDisable": null,
+                                "Start": null,
                                 "Lifetime": 1.2,
-                                "Speed": 5.0,
+                                "GetTransform": null,
+                                "_CheckHitPlayer": null,
+                                "DisableSafe": null,
                                 "_subscriptions": {},
+                                "Destroy": null,
+                                "GetPosition": null,
+                                "After": null,
+                                "Subscribe": null,
                                 "_transform_fetched": false,
-                                "_private": {},
+                                "LifeJitter": 0.25,
+                                "_GetPlayerPos": null,
+                                "Reset": null,
+                                "__created_at": 1769419004.0,
+                                "HitRadius": 0.5,
+                                "DeserializeFields": null,
+                                "SerializeFields": null,
+                                "SetScale": null,
+                                "Update": null,
+                                "UpdateSafe": null,
+                                "SetRotation": null,
+                                "StartSafe": null,
+                                "_call_lifecycle": null,
+                                "AwakeSafe": null,
+                                "Unsubscribe": null,
+                                "ArmDelay": 0.05,
                                 "Damage": 1.0,
+                                "Every": null,
+                                "__meta": {},
+                                "Speed": 5.0,
+                                "SetPosition": null,
+                                "DebugTransform": null,
+                                "GetRotation": null,
                                 "__field_list": {
                                     "Lifetime": 1.2,
                                     "Speed": 10.0,
                                     "Damage": 1.0
                                 },
-                                "__meta": {},
-                                "__created_at": 1769419004.0
+                                "Launch": null,
+                                "Move": null,
+                                "MaxRange": 10.0,
+                                "GetScale": null,
+                                "_private": {}
                             }
                         }
                     ]
@@ -367,7 +399,7 @@
         },
         {
             "id": 1,
-            "guid": "00300e0f4e7473d4-000425a824004fab",
+            "guid": "00345ceb6fb287cd-000460df2e02dbbf",
             "components": {
                 "NameComponent": {
                     "name": "goose_handle"
@@ -444,7 +476,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "00300e0f764060bf-000425a824004fa9"
+                        "00345ceb3425911f-000460df2e02dbbd"
                     ]
                 },
                 "ActiveComponent": {
@@ -460,7 +492,7 @@
         },
         {
             "id": 2,
-            "guid": "00300e0f6d1de0b1-000425a824004fad",
+            "guid": "00345ceb5766ad86-000460df2e02dbc1",
             "components": {
                 "NameComponent": {
                     "name": "feather_blade"
@@ -537,7 +569,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "00300e0f764060bf-000425a824004fa9"
+                        "00345ceb3425911f-000460df2e02dbbd"
                     ]
                 },
                 "ActiveComponent": {
