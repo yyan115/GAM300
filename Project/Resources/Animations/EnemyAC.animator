@@ -16,7 +16,7 @@
             "defaultValue": 0.0
         },
         {
-            "name": "Hurt1",
+            "name": "Melee",
             "type": "Bool",
             "defaultValue": 0.0
         },
@@ -26,7 +26,12 @@
             "defaultValue": 0.0
         },
         {
-            "name": "Melee",
+            "name": "PlayerInDetectionRange",
+            "type": "Bool",
+            "defaultValue": 0.0
+        },
+        {
+            "name": "Hurt1",
             "type": "Bool",
             "defaultValue": 0.0
         },
@@ -62,11 +67,6 @@
         },
         {
             "name": "Flying",
-            "type": "Bool",
-            "defaultValue": 0.0
-        },
-        {
-            "name": "PlayerInDetectionRange",
             "type": "Bool",
             "defaultValue": 0.0
         }
@@ -310,8 +310,8 @@
             "to": "Ranged Attack",
             "anyState": false,
             "hasExitTime": true,
-            "exitTime": 0.800000011920929,
-            "transitionDuration": 0.7900000214576721,
+            "exitTime": 0.699999988079071,
+            "transitionDuration": 0.699999988079071,
             "conditions": [
                 {
                     "paramName": "Ranged",
@@ -505,8 +505,8 @@
             "to": "Ranged Attack",
             "anyState": false,
             "hasExitTime": true,
-            "exitTime": 0.7599999904632568,
-            "transitionDuration": 0.75,
+            "exitTime": 0.699999988079071,
+            "transitionDuration": 0.699999988079071,
             "conditions": [
                 {
                     "paramName": "Hurt2",
@@ -560,8 +560,8 @@
             "to": "Ranged Attack",
             "anyState": false,
             "hasExitTime": true,
-            "exitTime": 0.7799999713897705,
-            "transitionDuration": 0.7799999713897705,
+            "exitTime": 0.699999988079071,
+            "transitionDuration": 0.699999988079071,
             "conditions": [
                 {
                     "paramName": "Hurt3",
@@ -1197,6 +1197,61 @@
                     "paramName": "Hurt3",
                     "mode": "Equals",
                     "threshold": 1.0
+                }
+            ]
+        },
+        {
+            "from": "Idle",
+            "to": "Ranged Attack",
+            "anyState": false,
+            "hasExitTime": true,
+            "exitTime": 0.029999999329447746,
+            "transitionDuration": 0.029999999329447746,
+            "conditions": [
+                {
+                    "paramName": "Ranged",
+                    "mode": "Equals",
+                    "threshold": 1.0
+                },
+                {
+                    "paramName": "Passive",
+                    "mode": "Equals",
+                    "threshold": 0.0
+                },
+                {
+                    "paramName": "Dead",
+                    "mode": "Equals",
+                    "threshold": 0.0
+                },
+                {
+                    "paramName": "PlayerInAttackRange",
+                    "mode": "Equals",
+                    "threshold": 1.0
+                }
+            ]
+        },
+        {
+            "from": "Idle",
+            "to": "Melee Attack",
+            "anyState": false,
+            "hasExitTime": true,
+            "exitTime": 0.05000000074505806,
+            "transitionDuration": 0.03999999910593033,
+            "conditions": [
+                {
+                    "paramName": "Melee",
+                    "mode": "Equals",
+                    "threshold": 1.0
+                },
+                {
+                    "paramName": "PlayerInAttackRange",
+                    "mode": "Equals",
+                    "threshold": 1.0
+                },
+                {
+                    "paramName": "Passive",
+                    "mode": "Equals",
+                    "threshold": 0.0
                 }
             ]
         }
