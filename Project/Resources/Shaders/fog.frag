@@ -1,7 +1,6 @@
 #version 330 core
 
 in vec3 FragPos;
-in vec3 LocalPos;       // [0, 1] within the volume
 
 out vec4 FragColor;
 
@@ -33,6 +32,9 @@ uniform bool hasNoiseMap;
 
 // Camera
 uniform vec3 cameraPos;
+
+// World-to-local transform for ray-box intersection
+uniform mat4 modelInverse;
 
 // ============================================================================
 // Procedural Noise
@@ -78,16 +80,38 @@ float fbm(vec3 p)
 }
 
 // ============================================================================
-// Main
+// Main - volumetric ray-box intersection
 // ============================================================================
 
 void main()
 {
-    // --- 1. Base density ---
-    float fogDensity = density;
+    // --- 1. Ray in world space ---
+    vec3 rayDir = normalize(FragPos - cameraPos);
 
-    // --- 2. Noise sampling for wispy / smoky look ---
-    vec3 noiseCoord = LocalPos * noiseScale + vec3(
+    // Transform ray into local box space [-0.5, 0.5]
+    vec3 localCamPos = (modelInverse * vec4(cameraPos, 1.0)).xyz;
+    vec3 localRayDir = normalize(mat3(modelInverse) * rayDir);
+
+    // --- 2. Ray-AABB intersection (slab method) ---
+    vec3 invDir = 1.0 / localRayDir;
+    vec3 t0 = (vec3(-0.5) - localCamPos) * invDir;
+    vec3 t1 = (vec3( 0.5) - localCamPos) * invDir;
+    vec3 tMinV = min(t0, t1);
+    vec3 tMaxV = max(t0, t1);
+    float tEntry = max(max(tMinV.x, tMinV.y), tMinV.z);
+    float tExit  = min(min(tMaxV.x, tMaxV.y), tMaxV.z);
+    tEntry = max(tEntry, 0.0);   // camera inside volume: start from camera
+
+    if (tExit <= tEntry) discard;
+
+    float thickness = tExit - tEntry;
+
+    // Sample the volume at the midpoint of the ray path (in [0,1] space)
+    vec3 sampleLocal = localCamPos + (tEntry + thickness * 0.5) * localRayDir;
+    vec3 samplePos   = clamp(sampleLocal + 0.5, 0.0, 1.0);
+
+    // --- 3. Noise sampling for wispy / smoky look ---
+    vec3 noiseCoord = samplePos * noiseScale + vec3(
         time * scrollSpeedX,
         time * scrollSpeedY,
         time * scrollSpeedX * 0.5
@@ -97,7 +121,7 @@ void main()
     if (hasNoiseMap)
     {
         // Sample provided noise texture on XZ plane
-        vec2 noiseUV = LocalPos.xz * noiseScale + vec2(time * scrollSpeedX, time * scrollSpeedY);
+        vec2 noiseUV = samplePos.xz * noiseScale + vec2(time * scrollSpeedX, time * scrollSpeedY);
         noiseValue = texture(noiseMap, noiseUV).r;
     }
     else
@@ -106,37 +130,30 @@ void main()
         noiseValue = fbm(noiseCoord);
     }
 
-    // Blend between uniform density and noisy density
-    fogDensity *= mix(1.0, noiseValue, noiseStrength);
+    // Beer-Lambert: accumulate density over path length through volume
+    float fogDensity = density * thickness * mix(1.0, noiseValue, noiseStrength);
 
-    // --- 3. Height fade (local Y: 0 = bottom, 1 = top) ---
+    // --- 4. Height fade (sample Y: 0 = bottom, 1 = top) ---
     if (useHeightFade)
     {
-        // smoothstep fades from 1.0 at heightFadeStart to 0.0 at heightFadeEnd
-        float heightFactor = smoothstep(heightFadeEnd, heightFadeStart, LocalPos.y);
+        float heightFactor = smoothstep(heightFadeEnd, heightFadeStart, samplePos.y);
         fogDensity *= heightFactor;
     }
 
-    // --- 4. Edge softness ---
+    // --- 5. Edge softness (samplePos is in the volume interior, not on a face) ---
     if (edgeSoftness > 0.0)
     {
-        // Distance from nearest edge in each axis (0 at edge, 0.5 at center)
-        float edgeX = min(LocalPos.x, 1.0 - LocalPos.x);
-        float edgeY = min(LocalPos.y, 1.0 - LocalPos.y);
-        float edgeZ = min(LocalPos.z, 1.0 - LocalPos.z);
-        float edgeDist = min(min(edgeX, edgeY), edgeZ);
-
+        float edgeX = min(samplePos.x, 1.0 - samplePos.x);
+        float edgeY = min(samplePos.y, 1.0 - samplePos.y);
+        float edgeZ = min(samplePos.z, 1.0 - samplePos.z);
+        float edgeDist = min(edgeX, min(edgeY, edgeZ));
         float edgeFade = smoothstep(0.0, edgeSoftness * 0.5, edgeDist);
         fogDensity *= edgeFade;
     }
 
-    // --- 5. Distance fade (subtle, avoids popping at far range) ---
-    float distToCamera = length(FragPos - cameraPos);
-    float distFade = 1.0 - smoothstep(50.0, 100.0, distToCamera);
-    fogDensity *= distFade;
-
     // --- 6. Final output ---
-    float finalAlpha = clamp(fogDensity * opacity, 0.0, opacity);
+    float finalAlpha = 1.0 - exp(-fogDensity);
+    finalAlpha = clamp(finalAlpha * opacity, 0.0, opacity);
 
     if (finalAlpha < 0.001)
     {

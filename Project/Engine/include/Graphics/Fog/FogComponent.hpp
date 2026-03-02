@@ -4,6 +4,7 @@
 #include <Math/Vector3D.hpp>
 #include "Math/Matrix4x4.hpp"
 #include "Utilities/GUID.hpp"
+#include "Reflection/ReflectionBase.hpp"
 
 class Texture;
 class Shader;

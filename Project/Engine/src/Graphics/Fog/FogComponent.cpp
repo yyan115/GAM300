@@ -1,5 +1,12 @@
 #include "pch.h"
 #include "Graphics/Fog/FogComponent.hpp"
+#include "Reflection/ReflectionBase.hpp"
+
+template<>
+ENGINE_API TypeDescriptor* GetPrimitiveDescriptor<FogShape>() {
+    using U = std::underlying_type_t<FogShape>;
+    return GetPrimitiveDescriptor<U>();
+}
 
 #pragma region Reflection
 REFL_REGISTER_START(FogVolumeComponent)

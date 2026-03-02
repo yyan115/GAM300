@@ -496,6 +496,11 @@ rapidjson::Value Serializer::SerializeEntity(Entity entity, rapidjson::Document:
         rapidjson::Value v = SerializeComponentToValue(c, alloc);
         compsObj.AddMember("ParticleComponent", v, alloc);
     }
+    if (ecs.HasComponent<FogVolumeComponent>(entity)) {
+        auto& c = ecs.GetComponent<FogVolumeComponent>(entity);
+        rapidjson::Value v = SerializeComponentToValue(c, alloc);
+        compsObj.AddMember("FogVolumeComponent", v, alloc);
+    }
     //if (ecs.HasComponent<DebugDrawComponent>(entity)) {
     //    auto& c = ecs.GetComponent<DebugDrawComponent>(entity);
     //    rapidjson::Value v = SerializeComponentToValue(c);
@@ -755,6 +760,7 @@ void Serializer::SerializePrefabInstanceDelta(ECSManager& sceneECS, Entity insta
     CheckAndSerializeDelta<SpriteRenderComponent>("SpriteRenderComponent", sceneECS, instanceEnt, baselineEnt, alloc, outComponentsArray, standardSerializer);
     CheckAndSerializeDelta<TextRenderComponent>("TextRenderComponent", sceneECS, instanceEnt, baselineEnt, alloc, outComponentsArray, standardSerializer);
     CheckAndSerializeDelta<ParticleComponent>("ParticleComponent", sceneECS, instanceEnt, baselineEnt, alloc, outComponentsArray, standardSerializer);
+    CheckAndSerializeDelta<FogVolumeComponent>("FogVolumeComponent", sceneECS, instanceEnt, baselineEnt, alloc, outComponentsArray, standardSerializer);
     CheckAndSerializeDelta<AudioComponent>("AudioComponent", sceneECS, instanceEnt, baselineEnt, alloc, outComponentsArray, standardSerializer);
     CheckAndSerializeDelta<AudioListenerComponent>("AudioListenerComponent", sceneECS, instanceEnt, baselineEnt, alloc, outComponentsArray, standardSerializer);
     CheckAndSerializeDelta<AudioReverbZoneComponent>("AudioReverbZoneComponent", sceneECS, instanceEnt, baselineEnt, alloc, outComponentsArray, standardSerializer);
@@ -1370,6 +1376,14 @@ Entity Serializer::DeserializeEntity(ECSManager& ecs, const rapidjson::Value& en
         DeserializeParticleComponent(particleComp, tv);
     }
 
+    // FogVolumeComponent
+    if (comps.HasMember("FogVolumeComponent") && comps["FogVolumeComponent"].IsObject()) {
+        const rapidjson::Value& tv = comps["FogVolumeComponent"];
+        ecs.AddComponent<FogVolumeComponent>(newEnt, FogVolumeComponent{});
+        auto& fogComp = ecs.GetComponent<FogVolumeComponent>(newEnt);
+        TypeResolver<FogVolumeComponent>::Get()->Deserialize(&fogComp, tv);
+    }
+
     // DirectionalLightComponent
     if (comps.HasMember("DirectionalLightComponent") && comps["DirectionalLightComponent"].IsObject()) {
         const rapidjson::Value& tv = comps["DirectionalLightComponent"];
@@ -1580,6 +1594,10 @@ void Serializer::ApplyPrefabOverridesRecursive(ECSManager& ecs, Entity& currentE
                 else if (typeName == "ParticleComponent") {
                     if (!ecs.HasComponent<ParticleComponent>(currentEntity)) ecs.AddComponent<ParticleComponent>(currentEntity, ParticleComponent{});
                     DeserializeParticleComponent(ecs.GetComponent<ParticleComponent>(currentEntity), data);
+                }
+                else if (typeName == "FogVolumeComponent") {
+                    if (!ecs.HasComponent<FogVolumeComponent>(currentEntity)) ecs.AddComponent<FogVolumeComponent>(currentEntity, FogVolumeComponent{});
+                    TypeResolver<FogVolumeComponent>::Get()->Deserialize(&ecs.GetComponent<FogVolumeComponent>(currentEntity), data);
                 }
                 else if (typeName == "CameraComponent") {
                     if (!ecs.HasComponent<CameraComponent>(currentEntity)) ecs.AddComponent<CameraComponent>(currentEntity, CameraComponent{});

@@ -1350,8 +1350,9 @@ void GraphicsManager::RenderFogVolume(const FogVolumeComponent& item)
 		return;
 	}
 
-	// --- Blending setup (same pattern as RenderParticles) ---
-	glDisable(GL_CULL_FACE);        // See fog from inside the volume too
+	// --- Blending setup ---
+	glEnable(GL_CULL_FACE);
+	glCullFace(GL_FRONT);           // Render back faces only for volumetric ray-box effect
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);  // Standard alpha blend
 	glDepthMask(GL_FALSE);          // Don't write to depth buffer
@@ -1361,6 +1362,7 @@ void GraphicsManager::RenderFogVolume(const FogVolumeComponent& item)
 	// --- Transform (uses worldTransform set by FogSystem) ---
 	glm::mat4 modelMatrix = item.worldTransform.ConvertToGLM();
 	item.fogShader->setMat4("model", modelMatrix);
+	item.fogShader->setMat4("modelInverse", glm::inverse(modelMatrix));
 
 	// --- Camera matrices ---
 	if (currentCamera)
@@ -1415,11 +1417,13 @@ void GraphicsManager::RenderFogVolume(const FogVolumeComponent& item)
 	glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
 	item.fogVAO->Unbind();
 
-	// --- Restore state (same pattern as RenderParticles) ---
+	// --- Restore state ---
 	if (hasNoiseMap) {
 		item.noiseTexture->Unbind(0);
 	}
 	glDepthMask(GL_TRUE);
 	glDisable(GL_BLEND);
+	glCullFace(GL_BACK);
 	if (faceCullingEnabled) glEnable(GL_CULL_FACE);
+	else glDisable(GL_CULL_FACE);
 }
