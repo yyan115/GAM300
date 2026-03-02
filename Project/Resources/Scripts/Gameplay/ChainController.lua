@@ -91,9 +91,6 @@ function M:StartRetraction()
     if (self.chainLen or 0) <= 0 then return end
     self.isRetracting = true
     self.isExtending = false
-    
-    -- Unlock endpoint when retracting
-    self.endPointLocked = false
 end
 
 -- Detect anchors (corner detection) and record them without mutating invMass here.
@@ -209,12 +206,13 @@ function M:Update(dt, settings)
         self._groundY = nil
     end
 
-    -- 3) Determine end world position with raycast collision detection
+    -- 3) Determine end world position
     local ex,ey,ez
-    
+
     if settings.endOverride then
         ex,ey,ez = settings.endOverride[1] or 0, settings.endOverride[2] or 0, settings.endOverride[3] or 0
-    elseif self.endPointLocked then
+    elseif self.endPointLocked and not self.isRetracting then
+        -- Locked to hooked entity — only while NOT retracting
         ex, ey, ez = self.lockedEndPoint[1], self.lockedEndPoint[2], self.lockedEndPoint[3]
     else
         local fx,fy,fz = self.lastForward[1] or 0, self.lastForward[2] or 0, self.lastForward[3] or 1
@@ -234,7 +232,6 @@ function M:Update(dt, settings)
                 self.chainLen = raycastResult.distance
                 self.isExtending = false
 
-                -- Recalculate activeN based on actual hit distance instead of MaxLength
                 local linkMaxForSnap = tonumber(settings.LinkMaxDistance) or tonumber(self.params.LinkMaxDistance) or 0
                 if linkMaxForSnap > 0 then
                     local needed = math.ceil(raycastResult.distance / linkMaxForSnap) + 1
@@ -246,7 +243,6 @@ function M:Update(dt, settings)
                     print(string.format("[ChainController] Raycast HIT at distance %.3f, locked endpoint at (%.3f, %.3f, %.3f)",
                         raycastResult.distance, ex, ey, ez))
                 end
-
             else
                 ex = sx + (fx * theoreticalDistance)
                 ey = sy + (fy * theoreticalDistance)
