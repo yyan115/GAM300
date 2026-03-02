@@ -1133,12 +1133,12 @@ void Serializer::SerializePrefabOverridesRecursive(ECSManager& sceneECS, Entity 
         // Sort the deletedChildrenNames vector by entity id to ensure consistent order in the scene file.
         std::sort(deletedChildren.begin(), deletedChildren.end());
 
-        // Now add the sorted deleted children guid, name and sibling index to the scene JSON.
+        // Now add the sorted deleted children name and sibling index to the scene JSON.
         for (const auto& deletedChild : deletedChildren) {
             rapidjson::Value deletedChildNode(rapidjson::kObjectType);
 
-            // Add GUID and Entity ID.
-            deletedChildNode = SerializeEntityGUID(deletedChild, alloc, deletedChildNode);
+            //// Add GUID and Entity ID.
+            //deletedChildNode = SerializeEntityGUID(deletedChild, alloc, deletedChildNode);
 
             // Add entity name.
             rapidjson::Value nameVal;
