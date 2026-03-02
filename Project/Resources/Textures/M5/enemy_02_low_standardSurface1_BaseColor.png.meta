@@ -1,0 +1,14 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "00327c2b057cff6a-000462073e000009",
+        "source": "../../Resources/Textures/M5/enemy_02_low_standardSurface1_BaseColor.png",
+        "compiled": "../../Resources/Textures/M5/enemy_02_low_standardSurface1_BaseColor.dds"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp"
+    }
+}
