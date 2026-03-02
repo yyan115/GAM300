@@ -1,4 +1,4 @@
--- ChainBootstrap.lua (refactored wiring: use component Subscribe, set controller start/end via API, seed positions safely)
+-- ChainBootstrap.lua
 local Component = require("extension.mono_helper")
 local LinkHandlerModule = require("Gameplay.ChainLinkTransformHandler")
 local ControllerModule = require("Gameplay.ChainController")
@@ -67,7 +67,6 @@ return Component {
         return self:_read_transform_position(tr)
     end,
 
-    -- Attempt to set world position robustly. Falls back to SetPosition/localPosition.
     _write_world_pos = function(self, tr, x, y, z)
         if not tr then return false end
         local ok = false
@@ -105,7 +104,6 @@ return Component {
         print("up chain control")
         self._chain_pressing = false
 
-        -- Deactivate camera aiming
         if _G.event_bus and _G.event_bus.publish then
             _G.event_bus.publish("chain.aim_camera", {active = false})
         end
@@ -124,7 +122,6 @@ return Component {
 
         if not isExt and not isRet and len <= 1e-4 then
             if not self._chain_held then
-                -- Quick tap: request player forward from PlayerMovement via event bus, fire on next Update
                 self._pendingPlayerForward = nil
                 self._pendingTapFire = true
                 if _G.event_bus and _G.event_bus.publish then
@@ -132,7 +129,6 @@ return Component {
                 end
                 print("[ChainBootstrap] TAP -> requested player_forward_response")
             else
-                -- Held then released: fire in camera aim direction
                 local direction = self._cameraForward
                 print(string.format("[ChainBootstrap] HOLD release -> camera forward: (%.3f, %.3f, %.3f)",
                     direction[1], direction[2], direction[3]))
@@ -142,15 +138,12 @@ return Component {
             self.controller:StartRetraction()
         end
 
-        -- Reset held flag AFTER we've used it above
         self._chain_held = false
     end,
 
     _on_chain_hold = function(self, payload)
         print("hold")
         self._chain_held = true
-
-        -- Tell camera to move to aim position ONLY if chain is not extended
         if self.controller then
             local len = (self.controller.chainLen or 0)
             local isExt = self.controller.isExtending or false
@@ -175,7 +168,6 @@ return Component {
             if tr then table.insert(self._runtime.childTransforms, tr) end
         end
 
-        -- instantiate handler and controller
         self.linkHandler = LinkHandlerModule.New(self)
         self.linkHandler:InitTransforms(self._runtime.childTransforms)
 
@@ -193,12 +185,11 @@ return Component {
         }
         self.controller = ControllerModule.New(params)
 
-        -- seed positions to current transform world positions (world-space)
         for i, tr in ipairs(self._runtime.childTransforms) do
-            local x,y,z
-            local ok, a,b,c = pcall(function() 
-                if Engine and Engine.GetTransformWorldPosition then 
-                    return Engine.GetTransformWorldPosition(tr) 
+            local x, y, z
+            local ok, a, b, c = pcall(function()
+                if Engine and Engine.GetTransformWorldPosition then
+                    return Engine.GetTransformWorldPosition(tr)
                 end
                 return nil
             end)
@@ -208,25 +199,21 @@ return Component {
             else
                 x,y,z = self:_read_world_pos(tr)
             end
-
             if self.controller.positions[i] then
                 self.controller.positions[i][1], self.controller.positions[i][2], self.controller.positions[i][3] = x, y, z
                 self.controller.prev[i][1], self.controller.prev[i][2], self.controller.prev[i][3] = x, y, z
             end
         end
-        
-        -- Initialize camera forward with fallback
-        self._cameraForward = {0, 0, 1}
 
-        -- Init tap/hold state
+        self._cameraForward = {0, 0, 1}
         self._chain_pressing = false
         self._chain_held = false
-
-        -- Pending tap-fire state (deferred one frame until player_forward_response arrives)
         self._pendingTapFire = false
         self._pendingPlayerForward = nil
 
-        -- Find chain endpoint object
+        -- Hooked collider transform for rotation (the actual part hit, not root)
+        self._hookedColliderTransform = nil
+
         self._endpointTransform = nil
         if self.ChainEndpointName and self.ChainEndpointName ~= "" then
             self._endpointTransform = Engine.FindTransformByName(self.ChainEndpointName)
@@ -248,13 +235,11 @@ return Component {
                     end
                 end
             end)
+
             self._chainSubDown = _G.event_bus.subscribe("chain.down", function(payload) if not payload then return end pcall(function() self:_on_chain_down(payload) end) end)
             self._chainSubUp   = _G.event_bus.subscribe("chain.up",   function(payload) if not payload then return end pcall(function() self:_on_chain_up(payload)   end) end)
             self._chainSubHold = _G.event_bus.subscribe("chain.hold", function(payload) if not payload then return end pcall(function() self:_on_chain_hold(payload) end) end)
 
-            -- Receive player forward direction response for tap-fire.
-            -- Multiple PlayerMovement instances may respond (stale ones have nil _facingX/_facingZ
-            -- and send 0,0,1). Only accept the first response that carries real values.
             self._subPlayerForward = _G.event_bus.subscribe("player_forward_response", function(payload)
                 if not payload then return end
                 if self._pendingPlayerForward then return end
@@ -283,11 +268,19 @@ return Component {
                 end)
             end)
 
+            -- Receive collider transform for rotation from ChainEndpointController
+            self._subHookedRot = _G.event_bus.subscribe("chain.endpoint_hooked_rotation", function(payload)
+                if not payload then return end
+                pcall(function()
+                    self._hookedColliderTransform = payload.transform
+                end)
+            end)
+
             self._subHitEntity = _G.event_bus.subscribe("chain.endpoint_hit_entity", function(payload)
                 if not payload then return end
                 pcall(function()
                     if self.controller then
-                        print("[ChainBootstrap] Endpoint hit entity " .. tostring(payload.entityId) .. " — locking endpoint")
+                        print("[ChainBootstrap] Endpoint hit entity '" .. tostring(payload.entityName) .. "' — locking endpoint")
                         self.controller.endPointLocked = true
                     end
                 end)
@@ -298,7 +291,6 @@ return Component {
     Update = function(self, dt)
         if not self.controller then return end
 
-        -- Deferred tap-fire: wait until player_forward_response arrives from PlayerMovement
         if self._pendingTapFire then
             if self._pendingPlayerForward then
                 local direction = self._pendingPlayerForward
@@ -308,9 +300,8 @@ return Component {
                 self._pendingTapFire = false
                 self._pendingPlayerForward = nil
             end
-            -- else: still waiting for response, will retry next frame
         end
-        
+
         self.playerTransform = Engine.FindTransformByName(self.PlayerName)
         if self.playerTransform then
             local sx, sy, sz = self:_read_world_pos(self.playerTransform)
@@ -371,48 +362,73 @@ return Component {
             if chainIsActive then
                 self:_write_world_pos(self._endpointTransform, endPos[1], endPos[2], endPos[3])
 
-                local fwd = self.controller.lastForward
-                local fx, fy, fz = fwd[1] or 0, fwd[2] or 0, fwd[3] or 1
-
-                local ux, uy, uz = 0, 1, 0
-                local dot = ux*fx + uy*fy + uz*fz
-                local rx = uy*fz - uz*fy
-                local ry = uz*fx - ux*fz
-                local rz = ux*fy - uy*fx
-                local axisLen = math.sqrt(rx*rx + ry*ry + rz*rz)
-
-                local qw, qx, qy, qz
-                if axisLen < 1e-6 then
-                    if dot > 0 then
-                        qw, qx, qy, qz = 1, 0, 0, 0
+                -- -------------------------------------------------------------------
+                -- ROTATION
+                -- When hooked: copy worldRotation from the exact collided part transform.
+                -- When not hooked: orient along chain forward direction as before.
+                -- -------------------------------------------------------------------
+                if self._hookedColliderTransform and self.controller.endPointLocked then
+                    local ok, rot = pcall(function()
+                        return self._hookedColliderTransform.worldRotation
+                    end)
+                    if ok and rot then
+                        pcall(function()
+                            local endRot = self._endpointTransform.localRotation
+                            if endRot and (type(endRot) == "table" or type(endRot) == "userdata") then
+                                endRot.w = rot.w or 1
+                                endRot.x = rot.x or 0
+                                endRot.y = rot.y or 0
+                                endRot.z = rot.z or 0
+                                self._endpointTransform.isDirty = true
+                            end
+                        end)
+                        print(string.format("[ChainBootstrap] Rotation matched to collider rot=(w=%.3f x=%.3f y=%.3f z=%.3f)",
+                            rot.w or 0, rot.x or 0, rot.y or 0, rot.z or 0))
                     else
-                        qw, qx, qy, qz = 0, 1, 0, 0
+                        print("[ChainBootstrap] WARNING: worldRotation read failed from collider transform — ok=" .. tostring(ok))
                     end
                 else
-                    rx, ry, rz = rx/axisLen, ry/axisLen, rz/axisLen
-                    local angle = math.acos(math.max(-1, math.min(1, dot)))
-                    local halfAngle = angle * 0.5
-                    local s = math.sin(halfAngle)
-                    qw = math.cos(halfAngle)
-                    qx = rx * s
-                    qy = ry * s
-                    qz = rz * s
-                end
+                    -- Default: orient endpoint along chain forward direction
+                    local fwd = self.controller.lastForward
+                    local fx, fy, fz = fwd[1] or 0, fwd[2] or 0, fwd[3] or 1
 
-                local qlen = math.sqrt(qw*qw + qx*qx + qy*qy + qz*qz)
-                if qlen > 1e-12 then
-                    qw, qx, qy, qz = qw/qlen, qx/qlen, qy/qlen, qz/qlen
-                else
-                    qw, qx, qy, qz = 1, 0, 0, 0
-                end
+                    local ux, uy, uz = 0, 1, 0
+                    local dot = ux*fx + uy*fy + uz*fz
+                    local rx = uy*fz - uz*fy
+                    local ry = uz*fx - ux*fz
+                    local rz = ux*fy - uy*fx
+                    local axisLen = math.sqrt(rx*rx + ry*ry + rz*rz)
 
-                pcall(function()
-                    local rot = self._endpointTransform.localRotation
-                    if rot and (type(rot) == "table" or type(rot) == "userdata") then
-                        rot.w, rot.x, rot.y, rot.z = qw, qx, qy, qz
-                        self._endpointTransform.isDirty = true
+                    local qw, qx, qy, qz
+                    if axisLen < 1e-6 then
+                        if dot > 0 then qw, qx, qy, qz = 1, 0, 0, 0
+                        else qw, qx, qy, qz = 0, 1, 0, 0 end
+                    else
+                        rx, ry, rz = rx/axisLen, ry/axisLen, rz/axisLen
+                        local angle = math.acos(math.max(-1, math.min(1, dot)))
+                        local halfAngle = angle * 0.5
+                        local s = math.sin(halfAngle)
+                        qw = math.cos(halfAngle)
+                        qx = rx * s
+                        qy = ry * s
+                        qz = rz * s
                     end
-                end)
+
+                    local qlen = math.sqrt(qw*qw + qx*qx + qy*qy + qz*qz)
+                    if qlen > 1e-12 then
+                        qw, qx, qy, qz = qw/qlen, qx/qlen, qy/qlen, qz/qlen
+                    else
+                        qw, qx, qy, qz = 1, 0, 0, 0
+                    end
+
+                    pcall(function()
+                        local rot = self._endpointTransform.localRotation
+                        if rot and (type(rot) == "table" or type(rot) == "userdata") then
+                            rot.w, rot.x, rot.y, rot.z = qw, qx, qy, qz
+                            self._endpointTransform.isDirty = true
+                        end
+                    end)
+                end
 
                 if _G.event_bus and _G.event_bus.publish then
                     _G.event_bus.publish("chain.endpoint_moved", {
@@ -431,6 +447,7 @@ return Component {
 
                 if self._wasChainActive then
                     self._wasChainActive = false
+                    self._hookedColliderTransform = nil
                     if _G.event_bus and _G.event_bus.publish then
                         _G.event_bus.publish("chain.endpoint_retracted", {
                             position = { x = sp[1], y = sp[2], z = sp[3] },
@@ -449,6 +466,7 @@ return Component {
             if self._chainSubHold     then pcall(function() _G.event_bus.unsubscribe(self._chainSubHold)     end) end
             if self._subPlayerForward then pcall(function() _G.event_bus.unsubscribe(self._subPlayerForward) end) end
             if self._subHookedPos     then pcall(function() _G.event_bus.unsubscribe(self._subHookedPos)     end) end
+            if self._subHookedRot     then pcall(function() _G.event_bus.unsubscribe(self._subHookedRot)     end) end
             if self._subHitEntity     then pcall(function() _G.event_bus.unsubscribe(self._subHitEntity)     end) end
         end
     end,

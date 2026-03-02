@@ -1146,6 +1146,30 @@ namespace EntityQueryWrappers {
         return nameOpt.value().get().name;
     }
 
+    // Get entity tag - returns string
+    inline std::string GetEntityTag(Entity entity) {
+        ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
+
+        auto tagOpt = ecsManager.TryGetComponent<TagComponent>(entity);
+        if (!tagOpt.has_value()) {
+            return "";
+        }
+
+        return tagOpt.value().get().GetTagName();
+    }
+
+    // Get entity layer - returns string
+    inline std::string GetEntityLayer(Entity entity) {
+        ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
+
+        auto layerOpt = ecsManager.TryGetComponent<LayerComponent>(entity);
+        if (!layerOpt.has_value()) {
+            return "";
+        }
+
+        return layerOpt.value().get().GetLayerName();
+    }
+
     // Check if entity is active - returns bool
     inline bool IsEntityActive(Entity entity) {
         ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
