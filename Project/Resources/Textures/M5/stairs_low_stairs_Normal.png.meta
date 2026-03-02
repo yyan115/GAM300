@@ -1,0 +1,14 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "00503acab391cc5a-0004629c06000005",
+        "source": "../../Resources/Textures/M5/stairs_low_stairs_Normal.png",
+        "compiled": "../../Resources/Textures/M5/stairs_low_stairs_Normal.dds"
+    },
+    "TextureMetaData": {
+        "type": "normal",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp"
+    }
+}
