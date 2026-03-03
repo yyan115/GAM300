@@ -193,6 +193,7 @@ void PhysicsSystem::Initialise(ECSManager& ecsManager) {
     }
     entityBodyMap.clear();
     bodyToEntityMap.clear();
+    m_activeInteractions.clear();
 
     // Create bodies for all existing entities
     for (auto& e : entities) {
@@ -305,11 +306,33 @@ void PhysicsSystem::Update(float fixedDt, ECSManager& ecsManager) {
             deltaRot.GetAxisAngle(axis, angle);
             JPH::Vec3 angularVel = axis * (angle / fixedDt);
 
-            bi.SetLinearVelocity(bodyId, linearVel);
-            bi.SetAngularVelocity(bodyId, angularVel);
-            bi.MoveKinematic(bodyId, targetPos, targetRot, fixedDt);
-            bi.ActivateBody(bodyId);
+            // [FIX START] Handle Triggers differently from Physical Objects
+            if (rb.isTrigger) {
+                // For Triggers/Sensors: Force teleport.
+                // This ensures overlaps are detected even if the body is stationary.
+                // 'MoveKinematic' relies on velocity simulation which can be culled when V=0.
+                bi.SetPositionAndRotation(bodyId, targetPos, targetRot, JPH::EActivation::Activate);
 
+                // Clear velocities so it doesn't have "momentum" if it turns dynamic later
+                // Kinematic bodies with exactly 0 velocity go to sleep immediately.
+                // We apply a microscopic velocity to trick Jolt into keeping this sensor 
+                // awake and actively checking for overlaps against stationary players.
+                bi.SetLinearVelocity(bodyId, JPH::Vec3(0.0f, -0.001f, 0.0f));
+                bi.SetAngularVelocity(bodyId, JPH::Vec3::sZero());
+            }
+            else {
+                // For Solid Objects (Moving Platforms): Use MoveKinematic.
+                // This enables friction/pushing of characters standing on them.
+                bi.SetLinearVelocity(bodyId, linearVel);
+                bi.SetAngularVelocity(bodyId, angularVel);
+                bi.MoveKinematic(bodyId, targetPos, targetRot, fixedDt);
+            }
+
+            //bi.SetLinearVelocity(bodyId, linearVel);
+            //bi.SetAngularVelocity(bodyId, angularVel);
+            //bi.MoveKinematic(bodyId, targetPos, targetRot, fixedDt);
+
+            bi.ActivateBody(bodyId);
             rb.transform_dirty = false;
         }
     }
@@ -397,9 +420,14 @@ void PhysicsSystem::Update(float fixedDt, ECSManager& ecsManager) {
         std::vector<CollisionEvent> enters, exits;
         contactListener->DrainEvents(enters, exits);
 
+        // PROCESS ENTER EVENTS.
         for (const auto& evt : enters) {
             Entity a = static_cast<Entity>(evt.entityA);
             Entity b = static_cast<Entity>(evt.entityB);
+
+            // Add to active set (Ordered so A is always smaller than B for consistency)
+            if (a < b) m_activeInteractions.insert({ a, b });
+            else       m_activeInteractions.insert({ b, a });
 
             bool aIsTrigger = false, bIsTrigger = false;
             if (ecsManager.HasComponent<RigidBodyComponent>(a))
@@ -418,9 +446,14 @@ void PhysicsSystem::Update(float fixedDt, ECSManager& ecsManager) {
             }
         }
 
+        // PROCESS EXIT EVENTS.
         for (const auto& evt : exits) {
             Entity a = static_cast<Entity>(evt.entityA);
             Entity b = static_cast<Entity>(evt.entityB);
+
+            // Remove from active set
+            if (a < b) m_activeInteractions.erase({ a, b });
+            else       m_activeInteractions.erase({ b, a });
 
             bool aIsTrigger = false, bIsTrigger = false;
             if (ecsManager.HasComponent<RigidBodyComponent>(a))
@@ -431,6 +464,36 @@ void PhysicsSystem::Update(float fixedDt, ECSManager& ecsManager) {
             const std::string fn = (aIsTrigger || bIsTrigger) ? "OnTriggerExit" : "OnCollisionExit";
             ecsManager.scriptSystem->CallEntityFunctionWithInt(a, fn, evt.entityB, ecsManager);
             ecsManager.scriptSystem->CallEntityFunctionWithInt(b, fn, evt.entityA, ecsManager);
+        }
+
+        // PROCESS STAY EVENTS
+        // Iterate through all currently active pairs and fire "OnTriggerStay"
+        for (auto it = m_activeInteractions.begin(); it != m_activeInteractions.end(); ) {
+            Entity a = it->first;
+            Entity b = it->second;
+
+            // Safety Check: If an entity was destroyed but we missed the exit event (rare but possible), clean it up.
+            if (!ecsManager.IsEntityActiveInHierarchy(a) || !ecsManager.IsEntityActiveInHierarchy(b)) {
+                it = m_activeInteractions.erase(it);
+                continue;
+            }
+
+            bool aIsTrigger = false, bIsTrigger = false;
+            // Check components again as they might have changed at runtime
+            if (ecsManager.HasComponent<RigidBodyComponent>(a))
+                aIsTrigger = ecsManager.GetComponent<RigidBodyComponent>(a).isTrigger;
+            if (ecsManager.HasComponent<RigidBodyComponent>(b))
+                bIsTrigger = ecsManager.GetComponent<RigidBodyComponent>(b).isTrigger;
+
+            // Determine if this is a Trigger Stay or Collision Stay
+            const std::string fn = (aIsTrigger || bIsTrigger) ? "OnTriggerStay" : "OnCollisionStay";
+
+            // Call Lua functions
+            // Note: casting Entity to int for Lua
+            ecsManager.scriptSystem->CallEntityFunctionWithInt(a, fn, static_cast<int>(b), ecsManager);
+            ecsManager.scriptSystem->CallEntityFunctionWithInt(b, fn, static_cast<int>(a), ecsManager);
+
+            ++it;
         }
     }
 
@@ -541,6 +604,7 @@ void PhysicsSystem::Shutdown() {
     }
     entityBodyMap.clear();
     bodyToEntityMap.clear();
+    m_activeInteractions.clear();
 
     // 2. Drop 
     //  shapes

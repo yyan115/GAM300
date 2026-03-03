@@ -123,6 +123,7 @@ private:
 	std::unique_ptr<JPH::JobSystem> jobs;           // e.g., JobSystemThreadPool
 	std::unique_ptr<JPH::TempAllocator> temp;       // e.g., TempAllocatorImpl
 	bool m_joltInitialized;  // Track if THIS instance's physics has been initialized
+	std::set<std::pair<Entity, Entity>> m_activeInteractions; // Stores currently colliding pairs {EntityA, EntityB} where A < B
 
 	void SyncPhysicsBodyToTransform(Entity entity, ECSManager& ecs);
 	void UpdateColliderShapeScale(ColliderComponent& col, Vector3D worldScale);

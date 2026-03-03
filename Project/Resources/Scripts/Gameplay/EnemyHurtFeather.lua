@@ -29,9 +29,9 @@ return Component {
         MaxSpawnTorque = 10.0,
         MinSpawnTorque = 2.0,
         TriggerDuration = 0.3,
-        SpawnForce = 1.0,
-        SpawnForceY = 0.5,
-        AliveDuration = 5.0,
+        SpawnForce = 0.2,
+        SpawnForceY = 0.1,
+        AliveDuration = 10.0,
     },
 
     Awake = function(self)
@@ -72,6 +72,7 @@ return Component {
             if self._triggerDuration <= 0.0 then
                 self._rb.isTrigger = false
                 self._isTriggerDisabled = true
+                print(string.format("[EnemyHurtFeather] Rb isTrigger set to false - Entity %d", self.entityId))
             end
         end
 
