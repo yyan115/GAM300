@@ -134,15 +134,26 @@ return Component {
             self._lungeDirX  = 0
             self._lungeDirZ  = 0
             self._attackLungeSub = event_bus.subscribe("attack_performed", function(data)
-                local w = self._currentRotW
-                local y = self._currentRotY
-                local fwdX = 2.0 * w * y
-                local fwdZ = w * w - y * y
+                -- Use camera facing direction so attacks always go where the camera looks.
+                -- _G.CAMERA_YAW is orbit-offset convention: forward = (-sin, 0, -cos).
+                local cameraYaw = _G.CAMERA_YAW or self._cameraYaw or 180.0
+                local yr = math.rad(cameraYaw)
+                local fwdX = -math.sin(yr)
+                local fwdZ = -math.cos(yr)
                 local len = math.sqrt(fwdX * fwdX + fwdZ * fwdZ)
                 if len > 0.001 then
                     self._lungeDirX = fwdX / len
                     self._lungeDirZ = fwdZ / len
                 end
+                -- Snap player model to face the attack direction.
+                local targetW, targetX, targetY, targetZ = directionToQuaternion(self._lungeDirX, self._lungeDirZ)
+                self._currentRotW = targetW
+                self._currentRotX = targetX
+                self._currentRotY = targetY
+                self._currentRotZ = targetZ
+                self._facingX = self._lungeDirX
+                self._facingZ = self._lungeDirZ
+                pcall(self.SetRotation, self, targetW, targetX, targetY, targetZ)
                 self._lungeTimer = self.AttackLungeDuration or 0.12
             end)
 
