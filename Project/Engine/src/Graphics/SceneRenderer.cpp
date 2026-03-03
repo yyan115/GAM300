@@ -201,6 +201,11 @@ void SceneRenderer::RenderSceneForEditor(const glm::vec3& cameraPos, const glm::
         // Mark that we're rendering for the editor (for view mode filtering)
         gfxManager.SetRenderingForEditor(true);
 
+        // Clear active hierarchy cache so toggling entity active state in the inspector
+        // takes effect immediately (the orchestrator does this in play mode, but editor
+        // rendering bypasses the orchestrator)
+        mainECS.ClearActiveHierarchyCache();
+
         // Update UI anchors before transform (sets local positions based on viewport)
         if (mainECS.uiAnchorSystem)
         {
