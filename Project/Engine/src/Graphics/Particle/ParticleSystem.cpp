@@ -26,6 +26,9 @@ prior written consent of DigiPen Institute of Technology is prohibited.
 #include "Engine.h"
 #include "Asset Manager/AssetManager.hpp"
 #include "ECS/ActiveComponent.hpp"
+#include "ECS/LayerComponent.hpp"
+#include "Graphics/PostProcessing/PostProcessingManager.hpp"
+#include "Graphics/BloomComponent.hpp"
 
 /******************************************************************************/
 /*!
@@ -268,6 +271,24 @@ void ParticleSystem::Update()
         if (!shouldUpdateParticles) {
             // Still submit to renderer (to show existing particles), but don't update physics or emit new particles
             auto renderItem = std::make_unique<ParticleComponent>(particleComp);
+
+            // Per-entity bloom emission
+            if (ecsManager.HasComponent<BloomComponent>(entity)) {
+                auto& bloom = ecsManager.GetComponent<BloomComponent>(entity);
+                if (bloom.enabled) {
+                    renderItem->bloomColor = bloom.bloomColor;
+                    renderItem->bloomIntensity = bloom.bloomIntensity;
+                }
+            }
+
+            // Tag items on excluded layers for deferred rendering
+            uint32_t exMask = PostProcessingManager::GetInstance().GetExcludedLayerMask();
+            if (exMask != 0) {
+                int layerIdx = GetEffectiveLayerIndex(entity, ecsManager);
+                if (exMask & (1u << layerIdx))
+                    renderItem->excludeFromPostProcess = true;
+            }
+
             gfxManager.Submit(std::move(renderItem));
             continue;
         }
@@ -301,6 +322,24 @@ void ParticleSystem::Update()
 
         // Submit to renderer
         auto renderItem = std::make_unique<ParticleComponent>(particleComp);
+
+        // Per-entity bloom emission
+        if (ecsManager.HasComponent<BloomComponent>(entity)) {
+            auto& bloom = ecsManager.GetComponent<BloomComponent>(entity);
+            if (bloom.enabled) {
+                renderItem->bloomColor = bloom.bloomColor;
+                renderItem->bloomIntensity = bloom.bloomIntensity;
+            }
+        }
+
+        // Tag items on excluded layers for deferred rendering
+        uint32_t exMask = PostProcessingManager::GetInstance().GetExcludedLayerMask();
+        if (exMask != 0) {
+            int layerIdx = GetEffectiveLayerIndex(entity, ecsManager);
+            if (exMask & (1u << layerIdx))
+                renderItem->excludeFromPostProcess = true;
+        }
+
         gfxManager.Submit(std::move(renderItem));
     }
 }

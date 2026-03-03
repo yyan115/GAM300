@@ -69,7 +69,7 @@ public:
 	void BeginFrame();
 	void EndFrame();
 
-	bool TryAddInstance(const ModelRenderComponent& component, const glm::mat4& worldMatrix);
+	bool TryAddInstance(const ModelRenderComponent& component, const glm::mat4& worldMatrix, const glm::vec3& bloomColor = glm::vec3(0.0f), float bloomIntensity = 0.0f);
 
 	void RenderBatches(const glm::mat4& view, const glm::mat4& projection, const glm::vec3& cameraPos);
 

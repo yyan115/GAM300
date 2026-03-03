@@ -13,6 +13,7 @@ class Shader;
 struct InstanceData {
 	glm::mat4 modelMatrix;
 	glm::mat4 normalMatrix;
+	glm::vec4 bloomData;  // xyz = bloomColor, w = bloomIntensity
 };
 
 class ENGINE_API InstanceBatch {
@@ -28,7 +29,7 @@ public:
 	void Initialize(std::shared_ptr<Model> model, std::shared_ptr<Material> material, std::shared_ptr<Shader> shader);
 	void Clear();
 
-	void AddInstance(const glm::mat4& modelMatrix);
+	void AddInstance(const glm::mat4& modelMatrix, const glm::vec3& bloomColor = glm::vec3(0.0f), float bloomIntensity = 0.0f);
 
 	void Render(const glm::mat4& view, const glm::mat4& projection, const glm::vec3& cameraPos);
 

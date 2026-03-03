@@ -9,6 +9,19 @@ uniform float gamma;
 uniform int toneMappingMode;
 uniform bool enableTonemapping;  // If false, bypass tonemapping
 
+// Vignette
+uniform bool vignetteEnabled;
+uniform float vignetteIntensity;
+uniform float vignetteSmoothness;
+uniform vec3 vignetteColor;
+
+// Color Grading
+uniform bool colorGradingEnabled;
+uniform float cgBrightness;
+uniform float cgContrast;
+uniform float cgSaturation;
+uniform vec3 cgTint;
+
 vec3 ReinhardToneMapping(vec3 color)
 {
     return color / (color + vec3(1.0));
@@ -57,5 +70,25 @@ void main()
     }
     // else: values pass through unchanged (will clip at 1.0 in output framebuffer)
 
+    // Vignette: blend toward vignetteColor at edges
+    if (vignetteEnabled)
+    {
+        vec2 uv = TexCoords - 0.5;
+        float vignette = 1.0 - dot(uv, uv) * vignetteIntensity * 4.0;
+        vignette = smoothstep(0.0, vignetteSmoothness + 0.5, vignette);
+        mapped = mix(vignetteColor, mapped, vignette);
+    }
+
+    // Color Grading
+    if (colorGradingEnabled)
+    {
+        mapped += cgBrightness;
+        mapped = (mapped - 0.5) * cgContrast + 0.5;
+        float luma = dot(mapped, vec3(0.2126, 0.7152, 0.0722));
+        mapped = mix(vec3(luma), mapped, cgSaturation);
+        mapped *= cgTint;
+    }
+
+    mapped = clamp(mapped, 0.0, 1.0);
     FragColor = vec4(mapped, 1.0);
 }

@@ -148,7 +148,17 @@ void SceneRenderer::BeginSceneRender(int width, int height)
 void SceneRenderer::EndSceneRender()
 {
     // Unbind framebuffer (render to screen again)
-    PostProcessingManager::GetInstance().EndHDRRender(sceneFrameBuffer, sceneWidth, sceneHeight); 
+    PostProcessingManager::GetInstance().EndHDRRender(sceneFrameBuffer, sceneWidth, sceneHeight);
+
+    // Render deferred items (excluded from post-processing) on top of blurred output
+    GraphicsManager& gfxManager = GraphicsManager::GetInstance();
+    if (gfxManager.HasDeferredItems())
+    {
+        glBindFramebuffer(GL_FRAMEBUFFER, sceneFrameBuffer);
+        glViewport(0, 0, sceneWidth, sceneHeight);
+        gfxManager.RenderDeferred();
+    }
+
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
@@ -264,6 +274,8 @@ void SceneRenderer::RenderSceneForEditor(const glm::vec3& cameraPos, const glm::
 
 void SceneRenderer::BeginGameRender(int width, int height)
 {
+    GraphicsManager::GetInstance().SetGamePanelActive(true);
+
     // Create or resize game framebuffer if needed
     if (gameFrameBuffer == 0 || width != gameWidth || height != gameHeight) {
         // Delete existing game framebuffer if it exists
@@ -325,9 +337,29 @@ void SceneRenderer::EndGameRender()
     BlurEffect* blur = PostProcessingManager::GetInstance().GetBlurEffect();
     if (blur) blur->SetIntensity(0.0f);
 
+    // Prevent double bloom: same issue as blur — SceneInstance::Draw already applied
+    // bloom in its first EndHDRRender pass. Save/restore since bloom intensity is persistent.
+    BloomEffect* bloom = PostProcessingManager::GetInstance().GetBloomEffect();
+    float savedBloomIntensity = bloom ? bloom->GetIntensity() : 0.0f;
+    if (bloom) bloom->SetIntensity(0.0f);
+
     PostProcessingManager::GetInstance().EndHDRRender(gameFrameBuffer, gameWidth, gameHeight);
+
+    // Restore bloom intensity for next frame
+    if (bloom) bloom->SetIntensity(savedBloomIntensity);
+
+    // Render deferred items (excluded from post-processing) on top of blurred output
+    GraphicsManager& gfxManager = GraphicsManager::GetInstance();
+    if (gfxManager.HasDeferredItems())
+    {
+        glBindFramebuffer(GL_FRAMEBUFFER, gameFrameBuffer);
+        glViewport(0, 0, gameWidth, gameHeight);
+        gfxManager.RenderDeferred();
+    }
+
     // Unbind framebuffer (render to screen again)
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    gfxManager.SetGamePanelActive(false);
 }
 
 unsigned int SceneRenderer::GetGameTexture()

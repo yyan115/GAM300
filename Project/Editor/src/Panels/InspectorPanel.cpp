@@ -40,6 +40,7 @@
 #include <FileWatch.hpp>
 #include "Video/VideoComponent.hpp"
 #include "Dialogue/DialogueComponent.hpp"
+#include "Graphics/BloomComponent.hpp"
 #include <ECS/ActiveComponent.hpp>
 #include "UndoSystem.hpp"
 
@@ -370,6 +371,12 @@ void InspectorPanel::DrawComponentsViaReflection(Entity entity) {
 			[&]() { return ecs.HasComponent<DialogueComponent>(entity) ?
 				(void*)&ecs.GetComponent<DialogueComponent>(entity) : nullptr; },
 			[&]() { return ecs.HasComponent<DialogueComponent>(entity); }},
+
+		// Bloom component
+		{"Bloom", "BloomComponent",
+			[&]() { return ecs.HasComponent<BloomComponent>(entity) ?
+				(void*)&ecs.GetComponent<BloomComponent>(entity) : nullptr; },
+			[&]() { return ecs.HasComponent<BloomComponent>(entity); }},
 	};
 
 	// Render each component that exists
@@ -1326,6 +1333,7 @@ void InspectorPanel::DrawAddComponentButton(Entity entity) {
 				{"Scripts", ICON_FA_FILE_CODE},
 				{"UI", ICON_FA_HAND_POINTER},
 				{"Video", ICON_FA_FILE_VIDEO},
+				{"Effects", ICON_FA_WAND_MAGIC_SPARKLES},
 			};
 
 			std::vector<ComponentEntry> allComponents;
@@ -1405,6 +1413,9 @@ void InspectorPanel::DrawAddComponentButton(Entity entity) {
 			}
 			if (!ecsManager.HasComponent<DialogueComponent>(entity)) {
 				allComponents.push_back({ "Dialogue", "DialogueComponent", "UI" });
+			}
+			if (!ecsManager.HasComponent<BloomComponent>(entity)) {
+				allComponents.push_back({ "Bloom", "BloomComponent", "Effects" });
 			}
 
 		// Cache scripts to avoid filesystem scanning every frame
@@ -1512,7 +1523,7 @@ void InspectorPanel::DrawAddComponentButton(Entity entity) {
 
 				std::vector<std::string> categoryOrder = {
 					"Rendering", "Audio", "Lighting", "Camera", "Physics",
-					"Animation", "AI", "Scripting", "General", "Scripts", "UI","Video"
+					"Animation", "AI", "Scripting", "General", "Scripts", "UI", "Video", "Effects"
 				};
 
 				for (const auto& category : categoryOrder) {
@@ -1610,7 +1621,9 @@ void InspectorPanel::DrawAddComponentButtonMulti(const std::vector<Entity>& enti
 			{"Scripting", ICON_FA_CODE},
 			{"General", ICON_FA_TAG},
 			{"Scripts", ICON_FA_FILE_CODE},
-			{"UI", ICON_FA_HAND_POINTER}
+			{"UI", ICON_FA_HAND_POINTER},
+			{"Video", ICON_FA_FILE_VIDEO},
+			{"Effects", ICON_FA_WAND_MAGIC_SPARKLES}
 		};
 
 		std::vector<ComponentEntry> allComponents;
@@ -1695,6 +1708,9 @@ void InspectorPanel::DrawAddComponentButtonMulti(const std::vector<Entity>& enti
 		}
 		if (allEntitiesLackComponent([&](Entity e) { return ecsManager.HasComponent<DialogueComponent>(e); })) {
 			allComponents.push_back({ "Dialogue", "DialogueComponent", "UI" });
+		}
+		if (allEntitiesLackComponent([&](Entity e) { return ecsManager.HasComponent<BloomComponent>(e); })) {
+			allComponents.push_back({ "Bloom", "BloomComponent", "Effects" });
 		}
 
 		// Cache scripts
@@ -1792,7 +1808,7 @@ void InspectorPanel::DrawAddComponentButtonMulti(const std::vector<Entity>& enti
 
 			std::vector<std::string> categoryOrder = {
 				"Rendering", "Audio", "Lighting", "Camera", "Physics",
-				"Animation", "AI", "Scripting", "General", "Scripts", "UI"
+				"Animation", "AI", "Scripting", "General", "Scripts", "UI", "Video", "Effects"
 			};
 
 			for (const auto& category : categoryOrder) {
@@ -2310,6 +2326,11 @@ void InspectorPanel::AddComponent(Entity entity, const std::string& componentTyp
 			ecsManager.AddComponent<DialogueComponent>(entity, component);
 			std::cout << "[Inspector] Added DialogueComponent to entity " << entity << std::endl;
 		}
+		else if (componentType == "BloomComponent") {
+			BloomComponent component;
+			ecsManager.AddComponent<BloomComponent>(entity, component);
+			std::cout << "[Inspector] Added BloomComponent to entity " << entity << std::endl;
+		}
 		else {
 			std::cerr << "[Inspector] Unknown component type: " << componentType << std::endl;
 		}
@@ -2712,6 +2733,10 @@ void InspectorPanel::ProcessPendingComponentRemovals() {
 				ecsManager.RemoveComponent<DialogueComponent>(request.entity);
 				std::cout << "[Inspector] Removed DialogueComponent from entity " << request.entity << std::endl;
 			}
+			else if (request.componentType == "BloomComponent") {
+				ecsManager.RemoveComponent<BloomComponent>(request.entity);
+				std::cout << "[Inspector] Removed BloomComponent from entity " << request.entity << std::endl;
+			}
 			else if (request.componentType == "TransformComponent") {
 				std::cerr << "[Inspector] Cannot remove TransformComponent - all entities must have one" << std::endl;
 			}
@@ -2822,6 +2847,10 @@ void InspectorPanel::ProcessPendingComponentResets() {
 			else if (request.componentType == "DialogueComponent") {
 				ecsManager.GetComponent<DialogueComponent>(request.entity) = DialogueComponent{};
 				std::cout << "[Inspector] Reset DialogueComponent on entity " << request.entity << std::endl;
+			}
+			else if (request.componentType == "BloomComponent") {
+				ecsManager.GetComponent<BloomComponent>(request.entity) = BloomComponent{};
+				std::cout << "[Inspector] Reset BloomComponent on entity " << request.entity << std::endl;
 			}
 			else if (request.componentType == "Transform") {
 				// Reset transform to default values
@@ -2985,6 +3014,11 @@ void InspectorPanel::ProcessPendingMultiComponentRemovals() {
 				else if (request.componentType == "DialogueComponent") {
 					if (ecsManager.HasComponent<DialogueComponent>(entity)) {
 						ecsManager.RemoveComponent<DialogueComponent>(entity);
+					}
+				}
+				else if (request.componentType == "BloomComponent") {
+					if (ecsManager.HasComponent<BloomComponent>(entity)) {
+						ecsManager.RemoveComponent<BloomComponent>(entity);
 					}
 				}
 				else if (request.componentType == "Transform") {
@@ -3660,6 +3694,9 @@ void InspectorPanel::DrawSharedComponentGeneric(const std::vector<Entity>& entit
 				}
 				else if (componentType == "DialogueComponent" && ecs.HasComponent<DialogueComponent>(otherEntity)) {
 					otherComponentPtr = &ecs.GetComponent<DialogueComponent>(otherEntity);
+				}
+				else if (componentType == "BloomComponent" && ecs.HasComponent<BloomComponent>(otherEntity)) {
+					otherComponentPtr = &ecs.GetComponent<BloomComponent>(otherEntity);
 				}
 				else if (componentType == "AudioListenerComponent" && ecs.HasComponent<AudioListenerComponent>(otherEntity)) {
 					otherComponentPtr = &ecs.GetComponent<AudioListenerComponent>(otherEntity);
