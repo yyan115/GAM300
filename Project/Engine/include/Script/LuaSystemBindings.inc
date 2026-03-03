@@ -57,6 +57,9 @@ BEGIN_SYSTEM("Input")
     // Axes (returns Vector2D object with .x and .y properties)
     FUNCTION("GetAxis", InputWrappers::GetAxis)
 
+    // Scroll wheel (desktop only; returns delta this frame, positive = scroll up)
+    FUNCTION("GetScrollY", InputWrappers::GetScrollY)
+
     // Entity-based touch position (Android joysticks)
     // Returns touch position relative to entity center - use for calculating joystick direction
     // Example: local pos = Input.GetActionTouchPosition("Movement")
@@ -301,6 +304,7 @@ END_SYSTEM()
 // ============================================================================
 BEGIN_SYSTEM("Engine")
     FUNCTION("FindTransformByName", &Lua_FindTransformByName)
+    FUNCTION("FindTransformByID", &Lua_FindTransformByID)
     FUNCTION("GetTransformPosition", &Lua_GetTransformPosition)
     FUNCTION("GetTransformWorldPosition", &Lua_GetTransformWorldPosition)
     FUNCTION("GetClipIndexByName", &Lua_FindCurrentClipByName)      //TEMPHACK
@@ -317,9 +321,12 @@ BEGIN_SYSTEM("Engine")
     FUNCTION("FindEntitiesWithScript", &EntityQueryWrappers::FindEntitiesWithScript)
     FUNCTION("GetEntityPosition", &EntityQueryWrappers::GetEntityPosition)
     FUNCTION("GetEntityName", &EntityQueryWrappers::GetEntityName)
+    FUNCTION("GetEntityTag", &EntityQueryWrappers::GetEntityTag)
+    FUNCTION("GetEntityLayer", &EntityQueryWrappers::GetEntityLayer)
     FUNCTION("IsEntityActive", &EntityQueryWrappers::IsEntityActive)
     FUNCTION("GetChildrenEntities", &EntityQueryWrappers::GetChildrenEntities)
     FUNCTION("GetParentEntity", &EntityQueryWrappers::GetParentEntity)
+    FUNCTION("SetParentEntity", &EntityQueryWrappers::SetParentEntity)
 
     FUNCTION("UpdateCacheTiming", &EntityQueryWrappers::UpdateCacheTiming)
     FUNCTION("UpdateEnemyCache", &EntityQueryWrappers::UpdateEnemyCache)

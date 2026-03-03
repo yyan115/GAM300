@@ -1231,10 +1231,26 @@ void GraphicsManager::RenderSceneForShadows(Shader& depthShader)
 		if (!modelItem || !modelItem->isVisible || !modelItem->model)
 			continue;
 
+		glm::mat4 modelMatrix = modelItem->transform.ConvertToGLM();
+
+		// Point light sphere culling: skip objects outside the light's range
+		if (m_shadowFarPlane > 0.0f)
+		{
+			AABB worldBBox = modelItem->model->GetBoundingBox().Transform(modelMatrix);
+			float sqDist = 0.0f;
+			for (int i = 0; i < 3; ++i)
+			{
+				float v = m_shadowLightPos[i];
+				if (v < worldBBox.min[i]) sqDist += (worldBBox.min[i] - v) * (worldBBox.min[i] - v);
+				if (v > worldBBox.max[i]) sqDist += (v - worldBBox.max[i]) * (v - worldBBox.max[i]);
+			}
+			if (sqDist > m_shadowFarPlane * m_shadowFarPlane)
+				continue;
+		}
+
 		count++;
 
 		// Set model matrix
-		glm::mat4 modelMatrix = modelItem->transform.ConvertToGLM();
 		depthShader.setMat4("model", modelMatrix);
 
 		// Handle animation
@@ -1447,11 +1463,12 @@ void GraphicsManager::RenderFogVolume(const FogVolumeComponent& item)
 	}
 
 	// --- Blending setup ---
+	glDisable(GL_DEPTH_TEST);       // Depth handled in shader via depth texture
 	glEnable(GL_CULL_FACE);
 	glCullFace(GL_FRONT);           // Render back faces only for volumetric ray-box effect
 	glEnable(GL_BLEND);
-	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);  // Standard alpha blend
-	glDepthMask(GL_FALSE);          // Don't write to depth buffer
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	glDepthMask(GL_FALSE);
 
 	item.fogShader->Activate();
 
@@ -1461,6 +1478,8 @@ void GraphicsManager::RenderFogVolume(const FogVolumeComponent& item)
 	item.fogShader->setMat4("modelInverse", glm::inverse(modelMatrix));
 
 	// --- Camera matrices ---
+	const float nearP = 0.1f;
+	const float farP  = 100.0f;
 	if (currentCamera)
 	{
 		float aspectRatio = currentFrameViewport.aspectRatio;
@@ -1468,12 +1487,25 @@ void GraphicsManager::RenderFogVolume(const FogVolumeComponent& item)
 		glm::mat4 projection = glm::perspective(
 			glm::radians(currentCamera->Zoom),
 			aspectRatio,
-			0.1f, 100.0f
+			nearP, farP
 		);
 		item.fogShader->setMat4("view", view);
 		item.fogShader->setMat4("projection", projection);
+		item.fogShader->setMat4("inverseView", glm::inverse(view));
+		item.fogShader->setMat4("inverseProjection", glm::inverse(projection));
 		item.fogShader->setVec3("cameraPos", currentCamera->Position);
+		item.fogShader->setFloat("nearPlane", nearP);
+		item.fogShader->setFloat("farPlane",  farP);
+		item.fogShader->setVec2("viewportSize",
+			glm::vec2(static_cast<float>(currentFrameViewport.width),
+			          static_cast<float>(currentFrameViewport.height)));
 	}
+
+	// --- Scene depth texture for soft intersection with solid geometry ---
+	unsigned int depthTex = PostProcessingManager::GetInstance().GetHDRDepthTexture();
+	glActiveTexture(GL_TEXTURE1);
+	glBindTexture(GL_TEXTURE_2D, depthTex);
+	item.fogShader->setInt("depthTexture", 1);
 
 	// --- Fog properties (all from FogVolumeComponent) ---
 	item.fogShader->setInt("fogShape", static_cast<int>(item.shape));
@@ -1518,9 +1550,13 @@ void GraphicsManager::RenderFogVolume(const FogVolumeComponent& item)
 	if (hasNoiseMap) {
 		item.noiseTexture->Unbind(0);
 	}
+	glActiveTexture(GL_TEXTURE1);
+	glBindTexture(GL_TEXTURE_2D, 0);
+	glActiveTexture(GL_TEXTURE0);
 	glDepthMask(GL_TRUE);
 	glDisable(GL_BLEND);
 	glCullFace(GL_BACK);
 	if (faceCullingEnabled) glEnable(GL_CULL_FACE);
 	else glDisable(GL_CULL_FACE);
+	glEnable(GL_DEPTH_TEST);
 }

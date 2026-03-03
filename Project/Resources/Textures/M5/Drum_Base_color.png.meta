@@ -1,0 +1,14 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "0007b7a6392b5eae-000462b846000047",
+        "source": "../../Resources/Textures/M5/Drum_Base_color.png",
+        "compiled": "../../Resources/Textures/M5/Drum_Base_color.dds"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp"
+    }
+}

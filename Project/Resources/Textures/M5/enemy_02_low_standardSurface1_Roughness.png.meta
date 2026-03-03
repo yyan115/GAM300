@@ -1,0 +1,14 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "00327c2b25a29414-000462073e000011",
+        "source": "../../Resources/Textures/M5/enemy_02_low_standardSurface1_Roughness.png",
+        "compiled": "../../Resources/Textures/M5/enemy_02_low_standardSurface1_Roughness.dds"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp"
+    }
+}

@@ -46,6 +46,7 @@ public:
     bool IsActionJustReleased(const std::string& action) override;
     glm::vec2 GetActionTouchPosition(const std::string& action) override;
     glm::vec2 GetAxis(const std::string& axisName) override;
+    float GetScrollY() override;
 
     bool IsDragging() override;
     glm::vec2 GetDragDelta() override;

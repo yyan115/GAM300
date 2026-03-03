@@ -120,6 +120,10 @@ public:
     const Frustum& GetFrustum() const { return viewFrustum; }
     void ENGINE_API UpdateFrustum(); // Update frustum based on current camera and viewport
 
+    // Per-light shadow culling: call before each point light shadow render
+    void SetPointShadowCullData(const glm::vec3& lightPos, float farPlane) { m_shadowLightPos = lightPos; m_shadowFarPlane = farPlane; }
+    void ClearPointShadowCullData() { m_shadowFarPlane = -1.0f; }
+
     const SortingStats& GetSortingStats() const { return m_sortingStats; }
 
 private:
@@ -196,6 +200,11 @@ private:
     std::mutex renderQueueMutex;
 
     void RenderSceneForShadows(Shader& depthShader);
+
+    // Current point light shadow data for per-light culling
+    // Set before each point shadow render, -1 farPlane means directional (no sphere cull)
+    glm::vec3 m_shadowLightPos = glm::vec3(0.0f);
+    float m_shadowFarPlane = -1.0f;
 
     // State sorting support
     ResourceIdCache m_idCache;

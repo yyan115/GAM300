@@ -22,6 +22,11 @@ uniform float cgContrast;
 uniform float cgSaturation;
 uniform vec3 cgTint;
 
+// Chromatic Aberration
+uniform bool caEnabled;
+uniform float caIntensity;
+uniform float caPadding;
+
 vec3 ReinhardToneMapping(vec3 color)
 {
     return color / (color + vec3(1.0));
@@ -44,7 +49,25 @@ vec3 ACESFilm(vec3 x)
 
 void main()
 {
-    vec3 hdrColor = texture(hdrBuffer, TexCoords).rgb;
+    vec3 hdrColor;
+    if (caEnabled && caIntensity > 0.0)
+    {
+        vec2 uv = TexCoords - 0.5;
+        float dist = length(uv);
+        // Padding controls the falloff: higher padding = effect only at edges
+        float edgeFactor = smoothstep(caPadding * 0.5, 1.0, dist * 2.0);
+        float offset = caIntensity * 0.01 * edgeFactor;
+
+        // Sample each channel with offset toward/away from center
+        vec2 dir = normalize(uv + 0.0001);
+        hdrColor.r = texture(hdrBuffer, TexCoords + dir * offset).r;
+        hdrColor.g = texture(hdrBuffer, TexCoords).g;
+        hdrColor.b = texture(hdrBuffer, TexCoords - dir * offset).b;
+    }
+    else
+    {
+        hdrColor = texture(hdrBuffer, TexCoords).rgb;
+    }
     
     // Apply exposure adjustment
     vec3 mapped = hdrColor * exposure;

@@ -176,6 +176,11 @@ void CameraSystem::Update()
 		ppManager.SetCGContrast(camComp.cgContrast);
 		ppManager.SetCGSaturation(camComp.cgSaturation);
 		ppManager.SetCGTint(camComp.cgTint);
+
+		// Chromatic Aberration
+		ppManager.SetChromaticAberrationEnabled(camComp.chromaticAberrationEnabled);
+		ppManager.SetChromaticAberrationIntensity(camComp.chromaticAberrationIntensity);
+		ppManager.SetChromaticAberrationPadding(camComp.chromaticAberrationPadding);
 	}
 	else
 	{

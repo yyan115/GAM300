@@ -40,5 +40,8 @@ REFL_REGISTER_START(CameraComponent)
 	REFL_REGISTER_PROPERTY(cgBrightness)
 	REFL_REGISTER_PROPERTY(cgContrast)
 	REFL_REGISTER_PROPERTY(cgSaturation)
+	REFL_REGISTER_PROPERTY(chromaticAberrationEnabled)
+	REFL_REGISTER_PROPERTY(chromaticAberrationIntensity)
+	REFL_REGISTER_PROPERTY(chromaticAberrationPadding)
 REFL_REGISTER_END
 #pragma endregion

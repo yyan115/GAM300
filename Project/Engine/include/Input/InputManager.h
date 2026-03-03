@@ -81,6 +81,13 @@ public:
      */
     virtual glm::vec2 GetAxis(const std::string& axisName) = 0;
 
+    /**
+     * @brief Get scroll wheel delta this frame (desktop only)
+     * @return Scroll amount (positive = scroll up/zoom in, negative = scroll down/zoom out)
+     *         Resets to 0 after being read. Returns 0 on Android.
+     */
+    virtual float GetScrollY() { return 0.0f; }
+
     // ========== Unhandled Touch / Camera Drag (Android) ==========
 
     /**

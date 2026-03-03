@@ -100,6 +100,11 @@ public:
     float cgSaturation = 1.0f;
     glm::vec3 cgTint = glm::vec3(1.0f);
 
+    // === Post-Processing: Chromatic Aberration ===
+    bool chromaticAberrationEnabled = false;
+    float chromaticAberrationIntensity = 0.5f;  // Strength of RGB separation (0-3)
+    float chromaticAberrationPadding = 0.5f;    // Edge falloff: 0 = everywhere, 1 = only at very edges
+
     CameraComponent() = default;
     ~CameraComponent() = default;
 };

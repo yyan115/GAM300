@@ -30,7 +30,8 @@ bool PostProcessingManager::Initialize()
     // Initialize member variables
     hdrFramebuffer = 0;
     hdrColorTexture = 0;
-    hdrDepthRenderbuffer = 0;
+    hdrBloomEmissionTexture = 0;
+    hdrDepthTexture = 0;
     hdrWidth = 0;
     hdrHeight = 0;
     screenQuadVAO = 0;
@@ -141,6 +142,9 @@ void PostProcessingManager::Process(unsigned int inputTexture, unsigned int outp
         hdrEffect->SetCGContrast(cgContrast_);
         hdrEffect->SetCGSaturation(cgSaturation_);
         hdrEffect->SetCGTint(cgTint_);
+        hdrEffect->SetChromaticAberrationEnabled(caEnabled_);
+        hdrEffect->SetChromaticAberrationIntensity(caIntensity_);
+        hdrEffect->SetChromaticAberrationPadding(caPadding_);
 
         // Bind output framebuffer
         glBindFramebuffer(GL_FRAMEBUFFER, currentOutput);
@@ -202,11 +206,16 @@ unsigned int PostProcessingManager::CreateHDRFramebuffer(int width, int height)
     // Default: draw to attachment 0 only (bloom MRT enabled on demand)
     glDrawBuffer(GL_COLOR_ATTACHMENT0);
 
-    // Create depth renderbuffer
-    glGenRenderbuffers(1, &hdrDepthRenderbuffer);
-    glBindRenderbuffer(GL_RENDERBUFFER, hdrDepthRenderbuffer);
-    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, width, height);
-    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, hdrDepthRenderbuffer);
+    // Create depth texture (sampleable, so fog can read scene depth for soft intersections)
+    glGenTextures(1, &hdrDepthTexture);
+    glBindTexture(GL_TEXTURE_2D, hdrDepthTexture);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT24, width, height, 0, GL_DEPTH_COMPONENT, GL_UNSIGNED_INT, nullptr);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_MODE, GL_NONE);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, hdrDepthTexture, 0);
 
     // Check framebuffer completeness
     if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
@@ -229,10 +238,10 @@ void PostProcessingManager::DeleteHDRFramebuffer()
         glDeleteTextures(1, &hdrBloomEmissionTexture);
         hdrBloomEmissionTexture = 0;
     }
-    if (hdrDepthRenderbuffer != 0)
+    if (hdrDepthTexture != 0)
     {
-        glDeleteRenderbuffers(1, &hdrDepthRenderbuffer);
-        hdrDepthRenderbuffer = 0;
+        glDeleteTextures(1, &hdrDepthTexture);
+        hdrDepthTexture = 0;
     }
     if (hdrFramebuffer != 0)
     {
@@ -330,6 +339,11 @@ void PostProcessingManager::ResetRuntimeState()
     cgContrast_ = 1.0f;
     cgSaturation_ = 1.0f;
     cgTint_ = glm::vec3(1.0f);
+
+    // Reset chromatic aberration
+    caEnabled_ = false;
+    caIntensity_ = 0.5f;
+    caPadding_ = 0.5f;
 
     // Reset layer exclusion
     excludedLayerMask = 0;
