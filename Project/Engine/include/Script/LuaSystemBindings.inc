@@ -301,6 +301,7 @@ END_SYSTEM()
 // ============================================================================
 BEGIN_SYSTEM("Engine")
     FUNCTION("FindTransformByName", &Lua_FindTransformByName)
+    FUNCTION("FindTransformByID", &Lua_FindTransformByID)
     FUNCTION("GetTransformPosition", &Lua_GetTransformPosition)
     FUNCTION("GetTransformWorldPosition", &Lua_GetTransformWorldPosition)
     FUNCTION("GetClipIndexByName", &Lua_FindCurrentClipByName)      //TEMPHACK

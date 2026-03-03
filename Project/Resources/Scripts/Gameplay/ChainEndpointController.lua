@@ -47,7 +47,9 @@ return Component {
         self._endpointTransform = nil
         if self._entityId and Engine then
             pcall(function()
-                if Engine.FindTransformByEntity then
+                if Engine.FindTransformByID then
+                    self._endpointTransform = Engine.FindTransformByID(self._entityId)
+                elseif Engine.FindTransformByEntity then
                     self._endpointTransform = Engine.FindTransformByEntity(self._entityId)
                 elseif Engine.GetTransformForEntity then
                     self._endpointTransform = Engine.GetTransformForEntity(self._entityId)
@@ -312,82 +314,38 @@ return Component {
 
         -- Cache root transform via entity ID to avoid FindTransformByName returning
         -- a stale/wrong instance when multiple enemies share the same name
-        -- Resolve transforms strictly by entity ID using the same API chain used in Start
-        local function findTransformById(entityId)
-            local tr = nil
-            pcall(function()
-                if Engine.FindTransformByEntity then
-                    tr = Engine.FindTransformByEntity(entityId)
-                elseif Engine.GetTransformForEntity then
-                    tr = Engine.GetTransformForEntity(entityId)
-                end
-            end)
-            return tr
-        end
+        self._hookedTransform = nil
+        self._hookedColliderTransform = nil
+        pcall(function()
+            self._hookedTransform = Engine.FindTransformByID(rootId)
+            self._hookedColliderTransform = Engine.FindTransformByID(otherEntityId)
+        end)
+        self:_dbg("[ChainEndpointController] hookedTransform=" .. tostring(self._hookedTransform ~= nil) .. " colliderTransform=" .. tostring(self._hookedColliderTransform ~= nil))
 
-        self._hookedTransform = findTransformById(rootId)
-        if self._hookedTransform then
-            self:_dbg("[ChainEndpointController] Root transform cached by id=" .. tostring(rootId) .. " '" .. rootName .. "'")
-        else
-            self:_dbg("[ChainEndpointController] WARNING: could not get root transform for id=" .. tostring(rootId) .. " '" .. rootName .. "'")
-        end
-
-        self._hookedColliderTransform = findTransformById(otherEntityId)
-        if self._hookedColliderTransform then
-            self:_dbg("[ChainEndpointController] Collider transform cached by id=" .. tostring(otherEntityId) .. " '" .. otherName .. "'")
-        else
-            self:_dbg("[ChainEndpointController] WARNING: could not get collider transform for id=" .. tostring(otherEntityId) .. " '" .. otherName .. "' — falling back to root")
-            self._hookedColliderTransform = self._hookedTransform
-        end
-
-        -- Snap endpoint along the line from collider origin toward impact point.
-        -- HookSnapDistance = how far from the collider origin the endpoint sits.
-        -- e.g. total dist=10, snapDist=1 -> endpoint is 1 unit from collider origin
-        --      toward the impact point.
         local impactX = self._lastEndpointX or 0
         local impactY = self._lastEndpointY or 0
         local impactZ = self._lastEndpointZ or 0
-
-        self:_dbg(string.format("[ChainEndpointController][SNAP] impactPos=(%.3f,%.3f,%.3f)", impactX, impactY, impactZ))
-        self:_dbg(string.format("[ChainEndpointController][SNAP] _endpointTransform=%s _hookedColliderTransform=%s",
-            tostring(self._endpointTransform ~= nil),
-            tostring(self._hookedColliderTransform ~= nil)))
-
-        -- Get collider world position via GetTransformWorldPosition on the transform
-        -- cached by entity ID (not by name, which can return stale instances).
-        local colliderPivotX, colliderPivotY, colliderPivotZ = impactX, impactY, impactZ
-
-        if self._hookedColliderTransform and Engine and Engine.GetTransformWorldPosition then
-            local ok, a, b, c = pcall(function()
-                return Engine.GetTransformWorldPosition(self._hookedColliderTransform)
-            end)
-            if ok and a ~= nil then
-                if type(a) == "table" then
-                    colliderPivotX = a[1] or a.x or 0
-                    colliderPivotY = a[2] or a.y or 0
-                    colliderPivotZ = a[3] or a.z or 0
-                elseif type(a) == "number" then
-                    colliderPivotX, colliderPivotY, colliderPivotZ = a, b, c
-                end
-                self:_dbg(string.format("[ChainEndpointController][SNAP] collider world pos=(%.3f,%.3f,%.3f)", colliderPivotX, colliderPivotY, colliderPivotZ))
-            else
-                self:_dbg("[ChainEndpointController][SNAP] WARNING: GetTransformWorldPosition failed — using impact point as pivot")
-            end
-        else
-            self:_dbg("[ChainEndpointController][SNAP] WARNING: no collider transform or API — using impact point as pivot")
-        end
-
-        -- Direction vector from collider pivot to impact point
-        local dx = impactX - colliderPivotX
-        local dy = impactY - colliderPivotY
-        local dz = impactZ - colliderPivotZ
-        local totalDist = math.sqrt(dx*dx + dy*dy + dz*dz)
         local snapDist = tonumber(self.HookSnapDistance) or 0
 
-        self:_dbg(string.format("[ChainEndpointController][SNAP] colliderPivot=(%.3f,%.3f,%.3f) totalDist=%.3f snapDist=%.3f",
-            colliderPivotX, colliderPivotY, colliderPivotZ, totalDist, snapDist))
+        -- Get root world position via its transform handle
+        local rootWX, rootWY, rootWZ = impactX, impactY, impactZ
+        if self._hookedTransform then
+            local ok, a, b, c = pcall(function() return Engine.GetTransformWorldPosition(self._hookedTransform) end)
+            if ok and a ~= nil then
+                if type(a) == "table" then rootWX, rootWY, rootWZ = a[1] or a.x or 0, a[2] or a.y or 0, a[3] or a.z or 0
+                elseif type(a) == "number" then rootWX, rootWY, rootWZ = a, b, c end
+            end
+        end
+        self:_dbg(string.format("[ChainEndpointController][SNAP] impact=(%.3f,%.3f,%.3f) rootWorld=(%.3f,%.3f,%.3f)", impactX, impactY, impactZ, rootWX, rootWY, rootWZ))
 
-        -- Parent first — engine recalculates our localPosition relative to root automatically.
+        -- World offset from root pivot to impact point
+        local dx = impactX - rootWX
+        local dy = impactY - rootWY
+        local dz = impactZ - rootWZ
+        local totalDist = math.sqrt(dx*dx + dy*dy + dz*dz)
+        self:_dbg(string.format("[ChainEndpointController][SNAP] totalDist=%.3f snapDist=%.3f", totalDist, snapDist))
+
+        -- Parent first — engine recalculates our localPosition relative to root
         if self._entityId and Engine and Engine.SetParentEntity then
             local ok = pcall(function() Engine.SetParentEntity(self._entityId, rootId) end)
             if ok then
@@ -397,45 +355,27 @@ return Component {
                 self._isParented = false
                 self:_dbg("[ChainEndpointController] WARNING: SetParentEntity failed for root '" .. rootName .. "'")
             end
-        else
-            self:_dbg("[ChainEndpointController] Note: SetParentEntity unavailable — endpoint will not follow enemy automatically")
         end
 
-        -- Read back the local position the engine assigned, then scale by snapDist/totalDist.
-        -- This places the endpoint the correct proportion from root toward the impact point.
-        if self._isParented and self._endpointTransform and totalDist > 1e-6 and snapDist > 1e-6 then
-            local ratio = math.min(snapDist, totalDist) / totalDist
-            local lx, ly, lz = nil, nil, nil
-            if Engine and Engine.GetTransformLocalPosition then
-                local ok, a, b, c = pcall(function()
-                    return Engine.GetTransformLocalPosition(self._endpointTransform)
-                end)
-                if ok and a ~= nil then
-                    if type(a) == "table" then lx, ly, lz = a[1] or a.x or 0, a[2] or a.y or 0, a[3] or a.z or 0
-                    elseif type(a) == "number" then lx, ly, lz = a, b, c end
+        -- Write snapped local position.
+        -- snapDist=0 means snap exactly to root pivot (local 0,0,0).
+        -- snapDist>0 means sit that many units from the pivot toward the impact point.
+        if self._isParented and self._endpointTransform then
+            local sx, sy, sz = 0, 0, 0
+            if snapDist > 1e-6 and totalDist > 1e-6 then
+                local ratio = math.min(snapDist, totalDist) / totalDist
+                sx, sy, sz = dx * ratio, dy * ratio, dz * ratio
+            end
+            pcall(function()
+                local pos = self._endpointTransform.localPosition
+                if type(pos) == "userdata" or type(pos) == "table" then
+                    pos.x, pos.y, pos.z = sx, sy, sz
+                else
+                    self._endpointTransform.localPosition = { x = sx, y = sy, z = sz }
                 end
-            end
-            if not lx then
-                pcall(function()
-                    local pos = self._endpointTransform.localPosition
-                    if pos then lx, ly, lz = pos.x or 0, pos.y or 0, pos.z or 0 end
-                end)
-            end
-            if lx then
-                local sx, sy, sz = lx * ratio, ly * ratio, lz * ratio
-                pcall(function()
-                    local pos = self._endpointTransform.localPosition
-                    if type(pos) == "userdata" or type(pos) == "table" then
-                        pos.x, pos.y, pos.z = sx, sy, sz
-                    else
-                        self._endpointTransform.localPosition = { x = sx, y = sy, z = sz }
-                    end
-                    self._endpointTransform.isDirty = true
-                end)
-                self:_dbg(string.format("[ChainEndpointController][SNAP] local=(%.3f,%.3f,%.3f) * ratio=%.3f -> (%.3f,%.3f,%.3f)", lx, ly, lz, ratio, sx, sy, sz))
-            else
-                self:_dbg("[ChainEndpointController][SNAP] WARNING: could not read local position after parenting — leaving at pivot")
-            end
+                self._endpointTransform.isDirty = true
+            end)
+            self:_dbg(string.format("[ChainEndpointController][SNAP] snapDist=%.3f -> local=(%.3f,%.3f,%.3f)", snapDist, sx, sy, sz))
         end
 
         -- Publish hit so ChainBootstrap locks the controller and snapshots lockedEndPoint
