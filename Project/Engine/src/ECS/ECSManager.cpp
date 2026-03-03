@@ -237,6 +237,8 @@ void ECSManager::Initialize() {
 		Signature signature;
 		signature.set(GetComponentID<DialogueComponent>());
 		SetSystemSignature<DialogueSystem>(signature);
+	}
+
 	fogSystem = RegisterSystem<FogSystem>();
 	{
 		Signature signature;
