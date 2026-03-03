@@ -35,6 +35,7 @@ function M.New(params)
 
     self.endPointLocked = false     -- true only after OnTriggerEnter fires via chain.endpoint_hit_entity
     self.lockedEndPoint = {0,0,0}   -- updated every frame by ChainEndpointController while hooked
+    self.hookedTag = ""             -- tag of the hooked entity root, set at hit time
 
     self._raycastSnapped = false    -- true after raycast hit, before trigger fires
     self._lockedChainLen = 0.0      -- chainLen at moment retraction begins
@@ -63,6 +64,7 @@ function M:StartExtension(forward, maxLength, linkMaxDistance)
 
     self.endPointLocked = false
     self.lockedEndPoint = {0,0,0}
+    self.hookedTag = ""
 
     local maxLen = tonumber(maxLength) or tonumber(self.params.MaxLength) or 0
     local linkMax = tonumber(linkMaxDistance) or tonumber(self.params.LinkMaxDistance) or 0
@@ -188,6 +190,62 @@ function M:Update(dt, settings)
         sx,sy,sz = self.startPos[1] or 0, self.startPos[2] or 0, self.startPos[3] or 0
     end
     self.startPos[1], self.startPos[2], self.startPos[3] = sx, sy, sz
+
+    -- Movement constraint: active when hooked (endPointLocked) OR snapped to ground (raycastSnapped).
+    -- Stores result on self.constraintResult for ChainBootstrap to publish.
+    local constraintActive = (self.endPointLocked or self._raycastSnapped) and not self.isRetracting and not self._flopping
+    if constraintActive then
+        local slack    = tonumber(settings.ChainSlackDistance) or 0
+        local dragTag  = settings.DragTag or ""
+        local ex0 = self.lockedEndPoint[1]
+        local ey0 = self.lockedEndPoint[2]
+        local ez0 = self.lockedEndPoint[3]
+        local playerDist = vec_len(sx - ex0, sy - ey0, sz - ez0)
+        local chainLength = self.chainLen or 0
+        local isDragType = (dragTag ~= "" and self.hookedTag == dragTag)
+        local hardLimit = chainLength + slack
+
+        print(string.format("[ChainController][CONSTRAINT] locked=%s snapped=%s playerDist=%.3f chainLen=%.3f slack=%.3f hardLimit=%.3f",
+            tostring(self.endPointLocked), tostring(self._raycastSnapped),
+            playerDist, chainLength, slack, hardLimit))
+
+        if isDragType then
+            if playerDist > chainLength + 1e-4 then
+                local dx = sx - ex0
+                local dy = sy - ey0
+                local dz = sz - ez0
+                local dist = vec_len(dx, dy, dz)
+                if dist > 1e-6 then
+                    local nx, ny, nz = dx/dist, dy/dist, dz/dist
+                    self.constraintResult = {
+                        ratio = 0, exceeded = false, drag = true,
+                        targetX = ex0 + nx * chainLength,
+                        targetY = ey0 + ny * chainLength,
+                        targetZ = ez0 + nz * chainLength,
+                    }
+                end
+            else
+                self.constraintResult = { ratio = 0, exceeded = false, drag = false }
+            end
+        else
+            local ratio = 0
+            if slack > 1e-6 then
+                ratio = math.max(0, math.min(1, (playerDist - chainLength) / slack))
+            end
+            if playerDist > hardLimit + 1e-4 then
+                print("[ChainController][CONSTRAINT] EXCEEDED -> flopping")
+                self.endPointLocked = false
+                self._raycastSnapped = false
+                self._flopping = true
+                self.hookedTag = ""
+                self.constraintResult = { ratio = 0, exceeded = true, drag = false }
+            else
+                self.constraintResult = { ratio = ratio, exceeded = false, drag = false }
+            end
+        end
+    else
+        self.constraintResult = { ratio = 0, exceeded = false, drag = false }
+    end
 
     -- Ground clamp (single downward ray, O(1))
     if settings.GroundClamp and Physics and Physics.Raycast then

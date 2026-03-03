@@ -384,6 +384,7 @@ return Component {
                 entityId   = otherEntityId,
                 entityName = otherName,
                 rootName   = rootName,
+                rootTag    = tag,
             })
         end
     end,

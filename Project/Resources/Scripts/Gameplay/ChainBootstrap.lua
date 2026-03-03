@@ -23,7 +23,9 @@ return Component {
         GroundClampOffset = 0.1,
         WallClamp = true,
         WallClampInterval = 10,
-        WallClampRadius = 0
+        WallClampRadius = 0,
+        ChainSlackDistance = 1.0,   -- extra metres player can move past chainLen before chain flops
+        DragTag = "HeavyEnemy",     -- entity tag that drags the player instead of flopping
     },
 
     _unpack_pos = function(self, a, b, c)
@@ -266,6 +268,7 @@ return Component {
                     if self.controller then
                         print("[ChainBootstrap] Endpoint hit entity '" .. tostring(payload.entityName) .. "' — locking endpoint")
                         self.controller.endPointLocked = true
+                        self.controller.hookedTag = payload.rootTag or ""
                         -- Snapshot lockedEndPoint at moment of hit as initial value.
                         -- ChainEndpointController will keep updating it every frame via
                         -- chain.endpoint_hooked_position so Verlet stays pinned correctly.
@@ -330,6 +333,8 @@ return Component {
             WallClamp = self.WallClamp,
             WallClampInterval = self.WallClampInterval,
             WallClampRadius = self.WallClampRadius,
+            ChainSlackDistance = self.ChainSlackDistance,
+            DragTag = self.DragTag,
             AnchorAngleThresholdRad = math.rad(self.AnchorAngleThresholdDeg or 45),
             PinEndWhenExtended = self.PinEndWhenExtended,
             getStart = function()
@@ -346,6 +351,14 @@ return Component {
 
         local positions, startPos, endPos = self.controller:Update(dt, settings)
         local activeN = self.controller.activeN
+
+        -- Publish movement constraint — ChainController computed it, Bootstrap owns event_bus
+        if self.controller.constraintResult and _G.event_bus and _G.event_bus.publish then
+            local cr = self.controller.constraintResult
+            print(string.format("[ChainBootstrap][CONSTRAINT] publishing ratio=%.3f exceeded=%s drag=%s",
+                cr.ratio or 0, tostring(cr.exceeded), tostring(cr.drag)))
+            _G.event_bus.publish("chain.movement_constraint", cr)
+        end
 
         self.linkHandler:ApplyPositions(positions, activeN)
 
@@ -372,31 +385,14 @@ return Component {
                 if not self.controller.endPointLocked then
                     self:_write_world_pos(self._endpointTransform, endPos[1], endPos[2], endPos[3])
 
-                    -- Rotation: only skip when snapped and not flopping
-                    if self.controller._raycastSnapped and not public.Flopping then goto skip_rotation end
+                    -- Rotation: only update when not snapped — endpoint is stationary
+                    -- at raycast hit point so no need to reorient every frame
+                    if self.controller._raycastSnapped then goto skip_rotation end
 
                     do
                     -- Rotation: orient endpoint along chain forward direction
-                    local fx, fy, fz
-                    local isFlopping = public.Flopping
-                    if isFlopping then
-                        -- Use actual last-link direction from physics positions
-                        local aN = self.controller.activeN
-                        local positions = self.controller.positions
-                        if aN >= 2 and positions[aN] and positions[aN-1] then
-                            local dx = positions[aN][1] - positions[aN-1][1]
-                            local dy = positions[aN][2] - positions[aN-1][2]
-                            local dz = positions[aN][3] - positions[aN-1][3]
-                            local dl = math.sqrt(dx*dx + dy*dy + dz*dz)
-                            if dl > 1e-6 then
-                                fx, fy, fz = dx/dl, dy/dl, dz/dl
-                            end
-                        end
-                    end
-                    if not fx then
-                        local fwd = self.controller.lastForward
-                        fx, fy, fz = fwd[1] or 0, fwd[2] or 0, fwd[3] or 1
-                    end
+                    local fwd = self.controller.lastForward
+                    local fx, fy, fz = fwd[1] or 0, fwd[2] or 0, fwd[3] or 1
 
                     local ux, uy, uz = 0, 1, 0
                     local dot = ux*fx + uy*fy + uz*fz
