@@ -1,4 +1,4 @@
--- ChainController.lua (refactored with raycast collision detection)
+-- ChainController.lua
 local VerletAdapter = require("extension.verletAdapter")
 local M = {}
 
@@ -14,7 +14,6 @@ function M.New(params)
     self.params = params or {}
     self.n = math.max(1, tonumber(self.params.NumberOfLinks) or 1)
 
-    -- allocate arrays once (positions/prev/invMass are owned by controller and passed to Verlet)
     self.positions = {}
     self.prev = {}
     self.invMass = {}
@@ -24,21 +23,24 @@ function M.New(params)
         self.invMass[i] = 1
     end
 
-    self.activeN = self.n      -- how many links from the pool are currently active; set on StartExtension
-    self.anchors = {}           -- map index->true; ComputeAnchors only marks anchors (does not mutate invMass)
-    self.chainLen = 0.0         -- authoritative logical chain length (meters)
+    self.activeN = self.n
+    self.anchors = {}
+    self.chainLen = 0.0
     self.extensionTime = 0.0
     self.isExtending = false
     self.isRetracting = false
-    self.lastForward = {0,0,1}  -- use component to set a different forward if desired (StartExtension(forward))
+    self.lastForward = {0,0,1}
     self.startPos = {0,0,0}
     self.endPos = {0,0,0}
-    
-    -- Track if endpoint is locked to a collision point
-    self.endPointLocked = false
-    self.lockedEndPoint = {0,0,0}
 
-    -- Verlet state is a thin wrapper over these arrays
+    self.endPointLocked = false     -- true only after OnTriggerEnter fires via chain.endpoint_hit_entity
+    self.lockedEndPoint = {0,0,0}   -- updated every frame by ChainEndpointController while hooked
+    self.hookedTag = ""             -- tag of the hooked entity root, set at hit time
+
+    self._raycastSnapped = false    -- true after raycast hit, before trigger fires
+    self._lockedChainLen = 0.0      -- chainLen at moment retraction begins
+    self._flopping = false          -- true when max distance reached with no hit — end link is free
+
     self.VerletState = VerletAdapter.Init{ positions = self.positions, prev = self.prev, invMass = self.invMass }
     return setmetatable(self, { __index = M })
 end
@@ -51,22 +53,23 @@ function M:SetEndPos(x,y,z)
     self.endPos = {x or 0, y or 0, z or 0}
 end
 
--- Accept optional forward vector, maxLength and linkMaxDistance to compute active link count from pool
 function M:StartExtension(forward, maxLength, linkMaxDistance)
     self.isExtending = true
     self.isRetracting = false
     self.extensionTime = 0
     self.chainLen = 0
-    
-    -- Reset endpoint lock when starting new extension
+    self._lockedChainLen = 0
+    self._raycastSnapped = false
+    self._flopping = false
+
     self.endPointLocked = false
     self.lockedEndPoint = {0,0,0}
+    self.hookedTag = ""
 
-    -- Calculate how many links are needed from the pool based on max length and link max distance
     local maxLen = tonumber(maxLength) or tonumber(self.params.MaxLength) or 0
     local linkMax = tonumber(linkMaxDistance) or tonumber(self.params.LinkMaxDistance) or 0
     if linkMax > 0 and maxLen > 0 then
-        local needed = math.ceil(maxLen / linkMax) + 1  -- +1 for the start/anchor link
+        local needed = math.ceil(maxLen / linkMax) + 1
         self.activeN = math.min(needed, self.n)
         print(string.format("[ChainController] StartExtension: MaxLength=%.3f LinkMaxDistance=%.4f needed=%d poolSize=%d activeN=%d",
             maxLen, linkMax, needed, self.n, self.activeN))
@@ -91,13 +94,15 @@ function M:StartRetraction()
     if (self.chainLen or 0) <= 0 then return end
     self.isRetracting = true
     self.isExtending = false
-    
-    -- Unlock endpoint when retracting
-    self.endPointLocked = false
+    self._raycastSnapped = false
+    self._flopping = false
+    self.hookedTag = ""
+    -- Snapshot chainLen at moment retraction begins so we can interpolate
+    -- from lockedEndPoint back to startPos correctly
+    self._lockedChainLen = self.chainLen
+    -- Do NOT clear endPointLocked here — Update clears it when chainLen hits 0
 end
 
--- Detect anchors (corner detection) and record them without mutating invMass here.
--- Anchor application to invMass happens each update so controller remains authoritative.
 function M:ComputeAnchors(angleThresholdRad)
     angleThresholdRad = angleThresholdRad or math.rad(45)
     self.anchors = {}
@@ -120,50 +125,36 @@ function M:ComputeAnchors(angleThresholdRad)
     end
 end
 
--- Perform raycast to detect collision and lock endpoint
 function M:PerformRaycast(sx, sy, sz, maxDistance)
-    if not Physics or not Physics.Raycast then
-        return nil
-    end
-    
+    if not Physics or not Physics.Raycast then return nil end
     local fx, fy, fz = self.lastForward[1] or 0, self.lastForward[2] or 0, self.lastForward[3] or 1
-    
-    -- Normalize direction
     local nx, ny, nz = normalize(fx, fy, fz)
-    
-    -- Perform raycast
     local hitDistance = Physics.Raycast(sx, sy, sz, nx, ny, nz, maxDistance)
-    
     if hitDistance > 0 then
-        -- Hit something! Calculate hit point
-        local hitX = sx + nx * hitDistance
-        local hitY = sy + ny * hitDistance
-        local hitZ = sz + nz * hitDistance
-        
         return {
             hit = true,
             distance = hitDistance,
-            hitPoint = {hitX, hitY, hitZ}
+            hitPoint = {
+                sx + nx * hitDistance,
+                sy + ny * hitDistance,
+                sz + nz * hitDistance
+            }
         }
     end
-    
     return nil
 end
 
--- Controller update: authoritative chainLen -> produce startPos/endPos, segmentLen and per-link invMass.
--- Returns positions (for transform writing), startPos, endPos.
 function M:Update(dt, settings)
     settings = settings or {}
 
-    local chainSpeed = tonumber(settings.ChainSpeed) or tonumber(self.params.ChainSpeed) or 10
-    local maxLenSetting = tonumber(settings.MaxLength) or tonumber(self.params.MaxLength) or 0
-    local isElastic = (settings.IsElastic ~= nil) and settings.IsElastic or (self.params.IsElastic == true)
-    local linkMax = tonumber(settings.LinkMaxDistance) or tonumber(self.params.LinkMaxDistance) or nil
+    local chainSpeed    = tonumber(settings.ChainSpeed)      or tonumber(self.params.ChainSpeed)      or 10
+    local maxLenSetting = tonumber(settings.MaxLength)       or tonumber(self.params.MaxLength)       or 0
+    local isElastic     = (settings.IsElastic ~= nil) and settings.IsElastic or (self.params.IsElastic == true)
+    local linkMax       = tonumber(settings.LinkMaxDistance) or tonumber(self.params.LinkMaxDistance) or nil
 
-    -- Use activeN for all per-link operations
     local aN = self.activeN
 
-    -- 1) Update authoritative chainLen based on extending/retracting
+    -- 1) Update chainLen
     if self.isExtending then
         self.extensionTime = self.extensionTime + dt
         local desired = chainSpeed * self.extensionTime
@@ -173,6 +164,11 @@ function M:Update(dt, settings)
             if desired > maxAllowed then desired = maxAllowed end
         end
         self.chainLen = desired
+        -- Max distance reached with no raycast hit — release end link to flop freely
+        if maxLenSetting and maxLenSetting > 0 and desired >= maxLenSetting and not self._raycastSnapped and not self.endPointLocked then
+            self.isExtending = false
+            self._flopping = true
+        end
     end
 
     if self.isRetracting then
@@ -181,10 +177,11 @@ function M:Update(dt, settings)
             self.isRetracting = false
             self.chainLen = 0
             self.endPointLocked = false
+            self._raycastSnapped = false
         end
     end
 
-    -- 2) Resolve start world position once (use settings.getStart if provided)
+    -- 2) Resolve start world position
     local sx,sy,sz = 0,0,0
     if type(settings.getStart) == "function" then
         sx,sy,sz = settings.getStart()
@@ -195,8 +192,67 @@ function M:Update(dt, settings)
     end
     self.startPos[1], self.startPos[2], self.startPos[3] = sx, sy, sz
 
-    -- Single downward raycast from start point to get global ground floor for chain clamping.
-    -- Only one raycast per frame regardless of link count (O(1)).
+    -- Movement constraint: active when hooked (endPointLocked) OR snapped to ground (raycastSnapped).
+    -- Stores result on self.constraintResult for ChainBootstrap to publish.
+    local constraintActive = (self.endPointLocked or self._raycastSnapped) and not self.isRetracting and not self._flopping
+    if constraintActive then
+        local slack    = math.max(0.5, tonumber(settings.ChainSlackDistance) or 0.5)
+        local dragTag  = settings.DragTag or ""
+        local ex0 = self.lockedEndPoint[1]
+        local ey0 = self.lockedEndPoint[2]
+        local ez0 = self.lockedEndPoint[3]
+        local playerDist = vec_len(sx - ex0, sy - ey0, sz - ez0)
+        local chainLength = self.chainLen or 0
+        local isDragType = (dragTag ~= "" and self.hookedTag == dragTag)
+        local hardLimit = chainLength + slack
+
+        print(string.format("[ChainController][CONSTRAINT] locked=%s snapped=%s playerDist=%.3f chainLen=%.3f slack=%.3f hardLimit=%.3f hookedTag='%s'",
+            tostring(self.endPointLocked), tostring(self._raycastSnapped),
+            playerDist, chainLength, slack, hardLimit, tostring(self.hookedTag)))
+
+        if isDragType then
+            if playerDist > chainLength + 1e-4 then
+                local dx = sx - ex0
+                local dy = sy - ey0
+                local dz = sz - ez0
+                local dist = vec_len(dx, dy, dz)
+                if dist > 1e-6 then
+                    local nx, ny, nz = dx/dist, dy/dist, dz/dist
+                    self.constraintResult = {
+                        ratio = 0, exceeded = false, drag = true,
+                        targetX = ex0 + nx * chainLength,
+                        targetY = ey0 + ny * chainLength,
+                        targetZ = ez0 + nz * chainLength,
+                    }
+                end
+            else
+                self.constraintResult = { ratio = 0, exceeded = false, drag = false }
+            end
+        else
+            -- Ratio: 0 when within chainLength, ramps to 1 across the slack zone
+            local ratio = 0
+            if playerDist > chainLength then
+                ratio = math.max(0, math.min(1, (playerDist - chainLength) / slack))
+            end
+            -- Only flop when chain is physically taut AND player is past hard limit AND untagged
+            local shouldFlop = self._isTaut and (playerDist > hardLimit + 1e-4) and (self.hookedTag == nil or self.hookedTag == "")
+            if shouldFlop then
+                print("[ChainController][CONSTRAINT] TAUT + EXCEEDED -> flopping (untagged)")
+                self.endPointLocked = false
+                self._raycastSnapped = false
+                self._flopping = true
+                self.hookedTag = ""
+                self.constraintResult = { ratio = 0, exceeded = true, drag = false }
+            else
+                self.constraintResult = { ratio = ratio, exceeded = false, drag = false,
+                endX = ex0, endY = ey0, endZ = ez0 }
+            end
+        end
+    else
+        self.constraintResult = { ratio = 0, exceeded = false, drag = false }
+    end
+
+    -- Ground clamp (single downward ray, O(1))
     if settings.GroundClamp and Physics and Physics.Raycast then
         local rayLen = 20.0
         local hitDist = Physics.Raycast(sx, sy, sz, 0, -1, 0, rayLen)
@@ -209,85 +265,150 @@ function M:Update(dt, settings)
         self._groundY = nil
     end
 
-    -- 3) Determine end world position with raycast collision detection
+    -- 3) Determine end world position
     local ex,ey,ez
-    
+    local fx,fy,fz = self.lastForward[1] or 0, self.lastForward[2] or 0, self.lastForward[3] or 1
+
     if settings.endOverride then
+        -- Explicit override always wins
         ex,ey,ez = settings.endOverride[1] or 0, settings.endOverride[2] or 0, settings.endOverride[3] or 0
-    elseif self.endPointLocked then
+
+    elseif self.endPointLocked and not self.isRetracting then
+        -- Trigger has fired and endpoint is parented to enemy.
+        -- lockedEndPoint is updated every frame by ChainEndpointController
+        -- reading its own parented world position back from the engine.
         ex, ey, ez = self.lockedEndPoint[1], self.lockedEndPoint[2], self.lockedEndPoint[3]
-    else
-        local fx,fy,fz = self.lastForward[1] or 0, self.lastForward[2] or 0, self.lastForward[3] or 1
+
+    elseif self.isRetracting then
+        -- Retract from lockedEndPoint toward startPos along the actual vector
+        -- between them, proportional to remaining chainLen
+        local lx = self.lockedEndPoint[1]
+        local ly = self.lockedEndPoint[2]
+        local lz = self.lockedEndPoint[3]
+        local dx = lx - sx
+        local dy = ly - sy
+        local dz = lz - sz
+        local fullDist = vec_len(dx, dy, dz)
+        if fullDist > 1e-6 then
+            local t = self.chainLen / (self._lockedChainLen > 0 and self._lockedChainLen or fullDist)
+            if t < 0 then t = 0 end
+            if t > 1 then t = 1 end
+            ex = sx + dx * t
+            ey = sy + dy * t
+            ez = sz + dz * t
+        else
+            ex = sx
+            ey = sy
+            ez = sz
+        end
+
+    elseif self._raycastSnapped then
+        -- Raycast hit, but trigger hasn't fired yet.
+        -- Hold endpoint exactly at the snapped world position — do not
+        -- recompute from player position so it doesn't drift with the player.
+        ex, ey, ez = self.lockedEndPoint[1], self.lockedEndPoint[2], self.lockedEndPoint[3]
+
+    elseif self.isExtending then
+        -- Actively extending: check for raycast hit
         local theoreticalDistance = self.chainLen or 0
-        
-        if self.isExtending and theoreticalDistance > 0 then
-            local raycastResult = self:PerformRaycast(sx, sy, sz, theoreticalDistance * 1.1)
-            
-            if raycastResult and raycastResult.hit then
-                self.endPointLocked = true
-                self.lockedEndPoint[1] = raycastResult.hitPoint[1]
-                self.lockedEndPoint[2] = raycastResult.hitPoint[2]
-                self.lockedEndPoint[3] = raycastResult.hitPoint[3]
-                
-                ex, ey, ez = raycastResult.hitPoint[1], raycastResult.hitPoint[2], raycastResult.hitPoint[3]
-                
-                self.chainLen = raycastResult.distance
-                self.isExtending = false
+        local raycastResult = self:PerformRaycast(sx, sy, sz, theoreticalDistance * 1.1)
 
-                -- Recalculate activeN based on actual hit distance instead of MaxLength
-                local linkMaxForSnap = tonumber(settings.LinkMaxDistance) or tonumber(self.params.LinkMaxDistance) or 0
-                if linkMaxForSnap > 0 then
-                    local needed = math.ceil(raycastResult.distance / linkMaxForSnap) + 1
-                    local prevActiveN = self.activeN
-                    self.activeN = math.min(needed, self.n)
-                    print(string.format("[ChainController] Raycast HIT at distance %.3f, locked endpoint at (%.3f, %.3f, %.3f) | activeN recalculated: %d -> %d",
-                        raycastResult.distance, ex, ey, ez, prevActiveN, self.activeN))
-                else
-                    print(string.format("[ChainController] Raycast HIT at distance %.3f, locked endpoint at (%.3f, %.3f, %.3f)",
-                        raycastResult.distance, ex, ey, ez))
-                end
+        if raycastResult and raycastResult.hit then
+            -- Raycast hit: stop extension at hit distance, snap endpoint there.
+            -- Do NOT set endPointLocked — only OnTriggerEnter does that.
+            -- _raycastSnapped holds the endpoint in place until the trigger fires.
+            self.chainLen = raycastResult.distance
+            self.isExtending = false
+            self._raycastSnapped = true
 
+            -- Recalculate activeN based on actual hit distance
+            local linkMaxForSnap = tonumber(settings.LinkMaxDistance) or tonumber(self.params.LinkMaxDistance) or 0
+            if linkMaxForSnap > 0 then
+                local needed = math.ceil(raycastResult.distance / linkMaxForSnap) + 1
+                local prevActiveN = self.activeN
+                self.activeN = math.min(needed, self.n)
+                aN = self.activeN
+                print(string.format("[ChainController] Raycast HIT at distance %.3f, snapped to (%.3f,%.3f,%.3f) | activeN: %d -> %d",
+                    raycastResult.distance,
+                    raycastResult.hitPoint[1], raycastResult.hitPoint[2], raycastResult.hitPoint[3],
+                    prevActiveN, self.activeN))
             else
-                ex = sx + (fx * theoreticalDistance)
-                ey = sy + (fy * theoreticalDistance)
-                ez = sz + (fz * theoreticalDistance)
+                print(string.format("[ChainController] Raycast HIT at distance %.3f, snapped to (%.3f,%.3f,%.3f)",
+                    raycastResult.distance,
+                    raycastResult.hitPoint[1], raycastResult.hitPoint[2], raycastResult.hitPoint[3]))
             end
+
+            -- Store snap position in lockedEndPoint so _raycastSnapped branch
+            -- and retraction both have a stable world position to work from
+            self.lockedEndPoint[1] = raycastResult.hitPoint[1]
+            self.lockedEndPoint[2] = raycastResult.hitPoint[2]
+            self.lockedEndPoint[3] = raycastResult.hitPoint[3]
+
+            ex, ey, ez = raycastResult.hitPoint[1], raycastResult.hitPoint[2], raycastResult.hitPoint[3]
         else
             ex = sx + (fx * theoreticalDistance)
             ey = sy + (fy * theoreticalDistance)
             ez = sz + (fz * theoreticalDistance)
         end
+
+    elseif self._flopping then
+        -- End link is free — physics owns its position. Read it back so endPos
+        -- and the endpoint object stay in sync with where the last link actually is.
+        ex = self.positions[aN][1]
+        ey = self.positions[aN][2]
+        ez = self.positions[aN][3]
+
+    else
+        -- Idle / fully retracted
+        local theoreticalDistance = self.chainLen or 0
+        ex = sx + (fx * theoreticalDistance)
+        ey = sy + (fy * theoreticalDistance)
+        ez = sz + (fz * theoreticalDistance)
     end
-    
+
     self.endPos[1], self.endPos[2], self.endPos[3] = ex, ey, ez
 
-    -- 4) Compute current physical distance and determine totalLen and segmentLen
+    -- 4) Physical distance and segment length
     local curEndDist = vec_len(ex - sx, ey - sy, ez - sz)
-    local totalLen = (self.chainLen and self.chainLen > 1e-8) and self.chainLen or math.max(curEndDist, 1e-6)
-    if maxLenSetting and maxLenSetting > 0 then totalLen = math.min(totalLen, maxLenSetting) end
-
-    local segmentLen = (aN > 1) and (totalLen / (aN - 1)) or 0
-    if (not isElastic) and linkMax and linkMax > 0 and segmentLen > linkMax then
-        segmentLen = linkMax
+    local totalLen
+    if self._flopping then
+        -- Physics owns the end — measure actual distance so constraints don't fight gravity
+        totalLen = math.max(curEndDist, 1e-6)
+    else
+        totalLen = (self.chainLen and self.chainLen > 1e-8) and self.chainLen or math.max(curEndDist, 1e-6)
+        if maxLenSetting and maxLenSetting > 0 then totalLen = math.min(totalLen, maxLenSetting) end
     end
 
-    -- 5) Determine per-link kinematic state based on authoritative chainLen and anchors.
-    -- Links beyond activeN are snapped to start and marked kinematic (pool links not in use).
+    local segmentLen
+    if self._flopping then
+        -- Freeze segment length at the natural rest length from when extension ended.
+        -- Using curEndDist here would compress all links into a spring — wrong.
+        local restLen = (maxLenSetting and maxLenSetting > 0) and maxLenSetting or math.max(curEndDist, 1e-6)
+        segmentLen = (aN > 1) and (restLen / (aN - 1)) or 0
+        if (not isElastic) and linkMax and linkMax > 0 and segmentLen > linkMax then
+            segmentLen = linkMax
+        end
+    else
+        segmentLen = (aN > 1) and (totalLen / (aN - 1)) or 0
+        if (not isElastic) and linkMax and linkMax > 0 and segmentLen > linkMax then
+            segmentLen = linkMax
+        end
+    end
+
+    -- 5) Per-link kinematic state
     for i = 1, self.n do
         if i > aN then
-            -- Pool link not in use: snap to start, mark kinematic
             self.positions[i][1], self.positions[i][2], self.positions[i][3] = sx, sy, sz
             self.prev[i][1], self.prev[i][2], self.prev[i][3] = sx, sy, sz
             self.invMass[i] = 0
         else
             local requiredDist = (i - 1) * segmentLen
-            if (self.chainLen + 1e-9) < requiredDist then
-                -- not deployed yet -> snap to start and mark kinematic
+            -- When flopping, skip the cull — all active links are owned by physics
+            if not self._flopping and (self.chainLen + 1e-9) < requiredDist then
                 self.positions[i][1], self.positions[i][2], self.positions[i][3] = sx, sy, sz
                 self.prev[i][1], self.prev[i][2], self.prev[i][3] = sx, sy, sz
                 self.invMass[i] = 0
             else
-                -- deployed => dynamic unless explicitly anchored
                 if self.anchors[i] then
                     self.invMass[i] = 0
                 else
@@ -297,26 +418,24 @@ function M:Update(dt, settings)
         end
     end
 
-    -- Pin first link to start (ALWAYS kinematic)
+    -- Pin first link to start (always kinematic)
     self.invMass[1] = 0
 
-    -- Pin last active link to endpoint when extending OR when endpoint is locked
-    if self.isExtending or self.endPointLocked then
+    -- Pin last active link to endpoint when extending, snapped, or locked — NOT when flopping
+    if (self.isExtending or self._raycastSnapped or self.endPointLocked) and not self._flopping then
         self.positions[aN][1], self.positions[aN][2], self.positions[aN][3] = ex, ey, ez
         self.prev[aN][1], self.prev[aN][2], self.prev[aN][3] = ex, ey, ez
         self.invMass[aN] = 0
     end
 
-    -- 6) Re-apply anchors as kinematic overrides
-    --TAKE NOTE THIS FUNCTION IS BUGGED
-    --self:ComputeAnchors(settings.AnchorAngleThresholdRad or self.params.AnchorAngleThresholdRad or math.rad(45))
+    -- 6) Re-apply anchors
     for idx, _ in pairs(self.anchors) do
         if idx >= 1 and idx <= aN then
             self.invMass[idx] = 0
         end
     end
 
-    -- 7) Build Verlet params and step physics
+    -- 7) Verlet physics step
     local vparams = {
         n = aN,
         VerletGravity = settings.VerletGravity or self.params.VerletGravity,
@@ -327,19 +446,20 @@ function M:Update(dt, settings)
         totalLen = totalLen,
         segmentLen = segmentLen,
         ClampSegment = linkMax,
-        endPointLocked = self.endPointLocked,
+        endPointLocked = self.endPointLocked or self._raycastSnapped,
         GroundClamp = settings.GroundClamp,
         GroundClampOffset = settings.GroundClampOffset,
         groundY = self._groundY,
-        pinnedLast = self.endPointLocked or ((not self.isExtending) and ((self.chainLen or 0) + 1e-9 >= (aN - 1) * segmentLen) and (settings.PinEndWhenExtended or self.params.PinEndWhenExtended)),
-        endPos = { ex, ey, ez },
+        pinnedLast = (not self._flopping) and (self.endPointLocked or self._raycastSnapped or
+                     ((not self.isExtending) and
+                      ((self.chainLen or 0) + 1e-9 >= (aN - 1) * segmentLen) and
+                      (settings.PinEndWhenExtended or self.params.PinEndWhenExtended))),
+        endPos  = { ex, ey, ez },
         startPos = { sx, sy, sz }
     }
-    
-    -- Step Verlet physics (in-place modification of self.positions/self.prev/self.invMass)
+
     VerletAdapter.Step(self.VerletState, dt, vparams)
 
-    -- Wall clamp: interval raycast between every WallClampInterval links, once per frame
     if settings.WallClamp then
         vparams.WallClamp = true
         vparams.WallClampInterval = settings.WallClampInterval or 10
@@ -347,8 +467,8 @@ function M:Update(dt, settings)
         VerletAdapter.ApplyWallClamp(self.VerletState, vparams)
     end
 
-    -- 8) After physics, ensure locked endpoint and undeployed links remain kinematic
-    if self.endPointLocked then
+    -- 8) Post-physics: enforce locked/snapped endpoint and undeployed links
+    if (self.endPointLocked or self._raycastSnapped) and not self._flopping then
         self.positions[aN][1], self.positions[aN][2], self.positions[aN][3] = ex, ey, ez
         self.prev[aN][1], self.prev[aN][2], self.prev[aN][3] = ex, ey, ez
         self.invMass[aN] = 0
@@ -358,14 +478,27 @@ function M:Update(dt, settings)
         self.invMass[aN] = 0
     end
 
-    -- Ensure anchors are preserved post-physics
+    -- Preserve anchors post-physics
     for idx, _ in pairs(self.anchors) do
         if idx >= 1 and idx <= aN then
             self.invMass[idx] = 0
         end
     end
 
-    -- Return positions for transform handler, and authoritative start/end positions
+    -- Compute isTaut: measure arc length of active links after physics
+    -- Chain is taut when links are fully stretched (arc >= 98% of chainLen)
+    do
+        local arcLen = 0
+        for i = 2, aN do
+            local dx = self.positions[i][1] - self.positions[i-1][1]
+            local dy = self.positions[i][2] - self.positions[i-1][2]
+            local dz = self.positions[i][3] - self.positions[i-1][3]
+            arcLen = arcLen + vec_len(dx, dy, dz)
+        end
+        self._isTaut = (arcLen >= (self.chainLen or 0) * 0.98)
+        self._arcLen = arcLen
+    end
+
     return self.positions, { self.startPos[1], self.startPos[2], self.startPos[3] }, { self.endPos[1], self.endPos[2], self.endPos[3] }
 end
 
@@ -378,7 +511,11 @@ function M:GetPublicState()
         ActiveLinkCount = self.activeN,
         Anchors = self.anchors,
         EndPointLocked = self.endPointLocked,
-        LockedEndPoint = self.endPointLocked and {self.lockedEndPoint[1], self.lockedEndPoint[2], self.lockedEndPoint[3]} or nil
+        RaycastSnapped = self._raycastSnapped,
+        Flopping = self._flopping,
+        IsTaut = self._isTaut,
+        LockedEndPoint = (self.endPointLocked or self._raycastSnapped) and
+                         {self.lockedEndPoint[1], self.lockedEndPoint[2], self.lockedEndPoint[3]} or nil
     }
 end
 

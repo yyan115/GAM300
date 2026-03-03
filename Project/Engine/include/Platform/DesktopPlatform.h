@@ -26,6 +26,7 @@ private:
     bool isFullscreen;
     int windowedWidth, windowedHeight;
     int windowedPosX, windowedPosY;
+    float m_scrollY = 0.0f;  // Accumulated scroll this frame; reset after read
     
     // Static callbacks for GLFW
     static void ErrorCallback(int error, const char* description);
@@ -68,6 +69,7 @@ public:
     bool IsKeyPressed(Input::Key key) override;
     bool IsMouseButtonPressed(Input::MouseButton button) override;
     void GetMousePosition(double* x, double* y) override;
+    float GetScrollY() override;
 
     void SetCursorLocked(bool locked) override;
     bool IsCursorLocked() override;

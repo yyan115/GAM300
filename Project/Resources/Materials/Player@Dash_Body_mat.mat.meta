@@ -1,8 +1,0 @@
-{
-    "AssetMetaData": {
-        "version": 7,
-        "guid": "006c877416cf3467-000461b068000027",
-        "source": "../../Resources/Materials/Player@Dash_Body_mat.mat",
-        "compiled": "../../Resources/Materials/Player_Dash_Body_mat.mat"
-    }
-}
