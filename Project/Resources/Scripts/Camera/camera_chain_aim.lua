@@ -81,6 +81,12 @@ function M.updateChainAim(self, dt)
         end
     end
 
+    -- Soft aim assist: gently pull _chainAimYaw/_chainAimPitch toward the
+    -- nearest enemy within the configured angular window.
+    if self._chainAiming and self._chainAimYaw then
+        M.updateAimAssist(self, dt, camX, camY, camZ)
+    end
+
     -- Publish forward basis for chain-throw direction while actively aiming
     if self._chainAiming then
         local aimYaw   = self._chainAimYaw   or self._yaw
@@ -115,6 +121,86 @@ function M.updateChainAim(self, dt)
     end
 
     return true, camX, camY, camZ
+end
+
+-- Wraps an angle difference to the [-180, 180] range so we always pull the
+-- short way around the circle.
+local function shortestDelta(from, to)
+    local d = (to - from) % 360.0
+    if d > 180.0 then d = d - 360.0 end
+    return d
+end
+
+-- Soft aim assist: nudge _chainAimYaw/_chainAimPitch toward the nearest enemy
+-- inside the angular window. Called only while _chainAiming is true.
+-- camX/Y/Z is the chain-aim camera anchor position.
+function M.updateAimAssist(self, dt, camX, camY, camZ)
+    if not (Engine and Engine.FindEntitiesWithScript and Engine.GetEntityPosition) then return end
+
+    local assistAngle    = self.chainAimAssistAngle        or 20.0
+    local assistStrength = self.chainAimAssistStrength     or 3.0
+    local assistRange    = self.chainAimAssistRange        or 25.0
+    local heightOffset   = self.chainAimAssistHeightOffset or 1.0
+    local enemyNames     = self.chainAimAssistEnemyNames   or {}
+
+    local currentYaw   = self._chainAimYaw
+    local currentPitch = self._chainAimPitch or 0.0
+
+    local bestDeviation = math.huge
+    local bestDYaw      = 0.0
+    local bestDPitch    = 0.0
+
+    for _, scriptName in ipairs(enemyNames) do
+        local entities = Engine.FindEntitiesWithScript(scriptName)
+        if entities then
+            for i = 1, #entities do
+                local ex, ey, ez = Engine.GetEntityPosition(entities[i])
+                if ex then
+                    -- World-distance gate (XZ plane, cheap check first)
+                    local dx = ex - camX
+                    local dy = (ey + heightOffset) - camY  -- aim at body center, not feet
+                    local dz = ez - camZ
+                    local distSq = dx*dx + dz*dz
+                    if distSq <= assistRange * assistRange then
+                        -- Angular direction from camera to enemy
+                        local len3d = math.sqrt(dx*dx + dy*dy + dz*dz)
+                        if len3d > 0.01 then
+                            local targetYaw   = math.deg(atan2(dx, dz))
+                            local targetPitch = -math.deg(math.asin(
+                                math.max(-1.0, math.min(1.0, dy / len3d))
+                            ))
+
+                            -- Angular deviation (shortest path in each axis)
+                            local dYaw   = shortestDelta(currentYaw,   targetYaw)
+                            local dPitch = shortestDelta(currentPitch, targetPitch)
+                            local deviation = math.sqrt(dYaw*dYaw + dPitch*dPitch)
+
+                            if deviation < bestDeviation then
+                                bestDeviation = deviation
+                                bestDYaw      = dYaw
+                                bestDPitch    = dPitch
+                            end
+                        end
+                    end
+                end
+            end
+        end
+    end
+
+    -- Apply pull only when best candidate is inside the angular window
+    if bestDeviation < assistAngle then
+        -- Strength falls off linearly to zero at the edge of the window
+        local factor = 1.0 - (bestDeviation / assistAngle)
+        local pull   = assistStrength * factor * dt
+
+        self._chainAimYaw   = currentYaw   + bestDYaw   * pull
+        self._chainAimPitch = math.max(
+            self.minPitch or -80.0,
+            math.min(self.maxPitch or 80.0,
+                currentPitch + bestDPitch * pull
+            )
+        )
+    end
 end
 
 -- Set the camera's rotation, blending between orbit look-at and chain-aim yaw/pitch.
