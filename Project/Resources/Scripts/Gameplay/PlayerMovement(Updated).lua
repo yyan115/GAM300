@@ -12,6 +12,12 @@ local IDLE = 0
 local RUN  = 1
 local JUMP = 2
 
+-- Chain Tension Response
+local chainSpeedMult = 1.0
+local tensionRadialX = 0
+local tensionRadialZ = 0
+local tensionScale   = 7.0
+
 -- Helper: convert 2D movement vector to Y-axis quaternion
 local function directionToQuaternion(dx, dz)
     local angle
@@ -362,7 +368,8 @@ return Component {
         end
 
         -- CHAIN MOVEMENT CONSTRAINT
-        local chainSpeedMult = 1.0
+        tensionRadialX = 0
+        tensionRadialZ = 0
         if self._chainConstraintExceeded then
             self._chainConstraintRatio = 0
             self._chainConstraintExceeded = false
@@ -372,24 +379,16 @@ return Component {
             CharacterController.SetPosition(self._controller, self._transform)
         elseif self._chainConstraintRatio and self._chainConstraintRatio > 0 then
             local r = self._chainConstraintRatio
-            -- Cubic speed reduction: gentle at soft limit, near-stopped at hard limit
-            chainSpeedMult = math.max(0.05, 1.0 - r * r * r * 0.95)
-
-            -- Impulse pullback toward endpoint, scaled by ratio squared
-            -- Weak tug near soft limit, strong pull approaching hard limit
-            if self._rigidbody and self._chainEndX and self._chainEndZ then
+            if self._chainEndX and self._chainEndZ then
                 local pos = CharacterController.GetPosition(self._controller)
                 if pos then
-                    local dx = self._chainEndX - pos.x
-                    local dz = self._chainEndZ - pos.z
-                    local dist = math.sqrt(dx*dx + dz*dz)
-                    if dist > 1e-4 then
-                        local nx, nz = dx/dist, dz/dist
-                        -- Scale: 0 at soft limit, ~300 near hard limit (tune via inspector feel)
-                        local impulseMag = r * r * 300
-                        pcall(function()
-                            self._rigidbody:AddImpulse(nx * impulseMag, 0, nz * impulseMag)
-                        end)
+                    local radX = pos.x - self._chainEndX
+                    local radZ = pos.z - self._chainEndZ
+                    local radLen = math.sqrt(radX * radX + radZ * radZ)
+                    if radLen > 1e-4 then
+                        tensionRadialX = radX / radLen
+                        tensionRadialZ = radZ / radLen
+                        tensionScale   = math.max(0.0, 1.0 - r * r * r * 0.95)
                     end
                 end
             end
@@ -532,11 +531,16 @@ return Component {
             playRandomSFX(self._audio, self.playerJumpSFX)
         end
 
-        -- APPLY MOVEMENT with chain drag
+        -- APPLY MOVEMENT
         if not isJumping and isMoving then
-            CharacterController.Move(self._controller,
-                moveX * self.Speed * chainSpeedMult, 0,
-                moveZ * self.Speed * chainSpeedMult)
+            local mx, mz = moveX * self.Speed, moveZ * self.Speed
+            -- only resist the outward component; lateral/inward movement is unaffected
+            local dot = mx * tensionRadialX + mz * tensionRadialZ
+            if dot > 0 then
+                mx = mx - tensionRadialX * dot * (1.0 - tensionScale)
+                mz = mz - tensionRadialZ * dot * (1.0 - tensionScale)
+            end
+            CharacterController.Move(self._controller, mx, 0, mz)
         end
 
         if self._isRolling and not isMoving then
@@ -545,9 +549,13 @@ return Component {
             local cosYaw = math.cos(yawRad)
             moveX = self._prevRawZ * (-sinYaw) - self._prevRawX * cosYaw
             moveZ = self._prevRawZ * (-cosYaw) + self._prevRawX * sinYaw
-            CharacterController.Move(self._controller,
-                moveX * self.Speed * chainSpeedMult, 0,
-                moveZ * self.Speed * chainSpeedMult)
+            local mx, mz = moveX * self.Speed, moveZ * self.Speed
+            local dot = mx * tensionRadialX + mz * tensionRadialZ
+            if dot > 0 then
+                mx = mx - tensionRadialX * dot * (1.0 - tensionScale)
+                mz = mz - tensionRadialZ * dot * (1.0 - tensionScale)
+            end
+            CharacterController.Move(self._controller, mx, 0, mz)
         end
 
         -- ANIMATION
