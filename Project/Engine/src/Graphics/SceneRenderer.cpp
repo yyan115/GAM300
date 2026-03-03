@@ -236,6 +236,10 @@ void SceneRenderer::RenderSceneForEditor(const glm::vec3& cameraPos, const glm::
         {
             mainECS.particleSystem->Update();
         }
+        if (mainECS.fogSystem)
+        {
+            mainECS.fogSystem->Update();
+        }
 
         // Render the scene
         gfxManager.Render();

@@ -17,6 +17,7 @@
 #include "Animation/AnimationComponent.hpp"
 #include "Graphics/Frustum/Frustum.hpp"
 #include "RenderSorter.hpp"
+#include "Fog/FogComponent.hpp"
 
 struct ViewportDimensions {
     int width = 0;
@@ -193,4 +194,7 @@ private:
     Material* m_currentMaterial = nullptr;
 
     void RenderModelOptimized(const ModelRenderComponent& item);
+
+    // Fog
+    void RenderFogVolume(const FogVolumeComponent& item);
 };

@@ -1,0 +1,8 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "005e6f9af37589fe-000461cf6e000001",
+        "source": "../../Resources/Shaders/fog",
+        "compiled": "../../Resources/Shaders/fog.shader"
+    }
+}
