@@ -10,6 +10,7 @@
 #include <Graphics/Lights/LightComponent.hpp>
 #include <Graphics/TextRendering/TextRenderComponent.hpp>
 #include <Graphics/Particle/ParticleComponent.hpp>
+#include <Graphics/Fog/FogComponent.hpp>
 #include <Graphics/Camera/CameraComponent.hpp>
 #include <Graphics/Sprite/SpriteAnimationComponent.hpp>
 #include <Graphics/DebugDraw/DebugDrawComponent.hpp>
@@ -274,6 +275,11 @@ void InspectorPanel::DrawComponentsViaReflection(Entity entity) {
 			[&]() { return ecs.HasComponent<ParticleComponent>(entity) ?
 				(void*)&ecs.GetComponent<ParticleComponent>(entity) : nullptr; },
 			[&]() { return ecs.HasComponent<ParticleComponent>(entity); }},
+
+		{"Fog Volume", "FogVolumeComponent",
+			[&]() { return ecs.HasComponent<FogVolumeComponent>(entity) ?
+				(void*)&ecs.GetComponent<FogVolumeComponent>(entity) : nullptr; },
+			[&]() { return ecs.HasComponent<FogVolumeComponent>(entity); }},
 
 		// Audio component
 		{"Audio Source", "AudioComponent",
@@ -1339,6 +1345,9 @@ void InspectorPanel::DrawAddComponentButton(Entity entity) {
 			if (!ecsManager.HasComponent<ParticleComponent>(entity)) {
 				allComponents.push_back({ "Particle System", "ParticleComponent", "Rendering" });
 			}
+			if (!ecsManager.HasComponent<FogVolumeComponent>(entity)) {
+				allComponents.push_back({ "Fog Volume", "FogVolumeComponent", "Rendering" });
+			}
 			if (!ecsManager.HasComponent<AudioComponent>(entity)) {
 				allComponents.push_back({ "Audio Source", "AudioComponent", "Audio" });
 			}
@@ -1629,6 +1638,9 @@ void InspectorPanel::DrawAddComponentButtonMulti(const std::vector<Entity>& enti
 		}
 		if (allEntitiesLackComponent([&](Entity e) { return ecsManager.HasComponent<ParticleComponent>(e); })) {
 			allComponents.push_back({ "Particle System", "ParticleComponent", "Rendering" });
+		}
+		if (allEntitiesLackComponent([&](Entity e) { return ecsManager.HasComponent<FogVolumeComponent>(e); })) {
+			allComponents.push_back({ "Fog Volume", "FogVolumeComponent", "Rendering" });
 		}
 		if (allEntitiesLackComponent([&](Entity e) { return ecsManager.HasComponent<AudioComponent>(e); })) {
 			allComponents.push_back({ "Audio Source", "AudioComponent", "Audio" });
@@ -1973,6 +1985,11 @@ void InspectorPanel::AddComponent(Entity entity, const std::string& componentTyp
 			//}
 
 			std::cout << "[Inspector] Added SpotLightComponent to entity " << entity << std::endl;
+		}
+		else if (componentType == "FogVolumeComponent") {
+			FogVolumeComponent component;
+			ecsManager.AddComponent<FogVolumeComponent>(entity, component);
+			std::cout << "[Inspector] Added FogVolumeComponent to entity " << entity << std::endl;
 		}
 		else if (componentType == "ParticleComponent") {
 			ParticleComponent component;
@@ -2368,6 +2385,10 @@ bool InspectorPanel::DrawComponentHeaderWithRemoval(const char* label, Entity en
 			auto& comp = ecs.GetComponent<ParticleComponent>(entity);
 			enabledFieldPtr = &comp.isVisible;
 		}
+		else if (componentType == "FogVolumeComponent") {
+			auto& comp = ecs.GetComponent<FogVolumeComponent>(entity);
+			enabledFieldPtr = &comp.isVisible;
+		}
 		else if (componentType == "AudioComponent") {
 			auto& comp = ecs.GetComponent<AudioComponent>(entity);
 			enabledFieldPtr = &comp.enabled;
@@ -2611,6 +2632,10 @@ void InspectorPanel::ProcessPendingComponentRemovals() {
 				ecsManager.RemoveComponent<ParticleComponent>(request.entity);
 				std::cout << "[Inspector] Removed ParticleComponent from entity " << request.entity << std::endl;
 			}
+			else if (request.componentType == "FogVolumeComponent") {
+				ecsManager.RemoveComponent<FogVolumeComponent>(request.entity);
+				std::cout << "[Inspector] Removed FogVolumeComponent from entity " << request.entity << std::endl;
+			}
 			else if (request.componentType == "AudioComponent") {
 				ecsManager.RemoveComponent<AudioComponent>(request.entity);
 				std::cout << "[Inspector] Removed AudioComponent from entity " << request.entity << std::endl;
@@ -2736,6 +2761,10 @@ void InspectorPanel::ProcessPendingComponentResets() {
 			else if (request.componentType == "ParticleComponent") {
 				ecsManager.GetComponent<ParticleComponent>(request.entity) = ParticleComponent{};
 				std::cout << "[Inspector] Reset ParticleComponent on entity " << request.entity << std::endl;
+			}
+			else if (request.componentType == "FogVolumeComponent") {
+				ecsManager.GetComponent<FogVolumeComponent>(request.entity) = FogVolumeComponent{};
+				std::cout << "[Inspector] Reset FogVolumeComponent on entity " << request.entity << std::endl;
 			}
 			else if (request.componentType == "AudioComponent") {
 				ecsManager.GetComponent<AudioComponent>(request.entity) = AudioComponent{};
@@ -2881,6 +2910,11 @@ void InspectorPanel::ProcessPendingMultiComponentRemovals() {
 				else if (request.componentType == "ParticleComponent") {
 					if (ecsManager.HasComponent<ParticleComponent>(entity)) {
 						ecsManager.RemoveComponent<ParticleComponent>(entity);
+					}
+				}
+				else if (request.componentType == "FogVolumeComponent") {
+					if (ecsManager.HasComponent<FogVolumeComponent>(entity)) {
+						ecsManager.RemoveComponent<FogVolumeComponent>(entity);
 					}
 				}
 				else if (request.componentType == "AudioComponent") {
@@ -3057,6 +3091,7 @@ bool InspectorPanel::HasComponent(Entity entity, const std::string& componentTyp
 	if (componentType == "SpriteAnimationComponent") return ecs.HasComponent<SpriteAnimationComponent>(entity);
 	if (componentType == "TextRenderComponent") return ecs.HasComponent<TextRenderComponent>(entity);
 	if (componentType == "ParticleComponent") return ecs.HasComponent<ParticleComponent>(entity);
+	if (componentType == "FogVolumeComponent") return ecs.HasComponent<FogVolumeComponent>(entity);
 	if (componentType == "AudioComponent") return ecs.HasComponent<AudioComponent>(entity);
 	if (componentType == "AudioListenerComponent") return ecs.HasComponent<AudioListenerComponent>(entity);
 	if (componentType == "AudioReverbZoneComponent") return ecs.HasComponent<AudioReverbZoneComponent>(entity);
@@ -3098,6 +3133,8 @@ void* InspectorPanel::GetComponentPtr(Entity entity, const std::string& componen
 		return &ecs.GetComponent<TextRenderComponent>(entity);
 	if (componentType == "ParticleComponent" && ecs.HasComponent<ParticleComponent>(entity))
 		return &ecs.GetComponent<ParticleComponent>(entity);
+	if (componentType == "FogVolumeComponent" && ecs.HasComponent<FogVolumeComponent>(entity))
+		return &ecs.GetComponent<FogVolumeComponent>(entity);
 	if (componentType == "AudioComponent" && ecs.HasComponent<AudioComponent>(entity))
 		return &ecs.GetComponent<AudioComponent>(entity);
 	if (componentType == "AudioListenerComponent" && ecs.HasComponent<AudioListenerComponent>(entity))
@@ -3160,7 +3197,8 @@ std::vector<std::string> InspectorPanel::GetSharedComponentTypes(const std::vect
 		"ScriptComponentData",
 		"ButtonComponent",
 		"SliderComponent",
-		"UIAnchorComponent"
+		"UIAnchorComponent",
+		"FogVolumeComponent"
 	};
 
 	std::vector<std::string> sharedComponents;
@@ -3345,7 +3383,8 @@ void InspectorPanel::DrawSharedComponentGeneric(const std::vector<Entity>& entit
 		{"ScriptComponentData", "Script"},
 		{"ButtonComponent", "Button"},
 		{"SliderComponent", "Slider"},
-		{"UIAnchorComponent", "UI Anchor"}
+		{"UIAnchorComponent", "UI Anchor"},
+		{"FogVolumeComponent", "Fog Volume"}
 	};
 
 	std::string displayName = componentType;
@@ -3440,6 +3479,9 @@ void InspectorPanel::DrawSharedComponentGeneric(const std::vector<Entity>& entit
 	}
 	else if (componentType == "ParticleComponent" && ecs.HasComponent<ParticleComponent>(firstEntity)) {
 		firstComponentPtr = &ecs.GetComponent<ParticleComponent>(firstEntity);
+	}
+	else if (componentType == "FogVolumeComponent" && ecs.HasComponent<FogVolumeComponent>(firstEntity)) {
+		firstComponentPtr = &ecs.GetComponent<FogVolumeComponent>(firstEntity);
 	}
 	else if (componentType == "AnimationComponent" && ecs.HasComponent<AnimationComponent>(firstEntity)) {
 		firstComponentPtr = &ecs.GetComponent<AnimationComponent>(firstEntity);
@@ -3594,6 +3636,9 @@ void InspectorPanel::DrawSharedComponentGeneric(const std::vector<Entity>& entit
 				}
 				else if (componentType == "ParticleComponent" && ecs.HasComponent<ParticleComponent>(otherEntity)) {
 					otherComponentPtr = &ecs.GetComponent<ParticleComponent>(otherEntity);
+				}
+				else if (componentType == "FogVolumeComponent" && ecs.HasComponent<FogVolumeComponent>(otherEntity)) {
+					otherComponentPtr = &ecs.GetComponent<FogVolumeComponent>(otherEntity);
 				}
 				else if (componentType == "AnimationComponent" && ecs.HasComponent<AnimationComponent>(otherEntity)) {
 					otherComponentPtr = &ecs.GetComponent<AnimationComponent>(otherEntity);

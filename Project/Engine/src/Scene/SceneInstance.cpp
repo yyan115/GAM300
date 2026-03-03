@@ -136,6 +136,10 @@ void SceneInstance::Initialize()
 	ENGINE_LOG_INFO("Video system initialized");
 	ecsManager.dialogueSystem->Initialise(ecsManager);
 	ENGINE_LOG_INFO("Dialogue system initialized");
+	ecsManager.fogSystem->Initialise();
+	ENGINE_LOG_INFO("Fog system initialized");
+
+	//testing(ecsManager);
 
 	if (!multithreadSystems)
 	{
@@ -266,6 +270,7 @@ void SceneInstance::Exit()
 	ECSRegistry::GetInstance().GetECSManager(scenePath).particleSystem->Shutdown();
 	ECSRegistry::GetInstance().GetECSManager(scenePath).dialogueSystem->Shutdown();
 	ECSRegistry::GetInstance().GetECSManager(scenePath).scriptSystem->Shutdown();
+	ECSRegistry::GetInstance().GetECSManager(scenePath).fogSystem->Shutdown();
 	systemOrchestrator.reset();
 	ENGINE_PRINT("TestScene Exited\n");
 }
@@ -525,64 +530,77 @@ void SceneInstance::CreateDefaultCamera(ECSManager &ecsManager)
 
 void testing(ECSManager& ecsManager)
 {
-	// ===== TEXT WRAPPING TEST =====
-	Entity textEntity = ecsManager.CreateEntity();
-	ecsManager.AddComponent<NameComponent>(textEntity, NameComponent("Text Wrap Test"));
+	//// ===== TEXT WRAPPING TEST =====
+	//Entity textEntity = ecsManager.CreateEntity();
+	//ecsManager.AddComponent<NameComponent>(textEntity, NameComponent("Text Wrap Test"));
 
-	GUID_128 fontGUID = MetaFilesManager::GetGUID128FromAssetFile("Resources/Fonts/Kenney Mini.ttf");
-	GUID_128 shaderGUID = MetaFilesManager::GetGUID128FromAssetFile(ResourceManager::GetPlatformShaderPath("text"));
+	//GUID_128 fontGUID = MetaFilesManager::GetGUID128FromAssetFile("Resources/Fonts/Kenney Mini.ttf");
+	//GUID_128 shaderGUID = MetaFilesManager::GetGUID128FromAssetFile(ResourceManager::GetPlatformShaderPath("text"));
 
-	// Add component first
-	TextRenderComponent textComp("This is a long piece of text that should wrap to multiple lines when word wrap is enabled.", 32, fontGUID, shaderGUID);
-	textComp.position = Vector3D(100.0f, 500.0f, 0.0f);
-	textComp.color = Vector3D(1.0f, 1.0f, 1.0f);
-	ecsManager.AddComponent<TextRenderComponent>(textEntity, textComp);
+	//// Add component first
+	//TextRenderComponent textComp("This is a long piece of text that should wrap to multiple lines when word wrap is enabled.", 32, fontGUID, shaderGUID);
+	//textComp.position = Vector3D(100.0f, 500.0f, 0.0f);
+	//textComp.color = Vector3D(1.0f, 1.0f, 1.0f);
+	//ecsManager.AddComponent<TextRenderComponent>(textEntity, textComp);
 
-	// Now get reference and set wrap properties
-	auto& text = ecsManager.GetComponent<TextRenderComponent>(textEntity);
-	text.wordWrap = true;
-	text.maxWidth = 300.0f;
-	text.lineSpacing = 1.2f;
+	//// Now get reference and set wrap properties
+	//auto& text = ecsManager.GetComponent<TextRenderComponent>(textEntity);
+	//text.wordWrap = true;
+	//text.maxWidth = 300.0f;
+	//text.lineSpacing = 1.2f;
 
-	std::cout << "[Test] Set wordWrap: " << text.wordWrap << ", maxWidth: " << text.maxWidth << std::endl;
+	//std::cout << "[Test] Set wordWrap: " << text.wordWrap << ", maxWidth: " << text.maxWidth << std::endl;
 
-	Entity sAnim = ecsManager.CreateEntity();
-	ecsManager.AddComponent<NameComponent>(sAnim, NameComponent("Sprite Animation Entity"));
-	ecsManager.AddComponent<SpriteAnimationComponent>(sAnim, SpriteAnimationComponent());
-	ecsManager.AddComponent<SpriteRenderComponent>(sAnim, SpriteRenderComponent{ MetaFilesManager::GetGUID128FromAssetFile("Resources/Textures/idle_1.png"), MetaFilesManager::GetGUID128FromAssetFile(ResourceManager::GetPlatformShaderPath("default"))});
+	//Entity sAnim = ecsManager.CreateEntity();
+	//ecsManager.AddComponent<NameComponent>(sAnim, NameComponent("Sprite Animation Entity"));
+	//ecsManager.AddComponent<SpriteAnimationComponent>(sAnim, SpriteAnimationComponent());
+	//ecsManager.AddComponent<SpriteRenderComponent>(sAnim, SpriteRenderComponent{ MetaFilesManager::GetGUID128FromAssetFile("Resources/Textures/idle_1.png"), MetaFilesManager::GetGUID128FromAssetFile(ResourceManager::GetPlatformShaderPath("default"))});
 
-	std::string idlePath[3] = {
-		"Resources/Textures/idle_1.png",
-		"Resources/Textures/idle_2.png",
-		"Resources/Textures/idle_3.png"
-	};
+	//std::string idlePath[3] = {
+	//	"Resources/Textures/idle_1.png",
+	//	"Resources/Textures/idle_2.png",
+	//	"Resources/Textures/idle_3.png"
+	//};
 
-	GUID_128 frame1 = MetaFilesManager::GetGUID128FromAssetFile(idlePath[0]);
-	GUID_128 frame2 = MetaFilesManager::GetGUID128FromAssetFile(idlePath[1]);
-	GUID_128 frame3 = MetaFilesManager::GetGUID128FromAssetFile(idlePath[2]);
+	//GUID_128 frame1 = MetaFilesManager::GetGUID128FromAssetFile(idlePath[0]);
+	//GUID_128 frame2 = MetaFilesManager::GetGUID128FromAssetFile(idlePath[1]);
+	//GUID_128 frame3 = MetaFilesManager::GetGUID128FromAssetFile(idlePath[2]);
 
-	// Setting Current Sprite
-	auto& sprite = ecsManager.GetComponent<SpriteRenderComponent>(sAnim);
-	sprite.is3D = true;
+	//// Setting Current Sprite
+	//auto& sprite = ecsManager.GetComponent<SpriteRenderComponent>(sAnim);
+	//sprite.is3D = true;
 
-	auto& anim = ecsManager.GetComponent<SpriteAnimationComponent>(sAnim);
+	//auto& anim = ecsManager.GetComponent<SpriteAnimationComponent>(sAnim);
 
-	SpriteAnimationClip idleClip;
-	idleClip.name = "Idle";
-	idleClip.loop = true;
+	//SpriteAnimationClip idleClip;
+	//idleClip.name = "Idle";
+	//idleClip.loop = true;
 
-	for(int i = 0; i < 3; ++i) 
-	{
-		SpriteFrame frame;
-		frame.textureGUID = MetaFilesManager::GetGUID128FromAssetFile(idlePath[i]);
-		frame.texturePath = idlePath[i];
-		frame.uvOffset = glm::vec2(0.0f, 0.0f);
-		frame.uvScale = glm::vec2(1.0f, 1.0f);
-		frame.duration = 1.0f; // 0.2 seconds per frame
+	//for(int i = 0; i < 3; ++i) 
+	//{
+	//	SpriteFrame frame;
+	//	frame.textureGUID = MetaFilesManager::GetGUID128FromAssetFile(idlePath[i]);
+	//	frame.texturePath = idlePath[i];
+	//	frame.uvOffset = glm::vec2(0.0f, 0.0f);
+	//	frame.uvScale = glm::vec2(1.0f, 1.0f);
+	//	frame.duration = 1.0f; // 0.2 seconds per frame
 
-		idleClip.frames.push_back(frame);
-	}
+	//	idleClip.frames.push_back(frame);
+	//}
 
-	anim.clips.push_back(idleClip);
-	anim.Play("Idle");
+	//anim.clips.push_back(idleClip);
+	//anim.Play("Idle");
+	// --- FOG TEST ---
+	Entity fogEntity = ecsManager.CreateEntity();
+	ecsManager.GetComponent<NameComponent>(fogEntity).name = "Test Fog Volume";
+	ecsManager.transformSystem->SetLocalPosition(fogEntity, Vector3D(0.f, 0.5f, 0.f));
+	ecsManager.transformSystem->SetLocalScale(fogEntity, Vector3D(10.f, 5.f, 10.f));
+
+	FogVolumeComponent fogComp;
+	fogComp.fogColor = Vector3D(0.7f, 0.7f, 0.8f);
+	fogComp.density = 0.5f;
+	fogComp.opacity = 0.6f;
+	fogComp.isVisible = true;
+	ecsManager.AddComponent<FogVolumeComponent>(fogEntity, fogComp);
+	// --- END FOG TEST ---
 }
