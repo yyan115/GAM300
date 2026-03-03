@@ -1,4 +1,6 @@
 -- ChainController.lua
+_G.CHAIN_DEBUG = _G.CHAIN_DEBUG ~= nil and _G.CHAIN_DEBUG or false
+local function dbg(...) if _G.CHAIN_DEBUG then print(...) end end
 local VerletAdapter = require("extension.verletAdapter")
 local M = {}
 
@@ -71,11 +73,11 @@ function M:StartExtension(forward, maxLength, linkMaxDistance)
     if linkMax > 0 and maxLen > 0 then
         local needed = math.ceil(maxLen / linkMax) + 1
         self.activeN = math.min(needed, self.n)
-        print(string.format("[ChainController] StartExtension: MaxLength=%.3f LinkMaxDistance=%.4f needed=%d poolSize=%d activeN=%d",
+        dbg(string.format("[ChainController] StartExtension: MaxLength=%.3f LinkMaxDistance=%.4f needed=%d poolSize=%d activeN=%d",
             maxLen, linkMax, needed, self.n, self.activeN))
     else
         self.activeN = self.n
-        print(string.format("[ChainController] StartExtension: MaxLength=%.3f LinkMaxDistance=%.4f invalid, using full pool activeN=%d",
+        dbg(string.format("[ChainController] StartExtension: MaxLength=%.3f LinkMaxDistance=%.4f invalid, using full pool activeN=%d",
             maxLen, linkMax, self.activeN))
     end
 
@@ -206,7 +208,7 @@ function M:Update(dt, settings)
         local isDragType = (dragTag ~= "" and self.hookedTag == dragTag)
         local hardLimit = chainLength + slack
 
-        print(string.format("[ChainController][CONSTRAINT] locked=%s snapped=%s playerDist=%.3f chainLen=%.3f slack=%.3f hardLimit=%.3f hookedTag='%s'",
+        dbg(string.format("[ChainController][CONSTRAINT] locked=%s snapped=%s playerDist=%.3f chainLen=%.3f slack=%.3f hardLimit=%.3f hookedTag='%s'",
             tostring(self.endPointLocked), tostring(self._raycastSnapped),
             playerDist, chainLength, slack, hardLimit, tostring(self.hookedTag)))
 
@@ -237,7 +239,7 @@ function M:Update(dt, settings)
             -- Only flop when chain is physically taut AND player is past hard limit AND untagged
             local shouldFlop = self._isTaut and (playerDist > hardLimit + 1e-4) and (self.hookedTag == nil or self.hookedTag == "")
             if shouldFlop then
-                print("[ChainController][CONSTRAINT] TAUT + EXCEEDED -> flopping (untagged)")
+                dbg("[ChainController][CONSTRAINT] TAUT + EXCEEDED -> flopping (untagged)")
                 self.endPointLocked = false
                 self._raycastSnapped = false
                 self._flopping = true
@@ -328,12 +330,12 @@ function M:Update(dt, settings)
                 local prevActiveN = self.activeN
                 self.activeN = math.min(needed, self.n)
                 aN = self.activeN
-                print(string.format("[ChainController] Raycast HIT at distance %.3f, snapped to (%.3f,%.3f,%.3f) | activeN: %d -> %d",
+                dbg(string.format("[ChainController] Raycast HIT at distance %.3f, snapped to (%.3f,%.3f,%.3f) | activeN: %d -> %d",
                     raycastResult.distance,
                     raycastResult.hitPoint[1], raycastResult.hitPoint[2], raycastResult.hitPoint[3],
                     prevActiveN, self.activeN))
             else
-                print(string.format("[ChainController] Raycast HIT at distance %.3f, snapped to (%.3f,%.3f,%.3f)",
+                dbg(string.format("[ChainController] Raycast HIT at distance %.3f, snapped to (%.3f,%.3f,%.3f)",
                     raycastResult.distance,
                     raycastResult.hitPoint[1], raycastResult.hitPoint[2], raycastResult.hitPoint[3]))
             end

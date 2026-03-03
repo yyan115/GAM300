@@ -1,4 +1,7 @@
 -- ChainBootstrap.lua
+_G.CHAIN_DEBUG = _G.CHAIN_DEBUG ~= nil and _G.CHAIN_DEBUG or false
+--_G.CHAIN_DEBUG = true
+local function dbg(...) if _G.CHAIN_DEBUG then print(...) end end
 local Component = require("extension.mono_helper")
 local LinkHandlerModule = require("Gameplay.ChainLinkTransformHandler")
 local ControllerModule = require("Gameplay.ChainController")
@@ -96,13 +99,13 @@ return Component {
     end,
 
     _on_chain_down = function(self, payload)
-        print("down")
+        dbg("down")
         self._chain_pressing = true
         self._chain_held = false
     end,
 
     _on_chain_up = function(self, payload)
-        print("up chain control")
+        dbg("up chain control")
         self._chain_pressing = false
 
         if _G.event_bus and _G.event_bus.publish then
@@ -118,7 +121,7 @@ return Component {
         local isExt = self.controller.isExtending or false
         local isRet = self.controller.isRetracting or false
 
-        print(string.format("[ChainBootstrap] _on_chain_up: len=%.4f isExt=%s isRet=%s chain_held=%s",
+        dbg(string.format("[ChainBootstrap] _on_chain_up: len=%.4f isExt=%s isRet=%s chain_held=%s",
             len, tostring(isExt), tostring(isRet), tostring(self._chain_held)))
 
         if not isExt and not isRet and len <= 1e-4 then
@@ -128,10 +131,10 @@ return Component {
                 if _G.event_bus and _G.event_bus.publish then
                     _G.event_bus.publish("request_player_forward", true)
                 end
-                print("[ChainBootstrap] TAP -> requested player_forward_response")
+                dbg("[ChainBootstrap] TAP -> requested player_forward_response")
             else
                 local direction = self._cameraForward
-                print(string.format("[ChainBootstrap] HOLD release -> camera forward: (%.3f, %.3f, %.3f)",
+                dbg(string.format("[ChainBootstrap] HOLD release -> camera forward: (%.3f, %.3f, %.3f)",
                     direction[1], direction[2], direction[3]))
                 self.controller:StartExtension(direction, self.MaxLength, self.LinkMaxDistance)
             end
@@ -143,7 +146,7 @@ return Component {
     end,
 
     _on_chain_hold = function(self, payload)
-        print("hold")
+        dbg("hold")
         self._chain_held = true
         if self.controller then
             local len = (self.controller.chainLen or 0)
@@ -216,7 +219,7 @@ return Component {
         if self.ChainEndpointName and self.ChainEndpointName ~= "" then
             self._endpointTransform = Engine.FindTransformByName(self.ChainEndpointName)
             if not self._endpointTransform then
-                print("[ChainBootstrap] WARNING: ChainEndpoint object not found: " .. tostring(self.ChainEndpointName))
+                dbg("[ChainBootstrap] WARNING: ChainEndpoint object not found: " .. tostring(self.ChainEndpointName))
             end
         end
 
@@ -266,7 +269,7 @@ return Component {
                 if not payload then return end
                 pcall(function()
                     if self.controller then
-                        print("[ChainBootstrap] Endpoint hit entity '" .. tostring(payload.entityName) .. "' — locking endpoint")
+                        dbg("[ChainBootstrap] Endpoint hit entity '" .. tostring(payload.entityName) .. "' — locking endpoint")
                         self.controller.endPointLocked = true
                         self.controller.hookedTag = payload.rootTag or ""
                         -- Snapshot lockedEndPoint at moment of hit as initial value.
@@ -287,7 +290,7 @@ return Component {
                                     self.controller.lockedEndPoint[1] = lx
                                     self.controller.lockedEndPoint[2] = ly
                                     self.controller.lockedEndPoint[3] = lz
-                                    print(string.format("[ChainBootstrap] lockedEndPoint snapshot at hit: (%.3f,%.3f,%.3f)", lx, ly, lz))
+                                    dbg(string.format("[ChainBootstrap] lockedEndPoint snapshot at hit: (%.3f,%.3f,%.3f)", lx, ly, lz))
                                 end
                             end
                         end
@@ -303,7 +306,7 @@ return Component {
         if self._pendingTapFire then
             if self._pendingPlayerForward then
                 local direction = self._pendingPlayerForward
-                print(string.format("[ChainBootstrap] TAP (deferred) -> player forward: (%.3f, %.3f, %.3f)",
+                dbg(string.format("[ChainBootstrap] TAP (deferred) -> player forward: (%.3f, %.3f, %.3f)",
                     direction[1], direction[2], direction[3]))
                 self.controller:StartExtension(direction, self.MaxLength, self.LinkMaxDistance)
                 self._pendingTapFire = false
@@ -316,7 +319,7 @@ return Component {
             local sx, sy, sz = self:_read_world_pos(self.playerTransform)
             self.controller:SetStartPos(sx, sy, sz)
         else
-            print("Cannot find the bloody player, WHY. YOU NAMED WRONG IS IT OR ENGINE FAILING AGAIN.")
+            dbg("Cannot find the bloody player, WHY. YOU NAMED WRONG IS IT OR ENGINE FAILING AGAIN.")
         end
 
         local settings = {
@@ -355,7 +358,7 @@ return Component {
         -- Publish movement constraint — ChainController computed it, Bootstrap owns event_bus
         if self.controller.constraintResult and _G.event_bus and _G.event_bus.publish then
             local cr = self.controller.constraintResult
-            print(string.format("[ChainBootstrap][CONSTRAINT] publishing ratio=%.3f exceeded=%s drag=%s",
+            dbg(string.format("[ChainBootstrap][CONSTRAINT] publishing ratio=%.3f exceeded=%s drag=%s",
                 cr.ratio or 0, tostring(cr.exceeded), tostring(cr.drag)))
             _G.event_bus.publish("chain.movement_constraint", cr)
         end

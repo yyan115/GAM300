@@ -1,4 +1,6 @@
 require("extension.engine_bootstrap")
+_G.CHAIN_DEBUG = _G.CHAIN_DEBUG ~= nil and _G.CHAIN_DEBUG or false
+local function dbg(...) if _G.CHAIN_DEBUG then print(...) end end
 local Component = require("extension.mono_helper")
 local TransformMixin = require("extension.transform_mixin")
 
@@ -91,21 +93,21 @@ return Component {
         self._chainDragTargetZ = 0
 
         if event_bus and event_bus.subscribe then
-            print("[PlayerMovement] Subscribing to camera_yaw")
+            dbg("[PlayerMovement] Subscribing to camera_yaw")
             self._cameraYawSub = event_bus.subscribe("camera_yaw", function(yaw)
                 if yaw then self._cameraYaw = yaw end
             end)
 
-            print("[PlayerMovement] Subscribing to playerDead")
+            dbg("[PlayerMovement] Subscribing to playerDead")
             self._playerDeadSub = event_bus.subscribe("playerDead", function(playerDead)
                 if playerDead then
-                    print("[PlayerMovement] Received playerDead")
+                    dbg("[PlayerMovement] Received playerDead")
                     self._playerDeadPending = playerDead
                     playRandomSFX(self._audio, self.playerDeadSFX)
                 end
             end)
 
-            print("[PlayerMovement] Subscribing to playerHurtTriggered")
+            dbg("[PlayerMovement] Subscribing to playerHurtTriggered")
             self._playerHurtTriggeredSub = event_bus.subscribe("playerHurtTriggered", function(hit)
                 if hit then
                     self._isDamageStun = true
@@ -114,7 +116,7 @@ return Component {
                 end
             end)
 
-            print("[PlayerMovement] Subscribing to player_knockback")
+            dbg("[PlayerMovement] Subscribing to player_knockback")
             self._kbPending = false
             self._kbX, self._kbZ = 0, 0
 
@@ -125,7 +127,7 @@ return Component {
                 self._kbPending = true
             end)
 
-            print("[PlayerMovement] Subscribing to respawnPlayer")
+            dbg("[PlayerMovement] Subscribing to respawnPlayer")
             self._respawnPlayerSub = event_bus.subscribe("respawnPlayer", function(respawn)
                 if respawn then self._respawnPlayer = true end
             end)
@@ -134,35 +136,24 @@ return Component {
             self._lungeDirX  = 0
             self._lungeDirZ  = 0
             self._attackLungeSub = event_bus.subscribe("attack_performed", function(data)
-                -- Use camera facing direction so attacks always go where the camera looks.
-                -- _G.CAMERA_YAW is orbit-offset convention: forward = (-sin, 0, -cos).
-                local cameraYaw = _G.CAMERA_YAW or self._cameraYaw or 180.0
-                local yr = math.rad(cameraYaw)
-                local fwdX = -math.sin(yr)
-                local fwdZ = -math.cos(yr)
+                local w = self._currentRotW
+                local y = self._currentRotY
+                local fwdX = 2.0 * w * y
+                local fwdZ = w * w - y * y
                 local len = math.sqrt(fwdX * fwdX + fwdZ * fwdZ)
                 if len > 0.001 then
                     self._lungeDirX = fwdX / len
                     self._lungeDirZ = fwdZ / len
                 end
-                -- Snap player model to face the attack direction.
-                local targetW, targetX, targetY, targetZ = directionToQuaternion(self._lungeDirX, self._lungeDirZ)
-                self._currentRotW = targetW
-                self._currentRotX = targetX
-                self._currentRotY = targetY
-                self._currentRotZ = targetZ
-                self._facingX = self._lungeDirX
-                self._facingZ = self._lungeDirZ
-                pcall(self.SetRotation, self, targetW, targetX, targetY, targetZ)
                 self._lungeTimer = self.AttackLungeDuration or 0.12
             end)
 
-            print("[PlayerMovement] Subscribing to activatedCheckpoint")
+            dbg("[PlayerMovement] Subscribing to activatedCheckpoint")
             self._activatedCheckpointSub = event_bus.subscribe("activatedCheckpoint", function(entityId)
                 if entityId then self._activatedCheckpoint = entityId end
             end)
 
-            print("[PlayerMovement] Subscribing to freeze_player")
+            dbg("[PlayerMovement] Subscribing to freeze_player")
             self._frozenBycinematic = false
             self._freezePending = false
             self._freezeSettleTimer = 0.0
@@ -174,10 +165,10 @@ return Component {
                     self._frozenBycinematic = false
                     self._freezePending = false
                 end
-                print("[PlayerMovement] Frozen = " .. tostring(frozen))
+                dbg("[PlayerMovement] Frozen = " .. tostring(frozen))
             end)
 
-            print("[PlayerMovement] Subscribing to request_player_forward")
+            dbg("[PlayerMovement] Subscribing to request_player_forward")
             self._requestPlayerForwardSub = event_bus.subscribe("request_player_forward", function(_)
                 if not self._facingX or not self._facingZ then return end
                 if event_bus and event_bus.publish then
@@ -206,7 +197,7 @@ return Component {
                 end
             end)
         else
-            print("[PlayerMovement] ERROR: event_bus not available!")
+            dbg("[PlayerMovement] ERROR: event_bus not available!")
         end
     end,
 
@@ -217,14 +208,14 @@ return Component {
         self._audio     = self:GetComponent("AudioComponent")
         self._rigidbody = self:GetComponent("RigidBodyComponent")
 
-        print("transform y here is ", self._transform.localPosition.y)
+        dbg("transform y here is ", self._transform.localPosition.y)
         self._controller = CharacterController.Create(self.entityId, self._collider, self._transform)
 
         if self._animator then
-            print("[PlayerMovement] Animator found, playing IDLE clip")
+            dbg("[PlayerMovement] Animator found, playing IDLE clip")
             self._animator:PlayClip(IDLE, true)
         else
-            print("[PlayerMovement] ERROR: Animator is nil!")
+            dbg("[PlayerMovement] ERROR: Animator is nil!")
         end
 
         self._isRunning = false
@@ -274,7 +265,7 @@ return Component {
 
         if event_bus and event_bus.publish then
             event_bus.publish("playerRespawned", respawnPos)
-            print(string.format("[PlayerMovement] Respawned player to %f %f %f", respawnPos.x, respawnPos.y, respawnPos.z))
+            dbg(string.format("[PlayerMovement] Respawned player to %f %f %f", respawnPos.x, respawnPos.y, respawnPos.z))
         end
     end,
 
@@ -437,7 +428,7 @@ return Component {
         if self._playerDeadPending and isGrounded then
             if self._animator then
                 self._animator:SetBool("IsDead", true)
-                print("[PlayerMovement] Player grounded, playing Death animation")
+                dbg("[PlayerMovement] Player grounded, playing Death animation")
             end
             self._playerDead = true
             self._playerDeadPending = false
@@ -480,7 +471,7 @@ return Component {
             self._animator:SetBool("IsRunning", false)
             self._isRunning = false
             self._animator:SetBool("IsDashing", true)
-            print("[PlayerMovement] Dash started")
+            dbg("[PlayerMovement] Dash started")
         end
 
         if self._isDashing then
@@ -494,7 +485,7 @@ return Component {
                 CharacterController.Jump(self._controller, self.JumpHeight)
                 self._animator:SetBool("IsJumping", true)
                 playRandomSFX(self._audio, self.playerJumpSFX)
-                print("[PlayerMovement] Dash jump-cancelled")
+                dbg("[PlayerMovement] Dash jump-cancelled")
             elseif self._dashTimer <= 0 then
                 self._isDashing = false
                 _G.player_is_dashing = false
@@ -503,7 +494,7 @@ return Component {
                 self._isLanding = true
                 self._isRolling = true
                 self._wasDashingInAir = false
-                print("[PlayerMovement] Dash ended")
+                dbg("[PlayerMovement] Dash ended")
             else
                 local speed = self.DashSpeed
                 local liftY = 0

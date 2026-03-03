@@ -1,4 +1,6 @@
 -- ChainEndpointController.lua
+_G.CHAIN_DEBUG = _G.CHAIN_DEBUG ~= nil and _G.CHAIN_DEBUG or false
+local function dbg(...) if _G.CHAIN_DEBUG then print(...) end end
 local Component = require("extension.mono_helper")
 
 return Component {
@@ -11,21 +13,21 @@ return Component {
     Start = function(self)
         self._modelRender = self:GetComponent("ModelRenderComponent")
         if not self._modelRender then
-            print("[ChainEndpointController] WARNING: ModelRenderComponent not found on endpoint object")
+            dbg("[ChainEndpointController] WARNING: ModelRenderComponent not found on endpoint object")
         end
 
         self._rb = self:GetComponent("RigidBodyComponent")
         if self._rb then
             self._rb:SetEnabled(false)
         else
-            print("[ChainEndpointController] WARNING: RigidBodyComponent not found on endpoint object")
+            dbg("[ChainEndpointController] WARNING: RigidBodyComponent not found on endpoint object")
         end
 
         self._playerEntityId = nil
         if Engine and Engine.GetEntityByName then
             self._playerEntityId = Engine.GetEntityByName(self.PlayerName)
         else
-            print("[ChainEndpointController] WARNING: Engine.GetEntityByName not available")
+            dbg("[ChainEndpointController] WARNING: Engine.GetEntityByName not available")
         end
 
         -- Resolve this component's entity id for parenting calls
@@ -97,13 +99,13 @@ return Component {
                 pcall(function() self:_onCheckCollision(payload) end)
             end)
         else
-            print("[ChainEndpointController] WARNING: event_bus not available")
+            dbg("[ChainEndpointController] WARNING: event_bus not available")
         end
     end,
 
     _dbg = function(self, msg)
         if self.DebugLogs or _G.CHAIN_DEBUG then
-            print(msg)
+            dbg(msg)
         end
     end,
 
@@ -263,23 +265,23 @@ return Component {
     OnTriggerEnter = function(self, otherEntityId)
         local otherName = self:_getEntityDebugName(otherEntityId)
 
-        print("[ChainEndpointController][TRIGGER] OnTriggerEnter fired entity='" .. otherName .. "' id=" .. tostring(otherEntityId))
-        print(string.format("[ChainEndpointController][TRIGGER] rbActive=%s hookedEntityId=%s playerEntityId=%s",
+        dbg("[ChainEndpointController][TRIGGER] OnTriggerEnter fired entity='" .. otherName .. "' id=" .. tostring(otherEntityId))
+        dbg(string.format("[ChainEndpointController][TRIGGER] rbActive=%s hookedEntityId=%s playerEntityId=%s",
             tostring(self._rb and self._rb:IsEnabled()),
             tostring(self._hookedEntityId),
             tostring(self._playerEntityId)))
 
         local rbActive = self._rb and self._rb:IsEnabled()
         if not rbActive then
-            print("[ChainEndpointController][TRIGGER] REJECTED — RB not active | entity='" .. otherName .. "'")
+            dbg("[ChainEndpointController][TRIGGER] REJECTED — RB not active | entity='" .. otherName .. "'")
             return
         end
         if self._hookedEntityId then
-            print("[ChainEndpointController][TRIGGER] REJECTED — already hooked to '" .. self:_getEntityDebugName(self._hookedEntityId) .. "' | new contact='" .. otherName .. "'")
+            dbg("[ChainEndpointController][TRIGGER] REJECTED — already hooked to '" .. self:_getEntityDebugName(self._hookedEntityId) .. "' | new contact='" .. otherName .. "'")
             return
         end
         if self._playerEntityId and otherEntityId == self._playerEntityId then
-            print("[ChainEndpointController][TRIGGER] REJECTED — hit player '" .. otherName .. "'")
+            dbg("[ChainEndpointController][TRIGGER] REJECTED — hit player '" .. otherName .. "'")
             return
         end
 
@@ -295,16 +297,16 @@ return Component {
         end
 
         self:_dbg("[ChainEndpointController] OnTriggerEnter entity='" .. otherName .. "' root='" .. rootName .. "' tag='" .. tostring(tag) .. "'")
-        print(string.format("[ChainEndpointController][TRIGGER] tag check — entity='%s' root='%s' tag='%s'", otherName, rootName, tostring(tag)))
+        dbg(string.format("[ChainEndpointController][TRIGGER] tag check — entity='%s' root='%s' tag='%s'", otherName, rootName, tostring(tag)))
 
         -- Extend here for more hookable types: (tag == "Enemy") or (tag == "Hookable")
         local isHookable = (tag == "Enemy")
         if not isHookable then
-            print("[ChainEndpointController][TRIGGER] REJECTED — tag='" .. tostring(tag) .. "' not hookable")
+            dbg("[ChainEndpointController][TRIGGER] REJECTED — tag='" .. tostring(tag) .. "' not hookable")
             self:_dbg("[ChainEndpointController] OnTriggerEnter ignored — root='" .. rootName .. "' tag='" .. tostring(tag) .. "' not hookable")
             return
         end
-        print("[ChainEndpointController][TRIGGER] PASSED all guards — proceeding to hook and snap")
+        dbg("[ChainEndpointController][TRIGGER] PASSED all guards — proceeding to hook and snap")
 
         self:_dbg("[ChainEndpointController] OnTriggerEnter HOOKING — entity='" .. otherName .. "' root='" .. rootName .. "'")
 
