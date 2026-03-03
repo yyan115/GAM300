@@ -1,0 +1,14 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "0049e2ee345a6e4d-0004628d06000007",
+        "source": "../../Resources/Textures/M5/Papers_Height.png",
+        "compiled": "../../Resources/Textures/M5/Papers_Height.dds"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp"
+    }
+}

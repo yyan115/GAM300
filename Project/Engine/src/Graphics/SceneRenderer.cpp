@@ -214,6 +214,9 @@ void SceneRenderer::RenderSceneForEditor(const glm::vec3& cameraPos, const glm::
         // Set the static editor camera (this won't be updated by input)
         gfxManager.SetCamera(editorCamera);
 
+        // Update frustum with editor camera for correct culling
+        gfxManager.UpdateFrustum();
+
         // Begin frame and clear (without input processing)
         gfxManager.BeginFrame();
 
@@ -258,6 +261,9 @@ void SceneRenderer::RenderSceneForEditor(const glm::vec3& cameraPos, const glm::
             ppManager.SetCGContrast(camComp.cgContrast);
             ppManager.SetCGSaturation(camComp.cgSaturation);
             ppManager.SetCGTint(camComp.cgTint);
+            ppManager.SetChromaticAberrationEnabled(camComp.chromaticAberrationEnabled);
+            ppManager.SetChromaticAberrationIntensity(camComp.chromaticAberrationIntensity);
+            ppManager.SetChromaticAberrationPadding(camComp.chromaticAberrationPadding);
         } else {
             gfxManager.Clear(0.192f, 0.301f, 0.475f, 1.0f);
         }
@@ -379,6 +385,11 @@ void SceneRenderer::EndGameRender()
     BloomEffect* bloom = PostProcessingManager::GetInstance().GetBloomEffect();
     float savedBloomIntensity = bloom ? bloom->GetIntensity() : 0.0f;
     if (bloom) bloom->SetIntensity(0.0f);
+
+    // NOTE: Chromatic aberration, vignette, and color grading are NOT zeroed here.
+    // They are tonemapping shader effects that sample hdrColorTexture read-only,
+    // so they don't cause double-application. They must stay active because this
+    // second EndHDRRender pass is what writes to the game framebuffer.
 
     PostProcessingManager::GetInstance().EndHDRRender(gameFrameBuffer, gameWidth, gameHeight);
 

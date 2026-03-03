@@ -73,6 +73,14 @@ public:
     float GetCGSaturation() const { return cgSaturation_; }
     glm::vec3 GetCGTint() const { return cgTint_; }
 
+    // Chromatic Aberration settings (applied in tonemapping shader)
+    void SetChromaticAberrationEnabled(bool e) { caEnabled_ = e; }
+    void SetChromaticAberrationIntensity(float i) { caIntensity_ = i; }
+    void SetChromaticAberrationPadding(float p) { caPadding_ = p; }
+    bool GetChromaticAberrationEnabled() const { return caEnabled_; }
+    float GetChromaticAberrationIntensity() const { return caIntensity_; }
+    float GetChromaticAberrationPadding() const { return caPadding_; }
+
     // Reset all runtime post-processing state to defaults
     // Call this when exiting play mode to prevent stale effects persisting
     ENGINE_API void ResetRuntimeState();
@@ -121,4 +129,9 @@ private:
     float cgContrast_ = 1.0f;
     float cgSaturation_ = 1.0f;
     glm::vec3 cgTint_ = glm::vec3(1.0f);
+
+    // Chromatic Aberration state
+    bool caEnabled_ = false;
+    float caIntensity_ = 0.5f;
+    float caPadding_ = 0.5f;
 };
