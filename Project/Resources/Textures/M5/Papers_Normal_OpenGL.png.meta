@@ -1,0 +1,14 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "0049e2ee5e7f8240-0004628d0600000d",
+        "source": "../../Resources/Textures/M5/Papers_Normal_OpenGL.png",
+        "compiled": "../../Resources/Textures/M5/Papers_Normal_OpenGL.dds"
+    },
+    "TextureMetaData": {
+        "type": "normal",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp"
+    }
+}

@@ -3,37 +3,18 @@ local Component = require("extension.mono_helper")
 local TransformMixin = require("extension.transform_mixin")
 local event_bus = _G.event_bus
 
-local function eulerToQuat(pitch, yaw, roll)
-    -- Inputs are in DEGREES. Your math.random(0, 360) is already in degrees.
-    local p = math.rad(pitch or 0) * 0.5
-    local y = math.rad(yaw or 0)   * 0.5
-    local r = math.rad(roll or 0)  * 0.5
-
-    local sinP, cosP = math.sin(p), math.cos(p)
-    local sinY, cosY = math.sin(y), math.cos(y)
-    local sinR, cosR = math.sin(r), math.cos(r)
-
-    -- Standard ZYX conversion
-    return {
-        w = cosP * cosY * cosR + sinP * sinY * sinR,
-        x = sinP * cosY * cosR - cosP * sinY * sinR,
-        y = cosP * sinY * cosR + sinP * cosY * sinR,
-        z = cosP * cosY * sinR - sinP * sinY * cosR
-    }
-end
-
 return Component {
     mixins = { TransformMixin },
 
     fields = {
         InitialInactiveDuration = 0.5,
-        CollectionSpeed = 10.0,
-        CollectionRadius = 0.1,
+        AttractionStrength = 60.0, -- Increased strength to fight drag
+        Drag = 5.0,                -- Air resistance to stop spinning
+        MaxSpeed = 40.0,           -- Higher max speed allowed
+        CollectionRadius = 0.05,    -- Slightly larger radius
+        TargetScale = 0.1,
+        LiftHeight = 0.3,          -- Aim for the player's center (not feet)
     },
-
-    Awake = function(self)
-        
-    end,
 
     Start = function(self)
         self._transform = self:GetComponent("Transform")
@@ -46,64 +27,127 @@ return Component {
         self._parentFeatherEntity = Engine.GetParentEntity(self.entityId)
         self._parentTransform = GetComponent(self._parentFeatherEntity, "Transform")
         self._parentRb = GetComponent(self._parentFeatherEntity, "RigidBodyComponent")
+        
+        self._onTriggerStayed = false
+        self._isCollecting = false
+        self._velocity = { x=0, y=0, z=0 }
     end,
 
     Update = function(self, dt)
-        if self._colliderEnabled == false then
-            self._initialInactiveDuration = self._initialInactiveDuration - dt
-            if self._initialInactiveDuration <= 0 then
-                self._colliderEnabled = true
-                self._collider.enabled = true
-            end
+        self._initialInactiveDuration = self._initialInactiveDuration - dt
+        if self._initialInactiveDuration <= 0 then
+            self._collider.enabled = true
+            --print(string.format("[EnemyFeatherCollectible] Trigger collider enabled! - Entity %d", self.entityId))
         end
 
         if self._isCollecting and self._playerTransform then
-            -- Disable physics so we can move manually without fighting gravity
-            if self._parentRb and self._parentRb.enabled then
-                self._parentRb.enabled = false
+            -- Fetch Transform FRESH every frame!
+            -- Do not use self._parentTransform cached in Start. 
+            -- Destroying other feathers causes memory addresses to shift.
+            local parentTransform = GetComponent(self._parentFeatherEntity, "Transform")
+            if not parentTransform then return end -- Safety check
+
+            -- [Physics Override]
+            local freshParentRb = GetComponent(self._parentFeatherEntity, "RigidBodyComponent")
+            if freshParentRb then
+                freshParentRb.enabled = false
+                freshParentRb.isTeleporting = true
             end
 
-            -- Get Positions
-            local myPos = self._parentTransform.localPosition -- or GetPosition()
-            local targetPos = self._playerTransform.localPosition -- or GetPosition()
+            -- Target Calculation
+            local targetPos = self._playerTransform.localPosition
+            local targetX = targetPos.x
+            local targetY = targetPos.y + self.LiftHeight
+            local targetZ = targetPos.z
 
-            -- Calculate Direction
-            local dx = targetPos.x - myPos.x
-            local dy = (targetPos.y + 1.0) - myPos.y -- Aim for chest/head, not feet
-            local dz = targetPos.z - myPos.z
+            -- [ZOMBIE HANDLING] If already collected (waiting for Destroy), snap and hide
+            if self._collected then
+                local targetPos = self._playerTransform.localPosition
+                parentTransform.localPosition = { 
+                    x = targetPos.x, 
+                    y = targetPos.y + self.LiftHeight, 
+                    z = targetPos.z 
+                }
+                parentTransform.localScale = { x = 0, y = 0, z = 0 }
+                parentTransform.isDirty = true
+                return 
+            end
 
+            -- Standard Movement Logic
+            local myPos = parentTransform.localPosition
+            local dx = targetX - myPos.x
+            local dy = targetY - myPos.y
+            local dz = targetZ - myPos.z
             local distSq = dx*dx + dy*dy + dz*dz
-            
-            -- Check if reached
-            if distSq < (self.CollectionRadius * self.CollectionRadius) then
-                -- self:OnCollected()
-                return
+            local dist = math.sqrt(distSq)
+
+            -- Drag
+            local dragFactor = 1.0 - (self.Drag * dt)
+            if dragFactor < 0 then dragFactor = 0 end
+            self._velocity.x = self._velocity.x * dragFactor
+            self._velocity.y = self._velocity.y * dragFactor
+            self._velocity.z = self._velocity.z * dragFactor
+
+            -- Attraction
+            if dist > 0.001 then
+                local nx, ny, nz = dx/dist, dy/dist, dz/dist
+                self._velocity.x = self._velocity.x + (nx * self.AttractionStrength * dt)
+                self._velocity.y = self._velocity.y + (ny * self.AttractionStrength * dt)
+                self._velocity.z = self._velocity.z + (nz * self.AttractionStrength * dt)
             end
 
-            -- Move towards player
-            local dist = math.sqrt(distSq)
-            local moveStep = self.CollectionSpeed * dt
-            
-            -- Prevent overshooting
-            if moveStep > dist then moveStep = dist end
+            -- Clamp Speed
+            local vSq = self._velocity.x^2 + self._velocity.y^2 + self._velocity.z^2
+            local currentSpeed = math.sqrt(vSq)
+            if currentSpeed > self.MaxSpeed then
+                local scale = self.MaxSpeed / currentSpeed
+                self._velocity.x = self._velocity.x * scale
+                self._velocity.y = self._velocity.y * scale
+                self._velocity.z = self._velocity.z * scale
+                currentSpeed = self.MaxSpeed
+            end
 
-            -- Normalize and Scale
-            local nx, ny, nz = dx/dist, dy/dist, dz/dist
-            
-            myPos.x = myPos.x + nx * moveStep
-            myPos.y = myPos.y + ny * moveStep
-            myPos.z = myPos.z + nz * moveStep
+            -- [Tunneling & Collection Check]
+            local moveDist = currentSpeed * dt
+            if (dist < self.CollectionRadius) or (dist <= moveDist) then
+                print(string.format("[EnemyFeatherCollectible] Player collected feather - Entity %d", self.entityId))
+                self:OnCollected() 
+                -- DO NOT RETURN HERE! Let the code below run one last time to snap position.
+                -- Next frame, the "Zombie Handling" block at the top will take over.
+                myPos = { x = targetX, y = targetY, z = targetZ } -- Snap position visually
+            else
+                -- Apply normal movement
+                myPos.x = myPos.x + self._velocity.x * dt
+                myPos.y = myPos.y + self._velocity.y * dt
+                myPos.z = myPos.z + self._velocity.z * dt
+            end
 
-            self._parentTransform.localPosition = myPos
-            self._parentTransform.isDirty = true
+            -- [Scale Logic]
+            if self._startDistance and self._startDistance > 0 then
+                local t = 1.0 - (dist / self._startDistance)
+                -- t = t * 2.0
+                if t < 0 then t = 0 end
+                if t > 1 then t = 1 end
+
+                local startS = self._startScale
+                local targetS = self.TargetScale
+
+                if startS then
+                    local currentScale = parentTransform.localScale
+                    currentScale.x = startS.x + (targetS - startS.x) * t
+                    currentScale.y = startS.y + (targetS - startS.y) * t
+                    currentScale.z = startS.z + (targetS - startS.z) * t
+                    parentTransform.localScale = currentScale
+                end
+            end
+
+            parentTransform.localPosition.x = myPos.x
+            parentTransform.localPosition.y = myPos.y
+            parentTransform.localPosition.z = myPos.z
+            parentTransform.isDirty = true
         end
     end,
 
-    OnDisable = function(self)
-
-    end,
-
-    -- Walk up the hierarchy to find the root entity
     _toRoot = function(self, entityId)
         local targetId = entityId
         if Engine and Engine.GetParentEntity then
@@ -116,37 +160,49 @@ return Component {
         return targetId
     end,
 
-    OnTriggerEnter = function(self, otherEntityId)
-        -- Don't trigger if already collecting
+    OnTriggerStay = function(self, otherEntityId)
+        if self._onTriggerStayed then return end
         if self._isCollecting then return end
 
         local rootId = self:_toRoot(otherEntityId)
         local tagComp = GetComponent(rootId, "TagComponent")
         
         if tagComp and Tag.Compare(tagComp.tagIndex, "Player") then
-            print("[EnemyFeatherCollectible] OnTriggerEnter with Player!")
-
-            -- 1. Mark as collecting
             self._isCollecting = true
-            
-            -- 2. Cache the Player Transform for the Update loop
             self._playerTransform = GetComponent(rootId, "Transform")
             
-            -- 3. Disable collision trigger so we don't trigger it again
-            if self._collider then self._collider.enabled = false end
+            local myPos = self._parentTransform.localPosition
+            local targetPos = self._playerTransform.localPosition
+            local dx = targetPos.x - myPos.x
+            local dy = (targetPos.y + self.LiftHeight) - myPos.y
+            local dz = targetPos.z - myPos.z
+            self._startDistance = math.sqrt(dx*dx + dy*dy + dz*dz)
+
+            -- Initial "Pop" Velocity upwards
+            self._velocity = { x=0, y=5.0, z=0 } 
+
+            local s = self._parentTransform.localScale
+            self._startScale = { x = s.x, y = s.y, z = s.z }
+
+            --if self._collider then self._collider.enabled = false end
+            self._onTriggerStayed = true
+
+            print(string.format("[EnemyFeatherCollectible] Player collecting feather - Entity %d", self.entityId))
         end
     end,
 
     OnCollected = function(self)
-        -- [Logic to give player resource goes here]
-        print("[EnemyFeatherCollectible] Collected!")
-        
-        -- Destroy Self
-        Engine.DestroyEntity(self.entityId)
-        
-        -- Optional: Decrement your global feather count to keep the limit logic working
+        if self._collected then return end
+        self._collected = true
+
+        Engine.DestroyEntity(self._parentFeatherEntity)
+
         if _G.ActiveFeatherCount then 
             _G.ActiveFeatherCount = math.max(0, _G.ActiveFeatherCount - 1)
+        end
+
+        if event_bus and event_bus.publish then
+            event_bus.publish("featherCollected", true)
         end
     end,
 }

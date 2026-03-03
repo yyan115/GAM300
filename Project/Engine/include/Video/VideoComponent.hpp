@@ -22,6 +22,7 @@ struct CutsceneBoard {
 	float fadeDuration = 0.5f;         // Fade time for transition INTO this board (seconds)
 
 	// --- Blur ---
+	float blurDelay = 0.0f;            // Seconds to stay sharp before blur starts
 	float blurIntensity = 0.0f;        // Blur at start of board (0=sharp, 1=full)
 	float blurIntensityEnd = -1.0f;    // Blur at end of board (-1=same as start, i.e. static)
 	float blurRadius = 2.0f;           // Blur kernel radius
@@ -77,6 +78,19 @@ struct ENGINE_API VideoComponent {
 	Entity blackScreenEntity = 0;
 	Entity skipButtonEntity = 0;
 	bool needsInit = true;
+
+	// Saved camera blur state (restored when cutscene ends)
+	bool savedCameraBlur = false;
+	bool origBlurEnabled = false;
+	float origBlurIntensity = 0.0f;
+	float origBlurRadius = 2.0f;
+	int origBlurPasses = 2;
+
+	// Blur continuity state (smooth transitions between boards)
+	float boardElapsedTime = 0.0f;      // Blur-dedicated timer (independent of phase stateTimer)
+	float lastComputedBlur = 0.0f;      // Current blur value (carries across transitions)
+	float transitionBlurFrom = 0.0f;    // Blur value when transition started
+	float transitionBlurTo = 0.0f;      // Target blur for incoming board
 
 	VideoComponent() = default;
 	~VideoComponent() = default;

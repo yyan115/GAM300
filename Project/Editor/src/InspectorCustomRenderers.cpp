@@ -31,6 +31,7 @@ prior written consent of DigiPen Institute of Technology is prohibited.
 #include "Graphics/Sprite/SpriteAnimationComponent.hpp"
 #include "Panels/SpriteAnimationEditorWindow.hpp"
 #include "Graphics/Particle/ParticleComponent.hpp"
+#include "Graphics/Fog/FogComponent.hpp"
 #include "Graphics/TextRendering/TextRenderComponent.hpp"
 #include "Physics/RigidBodyComponent.hpp"
 #include "Graphics/Lights/LightComponent.hpp"
@@ -68,6 +69,7 @@ prior written consent of DigiPen Institute of Technology is prohibited.
 #include "UI/Slider/SliderComponent.hpp"
 #include "UI/Anchor/UIAnchorComponent.hpp"
 #include "Dialogue/DialogueComponent.hpp"
+#include "Graphics/BloomComponent.hpp"
 #include "Scripting.h"
 #include "ScriptInspector.h"
 #include "Panels/TagsLayersPanel.hpp"
@@ -1839,6 +1841,12 @@ void RegisterInspectorCustomRenderers()
                 UndoableWidgets::Checkbox("##ContinueText", &board.continueText);
 
                 // --- Blur ---
+                ImGui::Text("Blur Delay");
+                if (ImGui::IsItemHovered()) ImGui::SetTooltip("Seconds to stay sharp before blur starts.\n0 = blur immediately.");
+                ImGui::SameLine(labelWidth);
+                ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x * 0.5f);
+                UndoableWidgets::DragFloat("##BlurDelay", &board.blurDelay, 0.05f, 0.0f, 30.0f, "%.2f sec");
+
                 bool animateBlur = (board.blurIntensityEnd >= 0.0f);
                 ImGui::Text("Blur Start");
                 if (ImGui::IsItemHovered()) ImGui::SetTooltip("Blur intensity at the start of this board.\n0 = sharp, higher = more blurred.\nIf Animate is off, this value is used for the entire board.");
@@ -2181,6 +2189,432 @@ void RegisterInspectorCustomRenderers()
                 );
             }
             isEditingBgColor[entity] = false;
+        }
+
+        // ==================== POST-PROCESSING ====================
+        ImGui::Spacing();
+        ImGui::Separator();
+        ImGui::Spacing();
+
+        // Static tracking for post-processing undo
+        static std::unordered_map<Entity, float> startBlurIntensity, startBlurRadius;
+        static std::unordered_map<Entity, int> startBlurPasses;
+        static std::unordered_map<Entity, uint32_t> startBlurLayerMask;
+        static std::unordered_map<Entity, float> startBloomThreshold, startBloomIntensity;
+        static std::unordered_map<Entity, float> startVignetteIntensity, startVignetteSmoothness;
+        static std::unordered_map<Entity, glm::vec3> startVignetteColor;
+        static std::unordered_map<Entity, float> startCGBrightness, startCGContrast, startCGSaturation;
+        static std::unordered_map<Entity, glm::vec3> startCGTint;
+        static std::unordered_map<Entity, float> startCAIntensity, startCAPadding;
+        static std::unordered_map<Entity, bool> isEditingPP;
+        if (isEditingPP.find(entity) == isEditingPP.end()) isEditingPP[entity] = false;
+
+        // --- BLUR ---
+        if (ImGui::CollapsingHeader("Post-Processing: Blur")) {
+            ImGui::Indent(10.0f);
+
+            // Enable checkbox
+            bool blurEnabled = camera.blurEnabled;
+            if (ImGui::Checkbox("Enable Blur##PP", &blurEnabled)) {
+                bool oldVal = camera.blurEnabled;
+                camera.blurEnabled = blurEnabled;
+                if (UndoSystem::GetInstance().IsEnabled()) {
+                    bool newVal = blurEnabled;
+                    UndoSystem::GetInstance().RecordLambdaChange(
+                        [entity, newVal]() { auto& ecs = ECSRegistry::GetInstance().GetActiveECSManager(); if (ecs.HasComponent<CameraComponent>(entity)) ecs.GetComponent<CameraComponent>(entity).blurEnabled = newVal; },
+                        [entity, oldVal]() { auto& ecs = ECSRegistry::GetInstance().GetActiveECSManager(); if (ecs.HasComponent<CameraComponent>(entity)) ecs.GetComponent<CameraComponent>(entity).blurEnabled = oldVal; },
+                        "Toggle Camera Blur");
+                }
+            }
+
+            if (camera.blurEnabled) {
+                // Blur Intensity
+                ImGui::Text("Intensity");
+                ImGui::SameLine(labelWidth);
+                ImGui::SetNextItemWidth(-1);
+                if (!isEditingPP[entity]) startBlurIntensity[entity] = camera.blurIntensity;
+                if (ImGui::SliderFloat("##BlurIntensity", &camera.blurIntensity, 0.0f, 5.0f)) { isEditingPP[entity] = true; }
+                if (isEditingPP[entity] && !ImGui::IsItemActive()) {
+                    float oldVal = startBlurIntensity[entity]; float newVal = camera.blurIntensity;
+                    if (oldVal != newVal && UndoSystem::GetInstance().IsEnabled()) {
+                        UndoSystem::GetInstance().RecordLambdaChange(
+                            [entity, newVal]() { auto& ecs = ECSRegistry::GetInstance().GetActiveECSManager(); if (ecs.HasComponent<CameraComponent>(entity)) ecs.GetComponent<CameraComponent>(entity).blurIntensity = newVal; },
+                            [entity, oldVal]() { auto& ecs = ECSRegistry::GetInstance().GetActiveECSManager(); if (ecs.HasComponent<CameraComponent>(entity)) ecs.GetComponent<CameraComponent>(entity).blurIntensity = oldVal; },
+                            "Change Blur Intensity");
+                    }
+                    isEditingPP[entity] = false;
+                }
+
+                // Blur Radius
+                ImGui::Text("Radius");
+                ImGui::SameLine(labelWidth);
+                ImGui::SetNextItemWidth(-1);
+                if (!isEditingPP[entity]) startBlurRadius[entity] = camera.blurRadius;
+                if (ImGui::DragFloat("##BlurRadius", &camera.blurRadius, 0.1f, 0.1f, 20.0f)) { isEditingPP[entity] = true; }
+                if (isEditingPP[entity] && !ImGui::IsItemActive()) {
+                    float oldVal = startBlurRadius[entity]; float newVal = camera.blurRadius;
+                    if (oldVal != newVal && UndoSystem::GetInstance().IsEnabled()) {
+                        UndoSystem::GetInstance().RecordLambdaChange(
+                            [entity, newVal]() { auto& ecs = ECSRegistry::GetInstance().GetActiveECSManager(); if (ecs.HasComponent<CameraComponent>(entity)) ecs.GetComponent<CameraComponent>(entity).blurRadius = newVal; },
+                            [entity, oldVal]() { auto& ecs = ECSRegistry::GetInstance().GetActiveECSManager(); if (ecs.HasComponent<CameraComponent>(entity)) ecs.GetComponent<CameraComponent>(entity).blurRadius = oldVal; },
+                            "Change Blur Radius");
+                    }
+                    isEditingPP[entity] = false;
+                }
+
+                // Blur Passes
+                ImGui::Text("Passes");
+                ImGui::SameLine(labelWidth);
+                ImGui::SetNextItemWidth(-1);
+                if (!isEditingPP[entity]) startBlurPasses[entity] = camera.blurPasses;
+                if (ImGui::InputInt("##BlurPasses", &camera.blurPasses)) {
+                    camera.blurPasses = std::max(1, std::min(camera.blurPasses, 20));
+                    isEditingPP[entity] = true;
+                }
+                if (isEditingPP[entity] && !ImGui::IsItemActive()) {
+                    int oldVal = startBlurPasses[entity]; int newVal = camera.blurPasses;
+                    if (oldVal != newVal && UndoSystem::GetInstance().IsEnabled()) {
+                        UndoSystem::GetInstance().RecordLambdaChange(
+                            [entity, newVal]() { auto& ecs = ECSRegistry::GetInstance().GetActiveECSManager(); if (ecs.HasComponent<CameraComponent>(entity)) ecs.GetComponent<CameraComponent>(entity).blurPasses = newVal; },
+                            [entity, oldVal]() { auto& ecs = ECSRegistry::GetInstance().GetActiveECSManager(); if (ecs.HasComponent<CameraComponent>(entity)) ecs.GetComponent<CameraComponent>(entity).blurPasses = oldVal; },
+                            "Change Blur Passes");
+                    }
+                    isEditingPP[entity] = false;
+                }
+
+                // Blur Layer Mask (checkboxes)
+                ImGui::Text("Blur Layers");
+                ImGui::SameLine(labelWidth);
+                const auto& availableLayers = LayerManager::GetInstance().GetAllLayers();
+                std::string previewLabel;
+                if (camera.blurLayerMask == 0xFFFFFFFF) previewLabel = "Everything";
+                else if (camera.blurLayerMask == 0) previewLabel = "Nothing";
+                else previewLabel = "Mixed...";
+                ImGui::SetNextItemWidth(-1);
+                EditorComponents::PushComboColors();
+                if (ImGui::BeginCombo("##BlurLayerMask", previewLabel.c_str())) {
+                    // Everything / Nothing shortcuts
+                    if (ImGui::Selectable("Everything", camera.blurLayerMask == 0xFFFFFFFF)) {
+                        uint32_t oldMask = camera.blurLayerMask;
+                        camera.blurLayerMask = 0xFFFFFFFF;
+                        if (oldMask != camera.blurLayerMask && UndoSystem::GetInstance().IsEnabled()) {
+                            uint32_t newMask = camera.blurLayerMask;
+                            UndoSystem::GetInstance().RecordLambdaChange(
+                                [entity, newMask]() { auto& ecs = ECSRegistry::GetInstance().GetActiveECSManager(); if (ecs.HasComponent<CameraComponent>(entity)) ecs.GetComponent<CameraComponent>(entity).blurLayerMask = newMask; },
+                                [entity, oldMask]() { auto& ecs = ECSRegistry::GetInstance().GetActiveECSManager(); if (ecs.HasComponent<CameraComponent>(entity)) ecs.GetComponent<CameraComponent>(entity).blurLayerMask = oldMask; },
+                                "Change Blur Layer Mask");
+                        }
+                    }
+                    if (ImGui::Selectable("Nothing", camera.blurLayerMask == 0)) {
+                        uint32_t oldMask = camera.blurLayerMask;
+                        camera.blurLayerMask = 0;
+                        if (oldMask != camera.blurLayerMask && UndoSystem::GetInstance().IsEnabled()) {
+                            uint32_t newMask = camera.blurLayerMask;
+                            UndoSystem::GetInstance().RecordLambdaChange(
+                                [entity, newMask]() { auto& ecs = ECSRegistry::GetInstance().GetActiveECSManager(); if (ecs.HasComponent<CameraComponent>(entity)) ecs.GetComponent<CameraComponent>(entity).blurLayerMask = newMask; },
+                                [entity, oldMask]() { auto& ecs = ECSRegistry::GetInstance().GetActiveECSManager(); if (ecs.HasComponent<CameraComponent>(entity)) ecs.GetComponent<CameraComponent>(entity).blurLayerMask = oldMask; },
+                                "Change Blur Layer Mask");
+                        }
+                    }
+                    ImGui::Separator();
+                    for (int i = 0; i < LayerManager::MAX_LAYERS; ++i) {
+                        if (availableLayers[i].empty()) continue;
+                        bool checked = (camera.blurLayerMask & (1u << i)) != 0;
+                        if (ImGui::Checkbox((availableLayers[i] + "##blurLayer" + std::to_string(i)).c_str(), &checked)) {
+                            uint32_t oldMask = camera.blurLayerMask;
+                            if (checked) camera.blurLayerMask |= (1u << i);
+                            else camera.blurLayerMask &= ~(1u << i);
+                            if (UndoSystem::GetInstance().IsEnabled()) {
+                                uint32_t newMask = camera.blurLayerMask;
+                                UndoSystem::GetInstance().RecordLambdaChange(
+                                    [entity, newMask]() { auto& ecs = ECSRegistry::GetInstance().GetActiveECSManager(); if (ecs.HasComponent<CameraComponent>(entity)) ecs.GetComponent<CameraComponent>(entity).blurLayerMask = newMask; },
+                                    [entity, oldMask]() { auto& ecs = ECSRegistry::GetInstance().GetActiveECSManager(); if (ecs.HasComponent<CameraComponent>(entity)) ecs.GetComponent<CameraComponent>(entity).blurLayerMask = oldMask; },
+                                    "Change Blur Layer Mask");
+                            }
+                        }
+                    }
+                    ImGui::EndCombo();
+                }
+                EditorComponents::PopComboColors();
+            }
+
+            ImGui::Unindent(10.0f);
+        }
+
+        // --- BLOOM ---
+        if (ImGui::CollapsingHeader("Post-Processing: Bloom")) {
+            ImGui::Indent(10.0f);
+
+            bool bloomEnabled = camera.bloomEnabled;
+            if (ImGui::Checkbox("Enable Bloom##PP", &bloomEnabled)) {
+                bool oldVal = camera.bloomEnabled;
+                camera.bloomEnabled = bloomEnabled;
+                if (UndoSystem::GetInstance().IsEnabled()) {
+                    bool newVal = bloomEnabled;
+                    UndoSystem::GetInstance().RecordLambdaChange(
+                        [entity, newVal]() { auto& ecs = ECSRegistry::GetInstance().GetActiveECSManager(); if (ecs.HasComponent<CameraComponent>(entity)) ecs.GetComponent<CameraComponent>(entity).bloomEnabled = newVal; },
+                        [entity, oldVal]() { auto& ecs = ECSRegistry::GetInstance().GetActiveECSManager(); if (ecs.HasComponent<CameraComponent>(entity)) ecs.GetComponent<CameraComponent>(entity).bloomEnabled = oldVal; },
+                        "Toggle Camera Bloom");
+                }
+            }
+
+            if (camera.bloomEnabled) {
+                ImGui::Text("Threshold");
+                ImGui::SameLine(labelWidth);
+                ImGui::SetNextItemWidth(-1);
+                if (!isEditingPP[entity]) startBloomThreshold[entity] = camera.bloomThreshold;
+                if (ImGui::SliderFloat("##BloomThreshold", &camera.bloomThreshold, 0.0f, 5.0f)) { isEditingPP[entity] = true; }
+                if (isEditingPP[entity] && !ImGui::IsItemActive()) {
+                    float oldVal = startBloomThreshold[entity]; float newVal = camera.bloomThreshold;
+                    if (oldVal != newVal && UndoSystem::GetInstance().IsEnabled()) {
+                        UndoSystem::GetInstance().RecordLambdaChange(
+                            [entity, newVal]() { auto& ecs = ECSRegistry::GetInstance().GetActiveECSManager(); if (ecs.HasComponent<CameraComponent>(entity)) ecs.GetComponent<CameraComponent>(entity).bloomThreshold = newVal; },
+                            [entity, oldVal]() { auto& ecs = ECSRegistry::GetInstance().GetActiveECSManager(); if (ecs.HasComponent<CameraComponent>(entity)) ecs.GetComponent<CameraComponent>(entity).bloomThreshold = oldVal; },
+                            "Change Bloom Threshold");
+                    }
+                    isEditingPP[entity] = false;
+                }
+
+                ImGui::Text("Intensity");
+                ImGui::SameLine(labelWidth);
+                ImGui::SetNextItemWidth(-1);
+                if (!isEditingPP[entity]) startBloomIntensity[entity] = camera.bloomIntensity;
+                if (ImGui::SliderFloat("##BloomIntensity", &camera.bloomIntensity, 0.0f, 5.0f)) { isEditingPP[entity] = true; }
+                if (isEditingPP[entity] && !ImGui::IsItemActive()) {
+                    float oldVal = startBloomIntensity[entity]; float newVal = camera.bloomIntensity;
+                    if (oldVal != newVal && UndoSystem::GetInstance().IsEnabled()) {
+                        UndoSystem::GetInstance().RecordLambdaChange(
+                            [entity, newVal]() { auto& ecs = ECSRegistry::GetInstance().GetActiveECSManager(); if (ecs.HasComponent<CameraComponent>(entity)) ecs.GetComponent<CameraComponent>(entity).bloomIntensity = newVal; },
+                            [entity, oldVal]() { auto& ecs = ECSRegistry::GetInstance().GetActiveECSManager(); if (ecs.HasComponent<CameraComponent>(entity)) ecs.GetComponent<CameraComponent>(entity).bloomIntensity = oldVal; },
+                            "Change Bloom Intensity");
+                    }
+                    isEditingPP[entity] = false;
+                }
+            }
+
+            ImGui::Unindent(10.0f);
+        }
+
+        // --- VIGNETTE ---
+        if (ImGui::CollapsingHeader("Post-Processing: Vignette")) {
+            ImGui::Indent(10.0f);
+
+            bool vignetteEnabled = camera.vignetteEnabled;
+            if (ImGui::Checkbox("Enable Vignette##PP", &vignetteEnabled)) {
+                bool oldVal = camera.vignetteEnabled;
+                camera.vignetteEnabled = vignetteEnabled;
+                if (UndoSystem::GetInstance().IsEnabled()) {
+                    bool newVal = vignetteEnabled;
+                    UndoSystem::GetInstance().RecordLambdaChange(
+                        [entity, newVal]() { auto& ecs = ECSRegistry::GetInstance().GetActiveECSManager(); if (ecs.HasComponent<CameraComponent>(entity)) ecs.GetComponent<CameraComponent>(entity).vignetteEnabled = newVal; },
+                        [entity, oldVal]() { auto& ecs = ECSRegistry::GetInstance().GetActiveECSManager(); if (ecs.HasComponent<CameraComponent>(entity)) ecs.GetComponent<CameraComponent>(entity).vignetteEnabled = oldVal; },
+                        "Toggle Camera Vignette");
+                }
+            }
+
+            if (camera.vignetteEnabled) {
+                ImGui::Text("Intensity");
+                ImGui::SameLine(labelWidth);
+                ImGui::SetNextItemWidth(-1);
+                if (!isEditingPP[entity]) startVignetteIntensity[entity] = camera.vignetteIntensity;
+                if (ImGui::SliderFloat("##VignetteIntensity", &camera.vignetteIntensity, 0.0f, 1.0f)) { isEditingPP[entity] = true; }
+                if (isEditingPP[entity] && !ImGui::IsItemActive()) {
+                    float oldVal = startVignetteIntensity[entity]; float newVal = camera.vignetteIntensity;
+                    if (oldVal != newVal && UndoSystem::GetInstance().IsEnabled()) {
+                        UndoSystem::GetInstance().RecordLambdaChange(
+                            [entity, newVal]() { auto& ecs = ECSRegistry::GetInstance().GetActiveECSManager(); if (ecs.HasComponent<CameraComponent>(entity)) ecs.GetComponent<CameraComponent>(entity).vignetteIntensity = newVal; },
+                            [entity, oldVal]() { auto& ecs = ECSRegistry::GetInstance().GetActiveECSManager(); if (ecs.HasComponent<CameraComponent>(entity)) ecs.GetComponent<CameraComponent>(entity).vignetteIntensity = oldVal; },
+                            "Change Vignette Intensity");
+                    }
+                    isEditingPP[entity] = false;
+                }
+
+                ImGui::Text("Smoothness");
+                ImGui::SameLine(labelWidth);
+                ImGui::SetNextItemWidth(-1);
+                if (!isEditingPP[entity]) startVignetteSmoothness[entity] = camera.vignetteSmoothness;
+                if (ImGui::SliderFloat("##VignetteSmoothness", &camera.vignetteSmoothness, 0.0f, 1.0f)) { isEditingPP[entity] = true; }
+                if (isEditingPP[entity] && !ImGui::IsItemActive()) {
+                    float oldVal = startVignetteSmoothness[entity]; float newVal = camera.vignetteSmoothness;
+                    if (oldVal != newVal && UndoSystem::GetInstance().IsEnabled()) {
+                        UndoSystem::GetInstance().RecordLambdaChange(
+                            [entity, newVal]() { auto& ecs = ECSRegistry::GetInstance().GetActiveECSManager(); if (ecs.HasComponent<CameraComponent>(entity)) ecs.GetComponent<CameraComponent>(entity).vignetteSmoothness = newVal; },
+                            [entity, oldVal]() { auto& ecs = ECSRegistry::GetInstance().GetActiveECSManager(); if (ecs.HasComponent<CameraComponent>(entity)) ecs.GetComponent<CameraComponent>(entity).vignetteSmoothness = oldVal; },
+                            "Change Vignette Smoothness");
+                    }
+                    isEditingPP[entity] = false;
+                }
+
+                ImGui::Text("Color");
+                ImGui::SameLine(labelWidth);
+                ImGui::SetNextItemWidth(-1);
+                float vigColor[3] = {camera.vignetteColor.r, camera.vignetteColor.g, camera.vignetteColor.b};
+                if (!isEditingPP[entity]) startVignetteColor[entity] = camera.vignetteColor;
+                if (ImGui::ColorEdit3("##VignetteColor", vigColor)) {
+                    camera.vignetteColor = glm::vec3(vigColor[0], vigColor[1], vigColor[2]);
+                    isEditingPP[entity] = true;
+                }
+                if (isEditingPP[entity] && !ImGui::IsItemActive()) {
+                    glm::vec3 oldVal = startVignetteColor[entity]; glm::vec3 newVal = camera.vignetteColor;
+                    if (oldVal != newVal && UndoSystem::GetInstance().IsEnabled()) {
+                        UndoSystem::GetInstance().RecordLambdaChange(
+                            [entity, newVal]() { auto& ecs = ECSRegistry::GetInstance().GetActiveECSManager(); if (ecs.HasComponent<CameraComponent>(entity)) ecs.GetComponent<CameraComponent>(entity).vignetteColor = newVal; },
+                            [entity, oldVal]() { auto& ecs = ECSRegistry::GetInstance().GetActiveECSManager(); if (ecs.HasComponent<CameraComponent>(entity)) ecs.GetComponent<CameraComponent>(entity).vignetteColor = oldVal; },
+                            "Change Vignette Color");
+                    }
+                    isEditingPP[entity] = false;
+                }
+            }
+
+            ImGui::Unindent(10.0f);
+        }
+
+        // --- COLOR GRADING ---
+        if (ImGui::CollapsingHeader("Post-Processing: Color Grading")) {
+            ImGui::Indent(10.0f);
+
+            bool cgEnabled = camera.colorGradingEnabled;
+            if (ImGui::Checkbox("Enable Color Grading##PP", &cgEnabled)) {
+                bool oldVal = camera.colorGradingEnabled;
+                camera.colorGradingEnabled = cgEnabled;
+                if (UndoSystem::GetInstance().IsEnabled()) {
+                    bool newVal = cgEnabled;
+                    UndoSystem::GetInstance().RecordLambdaChange(
+                        [entity, newVal]() { auto& ecs = ECSRegistry::GetInstance().GetActiveECSManager(); if (ecs.HasComponent<CameraComponent>(entity)) ecs.GetComponent<CameraComponent>(entity).colorGradingEnabled = newVal; },
+                        [entity, oldVal]() { auto& ecs = ECSRegistry::GetInstance().GetActiveECSManager(); if (ecs.HasComponent<CameraComponent>(entity)) ecs.GetComponent<CameraComponent>(entity).colorGradingEnabled = oldVal; },
+                        "Toggle Camera Color Grading");
+                }
+            }
+
+            if (camera.colorGradingEnabled) {
+                // Brightness
+                ImGui::Text("Brightness");
+                ImGui::SameLine(labelWidth);
+                ImGui::SetNextItemWidth(-1);
+                if (!isEditingPP[entity]) startCGBrightness[entity] = camera.cgBrightness;
+                if (ImGui::SliderFloat("##CGBrightness", &camera.cgBrightness, -1.0f, 1.0f)) { isEditingPP[entity] = true; }
+                if (isEditingPP[entity] && !ImGui::IsItemActive()) {
+                    float oldVal = startCGBrightness[entity]; float newVal = camera.cgBrightness;
+                    if (oldVal != newVal && UndoSystem::GetInstance().IsEnabled()) {
+                        UndoSystem::GetInstance().RecordLambdaChange(
+                            [entity, newVal]() { auto& ecs = ECSRegistry::GetInstance().GetActiveECSManager(); if (ecs.HasComponent<CameraComponent>(entity)) ecs.GetComponent<CameraComponent>(entity).cgBrightness = newVal; },
+                            [entity, oldVal]() { auto& ecs = ECSRegistry::GetInstance().GetActiveECSManager(); if (ecs.HasComponent<CameraComponent>(entity)) ecs.GetComponent<CameraComponent>(entity).cgBrightness = oldVal; },
+                            "Change CG Brightness");
+                    }
+                    isEditingPP[entity] = false;
+                }
+
+                // Contrast
+                ImGui::Text("Contrast");
+                ImGui::SameLine(labelWidth);
+                ImGui::SetNextItemWidth(-1);
+                if (!isEditingPP[entity]) startCGContrast[entity] = camera.cgContrast;
+                if (ImGui::SliderFloat("##CGContrast", &camera.cgContrast, 0.0f, 3.0f)) { isEditingPP[entity] = true; }
+                if (isEditingPP[entity] && !ImGui::IsItemActive()) {
+                    float oldVal = startCGContrast[entity]; float newVal = camera.cgContrast;
+                    if (oldVal != newVal && UndoSystem::GetInstance().IsEnabled()) {
+                        UndoSystem::GetInstance().RecordLambdaChange(
+                            [entity, newVal]() { auto& ecs = ECSRegistry::GetInstance().GetActiveECSManager(); if (ecs.HasComponent<CameraComponent>(entity)) ecs.GetComponent<CameraComponent>(entity).cgContrast = newVal; },
+                            [entity, oldVal]() { auto& ecs = ECSRegistry::GetInstance().GetActiveECSManager(); if (ecs.HasComponent<CameraComponent>(entity)) ecs.GetComponent<CameraComponent>(entity).cgContrast = oldVal; },
+                            "Change CG Contrast");
+                    }
+                    isEditingPP[entity] = false;
+                }
+
+                // Saturation
+                ImGui::Text("Saturation");
+                ImGui::SameLine(labelWidth);
+                ImGui::SetNextItemWidth(-1);
+                if (!isEditingPP[entity]) startCGSaturation[entity] = camera.cgSaturation;
+                if (ImGui::SliderFloat("##CGSaturation", &camera.cgSaturation, 0.0f, 3.0f)) { isEditingPP[entity] = true; }
+                if (isEditingPP[entity] && !ImGui::IsItemActive()) {
+                    float oldVal = startCGSaturation[entity]; float newVal = camera.cgSaturation;
+                    if (oldVal != newVal && UndoSystem::GetInstance().IsEnabled()) {
+                        UndoSystem::GetInstance().RecordLambdaChange(
+                            [entity, newVal]() { auto& ecs = ECSRegistry::GetInstance().GetActiveECSManager(); if (ecs.HasComponent<CameraComponent>(entity)) ecs.GetComponent<CameraComponent>(entity).cgSaturation = newVal; },
+                            [entity, oldVal]() { auto& ecs = ECSRegistry::GetInstance().GetActiveECSManager(); if (ecs.HasComponent<CameraComponent>(entity)) ecs.GetComponent<CameraComponent>(entity).cgSaturation = oldVal; },
+                            "Change CG Saturation");
+                    }
+                    isEditingPP[entity] = false;
+                }
+
+                // Tint (color picker)
+                ImGui::Text("Tint");
+                ImGui::SameLine(labelWidth);
+                ImGui::SetNextItemWidth(-1);
+                float tint[3] = {camera.cgTint.r, camera.cgTint.g, camera.cgTint.b};
+                if (!isEditingPP[entity]) startCGTint[entity] = camera.cgTint;
+                if (ImGui::ColorEdit3("##CGTint", tint)) {
+                    camera.cgTint = glm::vec3(tint[0], tint[1], tint[2]);
+                    isEditingPP[entity] = true;
+                }
+                if (isEditingPP[entity] && !ImGui::IsItemActive()) {
+                    glm::vec3 oldVal = startCGTint[entity]; glm::vec3 newVal = camera.cgTint;
+                    if (oldVal != newVal && UndoSystem::GetInstance().IsEnabled()) {
+                        UndoSystem::GetInstance().RecordLambdaChange(
+                            [entity, newVal]() { auto& ecs = ECSRegistry::GetInstance().GetActiveECSManager(); if (ecs.HasComponent<CameraComponent>(entity)) ecs.GetComponent<CameraComponent>(entity).cgTint = newVal; },
+                            [entity, oldVal]() { auto& ecs = ECSRegistry::GetInstance().GetActiveECSManager(); if (ecs.HasComponent<CameraComponent>(entity)) ecs.GetComponent<CameraComponent>(entity).cgTint = oldVal; },
+                            "Change CG Tint");
+                    }
+                    isEditingPP[entity] = false;
+                }
+            }
+
+            ImGui::Unindent(10.0f);
+        }
+
+        // --- CHROMATIC ABERRATION ---
+        if (ImGui::CollapsingHeader("Post-Processing: Chromatic Aberration")) {
+            ImGui::Indent(10.0f);
+
+            bool caEnabled = camera.chromaticAberrationEnabled;
+            if (ImGui::Checkbox("Enable Chromatic Aberration##PP", &caEnabled)) {
+                bool oldVal = camera.chromaticAberrationEnabled;
+                camera.chromaticAberrationEnabled = caEnabled;
+                if (UndoSystem::GetInstance().IsEnabled()) {
+                    bool newVal = caEnabled;
+                    UndoSystem::GetInstance().RecordLambdaChange(
+                        [entity, newVal]() { auto& ecs = ECSRegistry::GetInstance().GetActiveECSManager(); if (ecs.HasComponent<CameraComponent>(entity)) ecs.GetComponent<CameraComponent>(entity).chromaticAberrationEnabled = newVal; },
+                        [entity, oldVal]() { auto& ecs = ECSRegistry::GetInstance().GetActiveECSManager(); if (ecs.HasComponent<CameraComponent>(entity)) ecs.GetComponent<CameraComponent>(entity).chromaticAberrationEnabled = oldVal; },
+                        "Toggle Chromatic Aberration");
+                }
+            }
+
+            if (camera.chromaticAberrationEnabled) {
+                ImGui::Text("Intensity");
+                ImGui::SameLine(labelWidth);
+                ImGui::SetNextItemWidth(-1);
+                if (!isEditingPP[entity]) startCAIntensity[entity] = camera.chromaticAberrationIntensity;
+                if (ImGui::SliderFloat("##CAIntensity", &camera.chromaticAberrationIntensity, 0.0f, 3.0f)) { isEditingPP[entity] = true; }
+                if (isEditingPP[entity] && !ImGui::IsItemActive()) {
+                    float oldVal = startCAIntensity[entity]; float newVal = camera.chromaticAberrationIntensity;
+                    if (oldVal != newVal && UndoSystem::GetInstance().IsEnabled()) {
+                        UndoSystem::GetInstance().RecordLambdaChange(
+                            [entity, newVal]() { auto& ecs = ECSRegistry::GetInstance().GetActiveECSManager(); if (ecs.HasComponent<CameraComponent>(entity)) ecs.GetComponent<CameraComponent>(entity).chromaticAberrationIntensity = newVal; },
+                            [entity, oldVal]() { auto& ecs = ECSRegistry::GetInstance().GetActiveECSManager(); if (ecs.HasComponent<CameraComponent>(entity)) ecs.GetComponent<CameraComponent>(entity).chromaticAberrationIntensity = oldVal; },
+                            "Change CA Intensity");
+                    }
+                    isEditingPP[entity] = false;
+                }
+
+                ImGui::Text("Padding");
+                ImGui::SameLine(labelWidth);
+                ImGui::SetNextItemWidth(-1);
+                if (!isEditingPP[entity]) startCAPadding[entity] = camera.chromaticAberrationPadding;
+                if (ImGui::SliderFloat("##CAPadding", &camera.chromaticAberrationPadding, 0.0f, 1.0f)) { isEditingPP[entity] = true; }
+                if (isEditingPP[entity] && !ImGui::IsItemActive()) {
+                    float oldVal = startCAPadding[entity]; float newVal = camera.chromaticAberrationPadding;
+                    if (oldVal != newVal && UndoSystem::GetInstance().IsEnabled()) {
+                        UndoSystem::GetInstance().RecordLambdaChange(
+                            [entity, newVal]() { auto& ecs = ECSRegistry::GetInstance().GetActiveECSManager(); if (ecs.HasComponent<CameraComponent>(entity)) ecs.GetComponent<CameraComponent>(entity).chromaticAberrationPadding = newVal; },
+                            [entity, oldVal]() { auto& ecs = ECSRegistry::GetInstance().GetActiveECSManager(); if (ecs.HasComponent<CameraComponent>(entity)) ecs.GetComponent<CameraComponent>(entity).chromaticAberrationPadding = oldVal; },
+                            "Change CA Padding");
+                    }
+                    isEditingPP[entity] = false;
+                }
+            }
+
+            ImGui::Unindent(10.0f);
         }
 
         return false;
@@ -2561,6 +2995,19 @@ void RegisterInspectorCustomRenderers()
 
         return false;
     });
+
+    // Hide CameraComponent PP fields from default reflection rendering
+    // (handled by custom component renderer in CollapsingHeaders above)
+    for (const char* field : {
+        "blurEnabled", "blurIntensity", "blurRadius", "blurPasses",
+        "bloomEnabled", "bloomThreshold", "bloomIntensity",
+        "vignetteEnabled", "vignetteIntensity", "vignetteSmoothness",
+        "colorGradingEnabled", "cgBrightness", "cgContrast", "cgSaturation",
+        "chromaticAberrationEnabled", "chromaticAberrationIntensity", "chromaticAberrationPadding"
+    }) {
+        ReflectionRenderer::RegisterFieldRenderer("CameraComponent", field,
+            [](const char*, void*, Entity, ECSManager&) { return true; });
+    }
 
     // Custom color picker for SpriteRenderComponent
     // Uses entity-aware lambda commands for proper undo/redo
@@ -8159,6 +8606,328 @@ void RegisterInspectorCustomRenderers()
                                               [](const char*, void*, Entity, ECSManager&)
                                               { return true; });
 
+    // ==================== FOG VOLUME COMPONENT ====================
+    ReflectionRenderer::RegisterComponentRenderer("FogVolumeComponent",
+    [](void* componentPtr, TypeDescriptor_Struct*, Entity entity, ECSManager& ecs) -> bool
+    {
+        FogVolumeComponent& fog = *static_cast<FogVolumeComponent*>(componentPtr);
+        const float labelWidth = EditorComponents::GetLabelWidth();
+
+        // Static tracking maps for entity-aware undo
+        static std::unordered_map<Entity, int>      startShape;
+        static std::unordered_map<Entity, Vector3D> startFogColor;
+        static std::unordered_map<Entity, bool>     isEditingFogColor;
+        static std::unordered_map<Entity, float>    startFogColorAlpha;
+        static std::unordered_map<Entity, bool>     isEditingFogColorAlpha;
+        static std::unordered_map<Entity, float>    startDensity;
+        static std::unordered_map<Entity, bool>     isEditingDensity;
+        static std::unordered_map<Entity, float>    startOpacity;
+        static std::unordered_map<Entity, bool>     isEditingOpacity;
+        static std::unordered_map<Entity, float>    startScrollX;
+        static std::unordered_map<Entity, bool>     isEditingScrollX;
+        static std::unordered_map<Entity, float>    startScrollY;
+        static std::unordered_map<Entity, bool>     isEditingScrollY;
+        static std::unordered_map<Entity, float>    startNoiseScale;
+        static std::unordered_map<Entity, bool>     isEditingNoiseScale;
+        static std::unordered_map<Entity, float>    startNoiseStrength;
+        static std::unordered_map<Entity, bool>     isEditingNoiseStrength;
+        static std::unordered_map<Entity, float>    startHeightFadeStart;
+        static std::unordered_map<Entity, bool>     isEditingHeightFadeStart;
+        static std::unordered_map<Entity, float>    startHeightFadeEnd;
+        static std::unordered_map<Entity, bool>     isEditingHeightFadeEnd;
+        static std::unordered_map<Entity, float>    startEdgeSoftness;
+        static std::unordered_map<Entity, bool>     isEditingEdgeSoftness;
+        static std::unordered_map<Entity, bool>     startUseHeightFade;
+
+        // Initialize tracking state
+        if (isEditingFogColor.find(entity)       == isEditingFogColor.end())       isEditingFogColor[entity]       = false;
+        if (isEditingFogColorAlpha.find(entity)  == isEditingFogColorAlpha.end())  isEditingFogColorAlpha[entity]  = false;
+        if (isEditingDensity.find(entity)        == isEditingDensity.end())        isEditingDensity[entity]        = false;
+        if (isEditingOpacity.find(entity)        == isEditingOpacity.end())        isEditingOpacity[entity]        = false;
+        if (isEditingScrollX.find(entity)        == isEditingScrollX.end())        isEditingScrollX[entity]        = false;
+        if (isEditingScrollY.find(entity)        == isEditingScrollY.end())        isEditingScrollY[entity]        = false;
+        if (isEditingNoiseScale.find(entity)     == isEditingNoiseScale.end())     isEditingNoiseScale[entity]     = false;
+        if (isEditingNoiseStrength.find(entity)  == isEditingNoiseStrength.end())  isEditingNoiseStrength[entity]  = false;
+        if (isEditingHeightFadeStart.find(entity)== isEditingHeightFadeStart.end())isEditingHeightFadeStart[entity]= false;
+        if (isEditingHeightFadeEnd.find(entity)  == isEditingHeightFadeEnd.end())  isEditingHeightFadeEnd[entity]  = false;
+        if (isEditingEdgeSoftness.find(entity)   == isEditingEdgeSoftness.end())   isEditingEdgeSoftness[entity]   = false;
+
+        // --- Shape ---
+        ImGui::Text("Shape");
+        ImGui::SameLine(labelWidth);
+        ImGui::SetNextItemWidth(-1);
+        const char* shapeNames[] = { "Box", "Sphere", "Cylinder" };
+        int shapeIndex = static_cast<int>(fog.shape);
+        int oldShapeIndex = shapeIndex;
+        EditorComponents::PushComboColors();
+        if (ImGui::Combo("##FogShape", &shapeIndex, shapeNames, 3))
+        {
+            fog.shape = static_cast<FogShape>(shapeIndex);
+            if (oldShapeIndex != shapeIndex && UndoSystem::GetInstance().IsEnabled())
+            {
+                int newVal = shapeIndex;
+                int oldVal = oldShapeIndex;
+                UndoSystem::GetInstance().RecordLambdaChange(
+                    [entity, newVal]() { ECSManager& e = ECSRegistry::GetInstance().GetActiveECSManager(); if (e.HasComponent<FogVolumeComponent>(entity)) e.GetComponent<FogVolumeComponent>(entity).shape = static_cast<FogShape>(newVal); },
+                    [entity, oldVal]() { ECSManager& e = ECSRegistry::GetInstance().GetActiveECSManager(); if (e.HasComponent<FogVolumeComponent>(entity)) e.GetComponent<FogVolumeComponent>(entity).shape = static_cast<FogShape>(oldVal); },
+                    "Change Fog Shape"
+                );
+            }
+        }
+        EditorComponents::PopComboColors();
+
+        ImGui::Separator();
+        ImGui::Text("Color & Opacity");
+
+        // --- Fog Color ---
+        ImGui::Text("Color");
+        ImGui::SameLine(labelWidth);
+        ImGui::SetNextItemWidth(-1);
+        float colorArr[3] = { fog.fogColor.x, fog.fogColor.y, fog.fogColor.z };
+        if (!isEditingFogColor[entity]) startFogColor[entity] = fog.fogColor;
+        if (ImGui::IsItemActivated()) { startFogColor[entity] = fog.fogColor; isEditingFogColor[entity] = true; }
+        if (ImGui::ColorEdit3("##FogColor", colorArr))
+        {
+            fog.fogColor = Vector3D(colorArr[0], colorArr[1], colorArr[2]);
+            isEditingFogColor[entity] = true;
+        }
+        if (isEditingFogColor[entity] && !ImGui::IsItemActive())
+        {
+            Vector3D oldVal = startFogColor[entity];
+            Vector3D newVal = fog.fogColor;
+            if (oldVal != newVal && UndoSystem::GetInstance().IsEnabled())
+            {
+                UndoSystem::GetInstance().RecordLambdaChange(
+                    [entity, newVal]() { ECSManager& e = ECSRegistry::GetInstance().GetActiveECSManager(); if (e.HasComponent<FogVolumeComponent>(entity)) e.GetComponent<FogVolumeComponent>(entity).fogColor = newVal; },
+                    [entity, oldVal]() { ECSManager& e = ECSRegistry::GetInstance().GetActiveECSManager(); if (e.HasComponent<FogVolumeComponent>(entity)) e.GetComponent<FogVolumeComponent>(entity).fogColor = oldVal; },
+                    "Change Fog Color"
+                );
+            }
+            isEditingFogColor[entity] = false;
+        }
+
+        // --- Density ---
+        ImGui::Text("Density");
+        ImGui::SameLine(labelWidth);
+        ImGui::SetNextItemWidth(-1);
+        if (!isEditingDensity[entity]) startDensity[entity] = fog.density;
+        if (ImGui::IsItemActivated()) { startDensity[entity] = fog.density; isEditingDensity[entity] = true; }
+        if (ImGui::DragFloat("##FogDensity", &fog.density, 0.01f, 0.0f, 20.0f))
+            isEditingDensity[entity] = true;
+        if (isEditingDensity[entity] && !ImGui::IsItemActive())
+        {
+            float oldVal = startDensity[entity]; float newVal = fog.density;
+            if (oldVal != newVal && UndoSystem::GetInstance().IsEnabled())
+                UndoSystem::GetInstance().RecordLambdaChange(
+                    [entity, newVal]() { ECSManager& e = ECSRegistry::GetInstance().GetActiveECSManager(); if (e.HasComponent<FogVolumeComponent>(entity)) e.GetComponent<FogVolumeComponent>(entity).density = newVal; },
+                    [entity, oldVal]() { ECSManager& e = ECSRegistry::GetInstance().GetActiveECSManager(); if (e.HasComponent<FogVolumeComponent>(entity)) e.GetComponent<FogVolumeComponent>(entity).density = oldVal; },
+                    "Change Fog Density");
+            isEditingDensity[entity] = false;
+        }
+
+        // --- Opacity ---
+        ImGui::Text("Opacity");
+        ImGui::SameLine(labelWidth);
+        ImGui::SetNextItemWidth(-1);
+        if (!isEditingOpacity[entity]) startOpacity[entity] = fog.opacity;
+        if (ImGui::IsItemActivated()) { startOpacity[entity] = fog.opacity; isEditingOpacity[entity] = true; }
+        if (ImGui::DragFloat("##FogOpacity", &fog.opacity, 0.01f, 0.0f, 1.0f))
+            isEditingOpacity[entity] = true;
+        if (isEditingOpacity[entity] && !ImGui::IsItemActive())
+        {
+            float oldVal = startOpacity[entity]; float newVal = fog.opacity;
+            if (oldVal != newVal && UndoSystem::GetInstance().IsEnabled())
+                UndoSystem::GetInstance().RecordLambdaChange(
+                    [entity, newVal]() { ECSManager& e = ECSRegistry::GetInstance().GetActiveECSManager(); if (e.HasComponent<FogVolumeComponent>(entity)) e.GetComponent<FogVolumeComponent>(entity).opacity = newVal; },
+                    [entity, oldVal]() { ECSManager& e = ECSRegistry::GetInstance().GetActiveECSManager(); if (e.HasComponent<FogVolumeComponent>(entity)) e.GetComponent<FogVolumeComponent>(entity).opacity = oldVal; },
+                    "Change Fog Opacity");
+            isEditingOpacity[entity] = false;
+        }
+
+        ImGui::Separator();
+        ImGui::Text("Noise");
+
+        // --- Noise Scale ---
+        ImGui::Text("Scale");
+        ImGui::SameLine(labelWidth);
+        ImGui::SetNextItemWidth(-1);
+        if (!isEditingNoiseScale[entity]) startNoiseScale[entity] = fog.noiseScale;
+        if (ImGui::IsItemActivated()) { startNoiseScale[entity] = fog.noiseScale; isEditingNoiseScale[entity] = true; }
+        if (ImGui::DragFloat("##FogNoiseScale", &fog.noiseScale, 0.01f, 0.0f, 20.0f))
+            isEditingNoiseScale[entity] = true;
+        if (isEditingNoiseScale[entity] && !ImGui::IsItemActive())
+        {
+            float oldVal = startNoiseScale[entity]; float newVal = fog.noiseScale;
+            if (oldVal != newVal && UndoSystem::GetInstance().IsEnabled())
+                UndoSystem::GetInstance().RecordLambdaChange(
+                    [entity, newVal]() { ECSManager& e = ECSRegistry::GetInstance().GetActiveECSManager(); if (e.HasComponent<FogVolumeComponent>(entity)) e.GetComponent<FogVolumeComponent>(entity).noiseScale = newVal; },
+                    [entity, oldVal]() { ECSManager& e = ECSRegistry::GetInstance().GetActiveECSManager(); if (e.HasComponent<FogVolumeComponent>(entity)) e.GetComponent<FogVolumeComponent>(entity).noiseScale = oldVal; },
+                    "Change Fog Noise Scale");
+            isEditingNoiseScale[entity] = false;
+        }
+
+        // --- Noise Strength ---
+        ImGui::Text("Strength");
+        ImGui::SameLine(labelWidth);
+        ImGui::SetNextItemWidth(-1);
+        if (!isEditingNoiseStrength[entity]) startNoiseStrength[entity] = fog.noiseStrength;
+        if (ImGui::IsItemActivated()) { startNoiseStrength[entity] = fog.noiseStrength; isEditingNoiseStrength[entity] = true; }
+        if (ImGui::DragFloat("##FogNoiseStrength", &fog.noiseStrength, 0.01f, 0.0f, 1.0f))
+            isEditingNoiseStrength[entity] = true;
+        if (isEditingNoiseStrength[entity] && !ImGui::IsItemActive())
+        {
+            float oldVal = startNoiseStrength[entity]; float newVal = fog.noiseStrength;
+            if (oldVal != newVal && UndoSystem::GetInstance().IsEnabled())
+                UndoSystem::GetInstance().RecordLambdaChange(
+                    [entity, newVal]() { ECSManager& e = ECSRegistry::GetInstance().GetActiveECSManager(); if (e.HasComponent<FogVolumeComponent>(entity)) e.GetComponent<FogVolumeComponent>(entity).noiseStrength = newVal; },
+                    [entity, oldVal]() { ECSManager& e = ECSRegistry::GetInstance().GetActiveECSManager(); if (e.HasComponent<FogVolumeComponent>(entity)) e.GetComponent<FogVolumeComponent>(entity).noiseStrength = oldVal; },
+                    "Change Fog Noise Strength");
+            isEditingNoiseStrength[entity] = false;
+        }
+
+        // --- Scroll Speed X ---
+        ImGui::Text("Scroll X");
+        ImGui::SameLine(labelWidth);
+        ImGui::SetNextItemWidth(-1);
+        if (!isEditingScrollX[entity]) startScrollX[entity] = fog.scrollSpeedX;
+        if (ImGui::IsItemActivated()) { startScrollX[entity] = fog.scrollSpeedX; isEditingScrollX[entity] = true; }
+        if (ImGui::DragFloat("##FogScrollX", &fog.scrollSpeedX, 0.001f, -1.0f, 1.0f))
+            isEditingScrollX[entity] = true;
+        if (isEditingScrollX[entity] && !ImGui::IsItemActive())
+        {
+            float oldVal = startScrollX[entity]; float newVal = fog.scrollSpeedX;
+            if (oldVal != newVal && UndoSystem::GetInstance().IsEnabled())
+                UndoSystem::GetInstance().RecordLambdaChange(
+                    [entity, newVal]() { ECSManager& e = ECSRegistry::GetInstance().GetActiveECSManager(); if (e.HasComponent<FogVolumeComponent>(entity)) e.GetComponent<FogVolumeComponent>(entity).scrollSpeedX = newVal; },
+                    [entity, oldVal]() { ECSManager& e = ECSRegistry::GetInstance().GetActiveECSManager(); if (e.HasComponent<FogVolumeComponent>(entity)) e.GetComponent<FogVolumeComponent>(entity).scrollSpeedX = oldVal; },
+                    "Change Fog Scroll X");
+            isEditingScrollX[entity] = false;
+        }
+
+        // --- Scroll Speed Y ---
+        ImGui::Text("Scroll Y");
+        ImGui::SameLine(labelWidth);
+        ImGui::SetNextItemWidth(-1);
+        if (!isEditingScrollY[entity]) startScrollY[entity] = fog.scrollSpeedY;
+        if (ImGui::IsItemActivated()) { startScrollY[entity] = fog.scrollSpeedY; isEditingScrollY[entity] = true; }
+        if (ImGui::DragFloat("##FogScrollY", &fog.scrollSpeedY, 0.001f, -1.0f, 1.0f))
+            isEditingScrollY[entity] = true;
+        if (isEditingScrollY[entity] && !ImGui::IsItemActive())
+        {
+            float oldVal = startScrollY[entity]; float newVal = fog.scrollSpeedY;
+            if (oldVal != newVal && UndoSystem::GetInstance().IsEnabled())
+                UndoSystem::GetInstance().RecordLambdaChange(
+                    [entity, newVal]() { ECSManager& e = ECSRegistry::GetInstance().GetActiveECSManager(); if (e.HasComponent<FogVolumeComponent>(entity)) e.GetComponent<FogVolumeComponent>(entity).scrollSpeedY = newVal; },
+                    [entity, oldVal]() { ECSManager& e = ECSRegistry::GetInstance().GetActiveECSManager(); if (e.HasComponent<FogVolumeComponent>(entity)) e.GetComponent<FogVolumeComponent>(entity).scrollSpeedY = oldVal; },
+                    "Change Fog Scroll Y");
+            isEditingScrollY[entity] = false;
+        }
+
+        ImGui::Separator();
+        ImGui::Text("Fading");
+
+        // --- Edge Softness ---
+        ImGui::Text("Edge Softness");
+        ImGui::SameLine(labelWidth);
+        ImGui::SetNextItemWidth(-1);
+        if (!isEditingEdgeSoftness[entity]) startEdgeSoftness[entity] = fog.edgeSoftness;
+        if (ImGui::IsItemActivated()) { startEdgeSoftness[entity] = fog.edgeSoftness; isEditingEdgeSoftness[entity] = true; }
+        if (ImGui::DragFloat("##FogEdgeSoftness", &fog.edgeSoftness, 0.01f, 0.0f, 1.0f))
+            isEditingEdgeSoftness[entity] = true;
+        if (isEditingEdgeSoftness[entity] && !ImGui::IsItemActive())
+        {
+            float oldVal = startEdgeSoftness[entity]; float newVal = fog.edgeSoftness;
+            if (oldVal != newVal && UndoSystem::GetInstance().IsEnabled())
+                UndoSystem::GetInstance().RecordLambdaChange(
+                    [entity, newVal]() { ECSManager& e = ECSRegistry::GetInstance().GetActiveECSManager(); if (e.HasComponent<FogVolumeComponent>(entity)) e.GetComponent<FogVolumeComponent>(entity).edgeSoftness = newVal; },
+                    [entity, oldVal]() { ECSManager& e = ECSRegistry::GetInstance().GetActiveECSManager(); if (e.HasComponent<FogVolumeComponent>(entity)) e.GetComponent<FogVolumeComponent>(entity).edgeSoftness = oldVal; },
+                    "Change Fog Edge Softness");
+            isEditingEdgeSoftness[entity] = false;
+        }
+
+        // --- Use Height Fade ---
+        ImGui::Text("Height Fade");
+        ImGui::SameLine(labelWidth);
+        startUseHeightFade[entity] = fog.useHeightFade;
+        bool useHeightFadeVal = fog.useHeightFade;
+        if (ImGui::Checkbox("##FogUseHeightFade", &useHeightFadeVal))
+        {
+            bool oldVal = startUseHeightFade[entity];
+            fog.useHeightFade = useHeightFadeVal;
+            if (oldVal != useHeightFadeVal && UndoSystem::GetInstance().IsEnabled())
+                UndoSystem::GetInstance().RecordLambdaChange(
+                    [entity, useHeightFadeVal]() { ECSManager& e = ECSRegistry::GetInstance().GetActiveECSManager(); if (e.HasComponent<FogVolumeComponent>(entity)) e.GetComponent<FogVolumeComponent>(entity).useHeightFade = useHeightFadeVal; },
+                    [entity, oldVal]()           { ECSManager& e = ECSRegistry::GetInstance().GetActiveECSManager(); if (e.HasComponent<FogVolumeComponent>(entity)) e.GetComponent<FogVolumeComponent>(entity).useHeightFade = oldVal; },
+                    "Toggle Fog Height Fade");
+        }
+
+        if (fog.useHeightFade)
+        {
+            // --- Height Fade Start ---
+            ImGui::Text("  Fade Start");
+            ImGui::SameLine(labelWidth);
+            ImGui::SetNextItemWidth(-1);
+            if (!isEditingHeightFadeStart[entity]) startHeightFadeStart[entity] = fog.heightFadeStart;
+            if (ImGui::IsItemActivated()) { startHeightFadeStart[entity] = fog.heightFadeStart; isEditingHeightFadeStart[entity] = true; }
+            if (ImGui::DragFloat("##FogHeightFadeStart", &fog.heightFadeStart, 0.01f, 0.0f, 1.0f))
+                isEditingHeightFadeStart[entity] = true;
+            if (isEditingHeightFadeStart[entity] && !ImGui::IsItemActive())
+            {
+                float oldVal = startHeightFadeStart[entity]; float newVal = fog.heightFadeStart;
+                if (oldVal != newVal && UndoSystem::GetInstance().IsEnabled())
+                    UndoSystem::GetInstance().RecordLambdaChange(
+                        [entity, newVal]() { ECSManager& e = ECSRegistry::GetInstance().GetActiveECSManager(); if (e.HasComponent<FogVolumeComponent>(entity)) e.GetComponent<FogVolumeComponent>(entity).heightFadeStart = newVal; },
+                        [entity, oldVal]() { ECSManager& e = ECSRegistry::GetInstance().GetActiveECSManager(); if (e.HasComponent<FogVolumeComponent>(entity)) e.GetComponent<FogVolumeComponent>(entity).heightFadeStart = oldVal; },
+                        "Change Fog Height Fade Start");
+                isEditingHeightFadeStart[entity] = false;
+            }
+
+            // --- Height Fade End ---
+            ImGui::Text("  Fade End");
+            ImGui::SameLine(labelWidth);
+            ImGui::SetNextItemWidth(-1);
+            if (!isEditingHeightFadeEnd[entity]) startHeightFadeEnd[entity] = fog.heightFadeEnd;
+            if (ImGui::IsItemActivated()) { startHeightFadeEnd[entity] = fog.heightFadeEnd; isEditingHeightFadeEnd[entity] = true; }
+            if (ImGui::DragFloat("##FogHeightFadeEnd", &fog.heightFadeEnd, 0.01f, 0.0f, 1.0f))
+                isEditingHeightFadeEnd[entity] = true;
+            if (isEditingHeightFadeEnd[entity] && !ImGui::IsItemActive())
+            {
+                float oldVal = startHeightFadeEnd[entity]; float newVal = fog.heightFadeEnd;
+                if (oldVal != newVal && UndoSystem::GetInstance().IsEnabled())
+                    UndoSystem::GetInstance().RecordLambdaChange(
+                        [entity, newVal]() { ECSManager& e = ECSRegistry::GetInstance().GetActiveECSManager(); if (e.HasComponent<FogVolumeComponent>(entity)) e.GetComponent<FogVolumeComponent>(entity).heightFadeEnd = newVal; },
+                        [entity, oldVal]() { ECSManager& e = ECSRegistry::GetInstance().GetActiveECSManager(); if (e.HasComponent<FogVolumeComponent>(entity)) e.GetComponent<FogVolumeComponent>(entity).heightFadeEnd = oldVal; },
+                        "Change Fog Height Fade End");
+                isEditingHeightFadeEnd[entity] = false;
+            }
+        }
+
+        return true; // Skip default reflection rendering
+    });
+
+    // Hide runtime-only FogVolumeComponent fields from default rendering
+    ReflectionRenderer::RegisterFieldRenderer("FogVolumeComponent", "shape",            [](const char*, void*, Entity, ECSManager&) { return true; });
+    ReflectionRenderer::RegisterFieldRenderer("FogVolumeComponent", "fogColor",         [](const char*, void*, Entity, ECSManager&) { return true; });
+    ReflectionRenderer::RegisterFieldRenderer("FogVolumeComponent", "fogColorAlpha",    [](const char*, void*, Entity, ECSManager&) { return true; });
+    ReflectionRenderer::RegisterFieldRenderer("FogVolumeComponent", "density",          [](const char*, void*, Entity, ECSManager&) { return true; });
+    ReflectionRenderer::RegisterFieldRenderer("FogVolumeComponent", "opacity",          [](const char*, void*, Entity, ECSManager&) { return true; });
+    ReflectionRenderer::RegisterFieldRenderer("FogVolumeComponent", "scrollSpeedX",     [](const char*, void*, Entity, ECSManager&) { return true; });
+    ReflectionRenderer::RegisterFieldRenderer("FogVolumeComponent", "scrollSpeedY",     [](const char*, void*, Entity, ECSManager&) { return true; });
+    ReflectionRenderer::RegisterFieldRenderer("FogVolumeComponent", "noiseScale",       [](const char*, void*, Entity, ECSManager&) { return true; });
+    ReflectionRenderer::RegisterFieldRenderer("FogVolumeComponent", "noiseStrength",    [](const char*, void*, Entity, ECSManager&) { return true; });
+    ReflectionRenderer::RegisterFieldRenderer("FogVolumeComponent", "useHeightFade",    [](const char*, void*, Entity, ECSManager&) { return true; });
+    ReflectionRenderer::RegisterFieldRenderer("FogVolumeComponent", "heightFadeStart",  [](const char*, void*, Entity, ECSManager&) { return true; });
+    ReflectionRenderer::RegisterFieldRenderer("FogVolumeComponent", "heightFadeEnd",    [](const char*, void*, Entity, ECSManager&) { return true; });
+    ReflectionRenderer::RegisterFieldRenderer("FogVolumeComponent", "edgeSoftness",     [](const char*, void*, Entity, ECSManager&) { return true; });
+    ReflectionRenderer::RegisterFieldRenderer("FogVolumeComponent", "noiseTextureGUID", [](const char*, void*, Entity, ECSManager&) { return true; });
+    ReflectionRenderer::RegisterFieldRenderer("FogVolumeComponent", "fogShader",        [](const char*, void*, Entity, ECSManager&) { return true; });
+    ReflectionRenderer::RegisterFieldRenderer("FogVolumeComponent", "noiseTexture",     [](const char*, void*, Entity, ECSManager&) { return true; });
+    ReflectionRenderer::RegisterFieldRenderer("FogVolumeComponent", "noiseTexturePath", [](const char*, void*, Entity, ECSManager&) { return true; });
+    ReflectionRenderer::RegisterFieldRenderer("FogVolumeComponent", "fogVAO",           [](const char*, void*, Entity, ECSManager&) { return true; });
+    ReflectionRenderer::RegisterFieldRenderer("FogVolumeComponent", "fogVBO",           [](const char*, void*, Entity, ECSManager&) { return true; });
+    ReflectionRenderer::RegisterFieldRenderer("FogVolumeComponent", "fogEBO",           [](const char*, void*, Entity, ECSManager&) { return true; });
+    ReflectionRenderer::RegisterFieldRenderer("FogVolumeComponent", "worldTransform",   [](const char*, void*, Entity, ECSManager&) { return true; });
+
     // ==================== SPRITE ANIMATION COMPONENT ====================
     // Register the sprite animation inspector (defined in SpriteAnimationInspector.cpp)
     RegisterSpriteAnimationInspector();
@@ -8414,5 +9183,78 @@ void RegisterInspectorCustomRenderers()
     ReflectionRenderer::RegisterFieldRenderer("DialogueComponent", "entries",
                                               [](const char*, void*, Entity, ECSManager&) { return true; });
     ReflectionRenderer::RegisterFieldRenderer("DialogueComponent", "autoStart",
+                                              [](const char*, void*, Entity, ECSManager&) { return true; });
+
+    // ==================== BLOOM COMPONENT ====================
+    ReflectionRenderer::RegisterComponentRenderer("BloomComponent",
+    [](void* componentPtr, TypeDescriptor_Struct*, Entity entity, ECSManager& ecs) -> bool
+    {
+        BloomComponent& bloom = *static_cast<BloomComponent*>(componentPtr);
+        const float labelWidth = EditorComponents::GetLabelWidth();
+
+        static std::unordered_map<Entity, float> startBloomIntensity;
+        static std::unordered_map<Entity, glm::vec3> startBloomColor;
+        static std::unordered_map<Entity, bool> isEditingBloom;
+        if (isEditingBloom.find(entity) == isEditingBloom.end()) isEditingBloom[entity] = false;
+
+        // Enabled checkbox
+        bool bloomEnabled = bloom.enabled;
+        if (ImGui::Checkbox("Enabled##BloomComp", &bloomEnabled)) {
+            bool oldVal = bloom.enabled;
+            bloom.enabled = bloomEnabled;
+            if (UndoSystem::GetInstance().IsEnabled()) {
+                bool newVal = bloomEnabled;
+                UndoSystem::GetInstance().RecordLambdaChange(
+                    [entity, newVal]() { auto& e = ECSRegistry::GetInstance().GetActiveECSManager(); if (e.HasComponent<BloomComponent>(entity)) e.GetComponent<BloomComponent>(entity).enabled = newVal; },
+                    [entity, oldVal]() { auto& e = ECSRegistry::GetInstance().GetActiveECSManager(); if (e.HasComponent<BloomComponent>(entity)) e.GetComponent<BloomComponent>(entity).enabled = oldVal; },
+                    "Toggle Bloom Component");
+            }
+        }
+
+        // Bloom Color
+        ImGui::Text("Bloom Color");
+        ImGui::SameLine(labelWidth);
+        ImGui::SetNextItemWidth(-1);
+        float color[3] = {bloom.bloomColor.r, bloom.bloomColor.g, bloom.bloomColor.b};
+        if (!isEditingBloom[entity]) startBloomColor[entity] = bloom.bloomColor;
+        if (ImGui::ColorEdit3("##BloomColor", color)) {
+            bloom.bloomColor = glm::vec3(color[0], color[1], color[2]);
+            isEditingBloom[entity] = true;
+        }
+        if (isEditingBloom[entity] && !ImGui::IsItemActive()) {
+            glm::vec3 oldVal = startBloomColor[entity]; glm::vec3 newVal = bloom.bloomColor;
+            if (oldVal != newVal && UndoSystem::GetInstance().IsEnabled()) {
+                UndoSystem::GetInstance().RecordLambdaChange(
+                    [entity, newVal]() { auto& e = ECSRegistry::GetInstance().GetActiveECSManager(); if (e.HasComponent<BloomComponent>(entity)) e.GetComponent<BloomComponent>(entity).bloomColor = newVal; },
+                    [entity, oldVal]() { auto& e = ECSRegistry::GetInstance().GetActiveECSManager(); if (e.HasComponent<BloomComponent>(entity)) e.GetComponent<BloomComponent>(entity).bloomColor = oldVal; },
+                    "Change Bloom Color");
+            }
+            isEditingBloom[entity] = false;
+        }
+
+        // Bloom Intensity
+        ImGui::Text("Intensity");
+        ImGui::SameLine(labelWidth);
+        ImGui::SetNextItemWidth(-1);
+        if (!isEditingBloom[entity]) startBloomIntensity[entity] = bloom.bloomIntensity;
+        if (ImGui::SliderFloat("##BloomEntityIntensity", &bloom.bloomIntensity, 0.0f, 10.0f)) { isEditingBloom[entity] = true; }
+        if (isEditingBloom[entity] && !ImGui::IsItemActive()) {
+            float oldVal = startBloomIntensity[entity]; float newVal = bloom.bloomIntensity;
+            if (oldVal != newVal && UndoSystem::GetInstance().IsEnabled()) {
+                UndoSystem::GetInstance().RecordLambdaChange(
+                    [entity, newVal]() { auto& e = ECSRegistry::GetInstance().GetActiveECSManager(); if (e.HasComponent<BloomComponent>(entity)) e.GetComponent<BloomComponent>(entity).bloomIntensity = newVal; },
+                    [entity, oldVal]() { auto& e = ECSRegistry::GetInstance().GetActiveECSManager(); if (e.HasComponent<BloomComponent>(entity)) e.GetComponent<BloomComponent>(entity).bloomIntensity = oldVal; },
+                    "Change Bloom Intensity");
+            }
+            isEditingBloom[entity] = false;
+        }
+
+        return true; // Skip default reflection rendering
+    });
+
+    // Hide BloomComponent fields from default rendering (handled by custom renderer)
+    ReflectionRenderer::RegisterFieldRenderer("BloomComponent", "enabled",
+                                              [](const char*, void*, Entity, ECSManager&) { return true; });
+    ReflectionRenderer::RegisterFieldRenderer("BloomComponent", "bloomIntensity",
                                               [](const char*, void*, Entity, ECSManager&) { return true; });
 }

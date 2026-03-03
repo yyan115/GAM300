@@ -25,6 +25,8 @@
 #include "Video/VideoSystem.hpp"
 #include "Dialogue/DialogueSystem.hpp"
 #include "Script/ScriptSystem.hpp"
+#include "Graphics/Fog/FogSystem.hpp"
+
 class PhysicsSystem;
 class CharacterControllerSystem;
 
@@ -170,6 +172,7 @@ public:
 	std::shared_ptr<UIAnchorSystem> uiAnchorSystem;
 	std::shared_ptr<VideoSystem> videoSystem;
 	std::shared_ptr<DialogueSystem> dialogueSystem;
+	std::shared_ptr<FogSystem> fogSystem;
 private:
 	template <typename T>
 	ComponentID GetComponentID() {
