@@ -84,6 +84,7 @@ private:
         std::vector<float> linear;
         std::vector<float> quadratic;
         std::vector<float> intensity;
+        std::vector<float> range;
         std::vector<int> shadowIndex;
     } pointLightData;
 

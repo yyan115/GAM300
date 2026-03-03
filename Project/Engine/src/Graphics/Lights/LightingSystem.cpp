@@ -100,10 +100,13 @@ void LightingSystem::RenderShadowMaps()
         {
             glm::vec3 lightPos = pointLightData.positions[i];
 
-            if (pointShadowMaps[shadowIndex].NeedsUpdate(lightPos, pointLightShadowFarPlane))
+            float lightRange = pointLightData.range[i];
+            if (pointShadowMaps[shadowIndex].NeedsUpdate(lightPos, lightRange))
             {
-                pointShadowMaps[shadowIndex].Render(lightPos, pointLightShadowFarPlane, shadowRenderCallback);
-                pointShadowMaps[shadowIndex].MarkUpdated(lightPos, pointLightShadowFarPlane);
+                GraphicsManager::GetInstance().SetPointShadowCullData(lightPos, lightRange);
+                pointShadowMaps[shadowIndex].Render(lightPos, lightRange, shadowRenderCallback);
+                GraphicsManager::GetInstance().ClearPointShadowCullData();
+                pointShadowMaps[shadowIndex].MarkUpdated(lightPos, lightRange);
                 updatedCount++;
             }
             else
@@ -234,6 +237,7 @@ void LightingSystem::CollectLightData()
     pointLightData.linear.clear();
     pointLightData.quadratic.clear();
     pointLightData.intensity.clear();
+    pointLightData.range.clear();
     pointLightData.shadowIndex.clear();
 
     directionalLightData.hasDirectionalLight = false;
@@ -268,6 +272,7 @@ void LightingSystem::CollectLightData()
         float linear;
         float quadratic;
         float intensity;
+        float range;
         bool castShadows;
         float distanceToCamera;
     };
@@ -336,6 +341,7 @@ void LightingSystem::CollectLightData()
                     light.linear,
                     light.quadratic,
                     light.intensity,
+                    light.range,
                     light.castShadows,
                     dist
                     });
@@ -427,6 +433,7 @@ void LightingSystem::CollectLightData()
         pointLightData.linear.push_back(light.linear);
         pointLightData.quadratic.push_back(light.quadratic);
         pointLightData.intensity.push_back(light.intensity);
+        pointLightData.range.push_back(light.range);
         pointLightData.shadowIndex.push_back(-1);  // Will be assigned below
 
         // Track shadow candidates

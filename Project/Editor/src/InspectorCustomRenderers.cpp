@@ -4537,6 +4537,8 @@ void RegisterInspectorCustomRenderers()
         static std::unordered_map<Entity, Vector3D> startSpecular;
         static std::unordered_map<Entity, bool> isEditingSpecular;
         static std::unordered_map<Entity, bool> startCastShadows;
+        static std::unordered_map<Entity, float> startRange;
+        static std::unordered_map<Entity, bool> isEditingRange;
 
         // Initialize tracking state
         if (isEditingColor.find(entity) == isEditingColor.end()) isEditingColor[entity] = false;
@@ -4547,6 +4549,7 @@ void RegisterInspectorCustomRenderers()
         if (isEditingAmbient.find(entity) == isEditingAmbient.end()) isEditingAmbient[entity] = false;
         if (isEditingDiffuse.find(entity) == isEditingDiffuse.end()) isEditingDiffuse[entity] = false;
         if (isEditingSpecular.find(entity) == isEditingSpecular.end()) isEditingSpecular[entity] = false;
+        if (isEditingRange.find(entity) == isEditingRange.end()) isEditingRange[entity] = false;
 
         // Enabled checkbox
         ImGui::AlignTextToFramePadding();
@@ -4873,6 +4876,38 @@ void RegisterInspectorCustomRenderers()
                     "Toggle Point Light Shadows"
                 );
             }
+        }
+
+        // Shadow Range
+        ImGui::Text("Shadow Range");
+        ImGui::SameLine(labelWidth);
+        ImGui::SetNextItemWidth(-1);
+        if (!isEditingRange[entity]) startRange[entity] = light.range;
+        if (ImGui::IsItemActivated()) { startRange[entity] = light.range; isEditingRange[entity] = true; }
+        if (ImGui::DragFloat("##ShadowRange", &light.range, 0.5f, 0.1f, 500.0f)) {
+            isEditingRange[entity] = true;
+        }
+        if (isEditingRange[entity] && !ImGui::IsItemActive()) {
+            float oldVal = startRange[entity];
+            float newVal = light.range;
+            if (oldVal != newVal && UndoSystem::GetInstance().IsEnabled()) {
+                UndoSystem::GetInstance().RecordLambdaChange(
+                    [entity, newVal]() {
+                        ECSManager& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
+                        if (ecs.HasComponent<PointLightComponent>(entity)) {
+                            ecs.GetComponent<PointLightComponent>(entity).range = newVal;
+                        }
+                    },
+                    [entity, oldVal]() {
+                        ECSManager& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
+                        if (ecs.HasComponent<PointLightComponent>(entity)) {
+                            ecs.GetComponent<PointLightComponent>(entity).range = oldVal;
+                        }
+                    },
+                    "Change Point Light Shadow Range"
+                );
+            }
+            isEditingRange[entity] = false;
         }
 
         return true; // Return true to skip default field rendering
