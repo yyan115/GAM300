@@ -151,7 +151,75 @@
                             "type": "float",
                             "data": 25
                         },
-                        "0000000000000000-0000000000000000"
+                        "0000000000000000-0000000000000000",
+                        {
+                            "type": "bool",
+                            "data": true
+                        },
+                        {
+                            "type": "float",
+                            "data": 0.5
+                        },
+                        {
+                            "type": "float",
+                            "data": 2
+                        },
+                        {
+                            "type": "int",
+                            "data": 2
+                        },
+                        {
+                            "type": "bool",
+                            "data": false
+                        },
+                        {
+                            "type": "float",
+                            "data": 1
+                        },
+                        {
+                            "type": "float",
+                            "data": 1
+                        },
+                        {
+                            "type": "bool",
+                            "data": false
+                        },
+                        {
+                            "type": "float",
+                            "data": 0.5
+                        },
+                        {
+                            "type": "float",
+                            "data": 0.5
+                        },
+                        {
+                            "type": "bool",
+                            "data": false
+                        },
+                        {
+                            "type": "float",
+                            "data": 0
+                        },
+                        {
+                            "type": "float",
+                            "data": 1
+                        },
+                        {
+                            "type": "float",
+                            "data": 1
+                        },
+                        {
+                            "type": "bool",
+                            "data": false
+                        },
+                        {
+                            "type": "float",
+                            "data": 0.5
+                        },
+                        {
+                            "type": "float",
+                            "data": 0.5
+                        }
                     ],
                     "target": {
                         "type": "glm::vec3",
@@ -180,7 +248,41 @@
                     "clearFlags": 0,
                     "projectionType": 0,
                     "useSkybox": true,
-                    "skyboxTexturePath": ""
+                    "skyboxTexturePath": "",
+                    "blurEnabled": true,
+                    "blurIntensity": 0.5,
+                    "blurRadius": 2.0,
+                    "blurPasses": 2,
+                    "blurLayerMask": 4294966271,
+                    "bloomEnabled": false,
+                    "bloomThreshold": 1.0,
+                    "bloomIntensity": 1.0,
+                    "vignetteEnabled": false,
+                    "vignetteIntensity": 0.5,
+                    "vignetteSmoothness": 0.5,
+                    "vignetteColor": {
+                        "type": "glm::vec3",
+                        "data": [
+                            0.0,
+                            0.0,
+                            0.0
+                        ]
+                    },
+                    "colorGradingEnabled": false,
+                    "cgBrightness": 0.0,
+                    "cgContrast": 1.0,
+                    "cgSaturation": 1.0,
+                    "cgTint": {
+                        "type": "glm::vec3",
+                        "data": [
+                            1.0,
+                            1.0,
+                            1.0
+                        ]
+                    },
+                    "chromaticAberrationEnabled": false,
+                    "chromaticAberrationIntensity": 0.5,
+                    "chromaticAberrationPadding": 0.5
                 },
                 "ActiveComponent": {
                     "type": "ActiveComponent",
@@ -255,7 +357,7 @@
                                 },
                                 {
                                     "type": "float",
-                                    "data": 9.31919e-10
+                                    "data": 9.31942e-10
                                 },
                                 {
                                     "type": "float",
@@ -263,7 +365,7 @@
                                 },
                                 {
                                     "type": "float",
-                                    "data": 9.31919e-10
+                                    "data": 9.31942e-10
                                 }
                             ]
                         }
@@ -492,6 +594,10 @@
                                         },
                                         {
                                             "type": "float",
+                                            "data": 0
+                                        },
+                                        {
+                                            "type": "float",
                                             "data": 2
                                         },
                                         {
@@ -529,11 +635,15 @@
                                         },
                                         {
                                             "type": "float",
+                                            "data": 0.5
+                                        },
+                                        {
+                                            "type": "float",
                                             "data": 0
                                         },
                                         {
                                             "type": "float",
-                                            "data": 2
+                                            "data": 0
                                         },
                                         {
                                             "type": "float",
@@ -574,11 +684,15 @@
                                         },
                                         {
                                             "type": "float",
-                                            "data": 2
+                                            "data": 0.5
                                         },
                                         {
                                             "type": "float",
-                                            "data": 3
+                                            "data": 0
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": 10
                                         },
                                         {
                                             "type": "float",
@@ -619,11 +733,15 @@
                                         },
                                         {
                                             "type": "float",
-                                            "data": 3
+                                            "data": 0
                                         },
                                         {
                                             "type": "float",
                                             "data": 4
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": 2
                                         },
                                         {
                                             "type": "float",
@@ -656,7 +774,7 @@
                                         },
                                         {
                                             "type": "float",
-                                            "data": 3
+                                            "data": 1
                                         },
                                         {
                                             "type": "float",
@@ -664,11 +782,15 @@
                                         },
                                         {
                                             "type": "float",
-                                            "data": 4
+                                            "data": 0
                                         },
                                         {
                                             "type": "float",
                                             "data": 2
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": 1
                                         },
                                         {
                                             "type": "float",
@@ -709,7 +831,11 @@
                                         },
                                         {
                                             "type": "float",
-                                            "data": 2
+                                            "data": 0
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": 1
                                         },
                                         {
                                             "type": "float",
@@ -751,6 +877,10 @@
                                         {
                                             "type": "float",
                                             "data": 0.5
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": 0
                                         },
                                         {
                                             "type": "float",
@@ -807,6 +937,10 @@
                                         },
                                         {
                                             "type": "float",
+                                            "data": 0
+                                        },
+                                        {
+                                            "type": "float",
                                             "data": 2
                                         },
                                         {
@@ -841,6 +975,10 @@
                                         {
                                             "type": "float",
                                             "data": 0.5
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": 0
                                         },
                                         {
                                             "type": "float",
@@ -897,6 +1035,10 @@
                                         },
                                         {
                                             "type": "float",
+                                            "data": 0
+                                        },
+                                        {
+                                            "type": "float",
                                             "data": 2
                                         },
                                         {
@@ -931,6 +1073,10 @@
                                         {
                                             "type": "float",
                                             "data": 0.5
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": 0
                                         },
                                         {
                                             "type": "float",
@@ -987,6 +1133,10 @@
                                         },
                                         {
                                             "type": "float",
+                                            "data": 0
+                                        },
+                                        {
+                                            "type": "float",
                                             "data": 2
                                         },
                                         {
@@ -1021,6 +1171,10 @@
                                         {
                                             "type": "float",
                                             "data": 0.5
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": 0
                                         },
                                         {
                                             "type": "float",
@@ -1069,7 +1223,7 @@
                     "tagIndex": 11
                 },
                 "LayerComponent": {
-                    "layerIndex": 0
+                    "layerIndex": 10
                 },
                 "SiblingIndexComponent": {
                     "siblingIndex": 2
@@ -1290,7 +1444,7 @@
                     "tagIndex": 10
                 },
                 "LayerComponent": {
-                    "layerIndex": 0
+                    "layerIndex": 10
                 },
                 "SiblingIndexComponent": {
                     "siblingIndex": 4
@@ -1607,7 +1761,7 @@
                     "tagIndex": 0
                 },
                 "LayerComponent": {
-                    "layerIndex": 0
+                    "layerIndex": 10
                 },
                 "SiblingIndexComponent": {
                     "siblingIndex": 3
@@ -1970,7 +2124,7 @@
                     "tagIndex": 0
                 },
                 "LayerComponent": {
-                    "layerIndex": 0
+                    "layerIndex": 10
                 },
                 "SiblingIndexComponent": {
                     "siblingIndex": 4
@@ -2617,7 +2771,7 @@
         },
         {
             "index": 10,
-            "name": "test"
+            "name": "IgnoreBlur"
         }
     ],
     "lightingSystem": {

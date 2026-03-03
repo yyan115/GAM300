@@ -6,9 +6,9 @@
         "compiled": "../../Resources/Textures/M4/FloorMain_normal_tiled.dds"
     },
     "TextureMetaData": {
-        "type": "normal",
+        "type": "diffuse",
         "flipUVs": false,
         "generateMipmaps": true,
-        "textureWrapMode": "Repeat"
+        "textureWrapMode": "Clamp"
     }
 }

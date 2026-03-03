@@ -1,0 +1,14 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "00327c2b0426f9f8-000462073e000017",
+        "source": "../../Resources/Textures/M5/kusaneDoor_WoodenDoor_Height.png",
+        "compiled": "../../Resources/Textures/M5/kusaneDoor_WoodenDoor_Height.dds"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp"
+    }
+}

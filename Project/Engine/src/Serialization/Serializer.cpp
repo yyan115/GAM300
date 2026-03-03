@@ -11,6 +11,7 @@
 #include <Graphics/Model/ModelFactory.hpp>
 #include <Prefab/PrefabIO.hpp>
 #include "Video/VideoComponent.hpp"
+#include "Graphics/BloomComponent.hpp"
 
 // ---------- helpers ----------
 auto readVec3FromArray = [](const rapidjson::Value& a, Vector3D& out) -> bool {
@@ -519,6 +520,11 @@ rapidjson::Value Serializer::SerializeEntity(Entity entity, rapidjson::Document:
         rapidjson::Value v = SerializeComponentToValue(c, alloc);
         compsObj.AddMember("ParticleComponent", v, alloc);
     }
+    if (ecs.HasComponent<FogVolumeComponent>(entity)) {
+        auto& c = ecs.GetComponent<FogVolumeComponent>(entity);
+        rapidjson::Value v = SerializeComponentToValue(c, alloc);
+        compsObj.AddMember("FogVolumeComponent", v, alloc);
+    }
     //if (ecs.HasComponent<DebugDrawComponent>(entity)) {
     //    auto& c = ecs.GetComponent<DebugDrawComponent>(entity);
     //    rapidjson::Value v = SerializeComponentToValue(c);
@@ -626,6 +632,40 @@ rapidjson::Value Serializer::SerializeEntity(Entity entity, rapidjson::Document:
         rapidjson::Value skyboxPathVal;
         skyboxPathVal.SetString(c.skyboxTexturePath.c_str(), static_cast<rapidjson::SizeType>(c.skyboxTexturePath.size()), alloc);
         v.AddMember("skyboxTexturePath", skyboxPathVal, alloc);
+
+        // Post-processing settings
+        v.AddMember("blurEnabled", c.blurEnabled, alloc);
+        v.AddMember("blurIntensity", c.blurIntensity, alloc);
+        v.AddMember("blurRadius", c.blurRadius, alloc);
+        v.AddMember("blurPasses", c.blurPasses, alloc);
+        v.AddMember("blurLayerMask", c.blurLayerMask, alloc);
+        v.AddMember("bloomEnabled", c.bloomEnabled, alloc);
+        v.AddMember("bloomThreshold", c.bloomThreshold, alloc);
+        v.AddMember("bloomIntensity", c.bloomIntensity, alloc);
+        v.AddMember("vignetteEnabled", c.vignetteEnabled, alloc);
+        v.AddMember("vignetteIntensity", c.vignetteIntensity, alloc);
+        v.AddMember("vignetteSmoothness", c.vignetteSmoothness, alloc);
+        {
+            rapidjson::Value vigColorVal(rapidjson::kObjectType);
+            vigColorVal.AddMember("type", "glm::vec3", alloc);
+            rapidjson::Value vigColorData(rapidjson::kArrayType);
+            vigColorData.PushBack(c.vignetteColor.x, alloc); vigColorData.PushBack(c.vignetteColor.y, alloc); vigColorData.PushBack(c.vignetteColor.z, alloc);
+            vigColorVal.AddMember("data", vigColorData, alloc);
+            v.AddMember("vignetteColor", vigColorVal, alloc);
+        }
+        v.AddMember("colorGradingEnabled", c.colorGradingEnabled, alloc);
+        v.AddMember("cgBrightness", c.cgBrightness, alloc);
+        v.AddMember("cgContrast", c.cgContrast, alloc);
+        v.AddMember("cgSaturation", c.cgSaturation, alloc);
+        rapidjson::Value tintVal(rapidjson::kObjectType);
+        tintVal.AddMember("type", "glm::vec3", alloc);
+        rapidjson::Value tintData(rapidjson::kArrayType);
+        tintData.PushBack(c.cgTint.x, alloc); tintData.PushBack(c.cgTint.y, alloc); tintData.PushBack(c.cgTint.z, alloc);
+        tintVal.AddMember("data", tintData, alloc);
+        v.AddMember("cgTint", tintVal, alloc);
+        v.AddMember("chromaticAberrationEnabled", c.chromaticAberrationEnabled, alloc);
+        v.AddMember("chromaticAberrationIntensity", c.chromaticAberrationIntensity, alloc);
+        v.AddMember("chromaticAberrationPadding", c.chromaticAberrationPadding, alloc);
 
         compsObj.AddMember("CameraComponent", v, alloc);
     }
@@ -763,6 +803,20 @@ rapidjson::Value Serializer::SerializeEntity(Entity entity, rapidjson::Document:
         rapidjson::Value v = SerializeComponentToValue(c, alloc);
         compsObj.AddMember("DialogueComponent", v, alloc);
     }
+    if (ecs.HasComponent<BloomComponent>(entity)) {
+        auto& c = ecs.GetComponent<BloomComponent>(entity);
+        rapidjson::Value v = SerializeComponentToValue(c, alloc);
+        // bloomColor needs custom serialization (glm::vec3)
+        rapidjson::Value colorVal(rapidjson::kObjectType);
+        colorVal.AddMember("type", "glm::vec3", alloc);
+        rapidjson::Value colorData(rapidjson::kArrayType);
+        colorData.PushBack(c.bloomColor.x, alloc);
+        colorData.PushBack(c.bloomColor.y, alloc);
+        colorData.PushBack(c.bloomColor.z, alloc);
+        colorVal.AddMember("data", colorData, alloc);
+        v.AddMember("bloomColor", colorVal, alloc);
+        compsObj.AddMember("BloomComponent", v, alloc);
+    }
 
 
     entObj.AddMember("components", compsObj, alloc);
@@ -783,6 +837,7 @@ void Serializer::SerializePrefabInstanceDelta(ECSManager& sceneECS, Entity insta
     CheckAndSerializeDelta<SpriteRenderComponent>("SpriteRenderComponent", sceneECS, instanceEnt, baselineEnt, alloc, outComponentsArray, standardSerializer);
     CheckAndSerializeDelta<TextRenderComponent>("TextRenderComponent", sceneECS, instanceEnt, baselineEnt, alloc, outComponentsArray, standardSerializer);
     CheckAndSerializeDelta<ParticleComponent>("ParticleComponent", sceneECS, instanceEnt, baselineEnt, alloc, outComponentsArray, standardSerializer);
+    CheckAndSerializeDelta<FogVolumeComponent>("FogVolumeComponent", sceneECS, instanceEnt, baselineEnt, alloc, outComponentsArray, standardSerializer);
     CheckAndSerializeDelta<AudioComponent>("AudioComponent", sceneECS, instanceEnt, baselineEnt, alloc, outComponentsArray, standardSerializer);
     CheckAndSerializeDelta<AudioListenerComponent>("AudioListenerComponent", sceneECS, instanceEnt, baselineEnt, alloc, outComponentsArray, standardSerializer);
     CheckAndSerializeDelta<AudioReverbZoneComponent>("AudioReverbZoneComponent", sceneECS, instanceEnt, baselineEnt, alloc, outComponentsArray, standardSerializer);
@@ -799,6 +854,20 @@ void Serializer::SerializePrefabInstanceDelta(ECSManager& sceneECS, Entity insta
     CheckAndSerializeDelta<SliderComponent>("SliderComponent", sceneECS, instanceEnt, baselineEnt, alloc, outComponentsArray, standardSerializer);
     CheckAndSerializeDelta<VideoComponent>("VideoComponent", sceneECS, instanceEnt, baselineEnt, alloc, outComponentsArray, standardSerializer);
     CheckAndSerializeDelta<DialogueComponent>("DialogueComponent", sceneECS, instanceEnt, baselineEnt, alloc, outComponentsArray, standardSerializer);
+    CheckAndSerializeDelta<BloomComponent>("BloomComponent", sceneECS, instanceEnt, baselineEnt, alloc, outComponentsArray,
+        [&](const BloomComponent& c, auto& a) {
+            rapidjson::Value v = SerializeComponentToValue(c, a);
+            // bloomColor needs custom serialization (glm::vec3)
+            rapidjson::Value colorVal(rapidjson::kObjectType);
+            colorVal.AddMember("type", "glm::vec3", a);
+            rapidjson::Value colorData(rapidjson::kArrayType);
+            colorData.PushBack(c.bloomColor.x, a);
+            colorData.PushBack(c.bloomColor.y, a);
+            colorData.PushBack(c.bloomColor.z, a);
+            colorVal.AddMember("data", colorData, a);
+            v.AddMember("bloomColor", colorVal, a);
+            return v;
+        });
 
     // Note: ChildrenComponent and ParentComponent are intentionally SKIPPED.
     if (baselineEnt == static_cast<Entity>(-1)) {
@@ -940,6 +1009,40 @@ void Serializer::SerializePrefabInstanceDelta(ECSManager& sceneECS, Entity insta
             rapidjson::Value skyboxPathVal;
             skyboxPathVal.SetString(c.skyboxTexturePath.c_str(), static_cast<rapidjson::SizeType>(c.skyboxTexturePath.size()), a);
             v.AddMember("skyboxTexturePath", skyboxPathVal, a);
+
+            // Post-processing settings
+            v.AddMember("blurEnabled", c.blurEnabled, a);
+            v.AddMember("blurIntensity", c.blurIntensity, a);
+            v.AddMember("blurRadius", c.blurRadius, a);
+            v.AddMember("blurPasses", c.blurPasses, a);
+            v.AddMember("blurLayerMask", c.blurLayerMask, a);
+            v.AddMember("bloomEnabled", c.bloomEnabled, a);
+            v.AddMember("bloomThreshold", c.bloomThreshold, a);
+            v.AddMember("bloomIntensity", c.bloomIntensity, a);
+            v.AddMember("vignetteEnabled", c.vignetteEnabled, a);
+            v.AddMember("vignetteIntensity", c.vignetteIntensity, a);
+            v.AddMember("vignetteSmoothness", c.vignetteSmoothness, a);
+            {
+                rapidjson::Value vigColorVal(rapidjson::kObjectType);
+                vigColorVal.AddMember("type", "glm::vec3", a);
+                rapidjson::Value vigColorData(rapidjson::kArrayType);
+                vigColorData.PushBack(c.vignetteColor.x, a); vigColorData.PushBack(c.vignetteColor.y, a); vigColorData.PushBack(c.vignetteColor.z, a);
+                vigColorVal.AddMember("data", vigColorData, a);
+                v.AddMember("vignetteColor", vigColorVal, a);
+            }
+            v.AddMember("colorGradingEnabled", c.colorGradingEnabled, a);
+            v.AddMember("cgBrightness", c.cgBrightness, a);
+            v.AddMember("cgContrast", c.cgContrast, a);
+            v.AddMember("cgSaturation", c.cgSaturation, a);
+            rapidjson::Value tintVal(rapidjson::kObjectType);
+            tintVal.AddMember("type", "glm::vec3", a);
+            rapidjson::Value tintData(rapidjson::kArrayType);
+            tintData.PushBack(c.cgTint.x, a); tintData.PushBack(c.cgTint.y, a); tintData.PushBack(c.cgTint.z, a);
+            tintVal.AddMember("data", tintData, a);
+            v.AddMember("cgTint", tintVal, a);
+            v.AddMember("chromaticAberrationEnabled", c.chromaticAberrationEnabled, a);
+            v.AddMember("chromaticAberrationIntensity", c.chromaticAberrationIntensity, a);
+            v.AddMember("chromaticAberrationPadding", c.chromaticAberrationPadding, a);
 
             return v;
         });
@@ -1099,7 +1202,7 @@ void Serializer::SerializePrefabOverridesRecursive(ECSManager& sceneECS, Entity 
     if (sceneECS.HasComponent<ChildrenComponent>(instanceEnt)) {
         auto& instChildren = sceneECS.GetComponent<ChildrenComponent>(instanceEnt).children;
         if (baselineEnt == static_cast<Entity>(-1) || !sceneECS.HasComponent<ChildrenComponent>(baselineEnt)) {
-            // No baseline — serialize all instance children as new additions
+            // No baseline ï¿½ serialize all instance children as new additions
             return;
         }
         auto& baseChildren = sceneECS.GetComponent<ChildrenComponent>(baselineEnt).children;
@@ -1286,7 +1389,7 @@ void Serializer::RestorePrefabHierarchy(ECSManager& ecs, Entity currentEntity, c
                 }
             }
 
-            // Pass 2: Fallback — name only (for old scene files that lack SiblingIndex,
+            // Pass 2: Fallback ï¿½ name only (for old scene files that lack SiblingIndex,
             //         or entities that genuinely have unique names)
             if (match == static_cast<Entity>(-1)) {
                 for (auto it = candidates.begin(); it != candidates.end(); ++it) {
@@ -1497,6 +1600,14 @@ Entity Serializer::DeserializeEntity(ECSManager& ecs, const rapidjson::Value& en
         DeserializeParticleComponent(particleComp, tv);
     }
 
+    // FogVolumeComponent
+    if (comps.HasMember("FogVolumeComponent") && comps["FogVolumeComponent"].IsObject()) {
+        const rapidjson::Value& tv = comps["FogVolumeComponent"];
+        ecs.AddComponent<FogVolumeComponent>(newEnt, FogVolumeComponent{});
+        auto& fogComp = ecs.GetComponent<FogVolumeComponent>(newEnt);
+        TypeResolver<FogVolumeComponent>::Get()->Deserialize(&fogComp, tv);
+    }
+
     // DirectionalLightComponent
     if (comps.HasMember("DirectionalLightComponent") && comps["DirectionalLightComponent"].IsObject()) {
         const rapidjson::Value& tv = comps["DirectionalLightComponent"];
@@ -1639,6 +1750,24 @@ Entity Serializer::DeserializeEntity(ECSManager& ecs, const rapidjson::Value& en
         if (td) td->Deserialize(&dialogueComp, dialogueCompJSON);
     }
 
+    // BloomComponent
+    if (comps.HasMember("BloomComponent") && comps["BloomComponent"].IsObject()) {
+        const auto& bloomCompJSON = comps["BloomComponent"];
+        ecs.AddComponent<BloomComponent>(newEnt, BloomComponent{});
+        auto& bloomComp = ecs.GetComponent<BloomComponent>(newEnt);
+        TypeDescriptor* td = TypeResolver<BloomComponent>::Get();
+        if (td) td->Deserialize(&bloomComp, bloomCompJSON);
+        // bloomColor (custom glm::vec3)
+        if (bloomCompJSON.HasMember("bloomColor") && bloomCompJSON["bloomColor"].IsObject()) {
+            const auto& colorObj = bloomCompJSON["bloomColor"];
+            if (colorObj.HasMember("data") && colorObj["data"].IsArray() && colorObj["data"].Size() >= 3) {
+                bloomComp.bloomColor.x = static_cast<float>(colorObj["data"][0].GetDouble());
+                bloomComp.bloomColor.y = static_cast<float>(colorObj["data"][1].GetDouble());
+                bloomComp.bloomColor.z = static_cast<float>(colorObj["data"][2].GetDouble());
+            }
+        }
+    }
+
 
     // Ensure all entities have TagComponent and LayerComponent
     if (!ecs.HasComponent<TagComponent>(newEnt)) {
@@ -1715,6 +1844,10 @@ void Serializer::ApplyPrefabOverridesRecursive(ECSManager& ecs, Entity& currentE
                 else if (typeName == "ParticleComponent") {
                     if (!ecs.HasComponent<ParticleComponent>(currentEntity)) ecs.AddComponent<ParticleComponent>(currentEntity, ParticleComponent{});
                     DeserializeParticleComponent(ecs.GetComponent<ParticleComponent>(currentEntity), data);
+                }
+                else if (typeName == "FogVolumeComponent") {
+                    if (!ecs.HasComponent<FogVolumeComponent>(currentEntity)) ecs.AddComponent<FogVolumeComponent>(currentEntity, FogVolumeComponent{});
+                    TypeResolver<FogVolumeComponent>::Get()->Deserialize(&ecs.GetComponent<FogVolumeComponent>(currentEntity), data);
                 }
                 else if (typeName == "CameraComponent") {
                     if (!ecs.HasComponent<CameraComponent>(currentEntity)) ecs.AddComponent<CameraComponent>(currentEntity, CameraComponent{});
@@ -1804,6 +1937,21 @@ void Serializer::ApplyPrefabOverridesRecursive(ECSManager& ecs, Entity& currentE
                     if (!ecs.HasComponent<DialogueComponent>(currentEntity)) ecs.AddComponent<DialogueComponent>(currentEntity, DialogueComponent{});
                     TypeDescriptor* td = TypeResolver<DialogueComponent>::Get();
                     if (td) td->Deserialize(&ecs.GetComponent<DialogueComponent>(currentEntity), data);
+                }
+                else if (typeName == "BloomComponent") {
+                    if (!ecs.HasComponent<BloomComponent>(currentEntity)) ecs.AddComponent<BloomComponent>(currentEntity, BloomComponent{});
+                    TypeDescriptor* td = TypeResolver<BloomComponent>::Get();
+                    if (td) td->Deserialize(&ecs.GetComponent<BloomComponent>(currentEntity), data);
+                    // bloomColor (custom glm::vec3)
+                    if (data.HasMember("bloomColor") && data["bloomColor"].IsObject()) {
+                        const auto& colorObj = data["bloomColor"];
+                        if (colorObj.HasMember("data") && colorObj["data"].IsArray() && colorObj["data"].Size() >= 3) {
+                            auto& bloomComp = ecs.GetComponent<BloomComponent>(currentEntity);
+                            bloomComp.bloomColor.x = static_cast<float>(colorObj["data"][0].GetDouble());
+                            bloomComp.bloomColor.y = static_cast<float>(colorObj["data"][1].GetDouble());
+                            bloomComp.bloomColor.z = static_cast<float>(colorObj["data"][2].GetDouble());
+                        }
+                    }
                 }
 
             }
@@ -3310,6 +3458,21 @@ void Serializer::DeserializeCameraComponent(CameraComponent& cameraComp, const r
             idx++;
             cameraComp.skyboxTextureGUID = GUIDUtilities::ConvertStringToGUID128(skyboxGUIDStr);
         }
+        // Post-processing fields (index-based)
+        if (d.Size() > idx) cameraComp.blurEnabled = Serializer::GetBool(d, idx++);
+        if (d.Size() > idx) cameraComp.blurIntensity = Serializer::GetFloat(d, idx++);
+        if (d.Size() > idx) cameraComp.blurRadius = Serializer::GetFloat(d, idx++);
+        if (d.Size() > idx) cameraComp.blurPasses = Serializer::GetInt(d, idx++);
+        if (d.Size() > idx) cameraComp.bloomEnabled = Serializer::GetBool(d, idx++);
+        if (d.Size() > idx) cameraComp.bloomThreshold = Serializer::GetFloat(d, idx++);
+        if (d.Size() > idx) cameraComp.bloomIntensity = Serializer::GetFloat(d, idx++);
+        if (d.Size() > idx) cameraComp.vignetteEnabled = Serializer::GetBool(d, idx++);
+        if (d.Size() > idx) cameraComp.vignetteIntensity = Serializer::GetFloat(d, idx++);
+        if (d.Size() > idx) cameraComp.vignetteSmoothness = Serializer::GetFloat(d, idx++);
+        if (d.Size() > idx) cameraComp.colorGradingEnabled = Serializer::GetBool(d, idx++);
+        if (d.Size() > idx) cameraComp.cgBrightness = Serializer::GetFloat(d, idx++);
+        if (d.Size() > idx) cameraComp.cgContrast = Serializer::GetFloat(d, idx++);
+        if (d.Size() > idx) cameraComp.cgSaturation = Serializer::GetFloat(d, idx++);
     }
 
     // Check if we have custom serialized target and up vectors
@@ -3369,6 +3532,62 @@ void Serializer::DeserializeCameraComponent(CameraComponent& cameraComp, const r
     if (cameraJSON.HasMember("skyboxTexturePath") && cameraJSON["skyboxTexturePath"].IsString()) {
         cameraComp.skyboxTexturePath = cameraJSON["skyboxTexturePath"].GetString();
     }
+
+    // Post-processing settings (backward-compatible)
+    if (cameraJSON.HasMember("blurEnabled") && cameraJSON["blurEnabled"].IsBool())
+        cameraComp.blurEnabled = cameraJSON["blurEnabled"].GetBool();
+    if (cameraJSON.HasMember("blurIntensity") && cameraJSON["blurIntensity"].IsNumber())
+        cameraComp.blurIntensity = cameraJSON["blurIntensity"].GetFloat();
+    if (cameraJSON.HasMember("blurRadius") && cameraJSON["blurRadius"].IsNumber())
+        cameraComp.blurRadius = cameraJSON["blurRadius"].GetFloat();
+    if (cameraJSON.HasMember("blurPasses") && cameraJSON["blurPasses"].IsInt())
+        cameraComp.blurPasses = cameraJSON["blurPasses"].GetInt();
+    if (cameraJSON.HasMember("blurLayerMask") && cameraJSON["blurLayerMask"].IsUint())
+        cameraComp.blurLayerMask = cameraJSON["blurLayerMask"].GetUint();
+    if (cameraJSON.HasMember("bloomEnabled") && cameraJSON["bloomEnabled"].IsBool())
+        cameraComp.bloomEnabled = cameraJSON["bloomEnabled"].GetBool();
+    if (cameraJSON.HasMember("bloomThreshold") && cameraJSON["bloomThreshold"].IsNumber())
+        cameraComp.bloomThreshold = cameraJSON["bloomThreshold"].GetFloat();
+    if (cameraJSON.HasMember("bloomIntensity") && cameraJSON["bloomIntensity"].IsNumber())
+        cameraComp.bloomIntensity = cameraJSON["bloomIntensity"].GetFloat();
+    if (cameraJSON.HasMember("vignetteEnabled") && cameraJSON["vignetteEnabled"].IsBool())
+        cameraComp.vignetteEnabled = cameraJSON["vignetteEnabled"].GetBool();
+    if (cameraJSON.HasMember("vignetteIntensity") && cameraJSON["vignetteIntensity"].IsNumber())
+        cameraComp.vignetteIntensity = cameraJSON["vignetteIntensity"].GetFloat();
+    if (cameraJSON.HasMember("vignetteSmoothness") && cameraJSON["vignetteSmoothness"].IsNumber())
+        cameraComp.vignetteSmoothness = cameraJSON["vignetteSmoothness"].GetFloat();
+    if (cameraJSON.HasMember("vignetteColor") && cameraJSON["vignetteColor"].IsObject()) {
+        const auto& vigColorObj = cameraJSON["vignetteColor"];
+        if (vigColorObj.HasMember("data") && vigColorObj["data"].IsArray() && vigColorObj["data"].Size() >= 3) {
+            const auto& vec = vigColorObj["data"];
+            cameraComp.vignetteColor.x = vec[0].GetFloat();
+            cameraComp.vignetteColor.y = vec[1].GetFloat();
+            cameraComp.vignetteColor.z = vec[2].GetFloat();
+        }
+    }
+    if (cameraJSON.HasMember("colorGradingEnabled") && cameraJSON["colorGradingEnabled"].IsBool())
+        cameraComp.colorGradingEnabled = cameraJSON["colorGradingEnabled"].GetBool();
+    if (cameraJSON.HasMember("cgBrightness") && cameraJSON["cgBrightness"].IsNumber())
+        cameraComp.cgBrightness = cameraJSON["cgBrightness"].GetFloat();
+    if (cameraJSON.HasMember("cgContrast") && cameraJSON["cgContrast"].IsNumber())
+        cameraComp.cgContrast = cameraJSON["cgContrast"].GetFloat();
+    if (cameraJSON.HasMember("cgSaturation") && cameraJSON["cgSaturation"].IsNumber())
+        cameraComp.cgSaturation = cameraJSON["cgSaturation"].GetFloat();
+    if (cameraJSON.HasMember("cgTint") && cameraJSON["cgTint"].IsObject()) {
+        const auto& tintObj = cameraJSON["cgTint"];
+        if (tintObj.HasMember("data") && tintObj["data"].IsArray() && tintObj["data"].Size() >= 3) {
+            const auto& vec = tintObj["data"];
+            cameraComp.cgTint.x = vec[0].GetFloat();
+            cameraComp.cgTint.y = vec[1].GetFloat();
+            cameraComp.cgTint.z = vec[2].GetFloat();
+        }
+    }
+    if (cameraJSON.HasMember("chromaticAberrationEnabled") && cameraJSON["chromaticAberrationEnabled"].IsBool())
+        cameraComp.chromaticAberrationEnabled = cameraJSON["chromaticAberrationEnabled"].GetBool();
+    if (cameraJSON.HasMember("chromaticAberrationIntensity") && cameraJSON["chromaticAberrationIntensity"].IsNumber())
+        cameraComp.chromaticAberrationIntensity = cameraJSON["chromaticAberrationIntensity"].GetFloat();
+    if (cameraJSON.HasMember("chromaticAberrationPadding") && cameraJSON["chromaticAberrationPadding"].IsNumber())
+        cameraComp.chromaticAberrationPadding = cameraJSON["chromaticAberrationPadding"].GetFloat();
 }
 
 // Helper function to deserialize a single script instance

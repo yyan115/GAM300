@@ -19,6 +19,7 @@ layout (location = 10) in vec4 aInstanceModelCol3;
 layout (location = 11) in vec4 aInstanceNormalCol0;
 layout (location = 12) in vec4 aInstanceNormalCol1;
 layout (location = 13) in vec4 aInstanceNormalCol2;
+layout (location = 14) in vec4 aInstanceBloomData;  // rgb=color, a=intensity
 
 // ============================================================================
 // Outputs to Fragment Shader
@@ -29,6 +30,7 @@ out vec3 Tangent;
 out vec3 color;
 out vec2 TexCoords;
 out vec4 FragPosLightSpace;
+flat out vec4 vBloomData;
 
 // ============================================================================
 // Uniforms
@@ -65,17 +67,23 @@ void main()
             aInstanceModelCol2,
             aInstanceModelCol3
         );
-        
+
         // Reconstruct normal matrix (only need mat3, but we stored mat4 for alignment)
         normalMatrix = mat3(
             aInstanceNormalCol0.xyz,
             aInstanceNormalCol1.xyz,
             aInstanceNormalCol2.xyz
         );
+
+        // Pass per-instance bloom data to fragment shader
+        vBloomData = aInstanceBloomData;
     } else {
         modelMatrix = model;
         // Calculate normal matrix from model matrix
         normalMatrix = mat3(transpose(inverse(modelMatrix)));
+
+        // Non-instanced: fragment shader will use uniforms instead
+        vBloomData = vec4(0.0);
     }
 
     // Start with object-space position and normal

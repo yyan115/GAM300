@@ -116,6 +116,10 @@ void ParallelSystemOrchestrator::Draw() {
 
     frameChannel.join(); // waits for actual work to finish
 
+    // Fog runs on the main thread (lazy init may create OpenGL VAO/VBO/EBO)
+    if (ecs.fogSystem)
+        PROFILE_PLOT_TIMED("Fog", ecs.fogSystem->Update());
+
     // Set all isDirty flags to false after rendering
     ecs.transformSystem->PostUpdate();
 }
