@@ -2,6 +2,7 @@
 #include "Math/Vector3D.hpp"
 #include "Math/Matrix4x4.hpp"
 #include "Reflection/ReflectionBase.hpp"
+#include <algorithm>
 #include <tuple>
 // ============================================================================
 // VECTOR2D (for 2D values like axis input, pointer position)
@@ -1207,9 +1208,7 @@ namespace EntityQueryWrappers {
         }
 
         // Inline: compose a local matrix from Transform (localPosition, localRotation, localScale)
-        // NOTE: adjust rotation handling here if your Transform stores quaternion vs Euler.
         auto composeLocalMatrix = [&](const Transform& t) -> Matrix4x4 {
-            // If localRotation is stored as Euler angles (Vector3), use:
             Matrix4x4 Rx = Matrix4x4::RotationX(t.localRotation.x);
             Matrix4x4 Ry = Matrix4x4::RotationY(t.localRotation.y);
             Matrix4x4 Rz = Matrix4x4::RotationZ(t.localRotation.z);
@@ -1224,8 +1223,6 @@ namespace EntityQueryWrappers {
             // ExtractRotation yields a Vector3 — likely Euler angles. If your Transform expects quaternion,
             // convert Euler -> Quaternion here instead.
             outT.localRotation = Quaternion::FromEulerDegrees(Matrix4x4::ExtractRotation(m)); // Euler (vec3) assumption
-            // If you use Quaternion for localRotation, convert:
-            // outT.localRotationQuat = Quaternion::FromEuler(outT.localRotation); // example
             };
 
         // Inline recursive world-matrix computation (uses existing ParentComponent chain)
@@ -1251,15 +1248,8 @@ namespace EntityQueryWrappers {
             // preserve current world
             Matrix4x4 childWorld = computeWorldMatrix(child);
 
-            // remove child from old parent's children list (if any) and remove ParentComponent
+            // remove ParentComponent if any
             if (ecsManager.HasComponent<ParentComponent>(child)) {
-                const ParentComponent& oldPC = ecsManager.GetComponent<ParentComponent>(child);
-                Entity oldParent = guidRegistry.GetEntityByGUID(oldPC.parent);
-                if (oldParent >= 0 && ecsManager.HasComponent<ChildrenComponent>(oldParent)) {
-                    auto& children = ecsManager.GetComponent<ChildrenComponent>(oldParent).children;
-                    GUID_128 childGuid = guidRegistry.GetGUIDByEntity(child);
-                    children.erase(std::remove(children.begin(), children.end(), childGuid), children.end());
-                }
                 ecsManager.RemoveComponent<ParentComponent>(child);
             }
 
@@ -1307,15 +1297,9 @@ namespace EntityQueryWrappers {
         // Capture child's world matrix BEFORE structural changes
         Matrix4x4 childWorld = computeWorldMatrix(child);
 
-        // Remove child from previous parent's children list if present
+        // Remove ParentComponent from previous parent if present (no parent->children list manipulation)
         if (ecsManager.HasComponent<ParentComponent>(child)) {
-            const ParentComponent& oldPC = ecsManager.GetComponent<ParentComponent>(child);
-            Entity oldParent = guidRegistry.GetEntityByGUID(oldPC.parent);
-            if (oldParent >= 0 && ecsManager.HasComponent<ChildrenComponent>(oldParent)) {
-                auto& children = ecsManager.GetComponent<ChildrenComponent>(oldParent).children;
-                GUID_128 childGuid = guidRegistry.GetGUIDByEntity(child);
-                children.erase(std::remove(children.begin(), children.end(), childGuid), children.end());
-            }
+            ecsManager.RemoveComponent<ParentComponent>(child);
         }
 
         // Add or update ParentComponent on child
@@ -1325,18 +1309,6 @@ namespace EntityQueryWrappers {
         }
         else {
             ecsManager.AddComponent<ParentComponent>(child, ParentComponent{ parentGuid });
-        }
-
-        // Ensure parent has ChildrenComponent and add child GUID (no duplicates)
-        if (!ecsManager.HasComponent<ChildrenComponent>(parent)) {
-            ecsManager.AddComponent<ChildrenComponent>(parent, ChildrenComponent{});
-        }
-        {
-            auto& children = ecsManager.GetComponent<ChildrenComponent>(parent).children;
-            GUID_128 childGuid = guidRegistry.GetGUIDByEntity(child);
-            if (std::find(children.begin(), children.end(), childGuid) == children.end()) {
-                children.push_back(childGuid);
-            }
         }
 
         // Rebase child's transform so its world transform remains the same:
@@ -1353,7 +1325,6 @@ namespace EntityQueryWrappers {
             bool invOk = parentWorld.TryInverse(invParent);
             if (!invOk) {
                 // inverse failed (singular parent matrix) — cannot reliably rebase
-                // Fail safely and return false to Lua so caller can handle it.
                 lua_pushboolean(L, 0);
                 return 1;
             }

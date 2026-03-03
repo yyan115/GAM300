@@ -1,14 +1,6 @@
 -- ChainEndpointController.lua
 local Component = require("extension.mono_helper")
 
--- Toggle this global at runtime to enable all chain endpoint debug logs:
--- _G.CHAIN_DEBUG = true
-local function dbg(msg)
-    if _G.CHAIN_DEBUG then
-        print(msg)
-    end
-end
-
 return Component {
     fields = {
         PlayerName = "Player",
@@ -32,10 +24,43 @@ return Component {
         self._playerEntityId = nil
         if Engine and Engine.GetEntityByName then
             self._playerEntityId = Engine.GetEntityByName(self.PlayerName)
-            self:_dbg("[ChainEndpointController] Player entity resolved: '" .. self:_getEntityDebugName(self._playerEntityId) .. "'")
         else
             print("[ChainEndpointController] WARNING: Engine.GetEntityByName not available")
         end
+
+        -- Resolve this component's entity id for parenting calls. Keep heuristics minimal.
+        self._entityId = nil
+        do
+            local ok, eid = pcall(function() if self.GetEntityId then return self:GetEntityId() end end)
+            if ok and eid then self._entityId = eid end
+        end
+        if not self._entityId then
+            local ok, eid = pcall(function() if self.GetEntity then return self:GetEntity() end end)
+            if ok and eid then self._entityId = eid end
+        end
+        if not self._entityId and self.entityId then self._entityId = self.entityId end
+        if not self._entityId and self.entity and type(self.entity) == "number" then self._entityId = self.entity end
+        if not self._entityId and self.gameObject and self.gameObject.EntityId then self._entityId = self.gameObject.EntityId end
+
+        -- Try resolve endpoint transform handle once (non-fatal)
+        self._endpointTransform = nil
+        if self._entityId and Engine then
+            pcall(function()
+                if Engine.FindTransformByEntity then
+                    self._endpointTransform = Engine.FindTransformByEntity(self._entityId)
+                elseif Engine.GetTransformForEntity then
+                    self._endpointTransform = Engine.GetTransformForEntity(self._entityId)
+                elseif Engine.FindTransformByName and Engine.GetEntityName then
+                    local name = Engine.GetEntityName(self._entityId)
+                    if name and name ~= "" then
+                        self._endpointTransform = Engine.FindTransformByName(name)
+                    end
+                end
+            end)
+        end
+
+        -- Track if we successfully parented so we can avoid manual transform updates
+        self._isParented = false
 
         self._isVisible       = false
         self._isExtending     = false
@@ -74,13 +99,9 @@ return Component {
         end
     end,
 
-    -- -------------------------------------------------------------------------
-    -- Helpers
-    -- -------------------------------------------------------------------------
-
-    -- Internal debug print — checks both the inspector field and the global toggle
+    -- Single helper for debug printing
     _dbg = function(self, msg)
-        if self.DebugLogs or _G.CHAIN_DEBUG then
+        if self.DebugLogs then
             print(msg)
         end
     end,
@@ -114,6 +135,15 @@ return Component {
 
     _clearHook = function(self)
         self:_dbg("[ChainEndpointController] _clearHook — releasing '" .. self:_getEntityDebugName(self._hookedEntityId) .. "'")
+
+        if self._isParented and self._entityId and Engine and Engine.SetParentEntity then
+            pcall(function()
+                Engine.SetParentEntity(self._entityId, -1)
+            end)
+            self:_dbg("[ChainEndpointController] Unparented endpoint (on clear)")
+        end
+        self._isParented = false
+
         self._hookedEntityId          = nil
         self._hookedTransform         = nil
         self._hookedColliderTransform = nil
@@ -129,10 +159,7 @@ return Component {
         self:_dbg("[ChainEndpointController] Model visible=" .. tostring(visible))
     end,
 
-    -- -------------------------------------------------------------------------
     -- Chain state events
-    -- -------------------------------------------------------------------------
-
     _onEndpointMoved = function(self, payload)
         if not self._isVisible then
             self:_setModelVisible(true)
@@ -168,9 +195,10 @@ return Component {
             local hookedName = self:_getEntityDebugName(self._hookedEntityId)
             local px, py, pz = nil, nil, nil
 
-            if self._hookedTransform then
+            -- Prefer querying endpoint's own world position when parented and transform resolved
+            if self._isParented and self._endpointTransform and Engine and Engine.GetTransformWorldPosition then
                 local ok, a, b, c = pcall(function()
-                    return Engine.GetTransformWorldPosition(self._hookedTransform)
+                    return Engine.GetTransformWorldPosition(self._endpointTransform)
                 end)
                 if ok and a ~= nil then
                     if type(a) == "table" then
@@ -180,12 +208,33 @@ return Component {
                     elseif type(a) == "number" then
                         px, py, pz = a, b, c
                     end
-                    self:_dbg(string.format("[ChainEndpointController] TRACK '%s' root pivot=(%.3f,%.3f,%.3f)", hookedName, px, py, pz))
+                    self:_dbg(string.format("[ChainEndpointController] TRACK (parented) '%s' endpoint world pivot=(%.3f,%.3f,%.3f)", hookedName, px, py, pz))
                 else
-                    self:_dbg("[ChainEndpointController] WARNING: GetTransformWorldPosition failed for '" .. hookedName .. "'")
+                    px = nil
                 end
-            else
-                self:_dbg("[ChainEndpointController] WARNING: no root transform for '" .. hookedName .. "'")
+            end
+
+            -- Fallback: original root-pivot + offset calculation
+            if not px then
+                if self._hookedTransform then
+                    local ok, a, b, c = pcall(function()
+                        return Engine.GetTransformWorldPosition(self._hookedTransform)
+                    end)
+                    if ok and a ~= nil then
+                        if type(a) == "table" then
+                            px = a[1] or a.x or 0
+                            py = a[2] or a.y or 0
+                            pz = a[3] or a.z or 0
+                        elseif type(a) == "number" then
+                            px, py, pz = a, b, c
+                        end
+                        self:_dbg(string.format("[ChainEndpointController] TRACK '%s' root pivot=(%.3f,%.3f,%.3f)", hookedName, px, py, pz))
+                    else
+                        self:_dbg("[ChainEndpointController] WARNING: GetTransformWorldPosition failed for '" .. hookedName .. "'")
+                    end
+                else
+                    self:_dbg("[ChainEndpointController] WARNING: no root transform for '" .. hookedName .. "'")
+                end
             end
 
             if px then
@@ -258,10 +307,7 @@ return Component {
         if self._rb then self._rb:SetEnabled(false) end
     end,
 
-    -- -------------------------------------------------------------------------
     -- Trigger
-    -- -------------------------------------------------------------------------
-
     OnTriggerEnter = function(self, otherEntityId)
         local otherName = self:_getEntityDebugName(otherEntityId)
 
@@ -292,8 +338,6 @@ return Component {
 
         self:_dbg("[ChainEndpointController] OnTriggerEnter entity='" .. otherName .. "' root='" .. rootName .. "' tag='" .. tostring(tag) .. "'")
 
-        -- To add more hookable types extend here:
-        -- local isHookable = (tag == "Enemy") or (tag == "Hookable")
         local isHookable = (tag == "Enemy")
         if not isHookable then
             self:_dbg("[ChainEndpointController] OnTriggerEnter ignored — root='" .. rootName .. "' tag='" .. tostring(tag) .. "' not hookable")
@@ -373,6 +417,22 @@ return Component {
             rootPivotX, rootPivotY, rootPivotZ,
             self._hookedOffsetX, self._hookedOffsetY, self._hookedOffsetZ))
 
+        -- try to parent endpoint under the root so engine maintains transform automatically
+        if self._entityId and Engine and Engine.SetParentEntity then
+            local ok = pcall(function()
+                Engine.SetParentEntity(self._entityId, rootId)
+            end)
+            if ok then
+                self._isParented = true
+                self:_dbg("[ChainEndpointController] Engine.SetParentEntity succeeded: endpoint -> " .. tostring(rootId))
+            else
+                self._isParented = false
+                self:_dbg("[ChainEndpointController] WARNING: Engine.SetParentEntity failed for endpoint -> " .. tostring(rootId))
+            end
+        else
+            self:_dbg("[ChainEndpointController] Note: endpoint entity id unavailable or Engine.SetParentEntity not present; skipping parent call")
+        end
+
         if _G.event_bus and _G.event_bus.publish then
             _G.event_bus.publish("chain.endpoint_hit_entity", {
                 entityId   = otherEntityId,
@@ -388,6 +448,11 @@ return Component {
 
     _onDetach = function(self, payload)
         self:_dbg("[ChainEndpointController] _onDetach called")
+        if self._isParented and self._entityId and Engine and Engine.SetParentEntity then
+            pcall(function() Engine.SetParentEntity(self._entityId, -1) end)
+            self:_dbg("[ChainEndpointController] _onDetach: unparented endpoint (if parented)")
+        end
+        self._isParented = false
     end,
 
     _onCheckCollision = function(self, payload)
