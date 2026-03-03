@@ -75,6 +75,19 @@ void HDREffect::Apply(unsigned int inputTexture, unsigned int outputFBO, int wid
     shader->setInt("toneMappingMode", static_cast<int>(toneMappingMode));
     shader->setBool("enableTonemapping", enabled);  // Pass enabled state to shader
 
+    // Vignette uniforms
+    shader->setBool("vignetteEnabled", vignetteEnabled);
+    shader->setFloat("vignetteIntensity", vignetteIntensity);
+    shader->setFloat("vignetteSmoothness", vignetteSmoothness);
+    shader->setVec3("vignetteColor", vignetteColor);
+
+    // Color Grading uniforms
+    shader->setBool("colorGradingEnabled", colorGradingEnabled);
+    shader->setFloat("cgBrightness", cgBrightness);
+    shader->setFloat("cgContrast", cgContrast);
+    shader->setFloat("cgSaturation", cgSaturation);
+    shader->setVec3("cgTint", cgTint);
+
     // Bind input HDR texture
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, inputTexture);

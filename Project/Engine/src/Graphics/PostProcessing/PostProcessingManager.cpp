@@ -30,6 +30,7 @@ bool PostProcessingManager::Initialize()
     // Initialize member variables
     hdrFramebuffer = 0;
     hdrColorTexture = 0;
+    hdrBloomEmissionTexture = 0;
     hdrDepthTexture = 0;
     hdrWidth = 0;
     hdrHeight = 0;
@@ -56,9 +57,15 @@ bool PostProcessingManager::Initialize()
         return false;
     }
 
-    // Future effects will be initialized here
-    // bloomEffect = std::make_unique<BloomEffect>();
-    // if (!bloomEffect->Initialize()) { return false; }
+    // Initialize Bloom effect (applied after blur, before HDR tonemapping)
+    bloomEffect = std::make_unique<BloomEffect>();
+    if (!bloomEffect->Initialize())
+    {
+        ENGINE_PRINT(EngineLogging::LogLevel::Error, "[PostProcessingManager] Failed to initialize Bloom effect!\n");
+        // Non-fatal: bloom is optional
+    }
+    bloomEffect->SetEnabled(false);  // Default to off — CameraSystem enables when needed
+
     CreateHDRFramebuffer(RunTimeVar::window.width, RunTimeVar::window.height);
     initialized = true;
     ENGINE_PRINT("[PostProcessingManager] Initialized successfully\n");
@@ -71,6 +78,12 @@ void PostProcessingManager::Shutdown()
     {
         blurEffect->Shutdown();
         blurEffect.reset();
+    }
+
+    if (bloomEffect)
+    {
+        bloomEffect->Shutdown();
+        bloomEffect.reset();
     }
 
     if (hdrEffect)
@@ -109,9 +122,27 @@ void PostProcessingManager::Process(unsigned int inputTexture, unsigned int outp
         // hdrColorTexture now contains blurred image, currentInput still points to it
     }
 
+    // Apply bloom using per-entity emission buffer (no threshold extraction)
+    if (bloomEffect && bloomEffect->IsEnabled() && bloomEffect->GetIntensity() > 0.01f)
+    {
+        bloomEffect->SetBloomEmissionTexture(hdrBloomEmissionTexture);
+        bloomEffect->Apply(currentInput, hdrFramebuffer, width, height);
+    }
+
     // Apply HDR effect (shader will bypass tonemapping if disabled)
     if (hdrEffect)
     {
+        // Pass vignette/color grading settings to HDR effect
+        hdrEffect->SetVignetteEnabled(vignetteEnabled);
+        hdrEffect->SetVignetteIntensity(vignetteIntensity_);
+        hdrEffect->SetVignetteSmoothness(vignetteSmoothness_);
+        hdrEffect->SetVignetteColor(vignetteColor_);
+        hdrEffect->SetColorGradingEnabled(colorGradingEnabled);
+        hdrEffect->SetCGBrightness(cgBrightness_);
+        hdrEffect->SetCGContrast(cgContrast_);
+        hdrEffect->SetCGSaturation(cgSaturation_);
+        hdrEffect->SetCGTint(cgTint_);
+
         // Bind output framebuffer
         glBindFramebuffer(GL_FRAMEBUFFER, currentOutput);
         glViewport(0, 0, width, height);
@@ -159,6 +190,19 @@ unsigned int PostProcessingManager::CreateHDRFramebuffer(int width, int height)
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, hdrColorTexture, 0);
 
+    // Create bloom emission texture (MRT attachment 1)
+    glGenTextures(1, &hdrBloomEmissionTexture);
+    glBindTexture(GL_TEXTURE_2D, hdrBloomEmissionTexture);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, width, height, 0, GL_RGBA, GL_FLOAT, nullptr);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D, hdrBloomEmissionTexture, 0);
+
+    // Default: draw to attachment 0 only (bloom MRT enabled on demand)
+    glDrawBuffer(GL_COLOR_ATTACHMENT0);
+
     // Create depth texture (sampleable, so fog can read scene depth for soft intersections)
     glGenTextures(1, &hdrDepthTexture);
     glBindTexture(GL_TEXTURE_2D, hdrDepthTexture);
@@ -181,10 +225,15 @@ unsigned int PostProcessingManager::CreateHDRFramebuffer(int width, int height)
 
 void PostProcessingManager::DeleteHDRFramebuffer()
 {
-    if (hdrColorTexture != 0) 
+    if (hdrColorTexture != 0)
     {
         glDeleteTextures(1, &hdrColorTexture);
         hdrColorTexture = 0;
+    }
+    if (hdrBloomEmissionTexture != 0)
+    {
+        glDeleteTextures(1, &hdrBloomEmissionTexture);
+        hdrBloomEmissionTexture = 0;
     }
     if (hdrDepthTexture != 0)
     {
@@ -203,7 +252,7 @@ void PostProcessingManager::BeginHDRRender(int width, int height)
     PROFILE_FUNCTION();
 
     // Create or resize HDR framebuffer if needed
-    if (hdrFramebuffer == 0 || width != hdrWidth || height != hdrHeight) 
+    if (hdrFramebuffer == 0 || width != hdrWidth || height != hdrHeight)
     {
         CreateHDRFramebuffer(width, height);
     }
@@ -212,10 +261,16 @@ void PostProcessingManager::BeginHDRRender(int width, int height)
     glBindFramebuffer(GL_FRAMEBUFFER, hdrFramebuffer);
     glViewport(0, 0, width, height);
 
-    // Clear HDR buffer
-    // Clear HDR buffer with BLACK (very important!)
-    //glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-    //glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    // Clear bloom emission texture (attachment 1) to black
+    // This is separate from the main color clear so the scene background color
+    // doesn't leak into the bloom emission buffer
+    GLenum bloomAttachment = GL_COLOR_ATTACHMENT1;
+    glDrawBuffers(1, &bloomAttachment);
+    glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+    glClear(GL_COLOR_BUFFER_BIT);
+
+    // Restore single draw buffer (attachment 0 only) for normal rendering
+    glDrawBuffer(GL_COLOR_ATTACHMENT0);
 }
 
 void PostProcessingManager::EndHDRRender(unsigned int outputFBO, int width, int height)
@@ -229,6 +284,17 @@ void PostProcessingManager::EndHDRRender(unsigned int outputFBO, int width, int 
     Process(hdrColorTexture, outputFBO, width, height);
 }
 
+void PostProcessingManager::EnableBloomMRT()
+{
+    unsigned int attachments[2] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1 };
+    glDrawBuffers(2, attachments);
+}
+
+void PostProcessingManager::DisableBloomMRT()
+{
+    glDrawBuffer(GL_COLOR_ATTACHMENT0);
+}
+
 void PostProcessingManager::RenderScreenQuad()
 {
     if (screenQuadVAO == 0) 
@@ -240,6 +306,39 @@ void PostProcessingManager::RenderScreenQuad()
     glBindVertexArray(screenQuadVAO);
     glDrawArrays(GL_TRIANGLES, 0, 6); 
     glBindVertexArray(0);
+}
+
+void PostProcessingManager::ResetRuntimeState()
+{
+    // Reset blur
+    if (blurEffect) {
+        blurEffect->SetIntensity(0.0f);
+        blurEffect->SetRadius(2.0f);
+        blurEffect->SetPasses(2);
+    }
+
+    // Reset bloom
+    if (bloomEffect) {
+        bloomEffect->SetEnabled(false);
+        bloomEffect->SetThreshold(1.0f);
+        bloomEffect->SetIntensity(1.0f);
+    }
+
+    // Reset vignette
+    vignetteEnabled = false;
+    vignetteIntensity_ = 0.5f;
+    vignetteSmoothness_ = 0.5f;
+    vignetteColor_ = glm::vec3(0.0f);
+
+    // Reset color grading
+    colorGradingEnabled = false;
+    cgBrightness_ = 0.0f;
+    cgContrast_ = 1.0f;
+    cgSaturation_ = 1.0f;
+    cgTint_ = glm::vec3(1.0f);
+
+    // Reset layer exclusion
+    excludedLayerMask = 0;
 }
 
 void PostProcessingManager::CreateScreenQuad()

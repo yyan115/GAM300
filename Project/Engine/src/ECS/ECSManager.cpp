@@ -42,6 +42,7 @@
 #include "Video/VideoComponent.hpp"
 #include "Video/VideoSystem.hpp"
 #include "Dialogue/DialogueComponent.hpp"
+#include "Graphics/BloomComponent.hpp"
 #include "Dialogue/DialogueSystem.hpp"
 
 void ECSManager::Initialize() {
@@ -85,6 +86,7 @@ void ECSManager::Initialize() {
 	RegisterComponent<UIAnchorComponent>();
 	RegisterComponent<DialogueComponent>();
 	RegisterComponent<FogVolumeComponent>();
+	RegisterComponent<BloomComponent>();
 
 	// REGISTER ALL SYSTEMS AND ITS SIGNATURES HERE
 	// e.g.,

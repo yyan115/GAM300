@@ -39,7 +39,7 @@ void InstancingManager::EndFrame()
     }
 }
 
-bool InstancingManager::TryAddInstance(const ModelRenderComponent& component, const glm::mat4& worldMatrix)
+bool InstancingManager::TryAddInstance(const ModelRenderComponent& component, const glm::mat4& worldMatrix, const glm::vec3& bloomColor, float bloomIntensity)
 {
     m_stats.totalObjects++;
 
@@ -57,7 +57,7 @@ bool InstancingManager::TryAddInstance(const ModelRenderComponent& component, co
     if (m_frustum && component.model)
     {
         AABB worldBounds = component.model->GetBoundingBox().Transform(worldMatrix);
-        if (!m_frustum->IsBoxVisible(worldBounds)) 
+        if (!m_frustum->IsBoxVisible(worldBounds))
         {
             m_stats.culledObjects++;
             return true;  // Return true to indicate "handled" (culled)
@@ -72,7 +72,7 @@ bool InstancingManager::TryAddInstance(const ModelRenderComponent& component, co
 
     InstanceBatch& batch = GetOrCreateBatch(key, component.model, component.material, component.shader);
 
-    batch.AddInstance(worldMatrix);
+    batch.AddInstance(worldMatrix, bloomColor, bloomIntensity);
     m_stats.instancedObjects++;
 
     return true;

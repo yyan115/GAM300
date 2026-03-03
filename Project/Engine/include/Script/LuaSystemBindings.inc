@@ -326,7 +326,6 @@ BEGIN_SYSTEM("Engine")
     FUNCTION("SetCacheUpdateInterval", &EntityQueryWrappers::SetCacheUpdateInterval)
     FUNCTION("ClearEnemyCaches", &EntityQueryWrappers::ClearEnemyCaches)
     FUNCTION("GetCacheInfo", &EntityQueryWrappers::GetCacheInfo)
-
 END_SYSTEM()
 
 

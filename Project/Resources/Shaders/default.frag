@@ -37,8 +37,10 @@ in vec3 FragPos;
 in vec3 Normal;
 in vec3 Tangent;
 in vec4 FragPosLightSpace;
+flat in vec4 vBloomData;
 
 uniform Material material;
+uniform bool useInstancing;
 
 // ============================================================================
 // Lighting Structures
@@ -94,8 +96,13 @@ uniform float ambientIntensity;
 uniform sampler2D shadowMap;
 uniform bool shadowsEnabled;
 
-out vec4 FragColor;
+layout(location = 0) out vec4 FragColor;
+layout(location = 1) out vec4 BloomEmission;
 uniform vec3 cameraPos;
+
+// Per-entity bloom emission
+uniform float bloomIntensity;
+uniform vec3 bloomColor;
 
 // ============================================================================
 // Helper functions for materials
@@ -325,4 +332,11 @@ void main()
     result *= (1.0 - dirShadow * 0.7);
     
     FragColor = vec4(result, material.opacity);
+
+    // Per-entity bloom emission — written only to MRT attachment 1
+    // Modulate by fragment brightness so shadowed areas don't glow
+    float finalBloomIntensity = useInstancing ? vBloomData.a : bloomIntensity;
+    vec3 finalBloomColor = useInstancing ? vBloomData.rgb : bloomColor;
+    float brightness = dot(result, vec3(0.2126, 0.7152, 0.0722));
+    BloomEmission = vec4(finalBloomColor * finalBloomIntensity * brightness, 1.0);
 }

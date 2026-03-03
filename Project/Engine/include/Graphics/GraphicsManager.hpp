@@ -98,6 +98,14 @@ public:
     void Render();
     void RenderSkybox();
 
+    // Deferred rendering (items excluded from post-processing, rendered on top)
+    void RenderDeferred();
+    bool HasDeferredItems() const { return !deferredQueue.empty(); }
+
+    // Game panel active flag (prevents double deferred render)
+    void SetGamePanelActive(bool active) { gamePanelActive = active; }
+    bool IsGamePanelActive() const { return gamePanelActive; }
+
 	// Face Culling
 	void SetFaceCulling(bool enabled);
 	bool IsFaceCullingEnabled() const { return faceCullingEnabled; }
@@ -132,6 +140,7 @@ private:
     void Setup2DTextMatrices(Shader& shader, const glm::vec3& position, float scaleX, float scaleY);
 
     std::vector<std::unique_ptr<IRenderComponent>> renderQueue;
+    std::vector<std::unique_ptr<IRenderComponent>> deferredQueue; // Post-process excluded items
     Camera* currentCamera = nullptr;
     int screenWidth = 0;
     int screenHeight = 0;
@@ -145,6 +154,9 @@ private:
 
     // Flag to indicate if currently rendering for editor (vs game)
     bool isRenderingForEditor = false;
+
+    // Flag to indicate game panel is active (editor handles deferred rendering)
+    bool gamePanelActive = false;
 
     // Target game resolution for 2D rendering synchronization
     int targetGameWidth = 1920;

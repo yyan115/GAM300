@@ -257,6 +257,14 @@ void SceneInstance::Draw()
 
 	// End HDR rendering and apply tone-mapping to default framebuffer (screen)
 	PostProcessingManager::GetInstance().EndHDRRender(0, RunTimeVar::window.width, RunTimeVar::window.height);
+
+	// Render deferred items (excluded from post-processing) on top of blurred output
+	if (!gfxManager.IsGamePanelActive() && gfxManager.HasDeferredItems())
+	{
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+		glViewport(0, 0, RunTimeVar::window.width, RunTimeVar::window.height);
+		gfxManager.RenderDeferred();
+	}
 }
 
 void SceneInstance::Exit()

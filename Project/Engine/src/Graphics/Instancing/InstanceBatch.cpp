@@ -70,19 +70,12 @@ void InstanceBatch::Clear()
     m_bufferDirty = false;
 }
 
-void InstanceBatch::AddInstance(const glm::mat4& modelMatrix)
+void InstanceBatch::AddInstance(const glm::mat4& modelMatrix, const glm::vec3& bloomColor, float bloomIntensity)
 {
-    // Debug: print first few transforms
-    static int count = 0;
-    if (count++ < 5) {
-        std::cout << "Instance pos: "
-            << modelMatrix[3][0] << ", "
-            << modelMatrix[3][1] << ", "
-            << modelMatrix[3][2] << std::endl;
-    }
     InstanceData data;
     data.modelMatrix = modelMatrix;
     data.normalMatrix = glm::mat4(glm::transpose(glm::inverse(glm::mat3(modelMatrix))));
+    data.bloomData = glm::vec4(bloomColor, bloomIntensity);
 
     m_instances.push_back(data);
     m_bufferDirty = true;
