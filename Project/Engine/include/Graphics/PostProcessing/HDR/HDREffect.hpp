@@ -43,6 +43,11 @@ public:
 	void SetCGSaturation(float s) { cgSaturation = s; }
 	void SetCGTint(const glm::vec3& t) { cgTint = t; }
 
+	// Chromatic Aberration (applied in tonemapping shader)
+	void SetChromaticAberrationEnabled(bool e) { caEnabled = e; }
+	void SetChromaticAberrationIntensity(float i) { caIntensity = i; }
+	void SetChromaticAberrationPadding(float p) { caPadding = p; }
+
 private:
 	std::shared_ptr<Shader> shader;
 	float exposure;
@@ -61,4 +66,9 @@ private:
 	float cgContrast = 1.0f;
 	float cgSaturation = 1.0f;
 	glm::vec3 cgTint = glm::vec3(1.0f);
+
+	// Chromatic Aberration
+	bool caEnabled = false;
+	float caIntensity = 0.5f;
+	float caPadding = 0.5f;
 };

@@ -88,6 +88,11 @@ void HDREffect::Apply(unsigned int inputTexture, unsigned int outputFBO, int wid
     shader->setFloat("cgSaturation", cgSaturation);
     shader->setVec3("cgTint", cgTint);
 
+    // Chromatic Aberration uniforms
+    shader->setBool("caEnabled", caEnabled);
+    shader->setFloat("caIntensity", caIntensity);
+    shader->setFloat("caPadding", caPadding);
+
     // Bind input HDR texture
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, inputTexture);

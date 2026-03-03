@@ -142,6 +142,9 @@ void PostProcessingManager::Process(unsigned int inputTexture, unsigned int outp
         hdrEffect->SetCGContrast(cgContrast_);
         hdrEffect->SetCGSaturation(cgSaturation_);
         hdrEffect->SetCGTint(cgTint_);
+        hdrEffect->SetChromaticAberrationEnabled(caEnabled_);
+        hdrEffect->SetChromaticAberrationIntensity(caIntensity_);
+        hdrEffect->SetChromaticAberrationPadding(caPadding_);
 
         // Bind output framebuffer
         glBindFramebuffer(GL_FRAMEBUFFER, currentOutput);
@@ -336,6 +339,11 @@ void PostProcessingManager::ResetRuntimeState()
     cgContrast_ = 1.0f;
     cgSaturation_ = 1.0f;
     cgTint_ = glm::vec3(1.0f);
+
+    // Reset chromatic aberration
+    caEnabled_ = false;
+    caIntensity_ = 0.5f;
+    caPadding_ = 0.5f;
 
     // Reset layer exclusion
     excludedLayerMask = 0;

@@ -2205,6 +2205,7 @@ void RegisterInspectorCustomRenderers()
         static std::unordered_map<Entity, glm::vec3> startVignetteColor;
         static std::unordered_map<Entity, float> startCGBrightness, startCGContrast, startCGSaturation;
         static std::unordered_map<Entity, glm::vec3> startCGTint;
+        static std::unordered_map<Entity, float> startCAIntensity, startCAPadding;
         static std::unordered_map<Entity, bool> isEditingPP;
         if (isEditingPP.find(entity) == isEditingPP.end()) isEditingPP[entity] = false;
 
@@ -2554,6 +2555,60 @@ void RegisterInspectorCustomRenderers()
                             [entity, newVal]() { auto& ecs = ECSRegistry::GetInstance().GetActiveECSManager(); if (ecs.HasComponent<CameraComponent>(entity)) ecs.GetComponent<CameraComponent>(entity).cgTint = newVal; },
                             [entity, oldVal]() { auto& ecs = ECSRegistry::GetInstance().GetActiveECSManager(); if (ecs.HasComponent<CameraComponent>(entity)) ecs.GetComponent<CameraComponent>(entity).cgTint = oldVal; },
                             "Change CG Tint");
+                    }
+                    isEditingPP[entity] = false;
+                }
+            }
+
+            ImGui::Unindent(10.0f);
+        }
+
+        // --- CHROMATIC ABERRATION ---
+        if (ImGui::CollapsingHeader("Post-Processing: Chromatic Aberration")) {
+            ImGui::Indent(10.0f);
+
+            bool caEnabled = camera.chromaticAberrationEnabled;
+            if (ImGui::Checkbox("Enable Chromatic Aberration##PP", &caEnabled)) {
+                bool oldVal = camera.chromaticAberrationEnabled;
+                camera.chromaticAberrationEnabled = caEnabled;
+                if (UndoSystem::GetInstance().IsEnabled()) {
+                    bool newVal = caEnabled;
+                    UndoSystem::GetInstance().RecordLambdaChange(
+                        [entity, newVal]() { auto& ecs = ECSRegistry::GetInstance().GetActiveECSManager(); if (ecs.HasComponent<CameraComponent>(entity)) ecs.GetComponent<CameraComponent>(entity).chromaticAberrationEnabled = newVal; },
+                        [entity, oldVal]() { auto& ecs = ECSRegistry::GetInstance().GetActiveECSManager(); if (ecs.HasComponent<CameraComponent>(entity)) ecs.GetComponent<CameraComponent>(entity).chromaticAberrationEnabled = oldVal; },
+                        "Toggle Chromatic Aberration");
+                }
+            }
+
+            if (camera.chromaticAberrationEnabled) {
+                ImGui::Text("Intensity");
+                ImGui::SameLine(labelWidth);
+                ImGui::SetNextItemWidth(-1);
+                if (!isEditingPP[entity]) startCAIntensity[entity] = camera.chromaticAberrationIntensity;
+                if (ImGui::SliderFloat("##CAIntensity", &camera.chromaticAberrationIntensity, 0.0f, 3.0f)) { isEditingPP[entity] = true; }
+                if (isEditingPP[entity] && !ImGui::IsItemActive()) {
+                    float oldVal = startCAIntensity[entity]; float newVal = camera.chromaticAberrationIntensity;
+                    if (oldVal != newVal && UndoSystem::GetInstance().IsEnabled()) {
+                        UndoSystem::GetInstance().RecordLambdaChange(
+                            [entity, newVal]() { auto& ecs = ECSRegistry::GetInstance().GetActiveECSManager(); if (ecs.HasComponent<CameraComponent>(entity)) ecs.GetComponent<CameraComponent>(entity).chromaticAberrationIntensity = newVal; },
+                            [entity, oldVal]() { auto& ecs = ECSRegistry::GetInstance().GetActiveECSManager(); if (ecs.HasComponent<CameraComponent>(entity)) ecs.GetComponent<CameraComponent>(entity).chromaticAberrationIntensity = oldVal; },
+                            "Change CA Intensity");
+                    }
+                    isEditingPP[entity] = false;
+                }
+
+                ImGui::Text("Padding");
+                ImGui::SameLine(labelWidth);
+                ImGui::SetNextItemWidth(-1);
+                if (!isEditingPP[entity]) startCAPadding[entity] = camera.chromaticAberrationPadding;
+                if (ImGui::SliderFloat("##CAPadding", &camera.chromaticAberrationPadding, 0.0f, 1.0f)) { isEditingPP[entity] = true; }
+                if (isEditingPP[entity] && !ImGui::IsItemActive()) {
+                    float oldVal = startCAPadding[entity]; float newVal = camera.chromaticAberrationPadding;
+                    if (oldVal != newVal && UndoSystem::GetInstance().IsEnabled()) {
+                        UndoSystem::GetInstance().RecordLambdaChange(
+                            [entity, newVal]() { auto& ecs = ECSRegistry::GetInstance().GetActiveECSManager(); if (ecs.HasComponent<CameraComponent>(entity)) ecs.GetComponent<CameraComponent>(entity).chromaticAberrationPadding = newVal; },
+                            [entity, oldVal]() { auto& ecs = ECSRegistry::GetInstance().GetActiveECSManager(); if (ecs.HasComponent<CameraComponent>(entity)) ecs.GetComponent<CameraComponent>(entity).chromaticAberrationPadding = oldVal; },
+                            "Change CA Padding");
                     }
                     isEditingPP[entity] = false;
                 }
@@ -2947,7 +3002,8 @@ void RegisterInspectorCustomRenderers()
         "blurEnabled", "blurIntensity", "blurRadius", "blurPasses",
         "bloomEnabled", "bloomThreshold", "bloomIntensity",
         "vignetteEnabled", "vignetteIntensity", "vignetteSmoothness",
-        "colorGradingEnabled", "cgBrightness", "cgContrast", "cgSaturation"
+        "colorGradingEnabled", "cgBrightness", "cgContrast", "cgSaturation",
+        "chromaticAberrationEnabled", "chromaticAberrationIntensity", "chromaticAberrationPadding"
     }) {
         ReflectionRenderer::RegisterFieldRenderer("CameraComponent", field,
             [](const char*, void*, Entity, ECSManager&) { return true; });

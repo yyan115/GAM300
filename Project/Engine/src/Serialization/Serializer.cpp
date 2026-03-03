@@ -663,6 +663,9 @@ rapidjson::Value Serializer::SerializeEntity(Entity entity, rapidjson::Document:
         tintData.PushBack(c.cgTint.x, alloc); tintData.PushBack(c.cgTint.y, alloc); tintData.PushBack(c.cgTint.z, alloc);
         tintVal.AddMember("data", tintData, alloc);
         v.AddMember("cgTint", tintVal, alloc);
+        v.AddMember("chromaticAberrationEnabled", c.chromaticAberrationEnabled, alloc);
+        v.AddMember("chromaticAberrationIntensity", c.chromaticAberrationIntensity, alloc);
+        v.AddMember("chromaticAberrationPadding", c.chromaticAberrationPadding, alloc);
 
         compsObj.AddMember("CameraComponent", v, alloc);
     }
@@ -1037,6 +1040,9 @@ void Serializer::SerializePrefabInstanceDelta(ECSManager& sceneECS, Entity insta
             tintData.PushBack(c.cgTint.x, a); tintData.PushBack(c.cgTint.y, a); tintData.PushBack(c.cgTint.z, a);
             tintVal.AddMember("data", tintData, a);
             v.AddMember("cgTint", tintVal, a);
+            v.AddMember("chromaticAberrationEnabled", c.chromaticAberrationEnabled, a);
+            v.AddMember("chromaticAberrationIntensity", c.chromaticAberrationIntensity, a);
+            v.AddMember("chromaticAberrationPadding", c.chromaticAberrationPadding, a);
 
             return v;
         });
@@ -3576,6 +3582,12 @@ void Serializer::DeserializeCameraComponent(CameraComponent& cameraComp, const r
             cameraComp.cgTint.z = vec[2].GetFloat();
         }
     }
+    if (cameraJSON.HasMember("chromaticAberrationEnabled") && cameraJSON["chromaticAberrationEnabled"].IsBool())
+        cameraComp.chromaticAberrationEnabled = cameraJSON["chromaticAberrationEnabled"].GetBool();
+    if (cameraJSON.HasMember("chromaticAberrationIntensity") && cameraJSON["chromaticAberrationIntensity"].IsNumber())
+        cameraComp.chromaticAberrationIntensity = cameraJSON["chromaticAberrationIntensity"].GetFloat();
+    if (cameraJSON.HasMember("chromaticAberrationPadding") && cameraJSON["chromaticAberrationPadding"].IsNumber())
+        cameraComp.chromaticAberrationPadding = cameraJSON["chromaticAberrationPadding"].GetFloat();
 }
 
 // Helper function to deserialize a single script instance
