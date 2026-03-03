@@ -36,6 +36,8 @@ uniform vec3 cameraPos;
 // World-to-local transform for ray-box intersection
 uniform mat4 modelInverse;
 
+uniform int fogShape;
+
 // ============================================================================
 // Procedural Noise
 // Based on value noise with FBM layering for natural fog appearance
@@ -93,13 +95,70 @@ void main()
     vec3 localRayDir = normalize(mat3(modelInverse) * rayDir);
 
     // --- 2. Ray-AABB intersection (slab method) ---
-    vec3 invDir = 1.0 / localRayDir;
-    vec3 t0 = (vec3(-0.5) - localCamPos) * invDir;
-    vec3 t1 = (vec3( 0.5) - localCamPos) * invDir;
-    vec3 tMinV = min(t0, t1);
-    vec3 tMaxV = max(t0, t1);
-    float tEntry = max(max(tMinV.x, tMinV.y), tMinV.z);
-    float tExit  = min(min(tMaxV.x, tMaxV.y), tMaxV.z);
+    float tEntry = -1.0;
+    float tExit  = -1.0;
+
+    if (fogShape == 0) // BOX
+    {
+        vec3 invDir = 1.0 / localRayDir;
+        vec3 t0 = (vec3(-0.5) - localCamPos) * invDir;
+        vec3 t1 = (vec3( 0.5) - localCamPos) * invDir;
+        vec3 tMinV = min(t0, t1);
+        vec3 tMaxV = max(t0, t1);
+        tEntry = max(max(tMinV.x, tMinV.y), tMinV.z);
+        tExit  = min(min(tMaxV.x, tMaxV.y), tMaxV.z);
+    }
+    else if (fogShape == 1) // SPHERE
+    {
+        // Sphere formula: localCamPos + t * localRayDir = radius (0.5)
+        float b = dot(localCamPos, localRayDir);
+        float c = dot(localCamPos, localCamPos) - 0.25; // 0.25 is r^2
+        float d = b*b - c; 
+        
+        if (d >= 0.0) 
+        {
+            float sqrtD = sqrt(d);
+            tEntry = -b - sqrtD;
+            tExit  = -b + sqrtD;
+        }
+    }
+    else if (fogShape == 2) // CYLINDER (Aligned to Y axis)
+    {
+        // Check XZ plane for radial intersection
+        float a = dot(localRayDir.xz, localRayDir.xz);
+        float b = dot(localCamPos.xz, localRayDir.xz);
+        float c = dot(localCamPos.xz, localCamPos.xz) - 0.25;
+        float d = b*b - a*c;
+
+        if (d >= 0.0 && a > 0.00001) 
+        {
+            float sqrtD = sqrt(d);
+            float t0_cyl = (-b - sqrtD) / a;
+            float t1_cyl = (-b + sqrtD) / a;
+
+            // Check Y axis for top/bottom caps limits
+            float t_yMin = -99999.0;
+            float t_yMax =  99999.0;
+            
+            if (abs(localRayDir.y) > 0.00001) 
+            {
+                float t_cap0 = (-0.5 - localCamPos.y) / localRayDir.y;
+                float t_cap1 = (0.5 - localCamPos.y) / localRayDir.y;
+                t_yMin = min(t_cap0, t_cap1);
+                t_yMax = max(t_cap0, t_cap1);
+            } 
+            else if (abs(localCamPos.y) > 0.5) 
+            {
+                d = -1.0; // Ray is parallel to caps and outside Y bounds (miss)
+            }
+
+            if (d >= 0.0) 
+            {
+                tEntry = max(t0_cyl, t_yMin);
+                tExit = min(t1_cyl, t_yMax);
+            }
+        }
+    }
     tEntry = max(tEntry, 0.0);   // camera inside volume: start from camera
 
     if (tExit <= tEntry) discard;
@@ -140,13 +199,30 @@ void main()
         fogDensity *= heightFactor;
     }
 
-    // --- 5. Edge softness (samplePos is in the volume interior, not on a face) ---
+    // --- 5. Edge softness (calculated based on distance to shape surface) ---
     if (edgeSoftness > 0.0)
     {
-        float edgeX = min(samplePos.x, 1.0 - samplePos.x);
-        float edgeY = min(samplePos.y, 1.0 - samplePos.y);
-        float edgeZ = min(samplePos.z, 1.0 - samplePos.z);
-        float edgeDist = min(edgeX, min(edgeY, edgeZ));
+        float edgeDist = 0.0;
+        
+        if (fogShape == 0) // BOX
+        {
+            float edgeX = min(samplePos.x, 1.0 - samplePos.x);
+            float edgeY = min(samplePos.y, 1.0 - samplePos.y);
+            float edgeZ = min(samplePos.z, 1.0 - samplePos.z);
+            edgeDist = min(edgeX, min(edgeY, edgeZ));
+        } 
+        else if (fogShape == 1) // SPHERE
+        {
+            // sampleLocal is already between -0.5 and 0.5. Radius is 0.5.
+            edgeDist = 0.5 - length(sampleLocal);
+        } 
+        else if (fogShape == 2) // CYLINDER
+        {
+            float radialDist = 0.5 - length(sampleLocal.xz);
+            float verticalDist = 0.5 - abs(sampleLocal.y);
+            edgeDist = min(radialDist, verticalDist);
+        }
+        
         float edgeFade = smoothstep(0.0, edgeSoftness * 0.5, edgeDist);
         fogDensity *= edgeFade;
     }

@@ -1380,6 +1380,7 @@ void GraphicsManager::RenderFogVolume(const FogVolumeComponent& item)
 	}
 
 	// --- Fog properties (all from FogVolumeComponent) ---
+	item.fogShader->setInt("fogShape", static_cast<int>(item.shape));
 	item.fogShader->setVec3("fogColor", item.fogColor.ConvertToGLM());
 	item.fogShader->setFloat("density", item.density);
 	item.fogShader->setFloat("opacity", item.opacity);
