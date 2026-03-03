@@ -221,6 +221,43 @@ void SceneRenderer::RenderSceneForEditor(const glm::vec3& cameraPos, const glm::
         if (activeCam != UINT32_MAX && mainECS.HasComponent<CameraComponent>(activeCam)) {
             auto& camComp = mainECS.GetComponent<CameraComponent>(activeCam);
             gfxManager.Clear(camComp.backgroundColor.r, camComp.backgroundColor.g, camComp.backgroundColor.b, 1.0f);
+
+            // Apply camera post-processing settings in editor mode
+            // (CameraSystem::Update only runs during play mode)
+            auto& ppManager = PostProcessingManager::GetInstance();
+            BlurEffect* blur = ppManager.GetBlurEffect();
+            if (blur) {
+                if (camComp.blurEnabled) {
+                    blur->SetIntensity(camComp.blurIntensity);
+                    blur->SetRadius(camComp.blurRadius);
+                    blur->SetPasses(camComp.blurPasses);
+                } else {
+                    blur->SetIntensity(0.0f);
+                }
+            }
+            if (camComp.blurEnabled)
+                ppManager.SetExcludedLayerMask(~camComp.blurLayerMask);
+            else
+                ppManager.SetExcludedLayerMask(0);
+            BloomEffect* bloom = ppManager.GetBloomEffect();
+            if (bloom) {
+                if (camComp.bloomEnabled) {
+                    bloom->SetEnabled(true);
+                    bloom->SetThreshold(camComp.bloomThreshold);
+                    bloom->SetIntensity(camComp.bloomIntensity);
+                } else {
+                    bloom->SetEnabled(false);
+                }
+            }
+            ppManager.SetVignetteEnabled(camComp.vignetteEnabled);
+            ppManager.SetVignetteIntensity(camComp.vignetteIntensity);
+            ppManager.SetVignetteSmoothness(camComp.vignetteSmoothness);
+            ppManager.SetVignetteColor(camComp.vignetteColor);
+            ppManager.SetColorGradingEnabled(camComp.colorGradingEnabled);
+            ppManager.SetCGBrightness(camComp.cgBrightness);
+            ppManager.SetCGContrast(camComp.cgContrast);
+            ppManager.SetCGSaturation(camComp.cgSaturation);
+            ppManager.SetCGTint(camComp.cgTint);
         } else {
             gfxManager.Clear(0.192f, 0.301f, 0.475f, 1.0f);
         }

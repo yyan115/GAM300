@@ -334,8 +334,9 @@ void main()
     FragColor = vec4(result, material.opacity);
 
     // Per-entity bloom emission — written only to MRT attachment 1
-    // The bloom post-processing will blur and composite it back onto the scene
+    // Modulate by fragment brightness so shadowed areas don't glow
     float finalBloomIntensity = useInstancing ? vBloomData.a : bloomIntensity;
     vec3 finalBloomColor = useInstancing ? vBloomData.rgb : bloomColor;
-    BloomEmission = vec4(finalBloomColor * finalBloomIntensity, 1.0);
+    float brightness = dot(result, vec3(0.2126, 0.7152, 0.0722));
+    BloomEmission = vec4(finalBloomColor * finalBloomIntensity * brightness, 1.0);
 }
