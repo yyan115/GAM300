@@ -38,6 +38,7 @@ function M.New(params)
 
     self._raycastSnapped = false    -- true after raycast hit, before trigger fires
     self._lockedChainLen = 0.0      -- chainLen at moment retraction begins
+    self._flopping = false          -- true when max distance reached with no hit — end link is free
 
     self.VerletState = VerletAdapter.Init{ positions = self.positions, prev = self.prev, invMass = self.invMass }
     return setmetatable(self, { __index = M })
@@ -58,6 +59,7 @@ function M:StartExtension(forward, maxLength, linkMaxDistance)
     self.chainLen = 0
     self._lockedChainLen = 0
     self._raycastSnapped = false
+    self._flopping = false
 
     self.endPointLocked = false
     self.lockedEndPoint = {0,0,0}
@@ -91,6 +93,7 @@ function M:StartRetraction()
     self.isRetracting = true
     self.isExtending = false
     self._raycastSnapped = false
+    self._flopping = false
     -- Snapshot chainLen at moment retraction begins so we can interpolate
     -- from lockedEndPoint back to startPos correctly
     self._lockedChainLen = self.chainLen
@@ -158,6 +161,11 @@ function M:Update(dt, settings)
             if desired > maxAllowed then desired = maxAllowed end
         end
         self.chainLen = desired
+        -- Max distance reached with no raycast hit — release end link to flop freely
+        if maxLenSetting and maxLenSetting > 0 and desired >= maxLenSetting and not self._raycastSnapped and not self.endPointLocked then
+            self.isExtending = false
+            self._flopping = true
+        end
     end
 
     if self.isRetracting then
@@ -280,6 +288,13 @@ function M:Update(dt, settings)
             ez = sz + (fz * theoreticalDistance)
         end
 
+    elseif self._flopping then
+        -- End link is free — physics owns its position. Read it back so endPos
+        -- and the endpoint object stay in sync with where the last link actually is.
+        ex = self.positions[aN][1]
+        ey = self.positions[aN][2]
+        ez = self.positions[aN][3]
+
     else
         -- Idle / fully retracted
         local theoreticalDistance = self.chainLen or 0
@@ -292,12 +307,29 @@ function M:Update(dt, settings)
 
     -- 4) Physical distance and segment length
     local curEndDist = vec_len(ex - sx, ey - sy, ez - sz)
-    local totalLen = (self.chainLen and self.chainLen > 1e-8) and self.chainLen or math.max(curEndDist, 1e-6)
-    if maxLenSetting and maxLenSetting > 0 then totalLen = math.min(totalLen, maxLenSetting) end
+    local totalLen
+    if self._flopping then
+        -- Physics owns the end — measure actual distance so constraints don't fight gravity
+        totalLen = math.max(curEndDist, 1e-6)
+    else
+        totalLen = (self.chainLen and self.chainLen > 1e-8) and self.chainLen or math.max(curEndDist, 1e-6)
+        if maxLenSetting and maxLenSetting > 0 then totalLen = math.min(totalLen, maxLenSetting) end
+    end
 
-    local segmentLen = (aN > 1) and (totalLen / (aN - 1)) or 0
-    if (not isElastic) and linkMax and linkMax > 0 and segmentLen > linkMax then
-        segmentLen = linkMax
+    local segmentLen
+    if self._flopping then
+        -- Freeze segment length at the natural rest length from when extension ended.
+        -- Using curEndDist here would compress all links into a spring — wrong.
+        local restLen = (maxLenSetting and maxLenSetting > 0) and maxLenSetting or math.max(curEndDist, 1e-6)
+        segmentLen = (aN > 1) and (restLen / (aN - 1)) or 0
+        if (not isElastic) and linkMax and linkMax > 0 and segmentLen > linkMax then
+            segmentLen = linkMax
+        end
+    else
+        segmentLen = (aN > 1) and (totalLen / (aN - 1)) or 0
+        if (not isElastic) and linkMax and linkMax > 0 and segmentLen > linkMax then
+            segmentLen = linkMax
+        end
     end
 
     -- 5) Per-link kinematic state
@@ -325,8 +357,8 @@ function M:Update(dt, settings)
     -- Pin first link to start (always kinematic)
     self.invMass[1] = 0
 
-    -- Pin last active link to endpoint when extending, snapped, or locked
-    if self.isExtending or self._raycastSnapped or self.endPointLocked then
+    -- Pin last active link to endpoint when extending, snapped, or locked — NOT when flopping
+    if (self.isExtending or self._raycastSnapped or self.endPointLocked) and not self._flopping then
         self.positions[aN][1], self.positions[aN][2], self.positions[aN][3] = ex, ey, ez
         self.prev[aN][1], self.prev[aN][2], self.prev[aN][3] = ex, ey, ez
         self.invMass[aN] = 0
@@ -354,10 +386,10 @@ function M:Update(dt, settings)
         GroundClamp = settings.GroundClamp,
         GroundClampOffset = settings.GroundClampOffset,
         groundY = self._groundY,
-        pinnedLast = self.endPointLocked or self._raycastSnapped or
+        pinnedLast = (not self._flopping) and (self.endPointLocked or self._raycastSnapped or
                      ((not self.isExtending) and
                       ((self.chainLen or 0) + 1e-9 >= (aN - 1) * segmentLen) and
-                      (settings.PinEndWhenExtended or self.params.PinEndWhenExtended)),
+                      (settings.PinEndWhenExtended or self.params.PinEndWhenExtended))),
         endPos  = { ex, ey, ez },
         startPos = { sx, sy, sz }
     }
@@ -372,7 +404,7 @@ function M:Update(dt, settings)
     end
 
     -- 8) Post-physics: enforce locked/snapped endpoint and undeployed links
-    if self.endPointLocked or self._raycastSnapped then
+    if (self.endPointLocked or self._raycastSnapped) and not self._flopping then
         self.positions[aN][1], self.positions[aN][2], self.positions[aN][3] = ex, ey, ez
         self.prev[aN][1], self.prev[aN][2], self.prev[aN][3] = ex, ey, ez
         self.invMass[aN] = 0
@@ -402,6 +434,7 @@ function M:GetPublicState()
         Anchors = self.anchors,
         EndPointLocked = self.endPointLocked,
         RaycastSnapped = self._raycastSnapped,
+        Flopping = self._flopping,
         LockedEndPoint = (self.endPointLocked or self._raycastSnapped) and
                          {self.lockedEndPoint[1], self.lockedEndPoint[2], self.lockedEndPoint[3]} or nil
     }

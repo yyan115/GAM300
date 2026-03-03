@@ -372,14 +372,31 @@ return Component {
                 if not self.controller.endPointLocked then
                     self:_write_world_pos(self._endpointTransform, endPos[1], endPos[2], endPos[3])
 
-                    -- Rotation: only update when not snapped — endpoint is stationary
-                    -- at raycast hit point so no need to reorient every frame
-                    if self.controller._raycastSnapped then goto skip_rotation end
+                    -- Rotation: only skip when snapped and not flopping
+                    if self.controller._raycastSnapped and not public.Flopping then goto skip_rotation end
 
                     do
                     -- Rotation: orient endpoint along chain forward direction
-                    local fwd = self.controller.lastForward
-                    local fx, fy, fz = fwd[1] or 0, fwd[2] or 0, fwd[3] or 1
+                    local fx, fy, fz
+                    local isFlopping = public.Flopping
+                    if isFlopping then
+                        -- Use actual last-link direction from physics positions
+                        local aN = self.controller.activeN
+                        local positions = self.controller.positions
+                        if aN >= 2 and positions[aN] and positions[aN-1] then
+                            local dx = positions[aN][1] - positions[aN-1][1]
+                            local dy = positions[aN][2] - positions[aN-1][2]
+                            local dz = positions[aN][3] - positions[aN-1][3]
+                            local dl = math.sqrt(dx*dx + dy*dy + dz*dz)
+                            if dl > 1e-6 then
+                                fx, fy, fz = dx/dl, dy/dl, dz/dl
+                            end
+                        end
+                    end
+                    if not fx then
+                        local fwd = self.controller.lastForward
+                        fx, fy, fz = fwd[1] or 0, fwd[2] or 0, fwd[3] or 1
+                    end
 
                     local ux, uy, uz = 0, 1, 0
                     local dot = ux*fx + uy*fy + uz*fz
