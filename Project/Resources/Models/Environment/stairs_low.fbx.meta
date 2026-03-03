@@ -1,0 +1,11 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "00503acaa1dbdc1d-0004629bf4000001",
+        "source": "../../Resources/Models/Environment/stairs_low.fbx",
+        "compiled": "../../Resources/Models/Environment/stairs_low.mesh"
+    },
+    "ModelMetaData": {
+        "optimizeMeshes": true
+    }
+}
