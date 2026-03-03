@@ -207,6 +207,18 @@
                         {
                             "type": "float",
                             "data": 1
+                        },
+                        {
+                            "type": "bool",
+                            "data": false
+                        },
+                        {
+                            "type": "float",
+                            "data": 0.5
+                        },
+                        {
+                            "type": "float",
+                            "data": 0.5
                         }
                     ],
                     "target": {
@@ -248,6 +260,14 @@
                     "vignetteEnabled": false,
                     "vignetteIntensity": 0.5,
                     "vignetteSmoothness": 0.5,
+                    "vignetteColor": {
+                        "type": "glm::vec3",
+                        "data": [
+                            0.0,
+                            0.0,
+                            0.0
+                        ]
+                    },
                     "colorGradingEnabled": false,
                     "cgBrightness": 0.0,
                     "cgContrast": 1.0,
@@ -259,7 +279,10 @@
                             1.0,
                             1.0
                         ]
-                    }
+                    },
+                    "chromaticAberrationEnabled": false,
+                    "chromaticAberrationIntensity": 0.5,
+                    "chromaticAberrationPadding": 0.5
                 },
                 "ActiveComponent": {
                     "type": "ActiveComponent",
@@ -334,7 +357,7 @@
                                 },
                                 {
                                     "type": "float",
-                                    "data": 9.3193e-10
+                                    "data": 9.31936e-10
                                 },
                                 {
                                     "type": "float",
@@ -342,7 +365,7 @@
                                 },
                                 {
                                     "type": "float",
-                                    "data": 9.3193e-10
+                                    "data": 9.31936e-10
                                 }
                             ]
                         }
@@ -612,7 +635,7 @@
                                         },
                                         {
                                             "type": "float",
-                                            "data": 0.5
+                                            "data": 2
                                         },
                                         {
                                             "type": "float",
@@ -808,11 +831,11 @@
                                         },
                                         {
                                             "type": "float",
-                                            "data": 2
+                                            "data": 0
                                         },
                                         {
                                             "type": "float",
-                                            "data": 0
+                                            "data": 4
                                         },
                                         {
                                             "type": "float",
@@ -861,11 +884,11 @@
                                         },
                                         {
                                             "type": "float",
-                                            "data": 0
+                                            "data": 2
                                         },
                                         {
                                             "type": "float",
-                                            "data": 2
+                                            "data": 0
                                         },
                                         {
                                             "type": "float",
