@@ -57,6 +57,9 @@ BEGIN_SYSTEM("Input")
     // Axes (returns Vector2D object with .x and .y properties)
     FUNCTION("GetAxis", InputWrappers::GetAxis)
 
+    // Scroll wheel (desktop only; returns delta this frame, positive = scroll up)
+    FUNCTION("GetScrollY", InputWrappers::GetScrollY)
+
     // Entity-based touch position (Android joysticks)
     // Returns touch position relative to entity center - use for calculating joystick direction
     // Example: local pos = Input.GetActionTouchPosition("Movement")

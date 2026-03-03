@@ -31,6 +31,7 @@ public:
     virtual bool IsKeyPressed(Input::Key key) = 0;
     virtual bool IsMouseButtonPressed(Input::MouseButton button) = 0;
     virtual void GetMousePosition(double* x, double* y) = 0;
+    virtual float GetScrollY() { return 0.0f; }
 
     // Cursor control
     virtual void SetCursorLocked(bool locked) = 0;

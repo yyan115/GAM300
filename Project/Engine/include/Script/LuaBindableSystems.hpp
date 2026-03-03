@@ -60,6 +60,13 @@ namespace InputWrappers {
         return Vector2D(axis.x, axis.y);
     }
 
+    // Scroll wheel delta this frame (desktop only; 0 on Android)
+    // Positive = scroll up (zoom in), negative = scroll down (zoom out)
+    inline float GetScrollY() {
+        if (!g_inputManager) return 0.0f;
+        return g_inputManager->GetScrollY();
+    }
+
     // Batch API for Lua optimization - returns all action states at once
     // Lua example: local states = UnifiedInput.GetAllActionStates()
     //              if states["Jump"] then ... end

@@ -70,24 +70,25 @@ function M.updateMouseLook(self, dt)
 end
 
 -- Handle scroll-wheel zoom; updates self._normalDistance and self.followDistance.
+-- Always drains the scroll buffer to prevent delta accumulation during blocked modes.
 function M.updateScrollZoom(self)
     if not (Input and Input.GetScrollY) then return end
 
-    local scrollY = Input.GetScrollY()
-    if scrollY ~= 0 then
-        local zoomSpeed = self.zoomSpeed or 1.0
-        self._normalDistance = clamp(
-            self._normalDistance - scrollY * zoomSpeed,
-            self.minZoom or 2.0,
-            self.maxZoom or 15.0
-        )
-        if not self._actionModeActive then
-            self.followDistance = self._normalDistance
-        end
-        if Input.ConsumeScroll then
-            Input.ConsumeScroll()
-        end
-    end
+    local scrollY = Input.GetScrollY()  -- always drain, even if we discard the value
+    if scrollY == 0 then return end
+
+    -- Discard during cinematic or chain aim — but the drain above already consumed the delta
+    if self._cinematicActive then return end
+    if self._chainAimBlend and self._chainAimBlend > 0.0 then return end
+
+    local zoomSpeed = self.zoomSpeed or 1.0
+    self._normalDistance = clamp(
+        self._normalDistance - scrollY * zoomSpeed,
+        self.minZoom or 2.0,
+        self.maxZoom or 15.0
+    )
+    -- Do NOT snap followDistance here — the Update lerp (zoomLerpSpeed)
+    -- eases the camera smoothly to the new target distance each frame.
 end
 
 return M

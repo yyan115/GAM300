@@ -39,6 +39,7 @@ return Component {
         minZoom          = 2.0,
         maxZoom          = 15.0,
         zoomSpeed        = 1.0,
+        zoomLerpSpeed    = 6.0,   -- how fast the camera eases to a new zoom level (lower = smoother)
 
         -- Camera collision
         collisionEnabled = true,
@@ -94,7 +95,8 @@ return Component {
         -- Action mode
         self._actionModeActive        = false
         self._normalPitch             = 15.0
-        self._normalDistance          = 2.0
+        self._normalDistance          = self.minZoom or 2.0
+        self.followDistance           = self._normalDistance
         self._toggleCooldown          = 0.0
         self._actionModeTimer         = 0.0
 
@@ -286,15 +288,20 @@ return Component {
             if cursorOk and not shouldLock then
                 CamInput.updateMouseLook(self, dt)
             end
-            CamInput.updateScrollZoom(self)
         end
+        -- Always called so the scroll buffer is drained every frame;
+        -- updateScrollZoom discards the delta when cinematic or chain aim is active.
+        CamInput.updateScrollZoom(self)
 
         -- ── Action mode pitch / distance transition ──────────────────────────
-        local targetPitch    = self._actionModeActive and self.actionModePitch    or self._normalPitch
-        local targetDistance = self._actionModeActive and self.actionModeDistance or self._normalDistance
-        local t = 1.0 - math.exp(-(self.actionModeTransition or 8.0) * dt)
-        self._pitch         = self._pitch         + (targetPitch    - self._pitch)         * t
-        self.followDistance = self.followDistance + (targetDistance - self.followDistance) * t
+        if not self._cinematicActive then
+            local targetPitch    = self._actionModeActive and self.actionModePitch    or self._normalPitch
+            local targetDistance = self._actionModeActive and self.actionModeDistance or self._normalDistance
+            local pitchT = 1.0 - math.exp(-(self.actionModeTransition or 8.0) * dt)
+            local zoomT  = 1.0 - math.exp(-(self.zoomLerpSpeed or 6.0) * dt)
+            self._pitch         = self._pitch         + (targetPitch    - self._pitch)         * pitchT
+            self.followDistance = self.followDistance + (targetDistance - self.followDistance) * zoomT
+        end
 
         -- ── Cinematic override ───────────────────────────────────────────────
         if Cinematic.updateCinematic(self, dt) then return end

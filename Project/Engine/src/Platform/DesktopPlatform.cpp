@@ -358,6 +358,16 @@ void DesktopPlatform::CursorPosCallback(GLFWwindow* window, double xpos, double 
 
 void DesktopPlatform::ScrollCallback(GLFWwindow* window, double xoffset, double yoffset) {
 	(void)window;
+    (void)xoffset;
+    if (s_instance) {
+        s_instance->m_scrollY += static_cast<float>(yoffset);
+    }
+}
+
+float DesktopPlatform::GetScrollY() {
+    float val = m_scrollY;
+    m_scrollY = 0.0f;  // Consume the scroll — returns non-zero only for one frame
+    return val;
 }
 
 // Helper functions for input mapping (Engine -> GLFW)
