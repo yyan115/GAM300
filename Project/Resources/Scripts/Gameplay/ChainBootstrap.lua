@@ -69,9 +69,8 @@ return Component {
 
     _write_world_pos = function(self, tr, x, y, z)
         if not tr then return false end
-        local ok = false
         if Engine and type(Engine.SetTransformWorldPosition) == "function" then
-            ok = pcall(function() Engine.SetTransformWorldPosition(tr, x, y, z) end)
+            local ok = pcall(function() Engine.SetTransformWorldPosition(tr, x, y, z) end)
             if ok then return true end
         end
         if type(tr.SetPosition) == "function" then
@@ -211,9 +210,6 @@ return Component {
         self._pendingTapFire = false
         self._pendingPlayerForward = nil
 
-        -- Hooked collider transform for rotation (the actual part hit, not root)
-        self._hookedColliderTransform = nil
-
         self._endpointTransform = nil
         if self.ChainEndpointName and self.ChainEndpointName ~= "" then
             self._endpointTransform = Engine.FindTransformByName(self.ChainEndpointName)
@@ -249,30 +245,18 @@ return Component {
                 self._pendingPlayerForward = { x, payload.y or 0, z }
             end)
 
+            -- Update lockedEndPoint every frame while hooked so Verlet pins
+            -- positions[aN] to the correct moving world position.
+            -- ChainEndpointController reads its own parented world transform
+            -- and publishes it here — cheap since engine already computed it.
             self._subHookedPos = _G.event_bus.subscribe("chain.endpoint_hooked_position", function(payload)
                 if not payload then return end
                 pcall(function()
                     if self.controller then
-                        local aN = self.controller.activeN
-                        local x, y, z = payload.x, payload.y, payload.z
-                        self.controller.lockedEndPoint[1] = x
-                        self.controller.lockedEndPoint[2] = y
-                        self.controller.lockedEndPoint[3] = z
-                        self.controller.positions[aN][1] = x
-                        self.controller.positions[aN][2] = y
-                        self.controller.positions[aN][3] = z
-                        self.controller.prev[aN][1] = x
-                        self.controller.prev[aN][2] = y
-                        self.controller.prev[aN][3] = z
+                        self.controller.lockedEndPoint[1] = payload.x
+                        self.controller.lockedEndPoint[2] = payload.y
+                        self.controller.lockedEndPoint[3] = payload.z
                     end
-                end)
-            end)
-
-            -- Receive collider transform for rotation from ChainEndpointController
-            self._subHookedRot = _G.event_bus.subscribe("chain.endpoint_hooked_rotation", function(payload)
-                if not payload then return end
-                pcall(function()
-                    self._hookedColliderTransform = payload.transform
                 end)
             end)
 
@@ -282,6 +266,28 @@ return Component {
                     if self.controller then
                         print("[ChainBootstrap] Endpoint hit entity '" .. tostring(payload.entityName) .. "' — locking endpoint")
                         self.controller.endPointLocked = true
+                        -- Snapshot lockedEndPoint at moment of hit as initial value.
+                        -- ChainEndpointController will keep updating it every frame via
+                        -- chain.endpoint_hooked_position so Verlet stays pinned correctly.
+                        if self._endpointTransform then
+                            local ok, a, b, c = pcall(function()
+                                return Engine.GetTransformWorldPosition(self._endpointTransform)
+                            end)
+                            if ok and a ~= nil then
+                                local lx, ly, lz
+                                if type(a) == "table" then
+                                    lx, ly, lz = a[1] or a.x or 0, a[2] or a.y or 0, a[3] or a.z or 0
+                                elseif type(a) == "number" then
+                                    lx, ly, lz = a, b, c
+                                end
+                                if lx then
+                                    self.controller.lockedEndPoint[1] = lx
+                                    self.controller.lockedEndPoint[2] = ly
+                                    self.controller.lockedEndPoint[3] = lz
+                                    print(string.format("[ChainBootstrap] lockedEndPoint snapshot at hit: (%.3f,%.3f,%.3f)", lx, ly, lz))
+                                end
+                            end
+                        end
                     end
                 end)
             end)
@@ -360,35 +366,18 @@ return Component {
         if self._endpointTransform then
             local chainIsActive = (self.m_CurrentLength or 0) > 1e-4 or self.m_IsExtending
             if chainIsActive then
-                self:_write_world_pos(self._endpointTransform, endPos[1], endPos[2], endPos[3])
+                -- Only skip writes when endPointLocked — engine owns the transform via parenting.
+                -- _raycastSnapped still needs position written so endpoint object
+                -- matches positions[aN] which ChainController pins to ex/ey/ez.
+                if not self.controller.endPointLocked then
+                    self:_write_world_pos(self._endpointTransform, endPos[1], endPos[2], endPos[3])
 
-                -- -------------------------------------------------------------------
-                -- ROTATION
-                -- When hooked: copy worldRotation from the exact collided part transform.
-                -- When not hooked: orient along chain forward direction as before.
-                -- -------------------------------------------------------------------
-                if self._hookedColliderTransform and self.controller.endPointLocked then
-                    local ok, rot = pcall(function()
-                        return self._hookedColliderTransform.worldRotation
-                    end)
-                    if ok and rot then
-                        pcall(function()
-                            local endRot = self._endpointTransform.localRotation
-                            if endRot and (type(endRot) == "table" or type(endRot) == "userdata") then
-                                endRot.w = rot.w or 1
-                                endRot.x = rot.x or 0
-                                endRot.y = rot.y or 0
-                                endRot.z = rot.z or 0
-                                self._endpointTransform.isDirty = true
-                            end
-                        end)
-                        print(string.format("[ChainBootstrap] Rotation matched to collider rot=(w=%.3f x=%.3f y=%.3f z=%.3f)",
-                            rot.w or 0, rot.x or 0, rot.y or 0, rot.z or 0))
-                    else
-                        print("[ChainBootstrap] WARNING: worldRotation read failed from collider transform — ok=" .. tostring(ok))
-                    end
-                else
-                    -- Default: orient endpoint along chain forward direction
+                    -- Rotation: only update when not snapped — endpoint is stationary
+                    -- at raycast hit point so no need to reorient every frame
+                    if self.controller._raycastSnapped then goto skip_rotation end
+
+                    do
+                    -- Rotation: orient endpoint along chain forward direction
                     local fwd = self.controller.lastForward
                     local fx, fy, fz = fwd[1] or 0, fwd[2] or 0, fwd[3] or 1
 
@@ -428,8 +417,12 @@ return Component {
                             self._endpointTransform.isDirty = true
                         end
                     end)
+                    end -- do
+                    ::skip_rotation::
                 end
 
+                -- Always publish endpoint_moved so ChainEndpointController
+                -- can manage RB keepalive and trigger window regardless of lock state
                 if _G.event_bus and _G.event_bus.publish then
                     _G.event_bus.publish("chain.endpoint_moved", {
                         position = { x = endPos[1], y = endPos[2], z = endPos[3] },
@@ -442,12 +435,12 @@ return Component {
 
                 self._wasChainActive = true
             else
+                -- Chain inactive: always drive endpoint back to start
                 local sp = self.controller.startPos
                 self:_write_world_pos(self._endpointTransform, sp[1], sp[2], sp[3])
 
                 if self._wasChainActive then
                     self._wasChainActive = false
-                    self._hookedColliderTransform = nil
                     if _G.event_bus and _G.event_bus.publish then
                         _G.event_bus.publish("chain.endpoint_retracted", {
                             position = { x = sp[1], y = sp[2], z = sp[3] },
@@ -466,7 +459,6 @@ return Component {
             if self._chainSubHold     then pcall(function() _G.event_bus.unsubscribe(self._chainSubHold)     end) end
             if self._subPlayerForward then pcall(function() _G.event_bus.unsubscribe(self._subPlayerForward) end) end
             if self._subHookedPos     then pcall(function() _G.event_bus.unsubscribe(self._subHookedPos)     end) end
-            if self._subHookedRot     then pcall(function() _G.event_bus.unsubscribe(self._subHookedRot)     end) end
             if self._subHitEntity     then pcall(function() _G.event_bus.unsubscribe(self._subHitEntity)     end) end
         end
     end,
