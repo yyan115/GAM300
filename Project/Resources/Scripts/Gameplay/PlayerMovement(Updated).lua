@@ -362,11 +362,15 @@ return Component {
             self._chainConstraintExceeded = false
             self._chainDrag = false
         elseif self._chainDrag then
-            -- Being dragged by endpoint — force player to target position (taut chain)
             self:SetPosition(self._chainDragTargetX, self._chainDragTargetY, self._chainDragTargetZ)
             CharacterController.SetPosition(self._controller, self._transform)
         elseif self._chainConstraintRatio and self._chainConstraintRatio > 0 then
-            chainSpeedMult = 1.0 - (self._chainConstraintRatio * self._chainConstraintRatio * 0.9)
+            local r = self._chainConstraintRatio
+            -- Cubic curve: gentle start, severe near limit
+            -- r=0.0 -> mult=1.0 (free)
+            -- r=0.5 -> mult=0.65 (noticeable)
+            -- r=1.0 -> mult=0.05 (nearly stopped)
+            chainSpeedMult = math.max(0.05, 1.0 - r * r * r * 0.95)
         end
 
         -- RAW INPUT

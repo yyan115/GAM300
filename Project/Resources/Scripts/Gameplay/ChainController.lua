@@ -96,6 +96,7 @@ function M:StartRetraction()
     self.isExtending = false
     self._raycastSnapped = false
     self._flopping = false
+    self.hookedTag = ""
     -- Snapshot chainLen at moment retraction begins so we can interpolate
     -- from lockedEndPoint back to startPos correctly
     self._lockedChainLen = self.chainLen
@@ -195,7 +196,7 @@ function M:Update(dt, settings)
     -- Stores result on self.constraintResult for ChainBootstrap to publish.
     local constraintActive = (self.endPointLocked or self._raycastSnapped) and not self.isRetracting and not self._flopping
     if constraintActive then
-        local slack    = tonumber(settings.ChainSlackDistance) or 0
+        local slack    = math.max(0.5, tonumber(settings.ChainSlackDistance) or 0.5)
         local dragTag  = settings.DragTag or ""
         local ex0 = self.lockedEndPoint[1]
         local ey0 = self.lockedEndPoint[2]
@@ -205,9 +206,9 @@ function M:Update(dt, settings)
         local isDragType = (dragTag ~= "" and self.hookedTag == dragTag)
         local hardLimit = chainLength + slack
 
-        print(string.format("[ChainController][CONSTRAINT] locked=%s snapped=%s playerDist=%.3f chainLen=%.3f slack=%.3f hardLimit=%.3f",
+        print(string.format("[ChainController][CONSTRAINT] locked=%s snapped=%s playerDist=%.3f chainLen=%.3f slack=%.3f hardLimit=%.3f hookedTag='%s'",
             tostring(self.endPointLocked), tostring(self._raycastSnapped),
-            playerDist, chainLength, slack, hardLimit))
+            playerDist, chainLength, slack, hardLimit, tostring(self.hookedTag)))
 
         if isDragType then
             if playerDist > chainLength + 1e-4 then
@@ -228,12 +229,15 @@ function M:Update(dt, settings)
                 self.constraintResult = { ratio = 0, exceeded = false, drag = false }
             end
         else
+            -- Ratio: 0 when within chainLength, ramps to 1 across the slack zone
             local ratio = 0
-            if slack > 1e-6 then
+            if playerDist > chainLength then
                 ratio = math.max(0, math.min(1, (playerDist - chainLength) / slack))
             end
-            if playerDist > hardLimit + 1e-4 then
-                print("[ChainController][CONSTRAINT] EXCEEDED -> flopping")
+            -- Only flop when chain is physically taut AND player is past hard limit AND untagged
+            local shouldFlop = self._isTaut and (playerDist > hardLimit + 1e-4) and (self.hookedTag == nil or self.hookedTag == "")
+            if shouldFlop then
+                print("[ChainController][CONSTRAINT] TAUT + EXCEEDED -> flopping (untagged)")
                 self.endPointLocked = false
                 self._raycastSnapped = false
                 self._flopping = true
@@ -398,7 +402,8 @@ function M:Update(dt, settings)
             self.invMass[i] = 0
         else
             local requiredDist = (i - 1) * segmentLen
-            if (self.chainLen + 1e-9) < requiredDist then
+            -- When flopping, skip the cull — all active links are owned by physics
+            if not self._flopping and (self.chainLen + 1e-9) < requiredDist then
                 self.positions[i][1], self.positions[i][2], self.positions[i][3] = sx, sy, sz
                 self.prev[i][1], self.prev[i][2], self.prev[i][3] = sx, sy, sz
                 self.invMass[i] = 0
@@ -479,6 +484,20 @@ function M:Update(dt, settings)
         end
     end
 
+    -- Compute isTaut: measure arc length of active links after physics
+    -- Chain is taut when links are fully stretched (arc >= 98% of chainLen)
+    do
+        local arcLen = 0
+        for i = 2, aN do
+            local dx = self.positions[i][1] - self.positions[i-1][1]
+            local dy = self.positions[i][2] - self.positions[i-1][2]
+            local dz = self.positions[i][3] - self.positions[i-1][3]
+            arcLen = arcLen + vec_len(dx, dy, dz)
+        end
+        self._isTaut = (arcLen >= (self.chainLen or 0) * 0.98)
+        self._arcLen = arcLen
+    end
+
     return self.positions, { self.startPos[1], self.startPos[2], self.startPos[3] }, { self.endPos[1], self.endPos[2], self.endPos[3] }
 end
 
@@ -493,6 +512,7 @@ function M:GetPublicState()
         EndPointLocked = self.endPointLocked,
         RaycastSnapped = self._raycastSnapped,
         Flopping = self._flopping,
+        IsTaut = self._isTaut,
         LockedEndPoint = (self.endPointLocked or self._raycastSnapped) and
                          {self.lockedEndPoint[1], self.lockedEndPoint[2], self.lockedEndPoint[3]} or nil
     }

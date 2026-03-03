@@ -377,12 +377,12 @@ return Component {
         end
 
         if self._endpointTransform then
-            local chainIsActive = (self.m_CurrentLength or 0) > 1e-4 or self.m_IsExtending
+            local chainIsActive = (self.m_CurrentLength or 0) > 1e-4 or self.m_IsExtending or public.Flopping
             if chainIsActive then
                 -- Only skip writes when endPointLocked — engine owns the transform via parenting.
                 -- _raycastSnapped still needs position written so endpoint object
                 -- matches positions[aN] which ChainController pins to ex/ey/ez.
-                if not self.controller.endPointLocked then
+                if not self.controller.endPointLocked and not public.Flopping then
                     self:_write_world_pos(self._endpointTransform, endPos[1], endPos[2], endPos[3])
 
                     -- Rotation: only update when not snapped — endpoint is stationary
