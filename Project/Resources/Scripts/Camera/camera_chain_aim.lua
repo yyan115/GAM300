@@ -95,6 +95,25 @@ function M.updateChainAim(self, dt)
         end
     end
 
+    -- Override CAMERA_YAW with the chain-aim yaw so player movement matches
+    -- what the camera is actually showing. updateMouseLook already ran this
+    -- frame and set _G.CAMERA_YAW to the orbit yaw, so we overwrite it here.
+    --
+    -- Convention difference: orbit _yaw is the camera's *position* offset angle
+    -- (camera sits at sin/cos of yaw relative to player), while _chainAimYaw is
+    -- the camera's *look* direction. The two are 180° apart, so we add 180 to
+    -- convert chain-aim look-direction into the orbit-offset convention that the
+    -- player movement formula expects.
+    if self._chainAimYaw then
+        local blend = self._chainAimBlend
+        local chainAsOrbit = self._chainAimYaw + 180.0
+        local effectiveYaw = self._yaw + (chainAsOrbit - self._yaw) * blend
+        _G.CAMERA_YAW = effectiveYaw
+        if event_bus and event_bus.publish then
+            event_bus.publish("camera_yaw", effectiveYaw)
+        end
+    end
+
     return true, camX, camY, camZ
 end
 
