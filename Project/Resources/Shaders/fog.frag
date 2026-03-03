@@ -38,6 +38,14 @@ uniform mat4 modelInverse;
 
 uniform int fogShape;
 
+// Depth-based soft intersection with solid geometry
+uniform sampler2D depthTexture;
+uniform vec2      viewportSize;
+uniform mat4      inverseProjection;
+uniform mat4      inverseView;
+uniform float     nearPlane;
+uniform float     farPlane;
+
 // ============================================================================
 // Procedural Noise
 // Based on value noise with FBM layering for natural fog appearance
@@ -160,6 +168,33 @@ void main()
         }
     }
     tEntry = max(tEntry, 0.0);   // camera inside volume: start from camera
+
+    if (tExit <= tEntry) discard;
+
+    // --- 3. Depth-based solid geometry intersection ---
+    // Reconstruct world position of solid geometry from the scene depth buffer.
+    // Cap tExit so the fog path stops at any solid surface inside the volume.
+    // Beer-Lambert then naturally produces a smooth exponential fade at intersections.
+    {
+        vec2 screenUV  = gl_FragCoord.xy / viewportSize;
+        float sceneNDC = texture(depthTexture, screenUV).r;
+
+        // Only cap when there is real geometry (depth < 1.0 = far plane / sky)
+        if (sceneNDC < 1.0)
+        {
+            // Unproject depth-buffer value to world space
+            vec4 ndcPos   = vec4(screenUV * 2.0 - 1.0, sceneNDC * 2.0 - 1.0, 1.0);
+            vec4 viewPos  = inverseProjection * ndcPos;
+            viewPos      /= viewPos.w;
+            vec3 solidWorld = (inverseView * viewPos).xyz;
+
+            // Convert to local fog space, project onto local ray → t_solid
+            vec3  solidLocal = (modelInverse * vec4(solidWorld, 1.0)).xyz;
+            float t_solid    = dot(solidLocal - localCamPos, localRayDir);
+
+            tExit = min(tExit, t_solid);
+        }
+    }
 
     if (tExit <= tEntry) discard;
 

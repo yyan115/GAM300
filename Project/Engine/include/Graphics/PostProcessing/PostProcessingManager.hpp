@@ -25,6 +25,8 @@ public:
 
     unsigned int GetHDRTexture() const { return hdrColorTexture; }
 
+    unsigned int GetHDRDepthTexture() const { return hdrDepthTexture; }
+
     void BeginHDRRender(int width, int height);
 
     void EndHDRRender(unsigned int outputFBO, int width, int height);
@@ -53,7 +55,7 @@ private:
     // HDR framebuffer resources
     unsigned int hdrFramebuffer{};
     unsigned int hdrColorTexture{};
-    unsigned int hdrDepthRenderbuffer{};
+    unsigned int hdrDepthTexture{};
     int hdrWidth{};
     int hdrHeight{};
 
