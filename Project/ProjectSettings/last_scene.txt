@@ -1,1 +1,1 @@
-../../Resources/Scenes/TestScenes/TextureWrapTest.scene
+Resources/Scenes/04_GameLevelMap.scene
