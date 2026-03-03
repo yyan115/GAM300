@@ -27,6 +27,7 @@
 #include "Asset Manager/ResourceManager.hpp"
 #include "Graphics/Instancing/InstancingManager.hpp"
 #include "TimeManager.hpp"
+#include "Graphics/PostProcessing/PostProcessingManager.hpp"
 
 GraphicsManager& GraphicsManager::GetInstance()
 {
@@ -104,6 +105,7 @@ void GraphicsManager::Shutdown()
 void GraphicsManager::BeginFrame()
 {
 	renderQueue.clear();
+	deferredQueue.clear();
 
 	// Reset state tracking
 	m_currentShader = nullptr;
@@ -268,21 +270,29 @@ void GraphicsManager::Render()
 	// Render skybox first (before other objects)
 	RenderSkybox();
 
-	// Separate models from other render items
+	// Separate models from other render items, moving excluded items to deferred queue
 	std::vector<IRenderComponent*> modelItems;
 	std::vector<IRenderComponent*> otherItems;
 
-	for (auto& item : renderQueue) 
+	for (auto& item : renderQueue)
 	{
-		if (dynamic_cast<ModelRenderComponent*>(item.get())) 
+		if (item->excludeFromPostProcess)
+		{
+			deferredQueue.push_back(std::move(item));
+			continue;
+		}
+		if (dynamic_cast<ModelRenderComponent*>(item.get()))
 		{
 			modelItems.push_back(item.get());
 		}
-		else 
+		else
 		{
 			otherItems.push_back(item.get());
 		}
 	}
+	// Enable MRT so bloom-capable shaders can write to the bloom emission texture
+	PostProcessingManager::GetInstance().EnableBloomMRT();
+
 	InstancingManager& instancing = InstancingManager::GetInstance();
 
 	if (instancing.IsEnabled())
@@ -397,15 +407,67 @@ void GraphicsManager::Render()
 		}
 	}
 
+	// Disable bloom MRT — done writing bloom emission
+	PostProcessingManager::GetInstance().DisableBloomMRT();
+
 	// Debug output (optional - remove in release)
 	/*static int frameCount = 0;
-	if (++frameCount % 300 == 0) 
+	if (++frameCount % 300 == 0)
 	{
 		std::cout << "[Sorting] Objects: " << m_sortingStats.totalObjects
 			<< " DrawCalls: " << m_sortingStats.drawCalls
 			<< " ShaderSwitch: " << m_sortingStats.shaderSwitches
 			<< " MatSwitch: " << m_sortingStats.materialSwitches << "\n";
 	}*/
+}
+
+void GraphicsManager::RenderDeferred()
+{
+	if (deferredQueue.empty()) return;
+
+	// Separate deferred items into models/others
+	std::vector<IRenderComponent*> modelItems;
+	std::vector<IRenderComponent*> otherItems;
+
+	for (auto& item : deferredQueue)
+	{
+		if (!item) continue;
+		if (dynamic_cast<ModelRenderComponent*>(item.get()))
+			modelItems.push_back(item.get());
+		else
+			otherItems.push_back(item.get());
+	}
+
+	// Sort others by render order
+	std::sort(otherItems.begin(), otherItems.end(),
+		[](IRenderComponent* a, IRenderComponent* b) {
+			return a->renderOrder < b->renderOrder;
+		});
+
+	// Render as overlay: disable depth test, enable blending
+	glDisable(GL_DEPTH_TEST);
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+	for (IRenderComponent* item : modelItems)
+	{
+		RenderModel(*static_cast<ModelRenderComponent*>(item));
+	}
+
+	for (IRenderComponent* item : otherItems)
+	{
+		if (auto* textItem = dynamic_cast<TextRenderComponent*>(item))
+			RenderText(*textItem);
+		else if (auto* spriteItem = dynamic_cast<SpriteRenderComponent*>(item))
+			RenderSprite(*spriteItem);
+		else if (auto* particleItem = dynamic_cast<ParticleComponent*>(item))
+			RenderParticles(*particleItem);
+	}
+
+	// Restore state
+	glEnable(GL_DEPTH_TEST);
+
+	deferredQueue.clear();
 }
 
 void GraphicsManager::RenderModel(const ModelRenderComponent& item)
@@ -442,6 +504,12 @@ void GraphicsManager::RenderModel(const ModelRenderComponent& item)
 
 	// Set up all matrices and uniforms
 	SetupMatrices(*item.shader,item.transform.ConvertToGLM(), true);
+
+	// Per-entity bloom emission
+	item.shader->setFloat("bloomIntensity", item.bloomIntensity);
+	if (item.bloomIntensity > 0.0f) {
+		item.shader->setVec3("bloomColor", item.bloomColor);
+	}
 
 	// Apply lighting
 	ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager(); 
@@ -568,6 +636,12 @@ void GraphicsManager::RenderText(const TextRenderComponent& item)
 	item.shader->Activate();
 	glm::vec4 textColorWithAlpha = glm::vec4(item.color.ConvertToGLM(), item.alpha);
 	item.shader->setVec4("textColor", textColorWithAlpha);
+
+	// Per-entity bloom emission
+	item.shader->setFloat("bloomIntensity", item.bloomIntensity);
+	if (item.bloomIntensity > 0.0f) {
+		item.shader->setVec3("bloomColor", item.bloomColor);
+	}
 
 	// Set up matrices based on whether it's 2D or 3D text
 	if (item.is3D)
@@ -830,6 +904,12 @@ void GraphicsManager::RenderParticles(const ParticleComponent& item) {
 		item.particleShader->setInt("particleTexture", 0);
 	}
 
+	// Per-entity bloom emission
+	item.particleShader->setFloat("bloomIntensity", item.bloomIntensity);
+	if (item.bloomIntensity > 0.0f) {
+		item.particleShader->setVec3("bloomColor", item.bloomColor);
+	}
+
 #ifdef ANDROID
 	__android_log_print(ANDROID_LOG_INFO, "GAM300", "Draw ALL particles with ONE instanced draw call using indices");
 #endif
@@ -896,6 +976,12 @@ void GraphicsManager::RenderSprite(const SpriteRenderComponent& item)
 		item.shader->setFloat("fillAmount", fillAmount);
 		item.shader->setFloat("fillGlow", item.fillGlow);
 		item.shader->setFloat("fillBackground", item.fillBackground);
+	}
+
+	// Per-entity bloom emission
+	item.shader->setFloat("bloomIntensity", item.bloomIntensity);
+	if (item.bloomIntensity > 0.0f) {
+		item.shader->setVec3("bloomColor", item.bloomColor);
 	}
 
 	// Set up matrices based on rendering mode
@@ -1361,11 +1447,12 @@ void GraphicsManager::RenderFogVolume(const FogVolumeComponent& item)
 	}
 
 	// --- Blending setup ---
+	glDisable(GL_DEPTH_TEST);       // Depth handled in shader via depth texture
 	glEnable(GL_CULL_FACE);
 	glCullFace(GL_FRONT);           // Render back faces only for volumetric ray-box effect
 	glEnable(GL_BLEND);
-	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);  // Standard alpha blend
-	glDepthMask(GL_FALSE);          // Don't write to depth buffer
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	glDepthMask(GL_FALSE);
 
 	item.fogShader->Activate();
 
@@ -1375,6 +1462,8 @@ void GraphicsManager::RenderFogVolume(const FogVolumeComponent& item)
 	item.fogShader->setMat4("modelInverse", glm::inverse(modelMatrix));
 
 	// --- Camera matrices ---
+	const float nearP = 0.1f;
+	const float farP  = 100.0f;
 	if (currentCamera)
 	{
 		float aspectRatio = currentFrameViewport.aspectRatio;
@@ -1382,12 +1471,25 @@ void GraphicsManager::RenderFogVolume(const FogVolumeComponent& item)
 		glm::mat4 projection = glm::perspective(
 			glm::radians(currentCamera->Zoom),
 			aspectRatio,
-			0.1f, 100.0f
+			nearP, farP
 		);
 		item.fogShader->setMat4("view", view);
 		item.fogShader->setMat4("projection", projection);
+		item.fogShader->setMat4("inverseView", glm::inverse(view));
+		item.fogShader->setMat4("inverseProjection", glm::inverse(projection));
 		item.fogShader->setVec3("cameraPos", currentCamera->Position);
+		item.fogShader->setFloat("nearPlane", nearP);
+		item.fogShader->setFloat("farPlane",  farP);
+		item.fogShader->setVec2("viewportSize",
+			glm::vec2(static_cast<float>(currentFrameViewport.width),
+			          static_cast<float>(currentFrameViewport.height)));
 	}
+
+	// --- Scene depth texture for soft intersection with solid geometry ---
+	unsigned int depthTex = PostProcessingManager::GetInstance().GetHDRDepthTexture();
+	glActiveTexture(GL_TEXTURE1);
+	glBindTexture(GL_TEXTURE_2D, depthTex);
+	item.fogShader->setInt("depthTexture", 1);
 
 	// --- Fog properties (all from FogVolumeComponent) ---
 	item.fogShader->setInt("fogShape", static_cast<int>(item.shape));
@@ -1432,9 +1534,13 @@ void GraphicsManager::RenderFogVolume(const FogVolumeComponent& item)
 	if (hasNoiseMap) {
 		item.noiseTexture->Unbind(0);
 	}
+	glActiveTexture(GL_TEXTURE1);
+	glBindTexture(GL_TEXTURE_2D, 0);
+	glActiveTexture(GL_TEXTURE0);
 	glDepthMask(GL_TRUE);
 	glDisable(GL_BLEND);
 	glCullFace(GL_BACK);
 	if (faceCullingEnabled) glEnable(GL_CULL_FACE);
 	else glDisable(GL_CULL_FACE);
+	glEnable(GL_DEPTH_TEST);
 }

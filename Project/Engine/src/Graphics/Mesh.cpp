@@ -239,6 +239,16 @@ void Mesh::SetupInstanceAttributes(VBO& instanceVBO)
 		(void*)(normalMatrixOffset + 2 * sizeof(glm::vec4)));
 	glVertexAttribDivisor(13, 1);
 
+	// Instance bloom data (vec4: rgb=color, a=intensity)
+	size_t bloomOffset = sizeof(glm::mat4) * 2;  // After modelMatrix + normalMatrix
+
+	// Location 14: bloom data
+	glEnableVertexAttribArray(14);
+	glVertexAttribPointer(14, 4, GL_FLOAT, GL_FALSE,
+		sizeof(InstanceData),
+		(void*)bloomOffset);
+	glVertexAttribDivisor(14, 1);
+
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 	vao.Unbind();
 

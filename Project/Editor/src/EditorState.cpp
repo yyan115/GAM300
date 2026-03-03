@@ -12,6 +12,7 @@
 #include "Animation/AnimationComponent.hpp"
 #include "Video/VideoComponent.hpp"
 #include "Asset Manager/AssetManager.hpp"
+#include "Graphics/PostProcessing/PostProcessingManager.hpp"
 
 
 EditorState& EditorState::GetInstance() {
@@ -145,6 +146,11 @@ void EditorState::Stop() {
 
     // Reload the scene to the saved state before play mode
     SceneManager::GetInstance().ReloadTempScene();
+
+    // Reset post-processing state to defaults so stale play-mode effects
+    // (vignette, bloom, blur, color grading) don't persist into edit mode.
+    // CameraSystem::Update() will re-apply the camera's saved PP settings next frame.
+    PostProcessingManager::GetInstance().ResetRuntimeState();
 
     // Re-acquire ECS reference after scene reload (old reference is now stale)
     ECSManager& ecsAfterReload = ECSRegistry::GetInstance().GetActiveECSManager();

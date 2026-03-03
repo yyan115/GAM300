@@ -9,6 +9,9 @@
 #include "Graphics/EBO.h"
 #include "Asset Manager/AssetManager.hpp"
 #include "Asset Manager/ResourceManager.hpp"
+#include "ECS/LayerComponent.hpp"
+#include "Graphics/PostProcessing/PostProcessingManager.hpp"
+#include "Graphics/BloomComponent.hpp"
 
 bool SpriteSystem::Initialise()
 {
@@ -164,6 +167,24 @@ void SpriteSystem::Update()
                 
             // Sync sorting values to renderOrder
             spriteRenderItem->renderOrder = spriteComponent.sortingLayer * 100 + spriteComponent.sortingOrder;
+
+            // Per-entity bloom emission
+            if (ecsManager.HasComponent<BloomComponent>(entity)) {
+                auto& bloom = ecsManager.GetComponent<BloomComponent>(entity);
+                if (bloom.enabled) {
+                    spriteRenderItem->bloomColor = bloom.bloomColor;
+                    spriteRenderItem->bloomIntensity = bloom.bloomIntensity;
+                }
+            }
+
+            // Tag items on excluded layers for deferred rendering
+            uint32_t exMask = PostProcessingManager::GetInstance().GetExcludedLayerMask();
+            if (exMask != 0) {
+                int layerIdx = GetEffectiveLayerIndex(entity, ecsManager);
+                if (exMask & (1u << layerIdx))
+                    spriteRenderItem->excludeFromPostProcess = true;
+            }
+
             gfxManager.Submit(std::move(spriteRenderItem));
         }
 #ifdef ANDROID
