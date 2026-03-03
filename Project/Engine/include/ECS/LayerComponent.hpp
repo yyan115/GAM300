@@ -14,6 +14,10 @@ prior written consent of DigiPen Institute of Technology is prohibited.
 #pragma once
 #include <string>
 #include "Reflection/ReflectionBase.hpp"
+#include "ECS/Entity.hpp"
+#include "Engine.h"
+
+class ECSManager;
 
 struct LayerComponent
 {
@@ -33,3 +37,6 @@ struct LayerComponent
 	bool IsInLayer(const std::string& layerName) const;
 	int GetLayerMask() const { return 1 << layerIndex; }
 };
+
+// Walk parent chain to find effective layer index (returns 0/Default if none found)
+ENGINE_API int GetEffectiveLayerIndex(Entity entity, ECSManager& ecs);

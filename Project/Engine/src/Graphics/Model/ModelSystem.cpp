@@ -9,6 +9,9 @@
 #include "Asset Manager/AssetManager.hpp"
 #include "Asset Manager/ResourceManager.hpp"
 #include "Logging.hpp"
+#include "ECS/LayerComponent.hpp"
+#include "Graphics/PostProcessing/PostProcessingManager.hpp"
+#include "Graphics/BloomComponent.hpp"
 
 #ifdef ANDROID
 #include <android/log.h>
@@ -96,11 +99,22 @@ void ModelSystem::Update()
         glm::mat4 glmWorldMatrix = worldMatrix.ConvertToGLM();
 
        
-        if (instancing.IsEnabled()) 
+        if (instancing.IsEnabled())
         {
-            bool wasInstanced = instancing.TryAddInstance(modelComponent, glmWorldMatrix);
+            // Gather per-entity bloom data for instancing
+            glm::vec3 entityBloomColor(0.0f);
+            float entityBloomIntensity = 0.0f;
+            if (ecsManager.HasComponent<BloomComponent>(entity)) {
+                auto& bloom = ecsManager.GetComponent<BloomComponent>(entity);
+                if (bloom.enabled) {
+                    entityBloomColor = bloom.bloomColor;
+                    entityBloomIntensity = bloom.bloomIntensity;
+                }
+            }
 
-            if (wasInstanced) 
+            bool wasInstanced = instancing.TryAddInstance(modelComponent, glmWorldMatrix, entityBloomColor, entityBloomIntensity);
+
+            if (wasInstanced)
             {
                 // Instance was added to a batch (or culled), skip individual submission
                 cullingStats.renderedObjects++;  // Count as handled
@@ -145,7 +159,24 @@ void ModelSystem::Update()
 		    }
         }
 
-        gfxManager.Submit(std::move(modelRenderItem)); 
+        // Per-entity bloom emission
+        if (ecsManager.HasComponent<BloomComponent>(entity)) {
+            auto& bloom = ecsManager.GetComponent<BloomComponent>(entity);
+            if (bloom.enabled) {
+                modelRenderItem->bloomColor = bloom.bloomColor;
+                modelRenderItem->bloomIntensity = bloom.bloomIntensity;
+            }
+        }
+
+        // Tag items on excluded layers for deferred rendering
+        uint32_t exMask = PostProcessingManager::GetInstance().GetExcludedLayerMask();
+        if (exMask != 0) {
+            int layerIdx = GetEffectiveLayerIndex(entity, ecsManager);
+            if (exMask & (1u << layerIdx))
+                modelRenderItem->excludeFromPostProcess = true;
+        }
+
+        gfxManager.Submit(std::move(modelRenderItem));
     }
 #ifdef ANDROID
     //__android_log_print(ANDROID_LOG_INFO, "GAM300", "ModelSystem::Update() completed");
