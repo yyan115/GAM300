@@ -432,6 +432,54 @@ return Component {
                     end)
                     end -- do
                     ::skip_rotation::
+                elseif public.Flopping then
+                    -- Flopping: physics owns last link position — write it to endpoint transform
+                    local aN = self.controller.activeN
+                    local pos = self.controller.positions[aN]
+                    if pos then
+                        self:_write_world_pos(self._endpointTransform, pos[1], pos[2], pos[3])
+                    end
+                    -- Rotation: derive from last segment direction
+                    local posN   = self.controller.positions[aN]
+                    local posN1  = self.controller.positions[math.max(1, aN - 1)]
+                    if posN and posN1 then
+                        local fx = posN[1] - posN1[1]
+                        local fy = posN[2] - posN1[2]
+                        local fz = posN[3] - posN1[3]
+                        local flen = math.sqrt(fx*fx + fy*fy + fz*fz)
+                        if flen > 1e-6 then
+                            fx, fy, fz = fx/flen, fy/flen, fz/flen
+                            local ux, uy, uz = 0, 1, 0
+                            local dot = ux*fx + uy*fy + uz*fz
+                            local rx = uy*fz - uz*fy
+                            local ry = uz*fx - ux*fz
+                            local rz = ux*fy - uy*fx
+                            local axisLen = math.sqrt(rx*rx + ry*ry + rz*rz)
+                            local qw, qx, qy, qz
+                            if axisLen < 1e-6 then
+                                if dot > 0 then qw, qx, qy, qz = 1, 0, 0, 0
+                                else qw, qx, qy, qz = 0, 1, 0, 0 end
+                            else
+                                rx, ry, rz = rx/axisLen, ry/axisLen, rz/axisLen
+                                local angle = math.acos(math.max(-1, math.min(1, dot)))
+                                local half = angle * 0.5
+                                local s = math.sin(half)
+                                qw = math.cos(half)
+                                qx = rx * s; qy = ry * s; qz = rz * s
+                            end
+                            local qlen = math.sqrt(qw*qw + qx*qx + qy*qy + qz*qz)
+                            if qlen > 1e-12 then
+                                qw, qx, qy, qz = qw/qlen, qx/qlen, qy/qlen, qz/qlen
+                            end
+                            pcall(function()
+                                local rot = self._endpointTransform.localRotation
+                                if rot and (type(rot) == "table" or type(rot) == "userdata") then
+                                    rot.w, rot.x, rot.y, rot.z = qw, qx, qy, qz
+                                    self._endpointTransform.isDirty = true
+                                end
+                            end)
+                        end
+                    end
                 end
 
                 -- Always publish endpoint_moved so ChainEndpointController

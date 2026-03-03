@@ -185,6 +185,9 @@ return Component {
                 self._chainConstraintRatio    = payload.ratio or 0
                 self._chainConstraintExceeded = payload.exceeded or false
                 self._chainDrag               = payload.drag or false
+                self._chainEndX = payload.endX
+                self._chainEndY = payload.endY
+                self._chainEndZ = payload.endZ
                 if self._chainDrag then
                     self._chainDragTargetX = payload.targetX or 0
                     self._chainDragTargetY = payload.targetY or 0
@@ -201,6 +204,7 @@ return Component {
         self._animator  = self:GetComponent("AnimationComponent")
         self._transform = self:GetComponent("Transform")
         self._audio     = self:GetComponent("AudioComponent")
+        self._rigidbody = self:GetComponent("RigidBodyComponent")
 
         print("transform y here is ", self._transform.localPosition.y)
         self._controller = CharacterController.Create(self.entityId, self._collider, self._transform)
@@ -366,11 +370,27 @@ return Component {
             CharacterController.SetPosition(self._controller, self._transform)
         elseif self._chainConstraintRatio and self._chainConstraintRatio > 0 then
             local r = self._chainConstraintRatio
-            -- Cubic curve: gentle start, severe near limit
-            -- r=0.0 -> mult=1.0 (free)
-            -- r=0.5 -> mult=0.65 (noticeable)
-            -- r=1.0 -> mult=0.05 (nearly stopped)
+            -- Cubic speed reduction: gentle at soft limit, near-stopped at hard limit
             chainSpeedMult = math.max(0.05, 1.0 - r * r * r * 0.95)
+
+            -- Impulse pullback toward endpoint, scaled by ratio squared
+            -- Weak tug near soft limit, strong pull approaching hard limit
+            if self._rigidbody and self._chainEndX and self._chainEndZ then
+                local pos = CharacterController.GetPosition(self._controller)
+                if pos then
+                    local dx = self._chainEndX - pos.x
+                    local dz = self._chainEndZ - pos.z
+                    local dist = math.sqrt(dx*dx + dz*dz)
+                    if dist > 1e-4 then
+                        local nx, nz = dx/dist, dz/dist
+                        -- Scale: 0 at soft limit, ~300 near hard limit (tune via inspector feel)
+                        local impulseMag = r * r * 300
+                        pcall(function()
+                            self._rigidbody:AddImpulse(nx * impulseMag, 0, nz * impulseMag)
+                        end)
+                    end
+                end
+            end
         end
 
         -- RAW INPUT

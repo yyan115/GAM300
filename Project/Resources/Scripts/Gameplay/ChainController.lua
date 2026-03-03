@@ -244,7 +244,8 @@ function M:Update(dt, settings)
                 self.hookedTag = ""
                 self.constraintResult = { ratio = 0, exceeded = true, drag = false }
             else
-                self.constraintResult = { ratio = ratio, exceeded = false, drag = false }
+                self.constraintResult = { ratio = ratio, exceeded = false, drag = false,
+                endX = ex0, endY = ey0, endZ = ez0 }
             end
         end
     else
