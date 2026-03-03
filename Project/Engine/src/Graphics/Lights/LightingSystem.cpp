@@ -28,8 +28,8 @@ bool LightingSystem::Initialise()
         }
         // Each map updates on a different frame within the cycle so only 1 map
         // renders per frame instead of all at once, and no map is stale > updateInterval frames
-        pointShadowMaps[i].cacheConfig.updateInterval = MAX_POINT_LIGHT_SHADOWS;
-        pointShadowMaps[i].cacheConfig.maxStaleFrames = MAX_POINT_LIGHT_SHADOWS + 2;
+        pointShadowMaps[i].cacheConfig.updateInterval = 2;
+        pointShadowMaps[i].cacheConfig.maxStaleFrames = 4;
         pointShadowMaps[i].SetPhaseOffset(i);
     }
 
