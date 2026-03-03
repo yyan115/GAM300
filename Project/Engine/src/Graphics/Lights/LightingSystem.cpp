@@ -18,7 +18,7 @@ bool LightingSystem::Initialise()
         shadowsEnabled = false;
     }
 
-    // Initialize point light shadow maps
+    // Initialize point light shadow maps with round-robin staggered updates
     pointShadowMaps.resize(MAX_POINT_LIGHT_SHADOWS);
     for (int i = 0; i < MAX_POINT_LIGHT_SHADOWS; ++i)
     {
@@ -26,6 +26,11 @@ bool LightingSystem::Initialise()
         {
             std::cout << "[LightingSystem] Warning: Point shadow map " << i << " failed" << std::endl;
         }
+        // Each map updates on a different frame within the cycle so only 1 map
+        // renders per frame instead of all at once, and no map is stale > updateInterval frames
+        pointShadowMaps[i].cacheConfig.updateInterval = MAX_POINT_LIGHT_SHADOWS;
+        pointShadowMaps[i].cacheConfig.maxStaleFrames = MAX_POINT_LIGHT_SHADOWS + 2;
+        pointShadowMaps[i].SetPhaseOffset(i);
     }
 
     std::cout << "[LightingSystem] Initialized" << std::endl;

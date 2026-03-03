@@ -261,7 +261,7 @@ void PointShadowMap::MarkUpdated(const glm::vec3& lightPos, float farPlane)
     m_cachedLightPos = lightPos;
     m_cachedFarPlane = farPlane;
     m_framesSinceUpdate = 0;
-    m_framesSinceLastCheck = 0;
+    m_framesSinceLastCheck = -m_phaseOffset;  // Stagger next check across the update cycle
     m_forceDirty = false;
 
     cacheStats.updatesPerformed++;
