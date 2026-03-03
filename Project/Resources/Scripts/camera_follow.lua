@@ -59,6 +59,13 @@ return Component {
         chainAimTargetName      = "ChainAimPointLeftEnd",
         chainAimTransitionSpeed = 5.0,
 
+        -- Chain aim assist (soft gravity toward nearby enemies while aiming)
+        chainAimAssistEnemyNames   = {"EnemyAI", "FlyingEnemyLogic"},
+        chainAimAssistAngle        = 20.0,  -- angular window (degrees) around crosshair
+        chainAimAssistStrength     = 3.0,   -- max pull speed (degrees/second)
+        chainAimAssistRange        = 25.0,  -- max world-space distance to consider enemies
+        chainAimAssistHeightOffset = 0.5,   -- upward offset from enemy origin to aim at body center
+
         -- Rotation lock
         lockCameraRotation = false,
 
@@ -141,6 +148,19 @@ return Component {
                 self._chainAiming = payload.active or false
                 if self._chainAiming and not wasAiming then
                     self._chainAimInitialized = false
+                elseif not self._chainAiming and wasAiming then
+                    -- Chain aim released: inherit the current aim yaw/pitch into the
+                    -- orbit camera so it zooms back out from the same angle instead
+                    -- of panning back to the old orbit yaw.
+                    if self._chainAimYaw then
+                        -- _chainAimYaw is a look-direction; orbit _yaw is a camera-
+                        -- position offset (180° apart), so we add 180 to convert.
+                        self._yaw = self._chainAimYaw + 180.0
+                    end
+                    if self._chainAimPitch then
+                        self._pitch        = self._chainAimPitch
+                        self._normalPitch  = self._chainAimPitch
+                    end
                 end
             end)
 
