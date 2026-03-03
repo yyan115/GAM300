@@ -9,6 +9,6 @@
         "type": "diffuse",
         "flipUVs": false,
         "generateMipmaps": true,
-        "textureWrapMode": "Clamp"
+        "textureWrapMode": "Repeat"
     }
 }
