@@ -100,9 +100,54 @@ void VideoSystem::AdvanceToBoard(VideoComponent& vc, int boardIndex)
         return;
     }
 
+    const auto& nextBoard = vc.boards[boardIndex];
+
+    // If the next board has continueText, skip the black fade entirely —
+    // treat it as part of the same scene (seamless transition)
+    if (nextBoard.continueText)
+    {
+        SwapBoardImage(vc, boardIndex);
+
+        // Preserve typewriter state
+        vc.previousBoardChars = vc.revealedChars;
+
+        vc.currentBoardIndex = boardIndex;
+        vc.boardElapsedTime = 0.0f;
+        vc.stateTimer = 0.0f;
+
+        // Jump blur to the new board's value immediately (no lerp since we skip the fade)
+        vc.lastComputedBlur = nextBoard.blurIntensity;
+
+        // Apply blur immediately so there's no 1-frame lag from the previous board
+        float intensity = nextBoard.blurIntensity;
+        float radius = nextBoard.blurRadius;
+        int passes = nextBoard.blurPasses;
+
+        auto cameraSystem = m_ecs->GetSystem<CameraSystem>();
+        Entity camEntity = cameraSystem ? cameraSystem->GetActiveCameraEntity() : UINT32_MAX;
+        if (camEntity != UINT32_MAX && m_ecs->HasComponent<CameraComponent>(camEntity))
+        {
+            auto& cam = m_ecs->GetComponent<CameraComponent>(camEntity);
+            cam.blurEnabled = (intensity > 0.0f);
+            cam.blurIntensity = intensity;
+            cam.blurRadius = radius;
+            cam.blurPasses = passes;
+        }
+
+        BlurEffect* blur = PostProcessingManager::GetInstance().GetBlurEffect();
+        if (blur)
+        {
+            blur->SetIntensity(intensity);
+            blur->SetRadius(radius);
+            blur->SetPasses(passes);
+        }
+
+        vc.phase = VideoComponent::Phase::Displaying;
+        return;
+    }
+
     // Save blur endpoints for smooth transition
     vc.transitionBlurFrom = vc.lastComputedBlur;
-    const auto& nextBoard = vc.boards[boardIndex];
     vc.transitionBlurTo = (nextBoard.blurDelay > 0.0f) ? 0.0f : nextBoard.blurIntensity;
 
     vc.stateTimer = 0.0f;
