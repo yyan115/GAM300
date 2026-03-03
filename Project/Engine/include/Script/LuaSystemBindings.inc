@@ -322,6 +322,7 @@ BEGIN_SYSTEM("Engine")
     FUNCTION("IsEntityActive", &EntityQueryWrappers::IsEntityActive)
     FUNCTION("GetChildrenEntities", &EntityQueryWrappers::GetChildrenEntities)
     FUNCTION("GetParentEntity", &EntityQueryWrappers::GetParentEntity)
+    FUNCTION("SetParentEntity", &EntityQueryWrappers::SetParentEntity)
 
     FUNCTION("UpdateCacheTiming", &EntityQueryWrappers::UpdateCacheTiming)
     FUNCTION("UpdateEnemyCache", &EntityQueryWrappers::UpdateEnemyCache)

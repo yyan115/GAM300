@@ -1,5 +1,6 @@
 #pragma once
 #include "Math/Vector3D.hpp"
+#include "Math/Matrix4x4.hpp"
 #include "Reflection/ReflectionBase.hpp"
 #include <tuple>
 // ============================================================================
@@ -1189,6 +1190,182 @@ namespace EntityQueryWrappers {
         } else {
             lua_pushinteger(L, -1);
         }
+        return 1;
+    }
+
+    inline int SetParentEntity(lua_State* L) {
+        // Args: (childEntityId, parentEntityId) -- parentEntityId < 0 means detach
+        Entity child = static_cast<Entity>(luaL_checkinteger(L, 1));
+        int parentArg = static_cast<int>(luaL_checkinteger(L, 2)); // -1 to detach
+
+        ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
+        auto& guidRegistry = EntityGUIDRegistry::GetInstance();
+
+        if (child < 0) {
+            lua_pushboolean(L, 0);
+            return 1;
+        }
+
+        // Inline: compose a local matrix from Transform (localPosition, localRotation, localScale)
+        // NOTE: adjust rotation handling here if your Transform stores quaternion vs Euler.
+        auto composeLocalMatrix = [&](const Transform& t) -> Matrix4x4 {
+            // If localRotation is stored as Euler angles (Vector3), use:
+            Matrix4x4 Rx = Matrix4x4::RotationX(t.localRotation.x);
+            Matrix4x4 Ry = Matrix4x4::RotationY(t.localRotation.y);
+            Matrix4x4 Rz = Matrix4x4::RotationZ(t.localRotation.z);
+            Matrix4x4 R = Rz * Ry * Rx; // Z * Y * X order; change if your engine uses different order
+            return Matrix4x4::TRS(t.localPosition, R, t.localScale);
+            };
+
+        // Inline: decompose world/local matrix into Transform fields using Matrix4x4 extractors
+        auto decomposeMatrixToTransform = [&](const Matrix4x4& m, Transform& outT) {
+            outT.localPosition = Matrix4x4::ExtractTranslation(m);
+            outT.localScale = Matrix4x4::ExtractScale(m);
+            // ExtractRotation yields a Vector3 — likely Euler angles. If your Transform expects quaternion,
+            // convert Euler -> Quaternion here instead.
+            outT.localRotation = Quaternion::FromEulerDegrees(Matrix4x4::ExtractRotation(m)); // Euler (vec3) assumption
+            // If you use Quaternion for localRotation, convert:
+            // outT.localRotationQuat = Quaternion::FromEuler(outT.localRotation); // example
+            };
+
+        // Inline recursive world-matrix computation (uses existing ParentComponent chain)
+        std::function<Matrix4x4(Entity)> computeWorldMatrix = [&](Entity e) -> Matrix4x4 {
+            if (!ecsManager.HasComponent<Transform>(e)) {
+                return Matrix4x4::Identity();
+            }
+            const Transform& t = ecsManager.GetComponent<Transform>(e);
+            Matrix4x4 localMat = composeLocalMatrix(t);
+
+            if (!ecsManager.HasComponent<ParentComponent>(e)) {
+                return localMat;
+            }
+            const ParentComponent& pc = ecsManager.GetComponent<ParentComponent>(e);
+            Entity parent = guidRegistry.GetEntityByGUID(pc.parent);
+            if (parent < 0) return localMat;
+            Matrix4x4 parentWorld = computeWorldMatrix(parent);
+            return parentWorld * localMat;
+            };
+
+        // DETACH case
+        if (parentArg < 0) {
+            // preserve current world
+            Matrix4x4 childWorld = computeWorldMatrix(child);
+
+            // remove child from old parent's children list (if any) and remove ParentComponent
+            if (ecsManager.HasComponent<ParentComponent>(child)) {
+                const ParentComponent& oldPC = ecsManager.GetComponent<ParentComponent>(child);
+                Entity oldParent = guidRegistry.GetEntityByGUID(oldPC.parent);
+                if (oldParent >= 0 && ecsManager.HasComponent<ChildrenComponent>(oldParent)) {
+                    auto& children = ecsManager.GetComponent<ChildrenComponent>(oldParent).children;
+                    GUID_128 childGuid = guidRegistry.GetGUIDByEntity(child);
+                    children.erase(std::remove(children.begin(), children.end(), childGuid), children.end());
+                }
+                ecsManager.RemoveComponent<ParentComponent>(child);
+            }
+
+            // write local = world so child remains visually unchanged as a root
+            if (ecsManager.HasComponent<Transform>(child)) {
+                Transform& ct = ecsManager.GetComponent<Transform>(child);
+                decomposeMatrixToTransform(childWorld, ct);
+                ct.isDirty = true;
+            }
+
+            lua_pushboolean(L, 1);
+            return 1;
+        }
+
+        // ATTACH case
+        Entity parent = static_cast<Entity>(parentArg);
+
+        // self-parent
+        if (parent == child) {
+            lua_pushboolean(L, 0);
+            return 1;
+        }
+
+        // verify parent exists (and get GUID)
+        GUID_128 parentGuid = guidRegistry.GetGUIDByEntity(parent);
+        if (parentGuid == GUID_128{}) {
+            lua_pushboolean(L, 0);
+            return 1;
+        }
+
+        // cycle detection: walk up from parent to root and ensure we don't hit child
+        {
+            Entity cur = parent;
+            while (cur >= 0 && ecsManager.HasComponent<ParentComponent>(cur)) {
+                const ParentComponent& pc = ecsManager.GetComponent<ParentComponent>(cur);
+                Entity up = guidRegistry.GetEntityByGUID(pc.parent);
+                if (up == child) {
+                    lua_pushboolean(L, 0); // would create cycle
+                    return 1;
+                }
+                cur = up;
+            }
+        }
+
+        // Capture child's world matrix BEFORE structural changes
+        Matrix4x4 childWorld = computeWorldMatrix(child);
+
+        // Remove child from previous parent's children list if present
+        if (ecsManager.HasComponent<ParentComponent>(child)) {
+            const ParentComponent& oldPC = ecsManager.GetComponent<ParentComponent>(child);
+            Entity oldParent = guidRegistry.GetEntityByGUID(oldPC.parent);
+            if (oldParent >= 0 && ecsManager.HasComponent<ChildrenComponent>(oldParent)) {
+                auto& children = ecsManager.GetComponent<ChildrenComponent>(oldParent).children;
+                GUID_128 childGuid = guidRegistry.GetGUIDByEntity(child);
+                children.erase(std::remove(children.begin(), children.end(), childGuid), children.end());
+            }
+        }
+
+        // Add or update ParentComponent on child
+        if (ecsManager.HasComponent<ParentComponent>(child)) {
+            ParentComponent& childPC = ecsManager.GetComponent<ParentComponent>(child);
+            childPC.parent = parentGuid;
+        }
+        else {
+            ecsManager.AddComponent<ParentComponent>(child, ParentComponent{ parentGuid });
+        }
+
+        // Ensure parent has ChildrenComponent and add child GUID (no duplicates)
+        if (!ecsManager.HasComponent<ChildrenComponent>(parent)) {
+            ecsManager.AddComponent<ChildrenComponent>(parent, ChildrenComponent{});
+        }
+        {
+            auto& children = ecsManager.GetComponent<ChildrenComponent>(parent).children;
+            GUID_128 childGuid = guidRegistry.GetGUIDByEntity(child);
+            if (std::find(children.begin(), children.end(), childGuid) == children.end()) {
+                children.push_back(childGuid);
+            }
+        }
+
+        // Rebase child's transform so its world transform remains the same:
+        if (ecsManager.HasComponent<Transform>(child)) {
+            Matrix4x4 parentWorld = Matrix4x4::Identity();
+            if (ecsManager.HasComponent<Transform>(parent)) {
+                parentWorld = computeWorldMatrix(parent);
+            }
+            else {
+                parentWorld = Matrix4x4::Identity();
+            }
+
+            Matrix4x4 invParent;
+            bool invOk = parentWorld.TryInverse(invParent);
+            if (!invOk) {
+                // inverse failed (singular parent matrix) — cannot reliably rebase
+                // Fail safely and return false to Lua so caller can handle it.
+                lua_pushboolean(L, 0);
+                return 1;
+            }
+
+            Matrix4x4 childLocalMat = invParent * childWorld; // local matrix relative to new parent
+
+            Transform& ct = ecsManager.GetComponent<Transform>(child);
+            decomposeMatrixToTransform(childLocalMat, ct);
+            ct.isDirty = true;
+        }
+
+        lua_pushboolean(L, 1);
         return 1;
     }
 
