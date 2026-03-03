@@ -59,6 +59,7 @@ return Component {
         chainAimTargetName      = "ChainAimPointLeftEnd",
         chainAimTransitionSpeed = 5.0,
         chainAimZoomDistance    = 0.8,  -- orbit radius while chain aim is active
+        chainAimSideOffset      = 0.3,  -- rightward shift for over-the-shoulder view (negative = left)
 
         -- Chain aim assist (soft gravity toward nearby enemies while aiming)
         chainAimAssistEnemyNames   = {"EnemyAI", "FlyingEnemyLogic"},

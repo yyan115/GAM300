@@ -65,6 +65,13 @@ function M.updateChainAim(self, dt)
     local camY = pivY + zoomDist * math.sin(aimPitchR) + scaleH
     local camZ = pivZ + hRadius * math.cos(orbitYaw)
 
+    -- Over-the-shoulder: shift camera right relative to the look direction.
+    -- Right vector in XZ = (cos(lookYaw), 0, -sin(lookYaw)).
+    local sideOffset = self.chainAimSideOffset or 0.3
+    local lookYawRad = math.rad(self._chainAimYaw)
+    camX = camX - math.cos(lookYawRad) * sideOffset
+    camZ = camZ + math.sin(lookYawRad) * sideOffset
+
     -- Soft aim assist: gently pull _chainAimYaw/_chainAimPitch toward the
     -- nearest enemy within the configured angular window.
     if self._chainAiming and self._chainAimYaw then
