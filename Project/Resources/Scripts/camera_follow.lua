@@ -58,6 +58,7 @@ return Component {
         chainAimPosName         = "ChainAimPointLeft",
         chainAimTargetName      = "ChainAimPointLeftEnd",
         chainAimTransitionSpeed = 5.0,
+        chainAimZoomDistance    = 0.8,  -- orbit radius while chain aim is active
 
         -- Chain aim assist (soft gravity toward nearby enemies while aiming)
         chainAimAssistEnemyNames   = {"EnemyAI", "FlyingEnemyLogic"},
@@ -148,6 +149,14 @@ return Component {
                 self._chainAiming = payload.active or false
                 if self._chainAiming and not wasAiming then
                     self._chainAimInitialized = false
+                    -- Tell the player to face the current camera look direction.
+                    -- self._yaw accumulates without wrapping, so collapse through
+                    -- sin/cos + atan2 to get a canonical angle in (-180, 180].
+                    if event_bus and event_bus.publish then
+                        local yr = math.rad(self._yaw)
+                        local lookYaw = math.deg(math.atan2(-math.sin(yr), -math.cos(yr)))
+                        event_bus.publish("chain_aim_started", { yaw = lookYaw })
+                    end
                 elseif not self._chainAiming and wasAiming then
                     -- Chain aim released: inherit the current aim yaw/pitch into the
                     -- orbit camera so it zooms back out from the same angle instead

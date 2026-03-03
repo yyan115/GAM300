@@ -29,57 +29,41 @@ function M.updateChainAim(self, dt)
         return false, nil, nil, nil
     end
 
-    local aimPos    = Engine.FindTransformByName(self.chainAimPosName)
-    local aimTarget = Engine.FindTransformByName(self.chainAimTargetName)
-
-    if not (aimPos and aimTarget) then
-        -- Named transforms gone; abort blend
-        self._chainAimBlend = 0.0
-        return false, nil, nil, nil
-    end
-
-    -- Resolve world position of the camera anchor
-    local camX, camY, camZ = 0, 0, 0
-    local ok, a, b, c = pcall(function()
-        if Engine and Engine.GetTransformWorldPosition then
-            return Engine.GetTransformWorldPosition(aimPos)
-        end
-    end)
-    if ok and a ~= nil then
-        if type(a) == "table" then
-            camX, camY, camZ = a[1] or a.x or 0, a[2] or a.y or 0, a[3] or a.z or 0
-        else
-            camX, camY, camZ = a, b, c
-        end
-    end
-
-    -- On the very first frame of chain aim, lock yaw/pitch toward the end target
+    -- On the first frame of chain aim, inherit the current orbit yaw/pitch so
+    -- the camera zooms in along the direction it was already looking.
+    -- self._yaw is never wrapped (accumulates freely), so we cannot add 180
+    -- directly — that would make _chainAimYaw a huge number and cause
+    -- applyRotation to interpolate through hundreds of degrees (visible spin).
+    -- Instead, collapse through sin/cos then atan2 to get a canonical angle
+    -- in (-180, 180] that represents the same look direction.
     if not self._chainAimInitialized then
-        local targetX, targetY, targetZ = 0, 0, 0
-        ok, a, b, c = pcall(function()
-            if Engine and Engine.GetTransformWorldPosition then
-                return Engine.GetTransformWorldPosition(aimTarget)
-            end
-        end)
-        if ok and a ~= nil then
-            if type(a) == "table" then
-                targetX, targetY, targetZ = a[1] or a.x or 0, a[2] or a.y or 0, a[3] or a.z or 0
-            else
-                targetX, targetY, targetZ = a, b, c
-            end
-        end
-
-        local dirX = targetX - camX
-        local dirY = targetY - camY
-        local dirZ = targetZ - camZ
-        local dirLen = math.sqrt(dirX*dirX + dirY*dirY + dirZ*dirZ)
-        if dirLen > 0.0001 then
-            dirX, dirY, dirZ = dirX/dirLen, dirY/dirLen, dirZ/dirLen
-            self._chainAimYaw   = math.deg(atan2(dirX, dirZ))
-            self._chainAimPitch = -math.deg(math.asin(dirY))
-            self._chainAimInitialized = true
-        end
+        local yr = math.rad(self._yaw)
+        self._chainAimYaw         = math.deg(atan2(-math.sin(yr), -math.cos(yr)))
+        self._chainAimPitch       = self._pitch
+        self._chainAimInitialized = true
     end
+
+    -- Compute the zoomed-in camera position: same orbital direction as current
+    -- aim but at chainAimZoomDistance radius instead of followDistance.
+    local zoomDist  = self.chainAimZoomDistance or 1.5
+    -- _chainAimYaw is look-direction; add 180 to get orbit position-offset convention.
+    local orbitYaw  = math.rad(self._chainAimYaw + 180.0)
+    local aimPitchR = math.rad(self._chainAimPitch or 0.0)
+
+    local minZ = self.minZoom or 2.0
+    local maxZ = self.maxZoom or 15.0
+    local zf   = math.max(0.0, math.min(1.0, (zoomDist - minZ) / (maxZ - minZ)))
+    local lookAtH = 0.5 + zf * 0.7
+    local scaleH  = (self.heightOffset or 1.0) * (0.3 + zf * 0.7)
+
+    local pivX = self._targetPos.x
+    local pivY = self._targetPos.y + lookAtH
+    local pivZ = self._targetPos.z
+
+    local hRadius = zoomDist * math.cos(aimPitchR)
+    local camX = pivX + hRadius * math.sin(orbitYaw)
+    local camY = pivY + zoomDist * math.sin(aimPitchR) + scaleH
+    local camZ = pivZ + hRadius * math.cos(orbitYaw)
 
     -- Soft aim assist: gently pull _chainAimYaw/_chainAimPitch toward the
     -- nearest enemy within the configured angular window.
