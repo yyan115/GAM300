@@ -1,0 +1,14 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "006c64660aa82474-000466f4d4000061",
+        "source": "../../Resources/Materials/VFX/SlashEffect_baseColor.png",
+        "compiled": "../../Resources/Materials/VFX/SlashEffect_baseColor.dds"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp"
+    }
+}

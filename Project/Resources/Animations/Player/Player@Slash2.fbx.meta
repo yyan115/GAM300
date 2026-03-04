@@ -1,0 +1,11 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "006c646623b7ab58-000466f4d0000051",
+        "source": "../../Resources/Animations/Player/Player@Slash2.fbx",
+        "compiled": "../../Resources/Animations/Player/Player@Slash2.mesh"
+    },
+    "ModelMetaData": {
+        "optimizeMeshes": true
+    }
+}

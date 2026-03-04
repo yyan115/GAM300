@@ -1,13 +1,6 @@
 require("extension.engine_bootstrap")
 local Component = require("extension.mono_helper")
 
---PLAY HIGHLIGHT SHOULD BE ENABLED AT THE START
---LAST HIGHLIST STATE SHOULD PERSIST
-
---NEED TO THINK HOW TO HANDLE THIS HIGHLIGHT FOR ANDROID 
-
---IF CLICKED ON A BUTTON -> LAST STATE SHOULD BE THAT BUTTON (LOCKED HIGHLIGHT)
-
 local targetButtons = 
 {   "PlayGame", 
     "Credits", 

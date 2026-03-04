@@ -1,0 +1,11 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "006c64663183c164-000466f4b6000007",
+        "source": "../../Resources/Animations/Player/Kusane@Slash3.fbx",
+        "compiled": "../../Resources/Animations/Player/Kusane@Slash3.fbx"
+    },
+    "ModelMetaData": {
+        "optimizeMeshes": true
+    }
+}

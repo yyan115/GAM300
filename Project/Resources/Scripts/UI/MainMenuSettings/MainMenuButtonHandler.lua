@@ -194,17 +194,26 @@ return Component {
     Update = function(self, dt)
         -- Handle fade transition
         if self._isFading and self._fadeSprite then
+        -- --Disable Highlight of button when transitioning
+            local highlightButtonEntity = Engine.GetEntityByName("HighlightButtons")
+            local highlightButton = GetComponent(highlightButtonEntity, "ActiveComponent")
+            highlightButton.isActive = false
 
-        local targetButtons = {"PlayGame", "Credits", "ExitGame", "Settings"}
-        for _, buttonName in ipairs(targetButtons) do
-            local entity = Engine.GetEntityByName(buttonName)
-            if entity then
-                local button = GetComponent(entity, "ButtonComponent")
-                if button then
-                    button.interactable = false
+            local targetButtons = {"PlayGame", "Credits", "ExitGame", "Settings"}
+            for _, buttonName in ipairs(targetButtons) do
+                local entity = Engine.GetEntityByName(buttonName)
+                if entity then
+                    local button = GetComponent(entity, "ButtonComponent")
+                    local sprite = GetComponent(entity, "SpriteRenderComponent")
+                    if button then
+                        button.interactable = false
+                    end
+                    -- Disable the Highlight of the buttons (Failsafe)
+                    if sprite then
+                        sprite.isVisible = false
+                    end
                 end
             end
-        end
 
             self._fadeTimer = self._fadeTimer + dt
             local duration = self.fadeDuration or 1.0
