@@ -2,8 +2,8 @@
     "AssetMetaData": {
         "version": 7,
         "guid": "000b41a908ef0e76-00041a684200000d",
-        "source": "../../Resources/Animations/Player@Jump.fbx",
-        "compiled": "../../Resources/Animations/Player@Jump.mesh"
+        "source": "../../Resources/Animations/Player/Player@Jump.fbx",
+        "compiled": "../../Resources/Animations/Player/Player@Jump.mesh"
     },
     "ModelMetaData": {
         "optimizeMeshes": true

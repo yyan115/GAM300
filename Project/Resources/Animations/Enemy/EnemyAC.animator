@@ -16,7 +16,12 @@
             "defaultValue": 0.0
         },
         {
-            "name": "Melee",
+            "name": "PlayerInDetectionRange",
+            "type": "Bool",
+            "defaultValue": 0.0
+        },
+        {
+            "name": "Hurt1",
             "type": "Bool",
             "defaultValue": 0.0
         },
@@ -26,12 +31,7 @@
             "defaultValue": 0.0
         },
         {
-            "name": "PlayerInDetectionRange",
-            "type": "Bool",
-            "defaultValue": 0.0
-        },
-        {
-            "name": "Hurt1",
+            "name": "Melee",
             "type": "Bool",
             "defaultValue": 0.0
         },
@@ -46,12 +46,12 @@
             "defaultValue": 0.0
         },
         {
-            "name": "Hurt2",
+            "name": "Passive",
             "type": "Bool",
             "defaultValue": 0.0
         },
         {
-            "name": "Passive",
+            "name": "Hurt2",
             "type": "Bool",
             "defaultValue": 0.0
         },
@@ -73,14 +73,14 @@
     ],
     "states": [
         {
-            "id": "Hurt1",
+            "id": "Hooked",
             "clipIndex": 5,
             "loop": false,
-            "speed": 2.499999761581421,
+            "speed": 1.0,
             "crossfadeDuration": 0.0,
             "nodePosition": {
-                "x": 279.0,
-                "y": -25.5
+                "x": 428.5,
+                "y": 75.0
             }
         },
         {
@@ -95,36 +95,25 @@
             }
         },
         {
-            "id": "Hooked",
-            "clipIndex": 5,
+            "id": "Hurt1",
+            "clipIndex": 6,
             "loop": false,
-            "speed": 1.0,
+            "speed": 2.499999761581421,
             "crossfadeDuration": 0.0,
             "nodePosition": {
-                "x": 428.5,
-                "y": 75.0
+                "x": 279.0,
+                "y": -25.5
             }
         },
         {
             "id": "Death",
-            "clipIndex": 1,
+            "clipIndex": 5,
             "loop": false,
             "speed": 1.0,
             "crossfadeDuration": 0.0,
             "nodePosition": {
                 "x": 321.9285888671875,
                 "y": -292.39288330078125
-            }
-        },
-        {
-            "id": "Hurt3",
-            "clipIndex": 7,
-            "loop": false,
-            "speed": 2.000000238418579,
-            "crossfadeDuration": 0.0,
-            "nodePosition": {
-                "x": 645.9998168945313,
-                "y": -123.99993896484375
             }
         },
         {
@@ -136,6 +125,17 @@
             "nodePosition": {
                 "x": 438.5,
                 "y": -546.0
+            }
+        },
+        {
+            "id": "Hurt3",
+            "clipIndex": 8,
+            "loop": false,
+            "speed": 2.000000238418579,
+            "crossfadeDuration": 0.0,
+            "nodePosition": {
+                "x": 645.9998168945313,
+                "y": -123.99993896484375
             }
         },
         {
@@ -151,7 +151,7 @@
         },
         {
             "id": "Hurt2",
-            "clipIndex": 6,
+            "clipIndex": 7,
             "loop": false,
             "speed": 2.000000238418579,
             "crossfadeDuration": 0.0,
@@ -162,7 +162,7 @@
         },
         {
             "id": "Ground Chase",
-            "clipIndex": 8,
+            "clipIndex": 2,
             "loop": true,
             "speed": 1.0,
             "crossfadeDuration": 0.20000000298023224,
@@ -173,7 +173,7 @@
         },
         {
             "id": "Ground Patrol",
-            "clipIndex": 2,
+            "clipIndex": 1,
             "loop": true,
             "speed": 1.0,
             "crossfadeDuration": 0.0,
@@ -1257,14 +1257,14 @@
         }
     ],
     "clipPaths": [
-        "Resources/Animations/Enemy@Idle.fbx",
-        "Resources/Animations/Enemy@Death.fbx",
-        "Resources/Animations/Enemy@Walk.fbx",
-        "Resources/Animations/Enemy@AttackScratch.fbx",
-        "Resources/Animations/Enemy@AttackThrow.fbx",
-        "Resources/Animations/Enemy@Hurt.fbx",
-        "Resources/Animations/Enemy@Hurt2.fbx",
-        "Resources/Animations/Enemy@Hurt3.fbx",
-        "Resources/Animations/Enemy@Run.fbx"
+        "Resources/Animations/Enemy/Enemy@Idle.fbx",
+        "Resources/Animations/Enemy/Enemy@Walk.fbx",
+        "Resources/Animations/Enemy/Enemy@Run.fbx",
+        "Resources/Animations/Enemy/Enemy@AttackScratch.fbx",
+        "Resources/Animations/Enemy/Enemy@AttackThrow.fbx",
+        "Resources/Animations/Enemy/Enemy@Death.fbx",
+        "Resources/Animations/Enemy/Enemy@Hurt.fbx",
+        "Resources/Animations/Enemy/Enemy@Hurt2.fbx",
+        "Resources/Animations/Enemy/Enemy@Hurt3.fbx"
     ]
 }
