@@ -9,7 +9,6 @@ return Component {
 
     fields = {
         FeathersCollectedTextName = "FeathersCollectedText",
-        FeatherSkillRequirement = 20,
     },
 
     Awake = function(self)
@@ -48,7 +47,9 @@ return Component {
         end
     end,
 
-    Update = function(self, dt) end,
+    Update = function(self, dt) 
+
+    end,
 
     OnDisable = function(self)
         if self._featherCollectedSub and _G.event_bus then

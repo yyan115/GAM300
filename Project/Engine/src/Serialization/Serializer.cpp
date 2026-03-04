@@ -1201,10 +1201,10 @@ void Serializer::SerializePrefabOverridesRecursive(ECSManager& sceneECS, Entity 
     // 3. Recurse Children
     if (sceneECS.HasComponent<ChildrenComponent>(instanceEnt)) {
         auto& instChildren = sceneECS.GetComponent<ChildrenComponent>(instanceEnt).children;
-        if (baselineEnt == static_cast<Entity>(-1) || !sceneECS.HasComponent<ChildrenComponent>(baselineEnt)) {
-            // No baseline � serialize all instance children as new additions
-            return;
-        }
+        //if (baselineEnt == static_cast<Entity>(-1) || !sceneECS.HasComponent<ChildrenComponent>(baselineEnt)) {
+        //    // No baseline - serialize all instance children as new additions
+        //    return;
+        //}
         auto& baseChildren = sceneECS.GetComponent<ChildrenComponent>(baselineEnt).children;
 
         std::list<GUID_128> deletedBaseChildren{};
@@ -2009,7 +2009,13 @@ void Serializer::ApplyPrefabOverridesRecursive(ECSManager& ecs, Entity& currentE
 
     // 2. Recursively Handle Children
     // We only descend if the JSON has overrides for children
-    if (jsonNode.HasMember("Children") && ecs.HasComponent<ChildrenComponent>(currentEntity)) {
+    if (jsonNode.HasMember("Children")) {
+        // Ensure the entity has a ChildrenComponent before we try to populate it.
+        // Newly added entities won't have this component by default.
+        if (!ecs.HasComponent<ChildrenComponent>(currentEntity)) {
+            ecs.AddComponent<ChildrenComponent>(currentEntity, ChildrenComponent{});
+        }
+
         const auto& jsonChildren = jsonNode["Children"];
         auto& childrenComp = ecs.GetComponent<ChildrenComponent>(currentEntity);
 
@@ -2068,7 +2074,12 @@ void Serializer::ApplyPrefabOverridesRecursive(ECSManager& ecs, Entity& currentE
                     }
 
                     GUID_128 childGUID = EntityGUIDRegistry::GetInstance().GetGUIDByEntity(matchingChild);
-                    childrenComp.children.push_back(childGUID);
+                    // Prevent duplicate child links if the GUID was already added 
+                    // via the ComponentOverrides parsing step above.
+                    auto it = std::find(childrenComp.children.begin(), childrenComp.children.end(), childGUID);
+                    if (it == childrenComp.children.end()) {
+                        childrenComp.children.push_back(childGUID);
+                    }
                 }
             }
         }

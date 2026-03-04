@@ -98,6 +98,7 @@ return Component {
             event_bus.publish("deal_damage_to_entity", {
                 entityId = targetId,
                 damage   = self._currentDamage,
+                hitType  = "COMBO",
             })
             print("[AttackHitbox] Dealt " .. tostring(self._currentDamage)
                 .. " damage to entity " .. tostring(targetId))

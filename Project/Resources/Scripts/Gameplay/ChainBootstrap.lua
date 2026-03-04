@@ -355,8 +355,8 @@ return Component {
         -- Publish movement constraint — ChainController computed it, Bootstrap owns event_bus
         if self.controller.constraintResult and _G.event_bus and _G.event_bus.publish then
             local cr = self.controller.constraintResult
-            print(string.format("[ChainBootstrap][CONSTRAINT] publishing ratio=%.3f exceeded=%s drag=%s",
-                cr.ratio or 0, tostring(cr.exceeded), tostring(cr.drag)))
+            --print(string.format("[ChainBootstrap][CONSTRAINT] publishing ratio=%.3f exceeded=%s drag=%s",
+            --    cr.ratio or 0, tostring(cr.exceeded), tostring(cr.drag)))
             _G.event_bus.publish("chain.movement_constraint", cr)
         end
 

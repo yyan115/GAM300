@@ -140,6 +140,9 @@ return Component {
         -- ---- Skip all attack logic during cinematic ----
         if self._frozenByCinematic then return end
 
+        -- ---- Skip all attack logic while casting Feather Skill ----
+        if _G.player_is_casting_skill then return end
+
         -- ---- Input handling (unified input system) ----
         local leftDown,  leftPressed  = false, false
         local rightDown, rightPressed = false, false

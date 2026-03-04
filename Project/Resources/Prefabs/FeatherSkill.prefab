@@ -1,0 +1,404 @@
+{
+    "prefab_entities": [
+        {
+            "id": 0,
+            "guid": "0041bbedc0800991-000467c8ea0accdd",
+            "components": {
+                "PrefabLinkComponent": {
+                    "type": "PrefabLinkComponent",
+                    "data": [
+                        {
+                            "type": "std::string",
+                            "data": "../../Resources/Prefabs/FeatherSkill.prefab"
+                        }
+                    ]
+                },
+                "NameComponent": {
+                    "name": "FeatherSkill"
+                },
+                "TagComponent": {
+                    "tagIndex": 0
+                },
+                "LayerComponent": {
+                    "layerIndex": 0
+                },
+                "SiblingIndexComponent": {
+                    "siblingIndex": 1
+                },
+                "Transform": {
+                    "type": "Transform",
+                    "data": [
+                        {
+                            "type": "Vector3D",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": -0.00456067
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0.866323
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 5.86161
+                                }
+                            ]
+                        },
+                        {
+                            "type": "Vector3D",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 2
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 2
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 2
+                                }
+                            ]
+                        },
+                        {
+                            "type": "Quaternion",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": -3.19995e-8
+                                },
+                                {
+                                    "type": "float",
+                                    "data": -0.00000210232
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0.999977
+                                },
+                                {
+                                    "type": "float",
+                                    "data": -0.00680854
+                                }
+                            ]
+                        }
+                    ]
+                },
+                "ChildrenComponent": {
+                    "type": "ChildrenComponent",
+                    "data": [
+                        {
+                            "type": "std::vector<GUID_128>",
+                            "data": [
+                                "0041bbedca9d067c-000467c8ea0accdf"
+                            ]
+                        }
+                    ]
+                },
+                "ActiveComponent": {
+                    "type": "ActiveComponent",
+                    "data": [
+                        {
+                            "type": "bool",
+                            "data": true
+                        }
+                    ]
+                },
+                "ScriptComponent": {
+                    "scripts": [
+                        {
+                            "scriptGuidStr": "001301ef9d1ec03e-000464174c001b25",
+                            "scriptPath": "../../Resources/Scripts/Gameplay/FeatherSkillManager.lua",
+                            "enabled": true,
+                            "preserveKeys": [],
+                            "entryFunction": "OnInit",
+                            "autoInvokeEntry": true,
+                            "instanceState": {
+                                "Awake": null,
+                                "ProjectileSpeed": 20.0,
+                                "FeatherTargetRotationX": 70.0,
+                                "Unsubscribe": null,
+                                "_cameraYaw": 180.0,
+                                "_startSkill": false,
+                                "_cameraYawSub": {
+                                    "id": 17.0,
+                                    "event": "camera_yaw"
+                                },
+                                "_feathersSpawned": 0.0,
+                                "MaxAliveDuration": 10.0,
+                                "SpawnFeather": null,
+                                "_state": 0.0,
+                                "AwakeSafe": null,
+                                "_windupTimer": 0.2,
+                                "DisableSafe": null,
+                                "_spawnTimer": 0.0,
+                                "SkillLightCastedDiffuseR": 255.0,
+                                "Destroy": null,
+                                "SkillLightInitialDiffuseB": 107.0,
+                                "SerializeFields": null,
+                                "DebugTransform": null,
+                                "LaunchRotationSpeed": 1080.0,
+                                "_castDelay": 3.0,
+                                "UpdateSafe": null,
+                                "_subscriptions": {},
+                                "StartSafe": null,
+                                "_aliveDuration": 10.0,
+                                "_call_lifecycle": null,
+                                "Every": null,
+                                "GetScale": null,
+                                "After": null,
+                                "SpawnDuration": 0.3,
+                                "AimVerticalOffset": 0.0,
+                                "NumFeathersToSpawn": 10.0,
+                                "Subscribe": null,
+                                "GetTransform": null,
+                                "SetRotation": null,
+                                "SetScale": null,
+                                "FeatherProjectilePrefabPath": "Resources/Prefabs/FeatherSkillProjectile.prefab",
+                                "__field_list": {
+                                    "SkillLightInitialDiffuseB": 170.0,
+                                    "ProjectileSpeed": 25.0,
+                                    "FeatherTargetRotationX": 70.0,
+                                    "FeatherProjectilePrefabPath": "Resources/Prefabs/FeatherSkillProjectile.prefab",
+                                    "CastDelay": 3.0,
+                                    "WindupPullbackDistance": 0.6,
+                                    "SkillLightCastedDiffuseB": 0.0,
+                                    "SkillLightInitialDiffuseR": 255.0,
+                                    "SkillLightEntityName": "SkillLight",
+                                    "SkillLightCastedDiffuseG": 0.0,
+                                    "LaunchRotationSpeed": 1080.0,
+                                    "CastingRotationSpeed": 360.0,
+                                    "SkillLightInitialDiffuseG": 170.0,
+                                    "SpawnDuration": 1.0,
+                                    "NumFeathersToSpawn": 10.0,
+                                    "ConvergeDuration": 0.5,
+                                    "SkillLightCastedDiffuseR": 255.0,
+                                    "WindupDuration": 0.2
+                                },
+                                "GetRotation": null,
+                                "CastDelay": 0.5,
+                                "Update": null,
+                                "WindupPullbackDistance": 0.3,
+                                "GetPosition": null,
+                                "SkillLightCastedDiffuseB": 0.0,
+                                "Start": null,
+                                "_private": {},
+                                "SkillLightEntityName": "SkillLight",
+                                "__created_at": 1772621361.0,
+                                "SkillLightCastedDiffuseG": 142.0,
+                                "SetPosition": null,
+                                "Move": null,
+                                "_transform_fetched": false,
+                                "SkillLightInitialDiffuseR": 255.0,
+                                "CastingRotationSpeed": 0.0,
+                                "FocalDistance": 30.0,
+                                "SkillSizeFactor": 3.0,
+                                "SkillLightInitialDiffuseG": 183.0,
+                                "DeserializeFields": null,
+                                "OnDisable": null,
+                                "ConvergeDuration": 0.4,
+                                "__meta": {},
+                                "WindupDuration": 0.1
+                            }
+                        }
+                    ]
+                }
+            }
+        },
+        {
+            "id": 1,
+            "guid": "0041bbedca9d067c-000467c8ea0accdf",
+            "components": {
+                "NameComponent": {
+                    "name": "SkillLight"
+                },
+                "TagComponent": {
+                    "tagIndex": 0
+                },
+                "LayerComponent": {
+                    "layerIndex": 0
+                },
+                "SiblingIndexComponent": {
+                    "siblingIndex": 87
+                },
+                "Transform": {
+                    "type": "Transform",
+                    "data": [
+                        {
+                            "type": "Vector3D",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                }
+                            ]
+                        },
+                        {
+                            "type": "Vector3D",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                }
+                            ]
+                        },
+                        {
+                            "type": "Quaternion",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                }
+                            ]
+                        }
+                    ]
+                },
+                "ParentComponent": {
+                    "type": "ParentComponent",
+                    "data": [
+                        "0041bbedc0800991-000467c8ea0accdd"
+                    ]
+                },
+                "PointLightComponent": {
+                    "type": "PointLightComponent",
+                    "data": [
+                        {
+                            "type": "Vector3D",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                }
+                            ]
+                        },
+                        {
+                            "type": "float",
+                            "data": 1
+                        },
+                        {
+                            "type": "bool",
+                            "data": false
+                        },
+                        {
+                            "type": "float",
+                            "data": 1
+                        },
+                        {
+                            "type": "float",
+                            "data": 0.09
+                        },
+                        {
+                            "type": "float",
+                            "data": 0.032
+                        },
+                        {
+                            "type": "Vector3D",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 0.05
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0.05
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0.05
+                                }
+                            ]
+                        },
+                        {
+                            "type": "Vector3D",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0.634606
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0.254826
+                                }
+                            ]
+                        },
+                        {
+                            "type": "Vector3D",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                }
+                            ]
+                        },
+                        {
+                            "type": "bool",
+                            "data": false
+                        },
+                        {
+                            "type": "float",
+                            "data": 25
+                        }
+                    ]
+                },
+                "ActiveComponent": {
+                    "type": "ActiveComponent",
+                    "data": [
+                        {
+                            "type": "bool",
+                            "data": true
+                        }
+                    ]
+                }
+            }
+        }
+    ]
+}
