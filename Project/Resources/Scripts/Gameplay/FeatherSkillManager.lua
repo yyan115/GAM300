@@ -3,7 +3,6 @@ local Component = require("extension.mono_helper")
 local TransformMixin = require("extension.transform_mixin")
 local event_bus = _G.event_bus
 
--- Helper function for linear interpolation
 local function lerp(a, b, t)
     return a + (b - a) * t
 end
@@ -88,7 +87,12 @@ return Component {
         CastingRotationSpeed = 360.0,
         FeatherTargetRotationX = 70.0, 
         LaunchRotationSpeed = 1080.0, 
-        ProjectileSpeed = 25.0, 
+        ProjectileSpeed = 25.0,
+        SkillSizeFactor = 2.0,
+        MaxAliveDuration = 10.0,
+        
+        FocalDistance = 30.0,       
+        AimVerticalOffset = 0.0,    
         
         NumFeathersToSpawn = 10,
         FeatherProjectilePrefabPath = "Resources/Prefabs/FeatherSkillProjectile.prefab",
@@ -114,50 +118,100 @@ return Component {
         self._spawnTimer = 0.0
         self._castDelay = self.CastDelay
         self._windupTimer = self.WindupDuration
+        self._aliveDuration = self.MaxAliveDuration
         
         self._state = 0 
-        self._startSkill = false
         self._feathersSpawned = 0
-        
-        -- [NEW] Track Camera Yaw so we know where to shoot!
-        self._cameraYaw = 180.0
-        if event_bus and event_bus.subscribe then
-            self._cameraYawSub = event_bus.subscribe("camera_yaw", function(yaw)
-                if yaw then self._cameraYaw = yaw end
-            end)
-        end
     end,
 
     Start = function(self)
-        self._transform = self:GetComponent("Transform")
+        local transform = self:GetComponent("Transform")
+        if not transform then return end
         
-        local r = self._transform.localRotation
-        self._baseRotation = { w = r.w, x = r.x, y = r.y, z = r.z }
+        self._lockedCamX     = _G.CAMERA_POS_X or 0.0
+        self._lockedCamY     = _G.CAMERA_POS_Y or 0.0
+        self._lockedCamZ     = _G.CAMERA_POS_Z or 0.0
+        self._lockedCamFwdX  = _G.CAMERA_FWD_X or 0.0
+        self._lockedCamFwdY  = _G.CAMERA_FWD_Y or 0.0
+        self._lockedCamFwdZ  = _G.CAMERA_FWD_Z or -1.0
+
+        local wPos, wRot = getWorldTransform(self.entityId)
+
+        if Engine.SetParentEntity then
+            Engine.SetParentEntity(self.entityId, -1)
+        end
+        
+        transform.localPosition.x = wPos.x
+        transform.localPosition.y = wPos.y
+        transform.localPosition.z = wPos.z
+
+        transform.localScale.x = self.SkillSizeFactor
+        transform.localScale.y = self.SkillSizeFactor
+        transform.localScale.z = self.SkillSizeFactor
+
+        local targetX = self._lockedCamX + (self._lockedCamFwdX * self.FocalDistance)
+        local targetY = self._lockedCamY + (self._lockedCamFwdY * self.FocalDistance) + self.AimVerticalOffset
+        local targetZ = self._lockedCamZ + (self._lockedCamFwdZ * self.FocalDistance)
+
+        local dirX = targetX - wPos.x
+        local dirY = targetY - wPos.y
+        local dirZ = targetZ - wPos.z
+
+        local len = math.sqrt(dirX*dirX + dirY*dirY + dirZ*dirZ)
+        if len > 0.001 then
+            dirX = dirX / len
+            dirY = dirY / len
+            dirZ = dirZ / len
+        end
+
+        local finalPitch = -math.deg(math.asin(dirY)) 
+        local finalYaw = 0
+        if dirX == 0 and dirZ == 0 then
+            finalYaw = 0
+        elseif dirZ > 0 then
+            finalYaw = math.deg(math.atan(dirX / dirZ))
+        elseif dirZ < 0 then
+            finalYaw = math.deg(math.atan(dirX / dirZ)) + (dirX >= 0 and 180.0 or -180.0)
+        else
+            finalYaw = dirX > 0 and 90.0 or -90.0
+        end
+
+        local aimQuat = eulerToQuat(finalPitch, finalYaw, 0)
+
+        transform.localRotation.w = aimQuat.w
+        transform.localRotation.x = aimQuat.x
+        transform.localRotation.y = aimQuat.y
+        transform.localRotation.z = aimQuat.z
+        transform.isDirty = true
+
+        self._baseRotation = { w = aimQuat.w, x = aimQuat.x, y = aimQuat.y, z = aimQuat.z }
         self._currentSpinAngle = 0
 
         self._childFeathers = {}
+        self._skillLightEntityId = nil
         
         if Engine and Engine.GetChildrenEntities then
             local childrenIds = Engine.GetChildrenEntities(self.entityId)
             
             for _, childId in ipairs(childrenIds) do
-                local childTransform = GetComponent(childId, "Transform")
-                if childTransform then
-                    local cr = childTransform.localRotation
-                    table.insert(self._childFeathers, {
-                        transform = childTransform,
-                        baseRot = { w = cr.w, x = cr.x, y = cr.y, z = cr.z }
-                    })
-                end
-
                 local childName = Engine.GetEntityName(childId)
+                
                 if childName == self.SkillLightEntityName then
+                    self._skillLightEntityId = childId
                     local skillPointLightComp = GetComponent(childId, "PointLightComponent")
                     if skillPointLightComp then
-                        self._skillPointLightComp = skillPointLightComp
-                        self._skillPointLightComp.diffuse.x = self.SkillLightInitialDiffuseR / 255.0
-                        self._skillPointLightComp.diffuse.y = self.SkillLightInitialDiffuseG / 255.0
-                        self._skillPointLightComp.diffuse.z = self.SkillLightInitialDiffuseB / 255.0
+                        skillPointLightComp.diffuse.x = self.SkillLightInitialDiffuseR / 255.0
+                        skillPointLightComp.diffuse.y = self.SkillLightInitialDiffuseG / 255.0
+                        skillPointLightComp.diffuse.z = self.SkillLightInitialDiffuseB / 255.0
+                    end
+                else
+                    local childTransform = GetComponent(childId, "Transform")
+                    if childTransform then
+                        local cr = childTransform.localRotation
+                        table.insert(self._childFeathers, {
+                            entityId = childId,
+                            baseRot = { w = cr.w, x = cr.x, y = cr.y, z = cr.z }
+                        })
                     end
                 end
             end
@@ -189,31 +243,38 @@ return Component {
             childTransform.localRotation.x = zQuat.x
             childTransform.localRotation.y = zQuat.y
             childTransform.localRotation.z = zQuat.z
+
+            childTransform.localScale.x = childTransform.localScale.x * self.SkillSizeFactor
+            childTransform.localScale.y = childTransform.localScale.y * self.SkillSizeFactor
+            childTransform.localScale.z = childTransform.localScale.z * self.SkillSizeFactor
             childTransform.isDirty = true
 
             table.insert(self._childFeathers, {
                 entityId = newFeatherId,
-                transform = childTransform,
                 baseRot = { w = zQuat.w, x = zQuat.x, y = zQuat.y, z = zQuat.z }
             })
+        end
+
+        if index == 0 then
+            local lightComp = GetComponent(newFeatherId, "PointLightComponent")
+            if lightComp then
+                lightComp.enabled = true
+            end
         end
     end,
 
     Update = function(self, dt)
-        -- if Input and Input.IsActionPressed and Input.IsActionJustPressed("FeatherSkill") then
-        --     self._startSkill = true
-        --     if self._skillPointLightComp then
-        --         self._skillPointLightComp.enabled = true
-        --     end
-        -- end
+        self._aliveDuration = self._aliveDuration - dt
+        if self._aliveDuration <= 0 then
+            if Engine and Engine.DestroyEntity then
+                Engine.DestroyEntity(self.entityId)
+            end
+            return
+        end
 
-        -- if not self._startSkill then 
-        --     if self._skillPointLightComp then
-        --         self._skillPointLightComp.enabled = false
-        --     end
-        --     return 
-        -- end
-
+        local transform = self:GetComponent("Transform")
+        if not transform then return end
+        
         local currentRotationSpeed = 0
 
         local bw, bx, by, bz = self._baseRotation.w, self._baseRotation.x, self._baseRotation.y, self._baseRotation.z
@@ -221,9 +282,6 @@ return Component {
         local fwdY = 2 * (by * bz - bw * bx)
         local fwdZ = 1 - 2 * (bx * bx + by * by)
 
-        -- ==========================================
-        -- PHASE 0: SPAWNING
-        -- ==========================================
         if self._state == 0 then
             currentRotationSpeed = self.CastingRotationSpeed
             self._spawnTimer = self._spawnTimer + dt
@@ -246,9 +304,6 @@ return Component {
                 self._state = 1
             end
 
-        -- ==========================================
-        -- PHASE 1: CASTING DELAY (Converge & Wait)
-        -- ==========================================
         elseif self._state == 1 then
             self._castDelay = self._castDelay - dt
             currentRotationSpeed = self.CastingRotationSpeed
@@ -263,48 +318,24 @@ return Component {
 
             for _, child in ipairs(self._childFeathers) do
                 local newRot = multiplyQuat(child.baseRot, pitchQuat)
-                child.transform.localRotation.w = newRot.w
-                child.transform.localRotation.x = newRot.x
-                child.transform.localRotation.y = newRot.y
-                child.transform.localRotation.z = newRot.z
-                child.transform.isDirty = true
+                local childTransform = GetComponent(child.entityId, "Transform")
+                if childTransform then 
+                    childTransform.localRotation.w = newRot.w
+                    childTransform.localRotation.x = newRot.x
+                    childTransform.localRotation.y = newRot.y
+                    childTransform.localRotation.z = newRot.z
+                    childTransform.isDirty = true
+                end
             end
 
-            -- UNPARENTING & FLATTENING LOGIC
             if self._castDelay <= 0.0 then
-                local wPos, wRot = getWorldTransform(self.entityId)
-
-                if Engine.SetParentEntity then
-                    Engine.SetParentEntity(self.entityId, -1)
-                end
-                
-                self._transform.localPosition.x = wPos.x
-                self._transform.localPosition.y = wPos.y
-                self._transform.localPosition.z = wPos.z
-
-                -- [THE FIX] Level out the projectile so it shoots perfectly straight
-                -- (Pitch = 0, Roll = 0, Yaw = Camera Yaw)
-                local launchYaw = self._cameraYaw + 180.0
-                local flatQuat = eulerToQuat(0, launchYaw, 0)
-
-                self._transform.localRotation.w = flatQuat.w
-                self._transform.localRotation.x = flatQuat.x
-                self._transform.localRotation.y = flatQuat.y
-                self._transform.localRotation.z = flatQuat.z
-
-                -- Lock in the correct flat forward direction for flight!
-                self._baseRotation = { w = flatQuat.w, x = flatQuat.x, y = flatQuat.y, z = flatQuat.z }
-                
                 self._currentSpinAngle = 0
-                self._windupStartPos = { x = wPos.x, y = wPos.y, z = wPos.z }
+                local pos = transform.localPosition
+                self._windupStartPos = { x = pos.x, y = pos.y, z = pos.z }
 
                 self._state = 2
-                self._transform.isDirty = true
             end
 
-        -- ==========================================
-        -- PHASE 2: WIND-UP (The Jerk Backward)
-        -- ==========================================
         elseif self._state == 2 then
             self._windupTimer = self._windupTimer - dt
             currentRotationSpeed = self.LaunchRotationSpeed
@@ -314,62 +345,74 @@ return Component {
             if t < 0 then t = 0 end
             
             local easeT = t * t 
-
-            local pos = self._transform.localPosition
+            
+            local pos = transform.localPosition
             pos.x = self._windupStartPos.x - (fwdX * self.WindupPullbackDistance * easeT)
             pos.y = self._windupStartPos.y - (fwdY * self.WindupPullbackDistance * easeT)
             pos.z = self._windupStartPos.z - (fwdZ * self.WindupPullbackDistance * easeT)
-            self._transform.localPosition = pos
+            transform.localPosition = pos
 
             if self._windupTimer <= 0.0 then
                 self._state = 3
             end
 
-        -- ==========================================
-        -- PHASE 3: LAUNCHED (Fly Forward)
-        -- ==========================================
         elseif self._state == 3 then
-            if self._skillPointLightComp then
-                self._skillPointLightComp.diffuse.x = self.SkillLightCastedDiffuseR / 255.0
-                self._skillPointLightComp.diffuse.y = self.SkillLightCastedDiffuseG / 255.0
-                self._skillPointLightComp.diffuse.z = self.SkillLightCastedDiffuseB / 255.0
+            local skillPointLightComp = nil
+            if self._skillLightEntityId then
+                skillPointLightComp = GetComponent(self._skillLightEntityId, "PointLightComponent")
+            end
+            
+            if skillPointLightComp then
+                skillPointLightComp.diffuse.x = self.SkillLightCastedDiffuseR / 255.0
+                skillPointLightComp.diffuse.y = self.SkillLightCastedDiffuseG / 255.0
+                skillPointLightComp.diffuse.z = self.SkillLightCastedDiffuseB / 255.0
             end
 
             currentRotationSpeed = self.LaunchRotationSpeed
 
             local moveStep = self.ProjectileSpeed * dt
-            local pos = self._transform.localPosition
+            local pos = transform.localPosition
 
             pos.x = pos.x + (fwdX * moveStep)
             pos.y = pos.y + (fwdY * moveStep)
             pos.z = pos.z + (fwdZ * moveStep)
 
-            self._transform.localPosition = pos
+            transform.localPosition = pos
         end
 
-        -- ==========================================
-        -- PARENT ROTATION LOGIC (Runs in all phases)
-        -- ==========================================
         if self._state ~= 0 then
             self._currentSpinAngle = (self._currentSpinAngle + currentRotationSpeed * dt) % 360
             local spinQuat = eulerToQuat(0, 0, self._currentSpinAngle)
             local parentNewRot = multiplyQuat(self._baseRotation, spinQuat)
             
-            self._transform.localRotation.w = parentNewRot.w
-            self._transform.localRotation.x = parentNewRot.x
-            self._transform.localRotation.y = parentNewRot.y
-            self._transform.localRotation.z = parentNewRot.z
+            transform.localRotation.w = parentNewRot.w
+            transform.localRotation.x = parentNewRot.x
+            transform.localRotation.y = parentNewRot.y
+            transform.localRotation.z = parentNewRot.z
         end
         
-        self._transform.isDirty = true
+        transform.isDirty = true
+
+        if self._state > 0 and self._feathersSpawned >= self.NumFeathersToSpawn then
+            local anyFeathersAlive = false
+            
+            for _, child in ipairs(self._childFeathers) do
+                if GetComponent(child.entityId, "Transform") then
+                    anyFeathersAlive = true
+                    break
+                end
+            end
+
+            if not anyFeathersAlive then
+                if Engine and Engine.DestroyEntity then
+                    print("[FeatherSkillManager] All feathers destroyed. Cleaning up parent entity: " .. tostring(self.entityId))
+                    Engine.DestroyEntity(self.entityId)
+                end
+            end
+        end
     end,
 
     OnDisable = function(self)
-        if event_bus and event_bus.unsubscribe then
-            if self._cameraYawSub then
-                event_bus.unsubscribe(self._cameraYawSub)
-                self._cameraYawSub = nil
-            end
-        end
+
     end,
 }

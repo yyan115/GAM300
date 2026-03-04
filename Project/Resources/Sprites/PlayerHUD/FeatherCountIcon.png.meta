@@ -1,0 +1,14 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "0041bbedd1470147-000467cb680b92db",
+        "source": "../../Resources/Sprites/PlayerHUD/FeatherCountIcon.png",
+        "compiled": "../../Resources/Sprites/PlayerHUD/FeatherCountIcon.dds"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": true,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp"
+    }
+}

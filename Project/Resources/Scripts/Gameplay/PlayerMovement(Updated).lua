@@ -157,6 +157,27 @@ return Component {
                 self._lungeTimer = self.AttackLungeDuration or 0.12
             end)
 
+            -- Snap rotation to face camera exactly when a skill is cast
+            self._forceRotSub = event_bus.subscribe("force_player_rotation_to_camera", function()
+                local cameraYaw = _G.CAMERA_YAW or self._cameraYaw or 180.0
+                local yr = math.rad(cameraYaw)
+                local fwdX = -math.sin(yr)
+                local fwdZ = -math.cos(yr)
+                
+                local len = math.sqrt(fwdX * fwdX + fwdZ * fwdZ)
+                if len > 0.001 then
+                    fwdX = fwdX / len
+                    fwdZ = fwdZ / len
+                end
+
+                local targetW, targetX, targetY, targetZ = directionToQuaternion(fwdX, fwdZ)
+                self._currentRotW, self._currentRotX, self._currentRotY, self._currentRotZ = targetW, targetX, targetY, targetZ
+                self._facingX = fwdX
+                self._facingZ = fwdZ
+                
+                pcall(self.SetRotation, self, targetW, targetX, targetY, targetZ)
+            end)
+
             print("[PlayerMovement] Subscribing to activatedCheckpoint")
             self._activatedCheckpointSub = event_bus.subscribe("activatedCheckpoint", function(entityId)
                 if entityId then self._activatedCheckpoint = entityId end
@@ -279,6 +300,14 @@ return Component {
     end,
 
     Update = function(self, dt)
+        -- Sync internal states to globals so other scripts (like FeatherSkillManager) can read them
+        _G.player_is_jumping = self._isJumping or false
+        _G.player_is_rolling = self._isRolling or false
+        _G.player_is_landing = self._isLanding or false
+        _G.player_is_hurt    = self._isDamageStun or false
+        _G.player_is_dead    = self._playerDead or false
+        _G.player_is_frozen  = self._frozenBycinematic or self._freezePending or false
+
         if self._respawnPlayer then
             self:RespawnPlayer()
             return
@@ -357,6 +386,20 @@ return Component {
             CharacterController.Move(self._controller,
                 self._lungeDirX * (self.AttackLungeSpeed or 3.0), 0,
                 self._lungeDirZ * (self.AttackLungeSpeed or 3.0))
+        end
+
+        -- Lock player completely while casting the Feather Skill
+        if _G.player_is_casting_skill then
+            self._animator:SetBool("IsRunning", false)
+            self._isRunning = false
+            
+            -- Keep updating position so we don't fall out of sync with CC
+            local position = CharacterController.GetPosition(self._controller)
+            if position then
+                self:SetPosition(position.x, position.y, position.z)
+                if event_bus and event_bus.publish then event_bus.publish("player_position", position) end
+            end
+            return
         end
 
         if _G.player_is_attacking then
@@ -636,6 +679,7 @@ return Component {
             if self._requestPlayerForwardSub then event_bus.unsubscribe(self._requestPlayerForwardSub) end
             if self._attackLungeSub         then event_bus.unsubscribe(self._attackLungeSub)        end
             if self._chainConstraintSub     then event_bus.unsubscribe(self._chainConstraintSub)    end
+            if self._forceRotSub            then event_bus.unsubscribe(self._forceRotSub)           end
         end
         self._frozenBycinematic = false
         self._chainConstraintRatio = 0

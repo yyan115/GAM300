@@ -314,6 +314,10 @@ return Component {
         local pitchRad = math.rad(self._pitch)
         local yawRad   = math.rad(self._yaw)
 
+        -- Export camera angles globally for skills to read
+        _G.CAMERA_YAW = self._yaw
+        _G.CAMERA_PITCH = self._pitch
+
         local minZoom    = self.minZoom or 2.0
         local maxZoom    = self.maxZoom or 15.0
         local zoomFactor = clamp((radius - minZoom) / (maxZoom - minZoom), 0.0, 1.0)
@@ -367,6 +371,23 @@ return Component {
         local newX  = cx + (desiredX - cx) * lerpT
         local newY  = cy + (desiredY - cy) * lerpT
         local newZ  = cz + (desiredZ - cz) * lerpT
+
+        -- Export exact camera position and mathematically perfect forward vector!
+        _G.CAMERA_POS_X = newX
+        _G.CAMERA_POS_Y = newY
+        _G.CAMERA_POS_Z = newZ
+        
+        local fwdX = cameraTarget.x - newX
+        local fwdY = cameraTarget.y - newY
+        local fwdZ = cameraTarget.z - newZ
+        local fLen = math.sqrt(fwdX*fwdX + fwdY*fwdY + fwdZ*fwdZ)
+        
+        if fLen > 0.001 then
+            _G.CAMERA_FWD_X = fwdX / fLen
+            _G.CAMERA_FWD_Y = fwdY / fLen
+            _G.CAMERA_FWD_Z = fwdZ / fLen
+        end
+
         self:SetPosition(newX, newY, newZ)
 
         -- ── Rotation ─────────────────────────────────────────────────────────

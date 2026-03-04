@@ -2,7 +2,7 @@
     "prefab_entities": [
         {
             "id": 0,
-            "guid": "00505891b8179fa3-000464f1d201d67b",
+            "guid": "0041bbedb3efab9a-000467cd320c3a89",
             "components": {
                 "PrefabLinkComponent": {
                     "type": "PrefabLinkComponent",
@@ -176,8 +176,109 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "00505891cef6fdb5-000464f1d201d67d"
+                                "0041bbedd8e35ee1-000467cd320c3a8b"
                             ]
+                        }
+                    ]
+                },
+                "PointLightComponent": {
+                    "type": "PointLightComponent",
+                    "data": [
+                        {
+                            "type": "Vector3D",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                }
+                            ]
+                        },
+                        {
+                            "type": "float",
+                            "data": 1
+                        },
+                        {
+                            "type": "bool",
+                            "data": false
+                        },
+                        {
+                            "type": "float",
+                            "data": 1
+                        },
+                        {
+                            "type": "float",
+                            "data": 0.09
+                        },
+                        {
+                            "type": "float",
+                            "data": 0.032
+                        },
+                        {
+                            "type": "Vector3D",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 0.05
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0.05
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0.05
+                                }
+                            ]
+                        },
+                        {
+                            "type": "Vector3D",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0.634606
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0.254826
+                                }
+                            ]
+                        },
+                        {
+                            "type": "Vector3D",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                }
+                            ]
+                        },
+                        {
+                            "type": "bool",
+                            "data": false
+                        },
+                        {
+                            "type": "float",
+                            "data": 25
                         }
                     ]
                 },
@@ -194,7 +295,7 @@
                         },
                         {
                             "type": "bool",
-                            "data": false
+                            "data": true
                         },
                         {
                             "type": "float",
@@ -253,7 +354,7 @@
                     "data": [
                         {
                             "type": "bool",
-                            "data": true
+                            "data": false
                         },
                         {
                             "type": "int",
@@ -261,7 +362,7 @@
                         },
                         {
                             "type": "unsigned",
-                            "data": 1
+                            "data": 104
                         },
                         {
                             "type": "int",
@@ -272,15 +373,15 @@
                             "data": [
                                 {
                                     "type": "float",
-                                    "data": 0.0157949
+                                    "data": 0.02
                                 },
                                 {
                                     "type": "float",
-                                    "data": 0.0882124
+                                    "data": 0.2
                                 },
                                 {
                                     "type": "float",
-                                    "data": 0.00155632
+                                    "data": 0.02
                                 }
                             ]
                         },
@@ -313,7 +414,7 @@
                                 },
                                 {
                                     "type": "float",
-                                    "data": 0.0882124
+                                    "data": 0.05
                                 },
                                 {
                                     "type": "float",
@@ -348,12 +449,62 @@
                             "data": true
                         }
                     ]
+                },
+                "ScriptComponent": {
+                    "scripts": [
+                        {
+                            "scriptGuidStr": "004cf40d3d36d2c8-0004675cac168705",
+                            "scriptPath": "../../Resources/Scripts/Gameplay/FeatherSkillProjectileManager.lua",
+                            "enabled": true,
+                            "preserveKeys": [],
+                            "entryFunction": "OnInit",
+                            "autoInvokeEntry": true,
+                            "instanceState": {
+                                "__meta": {},
+                                "__created_at": 1772633527.0,
+                                "ProjectileDamage": 1.0,
+                                "_private": {},
+                                "FeatherRemnantPrefabPath": "Resources/Prefabs/FeatherSkillProjectileRemnant.prefab",
+                                "__field_list": {
+                                    "PlayerEntityName": "Player",
+                                    "FeatherRemnantPrefabPath": "Resources/Prefabs/FeatherSkillProjectileRemnant.prefab"
+                                },
+                                "PlayerEntityName": "Player",
+                                "ColliderDisabledDuration": 0.7,
+                                "SpawnRemnantOffset": 1.0,
+                                "_transform_fetched": false,
+                                "RigidbodyKinematicDuration": 0.7,
+                                "_subscriptions": {}
+                            }
+                        }
+                    ]
+                },
+                "BloomComponent": {
+                    "type": "BloomComponent",
+                    "data": [
+                        {
+                            "type": "bool",
+                            "data": true
+                        },
+                        {
+                            "type": "float",
+                            "data": 5.072
+                        }
+                    ],
+                    "bloomColor": {
+                        "type": "glm::vec3",
+                        "data": [
+                            1.0,
+                            0.5559845566749573,
+                            0.0
+                        ]
+                    }
                 }
             }
         },
         {
             "id": 1,
-            "guid": "00505891cef6fdb5-000464f1d201d67d",
+            "guid": "0041bbedd8e35ee1-000467cd320c3a8b",
             "components": {
                 "NameComponent": {
                     "name": "Feather"
@@ -430,7 +581,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "00505891b8179fa3-000464f1d201d67b"
+                        "0041bbedb3efab9a-000467cd320c3a89"
                     ]
                 },
                 "ActiveComponent": {
