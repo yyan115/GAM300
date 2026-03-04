@@ -169,16 +169,18 @@ return Component {
 
         -- Boss melee tuning (phase 1)
         BossMeleeRange = 2.2,
-        BossMeleeWindup = 0.85,
-        BossMeleeCooldown = 2.5,
+        BossMeleeWindup = 0.40,
+        BossMeleeCooldown = 2.95,
 
         -- Ranged charge (phase 1 Move1)
         P1_RangedCharge = 0.75,
 
         -- Shout AOE
-        ShoutRadius = 5.5,
+        ShoutRadius = 4.0,
         ShoutDamage = 1,
-        ShoutKnockback = 18.0,
+        ShoutKnockback = 240.0,
+        ShoutWindup = 0.95,
+        ShoutPostDelay = 2.15,
         ShoutCooldown = 999, -- checkpoint only (or set if you want it to recur)
 
         -- Air movement
@@ -192,6 +194,8 @@ return Component {
         GridStep = 4.0,
         GridCenterX = 0.0,
         GridCenterZ = 0.0,
+
+        HurtReactDuration = 0.35,   -- how long we "reserve" time for hurt anim to play
 
         -- SFX clip arrays (populate in editor with audio GUIDs)
         enemyHurtSFX = {},          -- EnemyHurt
@@ -220,6 +224,8 @@ return Component {
         self.currentMoveDef = nil
         self._recoverTimer = 0
         self._hitLockTimer = 0
+
+        self._moveQueue = {}
 
         -- active move runtime
         self._move = nil
@@ -477,12 +483,10 @@ return Component {
             return
         end
 
-        -- 7) Lock early exit (except INTRO)
+        -- 7) If locked, we still want queued reactions + current move to run.
+        -- Only block phase decision-making below.
         local locked = self:IsActionLocked()
         local lockReason = self._lockReason
-        if locked and lockReason ~= "INTRO" then
-            return
-        end
 
         -- 8) Aggro trigger / intro
         if not self._introDone then
@@ -510,7 +514,24 @@ return Component {
             self.fsm:Update(dtSec)
         end
 
-        -- 9) Phase dispatch (NEW system only)
+        -- ALWAYS tick move runtime + queued reactions (locked or not)
+        self:TickMove(dtSec)
+        self:TryStartQueuedMove()
+
+        -- If locked (and not INTRO), block ONLY phase decision-making
+        if locked and lockReason ~= "INTRO" then
+            -- still broadcast position etc if you want
+            if _G.event_bus and _G.event_bus.publish then
+                local x, y, z = self:GetPosition()
+                _G.event_bus.publish("enemy_position", {
+                    entityId = self.entityId,
+                    x = x, y = y, z = z
+                })
+            end
+            return
+        end
+
+        -- 9) Phase dispatch (only when not locked)
         self._phase = self._phase or self:_ComputePhase()
 
         if self._phase == 1 then
@@ -521,10 +542,7 @@ return Component {
             self:_UpdatePhase3(dtSec)
         end
 
-        -- 10) Always tick move runtime
-        self:TickMove(dtSec)
-
-        -- 11) Broadcast position
+        -- 10) Broadcast position
         if _G.event_bus and _G.event_bus.publish then
             local x, y, z = self:GetPosition()
             _G.event_bus.publish("enemy_position", {
@@ -925,6 +943,33 @@ return Component {
         if self.health <= 0 then
             self:Die()
             return
+        end
+
+        -- 1) Always queue a short “hurt reaction window”
+        self:EnqueueMoveFront("HurtReact", { duration = self.HurtReactDuration or 0.35 })
+
+        -- 2) Queue shout ONLY if we crossed a Phase 1 checkpoint
+        if (self._phase or self:_ComputePhase()) == 1 then
+            local hpPct = self:_GetHpPct()
+
+            local function queueShoutOnce()
+                self:EnqueueMove("ShoutAOE", {
+                    windup    = self.ShoutWindup or 0.55,
+                    postDelay = self.ShoutPostDelay or 0.25,
+                    radius    = self.ShoutRadius or 4.0,
+                    dmg       = self.ShoutDamage or 1,
+                    kb        = self.ShoutKnockback or 240.0,
+                })
+                print("[MinibossAI] Queued ShoutAOE")
+            end
+
+            if (not self._p1DidShout90) and hpPct <= (self.P1_Shout1Pct or 0.90) then
+                self._p1DidShout90 = true
+                queueShoutOnce()
+            elseif (not self._p1DidShout75) and hpPct <= (self.P1_Shout2Pct or 0.75) then
+                self._p1DidShout75 = true
+                queueShoutOnce()
+            end
         end
 
         -- Play hurt SFX
@@ -1363,12 +1408,13 @@ return Component {
 
         if _G.event_bus and _G.event_bus.publish then
             local x,y,z = self:GetPosition()
+            print("[MinibossAI] Casting boss_shout_aoe")
             _G.event_bus.publish("boss_shout_aoe", {
                 entityId = self.entityId,
                 x=x,y=y,z=z,
-                radius = self.ShoutRadius or 5.5,
+                radius = self.ShoutRadius or 4.0,
                 dmg = self.ShoutDamage or 1,
-                kb = self.ShoutKnockback or 18.0,
+                kb = self.ShoutKnockback or 240.0,
             })
         end
     end,
@@ -1406,6 +1452,54 @@ return Component {
         if self._moveFinished or not self._move then return end
         local m = self._move
         m.t = (m.t or 0) + dtSec
+
+        -- =========================
+        -- Queued reaction: Hurt
+        -- =========================
+        if m.kind == "HurtReact" then
+            if m.step == 0 then
+                m.step = 1
+                m.endAt = (m.duration or 0.35)
+            end
+            if m.t >= (m.endAt or 0.35) then
+                self:_EndMove()
+            end
+            return
+        end
+
+        -- =========================
+        -- Queued reaction: Shout AOE (delayed hit)
+        -- =========================
+        if m.kind == "ShoutAOE" then
+            if m.step == 0 then
+                m.step = 1
+                m.fireAt = m.windup or 0.55
+
+                -- start shout anim now
+                if self._animator then self._animator:SetTrigger("Taunt") end
+                playRandomSFX(self._audio, self.enemyTauntSFX)
+            end
+
+            if not m.didFire and m.t >= (m.fireAt or 0) then
+                m.didFire = true
+                if _G.event_bus and _G.event_bus.publish then
+                    local x,y,z = self:GetPosition()
+                    print("[MinibossAI] ShoutAOE HIT (queued + delayed)")
+                    _G.event_bus.publish("boss_shout_aoe", {
+                        entityId = self.entityId,
+                        x=x,y=y,z=z,
+                        radius = m.radius or (self.ShoutRadius or 5.5),
+                        dmg    = m.dmg or (self.ShoutDamage or 1),
+                        kb     = m.kb or (self.ShoutKnockback or 18.0),
+                    })
+                end
+            end
+
+            if m.didFire and m.t >= ((m.fireAt or 0) + (m.postDelay or 0.25)) then
+                self:_EndMove()
+            end
+            return
+        end
 
         if m.kind == "BossMelee" then
             if m.step == 0 then
@@ -1653,21 +1747,34 @@ return Component {
         end
     end,
 
+    EnqueueMove = function(self, kind, data)
+        self._moveQueue = self._moveQueue or {}
+        self._moveQueue[#self._moveQueue + 1] = { kind = kind, data = data or {} }
+    end,
+
+    EnqueueMoveFront = function(self, kind, data)
+        self._moveQueue = self._moveQueue or {}
+        table.insert(self._moveQueue, 1, { kind = kind, data = data or {} })
+    end,
+
+    TryStartQueuedMove = function(self)
+        if not self:IsCurrentMoveFinished() then return false end
+
+        -- Allow queued reactions during HIT_STUN (but still block for HOOKED/PHASE_TRANSFORM/DEAD/etc)
+        if self:IsActionLocked() and (self._lockReason ~= "HIT_STUN") then
+            return false
+        end
+
+        if not self._moveQueue or #self._moveQueue == 0 then return false end
+
+        local item = table.remove(self._moveQueue, 1)
+        self:_BeginMove(item.kind, item.data)
+        return true
+    end,
+
     _UpdatePhase1 = function(self, dtSec)
-        -- checkpoints
-        local hpPct = self:_GetHpPct()
-        if (not self._p1DidShout90) and hpPct <= (self.P1_Shout1Pct or 0.90) then
-            self._p1DidShout90 = true
-            self:_DoShoutAOE()
-            self:LockActions("HIT_STUN", 0.8)
-            return
-        end
-        if (not self._p1DidShout75) and hpPct <= (self.P1_Shout2Pct or 0.75) then
-            self._p1DidShout75 = true
-            self:_DoShoutAOE()
-            self:LockActions("HIT_STUN", 0.8)
-            return
-        end
+        -- If any queued reaction exists, run it first
+        if self:TryStartQueuedMove() then return end
 
         if not self:IsCurrentMoveFinished() then return end
         if self:IsActionLocked() then return end
