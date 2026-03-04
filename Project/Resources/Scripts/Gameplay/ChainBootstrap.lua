@@ -1,6 +1,6 @@
 -- ChainBootstrap.lua
 _G.CHAIN_DEBUG = _G.CHAIN_DEBUG ~= nil and _G.CHAIN_DEBUG or false
---_G.CHAIN_DEBUG = true
+_G.CHAIN_DEBUG = true
 local function dbg(...) if _G.CHAIN_DEBUG then print(...) end end
 local Component = require("extension.mono_helper")
 local LinkHandlerModule = require("Gameplay.ChainLinkTransformHandler")
@@ -29,6 +29,8 @@ return Component {
         WallClampRadius = 0,
         ChainSlackDistance = 1.0,   -- extra metres player can move past chainLen before chain flops
         DragTag = "HeavyEnemy",     -- entity tag that drags the player instead of flopping
+        UseLOSAnchors = false,      -- when true: chain is always taut/straight; anchors auto-created
+                                    -- wherever geometry breaks line-of-sight, removed when LOS clears
     },
 
     _unpack_pos = function(self, a, b, c)
@@ -338,6 +340,7 @@ return Component {
             WallClampRadius = self.WallClampRadius,
             ChainSlackDistance = self.ChainSlackDistance,
             DragTag = self.DragTag,
+            UseLOSAnchors = self.UseLOSAnchors,
             AnchorAngleThresholdRad = math.rad(self.AnchorAngleThresholdDeg or 45),
             PinEndWhenExtended = self.PinEndWhenExtended,
             getStart = function()

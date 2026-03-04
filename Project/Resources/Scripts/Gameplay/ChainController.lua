@@ -35,13 +35,17 @@ function M.New(params)
     self.startPos = {0,0,0}
     self.endPos = {0,0,0}
 
-    self.endPointLocked = false     -- true only after OnTriggerEnter fires via chain.endpoint_hit_entity
-    self.lockedEndPoint = {0,0,0}   -- updated every frame by ChainEndpointController while hooked
-    self.hookedTag = ""             -- tag of the hooked entity root, set at hit time
+    self.endPointLocked = false
+    self.lockedEndPoint = {0,0,0}
+    self.hookedTag = ""
 
-    self._raycastSnapped = false    -- true after raycast hit, before trigger fires
-    self._lockedChainLen = 0.0      -- chainLen at moment retraction begins
-    self._flopping = false          -- true when max distance reached with no hit — end link is free
+    self._raycastSnapped = false
+    self._lockedChainLen = 0.0
+    self._flopping = false
+
+    -- LOS anchor list: ordered {x,y,z} world positions where the chain bends
+    -- around occluding geometry. Managed by UpdateLOSAnchors every frame.
+    self.losAnchors = {}
 
     self.VerletState = VerletAdapter.Init{ positions = self.positions, prev = self.prev, invMass = self.invMass }
     return setmetatable(self, { __index = M })
@@ -67,6 +71,7 @@ function M:StartExtension(forward, maxLength, linkMaxDistance)
     self.endPointLocked = false
     self.lockedEndPoint = {0,0,0}
     self.hookedTag = ""
+    self.losAnchors = {}
 
     local maxLen = tonumber(maxLength) or tonumber(self.params.MaxLength) or 0
     local linkMax = tonumber(linkMaxDistance) or tonumber(self.params.LinkMaxDistance) or 0
@@ -99,10 +104,8 @@ function M:StartRetraction()
     self._raycastSnapped = false
     self._flopping = false
     self.hookedTag = ""
-    -- Snapshot chainLen at moment retraction begins so we can interpolate
-    -- from lockedEndPoint back to startPos correctly
+    self.losAnchors = {}
     self._lockedChainLen = self.chainLen
-    -- Do NOT clear endPointLocked here — Update clears it when chainLen hits 0
 end
 
 function M:ComputeAnchors(angleThresholdRad)
@@ -146,6 +149,188 @@ function M:PerformRaycast(sx, sy, sz, maxDistance)
     return nil
 end
 
+-- ---------------------------------------------------------------------------
+-- LOS anchor system
+-- ---------------------------------------------------------------------------
+-- Each anchor: { x, y, z, bodyId=, nx=, ny=, nz= }
+--   bodyId  identifies the object for permanence across frames
+--   nx/ny/nz surface normal at hit, used to place the anchor flush to the face
+-- ---------------------------------------------------------------------------
+local LOS_NUDGE       = 0.06  -- metres offset along normal, flush to surface
+local LOS_MIN_DIST    = 0.03  -- skip raycasts shorter than this
+local LOS_CLEAR_SLACK = 0.06  -- hit within this of the target counts as clear
+local LOS_MAX_ANCHORS = 8     -- hard cap
+
+-- ---------------------------------------------------------------------------
+-- RaycastFull unpacking
+-- ---------------------------------------------------------------------------
+-- C++ returns std::tuple<bool,float,float,float,float,float,float,float,uint32_t>.
+-- Depending on the Lua binding this arrives as EITHER:
+--   (a) 9 separate return values  — pcall gives ok, hit, dist, px...bodyId
+--   (b) a single Lua table        — pcall gives ok, r (where r[1]=hit, r[2]=dist...)
+-- We detect which case we're in by checking the type of the second pcall result.
+-- ---------------------------------------------------------------------------
+local function los_raycast(ox,oy,oz, dx,dy,dz, maxDist)
+    if Physics.RaycastFull then
+        local ok, a, b, c, d, e, f, g, h, k =
+            pcall(function()
+                return Physics.RaycastFull(ox,oy,oz, dx,dy,dz, maxDist)
+            end)
+        if ok then
+            local hit, dist, px, py, pz, nx, ny, nz, bodyId
+            if type(a) == "table" then
+                -- Binding returned a single table (case b)
+                hit = a[1]; dist = a[2]
+                px = a[3]; py = a[4]; pz = a[5]
+                nx = a[6]; ny = a[7]; nz = a[8]
+                bodyId = a[9]
+            else
+                -- Binding returned multiple values (case a)
+                hit = a;  dist = b
+                px = c;   py = d;   pz = e
+                nx = f;   ny = g;   nz = h
+                bodyId = k
+            end
+            if hit and dist and dist > 0 then
+                return true, dist, px,py,pz, nx,ny,nz, bodyId
+            end
+        end
+        return false
+    end
+    -- Fallback: plain Raycast — synthesise hitPoint, no normal/bodyId
+    local dist = Physics.Raycast(ox,oy,oz, dx,dy,dz, maxDist)
+    if dist and dist > 0 then
+        return true, dist, ox+dx*dist, oy+dy*dist, oz+dz*dist, 0,1,0, nil
+    end
+    return false
+end
+
+-- Place a single anchor from a RaycastFull result.
+-- Position is offset LOS_NUDGE along the surface normal so it sits flush
+-- against the geometry edge rather than floating in free space before the wall.
+local function make_anchor(ox,oy,oz, dirX,dirY,dirZ, dist, px,py,pz, nx,ny,nz, bodyId)
+    local ax, ay, az
+    nx = nx or 0; ny = ny or 0; nz = nz or 0
+    local nlen = math.sqrt(nx*nx + ny*ny + nz*nz)
+    if nlen > 0.01 then
+        nx, ny, nz = nx/nlen, ny/nlen, nz/nlen
+        ax = px + nx * LOS_NUDGE
+        ay = py + ny * LOS_NUDGE
+        az = pz + nz * LOS_NUDGE
+    else
+        -- No valid normal: nudge back along ray direction
+        ax = ox + dirX * (dist - LOS_NUDGE)
+        ay = oy + dirY * (dist - LOS_NUDGE)
+        az = oz + dirZ * (dist - LOS_NUDGE)
+        nx, ny, nz = -dirX, -dirY, -dirZ
+    end
+    return { ax, ay, az, bodyId = bodyId, nx = nx, ny = ny, nz = nz }
+end
+
+function M:UpdateLOSAnchors(sx, sy, sz, ex, ey, ez)
+    if not Physics then self.losAnchors = {} return end
+
+    -- Cast from the endpoint toward the player, placing an anchor at each
+    -- obstruction.  Repeat from each new anchor until the player is visible.
+    -- Anchors are discovered endpoint→player, then reversed so the list runs
+    -- player→endpoint to match DistributeLinksAlongPath.
+    --
+    -- Each anchor stores:
+    --   bodyId  — which object caused it (object permanence)
+    --   nx/ny/nz — surface normal at hit (slide plane reference)
+    local found = {}
+
+    local fromX, fromY, fromZ = ex, ey, ez
+
+    for _ = 1, LOS_MAX_ANCHORS do
+        local dx, dy, dz = sx - fromX, sy - fromY, sz - fromZ
+        local dist = math.sqrt(dx*dx + dy*dy + dz*dz)
+        if dist < LOS_MIN_DIST then break end
+
+        local ndx, ndy, ndz = dx/dist, dy/dist, dz/dist
+        local hit, hitDist, px, py, pz, nx, ny, nz, bodyId =
+            los_raycast(fromX, fromY, fromZ, ndx, ndy, ndz, dist)
+
+        -- Clear to player — done
+        if not hit or (hitDist and hitDist >= dist - LOS_CLEAR_SLACK) then break end
+
+        local anchor = make_anchor(fromX, fromY, fromZ, ndx, ndy, ndz,
+            hitDist, px, py, pz, nx, ny, nz, bodyId)
+        table.insert(found, anchor)
+
+        -- Step past the surface so next cast doesn't re-hit the same face
+        fromX = anchor[1] + ndx * LOS_NUDGE
+        fromY = anchor[2] + ndy * LOS_NUDGE
+        fromZ = anchor[3] + ndz * LOS_NUDGE
+    end
+
+    -- Reverse: DistributeLinksAlongPath expects player→endpoint order
+    local reversed = {}
+    for i = #found, 1, -1 do
+        table.insert(reversed, found[i])
+    end
+    self.losAnchors = reversed
+end
+
+-- Distribute activeN links evenly along the piecewise path:
+--   startPos → losAnchors[1] → losAnchors[2] → ... → endPos
+-- All positions are set kinematically (prev = pos, so no velocity).
+-- Pool links beyond activeN are parked at startPos.
+function M:DistributeLinksAlongPath(sx, sy, sz, ex, ey, ez, activeN)
+    local path = {{sx, sy, sz}}
+    for _, a in ipairs(self.losAnchors) do table.insert(path, a) end
+    table.insert(path, {ex, ey, ez})
+
+    -- Precompute per-segment lengths and total
+    local segLens = {}
+    local totalLen = 0
+    for i = 2, #path do
+        local dx = path[i][1] - path[i-1][1]
+        local dy = path[i][2] - path[i-1][2]
+        local dz = path[i][3] - path[i-1][3]
+        local l  = math.sqrt(dx*dx + dy*dy + dz*dz)
+        segLens[i - 1] = l
+        totalLen = totalLen + l
+    end
+
+    -- Place each active link
+    for i = 1, activeN do
+        local t           = (activeN > 1) and ((i - 1) / (activeN - 1)) or 0
+        local targetDist  = t * totalLen
+        local cumLen      = 0
+        local placed      = false
+
+        for seg = 1, #segLens do
+            local segEnd = cumLen + segLens[seg]
+            if targetDist <= segEnd + 1e-9 then
+                local localT = (segLens[seg] > 1e-9) and ((targetDist - cumLen) / segLens[seg]) or 0
+                local from = path[seg]; local to = path[seg + 1]
+                local px = from[1] + (to[1] - from[1]) * localT
+                local py = from[2] + (to[2] - from[2]) * localT
+                local pz = from[3] + (to[3] - from[3]) * localT
+                self.positions[i][1] = px; self.positions[i][2] = py; self.positions[i][3] = pz
+                self.prev[i][1]      = px; self.prev[i][2]      = py; self.prev[i][3]      = pz
+                placed = true
+                break
+            end
+            cumLen = segEnd
+        end
+
+        if not placed then
+            self.positions[i][1] = ex; self.positions[i][2] = ey; self.positions[i][3] = ez
+            self.prev[i][1]      = ex; self.prev[i][2]      = ey; self.prev[i][3]      = ez
+        end
+    end
+
+    -- Park pool links at startPos (keeps them hidden at origin of chain)
+    for i = activeN + 1, self.n do
+        self.positions[i][1] = sx; self.positions[i][2] = sy; self.positions[i][3] = sz
+        self.prev[i][1]      = sx; self.prev[i][2]      = sy; self.prev[i][3]      = sz
+    end
+end
+
+-- ---------------------------------------------------------------------------
+
 function M:Update(dt, settings)
     settings = settings or {}
 
@@ -166,7 +351,6 @@ function M:Update(dt, settings)
             if desired > maxAllowed then desired = maxAllowed end
         end
         self.chainLen = desired
-        -- Max distance reached with no raycast hit — release end link to flop freely
         if maxLenSetting and maxLenSetting > 0 and desired >= maxLenSetting and not self._raycastSnapped and not self.endPointLocked then
             self.isExtending = false
             self._flopping = true
@@ -180,6 +364,7 @@ function M:Update(dt, settings)
             self.chainLen = 0
             self.endPointLocked = false
             self._raycastSnapped = false
+            self.losAnchors = {}
         end
     end
 
@@ -194,8 +379,7 @@ function M:Update(dt, settings)
     end
     self.startPos[1], self.startPos[2], self.startPos[3] = sx, sy, sz
 
-    -- Movement constraint: active when hooked (endPointLocked) OR snapped to ground (raycastSnapped).
-    -- Stores result on self.constraintResult for ChainBootstrap to publish.
+    -- Movement constraint
     local constraintActive = (self.endPointLocked or self._raycastSnapped) and not self.isRetracting and not self._flopping
     if constraintActive then
         local slack    = math.max(0.5, tonumber(settings.ChainSlackDistance) or 0.5)
@@ -231,12 +415,10 @@ function M:Update(dt, settings)
                 self.constraintResult = { ratio = 0, exceeded = false, drag = false }
             end
         else
-            -- Ratio: 0 when within chainLength, ramps to 1 across the slack zone
             local ratio = 0
             if playerDist > chainLength then
                 ratio = math.max(0, math.min(1, (playerDist - chainLength) / slack))
             end
-            -- Only flop when chain is physically taut AND player is past hard limit AND untagged
             local shouldFlop = self._isTaut and (playerDist > hardLimit + 1e-4) and (self.hookedTag == nil or self.hookedTag == "")
             if shouldFlop then
                 dbg("[ChainController][CONSTRAINT] TAUT + EXCEEDED -> flopping (untagged)")
@@ -272,18 +454,12 @@ function M:Update(dt, settings)
     local fx,fy,fz = self.lastForward[1] or 0, self.lastForward[2] or 0, self.lastForward[3] or 1
 
     if settings.endOverride then
-        -- Explicit override always wins
         ex,ey,ez = settings.endOverride[1] or 0, settings.endOverride[2] or 0, settings.endOverride[3] or 0
 
     elseif self.endPointLocked and not self.isRetracting then
-        -- Trigger has fired and endpoint is parented to enemy.
-        -- lockedEndPoint is updated every frame by ChainEndpointController
-        -- reading its own parented world position back from the engine.
         ex, ey, ez = self.lockedEndPoint[1], self.lockedEndPoint[2], self.lockedEndPoint[3]
 
     elseif self.isRetracting then
-        -- Retract from lockedEndPoint toward startPos along the actual vector
-        -- between them, proportional to remaining chainLen
         local lx = self.lockedEndPoint[1]
         local ly = self.lockedEndPoint[2]
         local lz = self.lockedEndPoint[3]
@@ -299,31 +475,21 @@ function M:Update(dt, settings)
             ey = sy + dy * t
             ez = sz + dz * t
         else
-            ex = sx
-            ey = sy
-            ez = sz
+            ex = sx; ey = sy; ez = sz
         end
 
     elseif self._raycastSnapped then
-        -- Raycast hit, but trigger hasn't fired yet.
-        -- Hold endpoint exactly at the snapped world position — do not
-        -- recompute from player position so it doesn't drift with the player.
         ex, ey, ez = self.lockedEndPoint[1], self.lockedEndPoint[2], self.lockedEndPoint[3]
 
     elseif self.isExtending then
-        -- Actively extending: check for raycast hit
         local theoreticalDistance = self.chainLen or 0
         local raycastResult = self:PerformRaycast(sx, sy, sz, theoreticalDistance * 1.1)
 
         if raycastResult and raycastResult.hit then
-            -- Raycast hit: stop extension at hit distance, snap endpoint there.
-            -- Do NOT set endPointLocked — only OnTriggerEnter does that.
-            -- _raycastSnapped holds the endpoint in place until the trigger fires.
             self.chainLen = raycastResult.distance
             self.isExtending = false
             self._raycastSnapped = true
 
-            -- Recalculate activeN based on actual hit distance
             local linkMaxForSnap = tonumber(settings.LinkMaxDistance) or tonumber(self.params.LinkMaxDistance) or 0
             if linkMaxForSnap > 0 then
                 local needed = math.ceil(raycastResult.distance / linkMaxForSnap) + 1
@@ -334,14 +500,8 @@ function M:Update(dt, settings)
                     raycastResult.distance,
                     raycastResult.hitPoint[1], raycastResult.hitPoint[2], raycastResult.hitPoint[3],
                     prevActiveN, self.activeN))
-            else
-                dbg(string.format("[ChainController] Raycast HIT at distance %.3f, snapped to (%.3f,%.3f,%.3f)",
-                    raycastResult.distance,
-                    raycastResult.hitPoint[1], raycastResult.hitPoint[2], raycastResult.hitPoint[3]))
             end
 
-            -- Store snap position in lockedEndPoint so _raycastSnapped branch
-            -- and retraction both have a stable world position to work from
             self.lockedEndPoint[1] = raycastResult.hitPoint[1]
             self.lockedEndPoint[2] = raycastResult.hitPoint[2]
             self.lockedEndPoint[3] = raycastResult.hitPoint[3]
@@ -354,14 +514,11 @@ function M:Update(dt, settings)
         end
 
     elseif self._flopping then
-        -- End link is free — physics owns its position. Read it back so endPos
-        -- and the endpoint object stay in sync with where the last link actually is.
         ex = self.positions[aN][1]
         ey = self.positions[aN][2]
         ez = self.positions[aN][3]
 
     else
-        -- Idle / fully retracted
         local theoreticalDistance = self.chainLen or 0
         ex = sx + (fx * theoreticalDistance)
         ey = sy + (fy * theoreticalDistance)
@@ -370,11 +527,44 @@ function M:Update(dt, settings)
 
     self.endPos[1], self.endPos[2], self.endPos[3] = ex, ey, ez
 
+    -- =========================================================================
+    -- LOS ANCHOR MODE
+    -- When UseLOSAnchors is true and the chain has length, bypass Verlet entirely.
+    -- Positions are computed geometrically: straight lines between startPos,
+    -- any LOS anchors, and endPos.  Anchors are created/destroyed automatically
+    -- by raycasting each segment every frame.
+    -- =========================================================================
+    if settings.UseLOSAnchors and (self.chainLen or 0) > 1e-4 and not self._flopping then
+        -- Update the anchor list (cleanup stale + add new where LOS breaks)
+        self:UpdateLOSAnchors(sx, sy, sz, ex, ey, ez)
+
+        -- Distribute all active links along the piecewise straight path
+        self:DistributeLinksAlongPath(sx, sy, sz, ex, ey, ez, aN)
+
+        -- All links kinematic — no physics for this mode
+        for i = 1, self.n do self.invMass[i] = 0 end
+
+        -- Still compute isTaut (constraint system reads it)
+        do
+            local arcLen = 0
+            for i = 2, aN do
+                local dx = self.positions[i][1] - self.positions[i-1][1]
+                local dy = self.positions[i][2] - self.positions[i-1][2]
+                local dz = self.positions[i][3] - self.positions[i-1][3]
+                arcLen = arcLen + vec_len(dx, dy, dz)
+            end
+            self._isTaut = (arcLen >= (self.chainLen or 0) * 0.98)
+            self._arcLen = arcLen
+        end
+
+        return self.positions, { sx, sy, sz }, { ex, ey, ez }
+    end
+    -- =========================================================================
+
     -- 4) Physical distance and segment length
     local curEndDist = vec_len(ex - sx, ey - sy, ez - sz)
     local totalLen
     if self._flopping then
-        -- Physics owns the end — measure actual distance so constraints don't fight gravity
         totalLen = math.max(curEndDist, 1e-6)
     else
         totalLen = (self.chainLen and self.chainLen > 1e-8) and self.chainLen or math.max(curEndDist, 1e-6)
@@ -383,8 +573,6 @@ function M:Update(dt, settings)
 
     local segmentLen
     if self._flopping then
-        -- Freeze segment length at the natural rest length from when extension ended.
-        -- Using curEndDist here would compress all links into a spring — wrong.
         local restLen = (maxLenSetting and maxLenSetting > 0) and maxLenSetting or math.max(curEndDist, 1e-6)
         segmentLen = (aN > 1) and (restLen / (aN - 1)) or 0
         if (not isElastic) and linkMax and linkMax > 0 and segmentLen > linkMax then
@@ -405,7 +593,6 @@ function M:Update(dt, settings)
             self.invMass[i] = 0
         else
             local requiredDist = (i - 1) * segmentLen
-            -- When flopping, skip the cull — all active links are owned by physics
             if not self._flopping and (self.chainLen + 1e-9) < requiredDist then
                 self.positions[i][1], self.positions[i][2], self.positions[i][3] = sx, sy, sz
                 self.prev[i][1], self.prev[i][2], self.prev[i][3] = sx, sy, sz
@@ -420,24 +607,21 @@ function M:Update(dt, settings)
         end
     end
 
-    -- Pin first link to start (always kinematic)
     self.invMass[1] = 0
 
-    -- Pin last active link to endpoint when extending, snapped, or locked — NOT when flopping
     if (self.isExtending or self._raycastSnapped or self.endPointLocked) and not self._flopping then
         self.positions[aN][1], self.positions[aN][2], self.positions[aN][3] = ex, ey, ez
         self.prev[aN][1], self.prev[aN][2], self.prev[aN][3] = ex, ey, ez
         self.invMass[aN] = 0
     end
 
-    -- 6) Re-apply anchors
     for idx, _ in pairs(self.anchors) do
         if idx >= 1 and idx <= aN then
             self.invMass[idx] = 0
         end
     end
 
-    -- 7) Verlet physics step
+    -- 6) Verlet physics step
     local vparams = {
         n = aN,
         VerletGravity = settings.VerletGravity or self.params.VerletGravity,
@@ -469,7 +653,7 @@ function M:Update(dt, settings)
         VerletAdapter.ApplyWallClamp(self.VerletState, vparams)
     end
 
-    -- 8) Post-physics: enforce locked/snapped endpoint and undeployed links
+    -- 7) Post-physics: enforce locked/snapped endpoint and undeployed links
     if (self.endPointLocked or self._raycastSnapped) and not self._flopping then
         self.positions[aN][1], self.positions[aN][2], self.positions[aN][3] = ex, ey, ez
         self.prev[aN][1], self.prev[aN][2], self.prev[aN][3] = ex, ey, ez
@@ -480,15 +664,13 @@ function M:Update(dt, settings)
         self.invMass[aN] = 0
     end
 
-    -- Preserve anchors post-physics
     for idx, _ in pairs(self.anchors) do
         if idx >= 1 and idx <= aN then
             self.invMass[idx] = 0
         end
     end
 
-    -- Compute isTaut: measure arc length of active links after physics
-    -- Chain is taut when links are fully stretched (arc >= 98% of chainLen)
+    -- Compute isTaut
     do
         local arcLen = 0
         for i = 2, aN do
@@ -516,6 +698,7 @@ function M:GetPublicState()
         RaycastSnapped = self._raycastSnapped,
         Flopping = self._flopping,
         IsTaut = self._isTaut,
+        LOSAnchorCount = #self.losAnchors,
         LockedEndPoint = (self.endPointLocked or self._raycastSnapped) and
                          {self.lockedEndPoint[1], self.lockedEndPoint[2], self.lockedEndPoint[3]} or nil
     }
