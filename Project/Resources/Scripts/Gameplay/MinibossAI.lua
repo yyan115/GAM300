@@ -95,9 +95,8 @@ end
 -- Phase definition (HP-based)
 -------------------------------------------------
 local PHASE_THRESHOLDS = {
-    { id = 4, hpPct = 0.11 },
-    { id = 3, hpPct = 0.35 },
-    { id = 2, hpPct = 0.71 },
+    { id = 3, hpPct = 0.33 },
+    { id = 2, hpPct = 0.66 },
 }
 
 local function _phaseThresholdPct(phaseId)
@@ -139,6 +138,7 @@ return Component {
     fields = {
         MaxHealth = 30,
         RecoverDuration = 1.0,
+        KnockbackDuration = 0.12,
 
         -- Damage / Hook / Death
         HitIFrame      = 0.2,
@@ -158,6 +158,44 @@ return Component {
 
         IntroDuration = 5.0,
         AggroRange    = 15.0,  -- distance to trigger intro
+
+        -- Phase gates
+        Phase2HpPct = 0.66,
+        Phase3HpPct = 0.33,
+
+        -- Phase 1 shout checkpoints
+        P1_Shout1Pct = 0.90,
+        P1_Shout2Pct = 0.75,
+
+        -- Boss melee tuning (phase 1)
+        BossMeleeRange = 2.2,
+        BossMeleeWindup = 0.40,
+        BossMeleeCooldown = 2.95,
+
+        -- Ranged charge (phase 1 Move1)
+        P1_RangedCharge = 0.75,
+
+        -- Shout AOE
+        ShoutRadius = 4.0,
+        ShoutDamage = 1,
+        ShoutKnockback = 240.0,
+        ShoutWindup = 0.95,
+        ShoutPostDelay = 2.15,
+        ShoutCooldown = 999, -- checkpoint only (or set if you want it to recur)
+
+        -- Air movement
+        AirHeight = 4.0,
+        AirMoveSpeed = 9.0,
+        AirArriveRadius = 0.25,
+        AirWaitAfterAttack = 0.45,
+
+        -- Arena 3x3 grid waypoint positions (world-space XZ)
+        -- You can tune these in editor per arena
+        GridStep = 4.0,
+        GridCenterX = 0.0,
+        GridCenterZ = 0.0,
+
+        HurtReactDuration = 0.35,   -- how long we "reserve" time for hurt anim to play
 
         -- SFX clip arrays (populate in editor with audio GUIDs)
         enemyHurtSFX = {},          -- EnemyHurt
@@ -186,6 +224,8 @@ return Component {
         self.currentMoveDef = nil
         self._recoverTimer = 0
         self._hitLockTimer = 0
+
+        self._moveQueue = {}
 
         -- active move runtime
         self._move = nil
@@ -230,6 +270,10 @@ return Component {
 
         -- player cache
         self._playerTr = nil
+
+        self._p1DidShout90 = false
+        self._p1DidShout75 = false
+        self._meleeCdT = 0
     end,
 
     Start = function(self)
@@ -260,7 +304,7 @@ return Component {
 
         -- Set RB kinematic-ish like EnemyAI
         if self._rb then
-            pcall(function() self._rb.motionID = 1 end)
+            pcall(function() self._rb.motionID = 0 end)
             pcall(function() self._rb.linearVel = { x=0, y=0, z=0 } end)
             pcall(function() self._rb.impulseApplied = { x=0, y=0, z=0 } end)
         end
@@ -296,36 +340,15 @@ return Component {
                 self:ApplyHit(dmg, hitType)
             end)
 
-            self._comboDamageSub = _G.event_bus.subscribe("deal_damage", function(payload)
+            self._comboDamageSub = _G.event_bus.subscribe("deal_damage_to_entity", function(payload)
                 if not payload then return end
-                
-                -- Check if this enemy is the target
-                if payload.targetEntityId ~= self.entityId then
+
+                if payload.entityId ~= self.entityId then
                     return
                 end
-                
-                -- Extract attack data from ComboManager
-                local attackData = payload.attackData or {}
-                local damage = attackData.damage or 10
-                local knockback = attackData.knockback or 0
-                local attackState = attackData.state or "unknown"
-                local direction = payload.direction or { x = 0, y = 0, z = 1 }
-                
-                print(string.format("[EnemyAI] Taking damage: %d from attack '%s' (knockback: %.1f)", 
-                                damage, attackState, knockback))
-                
-                -- Apply damage through existing system
+
+                local damage = payload.damage or 10
                 self:ApplyHit(damage, "COMBO")
-                
-                -- Apply knockback using CC system, not RB impulse
-                if knockback and knockback > 0 then
-                    -- direction should be from attacker -> enemy (or similar)
-                    -- if it's opposite, just negate it
-                    local dir = direction or { x = 0, z = 1 }
-                    self._kbVX = (dir.x or 0) * knockback
-                    self._kbVZ = (dir.z or 0) * knockback
-                    self._kbT  = self.KnockbackDuration
-                end
             end)
         end
 
@@ -367,33 +390,45 @@ return Component {
         local _, y, _ = self:GetPosition()
         self._prevY = y
 
-        self._phase = self:GetPhase()
+        -- Use NEW HP gates (Phase2HpPct / Phase3HpPct)
+        self._phase = self:_ComputePhase()
+        self._pendingPhase = nil
+        self._transforming = false
+        self._immuneDamage = false
 
         self.fsm:Change("Recover", self.states.Recover)
         self._recoverTimer = 999999 -- idle until aggro
 
-        print("[Miniboss] KnifePool size =", #KnifePool.knives)
+        print("[Miniboss] KnifePool size =", (KnifePool.knives and #KnifePool.knives) or 0)
         print("[Miniboss KnifePool dbg] KnifePool table:", KnifePool, "activeCount:", KnifePool.activeCount, "poolSize:", KnifePool.poolSize)
     end,
 
     Update = function(self, dt)
         local dtSec = toDtSec(dt)
+        self._meleeCdT = math.max(0, (self._meleeCdT or 0) - dtSec)
 
-        -- 1. ALWAYS ENSURE COMPONENTS & APPLY GRAVITY
-        -- This ensures the boss falls to the ground immediately on game start.
+        -- 1) Ensure controller + gravity always
         self:EnsureController()
         self:ApplyGravity(dtSec)
 
         -- Freeze movement during cinematic
         if self._frozenBycinematic then return end
 
-        -- 2. TICK SYSTEM TIMERS (Always run)
+        -- 2) Tick timers always
         self._hitLockTimer = math.max(0, (self._hitLockTimer or 0) - dtSec)
         for k, v in pairs(self._moveCooldowns) do
             self._moveCooldowns[k] = math.max(0, v - dtSec)
         end
 
-        -- 3. ACTION LOCK SYSTEM
+        -- 3) Phase change detection (NEW system only)
+        -- Only start a phase transition if we're not already transforming.
+        -- Use computed phase, not GetPhase/PHASE_THRESHOLDS.
+        local computed = self:_ComputePhase()
+        if (computed ~= (self._phase or 1)) and (not self._transforming) and (not self.dead) then
+            self:StartBossPhaseTransition(computed)
+        end
+
+        -- 4) Action lock system (handles finishing transitions + hook)
         if self._lockAction and (self._lockReason ~= "DEAD") then
             self._lockTimer = math.max(0, (self._lockTimer or 0) - dtSec)
 
@@ -402,7 +437,7 @@ return Component {
                 self:UnlockActions()
 
                 if reason == "PHASE_TRANSFORM" then
-                    self:FinishPhaseTransform()
+                    self:FinishBossPhaseTransition()
                     self.fsm:Change("Recover", self.states.Recover)
                 elseif reason == "HOOKED" then
                     self._hooked = false
@@ -412,13 +447,12 @@ return Component {
             end
         end
 
-        -- 4. PHYSICS SYNC (Crucial for preventing teleports)
-        -- We sync the Transform to the CharacterController every frame.
+        -- 5) Physics sync (Transform <- CC) + preserve facing unless special move
         if self._controller then
             local pos = CharacterController.GetPosition(self._controller)
             if pos then
                 self:SetPosition(pos.x, pos.y, pos.z)
-                -- Only apply facing rotation if not in a special move like DeathLotus
+
                 if (not self:IsInMove("DeathLotus")) and self._lastFacingRot then
                     local r = self._lastFacingRot
                     self:SetRotation(r.w, r.x, r.y, r.z)
@@ -426,7 +460,7 @@ return Component {
             end
         end
 
-        -- 5. BOSS DEATH: fade to black then return to main menu
+        -- 6) Death handling
         if self.dead then
             self._deathFadeDelay = (self._deathFadeDelay or 4.0) - dtSec
             if self._deathFadeDelay <= 0 then
@@ -449,48 +483,66 @@ return Component {
             return
         end
 
-        -- EARLY EXIT FOR NON-INTRO LOCKS
-        -- We allow the "INTRO" reason to pass through so the BattlecryState can update.
+        -- 7) If locked, we still want queued reactions + current move to run.
+        -- Only block phase decision-making below.
         local locked = self:IsActionLocked()
         local lockReason = self._lockReason
-        if locked and lockReason ~= "INTRO" then
-            return
-        end
 
-        -- 6. PHASE TRANSITION CHECK
-        self:CheckPhaseTransition()
-        if self:IsActionLocked() and self._lockReason == "PHASE_TRANSFORM" then
-            return
-        end
-
-        -- 7. AGGRO TRIGGER LOGIC
+        -- 8) Aggro trigger / intro
         if not self._introDone then
-            self:FacePlayer() -- Keep facing while waiting
+            self:FacePlayer()
 
             local px, py, pz = self:GetPlayerPosForAI()
             if px then
                 local ex, ez = self:GetEnemyPosXZ()
                 local dx, dz = px - ex, pz - ez
                 local r = self.AggroRange or 15.0
-                
+
                 if (dx*dx + dz*dz) <= (r*r) then
-                    -- IMPORTANT: Set these BEFORE changing state to prevent re-triggering
-                    self._introDone = true 
+                    self._introDone = true
                     self._inIntro = true
-                    
                     print(string.format("[Miniboss][Aggro] Player in range. Starting Battlecry."))
                     self.fsm:Change("Battlecry", self.states.Battlecry)
                     return
                 end
             end
-            return -- Stay in Idle/Recover until player enters range
+            return
         end
 
-        -- 8. NORMAL COMBAT BEHAVIOR
-        self.fsm:Update(dtSec)
-        self:TickMove(dtSec)
+        -- During intro/Battlecry, let FSM run
+        if self._inIntro then
+            self.fsm:Update(dtSec)
+        end
 
-        -- 9. EVENT BROADCAST
+        -- ALWAYS tick move runtime + queued reactions (locked or not)
+        self:TickMove(dtSec)
+        self:TryStartQueuedMove()
+
+        -- If locked (and not INTRO), block ONLY phase decision-making
+        if locked and lockReason ~= "INTRO" then
+            -- still broadcast position etc if you want
+            if _G.event_bus and _G.event_bus.publish then
+                local x, y, z = self:GetPosition()
+                _G.event_bus.publish("enemy_position", {
+                    entityId = self.entityId,
+                    x = x, y = y, z = z
+                })
+            end
+            return
+        end
+
+        -- 9) Phase dispatch (only when not locked)
+        self._phase = self._phase or self:_ComputePhase()
+
+        if self._phase == 1 then
+            self:_UpdatePhase1(dtSec)
+        elseif self._phase == 2 then
+            self:_UpdatePhase2(dtSec)
+        elseif self._phase == 3 then
+            self:_UpdatePhase3(dtSec)
+        end
+
+        -- 10) Broadcast position
         if _G.event_bus and _G.event_bus.publish then
             local x, y, z = self:GetPosition()
             _G.event_bus.publish("enemy_position", {
@@ -506,6 +558,7 @@ return Component {
     ApplyGravity = function(self, dtSec)
         if not self._controller then return end
         if dtSec <= 0 then return end
+        if self._inAir then return end
 
         -- integrate velocity
         local g = self.Gravity or -9.81
@@ -600,6 +653,11 @@ return Component {
 
     GetPlayerPosForAI = function(self)
         local tr = self._playerTr
+        if not tr then
+            tr = Engine.FindTransformByName(self.PlayerName)
+            self._playerTr = tr
+        end
+        if not tr then return nil end
         local pp = Engine.GetTransformPosition(tr)
         local px, py, pz = unpackPos(pp)
         if not px then
@@ -613,87 +671,138 @@ return Component {
         return px, py, pz
     end,
 
+    _GetGridXZ = function(self, numpad)
+        local step = self.GridStep or 4.0
+        local cx = self.GridCenterX or 0.0
+        local cz = self.GridCenterZ or 0.0
+
+        -- numpad layout (player POV):
+        -- 7 8 9   (z+)
+        -- 4 5 6
+        -- 1 2 3   (z-)
+
+        local map = {
+            [1] = {-1, -1}, [2] = {0, -1}, [3] = {1, -1},
+            [4] = {-1,  0}, [5] = {0,  0}, [6] = {1,  0},
+            [7] = {-1,  1}, [8] = {0,  1}, [9] = {1,  1},
+        }
+        local v = map[numpad] or map[5]
+        local ix, iz = v[1], v[2]
+        return cx + ix * step, cz + iz * step
+    end,
+
+    _GetAirWaypoint = function(self, numpad)
+        local x, z = self:_GetGridXZ(numpad)
+        local y = (Nav and Nav.GetGroundY and Nav.GetGroundY(self.entityId)) or select(2, self:GetPosition()) or 0
+        return x, y + (self.AirHeight or 4.0), z
+    end,
+
+    _PickRandomAirNumpad = function(self, avoid)
+        local opts = {1,3,5,7,9}
+        if avoid then
+            local filtered = {}
+            for i=1,#opts do if opts[i] ~= avoid then filtered[#filtered+1] = opts[i] end end
+            opts = filtered
+        end
+        return opts[math.random(1, #opts)]
+    end,
+
+    _SetInAir = function(self, inAir)
+        self._inAir = inAir and true or false
+
+        -- air: don't fall
+        if self._rb then
+            pcall(function() self._rb.gravityFactor = inAir and 0 or 1 end)
+        end
+        if inAir then
+            self._vy = 0
+        end
+    end,
+
+    _MoveToXYZ_Air = function(self, tx, ty, tz, dtSec)
+        local x,y,z = self:GetPosition()
+        if not x then return true end
+
+        local dx, dy, dz = tx-x, ty-y, tz-z
+        local d2 = dx*dx + dy*dy + dz*dz
+        local r = self.AirArriveRadius or 0.25
+        if d2 <= r*r then
+            self:SetPosition(tx, ty, tz)
+            if self._controller and CharacterController.SetPosition then
+                pcall(function() CharacterController.SetPosition(self._controller, tx, ty, tz) end)
+            end
+            return true
+        end
+
+        local d = math.sqrt(d2)
+        local spd = self.AirMoveSpeed or 9.0
+        local step = math.min(spd * dtSec, d)
+        local nx = x + (dx/d) * step
+        local ny = y + (dy/d) * step
+        local nz = z + (dz/d) * step
+        self:SetPosition(nx, ny, nz)
+
+        if self._controller and CharacterController.SetPosition then
+            pcall(function() CharacterController.SetPosition(self._controller, nx, ny, nz) end)
+        end
+
+        -- face XZ direction
+        if d > 1e-6 then
+            self:FacePlayer() -- or face movement dir if you want
+        end
+
+        return false
+    end,
+
     -------------------------------------------------
     -- Phase logic
     -------------------------------------------------
-    GetPhase = function(self)
-        local hpPct = (self.health or 0) / (self.MaxHealth or 1)
-
-        for i = 1, #PHASE_THRESHOLDS do
-            if hpPct <= PHASE_THRESHOLDS[i].hpPct then
-                return PHASE_THRESHOLDS[i].id
-            end
-        end
-
-        return 1
-    end,
-
     GetCurrentPhase = function(self)
         return self._phase or self:GetPhase()
     end,
 
-    CheckPhaseTransition = function(self)
-        if self.dead then return end
-        if self._transforming then return end
-
-        local computedPhase = self:GetPhase()
-        local last = self._lastPhaseProcessed or 1
-
-        -- Only react to the *next* unprocessed phase
-        if computedPhase > last then
-            self:StartPhaseTransform(last + 1)
-        end
+    _GetHpPct = function(self)
+        return (self.health or 0) / math.max(1, (self.MaxHealth or 1))
     end,
 
-    StartPhaseTransform = function(self, newPhase)
-        if self.dead then return end
-        if self._transforming then return end
-        if newPhase ~= (self._lastPhaseProcessed + 1) then return end
+    _ComputePhase = function(self)
+        local pct = self:_GetHpPct()
+        if pct <= (self.Phase3HpPct or 0.33) then return 3 end
+        if pct <= (self.Phase2HpPct or 0.66) then return 2 end
+        return 1
+    end,
 
-        self._pendingPhase = newPhase
+    StartBossPhaseTransition = function(self, newPhase)
         self._transforming = true
+        self._pendingPhase = newPhase
 
-        local dur = self.PhaseTransformDuration or 1.2
-        self:LockActions("PHASE_TRANSFORM", dur)     
-        print(string.format(
-            "[Miniboss][Phase] START %d -> %d (%.2fs)",
-            self._lastPhaseProcessed,
-            newPhase,
-            dur
-        ))
+        -- Shout, immune, lock
+        self._immuneDamage = true
+        self:LockActions("PHASE_TRANSFORM", self.PhaseTransformDuration or 2.2)
 
-        self._animator:SetTrigger("Taunt")
-        -- Play taunt SFX during phase transition
+        if self._animator then self._animator:SetTrigger("Taunt") end
         playRandomSFX(self._audio, self.enemyTauntSFX)
     end,
 
-    FinishPhaseTransform = function(self)
-        if not self._transforming then return end
-
-        local newPhase = self._pendingPhase
-        if newPhase then
-            self._phase = newPhase
-            self._lastPhaseProcessed = newPhase
-
-            print(string.format(
-                "[Miniboss][Phase] DONE -> phase=%d (hp=%.1f/%.1f)",
-                newPhase,
-                self.health or 0,
-                self.MaxHealth or 1
-            ))
-        end
-
+    FinishBossPhaseTransition = function(self)
+        local newPhase = self._pendingPhase or self:_ComputePhase()
+        self._phase = newPhase
         self._pendingPhase = nil
         self._transforming = false
+        self._immuneDamage = false
 
-        self._recoverTimer = math.max(self.RecoverDuration or 0.6, 0.35)
+        if newPhase == 2 then
+            self:EnterPhase2_Air()
+        elseif newPhase == 3 then
+            self:EnterPhase3_Air()
+        end
     end,
 
     -------------------------------------------------
     -- Move selection
     -------------------------------------------------
     ChooseMove = function(self)
-        local phase = self:GetPhase()
+        local phase = self._phase
         local pool = {}
         local total = 0
 
@@ -761,7 +870,7 @@ return Component {
         return soonest
     end,
 
-        IsActionLocked = function(self)
+    IsActionLocked = function(self)
         return self._lockAction == true
     end,
 
@@ -797,9 +906,25 @@ return Component {
 
     ApplyHit = function(self, dmg, hitType)
         if self.dead then return end
-        if self._inIntro then return end
-        if (self._hitLockTimer or 0) > 0 then return end
-        if self._transforming then return end
+        
+        if self._inIntro then
+            print("[MinibossAI] ApplyHit blocked: _inIntro")
+            return
+        end
+        if self._transforming then
+            print("[MinibossAI] ApplyHit blocked: _transforming")
+            return
+        end
+        if self._immuneDamage then
+            print("[MinibossAI] ApplyHit blocked: _immuneDamage")
+            return
+        end
+        if (self._hitLockTimer or 0) > 0 then
+            print("[MinibossAI] ApplyHit blocked: iFrame", self._hitLockTimer)
+            return
+        end
+
+        print("[MinibossAI] ApplyHit called", dmg, hitType)
 
         self._hitLockTimer = self.HitIFrame or 0.2
         self.health = math.max(0, (self.health or 0) - (dmg or 1))
@@ -820,13 +945,43 @@ return Component {
             return
         end
 
+        -- 1) Always queue a short “hurt reaction window”
+        self:EnqueueMoveFront("HurtReact", { duration = self.HurtReactDuration or 0.35 })
+
+        -- 2) Queue shout ONLY if we crossed a Phase 1 checkpoint
+        if (self._phase or self:_ComputePhase()) == 1 then
+            local hpPct = self:_GetHpPct()
+
+            local function queueShoutOnce()
+                self:EnqueueMove("ShoutAOE", {
+                    windup    = self.ShoutWindup or 0.55,
+                    postDelay = self.ShoutPostDelay or 0.25,
+                    radius    = self.ShoutRadius or 4.0,
+                    dmg       = self.ShoutDamage or 1,
+                    kb        = self.ShoutKnockback or 240.0,
+                })
+                print("[MinibossAI] Queued ShoutAOE")
+            end
+
+            if (not self._p1DidShout90) and hpPct <= (self.P1_Shout1Pct or 0.90) then
+                self._p1DidShout90 = true
+                queueShoutOnce()
+            elseif (not self._p1DidShout75) and hpPct <= (self.P1_Shout2Pct or 0.75) then
+                self._p1DidShout75 = true
+                queueShoutOnce()
+            end
+        end
+
         -- Play hurt SFX
         playRandomSFX(self._audio, self.enemyHurtSFX)
 
-        -- if a hit causes a phase threshold to be crossed, transform immediately
-        self:CheckPhaseTransition()
+        -- If we crossed a phase threshold, start NEW transition immediately
+        local computed = self:_ComputePhase()
+        if (computed ~= (self._phase or 1)) and (not self._transforming) and (not self.dead) then
+            self:StartBossPhaseTransition(computed)
+        end
 
-        -- IMPORTANT: if we just started transforming, don't apply HIT_STUN (it would overwrite the lock)
+        -- If transforming now, don't apply HIT_STUN (avoid overwriting lock intent)
         if self._transforming or (self._lockReason == "PHASE_TRANSFORM") then
             return
         end
@@ -842,6 +997,16 @@ return Component {
     ApplyHook = function(self, duration)
         if self.dead then return end
         if self._inIntro then return end
+        if self._immuneChain then return end
+
+        -- phase 2: hooking forces boss down
+        if self._phase == 2 and self._inAir then
+            self._hookedDownRequested = true
+        end
+
+        if self._phase == 3 and not self._inAir then
+            self._p3WasHooked = true
+        end
 
         self._hooked = true
 
@@ -1237,6 +1402,34 @@ return Component {
         return true
     end,
 
+    _DoShoutAOE = function(self)
+        if self._animator then self._animator:SetTrigger("Taunt") end
+        playRandomSFX(self._audio, self.enemyTauntSFX)
+
+        if _G.event_bus and _G.event_bus.publish then
+            local x,y,z = self:GetPosition()
+            print("[MinibossAI] Casting boss_shout_aoe")
+            _G.event_bus.publish("boss_shout_aoe", {
+                entityId = self.entityId,
+                x=x,y=y,z=z,
+                radius = self.ShoutRadius or 4.0,
+                dmg = self.ShoutDamage or 1,
+                kb = self.ShoutKnockback or 240.0,
+            })
+        end
+    end,
+
+    _DoMeleeAttack = function(self)
+        -- longer windup + further range
+        if self._animator then self._animator:SetTrigger("Melee") end
+        self:_BeginMove("BossMelee", {
+            windup = self.BossMeleeWindup or 0.85,
+            range  = self.BossMeleeRange or 2.2,
+            dmg    = 1,
+            postDelay = 0.4
+        })
+    end,
+
     -------------------------------------------------
     -- Move runtime
     -------------------------------------------------
@@ -1259,6 +1452,101 @@ return Component {
         if self._moveFinished or not self._move then return end
         local m = self._move
         m.t = (m.t or 0) + dtSec
+
+        -- =========================
+        -- Queued reaction: Hurt
+        -- =========================
+        if m.kind == "HurtReact" then
+            if m.step == 0 then
+                m.step = 1
+                m.endAt = (m.duration or 0.35)
+            end
+            if m.t >= (m.endAt or 0.35) then
+                self:_EndMove()
+            end
+            return
+        end
+
+        -- =========================
+        -- Queued reaction: Shout AOE (delayed hit)
+        -- =========================
+        if m.kind == "ShoutAOE" then
+            if m.step == 0 then
+                m.step = 1
+                m.fireAt = m.windup or 0.55
+
+                -- start shout anim now
+                if self._animator then self._animator:SetTrigger("Taunt") end
+                playRandomSFX(self._audio, self.enemyTauntSFX)
+            end
+
+            if not m.didFire and m.t >= (m.fireAt or 0) then
+                m.didFire = true
+                if _G.event_bus and _G.event_bus.publish then
+                    local x,y,z = self:GetPosition()
+                    print("[MinibossAI] ShoutAOE HIT (queued + delayed)")
+                    _G.event_bus.publish("boss_shout_aoe", {
+                        entityId = self.entityId,
+                        x=x,y=y,z=z,
+                        radius = m.radius or (self.ShoutRadius or 5.5),
+                        dmg    = m.dmg or (self.ShoutDamage or 1),
+                        kb     = m.kb or (self.ShoutKnockback or 18.0),
+                    })
+                end
+            end
+
+            if m.didFire and m.t >= ((m.fireAt or 0) + (m.postDelay or 0.25)) then
+                self:_EndMove()
+            end
+            return
+        end
+
+        if m.kind == "BossMelee" then
+            if m.step == 0 then
+                self:FacePlayer()
+                m.step = 1
+                m.hitAt = (m.windup or 0.85)
+            end
+
+            if not m.didHit and m.t >= (m.hitAt or 0) then
+                m.didHit = true
+
+                if _G.event_bus and _G.event_bus.publish then
+                    local ex, ey, ez = self:GetPosition()
+                    _G.event_bus.publish("miniboss_slash", {
+                        entityId = self.entityId,
+                        x = ex, y = ey, z = ez,
+                        radius = m.slashRadius or 1.4,
+                        dmg = m.dmg or 1,
+
+                        kbStrength = m.kbStrength or 8.0,
+                        kbUp = 0.0,
+                    })
+                end
+                playRandomSFX(self._audio, self.enemyMeleeAttackSFX)
+            end
+
+            if m.t >= (m.hitAt + (m.postDelay or 0.4)) then
+                self:_EndMove()
+            end
+            return
+        end
+
+        if m.kind == "P1RangedCharged" then
+            if m.step == 0 then
+                self:FacePlayer()
+                if self._animator then self._animator:SetTrigger("Ranged") end
+                m.step = 1
+                m.fireAt = (m.charge or 0.75)
+            end
+            if not m.didFire and m.t >= (m.fireAt or 0.75) then
+                m.didFire = true
+                self:SpawnKnifeVolley3(m.spread or 0.6)
+                m.doneAt = m.t + (m.postDelay or 0.35)
+            end
+            if m.doneAt and m.t >= m.doneAt then self:_EndMove() end
+            return
+        end
 
         -------------------------------------------------
         -- Move1: Basic Attack (single volley)
@@ -1316,7 +1604,7 @@ return Component {
             if m.step == 0 then
                 self:FacePlayer()
                 print("[MinibossAI] SPAWNING AntiDodge")
-                self:SpawnKnifeFan8_NoCenter(m.spread1 or 0.9, m.spread2 or 1.8, m.spread3 or 2.7, m.spread2 or 3.6)
+                self:SpawnKnifeFan8_NoCenter(m.spread1 or 0.9, m.spread2 or 1.8, m.spread3 or 2.7, m.spread4 or 3.6)
                 m.step = 1
                 m.doneAt = m.t + (m.postDelay or 0.45)
             end
@@ -1454,6 +1742,294 @@ return Component {
 
             if m.t >= dur then
                 self:_EndMove()
+            end
+            return
+        end
+    end,
+
+    EnqueueMove = function(self, kind, data)
+        self._moveQueue = self._moveQueue or {}
+        self._moveQueue[#self._moveQueue + 1] = { kind = kind, data = data or {} }
+    end,
+
+    EnqueueMoveFront = function(self, kind, data)
+        self._moveQueue = self._moveQueue or {}
+        table.insert(self._moveQueue, 1, { kind = kind, data = data or {} })
+    end,
+
+    TryStartQueuedMove = function(self)
+        if not self:IsCurrentMoveFinished() then return false end
+
+        -- Allow queued reactions during HIT_STUN (but still block for HOOKED/PHASE_TRANSFORM/DEAD/etc)
+        if self:IsActionLocked() and (self._lockReason ~= "HIT_STUN") then
+            return false
+        end
+
+        if not self._moveQueue or #self._moveQueue == 0 then return false end
+
+        local item = table.remove(self._moveQueue, 1)
+        self:_BeginMove(item.kind, item.data)
+        return true
+    end,
+
+    _UpdatePhase1 = function(self, dtSec)
+        -- If any queued reaction exists, run it first
+        if self:TryStartQueuedMove() then return end
+
+        if not self:IsCurrentMoveFinished() then return end
+        if self:IsActionLocked() then return end
+
+        local px,py,pz = self:GetPlayerPosForAI()
+        if not px then return end
+        local ex,ez = self:GetEnemyPosXZ()
+        local dx,dz = px-ex, pz-ez
+        local d2 = dx*dx + dz*dz
+
+        local meleeR = self.BossMeleeRange or 2.2
+        if d2 <= meleeR*meleeR then
+            if (self._meleeCdT or 0) <= 0 then
+                self._meleeCdT = self.BossMeleeCooldown or 2.5
+                self:_DoMeleeAttack()
+            end
+            return
+        end
+
+        -- ranged w/ charge
+        self:_BeginMove("P1RangedCharged", {
+            charge = self.P1_RangedCharge or 0.75,
+            spread = 0.6,
+            postDelay = 0.35
+        })
+    end,
+
+    EnterPhase2_Air = function(self)
+        self:_SetInAir(true)
+        self._immuneChain = false   -- hookable in phase 2
+        self._phase2Numpad = self:_PickRandomAirNumpad(nil)
+        self._phase2State = "MOVE"
+        self._phase2AfterAttackT = 0
+    end,
+
+    _UpdatePhase2 = function(self, dtSec)
+        -- If hook-down requested: land + queue FateSealed
+        if self._hookedDownRequested then
+            self._hookedDownRequested = false
+
+            self:_SetInAir(false)
+
+            -- lock briefly (hook stun)
+            self:LockActions("HOOKED", math.min(self.HookedDuration or 4.0, 0.9))
+
+            -- queue FateSealed after hook lock ends
+            self._phase2QueuedFate = true
+            self._phase2State = "GROUND"
+            return
+        end
+
+        -- Ground handling: run queued FateSealed, then go back to air
+        if not self._inAir then
+            self._phase2State = "GROUND"
+
+            if self._phase2QueuedFate and self:IsCurrentMoveFinished() and (not self:IsActionLocked()) then
+                self._phase2QueuedFate = false
+                self:FateSealed()
+                return
+            end
+
+            -- Once FateSealed ends (or nothing queued), lift back into air and pick a new point
+            if self:IsCurrentMoveFinished() and (not self:IsActionLocked()) and (not self._phase2QueuedFate) then
+                self:_SetInAir(true)
+                self._phase2Numpad = self:_PickRandomAirNumpad(self._phase2Numpad)
+                self._phase2State = "MOVE"
+            end
+
+            return
+        end
+
+        -- Ensure state initialized
+        if not self._phase2State then
+            self._phase2State = "MOVE"
+        end
+
+        -- MOVE: go to waypoint
+        if self._phase2State == "MOVE" then
+            local tx, ty, tz = self:_GetAirWaypoint(self._phase2Numpad or 5)
+            local arrived = self:_MoveToXYZ_Air(tx, ty, tz, dtSec)
+            if not arrived then return end
+
+            -- Arrived -> switch to ATTACK (don’t start attack same frame if locked)
+            self._phase2State = "ATTACK"
+            self._phase2AfterAttackT = 0
+            return
+        end
+
+        -- ATTACK: start BurstFire once, then wait for completion, then pick new waypoint
+        if self._phase2State == "ATTACK" then
+            if self:IsActionLocked() then return end
+
+            -- If no move running, start BurstFire once
+            if self:IsCurrentMoveFinished() then
+                self:BurstFire()
+                return
+            end
+
+            -- While BurstFire running, do nothing
+            if self:IsInMove("BurstFire") then
+                return
+            end
+
+            -- Move finished and we're no longer in BurstFire (safety)
+            -- Small delay (optional) before relocating
+            self._phase2AfterAttackT = (self._phase2AfterAttackT or 0) + dtSec
+            if self._phase2AfterAttackT >= (self.AirWaitAfterAttack or 0.45) then
+                local old = self._phase2Numpad
+                self._phase2Numpad = self:_PickRandomAirNumpad(old)
+                self._phase2State = "MOVE"
+            end
+            return
+        end
+
+        -- Fallback: reset state if corrupted
+        self._phase2State = "MOVE"
+    end,
+
+    EnterPhase3_Air = function(self)
+        self:_SetInAir(true)
+        self._immuneChain = true
+        self._phase3Step = 0
+        self._phase3RainCount = 0
+    end,
+
+    _PickRainCells5 = function(self)
+        local cells = {1,2,3,4,5,6,7,8,9}
+        -- shuffle
+        for i=#cells,2,-1 do
+            local j = math.random(1,i)
+            cells[i], cells[j] = cells[j], cells[i]
+        end
+        local pick = {}
+        for i=1,5 do pick[i] = cells[i] end
+        return pick
+    end,
+
+    _DoRainExplosives = function(self)
+        local cells = self:_PickRainCells5()
+        if _G.event_bus and _G.event_bus.publish then
+            _G.event_bus.publish("boss_rain_explosives", {
+                entityId = self.entityId,
+                cells = cells,               -- {numpad numbers}
+                dmg = 1,
+                delay = 0.35,                -- explode after telegraph
+            })
+        end
+    end,
+
+    _GetPlayerGridNumpad = function(self)
+        local px,py,pz = self:GetPlayerPosForAI()
+        if not px then return 5 end
+        local cx = self.GridCenterX or 0
+        local cz = self.GridCenterZ or 0
+        local step = self.GridStep or 4.0
+
+        local ix = math.floor((px - cx)/step + 0.5)
+        local iz = math.floor((pz - cz)/step + 0.5)
+        ix = math.max(-1, math.min(1, ix))
+        iz = math.max(-1, math.min(1, iz))
+
+        local map = {
+            ["-1,-1"]=1, ["0,-1"]=2, ["1,-1"]=3,
+            ["-1,0"]=4,  ["0,0"]=5,  ["1,0"]=6,
+            ["-1,1"]=7,  ["0,1"]=8,  ["1,1"]=9,
+        }
+        return map[tostring(ix)..","..tostring(iz)] or 5
+    end,
+
+    _DoDiveToPlayerGrid = function(self)
+        local n = self:_GetPlayerGridNumpad()
+        local gx,gz = self:_GetGridXZ(n)
+        local gy = (Nav and Nav.GetGroundY and Nav.GetGroundY(self.entityId)) or select(2, self:GetPosition()) or 0
+
+        -- snap / fast move down (simple)
+        self:_SetInAir(false)
+        self:SetPosition(gx, gy, gz)
+        if self._controller and CharacterController.SetPosition then
+            pcall(function() CharacterController.SetPosition(self._controller, gx, gy, gz) end)
+        end
+
+        if _G.event_bus and _G.event_bus.publish then
+            _G.event_bus.publish("boss_dive_impact", {
+                entityId = self.entityId,
+                cell = n,
+                x=gx, y=gy, z=gz,
+                dmg = 1,
+                radius = 1.4,
+            })
+        end
+    end,
+
+    _UpdatePhase3 = function(self, dtSec)
+        -- step 0: go to center in air
+        if self._phase3Step == 0 then
+            self:_SetInAir(true)
+            self._immuneChain = true
+
+            local tx,ty,tz = self:_GetAirWaypoint(5)
+            local arrived = self:_MoveToXYZ_Air(tx,ty,tz,dtSec)
+            if arrived then
+                self._phase3RainCount = 0
+                self._phase3Step = 1
+            end
+            return
+        end
+
+        -- step 1: rain explosives twice
+        if self._phase3Step == 1 then
+            if not self._phase3RainT then
+                self:_DoRainExplosives()
+                self._phase3RainT = 0.9 -- time for telegraph/explode
+                self._phase3RainCount = (self._phase3RainCount or 0) + 1
+                return
+            end
+            self._phase3RainT = self._phase3RainT - dtSec
+            if self._phase3RainT <= 0 then
+                self._phase3RainT = nil
+                if self._phase3RainCount >= 2 then
+                    self._phase3Step = 2
+                end
+            end
+            return
+        end
+
+        -- step 2: dive to player grid
+        if self._phase3Step == 2 then
+            self:_DoDiveToPlayerGrid()
+            self._immuneChain = false -- hookable AFTER landing/lotus window (your design)
+            self._phase3Step = 3
+            return
+        end
+
+        -- step 3: Death Lotus on ground
+        if self._phase3Step == 3 then
+            if self:IsCurrentMoveFinished() and (not self:IsActionLocked()) then
+                self:DeathLotus() -- Move5 existing
+                self._phase3Step = 4
+            end
+            return
+        end
+
+        -- step 4: after lotus
+        if self._phase3Step == 4 then
+            if not self:IsCurrentMoveFinished() then return end
+
+            if self._p3WasHooked then
+                self._p3WasHooked = false
+                self:FateSealed()
+            end
+
+            -- repeat cycle
+            if self:IsCurrentMoveFinished() then
+                self._phase3Step = 0
+                self._immuneChain = true
             end
             return
         end

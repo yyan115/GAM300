@@ -512,7 +512,7 @@
                             "type": "bool",
                             "data": true
                         },
-                        "0037d81b75c76d96-000400f740000003",
+                        "002e4c7c7478043c-00046759981d07df",
                         {
                             "type": "bool",
                             "data": false
@@ -17946,7 +17946,23 @@
                             "enabled": true,
                             "preserveKeys": [],
                             "entryFunction": "OnInit",
-                            "autoInvokeEntry": true
+                            "autoInvokeEntry": true,
+                            "instanceState": {
+                                "endY": 2700.0,
+                                "fadeDuration": 1.0,
+                                "_private": {},
+                                "scrollSpeed": 100.0,
+                                "__meta": {},
+                                "__created_at": 1772626301.0,
+                                "__field_list": {
+                                    "startY": -2150.0,
+                                    "endY": 3500.0,
+                                    "scrollSpeed": 100.0,
+                                    "fadeDuration": 1.0
+                                },
+                                "startY": -1550.0,
+                                "_subscriptions": {}
+                            }
                         }
                     ]
                 }
@@ -18192,11 +18208,11 @@
                             "data": [
                                 {
                                     "type": "float",
-                                    "data": 1025
+                                    "data": 975
                                 },
                                 {
                                     "type": "float",
-                                    "data": -2150
+                                    "data": -1550
                                 },
                                 {
                                     "type": "float",
@@ -18209,11 +18225,11 @@
                             "data": [
                                 {
                                     "type": "float",
-                                    "data": 1800
+                                    "data": 1100
                                 },
                                 {
                                     "type": "float",
-                                    "data": 4000
+                                    "data": 3062
                                 },
                                 {
                                     "type": "float",

@@ -61,50 +61,120 @@ return Component {
                     self._isIFrame = true
                 end
             end)
-            print("[PlayerHealth] Subscription token: " .. tostring(self._knifeHitPlayerSub))
+            print("[PlayerHealth] Subscription token: " .. tostring(self._knifeHitPlayerDmgSub))
 
-        print("[PlayerHealth] Subscribing to meleeHitPlayerDmg")
-        self._meleeHitPlayerDmgSub = event_bus.subscribe("meleeHitPlayerDmg", function(payload)
-            if not payload then return end
-            if self._isIFrame then return end
+            print("[PlayerHealth] Subscribing to meleeHitPlayerDmg")
+            self._meleeHitPlayerDmgSub = event_bus.subscribe("meleeHitPlayerDmg", function(payload)
+                if not payload then return end
+                if self._isIFrame then return end
 
-            local dmg = payload
-            if type(payload) == "table" then
-                dmg = payload.dmg
-            end
-
-            if dmg ~= nil then
-                PlayerTakeDmg(self, dmg)
-                self._isIFrame = true
-            end
-        end)
-        print("[PlayerHealth] Subscription token (melee): " .. tostring(self._meleeHitPlayerDmgSub))
-
-        print("[PlayerHealth] Subscribing to miniboss_slash")
-            self._minibossSlashSub = event_bus.subscribe("miniboss_slash", function(payload)
-            if not payload then return end
-            if self._isIFrame then return end
-
-            -- payload: x,y,z,radius,dmg,entityId
-            local px, py, pz = self:GetPosition()
-            if not px then return end
-
-            local dx = (px - (payload.x or 0))
-            local dz = (pz - (payload.z or 0))
-            local r  = (payload.radius or 1.4)
-
-            -- simple XZ circle hit
-            if (dx*dx + dz*dz) <= (r*r) then
-                PlayerTakeDmg(self, payload.dmg or 1)
-
-                -- Publish hit confirmation for MiniBoss to play hit SFX
-                if event_bus and event_bus.publish then
-                    event_bus.publish("miniboss_melee_hit_confirmed", { entityId = payload.entityId })
+                local dmg = payload
+                if type(payload) == "table" then
+                    dmg = payload.dmg
                 end
 
-                if event_bus and event_bus.publish then
+                if dmg ~= nil then
+                    PlayerTakeDmg(self, dmg)
+                    self._isIFrame = true
+                end
+            end)
+            print("[PlayerHealth] Subscription token (melee): " .. tostring(self._meleeHitPlayerDmgSub))
+
+            print("[PlayerHealth] Subscribing to miniboss_slash")
+                self._minibossSlashSub = event_bus.subscribe("miniboss_slash", function(payload)
+                if not payload then return end
+                if self._isIFrame then return end
+
+                -- payload: x,y,z,radius,dmg,entityId
+                local px, py, pz = self:GetPosition()
+                if not px then return end
+
+                local dx = (px - (payload.x or 0))
+                local dz = (pz - (payload.z or 0))
+                local r  = (payload.radius or 1.4)
+
+                -- simple XZ circle hit
+                if (dx*dx + dz*dz) <= (r*r) then
+                    PlayerTakeDmg(self, payload.dmg or 1)
+
+                    -- Publish hit confirmation for MiniBoss to play hit SFX
+                    if event_bus and event_bus.publish then
+                        event_bus.publish("miniboss_melee_hit_confirmed", { entityId = payload.entityId })
+                    end
+
+                    if event_bus and event_bus.publish then
+                        local strength = payload.kbStrength or 0
+                        if strength > 0 then
+                            local kbx, kbz = dx, dz
+                            local len = math.sqrt(kbx*kbx + kbz*kbz)
+                            if len > 1e-4 then
+                                kbx = kbx / len
+                                kbz = kbz / len
+                            else
+                                kbx, kbz = 0, 1
+                            end
+
+                            event_bus.publish("player_knockback", {
+                                x = kbx,
+                                z = kbz,
+                                strength = strength,
+                            })
+                        end
+                    end
+                    self._isIFrame = true
+                    -- KNOCKBACK (NEW) - push player away from slash center
                     local strength = payload.kbStrength or 0
                     if strength > 0 then
+                        local kbx, kbz = dx, dz
+                        local len = math.sqrt(kbx*kbx + kbz*kbz)
+                        if len > 1e-4 then
+                            kbx = kbx / len
+                            kbz = kbz / len
+                        else
+                            -- edge case: player exactly at center
+                            kbx, kbz = 0, 1
+                        end
+
+                        -- If you have a CharacterController on player:
+                        if self._controller then
+                            CharacterController.Move(self._controller, kbx * strength, 0, kbz * strength)
+                        else
+                            -- fallback: if you have RB
+                            local rb = self:GetComponent("RigidBodyComponent")
+                            if rb then
+                                local v = rb.linearVel or {x=0,y=0,z=0}
+                                v.x = (v.x or 0) + kbx * strength
+                                v.z = (v.z or 0) + kbz * strength
+                                rb.linearVel = v
+                            end
+                        end
+                    end
+                end
+            end)
+            print("[PlayerHealth] Subscribed to miniboss_slash: " .. tostring(self._minibossSlashSub))
+
+            print("[PlayerHealth] Subscribing to boss_shout_aoe")
+            self._bossShoutAoeSub = event_bus.subscribe("boss_shout_aoe", function(payload)
+                if not payload then return end
+                if self._isIFrame then return end
+
+                -- payload: x,y,z,radius,dmg,kb,entityId
+                local px, py, pz = self:GetPosition()
+                if not px then return end
+
+                local dx = px - (payload.x or 0)
+                local dz = pz - (payload.z or 0)
+                local r  = payload.radius or 5.5
+
+                -- inside AOE radius?
+                if (dx*dx + dz*dz) <= (r*r) then
+                    -- damage
+                    PlayerTakeDmg(self, payload.dmg or 1)
+                    self._isIFrame = true
+
+                    -- knockback via your existing pipeline
+                    local strength = payload.kb or 0
+                    if strength > 0 and event_bus and event_bus.publish then
                         local kbx, kbz = dx, dz
                         local len = math.sqrt(kbx*kbx + kbz*kbz)
                         if len > 1e-4 then
@@ -118,57 +188,30 @@ return Component {
                             x = kbx,
                             z = kbz,
                             strength = strength,
+                            src = "boss_shout_aoe",
+                            enemyEntityId = payload.entityId,
                         })
                     end
                 end
-                self._isIFrame = true
-                -- KNOCKBACK (NEW) - push player away from slash center
-                local strength = payload.kbStrength or 0
-                if strength > 0 then
-                    local kbx, kbz = dx, dz
-                    local len = math.sqrt(kbx*kbx + kbz*kbz)
-                    if len > 1e-4 then
-                        kbx = kbx / len
-                        kbz = kbz / len
-                    else
-                        -- edge case: player exactly at center
-                        kbx, kbz = 0, 1
-                    end
+            end)
+            print("[PlayerHealth] Subscribed to boss_shout_aoe: " .. tostring(self._bossShoutAoeSub))
 
-                    -- If you have a CharacterController on player:
-                    if self._controller then
-                        CharacterController.Move(self._controller, kbx * strength, 0, kbz * strength)
-                    else
-                        -- fallback: if you have RB
-                        local rb = self:GetComponent("RigidBodyComponent")
-                        if rb then
-                            local v = rb.linearVel or {x=0,y=0,z=0}
-                            v.x = (v.x or 0) + kbx * strength
-                            v.z = (v.z or 0) + kbz * strength
-                            rb.linearVel = v
-                        end
-                    end
+            print("[PlayerHealth] Subscribing to playerHeal")
+            self._playerHealSub = event_bus.subscribe("playerHeal", function(amount)
+                if not amount or self.CurrentHealth <= 0 then return end
+                self.CurrentHealth = math.min(self.CurrentHealth + amount, self.MaxHealth)
+                if event_bus and event_bus.publish then
+                    event_bus.publish("playerMaxhealth", self.MaxHealth)
+                    event_bus.publish("playerCurrentHealth", self.CurrentHealth)
                 end
-            end
-        end)
-        print("[PlayerHealth] Subscribed to miniboss_slash: " .. tostring(self._minibossSlashSub))
+            end)
 
-        print("[PlayerHealth] Subscribing to playerHeal")
-        self._playerHealSub = event_bus.subscribe("playerHeal", function(amount)
-            if not amount or self.CurrentHealth <= 0 then return end
-            self.CurrentHealth = math.min(self.CurrentHealth + amount, self.MaxHealth)
-            if event_bus and event_bus.publish then
-                event_bus.publish("playerMaxhealth", self.MaxHealth)
-                event_bus.publish("playerCurrentHealth", self.CurrentHealth)
-            end
-        end)
-
-        print("[PlayerHealth] Subscribing to respawnPlayer")
-        self._respawnPlayerSub = event_bus.subscribe("respawnPlayer", function(respawn)
-            if respawn then
-                self._respawnPlayer = true
-            end
-        end)
+            print("[PlayerHealth] Subscribing to respawnPlayer")
+            self._respawnPlayerSub = event_bus.subscribe("respawnPlayer", function(respawn)
+                if respawn then
+                    self._respawnPlayer = true
+                end
+            end)
 
         else
             print("[PlayerHealth] ERROR: event_bus not available!")
