@@ -31,6 +31,10 @@ return Component {
         DragTag = "HeavyEnemy",     -- entity tag that drags the player instead of flopping
         UseLOSAnchors = false,      -- when true: chain is always taut/straight; anchors auto-created
                                     -- wherever geometry breaks line-of-sight, removed when LOS clears
+        ChainIsLax = false,         -- set true from game logic to make chain go lax (physics sag)
+        LaxTautTransitionSpeed = 3.0, -- blend units/sec: 3.0 = ~0.33s full transition
+        LaxAnchorStiffness = 0.12,  -- spring pull strength toward anchor 0-1 (lax mode)
+        LaxAnchorDamping   = 0.30,  -- velocity damping at anchor links 0-1 (prevents oscillation)
     },
 
     _unpack_pos = function(self, a, b, c)
@@ -341,6 +345,10 @@ return Component {
             ChainSlackDistance = self.ChainSlackDistance,
             DragTag = self.DragTag,
             UseLOSAnchors = self.UseLOSAnchors,
+            IsLax = self.ChainIsLax,
+            LaxTautTransitionSpeed = self.LaxTautTransitionSpeed,
+            LaxAnchorStiffness = self.LaxAnchorStiffness,
+            LaxAnchorDamping   = self.LaxAnchorDamping,
             AnchorAngleThresholdRad = math.rad(self.AnchorAngleThresholdDeg or 45),
             PinEndWhenExtended = self.PinEndWhenExtended,
             getStart = function()

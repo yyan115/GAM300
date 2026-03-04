@@ -152,14 +152,42 @@ end
 -- ---------------------------------------------------------------------------
 -- LOS anchor system
 -- ---------------------------------------------------------------------------
--- Each anchor: { x, y, z, bodyId=, nx=, ny=, nz= }
---   bodyId  identifies the object for permanence across frames
---   nx/ny/nz surface normal at hit, used to place the anchor flush to the face
+-- Each anchor entry: { x, y, z, bodyId, nx, ny, nz }
+--   x,y,z   world position (slides each frame along geometry)
+--   bodyId  persistent physics body that caused this anchor (from RaycastFull)
+--   nx,ny,nz hit normal at placement (used to offset anchor flush to surface)
+--
+-- DESIGN: Hybrid incremental — separate remove and add passes that operate on
+-- different parts of the path, so they cannot conflict within a frame.
+--
+-- WHY INCREMENTAL (not rebuild-from-scratch):
+--   Pure rebuild has no memory of which side of an obstacle the chain committed
+--   to.  If the player moves to a position where startPos→endPos is now a clear
+--   raycast, rebuild produces zero anchors — the chain snaps straight through
+--   the pillar it wrapped around.  bodyId lets us catch this: if a body that
+--   caused an anchor last frame no longer appears in the greedy walk this frame,
+--   we shoot startPos→endPos to check whether that body is still topologically
+--   between the two endpoints.  If it is, the chain is still wrapped — keep the
+--   anchor even though the greedy walk missed it.
+--
+-- WHY NO OSCILLATION (unlike the original two-pass-on-one-list approach):
+--   Remove and add passes operate on different segments of the path.
+--   Remove checks existing anchor chords (prev→next).
+--   Add extends only the frontier from the last surviving anchor toward endPos.
+--   They share no mutable state within the same frame, so neither pass
+--   invalidates the other's inputs.
+--
+-- ANCHOR SLIDING (hitNormal):
+--   Anchor position = hitPoint - hitNormal * SURFACE_OFFSET, placing it flush
+--   against the surface.  Each frame the anchor is re-derived from a fresh
+--   raycast, so it naturally slides along geometry as player moves vertically.
 -- ---------------------------------------------------------------------------
-local LOS_NUDGE       = 0.06  -- metres offset along normal, flush to surface
-local LOS_MIN_DIST    = 0.03  -- skip raycasts shorter than this
-local LOS_CLEAR_SLACK = 0.06  -- hit within this of the target counts as clear
-local LOS_MAX_ANCHORS = 8     -- hard cap
+local LOS_NUDGE          = 0.06   -- metres offset along normal from surface (flush placement)
+local LOS_MIN_DIST       = 0.03   -- skip raycasts on segments shorter than this
+local LOS_CLEAR_SLACK    = 0.06   -- hit within this of the far endpoint counts as "clear"
+local LOS_MAX_ANCHORS    = 16     -- hard cap against degenerate geometry
+local LOS_CLEAR_FRAMES   = 2      -- consecutive clear frames before an anchor is dissolved
+                                   -- prevents one-frame oscillation when player is close to occluder
 
 -- ---------------------------------------------------------------------------
 -- RaycastFull unpacking
@@ -224,52 +252,232 @@ local function make_anchor(ox,oy,oz, dirX,dirY,dirZ, dist, px,py,pz, nx,ny,nz, b
         az = oz + dirZ * (dist - LOS_NUDGE)
         nx, ny, nz = -dirX, -dirY, -dirZ
     end
-    return { ax, ay, az, bodyId = bodyId, nx = nx, ny = ny, nz = nz }
+    return { ax, ay, az, bodyId = bodyId, nx = nx, ny = ny, nz = nz, clearFrames = 0 }
 end
 
 function M:UpdateLOSAnchors(sx, sy, sz, ex, ey, ez)
     if not Physics then self.losAnchors = {} return end
 
-    -- Cast from the endpoint toward the player, placing an anchor at each
-    -- obstruction.  Repeat from each new anchor until the player is visible.
-    -- Anchors are discovered endpoint→player, then reversed so the list runs
-    -- player→endpoint to match DistributeLinksAlongPath.
+    -- -------------------------------------------------------------------------
+    -- REMOVE PASS
+    -- For each anchor, check two conditions for dissolution:
+    --   (a) chord prev→next is geometrically clear
+    --   (b) startPos→endPos does NOT hit the same bodyId (wrapping guard)
+    -- To prevent flicker when the player is very close to an occluder, we
+    -- require the anchor to be clear for LOS_CLEAR_FRAMES consecutive frames
+    -- before actually removing it.  clearFrames is reset to 0 on any blocked
+    -- frame so a single obstruction re-locks the anchor immediately.
     --
-    -- Each anchor stores:
-    --   bodyId  — which object caused it (object permanence)
-    --   nx/ny/nz — surface normal at hit (slide plane reference)
-    local found = {}
+    -- SLIDING: when an anchor survives, we re-derive its world position by
+    -- shooting from its predecessor toward the anchor's OWN stored position
+    -- (not the chord direction).  This guarantees we always re-hit the same
+    -- surface patch regardless of where next_ has moved, so the anchor slides
+    -- naturally along geometry as the player moves up/down or sideways.
+    -- -------------------------------------------------------------------------
 
-    local fromX, fromY, fromZ = ex, ey, ez
+    local bodyWrapCache = {}
+    local function isBodyStillWrapping(bodyId)
+        if bodyId == nil then return false end
+        if bodyWrapCache[bodyId] ~= nil then return bodyWrapCache[bodyId] end
+        -- Build the full piecewise path: start → each existing anchor → end.
+        -- We must check every segment, not just the direct line, because the
+        -- player may have moved sideways so the direct ray no longer clips the
+        -- pillar even though the chain is still topologically wrapped around it.
+        local path = {{sx, sy, sz}}
+        for _, a in ipairs(self.losAnchors) do table.insert(path, a) end
+        table.insert(path, {ex, ey, ez})
+        local wrapping = false
+        for seg = 1, #path - 1 do
+            local ax, ay, az = path[seg][1], path[seg][2], path[seg][3]
+            local bx, by, bz = path[seg+1][1], path[seg+1][2], path[seg+1][3]
+            local dx, dy, dz = bx-ax, by-ay, bz-az
+            local dist = math.sqrt(dx*dx+dy*dy+dz*dz)
+            if dist >= LOS_MIN_DIST then
+                local ndx,ndy,ndz = dx/dist, dy/dist, dz/dist
+                local hit, _, _,_,_, _,_,_, hitBodyId =
+                    los_raycast(ax,ay,az, ndx,ndy,ndz, dist)
+                if hit and (hitBodyId == bodyId) then
+                    wrapping = true
+                    break
+                end
+            end
+        end
+        bodyWrapCache[bodyId] = wrapping
+        return wrapping
+    end
 
-    for _ = 1, LOS_MAX_ANCHORS do
-        local dx, dy, dz = sx - fromX, sy - fromY, sz - fromZ
-        local dist = math.sqrt(dx*dx + dy*dy + dz*dz)
+    local i = 1
+    while i <= #self.losAnchors do
+        local anchor = self.losAnchors[i]
+        local prev   = (i == 1) and {sx, sy, sz} or self.losAnchors[i-1]
+        local next_  = (i == #self.losAnchors) and {ex, ey, ez} or self.losAnchors[i+1]
+        local dx, dy, dz = next_[1]-prev[1], next_[2]-prev[2], next_[3]-prev[3]
+        local chordDist = math.sqrt(dx*dx+dy*dy+dz*dz)
+
+        -- Evaluate whether this anchor is currently unnecessary
+        local shouldDissolve = false
+        if chordDist < LOS_MIN_DIST then
+            -- Collapsed — dissolve immediately regardless of clearFrames
+            shouldDissolve = true
+            anchor.clearFrames = (anchor.clearFrames or 0) + 1
+        else
+            local ndx,ndy,ndz = dx/chordDist, dy/chordDist, dz/chordDist
+            local hit, hitDist = los_raycast(prev[1],prev[2],prev[3], ndx,ndy,ndz, chordDist)
+            local chordClear = (not hit) or (hitDist and hitDist >= chordDist - LOS_CLEAR_SLACK)
+
+            if chordClear and not isBodyStillWrapping(anchor.bodyId) then
+                anchor.clearFrames = (anchor.clearFrames or 0) + 1
+                if anchor.clearFrames >= LOS_CLEAR_FRAMES then
+                    shouldDissolve = true
+                    dbg(string.format("[ChainController][LOS] Remove anchor %d after %d clear frames", i, anchor.clearFrames))
+                end
+            else
+                anchor.clearFrames = 0  -- blocked this frame — reset debounce
+            end
+        end
+
+        if shouldDissolve then
+            table.remove(self.losAnchors, i)
+            -- i stays the same; next entry slid down
+        else
+            -- SLIDING REFRESH: re-derive world position by shooting from predecessor
+            -- toward this anchor's own stored position.  Using the anchor's position
+            -- (not the chord direction) ensures we always re-hit the same surface
+            -- patch even after the player has moved significantly sideways.
+            local toAx = anchor[1] - prev[1]
+            local toAy = anchor[2] - prev[2]
+            local toAz = anchor[3] - prev[3]
+            local toADist = math.sqrt(toAx*toAx + toAy*toAy + toAz*toAz)
+            if toADist > LOS_MIN_DIST then
+                local tdx, tdy, tdz = toAx/toADist, toAy/toADist, toAz/toADist
+                -- Cast slightly beyond stored position to account for normal offset
+                local hit2, dist2, px,py,pz, nx2,ny2,nz2, bodyId2 =
+                    los_raycast(prev[1],prev[2],prev[3], tdx,tdy,tdz, toADist + 0.3)
+                if hit2 then
+                    local refreshed = make_anchor(
+                        prev[1],prev[2],prev[3], tdx,tdy,tdz,
+                        dist2, px,py,pz, nx2,ny2,nz2, bodyId2)
+                    -- Validate: the segment refreshed→next_ must not be blocked by
+                    -- the same body.  If it is, the refresh landed on the wrong face
+                    -- (e.g. side face when the anchor should be on the front) and
+                    -- accepting it would make the path cut through the obstacle.
+                    local refreshOk = true
+                    local rnx = next_[1] - refreshed[1]
+                    local rny = next_[2] - refreshed[2]
+                    local rnz = next_[3] - refreshed[3]
+                    local rnDist = math.sqrt(rnx*rnx + rny*rny + rnz*rnz)
+                    if rnDist >= LOS_MIN_DIST then
+                        local rndx, rndy, rndz = rnx/rnDist, rny/rnDist, rnz/rnDist
+                        local vhit, _, _,_,_, _,_,_, vBodyId =
+                            los_raycast(refreshed[1],refreshed[2],refreshed[3], rndx,rndy,rndz, rnDist)
+                        if vhit and vBodyId == bodyId2 then
+                            refreshOk = false  -- wrong face: segment to next still cuts the same body
+                        end
+                    end
+                    if refreshOk then
+                        anchor[1] = refreshed[1]
+                        anchor[2] = refreshed[2]
+                        anchor[3] = refreshed[3]
+                        anchor.nx = refreshed.nx
+                        anchor.ny = refreshed.ny
+                        anchor.nz = refreshed.nz
+                        -- Update bodyId so wrap cache stays valid for the new body
+                        anchor.bodyId = bodyId2
+                    end
+                end
+            end
+            i = i + 1
+        end
+    end
+
+    -- -------------------------------------------------------------------------
+    -- ADD PASS
+    -- Walk from the last surviving anchor toward endPos, adding new anchors
+    -- wherever the path is blocked.  Starts from the frontier — cannot conflict
+    -- with the remove pass which only operated on existing anchor chords.
+    -- -------------------------------------------------------------------------
+    if #self.losAnchors >= LOS_MAX_ANCHORS then return end
+
+    local fromX, fromY, fromZ
+    if #self.losAnchors > 0 then
+        local last = self.losAnchors[#self.losAnchors]
+        fromX, fromY, fromZ = last[1], last[2], last[3]
+    else
+        fromX, fromY, fromZ = sx, sy, sz
+    end
+
+    for _ = 1, LOS_MAX_ANCHORS - #self.losAnchors do
+        local dx, dy, dz = ex-fromX, ey-fromY, ez-fromZ
+        local dist = math.sqrt(dx*dx+dy*dy+dz*dz)
         if dist < LOS_MIN_DIST then break end
 
-        local ndx, ndy, ndz = dx/dist, dy/dist, dz/dist
-        local hit, hitDist, px, py, pz, nx, ny, nz, bodyId =
-            los_raycast(fromX, fromY, fromZ, ndx, ndy, ndz, dist)
+        local ndx,ndy,ndz = dx/dist, dy/dist, dz/dist
+        local hit, hitDist, px,py,pz, nx,ny,nz, bodyId =
+            los_raycast(fromX,fromY,fromZ, ndx,ndy,ndz, dist)
 
-        -- Clear to player — done
-        if not hit or (hitDist and hitDist >= dist - LOS_CLEAR_SLACK) then break end
+        local clear = (not hit) or (hitDist and hitDist >= dist - LOS_CLEAR_SLACK)
+        if clear then break end
 
-        local anchor = make_anchor(fromX, fromY, fromZ, ndx, ndy, ndz,
-            hitDist, px, py, pz, nx, ny, nz, bodyId)
-        table.insert(found, anchor)
+        local anchor = make_anchor(fromX,fromY,fromZ, ndx,ndy,ndz, hitDist, px,py,pz, nx,ny,nz, bodyId)
+        dbg(string.format("[ChainController][LOS] Add anchor %d bodyId=%s pos=(%.3f,%.3f,%.3f)",
+            #self.losAnchors+1, tostring(bodyId), anchor[1], anchor[2], anchor[3]))
+        table.insert(self.losAnchors, anchor)
 
-        -- Step past the surface so next cast doesn't re-hit the same face
+        -- Advance the frontier to just past the hit surface so the next raycast
+        -- origin clears the wall.  Using only the nudged anchor position as the
+        -- new origin causes the very next ray to immediately re-hit the same face.
         fromX = anchor[1] + ndx * LOS_NUDGE
         fromY = anchor[2] + ndy * LOS_NUDGE
         fromZ = anchor[3] + ndz * LOS_NUDGE
+
+        if #self.losAnchors >= LOS_MAX_ANCHORS then break end
     end
 
-    -- Reverse: DistributeLinksAlongPath expects player→endpoint order
-    local reversed = {}
-    for i = #found, 1, -1 do
-        table.insert(reversed, found[i])
+    -- -------------------------------------------------------------------------
+    -- VALIDATION PASS
+    -- Walk every segment of the complete path (start→a[1]→...→a[n]→end).
+    -- The REMOVE and ADD passes only operate on specific sub-ranges and cannot
+    -- catch cuts that arise when sliding moves an anchor to a new face, or when
+    -- a segment between two existing anchors becomes blocked.
+    -- For any blocked segment, insert a new anchor at the hit point and restart
+    -- the walk.  Bounded by LOS_MAX_ANCHORS so this cannot loop indefinitely.
+    -- -------------------------------------------------------------------------
+    local validationPasses = 0
+    local maxValidation = LOS_MAX_ANCHORS
+    local validationChanged = true
+    while validationChanged and validationPasses < maxValidation and #self.losAnchors < LOS_MAX_ANCHORS do
+        validationChanged = false
+        validationPasses = validationPasses + 1
+
+        local path = {{sx, sy, sz}}
+        for _, a in ipairs(self.losAnchors) do table.insert(path, a) end
+        table.insert(path, {ex, ey, ez})
+
+        for seg = 1, #path - 1 do
+            local ax2, ay2, az2 = path[seg][1], path[seg][2], path[seg][3]
+            local bx2, by2, bz2 = path[seg+1][1], path[seg+1][2], path[seg+1][3]
+            local vdx, vdy, vdz = bx2-ax2, by2-ay2, bz2-az2
+            local vdist = math.sqrt(vdx*vdx + vdy*vdy + vdz*vdz)
+            if vdist >= LOS_MIN_DIST then
+                local vndx, vndy, vndz = vdx/vdist, vdy/vdist, vdz/vdist
+                local vhit, vhitDist, vpx,vpy,vpz, vnx,vny,vnz, vBodyId =
+                    los_raycast(ax2,ay2,az2, vndx,vndy,vndz, vdist)
+                local vClear = (not vhit) or (vhitDist and vhitDist >= vdist - LOS_CLEAR_SLACK)
+                if not vClear then
+                    -- Segment seg cuts through geometry — insert anchor between
+                    -- path[seg] and path[seg+1], which is losAnchors[seg-1] and losAnchors[seg].
+                    local newAnchor = make_anchor(ax2,ay2,az2, vndx,vndy,vndz,
+                        vhitDist, vpx,vpy,vpz, vnx,vny,vnz, vBodyId)
+                    dbg(string.format("[ChainController][LOS] Validation insert at seg=%d bodyId=%s pos=(%.3f,%.3f,%.3f)",
+                        seg, tostring(vBodyId), newAnchor[1], newAnchor[2], newAnchor[3]))
+                    table.insert(self.losAnchors, seg, newAnchor)
+                    validationChanged = true
+                    break  -- restart walk with updated path
+                end
+            end
+            if #self.losAnchors >= LOS_MAX_ANCHORS then break end
+        end
     end
-    self.losAnchors = reversed
 end
 
 -- Distribute activeN links evenly along the piecewise path:
@@ -534,7 +742,8 @@ function M:Update(dt, settings)
     -- any LOS anchors, and endPos.  Anchors are created/destroyed automatically
     -- by raycasting each segment every frame.
     -- =========================================================================
-    if settings.UseLOSAnchors and (self.chainLen or 0) > 1e-4 and not self._flopping then
+    if settings.UseLOSAnchors and (self.chainLen or 0) > 1e-4 and not self._flopping
+       and (self.endPointLocked or self._raycastSnapped) then
         -- Update the anchor list (cleanup stale + add new where LOS breaks)
         self:UpdateLOSAnchors(sx, sy, sz, ex, ey, ez)
 
