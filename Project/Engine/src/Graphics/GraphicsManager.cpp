@@ -864,7 +864,10 @@ void GraphicsManager::RenderParticles(const ParticleComponent& item) {
 	if (!item.isVisible || item.particles.empty() || !item.particleShader || !item.particleVAO) return;
 	glDisable(GL_CULL_FACE);
 	glEnable(GL_BLEND);
-	glBlendFunc(GL_SRC_ALPHA, GL_ONE);  // Additive blending
+	if (item.additiveBlending)
+		glBlendFunc(GL_SRC_ALPHA, GL_ONE);              // Additive: glow/fire/magic
+	else
+		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);  // Standard alpha: physical/solid
 	glDepthMask(GL_FALSE);
 
 #ifdef ANDROID
