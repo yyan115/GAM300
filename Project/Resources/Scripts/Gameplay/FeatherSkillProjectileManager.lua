@@ -163,6 +163,8 @@ return Component {
         end
 
         local rootEntityTag = Engine.GetEntityTag(otherRootEntityId)
+        if not rootEntityTag then return end
+        
         if Tag and Tag.CompareNames and Tag.CompareNames(rootEntityTag, "Enemy") then
             if event_bus and event_bus.publish then 
                 event_bus.publish("deal_damage_to_entity", {
