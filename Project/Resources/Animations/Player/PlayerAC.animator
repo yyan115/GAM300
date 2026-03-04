@@ -91,7 +91,7 @@
         },
         {
             "id": "FeatherLaunchEnd",
-            "clipIndex": 12,
+            "clipIndex": 11,
             "loop": false,
             "speed": 1.0,
             "crossfadeDuration": 0.20000000298023224,
@@ -102,7 +102,7 @@
         },
         {
             "id": "Hurt",
-            "clipIndex": 10,
+            "clipIndex": 9,
             "loop": false,
             "speed": 1.0,
             "crossfadeDuration": 0.0,
@@ -123,17 +123,6 @@
             }
         },
         {
-            "id": "Death",
-            "clipIndex": 6,
-            "loop": false,
-            "speed": 1.0,
-            "crossfadeDuration": 0.0,
-            "nodePosition": {
-                "x": 450.529541015625,
-                "y": -2.4705915451049805
-            }
-        },
-        {
             "id": "Jump",
             "clipIndex": 5,
             "loop": false,
@@ -145,8 +134,19 @@
             }
         },
         {
+            "id": "Death",
+            "clipIndex": 6,
+            "loop": false,
+            "speed": 1.0,
+            "crossfadeDuration": 0.0,
+            "nodePosition": {
+                "x": 450.529541015625,
+                "y": -2.4705915451049805
+            }
+        },
+        {
             "id": "Land",
-            "clipIndex": 9,
+            "clipIndex": 8,
             "loop": false,
             "speed": 1.0,
             "crossfadeDuration": 0.0,
@@ -157,7 +157,7 @@
         },
         {
             "id": "Roll",
-            "clipIndex": 8,
+            "clipIndex": 7,
             "loop": false,
             "speed": 1.3000000715255737,
             "crossfadeDuration": 0.0,
@@ -190,8 +190,8 @@
         },
         {
             "id": "Dash",
-            "clipIndex": 7,
-            "loop": true,
+            "clipIndex": 12,
+            "loop": false,
             "speed": 1.8000000715255737,
             "crossfadeDuration": 0.0,
             "nodePosition": {
@@ -201,7 +201,7 @@
         },
         {
             "id": "FeatherLaunch",
-            "clipIndex": 11,
+            "clipIndex": 10,
             "loop": false,
             "speed": 1.0,
             "crossfadeDuration": 0.20000000298023224,
@@ -1150,11 +1150,11 @@
         "Resources/Animations/Player/KusaneV6@Run.fbx",
         "Resources/Animations/Player/KusaneV6@Jump.fbx",
         "Resources/Animations/Player/KusaneV6@Death.fbx",
-        "Resources/Animations/Player/KusaneV6@DashPose.fbx",
         "Resources/Animations/Player/KusaneV6@Roll.fbx",
         "Resources/Animations/Player/KusaneV6@Land.fbx",
         "Resources/Animations/Player/KusaneV6@Hurt.fbx",
         "Resources/Animations/Player/KusaneV6@FeatherLaunch.fbx",
-        "Resources/Animations/Player/KusaneV6@FeatherLaunchEnd.fbx"
+        "Resources/Animations/Player/KusaneV6@FeatherLaunchEnd.fbx",
+        "Resources/Animations/Player/KusaneV6@DashRoll.fbx"
     ]
 }
