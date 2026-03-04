@@ -1,0 +1,11 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "005bba215e3dc600-00046707a8072ea1",
+        "source": "../../Resources/Animations/Player/KusaneV6@DashPose.fbx",
+        "compiled": "../../Resources/Animations/Player/KusaneV6@DashPose.mesh"
+    },
+    "ModelMetaData": {
+        "optimizeMeshes": true
+    }
+}

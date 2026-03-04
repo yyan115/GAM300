@@ -154,7 +154,7 @@
                         "0000000000000000-0000000000000000",
                         {
                             "type": "bool",
-                            "data": true
+                            "data": false
                         },
                         {
                             "type": "float",
@@ -249,7 +249,7 @@
                     "projectionType": 0,
                     "useSkybox": true,
                     "skyboxTexturePath": "",
-                    "blurEnabled": true,
+                    "blurEnabled": false,
                     "blurIntensity": 0.5,
                     "blurRadius": 2.0,
                     "blurPasses": 2,
@@ -624,7 +624,7 @@
                                 },
                                 {
                                     "type": "float",
-                                    "data": -9.8
+                                    "data": -2.1
                                 },
                                 {
                                     "type": "float",
@@ -652,6 +652,10 @@
                                     "data": 0
                                 }
                             ]
+                        },
+                        {
+                            "type": "bool",
+                            "data": false
                         }
                     ]
                 },

@@ -1,0 +1,11 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "005bba214cecedab-00046707a4072e99",
+        "source": "../../Resources/Animations/Player/KusaneV6@Death.fbx",
+        "compiled": "../../Resources/Animations/Player/KusaneV6@Death.mesh"
+    },
+    "ModelMetaData": {
+        "optimizeMeshes": true
+    }
+}
