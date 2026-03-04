@@ -1,0 +1,14 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "0049e2ee5770e216-0004628d0600000f",
+        "source": "../../Resources/Textures/M5/Papers_Roughness.png",
+        "compiled": "../../Resources/Textures/M5/Papers_Roughness.dds"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp"
+    }
+}

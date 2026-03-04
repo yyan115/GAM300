@@ -1,0 +1,14 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "00327c2b25a7bb75-0004620740000027",
+        "source": "../../Resources/Textures/M5/ScrrollBox_Normal.png",
+        "compiled": "../../Resources/Textures/M5/ScrrollBox_Normal.dds"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp"
+    }
+}

@@ -342,6 +342,13 @@ return Component {
                 local damage = payload.damage or 10
                 self:ApplyHit(damage, "COMBO")
             end)
+
+            self._chainHookSub = _G.event_bus.subscribe("chain.enemy_hooked", function(payload)
+                if not payload then return end
+                if payload.entityId ~= self.entityId then return end
+                print("[EnemyAI] chain.enemy_hooked received — calling ApplyHook duration=" .. tostring(payload.duration))
+                pcall(function() self:ApplyHook(payload.duration) end)
+            end)
         end
 
         -- If you're using CC, do NOT run your old kinematic grounding system
@@ -1517,6 +1524,11 @@ return Component {
                 end)
                 self._freezeEnemySub = nil
             end
+
+            if self._chainHookSub then
+                pcall(function() _G.event_bus.unsubscribe(self._chainHookSub) end)
+                self._chainHookSub = nil
+            end
         end
         self._frozenBycinematic = false
     end,
@@ -1625,6 +1637,11 @@ return Component {
                     _G.event_bus.unsubscribe(self._freezeEnemySub)
                 end)
                 self._freezeEnemySub = nil
+            end
+
+            if self._chainHookSub then
+                pcall(function() _G.event_bus.unsubscribe(self._chainHookSub) end)
+                self._chainHookSub = nil
             end
         end
     end,

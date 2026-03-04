@@ -3263,6 +3263,7 @@ void Serializer::DeserializePointLightComponent(PointLightComponent& pointLightC
         readVec3Generic(d[7], pointLightComp.diffuse);
         readVec3Generic(d[8], pointLightComp.specular);
         pointLightComp.castShadows = Serializer::GetBool(d, 9);
+        if (d.Size() > 10) pointLightComp.range = Serializer::GetFloat(d, 10);
     }
 }
 

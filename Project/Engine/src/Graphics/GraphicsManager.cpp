@@ -864,7 +864,10 @@ void GraphicsManager::RenderParticles(const ParticleComponent& item) {
 	if (!item.isVisible || item.particles.empty() || !item.particleShader || !item.particleVAO) return;
 	glDisable(GL_CULL_FACE);
 	glEnable(GL_BLEND);
-	glBlendFunc(GL_SRC_ALPHA, GL_ONE);  // Additive blending
+	if (item.additiveBlending)
+		glBlendFunc(GL_SRC_ALPHA, GL_ONE);              // Additive: glow/fire/magic
+	else
+		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);  // Standard alpha: physical/solid
 	glDepthMask(GL_FALSE);
 
 #ifdef ANDROID
@@ -1231,10 +1234,26 @@ void GraphicsManager::RenderSceneForShadows(Shader& depthShader)
 		if (!modelItem || !modelItem->isVisible || !modelItem->model)
 			continue;
 
+		glm::mat4 modelMatrix = modelItem->transform.ConvertToGLM();
+
+		// Point light sphere culling: skip objects outside the light's range
+		if (m_shadowFarPlane > 0.0f)
+		{
+			AABB worldBBox = modelItem->model->GetBoundingBox().Transform(modelMatrix);
+			float sqDist = 0.0f;
+			for (int i = 0; i < 3; ++i)
+			{
+				float v = m_shadowLightPos[i];
+				if (v < worldBBox.min[i]) sqDist += (worldBBox.min[i] - v) * (worldBBox.min[i] - v);
+				if (v > worldBBox.max[i]) sqDist += (v - worldBBox.max[i]) * (v - worldBBox.max[i]);
+			}
+			if (sqDist > m_shadowFarPlane * m_shadowFarPlane)
+				continue;
+		}
+
 		count++;
 
 		// Set model matrix
-		glm::mat4 modelMatrix = modelItem->transform.ConvertToGLM();
 		depthShader.setMat4("model", modelMatrix);
 
 		// Handle animation

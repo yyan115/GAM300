@@ -1,0 +1,14 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "001646bf89ded49d-00046553c8001c71",
+        "source": "../../Resources/Textures/M5/BookStack1_Base_color.png",
+        "compiled": "../../Resources/Textures/M5/BookStack1_Base_color.dds"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp"
+    }
+}

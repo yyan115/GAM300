@@ -17,5 +17,5 @@ void main()
     FragColor = texColor * ParticleColor;
 
     // Per-entity bloom emission — written only to MRT attachment 1
-    BloomEmission = vec4(bloomColor * bloomIntensity, 1.0);
+    BloomEmission = vec4(bloomColor * bloomIntensity, FragColor.a);
 }

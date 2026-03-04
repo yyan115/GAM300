@@ -26,7 +26,7 @@ struct DirectionalLightComponent : public LightComponent
 	DirectionalLightComponent() = default;
 };
 
-struct PointLightComponent : public LightComponent 
+struct PointLightComponent : public LightComponent
 {
 	REFL_SERIALIZABLE
 	// Attenuation
@@ -34,7 +34,9 @@ struct PointLightComponent : public LightComponent
 	float linear = 0.09f;
 	float quadratic = 0.032f;
 
-	
+	// Shadow range: objects beyond this distance from the light are skipped in the shadow pass
+	float range = 25.0f;
+
 	Vector3D ambient = Vector3D(0.05f, 0.05f, 0.05f);
 	Vector3D diffuse = Vector3D(0.8f, 0.8f, 0.8f);
 	Vector3D specular = Vector3D::Ones();
