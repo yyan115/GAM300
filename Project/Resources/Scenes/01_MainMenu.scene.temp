@@ -17946,7 +17946,39 @@
                             "enabled": true,
                             "preserveKeys": [],
                             "entryFunction": "OnInit",
-                            "autoInvokeEntry": true
+                            "autoInvokeEntry": true,
+                            "instanceState": {
+                                "_private": {},
+                                "endY": 3500.0,
+                                "Update": null,
+                                "UpdateSafe": null,
+                                "scrollSpeed": 100.0,
+                                "__field_list": {
+                                    "fadeDuration": 1.0,
+                                    "scrollSpeed": 100.0,
+                                    "endY": 3500.0,
+                                    "startY": -2150.0
+                                },
+                                "After": null,
+                                "SerializeFields": null,
+                                "Destroy": null,
+                                "StartSafe": null,
+                                "DeserializeFields": null,
+                                "_closeCreditsUI": null,
+                                "AwakeSafe": null,
+                                "Every": null,
+                                "__meta": {},
+                                "Subscribe": null,
+                                "fadeDuration": 1.0,
+                                "_subscriptions": {},
+                                "_resetCredits": null,
+                                "_call_lifecycle": null,
+                                "DisableSafe": null,
+                                "Start": null,
+                                "Unsubscribe": null,
+                                "__created_at": 1772626301.0,
+                                "startY": -1550.0
+                            }
                         }
                     ]
                 }
@@ -18192,11 +18224,11 @@
                             "data": [
                                 {
                                     "type": "float",
-                                    "data": 1025
+                                    "data": 975
                                 },
                                 {
                                     "type": "float",
-                                    "data": -2150
+                                    "data": -1550
                                 },
                                 {
                                     "type": "float",
@@ -18209,11 +18241,11 @@
                             "data": [
                                 {
                                     "type": "float",
-                                    "data": 1800
+                                    "data": 1100
                                 },
                                 {
                                     "type": "float",
-                                    "data": 4000
+                                    "data": 3062
                                 },
                                 {
                                     "type": "float",
