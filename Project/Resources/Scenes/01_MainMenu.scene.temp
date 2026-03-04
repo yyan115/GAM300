@@ -512,7 +512,7 @@
                             "type": "bool",
                             "data": true
                         },
-                        "0037d81b75c76d96-000400f740000003",
+                        "002e4c7c7478043c-00046759981d07df",
                         {
                             "type": "bool",
                             "data": false
@@ -17948,36 +17948,20 @@
                             "entryFunction": "OnInit",
                             "autoInvokeEntry": true,
                             "instanceState": {
-                                "_private": {},
-                                "endY": 3500.0,
-                                "Update": null,
-                                "UpdateSafe": null,
-                                "scrollSpeed": 100.0,
-                                "__field_list": {
-                                    "fadeDuration": 1.0,
-                                    "scrollSpeed": 100.0,
-                                    "endY": 3500.0,
-                                    "startY": -2150.0
-                                },
-                                "After": null,
-                                "SerializeFields": null,
-                                "Destroy": null,
-                                "StartSafe": null,
-                                "DeserializeFields": null,
-                                "_closeCreditsUI": null,
-                                "AwakeSafe": null,
-                                "Every": null,
-                                "__meta": {},
-                                "Subscribe": null,
+                                "endY": 2700.0,
                                 "fadeDuration": 1.0,
-                                "_subscriptions": {},
-                                "_resetCredits": null,
-                                "_call_lifecycle": null,
-                                "DisableSafe": null,
-                                "Start": null,
-                                "Unsubscribe": null,
+                                "_private": {},
+                                "scrollSpeed": 100.0,
+                                "__meta": {},
                                 "__created_at": 1772626301.0,
-                                "startY": -1550.0
+                                "__field_list": {
+                                    "startY": -2150.0,
+                                    "endY": 3500.0,
+                                    "scrollSpeed": 100.0,
+                                    "fadeDuration": 1.0
+                                },
+                                "startY": -1550.0,
+                                "_subscriptions": {}
                             }
                         }
                     ]
