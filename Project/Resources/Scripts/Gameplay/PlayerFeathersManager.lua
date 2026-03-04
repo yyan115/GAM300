@@ -9,7 +9,6 @@ return Component {
 
     fields = {
         FeathersCollectedTextName = "FeathersCollectedText",
-        FeatherSkillRequirement = 20,
     },
 
     Awake = function(self)

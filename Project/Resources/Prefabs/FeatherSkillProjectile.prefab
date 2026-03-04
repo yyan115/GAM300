@@ -1,9 +1,18 @@
 {
     "prefab_entities": [
         {
-            "id": 2383,
-            "guid": "00007763ae25cc94-000464253a005127",
+            "id": 0,
+            "guid": "00505891b8179fa3-000464f1d201d67b",
             "components": {
+                "PrefabLinkComponent": {
+                    "type": "PrefabLinkComponent",
+                    "data": [
+                        {
+                            "type": "std::string",
+                            "data": "../../Resources/Prefabs/FeatherSkillProjectile.prefab"
+                        }
+                    ]
+                },
                 "NameComponent": {
                     "name": "FeatherSkillProjectile"
                 },
@@ -167,15 +176,9 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "007376d29e4bceff-00046427cc001181"
+                                "00505891cef6fdb5-000464f1d201d67d"
                             ]
                         }
-                    ]
-                },
-                "ParentComponent": {
-                    "type": "ParentComponent",
-                    "data": [
-                        "001301efac983cb4-00046411b4001b0b"
                     ]
                 },
                 "RigidBodyComponent": {
@@ -349,8 +352,8 @@
             }
         },
         {
-            "id": 2384,
-            "guid": "007376d29e4bceff-00046427cc001181",
+            "id": 1,
+            "guid": "00505891cef6fdb5-000464f1d201d67d",
             "components": {
                 "NameComponent": {
                     "name": "Feather"
@@ -427,7 +430,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "00007763ae25cc94-000464253a005127"
+                        "00505891b8179fa3-000464f1d201d67b"
                     ]
                 },
                 "ActiveComponent": {
