@@ -1,0 +1,11 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "000b41a92a972704-00041a6842000009",
+        "source": "../../Resources/Animations/Player@Idle.fbx",
+        "compiled": "../../Resources/Animations/Player@Idle.mesh"
+    },
+    "ModelMetaData": {
+        "optimizeMeshes": true
+    }
+}

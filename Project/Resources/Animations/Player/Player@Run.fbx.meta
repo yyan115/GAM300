@@ -1,0 +1,11 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "000b41a9494090bb-00041a6846000019",
+        "source": "../../Resources/Animations/Player@Run.fbx",
+        "compiled": "../../Resources/Animations/Player@Run.mesh"
+    },
+    "ModelMetaData": {
+        "optimizeMeshes": true
+    }
+}

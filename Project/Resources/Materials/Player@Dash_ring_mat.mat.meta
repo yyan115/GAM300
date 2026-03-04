@@ -1,0 +1,8 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "00245f72a12f4c4b-000466b0f0000003",
+        "source": "../../Resources/Materials/Player@Dash_ring_mat.mat",
+        "compiled": "../../Resources/Materials/Player_Dash_ring_mat.mat"
+    }
+}

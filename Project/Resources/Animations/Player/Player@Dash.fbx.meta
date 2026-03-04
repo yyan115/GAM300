@@ -1,0 +1,11 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "003476ad1b3707bc-00045d13f400524b",
+        "source": "../../Resources/Animations/Player@Dash.fbx",
+        "compiled": "../../Resources/Animations/Player@Dash.mesh"
+    },
+    "ModelMetaData": {
+        "optimizeMeshes": true
+    }
+}

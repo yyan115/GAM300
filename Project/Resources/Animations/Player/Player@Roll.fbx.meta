@@ -1,0 +1,11 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "0043059c3c2b6011-00043a3042000001",
+        "source": "../../Resources/Animations/Player@Roll.fbx",
+        "compiled": "../../Resources/Animations/Player@Roll.fbx"
+    },
+    "ModelMetaData": {
+        "optimizeMeshes": true
+    }
+}

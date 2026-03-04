@@ -1,0 +1,11 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "000b41a90e0212dc-00041a6844000011",
+        "source": "../../Resources/Animations/Player@Land.fbx",
+        "compiled": "../../Resources/Animations/Player@Land.mesh"
+    },
+    "ModelMetaData": {
+        "optimizeMeshes": true
+    }
+}
