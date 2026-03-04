@@ -75,7 +75,7 @@
         },
         {
             "id": "NA1",
-            "clipIndex": 8,
+            "clipIndex": 1,
             "loop": false,
             "speed": 2.000000238418579,
             "crossfadeDuration": 0.0,
@@ -86,7 +86,7 @@
         },
         {
             "id": "Hurt",
-            "clipIndex": 5,
+            "clipIndex": 10,
             "loop": false,
             "speed": 1.0,
             "crossfadeDuration": 0.0,
@@ -97,7 +97,7 @@
         },
         {
             "id": "Run",
-            "clipIndex": 6,
+            "clipIndex": 4,
             "loop": true,
             "speed": 1.0,
             "crossfadeDuration": 0.0,
@@ -107,19 +107,8 @@
             }
         },
         {
-            "id": "Jump",
-            "clipIndex": 1,
-            "loop": false,
-            "speed": 0.7999999523162842,
-            "crossfadeDuration": 0.0,
-            "nodePosition": {
-                "x": 100.50003051757813,
-                "y": -2.4705705642700195
-            }
-        },
-        {
             "id": "Death",
-            "clipIndex": 7,
+            "clipIndex": 6,
             "loop": false,
             "speed": 1.0,
             "crossfadeDuration": 0.0,
@@ -129,8 +118,19 @@
             }
         },
         {
+            "id": "Jump",
+            "clipIndex": 5,
+            "loop": false,
+            "speed": 0.7999999523162842,
+            "crossfadeDuration": 0.0,
+            "nodePosition": {
+                "x": 100.50003051757813,
+                "y": -2.4705705642700195
+            }
+        },
+        {
             "id": "Land",
-            "clipIndex": 4,
+            "clipIndex": 9,
             "loop": false,
             "speed": 1.0,
             "crossfadeDuration": 0.0,
@@ -141,7 +141,7 @@
         },
         {
             "id": "Roll",
-            "clipIndex": 3,
+            "clipIndex": 8,
             "loop": false,
             "speed": 1.3000000715255737,
             "crossfadeDuration": 0.0,
@@ -152,7 +152,7 @@
         },
         {
             "id": "NA2",
-            "clipIndex": 9,
+            "clipIndex": 2,
             "loop": true,
             "speed": 2.000000238418579,
             "crossfadeDuration": 0.0,
@@ -163,7 +163,7 @@
         },
         {
             "id": "NA3",
-            "clipIndex": 10,
+            "clipIndex": 3,
             "loop": true,
             "speed": 2.000000238418579,
             "crossfadeDuration": 0.0,
@@ -173,19 +173,8 @@
             }
         },
         {
-            "id": "Standing",
-            "clipIndex": 5,
-            "loop": false,
-            "speed": 1.0,
-            "crossfadeDuration": 0.0,
-            "nodePosition": {
-                "x": -97.25021362304688,
-                "y": -197.19631958007813
-            }
-        },
-        {
             "id": "Dash",
-            "clipIndex": 2,
+            "clipIndex": 7,
             "loop": true,
             "speed": 1.8000000715255737,
             "crossfadeDuration": 0.0,
@@ -839,15 +828,15 @@
     ],
     "clipPaths": [
         "Resources/Animations/Player/KusaneV6@Idle.fbx",
-        "Resources/Animations/Player/Player@Jump.fbx",
-        "Resources/Animations/Player/Player@Dash.fbx",
-        "Resources/Animations/Player/Kusane@Roll.fbx",
-        "Resources/Animations/Player/Player@Land.fbx",
-        "Resources/Animations/Player/Kusane@Hurt.fbx",
-        "Resources/Animations/Player/Kusane@Run.fbx",
-        "Resources/Animations/Player/Kusane@Death.fbx",
         "Resources/Animations/Player/KusaneV6@Slash1.fbx",
         "Resources/Animations/Player/KusaneV6@Slash2.fbx",
-        "Resources/Animations/Player/KusaneV6@Slash3.fbx"
+        "Resources/Animations/Player/KusaneV6@Slash3.fbx",
+        "Resources/Animations/Player/KusaneV6@Run.fbx",
+        "Resources/Animations/Player/KusaneV6@Jump.fbx",
+        "Resources/Animations/Player/KusaneV6@Death.fbx",
+        "Resources/Animations/Player/KusaneV6@DashPose.fbx",
+        "Resources/Animations/Player/KusaneV6@Roll.fbx",
+        "Resources/Animations/Player/KusaneV6@Land.fbx",
+        "Resources/Animations/Player/KusaneV6@Hurt.fbx"
     ]
 }
