@@ -36,22 +36,13 @@ return Component {
     },
 
     Awake = function(self)
-        self._numFeathers = 0
 
-        if event_bus and event_bus.subscribe then
-            if self._featherCollectedSub then return end
-
-            self._featherCollectedSub = event_bus.subscribe("featherCollected", function(payload)
-                if payload then
-                    self._numFeathers = self._numFeathers + 1
-                end
-            end)
-        end
     end,
 
     Start = function(self)
         self._featherSkillCooldown = 0
-        self._castingTimer = 0 
+        self._castingTimer = 0
+        _G._featherSkillRequirement = self.FeatherSkillRequirement
     end,
 
     Update = function(self, dt) 
@@ -70,7 +61,7 @@ return Component {
             end
         end
 
-        if self._numFeathers >= self.FeatherSkillRequirement and self._featherSkillCooldown <= 0 then
+        if _G._numFeathers >= self.FeatherSkillRequirement and self._featherSkillCooldown <= 0 then
             if Input and Input.IsActionPressed and Input.IsActionJustPressed("FeatherSkill") then
                 
                 local canCast = not _G.player_is_jumping and 
@@ -84,12 +75,14 @@ return Component {
                                 not _G.player_is_casting_skill
 
                 if canCast then
+                    _G._numFeathers = _G._numFeathers - self.FeatherSkillRequirement
+
                     _G.player_is_casting_skill = true
                     self._castingTimer = self.SkillCastDuration
 
                     if event_bus and event_bus.publish then
                         event_bus.publish("force_player_rotation_to_camera", true)
-                        event_bus.publish("activated_feather_skill", true)
+                        event_bus.publish("activated_feather_skill", self.FeatherSkillRequirement)
                     end
 
                     local animator = self:GetComponent("AnimationComponent")

@@ -188,9 +188,9 @@ return Component {
             local res1, res2 = Physics.RaycastGetEntity(rayOriginX, rayOriginY, rayOriginZ, fwdX, fwdY, fwdZ, raycastDist)
             local hitDist, hitEntityId = -1.0, -1
 
-            print(string.format("[FeatherSkillProjectile] Ray origin: %f %f %f", rayOriginX, rayOriginY, rayOriginZ))
-            print(string.format("[FeatherSkillProjectile] Ray forward: %f %f %f", fwdX, fwdY, fwdZ))
-            print(string.format("[FeatherSkillProjectile] Raycast dist: %f", raycastDist))
+            -- print(string.format("[FeatherSkillProjectile] Ray origin: %f %f %f", rayOriginX, rayOriginY, rayOriginZ))
+            -- print(string.format("[FeatherSkillProjectile] Ray forward: %f %f %f", fwdX, fwdY, fwdZ))
+            -- print(string.format("[FeatherSkillProjectile] Raycast dist: %f", raycastDist))
             
             if type(res1) == "table" or type(res1) == "userdata" then
                 -- If it's a struct, it uses .distance. If it's a tuple, it uses [1]
@@ -203,7 +203,7 @@ return Component {
             end
 
             -- Print the safely extracted variables! (This prevents the string.format nil crash)
-            print(string.format("[FeatherSkillProjectile] Raycasthit dist: %f Raycasthit entity: %d", hitDist, hitEntityId))
+            --print(string.format("[FeatherSkillProjectile] Raycasthit dist: %f Raycasthit entity: %d", hitDist, hitEntityId))
             
             if hitDist >= 0.0 then
                 local isValidHit = true
@@ -233,7 +233,7 @@ return Component {
                         z = rayOriginZ + (fwdZ * hitDist)
                     }
 
-                    print(string.format("[FeatherSkillProjectile] RaycasthitPos: %f %f %f", self._raycastHitPos.x, self._raycastHitPos.y, self._raycastHitPos.z))
+                    --print(string.format("[FeatherSkillProjectile] RaycasthitPos: %f %f %f", self._raycastHitPos.x, self._raycastHitPos.y, self._raycastHitPos.z))
                 end
             end
         end

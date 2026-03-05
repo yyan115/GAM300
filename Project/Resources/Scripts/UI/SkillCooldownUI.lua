@@ -25,9 +25,22 @@ return Component {
         end
     end,
 
+    GreyOutSkillIcon = function(self)
+        self._spriteRender.color.x = 69.0 / 255.0
+        self._spriteRender.color.y = 69.0 / 255.0
+        self._spriteRender.color.z = 69.0 / 255.0
+    end,
+
+    SetSkillIconColorToWhite = function(self)
+        self._spriteRender.color.x = 1.0
+        self._spriteRender.color.y = 1.0
+        self._spriteRender.color.z = 1.0
+    end,
+
     Start = function(self)
         self._spriteRender = self:GetComponent("SpriteRenderComponent")
         self._spriteRender.fillValue = 1.0
+        self:GreyOutSkillIcon()
 
         self._featherSkillCooldown = 0
     end,
@@ -45,6 +58,12 @@ return Component {
             end
 
             self._spriteRender.fillValue = 1.0 - (self._featherSkillCooldown / self.FeatherSkillCooldown)
+        end
+
+        if _G._numFeathers < _G._featherSkillRequirement then
+            self:GreyOutSkillIcon()
+        else
+            self:SetSkillIconColorToWhite()
         end
     end,
 }

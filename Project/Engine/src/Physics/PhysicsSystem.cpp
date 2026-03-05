@@ -195,6 +195,23 @@ void PhysicsSystem::Initialise(ECSManager& ecsManager) {
     bodyToEntityMap.clear();
     m_activeInteractions.clear();
 
+    // =========================================================
+    // FLUSH STALE PHYSICS EVENTS
+    // =========================================================
+    // Removing bodies above (and during the previous session's Shutdown) 
+    // causes Jolt to queue a backlog of "OnContactRemoved" events. 
+    // We must drain and discard them into the void so they don't instantly 
+    // cancel out interactions for newly recycled Entity IDs in the new session!
+    if (contactListener) {
+        std::vector<CollisionEvent> staleEnters, staleExits;
+        contactListener->DrainEvents(staleEnters, staleExits);
+
+        //  Wipe the activeCollisions memory bank!
+        // This prevents recycled Entity IDs from being ignored by the 
+        // `if (activeCollisions.insert(key).second)` check in OnContactAdded.
+        contactListener->ClearCollisions();
+    }
+
     // Create bodies for all existing entities
     for (auto& e : entities) {
         CreatePhysicsBody(e, ecsManager);
