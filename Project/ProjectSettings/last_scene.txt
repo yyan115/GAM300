@@ -1,1 +1,1 @@
-../../Resources/Scenes/04_Level.scene
+C:\Users\nce23\Documents\GAM300\Project\Resources\Scenes\03_Loading.scene
