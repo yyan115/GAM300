@@ -2206,7 +2206,7 @@ void RegisterInspectorCustomRenderers()
         static std::unordered_map<Entity, float> startBlurIntensity, startBlurRadius;
         static std::unordered_map<Entity, int> startBlurPasses;
         static std::unordered_map<Entity, uint32_t> startBlurLayerMask;
-        static std::unordered_map<Entity, float> startBloomThreshold, startBloomIntensity;
+        static std::unordered_map<Entity, float> startBloomThreshold, startBloomIntensity, startBloomSpread;
         static std::unordered_map<Entity, float> startVignetteIntensity, startVignetteSmoothness;
         static std::unordered_map<Entity, glm::vec3> startVignetteColor;
         static std::unordered_map<Entity, float> startCGBrightness, startCGContrast, startCGSaturation;
@@ -2369,7 +2369,7 @@ void RegisterInspectorCustomRenderers()
                 ImGui::SameLine(labelWidth);
                 ImGui::SetNextItemWidth(-1);
                 if (!isEditingPP[entity]) startBloomThreshold[entity] = camera.bloomThreshold;
-                if (ImGui::SliderFloat("##BloomThreshold", &camera.bloomThreshold, 0.0f, 5.0f)) { isEditingPP[entity] = true; }
+                if (ImGui::DragFloat("##BloomThreshold", &camera.bloomThreshold, 0.01f, 0.0f, 5.0f)) { isEditingPP[entity] = true; }
                 if (isEditingPP[entity] && !ImGui::IsItemActive()) {
                     float oldVal = startBloomThreshold[entity]; float newVal = camera.bloomThreshold;
                     if (oldVal != newVal && UndoSystem::GetInstance().IsEnabled()) {
@@ -2385,7 +2385,7 @@ void RegisterInspectorCustomRenderers()
                 ImGui::SameLine(labelWidth);
                 ImGui::SetNextItemWidth(-1);
                 if (!isEditingPP[entity]) startBloomIntensity[entity] = camera.bloomIntensity;
-                if (ImGui::SliderFloat("##BloomIntensity", &camera.bloomIntensity, 0.0f, 5.0f)) { isEditingPP[entity] = true; }
+                if (ImGui::DragFloat("##BloomIntensity", &camera.bloomIntensity, 0.01f, 0.0f, 5.0f)) { isEditingPP[entity] = true; }
                 if (isEditingPP[entity] && !ImGui::IsItemActive()) {
                     float oldVal = startBloomIntensity[entity]; float newVal = camera.bloomIntensity;
                     if (oldVal != newVal && UndoSystem::GetInstance().IsEnabled()) {
@@ -2393,6 +2393,22 @@ void RegisterInspectorCustomRenderers()
                             [entity, newVal]() { auto& ecs = ECSRegistry::GetInstance().GetActiveECSManager(); if (ecs.HasComponent<CameraComponent>(entity)) ecs.GetComponent<CameraComponent>(entity).bloomIntensity = newVal; },
                             [entity, oldVal]() { auto& ecs = ECSRegistry::GetInstance().GetActiveECSManager(); if (ecs.HasComponent<CameraComponent>(entity)) ecs.GetComponent<CameraComponent>(entity).bloomIntensity = oldVal; },
                             "Change Bloom Intensity");
+                    }
+                    isEditingPP[entity] = false;
+                }
+
+                ImGui::Text("Spread");
+                ImGui::SameLine(labelWidth);
+                ImGui::SetNextItemWidth(-1);
+                if (!isEditingPP[entity]) startBloomSpread[entity] = camera.bloomSpread;
+                if (ImGui::DragFloat("##BloomSpread", &camera.bloomSpread, 0.005f, 0.0f, 1.0f)) { isEditingPP[entity] = true; }
+                if (isEditingPP[entity] && !ImGui::IsItemActive()) {
+                    float oldVal = startBloomSpread[entity]; float newVal = camera.bloomSpread;
+                    if (oldVal != newVal && UndoSystem::GetInstance().IsEnabled()) {
+                        UndoSystem::GetInstance().RecordLambdaChange(
+                            [entity, newVal]() { auto& ecs = ECSRegistry::GetInstance().GetActiveECSManager(); if (ecs.HasComponent<CameraComponent>(entity)) ecs.GetComponent<CameraComponent>(entity).bloomSpread = newVal; },
+                            [entity, oldVal]() { auto& ecs = ECSRegistry::GetInstance().GetActiveECSManager(); if (ecs.HasComponent<CameraComponent>(entity)) ecs.GetComponent<CameraComponent>(entity).bloomSpread = oldVal; },
+                            "Change Bloom Spread");
                     }
                     isEditingPP[entity] = false;
                 }
@@ -2423,7 +2439,7 @@ void RegisterInspectorCustomRenderers()
                 ImGui::SameLine(labelWidth);
                 ImGui::SetNextItemWidth(-1);
                 if (!isEditingPP[entity]) startVignetteIntensity[entity] = camera.vignetteIntensity;
-                if (ImGui::SliderFloat("##VignetteIntensity", &camera.vignetteIntensity, 0.0f, 1.0f)) { isEditingPP[entity] = true; }
+                if (ImGui::DragFloat("##VignetteIntensity", &camera.vignetteIntensity, 0.005f, 0.0f, 1.0f)) { isEditingPP[entity] = true; }
                 if (isEditingPP[entity] && !ImGui::IsItemActive()) {
                     float oldVal = startVignetteIntensity[entity]; float newVal = camera.vignetteIntensity;
                     if (oldVal != newVal && UndoSystem::GetInstance().IsEnabled()) {
@@ -2439,7 +2455,7 @@ void RegisterInspectorCustomRenderers()
                 ImGui::SameLine(labelWidth);
                 ImGui::SetNextItemWidth(-1);
                 if (!isEditingPP[entity]) startVignetteSmoothness[entity] = camera.vignetteSmoothness;
-                if (ImGui::SliderFloat("##VignetteSmoothness", &camera.vignetteSmoothness, 0.0f, 1.0f)) { isEditingPP[entity] = true; }
+                if (ImGui::DragFloat("##VignetteSmoothness", &camera.vignetteSmoothness, 0.005f, 0.0f, 1.0f)) { isEditingPP[entity] = true; }
                 if (isEditingPP[entity] && !ImGui::IsItemActive()) {
                     float oldVal = startVignetteSmoothness[entity]; float newVal = camera.vignetteSmoothness;
                     if (oldVal != newVal && UndoSystem::GetInstance().IsEnabled()) {
@@ -2498,7 +2514,7 @@ void RegisterInspectorCustomRenderers()
                 ImGui::SameLine(labelWidth);
                 ImGui::SetNextItemWidth(-1);
                 if (!isEditingPP[entity]) startCGBrightness[entity] = camera.cgBrightness;
-                if (ImGui::SliderFloat("##CGBrightness", &camera.cgBrightness, -1.0f, 1.0f)) { isEditingPP[entity] = true; }
+                if (ImGui::DragFloat("##CGBrightness", &camera.cgBrightness, 0.005f, -1.0f, 1.0f)) { isEditingPP[entity] = true; }
                 if (isEditingPP[entity] && !ImGui::IsItemActive()) {
                     float oldVal = startCGBrightness[entity]; float newVal = camera.cgBrightness;
                     if (oldVal != newVal && UndoSystem::GetInstance().IsEnabled()) {
@@ -2515,7 +2531,7 @@ void RegisterInspectorCustomRenderers()
                 ImGui::SameLine(labelWidth);
                 ImGui::SetNextItemWidth(-1);
                 if (!isEditingPP[entity]) startCGContrast[entity] = camera.cgContrast;
-                if (ImGui::SliderFloat("##CGContrast", &camera.cgContrast, 0.0f, 3.0f)) { isEditingPP[entity] = true; }
+                if (ImGui::DragFloat("##CGContrast", &camera.cgContrast, 0.01f, 0.0f, 3.0f)) { isEditingPP[entity] = true; }
                 if (isEditingPP[entity] && !ImGui::IsItemActive()) {
                     float oldVal = startCGContrast[entity]; float newVal = camera.cgContrast;
                     if (oldVal != newVal && UndoSystem::GetInstance().IsEnabled()) {
@@ -2532,7 +2548,7 @@ void RegisterInspectorCustomRenderers()
                 ImGui::SameLine(labelWidth);
                 ImGui::SetNextItemWidth(-1);
                 if (!isEditingPP[entity]) startCGSaturation[entity] = camera.cgSaturation;
-                if (ImGui::SliderFloat("##CGSaturation", &camera.cgSaturation, 0.0f, 3.0f)) { isEditingPP[entity] = true; }
+                if (ImGui::DragFloat("##CGSaturation", &camera.cgSaturation, 0.01f, 0.0f, 3.0f)) { isEditingPP[entity] = true; }
                 if (isEditingPP[entity] && !ImGui::IsItemActive()) {
                     float oldVal = startCGSaturation[entity]; float newVal = camera.cgSaturation;
                     if (oldVal != newVal && UndoSystem::GetInstance().IsEnabled()) {
@@ -2591,7 +2607,7 @@ void RegisterInspectorCustomRenderers()
                 ImGui::SameLine(labelWidth);
                 ImGui::SetNextItemWidth(-1);
                 if (!isEditingPP[entity]) startCAIntensity[entity] = camera.chromaticAberrationIntensity;
-                if (ImGui::SliderFloat("##CAIntensity", &camera.chromaticAberrationIntensity, 0.0f, 3.0f)) { isEditingPP[entity] = true; }
+                if (ImGui::DragFloat("##CAIntensity", &camera.chromaticAberrationIntensity, 0.01f, 0.0f, 3.0f)) { isEditingPP[entity] = true; }
                 if (isEditingPP[entity] && !ImGui::IsItemActive()) {
                     float oldVal = startCAIntensity[entity]; float newVal = camera.chromaticAberrationIntensity;
                     if (oldVal != newVal && UndoSystem::GetInstance().IsEnabled()) {
@@ -2607,7 +2623,7 @@ void RegisterInspectorCustomRenderers()
                 ImGui::SameLine(labelWidth);
                 ImGui::SetNextItemWidth(-1);
                 if (!isEditingPP[entity]) startCAPadding[entity] = camera.chromaticAberrationPadding;
-                if (ImGui::SliderFloat("##CAPadding", &camera.chromaticAberrationPadding, 0.0f, 1.0f)) { isEditingPP[entity] = true; }
+                if (ImGui::DragFloat("##CAPadding", &camera.chromaticAberrationPadding, 0.005f, 0.0f, 1.0f)) { isEditingPP[entity] = true; }
                 if (isEditingPP[entity] && !ImGui::IsItemActive()) {
                     float oldVal = startCAPadding[entity]; float newVal = camera.chromaticAberrationPadding;
                     if (oldVal != newVal && UndoSystem::GetInstance().IsEnabled()) {
@@ -3006,7 +3022,7 @@ void RegisterInspectorCustomRenderers()
     // (handled by custom component renderer in CollapsingHeaders above)
     for (const char* field : {
         "blurEnabled", "blurIntensity", "blurRadius", "blurPasses",
-        "bloomEnabled", "bloomThreshold", "bloomIntensity",
+        "bloomEnabled", "bloomThreshold", "bloomIntensity", "bloomSpread",
         "vignetteEnabled", "vignetteIntensity", "vignetteSmoothness",
         "colorGradingEnabled", "cgBrightness", "cgContrast", "cgSaturation",
         "chromaticAberrationEnabled", "chromaticAberrationIntensity", "chromaticAberrationPadding"
@@ -9282,7 +9298,7 @@ void RegisterInspectorCustomRenderers()
         ImGui::SameLine(labelWidth);
         ImGui::SetNextItemWidth(-1);
         if (!isEditingBloom[entity]) startBloomIntensity[entity] = bloom.bloomIntensity;
-        if (ImGui::SliderFloat("##BloomEntityIntensity", &bloom.bloomIntensity, 0.0f, 10.0f)) { isEditingBloom[entity] = true; }
+        if (ImGui::DragFloat("##BloomEntityIntensity", &bloom.bloomIntensity, 0.05f, 0.0f, 10.0f)) { isEditingBloom[entity] = true; }
         if (isEditingBloom[entity] && !ImGui::IsItemActive()) {
             float oldVal = startBloomIntensity[entity]; float newVal = bloom.bloomIntensity;
             if (oldVal != newVal && UndoSystem::GetInstance().IsEnabled()) {

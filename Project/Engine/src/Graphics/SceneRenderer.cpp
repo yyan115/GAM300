@@ -253,6 +253,7 @@ void SceneRenderer::RenderSceneForEditor(const glm::vec3& cameraPos, const glm::
                     bloom->SetEnabled(true);
                     bloom->SetThreshold(camComp.bloomThreshold);
                     bloom->SetIntensity(camComp.bloomIntensity);
+                    bloom->SetScatter(camComp.bloomSpread);
                 } else {
                     bloom->SetEnabled(false);
                 }
