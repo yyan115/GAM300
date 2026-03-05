@@ -48,7 +48,6 @@ return Component {
         -- Global combo settings (editable in editor)
         DefaultComboWindow = 0.5,    -- Default time to continue combo
         HeavyChargeTime = 0.8,       -- Time to fully charge heavy
-        DashDuration = 0.3,          -- Dash length
         MaxComboAnimSpeed = 2.0,     -- Max animation speed when chaining quickly (multiplied on top of base)
 
         -- SFX clip arrays (populate in editor with audio GUIDs)
@@ -196,17 +195,17 @@ return Component {
             dash = {
                 id = "dash",
                 animParam = 30,
-                duration = 0.3,
+                duration = 1.0,
                 damage = 0,
                 canMove = false,
                 comboWindow = nil,
-                
+
                 onEnter = function(self, state, data)
                     if event_bus then
                         event_bus.publish("dash_performed", {})
                     end
                 end,
-                
+
                 transitions = {}
             },
         }
@@ -277,7 +276,14 @@ return Component {
         if not self._inputInterpreter or not self._animator or Time.IsPaused() then return end
 
         -- Block all combo input during dash
-        if _G.player_is_dashing then return end
+        if _G.player_is_dashing then
+            -- Also clear any queued combo to prevent it firing after dash ends
+            if self._queuedCombo then
+                print("[ComboManager] DASH ACTIVE: clearing queued combo '" .. tostring(self._queuedCombo.stateId) .. "'")
+                self._queuedCombo = nil
+            end
+            return
+        end
 
         -- Advance logical timer at the same rate as the animation playback.
         -- When boosted (e.g. speed=4.0), timer runs 4x faster so the combo
@@ -348,18 +354,21 @@ return Component {
         local candidateData = nil
 
         if input:HasBufferedAttack() then
+            print("[ComboManager] HasBufferedAttack=true, player_is_dashing=" .. tostring(_G.player_is_dashing))
             if input:IsAttackHeld() then
                 candidateStateId = state.transitions.attack_hold
             else
                 candidateStateId = state.transitions.attack
             end
         elseif input:HasBufferedChain() then
+            print("[ComboManager] HasBufferedChain=true, player_is_dashing=" .. tostring(_G.player_is_dashing))
             candidateStateId = state.transitions.chain
         elseif input:HasBufferedDash() then
             candidateStateId = state.transitions.dash
         end
 
         if candidateStateId then
+            print("[ComboManager] Candidate transition: " .. tostring(candidateStateId) .. " from state: " .. state.id)
             -- Consume the buffered input immediately so it doesn't re-fire repeatedly
             if input:HasBufferedAttack() then input:ConsumeBufferedAttack()
             elseif input:HasBufferedChain() then input:ConsumeBufferedChain()

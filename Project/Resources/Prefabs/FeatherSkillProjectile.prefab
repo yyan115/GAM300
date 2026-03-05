@@ -2,7 +2,7 @@
     "prefab_entities": [
         {
             "id": 0,
-            "guid": "0041bbedb3efab9a-000467cd320c3a89",
+            "guid": "002a86a9666788de-0004695d7603598d",
             "components": {
                 "PrefabLinkComponent": {
                     "type": "PrefabLinkComponent",
@@ -176,7 +176,7 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "0041bbedd8e35ee1-000467cd320c3a8b"
+                                "002a86a96a870f08-0004695d7603598f"
                             ]
                         }
                     ]
@@ -362,7 +362,7 @@
                         },
                         {
                             "type": "unsigned",
-                            "data": 104
+                            "data": 129
                         },
                         {
                             "type": "int",
@@ -377,7 +377,7 @@
                                 },
                                 {
                                     "type": "float",
-                                    "data": 0.2
+                                    "data": 0.1
                                 },
                                 {
                                     "type": "float",
@@ -414,7 +414,7 @@
                                 },
                                 {
                                     "type": "float",
-                                    "data": 0.05
+                                    "data": 0.08
                                 },
                                 {
                                     "type": "float",
@@ -460,21 +460,22 @@
                             "entryFunction": "OnInit",
                             "autoInvokeEntry": true,
                             "instanceState": {
-                                "__meta": {},
                                 "__created_at": 1772633527.0,
-                                "ProjectileDamage": 1.0,
-                                "_private": {},
                                 "FeatherRemnantPrefabPath": "Resources/Prefabs/FeatherSkillProjectileRemnant.prefab",
-                                "__field_list": {
-                                    "PlayerEntityName": "Player",
-                                    "FeatherRemnantPrefabPath": "Resources/Prefabs/FeatherSkillProjectileRemnant.prefab"
-                                },
-                                "PlayerEntityName": "Player",
+                                "ProjectileDamage": 1.0,
+                                "_subscriptions": {},
                                 "ColliderDisabledDuration": 0.7,
-                                "SpawnRemnantOffset": 1.0,
+                                "__meta": {},
                                 "_transform_fetched": false,
+                                "PlayerEntityName": "Player",
                                 "RigidbodyKinematicDuration": 0.7,
-                                "_subscriptions": {}
+                                "__field_list": {
+                                    "FeatherRemnantPrefabPath": "Resources/Prefabs/FeatherSkillProjectileRemnant.prefab",
+                                    "PlayerEntityName": "Player"
+                                },
+                                "_private": {},
+                                "ProjectileSpeed": 25.0,
+                                "SpawnRemnantOffset": 1.0
                             }
                         }
                     ]
@@ -504,7 +505,7 @@
         },
         {
             "id": 1,
-            "guid": "0041bbedd8e35ee1-000467cd320c3a8b",
+            "guid": "002a86a96a870f08-0004695d7603598f",
             "components": {
                 "NameComponent": {
                     "name": "Feather"
@@ -581,7 +582,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "0041bbedb3efab9a-000467cd320c3a89"
+                        "002a86a9666788de-0004695d7603598d"
                     ]
                 },
                 "ActiveComponent": {

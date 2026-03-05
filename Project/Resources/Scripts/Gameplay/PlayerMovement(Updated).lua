@@ -30,9 +30,17 @@ end
 -- Helper: play random SFX from array
 local function playRandomSFX(audio, clips)
     local count = clips and #clips or 0
-    if count > 0 and audio then
-        audio:PlayOneShot(clips[math.random(1, count)])
+    if count == 0 or not audio then return end
+    if count == 1 then
+        audio:PlayOneShot(clips[1])
+        return
     end
+    local idx
+    repeat
+        idx = math.random(1, count)
+    until idx ~= clips._lastIdx
+    clips._lastIdx = idx
+    audio:PlayOneShot(clips[idx])
 end
 
 -- Helper: lerp quaternion for smooth rotation
@@ -58,8 +66,8 @@ return Component {
         LandingDuration = 0.5,
         footstepInterval = 0.35,
         DashSpeed = 5.0,
-        DashDuration = 0.3,
-        DashCooldown = 2.0,
+        DashDuration = 1.0,
+        DashCooldown = 1.5,
         CinematicSettleTime = 0.8,
         AirDashSpeedMultiplier = 1.5,
         AirDashLift = 2.0,
@@ -70,6 +78,7 @@ return Component {
         playerJumpSFX = {},
         playerLandSFX = {},
         playerDeadSFX = {},
+        playerDashSFX = {},
     },
 
     Awake = function(self)
@@ -208,6 +217,13 @@ return Component {
                         z = self._facingZ
                     })
                 end
+            end)
+
+            -- Dash requested by ComboManager via event_bus
+            self._dashRequested = false
+            self._dashPerformedSub = event_bus.subscribe("dash_performed", function()
+                self._dashRequested = true
+                print("[PlayerMovement] Received dash_performed event")
             end)
 
             -- Chain movement constraint: reduce speed as player approaches slack limit,
@@ -487,17 +503,20 @@ return Component {
             return
         end
 
-        -- DASH
+        -- DASH (triggered by ComboManager via "dash_performed" event)
         if not self._isDashing
+            and self._dashRequested
             and self._dashCooldownTimer <= 0
             and not self._isDamageStun
             and not self._isLanding
             and not self._freezePending
-            and Input and Input.IsActionJustPressed and Input.IsActionJustPressed("Dash")
         then
+            self._dashRequested = false
+
             self._isDashing = true
             self._dashTimer = self.DashDuration
             _G.player_is_dashing = true
+            print("[PlayerMovement] _G.player_is_dashing = true")
             self._wasDashingInAir = not isGrounded
 
             if isMoving then
@@ -523,29 +542,26 @@ return Component {
             self._animator:SetBool("IsRunning", false)
             self._isRunning = false
             self._animator:SetBool("IsDashing", true)
+            playRandomSFX(self._audio, self.playerDashSFX)
             print("[PlayerMovement] Dash started")
+        elseif self._dashRequested then
+            -- Conditions not met, discard the request
+            print("[PlayerMovement] Dash request discarded (cooldown=" .. self._dashCooldownTimer .. " stun=" .. tostring(self._isDamageStun) .. " landing=" .. tostring(self._isLanding) .. " freeze=" .. tostring(self._freezePending) .. ")")
+            self._dashRequested = false
         end
 
         if self._isDashing then
             self._dashTimer = self._dashTimer - dt
 
-            if Input and Input.IsActionJustPressed and Input.IsActionJustPressed("Jump") and isGrounded then
+            if self._dashTimer <= 0 then
                 self._isDashing = false
                 _G.player_is_dashing = false
                 self._animator:SetBool("IsDashing", false)
                 self._dashCooldownTimer = self.DashCooldown
-                CharacterController.Jump(self._controller, self.JumpHeight)
-                self._animator:SetBool("IsJumping", true)
-                playRandomSFX(self._audio, self.playerJumpSFX)
-                print("[PlayerMovement] Dash jump-cancelled")
-            elseif self._dashTimer <= 0 then
-                self._isDashing = false
-                _G.player_is_dashing = false
-                self._animator:SetBool("IsDashing", false)
-                self._dashCooldownTimer = self.DashCooldown
-                self._isLanding = true
-                self._isRolling = true
                 self._wasDashingInAir = false
+                if event_bus and event_bus.publish then
+                    event_bus.publish("dash_ended", {})
+                end
                 print("[PlayerMovement] Dash ended")
             else
                 local speed = self.DashSpeed
@@ -680,6 +696,7 @@ return Component {
             if self._attackLungeSub         then event_bus.unsubscribe(self._attackLungeSub)        end
             if self._chainConstraintSub     then event_bus.unsubscribe(self._chainConstraintSub)    end
             if self._forceRotSub            then event_bus.unsubscribe(self._forceRotSub)           end
+            if self._dashPerformedSub       then event_bus.unsubscribe(self._dashPerformedSub)      end
         end
         self._frozenBycinematic = false
         self._chainConstraintRatio = 0

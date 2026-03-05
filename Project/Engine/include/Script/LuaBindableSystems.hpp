@@ -235,6 +235,28 @@ namespace PhysicsSystemWrappers {
         return result.hit ? result.distance : -1.0f;
     }
 
+    inline std::tuple<float, int> RaycastGetEntity(
+        float originX, float originY, float originZ,
+        float dirX, float dirY, float dirZ,
+        float maxDistance)
+    {
+        if (!g_PhysicsSystem) {
+            return std::make_tuple(-1.0f, -1);
+        }
+
+        Vector3D origin(originX, originY, originZ);
+        Vector3D direction(dirX, dirY, dirZ);
+
+        auto result = g_PhysicsSystem->Raycast(origin, direction, maxDistance);
+
+        if (result.hit) {
+            // Cast entityId to int to guarantee Lua can read it safely as a standard number
+            return std::make_tuple(result.distance, static_cast<int>(result.entityId));
+        }
+
+        return std::make_tuple(-1.0f, -1);
+    }
+
     // Check if two entities are within a certain distance
     // Usage: local hit = Physics.CheckDistance(entityA, entityB, maxDistance)
     // Returns: true if distance <= maxDistance, false otherwise

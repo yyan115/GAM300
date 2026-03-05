@@ -228,11 +228,19 @@ return Component {
 
         local newFeatherId = Prefab.InstantiatePrefab(self.FeatherProjectilePrefabPath)
         
+        -- [NEW] Cache the pure prefab scale BEFORE the engine tries to modify it during parenting
+        local childTransform = GetComponent(newFeatherId, "Transform")
+        local origScaleX, origScaleY, origScaleZ = 1.0, 1.0, 1.0
+        if childTransform then
+            origScaleX = childTransform.localScale.x
+            origScaleY = childTransform.localScale.y
+            origScaleZ = childTransform.localScale.z
+        end
+
         if Engine.SetParentEntity then
             Engine.SetParentEntity(newFeatherId, self.entityId)
         end
 
-        local childTransform = GetComponent(newFeatherId, "Transform")
         if childTransform then
             childTransform.localPosition.x = posX
             childTransform.localPosition.y = posY
@@ -244,9 +252,12 @@ return Component {
             childTransform.localRotation.y = zQuat.y
             childTransform.localRotation.z = zQuat.z
 
-            childTransform.localScale.x = childTransform.localScale.x * self.SkillSizeFactor
-            childTransform.localScale.y = childTransform.localScale.y * self.SkillSizeFactor
-            childTransform.localScale.z = childTransform.localScale.z * self.SkillSizeFactor
+            -- [FIXED] Do not multiply by SkillSizeFactor! Restore original local scale 
+            -- so it cleanly inherits the parent's huge scale uniformly.
+            childTransform.localScale.x = origScaleX
+            childTransform.localScale.y = origScaleY
+            childTransform.localScale.z = origScaleZ
+            
             childTransform.isDirty = true
 
             table.insert(self._childFeathers, {

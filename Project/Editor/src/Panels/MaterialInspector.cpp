@@ -187,6 +187,63 @@ void MaterialInspector::DrawMaterialAsset(std::shared_ptr<Material> material, co
             materialChanged = true;
         }
 
+        // Metallic slider
+        float metallic = material->GetMetallic();
+        ImGui::Text("Metallic");
+        ImGui::SameLine();
+        ImGui::Text("%.3f", metallic);
+        ImGui::SameLine();
+        ImGui::SetNextItemWidth(100.0f);
+        if (ImGui::SliderFloat("##metallic_slider", &metallic, 0.0f, 1.0f, "")) {
+            material->SetMetallic(metallic);
+            materialChanged = true;
+        }
+
+        // Roughness slider
+        float roughness = material->GetRoughness();
+        ImGui::Text("Roughness");
+        ImGui::SameLine();
+        ImGui::Text("%.3f", roughness);
+        ImGui::SameLine();
+        ImGui::SetNextItemWidth(100.0f);
+        if (ImGui::SliderFloat("##roughness_slider", &roughness, 0.0f, 1.0f, "")) {
+            material->SetRoughness(roughness);
+            materialChanged = true;
+        }
+
+        // AO slider
+        float ao = material->GetAO();
+        ImGui::Text("AO");
+        ImGui::SameLine();
+        ImGui::Text("%.3f", ao);
+        ImGui::SameLine();
+        ImGui::SetNextItemWidth(100.0f);
+        if (ImGui::SliderFloat("##ao_slider", &ao, 0.0f, 1.0f, "")) {
+            material->SetAO(ao);
+            materialChanged = true;
+        }
+
+        // Emissive color row
+        glm::vec3 emissive = material->GetEmissive();
+        float emissiveColor[3] = { emissive.r, emissive.g, emissive.b };
+
+        if (DrawColorComponent("Emissive", emissiveColor, "emissive_color_picker")) {
+            material->SetEmissive(glm::vec3(emissiveColor[0], emissiveColor[1], emissiveColor[2]));
+            materialChanged = true;
+        }
+
+        // Opacity slider
+        float opacity = material->GetOpacity();
+        ImGui::Text("Opacity");
+        ImGui::SameLine();
+        ImGui::Text("%.3f", opacity);
+        ImGui::SameLine();
+        ImGui::SetNextItemWidth(100.0f);
+        if (ImGui::SliderFloat("##opacity_slider", &opacity, 0.0f, 1.0f, "")) {
+            material->SetOpacity(opacity);
+            materialChanged = true;
+        }
+
         ImGui::PopStyleVar(2);
     }
 
@@ -200,11 +257,12 @@ void MaterialInspector::DrawMaterialAsset(std::shared_ptr<Material> material, co
         static const std::vector<std::pair<Material::TextureType, std::string>> textureTypes = {
             {Material::TextureType::DIFFUSE, "Diffuse"},
             {Material::TextureType::SPECULAR, "Specular"},
-            {Material::TextureType::AMBIENT_OCCLUSION, "Ambient Occlusion"},
-            {Material::TextureType::HEIGHT, "Height"},
             {Material::TextureType::NORMAL, "Normal"},
+            {Material::TextureType::EMISSIVE, "Emissive"},
             {Material::TextureType::METALLIC, "Metallic"},
-            {Material::TextureType::ROUGHNESS, "Roughness"}
+            {Material::TextureType::ROUGHNESS, "Roughness"},
+            {Material::TextureType::AMBIENT_OCCLUSION, "Ambient Occlusion"},
+            {Material::TextureType::HEIGHT, "Height"}
         };
 
         for (const auto& textureType : textureTypes) {

@@ -28,4 +28,19 @@ return Component {
     OnDisable = function(self)
 
     end,
+
+    OnCollisionEnter = function(self, otherEntityId)
+        local otherEntityLayer = Engine.GetEntityLayer(otherEntityId)
+        if otherEntityLayer == "Ground" then
+            print("[FeatherSkillRemnant] Collided with ground")
+            self._rb = self:GetComponent("RigidBodyComponent")
+            self._collider = self:GetComponent("ColliderComponent")
+
+            self._rb.motionID = 1
+            self._rb.motion_dirty = true
+            self._rb.isTrigger = true
+            self._rb.gravityFactor = 0.0
+            self._collider.enabled = false
+        end
+    end,
 }
