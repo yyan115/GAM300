@@ -42,10 +42,11 @@ return Component {
         zoomLerpSpeed    = 6.0,   -- how fast the camera eases to a new zoom level (lower = smoother)
 
         -- Camera collision
-        collisionEnabled = true,
-        collisionOffset  = 0.2,
-        collisionLerpIn  = 20.0,
-        collisionLerpOut = 5.0,
+        collisionEnabled             = true,
+        collisionOffset              = 0.2,
+        collisionLerpIn              = 20.0,
+        collisionLerpOut             = 5.0,
+        maxCameraHeightAbovePlayer   = 4.0,   -- hard Y cap (units above player feet); set 0 to disable
 
         -- Action mode
         actionModeEnabled      = false,
@@ -323,7 +324,7 @@ return Component {
         local zoomFactor = clamp((radius - minZoom) / (maxZoom - minZoom), 0.0, 1.0)
 
         -- Look-at pivot (slightly above player feet, scales with zoom)
-        local lookAtHeight = 0.5 + zoomFactor * 0.7
+        local lookAtHeight = 0.5 + zoomFactor * 0.2
         local cameraTarget = {
             x = self._targetPos.x,
             y = self._targetPos.y + lookAtHeight,
@@ -338,11 +339,19 @@ return Component {
         end
 
         -- Ideal camera position (spherical offset from pivot)
-        local scaledHeight    = (self.heightOffset or 1.0) * (0.3 + zoomFactor * 0.7)
+        local scaledHeight    = (self.heightOffset or 1.0) * (0.85 + zoomFactor * 0.15)
         local horizRadius     = radius * math.cos(pitchRad)
         local desiredX = cameraTarget.x + horizRadius * math.sin(yawRad)
         local desiredY = cameraTarget.y + radius * math.sin(pitchRad) + scaledHeight
         local desiredZ = cameraTarget.z + horizRadius * math.cos(yawRad)
+
+        -- Hard Y cap: prevents the camera from rising above indoor ceilings even
+        -- when the ceiling geometry has no physics collider. Set
+        -- maxCameraHeightAbovePlayer = 0 in the editor to disable for open areas.
+        local _maxH = self.maxCameraHeightAbovePlayer or 0
+        if _maxH > 0 then
+            desiredY = math.min(desiredY, self._targetPos.y + _maxH)
+        end
 
         -- ── Wall collision ───────────────────────────────────────────────────
         desiredX, desiredY, desiredZ = Collision.applyCollision(
