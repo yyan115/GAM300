@@ -4,107 +4,69 @@ local function dbg(...) if _G.CHAIN_DEBUG then print(...) end end
 local VerletAdapter = require("extension.verletAdapter")
 local M = {}
 
-local function vec_len(x,y,z) return math.sqrt((x or 0)*(x or 0) + (y or 0)*(y or 0) + (z or 0)*(z or 0)) end
-local function normalize(x,y,z)
-    local L = vec_len(x,y,z)
-    if L < 1e-9 then return 0,0,0 end
-    return x / L, y / L, z / L
-end
+local function vec_len(x,y,z) return math.sqrt((x or 0)*(x or 0)+(y or 0)*(y or 0)+(z or 0)*(z or 0)) end
+local function normalize(x,y,z) local L=vec_len(x,y,z) if L<1e-9 then return 0,0,0 end return x/L,y/L,z/L end
 
 function M.New(params)
-    local self = {}
-    self.params = params or {}
-    self.n = math.max(1, tonumber(self.params.NumberOfLinks) or 1)
-
-    self.positions = {}
-    self.prev = {}
-    self.invMass = {}
+    local self = setmetatable({}, {__index=M})
+    self.params   = params or {}
+    self.n        = math.max(1, tonumber(self.params.NumberOfLinks) or 1)
+    self.positions, self.prev, self.invMass = {}, {}, {}
     for i = 1, self.n do
-        self.positions[i] = {0,0,0}
-        self.prev[i] = {0,0,0}
-        self.invMass[i] = 1
+        self.positions[i]={0,0,0}; self.prev[i]={0,0,0}; self.invMass[i]=1
     end
-
-    self.activeN = self.n
-    self.anchors = {}
-    self.chainLen = 0.0
-    self.extensionTime = 0.0
-    self.isExtending = false
-    self.isRetracting = false
-    self.lastForward = {0,0,1}
-    self.startPos = {0,0,0}
-    self.endPos = {0,0,0}
-
+    self.activeN        = self.n
+    self.anchors        = {}
+    self.chainLen       = 0.0
+    self.extensionTime  = 0.0
+    self.isExtending    = false
+    self.isRetracting   = false
+    self.lastForward    = {0,0,1}
+    self.startPos       = {0,0,0}
+    self.endPos         = {0,0,0}
     self.endPointLocked = false
     self.lockedEndPoint = {0,0,0}
-    self.hookedTag = ""
-
-    self._raycastSnapped = false
-    self._lockedChainLen = 0.0
-    self._flopping = false
-
-    -- LOS anchor list: ordered {x,y,z} world positions where the chain bends
-    -- around occluding geometry. Managed by UpdateLOSAnchors every frame.
-    self.losAnchors = {}
-
-    self.VerletState = VerletAdapter.Init{ positions = self.positions, prev = self.prev, invMass = self.invMass }
-    return setmetatable(self, { __index = M })
+    self.hookedTag      = ""
+    self._raycastSnapped  = false
+    self._lockedChainLen  = 0.0
+    self._flopping        = false
+    self.losAnchors       = {}
+    self.VerletState = VerletAdapter.Init{positions=self.positions, prev=self.prev, invMass=self.invMass}
+    return self
 end
 
-function M:SetStartPos(x,y,z)
-    self.startPos = {x or 0, y or 0, z or 0}
-end
-
-function M:SetEndPos(x,y,z)
-    self.endPos = {x or 0, y or 0, z or 0}
-end
+function M:SetStartPos(x,y,z) self.startPos = {x or 0,y or 0,z or 0} end
+function M:SetEndPos(x,y,z)   self.endPos   = {x or 0,y or 0,z or 0} end
 
 function M:StartExtension(forward, maxLength, linkMaxDistance)
-    self.isExtending = true
-    self.isRetracting = false
-    self.extensionTime = 0
-    self.chainLen = 0
-    self._lockedChainLen = 0
-    self._raycastSnapped = false
-    self._flopping = false
-
+    self.isExtending, self.isRetracting = true, false
+    self.extensionTime, self.chainLen   = 0, 0
+    self._lockedChainLen, self._raycastSnapped, self._flopping = 0, false, false
     self.endPointLocked = false
     self.lockedEndPoint = {0,0,0}
-    self.hookedTag = ""
-    self.losAnchors = {}
-
-    local maxLen = tonumber(maxLength) or tonumber(self.params.MaxLength) or 0
+    self.hookedTag      = ""
+    self.losAnchors     = {}
+    local maxLen  = tonumber(maxLength)       or tonumber(self.params.MaxLength)       or 0
     local linkMax = tonumber(linkMaxDistance) or tonumber(self.params.LinkMaxDistance) or 0
     if linkMax > 0 and maxLen > 0 then
-        local needed = math.ceil(maxLen / linkMax) + 1
-        self.activeN = math.min(needed, self.n)
-        dbg(string.format("[ChainController] StartExtension: MaxLength=%.3f LinkMaxDistance=%.4f needed=%d poolSize=%d activeN=%d",
-            maxLen, linkMax, needed, self.n, self.activeN))
+        self.activeN = math.min(math.ceil(maxLen/linkMax)+1, self.n)
     else
         self.activeN = self.n
-        dbg(string.format("[ChainController] StartExtension: MaxLength=%.3f LinkMaxDistance=%.4f invalid, using full pool activeN=%d",
-            maxLen, linkMax, self.activeN))
     end
-
-    if forward and type(forward) == "table" and (#forward >= 3) then
-        local fx,fy,fz = forward[1], forward[2], forward[3]
-        local nx,ny,nz = normalize(fx,fy,fz)
-        if nx ~= 0 or ny ~= 0 or nz ~= 0 then self.lastForward = {nx,ny,nz} end
+    if forward and type(forward)=="table" and #forward>=3 then
+        local nx,ny,nz = normalize(forward[1],forward[2],forward[3])
+        if nx~=0 or ny~=0 or nz~=0 then self.lastForward={nx,ny,nz} end
     end
 end
 
-function M:StopExtension()
-    self.isExtending = false
-end
+function M:StopExtension() self.isExtending = false end
 
 function M:StartRetraction()
     if (self.chainLen or 0) <= 0 then return end
-    self.isRetracting = true
-    self.isExtending = false
-    self._raycastSnapped = false
-    self._flopping = false
-    self.hookedTag = ""
-    self.losAnchors = {}
+    self.isRetracting, self.isExtending = true, false
+    self._raycastSnapped, self._flopping = false, false
+    self.hookedTag       = ""
+    self.losAnchors      = {}
     self._lockedChainLen = self.chainLen
 end
 
@@ -113,38 +75,25 @@ function M:ComputeAnchors(angleThresholdRad)
     self.anchors = {}
     local aN = self.activeN
     if aN < 3 then return end
-    for i = 2, aN - 1 do
-        local a = self.positions[i-1]; local b = self.positions[i]; local c = self.positions[i+1]
-        local v1x,v1y,v1z = b[1]-a[1], b[2]-a[2], b[3]-a[3]
-        local v2x,v2y,v2z = c[1]-b[1], c[2]-b[2], c[3]-b[3]
-        local l1 = vec_len(v1x,v1y,v1z)
-        local l2 = vec_len(v2x,v2y,v2z)
-        if l1 > 1e-6 and l2 > 1e-6 then
-            local dotp = (v1x*v2x + v1y*v2y + v1z*v2z) / (l1 * l2)
-            if dotp < -1 then dotp = -1 elseif dotp > 1 then dotp = 1 end
-            local ang = math.acos(dotp)
-            if ang >= angleThresholdRad then
-                self.anchors[i] = true
-            end
+    for i = 2, aN-1 do
+        local a,b,c = self.positions[i-1], self.positions[i], self.positions[i+1]
+        local v1x,v1y,v1z = b[1]-a[1],b[2]-a[2],b[3]-a[3]
+        local v2x,v2y,v2z = c[1]-b[1],c[2]-b[2],c[3]-b[3]
+        local l1,l2 = vec_len(v1x,v1y,v1z), vec_len(v2x,v2y,v2z)
+        if l1>1e-6 and l2>1e-6 then
+            local dotp = math.max(-1, math.min(1, (v1x*v2x+v1y*v2y+v1z*v2z)/(l1*l2)))
+            if math.acos(dotp) >= angleThresholdRad then self.anchors[i] = true end
         end
     end
 end
 
-function M:PerformRaycast(sx, sy, sz, maxDistance)
+function M:PerformRaycast(sx,sy,sz,maxDistance)
     if not Physics or not Physics.Raycast then return nil end
-    local fx, fy, fz = self.lastForward[1] or 0, self.lastForward[2] or 0, self.lastForward[3] or 1
-    local nx, ny, nz = normalize(fx, fy, fz)
-    local hitDistance = Physics.Raycast(sx, sy, sz, nx, ny, nz, maxDistance)
+    local nx,ny,nz = normalize(self.lastForward[1] or 0, self.lastForward[2] or 0, self.lastForward[3] or 1)
+    local hitDistance = Physics.Raycast(sx,sy,sz, nx,ny,nz, maxDistance)
     if hitDistance > 0 then
-        return {
-            hit = true,
-            distance = hitDistance,
-            hitPoint = {
-                sx + nx * hitDistance,
-                sy + ny * hitDistance,
-                sz + nz * hitDistance
-            }
-        }
+        return {hit=true, distance=hitDistance,
+                hitPoint={sx+nx*hitDistance, sy+ny*hitDistance, sz+nz*hitDistance}}
     end
     return nil
 end
@@ -152,346 +101,180 @@ end
 -- ---------------------------------------------------------------------------
 -- LOS anchor system
 -- ---------------------------------------------------------------------------
--- Each anchor entry: { x, y, z, bodyId, nx, ny, nz }
---   x,y,z   world position (slides each frame along geometry)
---   bodyId  persistent physics body that caused this anchor (from RaycastFull)
---   nx,ny,nz hit normal at placement (used to offset anchor flush to surface)
---
--- DESIGN: Hybrid incremental — separate remove and add passes that operate on
--- different parts of the path, so they cannot conflict within a frame.
---
--- WHY INCREMENTAL (not rebuild-from-scratch):
---   Pure rebuild has no memory of which side of an obstacle the chain committed
---   to.  If the player moves to a position where startPos→endPos is now a clear
---   raycast, rebuild produces zero anchors — the chain snaps straight through
---   the pillar it wrapped around.  bodyId lets us catch this: if a body that
---   caused an anchor last frame no longer appears in the greedy walk this frame,
---   we shoot startPos→endPos to check whether that body is still topologically
---   between the two endpoints.  If it is, the chain is still wrapped — keep the
---   anchor even though the greedy walk missed it.
---
--- WHY NO OSCILLATION (unlike the original two-pass-on-one-list approach):
---   Remove and add passes operate on different segments of the path.
---   Remove checks existing anchor chords (prev→next).
---   Add extends only the frontier from the last surviving anchor toward endPos.
---   They share no mutable state within the same frame, so neither pass
---   invalidates the other's inputs.
---
--- ANCHOR SLIDING (hitNormal):
---   Anchor position = hitPoint - hitNormal * SURFACE_OFFSET, placing it flush
---   against the surface.  Each frame the anchor is re-derived from a fresh
---   raycast, so it naturally slides along geometry as player moves vertically.
--- ---------------------------------------------------------------------------
-local LOS_NUDGE          = 0.06   -- metres offset along normal from surface (flush placement)
-local LOS_MIN_DIST       = 0.03   -- skip raycasts on segments shorter than this
-local LOS_CLEAR_SLACK    = 0.06   -- hit within this of the far endpoint counts as "clear"
-local LOS_MAX_ANCHORS    = 16     -- hard cap against degenerate geometry
-local LOS_CLEAR_FRAMES   = 2      -- consecutive clear frames before an anchor is dissolved
-                                   -- prevents one-frame oscillation when player is close to occluder
+local LOS_NUDGE        = 0.06
+local LOS_MIN_DIST     = 0.03
+local LOS_CLEAR_SLACK  = 0.06
+local LOS_MAX_ANCHORS  = 16
+local LOS_CLEAR_FRAMES = 2
 
--- ---------------------------------------------------------------------------
--- RaycastFull unpacking
--- ---------------------------------------------------------------------------
--- C++ returns std::tuple<bool,float,float,float,float,float,float,float,uint32_t>.
--- Depending on the Lua binding this arrives as EITHER:
---   (a) 9 separate return values  — pcall gives ok, hit, dist, px...bodyId
---   (b) a single Lua table        — pcall gives ok, r (where r[1]=hit, r[2]=dist...)
--- We detect which case we're in by checking the type of the second pcall result.
--- ---------------------------------------------------------------------------
 local function los_raycast(ox,oy,oz, dx,dy,dz, maxDist)
     if Physics.RaycastFull then
-        local ok, a, b, c, d, e, f, g, h, k =
-            pcall(function()
-                return Physics.RaycastFull(ox,oy,oz, dx,dy,dz, maxDist)
-            end)
+        local ok, a,b,c,d,e,f,g,h,k = pcall(function()
+            return Physics.RaycastFull(ox,oy,oz, dx,dy,dz, maxDist)
+        end)
         if ok then
-            local hit, dist, px, py, pz, nx, ny, nz, bodyId
-            if type(a) == "table" then
-                -- Binding returned a single table (case b)
-                hit = a[1]; dist = a[2]
-                px = a[3]; py = a[4]; pz = a[5]
-                nx = a[6]; ny = a[7]; nz = a[8]
-                bodyId = a[9]
+            local hit,dist,px,py,pz,nx,ny,nz,bodyId
+            if type(a)=="table" then
+                hit,dist,px,py,pz,nx,ny,nz,bodyId = a[1],a[2],a[3],a[4],a[5],a[6],a[7],a[8],a[9]
             else
-                -- Binding returned multiple values (case a)
-                hit = a;  dist = b
-                px = c;   py = d;   pz = e
-                nx = f;   ny = g;   nz = h
-                bodyId = k
+                hit,dist,px,py,pz,nx,ny,nz,bodyId = a,b,c,d,e,f,g,h,k
             end
-            if hit and dist and dist > 0 then
-                return true, dist, px,py,pz, nx,ny,nz, bodyId
-            end
+            if hit and dist and dist>0 then return true,dist,px,py,pz,nx,ny,nz,bodyId end
         end
         return false
     end
-    -- Fallback: plain Raycast — synthesise hitPoint, no normal/bodyId
     local dist = Physics.Raycast(ox,oy,oz, dx,dy,dz, maxDist)
-    if dist and dist > 0 then
-        return true, dist, ox+dx*dist, oy+dy*dist, oz+dz*dist, 0,1,0, nil
-    end
+    if dist and dist>0 then return true,dist, ox+dx*dist,oy+dy*dist,oz+dz*dist, 0,1,0,nil end
     return false
 end
 
--- Place a single anchor from a RaycastFull result.
--- Position is offset LOS_NUDGE along the surface normal so it sits flush
--- against the geometry edge rather than floating in free space before the wall.
 local function make_anchor(ox,oy,oz, dirX,dirY,dirZ, dist, px,py,pz, nx,ny,nz, bodyId)
-    local ax, ay, az
-    nx = nx or 0; ny = ny or 0; nz = nz or 0
-    local nlen = math.sqrt(nx*nx + ny*ny + nz*nz)
+    nx,ny,nz = nx or 0, ny or 0, nz or 0
+    local nlen = math.sqrt(nx*nx+ny*ny+nz*nz)
+    local ax,ay,az
     if nlen > 0.01 then
-        nx, ny, nz = nx/nlen, ny/nlen, nz/nlen
-        ax = px + nx * LOS_NUDGE
-        ay = py + ny * LOS_NUDGE
-        az = pz + nz * LOS_NUDGE
+        nx,ny,nz = nx/nlen,ny/nlen,nz/nlen
+        ax,ay,az = px+nx*LOS_NUDGE, py+ny*LOS_NUDGE, pz+nz*LOS_NUDGE
     else
-        -- No valid normal: nudge back along ray direction
-        ax = ox + dirX * (dist - LOS_NUDGE)
-        ay = oy + dirY * (dist - LOS_NUDGE)
-        az = oz + dirZ * (dist - LOS_NUDGE)
-        nx, ny, nz = -dirX, -dirY, -dirZ
+        nx,ny,nz = -dirX,-dirY,-dirZ
+        ax,ay,az = ox+dirX*(dist-LOS_NUDGE), oy+dirY*(dist-LOS_NUDGE), oz+dirZ*(dist-LOS_NUDGE)
     end
-    return { ax, ay, az, bodyId = bodyId, nx = nx, ny = ny, nz = nz, clearFrames = 0 }
+    return {ax,ay,az, bodyId=bodyId, nx=nx,ny=ny,nz=nz, clearFrames=0}
 end
 
-function M:UpdateLOSAnchors(sx, sy, sz, ex, ey, ez)
-    if not Physics then self.losAnchors = {} return end
+function M:UpdateLOSAnchors(sx,sy,sz,ex,ey,ez)
+    if not Physics then self.losAnchors={} return end
 
-    -- -------------------------------------------------------------------------
-    -- REMOVE PASS
-    -- For each anchor, check two conditions for dissolution:
-    --   (a) chord prev→next is geometrically clear
-    --   (b) the chord prev→next does NOT hit this anchor's own bodyId
-    --       (wrapping guard — if removing this anchor would make the chain
-    --       clip through the body it wraps, keep it)
-    -- To prevent flicker when the player is very close to an occluder, we
-    -- require the anchor to be clear for LOS_CLEAR_FRAMES consecutive frames
-    -- before actually removing it.  clearFrames is reset to 0 on any blocked
-    -- frame so a single obstruction re-locks the anchor immediately.
-    --
-    -- SLIDING: when an anchor survives, we re-derive its world position by
-    -- shooting from its predecessor toward the anchor's OWN stored position
-    -- (not the chord direction).  This guarantees we always re-hit the same
-    -- surface patch regardless of where next_ has moved, so the anchor slides
-    -- naturally along geometry as the player moves up/down or sideways.
-    -- -------------------------------------------------------------------------
-
-    -- Topology unwrap test: shoot directly from startPos (player) to endPos.
-    -- If that ray hits anchor.bodyId, the obstacle is still topologically between
-    -- the two endpoints — the chain is still wrapped, keep the anchor.
-    -- If the ray does NOT hit anchor.bodyId, the player and endpoint are on the
-    -- same side of the obstacle → the wrapping has resolved → allow removal.
-    -- This is the correct test: it answers "are player and endpoint on the same
-    -- side?" rather than "does the local chord clip the body?" (the local chord
-    -- from prev→next always passes through the pillar when the player is far away,
-    -- which is what caused the stickiness).
-    local _directSideCache = {}
-    local function isStillTopologicallyWrapped(anchor)
-        if anchor.bodyId == nil then return false end
-        if _directSideCache[anchor.bodyId] ~= nil then
-            return _directSideCache[anchor.bodyId]
-        end
-        local dx, dy, dz = ex-sx, ey-sy, ez-sz
+    -- Per-frame topology test cache: is player still on opposite side of anchor's body?
+    local _sideCache = {}
+    local function isWrapped(anchor)
+        if anchor.bodyId==nil then return false end
+        if _sideCache[anchor.bodyId]~=nil then return _sideCache[anchor.bodyId] end
+        local dx,dy,dz = ex-sx,ey-sy,ez-sz
         local dist = math.sqrt(dx*dx+dy*dy+dz*dz)
-        if dist < LOS_MIN_DIST then
-            _directSideCache[anchor.bodyId] = false
-            return false
-        end
-        local ndx, ndy, ndz = dx/dist, dy/dist, dz/dist
-        local hit, _, _,_,_, _,_,_, hitBodyId =
-            los_raycast(sx, sy, sz, ndx, ndy, ndz, dist)
-        local wrapped = hit and (hitBodyId == anchor.bodyId)
-        _directSideCache[anchor.bodyId] = wrapped
+        if dist < LOS_MIN_DIST then _sideCache[anchor.bodyId]=false; return false end
+        local hit,_,_,_,_,_,_,_,hitBodyId = los_raycast(sx,sy,sz, dx/dist,dy/dist,dz/dist, dist)
+        local wrapped = hit and (hitBodyId==anchor.bodyId)
+        _sideCache[anchor.bodyId] = wrapped
         return wrapped
     end
 
-    -- Track bodyIds dissolved this frame so add/validation passes don't re-insert them.
     local dissolvedThisFrame = {}
 
+    -- REMOVE PASS
     local i = 1
     while i <= #self.losAnchors do
         local anchor = self.losAnchors[i]
-        local prev   = (i == 1) and {sx, sy, sz} or self.losAnchors[i-1]
-        local next_  = (i == #self.losAnchors) and {ex, ey, ez} or self.losAnchors[i+1]
-        local dx, dy, dz = next_[1]-prev[1], next_[2]-prev[2], next_[3]-prev[3]
+        local prev  = (i==1) and {sx,sy,sz} or self.losAnchors[i-1]
+        local next_ = (i==#self.losAnchors) and {ex,ey,ez} or self.losAnchors[i+1]
+        local dx,dy,dz = next_[1]-prev[1], next_[2]-prev[2], next_[3]-prev[3]
         local chordDist = math.sqrt(dx*dx+dy*dy+dz*dz)
-
-        -- Evaluate whether this anchor is currently unnecessary
         local shouldDissolve = false
-        if chordDist < LOS_MIN_DIST then
-            -- Collapsed — dissolve immediately regardless of clearFrames
-            shouldDissolve = true
-            anchor.clearFrames = (anchor.clearFrames or 0) + 1
-        else
-            local ndx,ndy,ndz = dx/chordDist, dy/chordDist, dz/chordDist
-            local hit, hitDist = los_raycast(prev[1],prev[2],prev[3], ndx,ndy,ndz, chordDist)
-            local chordClear = (not hit) or (hitDist and hitDist >= chordDist - LOS_CLEAR_SLACK)
 
-            if chordClear and not isStillTopologicallyWrapped(anchor) then
-                anchor.clearFrames = (anchor.clearFrames or 0) + 1
+        if chordDist < LOS_MIN_DIST then
+            anchor.clearFrames = (anchor.clearFrames or 0)+1
+            shouldDissolve = true
+        else
+            local hit,hitDist = los_raycast(prev[1],prev[2],prev[3], dx/chordDist,dy/chordDist,dz/chordDist, chordDist)
+            if ((not hit) or (hitDist and hitDist>=chordDist-LOS_CLEAR_SLACK)) and not isWrapped(anchor) then
+                anchor.clearFrames = (anchor.clearFrames or 0)+1
                 if anchor.clearFrames >= LOS_CLEAR_FRAMES then
                     shouldDissolve = true
-                    dbg(string.format("[ChainController][LOS] Remove anchor %d after %d clear frames", i, anchor.clearFrames))
+                    dbg(string.format("[LOS] Remove anchor %d after %d clear frames",i,anchor.clearFrames))
                 end
             else
-                anchor.clearFrames = 0  -- blocked this frame — reset debounce
+                anchor.clearFrames = 0
             end
         end
 
         if shouldDissolve then
-            if anchor.bodyId then dissolvedThisFrame[anchor.bodyId] = true end
+            if anchor.bodyId then dissolvedThisFrame[anchor.bodyId]=true end
             table.remove(self.losAnchors, i)
-            -- i stays the same; next entry slid down
         else
-            -- SLIDING REFRESH: re-derive world position by shooting from predecessor
-            -- toward this anchor's own stored position.  Using the anchor's position
-            -- (not the chord direction) ensures we always re-hit the same surface
-            -- patch even after the player has moved significantly sideways.
-            --
-            -- IMPORTANT: skip refresh when clearFrames > 0.  If the anchor is already
-            -- accumulating toward dissolution, re-hitting the surface would re-lock it
-            -- and prevent it from ever being removed (the stickiness bug).
-            if (anchor.clearFrames or 0) > 0 then
-                i = i + 1
-                goto continue_anchor
-            end
-            local toAx = anchor[1] - prev[1]
-            local toAy = anchor[2] - prev[2]
-            local toAz = anchor[3] - prev[3]
-            local toADist = math.sqrt(toAx*toAx + toAy*toAy + toAz*toAz)
-            if toADist > LOS_MIN_DIST then
-                local tdx, tdy, tdz = toAx/toADist, toAy/toADist, toAz/toADist
-                -- Cast slightly beyond stored position to account for normal offset
-                local hit2, dist2, px,py,pz, nx2,ny2,nz2, bodyId2 =
-                    los_raycast(prev[1],prev[2],prev[3], tdx,tdy,tdz, toADist + 0.3)
-                if hit2 then
-                    local refreshed = make_anchor(
-                        prev[1],prev[2],prev[3], tdx,tdy,tdz,
-                        dist2, px,py,pz, nx2,ny2,nz2, bodyId2)
-                    -- Validate: the segment refreshed→next_ must not be blocked by
-                    -- the same body.  If it is, the refresh landed on the wrong face
-                    -- (e.g. side face when the anchor should be on the front) and
-                    -- accepting it would make the path cut through the obstacle.
-                    local refreshOk = true
-                    local rnx = next_[1] - refreshed[1]
-                    local rny = next_[2] - refreshed[2]
-                    local rnz = next_[3] - refreshed[3]
-                    local rnDist = math.sqrt(rnx*rnx + rny*rny + rnz*rnz)
-                    if rnDist >= LOS_MIN_DIST then
-                        local rndx, rndy, rndz = rnx/rnDist, rny/rnDist, rnz/rnDist
-                        local vhit, _, _,_,_, _,_,_, vBodyId =
-                            los_raycast(refreshed[1],refreshed[2],refreshed[3], rndx,rndy,rndz, rnDist)
-                        if vhit and vBodyId == bodyId2 then
-                            refreshOk = false  -- wrong face: segment to next still cuts the same body
+            -- Sliding refresh: re-derive position by shooting toward anchor's stored pos
+            -- (skip if clearFrames>0 — re-locking a dissolving anchor causes stickiness)
+            if (anchor.clearFrames or 0) == 0 then
+                local toAx,toAy,toAz = anchor[1]-prev[1], anchor[2]-prev[2], anchor[3]-prev[3]
+                local toADist = math.sqrt(toAx*toAx+toAy*toAy+toAz*toAz)
+                if toADist > LOS_MIN_DIST then
+                    local tdx,tdy,tdz = toAx/toADist, toAy/toADist, toAz/toADist
+                    local hit2,dist2,px,py,pz,nx2,ny2,nz2,bodyId2 =
+                        los_raycast(prev[1],prev[2],prev[3], tdx,tdy,tdz, toADist+0.3)
+                    if hit2 then
+                        local ref = make_anchor(prev[1],prev[2],prev[3], tdx,tdy,tdz,
+                                                dist2,px,py,pz, nx2,ny2,nz2, bodyId2)
+                        -- Validate refreshed→next_ doesn't re-cut same body (wrong face guard)
+                        local rnx,rny,rnz = next_[1]-ref[1], next_[2]-ref[2], next_[3]-ref[3]
+                        local rnDist = math.sqrt(rnx*rnx+rny*rny+rnz*rnz)
+                        local refreshOk = true
+                        if rnDist >= LOS_MIN_DIST then
+                            local vhit,_,_,_,_,_,_,_,vBodyId =
+                                los_raycast(ref[1],ref[2],ref[3], rnx/rnDist,rny/rnDist,rnz/rnDist, rnDist)
+                            if vhit and vBodyId==bodyId2 then refreshOk=false end
                         end
-                    end
-                    if refreshOk then
-                        anchor[1] = refreshed[1]
-                        anchor[2] = refreshed[2]
-                        anchor[3] = refreshed[3]
-                        anchor.nx = refreshed.nx
-                        anchor.ny = refreshed.ny
-                        anchor.nz = refreshed.nz
-                        -- Update bodyId so wrap cache stays valid for the new body
-                        anchor.bodyId = bodyId2
+                        if refreshOk then
+                            anchor[1],anchor[2],anchor[3] = ref[1],ref[2],ref[3]
+                            anchor.nx,anchor.ny,anchor.nz = ref.nx,ref.ny,ref.nz
+                            anchor.bodyId = bodyId2
+                        end
                     end
                 end
             end
-            i = i + 1
-            ::continue_anchor::
+            i = i+1
         end
     end
 
-    -- -------------------------------------------------------------------------
     -- ADD PASS
-    -- Walk from the last surviving anchor toward endPos, adding new anchors
-    -- wherever the path is blocked.  Starts from the frontier — cannot conflict
-    -- with the remove pass which only operated on existing anchor chords.
-    -- -------------------------------------------------------------------------
     if #self.losAnchors >= LOS_MAX_ANCHORS then return end
-
-    local fromX, fromY, fromZ
+    local fromX,fromY,fromZ
     if #self.losAnchors > 0 then
-        local last = self.losAnchors[#self.losAnchors]
-        fromX, fromY, fromZ = last[1], last[2], last[3]
+        fromX,fromY,fromZ = self.losAnchors[#self.losAnchors][1],
+                            self.losAnchors[#self.losAnchors][2],
+                            self.losAnchors[#self.losAnchors][3]
     else
-        fromX, fromY, fromZ = sx, sy, sz
+        fromX,fromY,fromZ = sx,sy,sz
     end
-
-    for _ = 1, LOS_MAX_ANCHORS - #self.losAnchors do
-        local dx, dy, dz = ex-fromX, ey-fromY, ez-fromZ
+    for _ = 1, LOS_MAX_ANCHORS-#self.losAnchors do
+        local dx,dy,dz = ex-fromX,ey-fromY,ez-fromZ
         local dist = math.sqrt(dx*dx+dy*dy+dz*dz)
         if dist < LOS_MIN_DIST then break end
-
-        local ndx,ndy,ndz = dx/dist, dy/dist, dz/dist
-        local hit, hitDist, px,py,pz, nx,ny,nz, bodyId =
-            los_raycast(fromX,fromY,fromZ, ndx,ndy,ndz, dist)
-
-        local clear = (not hit) or (hitDist and hitDist >= dist - LOS_CLEAR_SLACK)
-        if clear then break end
-
-        -- Don't re-add a body dissolved this frame by the remove pass
+        local ndx,ndy,ndz = dx/dist,dy/dist,dz/dist
+        local hit,hitDist,px,py,pz,nx,ny,nz,bodyId = los_raycast(fromX,fromY,fromZ, ndx,ndy,ndz, dist)
+        if (not hit) or (hitDist and hitDist>=dist-LOS_CLEAR_SLACK) then break end
         if bodyId and dissolvedThisFrame[bodyId] then break end
-
-        local anchor = make_anchor(fromX,fromY,fromZ, ndx,ndy,ndz, hitDist, px,py,pz, nx,ny,nz, bodyId)
-        dbg(string.format("[ChainController][LOS] Add anchor %d bodyId=%s pos=(%.3f,%.3f,%.3f)",
-            #self.losAnchors+1, tostring(bodyId), anchor[1], anchor[2], anchor[3]))
+        local anchor = make_anchor(fromX,fromY,fromZ, ndx,ndy,ndz, hitDist,px,py,pz,nx,ny,nz,bodyId)
+        dbg(string.format("[LOS] Add anchor %d bodyId=%s pos=(%.3f,%.3f,%.3f)",
+            #self.losAnchors+1, tostring(bodyId), anchor[1],anchor[2],anchor[3]))
         table.insert(self.losAnchors, anchor)
-
-        -- Advance the frontier to just past the hit surface so the next raycast
-        -- origin clears the wall.  Using only the nudged anchor position as the
-        -- new origin causes the very next ray to immediately re-hit the same face.
-        fromX = anchor[1] + ndx * LOS_NUDGE
-        fromY = anchor[2] + ndy * LOS_NUDGE
-        fromZ = anchor[3] + ndz * LOS_NUDGE
-
+        fromX,fromY,fromZ = anchor[1]+ndx*LOS_NUDGE, anchor[2]+ndy*LOS_NUDGE, anchor[3]+ndz*LOS_NUDGE
         if #self.losAnchors >= LOS_MAX_ANCHORS then break end
     end
 
-    -- -------------------------------------------------------------------------
-    -- VALIDATION PASS
-    -- Walk every segment of the complete path (start→a[1]→...→a[n]→end).
-    -- The REMOVE and ADD passes only operate on specific sub-ranges and cannot
-    -- catch cuts that arise when sliding moves an anchor to a new face, or when
-    -- a segment between two existing anchors becomes blocked.
-    -- For any blocked segment, insert a new anchor at the hit point and restart
-    -- the walk.  Bounded by LOS_MAX_ANCHORS so this cannot loop indefinitely.
-    -- -------------------------------------------------------------------------
-    local validationPasses = 0
-    local maxValidation = LOS_MAX_ANCHORS
-    local validationChanged = true
-    while validationChanged and validationPasses < maxValidation and #self.losAnchors < LOS_MAX_ANCHORS do
-        validationChanged = false
-        validationPasses = validationPasses + 1
-
-        local path = {{sx, sy, sz}}
-        for _, a in ipairs(self.losAnchors) do table.insert(path, a) end
-        table.insert(path, {ex, ey, ez})
-
-        for seg = 1, #path - 1 do
-            local ax2, ay2, az2 = path[seg][1], path[seg][2], path[seg][3]
-            local bx2, by2, bz2 = path[seg+1][1], path[seg+1][2], path[seg+1][3]
-            local vdx, vdy, vdz = bx2-ax2, by2-ay2, bz2-az2
-            local vdist = math.sqrt(vdx*vdx + vdy*vdy + vdz*vdz)
+    -- VALIDATION PASS: catch any newly-blocked segments across the full path
+    local passes, changed = 0, true
+    while changed and passes<LOS_MAX_ANCHORS and #self.losAnchors<LOS_MAX_ANCHORS do
+        changed=false; passes=passes+1
+        local path = {{sx,sy,sz}}
+        for _,a in ipairs(self.losAnchors) do table.insert(path,a) end
+        table.insert(path,{ex,ey,ez})
+        for seg = 1, #path-1 do
+            local ax2,ay2,az2 = path[seg][1],path[seg][2],path[seg][3]
+            local bx2,by2,bz2 = path[seg+1][1],path[seg+1][2],path[seg+1][3]
+            local vdx,vdy,vdz = bx2-ax2,by2-ay2,bz2-az2
+            local vdist = math.sqrt(vdx*vdx+vdy*vdy+vdz*vdz)
             if vdist >= LOS_MIN_DIST then
-                local vndx, vndy, vndz = vdx/vdist, vdy/vdist, vdz/vdist
-                local vhit, vhitDist, vpx,vpy,vpz, vnx,vny,vnz, vBodyId =
+                local vndx,vndy,vndz = vdx/vdist,vdy/vdist,vdz/vdist
+                local vhit,vhitDist,vpx,vpy,vpz,vnx,vny,vnz,vBodyId =
                     los_raycast(ax2,ay2,az2, vndx,vndy,vndz, vdist)
-                local vClear = (not vhit) or (vhitDist and vhitDist >= vdist - LOS_CLEAR_SLACK)
-                if not vClear then
-                    -- Don't re-add a body dissolved this frame by the remove pass
-                    if vBodyId and dissolvedThisFrame[vBodyId] then
-                        -- skip, continue to next segment
-                    else
-                    local newAnchor = make_anchor(ax2,ay2,az2, vndx,vndy,vndz,
-                        vhitDist, vpx,vpy,vpz, vnx,vny,vnz, vBodyId)
-                    dbg(string.format("[ChainController][LOS] Validation insert at seg=%d bodyId=%s pos=(%.3f,%.3f,%.3f)",
-                        seg, tostring(vBodyId), newAnchor[1], newAnchor[2], newAnchor[3]))
-                    table.insert(self.losAnchors, seg, newAnchor)
-                    validationChanged = true
-                    break
-                    end  -- else (not dissolved)
+                if vhit and not (vhitDist and vhitDist>=vdist-LOS_CLEAR_SLACK) then
+                    if not (vBodyId and dissolvedThisFrame[vBodyId]) then
+                        local newA = make_anchor(ax2,ay2,az2, vndx,vndy,vndz,
+                            vhitDist,vpx,vpy,vpz, vnx,vny,vnz, vBodyId)
+                        dbg(string.format("[LOS] Validation insert seg=%d bodyId=%s pos=(%.3f,%.3f,%.3f)",
+                            seg, tostring(vBodyId), newA[1],newA[2],newA[3]))
+                        table.insert(self.losAnchors, seg, newA)
+                        changed=true; break
+                    end
                 end
             end
             if #self.losAnchors >= LOS_MAX_ANCHORS then break end
@@ -499,457 +282,339 @@ function M:UpdateLOSAnchors(sx, sy, sz, ex, ey, ez)
     end
 end
 
--- Distribute activeN links evenly along the piecewise path:
---   startPos → losAnchors[1] → losAnchors[2] → ... → endPos
--- All positions are set kinematically (prev = pos, so no velocity).
--- Pool links beyond activeN are parked at startPos.
-function M:DistributeLinksAlongPath(sx, sy, sz, ex, ey, ez, activeN)
-    local path = {{sx, sy, sz}}
-    for _, a in ipairs(self.losAnchors) do table.insert(path, a) end
-    table.insert(path, {ex, ey, ez})
-
-    -- Precompute per-segment lengths and total
-    local segLens = {}
-    local totalLen = 0
-    for i = 2, #path do
-        local dx = path[i][1] - path[i-1][1]
-        local dy = path[i][2] - path[i-1][2]
-        local dz = path[i][3] - path[i-1][3]
-        local l  = math.sqrt(dx*dx + dy*dy + dz*dz)
-        segLens[i - 1] = l
-        totalLen = totalLen + l
+function M:DistributeLinksAlongPath(sx,sy,sz,ex,ey,ez,activeN)
+    local path = {{sx,sy,sz}}
+    for _,a in ipairs(self.losAnchors) do table.insert(path,a) end
+    table.insert(path,{ex,ey,ez})
+    local segLens, totalLen = {}, 0
+    for i = 2,#path do
+        local dx,dy,dz = path[i][1]-path[i-1][1], path[i][2]-path[i-1][2], path[i][3]-path[i-1][3]
+        local l = math.sqrt(dx*dx+dy*dy+dz*dz)
+        segLens[i-1]=l; totalLen=totalLen+l
     end
-
-    -- Place each active link
     for i = 1, activeN do
-        local t           = (activeN > 1) and ((i - 1) / (activeN - 1)) or 0
-        local targetDist  = t * totalLen
-        local cumLen      = 0
-        local placed      = false
-
-        for seg = 1, #segLens do
-            local segEnd = cumLen + segLens[seg]
-            if targetDist <= segEnd + 1e-9 then
-                local localT = (segLens[seg] > 1e-9) and ((targetDist - cumLen) / segLens[seg]) or 0
-                local from = path[seg]; local to = path[seg + 1]
-                local px = from[1] + (to[1] - from[1]) * localT
-                local py = from[2] + (to[2] - from[2]) * localT
-                local pz = from[3] + (to[3] - from[3]) * localT
-                self.positions[i][1] = px; self.positions[i][2] = py; self.positions[i][3] = pz
-                self.prev[i][1]      = px; self.prev[i][2]      = py; self.prev[i][3]      = pz
-                placed = true
-                break
+        local targetDist = ((activeN>1) and ((i-1)/(activeN-1)) or 0)*totalLen
+        local cumLen, placed = 0, false
+        for seg = 1,#segLens do
+            local segEnd = cumLen+segLens[seg]
+            if targetDist <= segEnd+1e-9 then
+                local localT = (segLens[seg]>1e-9) and ((targetDist-cumLen)/segLens[seg]) or 0
+                local from,to = path[seg],path[seg+1]
+                self.positions[i] = {from[1]+(to[1]-from[1])*localT, from[2]+(to[2]-from[2])*localT, from[3]+(to[3]-from[3])*localT}
+                self.prev[i] = {self.positions[i][1],self.positions[i][2],self.positions[i][3]}
+                placed=true; break
             end
-            cumLen = segEnd
+            cumLen=segEnd
         end
-
-        if not placed then
-            self.positions[i][1] = ex; self.positions[i][2] = ey; self.positions[i][3] = ez
-            self.prev[i][1]      = ex; self.prev[i][2]      = ey; self.prev[i][3]      = ez
-        end
+        if not placed then self.positions[i]={ex,ey,ez}; self.prev[i]={ex,ey,ez} end
     end
-
-    -- Park pool links at startPos (keeps them hidden at origin of chain)
-    for i = activeN + 1, self.n do
-        self.positions[i][1] = sx; self.positions[i][2] = sy; self.positions[i][3] = sz
-        self.prev[i][1]      = sx; self.prev[i][2]      = sy; self.prev[i][3]      = sz
-    end
+    for i = activeN+1, self.n do self.positions[i]={sx,sy,sz}; self.prev[i]={sx,sy,sz} end
 end
 
 -- ---------------------------------------------------------------------------
 
 function M:Update(dt, settings)
     settings = settings or {}
-
     local chainSpeed    = tonumber(settings.ChainSpeed)      or tonumber(self.params.ChainSpeed)      or 10
     local maxLenSetting = tonumber(settings.MaxLength)       or tonumber(self.params.MaxLength)       or 0
     local isElastic     = (settings.IsElastic ~= nil) and settings.IsElastic or (self.params.IsElastic == true)
     local linkMax       = tonumber(settings.LinkMaxDistance) or tonumber(self.params.LinkMaxDistance) or nil
-
     local aN = self.activeN
 
     -- 1) Update chainLen
     if self.isExtending then
         self.extensionTime = self.extensionTime + dt
         local desired = chainSpeed * self.extensionTime
-        if maxLenSetting and maxLenSetting > 0 then desired = math.min(desired, maxLenSetting) end
-        if not isElastic and linkMax and linkMax > 0 then
-            local maxAllowed = linkMax * math.max(1, (aN - 1))
-            if desired > maxAllowed then desired = maxAllowed end
-        end
+        if maxLenSetting>0 then desired=math.min(desired,maxLenSetting) end
+        if not isElastic and linkMax and linkMax>0 then desired=math.min(desired,linkMax*math.max(1,aN-1)) end
         self.chainLen = desired
-        if maxLenSetting and maxLenSetting > 0 and desired >= maxLenSetting and not self._raycastSnapped and not self.endPointLocked then
-            self.isExtending = false
-            self._flopping = true
+        if maxLenSetting>0 and desired>=maxLenSetting and not self._raycastSnapped and not self.endPointLocked then
+            self.isExtending=false; self._flopping=true
         end
     end
-
     if self.isRetracting then
-        self.chainLen = math.max(0, (self.chainLen or 0) - chainSpeed * dt)
+        self.chainLen = math.max(0,(self.chainLen or 0)-chainSpeed*dt)
         if self.chainLen <= 0 then
-            self.isRetracting = false
-            self.chainLen = 0
-            self.endPointLocked = false
-            self._raycastSnapped = false
+            self.isRetracting,self.chainLen = false,0
+            self.endPointLocked,self._raycastSnapped = false,false
             self.losAnchors = {}
         end
     end
 
-    -- 2) Resolve start world position
+    -- 2) Resolve start position
     local sx,sy,sz = 0,0,0
-    if type(settings.getStart) == "function" then
+    if type(settings.getStart)=="function" then
         sx,sy,sz = settings.getStart()
     elseif settings.startOverride then
         sx,sy,sz = settings.startOverride[1] or 0, settings.startOverride[2] or 0, settings.startOverride[3] or 0
     else
         sx,sy,sz = self.startPos[1] or 0, self.startPos[2] or 0, self.startPos[3] or 0
     end
-    self.startPos[1], self.startPos[2], self.startPos[3] = sx, sy, sz
+    self.startPos[1],self.startPos[2],self.startPos[3] = sx,sy,sz
 
     -- Movement constraint
     local constraintActive = (self.endPointLocked or self._raycastSnapped) and not self.isRetracting and not self._flopping
     if constraintActive then
-        local slack    = math.max(0.5, tonumber(settings.ChainSlackDistance) or 0.5)
-        local dragTag  = settings.DragTag or ""
-        local ex0 = self.lockedEndPoint[1]
-        local ey0 = self.lockedEndPoint[2]
-        local ez0 = self.lockedEndPoint[3]
+        local slack       = math.max(0.5, tonumber(settings.ChainSlackDistance) or 0.5)
+        local dragTag     = settings.DragTag or ""
+        local ex0,ey0,ez0 = self.lockedEndPoint[1],self.lockedEndPoint[2],self.lockedEndPoint[3]
         local chainLength = self.chainLen or 0
-        local isDragType = (dragTag ~= "" and self.hookedTag == dragTag)
-        local hardLimit = chainLength + slack
-
-        -- When LOS anchors are active, measure tautness via the chain's actual arc length
-        -- (self._arcLen, updated last frame) rather than the straight player→endpoint distance.
-        -- This prevents tension and pull-out firing while the chain still has physical slack.
-        local effectiveDist
-        local usingArcLen = settings.UseLOSAnchors and (self._arcLen ~= nil) and (#self.losAnchors > 0)
-        if usingArcLen then
-            effectiveDist = self._arcLen
+        local isDragType  = (dragTag~="" and self.hookedTag==dragTag)
+        local hardLimit   = chainLength + slack
+        -- Use arc length when LOS anchors active; straight-line player→endpoint otherwise
+        local usingArcLen   = settings.UseLOSAnchors and self._arcLen and (#self.losAnchors>0)
+        local effectiveDist = usingArcLen and self._arcLen or vec_len(sx-ex0,sy-ey0,sz-ez0)
+        -- Tension direction: toward first anchor, or locked endpoint if no anchors
+        local tensionX,tensionY,tensionZ
+        if #self.losAnchors>0 then
+            tensionX,tensionY,tensionZ = self.losAnchors[1][1],self.losAnchors[1][2],self.losAnchors[1][3]
         else
-            effectiveDist = vec_len(sx - ex0, sy - ey0, sz - ez0)
+            tensionX,tensionY,tensionZ = ex0,ey0,ez0
         end
-
-        -- Tension direction: point toward the first waypoint from the player (first anchor
-        -- if any, otherwise the locked endpoint). This is the direction the chain pulls.
-        local tensionX, tensionY, tensionZ
-        if #self.losAnchors > 0 then
-            tensionX = self.losAnchors[1][1]
-            tensionY = self.losAnchors[1][2]
-            tensionZ = self.losAnchors[1][3]
-        else
-            tensionX, tensionY, tensionZ = ex0, ey0, ez0
-        end
-
-        dbg(string.format("[ChainController][CONSTRAINT] locked=%s snapped=%s effectiveDist=%.3f arcLen=%s chainLen=%.3f slack=%.3f hardLimit=%.3f hookedTag='%s' usingArcLen=%s",
-            tostring(self.endPointLocked), tostring(self._raycastSnapped),
-            effectiveDist, tostring(self._arcLen), chainLength, slack, hardLimit, tostring(self.hookedTag), tostring(usingArcLen)))
-
+        dbg(string.format("[CONSTRAINT] effectiveDist=%.3f arcLen=%s chainLen=%.3f hardLimit=%.3f usingArcLen=%s",
+            effectiveDist,tostring(self._arcLen),chainLength,hardLimit,tostring(usingArcLen)))
         if isDragType then
-            if effectiveDist > chainLength + 1e-4 then
-                local dx = sx - ex0
-                local dy = sy - ey0
-                local dz = sz - ez0
-                local dist = vec_len(dx, dy, dz)
-                if dist > 1e-6 then
-                    local nx, ny, nz = dx/dist, dy/dist, dz/dist
-                    self.constraintResult = {
-                        ratio = 0, exceeded = false, drag = true,
-                        targetX = ex0 + nx * chainLength,
-                        targetY = ey0 + ny * chainLength,
-                        targetZ = ez0 + nz * chainLength,
-                    }
+            if effectiveDist > chainLength+1e-4 then
+                local dx,dy,dz = sx-ex0,sy-ey0,sz-ez0
+                local dist = vec_len(dx,dy,dz)
+                if dist>1e-6 then
+                    self.constraintResult = {ratio=0,exceeded=false,drag=true,
+                        targetX=ex0+(dx/dist)*chainLength,
+                        targetY=ey0+(dy/dist)*chainLength,
+                        targetZ=ez0+(dz/dist)*chainLength}
                 end
             else
-                self.constraintResult = { ratio = 0, exceeded = false, drag = false }
+                self.constraintResult = {ratio=0,exceeded=false,drag=false}
             end
         else
-            local ratio = 0
-            if effectiveDist > chainLength then
-                ratio = math.max(0, math.min(1, (effectiveDist - chainLength) / slack))
-            end
-            local shouldFlop = self._isTaut and (effectiveDist > hardLimit + 1e-4) and (self.hookedTag == nil or self.hookedTag == "")
-            if shouldFlop then
-                dbg("[ChainController][CONSTRAINT] TAUT + EXCEEDED -> flopping (untagged)")
-                self.endPointLocked = false
-                self._raycastSnapped = false
-                self._flopping = true
-                self.hookedTag = ""
-                self.constraintResult = { ratio = 0, exceeded = true, drag = false }
+            local ratio = (effectiveDist>chainLength)
+                and math.max(0,math.min(1,(effectiveDist-chainLength)/slack)) or 0
+            if self._isTaut and effectiveDist>hardLimit+1e-4 and (self.hookedTag==nil or self.hookedTag=="") then
+                dbg("[CONSTRAINT] TAUT + EXCEEDED -> flopping")
+                self.endPointLocked,self._raycastSnapped,self._flopping = false,false,true
+                self.hookedTag=""
+                self.constraintResult = {ratio=0,exceeded=true,drag=false}
             else
-                self.constraintResult = { ratio = ratio, exceeded = false, drag = false,
-                endX = tensionX, endY = tensionY, endZ = tensionZ }
+                self.constraintResult = {ratio=ratio,exceeded=false,drag=false,
+                    endX=tensionX,endY=tensionY,endZ=tensionZ}
             end
         end
     else
-        self.constraintResult = { ratio = 0, exceeded = false, drag = false }
+        self.constraintResult = {ratio=0,exceeded=false,drag=false}
     end
 
-    -- Ground clamp (single downward ray, O(1))
+    -- Ground clamp
     if settings.GroundClamp and Physics and Physics.Raycast then
-        local rayLen = 20.0
-        local hitDist = Physics.Raycast(sx, sy, sz, 0, -1, 0, rayLen)
-        if hitDist and hitDist > 0 then
-            self._groundY = sy - hitDist + (settings.GroundClampOffset or 0.1)
-        else
-            self._groundY = nil
-        end
+        local hitDist = Physics.Raycast(sx,sy,sz, 0,-1,0, 20.0)
+        self._groundY = (hitDist and hitDist>0) and (sy-hitDist+(settings.GroundClampOffset or 0.1)) or nil
     else
         self._groundY = nil
     end
 
-    -- 3) Determine end world position
+    -- 3) Determine end position
     local ex,ey,ez
     local fx,fy,fz = self.lastForward[1] or 0, self.lastForward[2] or 0, self.lastForward[3] or 1
-
     if settings.endOverride then
-        ex,ey,ez = settings.endOverride[1] or 0, settings.endOverride[2] or 0, settings.endOverride[3] or 0
-
+        ex,ey,ez = settings.endOverride[1] or 0,settings.endOverride[2] or 0,settings.endOverride[3] or 0
     elseif self.endPointLocked and not self.isRetracting then
-        ex, ey, ez = self.lockedEndPoint[1], self.lockedEndPoint[2], self.lockedEndPoint[3]
-
+        ex,ey,ez = self.lockedEndPoint[1],self.lockedEndPoint[2],self.lockedEndPoint[3]
     elseif self.isRetracting then
-        local lx = self.lockedEndPoint[1]
-        local ly = self.lockedEndPoint[2]
-        local lz = self.lockedEndPoint[3]
-        local dx = lx - sx
-        local dy = ly - sy
-        local dz = lz - sz
-        local fullDist = vec_len(dx, dy, dz)
-        if fullDist > 1e-6 then
-            local t = self.chainLen / (self._lockedChainLen > 0 and self._lockedChainLen or fullDist)
-            if t < 0 then t = 0 end
-            if t > 1 then t = 1 end
-            ex = sx + dx * t
-            ey = sy + dy * t
-            ez = sz + dz * t
+        local lx,ly,lz = self.lockedEndPoint[1],self.lockedEndPoint[2],self.lockedEndPoint[3]
+        local dx,dy,dz = lx-sx,ly-sy,lz-sz
+        local fullDist = vec_len(dx,dy,dz)
+        if fullDist>1e-6 then
+            local t = math.max(0,math.min(1,self.chainLen/(self._lockedChainLen>0 and self._lockedChainLen or fullDist)))
+            ex,ey,ez = sx+dx*t,sy+dy*t,sz+dz*t
         else
-            ex = sx; ey = sy; ez = sz
+            ex,ey,ez = sx,sy,sz
         end
-
     elseif self._raycastSnapped then
-        ex, ey, ez = self.lockedEndPoint[1], self.lockedEndPoint[2], self.lockedEndPoint[3]
-
+        ex,ey,ez = self.lockedEndPoint[1],self.lockedEndPoint[2],self.lockedEndPoint[3]
     elseif self.isExtending then
-        local theoreticalDistance = self.chainLen or 0
-        local raycastResult = self:PerformRaycast(sx, sy, sz, theoreticalDistance * 1.1)
-
-        if raycastResult and raycastResult.hit then
-            self.chainLen = raycastResult.distance
-            self.isExtending = false
-            self._raycastSnapped = true
-
-            local linkMaxForSnap = tonumber(settings.LinkMaxDistance) or tonumber(self.params.LinkMaxDistance) or 0
-            if linkMaxForSnap > 0 then
-                local needed = math.ceil(raycastResult.distance / linkMaxForSnap) + 1
-                local prevActiveN = self.activeN
-                self.activeN = math.min(needed, self.n)
-                aN = self.activeN
-                dbg(string.format("[ChainController] Raycast HIT at distance %.3f, snapped to (%.3f,%.3f,%.3f) | activeN: %d -> %d",
-                    raycastResult.distance,
-                    raycastResult.hitPoint[1], raycastResult.hitPoint[2], raycastResult.hitPoint[3],
-                    prevActiveN, self.activeN))
-            end
-
-            self.lockedEndPoint[1] = raycastResult.hitPoint[1]
-            self.lockedEndPoint[2] = raycastResult.hitPoint[2]
-            self.lockedEndPoint[3] = raycastResult.hitPoint[3]
-
-            ex, ey, ez = raycastResult.hitPoint[1], raycastResult.hitPoint[2], raycastResult.hitPoint[3]
+        local theorDist = self.chainLen or 0
+        local rc = self:PerformRaycast(sx,sy,sz, theorDist*1.1)
+        if rc and rc.hit then
+            self.chainLen=rc.distance; self.isExtending=false; self._raycastSnapped=true
+            local lmfs = tonumber(settings.LinkMaxDistance) or tonumber(self.params.LinkMaxDistance) or 0
+            if lmfs>0 then self.activeN=math.min(math.ceil(rc.distance/lmfs)+1,self.n); aN=self.activeN end
+            self.lockedEndPoint[1],self.lockedEndPoint[2],self.lockedEndPoint[3] =
+                rc.hitPoint[1],rc.hitPoint[2],rc.hitPoint[3]
+            ex,ey,ez = rc.hitPoint[1],rc.hitPoint[2],rc.hitPoint[3]
         else
-            ex = sx + (fx * theoreticalDistance)
-            ey = sy + (fy * theoreticalDistance)
-            ez = sz + (fz * theoreticalDistance)
+            ex,ey,ez = sx+fx*theorDist,sy+fy*theorDist,sz+fz*theorDist
         end
-
     elseif self._flopping then
-        ex = self.positions[aN][1]
-        ey = self.positions[aN][2]
-        ez = self.positions[aN][3]
-
+        ex,ey,ez = self.positions[aN][1],self.positions[aN][2],self.positions[aN][3]
     else
-        local theoreticalDistance = self.chainLen or 0
-        ex = sx + (fx * theoreticalDistance)
-        ey = sy + (fy * theoreticalDistance)
-        ez = sz + (fz * theoreticalDistance)
+        local d = self.chainLen or 0
+        ex,ey,ez = sx+fx*d,sy+fy*d,sz+fz*d
     end
-
-    self.endPos[1], self.endPos[2], self.endPos[3] = ex, ey, ez
+    self.endPos[1],self.endPos[2],self.endPos[3] = ex,ey,ez
 
     -- =========================================================================
     -- LOS ANCHOR MODE
-    -- When UseLOSAnchors is true and the chain has length, bypass Verlet entirely.
-    -- Positions are computed geometrically: straight lines between startPos,
-    -- any LOS anchors, and endPos.  Anchors are created/destroyed automatically
-    -- by raycasting each segment every frame.
     -- =========================================================================
-    if settings.UseLOSAnchors and (self.chainLen or 0) > 1e-4 and not self._flopping
+    if settings.UseLOSAnchors and (self.chainLen or 0)>1e-4 and not self._flopping
        and (self.endPointLocked or self._raycastSnapped) then
-        -- Update the anchor list (cleanup stale + add new where LOS breaks)
-        self:UpdateLOSAnchors(sx, sy, sz, ex, ey, ez)
 
-        -- Distribute all active links along the piecewise straight path
-        self:DistributeLinksAlongPath(sx, sy, sz, ex, ey, ez, aN)
+        self:UpdateLOSAnchors(sx,sy,sz,ex,ey,ez)
 
-        -- All links kinematic — no physics for this mode
-        for i = 1, self.n do self.invMass[i] = 0 end
-
-        -- Still compute isTaut (constraint system reads it)
-        do
-            local arcLen = 0
-            for i = 2, aN do
-                local dx = self.positions[i][1] - self.positions[i-1][1]
-                local dy = self.positions[i][2] - self.positions[i-1][2]
-                local dz = self.positions[i][3] - self.positions[i-1][3]
-                arcLen = arcLen + vec_len(dx, dy, dz)
-            end
-            self._isTaut = (arcLen >= (self.chainLen or 0) * 0.98)
-            self._arcLen = arcLen
+        -- Build XZ path for post-physics correction
+        local path = {{sx,sy,sz}}
+        for _,a in ipairs(self.losAnchors) do table.insert(path,a) end
+        table.insert(path,{ex,ey,ez})
+        local totalPathLen,cumLens = 0,{0}
+        for i = 2,#path do
+            local dx,dy,dz = path[i][1]-path[i-1][1],path[i][2]-path[i-1][2],path[i][3]-path[i-1][3]
+            totalPathLen = totalPathLen+math.sqrt(dx*dx+dy*dy+dz*dz)
+            cumLens[i] = totalPathLen
         end
 
-        return self.positions, { sx, sy, sz }, { ex, ey, ez }
+        -- Park pool links; make active links dynamic (start+end hard-pinned)
+        for i = aN+1,self.n do self.positions[i]={sx,sy,sz}; self.prev[i]={sx,sy,sz}; self.invMass[i]=0 end
+        for i = 1,aN do self.invMass[i]=(self.anchors[i]) and 0 or 1 end
+        self.invMass[1]=0; self.invMass[aN]=0
+
+        local curEndDist = vec_len(ex-sx,ey-sy,ez-sz)
+        local totalLen   = (self.chainLen and self.chainLen>1e-8) and self.chainLen or math.max(curEndDist,1e-6)
+        local segmentLen = (aN>1) and (totalLen/(aN-1)) or 0
+        if linkMax and linkMax>0 and segmentLen>linkMax then segmentLen=linkMax end
+
+        VerletAdapter.Step(self.VerletState, dt, {
+            n=aN, VerletGravity=settings.VerletGravity or self.params.VerletGravity,
+            VerletDamping=settings.VerletDamping or self.params.VerletDamping,
+            ConstraintIterations=settings.ConstraintIterations or self.params.ConstraintIterations,
+            IsElastic=isElastic, LinkMaxDistance=linkMax,
+            totalLen=totalLen, segmentLen=segmentLen, ClampSegment=linkMax,
+            GroundClamp=settings.GroundClamp, groundY=self._groundY,
+            pinnedLast=true, endPos={ex,ey,ez}, startPos={sx,sy,sz},
+        })
+
+        -- Post-physics: overwrite XZ of every active link from path; Y stays as Verlet computed
+        if totalPathLen > 1e-9 then
+            for i = 1,aN do
+                local targetDist = ((aN>1) and ((i-1)/(aN-1)) or 0)*totalPathLen
+                local tx,tz = sx,sz
+                for seg = 1,#cumLens-1 do
+                    if targetDist <= cumLens[seg+1]+1e-9 then
+                        local segLen = cumLens[seg+1]-cumLens[seg]
+                        local localT = (segLen>1e-9) and ((targetDist-cumLens[seg])/segLen) or 0
+                        tx = path[seg][1]+(path[seg+1][1]-path[seg][1])*localT
+                        tz = path[seg][3]+(path[seg+1][3]-path[seg][3])*localT
+                        break
+                    end
+                end
+                self.positions[i][1]=tx; self.positions[i][3]=tz
+                self.prev[i][1]=tx;      self.prev[i][3]=tz
+            end
+        end
+        -- Re-pin start and end (including Y)
+        self.positions[1]={sx,sy,sz}; self.prev[1]={sx,sy,sz}
+        self.positions[aN]={ex,ey,ez}; self.prev[aN]={ex,ey,ez}
+
+        local arcLen = 0
+        for i = 2,aN do
+            arcLen=arcLen+vec_len(self.positions[i][1]-self.positions[i-1][1],
+                                  self.positions[i][2]-self.positions[i-1][2],
+                                  self.positions[i][3]-self.positions[i-1][3])
+        end
+        self._isTaut=(arcLen>=(self.chainLen or 0)*0.98); self._arcLen=arcLen
+        return self.positions, {sx,sy,sz}, {ex,ey,ez}
     end
     -- =========================================================================
 
     -- 4) Physical distance and segment length
-    local curEndDist = vec_len(ex - sx, ey - sy, ez - sz)
+    local curEndDist = vec_len(ex-sx,ey-sy,ez-sz)
     local totalLen
     if self._flopping then
-        totalLen = math.max(curEndDist, 1e-6)
+        totalLen = math.max(curEndDist,1e-6)
     else
-        totalLen = (self.chainLen and self.chainLen > 1e-8) and self.chainLen or math.max(curEndDist, 1e-6)
-        if maxLenSetting and maxLenSetting > 0 then totalLen = math.min(totalLen, maxLenSetting) end
+        totalLen = (self.chainLen and self.chainLen>1e-8) and self.chainLen or math.max(curEndDist,1e-6)
+        if maxLenSetting>0 then totalLen=math.min(totalLen,maxLenSetting) end
     end
-
-    local segmentLen
-    if self._flopping then
-        local restLen = (maxLenSetting and maxLenSetting > 0) and maxLenSetting or math.max(curEndDist, 1e-6)
-        segmentLen = (aN > 1) and (restLen / (aN - 1)) or 0
-        if (not isElastic) and linkMax and linkMax > 0 and segmentLen > linkMax then
-            segmentLen = linkMax
-        end
-    else
-        segmentLen = (aN > 1) and (totalLen / (aN - 1)) or 0
-        if (not isElastic) and linkMax and linkMax > 0 and segmentLen > linkMax then
-            segmentLen = linkMax
-        end
-    end
+    local restLen = (maxLenSetting>0) and maxLenSetting or math.max(curEndDist,1e-6)
+    local segmentLen = (aN>1) and ((self._flopping and restLen or totalLen)/(aN-1)) or 0
+    if (not isElastic) and linkMax and linkMax>0 and segmentLen>linkMax then segmentLen=linkMax end
 
     -- 5) Per-link kinematic state
-    for i = 1, self.n do
+    for i = 1,self.n do
         if i > aN then
-            self.positions[i][1], self.positions[i][2], self.positions[i][3] = sx, sy, sz
-            self.prev[i][1], self.prev[i][2], self.prev[i][3] = sx, sy, sz
-            self.invMass[i] = 0
+            self.positions[i]={sx,sy,sz}; self.prev[i]={sx,sy,sz}; self.invMass[i]=0
         else
-            local requiredDist = (i - 1) * segmentLen
-            if not self._flopping and (self.chainLen + 1e-9) < requiredDist then
-                self.positions[i][1], self.positions[i][2], self.positions[i][3] = sx, sy, sz
-                self.prev[i][1], self.prev[i][2], self.prev[i][3] = sx, sy, sz
-                self.invMass[i] = 0
+            local reqDist = (i-1)*segmentLen
+            if not self._flopping and (self.chainLen+1e-9)<reqDist then
+                self.positions[i]={sx,sy,sz}; self.prev[i]={sx,sy,sz}; self.invMass[i]=0
             else
-                if self.anchors[i] then
-                    self.invMass[i] = 0
-                else
-                    self.invMass[i] = 1
-                end
+                self.invMass[i] = self.anchors[i] and 0 or 1
             end
         end
     end
-
-    self.invMass[1] = 0
-
+    self.invMass[1]=0
     if (self.isExtending or self._raycastSnapped or self.endPointLocked) and not self._flopping then
-        self.positions[aN][1], self.positions[aN][2], self.positions[aN][3] = ex, ey, ez
-        self.prev[aN][1], self.prev[aN][2], self.prev[aN][3] = ex, ey, ez
-        self.invMass[aN] = 0
+        self.positions[aN]={ex,ey,ez}; self.prev[aN]={ex,ey,ez}; self.invMass[aN]=0
     end
-
-    for idx, _ in pairs(self.anchors) do
-        if idx >= 1 and idx <= aN then
-            self.invMass[idx] = 0
-        end
-    end
+    for idx,_ in pairs(self.anchors) do if idx>=1 and idx<=aN then self.invMass[idx]=0 end end
 
     -- 6) Verlet physics step
     local vparams = {
-        n = aN,
-        VerletGravity = settings.VerletGravity or self.params.VerletGravity,
-        VerletDamping = settings.VerletDamping or self.params.VerletDamping,
-        ConstraintIterations = settings.ConstraintIterations or self.params.ConstraintIterations,
-        IsElastic = isElastic,
-        LinkMaxDistance = linkMax,
-        totalLen = totalLen,
-        segmentLen = segmentLen,
-        ClampSegment = linkMax,
-        endPointLocked = self.endPointLocked or self._raycastSnapped,
-        GroundClamp = settings.GroundClamp,
-        GroundClampOffset = settings.GroundClampOffset,
-        groundY = self._groundY,
-        pinnedLast = (not self._flopping) and (self.endPointLocked or self._raycastSnapped or
-                     ((not self.isExtending) and
-                      ((self.chainLen or 0) + 1e-9 >= (aN - 1) * segmentLen) and
-                      (settings.PinEndWhenExtended or self.params.PinEndWhenExtended))),
-        endPos  = { ex, ey, ez },
-        startPos = { sx, sy, sz }
+        n=aN, VerletGravity=settings.VerletGravity or self.params.VerletGravity,
+        VerletDamping=settings.VerletDamping or self.params.VerletDamping,
+        ConstraintIterations=settings.ConstraintIterations or self.params.ConstraintIterations,
+        IsElastic=isElastic, LinkMaxDistance=linkMax,
+        totalLen=totalLen, segmentLen=segmentLen, ClampSegment=linkMax,
+        endPointLocked=self.endPointLocked or self._raycastSnapped,
+        GroundClamp=settings.GroundClamp, GroundClampOffset=settings.GroundClampOffset,
+        groundY=self._groundY,
+        pinnedLast=(not self._flopping) and (self.endPointLocked or self._raycastSnapped or
+            ((not self.isExtending) and ((self.chainLen or 0)+1e-9>=(aN-1)*segmentLen) and
+             (settings.PinEndWhenExtended or self.params.PinEndWhenExtended))),
+        endPos={ex,ey,ez}, startPos={sx,sy,sz}
     }
-
     VerletAdapter.Step(self.VerletState, dt, vparams)
-
     if settings.WallClamp then
-        vparams.WallClamp = true
-        vparams.WallClampInterval = settings.WallClampInterval or 10
-        vparams.WallClampRadius = settings.WallClampRadius or 0
+        vparams.WallClamp=true
+        vparams.WallClampInterval=settings.WallClampInterval or 10
+        vparams.WallClampRadius=settings.WallClampRadius or 0
         VerletAdapter.ApplyWallClamp(self.VerletState, vparams)
     end
 
-    -- 7) Post-physics: enforce locked/snapped endpoint and undeployed links
+    -- 7) Post-physics: enforce endpoints
     if (self.endPointLocked or self._raycastSnapped) and not self._flopping then
-        self.positions[aN][1], self.positions[aN][2], self.positions[aN][3] = ex, ey, ez
-        self.prev[aN][1], self.prev[aN][2], self.prev[aN][3] = ex, ey, ez
-        self.invMass[aN] = 0
+        self.positions[aN]={ex,ey,ez}; self.prev[aN]={ex,ey,ez}; self.invMass[aN]=0
     elseif vparams.pinnedLast and vparams.endPos then
-        self.positions[aN][1], self.positions[aN][2], self.positions[aN][3] = vparams.endPos[1], vparams.endPos[2], vparams.endPos[3]
-        self.prev[aN][1], self.prev[aN][2], self.prev[aN][3] = vparams.endPos[1], vparams.endPos[2], vparams.endPos[3]
-        self.invMass[aN] = 0
+        self.positions[aN]={vparams.endPos[1],vparams.endPos[2],vparams.endPos[3]}
+        self.prev[aN]={vparams.endPos[1],vparams.endPos[2],vparams.endPos[3]}
+        self.invMass[aN]=0
     end
-
-    for idx, _ in pairs(self.anchors) do
-        if idx >= 1 and idx <= aN then
-            self.invMass[idx] = 0
-        end
-    end
+    for idx,_ in pairs(self.anchors) do if idx>=1 and idx<=aN then self.invMass[idx]=0 end end
 
     -- Compute isTaut
-    do
-        local arcLen = 0
-        for i = 2, aN do
-            local dx = self.positions[i][1] - self.positions[i-1][1]
-            local dy = self.positions[i][2] - self.positions[i-1][2]
-            local dz = self.positions[i][3] - self.positions[i-1][3]
-            arcLen = arcLen + vec_len(dx, dy, dz)
-        end
-        self._isTaut = (arcLen >= (self.chainLen or 0) * 0.98)
-        self._arcLen = arcLen
+    local arcLen = 0
+    for i = 2,aN do
+        arcLen=arcLen+vec_len(self.positions[i][1]-self.positions[i-1][1],
+                              self.positions[i][2]-self.positions[i-1][2],
+                              self.positions[i][3]-self.positions[i-1][3])
     end
+    self._isTaut=(arcLen>=(self.chainLen or 0)*0.98); self._arcLen=arcLen
 
-    return self.positions, { self.startPos[1], self.startPos[2], self.startPos[3] }, { self.endPos[1], self.endPos[2], self.endPos[3] }
+    return self.positions, {self.startPos[1],self.startPos[2],self.startPos[3]}, {self.endPos[1],self.endPos[2],self.endPos[3]}
 end
 
 function M:GetPublicState()
     return {
-        ChainLength = self.chainLen,
-        IsExtending = self.isExtending,
-        IsRetracting = self.isRetracting,
-        LinkCount = self.n,
+        ChainLength     = self.chainLen,
+        IsExtending     = self.isExtending,
+        IsRetracting    = self.isRetracting,
+        LinkCount       = self.n,
         ActiveLinkCount = self.activeN,
-        Anchors = self.anchors,
-        EndPointLocked = self.endPointLocked,
-        RaycastSnapped = self._raycastSnapped,
-        Flopping = self._flopping,
-        IsTaut = self._isTaut,
-        LOSAnchorCount = #self.losAnchors,
-        LockedEndPoint = (self.endPointLocked or self._raycastSnapped) and
-                         {self.lockedEndPoint[1], self.lockedEndPoint[2], self.lockedEndPoint[3]} or nil
+        Anchors         = self.anchors,
+        EndPointLocked  = self.endPointLocked,
+        RaycastSnapped  = self._raycastSnapped,
+        Flopping        = self._flopping,
+        IsTaut          = self._isTaut,
+        LOSAnchorCount  = #self.losAnchors,
+        LockedEndPoint  = (self.endPointLocked or self._raycastSnapped) and
+                          {self.lockedEndPoint[1],self.lockedEndPoint[2],self.lockedEndPoint[3]} or nil
     }
 end
 
