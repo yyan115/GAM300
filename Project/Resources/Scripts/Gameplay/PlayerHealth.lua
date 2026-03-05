@@ -36,8 +36,8 @@ return Component {
     mixins = { TransformMixin },
 
     fields = {
-        MaxHealth = 10,
-        CurrentHealth = 10,
+        MaxHealth = 30,
+        CurrentHealth = 30,
         IFrameDuration = 1.0,
         YDeathThreshold = -3.0,
     },

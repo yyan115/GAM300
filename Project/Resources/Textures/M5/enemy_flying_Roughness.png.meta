@@ -1,0 +1,14 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "0041f10671f319fa-000467b8e633620b",
+        "source": "../../Resources/Textures/M5/enemy_flying_Roughness.png",
+        "compiled": "../../Resources/Textures/M5/enemy_flying_Roughness.dds"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp"
+    }
+}
