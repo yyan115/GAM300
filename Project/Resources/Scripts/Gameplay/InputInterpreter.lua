@@ -103,6 +103,13 @@ return Component {
             self._playerDead = false
         end)
 
+        -- Dash started - clear any buffered attack/chain so they don't fire after dash
+        self._dashPerformedSub = _G.event_bus.subscribe("dash_performed", function()
+            print("[InputInterpreter] dash_performed event: clearing attack=" .. self._bufferedInputs.attack .. " chain=" .. self._bufferedInputs.chain)
+            self._bufferedInputs.attack = 0
+            self._bufferedInputs.chain = 0
+        end)
+
         -- Current frame states (updated every frame)
         self._currentFrame = {
             attack = false,
@@ -198,10 +205,22 @@ return Component {
         -- Block combat inputs (attack/chain) while dashing
         local blockCombat = _G.player_is_dashing
 
+        if blockCombat then
+            -- Force-clear any lingering attack/chain buffers every frame while dashing
+            if self._bufferedInputs.attack > 0 or self._bufferedInputs.chain > 0 then
+                print("[InputInterpreter] DASH ACTIVE: clearing lingering attack=" .. self._bufferedInputs.attack .. " chain=" .. self._bufferedInputs.chain)
+                self._bufferedInputs.attack = 0
+                self._bufferedInputs.chain = 0
+            end
+        end
+
         -- If attack (LMB) was pressed and a UI button was not pressed first, safely trigger the attack.
         if attackJustPressed and self._uiButtonPressed == false and not blockCombat then
             self._bufferedInputs.attack = self.INPUT_BUFFER_FRAMES
             table.insert(self._inputHistory.attack, self._frameCount)
+            print("[InputInterpreter] Attack buffered (frame " .. self._frameCount .. ")")
+        elseif attackJustPressed and blockCombat then
+            print("[InputInterpreter] Attack BLOCKED by dash (frame " .. self._frameCount .. ")")
         end
 
         -- If a UI button was pressed, set the UIButtonPressed flag to false when LMB is released.
@@ -212,6 +231,9 @@ return Component {
         if chainJustPressed and not blockCombat then
             self._bufferedInputs.chain = self.INPUT_BUFFER_FRAMES
             table.insert(self._inputHistory.chain, self._frameCount)
+            print("[InputInterpreter] Chain buffered (frame " .. self._frameCount .. ")")
+        elseif chainJustPressed and blockCombat then
+            print("[InputInterpreter] Chain BLOCKED by dash (frame " .. self._frameCount .. ")")
         end
 
         if dashJustPressed then
