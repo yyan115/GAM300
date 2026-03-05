@@ -128,7 +128,8 @@
                                 },
                                 "__meta": {},
                                 "topBarName": "TopBar",
-                                "playerHUDName": "PlayerHUD"
+                                "playerHUDName": "PlayerHUD",
+                                "transitionOutDuration": 0.5
                             }
                         }
                     ]
