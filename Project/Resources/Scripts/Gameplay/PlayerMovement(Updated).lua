@@ -550,7 +550,7 @@ return Component {
                 self._dashCooldownTimer = self.DashCooldown
                 self._wasDashingInAir = false
                 if event_bus and event_bus.publish then
-                    event_bus.publish("dash_ended", { cooldown = self.DashCooldown })
+                    event_bus.publish("dash_ended", {})
                 end
                 print("[PlayerMovement] Dash ended")
             else
