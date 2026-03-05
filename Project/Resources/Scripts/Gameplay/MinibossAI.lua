@@ -396,11 +396,9 @@ return Component {
         self._transforming = false
         self._immuneDamage = false
 
-        self.fsm:Change("Recover", self.states.Recover)
-        self._recoverTimer = 999999 -- idle until aggro
-
-        print("[Miniboss] KnifePool size =", (KnifePool.knives and #KnifePool.knives) or 0)
-        print("[Miniboss KnifePool dbg] KnifePool table:", KnifePool, "activeCount:", KnifePool.activeCount, "poolSize:", KnifePool.poolSize)
+        -- no old FSM combat loop
+        self._postIntroRecoverT = 0
+        self._phaseRecoverT = 0
     end,
 
     Update = function(self, dt)
@@ -410,6 +408,11 @@ return Component {
         -- 1) Ensure controller + gravity always
         self:EnsureController()
         self:ApplyGravity(dtSec)
+
+        if self._frozenBycinematic then
+            print("[Miniboss] FROZEN by cinematic, skipping Update. lockReason=", tostring(self._lockReason), "lockT=", tostring(self._lockTimer))
+            return
+        end
 
         -- Freeze movement during cinematic
         if self._frozenBycinematic then return end
@@ -438,11 +441,9 @@ return Component {
 
                 if reason == "PHASE_TRANSFORM" then
                     self:FinishBossPhaseTransition()
-                    self.fsm:Change("Recover", self.states.Recover)
-                elseif reason == "HOOKED" then
-                    self._hooked = false
-                    self._recoverTimer = math.max(self.RecoverDuration or 0.6, 0.35)
-                    self.fsm:Change("Recover", self.states.Recover)
+
+                    -- NEW SYSTEM: small pause after transform before resuming phase logic
+                    self._phaseRecoverT = math.max(self.RecoverDuration or 0.6, 0.35)
                 end
             end
         end
@@ -533,6 +534,19 @@ return Component {
 
         -- 9) Phase dispatch (only when not locked)
         self._phase = self._phase or self:_ComputePhase()
+
+        -- Post-intro recovery pause (new system)
+        if (self._postIntroRecoverT or 0) > 0 then
+            self._postIntroRecoverT = math.max(0, self._postIntroRecoverT - dtSec)
+            return
+        end
+
+        -- Phase-transition recovery pause (new system)
+        if (self._phaseRecoverT or 0) > 0 then
+            self._phaseRecoverT = math.max(0, self._phaseRecoverT - dtSec)
+            print("[Miniboss] phaseRecoverT=", self._phaseRecoverT)
+            return
+        end
 
         if self._phase == 1 then
             self:_UpdatePhase1(dtSec)
@@ -781,6 +795,7 @@ return Component {
         self:LockActions("PHASE_TRANSFORM", self.PhaseTransformDuration or 2.2)
 
         if self._animator then self._animator:SetTrigger("Taunt") end
+        print("[Miniboss] StartBossPhaseTransition ->", newPhase, "duration=", tostring(self.PhaseTransformDuration))
         playRandomSFX(self._audio, self.enemyTauntSFX)
     end,
 
@@ -790,6 +805,8 @@ return Component {
         self._pendingPhase = nil
         self._transforming = false
         self._immuneDamage = false
+
+        print("[Miniboss] FinishBossPhaseTransition -> phase=", tostring(newPhase))
 
         if newPhase == 2 then
             self:EnterPhase2_Air()
@@ -1803,6 +1820,7 @@ return Component {
     end,
 
     EnterPhase2_Air = function(self)
+        print("[Miniboss] EnterPhase2_Air: setting inAir true")
         self:_SetInAir(true)
         self._immuneChain = false   -- hookable in phase 2
         self._phase2Numpad = self:_PickRandomAirNumpad(nil)
