@@ -1,4 +1,25 @@
 -- ChainBootstrap.lua
+
+---------------------------------------------------------------------------------
+--TAP = press and release before hold threshold
+--HOLD = press, cross hold threshold, then release
+--
+--1. TAP — chain fully retracted (len = 0)
+--→ Fires chain in player's facing direction
+--2. TAP — chain mid-extension (actively shooting out)
+--→ Chain tip drops into flop/physics mode from wherever it stopped
+--3. TAP — chain extended, idle, NOT attached
+--→ Retracts chain
+--4. TAP — chain extended, idle, ATTACHED (locked/snapped to entity or raycast)
+--→ Retracts chain
+--5. HOLD — chain fully retracted (len = 0)
+--→ Activates aim camera while held. On release: fires chain in camera forward direction
+--6. HOLD — chain extended, idle, ATTACHED
+--→ While held: chainLen tracks real arc distance from player to endpoint each frame, capped at MaxLength. Player can walk closer (chain shortens, links retract visually) or further (chain lengthens, links activate). Constraint still resists movement beyond MaxLength. On release: current length is confirmed, chain stays locked.
+--7. HOLD — chain extended, idle, NOT attached
+--→ No interaction defined. Debug stub only. Reserved for future use.
+---------------------------------------------------------------------------------
+
 _G.CHAIN_DEBUG = _G.CHAIN_DEBUG ~= nil and _G.CHAIN_DEBUG or false
 --_G.CHAIN_DEBUG = true
 local function dbg(...) if _G.CHAIN_DEBUG then print(...) end end
