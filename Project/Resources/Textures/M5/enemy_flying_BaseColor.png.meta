@@ -1,0 +1,14 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "0041f1064b4c5b90-000467b8ec336213",
+        "source": "../../Resources/Textures/M5/enemy_flying_BaseColor.png",
+        "compiled": "../../Resources/Textures/M5/enemy_flying_BaseColor.dds"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp"
+    }
+}
