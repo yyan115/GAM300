@@ -1,0 +1,14 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "0041f10664cb33a7-000467b0403361e9",
+        "source": "../../Resources/Textures/M5/AltarTable_Base_color.png",
+        "compiled": "../../Resources/Textures/M5/AltarTable_Base_color.dds"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp"
+    }
+}
