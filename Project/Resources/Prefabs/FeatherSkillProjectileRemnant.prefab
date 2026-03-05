@@ -2,7 +2,7 @@
     "prefab_entities": [
         {
             "id": 0,
-            "guid": "0045549be64e7364-000469abb201266f",
+            "guid": "0066d2df5a926bf3-00046a6cb0136ab5",
             "components": {
                 "PrefabLinkComponent": {
                     "type": "PrefabLinkComponent",
@@ -176,7 +176,7 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "0045549b802fe62b-000469abb2012671"
+                                "0066d2df4006e0d1-00046a6cb0136ab7"
                             ]
                         }
                     ]
@@ -240,7 +240,7 @@
                         },
                         {
                             "type": "float",
-                            "data": 10
+                            "data": 20
                         },
                         {
                             "type": "float",
@@ -359,16 +359,19 @@
                             "entryFunction": "OnInit",
                             "autoInvokeEntry": true,
                             "instanceState": {
-                                "__meta": {},
+                                "_transform_fetched": false,
                                 "__field_list": {
                                     "AliveDuration": 3.0
                                 },
                                 "AliveDuration": 3.0,
-                                "_subscriptions": {},
+                                "ConeSpread": 0.4,
+                                "__meta": {},
+                                "SpawnForceY": 1.0,
+                                "OnCollisionEnter": null,
                                 "_private": {},
-                                "_transform_fetched": false,
                                 "__created_at": 1772706562.0,
-                                "OnCollisionEnter": null
+                                "_subscriptions": {},
+                                "SpawnForce": 1.0
                             }
                         }
                     ]
@@ -398,7 +401,7 @@
         },
         {
             "id": 1,
-            "guid": "0045549b802fe62b-000469abb2012671",
+            "guid": "0066d2df4006e0d1-00046a6cb0136ab7",
             "components": {
                 "NameComponent": {
                     "name": "Feather"
@@ -475,7 +478,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "0045549be64e7364-000469abb201266f"
+                        "0066d2df5a926bf3-00046a6cb0136ab5"
                     ]
                 },
                 "ActiveComponent": {
