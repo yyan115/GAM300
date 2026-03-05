@@ -70,6 +70,49 @@ function M:StartRetraction()
     self._lockedChainLen = self.chainLen
 end
 
+-- ContinueExtension: resume extending from the current chain length and active link count.
+-- Call this when the chain is already out (locked/snapped) and the player holds the button
+-- again to extend further. Links are added proportionally to chainLen via LinkMaxDistance,
+-- exactly mirroring how normal StartExtension + Update activates them one by one.
+function M:ContinueExtension(forward, maxLength, linkMaxDistance)
+    local maxLen  = tonumber(maxLength)       or tonumber(self.params.MaxLength)       or 0
+    local linkMax = tonumber(linkMaxDistance) or tonumber(self.params.LinkMaxDistance) or 0
+
+    -- Back-solve extensionTime so chainLen is continuous from its current value.
+    -- Update() does: chainLen = chainSpeed * extensionTime, accumulating dt each frame.
+    -- Setting extensionTime here means the very next Update tick adds only dt worth of length.
+    local chainSpeed = tonumber(self.params.ChainSpeed) or 10
+    self.extensionTime = (self.chainLen or 0) / math.max(chainSpeed, 1e-6)
+
+    -- Unlock endpoint so Verlet is free to push the tip outward again.
+    self.endPointLocked  = false
+    self._raycastSnapped = false
+    self._flopping       = false
+    self.hookedTag       = ""
+    self.losAnchors      = {}
+    self._lockedChainLen = 0
+
+    -- Set activeN to the FULL ceiling of links that maxLength could ever need.
+    -- This is identical to what StartExtension does. Update's per-link kinematic
+    -- gate (reqDist = (i-1)*segmentLen compared against chainLen) then naturally
+    -- activates new links one by one as chainLen grows, proportional to distance.
+    -- Links already placed keep their positions because chainLen doesn't reset to 0.
+    if linkMax > 0 and maxLen > 0 then
+        self.activeN = math.min(math.ceil(maxLen / linkMax) + 1, self.n)
+    else
+        self.activeN = self.n
+    end
+
+    -- Update aim direction if provided.
+    if forward and type(forward) == "table" and #forward >= 3 then
+        local nx,ny,nz = normalize(forward[1], forward[2], forward[3])
+        if nx ~= 0 or ny ~= 0 or nz ~= 0 then self.lastForward = {nx,ny,nz} end
+    end
+
+    self.isExtending  = true
+    self.isRetracting = false
+end
+
 function M:ComputeAnchors(angleThresholdRad)
     angleThresholdRad = angleThresholdRad or math.rad(45)
     self.anchors = {}
@@ -490,8 +533,13 @@ function M:Update(dt, settings)
             pinnedLast=true, endPos={ex,ey,ez}, startPos={sx,sy,sz},
         })
 
-        -- Post-physics: overwrite XZ of every active link from path; Y stays as Verlet computed
-        if totalPathLen > 1e-9 then
+        -- FIX: Post-physics XZ path projection only when chain is taut.
+        -- When the chain is lax (slack), the path is shorter than the chain length,
+        -- so projecting all links onto it collapses them into a V shape.
+        -- Instead, trust Verlet's positions when there is meaningful slack.
+        local isTautForProjection = (totalPathLen >= (self.chainLen or 0) * 0.97)
+
+        if totalPathLen > 1e-9 and isTautForProjection then
             for i = 1,aN do
                 local targetDist = ((aN>1) and ((i-1)/(aN-1)) or 0)*totalPathLen
                 local tx,tz = sx,sz
@@ -508,6 +556,7 @@ function M:Update(dt, settings)
                 self.prev[i][1]=tx;      self.prev[i][3]=tz
             end
         end
+
         -- Re-pin start and end (including Y)
         self.positions[1]={sx,sy,sz}; self.prev[1]={sx,sy,sz}
         self.positions[aN]={ex,ey,ez}; self.prev[aN]={ex,ey,ez}

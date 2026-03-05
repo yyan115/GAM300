@@ -1,6 +1,6 @@
 -- ChainBootstrap.lua
 _G.CHAIN_DEBUG = _G.CHAIN_DEBUG ~= nil and _G.CHAIN_DEBUG or false
-_G.CHAIN_DEBUG = true
+--_G.CHAIN_DEBUG = true
 local function dbg(...) if _G.CHAIN_DEBUG then print(...) end end
 local Component = require("extension.mono_helper")
 local LinkHandlerModule = require("Gameplay.ChainLinkTransformHandler")
@@ -101,8 +101,11 @@ return Component {
 
     _on_chain_down = function(self, payload)
         dbg("down")
-        self._chain_pressing = true
-        self._chain_held = false
+        self._chain_pressing     = true
+        self._chain_held         = false
+        self._intentContinue     = false
+        self._intentAimFire      = false
+        self._intentAdjustLength = false
     end,
 
     _on_chain_up = function(self, payload)
@@ -114,49 +117,92 @@ return Component {
         end
 
         if not self.controller then
-            self._chain_held = false
+            self._chain_held     = false
+            self._intentContinue = false
+            self._intentAimFire  = false
             return
         end
 
-        local len = (self.controller.chainLen or 0)
+        local len   = (self.controller.chainLen or 0)
         local isExt = self.controller.isExtending or false
         local isRet = self.controller.isRetracting or false
 
-        dbg(string.format("[ChainBootstrap] _on_chain_up: len=%.4f isExt=%s isRet=%s chain_held=%s",
-            len, tostring(isExt), tostring(isRet), tostring(self._chain_held)))
+        dbg(string.format("[ChainBootstrap] _on_chain_up: len=%.4f isExt=%s isRet=%s held=%s intentContinue=%s intentAimFire=%s",
+            len, tostring(isExt), tostring(isRet), tostring(self._chain_held),
+            tostring(self._intentContinue), tostring(self._intentAimFire)))
 
-        if not isExt and not isRet and len <= 1e-4 then
-            if not self._chain_held then
-                self._pendingPlayerForward = nil
-                self._pendingTapFire = true
-                if _G.event_bus and _G.event_bus.publish then
-                    _G.event_bus.publish("request_player_forward", true)
-                end
-                dbg("[ChainBootstrap] TAP -> requested player_forward_response")
-            else
-                local direction = self._cameraForward
-                dbg(string.format("[ChainBootstrap] HOLD release -> camera forward: (%.3f, %.3f, %.3f)",
-                    direction[1], direction[2], direction[3]))
-                self.controller:StartExtension(direction, self.MaxLength, self.LinkMaxDistance)
+        if self._intentContinue then
+            -- Update drove ContinueExtension while held. Stop in place on release.
+            -- Never retract or re-fire from this branch.
+            if isExt then
+                self.controller:StopExtension()
+                dbg("[ChainBootstrap] ContinueExtension release -> StopExtension")
             end
-        elseif len > 1e-4 and (not isRet) then
+
+        elseif self._intentAdjustLength then
+            -- Length-adjust mode: player was tuning chainLen while attached.
+            -- On release the length is already set — just leave the chain locked as-is.
+            dbg(string.format("[ChainBootstrap] AdjustLength release -> confirmed chainLen=%.4f", self.controller.chainLen or 0))
+
+        elseif self._intentAimFire then
+            -- Held from retracted: fire with camera forward on release.
+            local dir = self._cameraForward
+            dbg(string.format("[ChainBootstrap] AimFire release -> StartExtension (%.3f,%.3f,%.3f)", dir[1],dir[2],dir[3]))
+            self.controller:StartExtension(dir, self.MaxLength, self.LinkMaxDistance)
+
+        elseif isExt and not isRet then
+            -- Released during extension before hold threshold: stop and drop into flop.
+            -- Chain tip becomes physics-driven from wherever it stopped.
+            self.controller.isExtending = false
+            self.controller._flopping   = true
+            dbg("[ChainBootstrap] Tap-release mid-extension -> Flop")
+
+        elseif not isExt and not isRet and len <= 1e-4 then
+            -- Tap on retracted chain: fire with player forward.
+            self._pendingPlayerForward = nil
+            self._pendingTapFire = true
+            if _G.event_bus and _G.event_bus.publish then
+                _G.event_bus.publish("request_player_forward", true)
+            end
+            dbg("[ChainBootstrap] TAP -> requested player_forward_response")
+
+        elseif len > 1e-4 and not isRet and not isExt then
+            -- Tap (hold never reached) on extended idle chain: retract.
+            -- (Skipped if we just finished an adjust-length hold — length was already confirmed above.)
             self.controller:StartRetraction()
+            dbg("[ChainBootstrap] TAP on extended idle -> StartRetraction")
         end
 
-        self._chain_held = false
+        self._chain_held         = false
+        self._intentContinue     = false
+        self._intentAimFire      = false
+        self._intentAdjustLength = false
     end,
 
     _on_chain_hold = function(self, payload)
         dbg("hold")
+        -- Hold threshold crossed. Mark held so Update can start ContinueExtension.
         self._chain_held = true
-        if self.controller then
-            local len = (self.controller.chainLen or 0)
-            local isExt = self.controller.isExtending or false
-            if len <= 1e-4 and not isExt then
-                if _G.event_bus and _G.event_bus.publish then
-                    _G.event_bus.publish("chain.aim_camera", {active = true})
-                end
+
+        if not self.controller then return end
+
+        local len        = (self.controller.chainLen or 0)
+        local isExt      = self.controller.isExtending or false
+        local isAttached = self.controller.endPointLocked or self.controller._raycastSnapped
+
+        -- Only handle aim camera here. ContinueExtension for an extended chain is
+        -- driven continuously in Update (every frame while held), not from this event.
+        if len <= 1e-4 and not isExt then
+            self._intentAimFire = true
+            if _G.event_bus and _G.event_bus.publish then
+                _G.event_bus.publish("chain.aim_camera", {active = true})
             end
+        elseif len > 1e-4 and not isExt and isAttached then
+            -- Chain is extended AND attached to something: enter length-adjust mode.
+            -- Update will set chainLen to the live player→endpoint distance each frame.
+            -- The length is confirmed (chain stays locked) when the button is released.
+            self._intentAdjustLength = true
+            dbg(string.format("[ChainBootstrap] hold on attached chain (len=%.4f) -> AdjustLength mode", len))
         end
     end,
 
@@ -210,10 +256,13 @@ return Component {
             end
         end
 
-        self._cameraForward = {0, 0, 1}
-        self._chain_pressing = false
-        self._chain_held = false
-        self._pendingTapFire = false
+        self._cameraForward      = {0, 0, 1}
+        self._chain_pressing     = false
+        self._chain_held         = false
+        self._intentContinue     = false
+        self._intentAimFire      = false
+        self._intentAdjustLength = false   -- hold on attached chain: live-adjust chainLen to real distance
+        self._pendingTapFire     = false
         self._pendingPlayerForward = nil
 
         self._endpointTransform = nil
@@ -314,6 +363,77 @@ return Component {
                 self._pendingPlayerForward = nil
             end
         end
+
+        -- Continuous hold logic -----------------------------------------------
+        if self._chain_pressing and self._chain_held then
+            local len        = (self.controller.chainLen or 0)
+            local isExt      = self.controller.isExtending or false
+            local isRet      = self.controller.isRetracting or false
+            local isAttached = self.controller.endPointLocked or self.controller._raycastSnapped
+
+            if self._intentAdjustLength then
+                -- LENGTH-ADJUST MODE: chain is extended and attached.
+                -- Every frame, set chainLen to the real arc-path distance from player
+                -- to the locked endpoint (through LOS anchors when present).
+                -- This works in BOTH directions:
+                --   player moves closer  → chainLen shrinks  → chain goes slack / fewer active links
+                --   player moves further → chainLen grows    → more links activate, up to MaxLength
+                -- The confirmed length is whatever chainLen is when the button is released.
+
+                local sx = self.controller.startPos[1]
+                local sy = self.controller.startPos[2]
+                local sz = self.controller.startPos[3]
+                local ep = self.controller.lockedEndPoint
+
+                -- Build arc distance through LOS anchors (same path Verlet uses)
+                local newLen
+                local losA = self.controller.losAnchors
+                if losA and #losA > 0 then
+                    -- Walk player → anchor[1] → ... → anchor[n] → endpoint
+                    local prev = {sx, sy, sz}
+                    local arc = 0
+                    for _, a in ipairs(losA) do
+                        local ddx, ddy, ddz = a[1]-prev[1], a[2]-prev[2], a[3]-prev[3]
+                        arc = arc + math.sqrt(ddx*ddx + ddy*ddy + ddz*ddz)
+                        prev = a
+                    end
+                    local ddx, ddy, ddz = ep[1]-prev[1], ep[2]-prev[2], ep[3]-prev[3]
+                    arc = arc + math.sqrt(ddx*ddx + ddy*ddy + ddz*ddz)
+                    newLen = arc
+                else
+                    -- No LOS anchors: straight-line to endpoint
+                    local ddx, ddy, ddz = ep[1]-sx, ep[2]-sy, ep[3]-sz
+                    newLen = math.sqrt(ddx*ddx + ddy*ddy + ddz*ddz)
+                end
+
+                newLen = math.min(math.max(newLen, 0), self.MaxLength)
+                self.controller.chainLen = newLen
+
+                -- Keep extensionTime consistent with chainLen
+                local spd = tonumber(self.ChainSpeed) or 10
+                self.controller.extensionTime = newLen / math.max(spd, 1e-6)
+
+                -- Update active link count proportionally so the visual pool
+                -- adds or removes links as length changes (mirrors StartExtension logic)
+                local lmd = tonumber(self.LinkMaxDistance) or 0
+                if lmd > 0 then
+                    self.controller.activeN = math.min(
+                        math.ceil(newLen / lmd) + 1,
+                        self.controller.n
+                    )
+                end
+
+                dbg(string.format("[ChainBootstrap] AdjustLength: chainLen=%.4f activeN=%d",
+                    newLen, self.controller.activeN))
+
+            elseif not self._intentContinue and not self._intentAimFire then
+                -- FUTURE: hold on extended, idle, unattached chain.
+                -- Interaction not yet defined. Add logic here when needed.
+                -- (ContinueExtension removed — was incorrectly re-shooting the chain.)
+                dbg("[ChainBootstrap] Hold on free extended chain — no interaction defined yet")
+            end
+        end
+        ----------------------------------------------------------------------
 
         self.playerTransform = Engine.FindTransformByName(self.PlayerName)
         if self.playerTransform then
