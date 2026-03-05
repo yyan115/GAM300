@@ -88,6 +88,11 @@ return Component {
         weaponPickup = "LowPolyFeatherChainPickUp",
         weaponOnHand = "LowPolyFeatherChain",
 
+        -- [NEW] Weapon Fly Timing and Offsets
+        weaponFlyDuration = 0.5, 
+        weaponHandOffsetY = 0.6, -- Approximates the hand/chest height from the player's root
+        weaponHandOffsetX = -0.1,
+
         openDuration = 2.5,
         postOpenDelay = 2.0,
         openAngle = 115,
@@ -100,6 +105,9 @@ return Component {
         openingTime = 0.0,
         isOpening = false,
         isWaiting = false,
+
+        isWeaponFlying = false,
+        weaponFlyTime = 0.0,
     },
 
     -------------------------------------------------
@@ -143,25 +151,28 @@ return Component {
             self.isActivatable = inRange
 
             if inRange then
-                -- --- Weapon pickup (instant) ---
-                if self.weaponPickupEnt and self.weaponOnHandEnt then
-                    local pickupActiveComp = GetComponent(self.weaponPickupEnt, "ActiveComponent")
-                    local handActiveComp   = GetComponent(self.weaponOnHandEnt, "ActiveComponent")
+                self.hasOpened = true
 
-                    -- Play pickup SFX
-                    local weaponSFX = GetComponent(self.weaponPickupEnt, "AudioComponent")
-                    if weaponSFX and self.pickupSFX[0] then
-                        weaponSFX:PlayOneShot(self.pickupSFX[0])
+                -- --- Start Weapon Fly ---
+                if self.weaponPickupEnt and self.weaponOnHandEnt then
+                    self.isWeaponFlying = true
+                    self.weaponFlyTime = 0.0
+                    
+                    self.pickupTr = GetComponent(self.weaponPickupEnt, "Transform")
+                    if self.pickupTr then
+                        self.pickupStartPos = { 
+                            x = self.pickupTr.localPosition.x, 
+                            y = self.pickupTr.localPosition.y, 
+                            z = self.pickupTr.localPosition.z 
+                        }
                     end
 
-                    if pickupActiveComp then pickupActiveComp.isActive = false end
-                    if handActiveComp then handActiveComp.isActive = true end
-                    _G.playerHasWeapon = true
-                    print("[DoorTrigger] Weapon picked up instantly!")
+                    if event_bus and event_bus.publish then
+                        event_bus.publish("picked_up_weapon", true)
+                    end
                 end
 
                 -- --- Start door opening ---
-                self.hasOpened = true
                 self.isOpening = true
                 self.openingTime = 0.0
 
@@ -178,12 +189,55 @@ return Component {
         end
 
         -------------------------------------------------
+        -- Weapon Flying Animation
+        -------------------------------------------------
+        if self.isWeaponFlying and self.pickupTr then
+            self.weaponFlyTime = self.weaponFlyTime + dt
+            local t = math.min(self.weaponFlyTime / self.weaponFlyDuration, 1.0)
+            local easeT = t * t * (3 - 2 * t) -- Smoothstep
+
+            -- Dynamically track the player so it homes in even if they walk away
+            local playerEnt = Engine.GetEntityByName(self.playerName)
+            local playerTrComp = GetComponent(playerEnt, "Transform")
+
+            if playerTrComp then
+                local targetX = playerTrComp.localPosition.x + self.weaponHandOffsetX
+                local targetY = playerTrComp.localPosition.y + self.weaponHandOffsetY
+                local targetZ = playerTrComp.localPosition.z
+
+                self.pickupTr.localPosition.x = Lerp(self.pickupStartPos.x, targetX, easeT)
+                self.pickupTr.localPosition.y = Lerp(self.pickupStartPos.y, targetY, easeT)
+                self.pickupTr.localPosition.z = Lerp(self.pickupStartPos.z, targetZ, easeT)
+                self.pickupTr.isDirty = true
+            end
+
+            -- Once it hits the hand, finalize the swap!
+            if t >= 1.0 then
+                self.isWeaponFlying = false
+
+                local pickupActiveComp = GetComponent(self.weaponPickupEnt, "ActiveComponent")
+                local handActiveComp   = GetComponent(self.weaponOnHandEnt, "ActiveComponent")
+
+                -- Play pickup SFX exactly when it hits the hand
+                local weaponSFX = GetComponent(self.weaponPickupEnt, "AudioComponent")
+                if weaponSFX and self.pickupSFX[0] then
+                    weaponSFX:PlayOneShot(self.pickupSFX[0])
+                end
+
+                if pickupActiveComp then pickupActiveComp.isActive = false end
+                if handActiveComp then handActiveComp.isActive = true end
+                
+                _G.playerHasWeapon = true
+                print("[DoorTrigger] Weapon successfully caught!")
+            end
+        end
+
+        -------------------------------------------------
         -- Door Animation
         -------------------------------------------------
         if self.isOpening and self.leftTransform and self.rightTransform then
             self.openingTime = self.openingTime + dt
             
-            -- [FIXED] Calculate strict linear progress from 0.0 to 1.0 based on openDuration
             local p = math.min(self.openingTime / self.openDuration, 1.0)
             
             local lAngle = 0
@@ -191,20 +245,19 @@ return Component {
 
             -- Phase 1: SmoothStep to the Overshoot angle (First 80% of the duration)
             if p < 0.8 then
-                local lp = p / 0.8 -- Scale progress to (0.0 to 1.0) for this specific phase
-                local t = lp * lp * (3 - 2 * lp) -- Apply SmoothStep
+                local lp = p / 0.8 
+                local t = lp * lp * (3 - 2 * lp) 
                 lAngle = Lerp(0, -(self.openAngle + self.overshootAngle), t)
                 rAngle = Lerp(0, (self.openAngle + self.overshootAngle), t)
             
             -- Phase 2: SmoothStep back to the resting angle (Last 20% of the duration)
             else
-                local lp = (p - 0.8) / 0.2 -- Scale progress to (0.0 to 1.0) for this specific phase
-                local t = lp * lp * (3 - 2 * lp) -- Apply SmoothStep
+                local lp = (p - 0.8) / 0.2 
+                local t = lp * lp * (3 - 2 * lp) 
                 lAngle = Lerp(-(self.openAngle + self.overshootAngle), -self.openAngle, t)
                 rAngle = Lerp((self.openAngle + self.overshootAngle), self.openAngle, t)
             end
 
-            -- Convert current angle to Quaternion offsets
             local lQuatOffset = eulerToQuat(0, lAngle, 0)
             local rQuatOffset = eulerToQuat(0, rAngle, 0)
             
@@ -229,7 +282,6 @@ return Component {
                 self.isWaiting = true
                 self.delayTime = 0.0
 
-                -- Disable colliders
                 if self.leftDoorEnt then
                     local leftCol = GetComponent(self.leftDoorEnt, "ColliderComponent")
                     if leftCol then leftCol.enabled = false end

@@ -12544,7 +12544,9 @@
                                 "postOpenDelay": 0.1,
                                 "openingTime": 0.0,
                                 "triggerRadius": 1.0,
-                                "isActivatable": false
+                                "isActivatable": false,
+                                "weaponFlyDuration": 0.15,
+                                "weaponHandOffsetX": -0.15
                             }
                         }
                     ]
