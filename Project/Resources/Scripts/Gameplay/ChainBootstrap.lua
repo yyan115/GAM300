@@ -436,62 +436,62 @@ return Component {
         local bestDX, bestDY, bestDZ = nil, nil, nil
 
         for _, entityId in ipairs(entities) do
-            local tr = nil
-            pcall(function() tr = Engine.FindTransformByID(entityId) end)
-            if not tr then goto continue end
+            repeat
+                local tr = nil
+                pcall(function() tr = Engine.FindTransformByID(entityId) end)
+                if not tr then break end
 
-            local tx, ty, tz
-            local rok, a, b, c = pcall(function()
-                return Engine.GetTransformWorldPosition(tr)
-            end)
-            if rok and a ~= nil then
-                if type(a) == "table" then tx, ty, tz = a[1] or a.x or 0, a[2] or a.y or 0, a[3] or a.z or 0
-                elseif type(a) == "number" then tx, ty, tz = a, b, c end
-            end
-            if not tx then goto continue end
+                local tx, ty, tz
+                local rok, a, b, c = pcall(function()
+                    return Engine.GetTransformWorldPosition(tr)
+                end)
+                if rok and a ~= nil then
+                    if type(a) == "table" then tx, ty, tz = a[1] or a.x or 0, a[2] or a.y or 0, a[3] or a.z or 0
+                    elseif type(a) == "number" then tx, ty, tz = a, b, c end
+                end
+                if not tx then break end
 
-            local dx, dy, dz = tx - sx, ty - sy, tz - sz
-            local dist = math.sqrt(dx*dx + dy*dy + dz*dz)
-            if dist < 1e-4 then goto continue end
+                local dx, dy, dz = tx - sx, ty - sy, tz - sz
+                local dist = math.sqrt(dx*dx + dy*dy + dz*dz)
+                if dist < 1e-4 then break end
 
-            -- Cone check on XZ plane only
-            local flatLen = math.sqrt(dx*dx + dz*dz)
-            local dot = flatLen > 1e-4 and ((dx/flatLen)*pfx + (dz/flatLen)*pfz) or 0
-            if dot < halfCos then goto continue end
+                -- Cone check on XZ plane only
+                local flatLen = math.sqrt(dx*dx + dz*dz)
+                local dot = flatLen > 1e-4 and ((dx/flatLen)*pfx + (dz/flatLen)*pfz) or 0
+                if dot < halfCos then break end
 
-            -- LOS check: raycast from player toward target.
-            -- Accept only if nothing is hit before reaching the target (clear LOS),
-            -- OR if the first thing hit belongs to the target entity itself.
-            if Physics then
-                local ndx, ndy, ndz = dx/dist, dy/dist, dz/dist
-                local hasLOS = true
-                if Physics.RaycastFull then
-                    local rok2, hit, hitDist, _, _, _, _, _, _, hitBodyId = pcall(function()
-                        return Physics.RaycastFull(sx, sy, sz, ndx, ndy, ndz, dist)
-                    end)
-                    if rok2 and hit and hitDist and hitDist < dist - 0.1 then
-                        -- Something was hit before the target — check if it's the target itself
-                        hasLOS = (hitBodyId == entityId)
+                -- LOS check: raycast from player toward target.
+                -- Accept only if nothing is hit before reaching the target (clear LOS),
+                -- OR if the first thing hit belongs to the target entity itself.
+                if Physics then
+                    local ndx, ndy, ndz = dx/dist, dy/dist, dz/dist
+                    local hasLOS = true
+                    if Physics.RaycastFull then
+                        local rok2, hit, hitDist, _, _, _, _, _, _, hitBodyId = pcall(function()
+                            return Physics.RaycastFull(sx, sy, sz, ndx, ndy, ndz, dist)
+                        end)
+                        if rok2 and hit and hitDist and hitDist < dist - 0.1 then
+                            hasLOS = (hitBodyId == entityId)
+                        end
+                    elseif Physics.Raycast then
+                        local rok2, hitDist = pcall(function()
+                            return Physics.Raycast(sx, sy, sz, ndx, ndy, ndz, dist)
+                        end)
+                        if rok2 and hitDist and hitDist > 0 and hitDist < dist - 0.1 then
+                            hasLOS = false
+                        end
                     end
-                elseif Physics.Raycast then
-                    local rok2, hitDist = pcall(function()
-                        return Physics.Raycast(sx, sy, sz, ndx, ndy, ndz, dist)
-                    end)
-                    if rok2 and hitDist and hitDist > 0 and hitDist < dist - 0.1 then
-                        hasLOS = false
+                    if not hasLOS then
+                        dbg(string.format("[ChainBootstrap] LockOn entityId=%d blocked by geometry", entityId))
+                        break
                     end
                 end
-                if not hasLOS then
-                    dbg(string.format("[ChainBootstrap] LockOn entityId=%d blocked by geometry", entityId))
-                    goto continue
-                end
-            end
 
-            if dist < bestDist then
-                bestDist = dist
-                bestDX, bestDY, bestDZ = dx/dist, dy/dist, dz/dist
-            end
-            ::continue::
+                if dist < bestDist then
+                    bestDist = dist
+                    bestDX, bestDY, bestDZ = dx/dist, dy/dist, dz/dist
+                end
+            until true
         end
 
         return bestDX, bestDY, bestDZ
@@ -668,8 +668,7 @@ return Component {
 
                     -- Rotation: only update when not snapped — endpoint is stationary
                     -- at raycast hit point so no need to reorient every frame
-                    if self.controller._raycastSnapped then goto skip_rotation end
-
+                    if not self.controller._raycastSnapped then
                     do
                     -- Rotation: orient endpoint along chain forward direction
                     local fwd = self.controller.lastForward
@@ -712,7 +711,7 @@ return Component {
                         end
                     end)
                     end -- do
-                    ::skip_rotation::
+                    end -- if not _raycastSnapped
                 elseif public.Flopping then
                     -- Flopping: physics owns last link position — write it to endpoint transform
                     local aN = self.controller.activeN
