@@ -1933,23 +1933,46 @@ return Component {
                 return
             end
 
-            -- Step 1: dash phase
+            -- Step 1: dash phase (stop early if we reach player, but keep timer for slash)
             local dashDur   = m.dashDur or 0.22
             local dashSpeed = m.dashSpeed or 18.0
+            local stopDist  = m.stopDist or 1.8
 
             if m.step == 1 then
                 m.dashT = (m.dashT or 0) + dtSec
 
-                if self._controller then
-                    CharacterController.Move(
-                        self._controller,
-                        m.dx * dashSpeed * dtSec,
-                        0,
-                        m.dz * dashSpeed * dtSec
-                    )
+                -- Check distance to player in XZ
+                local px, _, pz = self:GetPlayerPosForAI()
+                if px then
+                    local ex, ez = self:GetEnemyPosXZ()
+                    local ddx, ddz = px - ex, pz - ez
+                    if (ddx*ddx + ddz*ddz) <= (stopDist*stopDist) then
+                        m.reached = true
+                    end
                 end
 
-                -- slash timing: you can do "at end" or "near end"
+                -- Only move if not reached yet
+                if (not m.reached) then
+                    if self._controller then
+                        CharacterController.Move(
+                            self._controller,
+                            m.dx * dashSpeed * dtSec,
+                            0,
+                            m.dz * dashSpeed * dtSec
+                        )
+                    else
+                        -- fallback (just in case CC is missing)
+                        local x, y, z = self:GetPosition()
+                        if x then
+                            self:SetPosition(x + m.dx * dashSpeed * dtSec, y, z + m.dz * dashSpeed * dtSec)
+                        end
+                    end
+                else
+                    -- reached player: stop moving, just wait out slash timing
+                    self:FacePlayer()
+                end
+
+                -- slash timing: keep as-is (it will now happen while standing still if reached early)
                 local slashAt = m.slashAt or 0.85 -- fraction of dash
                 if not m.slashed and m.dashT >= (dashDur * slashAt) then
                     m.slashed = true
@@ -2515,6 +2538,7 @@ return Component {
             chargeDur = 2.00,
             dashDur = 0.4,
             dashSpeed = 700.0,
+            stopDist = 0.8,
             slashAt = 0.90,
             slashRadius = 1.4,
             dmg = 1,
