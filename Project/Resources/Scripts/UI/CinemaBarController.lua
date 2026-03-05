@@ -33,8 +33,10 @@ return Component {
         topBarTargetY      = 10.0,
         btmBarTargetY      = -10.0,
 
-        -- Must match Camera_Cinematic.lua transitionDuration
-        transitionDuration = 3.0,
+        -- Seconds for bars to slide IN when cinematic starts (0 = instant)
+        transitionInDuration  = 3.0,
+        -- Seconds for bars to slide OUT when cinematic ends (0 = instant)
+        transitionOutDuration = 0.0,
     },
 
     Start = function(self)
@@ -68,26 +70,38 @@ return Component {
         if event_bus and event_bus.subscribe then
             self._sub = event_bus.subscribe("cinematic.active", function(active)
                 if active and not self._cinematicOn then
-                    -- Cinematic turning ON: animate bars inward, hide HUD
+                    -- Cinematic turning ON
                     self._cinematicOn = true
-                    self._direction   = 1
-                    self._timer       = 0.0
-                    self._animating   = true
-                    if self._hudActive then
-                        self._hudActive.isActive = false
+                    if self._hudActive then self._hudActive.isActive = false end
+                    if self.transitionInDuration <= 0 then
+                        -- Instant
+                        setLocalY(self._topTr, self.topBarTargetY)
+                        setLocalY(self._btmTr, self.btmBarTargetY)
+                        self._animating = false
+                        print("[CinemaBarController] Cinematic ON - bars snapped in, HUD hidden")
+                    else
+                        self._direction = 1
+                        self._timer     = 0.0
+                        self._animating = true
+                        print("[CinemaBarController] Cinematic ON - bars animating in, HUD hidden")
                     end
-                    print("[CinemaBarController] Cinematic ON - bars animating in, HUD hidden")
 
                 elseif not active and self._cinematicOn then
-                    -- Cinematic turning OFF: snap bars back instantly, restore HUD
+                    -- Cinematic turning OFF
                     self._cinematicOn = false
-                    self._animating   = false
-                    setLocalY(self._topTr, self.topBarRestY)
-                    setLocalY(self._btmTr, self.btmBarRestY)
-                    if self._hudActive then
-                        self._hudActive.isActive = true
+                    if self._hudActive then self._hudActive.isActive = true end
+                    if self.transitionOutDuration <= 0 then
+                        -- Instant
+                        setLocalY(self._topTr, self.topBarRestY)
+                        setLocalY(self._btmTr, self.btmBarRestY)
+                        self._animating = false
+                        print("[CinemaBarController] Cinematic OFF - bars snapped out, HUD restored")
+                    else
+                        self._direction = -1
+                        self._timer     = self.transitionOutDuration
+                        self._animating = true
+                        print("[CinemaBarController] Cinematic OFF - bars animating out, HUD restored")
                     end
-                    print("[CinemaBarController] Cinematic OFF - bars snapped to rest, HUD restored")
                 end
             end)
         end
@@ -98,8 +112,7 @@ return Component {
     Update = function(self, dt)
         if not self._animating then return end
 
-        local dur = self.transitionDuration
-        if dur <= 0 then dur = 0.001 end
+        local dur = self._direction == 1 and self.transitionInDuration or self.transitionOutDuration
 
         -- Advance timer in the correct direction
         if self._direction == 1 then
