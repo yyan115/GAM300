@@ -317,6 +317,7 @@ return Component {
         local snapImpactX = self._lastEndpointX or 0
         local snapImpactY = self._lastEndpointY or 0
         local snapImpactZ = self._lastEndpointZ or 0
+        local snapPartId  = nil  -- if set, parent endpoint to this part instead of root
         local lockOnComp = nil
         pcall(function() lockOnComp = GetComponent(otherEntityId, "LockOnPoint") end)
         if lockOnComp then
@@ -325,12 +326,13 @@ return Component {
                 snapImpactX = partPos.x
                 snapImpactY = partPos.y
                 snapImpactZ = partPos.z
+                snapPartId  = partId
                 self:_dbg(string.format("[ChainEndpointController] Snapping to closest part id=%s pos=(%.3f,%.3f,%.3f)",
                     tostring(partId), snapImpactX, snapImpactY, snapImpactZ))
             end
         end
 
-        self:_doHook(otherEntityId, otherName, rootId, rootName, tag, snapImpactX, snapImpactY, snapImpactZ)
+        self:_doHook(otherEntityId, otherName, rootId, rootName, tag, snapImpactX, snapImpactY, snapImpactZ, snapPartId)
     end,
 
     -- Sweep hit from LockOnPoint (handles fast endpoint tunnelling through trigger)
@@ -362,13 +364,14 @@ return Component {
         local snapX = payload.partX or self._lastEndpointX or 0
         local snapY = payload.partY or self._lastEndpointY or 0
         local snapZ = payload.partZ or self._lastEndpointZ or 0
+        local snapPartId = payload.partId or nil
 
-        self:_doHook(otherEntityId, otherName, rootId, rootName, tag, snapX, snapY, snapZ)
+        self:_doHook(otherEntityId, otherName, rootId, rootName, tag, snapX, snapY, snapZ, snapPartId)
     end,
 
     -- Shared hook + snap logic used by both OnTriggerEnter and _onSweepHit
-    _doHook = function(self, otherEntityId, otherName, rootId, rootName, tag, impactX, impactY, impactZ)
-        self:_dbg("[ChainEndpointController] _doHook — entity='" .. otherName .. "' root='" .. rootName .. "'")
+    _doHook = function(self, otherEntityId, otherName, rootId, rootName, tag, impactX, impactY, impactZ, partId)
+        self:_dbg("[ChainEndpointController] _doHook — entity='" .. otherName .. "' root='" .. rootName .. "' partId=" .. tostring(partId))
 
         self._hookedEntityId = otherEntityId
         self._isExtending = false
@@ -380,60 +383,53 @@ return Component {
             self._hookedTransform = Engine.FindTransformByID(rootId)
             self._hookedColliderTransform = Engine.FindTransformByID(otherEntityId)
         end)
-        self:_dbg("[ChainEndpointController] hookedTransform=" .. tostring(self._hookedTransform ~= nil) .. " colliderTransform=" .. tostring(self._hookedColliderTransform ~= nil))
 
-        local snapDist = tonumber(self.HookSnapDistance) or 0
-
-        -- Get root world position to compute local offset for parenting
-        local rootWX, rootWY, rootWZ = impactX, impactY, impactZ
-        if self._hookedTransform then
-            local ok, a, b, c = pcall(function() return Engine.GetTransformWorldPosition(self._hookedTransform) end)
-            if ok and a ~= nil then
-                if type(a) == "table" then rootWX, rootWY, rootWZ = a[1] or a.x or 0, a[2] or a.y or 0, a[3] or a.z or 0
-                elseif type(a) == "number" then rootWX, rootWY, rootWZ = a, b, c end
+        -- Determine the parent target: use specific body part bone if provided,
+        -- otherwise fall back to root. This makes the endpoint follow animated bones.
+        local parentId = (partId and partId ~= 0) and partId or rootId
+        local parentTransform = nil
+        pcall(function()
+            if partId and partId ~= 0 then
+                parentTransform = Engine.FindTransformByID(partId)
             end
+        end)
+        if not parentTransform then
+            parentTransform = self._hookedTransform
+            parentId = rootId
         end
-        self:_dbg(string.format("[ChainEndpointController][SNAP] impact=(%.3f,%.3f,%.3f) rootWorld=(%.3f,%.3f,%.3f)",
-            impactX, impactY, impactZ, rootWX, rootWY, rootWZ))
 
-        local dx = impactX - rootWX
-        local dy = impactY - rootWY
-        local dz = impactZ - rootWZ
-        local totalDist = math.sqrt(dx*dx + dy*dy + dz*dz)
-        self:_dbg(string.format("[ChainEndpointController][SNAP] totalDist=%.3f snapDist=%.3f", totalDist, snapDist))
+        self:_dbg("[ChainEndpointController] hookedTransform=" .. tostring(self._hookedTransform ~= nil)
+            .. " parentId=" .. tostring(parentId) .. " partId=" .. tostring(partId))
 
-        -- Parent endpoint to root so it moves with the enemy
+        -- Parent endpoint to the body part bone (or root as fallback)
+        -- Local position 0,0,0 sits the endpoint exactly on the bone pivot.
         if self._entityId and Engine and Engine.SetParentEntity then
-            local ok = pcall(function() Engine.SetParentEntity(self._entityId, rootId) end)
+            local ok = pcall(function() Engine.SetParentEntity(self._entityId, parentId) end)
             if ok then
                 self._isParented = true
-                self:_dbg("[ChainEndpointController] Parented endpoint -> root '" .. rootName .. "' id=" .. tostring(rootId))
+                self:_dbg("[ChainEndpointController] Parented endpoint -> parentId=" .. tostring(parentId))
             else
                 self._isParented = false
-                self:_dbg("[ChainEndpointController] WARNING: SetParentEntity failed for root '" .. rootName .. "'")
+                self:_dbg("[ChainEndpointController] WARNING: SetParentEntity failed for parentId=" .. tostring(parentId))
             end
         end
 
-        -- Write local snapped position
+        -- Write local position 0,0,0 — sit exactly on the part bone pivot
         if self._isParented and self._endpointTransform then
-            local sx, sy, sz = 0, 0, 0
-            if snapDist > 1e-6 and totalDist > 1e-6 then
-                local ratio = math.min(snapDist, totalDist) / totalDist
-                sx, sy, sz = dx * ratio, dy * ratio, dz * ratio
-            end
             pcall(function()
                 local pos = self._endpointTransform.localPosition
                 if type(pos) == "userdata" or type(pos) == "table" then
-                    pos.x, pos.y, pos.z = sx, sy, sz
+                    pos.x, pos.y, pos.z = 0, 0, 0
                 else
-                    self._endpointTransform.localPosition = { x = sx, y = sy, z = sz }
+                    self._endpointTransform.localPosition = { x = 0, y = 0, z = 0 }
                 end
                 self._endpointTransform.isDirty = true
             end)
-            self:_dbg(string.format("[ChainEndpointController][SNAP] snapDist=%.3f -> local=(%.3f,%.3f,%.3f)", snapDist, sx, sy, sz))
+            self:_dbg("[ChainEndpointController][SNAP] parented to bone -> local=(0,0,0)")
         end
 
-        -- Notify ChainBootstrap to lock the controller and snapshot lockedEndPoint
+        -- hookedTransform still tracks root for constraint/physics purposes
+        -- lockedEndPoint in ChainBootstrap will follow the endpoint transform world pos
         if _G.event_bus and _G.event_bus.publish then
             _G.event_bus.publish("chain.endpoint_hit_entity", {
                 entityId   = otherEntityId,
