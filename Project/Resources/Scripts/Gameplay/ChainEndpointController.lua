@@ -1,4 +1,6 @@
 -- ChainEndpointController.lua
+_G.CHAIN_DEBUG = _G.CHAIN_DEBUG ~= nil and _G.CHAIN_DEBUG or false
+local function dbg(...) if _G.CHAIN_DEBUG then print(...) end end
 local Component = require("extension.mono_helper")
 
 return Component {
@@ -11,21 +13,21 @@ return Component {
     Start = function(self)
         self._modelRender = self:GetComponent("ModelRenderComponent")
         if not self._modelRender then
-            print("[ChainEndpointController] WARNING: ModelRenderComponent not found on endpoint object")
+            dbg("[ChainEndpointController] WARNING: ModelRenderComponent not found on endpoint object")
         end
 
         self._rb = self:GetComponent("RigidBodyComponent")
         if self._rb then
             self._rb:SetEnabled(false)
         else
-            print("[ChainEndpointController] WARNING: RigidBodyComponent not found on endpoint object")
+            dbg("[ChainEndpointController] WARNING: RigidBodyComponent not found on endpoint object")
         end
 
         self._playerEntityId = nil
         if Engine and Engine.GetEntityByName then
             self._playerEntityId = Engine.GetEntityByName(self.PlayerName)
         else
-            print("[ChainEndpointController] WARNING: Engine.GetEntityByName not available")
+            dbg("[ChainEndpointController] WARNING: Engine.GetEntityByName not available")
         end
 
         -- Resolve this component's entity id for parenting calls
@@ -96,14 +98,19 @@ return Component {
                 if not payload then return end
                 pcall(function() self:_onCheckCollision(payload) end)
             end)
+            -- Sweep hit from LockOnPoint: treat exactly like OnTriggerEnter
+            self._subSweepHit = _G.event_bus.subscribe("chain.lockon_sweep_hit", function(payload)
+                if not payload then return end
+                pcall(function() self:_onSweepHit(payload) end)
+            end)
         else
-            print("[ChainEndpointController] WARNING: event_bus not available")
+            dbg("[ChainEndpointController] WARNING: event_bus not available")
         end
     end,
 
     _dbg = function(self, msg)
         if self.DebugLogs or _G.CHAIN_DEBUG then
-            print(msg)
+            dbg(msg)
         end
     end,
 
@@ -263,23 +270,23 @@ return Component {
     OnTriggerEnter = function(self, otherEntityId)
         local otherName = self:_getEntityDebugName(otherEntityId)
 
-        print("[ChainEndpointController][TRIGGER] OnTriggerEnter fired entity='" .. otherName .. "' id=" .. tostring(otherEntityId))
-        print(string.format("[ChainEndpointController][TRIGGER] rbActive=%s hookedEntityId=%s playerEntityId=%s",
+        dbg("[ChainEndpointController][TRIGGER] OnTriggerEnter fired entity='" .. otherName .. "' id=" .. tostring(otherEntityId))
+        dbg(string.format("[ChainEndpointController][TRIGGER] rbActive=%s hookedEntityId=%s playerEntityId=%s",
             tostring(self._rb and self._rb:IsEnabled()),
             tostring(self._hookedEntityId),
             tostring(self._playerEntityId)))
 
         local rbActive = self._rb and self._rb:IsEnabled()
         if not rbActive then
-            print("[ChainEndpointController][TRIGGER] REJECTED — RB not active | entity='" .. otherName .. "'")
+            dbg("[ChainEndpointController][TRIGGER] REJECTED — RB not active | entity='" .. otherName .. "'")
             return
         end
         if self._hookedEntityId then
-            print("[ChainEndpointController][TRIGGER] REJECTED — already hooked to '" .. self:_getEntityDebugName(self._hookedEntityId) .. "' | new contact='" .. otherName .. "'")
+            dbg("[ChainEndpointController][TRIGGER] REJECTED — already hooked to '" .. self:_getEntityDebugName(self._hookedEntityId) .. "' | new contact='" .. otherName .. "'")
             return
         end
         if self._playerEntityId and otherEntityId == self._playerEntityId then
-            print("[ChainEndpointController][TRIGGER] REJECTED — hit player '" .. otherName .. "'")
+            dbg("[ChainEndpointController][TRIGGER] REJECTED — hit player '" .. otherName .. "'")
             return
         end
 
@@ -295,90 +302,134 @@ return Component {
         end
 
         self:_dbg("[ChainEndpointController] OnTriggerEnter entity='" .. otherName .. "' root='" .. rootName .. "' tag='" .. tostring(tag) .. "'")
-        print(string.format("[ChainEndpointController][TRIGGER] tag check — entity='%s' root='%s' tag='%s'", otherName, rootName, tostring(tag)))
+        dbg(string.format("[ChainEndpointController][TRIGGER] tag check — entity='%s' root='%s' tag='%s'", otherName, rootName, tostring(tag)))
 
         -- Extend here for more hookable types: (tag == "Enemy") or (tag == "Hookable")
         local isHookable = (tag == "Enemy")
         if not isHookable then
-            print("[ChainEndpointController][TRIGGER] REJECTED — tag='" .. tostring(tag) .. "' not hookable")
+            dbg("[ChainEndpointController][TRIGGER] REJECTED — tag='" .. tostring(tag) .. "' not hookable")
             self:_dbg("[ChainEndpointController] OnTriggerEnter ignored — root='" .. rootName .. "' tag='" .. tostring(tag) .. "' not hookable")
             return
         end
-        print("[ChainEndpointController][TRIGGER] PASSED all guards — proceeding to hook and snap")
+        dbg("[ChainEndpointController][TRIGGER] PASSED all guards — proceeding to hook and snap")
 
-        self:_dbg("[ChainEndpointController] OnTriggerEnter HOOKING — entity='" .. otherName .. "' root='" .. rootName .. "'")
+        -- Query LockOnPoint on the collided child entity for closest body part snap
+        local snapImpactX = self._lastEndpointX or 0
+        local snapImpactY = self._lastEndpointY or 0
+        local snapImpactZ = self._lastEndpointZ or 0
+        local snapPartId  = nil  -- if set, parent endpoint to this part instead of root
+        local lockOnComp = nil
+        pcall(function() lockOnComp = GetComponent(otherEntityId, "LockOnPoint") end)
+        if lockOnComp then
+            local partPos, partId = lockOnComp:GetClosestPart(snapImpactX, snapImpactY, snapImpactZ)
+            if partPos then
+                snapImpactX = partPos.x
+                snapImpactY = partPos.y
+                snapImpactZ = partPos.z
+                snapPartId  = partId
+                self:_dbg(string.format("[ChainEndpointController] Snapping to closest part id=%s pos=(%.3f,%.3f,%.3f)",
+                    tostring(partId), snapImpactX, snapImpactY, snapImpactZ))
+            end
+        end
+
+        self:_doHook(otherEntityId, otherName, rootId, rootName, tag, snapImpactX, snapImpactY, snapImpactZ, snapPartId)
+    end,
+
+    -- Sweep hit from LockOnPoint (handles fast endpoint tunnelling through trigger)
+    _onSweepHit = function(self, payload)
+        local rbActive = self._rb and self._rb:IsEnabled()
+        if not rbActive then return end
+        if self._hookedEntityId then return end
+
+        local otherEntityId = payload.entityId
+        if not otherEntityId then return end
+        if self._playerEntityId and otherEntityId == self._playerEntityId then return end
+
+        local otherName = self:_getEntityDebugName(otherEntityId)
+        local rootId    = self:_getRootEntityId(otherEntityId)
+        local rootName  = self:_getEntityDebugName(rootId)
+
+        local tag = nil
+        if Engine and Engine.GetEntityTag then
+            local ok, t = pcall(function() return Engine.GetEntityTag(rootId) end)
+            if ok then tag = t end
+        end
+
+        local isHookable = (tag == "Enemy")
+        if not isHookable then return end
+
+        dbg("[ChainEndpointController] Sweep hit confirmed — hooking entity='" .. otherName .. "' root='" .. rootName .. "'")
+
+        -- Use the part position reported by LockOnPoint directly as snap target
+        local snapX = payload.partX or self._lastEndpointX or 0
+        local snapY = payload.partY or self._lastEndpointY or 0
+        local snapZ = payload.partZ or self._lastEndpointZ or 0
+        local snapPartId = payload.partId or nil
+
+        self:_doHook(otherEntityId, otherName, rootId, rootName, tag, snapX, snapY, snapZ, snapPartId)
+    end,
+
+    -- Shared hook + snap logic used by both OnTriggerEnter and _onSweepHit
+    _doHook = function(self, otherEntityId, otherName, rootId, rootName, tag, impactX, impactY, impactZ, partId)
+        self:_dbg("[ChainEndpointController] _doHook — entity='" .. otherName .. "' root='" .. rootName .. "' partId=" .. tostring(partId))
 
         self._hookedEntityId = otherEntityId
         self._isExtending = false
         if self._rb then self._rb:SetEnabled(false) end
 
-        -- Cache root transform via entity ID to avoid FindTransformByName returning
-        -- a stale/wrong instance when multiple enemies share the same name
         self._hookedTransform = nil
         self._hookedColliderTransform = nil
         pcall(function()
             self._hookedTransform = Engine.FindTransformByID(rootId)
             self._hookedColliderTransform = Engine.FindTransformByID(otherEntityId)
         end)
-        self:_dbg("[ChainEndpointController] hookedTransform=" .. tostring(self._hookedTransform ~= nil) .. " colliderTransform=" .. tostring(self._hookedColliderTransform ~= nil))
 
-        local impactX = self._lastEndpointX or 0
-        local impactY = self._lastEndpointY or 0
-        local impactZ = self._lastEndpointZ or 0
-        local snapDist = tonumber(self.HookSnapDistance) or 0
-
-        -- Get root world position via its transform handle
-        local rootWX, rootWY, rootWZ = impactX, impactY, impactZ
-        if self._hookedTransform then
-            local ok, a, b, c = pcall(function() return Engine.GetTransformWorldPosition(self._hookedTransform) end)
-            if ok and a ~= nil then
-                if type(a) == "table" then rootWX, rootWY, rootWZ = a[1] or a.x or 0, a[2] or a.y or 0, a[3] or a.z or 0
-                elseif type(a) == "number" then rootWX, rootWY, rootWZ = a, b, c end
+        -- Determine the parent target: use specific body part bone if provided,
+        -- otherwise fall back to root. This makes the endpoint follow animated bones.
+        local parentId = (partId and partId ~= 0) and partId or rootId
+        local parentTransform = nil
+        pcall(function()
+            if partId and partId ~= 0 then
+                parentTransform = Engine.FindTransformByID(partId)
             end
+        end)
+        if not parentTransform then
+            parentTransform = self._hookedTransform
+            parentId = rootId
         end
-        self:_dbg(string.format("[ChainEndpointController][SNAP] impact=(%.3f,%.3f,%.3f) rootWorld=(%.3f,%.3f,%.3f)", impactX, impactY, impactZ, rootWX, rootWY, rootWZ))
 
-        -- World offset from root pivot to impact point
-        local dx = impactX - rootWX
-        local dy = impactY - rootWY
-        local dz = impactZ - rootWZ
-        local totalDist = math.sqrt(dx*dx + dy*dy + dz*dz)
-        self:_dbg(string.format("[ChainEndpointController][SNAP] totalDist=%.3f snapDist=%.3f", totalDist, snapDist))
+        self:_dbg("[ChainEndpointController] hookedTransform=" .. tostring(self._hookedTransform ~= nil)
+            .. " parentId=" .. tostring(parentId) .. " partId=" .. tostring(partId))
 
-        -- Parent first — engine recalculates our localPosition relative to root
+        -- Parent endpoint to the body part bone (or root as fallback)
+        -- Local position 0,0,0 sits the endpoint exactly on the bone pivot.
         if self._entityId and Engine and Engine.SetParentEntity then
-            local ok = pcall(function() Engine.SetParentEntity(self._entityId, rootId) end)
+            local ok = pcall(function() Engine.SetParentEntity(self._entityId, parentId) end)
             if ok then
                 self._isParented = true
-                self:_dbg("[ChainEndpointController] Parented endpoint -> root '" .. rootName .. "' id=" .. tostring(rootId))
+                self:_dbg("[ChainEndpointController] Parented endpoint -> parentId=" .. tostring(parentId))
             else
                 self._isParented = false
-                self:_dbg("[ChainEndpointController] WARNING: SetParentEntity failed for root '" .. rootName .. "'")
+                self:_dbg("[ChainEndpointController] WARNING: SetParentEntity failed for parentId=" .. tostring(parentId))
             end
         end
 
-        -- Write snapped local position.
-        -- snapDist=0 means snap exactly to root pivot (local 0,0,0).
-        -- snapDist>0 means sit that many units from the pivot toward the impact point.
+        -- Write local position 0,0,0 — sit exactly on the part bone pivot
         if self._isParented and self._endpointTransform then
-            local sx, sy, sz = 0, 0, 0
-            if snapDist > 1e-6 and totalDist > 1e-6 then
-                local ratio = math.min(snapDist, totalDist) / totalDist
-                sx, sy, sz = dx * ratio, dy * ratio, dz * ratio
-            end
             pcall(function()
                 local pos = self._endpointTransform.localPosition
                 if type(pos) == "userdata" or type(pos) == "table" then
-                    pos.x, pos.y, pos.z = sx, sy, sz
+                    pos.x, pos.y, pos.z = 0, 0, 0
                 else
-                    self._endpointTransform.localPosition = { x = sx, y = sy, z = sz }
+                    self._endpointTransform.localPosition = { x = 0, y = 0, z = 0 }
                 end
                 self._endpointTransform.isDirty = true
             end)
-            self:_dbg(string.format("[ChainEndpointController][SNAP] snapDist=%.3f -> local=(%.3f,%.3f,%.3f)", snapDist, sx, sy, sz))
+            self:_dbg("[ChainEndpointController][SNAP] parented to bone -> local=(0,0,0)")
         end
 
-        -- Publish hit so ChainBootstrap locks the controller and snapshots lockedEndPoint
+        -- hookedTransform still tracks root for constraint/physics purposes
+        -- lockedEndPoint in ChainBootstrap will follow the endpoint transform world pos
         if _G.event_bus and _G.event_bus.publish then
             _G.event_bus.publish("chain.endpoint_hit_entity", {
                 entityId   = otherEntityId,
@@ -416,6 +467,7 @@ return Component {
             if self._subAttach         then pcall(function() _G.event_bus.unsubscribe(self._subAttach)         end) end
             if self._subDetach         then pcall(function() _G.event_bus.unsubscribe(self._subDetach)         end) end
             if self._subCheckCollision then pcall(function() _G.event_bus.unsubscribe(self._subCheckCollision) end) end
+            if self._subSweepHit       then pcall(function() _G.event_bus.unsubscribe(self._subSweepHit)       end) end
         end
     end,
 }
