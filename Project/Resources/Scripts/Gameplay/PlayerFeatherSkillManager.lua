@@ -89,6 +89,7 @@ return Component {
 
                     if event_bus and event_bus.publish then
                         event_bus.publish("force_player_rotation_to_camera", true)
+                        event_bus.publish("activated_feather_skill", true)
                     end
 
                     local animator = self:GetComponent("AnimationComponent")

@@ -216,6 +216,25 @@ void PhysicsSystem::Update(float fixedDt, ECSManager& ecsManager) {
         __android_log_print(ANDROID_LOG_INFO, "GAM300", "[Physics] Update called, fixedDt=%f, entities=%zu", fixedDt, entities.size());
     }
 #endif
+
+    // =========================================================================================
+    // 0. CLEANUP DESTROYED / ORPHANED ENTITIES (GHOST COLLIDER FIX)
+    //    If an entity was destroyed by a script, it drops out of the ECS 'entities' set.
+    //    We must sweep our internal map and destroy any Jolt bodies that no longer have an ECS entity.
+    // =========================================================================================
+    std::vector<Entity> staleEntities;
+    for (const auto& [e, bodyId] : entityBodyMap) {
+        // If the entity is in our body map but NO LONGER in the ECS entities set
+        if (entities.find(e) == entities.end()) {
+            staleEntities.push_back(e);
+        }
+    }
+
+    // Destroy the orphaned Jolt physics bodies
+    for (Entity e : staleEntities) {
+        RemoveBody(e);
+    }
+
     if (entities.empty()) return;
 
     JPH::BodyInterface& bi = physics.GetBodyInterface();
@@ -800,6 +819,8 @@ void PhysicsSystem::RemoveBody(Entity entity) {
             bi.RemoveBody(bodyId);
         bi.DestroyBody(bodyId);
     }
+
+    bodyToEntityMap.erase(bodyId);
     entityBodyMap.erase(it);
 }
 
@@ -874,6 +895,7 @@ PhysicsSystem::RaycastResult PhysicsSystem::Raycast(const Vector3D& origin, cons
                                    static_cast<float>(hitPos.GetZ()));
 
         result.bodyId = hit.mBodyID;
+        result.entityId = GetEntityFromBody(hit.mBodyID);
     }
 
     return result;
