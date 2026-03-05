@@ -756,34 +756,112 @@ function M:Update(dt, settings)
 
     -- =========================================================================
     -- LOS ANCHOR MODE
-    -- When UseLOSAnchors is true and the chain has length, bypass Verlet entirely.
-    -- Positions are computed geometrically: straight lines between startPos,
-    -- any LOS anchors, and endPos.  Anchors are created/destroyed automatically
-    -- by raycasting each segment every frame.
+    -- Every link's XZ is driven by the geometric path (start→anchors→end).
+    -- Y is entirely Verlet/gravity — never overwritten.
     -- =========================================================================
     if settings.UseLOSAnchors and (self.chainLen or 0) > 1e-4 and not self._flopping
        and (self.endPointLocked or self._raycastSnapped) then
-        -- Update the anchor list (cleanup stale + add new where LOS breaks)
+
         self:UpdateLOSAnchors(sx, sy, sz, ex, ey, ez)
 
-        -- Distribute all active links along the piecewise straight path
-        self:DistributeLinksAlongPath(sx, sy, sz, ex, ey, ez, aN)
+        -- Build XZ path (Y from path is ignored)
+        local path = {{sx, sy, sz}}
+        for _, a in ipairs(self.losAnchors) do table.insert(path, a) end
+        table.insert(path, {ex, ey, ez})
 
-        -- All links kinematic — no physics for this mode
-        for i = 1, self.n do self.invMass[i] = 0 end
-
-        -- Still compute isTaut (constraint system reads it)
-        do
-            local arcLen = 0
-            for i = 2, aN do
-                local dx = self.positions[i][1] - self.positions[i-1][1]
-                local dy = self.positions[i][2] - self.positions[i-1][2]
-                local dz = self.positions[i][3] - self.positions[i-1][3]
-                arcLen = arcLen + vec_len(dx, dy, dz)
-            end
-            self._isTaut = (arcLen >= (self.chainLen or 0) * 0.98)
-            self._arcLen = arcLen
+        local totalPathLen = 0
+        local cumLens = {0}
+        for i = 2, #path do
+            local dx = path[i][1] - path[i-1][1]
+            local dy = path[i][2] - path[i-1][2]
+            local dz = path[i][3] - path[i-1][3]
+            totalPathLen = totalPathLen + math.sqrt(dx*dx + dy*dy + dz*dz)
+            cumLens[i] = totalPathLen
         end
+
+        -- Park pool links
+        for i = aN + 1, self.n do
+            self.positions[i][1], self.positions[i][2], self.positions[i][3] = sx, sy, sz
+            self.prev[i][1],      self.prev[i][2],      self.prev[i][3]      = sx, sy, sz
+            self.invMass[i] = 0
+        end
+
+        -- All active links dynamic; start and end hard-pinned
+        for i = 1, aN do
+            self.invMass[i] = (self.anchors[i]) and 0 or 1
+        end
+        self.invMass[1]  = 0
+        self.invMass[aN] = 0
+
+        -- Segment length
+        local curEndDist = vec_len(ex - sx, ey - sy, ez - sz)
+        local linkMax    = tonumber(settings.LinkMaxDistance) or tonumber(self.params.LinkMaxDistance) or nil
+        local totalLen   = (self.chainLen and self.chainLen > 1e-8) and self.chainLen or math.max(curEndDist, 1e-6)
+        local segmentLen = (aN > 1) and (totalLen / (aN - 1)) or 0
+        if linkMax and linkMax > 0 and segmentLen > linkMax then segmentLen = linkMax end
+
+        local vparams = {
+            n                    = aN,
+            VerletGravity        = settings.VerletGravity or self.params.VerletGravity,
+            VerletDamping        = settings.VerletDamping or self.params.VerletDamping,
+            ConstraintIterations = settings.ConstraintIterations or self.params.ConstraintIterations,
+            IsElastic            = (settings.IsElastic ~= nil) and settings.IsElastic or (self.params.IsElastic == true),
+            LinkMaxDistance      = linkMax,
+            totalLen             = totalLen,
+            segmentLen           = segmentLen,
+            ClampSegment         = linkMax,
+            GroundClamp          = settings.GroundClamp,
+            groundY              = self._groundY,
+            pinnedLast           = true,
+            endPos               = { ex, ey, ez },
+            startPos             = { sx, sy, sz },
+        }
+        VerletAdapter.Step(self.VerletState, dt, vparams)
+
+        -- Post-physics: overwrite XZ of EVERY active link from path interpolation.
+        -- Y is left exactly as Verlet computed it — gravity owns Y.
+        if totalPathLen > 1e-9 then
+            for i = 1, aN do
+                local t           = (aN > 1) and ((i - 1) / (aN - 1)) or 0
+                local targetDist  = t * totalPathLen
+                local cumLen      = 0
+                local tx, tz      = sx, sz
+
+                for seg = 1, #cumLens - 1 do
+                    local segEnd = cumLens[seg + 1]
+                    if targetDist <= segEnd + 1e-9 then
+                        local segLen = segEnd - cumLens[seg]
+                        local localT = (segLen > 1e-9) and ((targetDist - cumLens[seg]) / segLen) or 0
+                        tx = path[seg][1] + (path[seg+1][1] - path[seg][1]) * localT
+                        tz = path[seg][3] + (path[seg+1][3] - path[seg][3]) * localT
+                        break
+                    end
+                end
+
+                self.positions[i][1] = tx
+                self.positions[i][3] = tz
+                self.prev[i][1]      = tx  -- XZ is path-driven, kill XZ velocity
+                self.prev[i][3]      = tz
+                -- self.positions[i][2] (Y) intentionally not touched
+            end
+        end
+
+        -- Hard re-pin start and end Y as well
+        self.positions[1][1], self.positions[1][2], self.positions[1][3] = sx, sy, sz
+        self.prev[1][1],      self.prev[1][2],      self.prev[1][3]      = sx, sy, sz
+        self.positions[aN][1], self.positions[aN][2], self.positions[aN][3] = ex, ey, ez
+        self.prev[aN][1],      self.prev[aN][2],      self.prev[aN][3]      = ex, ey, ez
+
+        -- Compute isTaut
+        local arcLen = 0
+        for i = 2, aN do
+            local dx = self.positions[i][1] - self.positions[i-1][1]
+            local dy = self.positions[i][2] - self.positions[i-1][2]
+            local dz = self.positions[i][3] - self.positions[i-1][3]
+            arcLen = arcLen + vec_len(dx, dy, dz)
+        end
+        self._isTaut = (arcLen >= (self.chainLen or 0) * 0.98)
+        self._arcLen = arcLen
 
         return self.positions, { sx, sy, sz }, { ex, ey, ez }
     end
