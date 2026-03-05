@@ -96,6 +96,10 @@ public:
     EBO* quadEBO = nullptr;      // Index data for quad
     VBO* instanceVBO = nullptr;  // Instance data (per-particle)
 
+    // Blend mode: false = standard alpha (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA) for physical/solid particles
+    //             true  = additive (GL_SRC_ALPHA, GL_ONE) for glow/fire/magic effects
+    bool additiveBlending = false;
+
     float timeSinceEmission = 0.0f;
     bool isEmitting = true;
     bool isPlayingInEditor = false;  // Manual play control in editor

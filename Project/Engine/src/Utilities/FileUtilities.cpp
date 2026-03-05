@@ -175,3 +175,54 @@ bool FileUtilities::StrictExists(const std::filesystem::path& p) {
     return true;
 }
 
+bool FileUtilities::StrictDirectoryExists(std::filesystem::path p) {
+    std::error_code ec;
+
+    // If the path is a file, chop off the filename so we are only checking the directory
+    if (std::filesystem::is_regular_file(p, ec)) {
+        p = p.parent_path();
+    }
+
+    // Fast fail: if it's not a directory at this point, it's invalid
+    if (!std::filesystem::is_directory(p, ec)) return false;
+
+    std::filesystem::path current_scan_dir;
+    auto it = p.begin();
+
+    if (p.is_absolute()) {
+        current_scan_dir = p.root_path();
+        if (it != p.end() && *it == p.root_name()) ++it;
+        if (it != p.end() && *it == p.root_directory()) ++it;
+    }
+    else {
+        current_scan_dir = std::filesystem::current_path();
+    }
+
+    for (; it != p.end(); ++it) {
+        std::filesystem::path part = *it;
+
+        if (part.empty() || part == ".") continue;
+
+        if (part == "..") {
+            current_scan_dir = current_scan_dir.parent_path();
+            continue;
+        }
+
+        bool found_exact = false;
+
+        if (!std::filesystem::is_directory(current_scan_dir, ec)) return false;
+
+        for (const auto& entry : std::filesystem::directory_iterator(current_scan_dir)) {
+            if (entry.path().filename() == part) {
+                found_exact = true;
+                break;
+            }
+        }
+
+        if (!found_exact) return false;
+
+        current_scan_dir /= part;
+    }
+
+    return true;
+}

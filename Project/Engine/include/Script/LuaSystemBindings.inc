@@ -269,6 +269,7 @@ BEGIN_SYSTEM("Physics")
     // Returns: distance (float, -1.0 if no hit)
     FUNCTION("Raycast", PhysicsSystemWrappers::Raycast)
     FUNCTION("RaycastFull", PhysicsSystemWrappers::RaycastFull)
+    FUNCTION("RaycastGetEntity", PhysicsSystemWrappers::RaycastGetEntity)
     FUNCTION("CheckDistance", PhysicsSystemWrappers::CheckDistance)
 END_SYSTEM()
 

@@ -864,7 +864,10 @@ void GraphicsManager::RenderParticles(const ParticleComponent& item) {
 	if (!item.isVisible || item.particles.empty() || !item.particleShader || !item.particleVAO) return;
 	glDisable(GL_CULL_FACE);
 	glEnable(GL_BLEND);
-	glBlendFunc(GL_SRC_ALPHA, GL_ONE);  // Additive blending
+	if (item.additiveBlending)
+		glBlendFunc(GL_SRC_ALPHA, GL_ONE);              // Additive: glow/fire/magic
+	else
+		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);  // Standard alpha: physical/solid
 	glDepthMask(GL_FALSE);
 
 #ifdef ANDROID
@@ -1431,6 +1434,14 @@ void GraphicsManager::RenderModelOptimized(const ModelRenderComponent& item)
 		shader->setMat4("model", modelMatrix);
 		glm::mat3 normalMatrix = glm::mat3(glm::transpose(glm::inverse(modelMatrix)));
 		shader->setMat3("normalMatrix", normalMatrix);
+	}
+
+	// Per-entity bloom emission (must set per-model to avoid stale values)
+	shader->setFloat("bloomIntensity", item.bloomIntensity);
+	if (item.bloomIntensity > 0.0f) {
+		shader->setVec3("bloomColor", item.bloomColor);
+	} else {
+		shader->setVec3("bloomColor", glm::vec3(0.0f));
 	}
 
 	// Switch material only if different

@@ -642,6 +642,7 @@ rapidjson::Value Serializer::SerializeEntity(Entity entity, rapidjson::Document:
         v.AddMember("bloomEnabled", c.bloomEnabled, alloc);
         v.AddMember("bloomThreshold", c.bloomThreshold, alloc);
         v.AddMember("bloomIntensity", c.bloomIntensity, alloc);
+        v.AddMember("bloomSpread", c.bloomSpread, alloc);
         v.AddMember("vignetteEnabled", c.vignetteEnabled, alloc);
         v.AddMember("vignetteIntensity", c.vignetteIntensity, alloc);
         v.AddMember("vignetteSmoothness", c.vignetteSmoothness, alloc);
@@ -1019,6 +1020,7 @@ void Serializer::SerializePrefabInstanceDelta(ECSManager& sceneECS, Entity insta
             v.AddMember("bloomEnabled", c.bloomEnabled, a);
             v.AddMember("bloomThreshold", c.bloomThreshold, a);
             v.AddMember("bloomIntensity", c.bloomIntensity, a);
+            v.AddMember("bloomSpread", c.bloomSpread, a);
             v.AddMember("vignetteEnabled", c.vignetteEnabled, a);
             v.AddMember("vignetteIntensity", c.vignetteIntensity, a);
             v.AddMember("vignetteSmoothness", c.vignetteSmoothness, a);
@@ -1201,10 +1203,10 @@ void Serializer::SerializePrefabOverridesRecursive(ECSManager& sceneECS, Entity 
     // 3. Recurse Children
     if (sceneECS.HasComponent<ChildrenComponent>(instanceEnt)) {
         auto& instChildren = sceneECS.GetComponent<ChildrenComponent>(instanceEnt).children;
-        if (baselineEnt == static_cast<Entity>(-1) || !sceneECS.HasComponent<ChildrenComponent>(baselineEnt)) {
-            // No baseline � serialize all instance children as new additions
-            return;
-        }
+        //if (baselineEnt == static_cast<Entity>(-1) || !sceneECS.HasComponent<ChildrenComponent>(baselineEnt)) {
+        //    // No baseline - serialize all instance children as new additions
+        //    return;
+        //}
         auto& baseChildren = sceneECS.GetComponent<ChildrenComponent>(baselineEnt).children;
 
         std::list<GUID_128> deletedBaseChildren{};
@@ -2009,7 +2011,13 @@ void Serializer::ApplyPrefabOverridesRecursive(ECSManager& ecs, Entity& currentE
 
     // 2. Recursively Handle Children
     // We only descend if the JSON has overrides for children
-    if (jsonNode.HasMember("Children") && ecs.HasComponent<ChildrenComponent>(currentEntity)) {
+    if (jsonNode.HasMember("Children")) {
+        // Ensure the entity has a ChildrenComponent before we try to populate it.
+        // Newly added entities won't have this component by default.
+        if (!ecs.HasComponent<ChildrenComponent>(currentEntity)) {
+            ecs.AddComponent<ChildrenComponent>(currentEntity, ChildrenComponent{});
+        }
+
         const auto& jsonChildren = jsonNode["Children"];
         auto& childrenComp = ecs.GetComponent<ChildrenComponent>(currentEntity);
 
@@ -2068,7 +2076,12 @@ void Serializer::ApplyPrefabOverridesRecursive(ECSManager& ecs, Entity& currentE
                     }
 
                     GUID_128 childGUID = EntityGUIDRegistry::GetInstance().GetGUIDByEntity(matchingChild);
-                    childrenComp.children.push_back(childGUID);
+                    // Prevent duplicate child links if the GUID was already added 
+                    // via the ComponentOverrides parsing step above.
+                    auto it = std::find(childrenComp.children.begin(), childrenComp.children.end(), childGUID);
+                    if (it == childrenComp.children.end()) {
+                        childrenComp.children.push_back(childGUID);
+                    }
                 }
             }
         }
@@ -3551,6 +3564,8 @@ void Serializer::DeserializeCameraComponent(CameraComponent& cameraComp, const r
         cameraComp.bloomThreshold = cameraJSON["bloomThreshold"].GetFloat();
     if (cameraJSON.HasMember("bloomIntensity") && cameraJSON["bloomIntensity"].IsNumber())
         cameraComp.bloomIntensity = cameraJSON["bloomIntensity"].GetFloat();
+    if (cameraJSON.HasMember("bloomSpread") && cameraJSON["bloomSpread"].IsNumber())
+        cameraComp.bloomSpread = cameraJSON["bloomSpread"].GetFloat();
     if (cameraJSON.HasMember("vignetteEnabled") && cameraJSON["vignetteEnabled"].IsBool())
         cameraComp.vignetteEnabled = cameraJSON["vignetteEnabled"].GetBool();
     if (cameraJSON.HasMember("vignetteIntensity") && cameraJSON["vignetteIntensity"].IsNumber())

@@ -8,12 +8,12 @@ return Component {
 
     fields = {
         InitialInactiveDuration = 0.5,
-        AttractionStrength = 60.0, -- Increased strength to fight drag
-        Drag = 5.0,                -- Air resistance to stop spinning
-        MaxSpeed = 40.0,           -- Higher max speed allowed
-        CollectionRadius = 0.05,    -- Slightly larger radius
+        AttractionStrength = 60.0, 
+        Drag = 5.0,                
+        MaxSpeed = 40.0,           
+        CollectionRadius = 0.05,    
         TargetScale = 0.1,
-        LiftHeight = 0.3,          -- Aim for the player's center (not feet)
+        LiftHeight = 0.3,          
     },
 
     Start = function(self)
@@ -25,8 +25,6 @@ return Component {
         self._colliderEnabled = false
 
         self._parentFeatherEntity = Engine.GetParentEntity(self.entityId)
-        self._parentTransform = GetComponent(self._parentFeatherEntity, "Transform")
-        self._parentRb = GetComponent(self._parentFeatherEntity, "RigidBodyComponent")
         
         self._onTriggerStayed = false
         self._isCollecting = false
@@ -34,16 +32,19 @@ return Component {
     end,
 
     Update = function(self, dt)
-        self._initialInactiveDuration = self._initialInactiveDuration - dt
-        if self._initialInactiveDuration <= 0 then
-            self._collider.enabled = true
-            --print(string.format("[EnemyFeatherCollectible] Trigger collider enabled! - Entity %d", self.entityId))
+        -- [FIXED] Stop setting it to true every frame once it's enabled
+        if not self._colliderEnabled then
+            self._initialInactiveDuration = self._initialInactiveDuration - dt
+            if self._initialInactiveDuration <= 0 then
+                if self._collider then
+                    self._collider.enabled = true
+                end
+                self._colliderEnabled = true
+            end
         end
 
         if self._isCollecting and self._playerTransform then
             -- Fetch Transform FRESH every frame!
-            -- Do not use self._parentTransform cached in Start. 
-            -- Destroying other feathers causes memory addresses to shift.
             local parentTransform = GetComponent(self._parentFeatherEntity, "Transform")
             if not parentTransform then return end -- Safety check
 
@@ -62,13 +63,14 @@ return Component {
 
             -- [ZOMBIE HANDLING] If already collected (waiting for Destroy), snap and hide
             if self._collected then
-                local targetPos = self._playerTransform.localPosition
-                parentTransform.localPosition = { 
-                    x = targetPos.x, 
-                    y = targetPos.y + self.LiftHeight, 
-                    z = targetPos.z 
-                }
-                parentTransform.localScale = { x = 0, y = 0, z = 0 }
+                parentTransform.localPosition.x = targetX
+                parentTransform.localPosition.y = targetY
+                parentTransform.localPosition.z = targetZ
+                
+                parentTransform.localScale.x = 0
+                parentTransform.localScale.y = 0
+                parentTransform.localScale.z = 0
+                
                 parentTransform.isDirty = true
                 return 
             end
@@ -112,8 +114,6 @@ return Component {
             if (dist < self.CollectionRadius) or (dist <= moveDist) then
                 print(string.format("[EnemyFeatherCollectible] Player collected feather - Entity %d", self.entityId))
                 self:OnCollected() 
-                -- DO NOT RETURN HERE! Let the code below run one last time to snap position.
-                -- Next frame, the "Zombie Handling" block at the top will take over.
                 myPos = { x = targetX, y = targetY, z = targetZ } -- Snap position visually
             else
                 -- Apply normal movement
@@ -125,7 +125,6 @@ return Component {
             -- [Scale Logic]
             if self._startDistance and self._startDistance > 0 then
                 local t = 1.0 - (dist / self._startDistance)
-                -- t = t * 2.0
                 if t < 0 then t = 0 end
                 if t > 1 then t = 1 end
 
@@ -160,7 +159,8 @@ return Component {
         return targetId
     end,
 
-    OnTriggerStay = function(self, otherEntityId)
+    -- [NEW] Reusable collection logic
+    TryCollect = function(self, otherEntityId)
         if self._onTriggerStayed then return end
         if self._isCollecting then return end
 
@@ -168,10 +168,14 @@ return Component {
         local tagComp = GetComponent(rootId, "TagComponent")
         
         if tagComp and Tag.Compare(tagComp.tagIndex, "Player") then
+            -- [FIXED] Fetch the parent transform FRESH! Do not use the stale cached one from Start.
+            local parentTransform = GetComponent(self._parentFeatherEntity, "Transform")
+            if not parentTransform then return end
+
             self._isCollecting = true
             self._playerTransform = GetComponent(rootId, "Transform")
             
-            local myPos = self._parentTransform.localPosition
+            local myPos = parentTransform.localPosition
             local targetPos = self._playerTransform.localPosition
             local dx = targetPos.x - myPos.x
             local dy = (targetPos.y + self.LiftHeight) - myPos.y
@@ -181,14 +185,22 @@ return Component {
             -- Initial "Pop" Velocity upwards
             self._velocity = { x=0, y=5.0, z=0 } 
 
-            local s = self._parentTransform.localScale
+            local s = parentTransform.localScale
             self._startScale = { x = s.x, y = s.y, z = s.z }
 
-            --if self._collider then self._collider.enabled = false end
             self._onTriggerStayed = true
 
             print(string.format("[EnemyFeatherCollectible] Player collecting feather - Entity %d", self.entityId))
         end
+    end,
+
+    -- [FIXED] Route BOTH physics events into the collection logic!
+    OnTriggerEnter = function(self, otherEntityId)
+        self:TryCollect(otherEntityId)
+    end,
+
+    OnTriggerStay = function(self, otherEntityId)
+        self:TryCollect(otherEntityId)
     end,
 
     OnCollected = function(self)

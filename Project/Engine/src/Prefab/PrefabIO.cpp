@@ -615,7 +615,7 @@ ENGINE_API bool SaveEntityToPrefabFile(
     // Save to BOTH the Editor/Resources folder and the ROOT PROJECT Resources folder to ensure ALL prefab files are synced when saved.
     std::filesystem::path editorResourcesPath(outPath.substr(outPath.find("Resources")));
     if (outPath != editorResourcesPath.generic_string()) {
-        if (FileUtilities::StrictExists(editorResourcesPath)) {
+        if (FileUtilities::StrictDirectoryExists(editorResourcesPath)) {
             if (FileUtilities::CopyFile(outPath, editorResourcesPath.generic_string())) {
                 ENGINE_LOG_INFO("[PrefabIO] Prefab saved to Editor/Resources: " + editorResourcesPath.generic_string());
             }
@@ -633,7 +633,7 @@ ENGINE_API bool SaveEntityToPrefabFile(
 
     std::filesystem::path projectRootPath(std::filesystem::path(AssetManager::GetInstance().GetRootAssetDirectory()) / std::filesystem::path(outPath.substr(outPath.find("Resources") + 10)));
     if (outPath != projectRootPath.generic_string()) {
-        if (FileUtilities::StrictExists(projectRootPath)) {
+        if (FileUtilities::StrictDirectoryExists(projectRootPath)) {
             if (FileUtilities::CopyFile(outPath, projectRootPath.generic_string())) {
                 ENGINE_LOG_INFO("[PrefabIO] Prefab saved to Root Project/Resources: " + projectRootPath.generic_string());
             }

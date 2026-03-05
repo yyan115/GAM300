@@ -34,7 +34,7 @@
 --
 -- =============================================================================
 _G.CHAIN_DEBUG = _G.CHAIN_DEBUG ~= nil and _G.CHAIN_DEBUG or false
-_G.CHAIN_DEBUG = true
+--_G.CHAIN_DEBUG = true
 local function dbg(...) if _G.CHAIN_DEBUG then print(...) end end
 local Component = require("extension.mono_helper")
 local LinkHandlerModule = require("Gameplay.ChainLinkTransformHandler")

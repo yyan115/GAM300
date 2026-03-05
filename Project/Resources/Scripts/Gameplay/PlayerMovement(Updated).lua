@@ -38,9 +38,17 @@ end
 -- Helper: play random SFX from array
 local function playRandomSFX(audio, clips)
     local count = clips and #clips or 0
-    if count > 0 and audio then
-        audio:PlayOneShot(clips[math.random(1, count)])
+    if count == 0 or not audio then return end
+    if count == 1 then
+        audio:PlayOneShot(clips[1])
+        return
     end
+    local idx
+    repeat
+        idx = math.random(1, count)
+    until idx ~= clips._lastIdx
+    clips._lastIdx = idx
+    audio:PlayOneShot(clips[idx])
 end
 
 -- Helper: lerp quaternion for smooth rotation
@@ -66,8 +74,8 @@ return Component {
         LandingDuration = 0.5,
         footstepInterval = 0.35,
         DashSpeed = 5.0,
-        DashDuration = 0.3,
-        DashCooldown = 2.0,
+        DashDuration = 1.0,
+        DashCooldown = 1.5,
         CinematicSettleTime = 0.8,
         AirDashSpeedMultiplier = 1.5,
         AirDashLift = 2.0,
@@ -78,6 +86,7 @@ return Component {
         playerJumpSFX = {},
         playerLandSFX = {},
         playerDeadSFX = {},
+        playerDashSFX = {},
     },
 
     Awake = function(self)
@@ -154,7 +163,28 @@ return Component {
                 self._lungeTimer = self.AttackLungeDuration or 0.12
             end)
 
-            dbg("[PlayerMovement] Subscribing to activatedCheckpoint")
+            -- Snap rotation to face camera exactly when a skill is cast
+            self._forceRotSub = event_bus.subscribe("force_player_rotation_to_camera", function()
+                local cameraYaw = _G.CAMERA_YAW or self._cameraYaw or 180.0
+                local yr = math.rad(cameraYaw)
+                local fwdX = -math.sin(yr)
+                local fwdZ = -math.cos(yr)
+                
+                local len = math.sqrt(fwdX * fwdX + fwdZ * fwdZ)
+                if len > 0.001 then
+                    fwdX = fwdX / len
+                    fwdZ = fwdZ / len
+                end
+
+                local targetW, targetX, targetY, targetZ = directionToQuaternion(fwdX, fwdZ)
+                self._currentRotW, self._currentRotX, self._currentRotY, self._currentRotZ = targetW, targetX, targetY, targetZ
+                self._facingX = fwdX
+                self._facingZ = fwdZ
+                
+                pcall(self.SetRotation, self, targetW, targetX, targetY, targetZ)
+            end)
+
+            print("[PlayerMovement] Subscribing to activatedCheckpoint")
             self._activatedCheckpointSub = event_bus.subscribe("activatedCheckpoint", function(entityId)
                 if entityId then self._activatedCheckpoint = entityId end
             end)
@@ -184,6 +214,13 @@ return Component {
                         z = self._facingZ
                     })
                 end
+            end)
+
+            -- Dash requested by ComboManager via event_bus
+            self._dashRequested = false
+            self._dashPerformedSub = event_bus.subscribe("dash_performed", function()
+                self._dashRequested = true
+                print("[PlayerMovement] Received dash_performed event")
             end)
 
             -- Chain movement constraint: reduce speed as player approaches slack limit,
@@ -276,6 +313,14 @@ return Component {
     end,
 
     Update = function(self, dt)
+        -- Sync internal states to globals so other scripts (like FeatherSkillManager) can read them
+        _G.player_is_jumping = self._isJumping or false
+        _G.player_is_rolling = self._isRolling or false
+        _G.player_is_landing = self._isLanding or false
+        _G.player_is_hurt    = self._isDamageStun or false
+        _G.player_is_dead    = self._playerDead or false
+        _G.player_is_frozen  = self._frozenBycinematic or self._freezePending or false
+
         if self._respawnPlayer then
             self:RespawnPlayer()
             return
@@ -356,6 +401,20 @@ return Component {
                 self._lungeDirZ * (self.AttackLungeSpeed or 3.0))
         end
 
+        -- Lock player completely while casting the Feather Skill
+        if _G.player_is_casting_skill then
+            self._animator:SetBool("IsRunning", false)
+            self._isRunning = false
+            
+            -- Keep updating position so we don't fall out of sync with CC
+            local position = CharacterController.GetPosition(self._controller)
+            if position then
+                self:SetPosition(position.x, position.y, position.z)
+                if event_bus and event_bus.publish then event_bus.publish("player_position", position) end
+            end
+            return
+        end
+
         if _G.player_is_attacking then
             self._animator:SetBool("IsRunning", false)
             self._isRunning = false
@@ -434,17 +493,20 @@ return Component {
             return
         end
 
-        -- DASH
+        -- DASH (triggered by ComboManager via "dash_performed" event)
         if not self._isDashing
+            and self._dashRequested
             and self._dashCooldownTimer <= 0
             and not self._isDamageStun
             and not self._isLanding
             and not self._freezePending
-            and Input and Input.IsActionJustPressed and Input.IsActionJustPressed("Dash")
         then
+            self._dashRequested = false
+
             self._isDashing = true
             self._dashTimer = self.DashDuration
             _G.player_is_dashing = true
+            print("[PlayerMovement] _G.player_is_dashing = true")
             self._wasDashingInAir = not isGrounded
 
             if isMoving then
@@ -470,30 +532,27 @@ return Component {
             self._animator:SetBool("IsRunning", false)
             self._isRunning = false
             self._animator:SetBool("IsDashing", true)
-            dbg("[PlayerMovement] Dash started")
+            playRandomSFX(self._audio, self.playerDashSFX)
+            print("[PlayerMovement] Dash started")
+        elseif self._dashRequested then
+            -- Conditions not met, discard the request
+            print("[PlayerMovement] Dash request discarded (cooldown=" .. self._dashCooldownTimer .. " stun=" .. tostring(self._isDamageStun) .. " landing=" .. tostring(self._isLanding) .. " freeze=" .. tostring(self._freezePending) .. ")")
+            self._dashRequested = false
         end
 
         if self._isDashing then
             self._dashTimer = self._dashTimer - dt
 
-            if Input and Input.IsActionJustPressed and Input.IsActionJustPressed("Jump") and isGrounded then
+            if self._dashTimer <= 0 then
                 self._isDashing = false
                 _G.player_is_dashing = false
                 self._animator:SetBool("IsDashing", false)
                 self._dashCooldownTimer = self.DashCooldown
-                CharacterController.Jump(self._controller, self.JumpHeight)
-                self._animator:SetBool("IsJumping", true)
-                playRandomSFX(self._audio, self.playerJumpSFX)
-                dbg("[PlayerMovement] Dash jump-cancelled")
-            elseif self._dashTimer <= 0 then
-                self._isDashing = false
-                _G.player_is_dashing = false
-                self._animator:SetBool("IsDashing", false)
-                self._dashCooldownTimer = self.DashCooldown
-                self._isLanding = true
-                self._isRolling = true
                 self._wasDashingInAir = false
-                dbg("[PlayerMovement] Dash ended")
+                if event_bus and event_bus.publish then
+                    event_bus.publish("dash_ended", { cooldown = self.DashCooldown })
+                end
+                print("[PlayerMovement] Dash ended")
             else
                 local speed = self.DashSpeed
                 local liftY = 0
@@ -635,6 +694,8 @@ return Component {
             if self._requestPlayerForwardSub then event_bus.unsubscribe(self._requestPlayerForwardSub) end
             if self._attackLungeSub         then event_bus.unsubscribe(self._attackLungeSub)        end
             if self._chainConstraintSub     then event_bus.unsubscribe(self._chainConstraintSub)    end
+            if self._forceRotSub            then event_bus.unsubscribe(self._forceRotSub)           end
+            if self._dashPerformedSub       then event_bus.unsubscribe(self._dashPerformedSub)      end
         end
         self._frozenBycinematic = false
         self._chainConstraintRatio = 0

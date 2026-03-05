@@ -121,7 +121,7 @@ return Component {
         IsPassive            = false,
         MeleeSpeed           = 0.9,
         MeleeRange           = 1.2,
-        MeleeDamage          = 1,
+        MeleeDamage          = 3,
         MeleeAttackCooldown  = 5.0,
 
         HurtDuration      = 2.0,
@@ -129,6 +129,8 @@ return Component {
         HookedDuration    = 4.0,
         KnockbackStrength = 12.0,
         KnockbackDuration = 0.5,
+
+        FeatherSkillBufferDuration = 0.2,
 
         HookStopDistance    = 1.2,
         HookStaggerTime     = 1.0,
@@ -202,6 +204,7 @@ return Component {
         self.dead = false
         self.health = self.MaxHealth
         self._hitLockTimer = 0
+        self._featherSkillBufferTimer = 0
 
         self.fsm = StateMachine.new(self)
 
@@ -340,7 +343,8 @@ return Component {
                 end
 
                 local damage = payload.damage or 10
-                self:ApplyHit(damage, "COMBO")
+                local hitType = payload.hitType or "COMBO"
+                self:ApplyHit(damage, hitType)
             end)
 
             self._chainHookSub = _G.event_bus.subscribe("chain.enemy_hooked", function(payload)
@@ -448,6 +452,7 @@ return Component {
 
         local dtSec = toDtSec(dt)
         self._hitLockTimer = math.max(0, (self._hitLockTimer or 0) - dtSec)
+        self._featherSkillBufferTimer = math.max(0, (self._featherSkillBufferTimer or 0) - dtSec)
 
         if not self.fsm.current or not self.fsm.currentName then
             self.fsm:ForceChange("Idle", self.states.Idle)
@@ -1302,9 +1307,17 @@ return Component {
     ApplyHit = function(self, dmg, hitType)
         if self.dead then return end
         if (self._hitLockTimer or 0) > 0 then return end
-        self._hitLockTimer = self.config.HitIFrame or 0.1
+        if self._featherSkillBufferTimer <= 0 then
+            self._hurtTriggeredByFeather = false
+        end
+
+        -- Feather hits shouldn't apply I-Frame.
+        if hitType ~= "FEATHER" then
+            self._hitLockTimer = self.config.HitIFrame or 0.1
+        end
 
         self.health = self.health - (dmg or 1)
+        print(string.format("[EnemyAI] Remaining health: %d", self.health))
         self:ApplyKnockback(self.KnockbackStrength, self.KnockbackDuration)
 
         if self.health <= 0 then
@@ -1315,23 +1328,30 @@ return Component {
             return
         end
 
-        local myRandomValue = math.random(1, 3)
-        if myRandomValue == 1 then
-            self._animator:SetBool("Hurt1", true)
-        elseif myRandomValue == 2 then
-            self._animator:SetBool("Hurt2", true)
-        elseif myRandomValue == 3 then
-            self._animator:SetBool("Hurt3", true)
+        if not self._hurtTriggeredByFeather then
+            local myRandomValue = math.random(1, 3)
+            if myRandomValue == 1 then
+                self._animator:SetBool("Hurt1", true)
+            elseif myRandomValue == 2 then
+                self._animator:SetBool("Hurt2", true)
+            elseif myRandomValue == 3 then
+                self._animator:SetBool("Hurt3", true)
+            end
+
+            -- Play hurt SFX (only if not dead)
+            playRandomSFX(self._audio, self.enemyHurtSFX)
+
+            if self.fsm.currentName == "Hooked" then
+                return
+            end
+            --self._animator:SetBool("Hurt", false)
+            self.fsm:ForceChange("Hurt", self.states.Hurt)
         end
 
-        -- Play hurt SFX (only if not dead)
-        playRandomSFX(self._audio, self.enemyHurtSFX)
-
-        if self.fsm.currentName == "Hooked" then
-            return
+        if hitType == "FEATHER" then
+            self._featherSkillBufferTimer = self.FeatherSkillBufferDuration
+            self._hurtTriggeredByFeather = true
         end
-        --self._animator:SetBool("Hurt", false)
-        self.fsm:ForceChange("Hurt", self.states.Hurt)
     end,
 
     ApplyKnockback = function(self, strength, duration)
