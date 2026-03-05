@@ -157,6 +157,16 @@ bool ParticleSystem::InitialiseParticles(bool forceInit)
 /******************************************************************************/
 void ParticleSystem::InitializeParticleComponent(ParticleComponent& particleComp) 
 {
+    // Get the texture and shader first.
+    std::string texturePath = AssetManager::GetInstance().GetAssetPathFromGUID(particleComp.textureGUID);
+    ENGINE_LOG_INFO("[ParticleSystem] Texture Path: " + texturePath);
+    particleComp.texturePath = texturePath;
+    if (!particleComp.texturePath.empty())
+        particleComp.particleTexture = ResourceManager::GetInstance().GetResourceFromGUID<Texture>(particleComp.textureGUID, texturePath);
+    std::string shaderPath = ResourceManager::GetPlatformShaderPath("particle");
+    ENGINE_LOG_INFO("[ParticleSystem] Shader Path: " + shaderPath);
+    particleComp.particleShader = ResourceManager::GetInstance().GetResource<Shader>(shaderPath);
+
     particleComp.particleVAO = new VAO();
     particleComp.particleVAO->Bind();
 

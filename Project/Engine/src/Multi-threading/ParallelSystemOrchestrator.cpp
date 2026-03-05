@@ -105,10 +105,10 @@ void ParallelSystemOrchestrator::Draw() {
         auto& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
         PROFILE_PLOT_TIMED("Sprite", ecs.spriteSystem->Update());
         });
-    frameChannel.Submit([&] {
-        auto& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
-        PROFILE_PLOT_TIMED("Particle", ecs.particleSystem->Update());
-        });
+    //frameChannel.Submit([&] {
+    //    auto& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
+    //    PROFILE_PLOT_TIMED("Particle", ecs.particleSystem->Update());
+    //    });
     frameChannel.Submit([&] {
         auto& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
         ecs.debugDrawSystem->Update();
@@ -119,6 +119,9 @@ void ParallelSystemOrchestrator::Draw() {
     // Fog runs on the main thread (lazy init may create OpenGL VAO/VBO/EBO)
     if (ecs.fogSystem)
         PROFILE_PLOT_TIMED("Fog", ecs.fogSystem->Update());
+
+    // Particle system runs on the main thread (lazy init may create OpenGL VAO/VBO/EBO)
+    PROFILE_PLOT_TIMED("Particle", ecs.particleSystem->Update());
 
     // Set all isDirty flags to false after rendering
     ecs.transformSystem->PostUpdate();
