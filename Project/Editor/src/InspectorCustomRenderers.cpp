@@ -1797,6 +1797,12 @@ void RegisterInspectorCustomRenderers()
                 ImGui::SetNextItemWidth(-1);
                 UndoableWidgets::DragFloat("##FadeDur", &board.fadeDuration, 0.05f, 0.0f, 10.0f, "%.2f sec");
 
+                // --- No Fade Out ---
+                ImGui::Text("No Fade Out");
+                if (ImGui::IsItemHovered()) ImGui::SetTooltip("Skip the fade-to-black when leaving this board.\nThe next board appears instantly, or the cutscene ends without a black screen.");
+                ImGui::SameLine(labelWidth);
+                UndoableWidgets::Checkbox("##DisableFadeOut", &board.disableFadeOut);
+
                 // --- Text (multiline) ---
                 ImGui::Text("Text");
                 if (ImGui::IsItemHovered()) ImGui::SetTooltip("Dialogue text shown via typewriter effect on the Text Entity");

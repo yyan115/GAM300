@@ -20,6 +20,7 @@ struct CutsceneBoard {
 	// --- Timing ---
 	float duration = 3.0f;             // How long this board displays (seconds)
 	float fadeDuration = 0.5f;         // Fade time for transition INTO this board (seconds)
+	bool disableFadeOut = false;       // Skip fade-to-black when leaving this board
 
 	// --- Blur ---
 	float blurDelay = 0.0f;            // Seconds to stay sharp before blur starts
