@@ -521,13 +521,6 @@ return Component {
         local lockReason = self._lockReason
 
         -- 8) Aggro trigger / intro
-        print("[Miniboss][Tick] phase=", self._phase,
-            "introDone=", tostring(self._introDone),
-            "inIntro=", tostring(self._inIntro),
-            "locked=", tostring(self._lockAction),
-            "lockReason=", tostring(self._lockReason),
-            "inAir=", tostring(self._inAir),
-            "p2State=", tostring(self._phase2State))
         if not self._introDone then
             self:FacePlayer()
 
