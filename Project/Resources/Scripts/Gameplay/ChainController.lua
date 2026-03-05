@@ -262,7 +262,9 @@ function M:UpdateLOSAnchors(sx, sy, sz, ex, ey, ez)
     -- REMOVE PASS
     -- For each anchor, check two conditions for dissolution:
     --   (a) chord prev→next is geometrically clear
-    --   (b) startPos→endPos does NOT hit the same bodyId (wrapping guard)
+    --   (b) the chord prev→next does NOT hit this anchor's own bodyId
+    --       (wrapping guard — if removing this anchor would make the chain
+    --       clip through the body it wraps, keep it)
     -- To prevent flicker when the player is very close to an occluder, we
     -- require the anchor to be clear for LOS_CLEAR_FRAMES consecutive frames
     -- before actually removing it.  clearFrames is reset to 0 on any blocked
@@ -275,35 +277,33 @@ function M:UpdateLOSAnchors(sx, sy, sz, ex, ey, ez)
     -- naturally along geometry as the player moves up/down or sideways.
     -- -------------------------------------------------------------------------
 
-    local bodyWrapCache = {}
-    local function isBodyStillWrapping(bodyId)
-        if bodyId == nil then return false end
-        if bodyWrapCache[bodyId] ~= nil then return bodyWrapCache[bodyId] end
-        -- Build the full piecewise path: start → each existing anchor → end.
-        -- We must check every segment, not just the direct line, because the
-        -- player may have moved sideways so the direct ray no longer clips the
-        -- pillar even though the chain is still topologically wrapped around it.
-        local path = {{sx, sy, sz}}
-        for _, a in ipairs(self.losAnchors) do table.insert(path, a) end
-        table.insert(path, {ex, ey, ez})
-        local wrapping = false
-        for seg = 1, #path - 1 do
-            local ax, ay, az = path[seg][1], path[seg][2], path[seg][3]
-            local bx, by, bz = path[seg+1][1], path[seg+1][2], path[seg+1][3]
-            local dx, dy, dz = bx-ax, by-ay, bz-az
-            local dist = math.sqrt(dx*dx+dy*dy+dz*dz)
-            if dist >= LOS_MIN_DIST then
-                local ndx,ndy,ndz = dx/dist, dy/dist, dz/dist
-                local hit, _, _,_,_, _,_,_, hitBodyId =
-                    los_raycast(ax,ay,az, ndx,ndy,ndz, dist)
-                if hit and (hitBodyId == bodyId) then
-                    wrapping = true
-                    break
-                end
-            end
+    -- Topology unwrap test: shoot directly from startPos (player) to endPos.
+    -- If that ray hits anchor.bodyId, the obstacle is still topologically between
+    -- the two endpoints — the chain is still wrapped, keep the anchor.
+    -- If the ray does NOT hit anchor.bodyId, the player and endpoint are on the
+    -- same side of the obstacle → the wrapping has resolved → allow removal.
+    -- This is the correct test: it answers "are player and endpoint on the same
+    -- side?" rather than "does the local chord clip the body?" (the local chord
+    -- from prev→next always passes through the pillar when the player is far away,
+    -- which is what caused the stickiness).
+    local _directSideCache = {}
+    local function isStillTopologicallyWrapped(anchor)
+        if anchor.bodyId == nil then return false end
+        if _directSideCache[anchor.bodyId] ~= nil then
+            return _directSideCache[anchor.bodyId]
         end
-        bodyWrapCache[bodyId] = wrapping
-        return wrapping
+        local dx, dy, dz = ex-sx, ey-sy, ez-sz
+        local dist = math.sqrt(dx*dx+dy*dy+dz*dz)
+        if dist < LOS_MIN_DIST then
+            _directSideCache[anchor.bodyId] = false
+            return false
+        end
+        local ndx, ndy, ndz = dx/dist, dy/dist, dz/dist
+        local hit, _, _,_,_, _,_,_, hitBodyId =
+            los_raycast(sx, sy, sz, ndx, ndy, ndz, dist)
+        local wrapped = hit and (hitBodyId == anchor.bodyId)
+        _directSideCache[anchor.bodyId] = wrapped
+        return wrapped
     end
 
     local i = 1
@@ -325,7 +325,7 @@ function M:UpdateLOSAnchors(sx, sy, sz, ex, ey, ez)
             local hit, hitDist = los_raycast(prev[1],prev[2],prev[3], ndx,ndy,ndz, chordDist)
             local chordClear = (not hit) or (hitDist and hitDist >= chordDist - LOS_CLEAR_SLACK)
 
-            if chordClear and not isBodyStillWrapping(anchor.bodyId) then
+            if chordClear and not isStillTopologicallyWrapped(anchor) then
                 anchor.clearFrames = (anchor.clearFrames or 0) + 1
                 if anchor.clearFrames >= LOS_CLEAR_FRAMES then
                     shouldDissolve = true
@@ -344,6 +344,14 @@ function M:UpdateLOSAnchors(sx, sy, sz, ex, ey, ez)
             -- toward this anchor's own stored position.  Using the anchor's position
             -- (not the chord direction) ensures we always re-hit the same surface
             -- patch even after the player has moved significantly sideways.
+            --
+            -- IMPORTANT: skip refresh when clearFrames > 0.  If the anchor is already
+            -- accumulating toward dissolution, re-hitting the surface would re-lock it
+            -- and prevent it from ever being removed (the stickiness bug).
+            if (anchor.clearFrames or 0) > 0 then
+                i = i + 1
+                goto continue_anchor
+            end
             local toAx = anchor[1] - prev[1]
             local toAy = anchor[2] - prev[2]
             local toAz = anchor[3] - prev[3]
@@ -387,14 +395,16 @@ function M:UpdateLOSAnchors(sx, sy, sz, ex, ey, ez)
                 end
             end
             i = i + 1
+            ::continue_anchor::
         end
     end
 
     -- -------------------------------------------------------------------------
     -- ADD PASS
     -- Walk from the last surviving anchor toward endPos, adding new anchors
-    -- wherever the path is blocked.  Starts from the frontier — cannot conflict
-    -- with the remove pass which only operated on existing anchor chords.
+    -- wherever the path is blocked.
+    -- GUARD: skip any hit body that the topology test says is NOT between the
+    -- two endpoints — this prevents re-adding anchors that were just dissolved.
     -- -------------------------------------------------------------------------
     if #self.losAnchors >= LOS_MAX_ANCHORS then return end
 
@@ -418,17 +428,37 @@ function M:UpdateLOSAnchors(sx, sy, sz, ex, ey, ez)
         local clear = (not hit) or (hitDist and hitDist >= dist - LOS_CLEAR_SLACK)
         if clear then break end
 
-        local anchor = make_anchor(fromX,fromY,fromZ, ndx,ndy,ndz, hitDist, px,py,pz, nx,ny,nz, bodyId)
-        dbg(string.format("[ChainController][LOS] Add anchor %d bodyId=%s pos=(%.3f,%.3f,%.3f)",
-            #self.losAnchors+1, tostring(bodyId), anchor[1], anchor[2], anchor[3]))
-        table.insert(self.losAnchors, anchor)
-
-        -- Advance the frontier to just past the hit surface so the next raycast
-        -- origin clears the wall.  Using only the nudged anchor position as the
-        -- new origin causes the very next ray to immediately re-hit the same face.
-        fromX = anchor[1] + ndx * LOS_NUDGE
-        fromY = anchor[2] + ndy * LOS_NUDGE
-        fromZ = anchor[3] + ndz * LOS_NUDGE
+        -- Topology guard: if the direct startPos→endPos ray doesn't hit this body,
+        -- the obstacle is not topologically between the endpoints — skip it.
+        -- This prevents re-adding a body that the remove pass just dissolved.
+        if bodyId ~= nil and not _directSideCache[bodyId] then
+            -- run topology check for this bodyId and cache it
+            local tdx, tdy, tdz = ex-sx, ey-sy, ez-sz
+            local tdist = math.sqrt(tdx*tdx+tdy*tdy+tdz*tdz)
+            if tdist >= LOS_MIN_DIST then
+                local tndx, tndy, tndz = tdx/tdist, tdy/tdist, tdz/tdist
+                local thit, _, _,_,_, _,_,_, tBodyId =
+                    los_raycast(sx, sy, sz, tndx, tndy, tndz, tdist)
+                _directSideCache[bodyId] = thit and (tBodyId == bodyId)
+            else
+                _directSideCache[bodyId] = false
+            end
+        end
+        if bodyId ~= nil and not _directSideCache[bodyId] then
+            -- Body is not between endpoints — nudge past it and keep walking
+            fromX = fromX + ndx * (hitDist + LOS_NUDGE * 2)
+            fromY = fromY + ndy * (hitDist + LOS_NUDGE * 2)
+            fromZ = fromZ + ndz * (hitDist + LOS_NUDGE * 2)
+            -- don't add anchor for this body
+        else
+            local anchor = make_anchor(fromX,fromY,fromZ, ndx,ndy,ndz, hitDist, px,py,pz, nx,ny,nz, bodyId)
+            dbg(string.format("[ChainController][LOS] Add anchor %d bodyId=%s pos=(%.3f,%.3f,%.3f)",
+                #self.losAnchors+1, tostring(bodyId), anchor[1], anchor[2], anchor[3]))
+            table.insert(self.losAnchors, anchor)
+            fromX = anchor[1] + ndx * LOS_NUDGE
+            fromY = anchor[2] + ndy * LOS_NUDGE
+            fromZ = anchor[3] + ndz * LOS_NUDGE
+        end
 
         if #self.losAnchors >= LOS_MAX_ANCHORS then break end
     end
@@ -436,15 +466,16 @@ function M:UpdateLOSAnchors(sx, sy, sz, ex, ey, ez)
     -- -------------------------------------------------------------------------
     -- VALIDATION PASS
     -- Walk every segment of the complete path (start→a[1]→...→a[n]→end).
-    -- The REMOVE and ADD passes only operate on specific sub-ranges and cannot
-    -- catch cuts that arise when sliding moves an anchor to a new face, or when
-    -- a segment between two existing anchors becomes blocked.
-    -- For any blocked segment, insert a new anchor at the hit point and restart
-    -- the walk.  Bounded by LOS_MAX_ANCHORS so this cannot loop indefinitely.
+    -- Guards:
+    --   (a) Skip bodies not topologically between endpoints (same guard as add pass).
+    --   (b) Degenerate loop detection: if a validation insert lands at the same
+    --       position as the previous insert, the anchor is stuck against a concave
+    --       surface and adding more copies won't help — break immediately.
     -- -------------------------------------------------------------------------
     local validationPasses = 0
     local maxValidation = LOS_MAX_ANCHORS
     local validationChanged = true
+    local lastInsertX, lastInsertY, lastInsertZ = nil, nil, nil
     while validationChanged and validationPasses < maxValidation and #self.losAnchors < LOS_MAX_ANCHORS do
         validationChanged = false
         validationPasses = validationPasses + 1
@@ -464,15 +495,43 @@ function M:UpdateLOSAnchors(sx, sy, sz, ex, ey, ez)
                     los_raycast(ax2,ay2,az2, vndx,vndy,vndz, vdist)
                 local vClear = (not vhit) or (vhitDist and vhitDist >= vdist - LOS_CLEAR_SLACK)
                 if not vClear then
-                    -- Segment seg cuts through geometry — insert anchor between
-                    -- path[seg] and path[seg+1], which is losAnchors[seg-1] and losAnchors[seg].
-                    local newAnchor = make_anchor(ax2,ay2,az2, vndx,vndy,vndz,
-                        vhitDist, vpx,vpy,vpz, vnx,vny,vnz, vBodyId)
-                    dbg(string.format("[ChainController][LOS] Validation insert at seg=%d bodyId=%s pos=(%.3f,%.3f,%.3f)",
-                        seg, tostring(vBodyId), newAnchor[1], newAnchor[2], newAnchor[3]))
-                    table.insert(self.losAnchors, seg, newAnchor)
-                    validationChanged = true
-                    break  -- restart walk with updated path
+                    -- Topology guard: skip bodies not between endpoints
+                    if vBodyId ~= nil and not _directSideCache[vBodyId] then
+                        local tdx2, tdy2, tdz2 = ex-sx, ey-sy, ez-sz
+                        local tdist2 = math.sqrt(tdx2*tdx2+tdy2*tdy2+tdz2*tdz2)
+                        if tdist2 >= LOS_MIN_DIST then
+                            local tndx2, tndy2, tndz2 = tdx2/tdist2, tdy2/tdist2, tdz2/tdist2
+                            local thit2, _, _,_,_, _,_,_, tBodyId2 =
+                                los_raycast(sx, sy, sz, tndx2, tndy2, tndz2, tdist2)
+                            _directSideCache[vBodyId] = thit2 and (tBodyId2 == vBodyId)
+                        else
+                            _directSideCache[vBodyId] = false
+                        end
+                    end
+                    if vBodyId ~= nil and not _directSideCache[vBodyId] then
+                        -- Not topologically between endpoints — skip this segment
+                    else
+                        local newAnchor = make_anchor(ax2,ay2,az2, vndx,vndy,vndz,
+                            vhitDist, vpx,vpy,vpz, vnx,vny,vnz, vBodyId)
+
+                        -- Degenerate loop guard: if new anchor is at the same position
+                        -- as the last insert, we're stuck against concave geometry — stop.
+                        if lastInsertX and
+                           math.abs(newAnchor[1]-lastInsertX) < LOS_NUDGE and
+                           math.abs(newAnchor[2]-lastInsertY) < LOS_NUDGE and
+                           math.abs(newAnchor[3]-lastInsertZ) < LOS_NUDGE then
+                            dbg("[ChainController][LOS] Validation degenerate loop detected, stopping")
+                            validationChanged = false
+                            break
+                        end
+
+                        dbg(string.format("[ChainController][LOS] Validation insert at seg=%d bodyId=%s pos=(%.3f,%.3f,%.3f)",
+                            seg, tostring(vBodyId), newAnchor[1], newAnchor[2], newAnchor[3]))
+                        table.insert(self.losAnchors, seg, newAnchor)
+                        lastInsertX, lastInsertY, lastInsertZ = newAnchor[1], newAnchor[2], newAnchor[3]
+                        validationChanged = true
+                        break
+                    end
                 end
             end
             if #self.losAnchors >= LOS_MAX_ANCHORS then break end
