@@ -1,0 +1,14 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "0041f10665361eb5-000467b8ea336211",
+        "source": "../../Resources/Textures/M5/enemy_flying_Height.png",
+        "compiled": "../../Resources/Textures/M5/enemy_flying_Height.dds"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp"
+    }
+}
