@@ -1183,7 +1183,7 @@ return Component {
         if clips and #clips > 0 then
             sfxClip = clips[math.random(1, #clips)]
         end
-        local ok = knife:Launch(sx, sy, sz, tx, ty, tz, token, tag, sfxClip)
+        local ok = knife:Launch(sx, sy, sz, tx, ty, tz, token, tag, sfxClip, "BOSS")
         if not ok then
             print(string.format("[Miniboss][Knife] Launch FAILED tag=%s token=%s", tostring(tag), tostring(token)))
         end
