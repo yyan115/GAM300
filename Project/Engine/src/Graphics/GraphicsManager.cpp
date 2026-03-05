@@ -1436,6 +1436,14 @@ void GraphicsManager::RenderModelOptimized(const ModelRenderComponent& item)
 		shader->setMat3("normalMatrix", normalMatrix);
 	}
 
+	// Per-entity bloom emission (must set per-model to avoid stale values)
+	shader->setFloat("bloomIntensity", item.bloomIntensity);
+	if (item.bloomIntensity > 0.0f) {
+		shader->setVec3("bloomColor", item.bloomColor);
+	} else {
+		shader->setVec3("bloomColor", glm::vec3(0.0f));
+	}
+
 	// Switch material only if different
 	if (material != m_currentMaterial) {
 		if (material) {
