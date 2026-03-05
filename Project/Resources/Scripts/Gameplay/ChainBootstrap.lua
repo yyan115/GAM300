@@ -1,27 +1,40 @@
 -- ChainBootstrap.lua
-
----------------------------------------------------------------------------------
---TAP = press and release before hold threshold
---HOLD = press, cross hold threshold, then release
+-- =============================================================================
+-- CHAIN CONTROL INTERACTIONS
+-- TAP  = press and release before hold threshold
+-- HOLD = press, cross hold threshold, then release
+-- =============================================================================
 --
---1. TAP — chain fully retracted (len = 0)
---→ Fires chain in player's facing direction
---2. TAP — chain mid-extension (actively shooting out)
---→ Chain tip drops into flop/physics mode from wherever it stopped
---3. TAP — chain extended, idle, NOT attached
---→ Retracts chain
---4. TAP — chain extended, idle, ATTACHED (locked/snapped to entity or raycast)
---→ Retracts chain
---5. HOLD — chain fully retracted (len = 0)
---→ Activates aim camera while held. On release: fires chain in camera forward direction
---6. HOLD — chain extended, idle, ATTACHED
---→ While held: chainLen tracks real arc distance from player to endpoint each frame, capped at MaxLength. Player can walk closer (chain shortens, links retract visually) or further (chain lengthens, links activate). Constraint still resists movement beyond MaxLength. On release: current length is confirmed, chain stays locked.
---7. HOLD — chain extended, idle, NOT attached
---→ No interaction defined. Debug stub only. Reserved for future use.
----------------------------------------------------------------------------------
-
+-- 1. TAP — chain fully retracted (len = 0)
+--    Fires chain toward the closest LockOn-tagged entity within LockOnAngleDeg
+--    of player forward. Falls back to player forward if none in range.
+--
+-- 2. TAP — chain mid-extension (actively shooting out)
+--    Chain tip drops into flop/physics mode at current position.
+--
+-- 3. TAP — chain extended, idle, NOT attached
+--    Retracts chain.
+--
+-- 4. TAP — chain extended, idle, ATTACHED (locked/snapped)
+--    Retracts chain. If chainLen is near zero (hit on first frame of extension),
+--    force-clears the lock and fires endpoint_retracted immediately.
+--
+-- 5. HOLD — chain fully retracted (len = 0)
+--    Activates aim camera while held.
+--    On release: fires chain in camera forward direction.
+--
+-- 6. HOLD — chain extended, idle, ATTACHED
+--    While held: chainLen tracks real arc distance player→endpoint each frame,
+--    capped at MaxLength. Player can walk closer (chain shortens, links retract)
+--    or further (chain lengthens, links activate). Constraint resists movement
+--    beyond MaxLength. On release: current length confirmed, chain stays locked.
+--
+-- 7. HOLD — chain extended, idle, NOT attached
+--    [RESERVED — no interaction defined yet]
+--
+-- =============================================================================
 _G.CHAIN_DEBUG = _G.CHAIN_DEBUG ~= nil and _G.CHAIN_DEBUG or false
---_G.CHAIN_DEBUG = true
+_G.CHAIN_DEBUG = true
 local function dbg(...) if _G.CHAIN_DEBUG then print(...) end end
 local Component = require("extension.mono_helper")
 local LinkHandlerModule = require("Gameplay.ChainLinkTransformHandler")
@@ -50,7 +63,8 @@ return Component {
         WallClampRadius = 0,
         ChainSlackDistance = 1.0,   -- extra metres player can move past chainLen before chain flops
         DragTag = "HeavyEnemy",     -- entity tag that drags the player instead of flopping
-        UseLOSAnchors = true,      -- when true: anchors auto-created wherever geometry breaks LOS
+        UseLOSAnchors = true,       -- when true: anchors auto-created wherever geometry breaks LOS
+        LockOnAngleDeg = 45.0,      -- half-cone: LockOn targets outside this angle from player forward are ignored
     },
 
     _unpack_pos = function(self, a, b, c)
@@ -172,20 +186,49 @@ return Component {
             self.controller:StartExtension(dir, self.MaxLength, self.LinkMaxDistance)
 
         elseif isExt and not isRet then
-            -- Released during extension before hold threshold: stop and drop into flop.
-            -- Chain tip becomes physics-driven from wherever it stopped.
-            self.controller.isExtending = false
-            self.controller._flopping   = true
-            dbg("[ChainBootstrap] Tap-release mid-extension -> Flop")
+            -- Released during extension before hold threshold.
+            -- If the endpoint already locked onto something (trigger fired this frame),
+            -- skip flop and go straight to retraction so the enemy gets the hooked message.
+            local isAttached = self.controller.endPointLocked or self.controller._raycastSnapped
+            if isAttached then
+                self.controller.isExtending = false
+                self.controller:StartRetraction()
+                dbg("[ChainBootstrap] Tap-release mid-extension but already attached -> StartRetraction")
+            else
+                -- Nothing hit yet: drop into flop so tip falls from wherever it stopped.
+                self.controller.isExtending = false
+                self.controller._flopping   = true
+                dbg("[ChainBootstrap] Tap-release mid-extension -> Flop")
+            end
 
         elseif not isExt and not isRet and len <= 1e-4 then
-            -- Tap on retracted chain: fire with player forward.
-            self._pendingPlayerForward = nil
-            self._pendingTapFire = true
-            if _G.event_bus and _G.event_bus.publish then
-                _G.event_bus.publish("request_player_forward", true)
+            local isAttached = self.controller.endPointLocked or self.controller._raycastSnapped
+            if isAttached then
+                -- Chain hit something on the very first frame so chainLen is still near zero.
+                -- StartRetraction guards against len=0 so force-clear the lock directly and
+                -- publish endpoint_retracted so ChainEndpointController fires enemy_hooked.
+                self.controller.endPointLocked   = false
+                self.controller._raycastSnapped  = false
+                self.controller.hookedTag        = ""
+                self.controller.losAnchors       = {}
+                self.controller.chainLen         = 0
+                if self._wasChainActive and _G.event_bus and _G.event_bus.publish then
+                    local sp = self.controller.startPos
+                    _G.event_bus.publish("chain.endpoint_retracted", {
+                        position = { x = sp[1], y = sp[2], z = sp[3] },
+                    })
+                    self._wasChainActive = false
+                end
+                dbg("[ChainBootstrap] TAP on near-zero attached chain -> force clear + endpoint_retracted")
+            else
+                -- Normal tap on retracted chain: fire.
+                self._pendingPlayerForward = nil
+                self._pendingTapFire = true
+                if _G.event_bus and _G.event_bus.publish then
+                    _G.event_bus.publish("request_player_forward", true)
+                end
+                dbg("[ChainBootstrap] TAP -> requested player_forward_response")
             end
-            dbg("[ChainBootstrap] TAP -> requested player_forward_response")
 
         elseif len > 1e-4 and not isRet and not isExt then
             -- Tap (hold never reached) on extended idle chain: retract.
@@ -286,6 +329,8 @@ return Component {
         self._pendingTapFire     = false
         self._pendingPlayerForward = nil
 
+        -- LockOn targets are queried live via Engine.GetEntitiesByTag at fire time.
+
         self._endpointTransform = nil
         if self.ChainEndpointName and self.ChainEndpointName ~= "" then
             self._endpointTransform = Engine.FindTransformByName(self.ChainEndpointName)
@@ -368,7 +413,88 @@ return Component {
                     end
                 end)
             end)
+
         end
+    end,
+
+    -- Returns a normalised direction {x,y,z} toward the closest LockOn target within
+    -- the half-cone, or nil if none qualify. pfx/pfz = normalised player forward XZ.
+    _pickLockOnDirection = function(self, pfx, pfy, pfz)
+        if not Engine or not Engine.GetEntitiesByTag then return nil end
+
+        local halfCos = math.cos(math.rad(tonumber(self.LockOnAngleDeg) or 45.0))
+        local sx = self.controller.startPos[1]
+        local sy = self.controller.startPos[2]
+        local sz = self.controller.startPos[3]
+
+        local ok, entities = pcall(function()
+            return Engine.GetEntitiesByTag("LockOn", 32)
+        end)
+        if not ok or type(entities) ~= "table" then return nil end
+
+        local bestDist = math.huge
+        local bestDX, bestDY, bestDZ = nil, nil, nil
+
+        for _, entityId in ipairs(entities) do
+            local tr = nil
+            pcall(function() tr = Engine.FindTransformByID(entityId) end)
+            if not tr then goto continue end
+
+            local tx, ty, tz
+            local rok, a, b, c = pcall(function()
+                return Engine.GetTransformWorldPosition(tr)
+            end)
+            if rok and a ~= nil then
+                if type(a) == "table" then tx, ty, tz = a[1] or a.x or 0, a[2] or a.y or 0, a[3] or a.z or 0
+                elseif type(a) == "number" then tx, ty, tz = a, b, c end
+            end
+            if not tx then goto continue end
+
+            local dx, dy, dz = tx - sx, ty - sy, tz - sz
+            local dist = math.sqrt(dx*dx + dy*dy + dz*dz)
+            if dist < 1e-4 then goto continue end
+
+            -- Cone check on XZ plane only
+            local flatLen = math.sqrt(dx*dx + dz*dz)
+            local dot = flatLen > 1e-4 and ((dx/flatLen)*pfx + (dz/flatLen)*pfz) or 0
+            if dot < halfCos then goto continue end
+
+            -- LOS check: raycast from player toward target.
+            -- Accept only if nothing is hit before reaching the target (clear LOS),
+            -- OR if the first thing hit belongs to the target entity itself.
+            if Physics then
+                local ndx, ndy, ndz = dx/dist, dy/dist, dz/dist
+                local hasLOS = true
+                if Physics.RaycastFull then
+                    local rok2, hit, hitDist, _, _, _, _, _, _, hitBodyId = pcall(function()
+                        return Physics.RaycastFull(sx, sy, sz, ndx, ndy, ndz, dist)
+                    end)
+                    if rok2 and hit and hitDist and hitDist < dist - 0.1 then
+                        -- Something was hit before the target — check if it's the target itself
+                        hasLOS = (hitBodyId == entityId)
+                    end
+                elseif Physics.Raycast then
+                    local rok2, hitDist = pcall(function()
+                        return Physics.Raycast(sx, sy, sz, ndx, ndy, ndz, dist)
+                    end)
+                    if rok2 and hitDist and hitDist > 0 and hitDist < dist - 0.1 then
+                        hasLOS = false
+                    end
+                end
+                if not hasLOS then
+                    dbg(string.format("[ChainBootstrap] LockOn entityId=%d blocked by geometry", entityId))
+                    goto continue
+                end
+            end
+
+            if dist < bestDist then
+                bestDist = dist
+                bestDX, bestDY, bestDZ = dx/dist, dy/dist, dz/dist
+            end
+            ::continue::
+        end
+
+        return bestDX, bestDY, bestDZ
     end,
 
     Update = function(self, dt)
@@ -376,9 +502,18 @@ return Component {
 
         if self._pendingTapFire then
             if self._pendingPlayerForward then
-                local direction = self._pendingPlayerForward
-                dbg(string.format("[ChainBootstrap] TAP (deferred) -> player forward: (%.3f, %.3f, %.3f)",
-                    direction[1], direction[2], direction[3]))
+                local pf = self._pendingPlayerForward
+                local direction = pf
+
+                -- Check for a LockOn target in the cone around player forward
+                local lx, ly, lz = self:_pickLockOnDirection(pf[1], pf[2], pf[3])
+                if lx then
+                    direction = {lx, ly, lz}
+                    dbg(string.format("[ChainBootstrap] TAP -> LockOn target (%.3f,%.3f,%.3f)", lx, ly, lz))
+                else
+                    dbg(string.format("[ChainBootstrap] TAP -> player forward (%.3f,%.3f,%.3f)", pf[1], pf[2], pf[3]))
+                end
+
                 self.controller:StartExtension(direction, self.MaxLength, self.LinkMaxDistance)
                 self._pendingTapFire = false
                 self._pendingPlayerForward = nil
@@ -665,8 +800,8 @@ return Component {
             if self._chainSubUp       then pcall(function() _G.event_bus.unsubscribe(self._chainSubUp)       end) end
             if self._chainSubHold     then pcall(function() _G.event_bus.unsubscribe(self._chainSubHold)     end) end
             if self._subPlayerForward then pcall(function() _G.event_bus.unsubscribe(self._subPlayerForward) end) end
-            if self._subHookedPos     then pcall(function() _G.event_bus.unsubscribe(self._subHookedPos)     end) end
-            if self._subHitEntity     then pcall(function() _G.event_bus.unsubscribe(self._subHitEntity)     end) end
+            if self._subHookedPos         then pcall(function() _G.event_bus.unsubscribe(self._subHookedPos)         end) end
+            if self._subHitEntity         then pcall(function() _G.event_bus.unsubscribe(self._subHitEntity)         end) end
         end
     end,
 
