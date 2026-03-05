@@ -195,7 +195,7 @@ void BloomEffect::Apply(unsigned int inputTexture, unsigned int outputFBO, int w
     // scatter controls how much energy from lower (more blurred) mip levels
     // is added to each target level. 0.5 gives ~2x total energy (geometric series),
     // which is then controlled by the bloom intensity in the composite pass.
-    const float scatter = 0.5f;
+    const float effectiveScatter = scatter;
 
     glEnable(GL_BLEND);
     glBlendFunc(GL_ONE, GL_ONE); // Additive blending
@@ -210,7 +210,7 @@ void BloomEffect::Apply(unsigned int inputTexture, unsigned int outputFBO, int w
         // Don't clear — we want to ADD to the existing downsampled content
 
         shader->setInt("passType", 2); // upsample
-        shader->setFloat("scatter", scatter);
+        shader->setFloat("scatter", effectiveScatter);
         shader->setVec2("texelSize",
             1.0f / static_cast<float>(sourceMip.width),
             1.0f / static_cast<float>(sourceMip.height));

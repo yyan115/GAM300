@@ -235,6 +235,29 @@ namespace PhysicsSystemWrappers {
         return result.hit ? result.distance : -1.0f;
     }
 
+    inline std::tuple<bool, float, float, float, float, float, float, float, uint32_t> RaycastFull(
+        float originX, float originY, float originZ,
+        float dirX, float dirY, float dirZ,
+        float maxDistance)
+    {
+        if (!g_PhysicsSystem) {
+            return { false, -1.0f, 0.f, 0.f, 0.f, 0.f, 1.f, 0.f, 0 };
+        }
+        Vector3D origin(originX, originY, originZ);
+        Vector3D direction(dirX, dirY, dirZ);
+        auto result = g_PhysicsSystem->Raycast(origin, direction, maxDistance);
+        if (!result.hit) {
+            return { false, -1.0f, 0.f, 0.f, 0.f, 0.f, 1.f, 0.f, 0 };
+        }
+        return {
+            true,
+            result.distance,
+            result.hitPoint.x,  result.hitPoint.y,  result.hitPoint.z,
+            result.hitNormal.x, result.hitNormal.y, result.hitNormal.z,
+            result.bodyId.GetIndexAndSequenceNumber()
+        };
+    }
+
     inline std::tuple<float, int> RaycastGetEntity(
         float originX, float originY, float originZ,
         float dirX, float dirY, float dirZ,
@@ -256,7 +279,6 @@ namespace PhysicsSystemWrappers {
 
         return std::make_tuple(-1.0f, -1);
     }
-
     // Check if two entities are within a certain distance
     // Usage: local hit = Physics.CheckDistance(entityA, entityB, maxDistance)
     // Returns: true if distance <= maxDistance, false otherwise
