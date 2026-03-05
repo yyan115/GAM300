@@ -30,9 +30,17 @@ end
 -- Helper: play random SFX from array
 local function playRandomSFX(audio, clips)
     local count = clips and #clips or 0
-    if count > 0 and audio then
-        audio:PlayOneShot(clips[math.random(1, count)])
+    if count == 0 or not audio then return end
+    if count == 1 then
+        audio:PlayOneShot(clips[1])
+        return
     end
+    local idx
+    repeat
+        idx = math.random(1, count)
+    until idx ~= clips._lastIdx
+    clips._lastIdx = idx
+    audio:PlayOneShot(clips[idx])
 end
 
 -- Helper: lerp quaternion for smooth rotation
@@ -59,7 +67,7 @@ return Component {
         footstepInterval = 0.35,
         DashSpeed = 5.0,
         DashDuration = 1.0,
-        DashCooldown = 2.0,
+        DashCooldown = 1.5,
         CinematicSettleTime = 0.8,
         AirDashSpeedMultiplier = 1.5,
         AirDashLift = 2.0,
@@ -70,6 +78,7 @@ return Component {
         playerJumpSFX = {},
         playerLandSFX = {},
         playerDeadSFX = {},
+        playerDashSFX = {},
     },
 
     Awake = function(self)
@@ -533,6 +542,7 @@ return Component {
             self._animator:SetBool("IsRunning", false)
             self._isRunning = false
             self._animator:SetBool("IsDashing", true)
+            playRandomSFX(self._audio, self.playerDashSFX)
             print("[PlayerMovement] Dash started")
         elseif self._dashRequested then
             -- Conditions not met, discard the request
