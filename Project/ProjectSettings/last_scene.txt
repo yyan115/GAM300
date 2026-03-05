@@ -1,1 +1,1 @@
-C:\Users\nce23\Documents\GAM300\Project\Resources\Scenes\03_Loading.scene
+../../Resources/Scenes/03_Loading.scene

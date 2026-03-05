@@ -2207,6 +2207,68 @@ void Serializer::DeserializeScene(const std::string& scenePath) {
     std::cout << "[CreateEntitiesFromJson] loaded entities from: " << scenePath << "\n";
 }
 
+void Serializer::DeserializeSceneMetadata(
+    const rapidjson::Document& doc,
+    ECSManager& ecs
+) {
+    // Tags
+    if (doc.HasMember("tags") && doc["tags"].IsArray()) {
+        const auto& tags = doc["tags"];
+        for (rapidjson::SizeType i = 0; i < tags.Size(); ++i) {
+            std::string tag = tags[i].GetString();
+            TagManager::GetInstance().AddTag(tag);
+        }
+    }
+
+    // Layers
+    if (doc.HasMember("layers") && doc["layers"].IsArray()) {
+        const auto& layers = doc["layers"];
+        for (rapidjson::SizeType i = 0; i < layers.Size(); ++i) {
+            const auto& layerObj = layers[i];
+            int index = layerObj["index"].GetInt();
+            std::string name = layerObj["name"].GetString();
+            LayerManager::GetInstance().SetLayerName(index, name);
+        }
+    }
+
+    // Sorting layers
+    if (doc.HasMember("sortingLayers") && doc["sortingLayers"].IsArray()) {
+        SortingLayerManager::GetInstance().Clear();
+        const auto& sortingLayersArr = doc["sortingLayers"];
+        for (rapidjson::SizeType i = 0; i < sortingLayersArr.Size(); ++i) {
+            const auto& layerObj = sortingLayersArr[i];
+            if (layerObj.IsObject() && layerObj.HasMember("name")) {
+                std::string name = layerObj["name"].GetString();
+                SortingLayerManager::GetInstance().AddLayer(name);
+            }
+        }
+    }
+
+    // Lighting
+    if (doc.HasMember("lightingSystem") &&
+        doc["lightingSystem"].IsObject() &&
+        ecs.lightingSystem) {
+        const auto& lo = doc["lightingSystem"];
+
+        if (lo.HasMember("ambientMode") && lo["ambientMode"].IsInt())
+            ecs.lightingSystem->ambientMode =
+            static_cast<LightingSystem::AmbientMode>(lo["ambientMode"].GetInt());
+
+        if (lo.HasMember("ambientSky") && lo["ambientSky"].IsArray() && lo["ambientSky"].Size() >= 3) {
+            const auto& a = lo["ambientSky"];
+            ecs.lightingSystem->ambientSky = { a[0].GetFloat(), a[1].GetFloat(), a[2].GetFloat() };
+        }
+        if (lo.HasMember("ambientEquator") && lo["ambientEquator"].IsArray() && lo["ambientEquator"].Size() >= 3) {
+            const auto& a = lo["ambientEquator"];
+            ecs.lightingSystem->ambientEquator = { a[0].GetFloat(), a[1].GetFloat(), a[2].GetFloat() };
+        }
+        if (lo.HasMember("ambientGround") && lo["ambientGround"].IsArray() && lo["ambientGround"].Size() >= 3) {
+            const auto& a = lo["ambientGround"];
+            ecs.lightingSystem->ambientGround = { a[0].GetFloat(), a[1].GetFloat(), a[2].GetFloat() };
+        }
+    }
+}
+
 void Serializer::ReloadScene(const std::string& tempScenePath, const std::string& currentScenePath) {
     ENGINE_LOG_INFO("[Serializer] Reloading temp scene: " + tempScenePath);
     using namespace std;

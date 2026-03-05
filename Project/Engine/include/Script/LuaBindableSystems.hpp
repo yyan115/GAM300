@@ -546,6 +546,16 @@ namespace SceneWrappers {
         // Pass true for callingFromLua so editor stays in play mode during scene transitions
         SceneManager::GetInstance().LoadScene(scenePath, true);
     }
+
+    inline void LoadSceneAsync(const std::string& scenePath) {
+        SceneManager::GetInstance().LoadSceneAsync(scenePath, true);
+    }
+    inline float GetLoadProgress() {
+        return SceneManager::GetInstance().GetLoadProgress();
+    }
+    inline bool IsLoading() {
+        return SceneManager::GetInstance().IsLoading();
+    }
     
     inline std::string GetCurrentSceneName() {
         return SceneManager::GetInstance().GetSceneName();
