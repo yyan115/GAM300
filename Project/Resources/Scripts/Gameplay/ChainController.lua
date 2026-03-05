@@ -185,8 +185,8 @@ end
 local LOS_NUDGE          = 0.06   -- metres offset along normal from surface (flush placement)
 local LOS_MIN_DIST       = 0.03   -- skip raycasts on segments shorter than this
 local LOS_CLEAR_SLACK    = 0.06   -- hit within this of the far endpoint counts as "clear"
-local LOS_MAX_ANCHORS    = 16     -- hard cap against degenerate geometry
-local LOS_CLEAR_FRAMES   = 2      -- consecutive clear frames before an anchor is dissolved
+local LOS_MAX_ANCHORS    = 32     -- hard cap against degenerate geometry
+local LOS_CLEAR_FRAMES   = 4      -- consecutive clear frames before an anchor is dissolved
                                    -- prevents one-frame oscillation when player is close to occluder
 
 -- ---------------------------------------------------------------------------
