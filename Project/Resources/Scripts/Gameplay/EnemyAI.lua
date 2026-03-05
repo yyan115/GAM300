@@ -121,7 +121,7 @@ return Component {
         IsPassive            = false,
         MeleeSpeed           = 0.9,
         MeleeRange           = 1.2,
-        MeleeDamage          = 1,
+        MeleeDamage          = 3,
         MeleeAttackCooldown  = 5.0,
 
         HurtDuration      = 2.0,

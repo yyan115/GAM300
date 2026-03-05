@@ -64,6 +64,7 @@ public:
 		Vector3D hitNormal = Vector3D(0, 0, 0);
 
 		JPH::BodyID bodyId = JPH::BodyID();
+		Entity entityId{};
 	};
 	RaycastResult Raycast(const Vector3D& origin, const Vector3D& direction, float maxDistance);
 	/*RaycastResult RaycastGroundOnly(const Vector3D& origin, float maxDistance);

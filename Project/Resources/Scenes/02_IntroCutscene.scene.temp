@@ -357,7 +357,7 @@
                                 },
                                 {
                                     "type": "float",
-                                    "data": 9.3196e-10
+                                    "data": 9.31971e-10
                                 },
                                 {
                                     "type": "float",
@@ -365,7 +365,7 @@
                                 },
                                 {
                                     "type": "float",
-                                    "data": 9.3196e-10
+                                    "data": 9.31971e-10
                                 }
                             ]
                         }
@@ -603,6 +603,10 @@
                                         {
                                             "type": "int",
                                             "data": 2
+                                        },
+                                        {
+                                            "type": "bool",
+                                            "data": true
                                         }
                                     ]
                                 },
@@ -652,6 +656,10 @@
                                         {
                                             "type": "int",
                                             "data": 2
+                                        },
+                                        {
+                                            "type": "bool",
+                                            "data": true
                                         }
                                     ]
                                 },
@@ -701,6 +709,10 @@
                                         {
                                             "type": "int",
                                             "data": 2
+                                        },
+                                        {
+                                            "type": "bool",
+                                            "data": true
                                         }
                                     ]
                                 },
@@ -713,7 +725,7 @@
                                         },
                                         {
                                             "type": "std::string",
-                                            "data": "Each step forward is stolen from the edge of death."
+                                            "data": "Each step forward is stolen from the\nedge of death."
                                         },
                                         {
                                             "type": "float",
@@ -729,11 +741,11 @@
                                         },
                                         {
                                             "type": "float",
-                                            "data": 0.5
+                                            "data": 0
                                         },
                                         {
                                             "type": "float",
-                                            "data": 0
+                                            "data": 0.5
                                         },
                                         {
                                             "type": "float",
@@ -750,6 +762,10 @@
                                         {
                                             "type": "int",
                                             "data": 2
+                                        },
+                                        {
+                                            "type": "bool",
+                                            "data": false
                                         }
                                     ]
                                 },
@@ -778,7 +794,7 @@
                                         },
                                         {
                                             "type": "float",
-                                            "data": 0
+                                            "data": 0.5
                                         },
                                         {
                                             "type": "float",
@@ -799,6 +815,10 @@
                                         {
                                             "type": "int",
                                             "data": 2
+                                        },
+                                        {
+                                            "type": "bool",
+                                            "data": true
                                         }
                                     ]
                                 },
@@ -848,6 +868,10 @@
                                         {
                                             "type": "int",
                                             "data": 2
+                                        },
+                                        {
+                                            "type": "bool",
+                                            "data": true
                                         }
                                     ]
                                 },
@@ -860,7 +884,7 @@
                                         },
                                         {
                                             "type": "std::string",
-                                            "data": "The weight of loss is heavier than his wounds."
+                                            "data": "The weight of loss is heavier than\nhis wounds."
                                         },
                                         {
                                             "type": "float",
@@ -876,7 +900,7 @@
                                         },
                                         {
                                             "type": "float",
-                                            "data": 0.5
+                                            "data": 0
                                         },
                                         {
                                             "type": "float",
@@ -897,6 +921,10 @@
                                         {
                                             "type": "int",
                                             "data": 2
+                                        },
+                                        {
+                                            "type": "bool",
+                                            "data": true
                                         }
                                     ]
                                 },
@@ -925,7 +953,7 @@
                                         },
                                         {
                                             "type": "float",
-                                            "data": 0.5
+                                            "data": 0
                                         },
                                         {
                                             "type": "float",
@@ -946,6 +974,10 @@
                                         {
                                             "type": "int",
                                             "data": 2
+                                        },
+                                        {
+                                            "type": "bool",
+                                            "data": true
                                         }
                                     ]
                                 },
@@ -974,7 +1006,7 @@
                                         },
                                         {
                                             "type": "float",
-                                            "data": 0.5
+                                            "data": 0
                                         },
                                         {
                                             "type": "float",
@@ -995,6 +1027,10 @@
                                         {
                                             "type": "int",
                                             "data": 2
+                                        },
+                                        {
+                                            "type": "bool",
+                                            "data": false
                                         }
                                     ]
                                 },
@@ -1044,6 +1080,10 @@
                                         {
                                             "type": "int",
                                             "data": 2
+                                        },
+                                        {
+                                            "type": "bool",
+                                            "data": false
                                         }
                                     ]
                                 },
@@ -1093,6 +1133,10 @@
                                         {
                                             "type": "int",
                                             "data": 2
+                                        },
+                                        {
+                                            "type": "bool",
+                                            "data": true
                                         }
                                     ]
                                 },
@@ -1142,6 +1186,10 @@
                                         {
                                             "type": "int",
                                             "data": 2
+                                        },
+                                        {
+                                            "type": "bool",
+                                            "data": true
                                         }
                                     ]
                                 },
@@ -1191,6 +1239,10 @@
                                         {
                                             "type": "int",
                                             "data": 2
+                                        },
+                                        {
+                                            "type": "bool",
+                                            "data": false
                                         }
                                     ]
                                 },
@@ -1199,7 +1251,7 @@
                                     "data": [
                                         {
                                             "type": "std::string",
-                                            "data": "../../Resources/Cutscenes/Kusane_OpeningCutscene/Board_00004.png"
+                                            "data": "../../Resources/Cutscenes/Kusane_OpeningCutscene/Board_00005.png"
                                         },
                                         {
                                             "type": "std::string",
@@ -1240,6 +1292,10 @@
                                         {
                                             "type": "int",
                                             "data": 2
+                                        },
+                                        {
+                                            "type": "bool",
+                                            "data": true
                                         }
                                     ]
                                 },
@@ -1252,7 +1308,7 @@
                                         },
                                         {
                                             "type": "std::string",
-                                            "data": ""
+                                            "data": "..."
                                         },
                                         {
                                             "type": "float",
@@ -1268,7 +1324,7 @@
                                         },
                                         {
                                             "type": "float",
-                                            "data": 0.5
+                                            "data": 0
                                         },
                                         {
                                             "type": "float",
@@ -1289,6 +1345,10 @@
                                         {
                                             "type": "int",
                                             "data": 2
+                                        },
+                                        {
+                                            "type": "bool",
+                                            "data": true
                                         }
                                     ]
                                 },
@@ -1338,6 +1398,10 @@
                                         {
                                             "type": "int",
                                             "data": 2
+                                        },
+                                        {
+                                            "type": "bool",
+                                            "data": true
                                         }
                                     ]
                                 },
@@ -1387,6 +1451,10 @@
                                         {
                                             "type": "int",
                                             "data": 2
+                                        },
+                                        {
+                                            "type": "bool",
+                                            "data": true
                                         }
                                     ]
                                 },
@@ -1415,7 +1483,7 @@
                                         },
                                         {
                                             "type": "float",
-                                            "data": 0.5
+                                            "data": 0
                                         },
                                         {
                                             "type": "float",
@@ -1436,6 +1504,10 @@
                                         {
                                             "type": "int",
                                             "data": 2
+                                        },
+                                        {
+                                            "type": "bool",
+                                            "data": false
                                         }
                                     ]
                                 },
@@ -1448,7 +1520,7 @@
                                         },
                                         {
                                             "type": "std::string",
-                                            "data": "His wingsÃÂ¢ÃÂÃÂ¦"
+                                            "data": "His wings..."
                                         },
                                         {
                                             "type": "float",
@@ -1464,55 +1536,6 @@
                                         },
                                         {
                                             "type": "float",
-                                            "data": 0
-                                        },
-                                        {
-                                            "type": "float",
-                                            "data": 0
-                                        },
-                                        {
-                                            "type": "float",
-                                            "data": 0
-                                        },
-                                        {
-                                            "type": "float",
-                                            "data": -1
-                                        },
-                                        {
-                                            "type": "float",
-                                            "data": 2
-                                        },
-                                        {
-                                            "type": "int",
-                                            "data": 2
-                                        }
-                                    ]
-                                },
-                                {
-                                    "type": "CutsceneBoard",
-                                    "data": [
-                                        {
-                                            "type": "std::string",
-                                            "data": "../../Resources/Cutscenes/Kusane_OpeningCutscene/Board_00007.png"
-                                        },
-                                        {
-                                            "type": "std::string",
-                                            "data": "His wings...Gone."
-                                        },
-                                        {
-                                            "type": "float",
-                                            "data": 50
-                                        },
-                                        {
-                                            "type": "bool",
-                                            "data": true
-                                        },
-                                        {
-                                            "type": "float",
-                                            "data": 3
-                                        },
-                                        {
-                                            "type": "float",
                                             "data": 0.5
                                         },
                                         {
@@ -1534,6 +1557,63 @@
                                         {
                                             "type": "int",
                                             "data": 2
+                                        },
+                                        {
+                                            "type": "bool",
+                                            "data": true
+                                        }
+                                    ]
+                                },
+                                {
+                                    "type": "CutsceneBoard",
+                                    "data": [
+                                        {
+                                            "type": "std::string",
+                                            "data": "../../Resources/Cutscenes/Kusane_OpeningCutscene/Board_00007.png"
+                                        },
+                                        {
+                                            "type": "std::string",
+                                            "data": "His wings... Gone."
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": 50
+                                        },
+                                        {
+                                            "type": "bool",
+                                            "data": true
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": 3
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": 0
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": 0
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": 0
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": -1
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": 2
+                                        },
+                                        {
+                                            "type": "int",
+                                            "data": 2
+                                        },
+                                        {
+                                            "type": "bool",
+                                            "data": false
                                         }
                                     ]
                                 },
@@ -1562,7 +1642,7 @@
                                         },
                                         {
                                             "type": "float",
-                                            "data": 0
+                                            "data": 0.5
                                         },
                                         {
                                             "type": "float",
@@ -1583,6 +1663,10 @@
                                         {
                                             "type": "int",
                                             "data": 2
+                                        },
+                                        {
+                                            "type": "bool",
+                                            "data": true
                                         }
                                     ]
                                 },
@@ -1632,6 +1716,10 @@
                                         {
                                             "type": "int",
                                             "data": 2
+                                        },
+                                        {
+                                            "type": "bool",
+                                            "data": true
                                         }
                                     ]
                                 },
@@ -1681,6 +1769,10 @@
                                         {
                                             "type": "int",
                                             "data": 2
+                                        },
+                                        {
+                                            "type": "bool",
+                                            "data": true
                                         }
                                     ]
                                 },
@@ -1709,6 +1801,59 @@
                                         },
                                         {
                                             "type": "float",
+                                            "data": 0
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": 0
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": 0
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": -1
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": 2
+                                        },
+                                        {
+                                            "type": "int",
+                                            "data": 2
+                                        },
+                                        {
+                                            "type": "bool",
+                                            "data": false
+                                        }
+                                    ]
+                                },
+                                {
+                                    "type": "CutsceneBoard",
+                                    "data": [
+                                        {
+                                            "type": "std::string",
+                                            "data": "../../Resources/Cutscenes/Kusane_OpeningCutscene/Board_00009.png"
+                                        },
+                                        {
+                                            "type": "std::string",
+                                            "data": "Then..."
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": 50
+                                        },
+                                        {
+                                            "type": "bool",
+                                            "data": false
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": 2
+                                        },
+                                        {
+                                            "type": "float",
                                             "data": 0.5
                                         },
                                         {
@@ -1730,55 +1875,10 @@
                                         {
                                             "type": "int",
                                             "data": 2
-                                        }
-                                    ]
-                                },
-                                {
-                                    "type": "CutsceneBoard",
-                                    "data": [
-                                        {
-                                            "type": "std::string",
-                                            "data": "../../Resources/Cutscenes/Kusane_OpeningCutscene/Board_00009.png"
-                                        },
-                                        {
-                                            "type": "std::string",
-                                            "data": "ThenÃÂ¢ÃÂÃÂ"
-                                        },
-                                        {
-                                            "type": "float",
-                                            "data": 50
                                         },
                                         {
                                             "type": "bool",
-                                            "data": false
-                                        },
-                                        {
-                                            "type": "float",
-                                            "data": 2
-                                        },
-                                        {
-                                            "type": "float",
-                                            "data": 0
-                                        },
-                                        {
-                                            "type": "float",
-                                            "data": 0
-                                        },
-                                        {
-                                            "type": "float",
-                                            "data": 0
-                                        },
-                                        {
-                                            "type": "float",
-                                            "data": -1
-                                        },
-                                        {
-                                            "type": "float",
-                                            "data": 2
-                                        },
-                                        {
-                                            "type": "int",
-                                            "data": 2
+                                            "data": true
                                         }
                                     ]
                                 },
@@ -1828,6 +1928,10 @@
                                         {
                                             "type": "int",
                                             "data": 2
+                                        },
+                                        {
+                                            "type": "bool",
+                                            "data": true
                                         }
                                     ]
                                 },
@@ -1856,6 +1960,59 @@
                                         },
                                         {
                                             "type": "float",
+                                            "data": 0
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": 0
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": 0
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": -1
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": 2
+                                        },
+                                        {
+                                            "type": "int",
+                                            "data": 2
+                                        },
+                                        {
+                                            "type": "bool",
+                                            "data": false
+                                        }
+                                    ]
+                                },
+                                {
+                                    "type": "CutsceneBoard",
+                                    "data": [
+                                        {
+                                            "type": "std::string",
+                                            "data": "../../Resources/Cutscenes/Kusane_OpeningCutscene/Board_00010.png"
+                                        },
+                                        {
+                                            "type": "std::string",
+                                            "data": "A feather resting upon an ancient holder."
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": 50
+                                        },
+                                        {
+                                            "type": "bool",
+                                            "data": false
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": 3
+                                        },
+                                        {
+                                            "type": "float",
                                             "data": 0.5
                                         },
                                         {
@@ -1877,55 +2034,10 @@
                                         {
                                             "type": "int",
                                             "data": 2
-                                        }
-                                    ]
-                                },
-                                {
-                                    "type": "CutsceneBoard",
-                                    "data": [
-                                        {
-                                            "type": "std::string",
-                                            "data": "../../Resources/Cutscenes/Kusane_OpeningCutscene/Board_00010.png"
-                                        },
-                                        {
-                                            "type": "std::string",
-                                            "data": "A featherÃÂ¢ÃÂÃÂ¦Resting upon an ancient holder."
-                                        },
-                                        {
-                                            "type": "float",
-                                            "data": 50
                                         },
                                         {
                                             "type": "bool",
-                                            "data": false
-                                        },
-                                        {
-                                            "type": "float",
-                                            "data": 3
-                                        },
-                                        {
-                                            "type": "float",
-                                            "data": 0
-                                        },
-                                        {
-                                            "type": "float",
-                                            "data": 0
-                                        },
-                                        {
-                                            "type": "float",
-                                            "data": 0
-                                        },
-                                        {
-                                            "type": "float",
-                                            "data": -1
-                                        },
-                                        {
-                                            "type": "float",
-                                            "data": 2
-                                        },
-                                        {
-                                            "type": "int",
-                                            "data": 2
+                                            "data": true
                                         }
                                     ]
                                 },
@@ -1975,6 +2087,10 @@
                                         {
                                             "type": "int",
                                             "data": 2
+                                        },
+                                        {
+                                            "type": "bool",
+                                            "data": true
                                         }
                                     ]
                                 },
@@ -2003,7 +2119,7 @@
                                         },
                                         {
                                             "type": "float",
-                                            "data": 0.5
+                                            "data": 0
                                         },
                                         {
                                             "type": "float",
@@ -2024,6 +2140,10 @@
                                         {
                                             "type": "int",
                                             "data": 2
+                                        },
+                                        {
+                                            "type": "bool",
+                                            "data": false
                                         }
                                     ]
                                 },
@@ -2073,6 +2193,10 @@
                                         {
                                             "type": "int",
                                             "data": 2
+                                        },
+                                        {
+                                            "type": "bool",
+                                            "data": false
                                         }
                                     ]
                                 },
@@ -2085,7 +2209,7 @@
                                         },
                                         {
                                             "type": "std::string",
-                                            "data": "Is it salvationÃÂ¢ÃÂÃÂ¦"
+                                            "data": "Is it salvation..."
                                         },
                                         {
                                             "type": "float",
@@ -2101,7 +2225,7 @@
                                         },
                                         {
                                             "type": "float",
-                                            "data": 0
+                                            "data": 0.5
                                         },
                                         {
                                             "type": "float",
@@ -2122,6 +2246,10 @@
                                         {
                                             "type": "int",
                                             "data": 2
+                                        },
+                                        {
+                                            "type": "bool",
+                                            "data": false
                                         }
                                     ]
                                 },
@@ -2134,7 +2262,7 @@
                                         },
                                         {
                                             "type": "std::string",
-                                            "data": "Is it salvationÃÂ¢ÃÂÃÂ¦Or another curse?"
+                                            "data": "Is it salvation... or another curse?"
                                         },
                                         {
                                             "type": "float",
@@ -2171,6 +2299,10 @@
                                         {
                                             "type": "int",
                                             "data": 2
+                                        },
+                                        {
+                                            "type": "bool",
+                                            "data": true
                                         }
                                     ]
                                 },
@@ -2199,7 +2331,7 @@
                                         },
                                         {
                                             "type": "float",
-                                            "data": 0.5
+                                            "data": 0
                                         },
                                         {
                                             "type": "float",
@@ -2220,6 +2352,10 @@
                                         {
                                             "type": "int",
                                             "data": 2
+                                        },
+                                        {
+                                            "type": "bool",
+                                            "data": false
                                         }
                                     ]
                                 },
@@ -2269,6 +2405,10 @@
                                         {
                                             "type": "int",
                                             "data": 2
+                                        },
+                                        {
+                                            "type": "bool",
+                                            "data": false
                                         }
                                     ]
                                 }

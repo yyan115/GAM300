@@ -113,6 +113,7 @@ BEGIN_COMPONENT(SpriteRenderComponent, "SpriteRenderComponent")
     PROPERTY("rotation", &SpriteRenderComponent::rotation)
     PROPERTY("color", &SpriteRenderComponent::color)
     PROPERTY("alpha", &SpriteRenderComponent::alpha)
+    PROPERTY("fillValue", &SpriteRenderComponent::fillValue)
 END_COMPONENT()
 
 

@@ -195,6 +195,23 @@ void PhysicsSystem::Initialise(ECSManager& ecsManager) {
     bodyToEntityMap.clear();
     m_activeInteractions.clear();
 
+    // =========================================================
+    // FLUSH STALE PHYSICS EVENTS
+    // =========================================================
+    // Removing bodies above (and during the previous session's Shutdown) 
+    // causes Jolt to queue a backlog of "OnContactRemoved" events. 
+    // We must drain and discard them into the void so they don't instantly 
+    // cancel out interactions for newly recycled Entity IDs in the new session!
+    if (contactListener) {
+        std::vector<CollisionEvent> staleEnters, staleExits;
+        contactListener->DrainEvents(staleEnters, staleExits);
+
+        //  Wipe the activeCollisions memory bank!
+        // This prevents recycled Entity IDs from being ignored by the 
+        // `if (activeCollisions.insert(key).second)` check in OnContactAdded.
+        contactListener->ClearCollisions();
+    }
+
     // Create bodies for all existing entities
     for (auto& e : entities) {
         CreatePhysicsBody(e, ecsManager);
@@ -216,6 +233,25 @@ void PhysicsSystem::Update(float fixedDt, ECSManager& ecsManager) {
         __android_log_print(ANDROID_LOG_INFO, "GAM300", "[Physics] Update called, fixedDt=%f, entities=%zu", fixedDt, entities.size());
     }
 #endif
+
+    // =========================================================================================
+    // 0. CLEANUP DESTROYED / ORPHANED ENTITIES (GHOST COLLIDER FIX)
+    //    If an entity was destroyed by a script, it drops out of the ECS 'entities' set.
+    //    We must sweep our internal map and destroy any Jolt bodies that no longer have an ECS entity.
+    // =========================================================================================
+    std::vector<Entity> staleEntities;
+    for (const auto& [e, bodyId] : entityBodyMap) {
+        // If the entity is in our body map but NO LONGER in the ECS entities set
+        if (entities.find(e) == entities.end()) {
+            staleEntities.push_back(e);
+        }
+    }
+
+    // Destroy the orphaned Jolt physics bodies
+    for (Entity e : staleEntities) {
+        RemoveBody(e);
+    }
+
     if (entities.empty()) return;
 
     JPH::BodyInterface& bi = physics.GetBodyInterface();
@@ -800,6 +836,8 @@ void PhysicsSystem::RemoveBody(Entity entity) {
             bi.RemoveBody(bodyId);
         bi.DestroyBody(bodyId);
     }
+
+    bodyToEntityMap.erase(bodyId);
     entityBodyMap.erase(it);
 }
 
@@ -874,6 +912,7 @@ PhysicsSystem::RaycastResult PhysicsSystem::Raycast(const Vector3D& origin, cons
                                    static_cast<float>(hitPos.GetZ()));
 
         result.bodyId = hit.mBodyID;
+        result.entityId = GetEntityFromBody(hit.mBodyID);
     }
 
     return result;

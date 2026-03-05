@@ -1,0 +1,14 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "0041f10660d3c3cc-000467b03e3361e5",
+        "source": "../../Resources/Textures/M5/AltarTable_Metallic.png",
+        "compiled": "../../Resources/Textures/M5/AltarTable_Metallic.dds"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp"
+    }
+}

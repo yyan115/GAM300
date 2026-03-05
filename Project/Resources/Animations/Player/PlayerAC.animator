@@ -91,7 +91,7 @@
         },
         {
             "id": "FeatherLaunchEnd",
-            "clipIndex": 12,
+            "clipIndex": 11,
             "loop": false,
             "speed": 1.0,
             "crossfadeDuration": 0.20000000298023224,
@@ -102,7 +102,7 @@
         },
         {
             "id": "Hurt",
-            "clipIndex": 10,
+            "clipIndex": 9,
             "loop": false,
             "speed": 1.0,
             "crossfadeDuration": 0.0,
@@ -146,7 +146,7 @@
         },
         {
             "id": "Land",
-            "clipIndex": 9,
+            "clipIndex": 8,
             "loop": false,
             "speed": 1.0,
             "crossfadeDuration": 0.0,
@@ -157,7 +157,7 @@
         },
         {
             "id": "Roll",
-            "clipIndex": 8,
+            "clipIndex": 7,
             "loop": false,
             "speed": 1.3000000715255737,
             "crossfadeDuration": 0.0,
@@ -190,9 +190,9 @@
         },
         {
             "id": "Dash",
-            "clipIndex": 7,
-            "loop": true,
-            "speed": 1.8000000715255737,
+            "clipIndex": 12,
+            "loop": false,
+            "speed": 1.8999998569488525,
             "crossfadeDuration": 0.0,
             "nodePosition": {
                 "x": -300.0,
@@ -201,7 +201,7 @@
         },
         {
             "id": "FeatherLaunch",
-            "clipIndex": 11,
+            "clipIndex": 10,
             "loop": false,
             "speed": 1.0,
             "crossfadeDuration": 0.20000000298023224,
@@ -803,21 +803,6 @@
             ]
         },
         {
-            "from": "Dash",
-            "to": "Jump",
-            "anyState": false,
-            "hasExitTime": false,
-            "exitTime": 0.0,
-            "transitionDuration": 0.0,
-            "conditions": [
-                {
-                    "paramName": "IsJumping",
-                    "mode": "Equals",
-                    "threshold": 1.0
-                }
-            ]
-        },
-        {
             "from": "Jump",
             "to": "Dash",
             "anyState": false,
@@ -834,10 +819,10 @@
         },
         {
             "from": "Dash",
-            "to": "Roll",
+            "to": "Idle",
             "anyState": false,
-            "hasExitTime": false,
-            "exitTime": 0.5,
+            "hasExitTime": true,
+            "exitTime": 0.8500000238418579,
             "transitionDuration": 0.20000000298023224,
             "conditions": [
                 {
@@ -847,6 +832,36 @@
                 },
                 {
                     "paramName": "IsGrounded",
+                    "mode": "Equals",
+                    "threshold": 1.0
+                },
+                {
+                    "paramName": "IsRunning",
+                    "mode": "Equals",
+                    "threshold": 0.0
+                }
+            ]
+        },
+        {
+            "from": "Dash",
+            "to": "Run",
+            "anyState": false,
+            "hasExitTime": true,
+            "exitTime": 0.8500000238418579,
+            "transitionDuration": 0.20000000298023224,
+            "conditions": [
+                {
+                    "paramName": "IsDashing",
+                    "mode": "Equals",
+                    "threshold": 0.0
+                },
+                {
+                    "paramName": "IsGrounded",
+                    "mode": "Equals",
+                    "threshold": 1.0
+                },
+                {
+                    "paramName": "IsRunning",
                     "mode": "Equals",
                     "threshold": 1.0
                 }
@@ -1150,11 +1165,11 @@
         "Resources/Animations/Player/KusaneV6@Run.fbx",
         "Resources/Animations/Player/KusaneV6@Jump.fbx",
         "Resources/Animations/Player/KusaneV6@Death.fbx",
-        "Resources/Animations/Player/KusaneV6@DashPose.fbx",
         "Resources/Animations/Player/KusaneV6@Roll.fbx",
         "Resources/Animations/Player/KusaneV6@Land.fbx",
         "Resources/Animations/Player/KusaneV6@Hurt.fbx",
         "Resources/Animations/Player/KusaneV6@FeatherLaunch.fbx",
-        "Resources/Animations/Player/KusaneV6@FeatherLaunchEnd.fbx"
+        "Resources/Animations/Player/KusaneV6@FeatherLaunchEnd.fbx",
+        "Resources/Animations/Player/KusaneV6@DashRoll.fbx"
     ]
 }

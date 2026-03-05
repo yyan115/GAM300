@@ -25,25 +25,54 @@ function M.applyCollision(self, tx, ty, tz, desiredX, desiredY, desiredZ, dt)
 
     dirX, dirY, dirZ = dirX/dirLen, dirY/dirLen, dirZ/dirLen
 
-    local dist = Physics.Raycast(tx, ty, tz, dirX, dirY, dirZ, dirLen + 0.5)
-    local hit  = (dist >= 0 and dist < dirLen)
-
     local collisionOffset = self.collisionOffset or 0.2
     local targetDist      = dirLen
 
-    if hit then
+    -- Forward ray: pivot → desired camera (catches walls/floors)
+    local dist = Physics.Raycast(tx, ty, tz, dirX, dirY, dirZ, dirLen + 0.5)
+    if dist >= 0 and dist < dirLen then
         targetDist = math.max(dist - collisionOffset, 0.5)
+    end
+
+    -- Reverse ray: desired → pivot (catches back-facing surfaces the forward ray misses)
+    local revDist = Physics.Raycast(
+        desiredX, desiredY, desiredZ, -dirX, -dirY, -dirZ, dirLen + 0.5)
+    if revDist >= 0 and revDist < dirLen then
+        targetDist = math.min(targetDist, math.max(dirLen - revDist - collisionOffset, 0.5))
+    end
+
+    -- Ceiling clamp: cast straight up from both the pivot and the camera's XZ
+    -- position (the orbit may push the camera out from under the ceiling the
+    -- pivot-only ray covers). Use whichever gives the tighter constraint.
+    if dirY > 0.01 then
+        local bestMaxDist = math.huge
+
+        local function tryCeilRay(ox, oz)
+            local d = Physics.Raycast(ox, ty, oz, 0, 1, 0, 50.0)
+            if d >= 0 then
+                local md = (d - collisionOffset) / dirY
+                if md < bestMaxDist then bestMaxDist = md end
+            end
+        end
+
+        tryCeilRay(tx, tz)               -- directly above pivot
+        tryCeilRay(desiredX, desiredZ)   -- above camera's horizontal position
+
+        if bestMaxDist < math.huge then
+            targetDist = math.min(targetDist, math.max(bestMaxDist, 0.5))
+        end
     end
 
     -- Initialise on first call
     if self._currentCollisionDist == nil then
         self._currentCollisionDist = targetDist
+    elseif targetDist < self._currentCollisionDist then
+        -- Snap immediately into geometry — no lerp, eliminates the single frame
+        -- where the camera clips through a wall before the lerp catches up.
+        self._currentCollisionDist = targetDist
     else
-        -- Fast snap when hitting a wall, slow ease-out when it clears
-        local lerpSpeed = (targetDist < self._currentCollisionDist)
-            and (self.collisionLerpIn  or 20.0)
-            or  (self.collisionLerpOut or  5.0)
-        local t = 1.0 - math.exp(-lerpSpeed * dt)
+        -- Slow ease-out when geometry clears so the camera doesn't snap back.
+        local t = 1.0 - math.exp(-(self.collisionLerpOut or 5.0) * dt)
         self._currentCollisionDist = self._currentCollisionDist
             + (targetDist - self._currentCollisionDist) * t
     end

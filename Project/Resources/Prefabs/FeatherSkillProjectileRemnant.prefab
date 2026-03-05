@@ -2,7 +2,7 @@
     "prefab_entities": [
         {
             "id": 0,
-            "guid": "006d61b58236606f-000467ab0015bd85",
+            "guid": "0045549be64e7364-000469abb201266f",
             "components": {
                 "PrefabLinkComponent": {
                     "type": "PrefabLinkComponent",
@@ -176,7 +176,7 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "006d61b58a5d05ba-000467ab0015bd87"
+                                "0045549b802fe62b-000469abb2012671"
                             ]
                         }
                     ]
@@ -357,7 +357,19 @@
                             "enabled": true,
                             "preserveKeys": [],
                             "entryFunction": "OnInit",
-                            "autoInvokeEntry": true
+                            "autoInvokeEntry": true,
+                            "instanceState": {
+                                "__meta": {},
+                                "__field_list": {
+                                    "AliveDuration": 3.0
+                                },
+                                "AliveDuration": 3.0,
+                                "_subscriptions": {},
+                                "_private": {},
+                                "_transform_fetched": false,
+                                "__created_at": 1772706562.0,
+                                "OnCollisionEnter": null
+                            }
                         }
                     ]
                 },
@@ -386,7 +398,7 @@
         },
         {
             "id": 1,
-            "guid": "006d61b58a5d05ba-000467ab0015bd87",
+            "guid": "0045549b802fe62b-000469abb2012671",
             "components": {
                 "NameComponent": {
                     "name": "Feather"
@@ -463,7 +475,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "006d61b58236606f-000467ab0015bd85"
+                        "0045549be64e7364-000469abb201266f"
                     ]
                 },
                 "ActiveComponent": {
