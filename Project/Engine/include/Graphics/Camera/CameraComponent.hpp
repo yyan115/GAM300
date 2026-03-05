@@ -86,6 +86,7 @@ public:
     bool bloomEnabled = false;
     float bloomThreshold = 1.0f;
     float bloomIntensity = 1.0f;
+    float bloomSpread = 0.5f;
 
     // === Post-Processing: Vignette ===
     bool vignetteEnabled = false;

@@ -25,11 +25,15 @@ public:
     // Set the bloom emission texture from the MRT pass (skips threshold extraction)
     void SetBloomEmissionTexture(unsigned int tex) { bloomEmissionTexture = tex; }
 
+    void SetScatter(float s) { scatter = s; }
+    float GetScatter() const { return scatter; }
+
 private:
     std::shared_ptr<Shader> shader;
     float threshold = 1.0f;
     float intensity = 1.0f;
     int blurPasses = 3;
+    float scatter = 0.5f;
 
     // Brightness extraction FBO (fallback when no MRT emission texture)
     unsigned int extractFBO = 0;

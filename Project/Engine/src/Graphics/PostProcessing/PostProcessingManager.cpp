@@ -325,6 +325,7 @@ void PostProcessingManager::ResetRuntimeState()
         bloomEffect->SetEnabled(false);
         bloomEffect->SetThreshold(1.0f);
         bloomEffect->SetIntensity(1.0f);
+        bloomEffect->SetScatter(0.5f);
     }
 
     // Reset vignette

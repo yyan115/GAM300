@@ -642,6 +642,7 @@ rapidjson::Value Serializer::SerializeEntity(Entity entity, rapidjson::Document:
         v.AddMember("bloomEnabled", c.bloomEnabled, alloc);
         v.AddMember("bloomThreshold", c.bloomThreshold, alloc);
         v.AddMember("bloomIntensity", c.bloomIntensity, alloc);
+        v.AddMember("bloomSpread", c.bloomSpread, alloc);
         v.AddMember("vignetteEnabled", c.vignetteEnabled, alloc);
         v.AddMember("vignetteIntensity", c.vignetteIntensity, alloc);
         v.AddMember("vignetteSmoothness", c.vignetteSmoothness, alloc);
@@ -1019,6 +1020,7 @@ void Serializer::SerializePrefabInstanceDelta(ECSManager& sceneECS, Entity insta
             v.AddMember("bloomEnabled", c.bloomEnabled, a);
             v.AddMember("bloomThreshold", c.bloomThreshold, a);
             v.AddMember("bloomIntensity", c.bloomIntensity, a);
+            v.AddMember("bloomSpread", c.bloomSpread, a);
             v.AddMember("vignetteEnabled", c.vignetteEnabled, a);
             v.AddMember("vignetteIntensity", c.vignetteIntensity, a);
             v.AddMember("vignetteSmoothness", c.vignetteSmoothness, a);
@@ -3562,6 +3564,8 @@ void Serializer::DeserializeCameraComponent(CameraComponent& cameraComp, const r
         cameraComp.bloomThreshold = cameraJSON["bloomThreshold"].GetFloat();
     if (cameraJSON.HasMember("bloomIntensity") && cameraJSON["bloomIntensity"].IsNumber())
         cameraComp.bloomIntensity = cameraJSON["bloomIntensity"].GetFloat();
+    if (cameraJSON.HasMember("bloomSpread") && cameraJSON["bloomSpread"].IsNumber())
+        cameraComp.bloomSpread = cameraJSON["bloomSpread"].GetFloat();
     if (cameraJSON.HasMember("vignetteEnabled") && cameraJSON["vignetteEnabled"].IsBool())
         cameraComp.vignetteEnabled = cameraJSON["vignetteEnabled"].GetBool();
     if (cameraJSON.HasMember("vignetteIntensity") && cameraJSON["vignetteIntensity"].IsNumber())
