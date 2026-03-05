@@ -184,10 +184,20 @@ return Component {
         ShoutCooldown = 999, -- checkpoint only (or set if you want it to recur)
 
         -- Air movement
-        AirHeight = 4.0,
+        AirHeight = 1.0,
         AirMoveSpeed = 9.0,
+        AirSpeedMultiplier = 10.0,
+        AirVerticalMultiplier = 10.0,
         AirArriveRadius = 0.25,
         AirWaitAfterAttack = 0.45,
+
+        -- Hover tuning
+        HoverSnapSpeed = 8.0,   -- how fast it corrects to target height
+        HoverBobAmp    = 0.10,  -- bob amplitude (try 0.06 - 0.18)
+        HoverBobFreq   = 0.90,  -- bob frequency (Hz-ish)
+
+        -- Slam-down when hooked in air
+        SlamDownSpeed  = 16.0,  -- fall speed while slamming down
 
         -- Arena 3x3 grid waypoint positions (world-space XZ)
         -- You can tune these in editor per arena
@@ -255,6 +265,9 @@ return Component {
 
         -- hooked tracking
         self._hooked = false
+
+        self._hoverT = 0
+        self._slamActive = false
 
         -- CC / movement state
         self._controller = nil
@@ -405,9 +418,15 @@ return Component {
         local dtSec = toDtSec(dt)
         self._meleeCdT = math.max(0, (self._meleeCdT or 0) - dtSec)
 
-        -- 1) Ensure controller + gravity always
-        self:EnsureController()
-        self:ApplyGravity(dtSec)
+        if Input.IsActionJustPressed("Interact") then
+            self:ApplyHook(self.HookedDuration)
+        end
+
+        -- 1) Ground physics only when NOT in air
+        if not self._inAir then
+            self:EnsureController()
+            self:ApplyGravity(dtSec)
+        end
 
         if self._frozenBycinematic then
             print("[Miniboss] FROZEN by cinematic, skipping Update. lockReason=", tostring(self._lockReason), "lockT=", tostring(self._lockTimer))
@@ -448,16 +467,28 @@ return Component {
             end
         end
 
-        -- 5) Physics sync (Transform <- CC) + preserve facing unless special move
+        -- 5) Physics sync
         if self._controller then
-            local pos = CharacterController.GetPosition(self._controller)
-            if pos then
-                self:SetPosition(pos.x, pos.y, pos.z)
-
-                if (not self:IsInMove("DeathLotus")) and self._lastFacingRot then
-                    local r = self._lastFacingRot
-                    self:SetRotation(r.w, r.x, r.y, r.z)
+            if not self._inAir then
+                -- GROUND: CC is authoritative
+                local pos = CharacterController.GetPosition(self._controller)
+                if pos then
+                    self:SetPosition(pos.x, pos.y, pos.z)
                 end
+            else
+                -- AIR: Transform is authoritative (like FlyingEnemy)
+                local x, y, z = self:GetPosition()
+                if x ~= nil and CharacterController.SetPosition then
+                    pcall(function()
+                        CharacterController.SetPosition(self._controller, x, y, z)
+                    end)
+                end
+            end
+
+            -- preserve facing unless special move
+            if (not self:IsInMove("DeathLotus")) and self._lastFacingRot then
+                local r = self._lastFacingRot
+                self:SetRotation(r.w, r.x, r.y, r.z)
             end
         end
 
@@ -490,6 +521,13 @@ return Component {
         local lockReason = self._lockReason
 
         -- 8) Aggro trigger / intro
+        print("[Miniboss][Tick] phase=", self._phase,
+            "introDone=", tostring(self._introDone),
+            "inIntro=", tostring(self._inIntro),
+            "locked=", tostring(self._lockAction),
+            "lockReason=", tostring(self._lockReason),
+            "inAir=", tostring(self._inAir),
+            "p2State=", tostring(self._phase2State))
         if not self._introDone then
             self:FacePlayer()
 
@@ -535,18 +573,18 @@ return Component {
         -- 9) Phase dispatch (only when not locked)
         self._phase = self._phase or self:_ComputePhase()
 
-        -- Post-intro recovery pause (new system)
+        -- Post-intro recovery pause
         if (self._postIntroRecoverT or 0) > 0 then
             self._postIntroRecoverT = math.max(0, self._postIntroRecoverT - dtSec)
             return
         end
 
-        -- Phase-transition recovery pause (new system)
-        if (self._phaseRecoverT or 0) > 0 then
+        -- Phase-transition recovery pause
+        local phaseRecoverActive = (self._phaseRecoverT or 0) > 0
+        if phaseRecoverActive then
             self._phaseRecoverT = math.max(0, self._phaseRecoverT - dtSec)
-            print("[Miniboss] phaseRecoverT=", self._phaseRecoverT)
-            return
         end
+        self._phaseRecoverActive = phaseRecoverActive
 
         if self._phase == 1 then
             self:_UpdatePhase1(dtSec)
@@ -554,6 +592,11 @@ return Component {
             self:_UpdatePhase2(dtSec)
         elseif self._phase == 3 then
             self:_UpdatePhase3(dtSec)
+        end
+
+        -- Hover correction for air phases
+        if self._inAir then
+            self:MaintainHover(dtSec)
         end
 
         -- 10) Broadcast position
@@ -564,6 +607,81 @@ return Component {
                 x = x, y = y, z = z
             })
         end
+    end,
+
+    -- =================================================
+    -- CC lifecycle helpers
+    -- =================================================
+    DestroyCC = function(self)
+        if self._controller then
+            pcall(function()
+                if CharacterController.DestroyByEntity then
+                    CharacterController.DestroyByEntity(self.entityId)
+                end
+            end)
+        end
+        self._controller = nil
+    end,
+
+    CreateCC = function(self)
+        -- Only create if we have collider+transform
+        self._collider  = self._collider  or self:GetComponent("ColliderComponent")
+        self._transform = self._transform or self:GetComponent("Transform")
+        if not (self._collider and self._transform) then
+            print("[Miniboss] CreateCC failed: missing collider/transform")
+            return false
+        end
+
+        local ok, ctrl = pcall(function()
+            return CharacterController.Create(self.entityId, self._collider, self._transform)
+        end)
+
+        if ok and ctrl then
+            self._controller = ctrl
+            -- Sync CC to current Transform position
+            local x,y,z = self:GetPosition()
+            if CharacterController.SetPosition then
+                pcall(function() CharacterController.SetPosition(self._controller, x, y, z) end)
+            end
+            return true
+        end
+
+        self._controller = nil
+        print("[Miniboss] CreateCC failed: CharacterController.Create error")
+        return false
+    end,
+
+    _EnterAirMode = function(self)
+        self._inAir = true
+        -- Stop gravity/vertical integration
+        self._vy = 0
+
+        -- Disable RB gravity if present (optional)
+        if self._rb then
+            pcall(function() self._rb.gravityFactor = 0 end)
+            pcall(function() self._rb.linearVel = {x=0,y=0,z=0} end)
+            pcall(function() self._rb.impulseApplied = {x=0,y=0,z=0} end)
+        end
+
+        -- IMPORTANT: remove CC so ground collision can't "drag feet"
+        self:DestroyCC()
+    end,
+
+    _EnterGroundMode = function(self)
+        self._inAir = false
+
+        -- Re-enable RB gravity if present (optional)
+        if self._rb then
+            pcall(function() self._rb.gravityFactor = 1 end)
+        end
+
+        -- Create CC again (ground enemies require CC)
+        self:CreateCC()
+
+        -- Reset grounded heuristic
+        local _, y, _ = self:GetPosition()
+        self._prevY = y
+        self._vy = 0
     end,
 
     -------------------------------------------------
@@ -601,30 +719,10 @@ return Component {
     end,
 
     EnsureController = function(self)
+        -- In air, we intentionally have NO CC (FlyingEnemy-style)
+        if self._inAir then return false end
         if self._controller then return true end
-
-        self._collider  = self._collider  or self:GetComponent("ColliderComponent")
-        self._transform = self._transform or self:GetComponent("Transform")
-
-        if not (self._collider and self._transform) then
-            return false
-        end
-
-        local ok, ctrl = pcall(function()
-            return CharacterController.Create(self.entityId, self._collider, self._transform)
-        end)
-
-        if ok and ctrl then
-            self._controller = ctrl
-            -- sync scripted position to CC immediately so there’s no later “snap”
-            local x, y, z = self:GetPosition()
-            pcall(function()
-                CharacterController.SetPosition(self._controller, x, y, z)
-            end)
-            return true
-        end
-
-        return false
+        return self:CreateCC()
     end,
 
     -------------------------------------------------
@@ -722,49 +820,113 @@ return Component {
     end,
 
     _SetInAir = function(self, inAir)
-        self._inAir = inAir and true or false
-
-        -- air: don't fall
-        if self._rb then
-            pcall(function() self._rb.gravityFactor = inAir and 0 or 1 end)
-        end
         if inAir then
-            self._vy = 0
+            if not self._inAir then
+                print("[Miniboss] -> AIR MODE (destroy CC)")
+                self:_EnterAirMode()
+            end
+        else
+            if self._inAir then
+                print("[Miniboss] -> GROUND MODE (create CC)")
+                self:_EnterGroundMode()
+            end
         end
     end,
 
-    _MoveToXYZ_Air = function(self, tx, ty, tz, dtSec)
+    _MoveToXZ_Air = function(self, tx, tz, dtSec)
+        if dtSec <= 0 then return false end
         local x,y,z = self:GetPosition()
-        if not x then return true end
+        if x == nil then return true end
 
-        local dx, dy, dz = tx-x, ty-y, tz-z
-        local d2 = dx*dx + dy*dy + dz*dz
+        local dx, dz = tx-x, tz-z
         local r = self.AirArriveRadius or 0.25
+        local d2 = dx*dx + dz*dz
         if d2 <= r*r then
-            self:SetPosition(tx, ty, tz)
-            if self._controller and CharacterController.SetPosition then
-                pcall(function() CharacterController.SetPosition(self._controller, tx, ty, tz) end)
-            end
+            self:SetPosition(tx, y, tz)
+            self:FacePlayer()
             return true
         end
 
         local d = math.sqrt(d2)
+        if d < 1e-6 then return true end
+
         local spd = self.AirMoveSpeed or 9.0
         local step = math.min(spd * dtSec, d)
-        local nx = x + (dx/d) * step
-        local ny = y + (dy/d) * step
-        local nz = z + (dz/d) * step
-        self:SetPosition(nx, ny, nz)
 
-        if self._controller and CharacterController.SetPosition then
-            pcall(function() CharacterController.SetPosition(self._controller, nx, ny, nz) end)
+        self:SetPosition(x + (dx/d)*step, y, z + (dz/d)*step)
+        self:FacePlayer()
+        return false
+    end,
+
+    MaintainHover = function(self, dtSec)
+        dtSec = toDtSec(dtSec)
+        if dtSec <= 0 then return end
+        if not self._inAir then return end
+        if self._slamActive then return end -- don't hover while slamming down
+
+        local x, y, z = self:GetPosition()
+        if x == nil then return end
+
+        local gy = y
+        if Nav and Nav.GetGroundY then
+            local g = Nav.GetGroundY(self.entityId)
+            if g ~= nil then gy = g end
         end
 
-        -- face XZ direction
-        if d > 1e-6 then
-            self:FacePlayer() -- or face movement dir if you want
+        -- bobbing target
+        self._hoverT = (self._hoverT or 0) + dtSec
+        local amp  = tonumber(self.HoverBobAmp)  or 0
+        local freq = tonumber(self.HoverBobFreq) or 0
+        local bob = 0
+        if amp ~= 0 and freq ~= 0 then
+            bob = math.sin(self._hoverT * (math.pi * 2) * freq) * amp
         end
 
+        local baseH = self.HoverHeight or self.AirHeight or 4.0
+        local baseTargetY = (gy or y) + baseH
+        local targetY = baseTargetY + bob
+
+        local snap = self.HoverSnapSpeed or 8.0
+        local dy = targetY - y
+        local maxStep = snap * dtSec
+        if dy >  maxStep then dy =  maxStep end
+        if dy < -maxStep then dy = -maxStep end
+
+        self:SetPosition(x, y + dy, z)
+    end,
+
+    BeginSlamDown = function(self)
+        if not self._inAir then return end
+        self._slamActive = true
+    end,
+
+    UpdateSlamDown = function(self, dtSec)
+        if not self._slamActive then return false end
+        dtSec = toDtSec(dtSec)
+        if dtSec <= 0 then return false end
+
+        local x,y,z = self:GetPosition()
+        if x == nil then return false end
+
+        local gy = 0
+        if Nav and Nav.GetGroundY then
+            local g = Nav.GetGroundY(self.entityId)
+            if g ~= nil then gy = g end
+        else
+            gy = y
+        end
+
+        local speed = tonumber(self.SlamDownSpeed) or 16.0
+        local newY = y - speed * dtSec
+
+        if newY <= gy then
+            newY = gy
+            self:SetPosition(x, newY, z)
+            self._slamActive = false
+            return true
+        end
+
+        self:SetPosition(x, newY, z)
         return false
     end,
 
@@ -1019,6 +1181,7 @@ return Component {
         -- phase 2: hooking forces boss down
         if self._phase == 2 and self._inAir then
             self._hookedDownRequested = true
+            self:BeginSlamDown()
         end
 
         if self._phase == 3 and not self._inAir then
@@ -1820,25 +1983,37 @@ return Component {
     end,
 
     EnterPhase2_Air = function(self)
-        print("[Miniboss] EnterPhase2_Air: setting inAir true")
+        print("[Miniboss] EnterPhase2_Air")
         self:_SetInAir(true)
-        self._immuneChain = false   -- hookable in phase 2
+
+        local x,y,z = self:GetPosition()
+        local gy = (Nav and Nav.GetGroundY and Nav.GetGroundY(self.entityId)) or y or 0
+        local newY = gy + (self.AirHeight or 4.0)
+
+        self:SetPosition(x, newY, z)
+
+        self._immuneChain = false
         self._phase2Numpad = self:_PickRandomAirNumpad(nil)
         self._phase2State = "MOVE"
         self._phase2AfterAttackT = 0
+        self._phase2BurstStarted = false
     end,
 
     _UpdatePhase2 = function(self, dtSec)
-        -- If hook-down requested: land + queue FateSealed
-        if self._hookedDownRequested then
-            self._hookedDownRequested = false
+        -- If slamming down, keep falling until landed
+        if self._slamActive then
+            local landed = self:UpdateSlamDown(dtSec)
+            if not landed then
+                return -- still slamming
+            end
 
+            -- landed this frame: switch to ground mode (creates CC)
             self:_SetInAir(false)
 
-            -- lock briefly (hook stun)
+            -- brief hooked lock on landing
             self:LockActions("HOOKED", math.min(self.HookedDuration or 4.0, 0.9))
 
-            -- queue FateSealed after hook lock ends
+            -- queue FateSealed after hook lock ends (your existing design)
             self._phase2QueuedFate = true
             self._phase2State = "GROUND"
             return
@@ -1872,34 +2047,60 @@ return Component {
         -- MOVE: go to waypoint
         if self._phase2State == "MOVE" then
             local tx, ty, tz = self:_GetAirWaypoint(self._phase2Numpad or 5)
-            local arrived = self:_MoveToXYZ_Air(tx, ty, tz, dtSec)
+            local x,y,z = self:GetPosition()
+            if self._controller and CharacterController.GetPosition then
+                local p = CharacterController.GetPosition(self._controller)
+                if p then x,y,z = p.x,p.y,p.z end
+            end
+            print(string.format("[Miniboss][P2 MOVE] pos=(%.2f,%.2f,%.2f) -> (%.2f,%.2f,%.2f)",
+                x or -1, y or -1, z or -1, tx or -1, ty or -1, tz or -1))
+            local arrived = self:_MoveToXZ_Air(tx, tz, dtSec)
             if not arrived then return end
 
-            -- Arrived -> switch to ATTACK (don’t start attack same frame if locked)
+            -- Arrived -> switch to ATTACK
             self._phase2State = "ATTACK"
             self._phase2AfterAttackT = 0
+            self._phase2BurstStarted = false
             return
         end
 
-        -- ATTACK: start BurstFire once, then wait for completion, then pick new waypoint
+        -- ATTACK: start BurstFire once, wait for it to finish, then wait a short delay, then relocate
         if self._phase2State == "ATTACK" then
-            if self:IsActionLocked() then return end
-
-            -- If no move running, start BurstFire once
-            if self:IsCurrentMoveFinished() then
-                self:BurstFire()
+            -- during phase recover, do NOT start BurstFire yet
+            if self._phaseRecoverActive then
+                self:FacePlayer()
                 return
             end
 
-            -- While BurstFire running, do nothing
+            if self:IsActionLocked() then return end
+
+            -- If any queued reaction exists, let it run before BurstFire
+            if (self._moveQueue and #self._moveQueue > 0) then
+                -- TryStartQueuedMove is already called in Update(), but keep Phase2 fair:
+                self:FacePlayer()
+                return
+            end
+
+            -- Start BurstFire once
+            if not self._phase2BurstStarted then
+                if self:IsCurrentMoveFinished() then
+                    self._phase2BurstStarted = true
+                    self:BurstFire()
+                end
+                return
+            end
+
+            -- Wait until BurstFire ends
             if self:IsInMove("BurstFire") then
                 return
             end
 
-            -- Move finished and we're no longer in BurstFire (safety)
-            -- Small delay (optional) before relocating
+            -- BurstFire ended -> wait a bit before moving again
             self._phase2AfterAttackT = (self._phase2AfterAttackT or 0) + dtSec
             if self._phase2AfterAttackT >= (self.AirWaitAfterAttack or 0.45) then
+                self._phase2BurstStarted = false
+                self._phase2AfterAttackT = 0
+
                 local old = self._phase2Numpad
                 self._phase2Numpad = self:_PickRandomAirNumpad(old)
                 self._phase2State = "MOVE"
@@ -1992,7 +2193,7 @@ return Component {
             self._immuneChain = true
 
             local tx,ty,tz = self:_GetAirWaypoint(5)
-            local arrived = self:_MoveToXYZ_Air(tx,ty,tz,dtSec)
+            local arrived = self:_MoveToXZ_Air(tx,tz,dtSec)
             if arrived then
                 self._phase3RainCount = 0
                 self._phase3Step = 1
