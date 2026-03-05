@@ -69,6 +69,11 @@
             "name": "Flying",
             "type": "Bool",
             "defaultValue": 0.0
+        },
+        {
+            "name": "ReadyToAttack",
+            "type": "Bool",
+            "defaultValue": 0.0
         }
     ],
     "states": [
@@ -178,8 +183,8 @@
             "speed": 1.0,
             "crossfadeDuration": 0.0,
             "nodePosition": {
-                "x": -73.5,
-                "y": -286.0
+                "x": -117.5,
+                "y": -336.0
             }
         },
         {
@@ -1252,6 +1257,36 @@
                     "paramName": "Passive",
                     "mode": "Equals",
                     "threshold": 0.0
+                }
+            ]
+        },
+        {
+            "from": "Ground Chase",
+            "to": "Idle",
+            "anyState": false,
+            "hasExitTime": false,
+            "exitTime": 1.0,
+            "transitionDuration": 0.20000000298023224,
+            "conditions": [
+                {
+                    "paramName": "ReadyToAttack",
+                    "mode": "Equals",
+                    "threshold": 1.0
+                }
+            ]
+        },
+        {
+            "from": "Flying Chase",
+            "to": "Idle",
+            "anyState": false,
+            "hasExitTime": false,
+            "exitTime": 1.0,
+            "transitionDuration": 0.20000000298023224,
+            "conditions": [
+                {
+                    "paramName": "ReadyToAttack",
+                    "mode": "Equals",
+                    "threshold": 1.0
                 }
             ]
         }
