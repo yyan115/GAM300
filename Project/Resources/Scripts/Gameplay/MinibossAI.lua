@@ -2153,8 +2153,6 @@ return Component {
                 local p = CharacterController.GetPosition(self._controller)
                 if p then x,y,z = p.x,p.y,p.z end
             end
-            print(string.format("[Miniboss][P2 MOVE] pos=(%.2f,%.2f,%.2f) -> (%.2f,%.2f,%.2f)",
-                x or -1, y or -1, z or -1, tx or -1, ty or -1, tz or -1))
             local arrived = self:_MoveToXZ_Air(tx, tz, dtSec)
             if not arrived then return end
 
