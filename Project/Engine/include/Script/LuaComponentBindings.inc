@@ -79,8 +79,7 @@ BEGIN_COMPONENT(AnimationComponent, "AnimationComponent")
     METHOD("GetInt", &AnimationComponent::GetInt)
     METHOD("GetFloat", &AnimationComponent::GetFloat)
     METHOD("GetCurrentState", &AnimationComponent::GetCurrentState) 
-    METHOD("GetStateTime", &AnimationComponent::GetStateTime)
-    METHOD("GetNormalizedTime", &AnimationComponent::GetNormalizedTime )
+    METHOD("GetNormalizedTime", &AnimationComponent::GetNormalizedTime)
 END_COMPONENT()
 
 // ============================================================================

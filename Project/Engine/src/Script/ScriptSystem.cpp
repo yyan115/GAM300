@@ -590,6 +590,7 @@ void ScriptSystem::Initialise(ECSManager& ecsManager)
                 .addFunction("SetFloat", &LuaAnimationComponent::SetFloat)
                 .addFunction("SetInt", &LuaAnimationComponent::SetInt)
                 .addFunction("GetCurrentState", &LuaAnimationComponent::GetCurrentState)
+                .addFunction("GetNormalizedTime", &LuaAnimationComponent::GetNormalizedTime)
                 .addFunction("IsPlaying", &LuaAnimationComponent::IsPlaying)
                 .endClass();
 

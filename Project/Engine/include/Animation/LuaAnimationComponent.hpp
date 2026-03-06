@@ -96,6 +96,14 @@ struct LuaAnimationComponent
         return "";
     }
 
+    float GetNormalizedTime() const
+    {
+        if (auto* comp = GetInternal()) {
+            return comp->GetNormalizedTime();
+        }
+        return 0.0f;
+    }
+
     bool IsPlaying() const
     {
         if (auto* comp = GetInternal()) {
