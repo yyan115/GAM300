@@ -1091,9 +1091,11 @@ return Component {
         if x == nil then return false end
 
         local gy = 0
+        self._animator:SetBool("Hooked", false)
         if Nav and Nav.GetGroundY then
             local g = Nav.GetGroundY(self.entityId)
             if g ~= nil then gy = g end
+            self._animator:SetTrigger("Pulldown")
         end
 
         local targetY = gy
@@ -1108,6 +1110,7 @@ return Component {
 
             self._slamActive = false
             self._slamVy = 0
+            self._animator:SetTrigger("Slammed")
             return true
         end
 

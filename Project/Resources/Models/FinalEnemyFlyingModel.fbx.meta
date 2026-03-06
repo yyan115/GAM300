@@ -1,0 +1,11 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "0021c3844eb73664-00046bff52001387",
+        "source": "../../Resources/Models/FinalEnemyFlyingModel.fbx",
+        "compiled": "../../Resources/Models/FinalEnemyFlyingModel.mesh"
+    },
+    "ModelMetaData": {
+        "optimizeMeshes": true
+    }
+}

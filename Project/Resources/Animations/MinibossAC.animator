@@ -53,39 +53,6 @@
     ],
     "states": [
         {
-            "id": "Hurt1",
-            "clipIndex": 5,
-            "loop": false,
-            "speed": 2.000000238418579,
-            "crossfadeDuration": 0.0,
-            "nodePosition": {
-                "x": 169.0,
-                "y": -14.75
-            }
-        },
-        {
-            "id": "Hooked",
-            "clipIndex": 5,
-            "loop": false,
-            "speed": 1.0,
-            "crossfadeDuration": 0.0,
-            "nodePosition": {
-                "x": 918.5,
-                "y": -149.0
-            }
-        },
-        {
-            "id": "Idle",
-            "clipIndex": 1,
-            "loop": true,
-            "speed": 1.0,
-            "crossfadeDuration": 0.0,
-            "nodePosition": {
-                "x": -54.0,
-                "y": -138.0
-            }
-        },
-        {
             "id": "Taunt",
             "clipIndex": 0,
             "loop": false,
@@ -97,8 +64,41 @@
             }
         },
         {
+            "id": "Idle",
+            "clipIndex": 6,
+            "loop": true,
+            "speed": 1.0,
+            "crossfadeDuration": 0.0,
+            "nodePosition": {
+                "x": -54.0,
+                "y": -138.0
+            }
+        },
+        {
+            "id": "Hooked",
+            "clipIndex": 3,
+            "loop": false,
+            "speed": 1.0,
+            "crossfadeDuration": 0.0,
+            "nodePosition": {
+                "x": 918.5,
+                "y": -149.0
+            }
+        },
+        {
+            "id": "Hurt1",
+            "clipIndex": 3,
+            "loop": false,
+            "speed": 2.000000238418579,
+            "crossfadeDuration": 0.0,
+            "nodePosition": {
+                "x": 169.0,
+                "y": -14.75
+            }
+        },
+        {
             "id": "Death",
-            "clipIndex": 2,
+            "clipIndex": 1,
             "loop": false,
             "speed": 1.0,
             "crossfadeDuration": 0.0,
@@ -109,7 +109,7 @@
         },
         {
             "id": "Ranged Attack",
-            "clipIndex": 4,
+            "clipIndex": 2,
             "loop": true,
             "speed": 2.6999995708465576,
             "crossfadeDuration": 0.0,
@@ -120,7 +120,7 @@
         },
         {
             "id": "Melee Attack",
-            "clipIndex": 3,
+            "clipIndex": 7,
             "loop": false,
             "speed": 4.0,
             "crossfadeDuration": 0.0,
@@ -131,7 +131,7 @@
         },
         {
             "id": "Recovery",
-            "clipIndex": 1,
+            "clipIndex": 6,
             "loop": true,
             "speed": 1.0,
             "crossfadeDuration": 0.0,
@@ -142,7 +142,7 @@
         },
         {
             "id": "Hurt2",
-            "clipIndex": 6,
+            "clipIndex": 4,
             "loop": false,
             "speed": 1.7000001668930054,
             "crossfadeDuration": 0.0,
@@ -153,7 +153,7 @@
         },
         {
             "id": "Hurt3",
-            "clipIndex": 7,
+            "clipIndex": 5,
             "loop": false,
             "speed": 1.7000001668930054,
             "crossfadeDuration": 0.0,
@@ -845,12 +845,12 @@
     ],
     "clipPaths": [
         "Resources/Animations/Miniboss@Taunt.fbx",
-        "Resources/Animations/Enemy@Idle.fbx",
         "Resources/Animations/Enemy@Death.fbx",
-        "Resources/Animations/Enemy@AttackScratch.fbx",
         "Resources/Animations/Enemy@AttackThrow.fbx",
         "Resources/Animations/Enemy@Hurt.fbx",
         "Resources/Animations/Enemy@Hurt2.fbx",
-        "Resources/Animations/Enemy@Hurt3.fbx"
+        "Resources/Animations/Enemy@Hurt3.fbx",
+        "Resources/Animations/Enemy/Flying/KarasuFlying@IdleRangedGround.fbx",
+        "Resources/Animations/Enemy/Ground/KarasuGroundVar@Scratch.fbx"
     ]
 }

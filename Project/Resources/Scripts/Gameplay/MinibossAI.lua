@@ -687,6 +687,7 @@ return Component {
 
     _EnterAirMode = function(self)
         self._inAir = true
+        self._animator:SetBool("Flying", true)
         -- Stop gravity/vertical integration
         self._vy = 0
 
@@ -703,6 +704,7 @@ return Component {
 
     _EnterGroundMode = function(self)
         self._inAir = false
+        self._animator:SetBool("Flying", false)
 
         -- Re-enable RB gravity if present (optional)
         if self._rb then
@@ -943,9 +945,11 @@ return Component {
         if x == nil then return false end
 
         local gy = 0
+        self._animator:SetBool("Hooked", false)
         if Nav and Nav.GetGroundY then
             local g = Nav.GetGroundY(self.entityId)
             if g ~= nil then gy = g end
+            self._animator:SetTrigger("Pulldown")
         else
             gy = y
         end
@@ -957,6 +961,7 @@ return Component {
             newY = gy
             self:SetPosition(x, newY, z)
             self._slamActive = false
+            self._animator:SetTrigger("Slammed")
             return true
         end
 
