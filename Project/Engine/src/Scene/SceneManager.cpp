@@ -342,6 +342,7 @@ void SceneManager::UpdateAsyncLoad() {
     }
     switch (loadState) {
     case SceneLoadState::UNLOADING_CURRENT: {
+        EntityGUIDRegistry::GetInstance().Clear();
         ECSRegistry::GetInstance().CreateECSManager(asyncScenePath);
         loadState = SceneLoadState::PARSING_JSON;
         break;
@@ -430,7 +431,7 @@ void SceneManager::UpdateAsyncLoad() {
             // NOW switch active to new scene
             ECSRegistry::GetInstance().SetActiveECSManager(asyncScenePath);
             ECSRegistry::GetInstance()
-                .GetECSManager(currentScenePath).ClearAllEntities();
+                .GetECSManager(currentScenePath).ClearAllEntities(false);
             ECSRegistry::GetInstance()
                 .DestroyECSManager(currentScenePath);
             currentScene.reset();
