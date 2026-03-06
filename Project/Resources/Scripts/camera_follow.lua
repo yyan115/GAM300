@@ -74,11 +74,16 @@ return Component {
 
         -- === Slam Tilt ===
         TriggerSlam        = false,
-        SlamUpPitch        = 8.0,
-        SlamDownPitch      = -15.0,
-        SlamUpDuration     = 0.10,
+        SlamGroundAngle    = 60.0,
+        SlamReturnAngle    = 0.0,
         SlamDownDuration   = 0.15,
         SlamReturnDuration = 0.25,
+
+        -- === Screen Shake ===
+        TriggerShake       = false,
+        ShakeIntensity     = 0.3,
+        ShakeDuration      = 0.4,
+        ShakeFrequency     = 25.0,
 
         -- === Rotation ===
         lockCameraRotation = false,
@@ -132,6 +137,14 @@ return Component {
 
         -- Respawn teleport flag
         self._teleportToPlayer = false
+
+        -- Screen shake
+        self._shakeTimer       = 0.0
+        self._shakeDuration    = 0.0
+        self._shakeIntensity   = 0.0
+        self._shakeFrequency   = 0.0
+        self._shakePitchOffset = 0.0
+        self._shakeYawOffset   = 0.0
 
         -- Slam tilt
         SlamTilt.init(self)
@@ -326,8 +339,25 @@ return Component {
 
         -- ── Orbit follow position ────────────────────────────────────────────
         local radius     = self.followDistance or 5.0
-        local slamOffset = SlamTilt.update(self, dt)
-        local pitchRad   = math.rad(self._pitch + slamOffset)
+        if self.TriggerShake then
+            self.TriggerShake    = false
+            self._shakeTimer     = 0.0
+            self._shakeDuration  = self.ShakeDuration  or 0.4
+            self._shakeIntensity = self.ShakeIntensity or 0.3
+            self._shakeFrequency = self.ShakeFrequency or 25.0
+        end
+
+        local slamAbsPitch = SlamTilt.update(self, dt)
+        local pitchRad
+        if slamAbsPitch then
+            -- Keep _pitch and _normalPitch in sync so action-mode lerp
+            -- doesn't fight the slam and the camera settles correctly on release.
+            self._pitch       = slamAbsPitch
+            self._normalPitch = slamAbsPitch
+            pitchRad = math.rad(slamAbsPitch)
+        else
+            pitchRad = math.rad(self._pitch)
+        end
         local yawRad     = math.rad(self._yaw)
 
         -- Export camera angles globally for skills to read
@@ -414,8 +444,37 @@ return Component {
 
         self:SetPosition(newX, newY, newZ)
 
+        -- ── Screen shake (angular, applied to rotation) ──────────────────────
+        if self._shakeTimer < self._shakeDuration then
+            self._shakeTimer = self._shakeTimer + dt
+            local decay     = 1.0 - (self._shakeTimer / self._shakeDuration)
+            local intensity = self._shakeIntensity * decay
+            local t         = self._shakeTimer * self._shakeFrequency
+            self._shakePitchOffset = math.sin(t * 1.7) * intensity
+            self._shakeYawOffset   = math.sin(t * 1.3) * intensity
+        else
+            self._shakePitchOffset = 0.0
+            self._shakeYawOffset   = 0.0
+        end
+
         -- ── Rotation ─────────────────────────────────────────────────────────
+        local utils_eu = require("Camera.camera_utils")
+        local shakeQ = utils_eu.eulerToQuat(
+            self._shakePitchOffset,
+            self._shakeYawOffset,
+            0.0
+        )
         ChainAim.applyRotation(self, newX, newY, newZ, cameraTarget, chainActive, blend)
+        -- Multiply shake onto the rotation after base rotation is set
+        local rw, rx, ry, rz = self:GetRotation()
+        if type(rw) == "table" then rw, rx, ry, rz = rw.w, rw.x, rw.y, rw.z end
+        local sw, sx, sy, sz = shakeQ.w, shakeQ.x, shakeQ.y, shakeQ.z
+        self:SetRotation(
+            rw*sw - rx*sx - ry*sy - rz*sz,
+            rw*sx + rx*sw + ry*sz - rz*sy,
+            rw*sy - rx*sz + ry*sw + rz*sx,
+            rw*sz + rx*sy - ry*sx + rz*sw
+        )
 
         self.isDirty = true
     end,

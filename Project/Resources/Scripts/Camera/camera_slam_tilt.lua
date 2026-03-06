@@ -1,29 +1,28 @@
 -- Camera/camera_slam_tilt.lua
--- Additive pitch-tilt effect for slam attacks.
--- Tilts the camera up (anticipation) then quickly pitches down (impact).
+-- Slams the camera down to a fixed ground angle then returns to a set forward angle.
 --
--- TRIGGER (event bus — from any script):
+-- Down phase  → absolute pitch lerp to SlamGroundAngle regardless of start angle.
+-- Return      → lerps from SlamGroundAngle to SlamReturnAngle (default 0 = straight forward).
+-- On finish   → writes self._pitch so the camera stays at SlamReturnAngle.
+--
+-- TRIGGER (event bus):
 --   event_bus.publish("camera_slam", {
---       upPitch        = 8,    -- degrees upward during windup  (optional)
---       downPitch      = -15,  -- degrees downward at impact    (optional)
---       upDuration     = 0.10, -- seconds for windup phase      (optional)
---       downDuration   = 0.15, -- seconds for impact phase      (optional)
---       returnDuration = 0.25, -- seconds to ease back to 0     (optional)
+--       groundAngle    = 60,   -- absolute pitch at impact   (optional)
+--       returnAngle    = 0,    -- absolute pitch to settle at (optional)
+--       downDuration   = 0.15, -- seconds for impact         (optional)
+--       returnDuration = 0.25, -- seconds to ease back       (optional)
 --   })
---   Omitted fields fall back to the defaults set in camera_follow's fields table.
 
 local M = {}
 
--- Call from camera_follow Awake.  Adds slam-tilt state and subscribes to the event.
 function M.init(self)
-    self._slamPitchOffset   = 0.0
-    self._slamPhase         = nil   -- "up" | "down" | "return" | nil
-    self._slamTimer         = 0.0
+    self._slamPhase        = nil
+    self._slamTimer        = 0.0
+    self._slamAbsPitch     = nil
+    self._slamStartPitch   = 0.0
 
-    -- Per-trigger parameters (overridable per-call)
-    self._slamUpPitch        = 0.0
-    self._slamDownPitch      = 0.0
-    self._slamUpDuration     = 0.0
+    self._slamGroundAngle    = 0.0
+    self._slamReturnAngle    = 0.0
     self._slamDownDuration   = 0.0
     self._slamReturnDuration = 0.0
 
@@ -35,72 +34,67 @@ function M.init(self)
     end
 end
 
--- Trigger the slam animation.  payload is optional; missing keys use inspector defaults.
 function M.trigger(self, payload)
     local p = payload or {}
-    self._slamUpPitch        = p.upPitch        or self.SlamUpPitch        or 8.0
-    self._slamDownPitch      = p.downPitch       or self.SlamDownPitch      or -15.0
-    self._slamUpDuration     = p.upDuration      or self.SlamUpDuration     or 0.10
-    self._slamDownDuration   = p.downDuration    or self.SlamDownDuration   or 0.15
-    self._slamReturnDuration = p.returnDuration  or self.SlamReturnDuration or 0.25
-    self._slamPhase          = "up"
+    self._slamGroundAngle    = p.groundAngle    or self.SlamGroundAngle    or 60.0
+    self._slamReturnAngle    = p.returnAngle    or self.SlamReturnAngle    or 0.0
+    self._slamDownDuration   = p.downDuration   or self.SlamDownDuration   or 0.15
+    self._slamReturnDuration = p.returnDuration or self.SlamReturnDuration or 0.25
+    self._slamStartPitch     = self._pitch or 15.0
+    self._slamPhase          = "down"
     self._slamTimer          = 0.0
+    self._slamAbsPitch       = self._slamStartPitch
 end
 
--- Call from camera_follow Update (before computing pitchRad).
--- Returns the additive pitch offset (degrees) to add to self._pitch.
+-- Returns absPitch (number or nil).
+-- camera_follow uses absPitch directly when non-nil, otherwise uses self._pitch.
 function M.update(self, dt)
-    -- Inspector trigger: fire once when toggled on, then reset
+    -- Inspector trigger
     if self.TriggerSlam then
         self.TriggerSlam = false
         M.trigger(self, nil)
     end
 
     if not self._slamPhase then
-        self._slamPitchOffset = 0.0
-        return 0.0
+        return nil
     end
 
     self._slamTimer = self._slamTimer + dt
 
-    if self._slamPhase == "up" then
-        local dur = math.max(self._slamUpDuration, 0.001)
-        local t   = math.min(self._slamTimer / dur, 1.0)
-        -- ease-out quad
-        t = 1.0 - (1.0 - t) * (1.0 - t)
-        self._slamPitchOffset = self._slamUpPitch * t
-        if self._slamTimer >= dur then
-            self._slamPhase = "down"
-            self._slamTimer = 0.0
-        end
-
-    elseif self._slamPhase == "down" then
+    -- ── Down: snap to ground angle ────────────────────────────────────────────
+    if self._slamPhase == "down" then
         local dur = math.max(self._slamDownDuration, 0.001)
         local t   = math.min(self._slamTimer / dur, 1.0)
-        -- ease-in quad (fast start for snappy impact)
-        t = t * t
-        self._slamPitchOffset = self._slamUpPitch + (self._slamDownPitch - self._slamUpPitch) * t
+        t = t * t  -- ease-in: snappy impact
+        self._slamAbsPitch = self._slamStartPitch + (self._slamGroundAngle - self._slamStartPitch) * t
+
         if self._slamTimer >= dur then
-            self._slamPhase = "return"
-            self._slamTimer = 0.0
+            self._slamAbsPitch = self._slamGroundAngle
+            self._slamPhase    = "return"
+            self._slamTimer    = 0.0
         end
 
+    -- ── Return: ease to forward angle ─────────────────────────────────────────
     elseif self._slamPhase == "return" then
         local dur = math.max(self._slamReturnDuration, 0.001)
         local t   = math.min(self._slamTimer / dur, 1.0)
-        -- smooth-step ease back to zero
-        local st = t * t * (3.0 - 2.0 * t)
-        self._slamPitchOffset = self._slamDownPitch * (1.0 - st)
+        local st  = t * t * (3.0 - 2.0 * t)  -- smooth-step
+        self._slamAbsPitch = self._slamGroundAngle + (self._slamReturnAngle - self._slamGroundAngle) * st
+
         if self._slamTimer >= dur then
-            self._slamPhase       = nil
-            self._slamPitchOffset = 0.0
+            self._slamPhase      = nil
+            self._slamAbsPitch   = nil
+            -- Trigger screen shake once slam finishes
+            self._shakeTimer     = 0.0
+            self._shakeDuration  = self.ShakeDuration  or 0.4
+            self._shakeIntensity = self.ShakeIntensity or 0.3
+            self._shakeFrequency = self.ShakeFrequency or 25.0
         end
     end
 
-    return self._slamPitchOffset
+    return self._slamAbsPitch
 end
 
--- Call from camera_follow OnDisable to clean up the subscription.
 function M.cleanup(self)
     local event_bus = _G.event_bus
     if event_bus and event_bus.unsubscribe and self._slamSub then
