@@ -1,0 +1,14 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "00117f2bad758a9b-00046b5ada000001",
+        "source": "../../Resources/Sprites/PlayerHUD/DashCooldown.png",
+        "compiled": "../../Resources/Sprites/PlayerHUD/DashCooldown.dds"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp"
+    }
+}
