@@ -536,6 +536,9 @@ function M:Update(dt, settings)
             totalLen=totalLen, segmentLen=segmentLen, ClampSegment=linkMax,
             GroundClamp=settings.GroundClamp, groundY=self._groundY,
             pinnedLast=true, endPos={ex,ey,ez}, startPos={sx,sy,sz},
+            FixedDt=settings.FixedDt or self.params.FixedDt,
+            SubSteps=settings.SubSteps or self.params.SubSteps,
+            MaxSubSteps=settings.MaxSubSteps or self.params.MaxSubSteps,
         })
 
         -- FIX: Post-physics XZ path projection only when chain is taut.
@@ -637,7 +640,10 @@ function M:Update(dt, settings)
         pinnedLast=(not self._flopping) and (self.endPointLocked or self._raycastSnapped or
             ((not self.isExtending) and ((self.chainLen or 0)+1e-9>=(aN-1)*segmentLen) and
              (settings.PinEndWhenExtended or self.params.PinEndWhenExtended))),
-        endPos={ex,ey,ez}, startPos={sx,sy,sz}
+        endPos={ex,ey,ez}, startPos={sx,sy,sz},
+        FixedDt=settings.FixedDt or self.params.FixedDt,
+        SubSteps=settings.SubSteps or self.params.SubSteps,
+        MaxSubSteps=settings.MaxSubSteps or self.params.MaxSubSteps,
     }
     VerletAdapter.Step(self.VerletState, dt, vparams)
     if settings.WallClamp then
