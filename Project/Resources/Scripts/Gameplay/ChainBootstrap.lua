@@ -38,7 +38,8 @@ _G.CHAIN_DEBUG = _G.CHAIN_DEBUG ~= nil and _G.CHAIN_DEBUG or false
 local function dbg(...) if _G.CHAIN_DEBUG then print(...) end end
 local Component = require("extension.mono_helper")
 local LinkHandlerModule = require("Gameplay.ChainLinkTransformHandler")
-local ControllerModule = require("Gameplay.ChainController")
+local ControllerModule  = require("Gameplay.ChainController")
+local ChainAudioModule  = require("Gameplay.ChainAudio")
 
 return Component {
     fields = {
@@ -65,6 +66,57 @@ return Component {
         DragTag = "HeavyEnemy",     -- entity tag that drags the player instead of flopping
         UseLOSAnchors = true,       -- when true: anchors auto-created wherever geometry breaks LOS
         LockOnAngleDeg = 45.0,      -- half-cone: LockOn targets outside this angle from player forward are ignored
+
+        -- =====================================================================
+        -- AUDIO CHANNELS
+        -- ChainAudio resolves AudioComponents from link entities by name at
+        -- runtime using Engine.FindAudioCompByName.
+        --   Loop : throw / retract one-shots + flop loop
+        --   Shot : hit one-shots (flesh or wall) — separate channel so they
+        --          never cut off a still-playing throw/retract sound
+        --   Aim  : aim-camera loop (2D, reserved — no asset yet)
+        -- These are derived from LinkName automatically — no ID needed.
+        -- =====================================================================
+        AudioVolume = 1.0,
+
+        -- Spatial falloff — tune to match your world scale.
+        -- MinDistance: radius at which sound is still full volume.
+        -- MaxDistance: beyond this the sound is inaudible.
+        -- DopplerLevel: 0=no doppler, 1=realistic. Applied to flop tip
+        --               which moves fast through the world.
+        AudioMinDistance  = 1.0,
+        AudioMaxDistance  = 15.0,
+        AudioDopplerLevel = 0.5,
+
+        -- Per-play randomisation to stop sounds feeling stale.
+        -- Pitch:   +/- this fraction each trigger  (0.1 = +-10%)
+        -- Volume:  +/- this fraction each trigger  (0.08 = +-8%)
+        AudioPitchVariation  = 0.1,
+        AudioVolumeVariation = 0.08,
+
+        -- =====================================================================
+        -- AUDIO CLIPS
+        -- Arrays: ChainAudio picks randomly on each trigger.
+        -- Add more GUIDs at any time — no code changes needed.
+        -- Strings: single clips for continuous loops.
+        --
+        -- Currently mapped to the 12 available assets:
+        --   Throw    <- ChainThrow1, ChainThrow2, ChainThrow3, ChainThrow4
+        --   Retract  <- ChainRetract1, ChainRetract2, ChainRetract3
+        --   HitFlesh <- ChainHitFlesh1, ChainHitFlesh2, ChainHitFlesh3
+        --   HitWall  <- ChainHitWall1, ChainHitWall2, ChainHitWall3
+        --
+        -- No current assets for:
+        --   Flop  (chain tip in free physics — leave "" until asset is ready)
+        --   Aim   (aim camera held           — leave "" until asset is ready)
+        -- =====================================================================
+        AudioClips_Throw    = {},
+        AudioClips_Retract  = {},
+        AudioClips_HitFlesh = {},
+        AudioClips_HitWall  = {},
+        AudioClips_Flop     = {},   -- loops while tip is in free physics (ChainRetract2 assigned)
+        AudioClips_WallRub  = {},   -- loops while chain wraps around geometry — NEW ASSET NEEDED
+        AudioClips_Aim      = {},   -- loops while aim camera held — NEW ASSET NEEDED
     },
 
     _unpack_pos = function(self, a, b, c)
@@ -329,6 +381,31 @@ return Component {
         self._intentAdjustLength = false   -- hold on attached chain: live-adjust chainLen to real distance
         self._pendingTapFire     = false
         self._pendingPlayerForward = nil
+
+        -- =====================================================================
+        -- AUDIO: ChainAudio resolves link AudioComponents by name each frame
+        -- =====================================================================
+        self.audioHandler = ChainAudioModule.New(
+            self.LinkName,
+            {
+                throw    = self.AudioClips_Throw,
+                retract  = self.AudioClips_Retract,
+                hitFlesh = self.AudioClips_HitFlesh,
+                hitWall  = self.AudioClips_HitWall,
+                flop     = self.AudioClips_Flop,
+                wallRub  = self.AudioClips_WallRub,
+                aim      = self.AudioClips_Aim,
+            },
+            {
+                volume         = self.AudioVolume,
+                minDistance    = self.AudioMinDistance,
+                maxDistance    = self.AudioMaxDistance,
+                dopplerLevel   = self.AudioDopplerLevel,
+                pitchVariation = self.AudioPitchVariation,
+                volVariation   = self.AudioVolumeVariation,
+            }
+        )
+        self.audioHandler:Start()
 
         -- LockOn targets are queried live via Engine.GetEntitiesByTag at fire time.
 
@@ -647,6 +724,13 @@ return Component {
         local maxStep = (self.RotationMaxStepRadians or (self.RotationMaxStep and math.rad(self.RotationMaxStep))) or math.rad(60)
         self.linkHandler:ApplyRotations(positions, startPos, endPos, maxStep, true, activeN)
 
+        -- === Audio ===
+        if self.audioHandler then
+            pcall(function()
+                self.audioHandler:Update(dt, self.controller:GetPublicState(), positions, activeN)
+            end)
+        end
+
         local public = self.controller:GetPublicState()
         self.m_CurrentLength = public.ChainLength
         self.m_IsExtending = public.IsExtending
@@ -794,6 +878,9 @@ return Component {
     end,
 
     OnDisable = function(self)
+        -- === Audio ===
+        if self.audioHandler then pcall(function() self.audioHandler:Cleanup() end) end
+
         if _G.event_bus and _G.event_bus.unsubscribe then
             if self._cameraForwardSub then pcall(function() _G.event_bus.unsubscribe(self._cameraForwardSub) end) end
             if self._chainSubDown     then pcall(function() _G.event_bus.unsubscribe(self._chainSubDown)     end) end
