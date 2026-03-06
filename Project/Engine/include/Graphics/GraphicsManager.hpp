@@ -18,6 +18,9 @@
 #include "Graphics/Frustum/Frustum.hpp"
 #include "RenderSorter.hpp"
 #include "Fog/FogComponent.hpp"
+#ifndef ANDROID
+#include "Graphics/OcclusionCuller/OcclusionCuller.hpp"
+#endif
 
 struct ViewportDimensions {
     int width = 0;
@@ -124,6 +127,11 @@ public:
     void SetPointShadowCullData(const glm::vec3& lightPos, float farPlane) { m_shadowLightPos = lightPos; m_shadowFarPlane = farPlane; }
     void ClearPointShadowCullData() { m_shadowFarPlane = -1.0f; }
 
+    // OCCLUSION CULLING:
+    void ENGINE_API SetOcclusionCullingEnabled(bool enabled);
+    bool IsOcclusionCullingEnabled() const;
+    int  GetOcclusionCulledCount()   const;
+
     const SortingStats& GetSortingStats() const { return m_sortingStats; }
 
 private:
@@ -209,6 +217,11 @@ private:
     // State sorting support
     ResourceIdCache m_idCache;
     SortingStats m_sortingStats;
+
+    // Occlusion culling
+#ifndef ANDROID
+    OcclusionCuller m_occlusionCuller;
+#endif
 
     // Track current bound state to avoid redundant switches
     Shader* m_currentShader = nullptr;

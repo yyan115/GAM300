@@ -141,6 +141,7 @@ void ModelSystem::Update()
         auto modelRenderItem = std::make_unique<ModelRenderComponent>(modelComponent);
         auto& entityTransform = ecsManager.GetComponent<Transform>(entity);
         modelRenderItem->transform = entityTransform.worldMatrix;
+        modelRenderItem->entityId  = static_cast<uint32_t>(entity);
 
         // If model doesn't have an animation controller, allow manual manipulation of bone entities.
         if (!modelRenderItem->HasAnimation()) {

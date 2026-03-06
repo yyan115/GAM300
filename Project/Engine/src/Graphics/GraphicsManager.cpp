@@ -75,6 +75,11 @@ bool GraphicsManager::Initialize(int window_width, int window_height)
 		);
 	}
 
+	// Initialize occlusion culler (desktop only)
+#ifndef ANDROID
+	m_occlusionCuller.Initialize();
+#endif
+
 	ENGINE_PRINT("[GraphicsManager] Initialized - Face culling enabled\n");
 	return true;
 }
@@ -88,6 +93,10 @@ void GraphicsManager::Shutdown()
 	mainECS.spriteSystem->Shutdown();
 	mainECS.particleSystem->Shutdown();
 	mainECS.cameraSystem->Shutdown();
+
+#ifndef ANDROID
+	m_occlusionCuller.Shutdown();
+#endif
 
 	if (skyboxVAO != 0) {
 		glDeleteVertexArrays(1, &skyboxVAO);
@@ -111,6 +120,11 @@ void GraphicsManager::BeginFrame()
 	m_currentShader = nullptr;
 	m_currentMaterial = nullptr;
 	m_sortingStats.Reset();
+
+#ifndef ANDROID
+	// Collect GL occlusion query results from the previous frame (non-blocking).
+	m_occlusionCuller.BeginFrame();
+#endif
 
 	if (InstancingManager::GetInstance().IsEnabled())
 	{
@@ -368,22 +382,94 @@ void GraphicsManager::Render()
 		});
 
 	// =========================================================================
-	// Render models with state tracking
+	// Render models — two-phase occlusion culling (desktop) or direct (Android)
 	// =========================================================================
-	for (IRenderComponent* item : modelItems) 
+#ifndef ANDROID
+	{
+		// Phase 1: render entities that were VISIBLE in the previous frame.
+		// Phase 2: issue AABB proxy queries for ALL frustum-visible entities so
+		//          we detect both visible→occluded and occluded→visible transitions.
+
+		// Only apply occlusion culling during game rendering, not editor rendering
+		// (editor must always see all objects).
+		const bool useOcclusion = m_occlusionCuller.IsEnabled() && !isRenderingForEditor;
+
+		for (IRenderComponent* item : modelItems)
+		{
+			ModelRenderComponent* modelItem = static_cast<ModelRenderComponent*>(item);
+
+			if (instancing.IsEnabled() &&
+				!modelItem->HasAnimation() &&
+				modelItem->model &&
+				modelItem->model->mBoneInfoMap.empty())
+			{
+				continue; // Already rendered via instancing.
+			}
+
+			if (useOcclusion && modelItem->entityId != UINT32_MAX &&
+				m_occlusionCuller.IsOccluded(modelItem->entityId))
+			{
+				continue; // Occluded last frame — skip render, still query in phase 2.
+			}
+
+			RenderModelOptimized(*modelItem);
+		}
+
+		// Phase 2: issue occlusion queries while color + depth writes are off.
+		if (useOcclusion)
+		{
+			// Build the view-projection matrix for the proxy shader.
+			glm::mat4 view = currentCamera->GetViewMatrix();
+			glm::mat4 proj = glm::perspective(
+				glm::radians(currentCamera->Zoom),
+				currentFrameViewport.aspectRatio,
+				0.1f, 100.0f);
+			glm::mat4 viewProj = proj * view;
+
+			glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
+			glDepthMask(GL_FALSE);
+
+			// Query every non-instanced, frustum-visible entity so the culler
+			// can detect transitions in BOTH directions each frame.
+			for (IRenderComponent* item : modelItems)
+			{
+				ModelRenderComponent* modelItem = static_cast<ModelRenderComponent*>(item);
+
+				if (instancing.IsEnabled() &&
+					!modelItem->HasAnimation() &&
+					modelItem->model &&
+					modelItem->model->mBoneInfoMap.empty())
+				{
+					continue;
+				}
+
+				if (modelItem->entityId == UINT32_MAX || !modelItem->model)
+					continue;
+
+				glm::mat4 modelMatrix = modelItem->transform.ConvertToGLM();
+				AABB worldBBox = modelItem->model->GetBoundingBox().Transform(modelMatrix);
+				m_occlusionCuller.SubmitQuery(modelItem->entityId, worldBBox, viewProj);
+			}
+
+			glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+			glDepthMask(GL_TRUE);
+		}
+	}
+#else
+	// Android: no hardware occlusion queries — render all models directly.
+	for (IRenderComponent* item : modelItems)
 	{
 		ModelRenderComponent* modelItem = static_cast<ModelRenderComponent*>(item);
-		// Skip if it was handled by instancing
-	   // (InstancingManager sets a flag or we check IsInstanceable)
 		if (instancing.IsEnabled() &&
 			!modelItem->HasAnimation() &&
 			modelItem->model &&
-			modelItem->model->mBoneInfoMap.empty()) 
+			modelItem->model->mBoneInfoMap.empty())
 		{
-			continue;  // Already rendered via instancing
+			continue;
 		}
-		RenderModelOptimized(*modelItem);  // New optimized render method
+		RenderModelOptimized(*modelItem);
 	}
+#endif
 
 	// =========================================================================
 	// Render other items (sprites, text, particles, debug)
@@ -1475,6 +1561,40 @@ void GraphicsManager::RenderModelOptimized(const ModelRenderComponent& item)
 	}
 
 	m_sortingStats.drawCalls++;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Occlusion culling API
+// ─────────────────────────────────────────────────────────────────────────────
+void GraphicsManager::SetOcclusionCullingEnabled(bool enabled)
+{
+#ifndef ANDROID
+	m_occlusionCuller.SetEnabled(enabled);
+	if (enabled)
+		ENGINE_PRINT("[GraphicsManager] Occlusion culling enabled\n");
+	else
+		ENGINE_PRINT("[GraphicsManager] Occlusion culling disabled\n");
+#else
+	(void)enabled;
+#endif
+}
+
+bool GraphicsManager::IsOcclusionCullingEnabled() const
+{
+#ifndef ANDROID
+	return m_occlusionCuller.IsEnabled();
+#else
+	return false;
+#endif
+}
+
+int GraphicsManager::GetOcclusionCulledCount() const
+{
+#ifndef ANDROID
+	return m_occlusionCuller.GetOccludedCount();
+#else
+	return 0;
+#endif
 }
 
 void GraphicsManager::RenderFogVolume(const FogVolumeComponent& item)
