@@ -17,7 +17,8 @@ local EnemyDet  = require("Camera.camera_enemy_detection")
 local CamInput  = require("Camera.camera_input")
 local Cinematic = require("Camera.camera_cinematic_mode")
 local ChainAim  = require("Camera.camera_chain_aim")
-local Collision = require("Camera.camera_collision")
+local Collision  = require("Camera.camera_collision")
+local SlamTilt   = require("Camera.camera_slam_tilt")
 
 local clamp = utils.clamp
 
@@ -30,6 +31,7 @@ return Component {
     mixins = { TransformMixin },
 
     fields = {
+        -- === Follow ===
         followDistance   = 2.0,
         heightOffset     = 1.0,
         followLerp       = 10.0,
@@ -39,16 +41,16 @@ return Component {
         minZoom          = 2.0,
         maxZoom          = 15.0,
         zoomSpeed        = 1.0,
-        zoomLerpSpeed    = 6.0,   -- how fast the camera eases to a new zoom level (lower = smoother)
+        zoomLerpSpeed    = 6.0,
 
-        -- Camera collision
+        -- === Collision ===
         collisionEnabled             = true,
         collisionOffset              = 0.2,
         collisionLerpIn              = 20.0,
         collisionLerpOut             = 5.0,
-        maxCameraHeightAbovePlayer   = 4.0,   -- hard Y cap (units above player feet); set 0 to disable
+        maxCameraHeightAbovePlayer   = 4.0,
 
-        -- Action mode
+        -- === Action Mode ===
         actionModeEnabled      = false,
         actionModeDuration     = 3.0,
         actionModePitch        = 25.0,
@@ -56,24 +58,32 @@ return Component {
         actionModeTransition   = 8.0,
         actionModeLockRotation = false,
 
-        -- Chain aim
+        -- === Chain Aim ===
         chainAimPosName         = "ChainAimPointLeft",
         chainAimTargetName      = "ChainAimPointLeftEnd",
         chainAimTransitionSpeed = 5.0,
-        chainAimZoomDistance    = 0.8,  -- orbit radius while chain aim is active
-        chainAimSideOffset      = 0.3,  -- rightward shift for over-the-shoulder view (negative = left)
+        chainAimZoomDistance    = 0.8,
+        chainAimSideOffset      = 0.3,
 
-        -- Chain aim assist (soft gravity toward nearby enemies while aiming)
+        -- === Chain Aim Assist ===
         chainAimAssistEnemyNames   = {"EnemyAI", "FlyingEnemyLogic"},
-        chainAimAssistAngle        = 20.0,  -- angular window (degrees) around crosshair
-        chainAimAssistStrength     = 3.0,   -- max pull speed (degrees/second)
-        chainAimAssistRange        = 25.0,  -- max world-space distance to consider enemies
-        chainAimAssistHeightOffset = 0.5,   -- upward offset from enemy origin to aim at body center
+        chainAimAssistAngle        = 20.0,
+        chainAimAssistStrength     = 3.0,
+        chainAimAssistRange        = 25.0,
+        chainAimAssistHeightOffset = 0.5,
 
-        -- Rotation lock
+        -- === Slam Tilt ===
+        TriggerSlam        = false,
+        SlamUpPitch        = 8.0,
+        SlamDownPitch      = -15.0,
+        SlamUpDuration     = 0.10,
+        SlamDownDuration   = 0.15,
+        SlamReturnDuration = 0.25,
+
+        -- === Rotation ===
         lockCameraRotation = false,
 
-        -- Enemy detection
+        -- === Enemy Detection ===
         enableEnemyDetection = true,
         enemyDetectionRange  = 8.0,
         enemyDisengageRange  = 10.0,
@@ -122,6 +132,9 @@ return Component {
 
         -- Respawn teleport flag
         self._teleportToPlayer = false
+
+        -- Slam tilt
+        SlamTilt.init(self)
 
         -- Configure C++ entity cache intervals
         if Engine and Engine.SetCacheUpdateInterval then
@@ -205,6 +218,7 @@ return Component {
 
     -- ─────────────────────────────────────────────────────────────────────────
     OnDisable = function(self)
+        SlamTilt.cleanup(self)
         if event_bus and event_bus.unsubscribe then
             for _, sub in ipairs({
                 "_posSub", "_chainAimSub",
@@ -311,9 +325,10 @@ return Component {
         local chainActive, chainX, chainY, chainZ = ChainAim.updateChainAim(self, dt)
 
         -- ── Orbit follow position ────────────────────────────────────────────
-        local radius   = self.followDistance or 5.0
-        local pitchRad = math.rad(self._pitch)
-        local yawRad   = math.rad(self._yaw)
+        local radius     = self.followDistance or 5.0
+        local slamOffset = SlamTilt.update(self, dt)
+        local pitchRad   = math.rad(self._pitch + slamOffset)
+        local yawRad     = math.rad(self._yaw)
 
         -- Export camera angles globally for skills to read
         _G.CAMERA_YAW = self._yaw
