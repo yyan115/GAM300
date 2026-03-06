@@ -196,8 +196,9 @@ return Component {
                 dbg("[ChainBootstrap] Tap-release mid-extension but already attached -> StartRetraction")
             else
                 -- Nothing hit yet: drop into flop so tip falls from wherever it stopped.
-                self.controller.isExtending = false
-                self.controller._flopping   = true
+                self.controller.isExtending              = false
+                self.controller._flopping                = true
+                self.controller._justEnteredFlopFromExt  = true
                 dbg("[ChainBootstrap] Tap-release mid-extension -> Flop")
             end
 

@@ -19,102 +19,47 @@
 #include <commdlg.h>
 #endif
 
-// Helper function to draw color component with input fields and color picker
+// Label width for consistent two-column layout (Unity-style)
+static const float kMaterialLabelWidth = 110.0f;
+
+// Helper function to draw color component (Unity-style: label + color bar)
 static bool DrawColorComponent(const char* label, float color[3], const char* popupId) {
     bool changed = false;
 
     ImGui::Text("%s", label);
-    ImGui::SameLine();
+    ImGui::SameLine(kMaterialLabelWidth);
+    ImGui::SetNextItemWidth(-1);
 
-    // Create unique IDs using the label
-    std::string rId = std::string("##r_") + label;
-    std::string gId = std::string("##g_") + label;
-    std::string bId = std::string("##b_") + label;
     std::string colorId = std::string("##color_") + label;
-
-    // R input field
-    float r = color[0] * 255.0f;
-    ImGui::PushItemWidth(50);
-    if (ImGui::DragFloat(rId.c_str(), &r, 1.0f, 0.0f, 255.0f, "%.0f")) {
-        color[0] = r / 255.0f;
+    if (ImGui::ColorEdit3(colorId.c_str(), color, ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_NoLabel)) {
         changed = true;
-    }
-    ImGui::PopItemWidth();
-    ImGui::SameLine();
-    ImGui::Text("G:");
-    ImGui::SameLine();
-
-    // G input field
-    float g = color[1] * 255.0f;
-    ImGui::PushItemWidth(50);
-    if (ImGui::DragFloat(gId.c_str(), &g, 1.0f, 0.0f, 255.0f, "%.0f")) {
-        color[1] = g / 255.0f;
-        changed = true;
-    }
-    ImGui::PopItemWidth();
-    ImGui::SameLine();
-    ImGui::Text("B:");
-    ImGui::SameLine();
-
-    // B input field
-    float b = color[2] * 255.0f;
-    ImGui::PushItemWidth(50);
-    if (ImGui::DragFloat(bId.c_str(), &b, 1.0f, 0.0f, 255.0f, "%.0f")) {
-        color[2] = b / 255.0f;
-        changed = true;
-    }
-    ImGui::PopItemWidth();
-    ImGui::SameLine();
-
-    // Color picker button
-    if (ImGui::ColorButton(colorId.c_str(), ImVec4(color[0], color[1], color[2], 1), ImGuiColorEditFlags_NoTooltip, ImVec2(30, 20))) {
-        ImGui::OpenPopup(popupId);
-    }
-
-    // Color picker popup
-    if (ImGui::BeginPopup(popupId)) {
-        if (ImGui::ColorPicker3("Color", color)) {
-            changed = true;
-        }
-        ImGui::EndPopup();
     }
 
     return changed;
 }
 
-// Helper function to draw vector2 component with input fields
+// Helper function to draw vector2 component (Unity-style: label + two float fields)
 static bool DrawVec2Component(const char* label, float vec2[2], const char* popupId) {
     bool changed = false;
 
-    ImGui::Text("%s", label);
-    ImGui::SameLine();
-    ImGui::Text("X:");
-    ImGui::SameLine();
-
-    // Create unique IDs using the label
     std::string xId = std::string("##x_") + label;
     std::string yId = std::string("##y_") + label;
 
-    // X input field
-    float x = vec2[0];
-    ImGui::PushItemWidth(75);
-    if (ImGui::DragFloat(xId.c_str(), &x, 0.1f, -FLT_MAX, FLT_MAX, "%.2f")) {
-        vec2[0] = x;
-        changed = true;
-    }
-    ImGui::PopItemWidth();
-    ImGui::SameLine();
-    ImGui::Text("Y:");
-    ImGui::SameLine();
+    ImGui::Text("%s", label);
+    ImGui::SameLine(kMaterialLabelWidth);
 
-    // Y input field
-    float y = vec2[1];
-    ImGui::PushItemWidth(75);
-    if (ImGui::DragFloat(yId.c_str(), &y, 0.1f, -FLT_MAX, FLT_MAX, "%.2f")) {
-        vec2[1] = y;
+    float availWidth = ImGui::GetContentRegionAvail().x;
+    float halfWidth = (availWidth - ImGui::GetStyle().ItemSpacing.x) * 0.5f;
+
+    ImGui::SetNextItemWidth(halfWidth);
+    if (ImGui::DragFloat(xId.c_str(), &vec2[0], 0.01f, -FLT_MAX, FLT_MAX, "X: %.2f")) {
         changed = true;
     }
-    ImGui::PopItemWidth();
+    ImGui::SameLine();
+    ImGui::SetNextItemWidth(halfWidth);
+    if (ImGui::DragFloat(yId.c_str(), &vec2[1], 0.01f, -FLT_MAX, FLT_MAX, "Y: %.2f")) {
+        changed = true;
+    }
 
     return changed;
 }
@@ -173,73 +118,61 @@ void MaterialInspector::DrawMaterialAsset(std::shared_ptr<Material> material, co
             materialChanged = true;
         }
 
-        // Shininess row
+        // Shininess
         float shininess = material->GetShininess();
         float normalizedShininess = shininess / 256.0f;
-
         ImGui::Text("Shininess");
-        ImGui::SameLine();
-        ImGui::Text("%.3f", normalizedShininess);
-        ImGui::SameLine();
-        ImGui::SetNextItemWidth(100.0f);
-        if (ImGui::SliderFloat("##shininess_slider", &normalizedShininess, 0.0f, 1.0f, "")) {
+        ImGui::SameLine(kMaterialLabelWidth);
+        ImGui::SetNextItemWidth(-1);
+        if (ImGui::DragFloat("##shininess_slider", &normalizedShininess, 0.005f, 0.0f, 1.0f, "%.3f")) {
             material->SetShininess(normalizedShininess * 256.0f);
             materialChanged = true;
         }
 
-        // Metallic slider
+        // Metallic
         float metallic = material->GetMetallic();
         ImGui::Text("Metallic");
-        ImGui::SameLine();
-        ImGui::Text("%.3f", metallic);
-        ImGui::SameLine();
-        ImGui::SetNextItemWidth(100.0f);
-        if (ImGui::SliderFloat("##metallic_slider", &metallic, 0.0f, 1.0f, "")) {
+        ImGui::SameLine(kMaterialLabelWidth);
+        ImGui::SetNextItemWidth(-1);
+        if (ImGui::DragFloat("##metallic_slider", &metallic, 0.005f, 0.0f, 1.0f, "%.3f")) {
             material->SetMetallic(metallic);
             materialChanged = true;
         }
 
-        // Roughness slider
+        // Roughness
         float roughness = material->GetRoughness();
         ImGui::Text("Roughness");
-        ImGui::SameLine();
-        ImGui::Text("%.3f", roughness);
-        ImGui::SameLine();
-        ImGui::SetNextItemWidth(100.0f);
-        if (ImGui::SliderFloat("##roughness_slider", &roughness, 0.0f, 1.0f, "")) {
+        ImGui::SameLine(kMaterialLabelWidth);
+        ImGui::SetNextItemWidth(-1);
+        if (ImGui::DragFloat("##roughness_slider", &roughness, 0.005f, 0.0f, 1.0f, "%.3f")) {
             material->SetRoughness(roughness);
             materialChanged = true;
         }
 
-        // AO slider
+        // AO
         float ao = material->GetAO();
         ImGui::Text("AO");
-        ImGui::SameLine();
-        ImGui::Text("%.3f", ao);
-        ImGui::SameLine();
-        ImGui::SetNextItemWidth(100.0f);
-        if (ImGui::SliderFloat("##ao_slider", &ao, 0.0f, 1.0f, "")) {
+        ImGui::SameLine(kMaterialLabelWidth);
+        ImGui::SetNextItemWidth(-1);
+        if (ImGui::DragFloat("##ao_slider", &ao, 0.005f, 0.0f, 1.0f, "%.3f")) {
             material->SetAO(ao);
             materialChanged = true;
         }
 
-        // Emissive color row
+        // Emissive
         glm::vec3 emissive = material->GetEmissive();
         float emissiveColor[3] = { emissive.r, emissive.g, emissive.b };
-
         if (DrawColorComponent("Emissive", emissiveColor, "emissive_color_picker")) {
             material->SetEmissive(glm::vec3(emissiveColor[0], emissiveColor[1], emissiveColor[2]));
             materialChanged = true;
         }
 
-        // Opacity slider
+        // Opacity
         float opacity = material->GetOpacity();
         ImGui::Text("Opacity");
-        ImGui::SameLine();
-        ImGui::Text("%.3f", opacity);
-        ImGui::SameLine();
-        ImGui::SetNextItemWidth(100.0f);
-        if (ImGui::SliderFloat("##opacity_slider", &opacity, 0.0f, 1.0f, "")) {
+        ImGui::SameLine(kMaterialLabelWidth);
+        ImGui::SetNextItemWidth(-1);
+        if (ImGui::DragFloat("##opacity_slider", &opacity, 0.005f, 0.0f, 1.0f, "%.3f")) {
             material->SetOpacity(opacity);
             materialChanged = true;
         }
@@ -277,13 +210,13 @@ void MaterialInspector::DrawMaterialAsset(std::shared_ptr<Material> material, co
                 currentPath = textureInfo->get().filePath;
             }
 
-            ImGui::Text("%s:", name.c_str());
-            ImGui::SameLine();
+            ImGui::Text("%s", name.c_str());
+            ImGui::SameLine(kMaterialLabelWidth);
 
             // Calculate sizes for layout
             float availableWidth = ImGui::GetContentRegionAvail().x;
-            float removeButtonWidth = 35.0f;
-            float selectButtonWidth = 35.0f;
+            float removeButtonWidth = 25.0f;
+            float selectButtonWidth = 25.0f;
             float spacing = ImGui::GetStyle().ItemSpacing.x;
             float textureFieldWidth = availableWidth - removeButtonWidth - selectButtonWidth - (spacing * 2);
 
@@ -327,7 +260,7 @@ void MaterialInspector::DrawMaterialAsset(std::shared_ptr<Material> material, co
             ImGui::SameLine();
             ImGui::PushStyleVar(ImGuiStyleVar_ButtonTextAlign, ImVec2(0.5f, 0.5f));
             std::string removeButtonLabel = std::string(ICON_FA_XMARK) + "##remove_" + name;
-            if (ImGui::Button(removeButtonLabel.c_str(), ImVec2(removeButtonWidth, ImGui::GetTextLineHeightWithSpacing()))) {
+            if (ImGui::Button(removeButtonLabel.c_str(), ImVec2(removeButtonWidth, 0))) {
                 // Remove the texture
                 material->RemoveTexture(type);
                 materialChanged = true;
@@ -342,7 +275,7 @@ void MaterialInspector::DrawMaterialAsset(std::shared_ptr<Material> material, co
             ImGui::SameLine();
             ImGui::PushStyleVar(ImGuiStyleVar_ButtonTextAlign, ImVec2(0.5f, 0.5f)); // Center text in button
             std::string selectButtonLabel = std::string(ICON_FA_FOLDER_OPEN) + "##select_" + name;
-            if (ImGui::Button(selectButtonLabel.c_str(), ImVec2(selectButtonWidth, ImGui::GetTextLineHeightWithSpacing()))) {
+            if (ImGui::Button(selectButtonLabel.c_str(), ImVec2(selectButtonWidth, 0))) {
                 // Open file dialog
 #ifdef _WIN32
     // Store current working directory to restore it later

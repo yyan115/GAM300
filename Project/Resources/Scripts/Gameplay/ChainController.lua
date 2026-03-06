@@ -27,9 +27,10 @@ function M.New(params)
     self.endPointLocked = false
     self.lockedEndPoint = {0,0,0}
     self.hookedTag      = ""
-    self._raycastSnapped  = false
-    self._lockedChainLen  = 0.0
-    self._flopping        = false
+    self._raycastSnapped         = false
+    self._lockedChainLen         = 0.0
+    self._flopping               = false
+    self._justEnteredFlopFromExt = false  -- one-frame flag: redistribute links and zero velocity
     self.losAnchors       = {}
     self.VerletState = VerletAdapter.Init{positions=self.positions, prev=self.prev, invMass=self.invMass}
     return self
@@ -42,6 +43,7 @@ function M:StartExtension(forward, maxLength, linkMaxDistance)
     self.isExtending, self.isRetracting = true, false
     self.extensionTime, self.chainLen   = 0, 0
     self._lockedChainLen, self._raycastSnapped, self._flopping = 0, false, false
+    self._justEnteredFlopFromExt = false
     self.endPointLocked = false
     self.lockedEndPoint = {0,0,0}
     self.hookedTag      = ""
@@ -65,6 +67,7 @@ function M:StartRetraction()
     if (self.chainLen or 0) <= 0 then return end
     self.isRetracting, self.isExtending = true, false
     self._raycastSnapped, self._flopping = false, false
+    self._justEnteredFlopFromExt = false
     self.hookedTag       = ""
     self.losAnchors      = {}
     self._lockedChainLen = self.chainLen
@@ -88,6 +91,7 @@ function M:ContinueExtension(forward, maxLength, linkMaxDistance)
     self.endPointLocked  = false
     self._raycastSnapped = false
     self._flopping       = false
+    self._justEnteredFlopFromExt = false
     self.hookedTag       = ""
     self.losAnchors      = {}
     self._lockedChainLen = 0
@@ -373,6 +377,7 @@ function M:Update(dt, settings)
         self.chainLen = desired
         if maxLenSetting>0 and desired>=maxLenSetting and not self._raycastSnapped and not self.endPointLocked then
             self.isExtending=false; self._flopping=true
+            self._justEnteredFlopFromExt = true
         end
     end
     if self.isRetracting then
@@ -531,6 +536,9 @@ function M:Update(dt, settings)
             totalLen=totalLen, segmentLen=segmentLen, ClampSegment=linkMax,
             GroundClamp=settings.GroundClamp, groundY=self._groundY,
             pinnedLast=true, endPos={ex,ey,ez}, startPos={sx,sy,sz},
+            FixedDt=settings.FixedDt or self.params.FixedDt,
+            SubSteps=settings.SubSteps or self.params.SubSteps,
+            MaxSubSteps=settings.MaxSubSteps or self.params.MaxSubSteps,
         })
 
         -- FIX: Post-physics XZ path projection only when chain is taut.
@@ -581,11 +589,26 @@ function M:Update(dt, settings)
         totalLen = (self.chainLen and self.chainLen>1e-8) and self.chainLen or math.max(curEndDist,1e-6)
         if maxLenSetting>0 then totalLen=math.min(totalLen,maxLenSetting) end
     end
-    local restLen = (maxLenSetting>0) and maxLenSetting or math.max(curEndDist,1e-6)
+    -- restLen uses chainLen during flop so segmentLen matches actual chain length.
+    -- Using maxLenSetting here inflated segmentLen for short chains (e.g. double-tap at 2m
+    -- would get segmentLen=10/81=0.125 instead of 2/81=0.025), causing constraint expansion.
+    local restLen = self._flopping
+        and math.max((self.chainLen or 0), 1e-6)
+        or ((maxLenSetting>0) and maxLenSetting or math.max(curEndDist,1e-6))
     local segmentLen = (aN>1) and ((self._flopping and restLen or totalLen)/(aN-1)) or 0
     if (not isElastic) and linkMax and linkMax>0 and segmentLen>linkMax then segmentLen=linkMax end
 
-    -- 5) Per-link kinematic state
+    -- First-frame flop-from-extension: redistribute links uniformly and zero Verlet velocity.
+    -- Only fires for extension/tap→flop; wall-tension flop deliberately skips this so its
+    -- built-up Verlet velocity (from the player pulling away) produces the launch effect.
+    if self._flopping and self._justEnteredFlopFromExt then
+        self._justEnteredFlopFromExt = false
+        for i = 1, aN do
+            local t = (aN > 1) and ((i-1)/(aN-1)) or 0
+            self.positions[i] = {sx + (ex-sx)*t, sy + (ey-sy)*t, sz + (ez-sz)*t}
+            self.prev[i]      = {self.positions[i][1], self.positions[i][2], self.positions[i][3]}
+        end
+    end
     for i = 1,self.n do
         if i > aN then
             self.positions[i]={sx,sy,sz}; self.prev[i]={sx,sy,sz}; self.invMass[i]=0
@@ -610,14 +633,17 @@ function M:Update(dt, settings)
         VerletDamping=settings.VerletDamping or self.params.VerletDamping,
         ConstraintIterations=settings.ConstraintIterations or self.params.ConstraintIterations,
         IsElastic=isElastic, LinkMaxDistance=linkMax,
-        totalLen=totalLen, segmentLen=segmentLen, ClampSegment=linkMax,
+        totalLen=totalLen, segmentLen=segmentLen, ClampSegment=(not self._flopping) and linkMax or nil,
         endPointLocked=self.endPointLocked or self._raycastSnapped,
         GroundClamp=settings.GroundClamp, GroundClampOffset=settings.GroundClampOffset,
         groundY=self._groundY,
         pinnedLast=(not self._flopping) and (self.endPointLocked or self._raycastSnapped or
             ((not self.isExtending) and ((self.chainLen or 0)+1e-9>=(aN-1)*segmentLen) and
              (settings.PinEndWhenExtended or self.params.PinEndWhenExtended))),
-        endPos={ex,ey,ez}, startPos={sx,sy,sz}
+        endPos={ex,ey,ez}, startPos={sx,sy,sz},
+        FixedDt=settings.FixedDt or self.params.FixedDt,
+        SubSteps=settings.SubSteps or self.params.SubSteps,
+        MaxSubSteps=settings.MaxSubSteps or self.params.MaxSubSteps,
     }
     VerletAdapter.Step(self.VerletState, dt, vparams)
     if settings.WallClamp then
