@@ -2855,6 +2855,25 @@ void RegisterInspectorCustomRenderers()
         [](const char*, void*, Entity, ECSManager&)
         { return true; });
 
+    // Depth offset (z-fighting fix) — show factor/units only when enabled.
+    ReflectionRenderer::RegisterFieldRenderer("ModelRenderComponent", "depthOffset",
+        [](const char*, void*, Entity entity, ECSManager& ecs) -> bool {
+            auto& comp = ecs.GetComponent<ModelRenderComponent>(entity);
+            if (ImGui::Checkbox("Depth Offset (Z-Fight Fix)", &comp.depthOffset)) {}
+            if (comp.depthOffset) {
+                ImGui::Indent();
+                ImGui::DragFloat("Factor", &comp.depthOffsetFactor, 0.1f, -10.0f, 10.0f);
+                ImGui::DragFloat("Units",  &comp.depthOffsetUnits,  0.1f, -10.0f, 10.0f);
+                ImGui::Unindent();
+            }
+            return true;
+        });
+    // Hide raw factor/units fields — rendered inside the depthOffset renderer above.
+    ReflectionRenderer::RegisterFieldRenderer("ModelRenderComponent", "depthOffsetFactor",
+        [](const char*, void*, Entity, ECSManager&) { return true; });
+    ReflectionRenderer::RegisterFieldRenderer("ModelRenderComponent", "depthOffsetUnits",
+        [](const char*, void*, Entity, ECSManager&) { return true; });
+
     // Hide position, scale, rotation from SpriteRenderComponent (controlled by Transform)
     ReflectionRenderer::RegisterFieldRenderer("SpriteRenderComponent", "position",
                                               [](const char *, void *, Entity, ECSManager &)
