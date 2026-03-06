@@ -198,6 +198,20 @@ return Component {
                 pcall(self.SetRotation, self, targetW, targetX, targetY, targetZ)
             end)
 
+            self._chainFiredRotSub = event_bus.subscribe("force_player_rotation_to_direction", function(payload)
+                if not payload then return end
+                local dx, dz = payload.x, payload.z
+                if not dx or not dz then return end
+                local len = math.sqrt(dx * dx + dz * dz)
+                if len < 0.001 then return end
+                dx, dz = dx / len, dz / len
+                local targetW, targetX, targetY, targetZ = directionToQuaternion(dx, dz)
+                self._currentRotW, self._currentRotX, self._currentRotY, self._currentRotZ = targetW, targetX, targetY, targetZ
+                self._facingX = dx
+                self._facingZ = dz
+                pcall(self.SetRotation, self, targetW, targetX, targetY, targetZ)
+            end)
+
             print("[PlayerMovement] Subscribing to activatedCheckpoint")
             self._activatedCheckpointSub = event_bus.subscribe("activatedCheckpoint", function(entityId)
                 if entityId then self._activatedCheckpoint = entityId end

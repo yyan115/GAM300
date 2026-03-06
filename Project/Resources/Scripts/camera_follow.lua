@@ -19,6 +19,7 @@ local Cinematic = require("Camera.camera_cinematic_mode")
 local ChainAim  = require("Camera.camera_chain_aim")
 local Collision  = require("Camera.camera_collision")
 local SlamTilt   = require("Camera.camera_slam_tilt")
+local LockOn     = require("Camera.camera_lockon")
 
 local clamp = utils.clamp
 
@@ -84,6 +85,14 @@ return Component {
         ShakeDuration      = 0.4,
         ShakeFrequency     = 25.0,
 
+        -- === Lock-On ===
+        lockOnBreakDistance   = 15.0,
+        lockOnRotSpeed        = 20.0,
+        lockOnSnapFraction    = 0.85,
+        lockOnMouseThreshold  = 2.0,
+        lockOnLOSHeight       = 1.0,
+        lockOnLOSGrace        = 0.5,
+
         -- === Rotation ===
         lockCameraRotation = false,
 
@@ -148,6 +157,9 @@ return Component {
         -- Slam tilt
         SlamTilt.init(self)
 
+        -- Lock-on
+        LockOn.init(self)
+
         -- Configure C++ entity cache intervals
         if Engine and Engine.SetCacheUpdateInterval then
             -- Deduplicate: register both enemy-detection names and chain-aim-assist names
@@ -187,6 +199,7 @@ return Component {
                 self._chainAiming = payload.active or false
                 if self._chainAiming and not wasAiming then
                     self._chainAimInitialized = false
+                    self._preChainAimPitch = self._normalPitch
                     -- Tell the player to face the current camera look direction.
                     -- self._yaw accumulates without wrapping, so collapse through
                     -- sin/cos + atan2 to get a canonical angle in (-180, 180].
@@ -205,9 +218,11 @@ return Component {
                         self._yaw = self._chainAimYaw + 180.0
                     end
                     if self._chainAimPitch then
-                        self._pitch        = self._chainAimPitch
-                        self._normalPitch  = self._chainAimPitch
+                        self._pitch = self._chainAimPitch
                     end
+                    -- Restore the pre-chain-aim normal pitch so the camera
+                    -- doesn't drop to 0 after chain aim ends.
+                    self._normalPitch = self._preChainAimPitch or self._normalPitch
                 end
             end)
 
@@ -240,6 +255,7 @@ return Component {
     -- ─────────────────────────────────────────────────────────────────────────
     OnDisable = function(self)
         SlamTilt.cleanup(self)
+        LockOn.cleanup(self)
         if event_bus and event_bus.unsubscribe then
             for _, sub in ipairs({
                 "_posSub", "_chainAimSub",
@@ -322,7 +338,10 @@ return Component {
                 or (self._actionModeActive and self.actionModeLockRotation)
 
             if cursorOk and not shouldLock then
-                CamInput.updateMouseLook(self, dt)
+                local lockedOn = LockOn.update(self, dt)
+                if not lockedOn then
+                    CamInput.updateMouseLook(self, dt)
+                end
             end
         end
         -- Always called so the scroll buffer is drained every frame;
