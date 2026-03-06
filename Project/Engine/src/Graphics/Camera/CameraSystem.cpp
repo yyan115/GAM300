@@ -22,6 +22,7 @@ prior written consent of DigiPen Institute of Technology is prohibited.
 #include "Asset Manager/ResourceManager.hpp"
 #include "Graphics/PostProcessing/PostProcessingManager.hpp"
 #include "Graphics/PostProcessing/Blur/BlurEffect.hpp"
+#include "Graphics/GraphicsManager.hpp"
 
 bool CameraSystem::Initialise()
 {
@@ -182,6 +183,31 @@ void CameraSystem::Update()
 		ppManager.SetChromaticAberrationEnabled(camComp.chromaticAberrationEnabled);
 		ppManager.SetChromaticAberrationIntensity(camComp.chromaticAberrationIntensity);
 		ppManager.SetChromaticAberrationPadding(camComp.chromaticAberrationPadding);
+
+		// SSAO
+		SSAOEffect* ssao = ppManager.GetSSAOEffect();
+		if (ssao) {
+			ssao->SetEnabled(camComp.ssaoEnabled);
+			ssao->SetRadius(camComp.ssaoRadius);
+			ssao->SetIntensity(camComp.ssaoIntensity);
+		}
+
+		// Pass projection matrices for SSAO depth reconstruction
+		if (camComp.ssaoEnabled) {
+			auto& gfx = GraphicsManager::GetInstance();
+			Camera* cam = gfx.GetCurrentCamera();
+			if (cam) {
+				int vpW = 0, vpH = 0;
+				gfx.GetViewportSize(vpW, vpH);
+				if (vpW > 0 && vpH > 0) {
+					float aspect = static_cast<float>(vpW) / static_cast<float>(vpH);
+					glm::mat4 proj = glm::perspective(glm::radians(cam->Zoom), aspect, camComp.nearPlane, camComp.farPlane);
+					ppManager.SetProjectionMatrix(proj);
+					ppManager.SetInvProjectionMatrix(glm::inverse(proj));
+				}
+			}
+		}
+
 	}
 	else
 	{

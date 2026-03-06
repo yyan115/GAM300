@@ -293,6 +293,25 @@ void GraphicsManager::Render()
 	// Enable MRT so bloom-capable shaders can write to the bloom emission texture
 	PostProcessingManager::GetInstance().EnableBloomMRT();
 
+	// Bind skybox texture for environment reflections (high texture unit to avoid conflicts)
+	{
+		ECSManager& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
+		Entity activeCam = ecs.cameraSystem ? ecs.cameraSystem->GetActiveCameraEntity() : UINT32_MAX;
+		bool hasEnv = false;
+		float envIntensity = 1.0f;
+		if (activeCam != UINT32_MAX && ecs.HasComponent<CameraComponent>(activeCam)) {
+			auto& camComp = ecs.GetComponent<CameraComponent>(activeCam);
+			if (camComp.envReflectionEnabled && camComp.skyboxTexture) {
+				glActiveTexture(GL_TEXTURE12);
+				glBindTexture(GL_TEXTURE_2D, camComp.skyboxTexture->ID);
+				hasEnv = true;
+				envIntensity = camComp.envReflectionIntensity;
+			}
+		}
+		envReflectionActive = hasEnv;
+		envReflectionIntensityValue = envIntensity;
+	}
+
 	InstancingManager& instancing = InstancingManager::GetInstance();
 
 	if (instancing.IsEnabled())
@@ -1427,6 +1446,13 @@ void GraphicsManager::RenderModelOptimized(const ModelRenderComponent& item)
 		if (ecsManager.lightingSystem) {
 			ecsManager.lightingSystem->ApplyLighting(*shader);
 			ecsManager.lightingSystem->ApplyShadows(*shader);
+		}
+
+		// Environment reflections (skybox bound to texture unit 12)
+		shader->setBool("hasEnvMap", envReflectionActive);
+		if (envReflectionActive) {
+			shader->setInt("envMap", 12);
+			shader->setFloat("envReflectionIntensity", envReflectionIntensityValue);
 		}
 	}
 	else {

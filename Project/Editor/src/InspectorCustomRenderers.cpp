@@ -2639,6 +2639,103 @@ void RegisterInspectorCustomRenderers()
             ImGui::Unindent(10.0f);
         }
 
+        // ==================== SSAO ====================
+        if (ImGui::CollapsingHeader("SSAO##PP", ImGuiTreeNodeFlags_DefaultOpen)) {
+            ImGui::Indent(10.0f);
+
+            bool ssaoOn = camera.ssaoEnabled;
+            if (ImGui::Checkbox("Enable SSAO##PP", &ssaoOn)) {
+                bool oldVal = camera.ssaoEnabled;
+                camera.ssaoEnabled = ssaoOn;
+                if (UndoSystem::GetInstance().IsEnabled()) {
+                    bool newVal = ssaoOn;
+                    UndoSystem::GetInstance().RecordLambdaChange(
+                        [entity, newVal]() { auto& ecs = ECSRegistry::GetInstance().GetActiveECSManager(); if (ecs.HasComponent<CameraComponent>(entity)) ecs.GetComponent<CameraComponent>(entity).ssaoEnabled = newVal; },
+                        [entity, oldVal]() { auto& ecs = ECSRegistry::GetInstance().GetActiveECSManager(); if (ecs.HasComponent<CameraComponent>(entity)) ecs.GetComponent<CameraComponent>(entity).ssaoEnabled = oldVal; },
+                        "Toggle SSAO");
+                }
+            }
+
+            if (camera.ssaoEnabled) {
+                static std::unordered_map<Entity, float> startSSAORadius;
+                static std::unordered_map<Entity, float> startSSAOIntensity;
+
+                ImGui::Text("Radius");
+                ImGui::SameLine(labelWidth);
+                ImGui::SetNextItemWidth(-1);
+                if (!isEditingPP[entity]) startSSAORadius[entity] = camera.ssaoRadius;
+                if (ImGui::DragFloat("##SSAORadius", &camera.ssaoRadius, 0.01f, 0.05f, 5.0f)) { isEditingPP[entity] = true; }
+                if (isEditingPP[entity] && !ImGui::IsItemActive()) {
+                    float oldVal = startSSAORadius[entity]; float newVal = camera.ssaoRadius;
+                    if (oldVal != newVal && UndoSystem::GetInstance().IsEnabled()) {
+                        UndoSystem::GetInstance().RecordLambdaChange(
+                            [entity, newVal]() { auto& ecs = ECSRegistry::GetInstance().GetActiveECSManager(); if (ecs.HasComponent<CameraComponent>(entity)) ecs.GetComponent<CameraComponent>(entity).ssaoRadius = newVal; },
+                            [entity, oldVal]() { auto& ecs = ECSRegistry::GetInstance().GetActiveECSManager(); if (ecs.HasComponent<CameraComponent>(entity)) ecs.GetComponent<CameraComponent>(entity).ssaoRadius = oldVal; },
+                            "Change SSAO Radius");
+                    }
+                    isEditingPP[entity] = false;
+                }
+
+                ImGui::Text("Intensity");
+                ImGui::SameLine(labelWidth);
+                ImGui::SetNextItemWidth(-1);
+                if (!isEditingPP[entity]) startSSAOIntensity[entity] = camera.ssaoIntensity;
+                if (ImGui::DragFloat("##SSAOIntensity", &camera.ssaoIntensity, 0.01f, 0.0f, 5.0f)) { isEditingPP[entity] = true; }
+                if (isEditingPP[entity] && !ImGui::IsItemActive()) {
+                    float oldVal = startSSAOIntensity[entity]; float newVal = camera.ssaoIntensity;
+                    if (oldVal != newVal && UndoSystem::GetInstance().IsEnabled()) {
+                        UndoSystem::GetInstance().RecordLambdaChange(
+                            [entity, newVal]() { auto& ecs = ECSRegistry::GetInstance().GetActiveECSManager(); if (ecs.HasComponent<CameraComponent>(entity)) ecs.GetComponent<CameraComponent>(entity).ssaoIntensity = newVal; },
+                            [entity, oldVal]() { auto& ecs = ECSRegistry::GetInstance().GetActiveECSManager(); if (ecs.HasComponent<CameraComponent>(entity)) ecs.GetComponent<CameraComponent>(entity).ssaoIntensity = oldVal; },
+                            "Change SSAO Intensity");
+                    }
+                    isEditingPP[entity] = false;
+                }
+            }
+
+            ImGui::Unindent(10.0f);
+        }
+
+        // ==================== Environment Reflections ====================
+        if (ImGui::CollapsingHeader("Environment Reflections##PP", ImGuiTreeNodeFlags_DefaultOpen)) {
+            ImGui::Indent(10.0f);
+
+            bool envOn = camera.envReflectionEnabled;
+            if (ImGui::Checkbox("Enable Reflections##PP", &envOn)) {
+                bool oldVal = camera.envReflectionEnabled;
+                camera.envReflectionEnabled = envOn;
+                if (UndoSystem::GetInstance().IsEnabled()) {
+                    bool newVal = envOn;
+                    UndoSystem::GetInstance().RecordLambdaChange(
+                        [entity, newVal]() { auto& ecs = ECSRegistry::GetInstance().GetActiveECSManager(); if (ecs.HasComponent<CameraComponent>(entity)) ecs.GetComponent<CameraComponent>(entity).envReflectionEnabled = newVal; },
+                        [entity, oldVal]() { auto& ecs = ECSRegistry::GetInstance().GetActiveECSManager(); if (ecs.HasComponent<CameraComponent>(entity)) ecs.GetComponent<CameraComponent>(entity).envReflectionEnabled = oldVal; },
+                        "Toggle Env Reflections");
+                }
+            }
+
+            if (camera.envReflectionEnabled) {
+                static std::unordered_map<Entity, float> startEnvIntensity;
+
+                ImGui::Text("Intensity");
+                ImGui::SameLine(labelWidth);
+                ImGui::SetNextItemWidth(-1);
+                if (!isEditingPP[entity]) startEnvIntensity[entity] = camera.envReflectionIntensity;
+                if (ImGui::DragFloat("##EnvReflIntensity", &camera.envReflectionIntensity, 0.01f, 0.0f, 5.0f)) { isEditingPP[entity] = true; }
+                if (isEditingPP[entity] && !ImGui::IsItemActive()) {
+                    float oldVal = startEnvIntensity[entity]; float newVal = camera.envReflectionIntensity;
+                    if (oldVal != newVal && UndoSystem::GetInstance().IsEnabled()) {
+                        UndoSystem::GetInstance().RecordLambdaChange(
+                            [entity, newVal]() { auto& ecs = ECSRegistry::GetInstance().GetActiveECSManager(); if (ecs.HasComponent<CameraComponent>(entity)) ecs.GetComponent<CameraComponent>(entity).envReflectionIntensity = newVal; },
+                            [entity, oldVal]() { auto& ecs = ECSRegistry::GetInstance().GetActiveECSManager(); if (ecs.HasComponent<CameraComponent>(entity)) ecs.GetComponent<CameraComponent>(entity).envReflectionIntensity = oldVal; },
+                            "Change Env Reflection Intensity");
+                    }
+                    isEditingPP[entity] = false;
+                }
+            }
+
+            ImGui::Unindent(10.0f);
+        }
+
         return false;
     });
 
@@ -3025,7 +3122,9 @@ void RegisterInspectorCustomRenderers()
         "bloomEnabled", "bloomThreshold", "bloomIntensity", "bloomSpread",
         "vignetteEnabled", "vignetteIntensity", "vignetteSmoothness",
         "colorGradingEnabled", "cgBrightness", "cgContrast", "cgSaturation",
-        "chromaticAberrationEnabled", "chromaticAberrationIntensity", "chromaticAberrationPadding"
+        "chromaticAberrationEnabled", "chromaticAberrationIntensity", "chromaticAberrationPadding",
+        "ssaoEnabled", "ssaoRadius", "ssaoIntensity",
+        "envReflectionEnabled", "envReflectionIntensity"
     }) {
         ReflectionRenderer::RegisterFieldRenderer("CameraComponent", field,
             [](const char*, void*, Entity, ECSManager&) { return true; });
