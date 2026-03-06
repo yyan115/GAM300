@@ -32,7 +32,6 @@ return Component {
 
     fields = {
         -- === Follow ===
-        followDistance   = 2.0,
         heightOffset     = 1.0,
         followLerp       = 10.0,
         mouseSensitivity = 0.15,
@@ -66,9 +65,9 @@ return Component {
         chainAimSideOffset      = 0.3,
 
         -- === Chain Aim Assist ===
-        chainAimAssistEnemyNames   = {"EnemyAI", "FlyingEnemyLogic"},
-        chainAimAssistAngle        = 20.0,
-        chainAimAssistStrength     = 3.0,
+        chainAimAssistComponents   = {"EnemyAI", "FlyingEnemyLogic"},
+        chainAimAssistAngle        = 30.0,
+        chainAimAssistStrength     = 15.0,
         chainAimAssistRange        = 25.0,
         chainAimAssistHeightOffset = 0.5,
 
@@ -93,7 +92,7 @@ return Component {
         enemyDetectionRange  = 8.0,
         enemyDisengageRange  = 10.0,
         enemyDisengageDelay  = 2.0,
-        enemyNames           = {"EnemyAI"},
+        enemyComponents      = {"EnemyAI"},
         cacheUpdateInterval  = 1.0,
         debugEnemyDetection  = false,
     },
@@ -151,7 +150,16 @@ return Component {
 
         -- Configure C++ entity cache intervals
         if Engine and Engine.SetCacheUpdateInterval then
-            for _, scriptName in ipairs(self.enemyNames) do
+            -- Deduplicate: register both enemy-detection names and chain-aim-assist names
+            local registered = {}
+            local allNames = {}
+            for _, n in ipairs(self.enemyComponents or {}) do
+                if not registered[n] then registered[n] = true; allNames[#allNames+1] = n end
+            end
+            for _, n in ipairs(self.chainAimAssistComponents or {}) do
+                if not registered[n] then registered[n] = true; allNames[#allNames+1] = n end
+            end
+            for _, scriptName in ipairs(allNames) do
                 print("[CameraFollow] Setting cache interval for: " .. tostring(scriptName))
                 Engine.SetCacheUpdateInterval(scriptName, self.cacheUpdateInterval)
             end
@@ -404,12 +412,14 @@ return Component {
             desiredX, desiredY, desiredZ, dt
         )
 
-        -- ── Blend orbit + chain aim positions ───────────────────────────────
+        -- ── Override position with chain aim when active ────────────────────
+        -- Skip the orbit→chain lerp and let followLerp smooth the travel,
+        -- so the camera moves directly from its current spot to the aim position.
         local blend = self._chainAimBlend
-        if chainActive and blend > 0.0 and chainX then
-            desiredX = desiredX + (chainX - desiredX) * blend
-            desiredY = desiredY + (chainY - desiredY) * blend
-            desiredZ = desiredZ + (chainZ - desiredZ) * blend
+        if chainActive and chainX then
+            desiredX = chainX
+            desiredY = chainY
+            desiredZ = chainZ
         end
 
         -- ── Smooth position follow ───────────────────────────────────────────

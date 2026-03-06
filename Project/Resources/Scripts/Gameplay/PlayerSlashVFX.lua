@@ -33,11 +33,12 @@ return Component {
     mixins = { TransformMixin },
     
     fields = {
-        StartRot = 60,     --Adjust StartEndRot for Left-Right Orientation
-        EndRot = -200,    
+        StartRot = 60,     --Adjust Start Rotation
+        EndRot = -200,     --Adjust End Rotation
         RollOffset = 0,    --Adjust RollOffset for Top - Down Orientation 
         OffsetHeight = 0, --Adjust OffsetHeight for dagger starting height
-        OffsetDistance = -0.2, --Adjust where VFX spawn based on player position
+        OffsetDistance = -0.2, --Adjust how far VFX spawn based on player position
+        SideOffset = 0,        --Adjust VFX Spawn (+ve for Right, -ve for Left)
         Speed = 750,
         SpawnTime = 0.14,  -- Threshold for triggering (Normalized Time)
         AttackState = "NA3",
@@ -117,7 +118,7 @@ return Component {
         end
     end,
 
-    TriggerSlash = function(self, startRot, endRot, speed)
+TriggerSlash = function(self, startRot, endRot, speed)
         self._currentStartRot = startRot or self.StartRot
         local targetEndRot = endRot or self.EndRot
         self._currentSpeed = speed or self.Speed
@@ -136,11 +137,16 @@ return Component {
                                        1.0 - 2.0 * (playerRot.y * playerRot.y + playerRot.z * playerRot.z))        
         self._playerYawQuat = eulerToQuat(0, math.deg(playerYawRad), 0)
         
-        -- Position logic relative to the weapon bone/dagger
         local daggerPos = self._daggerTransform.worldPosition
-        self._transform.localPosition.x = daggerPos.x + (math.sin(playerYawRad) * self.OffsetDistance)           
+        local forward = self.OffsetDistance
+        local side = self.SideOffset or 0
+
+        local combinedOffsetX = (math.sin(playerYawRad) * forward) - (math.cos(playerYawRad) * side)
+        local combinedOffsetZ = (math.cos(playerYawRad) * forward) + (math.sin(playerYawRad) * side)
+
+        self._transform.localPosition.x = daggerPos.x + combinedOffsetX
         self._transform.localPosition.y = daggerPos.y + self.OffsetHeight
-        self._transform.localPosition.z = daggerPos.z + (math.cos(playerYawRad) * self.OffsetDistance)
+        self._transform.localPosition.z = daggerPos.z + combinedOffsetZ
         
         -- Start sweep state
         self.active = true
