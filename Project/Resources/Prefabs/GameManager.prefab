@@ -1,9 +1,18 @@
 {
     "prefab_entities": [
         {
-            "id": 380,
-            "guid": "00273e378cd42466-000414f780006783",
+            "id": 0,
+            "guid": "00345ceb5da3ebf1-000460df20026f87",
             "components": {
+                "PrefabLinkComponent": {
+                    "type": "PrefabLinkComponent",
+                    "data": [
+                        {
+                            "type": "std::string",
+                            "data": "../../Resources/Prefabs/GameManager.prefab"
+                        }
+                    ]
+                },
                 "NameComponent": {
                     "name": "GameManager"
                 },
@@ -93,7 +102,108 @@
                             "enabled": true,
                             "preserveKeys": [],
                             "entryFunction": "OnInit",
-                            "autoInvokeEntry": true
+                            "autoInvokeEntry": true,
+                            "instanceState": {
+                                "INPUT_BUFFER_FRAMES": 8.0,
+                                "GetMovementAxis": null,
+                                "_cleanHistory": null,
+                                "_inputHistory": {
+                                    "chain": {},
+                                    "attack": {},
+                                    "dash": {}
+                                },
+                                "_frameCount": 0.0,
+                                "__created_at": 1772418320.0,
+                                "IsDashJustPressed": null,
+                                "_cinematicSub": {
+                                    "id": 14.0,
+                                    "event": "cinematic.active"
+                                },
+                                "_call_lifecycle": null,
+                                "_bufferedInputs": {
+                                    "chain": 0.0,
+                                    "attack": 0.0,
+                                    "dash": 0.0
+                                },
+                                "_holdTimers": {
+                                    "chain": 0.0,
+                                    "attack": 0.0,
+                                    "dash": 0.0
+                                },
+                                "_currentFrame": {
+                                    "chain": false,
+                                    "attackJustReleased": false,
+                                    "dash": false,
+                                    "movement": {
+                                        "y": 0.0,
+                                        "x": 0.0
+                                    },
+                                    "attack": false,
+                                    "dashJustReleased": false,
+                                    "chainJustPressed": false,
+                                    "isMoving": false,
+                                    "dashJustPressed": false,
+                                    "chainJustReleased": false,
+                                    "attackJustPressed": false
+                                },
+                                "ConsumeBufferedAttack": null,
+                                "AwakeSafe": null,
+                                "IsAttackPressed": null,
+                                "HasBufferedDash": null,
+                                "Awake": null,
+                                "HasBufferedChain": null,
+                                "_uiButtonPressedSub": {
+                                    "id": 15.0,
+                                    "event": "uiButtonPressed"
+                                },
+                                "IsChainJustPressed": null,
+                                "UpdateSafe": null,
+                                "IsChainJustReleased": null,
+                                "_playerDeadSub": {
+                                    "id": 16.0,
+                                    "event": "playerDead"
+                                },
+                                "IsAttackJustReleased": null,
+                                "ConsumeBufferedDash": null,
+                                "IsChainHeld": null,
+                                "_frozenByCinematic": false,
+                                "Subscribe": null,
+                                "IsDashHeld": null,
+                                "HasBufferedAttack": null,
+                                "_uiButtonPressed": false,
+                                "HOLD_THRESHOLD": 0.2,
+                                "IsMoving": null,
+                                "__meta": {},
+                                "GetChainHoldTime": null,
+                                "GetAttackHoldTime": null,
+                                "_subscriptions": {},
+                                "SerializeFields": null,
+                                "After": null,
+                                "StartSafe": null,
+                                "ConsumeBufferedChain": null,
+                                "Every": null,
+                                "__field_list": {
+                                    "INPUT_BUFFER_FRAMES": 8.0,
+                                    "HOLD_THRESHOLD": 0.2
+                                },
+                                "_private": {},
+                                "IsDashJustReleased": null,
+                                "Unsubscribe": null,
+                                "WasInputSequence": null,
+                                "Destroy": null,
+                                "IsAttackJustPressed": null,
+                                "DisableSafe": null,
+                                "IsDashPressed": null,
+                                "Update": null,
+                                "IsChainPressed": null,
+                                "DeserializeFields": null,
+                                "_respawnPlayerSub": {
+                                    "id": 17.0,
+                                    "event": "respawnPlayer"
+                                },
+                                "GetDashHoldTime": null,
+                                "IsAttackHeld": null
+                            }
                         },
                         {
                             "scriptGuidStr": "002e3c80b8302dff-0004102b4200000b",
@@ -101,7 +211,153 @@
                             "enabled": true,
                             "preserveKeys": [],
                             "entryFunction": "OnInit",
-                            "autoInvokeEntry": true
+                            "autoInvokeEntry": true,
+                            "instanceState": {
+                                "_stateTimer": 0.0,
+                                "Unsubscribe": null,
+                                "_comboChain": {},
+                                "playerChainSFX": {},
+                                "GetCurrentState": null,
+                                "__meta": {},
+                                "_call_lifecycle": null,
+                                "AwakeSafe": null,
+                                "Subscribe": null,
+                                "StartSafe": null,
+                                "UpdateSafe": null,
+                                "_playRandomSFX": null,
+                                "HeavyChargeTime": 0.8,
+                                "GetCurrentComboChain": null,
+                                "IsAttacking": null,
+                                "Update": null,
+                                "_subscriptions": {},
+                                "SerializeFields": null,
+                                "After": null,
+                                "_currentStateId": "idle",
+                                "Every": null,
+                                "__field_list": {
+                                    "DefaultComboWindow": 0.5,
+                                    "playerChainSFX": {},
+                                    "playerSlashSFX": {},
+                                    "DashDuration": 0.3,
+                                    "HeavyChargeTime": 0.8
+                                },
+                                "Start": null,
+                                "DefaultComboWindow": 0.5,
+                                "_private": {},
+                                "CanMove": null,
+                                "_transitionTo": null,
+                                "Destroy": null,
+                                "_currentStateData": {
+                                    "id": "idle",
+                                    "transitions": {
+                                        "chain": "chain_attack",
+                                        "attack_hold": "heavy_charge",
+                                        "attack": "light_1",
+                                        "dash": "dash"
+                                    },
+                                    "canMove": true,
+                                    "animParam": 0.0,
+                                    "damage": 0.0,
+                                    "duration": 0.0
+                                },
+                                "DisableSafe": null,
+                                "__created_at": 1772418320.0,
+                                "COMBO_TREE": {
+                                    "chain_attack": {
+                                        "knockback": 1.0,
+                                        "comboWindow": 0.5,
+                                        "id": "chain_attack",
+                                        "transitions": {
+                                            "attack": "light_1"
+                                        },
+                                        "canMove": false,
+                                        "animParam": 20.0,
+                                        "damage": 25.0,
+                                        "duration": 0.5
+                                    },
+                                    "dash": {
+                                        "transitions": {},
+                                        "id": "dash",
+                                        "onEnter": null,
+                                        "canMove": false,
+                                        "animParam": 30.0,
+                                        "damage": 0.0,
+                                        "duration": 0.3
+                                    },
+                                    "light_2": {
+                                        "knockback": 20.0,
+                                        "comboWindow": 0.2,
+                                        "id": "light_2",
+                                        "transitions": {
+                                            "attack": "light_3",
+                                            "chain": "chain_attack"
+                                        },
+                                        "canMove": false,
+                                        "animParam": 2.0,
+                                        "damage": 12.0,
+                                        "duration": 1.0
+                                    },
+                                    "light_1": {
+                                        "knockback": 20.0,
+                                        "comboWindow": 0.2,
+                                        "id": "light_1",
+                                        "transitions": {
+                                            "attack": "light_2",
+                                            "chain": "chain_attack"
+                                        },
+                                        "canMove": false,
+                                        "animParam": 1.0,
+                                        "damage": 10.0,
+                                        "duration": 1.0
+                                    },
+                                    "light_3": {
+                                        "knockback": 200.0,
+                                        "id": "light_3",
+                                        "transitions": {},
+                                        "canMove": false,
+                                        "animParam": 3.0,
+                                        "damage": 20.0,
+                                        "duration": 0.8
+                                    },
+                                    "idle": {
+                                        "id": "idle",
+                                        "transitions": {
+                                            "chain": "chain_attack",
+                                            "attack_hold": "heavy_charge",
+                                            "attack": "light_1",
+                                            "dash": "dash"
+                                        },
+                                        "canMove": true,
+                                        "animParam": 0.0,
+                                        "damage": 0.0,
+                                        "duration": 0.0
+                                    },
+                                    "heavy_charge": {
+                                        "transitions": {},
+                                        "id": "heavy_charge",
+                                        "onUpdate": null,
+                                        "canMove": false,
+                                        "animParam": 10.0,
+                                        "damage": 0.0,
+                                        "duration": 999.0
+                                    },
+                                    "heavy_release": {
+                                        "onEnter": null,
+                                        "damage": 30.0,
+                                        "knockback": 20.0,
+                                        "id": "heavy_release",
+                                        "canMove": false,
+                                        "animParam": 11.0,
+                                        "transitions": {},
+                                        "duration": 0.8
+                                    }
+                                },
+                                "Awake": null,
+                                "DeserializeFields": null,
+                                "playerSlashSFX": {},
+                                "DashDuration": 0.3,
+                                "SPECIAL_INPUTS": {}
+                            }
                         }
                     ]
                 }

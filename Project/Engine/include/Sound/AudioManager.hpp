@@ -3,6 +3,8 @@
 #include <atomic>
 #include <vector>
 #include <shared_mutex>
+#include <thread>
+#include <chrono>
 #include "Math/Vector3D.hpp"
 #include "Engine.h"
 
@@ -66,7 +68,7 @@ public:
     bool Initialise();
     void Shutdown();
 
-    // Per-frame update - call from main loop
+    // Per-frame update - now lightweight (FMOD processing moved to dedicated audio thread)
     void Update();
 
     // Play/Stop/Pause API
@@ -170,4 +172,9 @@ private:
     void CleanupStoppedChannels();
     bool IsChannelValid(ChannelHandle channel);
     void UpdateChannelState(ChannelHandle channel);
+
+    // Dedicated audio thread for FMOD processing
+    void AudioThreadLoop();
+    std::thread m_audioThread;
+    std::atomic<bool> m_threadRunning{false};
 };

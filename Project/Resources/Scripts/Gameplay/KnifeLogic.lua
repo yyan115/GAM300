@@ -65,21 +65,33 @@ return Component {
 
         -- Resets knife after travelling this distance (0 disables). Helps "individual" recycle.
         MaxRange   = 10.0,
+
+        -- Variant tuning
+        BossScale       = 2.0,
+        BossDamageMult  = 2.0,
+        BossHitRadiusMult = 1.25,
     },
 
     Start = function(self)
         self.model    = self:GetComponent("ModelRenderComponent")
         self.collider = self:GetComponent("ColliderComponent")
         self.rb       = self:GetComponent("RigidBodyComponent")
+        self.light    = self:GetComponent("PointLightComponent")
+        self._audio   = self:GetComponent("AudioComponent")
 
         self.active = false
         self.reserved = false
         self.age = 0
         self.dirX, self.dirY, self.dirZ = 0,0,0
 
+        self._baseDamage = self.Damage
+        self._baseHitRadius = self.HitRadius
+
         -- per-launch lifetime + travel tracking
         self._life = self.Lifetime
         self._sx, self._sy, self._sz = 0,0,0
+
+        self._baseScaleX, self._baseScaleY, self._baseScaleZ = 2, 2, 2
 
         self._playerPos = nil
         self._playerPosSub = nil
@@ -94,6 +106,10 @@ return Component {
 
         if self.model then
             ModelRenderComponent.SetVisible(self.model, false)
+        end
+
+        if self.light then
+            self.light.enabled = false
         end
 
         if self.collider then
@@ -166,11 +182,13 @@ return Component {
         self._armedTimer = (self._armedTimer or 0) + dt
         if self._armedTimer >= self.ArmDelay then
             if self:_CheckHitPlayer() then
-                print("[KnifeLogic] Hit player")
+                --print("[KnifeLogic] Hit player")
                 if event_bus and event_bus.publish then
                     event_bus.publish("isKnifeHitPlayer", true)
                     event_bus.publish("knifeHitPlayerDmg", self.Damage)
                 end
+                self:Reset("HIT")
+                return
             end
         end
 
@@ -185,7 +203,7 @@ return Component {
         -- end
     end,
 
-    Launch = function(self, spawnX, spawnY, spawnZ, targetX, targetY, targetZ, token, slot)
+    Launch = function(self, spawnX, spawnY, spawnZ, targetX, targetY, targetZ, token, slot, sfxGuid, variant)
         -- already flying -> can't relaunch
         if self.active then
             -- debug
@@ -237,19 +255,59 @@ return Component {
         self.dirZ = dz / dist
 
         local yaw = math.deg(atan2(self.dirX, self.dirZ))
-        local q = eulerToQuat(0, yaw, 0)
+        local q = eulerToQuat(90, yaw, 0)
         self:SetRotation(q.w, q.x, q.y, q.z)
 
         self.active = true
         self.age = 0
         self._armedTimer = 0
 
+        -- Default (normal knives)
+        self.Damage = self.Damage or 1
+        self.HitRadius = self.HitRadius or 0.5
+
+        -- Restore base scale first so pooled knives don't keep boss scaling
+        if self.SetScale then
+            self:SetScale(self._baseScaleX or 2, self._baseScaleY or 2, self._baseScaleZ or 2)
+        end
+
+        -- Apply variant overrides
+        if variant == "BOSS" then
+            -- Scale
+            if self.SetScale then
+                local mul = self.BossScale or 2
+                self:SetScale((self._baseScaleX or 2) * mul,
+                            (self._baseScaleY or 2) * mul,
+                            (self._baseScaleZ or 2) * mul)
+            end
+
+            -- Damage
+            local baseDmg = self.Damage or 1
+            local mult = self.BossDamageMult or 2.0
+            self.Damage = math.floor(baseDmg * mult + 0.5)
+
+            -- Increase hit radius too
+            local r = self.HitRadius or 0.5
+            local rm = self.BossHitRadiusMult or 1.25
+            self.HitRadius = r * rm
+        end
+
         if self.model then
             ModelRenderComponent.SetVisible(self.model, true)
             local v = self.model.isVisible
             --print(string.format("[Knife] VIS slot=%s tok=%s isVisible=%s", tostring(slot), tostring(token), tostring(v)))
         end
+        
+        if self.light then
+            self.light.enabled = true
+        end
+
         if self.collider then self.collider.enabled = false end
+
+        -- Play ranged attack SFX from knife position (3D audio)
+        if sfxGuid and self._audio then
+            self._audio:PlayOneShot(sfxGuid)
+        end
 
         return true
     end,
@@ -262,6 +320,15 @@ return Component {
         self.reserved = false
         self._reservedToken = nil
 
+        -- restore base scale
+        if self.SetScale then
+            self:SetScale(self._baseScaleX or 2, self._baseScaleY or 2, self._baseScaleZ or 2)
+        end
+
+        -- restore baseline tuning
+        self.Damage = self._baseDamage or self.Damage or 1
+        self.HitRadius = self._baseHitRadius or self.HitRadius or 0.5
+
         self.age = 0
         self.dirX, self.dirY, self.dirZ = 0,0,0
         self._armedTimer = 0
@@ -269,6 +336,11 @@ return Component {
         if self.model then
             ModelRenderComponent.SetVisible(self.model, false)
         end
+
+        if self.light then
+            self.light.enabled = false
+        end
+
         if self.collider then self.collider.enabled = false end
     end,
 

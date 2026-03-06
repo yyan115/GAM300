@@ -1,4 +1,6 @@
 require("extension.engine_bootstrap")
+_G.CHAIN_DEBUG = _G.CHAIN_DEBUG ~= nil and _G.CHAIN_DEBUG or false
+local function dbg(...) if _G.CHAIN_DEBUG then print(...) end end
 local Component = require("extension.mono_helper")
 local TransformMixin = require("extension.transform_mixin")
 
@@ -9,6 +11,12 @@ local Input = _G.Input
 local IDLE = 0
 local RUN  = 1
 local JUMP = 2
+
+-- Chain Tension Response
+local chainSpeedMult = 1.0
+local tensionRadialX = 0
+local tensionRadialZ = 0
+local tensionScale   = 7.0
 
 -- Helper: convert 2D movement vector to Y-axis quaternion
 local function directionToQuaternion(dx, dz)
@@ -30,9 +38,17 @@ end
 -- Helper: play random SFX from array
 local function playRandomSFX(audio, clips)
     local count = clips and #clips or 0
-    if count > 0 and audio then
-        audio:PlayOneShot(clips[math.random(1, count)])
+    if count == 0 or not audio then return end
+    if count == 1 then
+        audio:PlayOneShot(clips[1])
+        return
     end
+    local idx
+    repeat
+        idx = math.random(1, count)
+    until idx ~= clips._lastIdx
+    clips._lastIdx = idx
+    audio:PlayOneShot(clips[idx])
 end
 
 -- Helper: lerp quaternion for smooth rotation
@@ -56,12 +72,21 @@ return Component {
         JumpHeight = 1.2,
         DamageStunDuration = 1.0,
         LandingDuration = 0.5,
-        footstepInterval = 0.35,  -- Time between footstep sounds while running
+        footstepInterval = 0.35,
+        DashSpeed = 5.0,
+        DashDuration = 1.0,
+        DashCooldown = 1.5,
+        CinematicSettleTime = 0.8,
+        AirDashSpeedMultiplier = 1.5,
+        AirDashLift = 2.0,
+        AttackLungeSpeed = 3.0,
+        AttackLungeDuration = 0.12,
         playerFootstepSFX = {},
         playerHurtSFX = {},
         playerJumpSFX = {},
         playerLandSFX = {},
         playerDeadSFX = {},
+        playerDashSFX = {},
     },
 
     Awake = function(self)
@@ -74,51 +99,162 @@ return Component {
         self._cameraYaw = 180.0
         self._cameraYawSub = nil
 
+        -- Chain movement constraint state
+        self._chainConstraintRatio = 0   -- 0=free, 1=at hard limit
+        self._chainConstraintExceeded = false
+        self._chainDrag = false          -- true when being dragged by a DragTag entity
+        self._chainDragTargetX = 0
+        self._chainDragTargetY = 0
+        self._chainDragTargetZ = 0
+
         if event_bus and event_bus.subscribe then
-            print("[PlayerMovement] Subscribing to camera_yaw")
+            dbg("[PlayerMovement] Subscribing to camera_yaw")
             self._cameraYawSub = event_bus.subscribe("camera_yaw", function(yaw)
-                if yaw then
-                    self._cameraYaw = yaw
-                end
+                if yaw then self._cameraYaw = yaw end
             end)
 
-            print("[PlayerMovement] Subscribing to playerDead")
+            dbg("[PlayerMovement] Subscribing to playerDead")
             self._playerDeadSub = event_bus.subscribe("playerDead", function(playerDead)
                 if playerDead then
-                    print("[PlayerMovement] Received playerDead")
+                    dbg("[PlayerMovement] Received playerDead")
                     self._playerDeadPending = playerDead
-                    -- Play death SFX
                     playRandomSFX(self._audio, self.playerDeadSFX)
                 end
             end)
 
-            print("[PlayerMovement] Subscribing to playerHurtTriggered")
+            dbg("[PlayerMovement] Subscribing to playerHurtTriggered")
             self._playerHurtTriggeredSub = event_bus.subscribe("playerHurtTriggered", function(hit)
                 if hit then
-                    print("[PlayerMovement] playerHurtTriggered received")
                     self._isDamageStun = true
                     if self._animator then self._animator:SetBool("IsJumping", false) end
-                    -- Play hurt SFX
                     playRandomSFX(self._audio, self.playerHurtSFX)
                 end
             end)
 
-            print("[PlayerMovement] Subscribing to respawnPlayer")
+            dbg("[PlayerMovement] Subscribing to player_knockback")
+            self._kbPending = false
+            self._kbX, self._kbZ = 0, 0
+
+            self._knockSub = event_bus.subscribe("player_knockback", function(p)
+                if not p then return end
+                self._kbX = (p.x or 0) * (p.strength or 0)
+                self._kbZ = (p.z or 0) * (p.strength or 0)
+                self._kbPending = true
+            end)
+
+            dbg("[PlayerMovement] Subscribing to respawnPlayer")
             self._respawnPlayerSub = event_bus.subscribe("respawnPlayer", function(respawn)
-                if respawn then
-                    self._respawnPlayer = true
+                if respawn then self._respawnPlayer = true end
+            end)
+
+            self._lungeTimer = 0
+            self._lungeDirX  = 0
+            self._lungeDirZ  = 0
+            self._attackLungeSub = event_bus.subscribe("attack_performed", function(data)
+                -- Use camera forward direction for both lunge and player facing
+                local cameraYaw = _G.CAMERA_YAW or self._cameraYaw or 180.0
+                local yr   = math.rad(cameraYaw)
+                local fwdX = -math.sin(yr)
+                local fwdZ = -math.cos(yr)
+                local len  = math.sqrt(fwdX * fwdX + fwdZ * fwdZ)
+                if len > 0.001 then
+                    fwdX = fwdX / len
+                    fwdZ = fwdZ / len
                 end
+
+                self._lungeDirX = fwdX
+                self._lungeDirZ = fwdZ
+                self._lungeTimer = self.AttackLungeDuration or 0.12
+
+                -- Snap player rotation to face camera direction
+                local targetW, targetX, targetY, targetZ = directionToQuaternion(fwdX, fwdZ)
+                self._currentRotW = targetW
+                self._currentRotX = targetX
+                self._currentRotY = targetY
+                self._currentRotZ = targetZ
+                self._facingX = fwdX
+                self._facingZ = fwdZ
+                pcall(self.SetRotation, self, targetW, targetX, targetY, targetZ)
+            end)
+
+            -- Snap rotation to face camera exactly when a skill is cast
+            self._forceRotSub = event_bus.subscribe("force_player_rotation_to_camera", function()
+                local cameraYaw = _G.CAMERA_YAW or self._cameraYaw or 180.0
+                local yr = math.rad(cameraYaw)
+                local fwdX = -math.sin(yr)
+                local fwdZ = -math.cos(yr)
+                
+                local len = math.sqrt(fwdX * fwdX + fwdZ * fwdZ)
+                if len > 0.001 then
+                    fwdX = fwdX / len
+                    fwdZ = fwdZ / len
+                end
+
+                local targetW, targetX, targetY, targetZ = directionToQuaternion(fwdX, fwdZ)
+                self._currentRotW, self._currentRotX, self._currentRotY, self._currentRotZ = targetW, targetX, targetY, targetZ
+                self._facingX = fwdX
+                self._facingZ = fwdZ
+                
+                pcall(self.SetRotation, self, targetW, targetX, targetY, targetZ)
             end)
 
             print("[PlayerMovement] Subscribing to activatedCheckpoint")
             self._activatedCheckpointSub = event_bus.subscribe("activatedCheckpoint", function(entityId)
-                if entityId then
-                    self._activatedCheckpoint = entityId
+                if entityId then self._activatedCheckpoint = entityId end
+            end)
+
+            dbg("[PlayerMovement] Subscribing to freeze_player")
+            self._frozenBycinematic = false
+            self._freezePending = false
+            self._freezeSettleTimer = 0.0
+            self._freezePlayerSub = event_bus.subscribe("freeze_player", function(frozen)
+                if frozen then
+                    self._freezePending = true
+                    self._freezeSettleTimer = self.CinematicSettleTime or 0.8
+                else
+                    self._frozenBycinematic = false
+                    self._freezePending = false
+                end
+                dbg("[PlayerMovement] Frozen = " .. tostring(frozen))
+            end)
+
+            dbg("[PlayerMovement] Subscribing to request_player_forward")
+            self._requestPlayerForwardSub = event_bus.subscribe("request_player_forward", function(_)
+                if not self._facingX or not self._facingZ then return end
+                if event_bus and event_bus.publish then
+                    event_bus.publish("player_forward_response", {
+                        x = self._facingX,
+                        y = 0,
+                        z = self._facingZ
+                    })
                 end
             end)
-            print("[PlayerMovement] Subscription token: " .. tostring(self._activatedCheckpointSub))
+
+            -- Dash requested by ComboManager via event_bus
+            self._dashRequested = false
+            self._dashPerformedSub = event_bus.subscribe("dash_performed", function()
+                self._dashRequested = true
+                print("[PlayerMovement] Received dash_performed event")
+            end)
+
+            -- Chain movement constraint: reduce speed as player approaches slack limit,
+            -- exceeded means the chain just flopped so constraint is cleared.
+            self._chainConstraintSub = event_bus.subscribe("chain.movement_constraint", function(payload)
+                if not payload then return end
+                self._chainConstraintRatio    = payload.ratio or 0
+                self._chainConstraintExceeded = payload.exceeded or false
+                self._chainDrag               = payload.drag or false
+                self._chainEndX = payload.endX
+                self._chainEndY = payload.endY
+                self._chainEndZ = payload.endZ
+                if self._chainDrag then
+                    self._chainDragTargetX = payload.targetX or 0
+                    self._chainDragTargetY = payload.targetY or 0
+                    self._chainDragTargetZ = payload.targetZ or 0
+                end
+            end)
         else
-            print("[PlayerMovement] ERROR: event_bus not available!")
+            dbg("[PlayerMovement] ERROR: event_bus not available!")
         end
     end,
 
@@ -127,15 +263,16 @@ return Component {
         self._animator  = self:GetComponent("AnimationComponent")
         self._transform = self:GetComponent("Transform")
         self._audio     = self:GetComponent("AudioComponent")
+        self._rigidbody = self:GetComponent("RigidBodyComponent")
 
-        print("transform y here is ", self._transform.localPosition.y)
+        dbg("transform y here is ", self._transform.localPosition.y)
         self._controller = CharacterController.Create(self.entityId, self._collider, self._transform)
 
         if self._animator then
-            print("[PlayerMovement] Animator found, playing IDLE clip")
+            dbg("[PlayerMovement] Animator found, playing IDLE clip")
             self._animator:PlayClip(IDLE, true)
         else
-            print("[PlayerMovement] ERROR: Animator is nil!")
+            dbg("[PlayerMovement] ERROR: Animator is nil!")
         end
 
         self._isRunning = false
@@ -147,30 +284,28 @@ return Component {
 
         self._landingDuration = self.LandingDuration
 
-        -- SFX state
+        self._isDashing = false
+        self._dashTimer = 0
+        self._dashCooldownTimer = 0
+        self._dashDirX = 0
+        self._dashDirZ = 0
+        self._wasDashingInAir = false
+        _G.player_is_dashing = false
+
         self._footstepTimer = 0
         self._wasRunning = false
 
-        self._initialSpawnPoint = self._transform.worldPosition
+        local pos = self._transform.worldPosition
+        self._initialSpawnPoint = { x = pos.x, y = pos.y, z = pos.z }
     end,
 
     RespawnPlayer = function(self)
-        if not self._controller then
-            --print("[PlayerMovement] RespawnPlayer: self._controller is null")
-        end
-
-        if not self._transform then
-            --print("[PlayerMovement] RespawnPlayer: self._transform is null")
-        end
-        
-        if not self._activatedCheckpoint then
-            --print("[PlayerMovement] RespawnPlayer: self._activatedCheckpoint is null")
-        end
-
+        local respawnPos = self._initialSpawnPoint
         if self._activatedCheckpoint then
             local checkpointTransform = GetComponent(self._activatedCheckpoint, "Transform")
             local checkpointPos = checkpointTransform.worldPosition
             self:SetPosition(checkpointPos.x, checkpointPos.y, checkpointPos.z)
+            respawnPos = checkpointPos
         elseif self._initialSpawnPoint then
             self:SetPosition(self._initialSpawnPoint.x, self._initialSpawnPoint.y, self._initialSpawnPoint.z)
         end
@@ -179,20 +314,65 @@ return Component {
         self._respawnPlayer = false
         self._playerDead = false
         self._playerDeadPending = false
-        print("self._animator:SetBool(IsDead, false)")
         self._animator:SetBool("IsDead", false)
+        self._justRespawnedPlayer = true
+        -- Clear constraint on respawn
+        self._chainConstraintRatio = 0
+        self._chainConstraintExceeded = false
 
-        print(string.format("[PlayerMovement] Respawned player to %f %f %f", checkpointPos.x, checkpointPos.y, checkpointPos.z))
+        if event_bus and event_bus.publish then
+            event_bus.publish("playerRespawned", respawnPos)
+            dbg(string.format("[PlayerMovement] Respawned player to %f %f %f", respawnPos.x, respawnPos.y, respawnPos.z))
+        end
     end,
 
     Update = function(self, dt)
+        -- Sync internal states to globals so other scripts (like FeatherSkillManager) can read them
+        _G.player_is_jumping = self._isJumping or false
+        _G.player_is_rolling = self._isRolling or false
+        _G.player_is_landing = self._isLanding or false
+        _G.player_is_hurt    = self._isDamageStun or false
+        _G.player_is_dead    = self._playerDead or false
+        _G.player_is_frozen  = self._frozenBycinematic or self._freezePending or false
+
         if self._respawnPlayer then
-            self.RespawnPlayer(self)
+            self:RespawnPlayer()
             return
+        end
+
+        if self._justRespawnedPlayer then
+            self._animator:Stop(self.entityId)
+            self._animator:Play(self.entityId)
+            self._justRespawnedPlayer = false
         end
 
         if not self._collider or not self._transform or not self._controller or self._playerDead then
             return
+        end
+
+        if self._freezePending then
+            self._freezeSettleTimer = self._freezeSettleTimer - dt
+            if self._freezeSettleTimer <= 0 then
+                self._freezePending = false
+                self._frozenBycinematic = true
+            end
+        end
+
+        if self._frozenBycinematic then
+            local position = CharacterController.GetPosition(self._controller)
+            if position then
+                self:SetPosition(position.x, position.y, position.z)
+                if event_bus and event_bus.publish then
+                    event_bus.publish("player_position", position)
+                end
+            end
+            return
+        end
+
+        if self._kbPending then
+            self._kbPending = false
+            CharacterController.Move(self._controller, (self._kbX or 0), 0, (self._kbZ or 0))
+            self._kbX, self._kbZ = 0, 0
         end
 
         if self._isDamageStun == true then
@@ -215,22 +395,85 @@ return Component {
         if self._isDamageStun == true then
             local isGrounded = CharacterController.IsGrounded(self._controller)
             self._animator:SetBool("IsGrounded", isGrounded)
-            
             self._animator:SetBool("IsRunning", self._isRunning)
-            --self._animator:SetBool("IsJumping", self._isJumping)
-
             local position = CharacterController.GetPosition(self._controller)
             if position then
                 self:SetPosition(position.x, position.y, position.z)
-                if event_bus and event_bus.publish then
-                    event_bus.publish("player_position", position)
-                end
+                if event_bus and event_bus.publish then event_bus.publish("player_position", position) end
             end
             return
         end
 
-        -- RAW INPUT (LOCAL SPACE)
-        local axis = Input and Input.GetAxis and Input.GetAxis("Movement") or { x = 0, y = 0 }
+        if self._dashCooldownTimer > 0 then
+            self._dashCooldownTimer = self._dashCooldownTimer - dt
+        end
+
+        if self._lungeTimer and self._lungeTimer > 0 then
+            self._lungeTimer = self._lungeTimer - dt
+            CharacterController.Move(self._controller,
+                self._lungeDirX * (self.AttackLungeSpeed or 3.0), 0,
+                self._lungeDirZ * (self.AttackLungeSpeed or 3.0))
+        end
+
+        -- Lock player completely while casting the Feather Skill
+        if _G.player_is_casting_skill then
+            self._animator:SetBool("IsRunning", false)
+            self._isRunning = false
+            
+            -- Keep updating position so we don't fall out of sync with CC
+            local position = CharacterController.GetPosition(self._controller)
+            if position then
+                self:SetPosition(position.x, position.y, position.z)
+                if event_bus and event_bus.publish then event_bus.publish("player_position", position) end
+            end
+            return
+        end
+
+        if _G.player_is_attacking then
+            self._animator:SetBool("IsRunning", false)
+            self._isRunning = false
+            local position = CharacterController.GetPosition(self._controller)
+            if position then
+                self:SetPosition(position.x, position.y, position.z)
+                if event_bus and event_bus.publish then event_bus.publish("player_position", position) end
+            end
+            return
+        end
+
+        -- CHAIN MOVEMENT CONSTRAINT
+        tensionRadialX = 0
+        tensionRadialZ = 0
+        if self._chainConstraintExceeded then
+            self._chainConstraintRatio = 0
+            self._chainConstraintExceeded = false
+            self._chainDrag = false
+        elseif self._chainDrag then
+            self:SetPosition(self._chainDragTargetX, self._chainDragTargetY, self._chainDragTargetZ)
+            CharacterController.SetPosition(self._controller, self._transform)
+        elseif self._chainConstraintRatio and self._chainConstraintRatio > 0 then
+            local r = self._chainConstraintRatio
+            if self._chainEndX and self._chainEndZ then
+                local pos = CharacterController.GetPosition(self._controller)
+                if pos then
+                    local radX = pos.x - self._chainEndX
+                    local radZ = pos.z - self._chainEndZ
+                    local radLen = math.sqrt(radX * radX + radZ * radZ)
+                    if radLen > 1e-4 then
+                        tensionRadialX = radX / radLen
+                        tensionRadialZ = radZ / radLen
+                        tensionScale   = math.max(0.0, 1.0 - r * r * r * 0.95)
+                    end
+                end
+            end
+        end
+
+        -- RAW INPUT
+        local axis
+        if self._freezePending then
+            axis = { x = 0, y = 0 }
+        else
+            axis = Input and Input.GetAxis and Input.GetAxis("Movement") or { x = 0, y = 0 }
+        end
         local rawX = -axis.x
         local rawZ = axis.y
 
@@ -250,59 +493,145 @@ return Component {
         end
 
         local isMoving = (moveX ~= 0 or moveZ ~= 0)
-
-        -- JUMP
         local isGrounded = CharacterController.IsGrounded(self._controller)
         local isJumping = false
         self._animator:SetBool("IsGrounded", isGrounded)
 
-        -- If death is pending AND we are on the floor, die now.
         if self._playerDeadPending and isGrounded then
             if self._animator then
                 self._animator:SetBool("IsDead", true)
-                print("[PlayerMovement] Player grounded, playing Death animation")
+                dbg("[PlayerMovement] Player grounded, playing Death animation")
             end
             self._playerDead = true
             self._playerDeadPending = false
-            return -- Exit immediately so we don't process movement on the death frame
+            return
         end
 
-        if not self._isLanding and Input and Input.IsActionJustPressed and Input.IsActionJustPressed("Jump") and isGrounded then
+        -- DASH (triggered by ComboManager via "dash_performed" event)
+        if not self._isDashing
+            and self._dashRequested
+            and self._dashCooldownTimer <= 0
+            and not self._isDamageStun
+            and not self._isLanding
+            and not self._freezePending
+        then
+            self._dashRequested = false
+
+            self._isDashing = true
+            self._dashTimer = self.DashDuration
+            _G.player_is_dashing = true
+            print("[PlayerMovement] _G.player_is_dashing = true")
+            self._wasDashingInAir = not isGrounded
+
+            if isMoving then
+                local len = math.sqrt(moveX * moveX + moveZ * moveZ)
+                self._dashDirX = moveX / len
+                self._dashDirZ = moveZ / len
+            else
+                local halfAngle = math.acos(math.max(-1, math.min(1, self._currentRotW)))
+                local sinHalf = math.sin(halfAngle)
+                if sinHalf > 0.001 then
+                    local yAxis = self._currentRotY / sinHalf
+                    local angle = 2 * halfAngle * (yAxis >= 0 and 1 or -1)
+                    self._dashDirX = math.sin(angle)
+                    self._dashDirZ = math.cos(angle)
+                else
+                    self._dashDirX = 0
+                    self._dashDirZ = 1
+                end
+            end
+
+            self._animator:SetBool("IsJumping", false)
+            self._isJumping = false
+            self._animator:SetBool("IsRunning", false)
+            self._isRunning = false
+            self._animator:SetBool("IsDashing", true)
+            playRandomSFX(self._audio, self.playerDashSFX)
+            print("[PlayerMovement] Dash started")
+        elseif self._dashRequested then
+            -- Conditions not met, discard the request
+            print("[PlayerMovement] Dash request discarded (cooldown=" .. self._dashCooldownTimer .. " stun=" .. tostring(self._isDamageStun) .. " landing=" .. tostring(self._isLanding) .. " freeze=" .. tostring(self._freezePending) .. ")")
+            self._dashRequested = false
+        end
+
+        if self._isDashing then
+            self._dashTimer = self._dashTimer - dt
+
+            if self._dashTimer <= 0 then
+                self._isDashing = false
+                _G.player_is_dashing = false
+                self._animator:SetBool("IsDashing", false)
+                self._dashCooldownTimer = self.DashCooldown
+                self._wasDashingInAir = false
+                if event_bus and event_bus.publish then
+                    event_bus.publish("dash_ended", { cooldown = self.DashCooldown })
+                end
+                print("[PlayerMovement] Dash ended")
+            else
+                local speed = self.DashSpeed
+                local liftY = 0
+                if not isGrounded or self._wasDashingInAir then
+                    speed = self.DashSpeed * self.AirDashSpeedMultiplier
+                    liftY = self.AirDashLift
+                end
+                CharacterController.Move(self._controller,
+                    self._dashDirX * speed, liftY, self._dashDirZ * speed)
+            end
+
+            if not isGrounded then self._wasDashingInAir = true end
+
+            if self.SetRotation then
+                local targetW, targetX, targetY, targetZ = directionToQuaternion(self._dashDirX, self._dashDirZ)
+                self._currentRotW, self._currentRotX, self._currentRotY, self._currentRotZ = targetW, targetX, targetY, targetZ
+                pcall(self.SetRotation, self, targetW, targetX, targetY, targetZ)
+            end
+
+            local position = CharacterController.GetPosition(self._controller)
+            if position then
+                self:SetPosition(position.x, position.y, position.z)
+                if event_bus and event_bus.publish then event_bus.publish("player_position", position) end
+            end
+            return
+        end
+
+        -- JUMP
+        if not self._isLanding and not self._freezePending
+            and Input and Input.IsActionJustPressed and Input.IsActionJustPressed("Jump") and isGrounded
+        then
             CharacterController.Jump(self._controller, self.JumpHeight)
             isJumping = true
             self._animator:SetBool("IsJumping", true)
-            -- Play jump SFX
             playRandomSFX(self._audio, self.playerJumpSFX)
         end
 
         -- APPLY MOVEMENT
         if not isJumping and isMoving then
-            CharacterController.Move(
-                self._controller,
-                moveX * self.Speed,
-                0,
-                moveZ * self.Speed
-            )
+            local mx, mz = moveX * self.Speed, moveZ * self.Speed
+            -- only resist the outward component; lateral/inward movement is unaffected
+            local dot = mx * tensionRadialX + mz * tensionRadialZ
+            if dot > 0 then
+                mx = mx - tensionRadialX * dot * (1.0 - tensionScale)
+                mz = mz - tensionRadialZ * dot * (1.0 - tensionScale)
+            end
+            CharacterController.Move(self._controller, mx, 0, mz)
         end
 
-        -- FORCE MOVEMENT IF PLAYER IS ROLLING
         if self._isRolling and not isMoving then
             local yawRad = math.rad(cameraYaw)
             local sinYaw = math.sin(yawRad)
             local cosYaw = math.cos(yawRad)
-
             moveX = self._prevRawZ * (-sinYaw) - self._prevRawX * cosYaw
             moveZ = self._prevRawZ * (-cosYaw) + self._prevRawX * sinYaw
-
-            CharacterController.Move(
-                self._controller,
-                moveX * self.Speed,
-                0,
-                moveZ * self.Speed
-            )
+            local mx, mz = moveX * self.Speed, moveZ * self.Speed
+            local dot = mx * tensionRadialX + mz * tensionRadialZ
+            if dot > 0 then
+                mx = mx - tensionRadialX * dot * (1.0 - tensionScale)
+                mz = mz - tensionRadialZ * dot * (1.0 - tensionScale)
+            end
+            CharacterController.Move(self._controller, mx, 0, mz)
         end
 
-        -- ANIMATION LOGIC
+        -- ANIMATION
         if not isGrounded then
             if not self._isJumping then
                 self._isJumping = true
@@ -313,16 +642,12 @@ return Component {
                 self._isJumping = false
                 self._animator:SetBool("IsJumping", false)
                 self._isLanding = true
-                -- Play landing SFX
                 playRandomSFX(self._audio, self.playerLandSFX)
-                -- Resume proper state based on movement
                 if isMoving then
-                    print("[PlayerMovement] SetBool(IsRunning, true)")
                     self._animator:SetBool("IsRunning", true)
                     self._isRunning = true
                     self._isRolling = true
                 else
-                    print("[PlayerMovement] SetBool(IsRunning, false)")
                     self._animator:SetBool("IsRunning", false)
                     self._isRunning = false
                 end
@@ -335,14 +660,12 @@ return Component {
             end
         end
 
-        -- Footstep SFX while running (timer-based)
+        -- FOOTSTEPS
         if self._isRunning and isGrounded and not self._isLanding then
-            -- Play immediately when running starts
             if not self._wasRunning then
                 playRandomSFX(self._audio, self.playerFootstepSFX)
                 self._footstepTimer = 0
             end
-            -- Timer-based footsteps
             self._footstepTimer = self._footstepTimer + dt
             if self._footstepTimer >= (self.footstepInterval or 0.35) then
                 playRandomSFX(self._audio, self.playerFootstepSFX)
@@ -354,15 +677,17 @@ return Component {
         self._wasRunning = self._isRunning
 
         -- ROTATION
-        if isMoving and self.SetRotation then
+        if isMoving then
+            local mag = math.sqrt(moveX * moveX + moveZ * moveZ)
+            self._facingX = moveX / mag
+            self._facingZ = moveZ / mag
+
             local targetW, targetX, targetY, targetZ = directionToQuaternion(moveX, moveZ)
             local t = math.min(self.rotationSpeed * dt, 1.0)
             local newW, newX, newY, newZ = lerpQuaternion(
                 self._currentRotW, self._currentRotX,
                 self._currentRotY, self._currentRotZ,
-                targetW, targetX, targetY, targetZ,
-                t
-            )
+                targetW, targetX, targetY, targetZ, t)
 
             self._currentRotW, self._currentRotX, self._currentRotY, self._currentRotZ = newW, newX, newY, newZ
             pcall(self.SetRotation, self, newW, newX, newY, newZ)
@@ -372,16 +697,23 @@ return Component {
         local position = CharacterController.GetPosition(self._controller)
         if position then
             self:SetPosition(position.x, position.y, position.z)
-            if event_bus and event_bus.publish then
-                event_bus.publish("player_position", position)
-            end
+            if event_bus and event_bus.publish then event_bus.publish("player_position", position) end
         end
     end,
 
     OnDisable = function(self)
-        if event_bus and event_bus.unsubscribe and self._cameraYawSub then
-            event_bus.unsubscribe(self._cameraYawSub)
-            self._cameraYawSub = nil
+        if event_bus and event_bus.unsubscribe then
+            if self._cameraYawSub          then event_bus.unsubscribe(self._cameraYawSub)          end
+            if self._freezePlayerSub        then event_bus.unsubscribe(self._freezePlayerSub)       end
+            if self._requestPlayerForwardSub then event_bus.unsubscribe(self._requestPlayerForwardSub) end
+            if self._attackLungeSub         then event_bus.unsubscribe(self._attackLungeSub)        end
+            if self._chainConstraintSub     then event_bus.unsubscribe(self._chainConstraintSub)    end
+            if self._forceRotSub            then event_bus.unsubscribe(self._forceRotSub)           end
+            if self._dashPerformedSub       then event_bus.unsubscribe(self._dashPerformedSub)      end
         end
+        self._frozenBycinematic = false
+        self._chainConstraintRatio = 0
+        self._chainConstraintExceeded = false
+        self._chainDrag = false
     end,
 }

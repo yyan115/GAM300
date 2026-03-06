@@ -8,7 +8,6 @@
 #include "Graphics/Camera/CameraComponent.hpp"
 #include "ECS/ECSRegistry.hpp"
 #include "ECS/ActiveComponent.hpp"
-#include "Performance/PerformanceProfiler.hpp"
 #include <cmath>
 
 #ifndef M_PI
@@ -18,10 +17,10 @@
 void AudioSystem::Update(float deltaTime) {
     PROFILE_FUNCTION();
     (void)deltaTime; // Unused for now
-    // First, update the AudioManager's internal FMOD system
-    AudioManager::GetInstance().Update();
+    // FMOD processing runs on a dedicated audio thread (AudioManager::AudioThreadLoop).
+    // This system only handles ECS component iteration.
 
-    // Then update all audio-related components in a single pass
+    // Update all audio-related components in a single pass
     ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
 
     for (const auto& entity : ecsManager.GetActiveEntities()) {
@@ -36,7 +35,7 @@ void AudioSystem::Update(float deltaTime) {
 
             if (ecsManager.HasComponent<Transform>(entity)) {
                 const Transform& transform = ecsManager.GetComponent<Transform>(entity);
-                newPosition = transform.localPosition;
+                newPosition = transform.worldPosition;
             }
 
             if (ecsManager.HasComponent<CameraComponent>(entity)) {
@@ -50,7 +49,7 @@ void AudioSystem::Update(float deltaTime) {
                 Vector3D world_up(0.0f, 1.0f, 0.0f);
                 Vector3D right = newForward.Cross(world_up);
                 right.Normalize();
-                right = -right;  // Negate right to fix left/right inversion
+                right = -right;
                 newUp = right.Cross(newForward);
                 newUp.Normalize();
             }
@@ -68,7 +67,7 @@ void AudioSystem::Update(float deltaTime) {
             // Update position from Transform
             if (ecsManager.HasComponent<Transform>(entity)) {
                 const Transform& transform = ecsManager.GetComponent<Transform>(entity);
-                reverbZoneComp.OnTransformChanged(transform.localPosition);
+                reverbZoneComp.OnTransformChanged(transform.worldPosition);
             }
 
             // Update the reverb zone
@@ -103,7 +102,7 @@ void AudioSystem::Update(float deltaTime) {
             // Update spatial audio position from Transform if applicable
             if (audioComp.Spatialize && ecsManager.HasComponent<Transform>(entity)) {
                 const Transform& transform = ecsManager.GetComponent<Transform>(entity);
-                audioComp.OnTransformChanged(transform.localPosition);
+                audioComp.OnTransformChanged(transform.worldPosition);
             }
         }
     }

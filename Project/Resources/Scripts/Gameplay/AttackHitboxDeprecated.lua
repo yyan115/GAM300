@@ -10,7 +10,7 @@ return Component {
 
     fields = {
         hitboxRange = 1.5,
-        maxEnemies = 4,
+        maxEnemies = 10,
         isActive = false,
     },
 

@@ -20,6 +20,23 @@ prior written consent of DigiPen Institute of Technology is prohibited.
 
 /******************************************************************************/
 /*!
+\struct     ParticleInstanceData
+\brief      GPU instance data structure for a single particle
+
+\details    Contains all per-particle data needed for instanced rendering:
+            position in world space, RGBA color with alpha, size scalar,
+            and rotation in degrees. Tightly packed for efficient GPU upload.
+*/
+/******************************************************************************/
+struct ParticleInstanceData {
+    glm::vec3 position;
+    glm::vec4 color;
+    float size;
+    float rotation;
+};
+
+/******************************************************************************/
+/*!
 \class      ParticleSystem
 \brief      ECS system for managing particle effects with GPU instancing
 

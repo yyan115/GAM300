@@ -25,8 +25,10 @@ prior written consent of DigiPen Institute of Technology is prohibited.
 #include "Platform/IPlatform.h"
 #include "Engine.h"
 #include "Asset Manager/AssetManager.hpp"
-#include "Performance/PerformanceProfiler.hpp"
 #include "ECS/ActiveComponent.hpp"
+#include "ECS/LayerComponent.hpp"
+#include "Graphics/PostProcessing/PostProcessingManager.hpp"
+#include "Graphics/BloomComponent.hpp"
 
 /******************************************************************************/
 /*!
@@ -155,6 +157,16 @@ bool ParticleSystem::InitialiseParticles(bool forceInit)
 /******************************************************************************/
 void ParticleSystem::InitializeParticleComponent(ParticleComponent& particleComp) 
 {
+    // Get the texture and shader first.
+    std::string texturePath = AssetManager::GetInstance().GetAssetPathFromGUID(particleComp.textureGUID);
+    ENGINE_LOG_INFO("[ParticleSystem] Texture Path: " + texturePath);
+    particleComp.texturePath = texturePath;
+    if (!particleComp.texturePath.empty())
+        particleComp.particleTexture = ResourceManager::GetInstance().GetResourceFromGUID<Texture>(particleComp.textureGUID, texturePath);
+    std::string shaderPath = ResourceManager::GetPlatformShaderPath("particle");
+    ENGINE_LOG_INFO("[ParticleSystem] Shader Path: " + shaderPath);
+    particleComp.particleShader = ResourceManager::GetInstance().GetResource<Shader>(shaderPath);
+
     particleComp.particleVAO = new VAO();
     particleComp.particleVAO->Bind();
 
@@ -251,11 +263,6 @@ void ParticleSystem::Update()
         }
 
         auto& particleComp = ecsManager.GetComponent<ParticleComponent>(entity);
-        
-        // Skip if not emitting and no particles to render
-        if (!particleComp.isEmitting && particleComp.particles.empty()) {
-            continue;
-        }
 
         // Initialize if not already done
         if (!particleComp.particleVAO) // In case new particle system is added on the fly
@@ -274,7 +281,24 @@ void ParticleSystem::Update()
         if (!shouldUpdateParticles) {
             // Still submit to renderer (to show existing particles), but don't update physics or emit new particles
             auto renderItem = std::make_unique<ParticleComponent>(particleComp);
-            renderItem->renderOrder = particleComp.sortingLayer * 100 + particleComp.sortingOrder;
+
+            // Per-entity bloom emission
+            if (ecsManager.HasComponent<BloomComponent>(entity)) {
+                auto& bloom = ecsManager.GetComponent<BloomComponent>(entity);
+                if (bloom.enabled) {
+                    renderItem->bloomColor = bloom.bloomColor;
+                    renderItem->bloomIntensity = bloom.bloomIntensity;
+                }
+            }
+
+            // Tag items on excluded layers for deferred rendering
+            uint32_t exMask = PostProcessingManager::GetInstance().GetExcludedLayerMask();
+            if (exMask != 0) {
+                int layerIdx = GetEffectiveLayerIndex(entity, ecsManager);
+                if (exMask & (1u << layerIdx))
+                    renderItem->excludeFromPostProcess = true;
+            }
+
             gfxManager.Submit(std::move(renderItem));
             continue;
         }
@@ -308,18 +332,25 @@ void ParticleSystem::Update()
 
         // Submit to renderer
         auto renderItem = std::make_unique<ParticleComponent>(particleComp);
-        renderItem->renderOrder = particleComp.sortingLayer * 100 + particleComp.sortingOrder;
-        gfxManager.Submit(std::move(renderItem));
-    }
-    static int frameCount = 0;
-    if (++frameCount % 60 == 0) {  // Print every second
-        int totalParticles = 0;
-        for (const auto& entity : entities) {
-            auto& comp = ecsManager.GetComponent<ParticleComponent>(entity);
-            totalParticles += comp.particles.size();
+
+        // Per-entity bloom emission
+        if (ecsManager.HasComponent<BloomComponent>(entity)) {
+            auto& bloom = ecsManager.GetComponent<BloomComponent>(entity);
+            if (bloom.enabled) {
+                renderItem->bloomColor = bloom.bloomColor;
+                renderItem->bloomIntensity = bloom.bloomIntensity;
+            }
         }
-        std::cout << "[ParticleSystem] Total particles: " << totalParticles
-            << ", Emitters: " << entities.size() << std::endl;
+
+        // Tag items on excluded layers for deferred rendering
+        uint32_t exMask = PostProcessingManager::GetInstance().GetExcludedLayerMask();
+        if (exMask != 0) {
+            int layerIdx = GetEffectiveLayerIndex(entity, ecsManager);
+            if (exMask & (1u << layerIdx))
+                renderItem->excludeFromPostProcess = true;
+        }
+
+        gfxManager.Submit(std::move(renderItem));
     }
 }
 
@@ -481,13 +512,9 @@ void ParticleSystem::UpdateInstanceBuffer(ParticleComponent& comp)
 {
     if (comp.particles.empty()) return;
 
-    // Reuse buffer instead of allocating every frame
-    comp.instanceDataBuffer.clear();
-
-    // Reserve once (only allocates if capacity is smaller)
-    if (comp.instanceDataBuffer.capacity() < comp.particles.size()) {
-        comp.instanceDataBuffer.reserve(comp.maxParticles);
-    }
+    // Prepare instance data array
+    std::vector<ParticleInstanceData> instanceData;
+    instanceData.reserve(comp.particles.size());
 
     for (const auto& particle : comp.particles)
     {
@@ -496,11 +523,11 @@ void ParticleSystem::UpdateInstanceBuffer(ParticleComponent& comp)
         data.color = particle.color;
         data.size = particle.size;
         data.rotation = particle.rotation;
-        comp.instanceDataBuffer.emplace_back(data);
+        instanceData.push_back(data);
     }
 
     // Update the instance VBO
     comp.instanceVBO->Bind();
-    comp.instanceVBO->UpdateData(comp.instanceDataBuffer.data(), comp.instanceDataBuffer.size() * sizeof(ParticleInstanceData));
+    comp.instanceVBO->UpdateData(instanceData.data(), instanceData.size() * sizeof(ParticleInstanceData));
     comp.instanceVBO->Unbind();
 }

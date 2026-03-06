@@ -151,7 +151,75 @@
                             "type": "float",
                             "data": 25
                         },
-                        "0000000000000000-0000000000000000"
+                        "0000000000000000-0000000000000000",
+                        {
+                            "type": "bool",
+                            "data": true
+                        },
+                        {
+                            "type": "float",
+                            "data": 0.5
+                        },
+                        {
+                            "type": "float",
+                            "data": 2
+                        },
+                        {
+                            "type": "int",
+                            "data": 2
+                        },
+                        {
+                            "type": "bool",
+                            "data": false
+                        },
+                        {
+                            "type": "float",
+                            "data": 1
+                        },
+                        {
+                            "type": "float",
+                            "data": 1
+                        },
+                        {
+                            "type": "bool",
+                            "data": false
+                        },
+                        {
+                            "type": "float",
+                            "data": 0.5
+                        },
+                        {
+                            "type": "float",
+                            "data": 0.5
+                        },
+                        {
+                            "type": "bool",
+                            "data": false
+                        },
+                        {
+                            "type": "float",
+                            "data": 0
+                        },
+                        {
+                            "type": "float",
+                            "data": 1
+                        },
+                        {
+                            "type": "float",
+                            "data": 1
+                        },
+                        {
+                            "type": "bool",
+                            "data": false
+                        },
+                        {
+                            "type": "float",
+                            "data": 0.5
+                        },
+                        {
+                            "type": "float",
+                            "data": 0.5
+                        }
                     ],
                     "target": {
                         "type": "glm::vec3",
@@ -180,7 +248,41 @@
                     "clearFlags": 0,
                     "projectionType": 0,
                     "useSkybox": true,
-                    "skyboxTexturePath": ""
+                    "skyboxTexturePath": "",
+                    "blurEnabled": true,
+                    "blurIntensity": 0.5,
+                    "blurRadius": 2.0,
+                    "blurPasses": 2,
+                    "blurLayerMask": 4294966271,
+                    "bloomEnabled": false,
+                    "bloomThreshold": 1.0,
+                    "bloomIntensity": 1.0,
+                    "vignetteEnabled": false,
+                    "vignetteIntensity": 0.5,
+                    "vignetteSmoothness": 0.5,
+                    "vignetteColor": {
+                        "type": "glm::vec3",
+                        "data": [
+                            0.0,
+                            0.0,
+                            0.0
+                        ]
+                    },
+                    "colorGradingEnabled": false,
+                    "cgBrightness": 0.0,
+                    "cgContrast": 1.0,
+                    "cgSaturation": 1.0,
+                    "cgTint": {
+                        "type": "glm::vec3",
+                        "data": [
+                            1.0,
+                            1.0,
+                            1.0
+                        ]
+                    },
+                    "chromaticAberrationEnabled": false,
+                    "chromaticAberrationIntensity": 0.5,
+                    "chromaticAberrationPadding": 0.5
                 },
                 "ActiveComponent": {
                     "type": "ActiveComponent",
@@ -217,11 +319,11 @@
                             "data": [
                                 {
                                     "type": "float",
-                                    "data": 954.707
+                                    "data": 960
                                 },
                                 {
                                     "type": "float",
-                                    "data": 539.014
+                                    "data": 540
                                 },
                                 {
                                     "type": "float",
@@ -255,7 +357,7 @@
                                 },
                                 {
                                     "type": "float",
-                                    "data": 9.31915e-10
+                                    "data": 9.31971e-10
                                 },
                                 {
                                     "type": "float",
@@ -263,7 +365,7 @@
                                 },
                                 {
                                     "type": "float",
-                                    "data": 9.31915e-10
+                                    "data": 9.31971e-10
                                 }
                             ]
                         }
@@ -369,6 +471,26 @@
                                     "data": 0
                                 }
                             ]
+                        },
+                        {
+                            "type": "int",
+                            "data": 0
+                        },
+                        {
+                            "type": "float",
+                            "data": 1
+                        },
+                        {
+                            "type": "float",
+                            "data": 1
+                        },
+                        {
+                            "type": "float",
+                            "data": 0.5
+                        },
+                        {
+                            "type": "float",
+                            "data": 0.3
                         }
                     ]
                 },
@@ -401,32 +523,1908 @@
                             "data": true
                         },
                         {
-                            "type": "bool",
-                            "data": false
+                            "type": "std::string",
+                            "data": "Kusane_OpeningCutscene"
                         },
                         {
-                            "type": "bool",
-                            "data": false
+                            "type": "std::string",
+                            "data": "001a801d3d91a282-0003fadeaa000001"
+                        },
+                        {
+                            "type": "std::string",
+                            "data": "007add1d2b2e522b-0003fbaf56000003"
+                        },
+                        {
+                            "type": "std::string",
+                            "data": "001e43b5550df23b-0003fa7a96000007"
                         },
                         {
                             "type": "float",
                             "data": 1
                         },
                         {
-                            "type": "float",
-                            "data": 0
-                        },
-                        {
-                            "type": "std::string",
-                            "data": "Resources/Cutscenes/TESTING_TEXT.txt"
-                        },
-                        {
-                            "type": "std::string",
-                            "data": "Resources/Cutscenes/Dialogue_test.txt"
+                            "type": "bool",
+                            "data": true
                         },
                         {
                             "type": "bool",
                             "data": false
+                        },
+                        {
+                            "type": "std::string",
+                            "data": ""
+                        },
+                        {
+                            "type": "std::vector<CutsceneBoard>",
+                            "data": [
+                                {
+                                    "type": "CutsceneBoard",
+                                    "data": [
+                                        {
+                                            "type": "std::string",
+                                            "data": "../../Resources/Cutscenes/Kusane_OpeningCutscene/Board_00000.png"
+                                        },
+                                        {
+                                            "type": "std::string",
+                                            "data": "The wind whispers through broken stone..."
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": 50
+                                        },
+                                        {
+                                            "type": "bool",
+                                            "data": false
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": 2
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": 0
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": 0
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": 0
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": 0
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": 2
+                                        },
+                                        {
+                                            "type": "int",
+                                            "data": 2
+                                        },
+                                        {
+                                            "type": "bool",
+                                            "data": true
+                                        }
+                                    ]
+                                },
+                                {
+                                    "type": "CutsceneBoard",
+                                    "data": [
+                                        {
+                                            "type": "std::string",
+                                            "data": "../../Resources/Cutscenes/Kusane_OpeningCutscene/Board_00000.png"
+                                        },
+                                        {
+                                            "type": "std::string",
+                                            "data": "Kusane... last son of a fallen clan."
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": 50
+                                        },
+                                        {
+                                            "type": "bool",
+                                            "data": false
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": 2
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": 0
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": 0.5
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": 0
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": 0
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": 2
+                                        },
+                                        {
+                                            "type": "int",
+                                            "data": 2
+                                        },
+                                        {
+                                            "type": "bool",
+                                            "data": true
+                                        }
+                                    ]
+                                },
+                                {
+                                    "type": "CutsceneBoard",
+                                    "data": [
+                                        {
+                                            "type": "std::string",
+                                            "data": "../../Resources/Cutscenes/Kusane_OpeningCutscene/Board_00000.png"
+                                        },
+                                        {
+                                            "type": "std::string",
+                                            "data": "Bloodied. Broken. Alone."
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": 50
+                                        },
+                                        {
+                                            "type": "bool",
+                                            "data": false
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": 2
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": 0
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": 0.5
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": 0
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": 0
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": 2
+                                        },
+                                        {
+                                            "type": "int",
+                                            "data": 2
+                                        },
+                                        {
+                                            "type": "bool",
+                                            "data": true
+                                        }
+                                    ]
+                                },
+                                {
+                                    "type": "CutsceneBoard",
+                                    "data": [
+                                        {
+                                            "type": "std::string",
+                                            "data": "../../Resources/Cutscenes/Kusane_OpeningCutscene/Board_00000.png"
+                                        },
+                                        {
+                                            "type": "std::string",
+                                            "data": "Each step forward is stolen from the\nedge of death."
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": 50
+                                        },
+                                        {
+                                            "type": "bool",
+                                            "data": false
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": 3
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": 0
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": 0.5
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": 0
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": 0
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": 2
+                                        },
+                                        {
+                                            "type": "int",
+                                            "data": 2
+                                        },
+                                        {
+                                            "type": "bool",
+                                            "data": false
+                                        }
+                                    ]
+                                },
+                                {
+                                    "type": "CutsceneBoard",
+                                    "data": [
+                                        {
+                                            "type": "std::string",
+                                            "data": "../../Resources/Cutscenes/Kusane_OpeningCutscene/Board_00001.png"
+                                        },
+                                        {
+                                            "type": "std::string",
+                                            "data": "His body screams."
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": 50
+                                        },
+                                        {
+                                            "type": "bool",
+                                            "data": false
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": 2
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": 0.5
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": 0
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": 0
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": 0
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": 2
+                                        },
+                                        {
+                                            "type": "int",
+                                            "data": 2
+                                        },
+                                        {
+                                            "type": "bool",
+                                            "data": true
+                                        }
+                                    ]
+                                },
+                                {
+                                    "type": "CutsceneBoard",
+                                    "data": [
+                                        {
+                                            "type": "std::string",
+                                            "data": "../../Resources/Cutscenes/Kusane_OpeningCutscene/Board_00001.png"
+                                        },
+                                        {
+                                            "type": "std::string",
+                                            "data": "His vision fades."
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": 50
+                                        },
+                                        {
+                                            "type": "bool",
+                                            "data": false
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": 3
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": 0
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": 0
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": 0
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": 4
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": 2
+                                        },
+                                        {
+                                            "type": "int",
+                                            "data": 2
+                                        },
+                                        {
+                                            "type": "bool",
+                                            "data": true
+                                        }
+                                    ]
+                                },
+                                {
+                                    "type": "CutsceneBoard",
+                                    "data": [
+                                        {
+                                            "type": "std::string",
+                                            "data": "../../Resources/Cutscenes/Kusane_OpeningCutscene/Board_00001.png"
+                                        },
+                                        {
+                                            "type": "std::string",
+                                            "data": "The weight of loss is heavier than\nhis wounds."
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": 50
+                                        },
+                                        {
+                                            "type": "bool",
+                                            "data": false
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": 3
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": 0
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": 0
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": 4
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": 2
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": 2
+                                        },
+                                        {
+                                            "type": "int",
+                                            "data": 2
+                                        },
+                                        {
+                                            "type": "bool",
+                                            "data": true
+                                        }
+                                    ]
+                                },
+                                {
+                                    "type": "CutsceneBoard",
+                                    "data": [
+                                        {
+                                            "type": "std::string",
+                                            "data": "../../Resources/Cutscenes/Kusane_OpeningCutscene/Board_00002.png"
+                                        },
+                                        {
+                                            "type": "std::string",
+                                            "data": "And in the silence..."
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": 50
+                                        },
+                                        {
+                                            "type": "bool",
+                                            "data": false
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": 2
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": 0
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": 0
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": 2
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": 0
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": 2
+                                        },
+                                        {
+                                            "type": "int",
+                                            "data": 2
+                                        },
+                                        {
+                                            "type": "bool",
+                                            "data": true
+                                        }
+                                    ]
+                                },
+                                {
+                                    "type": "CutsceneBoard",
+                                    "data": [
+                                        {
+                                            "type": "std::string",
+                                            "data": "../../Resources/Cutscenes/Kusane_OpeningCutscene/Board_00002.png"
+                                        },
+                                        {
+                                            "type": "std::string",
+                                            "data": "And in the silence... He falls."
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": 50
+                                        },
+                                        {
+                                            "type": "bool",
+                                            "data": true
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": 2
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": 0
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": 0
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": 0
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": 20
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": 2
+                                        },
+                                        {
+                                            "type": "int",
+                                            "data": 2
+                                        },
+                                        {
+                                            "type": "bool",
+                                            "data": false
+                                        }
+                                    ]
+                                },
+                                {
+                                    "type": "CutsceneBoard",
+                                    "data": [
+                                        {
+                                            "type": "std::string",
+                                            "data": "../../Resources/Cutscenes/Kusane_OpeningCutscene/Board_00003.png"
+                                        },
+                                        {
+                                            "type": "std::string",
+                                            "data": ""
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": 50
+                                        },
+                                        {
+                                            "type": "bool",
+                                            "data": false
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": 3
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": 0.5
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": 0
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": 0
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": 0
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": 2
+                                        },
+                                        {
+                                            "type": "int",
+                                            "data": 2
+                                        },
+                                        {
+                                            "type": "bool",
+                                            "data": false
+                                        }
+                                    ]
+                                },
+                                {
+                                    "type": "CutsceneBoard",
+                                    "data": [
+                                        {
+                                            "type": "std::string",
+                                            "data": "../../Resources/Cutscenes/Kusane_OpeningCutscene/Board_00004.png"
+                                        },
+                                        {
+                                            "type": "std::string",
+                                            "data": "A breath."
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": 50
+                                        },
+                                        {
+                                            "type": "bool",
+                                            "data": true
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": 2
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": 0
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": 0
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": 0
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": 0
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": 2
+                                        },
+                                        {
+                                            "type": "int",
+                                            "data": 2
+                                        },
+                                        {
+                                            "type": "bool",
+                                            "data": true
+                                        }
+                                    ]
+                                },
+                                {
+                                    "type": "CutsceneBoard",
+                                    "data": [
+                                        {
+                                            "type": "std::string",
+                                            "data": "../../Resources/Cutscenes/Kusane_OpeningCutscene/Board_00004.png"
+                                        },
+                                        {
+                                            "type": "std::string",
+                                            "data": "A flicker of consciousness."
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": 50
+                                        },
+                                        {
+                                            "type": "bool",
+                                            "data": false
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": 2
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": 0
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": 0
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": 0
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": 0
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": 2
+                                        },
+                                        {
+                                            "type": "int",
+                                            "data": 2
+                                        },
+                                        {
+                                            "type": "bool",
+                                            "data": true
+                                        }
+                                    ]
+                                },
+                                {
+                                    "type": "CutsceneBoard",
+                                    "data": [
+                                        {
+                                            "type": "std::string",
+                                            "data": "../../Resources/Cutscenes/Kusane_OpeningCutscene/Board_00004.png"
+                                        },
+                                        {
+                                            "type": "std::string",
+                                            "data": "Cold stone beneath him."
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": 50
+                                        },
+                                        {
+                                            "type": "bool",
+                                            "data": false
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": 2
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": 0
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": 0
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": 0
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": 0
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": 2
+                                        },
+                                        {
+                                            "type": "int",
+                                            "data": 2
+                                        },
+                                        {
+                                            "type": "bool",
+                                            "data": false
+                                        }
+                                    ]
+                                },
+                                {
+                                    "type": "CutsceneBoard",
+                                    "data": [
+                                        {
+                                            "type": "std::string",
+                                            "data": "../../Resources/Cutscenes/Kusane_OpeningCutscene/Board_00005.png"
+                                        },
+                                        {
+                                            "type": "std::string",
+                                            "data": "He lives."
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": 50
+                                        },
+                                        {
+                                            "type": "bool",
+                                            "data": false
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": 3
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": 0.5
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": 0
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": 0
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": -1
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": 2
+                                        },
+                                        {
+                                            "type": "int",
+                                            "data": 2
+                                        },
+                                        {
+                                            "type": "bool",
+                                            "data": true
+                                        }
+                                    ]
+                                },
+                                {
+                                    "type": "CutsceneBoard",
+                                    "data": [
+                                        {
+                                            "type": "std::string",
+                                            "data": "../../Resources/Cutscenes/Kusane_OpeningCutscene/Board_00005.png"
+                                        },
+                                        {
+                                            "type": "std::string",
+                                            "data": "..."
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": 50
+                                        },
+                                        {
+                                            "type": "bool",
+                                            "data": false
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": 3
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": 0
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": 0
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": 0
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": -1
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": 2
+                                        },
+                                        {
+                                            "type": "int",
+                                            "data": 2
+                                        },
+                                        {
+                                            "type": "bool",
+                                            "data": true
+                                        }
+                                    ]
+                                },
+                                {
+                                    "type": "CutsceneBoard",
+                                    "data": [
+                                        {
+                                            "type": "std::string",
+                                            "data": "../../Resources/Cutscenes/Kusane_OpeningCutscene/Board_00006.png"
+                                        },
+                                        {
+                                            "type": "std::string",
+                                            "data": "But something is wrong."
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": 50
+                                        },
+                                        {
+                                            "type": "bool",
+                                            "data": false
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": 3
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": 0
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": 0
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": 0
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": -1
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": 2
+                                        },
+                                        {
+                                            "type": "int",
+                                            "data": 2
+                                        },
+                                        {
+                                            "type": "bool",
+                                            "data": true
+                                        }
+                                    ]
+                                },
+                                {
+                                    "type": "CutsceneBoard",
+                                    "data": [
+                                        {
+                                            "type": "std::string",
+                                            "data": "../../Resources/Cutscenes/Kusane_OpeningCutscene/Board_00006.png"
+                                        },
+                                        {
+                                            "type": "std::string",
+                                            "data": "Too light."
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": 50
+                                        },
+                                        {
+                                            "type": "bool",
+                                            "data": false
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": 2
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": 0
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": 0
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": 0
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": -1
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": 2
+                                        },
+                                        {
+                                            "type": "int",
+                                            "data": 2
+                                        },
+                                        {
+                                            "type": "bool",
+                                            "data": true
+                                        }
+                                    ]
+                                },
+                                {
+                                    "type": "CutsceneBoard",
+                                    "data": [
+                                        {
+                                            "type": "std::string",
+                                            "data": "../../Resources/Cutscenes/Kusane_OpeningCutscene/Board_00006.png"
+                                        },
+                                        {
+                                            "type": "std::string",
+                                            "data": "Too empty."
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": 50
+                                        },
+                                        {
+                                            "type": "bool",
+                                            "data": false
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": 3
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": 0
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": 0
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": 0
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": -1
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": 2
+                                        },
+                                        {
+                                            "type": "int",
+                                            "data": 2
+                                        },
+                                        {
+                                            "type": "bool",
+                                            "data": false
+                                        }
+                                    ]
+                                },
+                                {
+                                    "type": "CutsceneBoard",
+                                    "data": [
+                                        {
+                                            "type": "std::string",
+                                            "data": "../../Resources/Cutscenes/Kusane_OpeningCutscene/Board_00007.png"
+                                        },
+                                        {
+                                            "type": "std::string",
+                                            "data": "His wings..."
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": 50
+                                        },
+                                        {
+                                            "type": "bool",
+                                            "data": false
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": 3
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": 0.5
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": 0
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": 0
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": -1
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": 2
+                                        },
+                                        {
+                                            "type": "int",
+                                            "data": 2
+                                        },
+                                        {
+                                            "type": "bool",
+                                            "data": true
+                                        }
+                                    ]
+                                },
+                                {
+                                    "type": "CutsceneBoard",
+                                    "data": [
+                                        {
+                                            "type": "std::string",
+                                            "data": "../../Resources/Cutscenes/Kusane_OpeningCutscene/Board_00007.png"
+                                        },
+                                        {
+                                            "type": "std::string",
+                                            "data": "His wings... Gone."
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": 50
+                                        },
+                                        {
+                                            "type": "bool",
+                                            "data": true
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": 3
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": 0
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": 0
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": 0
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": -1
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": 2
+                                        },
+                                        {
+                                            "type": "int",
+                                            "data": 2
+                                        },
+                                        {
+                                            "type": "bool",
+                                            "data": false
+                                        }
+                                    ]
+                                },
+                                {
+                                    "type": "CutsceneBoard",
+                                    "data": [
+                                        {
+                                            "type": "std::string",
+                                            "data": "../../Resources/Cutscenes/Kusane_OpeningCutscene/Board_00008.png"
+                                        },
+                                        {
+                                            "type": "std::string",
+                                            "data": "Torn from him by the Karasu"
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": 50
+                                        },
+                                        {
+                                            "type": "bool",
+                                            "data": false
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": 3
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": 0.5
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": 0
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": 0
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": -1
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": 2
+                                        },
+                                        {
+                                            "type": "int",
+                                            "data": 2
+                                        },
+                                        {
+                                            "type": "bool",
+                                            "data": true
+                                        }
+                                    ]
+                                },
+                                {
+                                    "type": "CutsceneBoard",
+                                    "data": [
+                                        {
+                                            "type": "std::string",
+                                            "data": "../../Resources/Cutscenes/Kusane_OpeningCutscene/Board_00008.png"
+                                        },
+                                        {
+                                            "type": "std::string",
+                                            "data": "The black-feathered hunters who devoured his clan."
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": 50
+                                        },
+                                        {
+                                            "type": "bool",
+                                            "data": false
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": 3
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": 0
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": 0
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": 0
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": -1
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": 2
+                                        },
+                                        {
+                                            "type": "int",
+                                            "data": 2
+                                        },
+                                        {
+                                            "type": "bool",
+                                            "data": true
+                                        }
+                                    ]
+                                },
+                                {
+                                    "type": "CutsceneBoard",
+                                    "data": [
+                                        {
+                                            "type": "std::string",
+                                            "data": "../../Resources/Cutscenes/Kusane_OpeningCutscene/Board_00008.png"
+                                        },
+                                        {
+                                            "type": "std::string",
+                                            "data": "They did not just seek his death."
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": 50
+                                        },
+                                        {
+                                            "type": "bool",
+                                            "data": false
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": 2
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": 0
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": 0
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": 0
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": -1
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": 2
+                                        },
+                                        {
+                                            "type": "int",
+                                            "data": 2
+                                        },
+                                        {
+                                            "type": "bool",
+                                            "data": true
+                                        }
+                                    ]
+                                },
+                                {
+                                    "type": "CutsceneBoard",
+                                    "data": [
+                                        {
+                                            "type": "std::string",
+                                            "data": "../../Resources/Cutscenes/Kusane_OpeningCutscene/Board_00008.png"
+                                        },
+                                        {
+                                            "type": "std::string",
+                                            "data": "They stole his sky."
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": 50
+                                        },
+                                        {
+                                            "type": "bool",
+                                            "data": false
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": 3
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": 0
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": 0
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": 0
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": -1
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": 2
+                                        },
+                                        {
+                                            "type": "int",
+                                            "data": 2
+                                        },
+                                        {
+                                            "type": "bool",
+                                            "data": false
+                                        }
+                                    ]
+                                },
+                                {
+                                    "type": "CutsceneBoard",
+                                    "data": [
+                                        {
+                                            "type": "std::string",
+                                            "data": "../../Resources/Cutscenes/Kusane_OpeningCutscene/Board_00009.png"
+                                        },
+                                        {
+                                            "type": "std::string",
+                                            "data": "Then..."
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": 50
+                                        },
+                                        {
+                                            "type": "bool",
+                                            "data": false
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": 2
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": 0.5
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": 0
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": 0
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": -1
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": 2
+                                        },
+                                        {
+                                            "type": "int",
+                                            "data": 2
+                                        },
+                                        {
+                                            "type": "bool",
+                                            "data": true
+                                        }
+                                    ]
+                                },
+                                {
+                                    "type": "CutsceneBoard",
+                                    "data": [
+                                        {
+                                            "type": "std::string",
+                                            "data": "../../Resources/Cutscenes/Kusane_OpeningCutscene/Board_00009.png"
+                                        },
+                                        {
+                                            "type": "std::string",
+                                            "data": "Then...a flicker."
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": 50
+                                        },
+                                        {
+                                            "type": "bool",
+                                            "data": true
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": 2
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": 0
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": 0
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": 0
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": -1
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": 2
+                                        },
+                                        {
+                                            "type": "int",
+                                            "data": 2
+                                        },
+                                        {
+                                            "type": "bool",
+                                            "data": true
+                                        }
+                                    ]
+                                },
+                                {
+                                    "type": "CutsceneBoard",
+                                    "data": [
+                                        {
+                                            "type": "std::string",
+                                            "data": "../../Resources/Cutscenes/Kusane_OpeningCutscene/Board_00009.png"
+                                        },
+                                        {
+                                            "type": "std::string",
+                                            "data": "A shimmer against the dark."
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": 50
+                                        },
+                                        {
+                                            "type": "bool",
+                                            "data": false
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": 2
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": 0
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": 0
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": 0
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": -1
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": 2
+                                        },
+                                        {
+                                            "type": "int",
+                                            "data": 2
+                                        },
+                                        {
+                                            "type": "bool",
+                                            "data": false
+                                        }
+                                    ]
+                                },
+                                {
+                                    "type": "CutsceneBoard",
+                                    "data": [
+                                        {
+                                            "type": "std::string",
+                                            "data": "../../Resources/Cutscenes/Kusane_OpeningCutscene/Board_00010.png"
+                                        },
+                                        {
+                                            "type": "std::string",
+                                            "data": "A feather resting upon an ancient holder."
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": 50
+                                        },
+                                        {
+                                            "type": "bool",
+                                            "data": false
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": 3
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": 0.5
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": 0
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": 0
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": -1
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": 2
+                                        },
+                                        {
+                                            "type": "int",
+                                            "data": 2
+                                        },
+                                        {
+                                            "type": "bool",
+                                            "data": true
+                                        }
+                                    ]
+                                },
+                                {
+                                    "type": "CutsceneBoard",
+                                    "data": [
+                                        {
+                                            "type": "std::string",
+                                            "data": "../../Resources/Cutscenes/Kusane_OpeningCutscene/Board_00010.png"
+                                        },
+                                        {
+                                            "type": "std::string",
+                                            "data": "It hums."
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": 50
+                                        },
+                                        {
+                                            "type": "bool",
+                                            "data": false
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": 2
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": 0
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": 0
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": 0
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": -1
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": 2
+                                        },
+                                        {
+                                            "type": "int",
+                                            "data": 2
+                                        },
+                                        {
+                                            "type": "bool",
+                                            "data": true
+                                        }
+                                    ]
+                                },
+                                {
+                                    "type": "CutsceneBoard",
+                                    "data": [
+                                        {
+                                            "type": "std::string",
+                                            "data": "../../Resources/Cutscenes/Kusane_OpeningCutscene/Board_00010.png"
+                                        },
+                                        {
+                                            "type": "std::string",
+                                            "data": "It calls to him."
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": 50
+                                        },
+                                        {
+                                            "type": "bool",
+                                            "data": false
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": 2
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": 0
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": 0
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": 0
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": -1
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": 2
+                                        },
+                                        {
+                                            "type": "int",
+                                            "data": 2
+                                        },
+                                        {
+                                            "type": "bool",
+                                            "data": false
+                                        }
+                                    ]
+                                },
+                                {
+                                    "type": "CutsceneBoard",
+                                    "data": [
+                                        {
+                                            "type": "std::string",
+                                            "data": "../../Resources/Cutscenes/Kusane_OpeningCutscene/Board_00011.png"
+                                        },
+                                        {
+                                            "type": "std::string",
+                                            "data": ""
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": 50
+                                        },
+                                        {
+                                            "type": "bool",
+                                            "data": false
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": 3
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": 0.5
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": 0
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": 0
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": -1
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": 2
+                                        },
+                                        {
+                                            "type": "int",
+                                            "data": 2
+                                        },
+                                        {
+                                            "type": "bool",
+                                            "data": false
+                                        }
+                                    ]
+                                },
+                                {
+                                    "type": "CutsceneBoard",
+                                    "data": [
+                                        {
+                                            "type": "std::string",
+                                            "data": "../../Resources/Cutscenes/Kusane_OpeningCutscene/Board_00012.png"
+                                        },
+                                        {
+                                            "type": "std::string",
+                                            "data": "Is it salvation..."
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": 50
+                                        },
+                                        {
+                                            "type": "bool",
+                                            "data": false
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": 2
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": 0.5
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": 0
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": 0
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": -1
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": 2
+                                        },
+                                        {
+                                            "type": "int",
+                                            "data": 2
+                                        },
+                                        {
+                                            "type": "bool",
+                                            "data": false
+                                        }
+                                    ]
+                                },
+                                {
+                                    "type": "CutsceneBoard",
+                                    "data": [
+                                        {
+                                            "type": "std::string",
+                                            "data": "../../Resources/Cutscenes/Kusane_OpeningCutscene/Board_00012.png"
+                                        },
+                                        {
+                                            "type": "std::string",
+                                            "data": "Is it salvation... or another curse?"
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": 50
+                                        },
+                                        {
+                                            "type": "bool",
+                                            "data": true
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": 3
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": 0
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": 0
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": 0
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": -1
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": 2
+                                        },
+                                        {
+                                            "type": "int",
+                                            "data": 2
+                                        },
+                                        {
+                                            "type": "bool",
+                                            "data": true
+                                        }
+                                    ]
+                                },
+                                {
+                                    "type": "CutsceneBoard",
+                                    "data": [
+                                        {
+                                            "type": "std::string",
+                                            "data": "../../Resources/Cutscenes/Kusane_OpeningCutscene/Board_00012.png"
+                                        },
+                                        {
+                                            "type": "std::string",
+                                            "data": "His hand trembles."
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": 50
+                                        },
+                                        {
+                                            "type": "bool",
+                                            "data": false
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": 3
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": 0
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": 0
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": 0
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": -1
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": 2
+                                        },
+                                        {
+                                            "type": "int",
+                                            "data": 2
+                                        },
+                                        {
+                                            "type": "bool",
+                                            "data": false
+                                        }
+                                    ]
+                                },
+                                {
+                                    "type": "CutsceneBoard",
+                                    "data": [
+                                        {
+                                            "type": "std::string",
+                                            "data": "../../Resources/Cutscenes/Kusane_OpeningCutscene/Board_00003.png"
+                                        },
+                                        {
+                                            "type": "std::string",
+                                            "data": "He chooses."
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": 50
+                                        },
+                                        {
+                                            "type": "bool",
+                                            "data": false
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": 3
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": 0.5
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": 0
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": 0
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": -1
+                                        },
+                                        {
+                                            "type": "float",
+                                            "data": 2
+                                        },
+                                        {
+                                            "type": "int",
+                                            "data": 2
+                                        },
+                                        {
+                                            "type": "bool",
+                                            "data": false
+                                        }
+                                    ]
+                                }
+                            ]
+                        },
+                        {
+                            "type": "bool",
+                            "data": false
+                        },
+                        {
+                            "type": "bool",
+                            "data": false
+                        },
+                        {
+                            "type": "float",
+                            "data": 0
                         }
                     ]
                 }
@@ -443,7 +2441,7 @@
                     "tagIndex": 11
                 },
                 "LayerComponent": {
-                    "layerIndex": 0
+                    "layerIndex": 10
                 },
                 "SiblingIndexComponent": {
                     "siblingIndex": 2
@@ -608,6 +2606,26 @@
                                     "data": 0
                                 }
                             ]
+                        },
+                        {
+                            "type": "int",
+                            "data": 0
+                        },
+                        {
+                            "type": "float",
+                            "data": 1
+                        },
+                        {
+                            "type": "float",
+                            "data": 1
+                        },
+                        {
+                            "type": "float",
+                            "data": 0.5
+                        },
+                        {
+                            "type": "float",
+                            "data": 0.3
                         }
                     ]
                 },
@@ -644,7 +2662,7 @@
                     "tagIndex": 10
                 },
                 "LayerComponent": {
-                    "layerIndex": 0
+                    "layerIndex": 10
                 },
                 "SiblingIndexComponent": {
                     "siblingIndex": 4
@@ -759,6 +2777,10 @@
                                     "data": 0
                                 }
                             ]
+                        },
+                        {
+                            "type": "float",
+                            "data": 1
                         },
                         {
                             "type": "bool",
@@ -957,7 +2979,7 @@
                     "tagIndex": 0
                 },
                 "LayerComponent": {
-                    "layerIndex": 0
+                    "layerIndex": 10
                 },
                 "SiblingIndexComponent": {
                     "siblingIndex": 3
@@ -970,7 +2992,7 @@
                             "data": [
                                 {
                                     "type": "float",
-                                    "data": 1733.59
+                                    "data": 1750
                                 },
                                 {
                                     "type": "float",
@@ -987,11 +3009,11 @@
                             "data": [
                                 {
                                     "type": "float",
-                                    "data": 225
+                                    "data": 280
                                 },
                                 {
                                     "type": "float",
-                                    "data": 130
+                                    "data": 170
                                 },
                                 {
                                     "type": "float",
@@ -1122,6 +3144,26 @@
                                     "data": 0
                                 }
                             ]
+                        },
+                        {
+                            "type": "int",
+                            "data": 0
+                        },
+                        {
+                            "type": "float",
+                            "data": 1
+                        },
+                        {
+                            "type": "float",
+                            "data": 1
+                        },
+                        {
+                            "type": "float",
+                            "data": 0.5
+                        },
+                        {
+                            "type": "float",
+                            "data": 0.3
                         }
                     ]
                 },
@@ -1300,7 +3342,7 @@
                     "tagIndex": 0
                 },
                 "LayerComponent": {
-                    "layerIndex": 0
+                    "layerIndex": 10
                 },
                 "SiblingIndexComponent": {
                     "siblingIndex": 4
@@ -1313,7 +3355,7 @@
                             "data": [
                                 {
                                     "type": "float",
-                                    "data": -0.15
+                                    "data": -0.17
                                 },
                                 {
                                     "type": "float",
@@ -1330,11 +3372,11 @@
                             "data": [
                                 {
                                     "type": "float",
-                                    "data": 0.8
+                                    "data": 1
                                 },
                                 {
                                     "type": "float",
-                                    "data": 0.8
+                                    "data": 1
                                 },
                                 {
                                     "type": "float",
@@ -1378,7 +3420,7 @@
                         },
                         {
                             "type": "unsigned",
-                            "data": 48
+                            "data": 40
                         },
                         "00602042db559215-00036778be000001",
                         "00374a2171ad928d-000331fc8200006d",
@@ -1387,11 +3429,11 @@
                             "data": [
                                 {
                                     "type": "float",
-                                    "data": 1699.84
+                                    "data": 1702.4
                                 },
                                 {
                                     "type": "float",
-                                    "data": 966.967
+                                    "data": 963.767
                                 },
                                 {
                                     "type": "float",
@@ -1415,6 +3457,10 @@
                                     "data": 1
                                 }
                             ]
+                        },
+                        {
+                            "type": "float",
+                            "data": 1
                         },
                         {
                             "type": "bool",
@@ -1708,6 +3754,26 @@
                                     "data": 0
                                 }
                             ]
+                        },
+                        {
+                            "type": "int",
+                            "data": 0
+                        },
+                        {
+                            "type": "float",
+                            "data": 1
+                        },
+                        {
+                            "type": "float",
+                            "data": 1
+                        },
+                        {
+                            "type": "float",
+                            "data": 0.5
+                        },
+                        {
+                            "type": "float",
+                            "data": 0.3
                         }
                     ]
                 },
@@ -1923,7 +3989,7 @@
         },
         {
             "index": 10,
-            "name": "test"
+            "name": "IgnoreBlur"
         }
     ],
     "lightingSystem": {

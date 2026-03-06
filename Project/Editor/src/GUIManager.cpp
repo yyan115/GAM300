@@ -47,6 +47,7 @@ std::vector<Entity> GUIManager::selectedEntities = {};
 GUID_128 GUIManager::selectedAsset = GUID_128{0, 0};
 std::string GUIManager::notificationMessage = "";
 float GUIManager::notificationTimer = 0.0f;
+bool GUIManager::showSelectionOutline = true;
 
 // Function definitions
 void GUIManager::SetSelectedEntities(const std::vector<Entity>& entities) { selectedEntities = entities; selectedAsset = GUID_128{0, 0}; }
@@ -73,7 +74,7 @@ void GUIManager::Initialize() {
 	// Load default layout from Editor's imgui.ini if build's imgui.ini doesn't exist
 	if (!std::filesystem::exists("imgui.ini")) {
 		std::filesystem::path editorIni = "../../../Project/Editor/imgui.ini";
-		ENGINE_LOG_DEBUG("Loading default editor layout from: " + editorIni.string());
+		std::cout << "Loading default editor layout from: " << editorIni << std::endl;
 		ImGui::LoadIniSettingsFromDisk(editorIni.string().c_str());
 	}
 	
@@ -361,6 +362,7 @@ void GUIManager::RenderMenuBar() {
 				// Reset to default docking layout
 				dockspaceInitialized = false;
 			}
+			ImGui::MenuItem(ICON_FA_VECTOR_SQUARE " Selection Outline", nullptr, &showSelectionOutline);
 			ImGui::EndMenu();
 		}
 

@@ -6,6 +6,7 @@
 // Include Engine logging to access the GUI queue
 #include "Logging.hpp"
 #include "EditorComponents.hpp"
+#include <IconsFontAwesome6.h>
 
 ConsolePanel::ConsolePanel() 
     : EditorPanel("Console", true) {
@@ -21,16 +22,23 @@ void ConsolePanel::OnImGuiRender() {
     ImGui::PushStyleColor(ImGuiCol_ChildBg, EditorComponents::PANEL_BG_ASSET_BROWSER);
 
     if (ImGui::Begin(name.c_str(), &isOpen)) {
-        // Filter checkboxes
-        ImGui::Checkbox("Info", &showInfo); ImGui::SameLine();
-        ImGui::Checkbox("Warnings", &showWarnings); ImGui::SameLine();
-        ImGui::Checkbox("Errors", &showErrors); ImGui::SameLine();
+        // Filter checkboxes with icons
+        ImGui::Checkbox(ICON_FA_CIRCLE_INFO " Info", &showInfo); ImGui::SameLine();
+        ImGui::Checkbox(ICON_FA_TRIANGLE_EXCLAMATION " Warnings", &showWarnings); ImGui::SameLine();
+        ImGui::Checkbox(ICON_FA_CIRCLE_EXCLAMATION " Errors", &showErrors); ImGui::SameLine();
         ImGui::Checkbox("Auto Scroll", &autoScroll);
 
         ImGui::SameLine();
         if (ImGui::Button("Clear")) {
             Clear();
         }
+
+        ImGui::SameLine();
+        ImGui::Text(ICON_FA_MAGNIFYING_GLASS);
+        ImGui::SameLine();
+        ImGui::PushItemWidth(200);
+        ImGui::InputText("##SearchFilter", searchFilter, sizeof(searchFilter));
+        ImGui::PopItemWidth();
 
         ImGui::Separator();
 
@@ -56,6 +64,17 @@ void ConsolePanel::OnImGuiRender() {
                     show = showErrors;
                     color = ImVec4(1.0f, 0.4f, 0.4f, 1.0f); // Red
                     break;
+            }
+
+            // Apply search filter (case-insensitive)
+            if (show && searchFilter[0] != '\0') {
+                std::string lowerMsg = entry.message;
+                std::string lowerFilter = searchFilter;
+                std::transform(lowerMsg.begin(), lowerMsg.end(), lowerMsg.begin(), ::tolower);
+                std::transform(lowerFilter.begin(), lowerFilter.end(), lowerFilter.begin(), ::tolower);
+                if (lowerMsg.find(lowerFilter) == std::string::npos) {
+                    show = false;
+                }
             }
 
             if (show) {
@@ -84,8 +103,8 @@ void ConsolePanel::OnImGuiRender() {
 
 
                 // Add timestamp and level prefix
-                const char* levelStr = (entry.level == 0) ? "[INFO]" : 
-                                      (entry.level == 1) ? "[WARN]" : "[ERROR]";
+                const char* levelStr = (entry.level == 0) ? ICON_FA_CIRCLE_INFO " [INFO]" :
+                                      (entry.level == 1) ? ICON_FA_TRIANGLE_EXCLAMATION " [WARN]" : ICON_FA_CIRCLE_EXCLAMATION " [ERROR]";
                 ImGui::Text("[%s] %s %s", timeBuffer, levelStr, entry.message.c_str());
                 
                 ImGui::PopStyleColor();

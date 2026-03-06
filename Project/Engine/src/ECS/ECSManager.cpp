@@ -41,6 +41,9 @@
 #include <Graphics/Sprite/SpriteAnimationComponent.hpp>
 #include "Video/VideoComponent.hpp"
 #include "Video/VideoSystem.hpp"
+#include "Dialogue/DialogueComponent.hpp"
+#include "Graphics/BloomComponent.hpp"
+#include "Dialogue/DialogueSystem.hpp"
 
 void ECSManager::Initialize() {
 	entityManager = std::make_unique<EntityManager>();
@@ -81,6 +84,9 @@ void ECSManager::Initialize() {
 	RegisterComponent<ButtonComponent>();
 	RegisterComponent<SliderComponent>();
 	RegisterComponent<UIAnchorComponent>();
+	RegisterComponent<DialogueComponent>();
+	RegisterComponent<FogVolumeComponent>();
+	RegisterComponent<BloomComponent>();
 
 	// REGISTER ALL SYSTEMS AND ITS SIGNATURES HERE
 	// e.g.,
@@ -228,7 +234,19 @@ void ECSManager::Initialize() {
 		SetSystemSignature<VideoSystem>(signature);
 	}
 
+	dialogueSystem = RegisterSystem<DialogueSystem>();
+	{
+		Signature signature;
+		signature.set(GetComponentID<DialogueComponent>());
+		SetSystemSignature<DialogueSystem>(signature);
+	}
 
+	fogSystem = RegisterSystem<FogSystem>();
+	{
+		Signature signature;
+		signature.set(GetComponentID<FogVolumeComponent>());
+		SetSystemSignature<FogSystem>(signature);
+	}
 
 }
 
@@ -322,10 +340,17 @@ std::vector<Entity> ECSManager::GetAllRootEntities() {
 }
 
 bool ECSManager::IsEntityActiveInHierarchy(Entity entity) {
+	// Check per-frame cache first
+	auto cacheIt = m_activeHierarchyCache.find(entity);
+	if (cacheIt != m_activeHierarchyCache.end()) {
+		return cacheIt->second;
+	}
+
 	// Check if entity itself is active
 	if (HasComponent<ActiveComponent>(entity)) {
 		auto& activeComp = GetComponent<ActiveComponent>(entity);
 		if (!activeComp.isActive) {
+			m_activeHierarchyCache[entity] = false;
 			return false;
 		}
 	}
@@ -335,11 +360,6 @@ bool ECSManager::IsEntityActiveInHierarchy(Entity entity) {
 	auto& guidRegistry = EntityGUIDRegistry::GetInstance();
 
 	while (HasComponent<ParentComponent>(currentEntity)) {
-		// Get current entity's name for debugging
-		std::string currentEntityName = HasComponent<NameComponent>(currentEntity)
-			? GetComponent<NameComponent>(currentEntity).name
-			: "Unnamed";
-
 		// Get parent entity
 		auto& parentComp = GetComponent<ParentComponent>(currentEntity);
 		GUID_128 parentGUID = parentComp.parent;
@@ -347,21 +367,14 @@ bool ECSManager::IsEntityActiveInHierarchy(Entity entity) {
 
 		// Check if parent is valid
 		if (parentEntity == static_cast<Entity>(-1) || parentEntity == UINT32_MAX) {
-			std::cerr << "[IsEntityActiveInHierarchy] ERROR: Entity '" << currentEntityName
-				<< "' (" << currentEntity << ") has invalid parent GUID: "
-				<< GUIDUtilities::ConvertGUID128ToString(parentGUID) << "\n";
 			break; // Invalid parent, stop traversal
 		}
-
-		// Get parent's name for debugging
-		std::string parentEntityName = HasComponent<NameComponent>(parentEntity)
-			? GetComponent<NameComponent>(parentEntity).name
-			: "Unnamed";
 
 		// Check if parent is active
 		if (HasComponent<ActiveComponent>(parentEntity)) {
 			auto& parentActiveComp = GetComponent<ActiveComponent>(parentEntity);
 			if (!parentActiveComp.isActive) {
+				m_activeHierarchyCache[entity] = false;
 				return false; // Parent is inactive, so this entity is inactive in hierarchy
 			}
 		}
@@ -370,5 +383,6 @@ bool ECSManager::IsEntityActiveInHierarchy(Entity entity) {
 		currentEntity = parentEntity;
 	}
 
+	m_activeHierarchyCache[entity] = true;
 	return true; // Entity and all ancestors are active
 }

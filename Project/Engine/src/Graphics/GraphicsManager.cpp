@@ -6,6 +6,17 @@
 #ifdef ANDROID
 #include <android/log.h>
 #endif
+
+// Tracy GPU profiling (desktop only)
+#if defined(TRACY_ENABLE) && !defined(ANDROID) && !defined(__APPLE__)
+#include "tracy/TracyOpenGL.hpp"
+#define PROFILE_GPU_CONTEXT   TracyGpuContext
+#define PROFILE_GPU_ZONE(name) TracyGpuZone(name)
+#else
+#define PROFILE_GPU_CONTEXT   ((void)0)
+#define PROFILE_GPU_ZONE(name) ((void)0)
+#endif
+
 #include <Transform/TransformSystem.hpp>
 #include <ECS/ECSManager.hpp>
 #include <ECS/ECSRegistry.hpp>
@@ -14,6 +25,9 @@
 #include "Graphics/Camera/CameraComponent.hpp"
 #include "Graphics/Camera/CameraSystem.hpp"
 #include "Asset Manager/ResourceManager.hpp"
+#include "Graphics/Instancing/InstancingManager.hpp"
+#include "TimeManager.hpp"
+#include "Graphics/PostProcessing/PostProcessingManager.hpp"
 
 GraphicsManager& GraphicsManager::GetInstance()
 {
@@ -42,6 +56,9 @@ bool GraphicsManager::Initialize(int window_width, int window_height)
 	GLenum fFace = GL_CCW;
 	if (frontFace == FrontFace::CW) fFace = GL_CW;
 	glFrontFace(fFace);      // Counter-clockwise winding = front face
+
+	// Initialize Tracy GPU profiling context (must be after GL is ready)
+	PROFILE_GPU_CONTEXT;
 
 	// Initialize skybox
 	InitializeSkybox();
@@ -88,11 +105,25 @@ void GraphicsManager::Shutdown()
 void GraphicsManager::BeginFrame()
 {
 	renderQueue.clear();
+	deferredQueue.clear();
 
 	// Reset state tracking
 	m_currentShader = nullptr;
 	m_currentMaterial = nullptr;
 	m_sortingStats.Reset();
+
+	if (InstancingManager::GetInstance().IsEnabled())
+	{
+		InstancingManager::GetInstance().BeginFrame();
+
+		// Update frustum NOW so TryAddInstance (called during Update) uses the
+		// current-frame frustum rather than the previous frame's frustum.
+		// Without this, frustum-culled instanceable models silently disappear:
+		// they are neither added to a batch nor submitted to the render queue.
+		UpdateFrustum();
+		InstancingManager::GetInstance().SetFrustum(
+			frustumCullingEnabled ? &viewFrustum : nullptr);
+	}
 }
 
 void GraphicsManager::EndFrame()
@@ -163,6 +194,8 @@ void GraphicsManager::Submit(std::unique_ptr<IRenderComponent> renderItem)
 
 void GraphicsManager::UpdateFrustum()
 {
+	PROFILE_FUNCTION();
+
 	if (!currentCamera)
 	{
 		return;
@@ -208,6 +241,9 @@ void GraphicsManager::UpdateFrustum()
 
 void GraphicsManager::Render()
 {
+	PROFILE_FUNCTION();
+	PROFILE_GPU_ZONE("Render");
+
 	if (auto* platform = WindowManager::GetPlatform()) {
 		platform->MakeContextCurrent();
 	}
@@ -234,17 +270,67 @@ void GraphicsManager::Render()
 	// Render skybox first (before other objects)
 	RenderSkybox();
 
-	// Separate models from other render items
+	// Separate models from other render items, moving excluded items to deferred queue
 	std::vector<IRenderComponent*> modelItems;
 	std::vector<IRenderComponent*> otherItems;
 
-	for (auto& item : renderQueue) {
-		if (dynamic_cast<ModelRenderComponent*>(item.get())) {
+	for (auto& item : renderQueue)
+	{
+		if (item->excludeFromPostProcess)
+		{
+			deferredQueue.push_back(std::move(item));
+			continue;
+		}
+		if (dynamic_cast<ModelRenderComponent*>(item.get()))
+		{
 			modelItems.push_back(item.get());
 		}
-		else {
+		else
+		{
 			otherItems.push_back(item.get());
 		}
+	}
+	// Enable MRT so bloom-capable shaders can write to the bloom emission texture
+	PostProcessingManager::GetInstance().EnableBloomMRT();
+
+	InstancingManager& instancing = InstancingManager::GetInstance();
+
+	if (instancing.IsEnabled())
+	{
+		// Get view/projection matrices
+		glm::mat4 view = currentCamera->GetViewMatrix();
+		float aspectRatio = currentFrameViewport.aspectRatio;
+		glm::mat4 projection = glm::perspective(
+			glm::radians(currentCamera->Zoom),
+			aspectRatio,
+			0.1f, 100.0f
+		);
+
+		// Render all batched instances
+		instancing.RenderBatches(view, projection, currentCamera->Position);
+
+		// End instancing frame
+		instancing.EndFrame();
+
+		//// Print stats every 300 frames
+		//static int frameCount = 0;
+		//if (++frameCount % 300 == 0)
+		//{
+		//	const auto& stats = instancing.GetStats();
+		//	std::cout << "[Instancing Stats]" << std::endl;
+		//	std::cout << "  Total objects: " << stats.totalObjects << std::endl;
+		//	std::cout << "  Instanced: " << stats.instancedObjects << std::endl;
+		//	std::cout << "  Non-instanced: " << stats.nonInstancedObjects << std::endl;
+		//	std::cout << "  Batches: " << stats.batchCount << std::endl;
+		//	std::cout << "  Draw calls: " << stats.drawCalls << std::endl;
+		//	std::cout << "  Culled: " << stats.culledObjects << std::endl;
+		//	std::cout << "  Efficiency: " << stats.GetBatchEfficiency() << "%" << std::endl;
+		//}
+
+		//// Update stats
+		//const auto& instStats = instancing.GetStats();
+		//// log stats
+		//std::cout << "Instanced: " << instStats.instancedObjects << ", Batches: " << instStats.batchCount << std::endl;
 	}
 
 	// Sort models by state (shader -> material -> mesh)
@@ -271,7 +357,7 @@ void GraphicsManager::Render()
 				m_idCache.GetMaterialId(modelB->material.get()),
 				m_idCache.GetModelId(modelB->model.get()));
 
-			return keyA < keyB;
+			return false;
 		});
 
 	// Sort other items by their existing sorting logic (sprites, text, etc.)
@@ -281,56 +367,21 @@ void GraphicsManager::Render()
 			return a->renderOrder < b->renderOrder;
 		});
 
-	// After sorting otherItems, before rendering
-	/*static int frame = 0;
-	if (++frame % 60 == 0) {
-		std::cout << "=== DRAW CALL BREAKDOWN ===" << std::endl;
-		std::cout << "Models: " << modelItems.size() << std::endl;
-
-		int spriteCount = 0;
-		int textCount = 0;
-		int particleCount = 0;
-		int debugCount = 0;
-
-		for (IRenderComponent* item : otherItems) {
-			if (dynamic_cast<TextRenderComponent*>(item)) textCount++;
-			else if (dynamic_cast<SpriteRenderComponent*>(item)) spriteCount++;
-			else if (dynamic_cast<ParticleComponent*>(item)) particleCount++;
-			else if (dynamic_cast<DebugDrawComponent*>(item)) debugCount++;
-		}
-
-		std::cout << "Sprites: " << spriteCount << std::endl;
-		std::cout << "Text: " << textCount << std::endl;
-		std::cout << "Particles: " << particleCount << std::endl;
-		std::cout << "Debug: " << debugCount << std::endl;
-		std::cout << "Total otherItems: " << otherItems.size() << std::endl;
-		std::cout << "===========================" << std::endl;
-	}*/
-
-	//static int frame = 0;
-	//if (++frame % 60 == 0) {
-	//	std::cout << "=== MODEL BREAKDOWN ===" << std::endl;
-
-	//	std::map<std::string, int> modelCounts;
-	//	for (IRenderComponent* item : modelItems) {
-	//		auto* model = static_cast<ModelRenderComponent*>(item);
-	//		if (model->model) {
-	//			std::string name = model->model->modelName;  // or GetName() if you have it
-	//			modelCounts[name]++;
-	//		}
-	//	}
-
-	//	for (const auto& pair : modelCounts) {
-	//		std::cout << pair.second << "x " << pair.first << std::endl;
-	//	}
-	//	std::cout << "========================" << std::endl;
-	//}
-
 	// =========================================================================
 	// Render models with state tracking
 	// =========================================================================
-	for (IRenderComponent* item : modelItems) {
+	for (IRenderComponent* item : modelItems) 
+	{
 		ModelRenderComponent* modelItem = static_cast<ModelRenderComponent*>(item);
+		// Skip if it was handled by instancing
+	   // (InstancingManager sets a flag or we check IsInstanceable)
+		if (instancing.IsEnabled() &&
+			!modelItem->HasAnimation() &&
+			modelItem->model &&
+			modelItem->model->mBoneInfoMap.empty()) 
+		{
+			continue;  // Already rendered via instancing
+		}
 		RenderModelOptimized(*modelItem);  // New optimized render method
 	}
 
@@ -351,17 +402,72 @@ void GraphicsManager::Render()
 		else if (auto* particleItem = dynamic_cast<ParticleComponent*>(item)) {
 			RenderParticles(*particleItem);
 		}
+		else if (auto* fogItem = dynamic_cast<FogVolumeComponent*>(item)) {
+			RenderFogVolume(*fogItem);
+		}
 	}
 
-	//// Debug output (optional - remove in release)
-	//static int frameCount = 0;
-	//if (++frameCount % 60 == 0) 
-	//{
-	//	std::cout << "[Sorting] Objects: " << m_sortingStats.totalObjects
-	//		<< " DrawCalls: " << m_sortingStats.drawCalls
-	//		<< " ShaderSwitch: " << m_sortingStats.shaderSwitches
-	//		<< " MatSwitch: " << m_sortingStats.materialSwitches << "\n";
-	//}
+	// Disable bloom MRT — done writing bloom emission
+	PostProcessingManager::GetInstance().DisableBloomMRT();
+
+	// Debug output (optional - remove in release)
+	/*static int frameCount = 0;
+	if (++frameCount % 300 == 0)
+	{
+		std::cout << "[Sorting] Objects: " << m_sortingStats.totalObjects
+			<< " DrawCalls: " << m_sortingStats.drawCalls
+			<< " ShaderSwitch: " << m_sortingStats.shaderSwitches
+			<< " MatSwitch: " << m_sortingStats.materialSwitches << "\n";
+	}*/
+}
+
+void GraphicsManager::RenderDeferred()
+{
+	if (deferredQueue.empty()) return;
+
+	// Separate deferred items into models/others
+	std::vector<IRenderComponent*> modelItems;
+	std::vector<IRenderComponent*> otherItems;
+
+	for (auto& item : deferredQueue)
+	{
+		if (!item) continue;
+		if (dynamic_cast<ModelRenderComponent*>(item.get()))
+			modelItems.push_back(item.get());
+		else
+			otherItems.push_back(item.get());
+	}
+
+	// Sort others by render order
+	std::sort(otherItems.begin(), otherItems.end(),
+		[](IRenderComponent* a, IRenderComponent* b) {
+			return a->renderOrder < b->renderOrder;
+		});
+
+	// Render as overlay: disable depth test, enable blending
+	glDisable(GL_DEPTH_TEST);
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+	for (IRenderComponent* item : modelItems)
+	{
+		RenderModel(*static_cast<ModelRenderComponent*>(item));
+	}
+
+	for (IRenderComponent* item : otherItems)
+	{
+		if (auto* textItem = dynamic_cast<TextRenderComponent*>(item))
+			RenderText(*textItem);
+		else if (auto* spriteItem = dynamic_cast<SpriteRenderComponent*>(item))
+			RenderSprite(*spriteItem);
+		else if (auto* particleItem = dynamic_cast<ParticleComponent*>(item))
+			RenderParticles(*particleItem);
+	}
+
+	// Restore state
+	glEnable(GL_DEPTH_TEST);
+
+	deferredQueue.clear();
 }
 
 void GraphicsManager::RenderModel(const ModelRenderComponent& item)
@@ -399,6 +505,12 @@ void GraphicsManager::RenderModel(const ModelRenderComponent& item)
 	// Set up all matrices and uniforms
 	SetupMatrices(*item.shader,item.transform.ConvertToGLM(), true);
 
+	// Per-entity bloom emission
+	item.shader->setFloat("bloomIntensity", item.bloomIntensity);
+	if (item.bloomIntensity > 0.0f) {
+		item.shader->setVec3("bloomColor", item.bloomColor);
+	}
+
 	// Apply lighting
 	ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager(); 
 	if (ecsManager.lightingSystem) 
@@ -410,7 +522,7 @@ void GraphicsManager::RenderModel(const ModelRenderComponent& item)
 		static bool once = false;
 		if (!once) 
 		{
-			ENGINE_PRINT("[Debug] ApplyShadows called");
+			std::cout << "[Debug] ApplyShadows called" << std::endl;
 			once = true;
 		}
 	}
@@ -522,7 +634,14 @@ void GraphicsManager::RenderText(const TextRenderComponent& item)
 
 	// Activate shader and set uniforms
 	item.shader->Activate();
-	item.shader->setVec3("textColor", item.color.ConvertToGLM());
+	glm::vec4 textColorWithAlpha = glm::vec4(item.color.ConvertToGLM(), item.alpha);
+	item.shader->setVec4("textColor", textColorWithAlpha);
+
+	// Per-entity bloom emission
+	item.shader->setFloat("bloomIntensity", item.bloomIntensity);
+	if (item.bloomIntensity > 0.0f) {
+		item.shader->setVec3("bloomColor", item.bloomColor);
+	}
 
 	// Set up matrices based on whether it's 2D or 3D text
 	if (item.is3D)
@@ -745,7 +864,10 @@ void GraphicsManager::RenderParticles(const ParticleComponent& item) {
 	if (!item.isVisible || item.particles.empty() || !item.particleShader || !item.particleVAO) return;
 	glDisable(GL_CULL_FACE);
 	glEnable(GL_BLEND);
-	glBlendFunc(GL_SRC_ALPHA, GL_ONE);  // Additive blending
+	if (item.additiveBlending)
+		glBlendFunc(GL_SRC_ALPHA, GL_ONE);              // Additive: glow/fire/magic
+	else
+		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);  // Standard alpha: physical/solid
 	glDepthMask(GL_FALSE);
 
 #ifdef ANDROID
@@ -783,6 +905,12 @@ void GraphicsManager::RenderParticles(const ParticleComponent& item) {
 		glActiveTexture(GL_TEXTURE0);
 		item.particleTexture->Bind(0);
 		item.particleShader->setInt("particleTexture", 0);
+	}
+
+	// Per-entity bloom emission
+	item.particleShader->setFloat("bloomIntensity", item.bloomIntensity);
+	if (item.bloomIntensity > 0.0f) {
+		item.particleShader->setVec3("bloomColor", item.bloomColor);
 	}
 
 #ifdef ANDROID
@@ -843,6 +971,21 @@ void GraphicsManager::RenderSprite(const SpriteRenderComponent& item)
 	item.shader->setVec4("spriteColor", spriteColor);
 	item.shader->setVec2("uvOffset", item.uvOffset);
 	item.shader->setVec2("uvScale", item.uvScale);
+	item.shader->setInt("fillMode", item.fillMode);
+	if (item.fillMode == 1) {
+		float fillAmount = (item.fillMaxValue > 0.0f)
+			? glm::clamp(item.fillValue / item.fillMaxValue, 0.0f, 1.0f)
+			: 0.0f;
+		item.shader->setFloat("fillAmount", fillAmount);
+		item.shader->setFloat("fillGlow", item.fillGlow);
+		item.shader->setFloat("fillBackground", item.fillBackground);
+	}
+
+	// Per-entity bloom emission
+	item.shader->setFloat("bloomIntensity", item.bloomIntensity);
+	if (item.bloomIntensity > 0.0f) {
+		item.shader->setVec3("bloomColor", item.bloomColor);
+	}
 
 	// Set up matrices based on rendering mode
 	if (item.is3D)
@@ -1067,12 +1210,12 @@ void GraphicsManager::InitializeSkybox()
 	std::string skyboxShaderPath = ResourceManager::GetPlatformShaderPath("skybox");
 	skyboxShader = ResourceManager::GetInstance().GetResource<Shader>(skyboxShaderPath);
 	if (!skyboxShader) {
-		ENGINE_PRINT("[GraphicsManager] WARNING: Failed to load skybox shader from: {}", skyboxShaderPath);
+		std::cout << "[GraphicsManager] WARNING: Failed to load skybox shader from: " << skyboxShaderPath << std::endl;
 	} else {
-		ENGINE_PRINT("[GraphicsManager] Skybox shader loaded successfully - ID: {}", skyboxShader->ID);
+		std::cout << "[GraphicsManager] Skybox shader loaded successfully - ID: " << skyboxShader->ID << std::endl;
 	}
 
-	ENGINE_PRINT("[GraphicsManager] Skybox initialized - VAO: {}, VBO: {}", skyboxVAO, skyboxVBO);
+	std::cout << "[GraphicsManager] Skybox initialized - VAO: " << skyboxVAO << ", VBO: " << skyboxVBO << std::endl;
 }
 
 void GraphicsManager::RenderSceneForShadows(Shader& depthShader)
@@ -1080,7 +1223,8 @@ void GraphicsManager::RenderSceneForShadows(Shader& depthShader)
 	static int frameCount = 0;
 	frameCount++;
 	if (frameCount <= 5) {
-		ENGINE_PRINT("[Shadow] RenderSceneForShadows called - frame {}, queue size: {}", frameCount, renderQueue.size());
+		std::cout << "[Shadow] RenderSceneForShadows called - frame " << frameCount
+			<< ", queue size: " << renderQueue.size() << std::endl;
 	}
 
 	int count = 0;
@@ -1090,10 +1234,26 @@ void GraphicsManager::RenderSceneForShadows(Shader& depthShader)
 		if (!modelItem || !modelItem->isVisible || !modelItem->model)
 			continue;
 
+		glm::mat4 modelMatrix = modelItem->transform.ConvertToGLM();
+
+		// Point light sphere culling: skip objects outside the light's range
+		if (m_shadowFarPlane > 0.0f)
+		{
+			AABB worldBBox = modelItem->model->GetBoundingBox().Transform(modelMatrix);
+			float sqDist = 0.0f;
+			for (int i = 0; i < 3; ++i)
+			{
+				float v = m_shadowLightPos[i];
+				if (v < worldBBox.min[i]) sqDist += (worldBBox.min[i] - v) * (worldBBox.min[i] - v);
+				if (v > worldBBox.max[i]) sqDist += (v - worldBBox.max[i]) * (v - worldBBox.max[i]);
+			}
+			if (sqDist > m_shadowFarPlane * m_shadowFarPlane)
+				continue;
+		}
+
 		count++;
 
 		// Set model matrix
-		glm::mat4 modelMatrix = modelItem->transform.ConvertToGLM();
 		depthShader.setMat4("model", modelMatrix);
 
 		// Handle animation
@@ -1114,7 +1274,7 @@ void GraphicsManager::RenderSceneForShadows(Shader& depthShader)
 	// Debug
 	static bool once = false;
 	if (!once) {
-		ENGINE_PRINT("[Shadow Pass] Rendered {} objects to shadow map", count);
+		std::cout << "[Shadow Pass] Rendered " << count << " objects to shadow map" << std::endl;
 		once = true;
 	}
 }
@@ -1125,7 +1285,8 @@ void GraphicsManager::RenderSkybox()
 
 	if (!currentCamera || !skyboxShader || skyboxVAO == 0) {
 		if (!checkedOnce) {
-			ENGINE_PRINT("[GraphicsManager] Skybox render skipped - camera: {}, shader: {}, VAO: {}", (currentCamera != nullptr), (skyboxShader != nullptr), skyboxVAO);
+			std::cout << "[GraphicsManager] Skybox render skipped - camera: " << (currentCamera != nullptr)
+				<< ", shader: " << (skyboxShader != nullptr) << ", VAO: " << skyboxVAO << std::endl;
 			checkedOnce = true;
 		}
 		return;
@@ -1134,7 +1295,7 @@ void GraphicsManager::RenderSkybox()
 	ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
 	if (!ecsManager.cameraSystem) {
 		if (!checkedOnce) {
-			ENGINE_PRINT("[GraphicsManager] Skybox render skipped - no camera system");
+			std::cout << "[GraphicsManager] Skybox render skipped - no camera system" << std::endl;
 			checkedOnce = true;
 		}
 		return;
@@ -1143,7 +1304,7 @@ void GraphicsManager::RenderSkybox()
 	Entity activeCameraEntity = ecsManager.cameraSystem->GetActiveCameraEntity();
 	if (activeCameraEntity == UINT32_MAX || !ecsManager.HasComponent<CameraComponent>(activeCameraEntity)) {
 		if (!checkedOnce) {
-			ENGINE_PRINT("[GraphicsManager] Skybox render skipped - no active camera entity");
+			std::cout << "[GraphicsManager] Skybox render skipped - no active camera entity" << std::endl;
 			checkedOnce = true;
 		}
 		return;
@@ -1152,7 +1313,7 @@ void GraphicsManager::RenderSkybox()
 	auto& cameraComp = ecsManager.GetComponent<CameraComponent>(activeCameraEntity);
 	if (!cameraComp.skyboxTexture) {
 		if (!checkedOnce) {
-			ENGINE_PRINT("[GraphicsManager] Skybox render skipped - no skybox texture assigned");
+			std::cout << "[GraphicsManager] Skybox render skipped - no skybox texture assigned" << std::endl;
 			checkedOnce = true;
 		}
 		return;
@@ -1160,7 +1321,8 @@ void GraphicsManager::RenderSkybox()
 
 	static bool logged = false;
 	if (!logged) {
-		ENGINE_PRINT("[GraphicsManager] Rendering skybox - Texture ID: {}, Viewport: {}x{}", cameraComp.skyboxTexture->ID, viewportWidth, viewportHeight);
+		std::cout << "[GraphicsManager] Rendering skybox - Texture ID: " << cameraComp.skyboxTexture->ID
+			<< ", Viewport: " << viewportWidth << "x" << viewportHeight << std::endl;
 		logged = true;
 	}
 
@@ -1255,6 +1417,7 @@ void GraphicsManager::RenderModelOptimized(const ModelRenderComponent& item)
 		shader->Activate();
 		m_currentShader = shader;
 		m_sortingStats.shaderSwitches++;
+		shader->setBool("useInstancing", false);
 
 		// Set view/projection (only need to do this on shader switch)
 		SetupMatrices(*shader, modelMatrix, true);
@@ -1273,6 +1436,14 @@ void GraphicsManager::RenderModelOptimized(const ModelRenderComponent& item)
 		shader->setMat3("normalMatrix", normalMatrix);
 	}
 
+	// Per-entity bloom emission (must set per-model to avoid stale values)
+	shader->setFloat("bloomIntensity", item.bloomIntensity);
+	if (item.bloomIntensity > 0.0f) {
+		shader->setVec3("bloomColor", item.bloomColor);
+	} else {
+		shader->setVec3("bloomColor", glm::vec3(0.0f));
+	}
+
 	// Switch material only if different
 	if (material != m_currentMaterial) {
 		if (material) {
@@ -1283,12 +1454,120 @@ void GraphicsManager::RenderModelOptimized(const ModelRenderComponent& item)
 	}
 
 	// Draw the model
-	if (item.HasAnimation()) {
+	if (item.HasAnimation()) 
+	{
 		item.model->Draw(*shader, *currentCamera, item.material, item, item.animator);
 	}
-	else {
+	else 
+	{
 		item.model->Draw(*shader, *currentCamera, item.material, item);
 	}
 
 	m_sortingStats.drawCalls++;
+}
+
+void GraphicsManager::RenderFogVolume(const FogVolumeComponent& item)
+{
+	if (!item.isVisible || !item.fogShader || !item.fogVAO) 
+	{
+		return;
+	}
+
+	// --- Blending setup ---
+	glDisable(GL_DEPTH_TEST);       // Depth handled in shader via depth texture
+	glEnable(GL_CULL_FACE);
+	glCullFace(GL_FRONT);           // Render back faces only for volumetric ray-box effect
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	glDepthMask(GL_FALSE);
+
+	item.fogShader->Activate();
+
+	// --- Transform (uses worldTransform set by FogSystem) ---
+	glm::mat4 modelMatrix = item.worldTransform.ConvertToGLM();
+	item.fogShader->setMat4("model", modelMatrix);
+	item.fogShader->setMat4("modelInverse", glm::inverse(modelMatrix));
+
+	// --- Camera matrices ---
+	const float nearP = 0.1f;
+	const float farP  = 100.0f;
+	if (currentCamera)
+	{
+		float aspectRatio = currentFrameViewport.aspectRatio;
+		glm::mat4 view = currentCamera->GetViewMatrix();
+		glm::mat4 projection = glm::perspective(
+			glm::radians(currentCamera->Zoom),
+			aspectRatio,
+			nearP, farP
+		);
+		item.fogShader->setMat4("view", view);
+		item.fogShader->setMat4("projection", projection);
+		item.fogShader->setMat4("inverseView", glm::inverse(view));
+		item.fogShader->setMat4("inverseProjection", glm::inverse(projection));
+		item.fogShader->setVec3("cameraPos", currentCamera->Position);
+		item.fogShader->setFloat("nearPlane", nearP);
+		item.fogShader->setFloat("farPlane",  farP);
+		item.fogShader->setVec2("viewportSize",
+			glm::vec2(static_cast<float>(currentFrameViewport.width),
+			          static_cast<float>(currentFrameViewport.height)));
+	}
+
+	// --- Scene depth texture for soft intersection with solid geometry ---
+	unsigned int depthTex = PostProcessingManager::GetInstance().GetHDRDepthTexture();
+	glActiveTexture(GL_TEXTURE1);
+	glBindTexture(GL_TEXTURE_2D, depthTex);
+	item.fogShader->setInt("depthTexture", 1);
+
+	// --- Fog properties (all from FogVolumeComponent) ---
+	item.fogShader->setInt("fogShape", static_cast<int>(item.shape));
+	item.fogShader->setVec3("fogColor", item.fogColor.ConvertToGLM());
+	item.fogShader->setFloat("density", item.density);
+	item.fogShader->setFloat("opacity", item.opacity);
+
+	// --- Time for noise animation ---
+	static float fogTime = 0.0f;
+	fogTime += static_cast<float>(TimeManager::GetDeltaTime());
+	item.fogShader->setFloat("time", fogTime);
+
+	item.fogShader->setFloat("scrollSpeedX", item.scrollSpeedX);
+	item.fogShader->setFloat("scrollSpeedY", item.scrollSpeedY);
+	item.fogShader->setFloat("noiseScale", item.noiseScale);
+	item.fogShader->setFloat("noiseStrength", item.noiseStrength);
+
+	// --- Height fade ---
+	item.fogShader->setBool("useHeightFade", item.useHeightFade);
+	item.fogShader->setFloat("heightFadeStart", item.heightFadeStart);
+	item.fogShader->setFloat("heightFadeEnd", item.heightFadeEnd);
+
+	// --- Edge softness ---
+	item.fogShader->setFloat("edgeSoftness", item.edgeSoftness);
+
+	// --- Noise texture ---
+	bool hasNoiseMap = (item.noiseTexture != nullptr);
+	item.fogShader->setBool("hasNoiseMap", hasNoiseMap);
+	if (hasNoiseMap)
+	{
+		glActiveTexture(GL_TEXTURE0);
+		item.noiseTexture->Bind(0);
+		item.fogShader->setInt("noiseMap", 0);
+	}
+
+	// --- Draw ---
+	item.fogVAO->Bind();
+	glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
+	item.fogVAO->Unbind();
+
+	// --- Restore state ---
+	if (hasNoiseMap) {
+		item.noiseTexture->Unbind(0);
+	}
+	glActiveTexture(GL_TEXTURE1);
+	glBindTexture(GL_TEXTURE_2D, 0);
+	glActiveTexture(GL_TEXTURE0);
+	glDepthMask(GL_TRUE);
+	glDisable(GL_BLEND);
+	glCullFace(GL_BACK);
+	if (faceCullingEnabled) glEnable(GL_CULL_FACE);
+	else glDisable(GL_CULL_FACE);
+	glEnable(GL_DEPTH_TEST);
 }

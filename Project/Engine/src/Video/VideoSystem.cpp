@@ -1,418 +1,678 @@
-#pragma once
-
 #include "pch.h"
-#include "ECS/ECSManager.hpp"
-#include "ECS/ECSRegistry.hpp"
 #include "Video/VideoSystem.hpp"
 #include "Video/VideoComponent.hpp"
-#include "Performance/PerformanceProfiler.hpp"
+#include "ECS/ECSManager.hpp"
+#include "ECS/ECSRegistry.hpp"
 #include "Graphics/Sprite/SpriteRenderComponent.hpp"
-#include "Asset Manager/AssetManager.hpp"
+#include "Graphics/TextRendering/TextRenderComponent.hpp"
+#include "Graphics/Camera/CameraSystem.hpp"
+#include "Graphics/Camera/CameraComponent.hpp"
+#include "Graphics/PostProcessing/PostProcessingManager.hpp"
+#include "Asset Manager/ResourceManager.hpp"
+#include "Hierarchy/EntityGUIDRegistry.hpp"
+#include "Utilities/GUID.hpp"
 #include "Input/InputManager.h"
-#include "ECS/TagManager.hpp"
-#include "ECS/TagComponent.hpp"
-#include "Sound/AudioComponent.hpp"
-#include "Video/cutscenelayer.hpp"
 #include "Scene/SceneManager.hpp"
+#include "Logging.hpp"
 #include <algorithm>
 #include <cmath>
 
-//HELPER FUNCTIONS
-float lerp(float start, float end, float time)
-{
-    return start + time * (end - start);
-}
+// ============================================================================
+// Helpers
+// ============================================================================
 
-// Smooth ease-in-out for cinematic transitions
-float smoothstep(float t)
+float VideoSystem::Smoothstep(float t)
 {
     t = std::clamp(t, 0.0f, 1.0f);
     return t * t * (3.0f - 2.0f * t);
 }
 
-// Ease-out cubic for smoother deceleration
-float easeOutCubic(float t)
+// ============================================================================
+// Init
+// ============================================================================
+
+void VideoSystem::Initialise(ECSManager& ecsManager)
 {
-    t = std::clamp(t, 0.0f, 1.0f);
-    return 1.0f - std::pow(1.0f - t, 3.0f);
+    m_ecs = &ecsManager;
 }
 
-// Panel definitions: which frames belong to which panel
-// Panel 1: frames 0-2, Panel 2: frames 3-5, Panel 3: frames 6-8, Panel 4: frames 9-10, Panel 5: frames 11-12
-int VideoSystem::GetPanelForFrame(int frame) const
+// ============================================================================
+// Entity Resolution (GUID → Entity, once at init)
+// ============================================================================
+
+void VideoSystem::ResolveEntityReferences(VideoComponent& vc)
 {
-    if (frame <= 2) return 1;
-    if (frame <= 5) return 2;
-    if (frame <= 8) return 3;
-    if (frame <= 10) return 4;
-    return 5;
+    auto resolve = [](const std::string& guidStr) -> Entity {
+        if (guidStr.empty()) return 0;
+        GUID_128 guid = GUIDUtilities::ConvertStringToGUID128(guidStr);
+        return EntityGUIDRegistry::GetInstance().GetEntityByGUID(guid);
+    };
+
+    vc.textEntity = resolve(vc.textEntityGuidStr);
+    vc.blackScreenEntity = resolve(vc.blackScreenEntityGuidStr);
+    vc.skipButtonEntity = resolve(vc.skipButtonEntityGuidStr);
 }
 
-int VideoSystem::GetFirstFrameOfPanel(int panel) const
+// ============================================================================
+// Cutscene Lifecycle
+// ============================================================================
+
+void VideoSystem::BeginCutscene(VideoComponent& vc)
 {
-    switch (panel) {
-        case 1: return 0;
-        case 2: return 3;
-        case 3: return 6;
-        case 4: return 9;
-        case 5: return 11;
-        default: return 0;
-    }
-}
+    if (vc.boards.empty()) return;
 
-int VideoSystem::GetLastFrameOfPanel(int panel) const
-{
-    switch (panel) {
-        case 1: return 2;
-        case 2: return 5;
-        case 3: return 8;
-        case 4: return 10;
-        case 5: return 12;
-        default: return 12;
-    }
-}
+    vc.currentBoardIndex = 0;
+    vc.stateTimer = 0.0f;
+    vc.typewriterTimer = 0.0f;
+    vc.revealedChars = 0;
+    vc.previousBoardChars = 0;
+    vc.cutsceneEnded = false;
+    vc.skipRequested = false;
+    vc.boardElapsedTime = 0.0f;
+    vc.lastComputedBlur = 0.0f;
 
-bool VideoSystem::IsLastFrameInPanel(int frame) const
-{
-    int panel = GetPanelForFrame(frame);
-    return frame == GetLastFrameOfPanel(panel);
-}
-
-void VideoSystem::Initialise(ECSManager& ecsManager) {
-     std::cout << "VideoSystem Initialised" << std::endl;
-     m_ecs = &ecsManager;
-}
-
-void VideoSystem::Update(float dt) {
-    PROFILE_FUNCTION();
-
-    int dialogueTagIndex = TagManager::GetInstance().GetTagIndex("DialogueText");
-    int dialogueBoxTagIndex = TagManager::GetInstance().GetTagIndex("DialogueBox");
-    int blackScreenIndex = TagManager::GetInstance().GetTagIndex("BlackScreen");
-    int skipButtonIndex = TagManager::GetInstance().GetTagIndex("SkipButton");
-
-    // GET ENTITY VIA TAG
-    for (const auto& entity : m_ecs->GetAllEntities())
+    // Save camera's original blur settings so we can restore after cutscene
+    auto cameraSystem = m_ecs->GetSystem<CameraSystem>();
+    Entity camEntity = cameraSystem ? cameraSystem->GetActiveCameraEntity() : UINT32_MAX;
+    if (camEntity != UINT32_MAX && m_ecs->HasComponent<CameraComponent>(camEntity))
     {
-        if (foundBlackScreen && foundDialogueBox && foundDialogueText && foundSkipButton)
-            break;
-
-        // FIND DialogueText Entity
-        if (!foundDialogueText &&
-            m_ecs->HasComponent<TextRenderComponent>(entity) &&
-            m_ecs->GetComponent<TagComponent>(entity).tagIndex == dialogueTagIndex)
-        {
-            foundDialogueText = true;
-            dialogueText_Entity = entity;
-        }
-
-        // FIND DIALOGUEBOX ENTITY
-        if (!foundDialogueBox &&
-            m_ecs->HasComponent<TextRenderComponent>(entity) &&
-            m_ecs->GetComponent<TagComponent>(entity).tagIndex == dialogueBoxTagIndex)
-        {
-            foundDialogueBox = true;
-            dialogueBox_Entity = entity;
-        }
-
-        // FIND BLACKSCREEN ENTITY FOR TRANSITION
-        if (!foundBlackScreen &&
-            m_ecs->HasComponent<SpriteRenderComponent>(entity) &&
-            m_ecs->GetComponent<TagComponent>(entity).tagIndex == blackScreenIndex)
-        {
-            foundBlackScreen = true;
-            blackScreen_Entity = entity;
-        }
-
-        // FIND SKIP BUTTON ENTITY
-        if (!foundSkipButton &&
-            m_ecs->HasComponent<SpriteRenderComponent>(entity) &&
-            m_ecs->GetComponent<TagComponent>(entity).tagIndex == skipButtonIndex)
-        {
-            foundSkipButton = true;
-            skipButton_Entity = entity;
-        }
+        auto& cam = m_ecs->GetComponent<CameraComponent>(camEntity);
+        vc.origBlurEnabled = cam.blurEnabled;
+        vc.origBlurIntensity = cam.blurIntensity;
+        vc.origBlurRadius = cam.blurRadius;
+        vc.origBlurPasses = cam.blurPasses;
+        vc.savedCameraBlur = true;
     }
 
-    if (m_ecs->HasComponent<TextRenderComponent>(dialogueText_Entity) == false)
+    // Set initial board image
+    SwapBoardImage(vc, 0);
+
+    // If first board has no fade, skip directly to displaying
+    if (vc.boards[0].fadeDuration <= 0.0f)
+    {
+        SetBlackScreenAlpha(vc, 0.0f);
+        vc.phase = VideoComponent::Phase::Displaying;
+        vc.stateTimer = 0.0f;
+    }
+    else
+    {
+        // Start with black screen, then fade in
+        SetBlackScreenAlpha(vc, 1.0f);
+        vc.phase = VideoComponent::Phase::FadingIn;
+    }
+}
+
+void VideoSystem::AdvanceToBoard(VideoComponent& vc, int boardIndex)
+{
+    if (boardIndex >= static_cast<int>(vc.boards.size()))
+    {
+        BeginEndingFade(vc);
+        return;
+    }
+
+    const auto& nextBoard = vc.boards[boardIndex];
+
+    // If the next board has continueText, skip the black fade entirely —
+    // treat it as part of the same scene (seamless transition)
+    if (nextBoard.continueText)
+    {
+        SwapBoardImage(vc, boardIndex);
+
+        // Preserve typewriter state
+        vc.previousBoardChars = vc.revealedChars;
+
+        vc.currentBoardIndex = boardIndex;
+        vc.boardElapsedTime = 0.0f;
+        vc.stateTimer = 0.0f;
+
+        // Jump blur to the new board's value immediately (no lerp since we skip the fade)
+        vc.lastComputedBlur = nextBoard.blurIntensity;
+
+        // Apply blur immediately so there's no 1-frame lag from the previous board
+        float intensity = nextBoard.blurIntensity;
+        float radius = nextBoard.blurRadius;
+        int passes = nextBoard.blurPasses;
+
+        auto cameraSystem = m_ecs->GetSystem<CameraSystem>();
+        Entity camEntity = cameraSystem ? cameraSystem->GetActiveCameraEntity() : UINT32_MAX;
+        if (camEntity != UINT32_MAX && m_ecs->HasComponent<CameraComponent>(camEntity))
+        {
+            auto& cam = m_ecs->GetComponent<CameraComponent>(camEntity);
+            cam.blurEnabled = (intensity > 0.0f);
+            cam.blurIntensity = intensity;
+            cam.blurRadius = radius;
+            cam.blurPasses = passes;
+        }
+
+        BlurEffect* blur = PostProcessingManager::GetInstance().GetBlurEffect();
+        if (blur)
+        {
+            blur->SetIntensity(intensity);
+            blur->SetRadius(radius);
+            blur->SetPasses(passes);
+        }
+
+        vc.phase = VideoComponent::Phase::Displaying;
+        return;
+    }
+
+    // If next board has no fade, or current board disables fade-out, do an instant swap
+    bool currentDisablesFadeOut = (vc.currentBoardIndex >= 0
+        && vc.currentBoardIndex < static_cast<int>(vc.boards.size())
+        && vc.boards[vc.currentBoardIndex].disableFadeOut);
+    if (nextBoard.fadeDuration <= 0.0f || currentDisablesFadeOut)
+    {
+        SwapBoardImage(vc, boardIndex);
+
+        vc.previousBoardChars = 0;
+        vc.typewriterTimer = 0.0f;
+        vc.revealedChars = 0;
+
+        vc.currentBoardIndex = boardIndex;
+        vc.boardElapsedTime = 0.0f;
+        vc.stateTimer = 0.0f;
+
+        vc.lastComputedBlur = nextBoard.blurIntensity;
+
+        // Apply blur immediately (same pattern as continueText path)
+        float intensity = nextBoard.blurIntensity;
+        float radius = nextBoard.blurRadius;
+        int passes = nextBoard.blurPasses;
+
+        auto cameraSystem = m_ecs->GetSystem<CameraSystem>();
+        Entity camEntity = cameraSystem ? cameraSystem->GetActiveCameraEntity() : UINT32_MAX;
+        if (camEntity != UINT32_MAX && m_ecs->HasComponent<CameraComponent>(camEntity))
+        {
+            auto& cam = m_ecs->GetComponent<CameraComponent>(camEntity);
+            cam.blurEnabled = (intensity > 0.0f);
+            cam.blurIntensity = intensity;
+            cam.blurRadius = radius;
+            cam.blurPasses = passes;
+        }
+
+        BlurEffect* blur = PostProcessingManager::GetInstance().GetBlurEffect();
+        if (blur)
+        {
+            blur->SetIntensity(intensity);
+            blur->SetRadius(radius);
+            blur->SetPasses(passes);
+        }
+
+        vc.phase = VideoComponent::Phase::Displaying;
+        return;
+    }
+
+    // Save blur endpoints for smooth transition
+    vc.transitionBlurFrom = vc.lastComputedBlur;
+    vc.transitionBlurTo = (nextBoard.blurDelay > 0.0f) ? 0.0f : nextBoard.blurIntensity;
+
+    vc.stateTimer = 0.0f;
+    vc.phase = VideoComponent::Phase::TransitionOut;
+}
+
+void VideoSystem::BeginEndingFade(VideoComponent& vc)
+{
+    // Check if the current board has fade-out disabled
+    if (vc.currentBoardIndex >= 0 && vc.currentBoardIndex < static_cast<int>(vc.boards.size())
+        && vc.boards[vc.currentBoardIndex].disableFadeOut)
+    {
+        SetBlackScreenAlpha(vc, 0.0f);
+        FinishCutscene(vc);
+        return;
+    }
+    vc.stateTimer = 0.0f;
+    vc.phase = VideoComponent::Phase::EndingFade;
+}
+
+void VideoSystem::FinishCutscene(VideoComponent& vc)
+{
+    vc.cutsceneEnded = true;
+    vc.phase = VideoComponent::Phase::Finished;
+    ClearText(vc);
+
+    // Restore camera's original blur settings
+    auto cameraSystem = m_ecs->GetSystem<CameraSystem>();
+    Entity camEntity = cameraSystem ? cameraSystem->GetActiveCameraEntity() : UINT32_MAX;
+    if (camEntity != UINT32_MAX && m_ecs->HasComponent<CameraComponent>(camEntity) && vc.savedCameraBlur)
+    {
+        auto& cam = m_ecs->GetComponent<CameraComponent>(camEntity);
+        cam.blurEnabled = vc.origBlurEnabled;
+        cam.blurIntensity = vc.origBlurIntensity;
+        cam.blurRadius = vc.origBlurRadius;
+        cam.blurPasses = vc.origBlurPasses;
+    }
+    vc.savedCameraBlur = false;
+
+    // Also apply restored values directly for same-frame effect
+    BlurEffect* blur = PostProcessingManager::GetInstance().GetBlurEffect();
+    if (blur)
+    {
+        blur->SetIntensity(vc.origBlurEnabled ? vc.origBlurIntensity : 0.0f);
+        blur->SetRadius(vc.origBlurRadius);
+        blur->SetPasses(vc.origBlurPasses);
+    }
+}
+
+// ============================================================================
+// Typewriter
+// ============================================================================
+
+void VideoSystem::UpdateTypewriter(VideoComponent& vc, float dt)
+{
+    if (vc.currentBoardIndex < 0 || vc.currentBoardIndex >= static_cast<int>(vc.boards.size()))
+        return;
+    if (vc.textEntity == 0 || !m_ecs->HasComponent<TextRenderComponent>(vc.textEntity))
         return;
 
-    // GET RESPECTIVE COMPONENTS
-    auto& textComp = m_ecs->GetComponent<TextRenderComponent>(dialogueText_Entity);
-    auto& textTransform = m_ecs->GetComponent<Transform>(dialogueText_Entity);
-    auto& textAudioComp = m_ecs->GetComponent<AudioComponent>(dialogueText_Entity);
-    auto& blackScreenSprite = m_ecs->GetComponent<SpriteRenderComponent>(blackScreen_Entity);
+    const CutsceneBoard& board = vc.boards[vc.currentBoardIndex];
+    auto& textComp = m_ecs->GetComponent<TextRenderComponent>(vc.textEntity);
 
-    SpriteRenderComponent* skipButtonSprite = nullptr;
-    if (foundSkipButton && m_ecs->HasComponent<SpriteRenderComponent>(skipButton_Entity))
-        skipButtonSprite = &m_ecs->GetComponent<SpriteRenderComponent>(skipButton_Entity);
-
-    // GET THE VIDEO COMP AND SPRITE COMPONENT FROM THE ENTITY
-    for (const auto& entity : entities)
+    if (board.text.empty())
     {
-        if (!m_ecs->HasComponent<VideoComponent>(entity) || !m_ecs->HasComponent<SpriteRenderComponent>(entity))
-            continue;
-        // Skip entities that are inactive in hierarchy (checks parents too)
-        if (!m_ecs->IsEntityActiveInHierarchy(entity)) continue;
+        textComp.text = "";
+        return;
+    }
 
-        auto& videoComp = m_ecs->GetComponent<VideoComponent>(entity);
-        auto& spriteComp = m_ecs->GetComponent<SpriteRenderComponent>(entity);
+    if (board.textSpeed <= 0.0f)
+    {
+        // Instant display
+        textComp.text = board.text;
+        vc.revealedChars = static_cast<int>(board.text.size());
+        return;
+    }
 
-        // SET UP THE FIRST CUTSCENE
-        if (videoComp.asset_dirty)
+    vc.typewriterTimer += dt;
+    int totalChars = vc.previousBoardChars + static_cast<int>(vc.typewriterTimer * board.textSpeed);
+    totalChars = std::min(totalChars, static_cast<int>(board.text.size()));
+    vc.revealedChars = totalChars;
+    textComp.text = board.text.substr(0, totalChars);
+}
+
+void VideoSystem::CompleteTypewriter(VideoComponent& vc)
+{
+    if (vc.currentBoardIndex < 0 || vc.currentBoardIndex >= static_cast<int>(vc.boards.size()))
+        return;
+    if (vc.textEntity == 0 || !m_ecs->HasComponent<TextRenderComponent>(vc.textEntity))
+        return;
+
+    const CutsceneBoard& board = vc.boards[vc.currentBoardIndex];
+    auto& textComp = m_ecs->GetComponent<TextRenderComponent>(vc.textEntity);
+
+    textComp.text = board.text;
+    vc.revealedChars = static_cast<int>(board.text.size());
+    vc.typewriterTimer = static_cast<float>(board.text.size()) / std::max(board.textSpeed, 1.0f);
+}
+
+bool VideoSystem::IsTypewriterFinished(const VideoComponent& vc) const
+{
+    if (vc.currentBoardIndex < 0 || vc.currentBoardIndex >= static_cast<int>(vc.boards.size()))
+        return true;
+    const CutsceneBoard& board = vc.boards[vc.currentBoardIndex];
+    if (board.text.empty()) return true;
+    return vc.revealedChars >= static_cast<int>(board.text.size());
+}
+
+// ============================================================================
+// Blur
+// ============================================================================
+
+void VideoSystem::ApplyBlur(VideoComponent& vc, float dt)
+{
+    if (vc.currentBoardIndex < 0 || vc.currentBoardIndex >= static_cast<int>(vc.boards.size()))
+        return;
+
+    const CutsceneBoard& board = vc.boards[vc.currentBoardIndex];
+    float intensity = vc.lastComputedBlur;
+    float radius = board.blurRadius;
+    int passes = board.blurPasses;
+
+    bool inTransition = (vc.phase == VideoComponent::Phase::TransitionOut ||
+                         vc.phase == VideoComponent::Phase::TransitionIn);
+
+    if (!inTransition)
+    {
+        // Accumulate board elapsed time (only during non-transition phases)
+        vc.boardElapsedTime += dt;
+
+        // Compute target from board settings using boardElapsedTime (NOT stateTimer)
+        if (board.blurDelay > 0.0f && vc.boardElapsedTime < board.blurDelay)
         {
-            videoComp.activeFrame = videoComp.frameStart;
-            videoComp.currentTime = 0;
-            videoComp.currentPanel = GetPanelForFrame(videoComp.frameStart);
-            videoComp.asset_dirty = false;
-            m_boardTimer = 0.0f;
-            m_fadeTimer = 0.0f;
-            m_isFading = false;
-            m_fadeTargetFrame = -1;
-            isSkipping = false;
-
-            std::string firstPath = ConstructNewPath(videoComp);
-            m_dialogueManager.Reset();
-            SwapCutscene(spriteComp, firstPath);
-            isTransitioning = true;
-            videoComp.cutsceneEnded = false;
-            internalCutsceneEnded = false;
-            blackScreenSprite.alpha = 1.0f;  // Start from black
-        }
-
-        videoComp.currentTime += dt;
-
-        // ========== SKIP BUTTON HANDLING ==========
-        // Check if cutsceneEnded was set externally (e.g., by Lua skip script)
-        if (videoComp.cutsceneEnded && !internalCutsceneEnded && !isSkipping)
-        {
-            // Skip was triggered externally, start skip fade
-            isSkipping = true;
-            internalCutsceneEnded = true;
-            m_isFading = true;
-            m_fadeTimer = 0.0f;
-            videoComp.cutsceneEnded = false;  // Reset so we can use proper fade
-        }
-
-        // ========== HANDLE FADE TRANSITIONS ==========
-        if (m_isFading)
-        {
-            m_fadeTimer += dt;
-            float fadeDuration = isSkipping ? videoComp.skipFadeDuration : videoComp.fadeDuration;
-            float fadeProgress = std::clamp(m_fadeTimer / fadeDuration, 0.0f, 1.0f);
-            float easedProgress = smoothstep(fadeProgress);
-
-            if (internalCutsceneEnded || isSkipping)
-            {
-                // Fade OUT to black (ending cutscene)
-                blackScreenSprite.alpha = easedProgress;
-
-                if (fadeProgress >= 1.0f)
-                {
-                    blackScreenSprite.alpha = 1.0f;
-                    m_isFading = false;
-                    videoComp.cutsceneEnded = true;
-
-                    // Hide skip button after skipping
-                    if (skipButtonSprite)
-                        skipButtonSprite->isVisible = false;
-                }
-            }
-            else if (m_fadeTargetFrame >= 0)
-            {
-                // Fade between boards
-                // First half: fade to black
-                if (fadeProgress < 0.5f)
-                {
-                    blackScreenSprite.alpha = smoothstep(fadeProgress * 2.0f);
-                }
-                // At midpoint: swap the image
-                else if (fadeProgress >= 0.5f && videoComp.activeFrame != m_fadeTargetFrame)
-                {
-                    videoComp.activeFrame = m_fadeTargetFrame;
-                    videoComp.currentPanel = GetPanelForFrame(m_fadeTargetFrame);
-                    std::string newPath = ConstructNewPath(videoComp);
-                    SwapCutscene(spriteComp, newPath);
-
-                    // Reset dialogue for new panel
-                    int newPanel = GetPanelForFrame(m_fadeTargetFrame);
-                    int oldPanel = GetPanelForFrame(m_fadeTargetFrame - 1);
-                    if (newPanel != oldPanel)
-                    {
-                        m_dialogueManager.Reset();
-                    }
-                }
-                // Second half: fade from black
-                if (fadeProgress >= 0.5f)
-                {
-                    blackScreenSprite.alpha = 1.0f - smoothstep((fadeProgress - 0.5f) * 2.0f);
-                }
-
-                if (fadeProgress >= 1.0f)
-                {
-                    blackScreenSprite.alpha = 0.0f;
-                    m_isFading = false;
-                    m_fadeTargetFrame = -1;
-                    m_boardTimer = 0.0f;  // Reset board timer after transition
-                }
-            }
-            else
-            {
-                // Initial fade in from black
-                blackScreenSprite.alpha = 1.0f - easedProgress;
-
-                if (fadeProgress >= 1.0f)
-                {
-                    blackScreenSprite.alpha = 0.0f;
-                    m_isFading = false;
-                    isTransitioning = false;
-                    m_boardTimer = 0.0f;
-                }
-            }
-
-            // Continue to render text even during fade
-            goto render_text;
-        }
-
-        // ========== INITIAL TRANSITION ==========
-        if (isTransitioning && !m_isFading)
-        {
-            m_isFading = true;
-            m_fadeTimer = 0.0f;
-            m_fadeTargetFrame = -1;  // No target, just fade in
-            goto render_text;
-        }
-
-        // ========== BLOCK INPUT IF CUTSCENE ENDED ==========
-        if (internalCutsceneEnded)
-        {
-            if (!m_isFading)
-            {
-                m_isFading = true;
-                m_fadeTimer = 0.0f;
-            }
-            goto render_text;
-        }
-
-        // ========== AUTO-ADVANCE TIMER ==========
-        m_boardTimer += dt;
-        {
-            bool isLastInPanel = IsLastFrameInPanel(videoComp.activeFrame);
-            float autoAdvanceTime = isLastInPanel ? videoComp.panelDuration : videoComp.boardDuration;
-
-            if (m_boardTimer >= autoAdvanceTime)
-            {
-                // Auto-advance to next frame
-                int nextFrame = videoComp.activeFrame + 1;
-
-                if (nextFrame > videoComp.frameEnd)
-                {
-                    // End of cutscene
-                    internalCutsceneEnded = true;
-                    isSkipping = false;
-                    m_isFading = true;
-                    m_fadeTimer = 0.0f;
-                }
-                else
-                {
-                    // Start fade to next frame
-                    m_isFading = true;
-                    m_fadeTimer = 0.0f;
-                    m_fadeTargetFrame = nextFrame;
-                }
-            }
-        }
-
-        // ========== TAP INPUT HANDLING ==========
-        if (g_inputManager->IsPointerJustPressed() && !m_isFading)
-        {
-            // Check if text is still typing
-            // Use frame number for frame-based dialogue, panel number for panel-based
-            int dialogueKey = !videoComp.dialogueMap.empty() ? videoComp.activeFrame : GetPanelForFrame(videoComp.activeFrame);
-            bool textFinished = m_dialogueManager.IsTextFinishedForPanel(textComp, dialogueKey);
-            textAudioComp.Play();
-            if (!textFinished)
-            {
-                // TAP: Auto-complete typewriter text
-                m_dialogueManager.CompleteTextImmediately(textComp, dialogueKey);
-            }
-            else
-            {
-                // TAP: Advance to next board
-                int nextFrame = videoComp.activeFrame + 1;
-
-                if (nextFrame > videoComp.frameEnd)
-                {
-                    // End of cutscene
-                    internalCutsceneEnded = true;
-                    m_isFading = true;
-                    m_fadeTimer = 0.0f;
-                }
-                else
-                {
-                    // Start fade to next frame
-                    m_isFading = true;
-                    m_fadeTimer = 0.0f;
-                    m_fadeTargetFrame = nextFrame;
-                }
-
-                m_boardTimer = 0.0f;  // Reset auto-advance timer on manual advance
-            }
-        }
-
-render_text:
-        // ========== TEXT HANDLING ==========
-        // Prefer frame/board-based dialogue for progressive text within panels
-        // Fall back to panel-based dialogue if frame-based is not available
-        if (!videoComp.dialogueMap.empty())
-        {
-            // Frame/Board-based dialogue - supports progressive text per board
-            m_dialogueManager.dialogueMap = videoComp.dialogueMap;
-            m_dialogueManager.HandleTextRender(dt, textComp, textTransform, videoComp.activeFrame);
-        }
-        else if (!videoComp.panelDialogueMap.empty())
-        {
-            // Panel-based dialogue - same text for all boards in panel
-            m_dialogueManager.panelDialogueMap = videoComp.panelDialogueMap;
-            int currentPanel = GetPanelForFrame(videoComp.activeFrame);
-            m_dialogueManager.HandlePanelTextRender(dt, textComp, textTransform, currentPanel);
+            intensity = 0.0f;
         }
         else
         {
-            // No dialogue
-            textComp.text = "";
+            intensity = board.blurIntensity;
+            if (board.blurIntensityEnd >= 0.0f && board.duration > board.blurDelay)
+            {
+                float elapsed = vc.boardElapsedTime - board.blurDelay;
+                float remaining = board.duration - board.blurDelay;
+                float t = std::clamp(elapsed / remaining, 0.0f, 1.0f);
+                intensity = board.blurIntensity + (board.blurIntensityEnd - board.blurIntensity) * t;
+            }
         }
+        vc.lastComputedBlur = intensity;
+    }
+    else if (vc.phase == VideoComponent::Phase::TransitionOut)
+    {
+        // Hold blur at last value while fading to black
+        intensity = vc.lastComputedBlur;
+    }
+    else // TransitionIn
+    {
+        // Smoothly lerp from old board's ending blur to new board's starting blur
+        float fadeDur = board.fadeDuration;
+        if (fadeDur <= 0.0f) fadeDur = 0.01f;
+        float halfFade = fadeDur * 0.5f;
+        float t = std::clamp(vc.stateTimer / halfFade, 0.0f, 1.0f);
+        intensity = vc.transitionBlurFrom + (vc.transitionBlurTo - vc.transitionBlurFrom) * t;
+        vc.lastComputedBlur = intensity;
+    }
+
+    // Update CameraComponent (centralized blur settings)
+    auto cameraSystem = m_ecs->GetSystem<CameraSystem>();
+    Entity camEntity = cameraSystem ? cameraSystem->GetActiveCameraEntity() : UINT32_MAX;
+    if (camEntity != UINT32_MAX && m_ecs->HasComponent<CameraComponent>(camEntity))
+    {
+        auto& cam = m_ecs->GetComponent<CameraComponent>(camEntity);
+        cam.blurEnabled = (intensity > 0.0f);
+        cam.blurIntensity = intensity;
+        cam.blurRadius = radius;
+        cam.blurPasses = passes;
+    }
+
+    // Also apply directly to PostProcessingManager for same-frame effect
+    // (CameraSystem already ran this frame, so camera changes alone would be 1 frame late)
+    BlurEffect* blur = PostProcessingManager::GetInstance().GetBlurEffect();
+    if (blur)
+    {
+        blur->SetIntensity(intensity);
+        blur->SetRadius(radius);
+        blur->SetPasses(passes);
     }
 }
 
-void VideoSystem::SwapCutscene(SpriteRenderComponent& comp, std::string newCutscenePath)
+// ============================================================================
+// Image Swap & UI helpers
+// ============================================================================
+
+void VideoSystem::SwapBoardImage(VideoComponent& vc, int boardIndex)
 {
-    comp.texture = ResourceManager::GetInstance().GetResource<Texture>(newCutscenePath);
-    comp.texturePath = newCutscenePath;
+    if (boardIndex < 0 || boardIndex >= static_cast<int>(vc.boards.size()))
+        return;
+
+    // The VideoComponent entity itself should have a SpriteRenderComponent
+    // (the entity this component is on)
+    for (const auto& entity : entities)
+    {
+        if (!m_ecs->HasComponent<VideoComponent>(entity)) continue;
+        auto& thisVc = m_ecs->GetComponent<VideoComponent>(entity);
+        if (&thisVc != &vc) continue;
+
+        if (!m_ecs->HasComponent<SpriteRenderComponent>(entity)) break;
+
+        auto& sprite = m_ecs->GetComponent<SpriteRenderComponent>(entity);
+        std::string loadPath = vc.boards[boardIndex].imagePath;
+
+#ifdef ANDROID
+        // Strip leading ../../ for Android asset loading
+        while (loadPath.size() >= 3 && loadPath.substr(0, 3) == "../")
+            loadPath = loadPath.substr(3);
+#endif
+
+        if (!loadPath.empty())
+        {
+            sprite.texture = ResourceManager::GetInstance().GetResource<Texture>(loadPath);
+            sprite.texturePath = loadPath;
+        }
+        break;
+    }
 }
 
-std::string VideoSystem::ConstructNewPath(VideoComponent& videoComp)
+void VideoSystem::SetBlackScreenAlpha(VideoComponent& vc, float alpha)
 {
-    std::string numResult = "_" + videoComp.PadNumber(videoComp.activeFrame);
-    std::string fileName = videoComp.cutSceneName + numResult + ".png";
-    std::string newCutscenePath = rootDirectory + fileName;
-    return newCutscenePath;
+    if (vc.blackScreenEntity == 0) return;
+    if (!m_ecs->HasComponent<SpriteRenderComponent>(vc.blackScreenEntity)) return;
+    m_ecs->GetComponent<SpriteRenderComponent>(vc.blackScreenEntity).alpha = alpha;
 }
 
-void VideoSystem::FadeInTransition(SpriteRenderComponent& blackScreen, float dt, float duration)
+void VideoSystem::ClearText(VideoComponent& vc)
 {
-    if (duration <= 0) return;
-
-    float progress = dt / duration;
-    float easedProgress = easeOutCubic(std::min(progress * 2.0f, 1.0f));
-    blackScreen.alpha = lerp(blackScreen.alpha, 0.0f, easedProgress);
+    if (vc.textEntity == 0) return;
+    if (!m_ecs->HasComponent<TextRenderComponent>(vc.textEntity)) return;
+    m_ecs->GetComponent<TextRenderComponent>(vc.textEntity).text = "";
 }
 
-void VideoSystem::FadeOutTransition(SpriteRenderComponent& blackScreen, float dt, float duration)
-{
-    if (duration <= 0) return;
+// ============================================================================
+// Main Update Loop
+// ============================================================================
 
-    float progress = dt / duration;
-    float easedProgress = easeOutCubic(std::min(progress * 2.0f, 1.0f));
-    blackScreen.alpha = lerp(blackScreen.alpha, 1.0f, easedProgress);
+void VideoSystem::Update(float dt)
+{
+    PROFILE_FUNCTION();
+
+    for (const auto& entity : entities)
+    {
+        if (!m_ecs->HasComponent<VideoComponent>(entity))
+            continue;
+        if (!m_ecs->IsEntityActiveInHierarchy(entity))
+            continue;
+
+        auto& vc = m_ecs->GetComponent<VideoComponent>(entity);
+
+        if (!vc.enabled) continue;
+
+        // One-time GUID resolution
+        if (vc.needsInit)
+        {
+            ResolveEntityReferences(vc);
+            if (vc.autoStart && !vc.boards.empty())
+            {
+                if (vc.startDelay > 0.0f)
+                {
+                    vc.startDelayTimer = vc.startDelay;
+                    vc.phase = VideoComponent::Phase::Inactive;
+                }
+                else
+                {
+                    BeginCutscene(vc);
+                }
+            }
+            vc.needsInit = false;
+            continue;
+        }
+
+        // Wait for start delay
+        if (vc.startDelayTimer > 0.0f)
+        {
+            vc.startDelayTimer -= dt;
+            if (vc.startDelayTimer <= 0.0f)
+            {
+                vc.startDelayTimer = 0.0f;
+                BeginCutscene(vc);
+            }
+            continue;
+        }
+
+        // Handle external skip request
+        if (vc.skipRequested && vc.phase != VideoComponent::Phase::EndingFade
+            && vc.phase != VideoComponent::Phase::Finished)
+        {
+            vc.skipRequested = false;
+            BeginEndingFade(vc);
+        }
+
+        // Always apply blur for active cutscenes
+        if (vc.phase != VideoComponent::Phase::Inactive && vc.phase != VideoComponent::Phase::Finished)
+            ApplyBlur(vc, dt);
+
+        switch (vc.phase)
+        {
+        case VideoComponent::Phase::Inactive:
+            break;
+
+        case VideoComponent::Phase::FadingIn:
+        {
+            if (vc.boards.empty()) break;
+            float fadeDur = vc.boards[0].fadeDuration;
+            if (fadeDur <= 0.0f) fadeDur = 0.01f;
+
+            vc.stateTimer += dt;
+            float progress = std::clamp(vc.stateTimer / fadeDur, 0.0f, 1.0f);
+            SetBlackScreenAlpha(vc, 1.0f - Smoothstep(progress));
+            UpdateTypewriter(vc, dt);
+
+            if (progress >= 1.0f)
+            {
+                SetBlackScreenAlpha(vc, 0.0f);
+                vc.phase = VideoComponent::Phase::Displaying;
+                vc.stateTimer = 0.0f;
+            }
+            break;
+        }
+
+        case VideoComponent::Phase::Displaying:
+        {
+            if (vc.currentBoardIndex < 0 || vc.currentBoardIndex >= static_cast<int>(vc.boards.size()))
+                break;
+
+            const CutsceneBoard& board = vc.boards[vc.currentBoardIndex];
+            vc.stateTimer += dt;
+            UpdateTypewriter(vc, dt);
+
+            // Tap input
+            if (g_inputManager->IsPointerJustPressed())
+            {
+                if (!IsTypewriterFinished(vc))
+                {
+                    CompleteTypewriter(vc);
+                }
+                else
+                {
+                    int nextBoard = vc.currentBoardIndex + 1;
+                    if (nextBoard < static_cast<int>(vc.boards.size()))
+                    {
+                        AdvanceToBoard(vc, nextBoard);
+                    }
+                    else
+                    {
+                        BeginEndingFade(vc);
+                    }
+                    vc.stateTimer = 0.0f;
+                }
+            }
+
+            // Auto-advance
+            if (vc.stateTimer >= board.duration && vc.phase == VideoComponent::Phase::Displaying)
+            {
+                int nextBoard = vc.currentBoardIndex + 1;
+                if (nextBoard < static_cast<int>(vc.boards.size()))
+                    AdvanceToBoard(vc, nextBoard);
+                else
+                    BeginEndingFade(vc);
+            }
+            break;
+        }
+
+        case VideoComponent::Phase::TransitionOut:
+        {
+            int nextBoard = vc.currentBoardIndex + 1;
+            if (nextBoard >= static_cast<int>(vc.boards.size()))
+            {
+                BeginEndingFade(vc);
+                break;
+            }
+
+            float fadeDur = vc.boards[nextBoard].fadeDuration;
+            if (fadeDur <= 0.0f) fadeDur = 0.01f;
+            float halfFade = fadeDur * 0.5f;
+
+            vc.stateTimer += dt;
+            float progress = std::clamp(vc.stateTimer / halfFade, 0.0f, 1.0f);
+            SetBlackScreenAlpha(vc, Smoothstep(progress));
+
+            if (progress >= 1.0f)
+            {
+                // Swap image at midpoint
+                SwapBoardImage(vc, nextBoard);
+
+                // Handle typewriter continuation
+                if (vc.boards[nextBoard].continueText)
+                {
+                    vc.previousBoardChars = vc.revealedChars;
+                    // Don't reset typewriterTimer — continue from where we left off
+                }
+                else
+                {
+                    vc.previousBoardChars = 0;
+                    vc.typewriterTimer = 0.0f;
+                    vc.revealedChars = 0;
+                }
+
+                vc.currentBoardIndex = nextBoard;
+                vc.boardElapsedTime = 0.0f;  // Reset blur timer for new board
+                vc.stateTimer = 0.0f;
+                vc.phase = VideoComponent::Phase::TransitionIn;
+            }
+            break;
+        }
+
+        case VideoComponent::Phase::TransitionIn:
+        {
+            if (vc.currentBoardIndex < 0 || vc.currentBoardIndex >= static_cast<int>(vc.boards.size()))
+                break;
+
+            float fadeDur = vc.boards[vc.currentBoardIndex].fadeDuration;
+            if (fadeDur <= 0.0f) fadeDur = 0.01f;
+            float halfFade = fadeDur * 0.5f;
+
+            vc.stateTimer += dt;
+            float progress = std::clamp(vc.stateTimer / halfFade, 0.0f, 1.0f);
+            SetBlackScreenAlpha(vc, 1.0f - Smoothstep(progress));
+            UpdateTypewriter(vc, dt);
+
+            if (progress >= 1.0f)
+            {
+                SetBlackScreenAlpha(vc, 0.0f);
+                vc.phase = VideoComponent::Phase::Displaying;
+                vc.stateTimer = 0.0f;
+            }
+            break;
+        }
+
+        case VideoComponent::Phase::EndingFade:
+        {
+            float fadeDur = vc.skipFadeDuration;
+            if (fadeDur <= 0.0f) fadeDur = 0.01f;
+
+            vc.stateTimer += dt;
+            float progress = std::clamp(vc.stateTimer / fadeDur, 0.0f, 1.0f);
+            SetBlackScreenAlpha(vc, Smoothstep(progress));
+
+            // Hide skip button during ending
+            if (vc.skipButtonEntity != 0 && m_ecs->HasComponent<SpriteRenderComponent>(vc.skipButtonEntity))
+                m_ecs->GetComponent<SpriteRenderComponent>(vc.skipButtonEntity).isVisible = false;
+
+            if (progress >= 1.0f)
+            {
+                SetBlackScreenAlpha(vc, 1.0f);
+                FinishCutscene(vc);
+            }
+            break;
+        }
+
+        case VideoComponent::Phase::Finished:
+        {
+            if (!vc.nextScenePath.empty())
+            {
+                SceneManager::GetInstance().LoadScene(vc.nextScenePath);
+            }
+            else if (vc.loop)
+            {
+                BeginCutscene(vc);
+            }
+            break;
+        }
+
+        } // switch
+    } // for entities
 }

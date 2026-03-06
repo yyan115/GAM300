@@ -38,6 +38,7 @@
 #include "Logging.hpp"
 #include "RunTimeVar.hpp"
 #include <Graphics/Model/ModelFactory.hpp>
+#include "Graphics/Sprite/SpriteRenderComponent.hpp"
 
 // External globals for model drag-drop from AssetBrowserPanel
 extern GUID_128 DraggedModelGuid;
@@ -1201,25 +1202,8 @@ void ScenePanel::OnImGuiRender()
         if (sceneViewWidth < 100) sceneViewWidth = 100;
         if (sceneViewHeight < 100) sceneViewHeight = 100;
 
-        // Optimize: Reduce render frequency when window is not focused
-        bool isFocused = ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows);
-        static int unfocusedFrameCounter = 0;
-        bool shouldRender = true;
-
-        if (!isFocused) {
-            unfocusedFrameCounter++;
-            // Render unfocused panel every 3rd frame instead of every frame
-            if (unfocusedFrameCounter % 3 != 0) {
-                shouldRender = false;
-            }
-        } else {
-            unfocusedFrameCounter = 0;
-        }
-
-        // Render the scene with our editor camera to the framebuffer
-        if (shouldRender) {
-            RenderSceneWithEditorCamera(sceneViewWidth, sceneViewHeight);
-        }
+        // Always render the scene with our editor camera to the framebuffer
+        RenderSceneWithEditorCamera(sceneViewWidth, sceneViewHeight);
 
         // Scene texture from renderer
         unsigned int sceneTexture = SceneRenderer::GetSceneTexture();
@@ -1290,13 +1274,15 @@ void ScenePanel::OnImGuiRender()
             DrawLightGizmos();
 
             // Draw selection outline for selected entities (skip 2D entities in 2D mode - they use custom 2D gizmo)
-            auto selectedEntities = GUIManager::GetSelectedEntities();
-            for (auto entity : selectedEntities) {
-                // In 2D mode, skip drawing 3D selection outline for 2D entities
-                if (editorState.Is2DMode() && !RaycastUtil::IsEntity3D(entity)) {
-                    continue;
+            if (GUIManager::IsSelectionOutlineEnabled()) {
+                auto selectedEntities = GUIManager::GetSelectedEntities();
+                for (auto entity : selectedEntities) {
+                    // In 2D mode, skip drawing 3D selection outline for 2D entities
+                    if (editorState.Is2DMode() && !RaycastUtil::IsEntity3D(entity)) {
+                        continue;
+                    }
+                    DrawSelectionOutline(entity, sceneViewWidth, sceneViewHeight);
                 }
-                DrawSelectionOutline(entity, sceneViewWidth, sceneViewHeight);
             }
 
             // View gizmo in the corner
@@ -2126,9 +2112,10 @@ void ScenePanel::DrawColliderGizmos() {
         Transform& transform = ecsManager.GetComponent<Transform>(selectedEntity);
         ColliderComponent& collider = ecsManager.GetComponent<ColliderComponent>(selectedEntity);
 
-        // check if entity has ModelRender - only auto-calculate center if it's at default (0,0,0)
-        // This preserves manually set or pasted center values
-        if (ecsManager.HasComponent<ModelRenderComponent>(selectedEntity))
+        // Auto-calculate center from model AABB for primitive shapes only.
+        // MeshShape vertices already define geometry in model-space, so center should stay (0,0,0).
+        if (collider.shapeType != ColliderShapeType::MeshShape &&
+            ecsManager.HasComponent<ModelRenderComponent>(selectedEntity))
         {
             ModelRenderComponent& rc = ecsManager.GetComponent<ModelRenderComponent>(selectedEntity);
             if (rc.model && collider.center.x == 0.0f && collider.center.y == 0.0f && collider.center.z == 0.0f) {
@@ -2160,11 +2147,16 @@ void ScenePanel::DrawColliderGizmos() {
         // Define the local center offset
         glm::vec3 localCenter = glm::vec3(collider.center.x, collider.center.y, collider.center.z);
 
-        // Lambda to transform a point: WorldMatrix * (Center + Point)
-        // This handles Rotation, Scale (including parent scale), and Translation correctly.
+        // Build local rotation matrix from shapeRotation (Euler degrees XYZ)
+        glm::mat4 shapeRotMat = glm::mat4(1.0f);
+        shapeRotMat = glm::rotate(shapeRotMat, glm::radians(collider.shapeRotation.x), glm::vec3(1, 0, 0));
+        shapeRotMat = glm::rotate(shapeRotMat, glm::radians(collider.shapeRotation.y), glm::vec3(0, 1, 0));
+        shapeRotMat = glm::rotate(shapeRotMat, glm::radians(collider.shapeRotation.z), glm::vec3(0, 0, 1));
+
+        // Lambda to transform a point: WorldMatrix * (Center + RotatedPoint)
         auto TransformPoint = [&](const glm::vec3& pointRelativeToCenter) -> glm::vec3 {
-            // Apply local center offset, then full world transform
-            glm::vec4 localPos = glm::vec4(localCenter + pointRelativeToCenter, 1.0f);
+            glm::vec3 rotatedPoint = glm::vec3(shapeRotMat * glm::vec4(pointRelativeToCenter, 0.0f));
+            glm::vec4 localPos = glm::vec4(localCenter + rotatedPoint, 1.0f);
             return glm::vec3(transformMatrix * localPos);
             };
         // --- FIX END ---
@@ -3170,6 +3162,16 @@ void ScenePanel::DrawSelectionOutline(Entity entity, int sceneWidth, int sceneHe
         ECSRegistry& registry = ECSRegistry::GetInstance();
         ECSManager& ecsManager = registry.GetActiveECSManager();
 
+        // For entities with a model, use stencil-based silhouette outline
+        if (ecsManager.HasComponent<ModelRenderComponent>(entity)) {
+            auto& modelComp = ecsManager.GetComponent<ModelRenderComponent>(entity);
+            if (modelComp.model) {
+                DrawStencilOutline(entity, sceneWidth, sceneHeight);
+                return;
+            }
+        }
+
+        // Fallback: bounding box outline for sprites and other entities
         // Compute view and projection matrices
         float aspectRatio = static_cast<float>(sceneWidth) / sceneHeight;
         glm::mat4 view = editorCamera.GetViewMatrix();
@@ -3191,10 +3193,6 @@ void ScenePanel::DrawSelectionOutline(Entity entity, int sceneWidth, int sceneHe
         // Define local corners based on component type
         if (ecsManager.HasComponent<SpriteRenderComponent>(entity)) {
             auto& sprite = ecsManager.GetComponent<SpriteRenderComponent>(entity);
-            // For sprites, use unit quad (-0.5 to 0.5) in local space
-            // The Transform's worldMatrix will apply the scale (extracted from worldMatrix in SpriteSystem)
-            // This prevents double-scaling: sprite.scale is already extracted from worldMatrix,
-            // so we shouldn't multiply by it again before applying worldMatrix transform
             localCorners[0] = glm::vec3(-0.5f, -0.5f, sprite.is3D ? -0.5f : 0.0f);
             localCorners[1] = glm::vec3( 0.5f, -0.5f, sprite.is3D ? -0.5f : 0.0f);
             localCorners[2] = glm::vec3(-0.5f,  0.5f, sprite.is3D ? -0.5f : 0.0f);
@@ -3204,20 +3202,6 @@ void ScenePanel::DrawSelectionOutline(Entity entity, int sceneWidth, int sceneHe
             localCorners[6] = glm::vec3(-0.5f,  0.5f, sprite.is3D ?  0.5f : 0.0f);
             localCorners[7] = glm::vec3( 0.5f,  0.5f, sprite.is3D ?  0.5f : 0.0f);
             hasValidBounds = true;
-        } else if (ecsManager.HasComponent<ModelRenderComponent>(entity)) {
-            auto& modelComp = ecsManager.GetComponent<ModelRenderComponent>(entity);
-            if (modelComp.model) {
-                auto modelAABB = modelComp.model->GetBoundingBox();
-                localCorners[0] = glm::vec3(modelAABB.min.x, modelAABB.min.y, modelAABB.min.z);
-                localCorners[1] = glm::vec3(modelAABB.max.x, modelAABB.min.y, modelAABB.min.z);
-                localCorners[2] = glm::vec3(modelAABB.min.x, modelAABB.max.y, modelAABB.min.z);
-                localCorners[3] = glm::vec3(modelAABB.max.x, modelAABB.max.y, modelAABB.min.z);
-                localCorners[4] = glm::vec3(modelAABB.min.x, modelAABB.min.y, modelAABB.max.z);
-                localCorners[5] = glm::vec3(modelAABB.max.x, modelAABB.min.y, modelAABB.max.z);
-                localCorners[6] = glm::vec3(modelAABB.min.x, modelAABB.max.y, modelAABB.max.z);
-                localCorners[7] = glm::vec3(modelAABB.max.x, modelAABB.max.y, modelAABB.max.z);
-                hasValidBounds = true;
-            }
         }
 
         // Default small box if no specific component
@@ -3290,5 +3274,52 @@ void ScenePanel::DrawSelectionOutline(Entity entity, int sceneWidth, int sceneHe
 
     } catch (const std::exception& e) {
         ENGINE_PRINT("[ScenePanel] Error drawing selection outline: ", e.what(), "\n");
+    }
+}
+
+void ScenePanel::InitOutlineShader() {
+    // No-op: shader is now managed by SceneRenderer (Engine DLL)
+}
+
+void ScenePanel::DrawStencilOutline(Entity entity, int sceneWidth, int sceneHeight) {
+    try {
+        ECSRegistry& registry = ECSRegistry::GetInstance();
+        ECSManager& ecsManager = registry.GetActiveECSManager();
+
+        if (!ecsManager.HasComponent<ModelRenderComponent>(entity)) return;
+        auto& modelComp = ecsManager.GetComponent<ModelRenderComponent>(entity);
+        if (!modelComp.model) return;
+
+        // Get transform
+        glm::mat4 modelMatrix(1.0f);
+        if (ecsManager.HasComponent<Transform>(entity)) {
+            auto& transform = ecsManager.GetComponent<Transform>(entity);
+            modelMatrix = transform.worldMatrix.ConvertToGLM();
+        }
+
+        // Compute view/projection
+        float aspectRatio = static_cast<float>(sceneWidth) / sceneHeight;
+        glm::mat4 viewMat = editorCamera.GetViewMatrix();
+        glm::mat4 projMat = editorCamera.GetProjectionMatrix(aspectRatio);
+
+        // Compute outline thickness scaled by camera distance for consistent screen-space width
+        glm::vec3 entityPos = glm::vec3(modelMatrix[3]);
+        float dist = glm::length(editorCamera.Position - entityPos);
+        float outlineThickness = 0.005f * dist;
+        outlineThickness = glm::clamp(outlineThickness, 0.002f, 0.15f);
+
+        // Delegate all GL work to SceneRenderer (Engine DLL where GLAD is initialized)
+        SceneRenderer::RenderSelectionOutline(
+            modelComp.model.get(),
+            modelMatrix,
+            viewMat,
+            projMat,
+            modelComp.HasAnimation(),
+            modelComp.mFinalBoneMatrices,
+            outlineThickness
+        );
+
+    } catch (const std::exception& e) {
+        ENGINE_PRINT("[ScenePanel] Error drawing stencil outline: ", e.what(), "\n");
     }
 }

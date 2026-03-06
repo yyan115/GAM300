@@ -78,7 +78,38 @@ return Component {
     Awake = function(self)
         -- Register as global singleton (only one player input system)
         _G.InputInterpreter = self
-        
+
+        -- Cinematic freeze flag
+        self._frozenByCinematic = false
+        if _G.event_bus and _G.event_bus.subscribe then
+            self._cinematicSub = _G.event_bus.subscribe("cinematic.active", function(active)
+                self._frozenByCinematic = active
+            end)
+        end
+
+        -- UI button press - should not trigger attacks.
+        self._uiButtonPressed = false
+        self._uiButtonPressedSub = _G.event_bus.subscribe("uiButtonPressed", function(pressed)
+            self._uiButtonPressed = pressed
+        end)
+
+        -- Player dead - should not be able to trigger attacks.
+        self._playerDeadSub = event_bus.subscribe("playerDead", function(dead)
+            self._playerDead = dead
+        end)
+
+        -- Player respawn - enable back attacks.
+        self._respawnPlayerSub = event_bus.subscribe("respawnPlayer", function(respawn)
+            self._playerDead = false
+        end)
+
+        -- Dash started - clear any buffered attack/chain so they don't fire after dash
+        self._dashPerformedSub = _G.event_bus.subscribe("dash_performed", function()
+            print("[InputInterpreter] dash_performed event: clearing attack=" .. self._bufferedInputs.attack .. " chain=" .. self._bufferedInputs.chain)
+            self._bufferedInputs.attack = 0
+            self._bufferedInputs.chain = 0
+        end)
+
         -- Current frame states (updated every frame)
         self._currentFrame = {
             attack = false,
@@ -123,6 +154,8 @@ return Component {
 
     Update = function(self, dt)
         if not Input then return end
+        if self._frozenByCinematic then return end
+        if Time.IsPaused() or self._playerDead then return end
 
         self._frameCount = self._frameCount + 1
 
@@ -168,14 +201,39 @@ return Component {
         -- ===============================
         -- INPUT BUFFERING
         -- ===============================
-        if attackJustPressed then
-            self._bufferedInputs.attack = self.INPUT_BUFFER_FRAMES
-            table.insert(self._inputHistory.attack, self._frameCount)
+
+        -- Block combat inputs (attack/chain) while dashing
+        local blockCombat = _G.player_is_dashing
+
+        if blockCombat then
+            -- Force-clear any lingering attack/chain buffers every frame while dashing
+            if self._bufferedInputs.attack > 0 or self._bufferedInputs.chain > 0 then
+                print("[InputInterpreter] DASH ACTIVE: clearing lingering attack=" .. self._bufferedInputs.attack .. " chain=" .. self._bufferedInputs.chain)
+                self._bufferedInputs.attack = 0
+                self._bufferedInputs.chain = 0
+            end
         end
 
-        if chainJustPressed then
+        -- If attack (LMB) was pressed and a UI button was not pressed first, safely trigger the attack.
+        if attackJustPressed and self._uiButtonPressed == false and not blockCombat then
+            self._bufferedInputs.attack = self.INPUT_BUFFER_FRAMES
+            table.insert(self._inputHistory.attack, self._frameCount)
+            print("[InputInterpreter] Attack buffered (frame " .. self._frameCount .. ")")
+        elseif attackJustPressed and blockCombat then
+            print("[InputInterpreter] Attack BLOCKED by dash (frame " .. self._frameCount .. ")")
+        end
+
+        -- If a UI button was pressed, set the UIButtonPressed flag to false when LMB is released.
+        if attackJustReleased and self._uiButtonPressed == true then
+            self._uiButtonPressed = false
+        end
+
+        if chainJustPressed and not blockCombat then
             self._bufferedInputs.chain = self.INPUT_BUFFER_FRAMES
             table.insert(self._inputHistory.chain, self._frameCount)
+            print("[InputInterpreter] Chain buffered (frame " .. self._frameCount .. ")")
+        elseif chainJustPressed and blockCombat then
+            print("[InputInterpreter] Chain BLOCKED by dash (frame " .. self._frameCount .. ")")
         end
 
         if dashJustPressed then
@@ -207,6 +265,30 @@ return Component {
             self._holdTimers.dash = self._holdTimers.dash + dt
         else
             self._holdTimers.dash = 0
+        end
+
+        -- ===============================
+        -- PUBLISH CHAIN EVENTS TO EVENT BUS
+        -- ===============================
+        if _G.playerHasWeapon and not blockCombat and _G.event_bus and _G.event_bus.publish then
+            if chainJustPressed then
+                _G.event_bus.publish("chain.down", {})
+            end
+
+            if chainJustReleased then
+                _G.event_bus.publish("chain.up", {})
+            end
+
+            -- Publish hold event if held past threshold
+            if self._holdTimers.chain >= self.HOLD_THRESHOLD and chainPressed then
+                -- Only publish once when threshold is crossed, not every frame
+                if not self._chainHoldPublished then
+                    _G.event_bus.publish("chain.hold", {})
+                    self._chainHoldPublished = true
+                end
+            else
+                self._chainHoldPublished = false
+            end
         end
 
         -- ===============================
@@ -255,8 +337,14 @@ return Component {
     GetDashHoldTime = function(self) return self._holdTimers.dash end,
 
     -- Buffered input (remembers recent presses even if released)
-    HasBufferedAttack = function(self) return self._bufferedInputs.attack > 0 end,
-    HasBufferedChain = function(self) return self._bufferedInputs.chain > 0 end,
+    HasBufferedAttack = function(self)
+        if not _G.playerHasWeapon then return false end
+        return self._bufferedInputs.attack > 0
+    end,
+    HasBufferedChain = function(self)
+        if not _G.playerHasWeapon then return false end
+        return self._bufferedInputs.chain > 0
+    end,
     HasBufferedDash = function(self) return self._bufferedInputs.dash > 0 end,
 
     -- Consume buffered input (combo system should call this when using a buffered input)

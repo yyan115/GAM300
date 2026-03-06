@@ -9,12 +9,15 @@
 #include "Asset Manager/AssetManager.hpp"
 #include "Asset Manager/ResourceManager.hpp"
 #include "Logging.hpp"
-#include "Performance/PerformanceProfiler.hpp"
+#include "ECS/LayerComponent.hpp"
+#include "Graphics/PostProcessing/PostProcessingManager.hpp"
+#include "Graphics/BloomComponent.hpp"
 
 #ifdef ANDROID
 #include <android/log.h>
 #endif
 #include <Graphics/Model/ModelFactory.hpp>
+#include <Graphics/Instancing/InstancingManager.hpp>
 
 bool ModelSystem::Initialise() 
 {
@@ -42,7 +45,7 @@ bool ModelSystem::Initialise()
         }
 
         if (modelComp.model) {
-            ModelFactory::PopulateBoneNameToEntityMap(entity, modelComp.boneNameToEntityMap, *modelComp.model);
+            ModelFactory::PopulateBoneNameToEntityMap(entity, modelComp.boneNameToEntityMap, *modelComp.model, true);
             modelComp.childBonesSaved = true;
         }
     }
@@ -54,12 +57,10 @@ bool ModelSystem::Initialise()
 void ModelSystem::Update()
 {
     PROFILE_FUNCTION(); // Will automatically show as "Model" in profiler UI
-    
-#ifdef ANDROID
-    //__android_log_print(ANDROID_LOG_INFO, "GAM300", "ModelSystem::Update() called");
-#endif
+
     ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
     GraphicsManager& gfxManager = GraphicsManager::GetInstance();
+    InstancingManager& instancing = InstancingManager::GetInstance();
 
     // Get current view mode and check if rendering for editor
     bool isRenderingForEditor = gfxManager.IsRenderingForEditor();
@@ -71,9 +72,6 @@ void ModelSystem::Update()
     // Reset stats each frame
     cullingStats.Reset();
 
-#ifdef ANDROID
-    //__android_log_print(ANDROID_LOG_INFO, "GAM300", "ModelSystem entities count: %zu", entities.size());
-#endif
 
     // Submit all visible models to the graphics manager
     for (const auto& entity : entities)
@@ -89,47 +87,64 @@ void ModelSystem::Update()
             continue;
         }
 
-#ifdef ANDROID
-        //__android_log_print(ANDROID_LOG_INFO, "GAM300", "Processing entity: %u", entity);
-#endif
         auto& modelComponent = ecsManager.GetComponent<ModelRenderComponent>(entity);
 
-#ifdef ANDROID
-        //__android_log_print(ANDROID_LOG_INFO, "GAM300", "Entity %u: isVisible=%d, model=%p, shader=%p",
-         //                 entity, modelComponent.isVisible, modelComponent.model.get(), modelComponent.shader.get());
-#endif
         if (!modelComponent.isVisible || !modelComponent.model || !modelComponent.shader)
         {
             continue;
         }
 
-        // FRUSTUM CULLING - ADD THIS BLOCK:
-        if (enableCulling && modelComponent.model) 
+        // Get world transform
+        Matrix4x4 worldMatrix = ecsManager.GetComponent<Transform>(entity).worldMatrix;
+        glm::mat4 glmWorldMatrix = worldMatrix.ConvertToGLM();
+
+       
+        if (instancing.IsEnabled())
         {
-            // Get world transform
-            Matrix4x4 worldMatrix = ecsManager.GetComponent<Transform>(entity).worldMatrix;
+            // Gather per-entity bloom data for instancing
+            glm::vec3 entityBloomColor(0.0f);
+            float entityBloomIntensity = 0.0f;
+            if (ecsManager.HasComponent<BloomComponent>(entity)) {
+                auto& bloom = ecsManager.GetComponent<BloomComponent>(entity);
+                if (bloom.enabled) {
+                    entityBloomColor = bloom.bloomColor;
+                    entityBloomIntensity = bloom.bloomIntensity;
+                }
+            }
 
-            // Get model's bounding box and transform to world space
-            AABB worldBounds = modelComponent.model->GetBoundingBox().Transform(worldMatrix.ConvertToGLM());
+            bool wasInstanced = instancing.TryAddInstance(modelComponent, glmWorldMatrix, entityBloomColor, entityBloomIntensity);
 
+            if (wasInstanced)
+            {
+                // Instance was added to a batch (or culled), skip individual submission
+                cullingStats.renderedObjects++;  // Count as handled
+                continue;
+            }
+        }
+
+        // =====================================================================
+        // Fallback: Not instanceable, render individually
+        // =====================================================================
+
+        // Frustum culling for non-instanced objects
+        if (enableCulling && modelComponent.model)
+        {
+            AABB worldBounds = modelComponent.model->GetBoundingBox().Transform(glmWorldMatrix);
             if (!frustum.IsBoxVisible(worldBounds))
             {
-                cullingStats.culledObjects++;  // Count as culled
-
-                // Log which entity was culled
-#ifdef _DEBUG
-                //std::cout << "Entity " << entity << " culled\n";
-#endif
+                cullingStats.culledObjects++;
                 continue;
             }
         }
 
         // Passed culling test, create and submit render item
-        auto modelRenderItem = std::make_unique<ModelRenderComponent>(modelComponent); 
-        modelRenderItem->transform = ecsManager.GetComponent<Transform>(entity).worldMatrix;
+        auto modelRenderItem = std::make_unique<ModelRenderComponent>(modelComponent);
+        auto& entityTransform = ecsManager.GetComponent<Transform>(entity);
+        modelRenderItem->transform = entityTransform.worldMatrix;
 
         // If model doesn't have an animation controller, allow manual manipulation of bone entities.
         if (!modelRenderItem->HasAnimation()) {
+            glm::mat4 rootInverse = glm::inverse(entityTransform.worldMatrix.ConvertToGLM());
             for (const auto& [name, boneInfo] : modelRenderItem->model->mBoneInfoMap)
             {
                 // Get the child entity representing this bone.
@@ -138,16 +153,30 @@ void ModelSystem::Update()
 			    // Get the transform of the bone entity.
                 glm::mat4 currentWorld = ecsManager.GetComponent<Transform>(boneEntity).worldMatrix.ConvertToGLM();
 
-                // Get inverse root (mesh space).
-                glm::mat4 rootInverse = glm::inverse(ecsManager.GetComponent<Transform>(entity).worldMatrix.ConvertToGLM());
-
 			    // Write to the final bone matrices.
                 modelRenderItem->mFinalBoneMatrices[boneInfo.id] =
                     rootInverse * currentWorld * boneInfo.offset;
 		    }
         }
 
-        gfxManager.Submit(std::move(modelRenderItem)); 
+        // Per-entity bloom emission
+        if (ecsManager.HasComponent<BloomComponent>(entity)) {
+            auto& bloom = ecsManager.GetComponent<BloomComponent>(entity);
+            if (bloom.enabled) {
+                modelRenderItem->bloomColor = bloom.bloomColor;
+                modelRenderItem->bloomIntensity = bloom.bloomIntensity;
+            }
+        }
+
+        // Tag items on excluded layers for deferred rendering
+        uint32_t exMask = PostProcessingManager::GetInstance().GetExcludedLayerMask();
+        if (exMask != 0) {
+            int layerIdx = GetEffectiveLayerIndex(entity, ecsManager);
+            if (exMask & (1u << layerIdx))
+                modelRenderItem->excludeFromPostProcess = true;
+        }
+
+        gfxManager.Submit(std::move(modelRenderItem));
     }
 #ifdef ANDROID
     //__android_log_print(ANDROID_LOG_INFO, "GAM300", "ModelSystem::Update() completed");

@@ -31,7 +31,7 @@
 // This eliminates all logging overhead - no function calls, no string formatting.
 // =============================================================================
 
- //#define ENGINE_LOGGING_DISABLED
+//#define ENGINE_LOGGING_DISABLED
 
 // =============================================================================
 // LOGGING MACROS
@@ -161,6 +161,39 @@ namespace EngineLogging {
     
 }
 
+// =============================================================================
+// TRACY FRAME PROFILER INTEGRATION
+// =============================================================================
+// When TRACY_ENABLE is defined (all builds except Release), these macros
+// forward to the Tracy profiler for timeline visualization in the Tracy GUI.
+// In Release builds, they compile to nothing (zero overhead).
+// =============================================================================
+
+#ifdef TRACY_ENABLE
+#include "tracy/Tracy.hpp"
+#include <chrono>
+#define ENGINE_FRAME_MARK          FrameMark
+#define PROFILE_FUNCTION()          ZoneScoped
+#define PROFILE_SCOPED(name)  ZoneScopedN(name)
+#define PROFILE_MESSAGE(msg, len) TracyMessage(msg, len)
+#define PROFILE_PLOT(name, val)   TracyPlot(name, val)
+#define PROFILE_PLOT_TIMED(name, stmt) do {                                  \
+        auto _t = std::chrono::high_resolution_clock::now();                 \
+        stmt;                                                                \
+        auto _elapsed = std::chrono::high_resolution_clock::now() - _t;      \
+        auto _us = std::chrono::duration_cast<std::chrono::microseconds>(    \
+            _elapsed).count();                                               \
+        TracyPlot(name, _us / 1000.0);                                       \
+    } while (0)
+#else
+#define ENGINE_FRAME_MARK          ((void)0)
+#define PROFILE_FUNCTION()          ((void)0)
+#define PROFILE_SCOPED(name)  ((void)0)
+#define PROFILE_MESSAGE(msg, len) ((void)0)
+#define PROFILE_PLOT(name, val)   ((void)0)
+#define PROFILE_PLOT_TIMED(name, stmt) stmt
+#endif
+
 #ifdef ENGINE_LOGGING_DISABLED
 
 // All logging compiles to nothing
@@ -173,13 +206,15 @@ namespace EngineLogging {
 #define ENGINE_PRINT(...)        ((void)0)
 
 #else // ENGINE_LOGGING_DISABLED not defined - logging enabled
-
 #define ENGINE_LOG_TRACE(msg)    EngineLogging::LogTrace(msg)
 #define ENGINE_LOG_DEBUG(msg)    EngineLogging::LogDebug(msg)
 #define ENGINE_LOG_INFO(msg)     EngineLogging::LogInfo(msg)
 #define ENGINE_LOG_WARN(msg)     EngineLogging::LogWarn(msg)
 #define ENGINE_LOG_ERROR(msg)    EngineLogging::LogError(msg)
 #define ENGINE_LOG_CRITICAL(msg) EngineLogging::LogCritical(msg)
+
+
+//Currently TRACE DEBUG INFO is all printed to console as [INFO], to be changed?
 
 /**
  * @brief Prints a message either to the console or to the internal editor logger.

@@ -1,0 +1,14 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "0041f1066582c5f7-000467b8ee336217",
+        "source": "../../Resources/Textures/M5/enemy_ground_02_Normal.png",
+        "compiled": "../../Resources/Textures/M5/enemy_ground_02_Normal.dds"
+    },
+    "TextureMetaData": {
+        "type": "normal",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp"
+    }
+}

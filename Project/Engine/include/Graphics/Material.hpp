@@ -11,7 +11,6 @@
 #include "ShaderClass.h"
 #include "Asset Manager/Asset.hpp"
 #include "../Engine.h"
-#include "Logging.hpp"
 
 
 class ENGINE_API Material : public IAsset {
@@ -60,6 +59,12 @@ public:
 	const float& GetRoughness() const { return m_roughness; }
 	const float& GetAO() const { return m_ao; }
 
+	const glm::vec2& GetTiling() const { return tiling; }
+	const glm::vec2& GetOffset() const { return offset; }
+
+	void SetTiling(const glm::vec2& _tiling) { tiling = _tiling; }
+	void SetOffset(const glm::vec2& _offset) { offset = _offset; }
+
 	// Texture Managment
 	void SetTexture(TextureType type, std::unique_ptr<TextureInfo> textureInfo);
 	std::optional<std::reference_wrapper<TextureInfo>>  GetTextureInfo(TextureType type) const;
@@ -104,6 +109,10 @@ private:
 	float m_metallic{ 0.0f };
 	float m_roughness{ 0.5f };
 	float m_ao{ 1.0f };
+
+	// Texture tiling properties
+	glm::vec2 tiling{ 1.0f, 1.0f };
+	glm::vec2 offset{ 0.0f, 0.0f };
 
 	// Texture storage
 	std::unordered_map<TextureType, std::unique_ptr<TextureInfo>> m_textureInfo;

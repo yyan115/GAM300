@@ -11,7 +11,8 @@ namespace Layers {
     static constexpr JPH::ObjectLayer DEBRIS = 4;
     static constexpr JPH::ObjectLayer NAV_GROUND = 5;
     static constexpr JPH::ObjectLayer NAV_OBSTACLE = 6;
-    static constexpr JPH::uint        COUNT = 7;
+    static constexpr JPH::ObjectLayer HURTBOX = 7;
+    static constexpr JPH::uint        COUNT = 8;
 }
 
 namespace BroadPhaseLayers {

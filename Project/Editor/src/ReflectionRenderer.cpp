@@ -139,7 +139,7 @@ FieldModificationResult ReflectionRenderer::RenderComponentWithFieldTracking(voi
     }
 
     if (result.wasModified && PrefabEditor::IsInPrefabEditorMode()) {
-		ENGINE_LOG_DEBUG("[ReflectionRenderer] Modified prefab component, saving prefab changes...");
+        std::cout << "[ReflectionRenderer] Modified prefab component, saving prefab changes..." << std::endl;
         PrefabEditor::SaveEditedPrefab();
     }
 

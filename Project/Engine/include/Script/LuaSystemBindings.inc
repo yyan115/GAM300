@@ -57,6 +57,9 @@ BEGIN_SYSTEM("Input")
     // Axes (returns Vector2D object with .x and .y properties)
     FUNCTION("GetAxis", InputWrappers::GetAxis)
 
+    // Scroll wheel (desktop only; returns delta this frame, positive = scroll up)
+    FUNCTION("GetScrollY", InputWrappers::GetScrollY)
+
     // Entity-based touch position (Android joysticks)
     // Returns touch position relative to entity center - use for calculating joystick direction
     // Example: local pos = Input.GetActionTouchPosition("Movement")
@@ -246,6 +249,7 @@ BEGIN_SYSTEM("CharacterController")
     FUNCTION("GetGravity", CharacterControllerWrappers::GetGravity)
     FUNCTION("SetGravity", CharacterControllerWrappers::SetGravity)
     FUNCTION("DestroyByEntity", CharacterControllerWrappers::DestroyByEntity)
+    FUNCTION("DisableCollision", CharacterControllerWrappers::DisableCollision)
     FUNCTION("UpdateAll", CharacterControllerWrappers::UpdateAll)
     FUNCTION("ClearAll", CharacterControllerWrappers::ClearAll)
 END_SYSTEM()
@@ -264,6 +268,8 @@ BEGIN_SYSTEM("Physics")
     // Raycast(originX, originY, originZ, dirX, dirY, dirZ, maxDistance)
     // Returns: distance (float, -1.0 if no hit)
     FUNCTION("Raycast", PhysicsSystemWrappers::Raycast)
+    FUNCTION("RaycastFull", PhysicsSystemWrappers::RaycastFull)
+    FUNCTION("RaycastGetEntity", PhysicsSystemWrappers::RaycastGetEntity)
     FUNCTION("CheckDistance", PhysicsSystemWrappers::CheckDistance)
 END_SYSTEM()
 
@@ -300,6 +306,7 @@ END_SYSTEM()
 // ============================================================================
 BEGIN_SYSTEM("Engine")
     FUNCTION("FindTransformByName", &Lua_FindTransformByName)
+    FUNCTION("FindTransformByID", &Lua_FindTransformByID)
     FUNCTION("GetTransformPosition", &Lua_GetTransformPosition)
     FUNCTION("GetTransformWorldPosition", &Lua_GetTransformWorldPosition)
     FUNCTION("GetClipIndexByName", &Lua_FindCurrentClipByName)      //TEMPHACK
@@ -310,20 +317,24 @@ BEGIN_SYSTEM("Engine")
     FUNCTION("GetGameCoordinate", &Lua_ScreenToGameCoordinates)
     FUNCTION("CreateEntityDup", &Lua_CreateEntityDup)
     FUNCTION("DestroyEntityDup", &Lua_DestroyEntityDup)
+    FUNCTION("DestroyEntity", &Lua_DestroyEntity)
     FUNCTION("FindAnimatorByName", &Lua_FindAnimatorByName)
 
     FUNCTION("FindEntitiesWithScript", &EntityQueryWrappers::FindEntitiesWithScript)
     FUNCTION("GetEntityPosition", &EntityQueryWrappers::GetEntityPosition)
     FUNCTION("GetEntityName", &EntityQueryWrappers::GetEntityName)
+    FUNCTION("GetEntityTag", &EntityQueryWrappers::GetEntityTag)
+    FUNCTION("GetEntityLayer", &EntityQueryWrappers::GetEntityLayer)
     FUNCTION("IsEntityActive", &EntityQueryWrappers::IsEntityActive)
     FUNCTION("GetChildrenEntities", &EntityQueryWrappers::GetChildrenEntities)
+    FUNCTION("GetParentEntity", &EntityQueryWrappers::GetParentEntity)
+    FUNCTION("SetParentEntity", &EntityQueryWrappers::SetParentEntity)
 
     FUNCTION("UpdateCacheTiming", &EntityQueryWrappers::UpdateCacheTiming)
     FUNCTION("UpdateEnemyCache", &EntityQueryWrappers::UpdateEnemyCache)
     FUNCTION("SetCacheUpdateInterval", &EntityQueryWrappers::SetCacheUpdateInterval)
     FUNCTION("ClearEnemyCaches", &EntityQueryWrappers::ClearEnemyCaches)
     FUNCTION("GetCacheInfo", &EntityQueryWrappers::GetCacheInfo)
-
 END_SYSTEM()
 
 
@@ -336,6 +347,25 @@ BEGIN_SYSTEM("Nav")
     FUNCTION("GetGroundY", NavWrappers::GetGroundY)
 END_SYSTEM()
 
+// ============================================================================
+// PREFAB INSTANTIATION
+// ============================================================================
+BEGIN_SYSTEM("Prefab")
+    FUNCTION("InstantiatePrefab", &PrefabWrappers::InstantiatePrefab)
+END_SYSTEM()
+
+// ============================================================================
+// DIALOGUE MANAGER
+// ============================================================================
+
+BEGIN_SYSTEM("DialogueManager")
+    FUNCTION("StartDialogue", &DialogueManagerWrappers::StartDialogue)
+    FUNCTION("StopDialogue", &DialogueManagerWrappers::StopDialogue)
+    FUNCTION("ScrollNext", &DialogueManagerWrappers::ScrollNext)
+    FUNCTION("IsDialogueActive", &DialogueManagerWrappers::IsDialogueActive)
+    FUNCTION("IsAnyDialogueActive", &DialogueManagerWrappers::IsAnyDialogueActive)
+    FUNCTION("GetCurrentIndex", &DialogueManagerWrappers::GetCurrentIndex)
+END_SYSTEM()
 
 // ============================================================================
 // FUTURE SYSTEMS (Examples)

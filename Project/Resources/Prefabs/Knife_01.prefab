@@ -1,9 +1,18 @@
 {
     "prefab_entities": [
         {
-            "id": 172,
-            "guid": "007f30f2eba20343-0003e0c7300001df",
+            "id": 0,
+            "guid": "0069e52ebc119695-000467b68a017cf5",
             "components": {
+                "PrefabLinkComponent": {
+                    "type": "PrefabLinkComponent",
+                    "data": [
+                        {
+                            "type": "std::string",
+                            "data": "../../Resources/Prefabs/Knife_01.prefab"
+                        }
+                    ]
+                },
                 "NameComponent": {
                     "name": "Knife_01"
                 },
@@ -167,9 +176,79 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "005c69cdd16a6ff3-0003ebdaf60002ab",
-                                "005c69cdc954d543-0003ebdaf60002ad"
+                                "0069e52efd8c2f36-000467b68a017cf7",
+                                "0069e52e9fdba5b3-000467b68a017cf9"
                             ]
+                        }
+                    ]
+                },
+                "AudioComponent": {
+                    "type": "AudioComponent",
+                    "data": [
+                        {
+                            "type": "bool",
+                            "data": true
+                        },
+                        "0000000000000000-0000000000000000",
+                        {
+                            "type": "bool",
+                            "data": false
+                        },
+                        {
+                            "type": "bool",
+                            "data": false
+                        },
+                        {
+                            "type": "bool",
+                            "data": false
+                        },
+                        {
+                            "type": "bool",
+                            "data": false
+                        },
+                        {
+                            "type": "int",
+                            "data": 128
+                        },
+                        {
+                            "type": "float",
+                            "data": 1
+                        },
+                        {
+                            "type": "float",
+                            "data": 1
+                        },
+                        {
+                            "type": "float",
+                            "data": 0
+                        },
+                        {
+                            "type": "float",
+                            "data": 1
+                        },
+                        {
+                            "type": "bool",
+                            "data": true
+                        },
+                        {
+                            "type": "float",
+                            "data": 1
+                        },
+                        {
+                            "type": "float",
+                            "data": 1
+                        },
+                        {
+                            "type": "float",
+                            "data": 8
+                        },
+                        {
+                            "type": "float",
+                            "data": 15
+                        },
+                        {
+                            "type": "std::string",
+                            "data": "SFX"
                         }
                     ]
                 },
@@ -245,6 +324,23 @@
                                     "data": -0.0107706
                                 }
                             ]
+                        },
+                        {
+                            "type": "Vector3D",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                }
+                            ]
                         }
                     ]
                 },
@@ -267,19 +363,23 @@
                             "entryFunction": "OnInit",
                             "autoInvokeEntry": true,
                             "instanceState": {
-                                "Speed": 5.0,
                                 "_subscriptions": {},
+                                "ArmDelay": 0.05,
                                 "_private": {},
+                                "_transform_fetched": false,
                                 "__field_list": {
-                                    "Speed": 10.0,
                                     "Lifetime": 1.2,
+                                    "Speed": 10.0,
                                     "Damage": 1.0
                                 },
-                                "__created_at": 1769419004.0,
-                                "Lifetime": 1.2,
-                                "_transform_fetched": false,
                                 "__meta": {},
-                                "Damage": 1.0
+                                "HitRadius": 0.5,
+                                "Lifetime": 1.2,
+                                "__created_at": 1769419004.0,
+                                "Speed": 5.0,
+                                "LifeJitter": 0.25,
+                                "Damage": 1.0,
+                                "MaxRange": 10.0
                             }
                         }
                     ]
@@ -287,8 +387,8 @@
             }
         },
         {
-            "id": 173,
-            "guid": "005c69cdd16a6ff3-0003ebdaf60002ab",
+            "id": 1,
+            "guid": "0069e52efd8c2f36-000467b68a017cf7",
             "components": {
                 "NameComponent": {
                     "name": "goose_handle"
@@ -365,7 +465,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "007f30f2eba20343-0003e0c7300001df"
+                        "0069e52ebc119695-000467b68a017cf5"
                     ]
                 },
                 "ActiveComponent": {
@@ -380,8 +480,8 @@
             }
         },
         {
-            "id": 174,
-            "guid": "005c69cdc954d543-0003ebdaf60002ad",
+            "id": 2,
+            "guid": "0069e52e9fdba5b3-000467b68a017cf9",
             "components": {
                 "NameComponent": {
                     "name": "feather_blade"
@@ -458,7 +558,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "007f30f2eba20343-0003e0c7300001df"
+                        "0069e52ebc119695-000467b68a017cf5"
                     ]
                 },
                 "ActiveComponent": {

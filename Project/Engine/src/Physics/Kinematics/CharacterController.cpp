@@ -1,7 +1,6 @@
 #pragma once
 #include "pch.h"
 #include "Physics/Kinematics/CharacterController.hpp"
-#include "Logging.hpp"
 #include <Jolt/Physics/Collision/Shape/RotatedTranslatedShape.h>
 #include <Jolt/Physics/Collision/ObjectLayer.h>
 #include "Physics/CollisionFilters.hpp"
@@ -37,7 +36,7 @@ CharacterController::~CharacterController()
 bool CharacterController::Initialise(ColliderComponent& collider, Transform& transform)
 {
     if (!mPhysicsSystem) {
-        ENGINE_PRINT("[CharacterController] ERROR: PhysicsSystem is NULL!");
+        std::cerr << "[CharacterController] ERROR: PhysicsSystem is NULL!" << std::endl;
         return false;
     }
 
@@ -45,18 +44,20 @@ bool CharacterController::Initialise(ColliderComponent& collider, Transform& tra
     collider.shapeType = ColliderShapeType::Capsule;
     collider.layer = Layers::CHARACTER;
 
-    //std::cout << "calculation for new offset Y is " << ((collider.capsuleHalfHeight + collider.capsuleRadius) * transform.localScale.y) << std::endl;
     collider.capsuleRadius = 0.25f;
     collider.capsuleHalfHeight = 0.4f;
     collider.center.y = collider.capsuleHalfHeight + collider.capsuleRadius;
     // Calculate offset - this represents how much the capsule center is above the feet
     collider_offsetY = collider.center.y * transform.localScale.y;
 
-    ENGINE_PRINT("[CharacterController] Collider offset Y: {}", collider_offsetY);
-    ENGINE_PRINT("[CharacterController] Transform position: ({}, {}, {})", 
-        transform.localPosition.x, transform.localPosition.y, transform.localPosition.z);
+    std::cout << "[CharacterController] Collider offset Y: " << collider_offsetY << std::endl;
+    std::cout << "[CharacterController] Transform position: ("
+        << transform.localPosition.x << ", "
+        << transform.localPosition.y << ", "
+        << transform.localPosition.z << ")" << std::endl;
 
-    ENGINE_PRINT("Capsule radius={} halfHeight={}", collider.capsuleRadius, collider.capsuleHalfHeight);
+    std::cout << "Capsule radius=" << collider.capsuleRadius
+        << " halfHeight=" << collider.capsuleHalfHeight << std::endl;
 
 
     // Create the capsule shape
@@ -85,17 +86,18 @@ bool CharacterController::Initialise(ColliderComponent& collider, Transform& tra
     settings->mEnhancedInternalEdgeRemoval = true;      //in-edge smoothing
 
 
-    // CRITICAL FIX: Add the offset when creating the character
-    // Transform position = feet position
-    // Physics needs the capsule CENTER position, which is offset upward
+    // Position the CharacterVirtual so the capsule center is above the feet.
+    // GetPosition() subtracts collider_offsetY, so this ensures it returns the scene position.
     JPH::RVec3 physicsPosition(
         transform.localPosition.x,
-        transform.localPosition.y,
+        transform.localPosition.y + collider_offsetY,
         transform.localPosition.z
     );
 
-    ENGINE_PRINT("[CharacterController] Creating character at physics position: ({}, {}, {})",
-        physicsPosition.GetX(), physicsPosition.GetY(), physicsPosition.GetZ());
+    std::cout << "[CharacterController] Creating character at physics position: ("
+        << physicsPosition.GetX() << ", "
+        << physicsPosition.GetY() << ", "
+        << physicsPosition.GetZ() << ")" << std::endl;
 
     // CREATE VIRTUAL CHARACTER at the correct physics position
     mCharacter = new JPH::CharacterVirtual(
@@ -107,7 +109,7 @@ bool CharacterController::Initialise(ColliderComponent& collider, Transform& tra
 
     if (!mCharacter)
     {
-        ENGINE_PRINT("[CharacterController] Failed to create CharacterVirtual!");
+        std::cerr << "[CharacterController] Failed to create CharacterVirtual!" << std::endl;
         return false;
     }
 
@@ -121,7 +123,8 @@ bool CharacterController::Initialise(ColliderComponent& collider, Transform& tra
         temp_allocator
     );
 
-    ENGINE_PRINT("[CharacterController] Initialized with Ground State: {}", (int)mCharacter->GetGroundState());
+    std::cout << "[CharacterController] Initialized with Ground State: "
+        << (int)mCharacter->GetGroundState() << std::endl;
 
     return true;
 }
@@ -130,14 +133,14 @@ bool CharacterController::Initialise(ColliderComponent& collider, Transform& tra
 CharacterController* CharacterController::CreateController(ColliderComponent& collider, Transform& transform)
 {
     if (!mPhysicsSystem) {
-        ENGINE_PRINT("[ERROR] Cannot create CharacterController - PhysicsSystem unavailable!");
+        std::cerr << "[ERROR] Cannot create CharacterController - PhysicsSystem unavailable!" << std::endl;
         return nullptr;
     }
 
     CharacterController* controller = new CharacterController(mPhysicsSystem);
 
     if (!controller->Initialise(collider, transform)) {
-        ENGINE_PRINT("[ERROR] CharacterController initialization failed!");
+        std::cerr << "[ERROR] CharacterController initialization failed!" << std::endl;
         delete controller;
         return nullptr;
     }
@@ -245,11 +248,6 @@ void CharacterController::Update(float deltaTime) {
         JPH::Vec3 groundNormal = mCharacter->GetGroundNormal();
         JPH::Vec3 groundVelocity = mCharacter->GetGroundVelocity();
         JPH::BodyID groundBodyID = mCharacter->GetGroundBodyID();
-
-        //std::cout << "[C++] ON GROUND! Normal: (" << groundNormal.GetX() << ", " 
-        //          << groundNormal.GetY() << ", " << groundNormal.GetZ() << ")" << std::endl;
-        //std::cout << "[C++] Ground Body ID: " << groundBodyID.GetIndex() << std::endl;
-        //std::cout << "[C++] Ground Velocity: " << groundVelocity.GetY() << std::endl;
     }
 
     //std::cout << "===================================" << std::endl;
@@ -331,7 +329,7 @@ bool CharacterController::IsGrounded() const
 {
     if (mCharacter == nullptr)
     {
-        ENGINE_PRINT("[DBG] IsGrounded: mCharacter is NULL");
+        std::cerr << "[DBG] IsGrounded: mCharacter is NULL\n";
         return false;
     }
 

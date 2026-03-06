@@ -14,6 +14,9 @@ prior written consent of DigiPen Institute of Technology is prohibited.
 #include "pch.h"
 #include "ECS/LayerComponent.hpp"
 #include "ECS/LayerManager.hpp"
+#include "ECS/ECSManager.hpp"
+#include "Hierarchy/ParentComponent.hpp"
+#include "Hierarchy/EntityGUIDRegistry.hpp"
 #include "Reflection/ReflectionBase.hpp"
 
 #pragma region Reflection
@@ -36,4 +39,26 @@ const std::string& LayerComponent::GetLayerName() const {
 
 bool LayerComponent::IsInLayer(const std::string& layerName) const {
 	return GetLayerName() == layerName;
+}
+
+int GetEffectiveLayerIndex(Entity entity, ECSManager& ecs) {
+	Entity current = entity;
+	auto& guidRegistry = EntityGUIDRegistry::GetInstance();
+
+	// Walk up from entity through parents looking for LayerComponent
+	while (true) {
+		if (ecs.HasComponent<LayerComponent>(current)) {
+			return ecs.GetComponent<LayerComponent>(current).layerIndex;
+		}
+		if (!ecs.HasComponent<ParentComponent>(current)) {
+			break;
+		}
+		auto& parentComp = ecs.GetComponent<ParentComponent>(current);
+		Entity parentEntity = guidRegistry.GetEntityByGUID(parentComp.parent);
+		if (parentEntity == static_cast<Entity>(-1) || parentEntity == UINT32_MAX) {
+			break;
+		}
+		current = parentEntity;
+	}
+	return 0; // Default layer
 }

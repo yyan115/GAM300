@@ -1,0 +1,11 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "005e129f2f112d41-000421171a006285",
+        "source": "../../Resources/Textures/M4/tori_gate.fbx",
+        "compiled": "../../Resources/Textures/M4/tori_gate.mesh"
+    },
+    "ModelMetaData": {
+        "optimizeMeshes": true
+    }
+}

@@ -1,0 +1,11 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "006bd5bb31e75768-00046ac43400405d",
+        "source": "../../Resources/Models/Rooms/Stairsup/Stairsup_Stairs_low.fbx",
+        "compiled": "../../Resources/Models/Rooms/Stairsup/Stairsup_Stairs_low.mesh"
+    },
+    "ModelMetaData": {
+        "optimizeMeshes": true
+    }
+}

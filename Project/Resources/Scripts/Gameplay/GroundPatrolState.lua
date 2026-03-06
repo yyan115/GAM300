@@ -34,21 +34,21 @@ local function stop(ai)
 end
 
 local function switchTarget(ai)
-    print("[GroundPatrolState] Before switch target, target = ", ai._patrolWhich)
+    --print("[GroundPatrolState] Before switch target, target = ", ai._patrolWhich)
     ai._patrolWhich = (ai._patrolWhich == 1) and 2 or 1
     ai._patrolTarget = (ai._patrolWhich == 1) and ai._patrolA or ai._patrolB
     ai._switchLockT = 0.45
     ai._stuckT = 0
-    print("[GroundPatrolState] After switch target, target = ", ai._patrolWhich)
+    --print("[GroundPatrolState] After switch target, target = ", ai._patrolWhich)
 end
 
 function PatrolState:Enter(ai)
-    print(string.format("[Patrol][Enter] A=%s B=%s T=%s",
-    tostring(ai._patrolA and (ai._patrolA.x .. "," .. ai._patrolA.z) or "nil"),
-    tostring(ai._patrolB and (ai._patrolB.x .. "," .. ai._patrolB.z) or "nil"),
-    tostring(ai._patrolTarget and (ai._patrolTarget.x .. "," .. ai._patrolTarget.z) or "nil")))
-
+    ai._animator:SetBool("PlayerInDetectionRange", false)
     ai._animator:SetBool("PatrolEnabled", true)
+    -- print(string.format("[Patrol][Enter] A=%s B=%s T=%s",
+    -- tostring(ai._patrolA and (ai._patrolA.x .. "," .. ai._patrolA.z) or "nil"),
+    -- tostring(ai._patrolB and (ai._patrolB.x .. "," .. ai._patrolB.z) or "nil"),
+    -- tostring(ai._patrolTarget and (ai._patrolTarget.x .. "," .. ai._patrolTarget.z) or "nil")))
 
     ai._patrolWaitT  = 0
     ai._switchLockT  = 0
@@ -95,7 +95,7 @@ function PatrolState:Enter(ai)
     --     needRepath = true
     -- end
     if needRepath then
-        print("[GroundPatrolState] NEED REPATH.")
+        --print("[GroundPatrolState] NEED REPATH.")
         ai._pathRepathT = 0
         ai:RequestPathToXZ(t.x, t.z)
     end
@@ -146,27 +146,25 @@ function PatrolState:Update(ai, dt)
     local arriveR = ai.PathArriveRadius or 0.5
 
     if ai._isPatrolWait == false and pathEnded then
-        print("[GroundPatrolState] Arrived at patrol point")
+        --print("[GroundPatrolState] Arrived at patrol point")
         ai._waitLockRot = ai._lastFacingRot
         ai._patrolWaitT = (ai.config and ai.config.PatrolWait) or ai.PatrolWait or 1.5
         stop(ai)
         ai._isPatrolWait = true
         ai._animator:SetBool("PatrolEnabled", false)
-        ai._animator:SetBool("Passive", true)
         return
     end
 
     if ai._isPatrolWait and pathEnded then
         ai._patrolWaitT = ai._patrolWaitT - dtSec
         if ai._patrolWaitT <= 0 then
-            print("[GroundPatrolState] Switching patrol targets")
+            --print("[GroundPatrolState] Switching patrol targets")
             switchTarget(ai)
             ai._isPatrolWait = false
+            ai._animator:SetBool("PatrolEnabled", true)
 
             t = ai._patrolTarget
             ai:RequestPathToXZ(t.x, t.z)
-            ai._animator:SetBool("PatrolEnabled", true)
-            ai._animator:SetBool("Passive", false)
         end
     end
 

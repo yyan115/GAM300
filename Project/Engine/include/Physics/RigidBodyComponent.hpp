@@ -46,6 +46,7 @@ struct RigidBodyComponent {
 	float linearDamping = 0.0f;
 	float angularDamping = 0.0f;
 
+	bool isTeleporting = false;
 
 	//TO BE USED FOR SCRIPT
 	Vector3D forceApplied = { 0.0f,0.0f,0.0f };

@@ -9,11 +9,18 @@ EntityManager::EntityManager() {
 }
 
 Entity EntityManager::CreateEntity() {
-	assert(activeEntityCount < MAX_ENTITIES && "Too many entities in existence.");
+	//assert(activeEntityCount < MAX_ENTITIES && "Too many entities in existence.");
+
+	if (activeEntityCount >= MAX_ENTITIES) {
+		ENGINE_LOG_WARN("[EntityManager] Failed to create entity: Max limit reached!");
+		return INVALID_ENTITY; // Return an ID that is out of bounds (Invalid)
+	}
 
 	Entity entity = availableEntities.front();
+	//ENGINE_LOG_INFO("[EntityManager] Created entity " + std::to_string(entity));
 	availableEntities.pop();
 	++activeEntityCount;
+	//ENGINE_LOG_INFO("[EntityManager] Active entity count: " + std::to_string(activeEntityCount));
 
 	activeEntities[entity] = true;
 
@@ -21,23 +28,42 @@ Entity EntityManager::CreateEntity() {
 }
 
 void EntityManager::DestroyEntity(Entity entity) {
-	assert(entity < MAX_ENTITIES && "Entity out of range.");
+	//assert(entity < MAX_ENTITIES && "Entity out of range.");
+
+	if (entity >= MAX_ENTITIES) {
+		ENGINE_LOG_WARN("[EntityManager] Failed to destroy entity " + std::to_string(entity));
+		return;
+	}
+
+	//ENGINE_LOG_INFO("[EntityManager] Destroying entity " + std::to_string(entity));
 
 	entitySignatures[entity].reset();
 
 	availableEntities.push(entity);
 	--activeEntityCount;
 
+	//ENGINE_LOG_INFO("[EntityManager] Active entity count: " + std::to_string(activeEntityCount));
+
 	activeEntities[entity] = false;
 }
 
 Signature EntityManager::GetEntitySignature(Entity entity) const {
-	assert(entity < MAX_ENTITIES && "Entity out of range.");
+	if (entity >= MAX_ENTITIES) {
+		// This stops the function immediately
+		throw std::runtime_error("[EntityManager] Failed to get entity signature for entity " + std::to_string(entity));
+	}
+
+	//assert(entity < MAX_ENTITIES && "Entity out of range.");
 	return entitySignatures[entity];
 }
 
 void EntityManager::SetEntitySignature(Entity entity, Signature signature) {
-	assert(entity < MAX_ENTITIES && "Entity out of range.");
+	if (entity >= MAX_ENTITIES) {
+		// This stops the function immediately
+		throw std::runtime_error("[EntityManager] Failed to set entity signature for entity " + std::to_string(entity));
+	}
+
+	//assert(entity < MAX_ENTITIES && "Entity out of range.");
 	entitySignatures[entity] = signature;
 }
 
@@ -63,12 +89,22 @@ void EntityManager::DestroyAllEntities() {
 }
 
 void EntityManager::SetActive(Entity entity, bool isActive) {
-	assert(entity < MAX_ENTITIES && "Entity out of range.");
+	if (entity >= MAX_ENTITIES) {
+		ENGINE_LOG_WARN("[EntityManager] Failed to set active entity " + std::to_string(entity));
+		return;
+	}
+
+	//assert(entity < MAX_ENTITIES && "Entity out of range.");
 	activeEntities[entity] = isActive;
 }
 
 bool EntityManager::IsActive(Entity entity) const {
-	assert(entity < MAX_ENTITIES && "Entity out of range.");
+	if (entity >= MAX_ENTITIES) {
+		// This stops the function immediately
+		throw std::runtime_error("[EntityManager] Failed to check is active for entity " + std::to_string(entity));
+	}
+
+	//assert(entity < MAX_ENTITIES && "Entity out of range.");
 	return activeEntities[entity];
 }
 

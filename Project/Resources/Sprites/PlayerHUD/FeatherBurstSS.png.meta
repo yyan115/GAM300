@@ -1,0 +1,14 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "0057e3bfbac9b82f-000468cd16001b17",
+        "source": "../../Resources/Sprites/PlayerHUD/FeatherBurstSS.png",
+        "compiled": "../../Resources/Sprites/PlayerHUD/FeatherBurstSS.dds"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp"
+    }
+}

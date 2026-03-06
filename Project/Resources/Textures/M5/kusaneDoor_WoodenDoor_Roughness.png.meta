@@ -1,0 +1,14 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "00327c2b231b2013-000462073e00001d",
+        "source": "../../Resources/Textures/M5/kusaneDoor_WoodenDoor_Roughness.png",
+        "compiled": "../../Resources/Textures/M5/kusaneDoor_WoodenDoor_Roughness.dds"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp"
+    }
+}

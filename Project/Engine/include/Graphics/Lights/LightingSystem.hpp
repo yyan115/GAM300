@@ -2,8 +2,7 @@
 #include "ECS/System.hpp"
 #include "Graphics/ShaderClass.h"
 #include "Graphics/Shadows/ShadowMap.hpp"
-#include "Graphics/Shadows/PointShadowMap.hpp"
-#include "Logging.hpp" 
+#include "Graphics/Shadows/PointShadowMap.hpp" 
 
 struct DirectionalLightComponent;
 struct PointLightComponent;
@@ -85,6 +84,7 @@ private:
         std::vector<float> linear;
         std::vector<float> quadratic;
         std::vector<float> intensity;
+        std::vector<float> range;
         std::vector<int> shadowIndex;
     } pointLightData;
 

@@ -1,9 +1,18 @@
 {
     "prefab_entities": [
         {
-            "id": 359,
-            "guid": "001a962e4c735722-00040923b4000bbd",
+            "id": 0,
+            "guid": "00345ceb2151913c-000460dfea09846f",
             "components": {
+                "PrefabLinkComponent": {
+                    "type": "PrefabLinkComponent",
+                    "data": [
+                        {
+                            "type": "std::string",
+                            "data": "../../Resources/Prefabs/LevelRooms/Path1.prefab"
+                        }
+                    ]
+                },
                 "NameComponent": {
                     "name": "Path1"
                 },
@@ -82,26 +91,20 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "0033f65906d6f696-0004093bfc00002b",
-                                "0079821fa3c233c5-00040e1a80041e6b",
-                                "001a962e66f82f80-0004092444000bbf",
-                                "001a962e391eae7e-000409249c000bc3",
-                                "005cdd82d0c99f6b-00040abf2602783f",
-                                "006ce0e63d2c28d5-00040a5ee80000a1",
-                                "005cdd82db6429ad-00040ac03a02ed93",
-                                "006ce0e60ae03367-00040a5f4c0000a3",
-                                "0079821fcf2bdcf6-00040e0dd200d593",
-                                "0079821fd3604c72-00040e0fa8014ae1",
-                                "0079821ffba18570-00040e116201c02d",
-                                "001955a0807d1cc8-00041e37f00006c1"
+                                "00345ceb1bc4e7e2-000460dfea098471",
+                                "00345ceb7b5d6913-000460dfea098473",
+                                "00345ceb4c70e83d-000460dfea09847f",
+                                "00345ceb4a1412c9-000460dfea098487",
+                                "00345ceb2f67c260-000460dfea09849d",
+                                "00345ceb2308f161-000460dfea0984c1",
+                                "00345ceb7f794a81-000460dfea0984f5",
+                                "00345ceb5128e313-000460dfea098517",
+                                "00345ceb5addf76c-000460dfea098521",
+                                "00345ceb75fd8d8c-000460dfea098525",
+                                "00345ceb779d200c-000460dfea098527",
+                                "00345ceb5f37e004-000460dfea09852b"
                             ]
                         }
-                    ]
-                },
-                "ParentComponent": {
-                    "type": "ParentComponent",
-                    "data": [
-                        "002f74130b102c59-000361c1e4000009"
                     ]
                 },
                 "ActiveComponent": {
@@ -116,8 +119,8 @@
             }
         },
         {
-            "id": 360,
-            "guid": "0033f65906d6f696-0004093bfc00002b",
+            "id": 1,
+            "guid": "00345ceb1bc4e7e2-000460dfea098471",
             "components": {
                 "NameComponent": {
                     "name": "PointLight"
@@ -194,7 +197,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "001a962e4c735722-00040923b4000bbd"
+                        "00345ceb2151913c-000460dfea09846f"
                     ]
                 },
                 "PointLightComponent": {
@@ -306,8 +309,8 @@
             }
         },
         {
-            "id": 361,
-            "guid": "0079821fa3c233c5-00040e1a80041e6b",
+            "id": 2,
+            "guid": "00345ceb7b5d6913-000460dfea098473",
             "components": {
                 "NameComponent": {
                     "name": "Ceiling"
@@ -387,11 +390,11 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "0079821ffcec8404-00040e180803ba77",
-                                "0079821fa8fa6cfd-00040e181803c329",
-                                "0079821fc6380af8-00040e1a4e0408af",
-                                "0079821fde73d166-00040e1a640415b9",
-                                "0079821fca64bba4-00040e1774039131"
+                                "00345ceb29c17f20-000460dfea098475",
+                                "00345ceb01f3a596-000460dfea098477",
+                                "00345ceb21eebc88-000460dfea098479",
+                                "00345ceb453f0b74-000460dfea09847b",
+                                "00345ceb71e64b58-000460dfea09847d"
                             ]
                         }
                     ]
@@ -399,7 +402,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "001a962e4c735722-00040923b4000bbd"
+                        "00345ceb2151913c-000460dfea09846f"
                     ]
                 },
                 "ActiveComponent": {
@@ -414,8 +417,8 @@
             }
         },
         {
-            "id": 362,
-            "guid": "0079821ffcec8404-00040e180803ba77",
+            "id": 3,
+            "guid": "00345ceb29c17f20-000460dfea098475",
             "components": {
                 "NameComponent": {
                     "name": "Ceiling (1) (1)"
@@ -577,7 +580,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "0079821fa3c233c5-00040e1a80041e6b"
+                        "00345ceb7b5d6913-000460dfea098473"
                     ]
                 },
                 "RigidBodyComponent": {
@@ -734,8 +737,8 @@
             }
         },
         {
-            "id": 363,
-            "guid": "0079821fa8fa6cfd-00040e181803c329",
+            "id": 4,
+            "guid": "00345ceb01f3a596-000460dfea098477",
             "components": {
                 "NameComponent": {
                     "name": "Ceiling (1) (1) (1)"
@@ -897,7 +900,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "0079821fa3c233c5-00040e1a80041e6b"
+                        "00345ceb7b5d6913-000460dfea098473"
                     ]
                 },
                 "RigidBodyComponent": {
@@ -1054,8 +1057,8 @@
             }
         },
         {
-            "id": 364,
-            "guid": "0079821fc6380af8-00040e1a4e0408af",
+            "id": 5,
+            "guid": "00345ceb21eebc88-000460dfea098479",
             "components": {
                 "NameComponent": {
                     "name": "Ceiling (1) (1) (1) (1)"
@@ -1217,7 +1220,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "0079821fa3c233c5-00040e1a80041e6b"
+                        "00345ceb7b5d6913-000460dfea098473"
                     ]
                 },
                 "RigidBodyComponent": {
@@ -1374,8 +1377,8 @@
             }
         },
         {
-            "id": 365,
-            "guid": "0079821fde73d166-00040e1a640415b9",
+            "id": 6,
+            "guid": "00345ceb453f0b74-000460dfea09847b",
             "components": {
                 "NameComponent": {
                     "name": "Ceiling (1) (1) (1) (1) (1)"
@@ -1537,7 +1540,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "0079821fa3c233c5-00040e1a80041e6b"
+                        "00345ceb7b5d6913-000460dfea098473"
                     ]
                 },
                 "RigidBodyComponent": {
@@ -1694,8 +1697,8 @@
             }
         },
         {
-            "id": 366,
-            "guid": "0079821fca64bba4-00040e1774039131",
+            "id": 7,
+            "guid": "00345ceb71e64b58-000460dfea09847d",
             "components": {
                 "NameComponent": {
                     "name": "Ceiling (1)"
@@ -1857,7 +1860,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "0079821fa3c233c5-00040e1a80041e6b"
+                        "00345ceb7b5d6913-000460dfea098473"
                     ]
                 },
                 "RigidBodyComponent": {
@@ -2014,8 +2017,8 @@
             }
         },
         {
-            "id": 367,
-            "guid": "001a962e66f82f80-0004092444000bbf",
+            "id": 8,
+            "guid": "00345ceb4c70e83d-000460dfea09847f",
             "components": {
                 "NameComponent": {
                     "name": "Ground"
@@ -2095,9 +2098,9 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "001a962e6ac64bcc-0004092350000bbb",
-                                "003669276c65713f-00040ae5f6043e63",
-                                "0036692761965f53-00040ae66004541d"
+                                "00345ceb6b8694b4-000460dfea098481",
+                                "00345ceb32d4a82d-000460dfea098483",
+                                "00345ceb59a048f0-000460dfea098485"
                             ]
                         }
                     ]
@@ -2105,7 +2108,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "001a962e4c735722-00040923b4000bbd"
+                        "00345ceb2151913c-000460dfea09846f"
                     ]
                 },
                 "ActiveComponent": {
@@ -2120,8 +2123,8 @@
             }
         },
         {
-            "id": 368,
-            "guid": "001a962e6ac64bcc-0004092350000bbb",
+            "id": 9,
+            "guid": "00345ceb6b8694b4-000460dfea098481",
             "components": {
                 "NameComponent": {
                     "name": "FloorMainModel (1) (1) (3) (2)"
@@ -2283,7 +2286,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "001a962e66f82f80-0004092444000bbf"
+                        "00345ceb4c70e83d-000460dfea09847f"
                     ]
                 },
                 "RigidBodyComponent": {
@@ -2440,8 +2443,8 @@
             }
         },
         {
-            "id": 369,
-            "guid": "003669276c65713f-00040ae5f6043e63",
+            "id": 10,
+            "guid": "00345ceb32d4a82d-000460dfea098483",
             "components": {
                 "NameComponent": {
                     "name": "FloorMainModel (1) (1) (3) (2) (2)"
@@ -2603,7 +2606,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "001a962e66f82f80-0004092444000bbf"
+                        "00345ceb4c70e83d-000460dfea09847f"
                     ]
                 },
                 "RigidBodyComponent": {
@@ -2760,8 +2763,8 @@
             }
         },
         {
-            "id": 370,
-            "guid": "0036692761965f53-00040ae66004541d",
+            "id": 11,
+            "guid": "00345ceb59a048f0-000460dfea098485",
             "components": {
                 "NameComponent": {
                     "name": "FloorMainModel (1) (1) (3) (2) (2) (1)"
@@ -2923,7 +2926,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "001a962e66f82f80-0004092444000bbf"
+                        "00345ceb4c70e83d-000460dfea09847f"
                     ]
                 },
                 "RigidBodyComponent": {
@@ -3080,8 +3083,8 @@
             }
         },
         {
-            "id": 371,
-            "guid": "001a962e391eae7e-000409249c000bc3",
+            "id": 12,
+            "guid": "00345ceb4a1412c9-000460dfea098487",
             "components": {
                 "NameComponent": {
                     "name": "Walls"
@@ -3161,16 +3164,16 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "001a962e2565ed4f-0004092490000bc1",
-                                "001a962e260b77c8-0004092536000bc5",
-                                "001a962e74bd42ee-0004092a3e000d09",
-                                "001a962e46b00bbd-0004092b0c000d0f",
-                                "001a962e52bcfb51-0004092cec000d13",
-                                "001a962e58e989f7-0004092cec000d15",
-                                "003669275902eff7-00040ae932049bcb",
-                                "003669276b3c7909-00040ae932049bcd",
-                                "003669276c8c6e4b-00040ae94204a027",
-                                "003669271fb79bc7-00040ae94204a029"
+                                "00345ceb20547299-000460dfea098489",
+                                "00345ceb57556e24-000460dfea09848b",
+                                "00345ceb10e1a4df-000460dfea09848d",
+                                "00345ceb42bdc1fa-000460dfea09848f",
+                                "00345ceb3995f68c-000460dfea098491",
+                                "00345ceb77cbb93f-000460dfea098493",
+                                "00345ceb243cbd6c-000460dfea098495",
+                                "00345ceb10889de2-000460dfea098497",
+                                "00345ceb30ce7f4f-000460dfea098499",
+                                "00345ceb195c4513-000460dfea09849b"
                             ]
                         }
                     ]
@@ -3178,7 +3181,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "001a962e4c735722-00040923b4000bbd"
+                        "00345ceb2151913c-000460dfea09846f"
                     ]
                 },
                 "ActiveComponent": {
@@ -3193,8 +3196,8 @@
             }
         },
         {
-            "id": 372,
-            "guid": "001a962e2565ed4f-0004092490000bc1",
+            "id": 13,
+            "guid": "00345ceb20547299-000460dfea098489",
             "components": {
                 "NameComponent": {
                     "name": "WallMainCombinedV2 (2) (1) (2) (3)"
@@ -3356,7 +3359,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "001a962e391eae7e-000409249c000bc3"
+                        "00345ceb4a1412c9-000460dfea098487"
                     ]
                 },
                 "RigidBodyComponent": {
@@ -3513,8 +3516,8 @@
             }
         },
         {
-            "id": 373,
-            "guid": "001a962e260b77c8-0004092536000bc5",
+            "id": 14,
+            "guid": "00345ceb57556e24-000460dfea09848b",
             "components": {
                 "NameComponent": {
                     "name": "WallMainCombinedV2 (2) (1) (2) (3) (1)"
@@ -3676,7 +3679,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "001a962e391eae7e-000409249c000bc3"
+                        "00345ceb4a1412c9-000460dfea098487"
                     ]
                 },
                 "RigidBodyComponent": {
@@ -3833,8 +3836,8 @@
             }
         },
         {
-            "id": 374,
-            "guid": "001a962e74bd42ee-0004092a3e000d09",
+            "id": 15,
+            "guid": "00345ceb10e1a4df-000460dfea09848d",
             "components": {
                 "NameComponent": {
                     "name": "WallMainCombinedV2 (2) (1) (2) (3) (2)"
@@ -3996,7 +3999,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "001a962e391eae7e-000409249c000bc3"
+                        "00345ceb4a1412c9-000460dfea098487"
                     ]
                 },
                 "RigidBodyComponent": {
@@ -4153,8 +4156,8 @@
             }
         },
         {
-            "id": 375,
-            "guid": "001a962e46b00bbd-0004092b0c000d0f",
+            "id": 16,
+            "guid": "00345ceb42bdc1fa-000460dfea09848f",
             "components": {
                 "NameComponent": {
                     "name": "WallMainCombinedV2 (2) (1) (2) (3) (2) (1)"
@@ -4316,7 +4319,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "001a962e391eae7e-000409249c000bc3"
+                        "00345ceb4a1412c9-000460dfea098487"
                     ]
                 },
                 "RigidBodyComponent": {
@@ -4473,8 +4476,8 @@
             }
         },
         {
-            "id": 376,
-            "guid": "001a962e52bcfb51-0004092cec000d13",
+            "id": 17,
+            "guid": "00345ceb3995f68c-000460dfea098491",
             "components": {
                 "NameComponent": {
                     "name": "WallMainCombinedV2 (2) (1) (2) (3) (2) (2)"
@@ -4636,7 +4639,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "001a962e391eae7e-000409249c000bc3"
+                        "00345ceb4a1412c9-000460dfea098487"
                     ]
                 },
                 "RigidBodyComponent": {
@@ -4793,8 +4796,8 @@
             }
         },
         {
-            "id": 377,
-            "guid": "001a962e58e989f7-0004092cec000d15",
+            "id": 18,
+            "guid": "00345ceb77cbb93f-000460dfea098493",
             "components": {
                 "NameComponent": {
                     "name": "WallMainCombinedV2 (2) (1) (2) (3) (2) (1) (1)"
@@ -4956,7 +4959,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "001a962e391eae7e-000409249c000bc3"
+                        "00345ceb4a1412c9-000460dfea098487"
                     ]
                 },
                 "RigidBodyComponent": {
@@ -5113,8 +5116,8 @@
             }
         },
         {
-            "id": 378,
-            "guid": "003669275902eff7-00040ae932049bcb",
+            "id": 19,
+            "guid": "00345ceb243cbd6c-000460dfea098495",
             "components": {
                 "NameComponent": {
                     "name": "WallMainCombinedV2 (2) (1) (2) (3) (3)"
@@ -5276,7 +5279,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "001a962e391eae7e-000409249c000bc3"
+                        "00345ceb4a1412c9-000460dfea098487"
                     ]
                 },
                 "RigidBodyComponent": {
@@ -5433,8 +5436,8 @@
             }
         },
         {
-            "id": 379,
-            "guid": "003669276b3c7909-00040ae932049bcd",
+            "id": 20,
+            "guid": "00345ceb10889de2-000460dfea098497",
             "components": {
                 "NameComponent": {
                     "name": "WallMainCombinedV2 (2) (1) (2) (3) (1) (1)"
@@ -5596,7 +5599,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "001a962e391eae7e-000409249c000bc3"
+                        "00345ceb4a1412c9-000460dfea098487"
                     ]
                 },
                 "RigidBodyComponent": {
@@ -5753,8 +5756,8 @@
             }
         },
         {
-            "id": 380,
-            "guid": "003669276c8c6e4b-00040ae94204a027",
+            "id": 21,
+            "guid": "00345ceb30ce7f4f-000460dfea098499",
             "components": {
                 "NameComponent": {
                     "name": "WallMainCombinedV2 (2) (1) (2) (3) (3) (1)"
@@ -5916,7 +5919,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "001a962e391eae7e-000409249c000bc3"
+                        "00345ceb4a1412c9-000460dfea098487"
                     ]
                 },
                 "RigidBodyComponent": {
@@ -6073,8 +6076,8 @@
             }
         },
         {
-            "id": 381,
-            "guid": "003669271fb79bc7-00040ae94204a029",
+            "id": 22,
+            "guid": "00345ceb195c4513-000460dfea09849b",
             "components": {
                 "NameComponent": {
                     "name": "WallMainCombinedV2 (2) (1) (2) (3) (1) (1) (1)"
@@ -6236,7 +6239,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "001a962e391eae7e-000409249c000bc3"
+                        "00345ceb4a1412c9-000460dfea098487"
                     ]
                 },
                 "RigidBodyComponent": {
@@ -6393,8 +6396,8 @@
             }
         },
         {
-            "id": 382,
-            "guid": "005cdd82d0c99f6b-00040abf2602783f",
+            "id": 23,
+            "guid": "00345ceb2f67c260-000460dfea09849d",
             "components": {
                 "NameComponent": {
                     "name": "WallModulars"
@@ -6474,23 +6477,23 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "005cdd82990c20c3-00040abf0c027611",
-                                "005cdd82d33ce04c-00040abf80029d2d",
-                                "005cdd82b28c5c07-00040abf8402a187",
-                                "005cdd82f04f8ed0-00040abfee02c21d",
-                                "005cdd82cd23d44c-00040abfee02c21f",
-                                "005cdd82cc920b4e-00040abfee02c221",
-                                "003669276b7f22e7-00040aec5c0556a5",
-                                "003669277dadced3-00040aec5c0556a7",
-                                "00366927661883a0-00040aecb4057969",
-                                "0036692722345608-00040aecb405796b",
-                                "0048a86958ead2fc-00040b519e000459",
-                                "0048a8691e78c180-00040b51e00015bb",
-                                "0048a86951686441-00040b51ea001a15",
-                                "0048a86948ff4bed-00040b52a200661f",
-                                "0048a8695d5dd51c-00040b52a2006621",
-                                "0048a8697b833667-00040b52a2006623",
-                                "0079821f8be08648-00040e187203dd3b"
+                                "00345ceb2a4af42c-000460dfea09849f",
+                                "00345ceb61bc5394-000460dfea0984a1",
+                                "00345ceb70ac9d3e-000460dfea0984a3",
+                                "00345ceb2c9322a8-000460dfea0984a5",
+                                "00345ceb03a605b4-000460dfea0984a7",
+                                "00345ceb2e1042d6-000460dfea0984a9",
+                                "00345ceb7c2a9930-000460dfea0984ab",
+                                "00345ceb1a99ec02-000460dfea0984ad",
+                                "00345ceb2e87cc34-000460dfea0984af",
+                                "00345ceb2c0326ec-000460dfea0984b1",
+                                "00345ceb6334d48c-000460dfea0984b3",
+                                "00345ceb5f39aa23-000460dfea0984b5",
+                                "00345ceb5235daad-000460dfea0984b7",
+                                "00345ceb52bd7a2f-000460dfea0984b9",
+                                "00345ceb4868a3c6-000460dfea0984bb",
+                                "00345ceb6f72236e-000460dfea0984bd",
+                                "00345ceb44e564cf-000460dfea0984bf"
                             ]
                         }
                     ]
@@ -6498,7 +6501,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "001a962e4c735722-00040923b4000bbd"
+                        "00345ceb2151913c-000460dfea09846f"
                     ]
                 },
                 "ActiveComponent": {
@@ -6513,8 +6516,8 @@
             }
         },
         {
-            "id": 383,
-            "guid": "005cdd82990c20c3-00040abf0c027611",
+            "id": 24,
+            "guid": "00345ceb2a4af42c-000460dfea09849f",
             "components": {
                 "NameComponent": {
                     "name": "WallModular (1) (1) (1) (1) (1) (1) (1) (1) (1) (2)"
@@ -6676,7 +6679,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "005cdd82d0c99f6b-00040abf2602783f"
+                        "00345ceb2f67c260-000460dfea09849d"
                     ]
                 },
                 "RigidBodyComponent": {
@@ -6833,8 +6836,8 @@
             }
         },
         {
-            "id": 384,
-            "guid": "005cdd82d33ce04c-00040abf80029d2d",
+            "id": 25,
+            "guid": "00345ceb61bc5394-000460dfea0984a1",
             "components": {
                 "NameComponent": {
                     "name": "WallModular (1) (1) (1) (1) (1) (1) (1) (1) (1) (2) (1)"
@@ -6996,7 +6999,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "005cdd82d0c99f6b-00040abf2602783f"
+                        "00345ceb2f67c260-000460dfea09849d"
                     ]
                 },
                 "RigidBodyComponent": {
@@ -7153,8 +7156,8 @@
             }
         },
         {
-            "id": 385,
-            "guid": "005cdd82b28c5c07-00040abf8402a187",
+            "id": 26,
+            "guid": "00345ceb70ac9d3e-000460dfea0984a3",
             "components": {
                 "NameComponent": {
                     "name": "WallModular (1) (1) (1) (1) (1) (1) (1) (1) (1) (2) (1) (1)"
@@ -7316,7 +7319,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "005cdd82d0c99f6b-00040abf2602783f"
+                        "00345ceb2f67c260-000460dfea09849d"
                     ]
                 },
                 "RigidBodyComponent": {
@@ -7473,8 +7476,8 @@
             }
         },
         {
-            "id": 386,
-            "guid": "005cdd82f04f8ed0-00040abfee02c21d",
+            "id": 27,
+            "guid": "00345ceb2c9322a8-000460dfea0984a5",
             "components": {
                 "NameComponent": {
                     "name": "WallModular (1) (1) (1) (1) (1) (1) (1) (1) (1) (2) (2)"
@@ -7636,7 +7639,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "005cdd82d0c99f6b-00040abf2602783f"
+                        "00345ceb2f67c260-000460dfea09849d"
                     ]
                 },
                 "RigidBodyComponent": {
@@ -7793,8 +7796,8 @@
             }
         },
         {
-            "id": 387,
-            "guid": "005cdd82cd23d44c-00040abfee02c21f",
+            "id": 28,
+            "guid": "00345ceb03a605b4-000460dfea0984a7",
             "components": {
                 "NameComponent": {
                     "name": "WallModular (1) (1) (1) (1) (1) (1) (1) (1) (1) (2) (1) (2)"
@@ -7956,7 +7959,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "005cdd82d0c99f6b-00040abf2602783f"
+                        "00345ceb2f67c260-000460dfea09849d"
                     ]
                 },
                 "RigidBodyComponent": {
@@ -8113,8 +8116,8 @@
             }
         },
         {
-            "id": 388,
-            "guid": "005cdd82cc920b4e-00040abfee02c221",
+            "id": 29,
+            "guid": "00345ceb2e1042d6-000460dfea0984a9",
             "components": {
                 "NameComponent": {
                     "name": "WallModular (1) (1) (1) (1) (1) (1) (1) (1) (1) (2) (1) (1) (1)"
@@ -8276,7 +8279,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "005cdd82d0c99f6b-00040abf2602783f"
+                        "00345ceb2f67c260-000460dfea09849d"
                     ]
                 },
                 "RigidBodyComponent": {
@@ -8433,8 +8436,8 @@
             }
         },
         {
-            "id": 389,
-            "guid": "003669276b7f22e7-00040aec5c0556a5",
+            "id": 30,
+            "guid": "00345ceb7c2a9930-000460dfea0984ab",
             "components": {
                 "NameComponent": {
                     "name": "WallModular (1) (1) (1) (1) (1) (1) (1) (1) (1) (2) (2) (1)"
@@ -8596,7 +8599,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "005cdd82d0c99f6b-00040abf2602783f"
+                        "00345ceb2f67c260-000460dfea09849d"
                     ]
                 },
                 "RigidBodyComponent": {
@@ -8753,8 +8756,8 @@
             }
         },
         {
-            "id": 390,
-            "guid": "003669277dadced3-00040aec5c0556a7",
+            "id": 31,
+            "guid": "00345ceb1a99ec02-000460dfea0984ad",
             "components": {
                 "NameComponent": {
                     "name": "WallModular (1) (1) (1) (1) (1) (1) (1) (1) (1) (2) (3)"
@@ -8916,7 +8919,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "005cdd82d0c99f6b-00040abf2602783f"
+                        "00345ceb2f67c260-000460dfea09849d"
                     ]
                 },
                 "RigidBodyComponent": {
@@ -9073,8 +9076,8 @@
             }
         },
         {
-            "id": 391,
-            "guid": "00366927661883a0-00040aecb4057969",
+            "id": 32,
+            "guid": "00345ceb2e87cc34-000460dfea0984af",
             "components": {
                 "NameComponent": {
                     "name": "WallModular (1) (1) (1) (1) (1) (1) (1) (1) (1) (2) (2) (1) (1)"
@@ -9236,7 +9239,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "005cdd82d0c99f6b-00040abf2602783f"
+                        "00345ceb2f67c260-000460dfea09849d"
                     ]
                 },
                 "RigidBodyComponent": {
@@ -9393,8 +9396,8 @@
             }
         },
         {
-            "id": 392,
-            "guid": "0036692722345608-00040aecb405796b",
+            "id": 33,
+            "guid": "00345ceb2c0326ec-000460dfea0984b1",
             "components": {
                 "NameComponent": {
                     "name": "WallModular (1) (1) (1) (1) (1) (1) (1) (1) (1) (2) (3) (1)"
@@ -9556,7 +9559,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "005cdd82d0c99f6b-00040abf2602783f"
+                        "00345ceb2f67c260-000460dfea09849d"
                     ]
                 },
                 "RigidBodyComponent": {
@@ -9713,8 +9716,8 @@
             }
         },
         {
-            "id": 393,
-            "guid": "0048a86958ead2fc-00040b519e000459",
+            "id": 34,
+            "guid": "00345ceb6334d48c-000460dfea0984b3",
             "components": {
                 "NameComponent": {
                     "name": "WallModular (1) (1) (1) (1) (1) (1) (1) (1) (1) (2) (1) (1) (2)"
@@ -9876,7 +9879,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "005cdd82d0c99f6b-00040abf2602783f"
+                        "00345ceb2f67c260-000460dfea09849d"
                     ]
                 },
                 "RigidBodyComponent": {
@@ -10033,8 +10036,8 @@
             }
         },
         {
-            "id": 394,
-            "guid": "0048a8691e78c180-00040b51e00015bb",
+            "id": 35,
+            "guid": "00345ceb5f39aa23-000460dfea0984b5",
             "components": {
                 "NameComponent": {
                     "name": "WallModular (1) (1) (1) (1) (1) (1) (1) (1) (1) (2) (1) (1) (2) (1)"
@@ -10196,7 +10199,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "005cdd82d0c99f6b-00040abf2602783f"
+                        "00345ceb2f67c260-000460dfea09849d"
                     ]
                 },
                 "RigidBodyComponent": {
@@ -10353,8 +10356,8 @@
             }
         },
         {
-            "id": 395,
-            "guid": "0048a86951686441-00040b51ea001a15",
+            "id": 36,
+            "guid": "00345ceb5235daad-000460dfea0984b7",
             "components": {
                 "NameComponent": {
                     "name": "WallModular (1) (1) (1) (1) (1) (1) (1) (1) (1) (2) (1) (1) (2) (1) (1)"
@@ -10516,7 +10519,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "005cdd82d0c99f6b-00040abf2602783f"
+                        "00345ceb2f67c260-000460dfea09849d"
                     ]
                 },
                 "RigidBodyComponent": {
@@ -10673,8 +10676,8 @@
             }
         },
         {
-            "id": 396,
-            "guid": "0048a86948ff4bed-00040b52a200661f",
+            "id": 37,
+            "guid": "00345ceb52bd7a2f-000460dfea0984b9",
             "components": {
                 "NameComponent": {
                     "name": "WallModular (1) (1) (1) (1) (1) (1) (1) (1) (1) (2) (1) (1) (2) (2)"
@@ -10836,7 +10839,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "005cdd82d0c99f6b-00040abf2602783f"
+                        "00345ceb2f67c260-000460dfea09849d"
                     ]
                 },
                 "RigidBodyComponent": {
@@ -10993,8 +10996,8 @@
             }
         },
         {
-            "id": 397,
-            "guid": "0048a8695d5dd51c-00040b52a2006621",
+            "id": 38,
+            "guid": "00345ceb4868a3c6-000460dfea0984bb",
             "components": {
                 "NameComponent": {
                     "name": "WallModular (1) (1) (1) (1) (1) (1) (1) (1) (1) (2) (1) (1) (2) (1) (2)"
@@ -11156,7 +11159,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "005cdd82d0c99f6b-00040abf2602783f"
+                        "00345ceb2f67c260-000460dfea09849d"
                     ]
                 },
                 "RigidBodyComponent": {
@@ -11313,8 +11316,8 @@
             }
         },
         {
-            "id": 398,
-            "guid": "0048a8697b833667-00040b52a2006623",
+            "id": 39,
+            "guid": "00345ceb6f72236e-000460dfea0984bd",
             "components": {
                 "NameComponent": {
                     "name": "WallModular (1) (1) (1) (1) (1) (1) (1) (1) (1) (2) (1) (1) (2) (1) (1) (1)"
@@ -11476,7 +11479,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "005cdd82d0c99f6b-00040abf2602783f"
+                        "00345ceb2f67c260-000460dfea09849d"
                     ]
                 },
                 "RigidBodyComponent": {
@@ -11633,8 +11636,8 @@
             }
         },
         {
-            "id": 399,
-            "guid": "0079821f8be08648-00040e187203dd3b",
+            "id": 40,
+            "guid": "00345ceb44e564cf-000460dfea0984bf",
             "components": {
                 "NameComponent": {
                     "name": "WallModular (1) (1) (1) (1) (1) (1) (1) (1) (1) (2) (1) (1) (2) (1) (1) (1) (1)"
@@ -11796,7 +11799,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "005cdd82d0c99f6b-00040abf2602783f"
+                        "00345ceb2f67c260-000460dfea09849d"
                     ]
                 },
                 "RigidBodyComponent": {
@@ -11953,8 +11956,8 @@
             }
         },
         {
-            "id": 400,
-            "guid": "006ce0e63d2c28d5-00040a5ee80000a1",
+            "id": 41,
+            "guid": "00345ceb2308f161-000460dfea0984c1",
             "components": {
                 "NameComponent": {
                     "name": "Columns"
@@ -12034,31 +12037,31 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "001a962e60bcbd94-0004092d5c000d17",
-                                "001a962e0c5f3828-0004092dbe000d19",
-                                "001a962e4f687955-0004092ae6000d0d",
-                                "001a962e1cbb2a7e-0004092aae000d0b",
-                                "006ce0e674e8998d-00040a5e7c00009d",
-                                "006ce0e619d85ba2-00040a5eba00009f",
-                                "003669274d1a3225-00040aeb40050a99",
-                                "003669270ce3301b-00040aeb7a0519cf",
-                                "003669276697d82a-00040aeb960526d9",
-                                "003669273d1fc5b4-00040aeb960526db",
-                                "00002932b4d2525a-00040bdc90094ce9",
-                                "0079821fe6ed70bf-00040e3f840746d3",
-                                "0079821fa6fe5902-00040e3fa2075a63",
-                                "0079821fe1372aaf-00040e3fbe07676d",
-                                "0079821ff198ee39-00040e3fd007701f",
-                                "0079821fc9d7e5f2-00040e401e0778d1",
-                                "0079821f89559641-00040e4056078c5f",
-                                "0079821fc83a4395-00040e406c079969",
-                                "0079821ffedc7f20-00040e407e07a447",
-                                "0079821f891882b7-00040e409007af25",
-                                "0079821fe37e12c2-00040e413207e9d5",
-                                "0079821feec36b3d-00040e414807f4b3",
-                                "0079821fc47af013-00040e416807ff91",
-                                "0079821f97f6eee3-00040e418c080a6f",
-                                "001955a0b82e0e34-00041e6646008199"
+                                "00345ceb165804d4-000460dfea0984c3",
+                                "00345ceb3c6fcae6-000460dfea0984c5",
+                                "00345ceb4d55eff6-000460dfea0984c7",
+                                "00345ceb2e4df775-000460dfea0984c9",
+                                "00345ceb6cc0623b-000460dfea0984cb",
+                                "00345ceb330f27e1-000460dfea0984cd",
+                                "00345ceb1fc5829a-000460dfea0984cf",
+                                "00345ceb03329d6c-000460dfea0984d1",
+                                "00345ceb08e8baab-000460dfea0984d3",
+                                "00345ceb1fe1b7b7-000460dfea0984d5",
+                                "00345ceb0a6802a2-000460dfea0984d7",
+                                "00345ceb39621419-000460dfea0984d9",
+                                "00345ceb4e29fa22-000460dfea0984db",
+                                "00345ceb5bdd025b-000460dfea0984dd",
+                                "00345ceb4608c3c7-000460dfea0984df",
+                                "00345ceb7596adef-000460dfea0984e1",
+                                "00345ceb63057370-000460dfea0984e3",
+                                "00345ceb2ff072c2-000460dfea0984e5",
+                                "00345ceb1d660922-000460dfea0984e7",
+                                "00345ceb242d2176-000460dfea0984e9",
+                                "00345ceb0d34e58f-000460dfea0984eb",
+                                "00345ceb491b086f-000460dfea0984ed",
+                                "00345ceb37378240-000460dfea0984ef",
+                                "00345ceb4d6215e9-000460dfea0984f1",
+                                "00345ceb5f91a4c8-000460dfea0984f3"
                             ]
                         }
                     ]
@@ -12066,7 +12069,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "001a962e4c735722-00040923b4000bbd"
+                        "00345ceb2151913c-000460dfea09846f"
                     ]
                 },
                 "ActiveComponent": {
@@ -12081,8 +12084,8 @@
             }
         },
         {
-            "id": 401,
-            "guid": "001a962e60bcbd94-0004092d5c000d17",
+            "id": 42,
+            "guid": "00345ceb165804d4-000460dfea0984c3",
             "components": {
                 "NameComponent": {
                     "name": "Column (1) (1) (2) (1) (2) (2)"
@@ -12244,7 +12247,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "006ce0e63d2c28d5-00040a5ee80000a1"
+                        "00345ceb2308f161-000460dfea0984c1"
                     ]
                 },
                 "RigidBodyComponent": {
@@ -12401,8 +12404,8 @@
             }
         },
         {
-            "id": 402,
-            "guid": "001a962e0c5f3828-0004092dbe000d19",
+            "id": 43,
+            "guid": "00345ceb3c6fcae6-000460dfea0984c5",
             "components": {
                 "NameComponent": {
                     "name": "Column (1) (1) (2) (1) (2) (1) (1)"
@@ -12564,7 +12567,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "006ce0e63d2c28d5-00040a5ee80000a1"
+                        "00345ceb2308f161-000460dfea0984c1"
                     ]
                 },
                 "RigidBodyComponent": {
@@ -12721,8 +12724,8 @@
             }
         },
         {
-            "id": 403,
-            "guid": "001a962e4f687955-0004092ae6000d0d",
+            "id": 44,
+            "guid": "00345ceb4d55eff6-000460dfea0984c7",
             "components": {
                 "NameComponent": {
                     "name": "Column (1) (1) (2) (1) (2) (1)"
@@ -12884,7 +12887,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "006ce0e63d2c28d5-00040a5ee80000a1"
+                        "00345ceb2308f161-000460dfea0984c1"
                     ]
                 },
                 "RigidBodyComponent": {
@@ -13041,8 +13044,8 @@
             }
         },
         {
-            "id": 404,
-            "guid": "001a962e1cbb2a7e-0004092aae000d0b",
+            "id": 45,
+            "guid": "00345ceb2e4df775-000460dfea0984c9",
             "components": {
                 "NameComponent": {
                     "name": "Column (1) (1) (2) (1) (2)"
@@ -13204,7 +13207,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "006ce0e63d2c28d5-00040a5ee80000a1"
+                        "00345ceb2308f161-000460dfea0984c1"
                     ]
                 },
                 "RigidBodyComponent": {
@@ -13361,8 +13364,8 @@
             }
         },
         {
-            "id": 405,
-            "guid": "006ce0e674e8998d-00040a5e7c00009d",
+            "id": 46,
+            "guid": "00345ceb6cc0623b-000460dfea0984cb",
             "components": {
                 "NameComponent": {
                     "name": "Column (1) (1) (2) (1) (2) (2) (1)"
@@ -13524,7 +13527,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "006ce0e63d2c28d5-00040a5ee80000a1"
+                        "00345ceb2308f161-000460dfea0984c1"
                     ]
                 },
                 "RigidBodyComponent": {
@@ -13681,8 +13684,8 @@
             }
         },
         {
-            "id": 406,
-            "guid": "006ce0e619d85ba2-00040a5eba00009f",
+            "id": 47,
+            "guid": "00345ceb330f27e1-000460dfea0984cd",
             "components": {
                 "NameComponent": {
                     "name": "Column (1) (1) (2) (1) (2) (2) (1) (1)"
@@ -13844,7 +13847,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "006ce0e63d2c28d5-00040a5ee80000a1"
+                        "00345ceb2308f161-000460dfea0984c1"
                     ]
                 },
                 "RigidBodyComponent": {
@@ -14001,8 +14004,8 @@
             }
         },
         {
-            "id": 407,
-            "guid": "003669274d1a3225-00040aeb40050a99",
+            "id": 48,
+            "guid": "00345ceb1fc5829a-000460dfea0984cf",
             "components": {
                 "NameComponent": {
                     "name": "Column (1) (1) (2) (1) (2) (3)"
@@ -14164,7 +14167,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "006ce0e63d2c28d5-00040a5ee80000a1"
+                        "00345ceb2308f161-000460dfea0984c1"
                     ]
                 },
                 "RigidBodyComponent": {
@@ -14321,8 +14324,8 @@
             }
         },
         {
-            "id": 408,
-            "guid": "003669270ce3301b-00040aeb7a0519cf",
+            "id": 49,
+            "guid": "00345ceb03329d6c-000460dfea0984d1",
             "components": {
                 "NameComponent": {
                     "name": "Column (1) (1) (2) (1) (2) (3) (1)"
@@ -14484,7 +14487,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "006ce0e63d2c28d5-00040a5ee80000a1"
+                        "00345ceb2308f161-000460dfea0984c1"
                     ]
                 },
                 "RigidBodyComponent": {
@@ -14641,8 +14644,8 @@
             }
         },
         {
-            "id": 409,
-            "guid": "003669276697d82a-00040aeb960526d9",
+            "id": 50,
+            "guid": "00345ceb08e8baab-000460dfea0984d3",
             "components": {
                 "NameComponent": {
                     "name": "Column (1) (1) (2) (1) (2) (3) (2)"
@@ -14804,7 +14807,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "006ce0e63d2c28d5-00040a5ee80000a1"
+                        "00345ceb2308f161-000460dfea0984c1"
                     ]
                 },
                 "RigidBodyComponent": {
@@ -14961,8 +14964,8 @@
             }
         },
         {
-            "id": 410,
-            "guid": "003669273d1fc5b4-00040aeb960526db",
+            "id": 51,
+            "guid": "00345ceb1fe1b7b7-000460dfea0984d5",
             "components": {
                 "NameComponent": {
                     "name": "Column (1) (1) (2) (1) (2) (3) (1) (1)"
@@ -15124,7 +15127,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "006ce0e63d2c28d5-00040a5ee80000a1"
+                        "00345ceb2308f161-000460dfea0984c1"
                     ]
                 },
                 "RigidBodyComponent": {
@@ -15281,8 +15284,8 @@
             }
         },
         {
-            "id": 411,
-            "guid": "00002932b4d2525a-00040bdc90094ce9",
+            "id": 52,
+            "guid": "00345ceb0a6802a2-000460dfea0984d7",
             "components": {
                 "NameComponent": {
                     "name": "Column (1) (1) (2) (1) (2) (2) (2)"
@@ -15444,7 +15447,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "006ce0e63d2c28d5-00040a5ee80000a1"
+                        "00345ceb2308f161-000460dfea0984c1"
                     ]
                 },
                 "RigidBodyComponent": {
@@ -15601,8 +15604,8 @@
             }
         },
         {
-            "id": 412,
-            "guid": "0079821fe6ed70bf-00040e3f840746d3",
+            "id": 53,
+            "guid": "00345ceb39621419-000460dfea0984d9",
             "components": {
                 "NameComponent": {
                     "name": "Column (1) (1) (2) (1) (2) (2) (2) (1)"
@@ -15764,7 +15767,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "006ce0e63d2c28d5-00040a5ee80000a1"
+                        "00345ceb2308f161-000460dfea0984c1"
                     ]
                 },
                 "RigidBodyComponent": {
@@ -15921,8 +15924,8 @@
             }
         },
         {
-            "id": 413,
-            "guid": "0079821fa6fe5902-00040e3fa2075a63",
+            "id": 54,
+            "guid": "00345ceb4e29fa22-000460dfea0984db",
             "components": {
                 "NameComponent": {
                     "name": "Column (1) (1) (2) (1) (2) (2) (2) (1) (2) (1)"
@@ -16084,7 +16087,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "006ce0e63d2c28d5-00040a5ee80000a1"
+                        "00345ceb2308f161-000460dfea0984c1"
                     ]
                 },
                 "RigidBodyComponent": {
@@ -16241,8 +16244,8 @@
             }
         },
         {
-            "id": 414,
-            "guid": "0079821fe1372aaf-00040e3fbe07676d",
+            "id": 55,
+            "guid": "00345ceb5bdd025b-000460dfea0984dd",
             "components": {
                 "NameComponent": {
                     "name": "Column (1) (1) (2) (1) (2) (2) (2) (1) (2) (1) (1)"
@@ -16404,7 +16407,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "006ce0e63d2c28d5-00040a5ee80000a1"
+                        "00345ceb2308f161-000460dfea0984c1"
                     ]
                 },
                 "RigidBodyComponent": {
@@ -16561,8 +16564,8 @@
             }
         },
         {
-            "id": 415,
-            "guid": "0079821ff198ee39-00040e3fd007701f",
+            "id": 56,
+            "guid": "00345ceb4608c3c7-000460dfea0984df",
             "components": {
                 "NameComponent": {
                     "name": "Column (1) (1) (2) (1) (2) (2) (2) (1) (2) (1) (1) (1)"
@@ -16724,7 +16727,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "006ce0e63d2c28d5-00040a5ee80000a1"
+                        "00345ceb2308f161-000460dfea0984c1"
                     ]
                 },
                 "RigidBodyComponent": {
@@ -16881,8 +16884,8 @@
             }
         },
         {
-            "id": 416,
-            "guid": "0079821fc9d7e5f2-00040e401e0778d1",
+            "id": 57,
+            "guid": "00345ceb7596adef-000460dfea0984e1",
             "components": {
                 "NameComponent": {
                     "name": "Column (1) (1) (2) (1) (2) (2) (2) (1) (2) (1) (1) (1) (1)"
@@ -17044,7 +17047,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "006ce0e63d2c28d5-00040a5ee80000a1"
+                        "00345ceb2308f161-000460dfea0984c1"
                     ]
                 },
                 "RigidBodyComponent": {
@@ -17201,8 +17204,8 @@
             }
         },
         {
-            "id": 417,
-            "guid": "0079821f89559641-00040e4056078c5f",
+            "id": 58,
+            "guid": "00345ceb63057370-000460dfea0984e3",
             "components": {
                 "NameComponent": {
                     "name": "Column (1) (1) (2) (1) (2) (2) (2) (1) (2) (1) (1) (1) (1) (1)"
@@ -17364,7 +17367,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "006ce0e63d2c28d5-00040a5ee80000a1"
+                        "00345ceb2308f161-000460dfea0984c1"
                     ]
                 },
                 "RigidBodyComponent": {
@@ -17521,8 +17524,8 @@
             }
         },
         {
-            "id": 418,
-            "guid": "0079821fc83a4395-00040e406c079969",
+            "id": 59,
+            "guid": "00345ceb2ff072c2-000460dfea0984e5",
             "components": {
                 "NameComponent": {
                     "name": "Column (1) (1) (2) (1) (2) (2) (2) (1) (2) (1) (1) (1) (1) (1) (1)"
@@ -17684,7 +17687,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "006ce0e63d2c28d5-00040a5ee80000a1"
+                        "00345ceb2308f161-000460dfea0984c1"
                     ]
                 },
                 "RigidBodyComponent": {
@@ -17841,8 +17844,8 @@
             }
         },
         {
-            "id": 419,
-            "guid": "0079821ffedc7f20-00040e407e07a447",
+            "id": 60,
+            "guid": "00345ceb1d660922-000460dfea0984e7",
             "components": {
                 "NameComponent": {
                     "name": "Column (1) (1) (2) (1) (2) (2) (2) (1) (2) (1) (1) (1) (1) (1) (1) (1)"
@@ -18004,7 +18007,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "006ce0e63d2c28d5-00040a5ee80000a1"
+                        "00345ceb2308f161-000460dfea0984c1"
                     ]
                 },
                 "RigidBodyComponent": {
@@ -18161,8 +18164,8 @@
             }
         },
         {
-            "id": 420,
-            "guid": "0079821f891882b7-00040e409007af25",
+            "id": 61,
+            "guid": "00345ceb242d2176-000460dfea0984e9",
             "components": {
                 "NameComponent": {
                     "name": "Column (1) (1) (2) (1) (2) (2) (2) (1) (2) (1) (1) (1) (1) (1) (1) (1) (1)"
@@ -18324,7 +18327,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "006ce0e63d2c28d5-00040a5ee80000a1"
+                        "00345ceb2308f161-000460dfea0984c1"
                     ]
                 },
                 "RigidBodyComponent": {
@@ -18481,8 +18484,8 @@
             }
         },
         {
-            "id": 421,
-            "guid": "0079821fe37e12c2-00040e413207e9d5",
+            "id": 62,
+            "guid": "00345ceb0d34e58f-000460dfea0984eb",
             "components": {
                 "NameComponent": {
                     "name": "Column (1) (1) (2) (1) (2) (2) (2) (1) (2) (1) (1) (1) (1) (1) (1) (1) (1) (1)"
@@ -18644,7 +18647,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "006ce0e63d2c28d5-00040a5ee80000a1"
+                        "00345ceb2308f161-000460dfea0984c1"
                     ]
                 },
                 "RigidBodyComponent": {
@@ -18801,8 +18804,8 @@
             }
         },
         {
-            "id": 422,
-            "guid": "0079821feec36b3d-00040e414807f4b3",
+            "id": 63,
+            "guid": "00345ceb491b086f-000460dfea0984ed",
             "components": {
                 "NameComponent": {
                     "name": "Column (1) (1) (2) (1) (2) (2) (2) (1) (2) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1)"
@@ -18964,7 +18967,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "006ce0e63d2c28d5-00040a5ee80000a1"
+                        "00345ceb2308f161-000460dfea0984c1"
                     ]
                 },
                 "RigidBodyComponent": {
@@ -19121,8 +19124,8 @@
             }
         },
         {
-            "id": 423,
-            "guid": "0079821fc47af013-00040e416807ff91",
+            "id": 64,
+            "guid": "00345ceb37378240-000460dfea0984ef",
             "components": {
                 "NameComponent": {
                     "name": "Column (1) (1) (2) (1) (2) (2) (2) (1) (2) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1)"
@@ -19284,7 +19287,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "006ce0e63d2c28d5-00040a5ee80000a1"
+                        "00345ceb2308f161-000460dfea0984c1"
                     ]
                 },
                 "RigidBodyComponent": {
@@ -19441,8 +19444,8 @@
             }
         },
         {
-            "id": 424,
-            "guid": "0079821f97f6eee3-00040e418c080a6f",
+            "id": 65,
+            "guid": "00345ceb4d6215e9-000460dfea0984f1",
             "components": {
                 "NameComponent": {
                     "name": "Column (1) (1) (2) (1) (2) (2) (2) (1) (2) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1)"
@@ -19604,7 +19607,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "006ce0e63d2c28d5-00040a5ee80000a1"
+                        "00345ceb2308f161-000460dfea0984c1"
                     ]
                 },
                 "RigidBodyComponent": {
@@ -19761,8 +19764,8 @@
             }
         },
         {
-            "id": 425,
-            "guid": "001955a0b82e0e34-00041e6646008199",
+            "id": 66,
+            "guid": "00345ceb5f91a4c8-000460dfea0984f3",
             "components": {
                 "NameComponent": {
                     "name": "Column (1) (1) (2) (1) (2) (2) (2) (1) (3)"
@@ -19924,7 +19927,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "006ce0e63d2c28d5-00040a5ee80000a1"
+                        "00345ceb2308f161-000460dfea0984c1"
                     ]
                 },
                 "RigidBodyComponent": {
@@ -20081,8 +20084,8 @@
             }
         },
         {
-            "id": 426,
-            "guid": "005cdd82db6429ad-00040ac03a02ed93",
+            "id": 67,
+            "guid": "00345ceb7f794a81-000460dfea0984f5",
             "components": {
                 "NameComponent": {
                     "name": "ColumnModulars"
@@ -20162,22 +20165,22 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "005cdd8299fcab6f-00040ac05c02f419",
-                                "005cdd829eb157f0-00040ac09002fa9f",
-                                "005cdd82f5e9c367-00040ac09602fccd",
-                                "005cdd82fde11284-00040ac1080316df",
-                                "003669277b0a323d-00040aed36059a01",
-                                "003669272556f4d2-00040aed36059a03",
-                                "0036692744c1670b-00040aed6805a939",
-                                "003669275557479a-00040aed6805a93b",
-                                "0079821ffbd0cc81-00040e16180335e9",
-                                "0079821fa7a45e67-00040e1634033c6f",
-                                "0079821fdf0d83ea-00040e1650034dd1",
-                                "0079821fdab5a048-00040e1684035adb",
-                                "0079821ffc846d1b-00040e16b2036e69",
-                                "0079821fae284e52-00040e16b2036e6b",
-                                "0079821fd5e9afd7-00040e16b2036e6d",
-                                "0079821f8758461d-00040e16b2036e6f"
+                                "00345ceb40be24af-000460dfea0984f7",
+                                "00345ceb0973ec61-000460dfea0984f9",
+                                "00345ceb1582d983-000460dfea0984fb",
+                                "00345ceb0d410629-000460dfea0984fd",
+                                "00345ceb6f61e19d-000460dfea0984ff",
+                                "00345ceb5e3ea217-000460dfea098501",
+                                "00345ceb09d39b02-000460dfea098503",
+                                "00345ceb72f31c45-000460dfea098505",
+                                "00345ceb6b0a95e1-000460dfea098507",
+                                "00345ceb3fa510c0-000460dfea098509",
+                                "00345ceb58dd8015-000460dfea09850b",
+                                "00345ceb3338d02c-000460dfea09850d",
+                                "00345ceb4bae1196-000460dfea09850f",
+                                "00345ceb03be443e-000460dfea098511",
+                                "00345ceb3d6f006f-000460dfea098513",
+                                "00345ceb2a930856-000460dfea098515"
                             ]
                         }
                     ]
@@ -20185,7 +20188,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "001a962e4c735722-00040923b4000bbd"
+                        "00345ceb2151913c-000460dfea09846f"
                     ]
                 },
                 "ActiveComponent": {
@@ -20200,8 +20203,8 @@
             }
         },
         {
-            "id": 427,
-            "guid": "005cdd8299fcab6f-00040ac05c02f419",
+            "id": 68,
+            "guid": "00345ceb40be24af-000460dfea0984f7",
             "components": {
                 "NameComponent": {
                     "name": "ColumnModular (1) (1) (1) (1) (1) (1) (1) (1) (1) (2)"
@@ -20363,7 +20366,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "005cdd82db6429ad-00040ac03a02ed93"
+                        "00345ceb7f794a81-000460dfea0984f5"
                     ]
                 },
                 "RigidBodyComponent": {
@@ -20520,8 +20523,8 @@
             }
         },
         {
-            "id": 428,
-            "guid": "005cdd829eb157f0-00040ac09002fa9f",
+            "id": 69,
+            "guid": "00345ceb0973ec61-000460dfea0984f9",
             "components": {
                 "NameComponent": {
                     "name": "ColumnModular (1) (1) (1) (1) (1) (1) (1) (1) (1) (2) (1)"
@@ -20683,7 +20686,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "005cdd82db6429ad-00040ac03a02ed93"
+                        "00345ceb7f794a81-000460dfea0984f5"
                     ]
                 },
                 "RigidBodyComponent": {
@@ -20840,8 +20843,8 @@
             }
         },
         {
-            "id": 429,
-            "guid": "005cdd82f5e9c367-00040ac09602fccd",
+            "id": 70,
+            "guid": "00345ceb1582d983-000460dfea0984fb",
             "components": {
                 "NameComponent": {
                     "name": "ColumnModular (1) (1) (1) (1) (1) (1) (1) (1) (1) (2) (1) (1)"
@@ -21003,7 +21006,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "005cdd82db6429ad-00040ac03a02ed93"
+                        "00345ceb7f794a81-000460dfea0984f5"
                     ]
                 },
                 "RigidBodyComponent": {
@@ -21160,8 +21163,8 @@
             }
         },
         {
-            "id": 430,
-            "guid": "005cdd82fde11284-00040ac1080316df",
+            "id": 71,
+            "guid": "00345ceb0d410629-000460dfea0984fd",
             "components": {
                 "NameComponent": {
                     "name": "ColumnModular (1) (1) (1) (1) (1) (1) (1) (1) (1) (2) (1) (1) (1)"
@@ -21323,7 +21326,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "005cdd82db6429ad-00040ac03a02ed93"
+                        "00345ceb7f794a81-000460dfea0984f5"
                     ]
                 },
                 "RigidBodyComponent": {
@@ -21480,8 +21483,8 @@
             }
         },
         {
-            "id": 431,
-            "guid": "003669277b0a323d-00040aed36059a01",
+            "id": 72,
+            "guid": "00345ceb6f61e19d-000460dfea0984ff",
             "components": {
                 "NameComponent": {
                     "name": "ColumnModular (1) (1) (1) (1) (1) (1) (1) (1) (1) (2) (2)"
@@ -21643,7 +21646,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "005cdd82db6429ad-00040ac03a02ed93"
+                        "00345ceb7f794a81-000460dfea0984f5"
                     ]
                 },
                 "RigidBodyComponent": {
@@ -21800,8 +21803,8 @@
             }
         },
         {
-            "id": 432,
-            "guid": "003669272556f4d2-00040aed36059a03",
+            "id": 73,
+            "guid": "00345ceb5e3ea217-000460dfea098501",
             "components": {
                 "NameComponent": {
                     "name": "ColumnModular (1) (1) (1) (1) (1) (1) (1) (1) (1) (2) (1) (1) (2)"
@@ -21963,7 +21966,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "005cdd82db6429ad-00040ac03a02ed93"
+                        "00345ceb7f794a81-000460dfea0984f5"
                     ]
                 },
                 "RigidBodyComponent": {
@@ -22120,8 +22123,8 @@
             }
         },
         {
-            "id": 433,
-            "guid": "0036692744c1670b-00040aed6805a939",
+            "id": 74,
+            "guid": "00345ceb09d39b02-000460dfea098503",
             "components": {
                 "NameComponent": {
                     "name": "ColumnModular (1) (1) (1) (1) (1) (1) (1) (1) (1) (2) (2) (1)"
@@ -22283,7 +22286,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "005cdd82db6429ad-00040ac03a02ed93"
+                        "00345ceb7f794a81-000460dfea0984f5"
                     ]
                 },
                 "RigidBodyComponent": {
@@ -22440,8 +22443,8 @@
             }
         },
         {
-            "id": 434,
-            "guid": "003669275557479a-00040aed6805a93b",
+            "id": 75,
+            "guid": "00345ceb72f31c45-000460dfea098505",
             "components": {
                 "NameComponent": {
                     "name": "ColumnModular (1) (1) (1) (1) (1) (1) (1) (1) (1) (2) (1) (1) (2) (1)"
@@ -22603,7 +22606,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "005cdd82db6429ad-00040ac03a02ed93"
+                        "00345ceb7f794a81-000460dfea0984f5"
                     ]
                 },
                 "RigidBodyComponent": {
@@ -22760,8 +22763,8 @@
             }
         },
         {
-            "id": 435,
-            "guid": "0079821ffbd0cc81-00040e16180335e9",
+            "id": 76,
+            "guid": "00345ceb6b0a95e1-000460dfea098507",
             "components": {
                 "NameComponent": {
                     "name": "ColumnModular (1) (1) (1) (1) (1) (1) (1) (1) (1) (2) (3)"
@@ -22923,7 +22926,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "005cdd82db6429ad-00040ac03a02ed93"
+                        "00345ceb7f794a81-000460dfea0984f5"
                     ]
                 },
                 "RigidBodyComponent": {
@@ -23080,8 +23083,8 @@
             }
         },
         {
-            "id": 436,
-            "guid": "0079821fa7a45e67-00040e1634033c6f",
+            "id": 77,
+            "guid": "00345ceb3fa510c0-000460dfea098509",
             "components": {
                 "NameComponent": {
                     "name": "ColumnModular (1) (1) (1) (1) (1) (1) (1) (1) (1) (2) (3) (1)"
@@ -23243,7 +23246,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "005cdd82db6429ad-00040ac03a02ed93"
+                        "00345ceb7f794a81-000460dfea0984f5"
                     ]
                 },
                 "RigidBodyComponent": {
@@ -23400,8 +23403,8 @@
             }
         },
         {
-            "id": 437,
-            "guid": "0079821fdf0d83ea-00040e1650034dd1",
+            "id": 78,
+            "guid": "00345ceb58dd8015-000460dfea09850b",
             "components": {
                 "NameComponent": {
                     "name": "ColumnModular (1) (1) (1) (1) (1) (1) (1) (1) (1) (2) (3) (1) (1)"
@@ -23563,7 +23566,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "005cdd82db6429ad-00040ac03a02ed93"
+                        "00345ceb7f794a81-000460dfea0984f5"
                     ]
                 },
                 "RigidBodyComponent": {
@@ -23720,8 +23723,8 @@
             }
         },
         {
-            "id": 438,
-            "guid": "0079821fdab5a048-00040e1684035adb",
+            "id": 79,
+            "guid": "00345ceb3338d02c-000460dfea09850d",
             "components": {
                 "NameComponent": {
                     "name": "ColumnModular (1) (1) (1) (1) (1) (1) (1) (1) (1) (2) (3) (1) (1) (1)"
@@ -23883,7 +23886,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "005cdd82db6429ad-00040ac03a02ed93"
+                        "00345ceb7f794a81-000460dfea0984f5"
                     ]
                 },
                 "RigidBodyComponent": {
@@ -24040,8 +24043,8 @@
             }
         },
         {
-            "id": 439,
-            "guid": "0079821ffc846d1b-00040e16b2036e69",
+            "id": 80,
+            "guid": "00345ceb4bae1196-000460dfea09850f",
             "components": {
                 "NameComponent": {
                     "name": "ColumnModular (1) (1) (1) (1) (1) (1) (1) (1) (1) (2) (3) (2)"
@@ -24203,7 +24206,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "005cdd82db6429ad-00040ac03a02ed93"
+                        "00345ceb7f794a81-000460dfea0984f5"
                     ]
                 },
                 "RigidBodyComponent": {
@@ -24360,8 +24363,8 @@
             }
         },
         {
-            "id": 440,
-            "guid": "0079821fae284e52-00040e16b2036e6b",
+            "id": 81,
+            "guid": "00345ceb03be443e-000460dfea098511",
             "components": {
                 "NameComponent": {
                     "name": "ColumnModular (1) (1) (1) (1) (1) (1) (1) (1) (1) (2) (3) (1) (2)"
@@ -24523,7 +24526,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "005cdd82db6429ad-00040ac03a02ed93"
+                        "00345ceb7f794a81-000460dfea0984f5"
                     ]
                 },
                 "RigidBodyComponent": {
@@ -24680,8 +24683,8 @@
             }
         },
         {
-            "id": 441,
-            "guid": "0079821fd5e9afd7-00040e16b2036e6d",
+            "id": 82,
+            "guid": "00345ceb3d6f006f-000460dfea098513",
             "components": {
                 "NameComponent": {
                     "name": "ColumnModular (1) (1) (1) (1) (1) (1) (1) (1) (1) (2) (3) (1) (1) (2)"
@@ -24843,7 +24846,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "005cdd82db6429ad-00040ac03a02ed93"
+                        "00345ceb7f794a81-000460dfea0984f5"
                     ]
                 },
                 "RigidBodyComponent": {
@@ -25000,8 +25003,8 @@
             }
         },
         {
-            "id": 442,
-            "guid": "0079821f8758461d-00040e16b2036e6f",
+            "id": 83,
+            "guid": "00345ceb2a930856-000460dfea098515",
             "components": {
                 "NameComponent": {
                     "name": "ColumnModular (1) (1) (1) (1) (1) (1) (1) (1) (1) (2) (3) (1) (1) (1) (1)"
@@ -25163,7 +25166,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "005cdd82db6429ad-00040ac03a02ed93"
+                        "00345ceb7f794a81-000460dfea0984f5"
                     ]
                 },
                 "RigidBodyComponent": {
@@ -25320,8 +25323,8 @@
             }
         },
         {
-            "id": 443,
-            "guid": "006ce0e60ae03367-00040a5f4c0000a3",
+            "id": 84,
+            "guid": "00345ceb5128e313-000460dfea098517",
             "components": {
                 "NameComponent": {
                     "name": "Stairs"
@@ -25401,10 +25404,10 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "001a962e3b7f0613-00040925ba000bc9",
-                                "001a962e4dab2dea-0004092b96000d11",
-                                "0033f6595f4400e4-0004093af8000013",
-                                "003669274bfea14d-00040aea1a04dcfb"
+                                "00345ceb55d185f3-000460dfea098519",
+                                "00345ceb571b3c70-000460dfea09851b",
+                                "00345ceb72423d46-000460dfea09851d",
+                                "00345ceb111f7bf2-000460dfea09851f"
                             ]
                         }
                     ]
@@ -25412,7 +25415,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "001a962e4c735722-00040923b4000bbd"
+                        "00345ceb2151913c-000460dfea09846f"
                     ]
                 },
                 "ActiveComponent": {
@@ -25427,8 +25430,8 @@
             }
         },
         {
-            "id": 444,
-            "guid": "001a962e3b7f0613-00040925ba000bc9",
+            "id": 85,
+            "guid": "00345ceb55d185f3-000460dfea098519",
             "components": {
                 "NameComponent": {
                     "name": "LongStairsModular"
@@ -25590,7 +25593,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "006ce0e60ae03367-00040a5f4c0000a3"
+                        "00345ceb5128e313-000460dfea098517"
                     ]
                 },
                 "RigidBodyComponent": {
@@ -25747,8 +25750,8 @@
             }
         },
         {
-            "id": 445,
-            "guid": "001a962e4dab2dea-0004092b96000d11",
+            "id": 86,
+            "guid": "00345ceb571b3c70-000460dfea09851b",
             "components": {
                 "NameComponent": {
                     "name": "LongStairsModular (1)"
@@ -25910,7 +25913,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "006ce0e60ae03367-00040a5f4c0000a3"
+                        "00345ceb5128e313-000460dfea098517"
                     ]
                 },
                 "RigidBodyComponent": {
@@ -26067,8 +26070,8 @@
             }
         },
         {
-            "id": 446,
-            "guid": "0033f6595f4400e4-0004093af8000013",
+            "id": 87,
+            "guid": "00345ceb72423d46-000460dfea09851d",
             "components": {
                 "NameComponent": {
                     "name": "LongStairsLandingArea"
@@ -26230,7 +26233,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "006ce0e60ae03367-00040a5f4c0000a3"
+                        "00345ceb5128e313-000460dfea098517"
                     ]
                 },
                 "ActiveComponent": {
@@ -26245,8 +26248,8 @@
             }
         },
         {
-            "id": 447,
-            "guid": "003669274bfea14d-00040aea1a04dcfb",
+            "id": 88,
+            "guid": "00345ceb111f7bf2-000460dfea09851f",
             "components": {
                 "NameComponent": {
                     "name": "LongStairsLandingArea (1)"
@@ -26408,7 +26411,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "006ce0e60ae03367-00040a5f4c0000a3"
+                        "00345ceb5128e313-000460dfea098517"
                     ]
                 },
                 "ActiveComponent": {
@@ -26423,8 +26426,8 @@
             }
         },
         {
-            "id": 448,
-            "guid": "0079821fcf2bdcf6-00040e0dd200d593",
+            "id": 89,
+            "guid": "00345ceb5addf76c-000460dfea098521",
             "components": {
                 "NameComponent": {
                     "name": "Lantern (4)"
@@ -26589,7 +26592,7 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "0079821fd66b8c9d-00040e0e0c00dc1b"
+                                "00345ceb14584af4-000460dfea098523"
                             ]
                         }
                     ]
@@ -26597,7 +26600,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "001a962e4c735722-00040923b4000bbd"
+                        "00345ceb2151913c-000460dfea09846f"
                     ]
                 },
                 "ActiveComponent": {
@@ -26612,8 +26615,8 @@
             }
         },
         {
-            "id": 449,
-            "guid": "0079821fd66b8c9d-00040e0e0c00dc1b",
+            "id": 90,
+            "guid": "00345ceb14584af4-000460dfea098523",
             "components": {
                 "NameComponent": {
                     "name": "Light (2)"
@@ -26690,7 +26693,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "0079821fcf2bdcf6-00040e0dd200d593"
+                        "00345ceb5addf76c-000460dfea098521"
                     ]
                 },
                 "PointLightComponent": {
@@ -26802,8 +26805,8 @@
             }
         },
         {
-            "id": 450,
-            "guid": "0079821fd3604c72-00040e0fa8014ae1",
+            "id": 91,
+            "guid": "00345ceb75fd8d8c-000460dfea098525",
             "components": {
                 "NameComponent": {
                     "name": "Lantern (4) (1)"
@@ -26965,7 +26968,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "001a962e4c735722-00040923b4000bbd"
+                        "00345ceb2151913c-000460dfea09846f"
                     ]
                 },
                 "ActiveComponent": {
@@ -26980,8 +26983,8 @@
             }
         },
         {
-            "id": 451,
-            "guid": "0079821ffba18570-00040e116201c02d",
+            "id": 92,
+            "guid": "00345ceb779d200c-000460dfea098527",
             "components": {
                 "NameComponent": {
                     "name": "Lantern (4) (1) (1)"
@@ -27146,7 +27149,7 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "0079821f9981dc55-00040e116401c25b"
+                                "00345ceb3ebb4d5a-000460dfea098529"
                             ]
                         }
                     ]
@@ -27154,7 +27157,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "001a962e4c735722-00040923b4000bbd"
+                        "00345ceb2151913c-000460dfea09846f"
                     ]
                 },
                 "ActiveComponent": {
@@ -27169,8 +27172,8 @@
             }
         },
         {
-            "id": 452,
-            "guid": "0079821f9981dc55-00040e116401c25b",
+            "id": 93,
+            "guid": "00345ceb3ebb4d5a-000460dfea098529",
             "components": {
                 "NameComponent": {
                     "name": "Light (2) (1) (1)"
@@ -27247,7 +27250,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "0079821ffba18570-00040e116201c02d"
+                        "00345ceb779d200c-000460dfea098527"
                     ]
                 },
                 "PointLightComponent": {
@@ -27359,18 +27362,9 @@
             }
         },
         {
-            "id": 453,
-            "guid": "001955a0807d1cc8-00041e37f00006c1",
+            "id": 94,
+            "guid": "00345ceb5f37e004-000460dfea09852b",
             "components": {
-                "PrefabLinkComponent": {
-                    "type": "PrefabLinkComponent",
-                    "data": [
-                        {
-                            "type": "std::string",
-                            "data": "../../Resources/Prefabs/Checkpoint_New.prefab"
-                        }
-                    ]
-                },
                 "NameComponent": {
                     "name": "Checkpoint_New"
                 },
@@ -27534,9 +27528,9 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "001cbc0ec60e9e5b-00041fad6e000671",
-                                "001cbc0ea9efac6c-00041fad6e000673",
-                                "001955a0da194ea1-00041e37f00006c7"
+                                "00345ceb6fac26cc-000460dfea09852d",
+                                "00345ceb34d6ead9-000460dfea09852f",
+                                "00345ceb16e53637-000460dfea098531"
                             ]
                         }
                     ]
@@ -27544,7 +27538,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "001a962e4c735722-00040923b4000bbd"
+                        "00345ceb2151913c-000460dfea09846f"
                     ]
                 },
                 "RigidBodyComponent": {
@@ -27701,8 +27695,8 @@
             }
         },
         {
-            "id": 454,
-            "guid": "001cbc0ec60e9e5b-00041fad6e000671",
+            "id": 95,
+            "guid": "00345ceb6fac26cc-000460dfea09852d",
             "components": {
                 "NameComponent": {
                     "name": "Shrine3"
@@ -27712,6 +27706,9 @@
                 },
                 "LayerComponent": {
                     "layerIndex": 0
+                },
+                "SiblingIndexComponent": {
+                    "siblingIndex": 0
                 },
                 "Transform": {
                     "type": "Transform",
@@ -27776,7 +27773,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "001955a0807d1cc8-00041e37f00006c1"
+                        "00345ceb5f37e004-000460dfea09852b"
                     ]
                 },
                 "ActiveComponent": {
@@ -27791,8 +27788,8 @@
             }
         },
         {
-            "id": 455,
-            "guid": "001cbc0ea9efac6c-00041fad6e000673",
+            "id": 96,
+            "guid": "00345ceb34d6ead9-000460dfea09852f",
             "components": {
                 "NameComponent": {
                     "name": "Light (2) (1) (1) (1)"
@@ -27869,7 +27866,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "001955a0807d1cc8-00041e37f00006c1"
+                        "00345ceb5f37e004-000460dfea09852b"
                     ]
                 },
                 "SpotLightComponent": {
@@ -28002,8 +27999,8 @@
             }
         },
         {
-            "id": 456,
-            "guid": "001955a0da194ea1-00041e37f00006c7",
+            "id": 97,
+            "guid": "00345ceb16e53637-000460dfea098531",
             "components": {
                 "NameComponent": {
                     "name": "RespawnPoint"
@@ -28080,7 +28077,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "001955a0807d1cc8-00041e37f00006c1"
+                        "00345ceb5f37e004-000460dfea09852b"
                     ]
                 },
                 "ActiveComponent": {

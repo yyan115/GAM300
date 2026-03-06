@@ -6,8 +6,9 @@
         "compiled": "../../Resources/Textures/M4/lantern_lantern_Normal.dds"
     },
     "TextureMetaData": {
-        "type": "normal",
+        "type": "diffuse",
         "flipUVs": false,
-        "generateMipmaps": true
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp"
     }
 }

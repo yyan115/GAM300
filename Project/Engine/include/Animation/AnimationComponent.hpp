@@ -52,13 +52,14 @@ public:
 
     Animation& GetClip(size_t i);
     const Animation& GetClip(size_t i) const;
-    const std::vector<std::unique_ptr<Animation>>& GetClips() const;
+    const std::vector<std::shared_ptr<Animation>>& GetClips() const;
     size_t GetActiveClipIndex() const;
 
     void LoadClipsFromPaths(const std::map<std::string, BoneInfo>& boneInfoMap, int boneCount, Entity entity);
     void SetClipCount(size_t count);
 
     void PlayClip(std::size_t clipIndex, bool loop, Entity entity);
+	void PlayClipWithCrossfade(std::size_t clipIndex, bool loop, float crossfadeDuration, Entity entity);
 	void PlayOnce(std::size_t clipIndex, Entity entity);
     bool IsPlaying() const;
 
@@ -99,6 +100,7 @@ public:
     int GetInt(const std::string& name) const;
     float GetFloat(const std::string& name) const;
 
+    float GetStateTime() const;
     // Get current state name from state machine
     std::string GetCurrentState() const;
 
@@ -114,7 +116,7 @@ public:
 
 private:
     bool mLoopJustCompleted = false;
-    std::vector<std::unique_ptr<Animation>> clips;
+    std::vector<std::shared_ptr<Animation>> clips;
     size_t activeClip = 0;
 
     std::unique_ptr<Animator> animator;
@@ -122,5 +124,5 @@ private:
 	std::unique_ptr<AnimationStateMachine> stateMachine;
 
     void SyncAnimatorToActiveClip(Entity entity);
-    std::unique_ptr<Animation> LoadClipFromPath(const std::string& path, const std::map<std::string, BoneInfo>& boneInfoMap, int boneCount);
+    std::shared_ptr<Animation> LoadClipFromPath(const std::string& path, const std::map<std::string, BoneInfo>& boneInfoMap, int boneCount);
 };

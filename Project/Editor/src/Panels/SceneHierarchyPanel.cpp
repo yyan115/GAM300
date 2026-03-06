@@ -2,7 +2,6 @@
 #include <imgui.h>
 #include "pch.h"
 #include "GUIManager.hpp"
-#include "Logging.hpp"
 #include "../../../Libraries/IconFontCppHeaders/IconsFontAwesome6.h"
 #include "EditorComponents.hpp"
 #include "ECS/ECSManager.hpp"
@@ -47,6 +46,7 @@
 #include "SnapshotManager.hpp"
 #include "UndoableWidgets.hpp"
 #include <algorithm>
+#include <cctype>
 #include <Panels/PrefabEditorPanel.hpp>
 #include <Prefab/PrefabLinkComponent.hpp>
 
@@ -72,16 +72,19 @@ SceneHierarchyPanel::SceneHierarchyPanel()
 
 void SceneHierarchyPanel::MarkForRefresh() {
     needsRefresh = true;
+    searchDirty = true;
 }
 
 // Static set to track visited entities during hierarchy rendering (prevents infinite recursion from circular refs)
 static thread_local std::set<Entity> s_VisitedEntities;
 static thread_local int s_HierarchyDepth = 0;
+static thread_local int s_RowIndex = 0;
 
 void SceneHierarchyPanel::OnImGuiRender() {
     // Clear visited entities tracking at start of each frame
     s_VisitedEntities.clear();
     s_HierarchyDepth = 0;
+    s_RowIndex = 0;
 
     // Clear visible expanded nodes tracking (will be rebuilt during rendering)
     visibleExpandedNodes.clear();
@@ -158,8 +161,40 @@ void SceneHierarchyPanel::OnImGuiRender() {
             }
         }
 
+        // Search bar + Collapse/Expand buttons
+        {
+            float buttonWidth = ImGui::GetFrameHeight(); // square buttons
+            float spacing = ImGui::GetStyle().ItemSpacing.x;
+            float searchWidth = ImGui::GetContentRegionAvail().x - (buttonWidth * 2 + spacing * 2);
+
+            ImGui::SetNextItemWidth(searchWidth);
+            if (ImGui::InputTextWithHint("##HierarchySearch", ICON_FA_MAGNIFYING_GLASS " Search entities...",
+                                         searchBuffer, sizeof(searchBuffer))) {
+                searchQuery = searchBuffer;
+                searchDirty = true;
+            }
+
+            ImGui::SameLine();
+            if (ImGui::Button(ICON_FA_COMPRESS, ImVec2(buttonWidth, 0))) {
+                collapseExpandAction = CollapseExpandAction::CollapseAll;
+            }
+            if (ImGui::IsItemHovered()) ImGui::SetTooltip("Collapse All");
+
+            ImGui::SameLine();
+            if (ImGui::Button(ICON_FA_EXPAND, ImVec2(buttonWidth, 0))) {
+                collapseExpandAction = CollapseExpandAction::ExpandAll;
+            }
+            if (ImGui::IsItemHovered()) ImGui::SetTooltip("Expand All");
+        }
+        ImGui::Spacing();
+
         // Get the active ECS manager
         ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
+
+        // Rebuild search cache if needed
+        if (searchDirty) {
+            RebuildSearchCache();
+        }
 
 		std::string sceneDisplayName;
         if (!PrefabEditor::IsInPrefabEditorMode()) {
@@ -226,6 +261,11 @@ void SceneHierarchyPanel::OnImGuiRender() {
                         continue;
                     }
 
+                    // Skip entities not visible in search results
+                    if (!searchQuery.empty() && searchVisibleEntities.find(entity) == searchVisibleEntities.end()) {
+                        continue;
+                    }
+
                     DrawEntityNode(entityName, entity, ecsManager.TryGetComponent<ChildrenComponent>(entity).has_value());
                 }
 
@@ -261,6 +301,14 @@ void SceneHierarchyPanel::OnImGuiRender() {
 
             ImGui::TreePop();
         }
+
+        // Clear force-expanded tracking after tree is drawn (collapse applied for one frame)
+        if (searchQuery.empty() && !searchForceExpandedNodes.empty()) {
+            searchForceExpandedNodes.clear();
+        }
+
+        // Reset collapse/expand action after tree is fully drawn
+        collapseExpandAction = CollapseExpandAction::None;
 
         //ImGui::Separator();
 
@@ -313,11 +361,11 @@ void SceneHierarchyPanel::OnImGuiRender() {
                 if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("PREFAB_PATH")) {
                     const char* prefabPath = static_cast<const char*>(payload->Data);
                     const Entity entity = InstantiatePrefabFromFile(prefabPath);
-                    if (entity == MAX_ENTITIES) {
+                    if (entity == INVALID_ENTITY) {
                         std::cerr << "[ScenePanel] Failed to instantiate prefab: " << prefabPath << "\n";
                     }
                     else {
-                        ENGINE_PRINT("[ScenePanel] Instantiated prefab: ", prefabPath);
+                        std::cout << "[ScenePanel] Instantiated prefab: " << prefabPath << std::endl;
                     }
 
                     // Set SiblingIndexComponent's siblingIndex to MAX_ENTITIES to place at end by default.
@@ -374,6 +422,16 @@ void SceneHierarchyPanel::DrawEntityNode(const std::string& entityName, Entity e
     if (GUIManager::IsEntitySelected(entityId)) flags |= ImGuiTreeNodeFlags_Selected;
     if (forceOpen && hasChildren) flags |= ImGuiTreeNodeFlags_DefaultOpen;
 
+    // Zebra striping — draw alternating row background
+    {
+        ImVec2 rowMin = ImVec2(ImGui::GetWindowPos().x, ImGui::GetCursorScreenPos().y);
+        ImVec2 rowMax = ImVec2(rowMin.x + ImGui::GetWindowSize().x, rowMin.y + ImGui::GetTextLineHeightWithSpacing());
+        if (s_RowIndex % 2 == 1) {
+            ImGui::GetWindowDrawList()->AddRectFilled(rowMin, rowMax, IM_COL32(255, 255, 255, 6));
+        }
+        s_RowIndex++;
+    }
+
     // Get item position for drop zone detection
     ImVec2 cursorPos = ImGui::GetCursorScreenPos();
     float itemHeight = ImGui::GetTextLineHeightWithSpacing();
@@ -409,6 +467,8 @@ void SceneHierarchyPanel::DrawEntityNode(const std::string& entityName, Entity e
     }
 
     bool opened = false;
+    ImVec2 parentItemRectMin = ImVec2(0, 0);
+    ImVec2 parentItemRectMax = ImVec2(0, 0);
 
     if (renamingEntity == entityId)
     {
@@ -460,6 +520,25 @@ void SceneHierarchyPanel::DrawEntityNode(const std::string& entityName, Entity e
             ImGui::SetNextItemOpen(true, ImGuiCond_Always);
         }
 
+        // Auto-expand ancestor nodes during search (and track them for restore)
+        if (!searchQuery.empty() && hasChildren &&
+            searchVisibleEntities.count(entityId) && !searchMatchedEntities.count(entityId)) {
+            ImGui::SetNextItemOpen(true, ImGuiCond_Always);
+            searchForceExpandedNodes.insert(entityId);
+        }
+
+        // Collapse nodes that were force-expanded by search when search is cleared
+        if (searchQuery.empty() && hasChildren && searchForceExpandedNodes.count(entityId)) {
+            ImGui::SetNextItemOpen(false, ImGuiCond_Always);
+        }
+
+        // Collapse/Expand all action
+        if (hasChildren && collapseExpandAction == CollapseExpandAction::CollapseAll) {
+            ImGui::SetNextItemOpen(false, ImGuiCond_Always);
+        } else if (hasChildren && collapseExpandAction == CollapseExpandAction::ExpandAll) {
+            ImGui::SetNextItemOpen(true, ImGuiCond_Always);
+        }
+
         // Determine text color based on prefab status and active state
         bool isPrefab = ecsManager.HasComponent<PrefabLinkComponent>(entityId);
         bool pushedColor = false;
@@ -481,10 +560,15 @@ void SceneHierarchyPanel::DrawEntityNode(const std::string& entityName, Entity e
 
         opened = ImGui::TreeNodeEx((void*)(intptr_t)entityId, flags, "%s", displayName.c_str());
 
+        // Capture item rect for connector lines
+        parentItemRectMin = ImGui::GetItemRectMin();
+        parentItemRectMax = ImGui::GetItemRectMax();
+
         // Pop color if we pushed it
         if (pushedColor) {
             ImGui::PopStyleColor();
         }
+
         if (ImGui::IsItemClicked()) {
             ImGuiIO& io = ImGui::GetIO();
             if (io.KeyShift && lastClickedEntity != static_cast<Entity>(-1)) {
@@ -514,8 +598,8 @@ void SceneHierarchyPanel::DrawEntityNode(const std::string& entityName, Entity e
                                           transform.worldMatrix.m.m13,
                                           transform.worldMatrix.m.m23);
 
-                        ENGINE_PRINT("[SceneHierarchy] Double-clicked entity '", entityName,
-                                 "' at world position (", entityPos.x, ", ", entityPos.y, ", ", entityPos.z, ")");
+                        std::cout << "[SceneHierarchy] Double-clicked entity '" << entityName
+                                 << "' at world position (" << entityPos.x << ", " << entityPos.y << ", " << entityPos.z << ")" << std::endl;
 
                         // Determine if entity is 2D or 3D
                         bool entityIs3D = true; // Default to 3D
@@ -529,11 +613,11 @@ void SceneHierarchyPanel::DrawEntityNode(const std::string& entityName, Entity e
                             auto& sprite = ecsManager.GetComponent<SpriteRenderComponent>(entityId);
                             entityIs3D = sprite.is3D;
                             // Always use transform.worldMatrix for position - sprite.position is not kept updated
-                            ENGINE_PRINT("[SceneHierarchy] Entity has sprite, is3D=", sprite.is3D);
+                            std::cout << "[SceneHierarchy] Entity has sprite, is3D=" << sprite.is3D << std::endl;
                         } else if (hasText) {
                             auto& text = ecsManager.GetComponent<TextRenderComponent>(entityId);
                             entityIs3D = text.is3D;
-                            ENGINE_PRINT("[SceneHierarchy] Entity has text component is3D=", text.is3D);
+                            std::cout << "[SceneHierarchy] Entity has text component is3D=" << text.is3D << std::endl;
                         }
 
                         // Switch view mode to match entity
@@ -550,7 +634,7 @@ void SceneHierarchyPanel::DrawEntityNode(const std::string& entityName, Entity e
                             GraphicsManager::ViewMode gfxMode = entityIs3D ? GraphicsManager::ViewMode::VIEW_3D : GraphicsManager::ViewMode::VIEW_2D;
                             GraphicsManager::GetInstance().SetViewMode(gfxMode);
 
-                            ENGINE_PRINT("[SceneHierarchy] Switched view mode to ", (entityIs3D ? "3D" : "2D"));
+                            std::cout << "[SceneHierarchy] Switched view mode to " << (entityIs3D ? "3D" : "2D") << std::endl;
                         }
 
                         // Frame the entity in the scene camera
@@ -559,16 +643,16 @@ void SceneHierarchyPanel::DrawEntityNode(const std::string& entityName, Entity e
                             auto scenePanel = std::dynamic_pointer_cast<ScenePanel>(scenePanelPtr);
                             if (scenePanel) {
                                 scenePanel->SetCameraTarget(entityPos);
-                                ENGINE_PRINT("[SceneHierarchy] Set camera target to (",
-                                         entityPos.x, ", ", entityPos.y, ", ", entityPos.z, ")");
+                                std::cout << "[SceneHierarchy] Set camera target to ("
+                                         << entityPos.x << ", " << entityPos.y << ", " << entityPos.z << ")" << std::endl;
                             } else {
-                                ENGINE_PRINT("[SceneHierarchy] Failed to cast to ScenePanel");
+                                std::cout << "[SceneHierarchy] Failed to cast to ScenePanel" << std::endl;
                             }
                         } else {
-                            ENGINE_PRINT("[SceneHierarchy] Scene panel not found");
+                            std::cout << "[SceneHierarchy] Scene panel not found" << std::endl;
                         }
                     } else {
-                        ENGINE_PRINT("[SceneHierarchy] Entity '", entityName, "' has no Transform component");
+                        std::cout << "[SceneHierarchy] Entity '" << entityName << "' has no Transform component" << std::endl;
                     }
                 } catch (const std::exception& e) {
                     std::cerr << "[SceneHierarchy] Error focusing entity: " << e.what() << std::endl;
@@ -633,16 +717,11 @@ void SceneHierarchyPanel::DrawEntityNode(const std::string& entityName, Entity e
         ImGui::Separator();
 
         if (ImGui::MenuItem("Duplicate", "Ctrl+D")) {
-            if (isMultiSelect) {
-                std::vector<Entity> duplicated = DuplicateEntities(selectedEntities);
-                if (!duplicated.empty()) {
-                    GUIManager::SetSelectedEntities(duplicated);
-                }
-            } else {
-                Entity duplicatedEntity = DuplicateEntity(entityId);
-                if (duplicatedEntity != static_cast<Entity>(-1)) {
-                    GUIManager::SetSelectedEntity(duplicatedEntity);
-                }
+            // Always route through DuplicateEntities so children are included
+            std::vector<Entity> entitiesToDup = isMultiSelect ? selectedEntities : std::vector<Entity>{ entityId };
+            std::vector<Entity> duplicated = DuplicateEntities(entitiesToDup);
+            if (!duplicated.empty()) {
+                GUIManager::SetSelectedEntities(duplicated);
             }
         }
         if (ImGui::MenuItem("Rename", "F2", false, !isMultiSelect)) {
@@ -685,13 +764,40 @@ void SceneHierarchyPanel::DrawEntityNode(const std::string& entityName, Entity e
         // Child nodes would be drawn here in a real implementation
         if (ecsManager.HasComponent<ChildrenComponent>(entityId)) {
             const auto& children = ecsManager.GetComponent<ChildrenComponent>(entityId).children;
+
+            // Hierarchy connector lines setup
+            float indentSpacing = ImGui::GetStyle().IndentSpacing;
+            float lineX = ImGui::GetCursorScreenPos().x + indentSpacing * 0.5f;
+            ImDrawList* drawList = ImGui::GetWindowDrawList();
+            ImU32 lineColor = IM_COL32(255, 255, 255, 40);
+            // Start the vertical line from the bottom of the parent item
+            float parentBottomY = parentItemRectMax.y;
+            float lastChildY = parentBottomY;
+            bool hasVisibleChild = false;
+
             for (const auto& childGUID : children) {
                 Entity child = EntityGUIDRegistry::GetInstance().GetEntityByGUID(childGUID);
                 // Safety check: verify child entity is valid and has required components
                 if (child == static_cast<Entity>(-1) || !ecsManager.HasComponent<NameComponent>(child)) {
                     continue;  // Skip invalid children
                 }
+                // Skip children not visible in search results
+                if (!searchQuery.empty() && searchVisibleEntities.find(child) == searchVisibleEntities.end()) {
+                    continue;
+                }
+
+                // Draw horizontal connector line for this child
+                float childMidY = ImGui::GetCursorScreenPos().y + ImGui::GetTextLineHeight() * 0.5f;
+                lastChildY = childMidY;
+                hasVisibleChild = true;
+                drawList->AddLine(ImVec2(lineX, childMidY), ImVec2(lineX + 8.0f, childMidY), lineColor);
+
                 DrawEntityNode(ecsManager.GetComponent<NameComponent>(child).name, child, ecsManager.HasComponent<ChildrenComponent>(child));
+            }
+
+            // Draw vertical connector line from parent down to last child
+            if (hasVisibleChild) {
+                drawList->AddLine(ImVec2(lineX, parentBottomY), ImVec2(lineX, lastChildY), lineColor);
             }
         }
 
@@ -989,7 +1095,7 @@ Entity SceneHierarchyPanel::CreateEmptyEntity(const std::string& Pathname) {
         int nextIndex = GetNextRootSiblingIndex();
         ecsManager.AddComponent<SiblingIndexComponent>(newEntity, SiblingIndexComponent{ nextIndex });
 
-        ENGINE_PRINT("[SceneHierarchy] Created empty entity '", Pathname, "' with ID ", newEntity);
+        std::cout << "[SceneHierarchy] Created empty entity '" << Pathname << "' with ID " << newEntity << std::endl;
 
         // Take snapshot after creating entity (for undo)
         SnapshotManager::GetInstance().TakeSnapshot("Create Entity: " + Pathname);
@@ -1017,7 +1123,7 @@ Entity SceneHierarchyPanel::CreateCubeEntity() {
         cubeRenderer.modelGUID = AssetManager::GetInstance().GetGUID128FromAssetMeta(modelPath);
 
         if (cubeRenderer.model) {
-            ENGINE_PRINT("[SceneHierarchy] Cube model loaded successfully from: ", modelPath);
+            std::cout << "[SceneHierarchy] Cube model loaded successfully from: " << modelPath << std::endl;
         } else {
             std::cerr << "[SceneHierarchy] Failed to load cube model from: " << modelPath << std::endl;
         }
@@ -1028,7 +1134,7 @@ Entity SceneHierarchyPanel::CreateCubeEntity() {
         cubeRenderer.shaderGUID = AssetManager::GetInstance().GetGUID128FromAssetMeta(shaderPath);
 
         if (cubeRenderer.shader) {
-            ENGINE_PRINT("[SceneHierarchy] Default shader loaded successfully from: ", shaderPath);
+            std::cout << "[SceneHierarchy] Default shader loaded successfully from: " << shaderPath << std::endl;
         } else {
             std::cerr << "[SceneHierarchy] Failed to load default shader from: " << shaderPath << std::endl;
         }
@@ -1040,10 +1146,10 @@ Entity SceneHierarchyPanel::CreateCubeEntity() {
             Transform& transform = ecsManager.GetComponent<Transform>(cubeEntity);
             transform.localScale = Vector3D(1.0f, 1.0f, 1.0f);
             transform.isDirty = true; // Mark for update
-            ENGINE_PRINT("[SceneHierarchy] Set cube scale to 1.0,1.0,1.0");
+            std::cout << "[SceneHierarchy] Set cube scale to 1.0,1.0,1.0" << std::endl;
         }
 
-        ENGINE_PRINT("[SceneHierarchy] Created cube entity with ID ", cubeEntity);
+        std::cout << "[SceneHierarchy] Created cube entity with ID " << cubeEntity << std::endl;
         return cubeEntity;
     } catch (const std::exception& e) {
         std::cerr << "[SceneHierarchy] Failed to create cube entity: " << e.what() << std::endl;
@@ -1071,7 +1177,7 @@ Entity SceneHierarchyPanel::CreateCameraEntity() {
             }
         }
 
-        ENGINE_PRINT("[SceneHierarchy] Deactivated all existing cameras before creating new one");
+        std::cout << "[SceneHierarchy] Deactivated all existing cameras before creating new one" << std::endl;
 
         // Add CameraComponent with default settings
         CameraComponent cameraComp;
@@ -1090,8 +1196,8 @@ Entity SceneHierarchyPanel::CreateCameraEntity() {
 
         ecsManager.AddComponent<CameraComponent>(cameraEntity, cameraComp);
 
-        ENGINE_PRINT("[SceneHierarchy] Created camera entity with ID ", cameraEntity,
-                  " with CameraComponent (active=true, priority=", cameraComp.priority, ")");
+        std::cout << "[SceneHierarchy] Created camera entity with ID " << cameraEntity
+                  << " with CameraComponent (active=true, priority=" << cameraComp.priority << ")" << std::endl;
         return cameraEntity;
     } catch (const std::exception& e) {
         std::cerr << "[SceneHierarchy] Failed to create camera entity: " << e.what() << std::endl;
@@ -1135,7 +1241,7 @@ Entity SceneHierarchyPanel::DuplicateEntity(Entity sourceEntity, bool takeSnapsh
 
         // Create new entity
         Entity newEntity = ecsManager.CreateEntity();
-        ENGINE_PRINT("[SceneHierarchy] Duplicating entity '", sourceName, "' -> '", newName, "'");
+        std::cout << "[SceneHierarchy] Duplicating entity '" << sourceName << "' -> '" << newName << "'" << std::endl;
 
         // Set name
         if (ecsManager.HasComponent<NameComponent>(newEntity)) {
@@ -1355,13 +1461,16 @@ Entity SceneHierarchyPanel::DuplicateEntity(Entity sourceEntity, bool takeSnapsh
         if (ecsManager.HasComponent<VideoComponent>(sourceEntity)) {
             VideoComponent sourceVideo = ecsManager.GetComponent<VideoComponent>(sourceEntity);
             // Reset playback state
-            sourceVideo.isPlaying = false;
-            sourceVideo.currentTime = 0.0f;
-            sourceVideo.activeFrame = sourceVideo.frameStart;
-            sourceVideo.textureID = 0;
-            sourceVideo.asset_dirty = true;
-            sourceVideo.seek_dirty = false;
+            sourceVideo.phase = VideoComponent::Phase::Inactive;
+            sourceVideo.currentBoardIndex = -1;
+            sourceVideo.startDelayTimer = 0.0f;
+            sourceVideo.stateTimer = 0.0f;
+            sourceVideo.typewriterTimer = 0.0f;
+            sourceVideo.revealedChars = 0;
+            sourceVideo.previousBoardChars = 0;
             sourceVideo.cutsceneEnded = false;
+            sourceVideo.skipRequested = false;
+            sourceVideo.needsInit = true;
             ecsManager.AddComponent<VideoComponent>(newEntity, sourceVideo);
         }
 
@@ -1385,12 +1494,12 @@ Entity SceneHierarchyPanel::DuplicateEntity(Entity sourceEntity, bool takeSnapsh
             GUID_128 parentGUID = ecsManager.GetComponent<ParentComponent>(sourceEntity).parent;
             Entity parentEntity = guidRegistry.GetEntityByGUID(parentGUID);
 
-            ENGINE_PRINT("[SceneHierarchy] Source entity ", sourceEntity, " has parent entity ", parentEntity);
+            std::cout << "[SceneHierarchy] Source entity " << sourceEntity << " has parent entity " << parentEntity << std::endl;
 
             // Verify parent entity is valid and still exists
             if (parentEntity != static_cast<Entity>(-1) && ecsManager.HasComponent<NameComponent>(parentEntity)) {
                 std::string parentName = ecsManager.GetComponent<NameComponent>(parentEntity).name;
-                ENGINE_PRINT("[SceneHierarchy] Parent name: ", parentName);
+                std::cout << "[SceneHierarchy] Parent name: " << parentName << std::endl;
 
                 // Safety check: make sure we're not making the entity its own ancestor
                 // (shouldn't happen with newly created entity, but check anyway)
@@ -1406,21 +1515,21 @@ Entity SceneHierarchyPanel::DuplicateEntity(Entity sourceEntity, bool takeSnapsh
 
                     // Add new entity to parent's children list
                     GUID_128 newEntityGUID = guidRegistry.GetGUIDByEntity(newEntity);
-                    ENGINE_PRINT("[SceneHierarchy] New entity ", newEntity, " GUID: ",
-                              std::hex, newEntityGUID.high, "-", newEntityGUID.low, std::dec);
+                    std::cout << "[SceneHierarchy] New entity " << newEntity << " GUID: "
+                              << std::hex << newEntityGUID.high << "-" << newEntityGUID.low << std::dec << std::endl;
 
                     if (newEntityGUID.high != 0 || newEntityGUID.low != 0) {
                         if (ecsManager.HasComponent<ChildrenComponent>(parentEntity)) {
                             auto& children = ecsManager.GetComponent<ChildrenComponent>(parentEntity).children;
-                            ENGINE_PRINT("[SceneHierarchy] Parent has ", children.size(), " children before adding");
+                            std::cout << "[SceneHierarchy] Parent has " << children.size() << " children before adding" << std::endl;
                             children.push_back(newEntityGUID);
-                            ENGINE_PRINT("[SceneHierarchy] Parent now has ", children.size(), " children");
+                            std::cout << "[SceneHierarchy] Parent now has " << children.size() << " children" << std::endl;
                         } else {
                             ChildrenComponent childrenComp;
                             childrenComp.children.push_back(newEntityGUID);
                             ecsManager.AddComponent<ChildrenComponent>(parentEntity, childrenComp);
                         }
-                        ENGINE_PRINT("[SceneHierarchy] Preserved parent relationship for duplicated entity");
+                        std::cout << "[SceneHierarchy] Preserved parent relationship for duplicated entity" << std::endl;
                     }
                 }
             }
@@ -1429,7 +1538,7 @@ Entity SceneHierarchyPanel::DuplicateEntity(Entity sourceEntity, bool takeSnapsh
         // Ensure duplicated entity has a sibling index
         EnsureSiblingIndex(newEntity);
 
-        ENGINE_PRINT("[SceneHierarchy] Successfully duplicated entity (ID: ", newEntity, ")");
+        std::cout << "[SceneHierarchy] Successfully duplicated entity (ID: " << newEntity << ")" << std::endl;
         return newEntity;
 
     } catch (const std::exception& e) {
@@ -1569,15 +1678,15 @@ void SceneHierarchyPanel::CopySelectedEntities() {
     }
     g_EntityClipboard.hasData = !g_EntityClipboard.copiedEntityGUIDs.empty();
 
-    ENGINE_PRINT("[SceneHierarchy] Copied ", g_EntityClipboard.copiedEntityGUIDs.size(), " entities to clipboard");
+    std::cout << "[SceneHierarchy] Copied " << g_EntityClipboard.copiedEntityGUIDs.size() << " entities to clipboard" << std::endl;
 }
 
 void SceneHierarchyPanel::PasteEntities() {
-    ENGINE_PRINT("[SceneHierarchy] PasteEntities() called. hasData=", g_EntityClipboard.hasData,
-              ", numGUIDs=", g_EntityClipboard.copiedEntityGUIDs.size());
+    std::cout << "[SceneHierarchy] PasteEntities() called. hasData=" << g_EntityClipboard.hasData
+              << ", numGUIDs=" << g_EntityClipboard.copiedEntityGUIDs.size() << std::endl;
 
     if (!g_EntityClipboard.hasData || g_EntityClipboard.copiedEntityGUIDs.empty()) {
-        ENGINE_PRINT("[SceneHierarchy] Clipboard is empty, nothing to paste");
+        std::cout << "[SceneHierarchy] Clipboard is empty, nothing to paste" << std::endl;
         return;
     }
 
@@ -1594,7 +1703,7 @@ void SceneHierarchyPanel::PasteEntities() {
     }
 
     if (validEntities.empty()) {
-        ENGINE_PRINT("[SceneHierarchy] No valid entities to paste (original entities may have been deleted)");
+        std::cout << "[SceneHierarchy] No valid entities to paste (original entities may have been deleted)" << std::endl;
         g_EntityClipboard.Clear();
         return;
     }
@@ -1602,9 +1711,63 @@ void SceneHierarchyPanel::PasteEntities() {
     std::vector<Entity> pastedEntities = DuplicateEntities(validEntities);
     if (!pastedEntities.empty()) {
         GUIManager::SetSelectedEntities(pastedEntities);
-        ENGINE_PRINT("[SceneHierarchy] Pasted ", pastedEntities.size(), " entities");
+        std::cout << "[SceneHierarchy] Pasted " << pastedEntities.size() << " entities" << std::endl;
     }
     // Note: Clipboard is NOT cleared after paste, allowing multiple pastes
+}
+
+Entity SceneHierarchyPanel::DuplicateEntityWithChildren(Entity sourceEntity, Entity newParentOverride) {
+    ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
+    EntityGUIDRegistry& guidRegistry = EntityGUIDRegistry::GetInstance();
+
+    // Duplicate the entity itself (all components, snapshot already taken by caller)
+    Entity newEntity = DuplicateEntity(sourceEntity, false);
+    if (newEntity == static_cast<Entity>(-1)) return newEntity;
+
+    // If a new parent is specified, reparent the new entity there instead of where
+    // DuplicateEntity() placed it (which is under the source's original parent).
+    if (newParentOverride != static_cast<Entity>(-1)) {
+        GUID_128 newParentGUID = guidRegistry.GetGUIDByEntity(newParentOverride);
+        GUID_128 newEntityGUID = guidRegistry.GetGUIDByEntity(newEntity);
+
+        // Remove newEntity from the parent that DuplicateEntity() assigned it to
+        if (ecsManager.HasComponent<ParentComponent>(newEntity)) {
+            GUID_128 currentParentGUID = ecsManager.GetComponent<ParentComponent>(newEntity).parent;
+            Entity currentParent = guidRegistry.GetEntityByGUID(currentParentGUID);
+            if (currentParent != static_cast<Entity>(-1) &&
+                ecsManager.HasComponent<ChildrenComponent>(currentParent)) {
+                auto& children = ecsManager.GetComponent<ChildrenComponent>(currentParent).children;
+                children.erase(std::remove(children.begin(), children.end(), newEntityGUID), children.end());
+            }
+            ecsManager.GetComponent<ParentComponent>(newEntity).parent = newParentGUID;
+        } else {
+            ecsManager.AddComponent<ParentComponent>(newEntity, ParentComponent{ newParentGUID });
+        }
+
+        // Register newEntity as a child of newParentOverride
+        if (ecsManager.HasComponent<ChildrenComponent>(newParentOverride)) {
+            ecsManager.GetComponent<ChildrenComponent>(newParentOverride).children.push_back(newEntityGUID);
+        } else {
+            ChildrenComponent childrenComp;
+            childrenComp.children.push_back(newEntityGUID);
+            ecsManager.AddComponent<ChildrenComponent>(newParentOverride, childrenComp);
+        }
+    }
+
+    // Recursively duplicate all children of the source, parented under newEntity
+    if (ecsManager.HasComponent<ChildrenComponent>(sourceEntity)) {
+        // Copy the list before recursing - DuplicateEntity temporarily modifies it
+        const std::vector<GUID_128> childGUIDs =
+            ecsManager.GetComponent<ChildrenComponent>(sourceEntity).children;
+        for (const GUID_128& childGUID : childGUIDs) {
+            Entity child = guidRegistry.GetEntityByGUID(childGUID);
+            if (child != static_cast<Entity>(-1)) {
+                DuplicateEntityWithChildren(child, newEntity);
+            }
+        }
+    }
+
+    return newEntity;
 }
 
 std::vector<Entity> SceneHierarchyPanel::DuplicateEntities(const std::vector<Entity>& sourceEntities) {
@@ -1621,15 +1784,37 @@ std::vector<Entity> SceneHierarchyPanel::DuplicateEntities(const std::vector<Ent
     // Take snapshot before duplicating (for undo)
     SnapshotManager::GetInstance().TakeSnapshot(snapshotDesc);
 
-    for (Entity sourceEntity : sourceEntities) {
-        // Pass false to skip internal snapshot (we already took one)
-        Entity duplicated = DuplicateEntity(sourceEntity, false);
+    // When multiple entities are selected, skip those whose ancestor is also selected -
+    // they will be duplicated recursively as part of their ancestor's copy.
+    EntityGUIDRegistry& guidRegistry = EntityGUIDRegistry::GetInstance();
+    std::unordered_set<Entity> selectionSet(sourceEntities.begin(), sourceEntities.end());
+    std::vector<Entity> rootsOfSelection;
+    for (Entity entity : sourceEntities) {
+        bool hasAncestorInSelection = false;
+        Entity current = entity;
+        while (ecsManager.HasComponent<ParentComponent>(current)) {
+            GUID_128 parentGUID = ecsManager.GetComponent<ParentComponent>(current).parent;
+            Entity parent = guidRegistry.GetEntityByGUID(parentGUID);
+            if (parent == static_cast<Entity>(-1)) break;
+            if (selectionSet.count(parent)) {
+                hasAncestorInSelection = true;
+                break;
+            }
+            current = parent;
+        }
+        if (!hasAncestorInSelection) {
+            rootsOfSelection.push_back(entity);
+        }
+    }
+
+    for (Entity sourceEntity : rootsOfSelection) {
+        Entity duplicated = DuplicateEntityWithChildren(sourceEntity, static_cast<Entity>(-1));
         if (duplicated != static_cast<Entity>(-1)) {
             duplicatedEntities.push_back(duplicated);
         }
     }
 
-    ENGINE_PRINT("[SceneHierarchy] Duplicated ", duplicatedEntities.size(), " entities");
+    std::cout << "[SceneHierarchy] Duplicated " << duplicatedEntities.size() << " entities" << std::endl;
     return duplicatedEntities;
 }
 
@@ -1686,7 +1871,7 @@ void SceneHierarchyPanel::DeleteSelectedEntities() {
             ? "Delete Entity: " + ecsManager.GetComponent<NameComponent>(selectedEntities[0]).name
             : "Delete " + std::to_string(selectedEntities.size()) + " Entities";
 
-        ENGINE_PRINT("[SceneHierarchy] Deleting ", selectedEntities.size(), " entities");
+        std::cout << "[SceneHierarchy] Deleting " << selectedEntities.size() << " entities" << std::endl;
 
         // Take snapshot before deleting (for undo)
         SnapshotManager::GetInstance().TakeSnapshot(snapshotDesc);
@@ -1704,9 +1889,63 @@ void SceneHierarchyPanel::DeleteSelectedEntities() {
             }
         }
 
-        ENGINE_PRINT("[SceneHierarchy] Entities deleted successfully");
+        std::cout << "[SceneHierarchy] Entities deleted successfully" << std::endl;
     } catch (const std::exception& e) {
         std::cerr << "[SceneHierarchy] Failed to delete entities: " << e.what() << std::endl;
+    }
+}
+
+// ============================================================================
+// Search Functionality
+// ============================================================================
+
+void SceneHierarchyPanel::RebuildSearchCache() {
+    searchMatchedEntities.clear();
+    searchVisibleEntities.clear();
+    searchDirty = false;
+
+    if (searchQuery.empty()) return;
+
+    // Convert query to lowercase once
+    searchQueryLower = searchQuery;
+    std::transform(searchQueryLower.begin(), searchQueryLower.end(), searchQueryLower.begin(),
+                   [](unsigned char c) { return std::tolower(c); });
+
+    ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
+    std::vector<Entity> allEntities = ecsManager.GetActiveEntities();
+
+    // Find all matching entities
+    for (Entity entity : allEntities) {
+        if (!ecsManager.HasComponent<NameComponent>(entity)) continue;
+        const std::string& name = ecsManager.GetComponent<NameComponent>(entity).name;
+        if (EntityMatchesSearch(name)) {
+            searchMatchedEntities.insert(entity);
+            searchVisibleEntities.insert(entity);
+            // Walk up ancestor chain to make the path visible
+            CollectAncestors(entity, searchVisibleEntities);
+        }
+    }
+}
+
+bool SceneHierarchyPanel::EntityMatchesSearch(const std::string& name) const {
+    // Case-insensitive substring match
+    std::string nameLower = name;
+    std::transform(nameLower.begin(), nameLower.end(), nameLower.begin(),
+                   [](unsigned char c) { return std::tolower(c); });
+    return nameLower.find(searchQueryLower) != std::string::npos;
+}
+
+void SceneHierarchyPanel::CollectAncestors(Entity entity, std::unordered_set<Entity>& ancestors) {
+    ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
+    EntityGUIDRegistry& guidRegistry = EntityGUIDRegistry::GetInstance();
+
+    Entity current = entity;
+    while (ecsManager.HasComponent<ParentComponent>(current)) {
+        GUID_128 parentGUID = ecsManager.GetComponent<ParentComponent>(current).parent;
+        Entity parent = guidRegistry.GetEntityByGUID(parentGUID);
+        if (parent == static_cast<Entity>(-1)) break;
+        ancestors.insert(parent);
+        current = parent;
     }
 }
 
@@ -1733,5 +1972,5 @@ void SceneHierarchyPanel::SelectRange(Entity fromEntity, Entity toEntity) {
     }
 
     GUIManager::SetSelectedEntities(rangeSelection);
-    ENGINE_PRINT("[SceneHierarchy] Range selected ", rangeSelection.size(), " entities");
+    std::cout << "[SceneHierarchy] Range selected " << rangeSelection.size() << " entities" << std::endl;
 }

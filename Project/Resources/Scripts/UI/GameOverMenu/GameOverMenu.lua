@@ -48,9 +48,14 @@ return Component {
                         self._respawnButtonHoveredActive.isActive = false
                     end
 
+                    self._isFading = false
                     self._fadeTimer = 0
                     self._deathAnimationDelay = self.deathAnimationDelay
                     self._playerDead = false
+                    -- Stop/reset BGM so it doesn't get spammed or continue playing
+                    if self._BGMaudio then
+                        self._BGMaudio:Stop()
+                    end
                 end
             end)
         else
@@ -97,6 +102,8 @@ return Component {
                 self._respawnButtonHoveredActive.isActive = false
             end
         end
+
+        self._BGMaudio = GetComponent(Engine.GetEntityByName("DeathScreenBGM"), "AudioComponent")
     end,
 
     -- Update handles fade transition and scene loading
@@ -111,9 +118,20 @@ return Component {
                 self._fadeActive.isActive = true
                 self._respawnButtonActive.isActive = true
                 self._respawnButtonHoveredActive.isActive = true
-
                 if Screen and Screen.IsCursorLocked() then
                     Screen.SetCursorLocked(false)
+                end
+
+                -- Stop main game BGM and ambience so DeathScreenBGM can play alone
+                local bgm1 = GetComponent(Engine.GetEntityByName("BGM1"), "AudioComponent")
+                local ambience = GetComponent(Engine.GetEntityByName("Ambience"), "AudioComponent")
+                if bgm1 and ambience then
+                    bgm1:Pause()
+                    ambience:Pause()
+                end
+                -- Start BGM once when the death screen is shown
+                if self._BGMaudio then
+                    self._BGMaudio:Play()
                 end
             end
         end
@@ -125,10 +143,11 @@ return Component {
             self._fadeAlpha = math.min(self._fadeTimer / duration, 1.0)
             self._fadeSprite.alpha = self._fadeAlpha
             self._respawnButtonSprite.alpha = self._fadeAlpha
-
             -- Stop once fade is complete
             if self._fadeAlpha >= 1.0 then
                 self._isFading = false
+                -- Pause the game when death screen shows
+                Time.SetPaused(true)
             end
         end
     end

@@ -3,6 +3,9 @@
 #include <assimp/Importer.hpp>
 #include <assimp/postprocess.h>
 #include <assimp/scene.h>
+#include <Asset Manager/AssetManager.hpp>
+#include <Platform/IPlatform.h>
+#include <WindowManager.hpp>
 
 static std::string NormalizeFbxName(std::string n);
 static  bool IsAssimpFbxTrsNode(const std::string& n);
@@ -28,7 +31,7 @@ glm::mat4 aiMatrix4x4ToGlm(const aiMatrix4x4& from);
 //	if (itF != mBoneInfoMap.end()) DebugMatrix("[Anim] Offset(LeftFoot)", itF->second.offset);
 //}
 
-Animation::Animation(aiAnimation* animation, const aiNode* rootNode, std::map<std::string, BoneInfo> boneInfoMap, int boneCount) 
+Animation::Animation(aiAnimation* animation, const aiNode* rootNode, std::map<std::string, BoneInfo> boneInfoMap, int boneCount)
 {
 	mDuration = static_cast<float>(animation->mDuration);
 	mTicksPerSecond = animation->mTicksPerSecond != 0.0 ? static_cast<int>(animation->mTicksPerSecond) : 25;
@@ -61,22 +64,120 @@ Animation::Animation(aiAnimation* animation, const aiNode* rootNode, std::map<st
 	ReadMissingBones(animation, boneInfoMap, boneCount);
 }
 
+std::string Animation::CompileToResource(const std::string& assetPath, bool forAndroid) {
+	if (!forAndroid) {
+		return assetPath;
+	}
+	else {
+		std::string assetPathAndroid = assetPath.substr(assetPath.find("Resources"));
+		assetPathAndroid = (AssetManager::GetInstance().GetAndroidResourcesPath() / assetPathAndroid).generic_string();
+		// Ensure parent directories exist
+		std::filesystem::path outputPath = FileUtilities::SanitizePathForAndroid(std::filesystem::path(assetPathAndroid));
+		assetPathAndroid = outputPath.generic_string();
+		std::filesystem::create_directories(outputPath.parent_path());
+
+		try {
+			// Copy the file to the Android assets location
+			std::filesystem::copy_file(assetPath, assetPathAndroid, std::filesystem::copy_options::overwrite_existing);
+		}
+		catch (const std::filesystem::filesystem_error& e) {
+			ENGINE_PRINT(EngineLogging::LogLevel::Error, "[Animation] Failed to copy animation file for Android: ", e.what(), "\n");
+			return std::string{};
+		}
+		return assetPathAndroid;
+	}
+}
+
+bool Animation::LoadResource(const std::string& resourcePath, const std::map<std::string, BoneInfo>& boneInfoMap, int boneCount) {
+	if (resourcePath.empty()) return false;
+
+	IPlatform* platform = WindowManager::GetPlatform();
+	if (!platform) {
+		ENGINE_PRINT(EngineLogging::LogLevel::Error, "[Animation] ERROR: Platform not available for asset discovery!", "\n");
+		return false;
+	}
+
+	std::vector<uint8_t> buffer = platform->ReadAsset(resourcePath);
+
+	Assimp::Importer importer;
+
+	importer.SetPropertyBool(AI_CONFIG_IMPORT_FBX_PRESERVE_PIVOTS, false);
+	importer.SetPropertyInteger(AI_CONFIG_PP_RVC_FLAGS,
+		aiComponent_NORMALS | aiComponent_TANGENTS_AND_BITANGENTS);
+
+	unsigned int postProcessFlags = aiProcess_Triangulate | aiProcess_FlipUVs;
+
+	const aiScene* scene = importer.ReadFileFromMemory(buffer.data(), buffer.size(), postProcessFlags, "fbx");
+
+	if (!scene) {
+		ENGINE_PRINT("[Anim] Buffer size: ", buffer.size());
+		ENGINE_PRINT("[Anim] ReadFile failed: ", importer.GetErrorString(), " path=", resourcePath, "\n");
+		return false;
+	}
+
+	if (!scene->mRootNode) {
+		ENGINE_PRINT("[Anim] No root node\n");
+		return false;
+	}
+	if (scene->mNumAnimations == 0) {
+		ENGINE_PRINT("[Anim] File has NO animations: ", resourcePath, "\n");
+		return false;
+	}
+
+	float scaleFactor = Model::CalculateAutoScale(scene);
+
+	// 3. MANUAL FIX: Iterate and multiply translation keys
+	if (std::abs(scaleFactor - 1.0f) > 0.001f)
+	{
+		ENGINE_LOG_INFO("[AnimationComponent] Auto-scaling animation by " + std::to_string(scaleFactor));
+
+		// Free the current scene
+		importer.FreeScene();
+
+		// Re-import with GlobalScale
+		importer.SetPropertyFloat(AI_CONFIG_GLOBAL_SCALE_FACTOR_KEY, scaleFactor);
+		postProcessFlags |= aiProcess_GlobalScale;
+
+		scene = importer.ReadFileFromMemory(buffer.data(), buffer.size(), postProcessFlags, "fbx");
+
+		if (!scene || !scene->mRootNode || scene->mNumAnimations == 0) {
+			ENGINE_PRINT(EngineLogging::LogLevel::Error, "[AnimationComponent] Re-import with scaling failed\n");
+			return false;
+		}
+	}
+
+	aiAnimation* aiAnim = scene->mAnimations[0];
+
+	mDuration = static_cast<float>(aiAnim->mDuration);
+	mTicksPerSecond = aiAnim->mTicksPerSecond != 0.0 ? static_cast<int>(aiAnim->mTicksPerSecond) : 25;
+
+	mGlobalInverse = glm::inverse(aiMatrix4x4ToGlm(scene->mRootNode->mTransformation));
+
+	ReadHierarchyData(mRootNode, scene->mRootNode);
+	ReadMissingBones(aiAnim, boneInfoMap, boneCount);
+
+	return true;
+}
+
+bool Animation::ReloadResource(const std::string& resourcePath, const std::map<std::string, BoneInfo>& boneInfoMap, int boneCount) {
+	return LoadResource(resourcePath, boneInfoMap, boneCount);
+}
+
+std::shared_ptr<AssetMeta> Animation::ExtendMetaFile(const std::string& assetPath, std::shared_ptr<AssetMeta> currentMetaData, bool forAndroid) {
+	return currentMetaData;
+}
+
 Bone* Animation::FindBone(const std::string& name)
 {
-	auto iter = std::find_if(mBones.begin(), mBones.end(),
-		[&](const Bone& Bone)
-		{
-			return Bone.GetBoneName() == name;
-		}
-	);
-	if (iter == mBones.end()) return nullptr;
-	else return &(*iter);
+	auto it = mBoneLookup.find(name);
+	return it != mBoneLookup.end() ? it->second : nullptr;
 }
 
 void Animation::ReadMissingBones(const aiAnimation* animation,
-	std::map<std::string, BoneInfo> boneInfoMap,
+	const std::map<std::string, BoneInfo>& boneInfoMap,
 	int boneCount)
 {
+	mBoneInfoMap = boneInfoMap; // copy once upfront, modify our own copy
 	const int num = animation ? static_cast<int>(animation->mNumChannels) : 0;
 	mBones.reserve(mBones.size() + num);
 
@@ -89,15 +190,15 @@ void Animation::ReadMissingBones(const aiAnimation* animation,
 		const std::string boneName = NormalizeFbxName(channel->mNodeName.C_Str());
 
 		// Ensure the bone exists in the info map and has an ID
-		auto it = boneInfoMap.find(boneName);
-		if (it == boneInfoMap.end())
+		auto it = mBoneInfoMap.find(boneName);
+		if (it == mBoneInfoMap.end())
 		{
 			//ENGINE_LOG_WARN("[ReadMissingBones] Bone '" + boneName + "' NOT FOUND in model's boneInfoMap! Creating default.\n");
 
 			BoneInfo info;
 			info.id = boneCount++;
 			info.offset = glm::mat4(1.0f); // default if not in mesh
-			it = boneInfoMap.emplace(boneName, info).first;
+			it = mBoneInfoMap.emplace(boneName, info).first;
 		}
 		//else {
 		//	if (boneName == "mixamorig:Hips" || boneName == "mixamorig:Spine") {
@@ -108,7 +209,12 @@ void Animation::ReadMissingBones(const aiAnimation* animation,
 		mBones.emplace_back(boneName, it->second.id, channel);
 	}
 
-	mBoneInfoMap = std::move(boneInfoMap);
+	// Build O(1) bone lookup cache
+	mBoneLookup.clear();
+	mBoneLookup.reserve(mBones.size());
+	for (auto& bone : mBones) {
+		mBoneLookup[bone.GetBoneName()] = &bone;
+	}
 
 	//// FINAL CHECK: Log what ended up in mBoneInfoMap
 	//ENGINE_LOG_DEBUG("[ReadMissingBones] Final mBoneInfoMap has " + std::to_string(mBoneInfoMap.size()) + " bones\n");

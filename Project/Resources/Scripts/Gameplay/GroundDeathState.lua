@@ -13,9 +13,16 @@ function DeathState:Enter(ai)
     ai._animator:SetBool("Dead", true)
     if ai.DisableCombat then ai:DisableCombat() end
 
+    -- Remove from charVsChar so corpse can't be pushed — controller stays alive
+    pcall(function() CharacterController.DisableCollision(ai.entityId) end)
+
     -- init always
     ai._deathTimer = 0
     ai._deathLifetime = tonumber(ai.deathLifetime) or 8.0
+
+    for i = 1, ai.NumFeathersSpawnedPerHit do
+        ai:SpawnFeather(i)
+    end
 end
 
 function DeathState:Update(ai, dt)

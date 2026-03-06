@@ -48,7 +48,11 @@ return Component {
         -- Global combo settings (editable in editor)
         DefaultComboWindow = 0.5,    -- Default time to continue combo
         HeavyChargeTime = 0.8,       -- Time to fully charge heavy
-        DashDuration = 0.3,          -- Dash length
+        MaxComboAnimSpeed = 2.0,     -- Max animation speed when chaining quickly (multiplied on top of base)
+
+        -- SFX clip arrays (populate in editor with audio GUIDs)
+        playerSlashSFX = {},      -- FastSlash (whoosh on swing)
+        playerChainSFX = {},      -- FastSlashHitonFlesh (impact on hit)
     },
 
     Awake = function(self)
@@ -77,7 +81,7 @@ return Component {
             light_1 = {
                 id = "light_1",
                 animParam = 1,
-                duration = 1.5,
+                duration = 1.0,
                 damage = 10,
                 knockback = 20.0,
                 canMove = false,
@@ -91,7 +95,7 @@ return Component {
             light_2 = {
                 id = "light_2",
                 animParam = 2,
-                duration = 1.5,
+                duration = 1.0,
                 damage = 12,
                 knockback = 20.0,
                 canMove = false,
@@ -105,7 +109,7 @@ return Component {
             light_3 = {
                 id = "light_3",
                 animParam = 3,
-                duration = 1.5,
+                duration = 0.8,
                 damage = 20,
                 knockback = 200.0,
                 canMove = false,
@@ -191,17 +195,17 @@ return Component {
             dash = {
                 id = "dash",
                 animParam = 30,
-                duration = 0.3,
+                duration = 1.0,
                 damage = 0,
                 canMove = false,
                 comboWindow = nil,
-                
+
                 onEnter = function(self, state, data)
                     if event_bus then
                         event_bus.publish("dash_performed", {})
                     end
                 end,
-                
+
                 transitions = {}
             },
         }
@@ -254,18 +258,38 @@ return Component {
         end
         print("[ComboManager] InputInterpreter found")
 
+        -- Get AudioComponent from Player for attack SFX
+        self._playerAudio = GetComponent(self._playerEntityId, "AudioComponent")
+        if not self._playerAudio then
+            print("[ComboManager] WARNING: Player AudioComponent not found")
+        end
+
         -- Initialize animator parameters using the bound methods
         self._animator:SetInt("ComboStep", 0)        -- Note: SetInt, not SetInteger
         self._animator:SetBool("IsAttacking", false)
         self._animator:SetBool("IsHeavyCharging", false)
-        
+
         print("[ComboManager] Initialized successfully")
     end,
 
     Update = function(self, dt)
-        if not self._inputInterpreter or not self._animator then return end
+        if not self._inputInterpreter or not self._animator or Time.IsPaused() then return end
 
-        self._stateTimer = self._stateTimer + dt
+        -- Block all combo input during dash
+        if _G.player_is_dashing then
+            -- Also clear any queued combo to prevent it firing after dash ends
+            if self._queuedCombo then
+                print("[ComboManager] DASH ACTIVE: clearing queued combo '" .. tostring(self._queuedCombo.stateId) .. "'")
+                self._queuedCombo = nil
+            end
+            return
+        end
+
+        -- Advance logical timer at the same rate as the animation playback.
+        -- When boosted (e.g. speed=4.0), timer runs 4x faster so the combo
+        -- window and auto-transition fire at the right moment instead of lagging behind.
+        local animSpeed = self._animator.speed or 1.0
+        self._stateTimer = self._stateTimer + dt * animSpeed
         local state = self._currentStateData
         
         -- Create state object for callbacks
@@ -302,12 +326,11 @@ return Component {
             timeRemaining = state.duration - self._stateTimer
         end
 
-        -- Combo window for this state (seconds). nil means "no continuation allowed".
+        -- Combo window for this state (real-time seconds). nil means "no continuation allowed".
+        -- Scale by animSpeed so the real-time window stays constant regardless of playback rate.
         local window = state.comboWindow
-        if window == nil then
-            window = nil  -- keep nil to indicate no continuation
-        else
-            window = window or self.DefaultComboWindow
+        if window ~= nil then
+            window = (window or self.DefaultComboWindow) * animSpeed
         end
 
         -- If we have a queued combo input, try to execute it once the window opens (or immediately if idle)
@@ -331,18 +354,21 @@ return Component {
         local candidateData = nil
 
         if input:HasBufferedAttack() then
+            print("[ComboManager] HasBufferedAttack=true, player_is_dashing=" .. tostring(_G.player_is_dashing))
             if input:IsAttackHeld() then
                 candidateStateId = state.transitions.attack_hold
             else
                 candidateStateId = state.transitions.attack
             end
         elseif input:HasBufferedChain() then
+            print("[ComboManager] HasBufferedChain=true, player_is_dashing=" .. tostring(_G.player_is_dashing))
             candidateStateId = state.transitions.chain
         elseif input:HasBufferedDash() then
             candidateStateId = state.transitions.dash
         end
 
         if candidateStateId then
+            print("[ComboManager] Candidate transition: " .. tostring(candidateStateId) .. " from state: " .. state.id)
             -- Consume the buffered input immediately so it doesn't re-fire repeatedly
             if input:HasBufferedAttack() then input:ConsumeBufferedAttack()
             elseif input:HasBufferedChain() then input:ConsumeBufferedChain()
@@ -373,6 +399,20 @@ return Component {
                 data = candidateData,
                 requestedAt = self._stateTimer
             }
+
+            -- Speed up current animation based on how early the input came in.
+            -- earlyFactor=1 (pressed right at start) → maxSpeed, earlyFactor=0 (pressed at window) → 1.0
+            if timeRemaining and state.duration and state.duration > 0 and self._animator then
+                -- window is already in animation-time (scaled by animSpeed above).
+                -- earlyFactor: 1.0 = pressed at the very start, 0.0 = pressed right at window open.
+                local earlyTime = math.max(0, timeRemaining - (window or 0))
+                local earlyFactor = math.min(1.0, earlyTime / math.max(0.001, state.duration - (window or 0)))
+                -- Read the state machine's configured speed for this state (e.g. 2.0).
+                -- Boost is a multiplier on top of that: MaxComboAnimSpeed=2 means "up to 2x faster than normal".
+                local base = self._animator.speed
+                local speedMult = base * (1.0 + (self.MaxComboAnimSpeed - 1.0) * earlyFactor)
+                self._animator:SetSpeed(speedMult)
+            end
         end
 
         -- ===============================
@@ -409,6 +449,9 @@ return Component {
         self._currentStateData = newState
         self._stateTimer = 0
 
+        -- Update global attacking flag so PlayerMovement can lock movement
+        _G.player_is_attacking = (stateId ~= "idle" and stateId ~= "dash")
+
         -- Update combo chain tracking
         if stateId ~= "idle" and stateId ~= "dash" then
             table.insert(self._comboChain, stateId)
@@ -433,9 +476,14 @@ return Component {
             self._animator:SetBool("IsHeavyCharging", false)
         end
         
-        -- Trigger transition (skip for idle to avoid unnecessary triggers)
-        if stateId ~= "idle" then
+        -- Trigger transition (skip for idle and dash to avoid unnecessary triggers/SFX)
+        if stateId ~= "idle" and stateId ~= "dash" then
             self._animator:SetTrigger("Attack")
+            if stateId == "chain_attack" then
+                self:_playRandomSFX(self.playerChainSFX)
+            else
+                self:_playRandomSFX(self.playerSlashSFX)
+            end
         end
 
         -- Broadcast state change
@@ -465,8 +513,18 @@ return Component {
                     damage = newState.damage,
                     knockback = newState.knockback or 0
                 })
+                
             end
         end
+    end,
+
+    -- ===============================
+    -- SFX HELPERS
+    -- ===============================
+    _playRandomSFX = function(self, clips)
+        local audio = self._playerAudio
+        if not audio or not clips or #clips == 0 then return end
+        audio:PlayOneShot(clips[math.random(1, #clips)])
     end,
 
     -- ===============================

@@ -15,6 +15,7 @@ void UIAnchorSystem::Initialise(ECSManager& ecsManager)
 
 void UIAnchorSystem::Update()
 {
+    PROFILE_FUNCTION();
     if (!m_ecs) return;
 
     // Get current viewport size

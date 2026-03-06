@@ -4,6 +4,7 @@
 #include "Game AI/BrainFactory.hpp"
 
 void RunBrainInitSystem(ECSManager& ecs) {
+    PROFILE_FUNCTION();
     const auto& all = ecs.GetAllEntities();
     for (Entity e : all) {
         if (!ecs.HasComponent<BrainComponent>(e))
@@ -33,6 +34,7 @@ void RunBrainInitSystem(ECSManager& ecs) {
 }
 
 void RunBrainUpdateSystem(ECSManager& ecs, float dt) {
+    PROFILE_FUNCTION();
     if (Engine::IsEditMode()) {
         return;
     }

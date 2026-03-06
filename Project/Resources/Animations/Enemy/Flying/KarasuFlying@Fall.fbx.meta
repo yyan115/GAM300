@@ -1,0 +1,11 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "006bd5bb443a9fbd-00046ab566000001",
+        "source": "../../Resources/Animations/Enemy/Flying/KarasuFlying@Fall.fbx",
+        "compiled": "../../Resources/Animations/Enemy/Flying/KarasuFlying@Fall.mesh"
+    },
+    "ModelMetaData": {
+        "optimizeMeshes": true
+    }
+}

@@ -4,32 +4,36 @@
 #include "ECS/ECSRegistry.hpp"
 #include "Transform/TransformComponent.hpp"
 #include "Graphics/GraphicsManager.hpp"
-#include "Performance/PerformanceProfiler.hpp"
 #include "ECS/ActiveComponent.hpp"
 #include "Asset Manager/ResourceManager.hpp"
 
 bool LightingSystem::Initialise()
 {
-    ENGINE_PRINT("[LightingSystem] Initializing...");
+    std::cout << "[LightingSystem] Initializing..." << std::endl;
 
     // Initialize directional shadow map
     if (!directionalShadowMap.Initialize(shadowMapResolution))
     {
-        ENGINE_PRINT("[LightingSystem] Warning: Directional shadow map failed");
+        std::cout << "[LightingSystem] Warning: Directional shadow map failed" << std::endl;
         shadowsEnabled = false;
     }
 
-    // Initialize point light shadow maps
+    // Initialize point light shadow maps with round-robin staggered updates
     pointShadowMaps.resize(MAX_POINT_LIGHT_SHADOWS);
     for (int i = 0; i < MAX_POINT_LIGHT_SHADOWS; ++i)
     {
         if (!pointShadowMaps[i].Initialize(pointShadowMapResolution))
         {
-            ENGINE_PRINT("[LightingSystem] Warning: Point shadow map {} failed", i);
+            std::cout << "[LightingSystem] Warning: Point shadow map " << i << " failed" << std::endl;
         }
+        // Each map updates on a different frame within the cycle so only 1 map
+        // renders per frame instead of all at once, and no map is stale > updateInterval frames
+        pointShadowMaps[i].cacheConfig.updateInterval = 2;
+        pointShadowMaps[i].cacheConfig.maxStaleFrames = 4;
+        pointShadowMaps[i].SetPhaseOffset(i);
     }
 
-    ENGINE_PRINT("[LightingSystem] Initialized");
+    std::cout << "[LightingSystem] Initialized" << std::endl;
     return true;
 }
 
@@ -50,7 +54,7 @@ void LightingSystem::Shutdown()
     }
     pointShadowMaps.clear();
 
-    ENGINE_PRINT("[LightingSystem] Shutdown");
+    std::cout << "[LightingSystem] Shutdown" << std::endl;
 }
 
 void LightingSystem::RenderShadowMaps()
@@ -96,10 +100,13 @@ void LightingSystem::RenderShadowMaps()
         {
             glm::vec3 lightPos = pointLightData.positions[i];
 
-            if (pointShadowMaps[shadowIndex].NeedsUpdate(lightPos, pointLightShadowFarPlane))
+            float lightRange = pointLightData.range[i];
+            if (pointShadowMaps[shadowIndex].NeedsUpdate(lightPos, lightRange))
             {
-                pointShadowMaps[shadowIndex].Render(lightPos, pointLightShadowFarPlane, shadowRenderCallback);
-                pointShadowMaps[shadowIndex].MarkUpdated(lightPos, pointLightShadowFarPlane);
+                GraphicsManager::GetInstance().SetPointShadowCullData(lightPos, lightRange);
+                pointShadowMaps[shadowIndex].Render(lightPos, lightRange, shadowRenderCallback);
+                GraphicsManager::GetInstance().ClearPointShadowCullData();
+                pointShadowMaps[shadowIndex].MarkUpdated(lightPos, lightRange);
                 updatedCount++;
             }
             else
@@ -119,6 +126,7 @@ void LightingSystem::ApplyLighting(Shader& shader)
     shader.setVec3("ambientSky", ambientSky);
     shader.setVec3("ambientEquator", ambientEquator);
     shader.setVec3("ambientGround", ambientGround);
+    shader.setFloat("ambientIntensity", ambientIntensity);
 
     // Apply directional light
     if (directionalLightData.hasDirectionalLight)
@@ -230,6 +238,7 @@ void LightingSystem::CollectLightData()
     pointLightData.linear.clear();
     pointLightData.quadratic.clear();
     pointLightData.intensity.clear();
+    pointLightData.range.clear();
     pointLightData.shadowIndex.clear();
 
     directionalLightData.hasDirectionalLight = false;
@@ -264,6 +273,7 @@ void LightingSystem::CollectLightData()
         float linear;
         float quadratic;
         float intensity;
+        float range;
         bool castShadows;
         float distanceToCamera;
     };
@@ -271,9 +281,12 @@ void LightingSystem::CollectLightData()
 
     for (const auto& entity : entities)
     {
-        // Skip entities that are inactive in hierarchy (checks parents too)
-        if (!ecsManager.IsEntityActiveInHierarchy(entity)) {
-            continue;
+        // Skip inactive entities
+        if (ecsManager.HasComponent<ActiveComponent>(entity)) {
+            auto& activeComp = ecsManager.GetComponent<ActiveComponent>(entity);
+            if (!activeComp.isActive) {
+                continue;
+            }
         }
 
         // Collect directional light (first one only)
@@ -329,6 +342,7 @@ void LightingSystem::CollectLightData()
                     light.linear,
                     light.quadratic,
                     light.intensity,
+                    light.range,
                     light.castShadows,
                     dist
                     });
@@ -372,7 +386,8 @@ void LightingSystem::CollectLightData()
                 {
                     static bool spotLightWarningShown = false;
                     if (!spotLightWarningShown) {
-                        ENGINE_PRINT("[LightingSystem] Warning: Maximum spot lights ({}) reached. Additional spot lights will be ignored.", MAX_SPOT_LIGHTS);
+                        std::cout << "[LightingSystem] Warning: Maximum spot lights (" << MAX_SPOT_LIGHTS
+                            << ") reached. Additional spot lights will be ignored." << std::endl;
                         spotLightWarningShown = true;
                     }
                 }
@@ -419,6 +434,7 @@ void LightingSystem::CollectLightData()
         pointLightData.linear.push_back(light.linear);
         pointLightData.quadratic.push_back(light.quadratic);
         pointLightData.intensity.push_back(light.intensity);
+        pointLightData.range.push_back(light.range);
         pointLightData.shadowIndex.push_back(-1);  // Will be assigned below
 
         // Track shadow candidates

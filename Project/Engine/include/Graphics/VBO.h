@@ -21,6 +21,7 @@ struct Vertex {
 // VBO stores multiple vertices on the GPU memory
 class VBO {
 public:
+	VBO() = default;
 	GLuint ID{};
 	VBO(std::vector<Vertex>& vertices);
 
@@ -32,6 +33,28 @@ public:
 	void UpdateData(const void* data, size_t size, size_t offset = 0);
 	// New method to initialize buffer with specific size (for deferred init)
 	void InitializeBuffer(size_t size, GLenum usage = GL_DYNAMIC_DRAW);
+
+	// Move constructor
+	VBO(VBO&& other) noexcept : ID(other.ID), initialized(other.initialized) {
+		other.ID = 0;
+		other.initialized = false;
+	}
+
+	// Move assignment
+	VBO& operator=(VBO&& other) noexcept {
+		if (this != &other) {
+			Delete();
+			ID = other.ID;
+			initialized = other.initialized;
+			other.ID = 0;
+			other.initialized = false;
+		}
+		return *this;
+	}
+
+	// Delete copy (prevent accidental copies)
+	VBO(const VBO&) = delete;
+	VBO& operator=(const VBO&) = delete;
 
 private:
 	bool initialized = false;

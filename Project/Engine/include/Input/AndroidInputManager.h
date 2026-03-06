@@ -138,6 +138,7 @@ private:
         TouchPhase phase;            // Current phase (began, moved, stationary, ended)
         std::string entityName;      // Which entity this touch is on ("" if none)
         bool isHandled;              // If handled by an entity action
+        bool beganConsumed = false;  // True after Began phase has been seen for one full frame
     };
 
     // Touches that ended this frame (kept for one frame with Ended phase)

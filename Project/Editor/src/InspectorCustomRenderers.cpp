@@ -31,6 +31,7 @@ prior written consent of DigiPen Institute of Technology is prohibited.
 #include "Graphics/Sprite/SpriteAnimationComponent.hpp"
 #include "Panels/SpriteAnimationEditorWindow.hpp"
 #include "Graphics/Particle/ParticleComponent.hpp"
+#include "Graphics/Fog/FogComponent.hpp"
 #include "Graphics/TextRendering/TextRenderComponent.hpp"
 #include "Physics/RigidBodyComponent.hpp"
 #include "Graphics/Lights/LightComponent.hpp"
@@ -67,6 +68,8 @@ prior written consent of DigiPen Institute of Technology is prohibited.
 #include "UI/Button/ButtonComponent.hpp"
 #include "UI/Slider/SliderComponent.hpp"
 #include "UI/Anchor/UIAnchorComponent.hpp"
+#include "Dialogue/DialogueComponent.hpp"
+#include "Graphics/BloomComponent.hpp"
 #include "Scripting.h"
 #include "ScriptInspector.h"
 #include "Panels/TagsLayersPanel.hpp"
@@ -248,217 +251,6 @@ bool RenderAssetField(const std::string& fieldName, std::string& guidStr, AssetT
     }
     
     return modified;
-}
-
-// Helper function to convert simple Lua table string to JSON string
-// Handles: {x = -2, y = 1, z = -2} -> {"x":-2,"y":1,"z":-2}
-// Handles: {"EnemyAI", "FlyingEnemyLogic"} -> ["EnemyAI","FlyingEnemyLogic"]
-// Handles: {} -> []
-std::string ConvertLuaTableToJson(const std::string& luaTable) {
-    if (luaTable.empty() || luaTable.front() != '{' || luaTable.back() != '}') {
-        return "{}";
-    }
-
-    // Remove outer braces
-    std::string content = luaTable.substr(1, luaTable.size() - 2);
-
-    // Trim whitespace
-    size_t start = content.find_first_not_of(" \t\n\r");
-    size_t end = content.find_last_not_of(" \t\n\r");
-    if (start == std::string::npos) {
-        return "[]"; // Empty table
-    }
-    content = content.substr(start, end - start + 1);
-
-    if (content.empty()) {
-        return "[]"; // Empty table
-    }
-
-    // Check if it's an array-style table (no "=" signs means array)
-    bool isArray = (content.find('=') == std::string::npos);
-
-    rapidjson::Document doc;
-    auto& alloc = doc.GetAllocator();
-
-    if (isArray) {
-        // Parse as array: {"val1", "val2", 3, 4}
-        doc.SetArray();
-
-        size_t pos = 0;
-        while (pos < content.size()) {
-            // Skip whitespace
-            while (pos < content.size() && std::isspace(content[pos])) pos++;
-            if (pos >= content.size()) break;
-
-            std::string value;
-            bool inString = false;
-            char stringDelim = 0;
-
-            while (pos < content.size()) {
-                char c = content[pos];
-
-                if (!inString) {
-                    if (c == '"' || c == '\'') {
-                        inString = true;
-                        stringDelim = c;
-                    } else if (c == ',') {
-                        pos++; // Skip comma
-                        break;
-                    } else {
-                        value += c;
-                    }
-                } else {
-                    if (c == stringDelim) {
-                        inString = false;
-                    } else {
-                        value += c;
-                    }
-                }
-                pos++;
-            }
-
-            // Trim value
-            size_t vstart = value.find_first_not_of(" \t\n\r");
-            size_t vend = value.find_last_not_of(" \t\n\r");
-            if (vstart != std::string::npos) {
-                value = value.substr(vstart, vend - vstart + 1);
-            } else {
-                value = "";
-            }
-
-            if (!value.empty()) {
-                // Try to parse as number
-                try {
-                    size_t processed = 0;
-                    double num = std::stod(value, &processed);
-                    if (processed == value.size()) {
-                        doc.PushBack(rapidjson::Value(num), alloc);
-                    } else {
-                        doc.PushBack(rapidjson::Value(value.c_str(), alloc), alloc);
-                    }
-                } catch (...) {
-                    doc.PushBack(rapidjson::Value(value.c_str(), alloc), alloc);
-                }
-            }
-        }
-    } else {
-        // Parse as object: {x = -2, y = 1, z = -2}
-        doc.SetObject();
-
-        size_t pos = 0;
-        while (pos < content.size()) {
-            // Skip whitespace
-            while (pos < content.size() && std::isspace(content[pos])) pos++;
-            if (pos >= content.size()) break;
-
-            // Parse key
-            std::string key;
-            while (pos < content.size() && content[pos] != '=' && content[pos] != ',' && !std::isspace(content[pos])) {
-                key += content[pos++];
-            }
-
-            // Skip whitespace and '='
-            while (pos < content.size() && (std::isspace(content[pos]) || content[pos] == '=')) pos++;
-
-            if (key.empty()) {
-                // Skip to next comma
-                while (pos < content.size() && content[pos] != ',') pos++;
-                if (pos < content.size()) pos++; // Skip comma
-                continue;
-            }
-
-            // Parse value
-            std::string value;
-            bool inString = false;
-            char stringDelim = 0;
-            int braceDepth = 0;
-
-            while (pos < content.size()) {
-                char c = content[pos];
-
-                if (!inString) {
-                    if (c == '"' || c == '\'') {
-                        inString = true;
-                        stringDelim = c;
-                        value += c;
-                    } else if (c == '{') {
-                        braceDepth++;
-                        value += c;
-                    } else if (c == '}') {
-                        if (braceDepth > 0) {
-                            braceDepth--;
-                            value += c;
-                        } else {
-                            break;
-                        }
-                    } else if (c == ',' && braceDepth == 0) {
-                        pos++; // Skip comma
-                        break;
-                    } else {
-                        value += c;
-                    }
-                } else {
-                    value += c;
-                    if (c == stringDelim) {
-                        inString = false;
-                    }
-                }
-                pos++;
-            }
-
-            // Trim value
-            size_t vstart = value.find_first_not_of(" \t\n\r");
-            size_t vend = value.find_last_not_of(" \t\n\r");
-            if (vstart != std::string::npos) {
-                value = value.substr(vstart, vend - vstart + 1);
-            } else {
-                value = "";
-            }
-
-            if (!key.empty() && !value.empty()) {
-                // Remove quotes from string values
-                if ((value.front() == '"' && value.back() == '"') ||
-                    (value.front() == '\'' && value.back() == '\'')) {
-                    value = value.substr(1, value.size() - 2);
-                    doc.AddMember(
-                        rapidjson::Value(key.c_str(), alloc),
-                        rapidjson::Value(value.c_str(), alloc),
-                        alloc
-                    );
-                } else {
-                    // Try to parse as number
-                    try {
-                        size_t processed = 0;
-                        double num = std::stod(value, &processed);
-                        if (processed == value.size()) {
-                            doc.AddMember(
-                                rapidjson::Value(key.c_str(), alloc),
-                                rapidjson::Value(num),
-                                alloc
-                            );
-                        } else {
-                            doc.AddMember(
-                                rapidjson::Value(key.c_str(), alloc),
-                                rapidjson::Value(value.c_str(), alloc),
-                                alloc
-                            );
-                        }
-                    } catch (...) {
-                        doc.AddMember(
-                            rapidjson::Value(key.c_str(), alloc),
-                            rapidjson::Value(value.c_str(), alloc),
-                            alloc
-                        );
-                    }
-                }
-            }
-        }
-    }
-
-    rapidjson::StringBuffer buffer;
-    rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
-    doc.Accept(writer);
-    return buffer.GetString();
 }
 
 // Forward declaration for sprite animation inspector
@@ -1390,12 +1182,12 @@ void RegisterInspectorCustomRenderers()
         ImGui::Text("Layer");
         ImGui::SameLine(labelWidth);
         ImGui::SetNextItemWidth(-1);
-        const char *layers[] = {"Non-Moving", "Moving", "Sensor", "Debris"};
+        const char *layers[] = {"Non-Moving", "Moving", "Character", "Sensor", "Debris", "Nav Ground", "Nav Obstacle", "Hurtbox"};
         int currentLayer = static_cast<int>(collider.layer);
         int oldLayer = currentLayer;
 
         EditorComponents::PushComboColors();
-        bool changed = ImGui::Combo("##Layer", &currentLayer, layers, 4);
+        bool changed = ImGui::Combo("##Layer", &currentLayer, layers, 8);
         EditorComponents::PopComboColors();
 
         if (changed) {
@@ -1504,6 +1296,71 @@ void RegisterInspectorCustomRenderers()
                 );
             }
             isEditingCenter[entity] = false;
+        }
+
+        return changed;
+    });
+
+    // ColliderComponent shapeRotation field - entity-aware undo
+    ReflectionRenderer::RegisterFieldRenderer("ColliderComponent", "shapeRotation",
+    [](const char*, void*, Entity entity, ECSManager& ecs)
+    {
+        static std::unordered_map<Entity, Vector3D> startRot;
+        static std::unordered_map<Entity, bool> isEditingRot;
+
+        auto& collider = ecs.GetComponent<ColliderComponent>(entity);
+        const float labelWidth = EditorComponents::GetLabelWidth();
+
+        if (isEditingRot.find(entity) == isEditingRot.end()) {
+            isEditingRot[entity] = false;
+        }
+
+        ImGui::Text("Rotation");
+        ImGui::SameLine(labelWidth);
+        ImGui::SetNextItemWidth(-1);
+
+        float rot[3] = { collider.shapeRotation.x, collider.shapeRotation.y, collider.shapeRotation.z };
+
+        if (!isEditingRot[entity]) {
+            startRot[entity] = collider.shapeRotation;
+        }
+        if (ImGui::IsItemActivated()) {
+            startRot[entity] = collider.shapeRotation;
+            isEditingRot[entity] = true;
+        }
+
+        bool changed = false;
+        if (ImGui::DragFloat3("##ShapeRotation", rot, 1.0f)) {
+            collider.shapeRotation = Vector3D(rot[0], rot[1], rot[2]);
+            collider.version++;
+            isEditingRot[entity] = true;
+            changed = true;
+        }
+
+        if (isEditingRot[entity] && !ImGui::IsItemActive()) {
+            Vector3D oldVal = startRot[entity];
+            Vector3D newVal = collider.shapeRotation;
+            if ((oldVal.x != newVal.x || oldVal.y != newVal.y || oldVal.z != newVal.z) &&
+                UndoSystem::GetInstance().IsEnabled()) {
+                UndoSystem::GetInstance().RecordLambdaChange(
+                    [entity, newVal]() {
+                        ECSManager& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
+                        if (ecs.HasComponent<ColliderComponent>(entity)) {
+                            ecs.GetComponent<ColliderComponent>(entity).shapeRotation = newVal;
+                            ecs.GetComponent<ColliderComponent>(entity).version++;
+                        }
+                    },
+                    [entity, oldVal]() {
+                        ECSManager& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
+                        if (ecs.HasComponent<ColliderComponent>(entity)) {
+                            ecs.GetComponent<ColliderComponent>(entity).shapeRotation = oldVal;
+                            ecs.GetComponent<ColliderComponent>(entity).version++;
+                        }
+                    },
+                    "Edit Collider Rotation"
+                );
+            }
+            isEditingRot[entity] = false;
         }
 
         return changed;
@@ -1745,177 +1602,347 @@ void RegisterInspectorCustomRenderers()
         return true; // skip default reflection
     });
 
-    //ReflectionRenderer::RegisterComponentRenderer("VideoComponent",
-    //    [](void* ptr, TypeDescriptor_Struct* type, Entity entity, ECSManager& ecs)
-    //    {
-    //        // 1. Cast to the actual component type
-    //        auto& videoComp = *static_cast<VideoComponent*>(ptr);
-    //        const float labelWidth = EditorComponents::GetLabelWidth();
+    // ==================== VIDEO COMPONENT ====================
+    // Full custom renderer (like DialogueComponent) — inspector-driven cutscene system
 
-    //        ImGui::Text("Configuration File");
-    //        ImGui::SameLine(labelWidth);
-    //        ImGui::SetNextItemWidth(-1);
+    ReflectionRenderer::RegisterComponentRenderer("VideoComponent",
+    [](void* componentPtr, TypeDescriptor_Struct*, Entity entity, ECSManager& ecs) -> bool
+    {
+        VideoComponent& vc = *static_cast<VideoComponent*>(componentPtr);
+        const float labelWidth = EditorComponents::GetLabelWidth();
 
-    //        // 2. Use the path stored in the component to show the display text
-    //        std::string texPath = videoComp.videoPath;
-    //        videoComp.inputFilePath = texPath;
-    //        std::string displayText = texPath.empty() ? "None (Text)" : texPath.substr(texPath.find_last_of("/\\") + 1);
-
-    //        float buttonWidth = ImGui::GetContentRegionAvail().x;
-    //        EditorComponents::DrawDragDropButton(displayText.c_str(), buttonWidth);
-
-    //        if (EditorComponents::BeginDragDropTarget())
-    //        {
-    //            if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("TEXT_PAYLOAD"))
-    //            {
-    //                SnapshotManager::GetInstance().TakeSnapshot("Assign Cutscene File");
-
-    //                const char* payloadPath = (const char*)payload->Data;
-    //                std::string pathStr(payloadPath, payload->DataSize);
-    //                pathStr.erase(std::find(pathStr.begin(), pathStr.end(), '\0'), pathStr.end());
-
-    //                // 3. Update the component directly
-
-    //                videoComp.ProcessMetaData(pathStr);     //split path accordingly.
-    //                videoComp.asset_dirty = true; // Mark for reload      
-
-    //                EditorComponents::EndDragDropTarget();
-    //                return true;
-    //            }
-    //            EditorComponents::EndDragDropTarget();
-    //        }
-
-    //        ImGui::Spacing(); // Add some space between the two inputs
-
-    //        // --- 2. DIALOGUE FILE (New) ---
-    //        ImGui::Text("Dialogue File");
-    //        ImGui::SameLine(labelWidth);
-    //        ImGui::SetNextItemWidth(-1);
-
-    //        // Assuming you add 'dialoguePath' to your VideoComponent
-    //        std::string diagPath = videoComp.dialoguePath;
-    //        std::string diagDisplay = diagPath.empty() ? "None (Dialogue)" : diagPath.substr(diagPath.find_last_of("/\\") + 1);
-
-    //        EditorComponents::DrawDragDropButton(diagDisplay.c_str(), buttonWidth);
-
-    //        if (EditorComponents::BeginDragDropTarget())
-    //        {
-    //            if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("TEXT_PAYLOAD"))
-    //            {
-    //                SnapshotManager::GetInstance().TakeSnapshot("Assign Dialogue File");
-    //                const char* payloadPath = (const char*)payload->Data;
-    //                std::string pathStr(payloadPath, payload->DataSize);
-    //                pathStr.erase(std::find(pathStr.begin(), pathStr.end(), '\0'), pathStr.end());
-
-    //                // Store the path and trigger the parser you wrote in the DialogueManager
-    //                videoComp.dialoguePath = pathStr;   
-    //                videoComp.ProcessDialogueData(pathStr);
-
-    //                EditorComponents::EndDragDropTarget();
-    //                return true;
-    //            }
-    //            EditorComponents::EndDragDropTarget();
-    //        }
-
-    //        return false;
-    //    });
-
-
-    ReflectionRenderer::RegisterFieldRenderer("VideoComponent", "videoPath",
-        [](const char*, void* ptr, Entity entity, ECSManager& ecs)
+        // --- Cutscene Name ---
+        ImGui::Text("Cutscene Name");
+        ImGui::SameLine(labelWidth);
+        ImGui::SetNextItemWidth(-1);
         {
-            std::string* pathPtr = static_cast<std::string*>(ptr);
-            const float labelWidth = EditorComponents::GetLabelWidth();
+            static std::unordered_map<ImGuiID, std::string> startName;
+            static std::unordered_map<ImGuiID, bool> isEditing;
+            ImGuiID id = ImGui::GetID("##CutsceneName");
+            if (!isEditing[id]) startName[id] = vc.cutsceneName;
+            char nameBuf[256];
+            strncpy(nameBuf, vc.cutsceneName.c_str(), sizeof(nameBuf) - 1);
+            nameBuf[sizeof(nameBuf) - 1] = '\0';
+            if (ImGui::InputText("##CutsceneName", nameBuf, sizeof(nameBuf))) {
+                vc.cutsceneName = nameBuf;
+            }
+            if (ImGui::IsItemActivated()) { startName[id] = vc.cutsceneName; isEditing[id] = true; }
+            if (isEditing[id] && !ImGui::IsItemActive()) {
+                isEditing[id] = false;
+                if (startName[id] != vc.cutsceneName && UndoSystem::GetInstance().IsEnabled())
+                    UndoSystem::GetInstance().RecordStringChange(&vc.cutsceneName, startName[id], vc.cutsceneName, "Change Cutscene Name");
+            }
+        }
 
-            ImGui::Text("Configuration File");
+        ImGui::Spacing();
+        ImGui::Separator();
+        ImGui::Text("Entity References");
+        ImGui::Spacing();
+
+        // Helper lambda for GUID entity drag-drop
+        auto DrawEntityRef = [&](const char* label, std::string& guidStr, Entity& resolvedEntity, bool requireSprite, bool requireText) {
+            ImGui::Text("%s", label);
             ImGui::SameLine(labelWidth);
-            ImGui::SetNextItemWidth(-1);
+            float fieldWidth = ImGui::GetContentRegionAvail().x;
 
-            std::string displayText = pathPtr->empty() ? "None (Text)" : pathPtr->substr(pathPtr->find_last_of("/\\") + 1);
-            float buttonWidth = ImGui::GetContentRegionAvail().x;
-            EditorComponents::DrawDragDropButton(displayText.c_str(), buttonWidth);
-
-            if (EditorComponents::BeginDragDropTarget())
-            {
-                ImGui::SetTooltip("Drop configuration file here");
-                if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("TEXT_PAYLOAD"))
-                {
-                    // Take snapshot before changing file
-                    SnapshotManager::GetInstance().TakeSnapshot("Assign Configuration File");
-
-                    const char* filePath = (const char*)payload->Data;
-                    std::string pathStr(filePath, payload->DataSize);
-                    pathStr.erase(std::find(pathStr.begin(), pathStr.end(), '\0'), pathStr.end());
-
-                    ENGINE_PRINT("Configuration PathStr is ", pathStr);
-
-                    // Update the videoPath directly
-                    *pathPtr = pathStr;
-
-                    // Get the component and process the metadata
-                    auto& videoComp = ecs.GetComponent<VideoComponent>(entity);
-                    videoComp.videoPath = pathStr;
-                    videoComp.ProcessMetaData(pathStr);
-                    videoComp.asset_dirty = true;
-
-                    EditorComponents::EndDragDropTarget();
-                    return true; // Field was modified
+            std::string display = "None";
+            if (!guidStr.empty()) {
+                GUID_128 guid = GUIDUtilities::ConvertStringToGUID128(guidStr);
+                Entity ent = EntityGUIDRegistry::GetInstance().GetEntityByGUID(guid);
+                if (ent != 0 && ecs.HasComponent<NameComponent>(ent)) {
+                    display = ecs.GetComponent<NameComponent>(ent).name;
                 }
-                EditorComponents::EndDragDropTarget();
             }
 
-            return false;
-        });
+            EditorComponents::DrawDragDropButton(display.c_str(), fieldWidth);
+            if (ImGui::BeginDragDropTarget()) {
+                if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("HIERARCHY_ENTITY")) {
+                    Entity dropped = *(Entity*)payload->Data;
+                    bool valid = true;
+                    if (requireText && !ecs.HasComponent<TextRenderComponent>(dropped)) valid = false;
+                    if (requireSprite && !ecs.HasComponent<SpriteRenderComponent>(dropped)) valid = false;
 
-
-
-
-    ReflectionRenderer::RegisterFieldRenderer("VideoComponent", "dialoguePath",
-        [](const char*, void* ptr, Entity entity, ECSManager& ecs)
-        {
-            std::string* pathPtr = static_cast<std::string*>(ptr);
-            const float labelWidth = EditorComponents::GetLabelWidth();
-
-            ImGui::Text("Dialogue File");
-            ImGui::SameLine(labelWidth);
-            ImGui::SetNextItemWidth(-1);
-
-            std::string displayText = pathPtr->empty() ? "None (Dialogue)" : pathPtr->substr(pathPtr->find_last_of("/\\") + 1);
-            float buttonWidth = ImGui::GetContentRegionAvail().x;
-            EditorComponents::DrawDragDropButton(displayText.c_str(), buttonWidth);
-
-            if (EditorComponents::BeginDragDropTarget())
-            {
-                ImGui::SetTooltip("Drop dialogue file here");
-                if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("TEXT_PAYLOAD"))
-                {
-                    // Take snapshot before changing file
-                    SnapshotManager::GetInstance().TakeSnapshot("Assign Dialogue File");
-
-                    const char* filePath = (const char*)payload->Data;
-                    std::string pathStr(filePath, payload->DataSize);
-                    pathStr.erase(std::find(pathStr.begin(), pathStr.end(), '\0'), pathStr.end());
-
-                    ENGINE_PRINT("Dialogue PathStr is ", pathStr);
-
-                    // Update the dialoguePath directly
-                    *pathPtr = pathStr;
-
-                    // Get the component and process the dialogue data
-                    auto& videoComp = ecs.GetComponent<VideoComponent>(entity);
-                    videoComp.dialoguePath = pathStr;
-                    videoComp.ProcessDialogueData(pathStr);
-
-                    EditorComponents::EndDragDropTarget();
-                    return true; // Field was modified
+                    if (valid) {
+                        std::string oldGuid = guidStr;
+                        GUID_128 guid = EntityGUIDRegistry::GetInstance().GetGUIDByEntity(dropped);
+                        std::string newGuid = GUIDUtilities::ConvertGUID128ToString(guid);
+                        guidStr = newGuid;
+                        resolvedEntity = dropped;
+                        if (UndoSystem::GetInstance().IsEnabled())
+                            UndoSystem::GetInstance().RecordStringChange(&guidStr, oldGuid, newGuid, "Assign Entity Reference");
+                    }
                 }
-                EditorComponents::EndDragDropTarget();
+                ImGui::EndDragDropTarget();
+            }
+        };
+
+        DrawEntityRef("Text Entity", vc.textEntityGuidStr, vc.textEntity, false, true);
+        if (ImGui::IsItemHovered()) ImGui::SetTooltip("Entity with TextRenderComponent to display dialogue text");
+        DrawEntityRef("Black Screen", vc.blackScreenEntityGuidStr, vc.blackScreenEntity, true, false);
+        if (ImGui::IsItemHovered()) ImGui::SetTooltip("Entity with SpriteRenderComponent used as fade overlay (black)");
+        DrawEntityRef("Skip Button", vc.skipButtonEntityGuidStr, vc.skipButtonEntity, true, false);
+        if (ImGui::IsItemHovered()) ImGui::SetTooltip("Optional entity shown as a skip button (SpriteRenderComponent)");
+
+        ImGui::Spacing();
+        ImGui::Separator();
+        ImGui::Text("Settings");
+        ImGui::Spacing();
+
+        // --- Start Delay ---
+        ImGui::Text("Start Delay");
+        if (ImGui::IsItemHovered()) ImGui::SetTooltip("Seconds to wait before starting the cutscene.\nUse this to wait for a scene transition fade to finish.");
+        ImGui::SameLine(labelWidth);
+        ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x * 0.45f);
+        UndoableWidgets::DragFloat("##StartDelay", &vc.startDelay, 0.05f, 0.0f, 30.0f, "%.2f sec");
+        ImGui::SameLine();
+
+        // --- Skip Fade Duration ---
+        ImGui::Text("Skip Fade");
+        if (ImGui::IsItemHovered()) ImGui::SetTooltip("How long the fade-to-black takes when the cutscene is skipped (seconds)");
+        ImGui::SameLine();
+        ImGui::SetNextItemWidth(-1);
+        UndoableWidgets::DragFloat("##SkipFadeDur", &vc.skipFadeDuration, 0.05f, 0.1f, 10.0f, "%.2f sec");
+
+        // --- Auto Start ---
+        ImGui::Text("Auto Start");
+        if (ImGui::IsItemHovered()) ImGui::SetTooltip("Automatically begin the cutscene when the scene loads");
+        ImGui::SameLine(labelWidth);
+        UndoableWidgets::Checkbox("##AutoStart", &vc.autoStart);
+
+        // --- Loop ---
+        ImGui::Text("Loop");
+        if (ImGui::IsItemHovered()) ImGui::SetTooltip("Restart the cutscene from the first board after finishing");
+        ImGui::SameLine(labelWidth);
+        UndoableWidgets::Checkbox("##Loop", &vc.loop);
+
+        ImGui::Spacing();
+        ImGui::Separator();
+
+        // --- Boards header + Add button ---
+        ImGui::Text("Boards (%zu)", vc.boards.size());
+        ImGui::SameLine(ImGui::GetContentRegionAvail().x - 60);
+        if (ImGui::SmallButton(ICON_FA_PLUS " Add")) {
+            vc.boards.push_back(CutsceneBoard{});
+            if (UndoSystem::GetInstance().IsEnabled()) {
+                UndoSystem::GetInstance().RecordLambdaChange(
+                    [entity]() { auto& e = ECSRegistry::GetInstance().GetActiveECSManager(); if (e.HasComponent<VideoComponent>(entity)) e.GetComponent<VideoComponent>(entity).boards.push_back(CutsceneBoard{}); },
+                    [entity]() { auto& e = ECSRegistry::GetInstance().GetActiveECSManager(); if (e.HasComponent<VideoComponent>(entity)) { auto& b = e.GetComponent<VideoComponent>(entity).boards; if (!b.empty()) b.pop_back(); } },
+                    "Add Cutscene Board");
+            }
+        }
+
+        ImGui::Spacing();
+
+        // --- Render each board ---
+        int boardToRemove = -1;
+        for (size_t i = 0; i < vc.boards.size(); ++i) {
+            CutsceneBoard& board = vc.boards[i];
+            ImGui::PushID(static_cast<int>(i));
+
+            // Collapsible header
+            std::string boardLabel = "Board " + std::to_string(i);
+            bool boardOpen = ImGui::CollapsingHeader(boardLabel.c_str(),
+                ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_AllowOverlap);
+
+            // Remove button on same line
+            ImGui::SameLine(ImGui::GetContentRegionAvail().x + ImGui::GetCursorPosX() - 25);
+            if (ImGui::SmallButton(ICON_FA_TRASH "##RemoveBoard")) {
+                boardToRemove = static_cast<int>(i);
+            }
+            if (ImGui::IsItemHovered()) {
+                ImGui::SetTooltip("Remove this board");
             }
 
-            return false;
-        });
+            if (boardOpen) {
+                ImGui::Indent(10.0f);
 
+                // --- Image (drag-drop) ---
+                ImGui::Text("Image");
+                if (ImGui::IsItemHovered()) ImGui::SetTooltip("Background image for this board (drag-drop a texture from Asset Browser)");
+                ImGui::SameLine(labelWidth);
+                std::string imgDisplay = board.imagePath.empty() ? "None (Texture)"
+                    : board.imagePath.substr(board.imagePath.find_last_of("/\\") + 1);
+                float btnWidth = ImGui::GetContentRegionAvail().x;
+                EditorComponents::DrawDragDropButton(imgDisplay.c_str(), btnWidth);
 
+                if (EditorComponents::BeginDragDropTarget()) {
+                    ImGui::SetTooltip("Drop texture here");
+                    if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("TEXTURE_PAYLOAD")) {
+                        const char* texPath = (const char*)payload->Data;
+                        std::string pathStr(texPath, payload->DataSize);
+                        pathStr.erase(std::find(pathStr.begin(), pathStr.end(), '\0'), pathStr.end());
+                        std::string oldPath = board.imagePath;
+                        board.imagePath = pathStr;
+                        if (UndoSystem::GetInstance().IsEnabled()) {
+                            size_t idx = i;
+                            UndoSystem::GetInstance().RecordLambdaChange(
+                                [entity, idx, pathStr]() { auto& e = ECSRegistry::GetInstance().GetActiveECSManager(); if (e.HasComponent<VideoComponent>(entity)) { auto& b = e.GetComponent<VideoComponent>(entity).boards; if (idx < b.size()) b[idx].imagePath = pathStr; } },
+                                [entity, idx, oldPath]() { auto& e = ECSRegistry::GetInstance().GetActiveECSManager(); if (e.HasComponent<VideoComponent>(entity)) { auto& b = e.GetComponent<VideoComponent>(entity).boards; if (idx < b.size()) b[idx].imagePath = oldPath; } },
+                                "Assign Board Image");
+                        }
+                    }
+                    EditorComponents::EndDragDropTarget();
+                }
+
+                // --- Duration + Fade Duration (same line) ---
+                ImGui::Text("Duration");
+                if (ImGui::IsItemHovered()) ImGui::SetTooltip("How long this board stays on screen before auto-advancing (seconds).\nAlso controls blur animation timing if Animate is checked.");
+                ImGui::SameLine(labelWidth);
+                ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x * 0.45f);
+                UndoableWidgets::DragFloat("##Duration", &board.duration, 0.1f, 0.1f, 60.0f, "%.1f sec");
+                ImGui::SameLine();
+                ImGui::Text("Fade");
+                if (ImGui::IsItemHovered()) ImGui::SetTooltip("Fade-in/out transition time when entering this board (seconds).\nThe transition fades to black, swaps the image, then fades back in.\nTotal transition = this value (half out, half in).");
+                ImGui::SameLine();
+                ImGui::SetNextItemWidth(-1);
+                UndoableWidgets::DragFloat("##FadeDur", &board.fadeDuration, 0.05f, 0.0f, 10.0f, "%.2f sec");
+
+                // --- No Fade Out ---
+                ImGui::Text("No Fade Out");
+                if (ImGui::IsItemHovered()) ImGui::SetTooltip("Skip the fade-to-black when leaving this board.\nThe next board appears instantly, or the cutscene ends without a black screen.");
+                ImGui::SameLine(labelWidth);
+                UndoableWidgets::Checkbox("##DisableFadeOut", &board.disableFadeOut);
+
+                // --- Text (multiline) ---
+                ImGui::Text("Text");
+                if (ImGui::IsItemHovered()) ImGui::SetTooltip("Dialogue text shown via typewriter effect on the Text Entity");
+                ImGui::SameLine(labelWidth);
+                ImGui::SetNextItemWidth(-1);
+                {
+                    static std::unordered_map<ImGuiID, std::string> startText;
+                    static std::unordered_map<ImGuiID, bool> isEditingText;
+                    ImGuiID tid = ImGui::GetID("##BoardText");
+                    if (!isEditingText[tid]) startText[tid] = board.text;
+                    char textBuf[1024];
+                    strncpy(textBuf, board.text.c_str(), sizeof(textBuf) - 1);
+                    textBuf[sizeof(textBuf) - 1] = '\0';
+                    if (ImGui::InputTextMultiline("##BoardText", textBuf, sizeof(textBuf),
+                        ImVec2(-1, ImGui::GetTextLineHeight() * 3))) {
+                        board.text = textBuf;
+                    }
+                    if (ImGui::IsItemActivated()) { startText[tid] = board.text; isEditingText[tid] = true; }
+                    if (isEditingText[tid] && !ImGui::IsItemActive()) {
+                        isEditingText[tid] = false;
+                        if (startText[tid] != board.text && UndoSystem::GetInstance().IsEnabled()) {
+                            size_t idx = i;
+                            std::string oldVal = startText[tid], newVal = board.text;
+                            UndoSystem::GetInstance().RecordLambdaChange(
+                                [entity, idx, newVal]() { auto& e = ECSRegistry::GetInstance().GetActiveECSManager(); if (e.HasComponent<VideoComponent>(entity)) { auto& b = e.GetComponent<VideoComponent>(entity).boards; if (idx < b.size()) b[idx].text = newVal; } },
+                                [entity, idx, oldVal]() { auto& e = ECSRegistry::GetInstance().GetActiveECSManager(); if (e.HasComponent<VideoComponent>(entity)) { auto& b = e.GetComponent<VideoComponent>(entity).boards; if (idx < b.size()) b[idx].text = oldVal; } },
+                                "Change Board Text");
+                        }
+                    }
+                }
+
+                // --- Text Speed + Continue Text ---
+                ImGui::Text("Text Speed");
+                if (ImGui::IsItemHovered()) ImGui::SetTooltip("Typewriter speed in characters per second.\n0 = instant (all text appears at once).");
+                ImGui::SameLine(labelWidth);
+                ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x * 0.5f);
+                UndoableWidgets::DragFloat("##TextSpeed", &board.textSpeed, 1.0f, 0.0f, 200.0f, "%.0f ch/s");
+                ImGui::SameLine();
+                ImGui::Text("Continue");
+                if (ImGui::IsItemHovered()) ImGui::SetTooltip("Continue the typewriter from where the previous board left off.\nKeeps the revealed character count instead of resetting to 0.");
+                ImGui::SameLine();
+                UndoableWidgets::Checkbox("##ContinueText", &board.continueText);
+
+                // --- Blur ---
+                ImGui::Text("Blur Delay");
+                if (ImGui::IsItemHovered()) ImGui::SetTooltip("Seconds to stay sharp before blur starts.\n0 = blur immediately.");
+                ImGui::SameLine(labelWidth);
+                ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x * 0.5f);
+                UndoableWidgets::DragFloat("##BlurDelay", &board.blurDelay, 0.05f, 0.0f, 30.0f, "%.2f sec");
+
+                bool animateBlur = (board.blurIntensityEnd >= 0.0f);
+                ImGui::Text("Blur Start");
+                if (ImGui::IsItemHovered()) ImGui::SetTooltip("Blur intensity at the start of this board.\n0 = sharp, higher = more blurred.\nIf Animate is off, this value is used for the entire board.");
+                ImGui::SameLine(labelWidth);
+                ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x * 0.5f);
+                UndoableWidgets::DragFloat("##BlurIntensity", &board.blurIntensity, 0.05f, 0.0f, 10.0f, "%.2f");
+                ImGui::SameLine();
+                {
+                    float oldEnd = board.blurIntensityEnd;
+                    if (ImGui::Checkbox("Animate##BlurAnim", &animateBlur)) {
+                        board.blurIntensityEnd = animateBlur ? board.blurIntensity : -1.0f;
+                        if (UndoSystem::GetInstance().IsEnabled()) {
+                            float newEnd = board.blurIntensityEnd;
+                            size_t idx = i;
+                            UndoSystem::GetInstance().RecordLambdaChange(
+                                [entity, idx, newEnd]() { auto& e = ECSRegistry::GetInstance().GetActiveECSManager(); if (e.HasComponent<VideoComponent>(entity)) { auto& b = e.GetComponent<VideoComponent>(entity).boards; if (idx < b.size()) b[idx].blurIntensityEnd = newEnd; } },
+                                [entity, idx, oldEnd]() { auto& e = ECSRegistry::GetInstance().GetActiveECSManager(); if (e.HasComponent<VideoComponent>(entity)) { auto& b = e.GetComponent<VideoComponent>(entity).boards; if (idx < b.size()) b[idx].blurIntensityEnd = oldEnd; } },
+                                "Toggle Blur Animation");
+                        }
+                    }
+                }
+                if (ImGui::IsItemHovered()) ImGui::SetTooltip("Animate blur from Start to End over this board's Duration.\nUseful for focus/consciousness effects.");
+                if (animateBlur) {
+                    ImGui::Text("Blur End");
+                    if (ImGui::IsItemHovered()) ImGui::SetTooltip("Blur intensity at the end of this board.\nInterpolates linearly from Blur Start to this value over Duration.");
+                    ImGui::SameLine(labelWidth);
+                    ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x * 0.5f);
+                    UndoableWidgets::DragFloat("##BlurIntensityEnd", &board.blurIntensityEnd, 0.05f, 0.0f, 10.0f, "%.2f");
+                }
+                ImGui::Text("Blur Radius");
+                if (ImGui::IsItemHovered()) ImGui::SetTooltip("Size of the blur kernel.\nHigher = wider/softer blur, but more expensive.");
+                ImGui::SameLine(labelWidth);
+                ImGui::SetNextItemWidth(60);
+                UndoableWidgets::DragFloat("##BlurRadius", &board.blurRadius, 0.1f, 0.1f, 20.0f, "%.1f");
+                ImGui::SameLine();
+                ImGui::Text("Passes");
+                if (ImGui::IsItemHovered()) ImGui::SetTooltip("Number of blur iterations.\nMore passes = smoother blur but heavier on GPU.");
+                ImGui::SameLine();
+                ImGui::SetNextItemWidth(40);
+                UndoableWidgets::DragInt("##BlurPasses", &board.blurPasses, 1, 1, 5);
+
+                ImGui::Unindent(10.0f);
+            }
+
+            ImGui::PopID();
+        }
+
+        // Process removal after loop
+        if (boardToRemove >= 0 && boardToRemove < static_cast<int>(vc.boards.size())) {
+            CutsceneBoard removedBoard = vc.boards[boardToRemove];
+            int removeIdx = boardToRemove;
+            vc.boards.erase(vc.boards.begin() + boardToRemove);
+            if (UndoSystem::GetInstance().IsEnabled()) {
+                UndoSystem::GetInstance().RecordLambdaChange(
+                    [entity, removeIdx]() { auto& e = ECSRegistry::GetInstance().GetActiveECSManager(); if (e.HasComponent<VideoComponent>(entity)) { auto& b = e.GetComponent<VideoComponent>(entity).boards; if (removeIdx < static_cast<int>(b.size())) b.erase(b.begin() + removeIdx); } },
+                    [entity, removeIdx, removedBoard]() { auto& e = ECSRegistry::GetInstance().GetActiveECSManager(); if (e.HasComponent<VideoComponent>(entity)) { auto& b = e.GetComponent<VideoComponent>(entity).boards; b.insert(b.begin() + std::min(removeIdx, static_cast<int>(b.size())), removedBoard); } },
+                    "Remove Cutscene Board");
+            }
+        }
+
+        return true; // Skip default reflection rendering
+    });
+
+    // Hide all VideoComponent fields from default rendering (handled by custom renderer above)
+    ReflectionRenderer::RegisterFieldRenderer("VideoComponent", "enabled",
+        [](const char*, void*, Entity, ECSManager&) { return true; });
+    ReflectionRenderer::RegisterFieldRenderer("VideoComponent", "cutsceneName",
+        [](const char*, void*, Entity, ECSManager&) { return true; });
+    ReflectionRenderer::RegisterFieldRenderer("VideoComponent", "textEntityGuidStr",
+        [](const char*, void*, Entity, ECSManager&) { return true; });
+    ReflectionRenderer::RegisterFieldRenderer("VideoComponent", "blackScreenEntityGuidStr",
+        [](const char*, void*, Entity, ECSManager&) { return true; });
+    ReflectionRenderer::RegisterFieldRenderer("VideoComponent", "skipButtonEntityGuidStr",
+        [](const char*, void*, Entity, ECSManager&) { return true; });
+    ReflectionRenderer::RegisterFieldRenderer("VideoComponent", "startDelay",
+        [](const char*, void*, Entity, ECSManager&) { return true; });
+    ReflectionRenderer::RegisterFieldRenderer("VideoComponent", "skipFadeDuration",
+        [](const char*, void*, Entity, ECSManager&) { return true; });
+    ReflectionRenderer::RegisterFieldRenderer("VideoComponent", "autoStart",
+        [](const char*, void*, Entity, ECSManager&) { return true; });
+    ReflectionRenderer::RegisterFieldRenderer("VideoComponent", "loop",
+        [](const char*, void*, Entity, ECSManager&) { return true; });
+    ReflectionRenderer::RegisterFieldRenderer("VideoComponent", "nextScenePath",
+        [](const char*, void*, Entity, ECSManager&) { return true; });
+    ReflectionRenderer::RegisterFieldRenderer("VideoComponent", "boards",
+        [](const char*, void*, Entity, ECSManager&) { return true; });
+    ReflectionRenderer::RegisterFieldRenderer("VideoComponent", "cutsceneEnded",
+        [](const char*, void*, Entity, ECSManager&) { return true; });
+    ReflectionRenderer::RegisterFieldRenderer("VideoComponent", "skipRequested",
+        [](const char*, void*, Entity, ECSManager&) { return true; });
 
 
 
@@ -2170,6 +2197,448 @@ void RegisterInspectorCustomRenderers()
             isEditingBgColor[entity] = false;
         }
 
+        // ==================== POST-PROCESSING ====================
+        ImGui::Spacing();
+        ImGui::Separator();
+        ImGui::Spacing();
+
+        // Static tracking for post-processing undo
+        static std::unordered_map<Entity, float> startBlurIntensity, startBlurRadius;
+        static std::unordered_map<Entity, int> startBlurPasses;
+        static std::unordered_map<Entity, uint32_t> startBlurLayerMask;
+        static std::unordered_map<Entity, float> startBloomThreshold, startBloomIntensity, startBloomSpread;
+        static std::unordered_map<Entity, float> startVignetteIntensity, startVignetteSmoothness;
+        static std::unordered_map<Entity, glm::vec3> startVignetteColor;
+        static std::unordered_map<Entity, float> startCGBrightness, startCGContrast, startCGSaturation;
+        static std::unordered_map<Entity, glm::vec3> startCGTint;
+        static std::unordered_map<Entity, float> startCAIntensity, startCAPadding;
+        static std::unordered_map<Entity, bool> isEditingPP;
+        if (isEditingPP.find(entity) == isEditingPP.end()) isEditingPP[entity] = false;
+
+        // --- BLUR ---
+        if (ImGui::CollapsingHeader("Post-Processing: Blur")) {
+            ImGui::Indent(10.0f);
+
+            // Enable checkbox
+            bool blurEnabled = camera.blurEnabled;
+            if (ImGui::Checkbox("Enable Blur##PP", &blurEnabled)) {
+                bool oldVal = camera.blurEnabled;
+                camera.blurEnabled = blurEnabled;
+                if (UndoSystem::GetInstance().IsEnabled()) {
+                    bool newVal = blurEnabled;
+                    UndoSystem::GetInstance().RecordLambdaChange(
+                        [entity, newVal]() { auto& ecs = ECSRegistry::GetInstance().GetActiveECSManager(); if (ecs.HasComponent<CameraComponent>(entity)) ecs.GetComponent<CameraComponent>(entity).blurEnabled = newVal; },
+                        [entity, oldVal]() { auto& ecs = ECSRegistry::GetInstance().GetActiveECSManager(); if (ecs.HasComponent<CameraComponent>(entity)) ecs.GetComponent<CameraComponent>(entity).blurEnabled = oldVal; },
+                        "Toggle Camera Blur");
+                }
+            }
+
+            if (camera.blurEnabled) {
+                // Blur Intensity
+                ImGui::Text("Intensity");
+                ImGui::SameLine(labelWidth);
+                ImGui::SetNextItemWidth(-1);
+                if (!isEditingPP[entity]) startBlurIntensity[entity] = camera.blurIntensity;
+                if (ImGui::SliderFloat("##BlurIntensity", &camera.blurIntensity, 0.0f, 5.0f)) { isEditingPP[entity] = true; }
+                if (isEditingPP[entity] && !ImGui::IsItemActive()) {
+                    float oldVal = startBlurIntensity[entity]; float newVal = camera.blurIntensity;
+                    if (oldVal != newVal && UndoSystem::GetInstance().IsEnabled()) {
+                        UndoSystem::GetInstance().RecordLambdaChange(
+                            [entity, newVal]() { auto& ecs = ECSRegistry::GetInstance().GetActiveECSManager(); if (ecs.HasComponent<CameraComponent>(entity)) ecs.GetComponent<CameraComponent>(entity).blurIntensity = newVal; },
+                            [entity, oldVal]() { auto& ecs = ECSRegistry::GetInstance().GetActiveECSManager(); if (ecs.HasComponent<CameraComponent>(entity)) ecs.GetComponent<CameraComponent>(entity).blurIntensity = oldVal; },
+                            "Change Blur Intensity");
+                    }
+                    isEditingPP[entity] = false;
+                }
+
+                // Blur Radius
+                ImGui::Text("Radius");
+                ImGui::SameLine(labelWidth);
+                ImGui::SetNextItemWidth(-1);
+                if (!isEditingPP[entity]) startBlurRadius[entity] = camera.blurRadius;
+                if (ImGui::DragFloat("##BlurRadius", &camera.blurRadius, 0.1f, 0.1f, 20.0f)) { isEditingPP[entity] = true; }
+                if (isEditingPP[entity] && !ImGui::IsItemActive()) {
+                    float oldVal = startBlurRadius[entity]; float newVal = camera.blurRadius;
+                    if (oldVal != newVal && UndoSystem::GetInstance().IsEnabled()) {
+                        UndoSystem::GetInstance().RecordLambdaChange(
+                            [entity, newVal]() { auto& ecs = ECSRegistry::GetInstance().GetActiveECSManager(); if (ecs.HasComponent<CameraComponent>(entity)) ecs.GetComponent<CameraComponent>(entity).blurRadius = newVal; },
+                            [entity, oldVal]() { auto& ecs = ECSRegistry::GetInstance().GetActiveECSManager(); if (ecs.HasComponent<CameraComponent>(entity)) ecs.GetComponent<CameraComponent>(entity).blurRadius = oldVal; },
+                            "Change Blur Radius");
+                    }
+                    isEditingPP[entity] = false;
+                }
+
+                // Blur Passes
+                ImGui::Text("Passes");
+                ImGui::SameLine(labelWidth);
+                ImGui::SetNextItemWidth(-1);
+                if (!isEditingPP[entity]) startBlurPasses[entity] = camera.blurPasses;
+                if (ImGui::InputInt("##BlurPasses", &camera.blurPasses)) {
+                    camera.blurPasses = std::max(1, std::min(camera.blurPasses, 20));
+                    isEditingPP[entity] = true;
+                }
+                if (isEditingPP[entity] && !ImGui::IsItemActive()) {
+                    int oldVal = startBlurPasses[entity]; int newVal = camera.blurPasses;
+                    if (oldVal != newVal && UndoSystem::GetInstance().IsEnabled()) {
+                        UndoSystem::GetInstance().RecordLambdaChange(
+                            [entity, newVal]() { auto& ecs = ECSRegistry::GetInstance().GetActiveECSManager(); if (ecs.HasComponent<CameraComponent>(entity)) ecs.GetComponent<CameraComponent>(entity).blurPasses = newVal; },
+                            [entity, oldVal]() { auto& ecs = ECSRegistry::GetInstance().GetActiveECSManager(); if (ecs.HasComponent<CameraComponent>(entity)) ecs.GetComponent<CameraComponent>(entity).blurPasses = oldVal; },
+                            "Change Blur Passes");
+                    }
+                    isEditingPP[entity] = false;
+                }
+
+                // Blur Layer Mask (checkboxes)
+                ImGui::Text("Blur Layers");
+                ImGui::SameLine(labelWidth);
+                const auto& availableLayers = LayerManager::GetInstance().GetAllLayers();
+                std::string previewLabel;
+                if (camera.blurLayerMask == 0xFFFFFFFF) previewLabel = "Everything";
+                else if (camera.blurLayerMask == 0) previewLabel = "Nothing";
+                else previewLabel = "Mixed...";
+                ImGui::SetNextItemWidth(-1);
+                EditorComponents::PushComboColors();
+                if (ImGui::BeginCombo("##BlurLayerMask", previewLabel.c_str())) {
+                    // Everything / Nothing shortcuts
+                    if (ImGui::Selectable("Everything", camera.blurLayerMask == 0xFFFFFFFF)) {
+                        uint32_t oldMask = camera.blurLayerMask;
+                        camera.blurLayerMask = 0xFFFFFFFF;
+                        if (oldMask != camera.blurLayerMask && UndoSystem::GetInstance().IsEnabled()) {
+                            uint32_t newMask = camera.blurLayerMask;
+                            UndoSystem::GetInstance().RecordLambdaChange(
+                                [entity, newMask]() { auto& ecs = ECSRegistry::GetInstance().GetActiveECSManager(); if (ecs.HasComponent<CameraComponent>(entity)) ecs.GetComponent<CameraComponent>(entity).blurLayerMask = newMask; },
+                                [entity, oldMask]() { auto& ecs = ECSRegistry::GetInstance().GetActiveECSManager(); if (ecs.HasComponent<CameraComponent>(entity)) ecs.GetComponent<CameraComponent>(entity).blurLayerMask = oldMask; },
+                                "Change Blur Layer Mask");
+                        }
+                    }
+                    if (ImGui::Selectable("Nothing", camera.blurLayerMask == 0)) {
+                        uint32_t oldMask = camera.blurLayerMask;
+                        camera.blurLayerMask = 0;
+                        if (oldMask != camera.blurLayerMask && UndoSystem::GetInstance().IsEnabled()) {
+                            uint32_t newMask = camera.blurLayerMask;
+                            UndoSystem::GetInstance().RecordLambdaChange(
+                                [entity, newMask]() { auto& ecs = ECSRegistry::GetInstance().GetActiveECSManager(); if (ecs.HasComponent<CameraComponent>(entity)) ecs.GetComponent<CameraComponent>(entity).blurLayerMask = newMask; },
+                                [entity, oldMask]() { auto& ecs = ECSRegistry::GetInstance().GetActiveECSManager(); if (ecs.HasComponent<CameraComponent>(entity)) ecs.GetComponent<CameraComponent>(entity).blurLayerMask = oldMask; },
+                                "Change Blur Layer Mask");
+                        }
+                    }
+                    ImGui::Separator();
+                    for (int i = 0; i < LayerManager::MAX_LAYERS; ++i) {
+                        if (availableLayers[i].empty()) continue;
+                        bool checked = (camera.blurLayerMask & (1u << i)) != 0;
+                        if (ImGui::Checkbox((availableLayers[i] + "##blurLayer" + std::to_string(i)).c_str(), &checked)) {
+                            uint32_t oldMask = camera.blurLayerMask;
+                            if (checked) camera.blurLayerMask |= (1u << i);
+                            else camera.blurLayerMask &= ~(1u << i);
+                            if (UndoSystem::GetInstance().IsEnabled()) {
+                                uint32_t newMask = camera.blurLayerMask;
+                                UndoSystem::GetInstance().RecordLambdaChange(
+                                    [entity, newMask]() { auto& ecs = ECSRegistry::GetInstance().GetActiveECSManager(); if (ecs.HasComponent<CameraComponent>(entity)) ecs.GetComponent<CameraComponent>(entity).blurLayerMask = newMask; },
+                                    [entity, oldMask]() { auto& ecs = ECSRegistry::GetInstance().GetActiveECSManager(); if (ecs.HasComponent<CameraComponent>(entity)) ecs.GetComponent<CameraComponent>(entity).blurLayerMask = oldMask; },
+                                    "Change Blur Layer Mask");
+                            }
+                        }
+                    }
+                    ImGui::EndCombo();
+                }
+                EditorComponents::PopComboColors();
+            }
+
+            ImGui::Unindent(10.0f);
+        }
+
+        // --- BLOOM ---
+        if (ImGui::CollapsingHeader("Post-Processing: Bloom")) {
+            ImGui::Indent(10.0f);
+
+            bool bloomEnabled = camera.bloomEnabled;
+            if (ImGui::Checkbox("Enable Bloom##PP", &bloomEnabled)) {
+                bool oldVal = camera.bloomEnabled;
+                camera.bloomEnabled = bloomEnabled;
+                if (UndoSystem::GetInstance().IsEnabled()) {
+                    bool newVal = bloomEnabled;
+                    UndoSystem::GetInstance().RecordLambdaChange(
+                        [entity, newVal]() { auto& ecs = ECSRegistry::GetInstance().GetActiveECSManager(); if (ecs.HasComponent<CameraComponent>(entity)) ecs.GetComponent<CameraComponent>(entity).bloomEnabled = newVal; },
+                        [entity, oldVal]() { auto& ecs = ECSRegistry::GetInstance().GetActiveECSManager(); if (ecs.HasComponent<CameraComponent>(entity)) ecs.GetComponent<CameraComponent>(entity).bloomEnabled = oldVal; },
+                        "Toggle Camera Bloom");
+                }
+            }
+
+            if (camera.bloomEnabled) {
+                ImGui::Text("Threshold");
+                ImGui::SameLine(labelWidth);
+                ImGui::SetNextItemWidth(-1);
+                if (!isEditingPP[entity]) startBloomThreshold[entity] = camera.bloomThreshold;
+                if (ImGui::DragFloat("##BloomThreshold", &camera.bloomThreshold, 0.01f, 0.0f, 5.0f)) { isEditingPP[entity] = true; }
+                if (isEditingPP[entity] && !ImGui::IsItemActive()) {
+                    float oldVal = startBloomThreshold[entity]; float newVal = camera.bloomThreshold;
+                    if (oldVal != newVal && UndoSystem::GetInstance().IsEnabled()) {
+                        UndoSystem::GetInstance().RecordLambdaChange(
+                            [entity, newVal]() { auto& ecs = ECSRegistry::GetInstance().GetActiveECSManager(); if (ecs.HasComponent<CameraComponent>(entity)) ecs.GetComponent<CameraComponent>(entity).bloomThreshold = newVal; },
+                            [entity, oldVal]() { auto& ecs = ECSRegistry::GetInstance().GetActiveECSManager(); if (ecs.HasComponent<CameraComponent>(entity)) ecs.GetComponent<CameraComponent>(entity).bloomThreshold = oldVal; },
+                            "Change Bloom Threshold");
+                    }
+                    isEditingPP[entity] = false;
+                }
+
+                ImGui::Text("Intensity");
+                ImGui::SameLine(labelWidth);
+                ImGui::SetNextItemWidth(-1);
+                if (!isEditingPP[entity]) startBloomIntensity[entity] = camera.bloomIntensity;
+                if (ImGui::DragFloat("##BloomIntensity", &camera.bloomIntensity, 0.01f, 0.0f, 5.0f)) { isEditingPP[entity] = true; }
+                if (isEditingPP[entity] && !ImGui::IsItemActive()) {
+                    float oldVal = startBloomIntensity[entity]; float newVal = camera.bloomIntensity;
+                    if (oldVal != newVal && UndoSystem::GetInstance().IsEnabled()) {
+                        UndoSystem::GetInstance().RecordLambdaChange(
+                            [entity, newVal]() { auto& ecs = ECSRegistry::GetInstance().GetActiveECSManager(); if (ecs.HasComponent<CameraComponent>(entity)) ecs.GetComponent<CameraComponent>(entity).bloomIntensity = newVal; },
+                            [entity, oldVal]() { auto& ecs = ECSRegistry::GetInstance().GetActiveECSManager(); if (ecs.HasComponent<CameraComponent>(entity)) ecs.GetComponent<CameraComponent>(entity).bloomIntensity = oldVal; },
+                            "Change Bloom Intensity");
+                    }
+                    isEditingPP[entity] = false;
+                }
+
+                ImGui::Text("Spread");
+                ImGui::SameLine(labelWidth);
+                ImGui::SetNextItemWidth(-1);
+                if (!isEditingPP[entity]) startBloomSpread[entity] = camera.bloomSpread;
+                if (ImGui::DragFloat("##BloomSpread", &camera.bloomSpread, 0.005f, 0.0f, 1.0f)) { isEditingPP[entity] = true; }
+                if (isEditingPP[entity] && !ImGui::IsItemActive()) {
+                    float oldVal = startBloomSpread[entity]; float newVal = camera.bloomSpread;
+                    if (oldVal != newVal && UndoSystem::GetInstance().IsEnabled()) {
+                        UndoSystem::GetInstance().RecordLambdaChange(
+                            [entity, newVal]() { auto& ecs = ECSRegistry::GetInstance().GetActiveECSManager(); if (ecs.HasComponent<CameraComponent>(entity)) ecs.GetComponent<CameraComponent>(entity).bloomSpread = newVal; },
+                            [entity, oldVal]() { auto& ecs = ECSRegistry::GetInstance().GetActiveECSManager(); if (ecs.HasComponent<CameraComponent>(entity)) ecs.GetComponent<CameraComponent>(entity).bloomSpread = oldVal; },
+                            "Change Bloom Spread");
+                    }
+                    isEditingPP[entity] = false;
+                }
+            }
+
+            ImGui::Unindent(10.0f);
+        }
+
+        // --- VIGNETTE ---
+        if (ImGui::CollapsingHeader("Post-Processing: Vignette")) {
+            ImGui::Indent(10.0f);
+
+            bool vignetteEnabled = camera.vignetteEnabled;
+            if (ImGui::Checkbox("Enable Vignette##PP", &vignetteEnabled)) {
+                bool oldVal = camera.vignetteEnabled;
+                camera.vignetteEnabled = vignetteEnabled;
+                if (UndoSystem::GetInstance().IsEnabled()) {
+                    bool newVal = vignetteEnabled;
+                    UndoSystem::GetInstance().RecordLambdaChange(
+                        [entity, newVal]() { auto& ecs = ECSRegistry::GetInstance().GetActiveECSManager(); if (ecs.HasComponent<CameraComponent>(entity)) ecs.GetComponent<CameraComponent>(entity).vignetteEnabled = newVal; },
+                        [entity, oldVal]() { auto& ecs = ECSRegistry::GetInstance().GetActiveECSManager(); if (ecs.HasComponent<CameraComponent>(entity)) ecs.GetComponent<CameraComponent>(entity).vignetteEnabled = oldVal; },
+                        "Toggle Camera Vignette");
+                }
+            }
+
+            if (camera.vignetteEnabled) {
+                ImGui::Text("Intensity");
+                ImGui::SameLine(labelWidth);
+                ImGui::SetNextItemWidth(-1);
+                if (!isEditingPP[entity]) startVignetteIntensity[entity] = camera.vignetteIntensity;
+                if (ImGui::DragFloat("##VignetteIntensity", &camera.vignetteIntensity, 0.005f, 0.0f, 1.0f)) { isEditingPP[entity] = true; }
+                if (isEditingPP[entity] && !ImGui::IsItemActive()) {
+                    float oldVal = startVignetteIntensity[entity]; float newVal = camera.vignetteIntensity;
+                    if (oldVal != newVal && UndoSystem::GetInstance().IsEnabled()) {
+                        UndoSystem::GetInstance().RecordLambdaChange(
+                            [entity, newVal]() { auto& ecs = ECSRegistry::GetInstance().GetActiveECSManager(); if (ecs.HasComponent<CameraComponent>(entity)) ecs.GetComponent<CameraComponent>(entity).vignetteIntensity = newVal; },
+                            [entity, oldVal]() { auto& ecs = ECSRegistry::GetInstance().GetActiveECSManager(); if (ecs.HasComponent<CameraComponent>(entity)) ecs.GetComponent<CameraComponent>(entity).vignetteIntensity = oldVal; },
+                            "Change Vignette Intensity");
+                    }
+                    isEditingPP[entity] = false;
+                }
+
+                ImGui::Text("Smoothness");
+                ImGui::SameLine(labelWidth);
+                ImGui::SetNextItemWidth(-1);
+                if (!isEditingPP[entity]) startVignetteSmoothness[entity] = camera.vignetteSmoothness;
+                if (ImGui::DragFloat("##VignetteSmoothness", &camera.vignetteSmoothness, 0.005f, 0.0f, 1.0f)) { isEditingPP[entity] = true; }
+                if (isEditingPP[entity] && !ImGui::IsItemActive()) {
+                    float oldVal = startVignetteSmoothness[entity]; float newVal = camera.vignetteSmoothness;
+                    if (oldVal != newVal && UndoSystem::GetInstance().IsEnabled()) {
+                        UndoSystem::GetInstance().RecordLambdaChange(
+                            [entity, newVal]() { auto& ecs = ECSRegistry::GetInstance().GetActiveECSManager(); if (ecs.HasComponent<CameraComponent>(entity)) ecs.GetComponent<CameraComponent>(entity).vignetteSmoothness = newVal; },
+                            [entity, oldVal]() { auto& ecs = ECSRegistry::GetInstance().GetActiveECSManager(); if (ecs.HasComponent<CameraComponent>(entity)) ecs.GetComponent<CameraComponent>(entity).vignetteSmoothness = oldVal; },
+                            "Change Vignette Smoothness");
+                    }
+                    isEditingPP[entity] = false;
+                }
+
+                ImGui::Text("Color");
+                ImGui::SameLine(labelWidth);
+                ImGui::SetNextItemWidth(-1);
+                float vigColor[3] = {camera.vignetteColor.r, camera.vignetteColor.g, camera.vignetteColor.b};
+                if (!isEditingPP[entity]) startVignetteColor[entity] = camera.vignetteColor;
+                if (ImGui::ColorEdit3("##VignetteColor", vigColor)) {
+                    camera.vignetteColor = glm::vec3(vigColor[0], vigColor[1], vigColor[2]);
+                    isEditingPP[entity] = true;
+                }
+                if (isEditingPP[entity] && !ImGui::IsItemActive()) {
+                    glm::vec3 oldVal = startVignetteColor[entity]; glm::vec3 newVal = camera.vignetteColor;
+                    if (oldVal != newVal && UndoSystem::GetInstance().IsEnabled()) {
+                        UndoSystem::GetInstance().RecordLambdaChange(
+                            [entity, newVal]() { auto& ecs = ECSRegistry::GetInstance().GetActiveECSManager(); if (ecs.HasComponent<CameraComponent>(entity)) ecs.GetComponent<CameraComponent>(entity).vignetteColor = newVal; },
+                            [entity, oldVal]() { auto& ecs = ECSRegistry::GetInstance().GetActiveECSManager(); if (ecs.HasComponent<CameraComponent>(entity)) ecs.GetComponent<CameraComponent>(entity).vignetteColor = oldVal; },
+                            "Change Vignette Color");
+                    }
+                    isEditingPP[entity] = false;
+                }
+            }
+
+            ImGui::Unindent(10.0f);
+        }
+
+        // --- COLOR GRADING ---
+        if (ImGui::CollapsingHeader("Post-Processing: Color Grading")) {
+            ImGui::Indent(10.0f);
+
+            bool cgEnabled = camera.colorGradingEnabled;
+            if (ImGui::Checkbox("Enable Color Grading##PP", &cgEnabled)) {
+                bool oldVal = camera.colorGradingEnabled;
+                camera.colorGradingEnabled = cgEnabled;
+                if (UndoSystem::GetInstance().IsEnabled()) {
+                    bool newVal = cgEnabled;
+                    UndoSystem::GetInstance().RecordLambdaChange(
+                        [entity, newVal]() { auto& ecs = ECSRegistry::GetInstance().GetActiveECSManager(); if (ecs.HasComponent<CameraComponent>(entity)) ecs.GetComponent<CameraComponent>(entity).colorGradingEnabled = newVal; },
+                        [entity, oldVal]() { auto& ecs = ECSRegistry::GetInstance().GetActiveECSManager(); if (ecs.HasComponent<CameraComponent>(entity)) ecs.GetComponent<CameraComponent>(entity).colorGradingEnabled = oldVal; },
+                        "Toggle Camera Color Grading");
+                }
+            }
+
+            if (camera.colorGradingEnabled) {
+                // Brightness
+                ImGui::Text("Brightness");
+                ImGui::SameLine(labelWidth);
+                ImGui::SetNextItemWidth(-1);
+                if (!isEditingPP[entity]) startCGBrightness[entity] = camera.cgBrightness;
+                if (ImGui::DragFloat("##CGBrightness", &camera.cgBrightness, 0.005f, -1.0f, 1.0f)) { isEditingPP[entity] = true; }
+                if (isEditingPP[entity] && !ImGui::IsItemActive()) {
+                    float oldVal = startCGBrightness[entity]; float newVal = camera.cgBrightness;
+                    if (oldVal != newVal && UndoSystem::GetInstance().IsEnabled()) {
+                        UndoSystem::GetInstance().RecordLambdaChange(
+                            [entity, newVal]() { auto& ecs = ECSRegistry::GetInstance().GetActiveECSManager(); if (ecs.HasComponent<CameraComponent>(entity)) ecs.GetComponent<CameraComponent>(entity).cgBrightness = newVal; },
+                            [entity, oldVal]() { auto& ecs = ECSRegistry::GetInstance().GetActiveECSManager(); if (ecs.HasComponent<CameraComponent>(entity)) ecs.GetComponent<CameraComponent>(entity).cgBrightness = oldVal; },
+                            "Change CG Brightness");
+                    }
+                    isEditingPP[entity] = false;
+                }
+
+                // Contrast
+                ImGui::Text("Contrast");
+                ImGui::SameLine(labelWidth);
+                ImGui::SetNextItemWidth(-1);
+                if (!isEditingPP[entity]) startCGContrast[entity] = camera.cgContrast;
+                if (ImGui::DragFloat("##CGContrast", &camera.cgContrast, 0.01f, 0.0f, 3.0f)) { isEditingPP[entity] = true; }
+                if (isEditingPP[entity] && !ImGui::IsItemActive()) {
+                    float oldVal = startCGContrast[entity]; float newVal = camera.cgContrast;
+                    if (oldVal != newVal && UndoSystem::GetInstance().IsEnabled()) {
+                        UndoSystem::GetInstance().RecordLambdaChange(
+                            [entity, newVal]() { auto& ecs = ECSRegistry::GetInstance().GetActiveECSManager(); if (ecs.HasComponent<CameraComponent>(entity)) ecs.GetComponent<CameraComponent>(entity).cgContrast = newVal; },
+                            [entity, oldVal]() { auto& ecs = ECSRegistry::GetInstance().GetActiveECSManager(); if (ecs.HasComponent<CameraComponent>(entity)) ecs.GetComponent<CameraComponent>(entity).cgContrast = oldVal; },
+                            "Change CG Contrast");
+                    }
+                    isEditingPP[entity] = false;
+                }
+
+                // Saturation
+                ImGui::Text("Saturation");
+                ImGui::SameLine(labelWidth);
+                ImGui::SetNextItemWidth(-1);
+                if (!isEditingPP[entity]) startCGSaturation[entity] = camera.cgSaturation;
+                if (ImGui::DragFloat("##CGSaturation", &camera.cgSaturation, 0.01f, 0.0f, 3.0f)) { isEditingPP[entity] = true; }
+                if (isEditingPP[entity] && !ImGui::IsItemActive()) {
+                    float oldVal = startCGSaturation[entity]; float newVal = camera.cgSaturation;
+                    if (oldVal != newVal && UndoSystem::GetInstance().IsEnabled()) {
+                        UndoSystem::GetInstance().RecordLambdaChange(
+                            [entity, newVal]() { auto& ecs = ECSRegistry::GetInstance().GetActiveECSManager(); if (ecs.HasComponent<CameraComponent>(entity)) ecs.GetComponent<CameraComponent>(entity).cgSaturation = newVal; },
+                            [entity, oldVal]() { auto& ecs = ECSRegistry::GetInstance().GetActiveECSManager(); if (ecs.HasComponent<CameraComponent>(entity)) ecs.GetComponent<CameraComponent>(entity).cgSaturation = oldVal; },
+                            "Change CG Saturation");
+                    }
+                    isEditingPP[entity] = false;
+                }
+
+                // Tint (color picker)
+                ImGui::Text("Tint");
+                ImGui::SameLine(labelWidth);
+                ImGui::SetNextItemWidth(-1);
+                float tint[3] = {camera.cgTint.r, camera.cgTint.g, camera.cgTint.b};
+                if (!isEditingPP[entity]) startCGTint[entity] = camera.cgTint;
+                if (ImGui::ColorEdit3("##CGTint", tint)) {
+                    camera.cgTint = glm::vec3(tint[0], tint[1], tint[2]);
+                    isEditingPP[entity] = true;
+                }
+                if (isEditingPP[entity] && !ImGui::IsItemActive()) {
+                    glm::vec3 oldVal = startCGTint[entity]; glm::vec3 newVal = camera.cgTint;
+                    if (oldVal != newVal && UndoSystem::GetInstance().IsEnabled()) {
+                        UndoSystem::GetInstance().RecordLambdaChange(
+                            [entity, newVal]() { auto& ecs = ECSRegistry::GetInstance().GetActiveECSManager(); if (ecs.HasComponent<CameraComponent>(entity)) ecs.GetComponent<CameraComponent>(entity).cgTint = newVal; },
+                            [entity, oldVal]() { auto& ecs = ECSRegistry::GetInstance().GetActiveECSManager(); if (ecs.HasComponent<CameraComponent>(entity)) ecs.GetComponent<CameraComponent>(entity).cgTint = oldVal; },
+                            "Change CG Tint");
+                    }
+                    isEditingPP[entity] = false;
+                }
+            }
+
+            ImGui::Unindent(10.0f);
+        }
+
+        // --- CHROMATIC ABERRATION ---
+        if (ImGui::CollapsingHeader("Post-Processing: Chromatic Aberration")) {
+            ImGui::Indent(10.0f);
+
+            bool caEnabled = camera.chromaticAberrationEnabled;
+            if (ImGui::Checkbox("Enable Chromatic Aberration##PP", &caEnabled)) {
+                bool oldVal = camera.chromaticAberrationEnabled;
+                camera.chromaticAberrationEnabled = caEnabled;
+                if (UndoSystem::GetInstance().IsEnabled()) {
+                    bool newVal = caEnabled;
+                    UndoSystem::GetInstance().RecordLambdaChange(
+                        [entity, newVal]() { auto& ecs = ECSRegistry::GetInstance().GetActiveECSManager(); if (ecs.HasComponent<CameraComponent>(entity)) ecs.GetComponent<CameraComponent>(entity).chromaticAberrationEnabled = newVal; },
+                        [entity, oldVal]() { auto& ecs = ECSRegistry::GetInstance().GetActiveECSManager(); if (ecs.HasComponent<CameraComponent>(entity)) ecs.GetComponent<CameraComponent>(entity).chromaticAberrationEnabled = oldVal; },
+                        "Toggle Chromatic Aberration");
+                }
+            }
+
+            if (camera.chromaticAberrationEnabled) {
+                ImGui::Text("Intensity");
+                ImGui::SameLine(labelWidth);
+                ImGui::SetNextItemWidth(-1);
+                if (!isEditingPP[entity]) startCAIntensity[entity] = camera.chromaticAberrationIntensity;
+                if (ImGui::DragFloat("##CAIntensity", &camera.chromaticAberrationIntensity, 0.01f, 0.0f, 3.0f)) { isEditingPP[entity] = true; }
+                if (isEditingPP[entity] && !ImGui::IsItemActive()) {
+                    float oldVal = startCAIntensity[entity]; float newVal = camera.chromaticAberrationIntensity;
+                    if (oldVal != newVal && UndoSystem::GetInstance().IsEnabled()) {
+                        UndoSystem::GetInstance().RecordLambdaChange(
+                            [entity, newVal]() { auto& ecs = ECSRegistry::GetInstance().GetActiveECSManager(); if (ecs.HasComponent<CameraComponent>(entity)) ecs.GetComponent<CameraComponent>(entity).chromaticAberrationIntensity = newVal; },
+                            [entity, oldVal]() { auto& ecs = ECSRegistry::GetInstance().GetActiveECSManager(); if (ecs.HasComponent<CameraComponent>(entity)) ecs.GetComponent<CameraComponent>(entity).chromaticAberrationIntensity = oldVal; },
+                            "Change CA Intensity");
+                    }
+                    isEditingPP[entity] = false;
+                }
+
+                ImGui::Text("Padding");
+                ImGui::SameLine(labelWidth);
+                ImGui::SetNextItemWidth(-1);
+                if (!isEditingPP[entity]) startCAPadding[entity] = camera.chromaticAberrationPadding;
+                if (ImGui::DragFloat("##CAPadding", &camera.chromaticAberrationPadding, 0.005f, 0.0f, 1.0f)) { isEditingPP[entity] = true; }
+                if (isEditingPP[entity] && !ImGui::IsItemActive()) {
+                    float oldVal = startCAPadding[entity]; float newVal = camera.chromaticAberrationPadding;
+                    if (oldVal != newVal && UndoSystem::GetInstance().IsEnabled()) {
+                        UndoSystem::GetInstance().RecordLambdaChange(
+                            [entity, newVal]() { auto& ecs = ECSRegistry::GetInstance().GetActiveECSManager(); if (ecs.HasComponent<CameraComponent>(entity)) ecs.GetComponent<CameraComponent>(entity).chromaticAberrationPadding = newVal; },
+                            [entity, oldVal]() { auto& ecs = ECSRegistry::GetInstance().GetActiveECSManager(); if (ecs.HasComponent<CameraComponent>(entity)) ecs.GetComponent<CameraComponent>(entity).chromaticAberrationPadding = oldVal; },
+                            "Change CA Padding");
+                    }
+                    isEditingPP[entity] = false;
+                }
+            }
+
+            ImGui::Unindent(10.0f);
+        }
+
         return false;
     });
 
@@ -2206,7 +2675,7 @@ void RegisterInspectorCustomRenderers()
                 // Load and apply the model
                 auto &modelRenderer = ecs.GetComponent<ModelRenderComponent>(entity);
 
-                ENGINE_PRINT("[Inspector] Applying model - GUID: {", DraggedModelGuid.high, ", ", DraggedModelGuid.low, "}, Path: ", DraggedModelPath);
+                std::cout << "[Inspector] Applying model - GUID: {" << DraggedModelGuid.high << ", " << DraggedModelGuid.low << "}, Path: " << DraggedModelPath << std::endl;
 
                 try
                 {
@@ -2223,7 +2692,7 @@ void RegisterInspectorCustomRenderers()
 
                     if (loadedModel)
                     {
-                        ENGINE_PRINT("[Inspector] Model loaded successfully!");
+                        std::cout << "[Inspector] Model loaded successfully!" << std::endl;
                         modelRenderer.model = loadedModel;
                         modelRenderer.modelGUID = DraggedModelGuid;
 
@@ -2363,7 +2832,7 @@ void RegisterInspectorCustomRenderers()
                 pathStr.erase(std::find(pathStr.begin(), pathStr.end(), '\0'), pathStr.end());
 
                 GUID_128 textureGUID = AssetManager::GetInstance().GetGUID128FromAssetMeta(pathStr);
-                ENGINE_PRINT("PathStr is ", pathStr);
+                std::cout << "PathStr is " << pathStr << std::endl;
                 *guid = textureGUID;
 
                 // Load texture immediately
@@ -2549,6 +3018,19 @@ void RegisterInspectorCustomRenderers()
         return false;
     });
 
+    // Hide CameraComponent PP fields from default reflection rendering
+    // (handled by custom component renderer in CollapsingHeaders above)
+    for (const char* field : {
+        "blurEnabled", "blurIntensity", "blurRadius", "blurPasses",
+        "bloomEnabled", "bloomThreshold", "bloomIntensity", "bloomSpread",
+        "vignetteEnabled", "vignetteIntensity", "vignetteSmoothness",
+        "colorGradingEnabled", "cgBrightness", "cgContrast", "cgSaturation",
+        "chromaticAberrationEnabled", "chromaticAberrationIntensity", "chromaticAberrationPadding"
+    }) {
+        ReflectionRenderer::RegisterFieldRenderer("CameraComponent", field,
+            [](const char*, void*, Entity, ECSManager&) { return true; });
+    }
+
     // Custom color picker for SpriteRenderComponent
     // Uses entity-aware lambda commands for proper undo/redo
     ReflectionRenderer::RegisterFieldRenderer("SpriteRenderComponent", "color",
@@ -2634,6 +3116,103 @@ void RegisterInspectorCustomRenderers()
     ReflectionRenderer::RegisterFieldRenderer("SpriteRenderComponent", "alpha",
                                               [](const char *, void *, Entity, ECSManager &)
                                               { return true; });
+
+    // Fill Mode dropdown for SpriteRenderComponent
+    ReflectionRenderer::RegisterFieldRenderer("SpriteRenderComponent", "fillMode",
+    [](const char*, void* ptr, Entity entity, ECSManager& ecs) {
+        int* mode = static_cast<int*>(ptr);
+        const float labelWidth = EditorComponents::GetLabelWidth();
+
+        ImGui::Text("Fill Mode");
+        ImGui::SameLine(labelWidth);
+        ImGui::SetNextItemWidth(-1);
+
+        const char* items[] = { "Solid", "Radial" };
+        EditorComponents::PushComboColors();
+        bool changed = ImGui::Combo("##FillMode", mode, items, 2);
+        EditorComponents::PopComboColors();
+
+        if (changed) {
+            SnapshotManager::GetInstance().TakeSnapshot("Change Fill Mode");
+        }
+        return true;
+    });
+
+    // Fill Max Value - only visible when fillMode == Radial
+    ReflectionRenderer::RegisterFieldRenderer("SpriteRenderComponent", "fillMaxValue",
+    [](const char*, void* ptr, Entity entity, ECSManager& ecs) {
+        auto& sprite = ecs.GetComponent<SpriteRenderComponent>(entity);
+        if (sprite.fillMode != 1) return true; // Hide when Solid
+
+        float* val = static_cast<float*>(ptr);
+        const float labelWidth = EditorComponents::GetLabelWidth();
+
+        ImGui::Text("Fill Max");
+        ImGui::SameLine(labelWidth);
+        ImGui::SetNextItemWidth(-1);
+        bool changed = ImGui::DragFloat("##FillMax", val, 0.1f, 0.001f, 1000.0f);
+        if (changed) {
+            SnapshotManager::GetInstance().TakeSnapshot("Change Fill Max");
+        }
+        return true;
+    });
+
+    // Fill Value slider - only visible when fillMode == Radial
+    ReflectionRenderer::RegisterFieldRenderer("SpriteRenderComponent", "fillValue",
+    [](const char*, void* ptr, Entity entity, ECSManager& ecs) {
+        auto& sprite = ecs.GetComponent<SpriteRenderComponent>(entity);
+        if (sprite.fillMode != 1) return true; // Hide when Solid
+
+        float* val = static_cast<float*>(ptr);
+        const float labelWidth = EditorComponents::GetLabelWidth();
+
+        ImGui::Text("Fill Value");
+        ImGui::SameLine(labelWidth);
+        ImGui::SetNextItemWidth(-1);
+        bool changed = ImGui::SliderFloat("##FillValue", val, 0.0f, sprite.fillMaxValue);
+        if (changed) {
+            SnapshotManager::GetInstance().TakeSnapshot("Change Fill Value");
+        }
+        return true;
+    });
+
+    // Fill Edge Glow slider - only visible when fillMode == Radial
+    ReflectionRenderer::RegisterFieldRenderer("SpriteRenderComponent", "fillGlow",
+    [](const char*, void* ptr, Entity entity, ECSManager& ecs) {
+        auto& sprite = ecs.GetComponent<SpriteRenderComponent>(entity);
+        if (sprite.fillMode != 1) return true; // Hide when Solid
+
+        float* val = static_cast<float*>(ptr);
+        const float labelWidth = EditorComponents::GetLabelWidth();
+
+        ImGui::Text("Edge Glow");
+        ImGui::SameLine(labelWidth);
+        ImGui::SetNextItemWidth(-1);
+        bool changed = ImGui::SliderFloat("##FillGlow", val, 0.0f, 1.0f);
+        if (changed) {
+            SnapshotManager::GetInstance().TakeSnapshot("Change Edge Glow");
+        }
+        return true;
+    });
+
+    // Fill Background brightness slider - only visible when fillMode == Radial
+    ReflectionRenderer::RegisterFieldRenderer("SpriteRenderComponent", "fillBackground",
+    [](const char*, void* ptr, Entity entity, ECSManager& ecs) {
+        auto& sprite = ecs.GetComponent<SpriteRenderComponent>(entity);
+        if (sprite.fillMode != 1) return true; // Hide when Solid
+
+        float* val = static_cast<float*>(ptr);
+        const float labelWidth = EditorComponents::GetLabelWidth();
+
+        ImGui::Text("Background");
+        ImGui::SameLine(labelWidth);
+        ImGui::SetNextItemWidth(-1);
+        bool changed = ImGui::SliderFloat("##FillBG", val, 0.0f, 1.0f);
+        if (changed) {
+            SnapshotManager::GetInstance().TakeSnapshot("Change Fill Background");
+        }
+        return true;
+    });
 
     // Particle texture GUID
     ReflectionRenderer::RegisterFieldRenderer("ParticleComponent", "textureGUID",
@@ -4036,6 +4615,8 @@ void RegisterInspectorCustomRenderers()
         static std::unordered_map<Entity, Vector3D> startSpecular;
         static std::unordered_map<Entity, bool> isEditingSpecular;
         static std::unordered_map<Entity, bool> startCastShadows;
+        static std::unordered_map<Entity, float> startRange;
+        static std::unordered_map<Entity, bool> isEditingRange;
 
         // Initialize tracking state
         if (isEditingColor.find(entity) == isEditingColor.end()) isEditingColor[entity] = false;
@@ -4046,6 +4627,7 @@ void RegisterInspectorCustomRenderers()
         if (isEditingAmbient.find(entity) == isEditingAmbient.end()) isEditingAmbient[entity] = false;
         if (isEditingDiffuse.find(entity) == isEditingDiffuse.end()) isEditingDiffuse[entity] = false;
         if (isEditingSpecular.find(entity) == isEditingSpecular.end()) isEditingSpecular[entity] = false;
+        if (isEditingRange.find(entity) == isEditingRange.end()) isEditingRange[entity] = false;
 
         // Enabled checkbox
         ImGui::AlignTextToFramePadding();
@@ -4372,6 +4954,38 @@ void RegisterInspectorCustomRenderers()
                     "Toggle Point Light Shadows"
                 );
             }
+        }
+
+        // Shadow Range
+        ImGui::Text("Shadow Range");
+        ImGui::SameLine(labelWidth);
+        ImGui::SetNextItemWidth(-1);
+        if (!isEditingRange[entity]) startRange[entity] = light.range;
+        if (ImGui::IsItemActivated()) { startRange[entity] = light.range; isEditingRange[entity] = true; }
+        if (ImGui::DragFloat("##ShadowRange", &light.range, 0.5f, 0.1f, 500.0f)) {
+            isEditingRange[entity] = true;
+        }
+        if (isEditingRange[entity] && !ImGui::IsItemActive()) {
+            float oldVal = startRange[entity];
+            float newVal = light.range;
+            if (oldVal != newVal && UndoSystem::GetInstance().IsEnabled()) {
+                UndoSystem::GetInstance().RecordLambdaChange(
+                    [entity, newVal]() {
+                        ECSManager& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
+                        if (ecs.HasComponent<PointLightComponent>(entity)) {
+                            ecs.GetComponent<PointLightComponent>(entity).range = newVal;
+                        }
+                    },
+                    [entity, oldVal]() {
+                        ECSManager& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
+                        if (ecs.HasComponent<PointLightComponent>(entity)) {
+                            ecs.GetComponent<PointLightComponent>(entity).range = oldVal;
+                        }
+                    },
+                    "Change Point Light Shadow Range"
+                );
+            }
+            isEditingRange[entity] = false;
         }
 
         return true; // Return true to skip default field rendering
@@ -4879,8 +5493,10 @@ void RegisterInspectorCustomRenderers()
 
                 AnimatorController controller;
                 if (controller.LoadFromFile(pathStr)) {
-                    // Save the controller path for serialization
-                    animComp.controllerPath = pathStr;
+                    // Convert to relative path (from "Resources" onwards) for cross-machine compatibility
+                    size_t resPos = pathStr.find("Resources");
+                    std::string relativePath = (resPos != std::string::npos) ? pathStr.substr(resPos) : pathStr;
+                    animComp.controllerPath = relativePath;
 
                     // Apply state machine configuration
                     AnimationStateMachine* stateMachine = animComp.EnsureStateMachine();
@@ -4956,8 +5572,10 @@ void RegisterInspectorCustomRenderers()
 
                                 AnimatorController controller;
                                 if (controller.LoadFromFile(controllerPath)) {
-                                    // Save the controller path for serialization
-                                    animComp.controllerPath = controllerPath;
+                                    // Convert to relative path (from "Resources" onwards) for cross-machine compatibility
+                                    size_t resPos = controllerPath.find("Resources");
+                                    std::string relativePath = (resPos != std::string::npos) ? controllerPath.substr(resPos) : controllerPath;
+                                    animComp.controllerPath = relativePath;
 
                                     // Apply state machine configuration
                                     AnimationStateMachine* stateMachine = animComp.EnsureStateMachine();
@@ -6064,9 +6682,58 @@ void RegisterInspectorCustomRenderers()
                                 syntheticField.type = Scripting::FieldType::String;
                                 syntheticField.defaultValueSerialized = "\"" + luaDefault.substr(1, luaDefault.size() - 2) + "\"";
                             } else if (luaDefault.front() == '{') {
-                                // Lua table - convert to JSON
+                                // Lua table - convert simple array literals to JSON
                                 syntheticField.type = Scripting::FieldType::Table;
-                                syntheticField.defaultValueSerialized = ConvertLuaTableToJson(luaDefault);
+                                // Try to parse Lua table literal like {"EnemyAI"} or {"a","b","c"}
+                                // Extract content between outer braces
+                                std::string inner = luaDefault.substr(1, luaDefault.size() - 2);
+                                // Trim whitespace
+                                size_t iStart = inner.find_first_not_of(" \t\r\n");
+                                size_t iEnd = inner.find_last_not_of(" \t\r\n");
+                                if (iStart == std::string::npos || iEnd == std::string::npos) {
+                                    // Empty table
+                                    syntheticField.defaultValueSerialized = "[]";
+                                } else {
+                                    inner = inner.substr(iStart, iEnd - iStart + 1);
+                                    // Check if it looks like a simple string array (quoted elements separated by commas)
+                                    bool isSimpleStringArray = true;
+                                    // Quick check: does it contain '=' (key-value pairs) or nested '{' ?
+                                    if (inner.find('=') != std::string::npos || inner.find('{') != std::string::npos) {
+                                        isSimpleStringArray = false;
+                                    }
+                                    if (isSimpleStringArray) {
+                                        // Parse comma-separated quoted strings: "a","b","c" or 'a','b'
+                                        std::string jsonArray = "[";
+                                        std::string remaining = inner;
+                                        bool first = true;
+                                        bool valid = true;
+                                        while (!remaining.empty()) {
+                                            // Trim leading whitespace and commas
+                                            size_t s = remaining.find_first_not_of(" \t\r\n,");
+                                            if (s == std::string::npos) break;
+                                            remaining = remaining.substr(s);
+                                            if (remaining.empty()) break;
+                                            char delim = remaining[0];
+                                            if (delim == '"' || delim == '\'') {
+                                                // Find closing quote
+                                                size_t closePos = remaining.find(delim, 1);
+                                                if (closePos == std::string::npos) { valid = false; break; }
+                                                std::string elem = remaining.substr(1, closePos - 1);
+                                                if (!first) jsonArray += ",";
+                                                jsonArray += "\"" + elem + "\"";
+                                                first = false;
+                                                remaining = remaining.substr(closePos + 1);
+                                            } else {
+                                                valid = false;
+                                                break;
+                                            }
+                                        }
+                                        jsonArray += "]";
+                                        syntheticField.defaultValueSerialized = valid ? jsonArray : "[]";
+                                    } else {
+                                        syntheticField.defaultValueSerialized = "{}";
+                                    }
+                                }
                             } else {
                                 // Assume it's a number
                                 syntheticField.type = Scripting::FieldType::Number;
@@ -6387,87 +7054,77 @@ void RegisterInspectorCustomRenderers()
                             }
                             else
                             {
-                                // Generic string array - render with +/- buttons like Unity
-                                renderLabelWithTooltip();
-                                bool arrayModified = false;
-                                rapidjson::Document newDoc;
-                                newDoc.SetArray();
-                                auto& alloc = newDoc.GetAllocator();
-
-                                // Static buffers for string editing (keyed by field name + index)
-                                static std::unordered_map<std::string, std::vector<char>> stringArrayBuffers;
-
+                                // Check if all elements are strings (or array is empty)
+                                bool allStrings = true;
                                 for (size_t i = 0; i < doc.Size(); ++i)
                                 {
-                                    ImGui::PushID(static_cast<int>(i));
+                                    if (!doc[i].IsString()) { allStrings = false; break; }
+                                }
 
-                                    std::string currentValue;
-                                    if (doc[i].IsString())
+                                if (allStrings || doc.Size() == 0)
+                                {
+                                    // Render as editable string array with +/- buttons
+                                    renderLabelWithTooltip();
+                                    bool arrayModified = false;
+                                    rapidjson::Document newDoc;
+                                    newDoc.SetArray();
+                                    auto& alloc = newDoc.GetAllocator();
+
+                                    for (size_t i = 0; i < doc.Size(); ++i)
                                     {
-                                        currentValue = doc[i].GetString();
+                                        ImGui::PushID(static_cast<int>(i));
+
+                                        std::string elemStr = doc[i].IsString() ? doc[i].GetString() : "";
+
+                                        char buf[256];
+                                        strncpy(buf, elemStr.c_str(), sizeof(buf) - 1);
+                                        buf[sizeof(buf) - 1] = '\0';
+
+                                        ImGui::Text("[%zu]", i + 1);
+                                        ImGui::SameLine();
+                                        ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x - 30.0f);
+                                        if (ImGui::InputText(("##str_" + field.name + "_" + std::to_string(i)).c_str(), buf, sizeof(buf)))
+                                        {
+                                            elemStr = buf;
+                                            arrayModified = true;
+                                        }
+
+                                        ImGui::SameLine();
+                                        if (ImGui::SmallButton((std::string(ICON_FA_MINUS) + "##remove" + std::to_string(i)).c_str()))
+                                        {
+                                            arrayModified = true;
+                                        }
+                                        else
+                                        {
+                                            newDoc.PushBack(rapidjson::Value(elemStr.c_str(), alloc), alloc);
+                                        }
+
+                                        ImGui::PopID();
                                     }
-                                    else if (doc[i].IsNumber())
+
+                                    if (ImGui::Button((std::string(ICON_FA_PLUS) + "##add_" + field.name).c_str()))
                                     {
-                                        currentValue = std::to_string(doc[i].GetDouble());
-                                    }
-                                    else
-                                    {
-                                        currentValue = "";
-                                    }
-
-                                    // Create a unique key for this field+index buffer
-                                    std::string bufferKey = field.name + "_" + std::to_string(i);
-                                    auto& buffer = stringArrayBuffers[bufferKey];
-                                    if (buffer.size() < 256) buffer.resize(256);
-
-                                    // Initialize buffer with current value if it's empty or different
-                                    if (buffer[0] == '\0' || std::string(buffer.data()) != currentValue) {
-                                        size_t copyLen = std::min(currentValue.size(), size_t(255));
-                                        std::memcpy(buffer.data(), currentValue.c_str(), copyLen);
-                                        buffer[copyLen] = '\0';
-                                    }
-
-                                    ImGui::Text("[%zu]", i + 1);
-                                    ImGui::SameLine();
-                                    ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x - 30.0f);
-
-                                    if (ImGui::InputText(("##str" + std::to_string(i)).c_str(), buffer.data(), 256))
-                                    {
+                                        newDoc.PushBack(rapidjson::Value("", alloc), alloc);
                                         arrayModified = true;
                                     }
 
-                                    ImGui::SameLine();
-                                    if (ImGui::SmallButton((std::string(ICON_FA_MINUS) + "##remove" + std::to_string(i)).c_str()))
+                                    if (arrayModified)
                                     {
-                                        // Skip this element (remove it)
-                                        arrayModified = true;
-                                        // Clear the buffer for this removed element
-                                        stringArrayBuffers.erase(bufferKey);
+                                        rapidjson::StringBuffer buffer;
+                                        rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
+                                        newDoc.Accept(writer);
+                                        newValue = buffer.GetString();
+                                        fieldModified = true;
                                     }
-                                    else
+                                }
+                                else
+                                {
+                                    // Non-string generic array - show as text
+                                    ImGui::Text("%s: [Array with %zu elements]", displayName.c_str(), doc.Size());
+                                    if (!field.meta.tooltip.empty() && ImGui::IsItemHovered())
                                     {
-                                        // Add to new array (use buffer content)
-                                        newDoc.PushBack(rapidjson::Value(buffer.data(), alloc), alloc);
+                                        ImGui::SetTooltip("%s", field.meta.tooltip.c_str());
                                     }
-
-                                    ImGui::PopID();
-                                }
-
-                                // Add new element button
-                                if (ImGui::Button((std::string(ICON_FA_PLUS) + "##add_" + field.name).c_str()))
-                                {
-                                    newDoc.PushBack(rapidjson::Value("", alloc), alloc);
-                                    arrayModified = true;
-                                }
-
-                                if (arrayModified)
-                                {
-                                    // Serialize new array
-                                    rapidjson::StringBuffer buffer;
-                                    rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
-                                    newDoc.Accept(writer);
-                                    newValue = buffer.GetString();
-                                    fieldModified = true;
                                 }
                             }
                         }
@@ -6569,88 +7226,88 @@ void RegisterInspectorCustomRenderers()
                                 }
                                 else
                                 {
-                                    // Generic string array-like table - render with +/- buttons
-                                    renderLabelWithTooltip();
-                                    bool arrayModified = false;
-                                    rapidjson::Document newDoc;
-                                    newDoc.SetArray();
-                                    auto& alloc = newDoc.GetAllocator();
-
-                                    // Static buffers for string editing
-                                    static std::unordered_map<std::string, std::vector<char>> stringArrayTableBuffers;
-
+                                    // Check if all elements are strings (or table is empty)
                                     size_t arraySize = doc.GetObject().MemberCount();
+                                    bool allStrings = true;
                                     for (size_t i = 0; i < arraySize; ++i)
                                     {
                                         std::string key = std::to_string(i + 1);
                                         auto it = doc.FindMember(key.c_str());
-                                        if (it == doc.MemberEnd()) continue;
-
-                                        ImGui::PushID(static_cast<int>(i));
-
-                                        std::string currentValue;
-                                        if (it->value.IsString())
+                                        if (it == doc.MemberEnd() || !it->value.IsString())
                                         {
-                                            currentValue = it->value.GetString();
+                                            allStrings = false;
+                                            break;
                                         }
-                                        else if (it->value.IsNumber())
+                                    }
+
+                                    if (allStrings || arraySize == 0)
+                                    {
+                                        // Render as editable string array with +/- buttons
+                                        renderLabelWithTooltip();
+                                        bool arrayModified = false;
+                                        rapidjson::Document newDoc;
+                                        newDoc.SetArray();
+                                        auto& alloc = newDoc.GetAllocator();
+
+                                        for (size_t i = 0; i < arraySize; ++i)
                                         {
-                                            currentValue = std::to_string(it->value.GetDouble());
+                                            std::string key = std::to_string(i + 1);
+                                            auto it = doc.FindMember(key.c_str());
+                                            if (it == doc.MemberEnd()) continue;
+
+                                            ImGui::PushID(static_cast<int>(i));
+
+                                            std::string elemStr = it->value.IsString() ? it->value.GetString() : "";
+
+                                            char buf[256];
+                                            strncpy(buf, elemStr.c_str(), sizeof(buf) - 1);
+                                            buf[sizeof(buf) - 1] = '\0';
+
+                                            ImGui::Text("[%zu]", i + 1);
+                                            ImGui::SameLine();
+                                            ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x - 30.0f);
+                                            if (ImGui::InputText(("##str_" + field.name + "_" + std::to_string(i)).c_str(), buf, sizeof(buf)))
+                                            {
+                                                elemStr = buf;
+                                                arrayModified = true;
+                                            }
+
+                                            ImGui::SameLine();
+                                            if (ImGui::SmallButton((std::string(ICON_FA_MINUS) + "##remove" + std::to_string(i)).c_str()))
+                                            {
+                                                arrayModified = true;
+                                            }
+                                            else
+                                            {
+                                                newDoc.PushBack(rapidjson::Value(elemStr.c_str(), alloc), alloc);
+                                            }
+
+                                            ImGui::PopID();
                                         }
-                                        else
+
+                                        if (ImGui::Button((std::string(ICON_FA_PLUS) + "##add_" + field.name).c_str()))
                                         {
-                                            currentValue = "";
-                                        }
-
-                                        // Create a unique key for this field+index buffer
-                                        std::string bufferKey = field.name + "_tbl_" + std::to_string(i);
-                                        auto& buffer = stringArrayTableBuffers[bufferKey];
-                                        if (buffer.size() < 256) buffer.resize(256);
-
-                                        // Initialize buffer
-                                        if (buffer[0] == '\0' || std::string(buffer.data()) != currentValue) {
-                                            size_t copyLen = std::min(currentValue.size(), size_t(255));
-                                            std::memcpy(buffer.data(), currentValue.c_str(), copyLen);
-                                            buffer[copyLen] = '\0';
-                                        }
-
-                                        ImGui::Text("[%zu]", i + 1);
-                                        ImGui::SameLine();
-                                        ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x - 30.0f);
-
-                                        if (ImGui::InputText(("##str_tbl" + std::to_string(i)).c_str(), buffer.data(), 256))
-                                        {
+                                            newDoc.PushBack(rapidjson::Value("", alloc), alloc);
                                             arrayModified = true;
                                         }
 
-                                        ImGui::SameLine();
-                                        if (ImGui::SmallButton((std::string(ICON_FA_MINUS) + "##remove_tbl" + std::to_string(i)).c_str()))
+                                        if (arrayModified)
                                         {
-                                            arrayModified = true;
-                                            stringArrayTableBuffers.erase(bufferKey);
+                                            rapidjson::StringBuffer buffer;
+                                            rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
+                                            newDoc.Accept(writer);
+                                            newValue = buffer.GetString();
+                                            fieldModified = true;
                                         }
-                                        else
-                                        {
-                                            newDoc.PushBack(rapidjson::Value(buffer.data(), alloc), alloc);
+                                    }
+                                    else
+                                    {
+                                        // Non-string generic array-like table - show as text
+                                        ImGui::Text("%s: [Array with %zu elements]", displayName.c_str(), doc.GetObject().MemberCount());
+                                        if (ImGui::IsItemHovered()) {
+                                            std::string tooltip = !fieldComment.empty() ? fieldComment : field.meta.tooltip;
+                                            if (!tooltip.empty()) ImGui::SetTooltip("%s", tooltip.c_str());
                                         }
-
-                                        ImGui::PopID();
-                                    }
-
-                                    // Add new element button
-                                    if (ImGui::Button((std::string(ICON_FA_PLUS) + "##add_tbl_" + field.name).c_str()))
-                                    {
-                                        newDoc.PushBack(rapidjson::Value("", alloc), alloc);
-                                        arrayModified = true;
-                                    }
-
-                                    if (arrayModified)
-                                    {
-                                        rapidjson::StringBuffer buffer;
-                                        rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
-                                        newDoc.Accept(writer);
-                                        newValue = buffer.GetString();
-                                        fieldModified = true;
                                     }
                                 }
                             }
@@ -8010,7 +8667,655 @@ void RegisterInspectorCustomRenderers()
                                               [](const char*, void*, Entity, ECSManager&)
                                               { return true; });
 
+    // ==================== FOG VOLUME COMPONENT ====================
+    ReflectionRenderer::RegisterComponentRenderer("FogVolumeComponent",
+    [](void* componentPtr, TypeDescriptor_Struct*, Entity entity, ECSManager& ecs) -> bool
+    {
+        FogVolumeComponent& fog = *static_cast<FogVolumeComponent*>(componentPtr);
+        const float labelWidth = EditorComponents::GetLabelWidth();
+
+        // Static tracking maps for entity-aware undo
+        static std::unordered_map<Entity, int>      startShape;
+        static std::unordered_map<Entity, Vector3D> startFogColor;
+        static std::unordered_map<Entity, bool>     isEditingFogColor;
+        static std::unordered_map<Entity, float>    startFogColorAlpha;
+        static std::unordered_map<Entity, bool>     isEditingFogColorAlpha;
+        static std::unordered_map<Entity, float>    startDensity;
+        static std::unordered_map<Entity, bool>     isEditingDensity;
+        static std::unordered_map<Entity, float>    startOpacity;
+        static std::unordered_map<Entity, bool>     isEditingOpacity;
+        static std::unordered_map<Entity, float>    startScrollX;
+        static std::unordered_map<Entity, bool>     isEditingScrollX;
+        static std::unordered_map<Entity, float>    startScrollY;
+        static std::unordered_map<Entity, bool>     isEditingScrollY;
+        static std::unordered_map<Entity, float>    startNoiseScale;
+        static std::unordered_map<Entity, bool>     isEditingNoiseScale;
+        static std::unordered_map<Entity, float>    startNoiseStrength;
+        static std::unordered_map<Entity, bool>     isEditingNoiseStrength;
+        static std::unordered_map<Entity, float>    startHeightFadeStart;
+        static std::unordered_map<Entity, bool>     isEditingHeightFadeStart;
+        static std::unordered_map<Entity, float>    startHeightFadeEnd;
+        static std::unordered_map<Entity, bool>     isEditingHeightFadeEnd;
+        static std::unordered_map<Entity, float>    startEdgeSoftness;
+        static std::unordered_map<Entity, bool>     isEditingEdgeSoftness;
+        static std::unordered_map<Entity, bool>     startUseHeightFade;
+
+        // Initialize tracking state
+        if (isEditingFogColor.find(entity)       == isEditingFogColor.end())       isEditingFogColor[entity]       = false;
+        if (isEditingFogColorAlpha.find(entity)  == isEditingFogColorAlpha.end())  isEditingFogColorAlpha[entity]  = false;
+        if (isEditingDensity.find(entity)        == isEditingDensity.end())        isEditingDensity[entity]        = false;
+        if (isEditingOpacity.find(entity)        == isEditingOpacity.end())        isEditingOpacity[entity]        = false;
+        if (isEditingScrollX.find(entity)        == isEditingScrollX.end())        isEditingScrollX[entity]        = false;
+        if (isEditingScrollY.find(entity)        == isEditingScrollY.end())        isEditingScrollY[entity]        = false;
+        if (isEditingNoiseScale.find(entity)     == isEditingNoiseScale.end())     isEditingNoiseScale[entity]     = false;
+        if (isEditingNoiseStrength.find(entity)  == isEditingNoiseStrength.end())  isEditingNoiseStrength[entity]  = false;
+        if (isEditingHeightFadeStart.find(entity)== isEditingHeightFadeStart.end())isEditingHeightFadeStart[entity]= false;
+        if (isEditingHeightFadeEnd.find(entity)  == isEditingHeightFadeEnd.end())  isEditingHeightFadeEnd[entity]  = false;
+        if (isEditingEdgeSoftness.find(entity)   == isEditingEdgeSoftness.end())   isEditingEdgeSoftness[entity]   = false;
+
+        // --- Shape ---
+        ImGui::Text("Shape");
+        ImGui::SameLine(labelWidth);
+        ImGui::SetNextItemWidth(-1);
+        const char* shapeNames[] = { "Box", "Sphere", "Cylinder" };
+        int shapeIndex = static_cast<int>(fog.shape);
+        int oldShapeIndex = shapeIndex;
+        EditorComponents::PushComboColors();
+        if (ImGui::Combo("##FogShape", &shapeIndex, shapeNames, 3))
+        {
+            fog.shape = static_cast<FogShape>(shapeIndex);
+            if (oldShapeIndex != shapeIndex && UndoSystem::GetInstance().IsEnabled())
+            {
+                int newVal = shapeIndex;
+                int oldVal = oldShapeIndex;
+                UndoSystem::GetInstance().RecordLambdaChange(
+                    [entity, newVal]() { ECSManager& e = ECSRegistry::GetInstance().GetActiveECSManager(); if (e.HasComponent<FogVolumeComponent>(entity)) e.GetComponent<FogVolumeComponent>(entity).shape = static_cast<FogShape>(newVal); },
+                    [entity, oldVal]() { ECSManager& e = ECSRegistry::GetInstance().GetActiveECSManager(); if (e.HasComponent<FogVolumeComponent>(entity)) e.GetComponent<FogVolumeComponent>(entity).shape = static_cast<FogShape>(oldVal); },
+                    "Change Fog Shape"
+                );
+            }
+        }
+        EditorComponents::PopComboColors();
+
+        ImGui::Separator();
+        ImGui::Text("Color & Opacity");
+
+        // --- Fog Color ---
+        ImGui::Text("Color");
+        ImGui::SameLine(labelWidth);
+        ImGui::SetNextItemWidth(-1);
+        float colorArr[3] = { fog.fogColor.x, fog.fogColor.y, fog.fogColor.z };
+        if (!isEditingFogColor[entity]) startFogColor[entity] = fog.fogColor;
+        if (ImGui::IsItemActivated()) { startFogColor[entity] = fog.fogColor; isEditingFogColor[entity] = true; }
+        if (ImGui::ColorEdit3("##FogColor", colorArr))
+        {
+            fog.fogColor = Vector3D(colorArr[0], colorArr[1], colorArr[2]);
+            isEditingFogColor[entity] = true;
+        }
+        if (isEditingFogColor[entity] && !ImGui::IsItemActive())
+        {
+            Vector3D oldVal = startFogColor[entity];
+            Vector3D newVal = fog.fogColor;
+            if (oldVal != newVal && UndoSystem::GetInstance().IsEnabled())
+            {
+                UndoSystem::GetInstance().RecordLambdaChange(
+                    [entity, newVal]() { ECSManager& e = ECSRegistry::GetInstance().GetActiveECSManager(); if (e.HasComponent<FogVolumeComponent>(entity)) e.GetComponent<FogVolumeComponent>(entity).fogColor = newVal; },
+                    [entity, oldVal]() { ECSManager& e = ECSRegistry::GetInstance().GetActiveECSManager(); if (e.HasComponent<FogVolumeComponent>(entity)) e.GetComponent<FogVolumeComponent>(entity).fogColor = oldVal; },
+                    "Change Fog Color"
+                );
+            }
+            isEditingFogColor[entity] = false;
+        }
+
+        // --- Density ---
+        ImGui::Text("Density");
+        ImGui::SameLine(labelWidth);
+        ImGui::SetNextItemWidth(-1);
+        if (!isEditingDensity[entity]) startDensity[entity] = fog.density;
+        if (ImGui::IsItemActivated()) { startDensity[entity] = fog.density; isEditingDensity[entity] = true; }
+        if (ImGui::DragFloat("##FogDensity", &fog.density, 0.01f, 0.0f, 20.0f))
+            isEditingDensity[entity] = true;
+        if (isEditingDensity[entity] && !ImGui::IsItemActive())
+        {
+            float oldVal = startDensity[entity]; float newVal = fog.density;
+            if (oldVal != newVal && UndoSystem::GetInstance().IsEnabled())
+                UndoSystem::GetInstance().RecordLambdaChange(
+                    [entity, newVal]() { ECSManager& e = ECSRegistry::GetInstance().GetActiveECSManager(); if (e.HasComponent<FogVolumeComponent>(entity)) e.GetComponent<FogVolumeComponent>(entity).density = newVal; },
+                    [entity, oldVal]() { ECSManager& e = ECSRegistry::GetInstance().GetActiveECSManager(); if (e.HasComponent<FogVolumeComponent>(entity)) e.GetComponent<FogVolumeComponent>(entity).density = oldVal; },
+                    "Change Fog Density");
+            isEditingDensity[entity] = false;
+        }
+
+        // --- Opacity ---
+        ImGui::Text("Opacity");
+        ImGui::SameLine(labelWidth);
+        ImGui::SetNextItemWidth(-1);
+        if (!isEditingOpacity[entity]) startOpacity[entity] = fog.opacity;
+        if (ImGui::IsItemActivated()) { startOpacity[entity] = fog.opacity; isEditingOpacity[entity] = true; }
+        if (ImGui::DragFloat("##FogOpacity", &fog.opacity, 0.01f, 0.0f, 1.0f))
+            isEditingOpacity[entity] = true;
+        if (isEditingOpacity[entity] && !ImGui::IsItemActive())
+        {
+            float oldVal = startOpacity[entity]; float newVal = fog.opacity;
+            if (oldVal != newVal && UndoSystem::GetInstance().IsEnabled())
+                UndoSystem::GetInstance().RecordLambdaChange(
+                    [entity, newVal]() { ECSManager& e = ECSRegistry::GetInstance().GetActiveECSManager(); if (e.HasComponent<FogVolumeComponent>(entity)) e.GetComponent<FogVolumeComponent>(entity).opacity = newVal; },
+                    [entity, oldVal]() { ECSManager& e = ECSRegistry::GetInstance().GetActiveECSManager(); if (e.HasComponent<FogVolumeComponent>(entity)) e.GetComponent<FogVolumeComponent>(entity).opacity = oldVal; },
+                    "Change Fog Opacity");
+            isEditingOpacity[entity] = false;
+        }
+
+        ImGui::Separator();
+        ImGui::Text("Noise");
+
+        // --- Noise Scale ---
+        ImGui::Text("Scale");
+        ImGui::SameLine(labelWidth);
+        ImGui::SetNextItemWidth(-1);
+        if (!isEditingNoiseScale[entity]) startNoiseScale[entity] = fog.noiseScale;
+        if (ImGui::IsItemActivated()) { startNoiseScale[entity] = fog.noiseScale; isEditingNoiseScale[entity] = true; }
+        if (ImGui::DragFloat("##FogNoiseScale", &fog.noiseScale, 0.01f, 0.0f, 20.0f))
+            isEditingNoiseScale[entity] = true;
+        if (isEditingNoiseScale[entity] && !ImGui::IsItemActive())
+        {
+            float oldVal = startNoiseScale[entity]; float newVal = fog.noiseScale;
+            if (oldVal != newVal && UndoSystem::GetInstance().IsEnabled())
+                UndoSystem::GetInstance().RecordLambdaChange(
+                    [entity, newVal]() { ECSManager& e = ECSRegistry::GetInstance().GetActiveECSManager(); if (e.HasComponent<FogVolumeComponent>(entity)) e.GetComponent<FogVolumeComponent>(entity).noiseScale = newVal; },
+                    [entity, oldVal]() { ECSManager& e = ECSRegistry::GetInstance().GetActiveECSManager(); if (e.HasComponent<FogVolumeComponent>(entity)) e.GetComponent<FogVolumeComponent>(entity).noiseScale = oldVal; },
+                    "Change Fog Noise Scale");
+            isEditingNoiseScale[entity] = false;
+        }
+
+        // --- Noise Strength ---
+        ImGui::Text("Strength");
+        ImGui::SameLine(labelWidth);
+        ImGui::SetNextItemWidth(-1);
+        if (!isEditingNoiseStrength[entity]) startNoiseStrength[entity] = fog.noiseStrength;
+        if (ImGui::IsItemActivated()) { startNoiseStrength[entity] = fog.noiseStrength; isEditingNoiseStrength[entity] = true; }
+        if (ImGui::DragFloat("##FogNoiseStrength", &fog.noiseStrength, 0.01f, 0.0f, 1.0f))
+            isEditingNoiseStrength[entity] = true;
+        if (isEditingNoiseStrength[entity] && !ImGui::IsItemActive())
+        {
+            float oldVal = startNoiseStrength[entity]; float newVal = fog.noiseStrength;
+            if (oldVal != newVal && UndoSystem::GetInstance().IsEnabled())
+                UndoSystem::GetInstance().RecordLambdaChange(
+                    [entity, newVal]() { ECSManager& e = ECSRegistry::GetInstance().GetActiveECSManager(); if (e.HasComponent<FogVolumeComponent>(entity)) e.GetComponent<FogVolumeComponent>(entity).noiseStrength = newVal; },
+                    [entity, oldVal]() { ECSManager& e = ECSRegistry::GetInstance().GetActiveECSManager(); if (e.HasComponent<FogVolumeComponent>(entity)) e.GetComponent<FogVolumeComponent>(entity).noiseStrength = oldVal; },
+                    "Change Fog Noise Strength");
+            isEditingNoiseStrength[entity] = false;
+        }
+
+        // --- Scroll Speed X ---
+        ImGui::Text("Scroll X");
+        ImGui::SameLine(labelWidth);
+        ImGui::SetNextItemWidth(-1);
+        if (!isEditingScrollX[entity]) startScrollX[entity] = fog.scrollSpeedX;
+        if (ImGui::IsItemActivated()) { startScrollX[entity] = fog.scrollSpeedX; isEditingScrollX[entity] = true; }
+        if (ImGui::DragFloat("##FogScrollX", &fog.scrollSpeedX, 0.001f, -1.0f, 1.0f))
+            isEditingScrollX[entity] = true;
+        if (isEditingScrollX[entity] && !ImGui::IsItemActive())
+        {
+            float oldVal = startScrollX[entity]; float newVal = fog.scrollSpeedX;
+            if (oldVal != newVal && UndoSystem::GetInstance().IsEnabled())
+                UndoSystem::GetInstance().RecordLambdaChange(
+                    [entity, newVal]() { ECSManager& e = ECSRegistry::GetInstance().GetActiveECSManager(); if (e.HasComponent<FogVolumeComponent>(entity)) e.GetComponent<FogVolumeComponent>(entity).scrollSpeedX = newVal; },
+                    [entity, oldVal]() { ECSManager& e = ECSRegistry::GetInstance().GetActiveECSManager(); if (e.HasComponent<FogVolumeComponent>(entity)) e.GetComponent<FogVolumeComponent>(entity).scrollSpeedX = oldVal; },
+                    "Change Fog Scroll X");
+            isEditingScrollX[entity] = false;
+        }
+
+        // --- Scroll Speed Y ---
+        ImGui::Text("Scroll Y");
+        ImGui::SameLine(labelWidth);
+        ImGui::SetNextItemWidth(-1);
+        if (!isEditingScrollY[entity]) startScrollY[entity] = fog.scrollSpeedY;
+        if (ImGui::IsItemActivated()) { startScrollY[entity] = fog.scrollSpeedY; isEditingScrollY[entity] = true; }
+        if (ImGui::DragFloat("##FogScrollY", &fog.scrollSpeedY, 0.001f, -1.0f, 1.0f))
+            isEditingScrollY[entity] = true;
+        if (isEditingScrollY[entity] && !ImGui::IsItemActive())
+        {
+            float oldVal = startScrollY[entity]; float newVal = fog.scrollSpeedY;
+            if (oldVal != newVal && UndoSystem::GetInstance().IsEnabled())
+                UndoSystem::GetInstance().RecordLambdaChange(
+                    [entity, newVal]() { ECSManager& e = ECSRegistry::GetInstance().GetActiveECSManager(); if (e.HasComponent<FogVolumeComponent>(entity)) e.GetComponent<FogVolumeComponent>(entity).scrollSpeedY = newVal; },
+                    [entity, oldVal]() { ECSManager& e = ECSRegistry::GetInstance().GetActiveECSManager(); if (e.HasComponent<FogVolumeComponent>(entity)) e.GetComponent<FogVolumeComponent>(entity).scrollSpeedY = oldVal; },
+                    "Change Fog Scroll Y");
+            isEditingScrollY[entity] = false;
+        }
+
+        ImGui::Separator();
+        ImGui::Text("Fading");
+
+        // --- Edge Softness ---
+        ImGui::Text("Edge Softness");
+        ImGui::SameLine(labelWidth);
+        ImGui::SetNextItemWidth(-1);
+        if (!isEditingEdgeSoftness[entity]) startEdgeSoftness[entity] = fog.edgeSoftness;
+        if (ImGui::IsItemActivated()) { startEdgeSoftness[entity] = fog.edgeSoftness; isEditingEdgeSoftness[entity] = true; }
+        if (ImGui::DragFloat("##FogEdgeSoftness", &fog.edgeSoftness, 0.01f, 0.0f, 1.0f))
+            isEditingEdgeSoftness[entity] = true;
+        if (isEditingEdgeSoftness[entity] && !ImGui::IsItemActive())
+        {
+            float oldVal = startEdgeSoftness[entity]; float newVal = fog.edgeSoftness;
+            if (oldVal != newVal && UndoSystem::GetInstance().IsEnabled())
+                UndoSystem::GetInstance().RecordLambdaChange(
+                    [entity, newVal]() { ECSManager& e = ECSRegistry::GetInstance().GetActiveECSManager(); if (e.HasComponent<FogVolumeComponent>(entity)) e.GetComponent<FogVolumeComponent>(entity).edgeSoftness = newVal; },
+                    [entity, oldVal]() { ECSManager& e = ECSRegistry::GetInstance().GetActiveECSManager(); if (e.HasComponent<FogVolumeComponent>(entity)) e.GetComponent<FogVolumeComponent>(entity).edgeSoftness = oldVal; },
+                    "Change Fog Edge Softness");
+            isEditingEdgeSoftness[entity] = false;
+        }
+
+        // --- Use Height Fade ---
+        ImGui::Text("Height Fade");
+        ImGui::SameLine(labelWidth);
+        startUseHeightFade[entity] = fog.useHeightFade;
+        bool useHeightFadeVal = fog.useHeightFade;
+        if (ImGui::Checkbox("##FogUseHeightFade", &useHeightFadeVal))
+        {
+            bool oldVal = startUseHeightFade[entity];
+            fog.useHeightFade = useHeightFadeVal;
+            if (oldVal != useHeightFadeVal && UndoSystem::GetInstance().IsEnabled())
+                UndoSystem::GetInstance().RecordLambdaChange(
+                    [entity, useHeightFadeVal]() { ECSManager& e = ECSRegistry::GetInstance().GetActiveECSManager(); if (e.HasComponent<FogVolumeComponent>(entity)) e.GetComponent<FogVolumeComponent>(entity).useHeightFade = useHeightFadeVal; },
+                    [entity, oldVal]()           { ECSManager& e = ECSRegistry::GetInstance().GetActiveECSManager(); if (e.HasComponent<FogVolumeComponent>(entity)) e.GetComponent<FogVolumeComponent>(entity).useHeightFade = oldVal; },
+                    "Toggle Fog Height Fade");
+        }
+
+        if (fog.useHeightFade)
+        {
+            // --- Height Fade Start ---
+            ImGui::Text("  Fade Start");
+            ImGui::SameLine(labelWidth);
+            ImGui::SetNextItemWidth(-1);
+            if (!isEditingHeightFadeStart[entity]) startHeightFadeStart[entity] = fog.heightFadeStart;
+            if (ImGui::IsItemActivated()) { startHeightFadeStart[entity] = fog.heightFadeStart; isEditingHeightFadeStart[entity] = true; }
+            if (ImGui::DragFloat("##FogHeightFadeStart", &fog.heightFadeStart, 0.01f, 0.0f, 1.0f))
+                isEditingHeightFadeStart[entity] = true;
+            if (isEditingHeightFadeStart[entity] && !ImGui::IsItemActive())
+            {
+                float oldVal = startHeightFadeStart[entity]; float newVal = fog.heightFadeStart;
+                if (oldVal != newVal && UndoSystem::GetInstance().IsEnabled())
+                    UndoSystem::GetInstance().RecordLambdaChange(
+                        [entity, newVal]() { ECSManager& e = ECSRegistry::GetInstance().GetActiveECSManager(); if (e.HasComponent<FogVolumeComponent>(entity)) e.GetComponent<FogVolumeComponent>(entity).heightFadeStart = newVal; },
+                        [entity, oldVal]() { ECSManager& e = ECSRegistry::GetInstance().GetActiveECSManager(); if (e.HasComponent<FogVolumeComponent>(entity)) e.GetComponent<FogVolumeComponent>(entity).heightFadeStart = oldVal; },
+                        "Change Fog Height Fade Start");
+                isEditingHeightFadeStart[entity] = false;
+            }
+
+            // --- Height Fade End ---
+            ImGui::Text("  Fade End");
+            ImGui::SameLine(labelWidth);
+            ImGui::SetNextItemWidth(-1);
+            if (!isEditingHeightFadeEnd[entity]) startHeightFadeEnd[entity] = fog.heightFadeEnd;
+            if (ImGui::IsItemActivated()) { startHeightFadeEnd[entity] = fog.heightFadeEnd; isEditingHeightFadeEnd[entity] = true; }
+            if (ImGui::DragFloat("##FogHeightFadeEnd", &fog.heightFadeEnd, 0.01f, 0.0f, 1.0f))
+                isEditingHeightFadeEnd[entity] = true;
+            if (isEditingHeightFadeEnd[entity] && !ImGui::IsItemActive())
+            {
+                float oldVal = startHeightFadeEnd[entity]; float newVal = fog.heightFadeEnd;
+                if (oldVal != newVal && UndoSystem::GetInstance().IsEnabled())
+                    UndoSystem::GetInstance().RecordLambdaChange(
+                        [entity, newVal]() { ECSManager& e = ECSRegistry::GetInstance().GetActiveECSManager(); if (e.HasComponent<FogVolumeComponent>(entity)) e.GetComponent<FogVolumeComponent>(entity).heightFadeEnd = newVal; },
+                        [entity, oldVal]() { ECSManager& e = ECSRegistry::GetInstance().GetActiveECSManager(); if (e.HasComponent<FogVolumeComponent>(entity)) e.GetComponent<FogVolumeComponent>(entity).heightFadeEnd = oldVal; },
+                        "Change Fog Height Fade End");
+                isEditingHeightFadeEnd[entity] = false;
+            }
+        }
+
+        return true; // Skip default reflection rendering
+    });
+
+    // Hide runtime-only FogVolumeComponent fields from default rendering
+    ReflectionRenderer::RegisterFieldRenderer("FogVolumeComponent", "shape",            [](const char*, void*, Entity, ECSManager&) { return true; });
+    ReflectionRenderer::RegisterFieldRenderer("FogVolumeComponent", "fogColor",         [](const char*, void*, Entity, ECSManager&) { return true; });
+    ReflectionRenderer::RegisterFieldRenderer("FogVolumeComponent", "fogColorAlpha",    [](const char*, void*, Entity, ECSManager&) { return true; });
+    ReflectionRenderer::RegisterFieldRenderer("FogVolumeComponent", "density",          [](const char*, void*, Entity, ECSManager&) { return true; });
+    ReflectionRenderer::RegisterFieldRenderer("FogVolumeComponent", "opacity",          [](const char*, void*, Entity, ECSManager&) { return true; });
+    ReflectionRenderer::RegisterFieldRenderer("FogVolumeComponent", "scrollSpeedX",     [](const char*, void*, Entity, ECSManager&) { return true; });
+    ReflectionRenderer::RegisterFieldRenderer("FogVolumeComponent", "scrollSpeedY",     [](const char*, void*, Entity, ECSManager&) { return true; });
+    ReflectionRenderer::RegisterFieldRenderer("FogVolumeComponent", "noiseScale",       [](const char*, void*, Entity, ECSManager&) { return true; });
+    ReflectionRenderer::RegisterFieldRenderer("FogVolumeComponent", "noiseStrength",    [](const char*, void*, Entity, ECSManager&) { return true; });
+    ReflectionRenderer::RegisterFieldRenderer("FogVolumeComponent", "useHeightFade",    [](const char*, void*, Entity, ECSManager&) { return true; });
+    ReflectionRenderer::RegisterFieldRenderer("FogVolumeComponent", "heightFadeStart",  [](const char*, void*, Entity, ECSManager&) { return true; });
+    ReflectionRenderer::RegisterFieldRenderer("FogVolumeComponent", "heightFadeEnd",    [](const char*, void*, Entity, ECSManager&) { return true; });
+    ReflectionRenderer::RegisterFieldRenderer("FogVolumeComponent", "edgeSoftness",     [](const char*, void*, Entity, ECSManager&) { return true; });
+    ReflectionRenderer::RegisterFieldRenderer("FogVolumeComponent", "noiseTextureGUID", [](const char*, void*, Entity, ECSManager&) { return true; });
+    ReflectionRenderer::RegisterFieldRenderer("FogVolumeComponent", "fogShader",        [](const char*, void*, Entity, ECSManager&) { return true; });
+    ReflectionRenderer::RegisterFieldRenderer("FogVolumeComponent", "noiseTexture",     [](const char*, void*, Entity, ECSManager&) { return true; });
+    ReflectionRenderer::RegisterFieldRenderer("FogVolumeComponent", "noiseTexturePath", [](const char*, void*, Entity, ECSManager&) { return true; });
+    ReflectionRenderer::RegisterFieldRenderer("FogVolumeComponent", "fogVAO",           [](const char*, void*, Entity, ECSManager&) { return true; });
+    ReflectionRenderer::RegisterFieldRenderer("FogVolumeComponent", "fogVBO",           [](const char*, void*, Entity, ECSManager&) { return true; });
+    ReflectionRenderer::RegisterFieldRenderer("FogVolumeComponent", "fogEBO",           [](const char*, void*, Entity, ECSManager&) { return true; });
+    ReflectionRenderer::RegisterFieldRenderer("FogVolumeComponent", "worldTransform",   [](const char*, void*, Entity, ECSManager&) { return true; });
+
     // ==================== SPRITE ANIMATION COMPONENT ====================
     // Register the sprite animation inspector (defined in SpriteAnimationInspector.cpp)
     RegisterSpriteAnimationInspector();
+
+    // ==================== DIALOGUE COMPONENT ====================
+    ReflectionRenderer::RegisterComponentRenderer("DialogueComponent",
+    [](void* componentPtr, TypeDescriptor_Struct*, Entity entity, ECSManager& ecs) -> bool
+    {
+        DialogueComponent& dialogue = *static_cast<DialogueComponent*>(componentPtr);
+        const float labelWidth = EditorComponents::GetLabelWidth();
+
+        // --- Dialogue Name ---
+        ImGui::Text("Dialogue Name");
+        ImGui::SameLine(labelWidth);
+        ImGui::SetNextItemWidth(-1);
+        {
+            static std::unordered_map<ImGuiID, std::string> startDlgName;
+            static std::unordered_map<ImGuiID, bool> isEditingDlgName;
+            ImGuiID dnId = ImGui::GetID("##DialogueName");
+            if (!isEditingDlgName[dnId]) startDlgName[dnId] = dialogue.dialogueName;
+            char nameBuf[256];
+            strncpy(nameBuf, dialogue.dialogueName.c_str(), sizeof(nameBuf) - 1);
+            nameBuf[sizeof(nameBuf) - 1] = '\0';
+            if (ImGui::InputText("##DialogueName", nameBuf, sizeof(nameBuf))) {
+                dialogue.dialogueName = nameBuf;
+                dialogue.registeredWithManager = false;
+            }
+            if (ImGui::IsItemActivated()) { startDlgName[dnId] = dialogue.dialogueName; isEditingDlgName[dnId] = true; }
+            if (isEditingDlgName[dnId] && !ImGui::IsItemActive()) {
+                isEditingDlgName[dnId] = false;
+                if (startDlgName[dnId] != dialogue.dialogueName && UndoSystem::GetInstance().IsEnabled())
+                    UndoSystem::GetInstance().RecordStringChange(&dialogue.dialogueName, startDlgName[dnId], dialogue.dialogueName, "Change Dialogue Name");
+            }
+        }
+
+        // --- Text Entity (drag-drop target) ---
+        ImGui::Text("Text Entity");
+        ImGui::SameLine(labelWidth);
+        float fieldWidth = ImGui::GetContentRegionAvail().x;
+
+        std::string textEntityDisplay = "None (TextRender)";
+        if (!dialogue.textEntityGuidStr.empty()) {
+            GUID_128 guid = GUIDUtilities::ConvertStringToGUID128(dialogue.textEntityGuidStr);
+            Entity textEntity = EntityGUIDRegistry::GetInstance().GetEntityByGUID(guid);
+            if (textEntity != 0 && ecs.HasComponent<NameComponent>(textEntity)) {
+                textEntityDisplay = ecs.GetComponent<NameComponent>(textEntity).name;
+            }
+        }
+
+        EditorComponents::DrawDragDropButton(textEntityDisplay.c_str(), fieldWidth);
+        if (ImGui::BeginDragDropTarget()) {
+            if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("HIERARCHY_ENTITY")) {
+                Entity droppedEntity = *(Entity*)payload->Data;
+                if (ecs.HasComponent<TextRenderComponent>(droppedEntity)) {
+                    std::string oldGuid = dialogue.textEntityGuidStr;
+                    GUID_128 guid = EntityGUIDRegistry::GetInstance().GetGUIDByEntity(droppedEntity);
+                    std::string newGuid = GUIDUtilities::ConvertGUID128ToString(guid);
+                    dialogue.textEntityGuidStr = newGuid;
+                    dialogue.textEntity = droppedEntity;
+                    if (UndoSystem::GetInstance().IsEnabled())
+                        UndoSystem::GetInstance().RecordStringChange(&dialogue.textEntityGuidStr, oldGuid, newGuid, "Assign Dialogue Text Entity");
+                }
+            }
+            ImGui::EndDragDropTarget();
+        }
+
+        // --- Appearance Mode dropdown ---
+        ImGui::Text("Appearance");
+        ImGui::SameLine(labelWidth);
+        ImGui::SetNextItemWidth(-1);
+        const char* appearanceModes[] = { "Fade In / Out", "Typewriter", "Instant" };
+        EditorComponents::PushComboColors();
+        UndoableWidgets::Combo("##AppearanceMode", &dialogue.appearanceModeID, appearanceModes, IM_ARRAYSIZE(appearanceModes));
+        EditorComponents::PopComboColors();
+
+        // --- Fade Duration (only if FadeInOut) ---
+        if (dialogue.appearanceModeID == 0) {
+            ImGui::Text("Fade Duration");
+            ImGui::SameLine(labelWidth);
+            ImGui::SetNextItemWidth(-1);
+            UndoableWidgets::DragFloat("##FadeDuration", &dialogue.fadeDuration, 0.01f, 0.0f, 10.0f, "%.2f sec");
+        }
+
+        // --- Text Speed (only if Typewriter) ---
+        if (dialogue.appearanceModeID == 1) {
+            ImGui::Text("Text Speed");
+            ImGui::SameLine(labelWidth);
+            ImGui::SetNextItemWidth(-1);
+            UndoableWidgets::DragFloat("##TextSpeed", &dialogue.textSpeed, 1.0f, 1.0f, 200.0f, "%.0f chars/sec");
+        }
+
+        // --- Auto Start checkbox ---
+        ImGui::Text("Auto Start");
+        ImGui::SameLine(labelWidth);
+        UndoableWidgets::Checkbox("##AutoStart", &dialogue.autoStart);
+
+        ImGui::Spacing();
+        ImGui::Separator();
+
+        // --- Dialogue Entries header ---
+        ImGui::Text("Dialogue Entries");
+        ImGui::SameLine(ImGui::GetContentRegionAvail().x - 60);
+        if (ImGui::SmallButton(ICON_FA_PLUS " Add")) {
+            dialogue.entries.push_back(DialogueEntry{});
+            if (UndoSystem::GetInstance().IsEnabled()) {
+                UndoSystem::GetInstance().RecordLambdaChange(
+                    [entity]() { auto& e = ECSRegistry::GetInstance().GetActiveECSManager(); if (e.HasComponent<DialogueComponent>(entity)) e.GetComponent<DialogueComponent>(entity).entries.push_back(DialogueEntry{}); },
+                    [entity]() { auto& e = ECSRegistry::GetInstance().GetActiveECSManager(); if (e.HasComponent<DialogueComponent>(entity)) { auto& b = e.GetComponent<DialogueComponent>(entity).entries; if (!b.empty()) b.pop_back(); } },
+                    "Add Dialogue Entry");
+            }
+        }
+
+        ImGui::Spacing();
+
+        // --- Render each entry ---
+        int entryToRemove = -1;
+        for (size_t i = 0; i < dialogue.entries.size(); ++i) {
+            DialogueEntry& entry = dialogue.entries[i];
+            ImGui::PushID(static_cast<int>(i));
+
+            // Collapsible header for each entry
+            std::string entryLabel = "Entry " + std::to_string(i);
+            bool entryOpen = ImGui::CollapsingHeader(entryLabel.c_str(), ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_AllowOverlap);
+
+            // Remove button on same line
+            ImGui::SameLine(ImGui::GetContentRegionAvail().x + ImGui::GetCursorPosX() - 25);
+            if (ImGui::SmallButton(ICON_FA_TRASH "##RemoveEntry")) {
+                entryToRemove = static_cast<int>(i);
+            }
+            if (ImGui::IsItemHovered()) {
+                ImGui::SetTooltip("Remove this entry");
+            }
+
+            if (entryOpen) {
+                ImGui::Indent(10.0f);
+
+                // --- Text content (multiline) ---
+                ImGui::Text("Text");
+                ImGui::SameLine(labelWidth);
+                ImGui::SetNextItemWidth(-1);
+                {
+                    static std::unordered_map<ImGuiID, std::string> startEntryText;
+                    static std::unordered_map<ImGuiID, bool> isEditingEntryText;
+                    ImGuiID etid = ImGui::GetID("##EntryText");
+                    if (!isEditingEntryText[etid]) startEntryText[etid] = entry.text;
+                    char textBuf[1024];
+                    strncpy(textBuf, entry.text.c_str(), sizeof(textBuf) - 1);
+                    textBuf[sizeof(textBuf) - 1] = '\0';
+                    if (ImGui::InputTextMultiline("##EntryText", textBuf, sizeof(textBuf),
+                        ImVec2(-1, ImGui::GetTextLineHeight() * 3))) {
+                        entry.text = textBuf;
+                    }
+                    if (ImGui::IsItemActivated()) { startEntryText[etid] = entry.text; isEditingEntryText[etid] = true; }
+                    if (isEditingEntryText[etid] && !ImGui::IsItemActive()) {
+                        isEditingEntryText[etid] = false;
+                        if (startEntryText[etid] != entry.text && UndoSystem::GetInstance().IsEnabled()) {
+                            size_t idx = i;
+                            std::string oldVal = startEntryText[etid], newVal = entry.text;
+                            UndoSystem::GetInstance().RecordLambdaChange(
+                                [entity, idx, newVal]() { auto& e = ECSRegistry::GetInstance().GetActiveECSManager(); if (e.HasComponent<DialogueComponent>(entity)) { auto& b = e.GetComponent<DialogueComponent>(entity).entries; if (idx < b.size()) b[idx].text = newVal; } },
+                                [entity, idx, oldVal]() { auto& e = ECSRegistry::GetInstance().GetActiveECSManager(); if (e.HasComponent<DialogueComponent>(entity)) { auto& b = e.GetComponent<DialogueComponent>(entity).entries; if (idx < b.size()) b[idx].text = oldVal; } },
+                                "Change Dialogue Text");
+                        }
+                    }
+                }
+
+                // --- Advance By dropdown ---
+                ImGui::Text("Advance By");
+                ImGui::SameLine(labelWidth);
+                ImGui::SetNextItemWidth(-1);
+                const char* scrollTypes[] = { "Time", "Action", "Trigger" };
+                EditorComponents::PushComboColors();
+                UndoableWidgets::Combo("##ScrollType", &entry.scrollTypeID, scrollTypes, IM_ARRAYSIZE(scrollTypes));
+                EditorComponents::PopComboColors();
+
+                // --- Conditional fields based on scroll type ---
+                if (entry.scrollTypeID == 0) {
+                    // Time mode: show duration
+                    ImGui::Text("Duration");
+                    ImGui::SameLine(labelWidth);
+                    ImGui::SetNextItemWidth(-1);
+                    UndoableWidgets::DragFloat("##AutoTime", &entry.autoTime, 0.1f, 0.1f, 60.0f, "%.1f sec");
+                }
+                else if (entry.scrollTypeID == 2) {
+                    // Trigger mode: show entity drag-drop
+                    ImGui::Text("Trigger Entity");
+                    ImGui::SameLine(labelWidth);
+                    float triggerFieldWidth = ImGui::GetContentRegionAvail().x;
+
+                    std::string triggerDisplay = "None (Trigger)";
+                    if (!entry.triggerEntityGuidStr.empty()) {
+                        GUID_128 guid = GUIDUtilities::ConvertStringToGUID128(entry.triggerEntityGuidStr);
+                        Entity triggerEntity = EntityGUIDRegistry::GetInstance().GetEntityByGUID(guid);
+                        if (triggerEntity != 0 && ecs.HasComponent<NameComponent>(triggerEntity)) {
+                            triggerDisplay = ecs.GetComponent<NameComponent>(triggerEntity).name;
+                        }
+                    }
+
+                    EditorComponents::DrawDragDropButton(triggerDisplay.c_str(), triggerFieldWidth);
+                    if (ImGui::BeginDragDropTarget()) {
+                        if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("HIERARCHY_ENTITY")) {
+                            Entity droppedEntity = *(Entity*)payload->Data;
+                            std::string oldGuid = entry.triggerEntityGuidStr;
+                            GUID_128 guid = EntityGUIDRegistry::GetInstance().GetGUIDByEntity(droppedEntity);
+                            std::string newGuid = GUIDUtilities::ConvertGUID128ToString(guid);
+                            entry.triggerEntityGuidStr = newGuid;
+                            if (UndoSystem::GetInstance().IsEnabled()) {
+                                size_t idx = i;
+                                UndoSystem::GetInstance().RecordLambdaChange(
+                                    [entity, idx, newGuid]() { auto& e = ECSRegistry::GetInstance().GetActiveECSManager(); if (e.HasComponent<DialogueComponent>(entity)) { auto& b = e.GetComponent<DialogueComponent>(entity).entries; if (idx < b.size()) b[idx].triggerEntityGuidStr = newGuid; } },
+                                    [entity, idx, oldGuid]() { auto& e = ECSRegistry::GetInstance().GetActiveECSManager(); if (e.HasComponent<DialogueComponent>(entity)) { auto& b = e.GetComponent<DialogueComponent>(entity).entries; if (idx < b.size()) b[idx].triggerEntityGuidStr = oldGuid; } },
+                                    "Assign Dialogue Trigger Entity");
+                            }
+                        }
+                        ImGui::EndDragDropTarget();
+                    }
+                }
+                // Action mode: no extra fields needed
+
+                ImGui::Unindent(10.0f);
+            }
+
+            ImGui::PopID();
+        }
+
+        // Process removal after loop
+        if (entryToRemove >= 0 && entryToRemove < static_cast<int>(dialogue.entries.size())) {
+            DialogueEntry removedEntry = dialogue.entries[entryToRemove];
+            int removeIdx = entryToRemove;
+            dialogue.entries.erase(dialogue.entries.begin() + entryToRemove);
+            if (UndoSystem::GetInstance().IsEnabled()) {
+                UndoSystem::GetInstance().RecordLambdaChange(
+                    [entity, removeIdx]() { auto& e = ECSRegistry::GetInstance().GetActiveECSManager(); if (e.HasComponent<DialogueComponent>(entity)) { auto& b = e.GetComponent<DialogueComponent>(entity).entries; if (removeIdx < static_cast<int>(b.size())) b.erase(b.begin() + removeIdx); } },
+                    [entity, removeIdx, removedEntry]() { auto& e = ECSRegistry::GetInstance().GetActiveECSManager(); if (e.HasComponent<DialogueComponent>(entity)) { auto& b = e.GetComponent<DialogueComponent>(entity).entries; b.insert(b.begin() + std::min(removeIdx, static_cast<int>(b.size())), removedEntry); } },
+                    "Remove Dialogue Entry");
+            }
+        }
+
+        return true; // Skip default reflection rendering
+    });
+
+    // Hide all DialogueComponent fields from default rendering (handled by custom renderer)
+    ReflectionRenderer::RegisterFieldRenderer("DialogueComponent", "dialogueName",
+                                              [](const char*, void*, Entity, ECSManager&) { return true; });
+    ReflectionRenderer::RegisterFieldRenderer("DialogueComponent", "textEntityGuidStr",
+                                              [](const char*, void*, Entity, ECSManager&) { return true; });
+    ReflectionRenderer::RegisterFieldRenderer("DialogueComponent", "appearanceModeID",
+                                              [](const char*, void*, Entity, ECSManager&) { return true; });
+    ReflectionRenderer::RegisterFieldRenderer("DialogueComponent", "fadeDuration",
+                                              [](const char*, void*, Entity, ECSManager&) { return true; });
+    ReflectionRenderer::RegisterFieldRenderer("DialogueComponent", "textSpeed",
+                                              [](const char*, void*, Entity, ECSManager&) { return true; });
+    ReflectionRenderer::RegisterFieldRenderer("DialogueComponent", "entries",
+                                              [](const char*, void*, Entity, ECSManager&) { return true; });
+    ReflectionRenderer::RegisterFieldRenderer("DialogueComponent", "autoStart",
+                                              [](const char*, void*, Entity, ECSManager&) { return true; });
+
+    // ==================== BLOOM COMPONENT ====================
+    ReflectionRenderer::RegisterComponentRenderer("BloomComponent",
+    [](void* componentPtr, TypeDescriptor_Struct*, Entity entity, ECSManager& ecs) -> bool
+    {
+        BloomComponent& bloom = *static_cast<BloomComponent*>(componentPtr);
+        const float labelWidth = EditorComponents::GetLabelWidth();
+
+        static std::unordered_map<Entity, float> startBloomIntensity;
+        static std::unordered_map<Entity, glm::vec3> startBloomColor;
+        static std::unordered_map<Entity, bool> isEditingBloom;
+        if (isEditingBloom.find(entity) == isEditingBloom.end()) isEditingBloom[entity] = false;
+
+        // Enabled checkbox
+        bool bloomEnabled = bloom.enabled;
+        if (ImGui::Checkbox("Enabled##BloomComp", &bloomEnabled)) {
+            bool oldVal = bloom.enabled;
+            bloom.enabled = bloomEnabled;
+            if (UndoSystem::GetInstance().IsEnabled()) {
+                bool newVal = bloomEnabled;
+                UndoSystem::GetInstance().RecordLambdaChange(
+                    [entity, newVal]() { auto& e = ECSRegistry::GetInstance().GetActiveECSManager(); if (e.HasComponent<BloomComponent>(entity)) e.GetComponent<BloomComponent>(entity).enabled = newVal; },
+                    [entity, oldVal]() { auto& e = ECSRegistry::GetInstance().GetActiveECSManager(); if (e.HasComponent<BloomComponent>(entity)) e.GetComponent<BloomComponent>(entity).enabled = oldVal; },
+                    "Toggle Bloom Component");
+            }
+        }
+
+        // Bloom Color
+        ImGui::Text("Bloom Color");
+        ImGui::SameLine(labelWidth);
+        ImGui::SetNextItemWidth(-1);
+        float color[3] = {bloom.bloomColor.r, bloom.bloomColor.g, bloom.bloomColor.b};
+        if (!isEditingBloom[entity]) startBloomColor[entity] = bloom.bloomColor;
+        if (ImGui::ColorEdit3("##BloomColor", color)) {
+            bloom.bloomColor = glm::vec3(color[0], color[1], color[2]);
+            isEditingBloom[entity] = true;
+        }
+        if (isEditingBloom[entity] && !ImGui::IsItemActive()) {
+            glm::vec3 oldVal = startBloomColor[entity]; glm::vec3 newVal = bloom.bloomColor;
+            if (oldVal != newVal && UndoSystem::GetInstance().IsEnabled()) {
+                UndoSystem::GetInstance().RecordLambdaChange(
+                    [entity, newVal]() { auto& e = ECSRegistry::GetInstance().GetActiveECSManager(); if (e.HasComponent<BloomComponent>(entity)) e.GetComponent<BloomComponent>(entity).bloomColor = newVal; },
+                    [entity, oldVal]() { auto& e = ECSRegistry::GetInstance().GetActiveECSManager(); if (e.HasComponent<BloomComponent>(entity)) e.GetComponent<BloomComponent>(entity).bloomColor = oldVal; },
+                    "Change Bloom Color");
+            }
+            isEditingBloom[entity] = false;
+        }
+
+        // Bloom Intensity
+        ImGui::Text("Intensity");
+        ImGui::SameLine(labelWidth);
+        ImGui::SetNextItemWidth(-1);
+        if (!isEditingBloom[entity]) startBloomIntensity[entity] = bloom.bloomIntensity;
+        if (ImGui::DragFloat("##BloomEntityIntensity", &bloom.bloomIntensity, 0.05f, 0.0f, 10.0f)) { isEditingBloom[entity] = true; }
+        if (isEditingBloom[entity] && !ImGui::IsItemActive()) {
+            float oldVal = startBloomIntensity[entity]; float newVal = bloom.bloomIntensity;
+            if (oldVal != newVal && UndoSystem::GetInstance().IsEnabled()) {
+                UndoSystem::GetInstance().RecordLambdaChange(
+                    [entity, newVal]() { auto& e = ECSRegistry::GetInstance().GetActiveECSManager(); if (e.HasComponent<BloomComponent>(entity)) e.GetComponent<BloomComponent>(entity).bloomIntensity = newVal; },
+                    [entity, oldVal]() { auto& e = ECSRegistry::GetInstance().GetActiveECSManager(); if (e.HasComponent<BloomComponent>(entity)) e.GetComponent<BloomComponent>(entity).bloomIntensity = oldVal; },
+                    "Change Bloom Intensity");
+            }
+            isEditingBloom[entity] = false;
+        }
+
+        return true; // Skip default reflection rendering
+    });
+
+    // Hide BloomComponent fields from default rendering (handled by custom renderer)
+    ReflectionRenderer::RegisterFieldRenderer("BloomComponent", "enabled",
+                                              [](const char*, void*, Entity, ECSManager&) { return true; });
+    ReflectionRenderer::RegisterFieldRenderer("BloomComponent", "bloomIntensity",
+                                              [](const char*, void*, Entity, ECSManager&) { return true; });
 }

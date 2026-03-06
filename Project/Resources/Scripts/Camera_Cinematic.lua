@@ -1,4 +1,4 @@
--- CinematicCamera.lua 
+-- CinematicCamera.lua
 -- Handles cinematic camera mode with position/rotation tracking and automatic timeout
 -- FIXED: Uses Engine.GetTransformRotation instead of GetTransformWorldRotation
 
@@ -63,25 +63,40 @@ return Component {
         targetTransformName = "",
         targetPosition = {x = -2, y = 1, z = -2},
         targetRotation = {x = 0, y = 0, z = 0},
-        transitionSpeed = 0.5,
-        useSequence = false,
-        sequenceWaypoints = {},
-        sequenceInterval = 3.0,
-        sequenceLoop = false,
-        
-        -- Timer settings
-        useDuration = false,
-        cinematicDuration = 5.0,
-        
+
+        -- seconds to lerp to target
+        transitionDuration = 3.0,
+        -- seconds to stay at target before auto-disabling
+        stayDuration = 3.0,
+
+        -- Camera position names to cycle through on each cinematic trigger.
+        -- Order matches trigger order (0-based).
+        cinematicPositionNames = { "DoorCameraTarget", "Player" },
+        -- Override which index fires next (1-based). Resets to this value on play.
+        cinematicPositionIndex = 1,
+
+        -- Freeze movement during cinematic
+        freezePlayer = false,
+        freezeEnemy = false,
+
         debugMode = true,
     },
 
     Awake = function(self)
         self._wasCinematicActive = false
-        self._currentWaypointIndex = 1
-        self._waypointTimer = 0.0
-        self._durationTimer = 0.0
-        
+        self._transitionTimer = 0.0
+        self._stayTimer = 0.0
+        self._phase = "transition"  -- "transition" or "staying"
+        self._cinematicPositionIndex = 1  -- always start at index 1 on play
+
+        -- Allow external scripts (e.g. DoorTrigger) to activate cinematic mode.
+        if event_bus and event_bus.subscribe then
+            self._cinematicTriggerSub = event_bus.subscribe("cinematic.trigger", function(active)
+                self.cinematicActive = active
+                print("[CinematicCamera] cinematicActive set to " .. tostring(active) .. " via event")
+            end)
+        end
+
         print("[CinematicCamera] Initialized")
     end,
 
@@ -89,93 +104,110 @@ return Component {
         -- Detect activation/deactivation
         if self.cinematicActive ~= self._wasCinematicActive then
             self._wasCinematicActive = self.cinematicActive
-            
+
             if self.cinematicActive then
                 print("[CinematicCamera] Cinematic mode ENABLED")
-                self._durationTimer = 0.0
-                
+                self._transitionTimer = 0.0
+                self._stayTimer = 0.0
+                self._phase = "transition"
+
+                -- Cycle to the next position name (1-based array)
+                local names = self.cinematicPositionNames
+                local idx   = self._cinematicPositionIndex
+                local name  = names and names[idx]
+                if name and name ~= "" then
+                    self.targetTransformName = name
+                    print("[CinematicCamera] Camera target set to: " .. name)
+                end
+                if names then
+                    local nextIdx = idx + 1
+                    if names[nextIdx] == nil then nextIdx = 1 end
+                    self._cinematicPositionIndex = nextIdx
+                    self.cinematicPositionIndex  = nextIdx  -- keep editor field in sync
+                end
+
                 if event_bus and event_bus.publish then
                     event_bus.publish("cinematic.active", true)
-                end
-                if self.useSequence then
-                    self._currentWaypointIndex = 1
-                    self._waypointTimer = 0.0
+                    if self.freezePlayer then
+                        event_bus.publish("freeze_player", true)
+                        print("[CinematicCamera] Player movement FROZEN")
+                    end
+                    if self.freezeEnemy then
+                        event_bus.publish("freeze_enemy", true)
+                        print("[CinematicCamera] Enemy movement FROZEN")
+                    end
                 end
             else
                 print("[CinematicCamera] Cinematic mode DISABLED")
                 if event_bus and event_bus.publish then
                     event_bus.publish("cinematic.active", false)
+                    if self.freezePlayer then
+                        event_bus.publish("freeze_player", false)
+                        print("[CinematicCamera] Player movement UNFROZEN")
+                    end
+                    if self.freezeEnemy then
+                        event_bus.publish("freeze_enemy", false)
+                        print("[CinematicCamera] Enemy movement UNFROZEN")
+                    end
                 end
             end
         end
-        
+
         if not self.cinematicActive then
             return
         end
-        
-        -- Duration timer
-        if self.useDuration then
-            self._durationTimer = self._durationTimer + dt
-            
-            if self._durationTimer >= self.cinematicDuration then
-                print(string.format("[CinematicCamera] Duration timeout (%.2fs) - disabling", 
-                                  self._durationTimer))
+
+        -- Phase timing
+        if self._phase == "transition" then
+            self._transitionTimer = self._transitionTimer + dt
+            if self._transitionTimer >= self.transitionDuration then
+                self._phase = "staying"
+                self._stayTimer = 0.0
+                if self.debugMode then
+                    print(string.format("[CinematicCamera] Transition complete (%.2fs), now staying", self._transitionTimer))
+                end
+            end
+        elseif self._phase == "staying" then
+            self._stayTimer = self._stayTimer + dt
+            if self._stayTimer >= self.stayDuration then
+                print(string.format("[CinematicCamera] Stay complete (%.2fs) - disabling", self._stayTimer))
+                -- Advance dialogue after cinematic pan completes
+                DialogueManager.ScrollNext("Intro")
                 self.cinematicActive = false
                 return
             end
         end
-        
-        -- Sequence mode
-        if self.useSequence and self.sequenceWaypoints and #self.sequenceWaypoints > 0 then
-            self._waypointTimer = self._waypointTimer + dt
-            
-            if self._waypointTimer >= self.sequenceInterval then
-                self._waypointTimer = 0.0
-                self._currentWaypointIndex = self._currentWaypointIndex + 1
-                
-                if self._currentWaypointIndex > #self.sequenceWaypoints then
-                    if self.sequenceLoop then
-                        self._currentWaypointIndex = 1
-                    else
-                        self.cinematicActive = false
-                        return
-                    end
-                end
-                
-                self.targetTransformName = self.sequenceWaypoints[self._currentWaypointIndex]
-            end
-        end
-        
+
         -- Get target position & rotation
         local targetPos = nil
         local targetRot = nil
-        
+
         if self.targetTransformName and self.targetTransformName ~= "" then
             -- STRIP QUOTES AND WHITESPACE
             local cleanName = self.targetTransformName
             cleanName = cleanName:gsub('"', ''):gsub("'", ''):gsub("^%s*(.-)%s*$", "%1")
-            
+
             if self.debugMode then
                 print(string.format("[CinematicCamera] Searching for: '%s'", cleanName))
             end
-            
+
             if Engine and Engine.FindTransformByName then
                 local targetTransform = Engine.FindTransformByName(cleanName)
-                
+
                 if targetTransform then
                     if self.debugMode then
                         print("[CinematicCamera] Transform FOUND!")
                     end
-                    
+
                     -- Get Position
                     if Engine.GetTransformWorldPosition then
                         local positionTable = Engine.GetTransformWorldPosition(targetTransform)
-    
+
                         if positionTable and type(positionTable) == "table" then
                             local x = positionTable[1] or positionTable.x or positionTable._1
                             local y = positionTable[2] or positionTable.y or positionTable._2
                             local z = positionTable[3] or positionTable.z or positionTable._3
-        
+
                             if x and y and z then
                                 targetPos = {x = x, y = y, z = z}
                                 if self.debugMode then
@@ -184,13 +216,13 @@ return Component {
                             end
                         end
                     end
-                    
+
                     -- Get Rotation - TRY MULTIPLE METHODS
                     if self.debugMode then
                         print("[CinematicCamera] Attempting to get rotation...")
                     end
-                    
-                    -- METHOD 1: Try accessing worldRotation property directly from Transform
+
+                    -- METHOD 1: Try accessing localRotation property from Transform
                     if targetTransform.localRotation then
                         local rot = targetTransform.localRotation
                         if self.debugMode then
@@ -200,7 +232,7 @@ return Component {
                                     tostring(rot.w), tostring(rot.x), tostring(rot.y), tostring(rot.z)))
                             end
                         end
-                        
+
                         if rot and (rot.w or rot.x or rot.y or rot.z) then
                             targetRot = {
                                 qw = rot.w or 1,
@@ -208,18 +240,18 @@ return Component {
                                 qy = rot.y or 0,
                                 qz = rot.z or 0
                             }
-                            
+
                             if self.debugMode then
                                 local pitch, yaw, roll = quatToEuler(targetRot.qw, targetRot.qx, targetRot.qy, targetRot.qz)
-                                print(string.format("[CinematicCamera] Rotation (quat): w=%.3f, x=%.3f, y=%.3f, z=%.3f", 
+                                print(string.format("[CinematicCamera] Rotation (quat): w=%.3f, x=%.3f, y=%.3f, z=%.3f",
                                     targetRot.qw, targetRot.qx, targetRot.qy, targetRot.qz))
-                                print(string.format("[CinematicCamera] Rotation (euler): y=%.1f, x=%.1f, z=%.1f", 
+                                print(string.format("[CinematicCamera] Rotation (euler): y=%.1f, x=%.1f, z=%.1f",
                                     pitch, yaw, roll))
                             end
                         end
                     end
-                    
-                    
+
+
                     if not targetRot and self.debugMode then
                         print("[CinematicCamera] WARNING: Could not extract rotation from transform!")
                     end
@@ -228,7 +260,7 @@ return Component {
                 end
             end
         end
-        
+
         -- Fallback to manual position
         if not targetPos then
             targetPos = {
@@ -237,11 +269,11 @@ return Component {
                 z = self.targetPosition.z or 0
             }
         end
-        
+
         -- Fallback to manual rotation
         if not targetRot then
             if self.debugMode then
-                print(string.format("[CinematicCamera] Using manual rotation: x=%.1f, y=%.1f, z=%.1f", 
+                print(string.format("[CinematicCamera] Using manual rotation: x=%.1f, y=%.1f, z=%.1f",
                     self.targetRotation.x, self.targetRotation.y, self.targetRotation.z))
             end
             local quat = eulerToQuat(
@@ -254,23 +286,31 @@ return Component {
 
         -- Debug print position and Rotation
         if self.debugMode then
-           print(string.format("[CinematicCamera] Target Pos: (%.2f, %.2f, %.2f)", 
+           print(string.format("[CinematicCamera] Target Pos: (%.2f, %.2f, %.2f)",
                 targetPos.x, targetPos.y, targetPos.z))
-           print(string.format("[CinematicCamera] Target Rot (quat): w=%.3f, x=%.3f, y=%.3f, z=%.3f", 
+           print(string.format("[CinematicCamera] Target Rot (quat): w=%.3f, x=%.3f, y=%.3f, z=%.3f",
                 targetRot.qw, targetRot.qx, targetRot.qy, targetRot.qz))
         end
-        
+
         -- Publish to camera
         if event_bus and event_bus.publish then
+            local t = 0.0
+            if self.transitionDuration > 0 then
+                t = math.min(self._transitionTimer / self.transitionDuration, 1.0)
+            else
+                t = 1.0
+            end
+
             event_bus.publish("cinematic.target", {
                 position = targetPos,
                 rotation = targetRot,
-                transitionSpeed = self.transitionSpeed
+                lerpT = t,
+                phase = self._phase,
             })
-            
+
             if self.debugMode and targetRot then
                 local pitch, yaw, roll = quatToEuler(targetRot.qw, targetRot.qx, targetRot.qy, targetRot.qz)
-                print(string.format("[CinematicCamera] Publishing - Pos: (%.2f, %.2f, %.2f), Euler: (%.1f, %.1f, %.1f)", 
+                print(string.format("[CinematicCamera] Publishing - Pos: (%.2f, %.2f, %.2f), Euler: (%.1f, %.1f, %.1f)",
                     targetPos.x, targetPos.y, targetPos.z, pitch, yaw, roll))
             end
         end

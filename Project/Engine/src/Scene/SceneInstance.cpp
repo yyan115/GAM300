@@ -35,6 +35,7 @@
 #include <UI/Slider/SliderComponent.hpp>
 #include <Multi-threading/SequentialSystemOrchestrator.hpp>
 #include <Multi-threading/ParallelSystemOrchestrator.hpp>
+#include "Engine.h"
 
 Entity fpsText;
 
@@ -134,7 +135,12 @@ void SceneInstance::Initialize()
 	ENGINE_LOG_INFO("Slider system initialized");
 	ecsManager.videoSystem->Initialise(ecsManager);
 	ENGINE_LOG_INFO("Video system initialized");
+	ecsManager.dialogueSystem->Initialise(ecsManager);
+	ENGINE_LOG_INFO("Dialogue system initialized");
+	ecsManager.fogSystem->Initialise();
+	ENGINE_LOG_INFO("Fog system initialized");
 
+	//testing(ecsManager);
 
 	if (!multithreadSystems)
 	{
@@ -184,7 +190,6 @@ void SceneInstance::Update(double dt)
 
 void SceneInstance::Draw()
 {
-
 	ECSManager &mainECS = ECSRegistry::GetInstance().GetECSManager(scenePath);
 
 	GraphicsManager &gfxManager = GraphicsManager::GetInstance();
@@ -211,17 +216,30 @@ void SceneInstance::Draw()
 		gfxManager.Clear(0.192f, 0.301f, 0.475f, 1.0f);
 	}
 
-	// Update transforms before camera (camera needs up-to-date transform matrices)
-	mainECS.transformSystem->Update();
+	// In edit mode, the orchestrator's Update phase doesn't run (no game logic).
+	// We must update rendering-critical systems here so the game panel has correct
+	// transforms, camera state, lighting data, and post-processing settings.
+	if (!Engine::ShouldRunGameLogic())
+	{
+		if (mainECS.transformSystem) mainECS.transformSystem->Update();
+		if (mainECS.cameraSystem) mainECS.cameraSystem->Update();
 
-	// Update camera system (detects camera changes, switches cameras, updates from components)
-	// This needs to run even in edit mode so the game panel shows the correct camera
-	mainECS.cameraSystem->Update();
+		// Set the game camera on gfxManager BEFORE lighting update.
+		// LightingSystem::CollectLightData() uses GetCurrentCamera() for distance
+		// culling of point/spot lights. Without this, it uses the editor camera
+		// (still set from the Scene Panel render), which can cull lights that are
+		// close to the game camera but far from the editor camera — causing wrong
+		// lighting colors (e.g., red tint from missing cool-colored fill lights).
+		gfxManager.SetCamera(mainECS.cameraSystem->GetActiveCamera());
+		gfxManager.UpdateFrustum();
 
-	gfxManager.SetCamera(mainECS.cameraSystem->GetActiveCamera());
-
-	// Update frustum with the game camera BEFORE model system runs (for proper culling in game panel)
-	gfxManager.UpdateFrustum();
+		if (mainECS.lightingSystem) mainECS.lightingSystem->Update();
+	}
+	else
+	{
+		gfxManager.SetCamera(mainECS.cameraSystem->GetActiveCamera());
+		gfxManager.UpdateFrustum();
+	}
 
 	drawSynchronized = false;
 	systemOrchestrator->Draw();
@@ -253,6 +271,14 @@ void SceneInstance::Draw()
 
 	// End HDR rendering and apply tone-mapping to default framebuffer (screen)
 	PostProcessingManager::GetInstance().EndHDRRender(0, RunTimeVar::window.width, RunTimeVar::window.height);
+
+	// Render deferred items (excluded from post-processing) on top of blurred output
+	if (!gfxManager.IsGamePanelActive() && gfxManager.HasDeferredItems())
+	{
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+		glViewport(0, 0, RunTimeVar::window.width, RunTimeVar::window.height);
+		gfxManager.RenderDeferred();
+	}
 }
 
 void SceneInstance::Exit()
@@ -264,7 +290,9 @@ void SceneInstance::Exit()
 	ShutDownPhysics();
 	PostProcessingManager::GetInstance().Shutdown();
 	ECSRegistry::GetInstance().GetECSManager(scenePath).particleSystem->Shutdown();
+	ECSRegistry::GetInstance().GetECSManager(scenePath).dialogueSystem->Shutdown();
 	ECSRegistry::GetInstance().GetECSManager(scenePath).scriptSystem->Shutdown();
+	ECSRegistry::GetInstance().GetECSManager(scenePath).fogSystem->Shutdown();
 	systemOrchestrator.reset();
 	ENGINE_PRINT("TestScene Exited\n");
 }
@@ -524,64 +552,77 @@ void SceneInstance::CreateDefaultCamera(ECSManager &ecsManager)
 
 void testing(ECSManager& ecsManager)
 {
-	// ===== TEXT WRAPPING TEST =====
-	Entity textEntity = ecsManager.CreateEntity();
-	ecsManager.AddComponent<NameComponent>(textEntity, NameComponent("Text Wrap Test"));
+	//// ===== TEXT WRAPPING TEST =====
+	//Entity textEntity = ecsManager.CreateEntity();
+	//ecsManager.AddComponent<NameComponent>(textEntity, NameComponent("Text Wrap Test"));
 
-	GUID_128 fontGUID = MetaFilesManager::GetGUID128FromAssetFile("Resources/Fonts/Kenney Mini.ttf");
-	GUID_128 shaderGUID = MetaFilesManager::GetGUID128FromAssetFile(ResourceManager::GetPlatformShaderPath("text"));
+	//GUID_128 fontGUID = MetaFilesManager::GetGUID128FromAssetFile("Resources/Fonts/Kenney Mini.ttf");
+	//GUID_128 shaderGUID = MetaFilesManager::GetGUID128FromAssetFile(ResourceManager::GetPlatformShaderPath("text"));
 
-	// Add component first
-	TextRenderComponent textComp("This is a long piece of text that should wrap to multiple lines when word wrap is enabled.", 32, fontGUID, shaderGUID);
-	textComp.position = Vector3D(100.0f, 500.0f, 0.0f);
-	textComp.color = Vector3D(1.0f, 1.0f, 1.0f);
-	ecsManager.AddComponent<TextRenderComponent>(textEntity, textComp);
+	//// Add component first
+	//TextRenderComponent textComp("This is a long piece of text that should wrap to multiple lines when word wrap is enabled.", 32, fontGUID, shaderGUID);
+	//textComp.position = Vector3D(100.0f, 500.0f, 0.0f);
+	//textComp.color = Vector3D(1.0f, 1.0f, 1.0f);
+	//ecsManager.AddComponent<TextRenderComponent>(textEntity, textComp);
 
-	// Now get reference and set wrap properties
-	auto& text = ecsManager.GetComponent<TextRenderComponent>(textEntity);
-	text.wordWrap = true;
-	text.maxWidth = 300.0f;
-	text.lineSpacing = 1.2f;
+	//// Now get reference and set wrap properties
+	//auto& text = ecsManager.GetComponent<TextRenderComponent>(textEntity);
+	//text.wordWrap = true;
+	//text.maxWidth = 300.0f;
+	//text.lineSpacing = 1.2f;
 
-	std::cout << "[Test] Set wordWrap: " << text.wordWrap << ", maxWidth: " << text.maxWidth << std::endl;
+	//std::cout << "[Test] Set wordWrap: " << text.wordWrap << ", maxWidth: " << text.maxWidth << std::endl;
 
-	Entity sAnim = ecsManager.CreateEntity();
-	ecsManager.AddComponent<NameComponent>(sAnim, NameComponent("Sprite Animation Entity"));
-	ecsManager.AddComponent<SpriteAnimationComponent>(sAnim, SpriteAnimationComponent());
-	ecsManager.AddComponent<SpriteRenderComponent>(sAnim, SpriteRenderComponent{ MetaFilesManager::GetGUID128FromAssetFile("Resources/Textures/idle_1.png"), MetaFilesManager::GetGUID128FromAssetFile(ResourceManager::GetPlatformShaderPath("default"))});
+	//Entity sAnim = ecsManager.CreateEntity();
+	//ecsManager.AddComponent<NameComponent>(sAnim, NameComponent("Sprite Animation Entity"));
+	//ecsManager.AddComponent<SpriteAnimationComponent>(sAnim, SpriteAnimationComponent());
+	//ecsManager.AddComponent<SpriteRenderComponent>(sAnim, SpriteRenderComponent{ MetaFilesManager::GetGUID128FromAssetFile("Resources/Textures/idle_1.png"), MetaFilesManager::GetGUID128FromAssetFile(ResourceManager::GetPlatformShaderPath("default"))});
 
-	std::string idlePath[3] = {
-		"Resources/Textures/idle_1.png",
-		"Resources/Textures/idle_2.png",
-		"Resources/Textures/idle_3.png"
-	};
+	//std::string idlePath[3] = {
+	//	"Resources/Textures/idle_1.png",
+	//	"Resources/Textures/idle_2.png",
+	//	"Resources/Textures/idle_3.png"
+	//};
 
-	GUID_128 frame1 = MetaFilesManager::GetGUID128FromAssetFile(idlePath[0]);
-	GUID_128 frame2 = MetaFilesManager::GetGUID128FromAssetFile(idlePath[1]);
-	GUID_128 frame3 = MetaFilesManager::GetGUID128FromAssetFile(idlePath[2]);
+	//GUID_128 frame1 = MetaFilesManager::GetGUID128FromAssetFile(idlePath[0]);
+	//GUID_128 frame2 = MetaFilesManager::GetGUID128FromAssetFile(idlePath[1]);
+	//GUID_128 frame3 = MetaFilesManager::GetGUID128FromAssetFile(idlePath[2]);
 
-	// Setting Current Sprite
-	auto& sprite = ecsManager.GetComponent<SpriteRenderComponent>(sAnim);
-	sprite.is3D = true;
+	//// Setting Current Sprite
+	//auto& sprite = ecsManager.GetComponent<SpriteRenderComponent>(sAnim);
+	//sprite.is3D = true;
 
-	auto& anim = ecsManager.GetComponent<SpriteAnimationComponent>(sAnim);
+	//auto& anim = ecsManager.GetComponent<SpriteAnimationComponent>(sAnim);
 
-	SpriteAnimationClip idleClip;
-	idleClip.name = "Idle";
-	idleClip.loop = true;
+	//SpriteAnimationClip idleClip;
+	//idleClip.name = "Idle";
+	//idleClip.loop = true;
 
-	for(int i = 0; i < 3; ++i) 
-	{
-		SpriteFrame frame;
-		frame.textureGUID = MetaFilesManager::GetGUID128FromAssetFile(idlePath[i]);
-		frame.texturePath = idlePath[i];
-		frame.uvOffset = glm::vec2(0.0f, 0.0f);
-		frame.uvScale = glm::vec2(1.0f, 1.0f);
-		frame.duration = 1.0f; // 0.2 seconds per frame
+	//for(int i = 0; i < 3; ++i) 
+	//{
+	//	SpriteFrame frame;
+	//	frame.textureGUID = MetaFilesManager::GetGUID128FromAssetFile(idlePath[i]);
+	//	frame.texturePath = idlePath[i];
+	//	frame.uvOffset = glm::vec2(0.0f, 0.0f);
+	//	frame.uvScale = glm::vec2(1.0f, 1.0f);
+	//	frame.duration = 1.0f; // 0.2 seconds per frame
 
-		idleClip.frames.push_back(frame);
-	}
+	//	idleClip.frames.push_back(frame);
+	//}
 
-	anim.clips.push_back(idleClip);
-	anim.Play("Idle");
+	//anim.clips.push_back(idleClip);
+	//anim.Play("Idle");
+	// --- FOG TEST ---
+	Entity fogEntity = ecsManager.CreateEntity();
+	ecsManager.GetComponent<NameComponent>(fogEntity).name = "Test Fog Volume";
+	ecsManager.transformSystem->SetLocalPosition(fogEntity, Vector3D(0.f, 0.5f, 0.f));
+	ecsManager.transformSystem->SetLocalScale(fogEntity, Vector3D(10.f, 5.f, 10.f));
+
+	FogVolumeComponent fogComp;
+	fogComp.fogColor = Vector3D(0.7f, 0.7f, 0.8f);
+	fogComp.density = 0.5f;
+	fogComp.opacity = 0.6f;
+	fogComp.isVisible = true;
+	ecsManager.AddComponent<FogVolumeComponent>(fogEntity, fogComp);
+	// --- END FOG TEST ---
 }

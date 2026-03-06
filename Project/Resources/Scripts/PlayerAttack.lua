@@ -29,6 +29,7 @@ return Component {
         maxComboSteps   = 3,
         comboResetTime  = 1.3, -- currently not heavily used but kept for tuning
         attackCooldown  = 2.0, -- minimum time between attacks to prevent spam
+        maxComboAnimSpeed = 2.0, -- max animation speed multiplier when clicking early (1.0 = no speedup)
 
         -- Step 1 timings
         attack1Duration  = 2.0,
@@ -88,6 +89,9 @@ return Component {
         self._hitEventIdCounter = 0
         self._currentHitEventId = nil
 
+        -- Combo animation speed scaling
+        self._comboSpeedMult = 1.0
+
         -- Animation clip indices
          self._attackAnimClip1 = 3
          self._attackAnimClip2 = 4
@@ -101,6 +105,14 @@ return Component {
     Start = function(self)
         self._animator = self:GetComponent("AnimationComponent")
         self._audio    = self:GetComponent("AudioComponent")
+
+        -- Listen for cinematic mode so chain (and melee) attacks are blocked
+        self._frozenByCinematic = false
+        if event_bus and event_bus.subscribe then
+            self._cinematicSub = event_bus.subscribe("cinematic.active", function(active)
+                self._frozenByCinematic = active
+            end)
+        end
     end,
 
     OnDisable = function(self)
@@ -118,6 +130,18 @@ return Component {
     ----------------------------------------------------------------------
         Update = function(self, dt)
         self._time = self._time + dt
+
+        -- ---- Skip all attack logic if player has no weapon ----
+        if not _G.playerHasWeapon then return end
+
+        -- ---- Skip all attack logic during dash ----
+        if _G.player_is_dashing then return end
+
+        -- ---- Skip all attack logic during cinematic ----
+        if self._frozenByCinematic then return end
+
+        -- ---- Skip all attack logic while casting Feather Skill ----
+        if _G.player_is_casting_skill then return end
 
         -- ---- Input handling (unified input system) ----
         local leftDown,  leftPressed  = false, false
@@ -175,7 +199,8 @@ return Component {
         end
 
         -- There is an active attack step
-        self._attackTimer = self._attackTimer + dt
+        -- Timer is scaled by combo speed multiplier so it stays in sync with animation
+        self._attackTimer = self._attackTimer + dt * self._comboSpeedMult
 
         -- Only allow queuing the next swing while the hit is actually active
         local hitStart, hitEnd = self:_getHitWindow(self._comboIndex)
@@ -189,7 +214,22 @@ return Component {
 
         if leftPressed and canQueueNext then
             self._queuedNextSwing = true
-            print("[LUA][PlayerAttack] Queued next swing (step " .. tostring(self._comboIndex + 1) .. ")")
+
+            -- How early in the hit window did they click?
+            -- 1.0 = right at hitStart (very early/fast), 0.0 = right at hitEnd (slow)
+            local windowSize = math.max(hitEnd - hitStart, 0.001)
+            local earlyFactor = 1.0 - ((t - hitStart) / windowSize)
+            earlyFactor = math.max(0.0, math.min(1.0, earlyFactor))
+
+            -- Lerp speed: earlyFactor=1 → maxComboAnimSpeed, earlyFactor=0 → 1.0
+            local maxSpeed = self.maxComboAnimSpeed or 2.0
+            self._comboSpeedMult = 1.0 + (maxSpeed - 1.0) * earlyFactor
+
+            if self._animator then
+                self._animator:SetSpeed(self._comboSpeedMult)
+            end
+
+            print("[LUA][PlayerAttack] Queued next swing (step " .. tostring(self._comboIndex + 1) .. ") speed=" .. string.format("%.2f", self._comboSpeedMult))
         end
 
         -- Update hitbox for this frame
@@ -210,6 +250,8 @@ return Component {
                 self._hitboxActive      = false
                 self._currentHitEventId = nil
                 self._cooldownTimer     = self.attackCooldown or 3.0
+                self._comboSpeedMult    = 1.0
+                if self._animator then self._animator:SetSpeed(1.0) end
 
                 _G.player_is_attacking = false
             end
@@ -289,6 +331,12 @@ return Component {
         self._attackTimer     = 0.0
         self._queuedNextSwing = false
         self._hitboxActive    = false
+
+        -- Reset animation speed for each new step (speedup is re-applied when next click comes in)
+        self._comboSpeedMult = 1.0
+        if self._animator then
+            self._animator:SetSpeed(1.0)
+        end
 
         -- New unique ID for this swing
         self._hitEventIdCounter = (self._hitEventIdCounter or 0) + 1

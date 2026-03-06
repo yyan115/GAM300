@@ -3,132 +3,125 @@
 #include <ECS/ECSRegistry.hpp>
 #include "Physics/PhysicsSystem.hpp"
 #include <Physics/Kinematics/CharacterControllerSystem.hpp>
+#include "Logging.hpp"
 
 void ParallelSystemOrchestrator::Update() {
     xscheduler::task_group frameChannel{ xscheduler::str_v<"UpdateChannel">, scheduler };
-
-    // Update physics and transform systems sequentially first.
-    // Use actual delta time, not fixed - these are called once per frame, not in a fixed timestep loop
     auto& mainECS = ECSRegistry::GetInstance().GetActiveECSManager();
 
-    //
+    // -------------------------------------------------------------------------
+    // 1. LOGIC PHASE (Sequential)
+    // -------------------------------------------------------------------------
+    // Scripts must run first to handle input and state changes.
+    // Running this in parallel is risky due to potential logic race conditions.
+    PROFILE_PLOT_TIMED("Script", mainECS.scriptSystem->Update());
+
+    // Clear/Pre-warm cache for the parallel threads to read safely
+    mainECS.ClearActiveHierarchyCache();
+    mainECS.PreWarmActiveHierarchyCache();
 
     bool gamePaused = TimeManager::IsPaused();
-    if (!gamePaused)
-    {
-        mainECS.physicsSystem->Update((float)TimeManager::GetDeltaTime(), mainECS);
-        mainECS.characterControllerSystem->Update((float)TimeManager::GetDeltaTime(), mainECS);
-    }
 
+    // -------------------------------------------------------------------------
+    // 2. SIMULATION PHASE (Parallel)
+    // -------------------------------------------------------------------------
+    // We group the heavy systems to run simultaneously.
+    // Thread 1: Animation (3.1ms)
+    // Thread 2: Physics + CC (2.25ms) + Audio (Light)
+    // -------------------------------------------------------------------------
 
-    //mainECS.physicsSystem->Update((float)TimeManager::GetDeltaTime(), mainECS);
-    //mainECS.characterControllerSystem->Update((float)TimeManager::GetDeltaTime(), mainECS);
-    mainECS.transformSystem->Update();
-    mainECS.uiAnchorSystem->Update();  // Must run before button/slider to update positions
-    mainECS.videoSystem->Update((float)TimeManager::GetDeltaTime()); // must be run on the main thread due to call to OpenGL functions
-    mainECS.scriptSystem->Update();
-
-    if (!gamePaused)
-    {
+    // JOB A: Animation
+    if (!gamePaused) {
         frameChannel.Submit([&] {
-            auto& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
-            //ENGINE_LOG_DEBUG("Running AnimationJob");
-            ecs.animationSystem->Update();
+            // Animation touches Bone Entities
+            PROFILE_PLOT_TIMED("Animation",       mainECS.animationSystem->Update());
+            PROFILE_PLOT_TIMED("SpriteAnimation", mainECS.spriteAnimationSystem->Update());
             });
-        frameChannel.Submit([&] {
-          auto& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
-          //ENGINE_LOG_DEBUG("Running SpriteAnimationJob");
-          ecs.spriteAnimationSystem->Update();
-          });
     }
 
+    // JOB B: Physics & Movement
+    // Physics touches Root/Collider Entities. These are usually different
+    // from Bones, so it is safe to run in parallel with Animation.
+    frameChannel.Submit([&] {
+        if (!gamePaused) {
+            float dt = (float)TimeManager::GetDeltaTime();
+            PROFILE_PLOT_TIMED("Physics",             mainECS.physicsSystem->Update(dt, mainECS));
+            PROFILE_PLOT_TIMED("CharacterController", mainECS.characterControllerSystem->Update(dt, mainECS));
+        }
 
-	// Then update the other systems in parallel.
-    frameChannel.Submit([&] {
-        auto& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
-        //ENGINE_LOG_DEBUG("Running AudioJob");
-        ecs.audioSystem->Update((float)TimeManager::GetDeltaTime());
-        });
-  //  frameChannel.Submit([&] {
-  //      auto& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
-  //      //ENGINE_LOG_DEBUG("Running AnimationJob");
-  //      ecs.animationSystem->Update();
-		//});
-    frameChannel.Submit([&] {
-        auto& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
-        //ENGINE_LOG_DEBUG("Running CameraJob");
-        ecs.cameraSystem->Update();
-		});
-    frameChannel.Submit([&] {
-        auto& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
-        //ENGINE_LOG_DEBUG("Running LightingJob");
-        ecs.lightingSystem->Update();
-        });
-	//frameChannel.Submit([&] {
- //       auto& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
- //       //ENGINE_LOG_DEBUG("Running ScriptingJob");
- //       ecs.scriptSystem->Update();
-	//	});
-    frameChannel.Submit([&] {
-        auto& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
-        //ENGINE_LOG_DEBUG("Running ButtonJob");
-        ecs.buttonSystem->Update();
-        });
-    frameChannel.Submit([&] {
-        auto& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
-        //ENGINE_LOG_DEBUG("Running SliderJob");
-        if (ecs.sliderSystem) {
-            ecs.sliderSystem->Update();
+        // Audio is usually thread-safe and light, fit it in the gap here
+        if (mainECS.audioSystem) {
+            PROFILE_PLOT_TIMED("Audio", mainECS.audioSystem->Update((float)TimeManager::GetDeltaTime()));
         }
         });
-  //  frameChannel.Submit([&] {
-  //      auto& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
-  //      //ENGINE_LOG_DEBUG("Running SpriteAnimationJob");
-  //      ecs.spriteAnimationSystem->Update();
-		//});
 
-    // Synchronize
+    // Wait for Simulation to finish before updating Transforms
     frameChannel.join();
-    //ENGINE_LOG_DEBUG("Update Synchronized\n");
+
+    // -------------------------------------------------------------------------
+    // 3. TRANSFORM PHASE (Sequential)
+    // -------------------------------------------------------------------------
+    // Must run AFTER Physics/Anim so that World Matrices reflect this frame's changes.
+    // This is the bottleneck (3.8ms), but it relies on the data from above.
+    PROFILE_PLOT_TIMED("Transform", mainECS.transformSystem->Update());
+
+    // Update anchors after transform so UI is positioned correctly
+    PROFILE_PLOT_TIMED("UIAnchor", mainECS.uiAnchorSystem->Update());
+
+    // OpenGL calls must be on main thread
+    PROFILE_PLOT_TIMED("Video", mainECS.videoSystem->Update((float)TimeManager::GetDeltaTime()));
+
+    // Refresh cache again if transforms changed hierarchy active states (rare but possible)
+    mainECS.ClearActiveHierarchyCache();
+    mainECS.PreWarmActiveHierarchyCache();
+
+    // -------------------------------------------------------------------------
+    // 4. RENDER PREP PHASE (Sequential)
+    // -------------------------------------------------------------------------
+    // Run these on the main thread to avoid complexity and overhead
+    PROFILE_PLOT_TIMED("Camera",   mainECS.cameraSystem->Update());
+    PROFILE_PLOT_TIMED("Lighting", mainECS.lightingSystem->Update());
+    PROFILE_PLOT_TIMED("Button",   mainECS.buttonSystem->Update());
+    PROFILE_PLOT_TIMED("Slider",   mainECS.sliderSystem->Update());
+    PROFILE_PLOT_TIMED("Dialogue", mainECS.dialogueSystem->Update((float)TimeManager::GetDeltaTime()));
 }
 
 void ParallelSystemOrchestrator::Draw() {
     xscheduler::task_group frameChannel{ xscheduler::str_v<"DrawChannel">, scheduler };
     auto& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
 
+    // Ensure cache is fully populated before parallel draw tasks (read-only is thread-safe)
+    ecs.PreWarmActiveHierarchyCache();
+
     frameChannel.Submit([&] {
         auto& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
-        //ENGINE_LOG_DEBUG("Running ModelJob");
-        ecs.modelSystem->Update();
-        //ENGINE_PRINT("ModelJob finished");
+        PROFILE_PLOT_TIMED("Model", ecs.modelSystem->Update());
         });
     frameChannel.Submit([&] {
         auto& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
-        //ENGINE_LOG_DEBUG("Running TextJob");
-        ecs.textSystem->Update();
-       // ENGINE_PRINT("TextJob finished");
+        PROFILE_PLOT_TIMED("Text", ecs.textSystem->Update());
         });
     frameChannel.Submit([&] {
         auto& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
-        //ENGINE_LOG_DEBUG("Running SpriteJob");
-        ecs.spriteSystem->Update();
-        //ENGINE_PRINT("SpriteJob finished");
+        PROFILE_PLOT_TIMED("Sprite", ecs.spriteSystem->Update());
         });
+    //frameChannel.Submit([&] {
+    //    auto& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
+    //    PROFILE_PLOT_TIMED("Particle", ecs.particleSystem->Update());
+    //    });
     frameChannel.Submit([&] {
         auto& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
-        //ENGINE_LOG_DEBUG("Running ParticleJob");
-        ecs.particleSystem->Update();
-        //ENGINE_PRINT("ParticleJob finished");
-        });
-    frameChannel.Submit([&] {
-        auto& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
-        //ENGINE_LOG_DEBUG("Running DebugDrawJob");
         ecs.debugDrawSystem->Update();
-        //ENGINE_PRINT("DebugDrawJob finished");
         });
 
     frameChannel.join(); // waits for actual work to finish
-    //ENGINE_LOG_DEBUG("Draw Synchronized\n");
+
+    // Fog runs on the main thread (lazy init may create OpenGL VAO/VBO/EBO)
+    if (ecs.fogSystem)
+        PROFILE_PLOT_TIMED("Fog", ecs.fogSystem->Update());
+
+    // Particle system runs on the main thread (lazy init may create OpenGL VAO/VBO/EBO)
+    PROFILE_PLOT_TIMED("Particle", ecs.particleSystem->Update());
 
     // Set all isDirty flags to false after rendering
     ecs.transformSystem->PostUpdate();

@@ -2,6 +2,14 @@
 -- Minimal bootstrap so scripts can rely on _G.__instances, scheduler, and event_bus.
 -- Put this in Resources/Scripts and require it or let your main script require it.
 
+-- [NEW] GLOBAL SEEDING (Do this exactly once here)
+-- We mix os.time (seconds) with os.clock (CPU time) to ensure
+-- a unique seed even if you restart the game multiple times per second.
+math.randomseed(os.time() + os.clock() * 100000)
+
+-- Pop a few random numbers to flush the state (good practice in Lua)
+math.random(); math.random(); math.random()
+
 _G.__instances = _G.__instances or {}
 
 -- Ensure scheduler exists (if not provided elsewhere)

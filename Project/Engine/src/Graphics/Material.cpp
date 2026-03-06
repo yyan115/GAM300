@@ -12,6 +12,7 @@
 #include <WindowManager.hpp>
 #include <Platform/IPlatform.h>
 #include <Asset Manager/AssetManager.hpp>
+#include "Utilities/FileUtilities.hpp"
 
 Material::Material() : m_name("DefaultMaterial") {
 }
@@ -127,10 +128,10 @@ void Material::ApplyToShader(Shader& shader) const
 	shader.setFloat("material.shininess", m_shininess);
 	shader.setFloat("material.opacity", m_opacity);
 
-	// Apply PBR properties - For Future Use
-	//shader.setFloat("material.metallic", m_metallic);
-	//shader.setFloat("material.roughness", m_roughness);
-	//shader.setFloat("material.ao", m_ao);
+	// PBR properties
+	shader.setFloat("material.metallic", m_metallic);
+	shader.setFloat("material.roughness", m_roughness);
+	shader.setFloat("material.ao", m_ao);
 
 	// DEBUG: Print emissive value
 	//static int callCount = 0;
@@ -140,6 +141,10 @@ void Material::ApplyToShader(Shader& shader) const
 	//}
 	// Bind textures
 	BindTextures(shader);
+
+	// Set texture wrapping options
+	shader.setVec2("material.uTiling", tiling);
+	shader.setVec2("material.uOffset", offset);
 }
 
 void Material::BindTextures(Shader& shader) const
@@ -153,6 +158,10 @@ void Material::BindTextures(Shader& shader) const
 	bool hasSpecular = HasTexture(TextureType::SPECULAR);
 	bool hasNormal = HasTexture(TextureType::NORMAL);
 	bool hasEmissive = HasTexture(TextureType::EMISSIVE);
+	bool hasHeight = HasTexture(TextureType::HEIGHT);
+	bool hasAO = HasTexture(TextureType::AMBIENT_OCCLUSION);
+	bool hasMetallic = HasTexture(TextureType::METALLIC);
+	bool hasRoughness = HasTexture(TextureType::ROUGHNESS);
 
 #if defined(ANDROID) || defined(__ANDROID__)
 	// Android shader has samplers outside of Material struct (OpenGL ES compatibility)
@@ -167,17 +176,20 @@ void Material::BindTextures(Shader& shader) const
 	shader.setBool("hasSpecularMap", hasSpecular);
 	shader.setBool("hasNormalMap", hasNormal);
 	shader.setBool("hasEmissiveMap", hasEmissive);
+	shader.setBool("hasHeightMap", hasHeight);
+	shader.setBool("hasAOMap", hasAO);
+	shader.setBool("hasMetallicMap", hasMetallic);
+	shader.setBool("hasRoughnessMap", hasRoughness);
 #else
 	shader.setBool("material.hasDiffuseMap", hasDiffuse);
 	shader.setBool("material.hasSpecularMap", hasSpecular);
 	shader.setBool("material.hasNormalMap", hasNormal);
 	shader.setBool("material.hasEmissiveMap", hasEmissive);
+	shader.setBool("material.hasHeightMap", hasHeight);
+	shader.setBool("material.hasAOMap", hasAO);
+	shader.setBool("material.hasMetallicMap", hasMetallic);
+	shader.setBool("material.hasRoughnessMap", hasRoughness);
 #endif
-	// For Future Use
-	/*shader.setBool("material.hasHeightMap", hasTexture(TextureType::HEIGHT));
-	shader.setBool("material.hasAOMap", hasTexture(TextureType::AMBIENT_OCCLUSION));
-	shader.setBool("material.hasMetallicMap", hasTexture(TextureType::METALLIC));
-	shader.setBool("material.hasRoughnessMap", hasTexture(TextureType::ROUGHNESS));*/
 
 	// Bind each texture type
 	for (auto it = m_textureInfo.begin(); it != m_textureInfo.end(); ++it)
@@ -457,6 +469,22 @@ bool Material::GetMaterialPropertiesFromAsset(const std::string& assetPath) {
 				//	break;
 				//}
 			}
+
+			// Ensure we don't overflow the buffer as these are new material options that not all materials might have.
+			if (offset + (2 * sizeof(glm::vec2)) > buffer.size()) {
+				return true;
+			}
+
+			// Read texture wrapping options from file.
+			glm::vec2 tiling;
+			std::memcpy(&tiling, buffer.data() + offset, sizeof(tiling));
+			offset += sizeof(tiling);
+			SetTiling(tiling);
+
+			glm::vec2 textureOffset;
+			std::memcpy(&textureOffset, buffer.data() + offset, sizeof(textureOffset));
+			offset += sizeof(textureOffset);
+			SetOffset(textureOffset);
 		}
 		catch (const std::exception& e) {
 			ENGINE_LOG_ERROR("[Material] Failed to load material: " + std::string(e.what()));
@@ -537,12 +565,13 @@ std::string Material::CompileToResource(const std::string& assetPath, bool forAn
 		materialPath = newPath.generic_string();
 	}
 
-	ENGINE_PRINT("[Material] SAVE - Input path: {}", assetPath);
-	ENGINE_PRINT("[Material] SAVE - Computed path: {}", materialPath);
-	ENGINE_PRINT("[Material] SAVE - Working directory: {}", std::filesystem::current_path().generic_string());
-	ENGINE_PRINT("[Material] SAVE - Material name: {}", m_name);
-	ENGINE_PRINT("[Material] SAVE - Number of textures: {}", m_textureInfo.size());
-	ENGINE_PRINT("[Material] SAVE - Ambient: ({}, {}, {})", m_ambient.x, m_ambient.y, m_ambient.z);
+	materialPath = FileUtilities::SanitizeFilePath(materialPath);
+	std::cout << "[Material] SAVE - Input path: " << assetPath << std::endl;
+	std::cout << "[Material] SAVE - Computed path: " << materialPath << std::endl;
+	std::cout << "[Material] SAVE - Working directory: " << std::filesystem::current_path() << std::endl;
+	std::cout << "[Material] SAVE - Material name: " << m_name << std::endl;
+	std::cout << "[Material] SAVE - Number of textures: " << m_textureInfo.size() << std::endl;
+	std::cout << "[Material] SAVE - Ambient: (" << m_ambient.x << ", " << m_ambient.y << ", " << m_ambient.z << ")" << std::endl;
 
 	p = materialPath;
 	std::filesystem::create_directories(p.parent_path());
@@ -579,6 +608,10 @@ std::string Material::CompileToResource(const std::string& assetPath, bool forAn
 			materialFile.write(it->second->filePath.data(), pathLength);
 		}
 
+		// Write texture wrapping options
+		materialFile.write(reinterpret_cast<const char*>(&tiling), sizeof(tiling));
+		materialFile.write(reinterpret_cast<const char*>(&offset), sizeof(offset));
+
 		materialFile.close();
 		return materialPath;
 	}
@@ -601,6 +634,7 @@ std::string Material::CompileUpdatedAssetToResource(const std::string& assetPath
 		materialPath = newPath.generic_string();
 	}
 
+	materialPath = FileUtilities::SanitizeFilePath(materialPath);
 	ENGINE_PRINT("[Material] SAVE - Input path: ", assetPath, "\n");
 	ENGINE_PRINT("[Material] SAVE - Computed path: ", materialPath, "\n");
 	ENGINE_PRINT("[Material] SAVE - Working directory: ", std::filesystem::current_path(), "\n");
@@ -642,6 +676,10 @@ std::string Material::CompileUpdatedAssetToResource(const std::string& assetPath
 			materialFile.write(reinterpret_cast<const char*>(&pathLength), sizeof(pathLength));
 			materialFile.write(it->second->filePath.data(), pathLength);
 		}
+
+		// Write texture wrapping options
+		materialFile.write(reinterpret_cast<const char*>(&tiling), sizeof(tiling));
+		materialFile.write(reinterpret_cast<const char*>(&offset), sizeof(offset));
 
 		materialFile.close();
 		return materialPath;

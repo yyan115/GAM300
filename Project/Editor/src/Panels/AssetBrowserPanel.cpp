@@ -182,6 +182,8 @@ void AssetBrowserPanel::ProcessFileChange(const std::string& relativePath, const
     case filewatch::Event::renamed_new: eventStr = "RENAMED_NEW"; break;
     }
 
+    // std::cout << "[AssetBrowserPanel] File " << eventStr << ": " << relativePath << std::endl;
+
     // Build full path from rootAssetDirectory + relativePath
     std::filesystem::path fullPathPath = std::filesystem::path(rootAssetDirectory) / relativePath;
     const std::string fullPath = fullPathPath.generic_string();
@@ -231,10 +233,12 @@ void AssetBrowserPanel::ProcessFileChange(const std::string& relativePath, const
                     RemoveThumbnailFromCache(guid);
                 }
             }
-            AssetManager::GetInstance().UnloadAsset(fullPath);
+            // Route through event queue so RunEventQueue can check for a
+            // subsequent 'added' event (editors often delete-then-recreate).
+            AssetManager::GetInstance().AddToEventQueue(AssetManager::Event::removed, fullPathObj);
         }
         else if (event == filewatch::Event::renamed_old) {
-            AssetManager::GetInstance().UnloadAsset(fullPath);
+            AssetManager::GetInstance().AddToEventQueue(AssetManager::Event::renamed_old, fullPathObj);
         }
         else if (event == filewatch::Event::renamed_new) {
             AssetManager::GetInstance().AddToEventQueue(AssetManager::Event::modified, fullPathObj);
@@ -309,6 +313,7 @@ void AssetBrowserPanel::OnImGuiRender() {
 
     // Check if refresh is needed (from file watcher)
     if (refreshPending.exchange(false)) {
+        // std::cout << "[AssetBrowserPanel] Refreshing assets due to file changes." << std::endl;
         RefreshAssets();
     }
 

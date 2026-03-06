@@ -282,7 +282,11 @@ void TypeDescriptor_Struct::Deserialize(void* obj, const rapidjson::Value& value
     if (!impl || impl->members.empty()) return;
 
     // Per-member guarded deserialization
-    for (rapidjson::SizeType i = 0; i < arr.Size(); ++i)
+    // Cap at min(arr.Size(), expected) to avoid out-of-bounds on members vector
+    // when the scene file has more fields than the current code expects (e.g. removed fields)
+    rapidjson::SizeType limit = static_cast<rapidjson::SizeType>(
+        std::min(static_cast<size_t>(arr.Size()), expected));
+    for (rapidjson::SizeType i = 0; i < limit; ++i)
     {
         const TypeDescriptor_Struct::Member& member = impl->members[i];
 

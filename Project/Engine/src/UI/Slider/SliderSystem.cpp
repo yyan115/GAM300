@@ -349,6 +349,7 @@ void SliderSystem::InvokeOnValueChanged(Entity sliderEntity, SliderComponent& sl
 }
 
 void SliderSystem::Update() {
+    PROFILE_FUNCTION();
     if (!m_ecs || !g_inputManager) return;
 
     const bool mousePressed = g_inputManager->IsPointerJustPressed();
@@ -362,8 +363,6 @@ void SliderSystem::Update() {
 
     for (Entity sliderEntity : entities) {
         if (!m_ecs->HasComponent<SliderComponent>(sliderEntity)) continue;
-        // Skip entities that are inactive in hierarchy (checks parents too)
-        if (!m_ecs->IsEntityActiveInHierarchy(sliderEntity)) continue;
 
         auto& sliderComp = m_ecs->GetComponent<SliderComponent>(sliderEntity);
         EnsureChildEntities(sliderEntity, sliderComp);

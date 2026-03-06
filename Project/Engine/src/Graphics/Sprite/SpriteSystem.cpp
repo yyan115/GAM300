@@ -9,8 +9,9 @@
 #include "Graphics/EBO.h"
 #include "Asset Manager/AssetManager.hpp"
 #include "Asset Manager/ResourceManager.hpp"
-#include "Performance/PerformanceProfiler.hpp"
-#include "Logging.hpp"
+#include "ECS/LayerComponent.hpp"
+#include "Graphics/PostProcessing/PostProcessingManager.hpp"
+#include "Graphics/BloomComponent.hpp"
 
 bool SpriteSystem::Initialise()
 {
@@ -135,8 +136,9 @@ void SpriteSystem::Update()
                     spriteComponent.hasMigratedToTransform = true;
 
                     // Log the migration (only once)
-                    ENGINE_PRINT("[SpriteSystem] Migrated 2D sprite {} from sprite properties to Transform: pos({},{}) scale({},{})", 
-                        entity, spriteComponent.position.x, spriteComponent.position.y, spriteComponent.scale.x, spriteComponent.scale.y);
+                    std::cout << "[SpriteSystem] Migrated 2D sprite " << entity << " from sprite properties to Transform: "
+                              << "pos(" << spriteComponent.position.x << "," << spriteComponent.position.y << ") "
+                              << "scale(" << spriteComponent.scale.x << "," << spriteComponent.scale.y << ")" << std::endl;
                 }
 
                 spriteRenderItem->position = Vector3D::ConvertGLMToVector3D(transformPos);
@@ -165,6 +167,24 @@ void SpriteSystem::Update()
                 
             // Sync sorting values to renderOrder
             spriteRenderItem->renderOrder = spriteComponent.sortingLayer * 100 + spriteComponent.sortingOrder;
+
+            // Per-entity bloom emission
+            if (ecsManager.HasComponent<BloomComponent>(entity)) {
+                auto& bloom = ecsManager.GetComponent<BloomComponent>(entity);
+                if (bloom.enabled) {
+                    spriteRenderItem->bloomColor = bloom.bloomColor;
+                    spriteRenderItem->bloomIntensity = bloom.bloomIntensity;
+                }
+            }
+
+            // Tag items on excluded layers for deferred rendering
+            uint32_t exMask = PostProcessingManager::GetInstance().GetExcludedLayerMask();
+            if (exMask != 0) {
+                int layerIdx = GetEffectiveLayerIndex(entity, ecsManager);
+                if (exMask & (1u << layerIdx))
+                    spriteRenderItem->excludeFromPostProcess = true;
+            }
+
             gfxManager.Submit(std::move(spriteRenderItem));
         }
 #ifdef ANDROID
@@ -182,7 +202,7 @@ void SpriteSystem::Update()
 void SpriteSystem::Shutdown()
 {
     CleanupSpriteQuad();
-    ENGINE_PRINT("[SpriteSystem] Shutdown");
+    std::cout << "[SpriteSystem] Shutdown" << std::endl;
 }
 
 void SpriteSystem::InitializeSpriteQuad()
@@ -243,7 +263,7 @@ void SpriteSystem::InitializeSpriteQuad()
 #ifdef ANDROID
     __android_log_print(ANDROID_LOG_INFO, "GAM300", "[SpriteSystem] Sprite quad initialized using VBO/VAO/EBO classes with indices");
 #endif
-    ENGINE_PRINT("[SpriteSystem] Sprite quad initialized with indexed rendering");
+    std::cout << "[SpriteSystem] Sprite quad initialized with indexed rendering" << std::endl;
 }
 
 void SpriteSystem::CleanupSpriteQuad()
@@ -266,6 +286,6 @@ void SpriteSystem::CleanupSpriteQuad()
             spriteEBO.reset();
         }
         spriteQuadInitialized = false;
-        ENGINE_PRINT("[SpriteSystem] Sprite quad cleaned up");
+        std::cout << "[SpriteSystem] Sprite quad cleaned up" << std::endl;
     }
 }

@@ -52,6 +52,7 @@ public:
 
     void SetGravity(Vector3D gravity);
 
+
     //TODO:
     //void SetRotation(float yaw);            // Set facing direction (degrees)
     //void GetRotation();            // Add to current rotation

@@ -11,6 +11,8 @@
 #include "Physics/PhysicsSystem.hpp"
 #include "Animation/AnimationComponent.hpp"
 #include "Video/VideoComponent.hpp"
+#include "Asset Manager/AssetManager.hpp"
+#include "Graphics/PostProcessing/PostProcessingManager.hpp"
 
 
 EditorState& EditorState::GetInstance() {
@@ -87,7 +89,9 @@ void EditorState::Play() {
         for (auto ent : ecs.GetActiveEntities()) {
             if (ecs.HasComponent<VideoComponent>(ent)) {
                 VideoComponent& videoComp = ecs.GetComponent<VideoComponent>(ent);
-                videoComp.asset_dirty = true;
+                videoComp.needsInit = true;
+                videoComp.phase = VideoComponent::Phase::Inactive;
+                videoComp.cutsceneEnded = false;
             }
         }
 
@@ -107,6 +111,8 @@ void EditorState::Play() {
             }
         }
     }
+
+	AssetManager::GetInstance().SetShouldRunEventQueue(false); // Disable asset event processing during play mode to prevent lag spikes while playing.
 }
 
 void EditorState::Pause() {
@@ -141,6 +147,11 @@ void EditorState::Stop() {
     // Reload the scene to the saved state before play mode
     SceneManager::GetInstance().ReloadTempScene();
 
+    // Reset post-processing state to defaults so stale play-mode effects
+    // (vignette, bloom, blur, color grading) don't persist into edit mode.
+    // CameraSystem::Update() will re-apply the camera's saved PP settings next frame.
+    PostProcessingManager::GetInstance().ResetRuntimeState();
+
     // Re-acquire ECS reference after scene reload (old reference is now stale)
     ECSManager& ecsAfterReload = ECSRegistry::GetInstance().GetActiveECSManager();
 
@@ -153,6 +164,7 @@ void EditorState::Stop() {
     }
 
     SetState(State::EDIT_MODE);
+	AssetManager::GetInstance().SetShouldRunEventQueue(true); // Re-enable asset event processing after exiting play mode.
 }
 
 void EditorState::SetSelectedEntity(Entity entity) {

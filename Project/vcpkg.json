@@ -19,7 +19,11 @@
     "spdlog",
     "rapidjson",
     "gli",
-    "meshoptimizer"
+    "meshoptimizer",
+    {
+      "name": "tracy",
+      "features": ["on-demand"]
+    }
   ],
   "overrides": [
     {

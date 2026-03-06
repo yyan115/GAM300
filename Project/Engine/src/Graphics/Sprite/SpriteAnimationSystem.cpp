@@ -67,6 +67,7 @@ bool SpriteAnimationSystem::Initialise()
 
 void SpriteAnimationSystem::Update()
 {
+    PROFILE_FUNCTION();
     bool isEditMode = Engine::IsEditMode();
 
     // Check if we just entered play mode

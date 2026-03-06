@@ -1,8 +1,8 @@
 {
     "prefab_entities": [
         {
-            "id": 2919,
-            "guid": "0010bb798f4d87f2-00041fb1d80001a9",
+            "id": 0,
+            "guid": "00345ceb4c3e2933-000460df5203ed87",
             "components": {
                 "PrefabLinkComponent": {
                     "type": "PrefabLinkComponent",
@@ -91,12 +91,12 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "0010bb79aa04b9c3-00041fb10c00001b",
-                                "0010bb79e560dc3b-00041fb10c00002d",
-                                "0010bb79ca628478-00041fb10c00005b",
-                                "0010bb79c2e7ac9b-00041fb10c000069",
-                                "0010bb79cc21ded8-00041fb10c00006b",
-                                "0010bb7989b00cf1-00041fb10c00006d"
+                                "00345ceb2c609b67-000460df5203ed89",
+                                "00345ceb6f37646d-000460df5203ed95",
+                                "00345ceb087ee1a0-000460df5203edc1",
+                                "00345ceb40ae4573-000460df5203edcb",
+                                "00345ceb50d4e701-000460df5203edcd",
+                                "00345ceb0fac98cf-000460df5203edcf"
                             ]
                         }
                     ]
@@ -113,8 +113,8 @@
             }
         },
         {
-            "id": 2920,
-            "guid": "0010bb79aa04b9c3-00041fb10c00001b",
+            "id": 1,
+            "guid": "00345ceb2c609b67-000460df5203ed89",
             "components": {
                 "NameComponent": {
                     "name": "PauseMenuUI"
@@ -194,11 +194,11 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "0010bb79fa9a980a-00041fb10c00001d",
-                                "0010bb799bc601a7-00041fb10c00001f",
-                                "0010bb79bedf6f70-00041fb10c000021",
-                                "0010bb79fc0fd8a8-00041fb10c000025",
-                                "0010bb79ae736c0e-00041fb10c000029"
+                                "00345ceb42ff7632-000460df5203ed8b",
+                                "00345ceb58e4f499-000460df5203ed8d",
+                                "00345ceb7f9ea03e-000460df5203ed8f",
+                                "00345ceb39d8e207-000460df5203ed91",
+                                "00345ceb48989337-000460df5203ed93"
                             ]
                         }
                     ]
@@ -206,7 +206,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "0010bb798f4d87f2-00041fb1d80001a9"
+                        "00345ceb4c3e2933-000460df5203ed87"
                     ]
                 },
                 "AudioComponent": {
@@ -298,54 +298,57 @@
                             "entryFunction": "OnInit",
                             "autoInvokeEntry": true,
                             "instanceState": {
-                                "_buttonData": [
-                                    {
-                                        "minX": 846.9010009765625,
-                                        "minY": 550.0,
-                                        "maxX": 1146.9010009765625,
-                                        "maxY": 620.0
-                                    },
-                                    {
-                                        "minX": 846.9010009765625,
-                                        "minY": 445.0,
-                                        "maxX": 1146.9010009765625,
-                                        "maxY": 515.0
-                                    },
-                                    {
-                                        "minX": 796.9010009765625,
-                                        "minY": 340.0,
-                                        "maxX": 1196.9010009765625,
-                                        "maxY": 410.0
-                                    }
-                                ],
-                                "_subs_map": {},
-                                "_subscriptions": {},
-                                "entityId": 1.0,
-                                "__field_list": {
-                                    "fadeScreenName": "MenuFadeScreen",
-                                    "fadeDuration": 1.0
-                                },
-                                "__created_at": 1769694721.0,
-                                "__meta": {},
-                                "_private": {},
-                                "fadeDuration": 1.0,
+                                "fadeScreenName": "MenuFadeScreen",
                                 "fields": {
+                                    "fadeScreenName": "MenuFadeScreen",
+                                    "_subscriptions": {},
+                                    "__meta": {},
+                                    "fadeDuration": 1.0,
+                                    "__created_at": 1769694721.0,
+                                    "_private": {},
                                     "__field_list": {
                                         "fadeScreenName": "MenuFadeScreen",
                                         "fadeDuration": 1.0
-                                    },
-                                    "__created_at": 1769694721.0,
-                                    "__meta": {},
-                                    "_private": {},
-                                    "fadeDuration": 1.0,
-                                    "_subscriptions": {},
-                                    "fadeScreenName": "MenuFadeScreen"
+                                    }
                                 },
-                                "fadeScreenName": "MenuFadeScreen",
-                                "ButtonSFX": [
-                                    "0037d81b0c6c0a46-000400f740000005",
-                                    "0037d81b07b695ee-000400f740000007"
+                                "fadeDuration": 1.0,
+                                "entityId": 1.0,
+                                "StartSafe": null,
+                                "OnClickSettingButton": null,
+                                "OnClickMainMenuButton": null,
+                                "_subs_map": {},
+                                "SerializeFields": null,
+                                "Destroy": null,
+                                "After": null,
+                                "Start": null,
+                                "_buttonData": [
+                                    {
+                                        "maxX": 1146.9010009765625,
+                                        "minY": 550.0,
+                                        "minX": 846.9010009765625,
+                                        "maxY": 620.0
+                                    },
+                                    {
+                                        "maxX": 1146.9010009765625,
+                                        "minY": 445.0,
+                                        "minX": 846.9010009765625,
+                                        "maxY": 515.0
+                                    },
+                                    {
+                                        "maxX": 1196.9010009765625,
+                                        "minY": 340.0,
+                                        "minX": 796.9010009765625,
+                                        "maxY": 410.0
+                                    }
                                 ],
+                                "__created_at": 1769694721.0,
+                                "SettingSpriteGUIDs": [
+                                    "007ba6c31fa9bc17-000405327a00000d",
+                                    "007ba6c37c4e29a7-0004053256000007"
+                                ],
+                                "DeserializeFields": null,
+                                "Every": null,
+                                "Subscribe": null,
                                 "MainMenuSpriteGUIDs": [
                                     "007ba6c34f5dcff4-0004053264000009",
                                     "007ba6c351f42b00-000405323c000003"
@@ -354,10 +357,24 @@
                                     "007ba6c360933517-000405326e00000b",
                                     "007ba6c369d7a82f-0004053248000005"
                                 ],
-                                "SettingSpriteGUIDs": [
-                                    "007ba6c31fa9bc17-000405327a00000d",
-                                    "007ba6c37c4e29a7-0004053256000007"
-                                ]
+                                "AwakeSafe": null,
+                                "Unsubscribe": null,
+                                "UpdateSafe": null,
+                                "_call_lifecycle": null,
+                                "Update": null,
+                                "ButtonSFX": [
+                                    "0037d81b0c6c0a46-000400f740000005",
+                                    "0037d81b07b695ee-000400f740000007"
+                                ],
+                                "_subscriptions": {},
+                                "DisableSafe": null,
+                                "_private": {},
+                                "__meta": {},
+                                "OnClickContinueButton": null,
+                                "__field_list": {
+                                    "fadeScreenName": "MenuFadeScreen",
+                                    "fadeDuration": 1.0
+                                }
                             }
                         }
                     ]
@@ -365,8 +382,8 @@
             }
         },
         {
-            "id": 2921,
-            "guid": "0010bb79fa9a980a-00041fb10c00001d",
+            "id": 2,
+            "guid": "00345ceb42ff7632-000460df5203ed8b",
             "components": {
                 "NameComponent": {
                     "name": "PauseBG"
@@ -546,7 +563,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "0010bb79aa04b9c3-00041fb10c00001b"
+                        "00345ceb2c609b67-000460df5203ed89"
                     ]
                 },
                 "ActiveComponent": {
@@ -561,8 +578,8 @@
             }
         },
         {
-            "id": 2922,
-            "guid": "0010bb799bc601a7-00041fb10c00001f",
+            "id": 3,
+            "guid": "00345ceb58e4f499-000460df5203ed8d",
             "components": {
                 "NameComponent": {
                     "name": "PauseText"
@@ -789,7 +806,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "0010bb79aa04b9c3-00041fb10c00001b"
+                        "00345ceb2c609b67-000460df5203ed89"
                     ]
                 },
                 "ActiveComponent": {
@@ -804,8 +821,8 @@
             }
         },
         {
-            "id": 2923,
-            "guid": "0010bb79bedf6f70-00041fb10c000021",
+            "id": 4,
+            "guid": "00345ceb7f9ea03e-000460df5203ed8f",
             "components": {
                 "NameComponent": {
                     "name": "ContinueButton"
@@ -985,7 +1002,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "0010bb79aa04b9c3-00041fb10c00001b"
+                        "00345ceb2c609b67-000460df5203ed89"
                     ]
                 },
                 "AudioComponent": {
@@ -1109,8 +1126,8 @@
             }
         },
         {
-            "id": 2924,
-            "guid": "0010bb79fc0fd8a8-00041fb10c000025",
+            "id": 5,
+            "guid": "00345ceb39d8e207-000460df5203ed91",
             "components": {
                 "NameComponent": {
                     "name": "SettingsButton"
@@ -1290,7 +1307,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "0010bb79aa04b9c3-00041fb10c00001b"
+                        "00345ceb2c609b67-000460df5203ed89"
                     ]
                 },
                 "AudioComponent": {
@@ -1414,8 +1431,8 @@
             }
         },
         {
-            "id": 2925,
-            "guid": "0010bb79ae736c0e-00041fb10c000029",
+            "id": 6,
+            "guid": "00345ceb48989337-000460df5203ed93",
             "components": {
                 "NameComponent": {
                     "name": "MainMenuButton"
@@ -1595,7 +1612,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "0010bb79aa04b9c3-00041fb10c00001b"
+                        "00345ceb2c609b67-000460df5203ed89"
                     ]
                 },
                 "AudioComponent": {
@@ -1719,8 +1736,8 @@
             }
         },
         {
-            "id": 2926,
-            "guid": "0010bb79e560dc3b-00041fb10c00002d",
+            "id": 7,
+            "guid": "00345ceb6f37646d-000460df5203ed95",
             "components": {
                 "NameComponent": {
                     "name": "SettingsUI"
@@ -1800,10 +1817,10 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "0010bb79df54e390-00041fb10c00002f",
-                                "0010bb79cd060188-00041fb10c000037",
-                                "0010bb79c0911405-00041fb10c00003f",
-                                "0010bb79f9327ca0-00041fb25c0001ab"
+                                "00345ceb07f67761-000460df5203ed97",
+                                "00345ceb150086ac-000460df5203ed9f",
+                                "00345ceb268a0c8c-000460df5203eda7",
+                                "00345ceb77f25e0c-000460df5203edbb"
                             ]
                         }
                     ]
@@ -1811,7 +1828,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "0010bb798f4d87f2-00041fb1d80001a9"
+                        "00345ceb4c3e2933-000460df5203ed87"
                     ]
                 },
                 "ActiveComponent": {
@@ -1833,11 +1850,24 @@
                             "entryFunction": "OnInit",
                             "autoInvokeEntry": true,
                             "instanceState": {
-                                "__created_at": 1770222532.0,
-                                "_subscriptions": {},
-                                "_private": {},
+                                "StartSafe": null,
+                                "__meta": {},
+                                "Start": null,
+                                "UpdateSafe": null,
+                                "DeserializeFields": null,
+                                "Every": null,
+                                "Subscribe": null,
+                                "AwakeSafe": null,
+                                "Unsubscribe": null,
+                                "Destroy": null,
                                 "__field_list": {},
-                                "__meta": {}
+                                "After": null,
+                                "_subscriptions": {},
+                                "DisableSafe": null,
+                                "_private": {},
+                                "__created_at": 1770222532.0,
+                                "_call_lifecycle": null,
+                                "SerializeFields": null
                             }
                         }
                     ]
@@ -1845,8 +1875,8 @@
             }
         },
         {
-            "id": 2927,
-            "guid": "0010bb79df54e390-00041fb10c00002f",
+            "id": 8,
+            "guid": "00345ceb07f67761-000460df5203ed97",
             "components": {
                 "NameComponent": {
                     "name": "BackGround + Banner"
@@ -1926,9 +1956,9 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "0010bb798ec28127-00041fb10c000031",
-                                "0010bb79dc7a2dad-00041fb10c000033",
-                                "0010bb79c852c682-00041fb10c000035"
+                                "00345ceb57cde982-000460df5203ed99",
+                                "00345ceb5420556f-000460df5203ed9b",
+                                "00345ceb3ddced6b-000460df5203ed9d"
                             ]
                         }
                     ]
@@ -1936,7 +1966,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "0010bb79e560dc3b-00041fb10c00002d"
+                        "00345ceb6f37646d-000460df5203ed95"
                     ]
                 },
                 "ActiveComponent": {
@@ -1951,8 +1981,8 @@
             }
         },
         {
-            "id": 2928,
-            "guid": "0010bb798ec28127-00041fb10c000031",
+            "id": 9,
+            "guid": "00345ceb57cde982-000460df5203ed99",
             "components": {
                 "NameComponent": {
                     "name": "SettingsBackground"
@@ -2132,7 +2162,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "0010bb79df54e390-00041fb10c00002f"
+                        "00345ceb07f67761-000460df5203ed97"
                     ]
                 },
                 "ActiveComponent": {
@@ -2147,8 +2177,8 @@
             }
         },
         {
-            "id": 2929,
-            "guid": "0010bb79dc7a2dad-00041fb10c000033",
+            "id": 10,
+            "guid": "00345ceb5420556f-000460df5203ed9b",
             "components": {
                 "NameComponent": {
                     "name": "SettingsAudioBanner"
@@ -2328,7 +2358,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "0010bb79df54e390-00041fb10c00002f"
+                        "00345ceb07f67761-000460df5203ed97"
                     ]
                 },
                 "ActiveComponent": {
@@ -2343,8 +2373,8 @@
             }
         },
         {
-            "id": 2930,
-            "guid": "0010bb79c852c682-00041fb10c000035",
+            "id": 11,
+            "guid": "00345ceb3ddced6b-000460df5203ed9d",
             "components": {
                 "NameComponent": {
                     "name": "SettingsBanner"
@@ -2524,7 +2554,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "0010bb79df54e390-00041fb10c00002f"
+                        "00345ceb07f67761-000460df5203ed97"
                     ]
                 },
                 "ActiveComponent": {
@@ -2539,8 +2569,8 @@
             }
         },
         {
-            "id": 2931,
-            "guid": "0010bb79cd060188-00041fb10c000037",
+            "id": 12,
+            "guid": "00345ceb150086ac-000460df5203ed9f",
             "components": {
                 "NameComponent": {
                     "name": "AudioText"
@@ -2620,9 +2650,9 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "0010bb7981c62367-00041fb10c000039",
-                                "0010bb79bfc4aef9-00041fb10c00003b",
-                                "0010bb79da401767-00041fb10c00003d"
+                                "00345ceb007d8327-000460df5203eda1",
+                                "00345ceb7ad2839a-000460df5203eda3",
+                                "00345ceb701e7ec5-000460df5203eda5"
                             ]
                         }
                     ]
@@ -2630,7 +2660,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "0010bb79e560dc3b-00041fb10c00002d"
+                        "00345ceb6f37646d-000460df5203ed95"
                     ]
                 },
                 "ActiveComponent": {
@@ -2645,8 +2675,8 @@
             }
         },
         {
-            "id": 2932,
-            "guid": "0010bb7981c62367-00041fb10c000039",
+            "id": 13,
+            "guid": "00345ceb007d8327-000460df5203eda1",
             "components": {
                 "NameComponent": {
                     "name": "MasterText"
@@ -2873,7 +2903,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "0010bb79cd060188-00041fb10c000037"
+                        "00345ceb150086ac-000460df5203ed9f"
                     ]
                 },
                 "ActiveComponent": {
@@ -2888,8 +2918,8 @@
             }
         },
         {
-            "id": 2933,
-            "guid": "0010bb79bfc4aef9-00041fb10c00003b",
+            "id": 14,
+            "guid": "00345ceb7ad2839a-000460df5203eda3",
             "components": {
                 "NameComponent": {
                     "name": "BGMText"
@@ -3116,7 +3146,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "0010bb79cd060188-00041fb10c000037"
+                        "00345ceb150086ac-000460df5203ed9f"
                     ]
                 },
                 "ActiveComponent": {
@@ -3131,8 +3161,8 @@
             }
         },
         {
-            "id": 2934,
-            "guid": "0010bb79da401767-00041fb10c00003d",
+            "id": 15,
+            "guid": "00345ceb701e7ec5-000460df5203eda5",
             "components": {
                 "NameComponent": {
                     "name": "SFXText"
@@ -3359,7 +3389,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "0010bb79cd060188-00041fb10c000037"
+                        "00345ceb150086ac-000460df5203ed9f"
                     ]
                 },
                 "ActiveComponent": {
@@ -3374,8 +3404,8 @@
             }
         },
         {
-            "id": 2935,
-            "guid": "0010bb79c0911405-00041fb10c00003f",
+            "id": 16,
+            "guid": "00345ceb268a0c8c-000460df5203eda7",
             "components": {
                 "NameComponent": {
                     "name": "AudioBars"
@@ -3455,15 +3485,15 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "0010bb79c4a659e8-00041fb10c000041",
-                                "0010bb799d4467d8-00041fb10c000043",
-                                "0010bb79f40aa0d4-00041fb10c000045",
-                                "0010bb79938b4890-00041fb10c000047",
-                                "0010bb79fc70f399-00041fb10c000049",
-                                "0010bb79c7d726db-00041fb10c00004b",
-                                "0010bb79db570302-00041fb10c00004d",
-                                "0010bb799963fca3-00041fb10c00004f",
-                                "0010bb79d378b12d-00041fb10c000051"
+                                "00345ceb061e31fe-000460df5203eda9",
+                                "00345ceb44ea32dd-000460df5203edab",
+                                "00345ceb3e3525f1-000460df5203edad",
+                                "00345ceb3fcb7a03-000460df5203edaf",
+                                "00345ceb78ad5618-000460df5203edb1",
+                                "00345ceb78e38416-000460df5203edb3",
+                                "00345ceb4923d0d2-000460df5203edb5",
+                                "00345ceb58fd2140-000460df5203edb7",
+                                "00345ceb16dc7c88-000460df5203edb9"
                             ]
                         }
                     ]
@@ -3471,7 +3501,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "0010bb79e560dc3b-00041fb10c00002d"
+                        "00345ceb6f37646d-000460df5203ed95"
                     ]
                 },
                 "ActiveComponent": {
@@ -3486,8 +3516,8 @@
             }
         },
         {
-            "id": 2936,
-            "guid": "0010bb79c4a659e8-00041fb10c000041",
+            "id": 17,
+            "guid": "00345ceb061e31fe-000460df5203eda9",
             "components": {
                 "NameComponent": {
                     "name": "MasterBar"
@@ -3667,7 +3697,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "0010bb79c0911405-00041fb10c00003f"
+                        "00345ceb268a0c8c-000460df5203eda7"
                     ]
                 },
                 "ActiveComponent": {
@@ -3682,8 +3712,8 @@
             }
         },
         {
-            "id": 2937,
-            "guid": "0010bb799d4467d8-00041fb10c000043",
+            "id": 18,
+            "guid": "00345ceb44ea32dd-000460df5203edab",
             "components": {
                 "NameComponent": {
                     "name": "BGMBar"
@@ -3863,7 +3893,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "0010bb79c0911405-00041fb10c00003f"
+                        "00345ceb268a0c8c-000460df5203eda7"
                     ]
                 },
                 "ActiveComponent": {
@@ -3878,8 +3908,8 @@
             }
         },
         {
-            "id": 2938,
-            "guid": "0010bb79f40aa0d4-00041fb10c000045",
+            "id": 19,
+            "guid": "00345ceb3e3525f1-000460df5203edad",
             "components": {
                 "NameComponent": {
                     "name": "SFXBar"
@@ -4059,7 +4089,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "0010bb79c0911405-00041fb10c00003f"
+                        "00345ceb268a0c8c-000460df5203eda7"
                     ]
                 },
                 "ActiveComponent": {
@@ -4074,8 +4104,8 @@
             }
         },
         {
-            "id": 2939,
-            "guid": "0010bb79938b4890-00041fb10c000047",
+            "id": 20,
+            "guid": "00345ceb3fcb7a03-000460df5203edaf",
             "components": {
                 "NameComponent": {
                     "name": "MasterNotch"
@@ -4255,7 +4285,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "0010bb79c0911405-00041fb10c00003f"
+                        "00345ceb268a0c8c-000460df5203eda7"
                     ]
                 },
                 "AudioComponent": {
@@ -4347,20 +4377,39 @@
                             "entryFunction": "OnInit",
                             "autoInvokeEntry": true,
                             "instanceState": {
-                                "sliderFill": "\"MasterFill\"",
+                                "sliderNotch": "MasterNotch",
+                                "settingType": "master",
+                                "_private": {},
+                                "Destroy": null,
+                                "StartSafe": null,
+                                "SerializeFields": null,
+                                "DisableSafe": null,
+                                "Start": null,
+                                "ValueToNormalized": null,
+                                "__created_at": 1770221842.0,
+                                "UpdateSafe": null,
+                                "DeserializeFields": null,
+                                "Every": null,
+                                "GetCurrentValue": null,
+                                "NormalizedToValue": null,
+                                "_call_lifecycle": null,
+                                "AwakeSafe": null,
+                                "sliderBar": "MasterBar",
+                                "Unsubscribe": null,
+                                "Subscribe": null,
+                                "Update": null,
+                                "After": null,
                                 "_subscriptions": {},
+                                "UpdateFillBar": null,
+                                "__meta": {},
+                                "SetCurrentValue": null,
+                                "sliderFill": "\"MasterFill\"",
                                 "__field_list": {
                                     "sliderFill": "",
                                     "sliderBar": "MasterBar",
-                                    "sliderNotch": "MasterNotch",
-                                    "settingType": "master"
-                                },
-                                "sliderNotch": "MasterNotch",
-                                "sliderBar": "MasterBar",
-                                "__created_at": 1770221842.0,
-                                "__meta": {},
-                                "_private": {},
-                                "settingType": "master"
+                                    "settingType": "master",
+                                    "sliderNotch": "MasterNotch"
+                                }
                             }
                         }
                     ]
@@ -4381,8 +4430,8 @@
             }
         },
         {
-            "id": 2940,
-            "guid": "0010bb79fc70f399-00041fb10c000049",
+            "id": 21,
+            "guid": "00345ceb78ad5618-000460df5203edb1",
             "components": {
                 "NameComponent": {
                     "name": "BGMNotch"
@@ -4562,7 +4611,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "0010bb79c0911405-00041fb10c00003f"
+                        "00345ceb268a0c8c-000460df5203eda7"
                     ]
                 },
                 "AudioComponent": {
@@ -4654,20 +4703,39 @@
                             "entryFunction": "OnInit",
                             "autoInvokeEntry": true,
                             "instanceState": {
-                                "sliderFill": "\"BGMFill\"",
+                                "sliderNotch": "\"BGMNotch\"",
+                                "settingType": "\"bgm\"",
+                                "_private": {},
+                                "Destroy": null,
+                                "StartSafe": null,
+                                "SerializeFields": null,
+                                "DisableSafe": null,
+                                "Start": null,
+                                "ValueToNormalized": null,
+                                "__created_at": 1770221875.0,
+                                "UpdateSafe": null,
+                                "DeserializeFields": null,
+                                "Every": null,
+                                "GetCurrentValue": null,
+                                "NormalizedToValue": null,
+                                "_call_lifecycle": null,
+                                "AwakeSafe": null,
+                                "sliderBar": "\"BGMBar\"",
+                                "Unsubscribe": null,
+                                "Subscribe": null,
+                                "Update": null,
+                                "After": null,
                                 "_subscriptions": {},
+                                "UpdateFillBar": null,
+                                "__meta": {},
+                                "SetCurrentValue": null,
+                                "sliderFill": "\"BGMFill\"",
                                 "__field_list": {
                                     "sliderFill": "",
                                     "sliderBar": "MasterBar",
-                                    "sliderNotch": "MasterNotch",
-                                    "settingType": "master"
-                                },
-                                "sliderNotch": "\"BGMNotch\"",
-                                "sliderBar": "\"BGMBar\"",
-                                "__created_at": 1770221875.0,
-                                "__meta": {},
-                                "_private": {},
-                                "settingType": "\"bgm\""
+                                    "settingType": "master",
+                                    "sliderNotch": "MasterNotch"
+                                }
                             }
                         }
                     ]
@@ -4688,8 +4756,8 @@
             }
         },
         {
-            "id": 2941,
-            "guid": "0010bb79c7d726db-00041fb10c00004b",
+            "id": 22,
+            "guid": "00345ceb78e38416-000460df5203edb3",
             "components": {
                 "NameComponent": {
                     "name": "SFXNotch"
@@ -4869,7 +4937,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "0010bb79c0911405-00041fb10c00003f"
+                        "00345ceb268a0c8c-000460df5203eda7"
                     ]
                 },
                 "AudioComponent": {
@@ -4961,20 +5029,39 @@
                             "entryFunction": "OnInit",
                             "autoInvokeEntry": true,
                             "instanceState": {
-                                "sliderFill": "\"SFXFill\"",
+                                "sliderNotch": "\"SFXNotch\"",
+                                "settingType": "\"sfx\"",
+                                "_private": {},
+                                "Destroy": null,
+                                "StartSafe": null,
+                                "SerializeFields": null,
+                                "DisableSafe": null,
+                                "Start": null,
+                                "ValueToNormalized": null,
+                                "__created_at": 1770221900.0,
+                                "UpdateSafe": null,
+                                "DeserializeFields": null,
+                                "Every": null,
+                                "GetCurrentValue": null,
+                                "NormalizedToValue": null,
+                                "_call_lifecycle": null,
+                                "AwakeSafe": null,
+                                "sliderBar": "\"SFXBar\"",
+                                "Unsubscribe": null,
+                                "Subscribe": null,
+                                "Update": null,
+                                "After": null,
                                 "_subscriptions": {},
+                                "UpdateFillBar": null,
+                                "__meta": {},
+                                "SetCurrentValue": null,
+                                "sliderFill": "\"SFXFill\"",
                                 "__field_list": {
                                     "sliderFill": "",
                                     "sliderBar": "MasterBar",
-                                    "sliderNotch": "MasterNotch",
-                                    "settingType": "master"
-                                },
-                                "sliderNotch": "\"SFXNotch\"",
-                                "sliderBar": "\"SFXBar\"",
-                                "__created_at": 1770221900.0,
-                                "__meta": {},
-                                "_private": {},
-                                "settingType": "\"sfx\""
+                                    "settingType": "master",
+                                    "sliderNotch": "MasterNotch"
+                                }
                             }
                         }
                     ]
@@ -4995,8 +5082,8 @@
             }
         },
         {
-            "id": 2942,
-            "guid": "0010bb79db570302-00041fb10c00004d",
+            "id": 23,
+            "guid": "00345ceb4923d0d2-000460df5203edb5",
             "components": {
                 "NameComponent": {
                     "name": "MasterFill"
@@ -5176,7 +5263,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "0010bb79c0911405-00041fb10c00003f"
+                        "00345ceb268a0c8c-000460df5203eda7"
                     ]
                 },
                 "ActiveComponent": {
@@ -5191,8 +5278,8 @@
             }
         },
         {
-            "id": 2943,
-            "guid": "0010bb799963fca3-00041fb10c00004f",
+            "id": 24,
+            "guid": "00345ceb58fd2140-000460df5203edb7",
             "components": {
                 "NameComponent": {
                     "name": "BGMFill"
@@ -5372,7 +5459,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "0010bb79c0911405-00041fb10c00003f"
+                        "00345ceb268a0c8c-000460df5203eda7"
                     ]
                 },
                 "ActiveComponent": {
@@ -5387,8 +5474,8 @@
             }
         },
         {
-            "id": 2944,
-            "guid": "0010bb79d378b12d-00041fb10c000051",
+            "id": 25,
+            "guid": "00345ceb16dc7c88-000460df5203edb9",
             "components": {
                 "NameComponent": {
                     "name": "SFXFill"
@@ -5568,7 +5655,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "0010bb79c0911405-00041fb10c00003f"
+                        "00345ceb268a0c8c-000460df5203eda7"
                     ]
                 },
                 "ActiveComponent": {
@@ -5583,8 +5670,8 @@
             }
         },
         {
-            "id": 2945,
-            "guid": "0010bb79f9327ca0-00041fb25c0001ab",
+            "id": 26,
+            "guid": "00345ceb77f25e0c-000460df5203edbb",
             "components": {
                 "NameComponent": {
                     "name": "SettingsUIButtons"
@@ -5664,8 +5751,8 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "0010bb7997204bac-00041fb10c000053",
-                                "0010bb798dd1d2aa-00041fb10c000057"
+                                "00345ceb6c027d5b-000460df5203edbd",
+                                "00345ceb60049f7e-000460df5203edbf"
                             ]
                         }
                     ]
@@ -5673,7 +5760,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "0010bb79e560dc3b-00041fb10c00002d"
+                        "00345ceb6f37646d-000460df5203ed95"
                     ]
                 },
                 "AudioComponent": {
@@ -5765,63 +5852,45 @@
                             "entryFunction": "OnInit",
                             "autoInvokeEntry": true,
                             "instanceState": {
+                                "masterBar": "MasterBar",
+                                "sfxNotch": "SFXNotch",
                                 "__meta": {},
-                                "_call_lifecycle": null,
-                                "StartSafe": null,
-                                "UpdateSafe": null,
+                                "masterNotch": "MasterNotch",
+                                "sfxFill": "SFXFill",
+                                "bgmNotch": "BGMNotch",
+                                "bgmBar": "BGMBar",
                                 "ResetSpriteGUIDs": [
                                     "007f7ae3843e20f3-0004059386000009",
                                     "007f7ae3b46a1078-000405939000000b"
                                 ],
-                                "AwakeSafe": null,
-                                "sfxBar": "SFXBar",
-                                "Every": null,
-                                "_private": {},
-                                "DisableSafe": null,
-                                "masterNotch": "MasterNotch",
-                                "UpdateSliderPositions": null,
-                                "Update": null,
-                                "bgmNotch": "BGMNotch",
-                                "Destroy": null,
-                                "bgmFill": "BGMFill",
-                                "__created_at": 1770282695.0,
-                                "OnClickBackButton": null,
-                                "Unsubscribe": null,
-                                "Subscribe": null,
-                                "DeserializeFields": null,
-                                "SerializeFields": null,
-                                "masterBar": "MasterBar",
-                                "OnClickResetButton": null,
-                                "After": null,
-                                "__field_list": {
-                                    "BackSpriteGUIDs": {},
-                                    "masterBar": "MasterBar",
-                                    "ResetSpriteGUIDs": {},
-                                    "masterNotch": "MasterNotch",
-                                    "sfxBar": "SFXBar",
-                                    "masterFill": "MasterFill",
-                                    "bgmNotch": "BGMNotch",
-                                    "buttonSFX": {},
-                                    "bgmFill": "BGMFill",
-                                    "bgmBar": "BGMBar",
-                                    "sfxNotch": "SFXNotch",
-                                    "sfxFill": "SFXFill"
-                                },
-                                "sfxFill": "SFXFill",
                                 "masterFill": "MasterFill",
-                                "_playClickSound": null,
-                                "buttonSFX": [
-                                    "0037d81b0c6c0a46-000400f740000005",
-                                    "0037d81b07b695ee-000400f740000007"
-                                ],
                                 "BackSpriteGUIDs": [
                                     "007f7ae3c3aa1383-000405939c00000d",
                                     "007f7ae3c031397b-00040593a600000f"
                                 ],
-                                "Start": null,
-                                "bgmBar": "BGMBar",
-                                "sfxNotch": "SFXNotch",
-                                "_subscriptions": {}
+                                "_private": {},
+                                "bgmFill": "BGMFill",
+                                "sfxBar": "SFXBar",
+                                "buttonSFX": [
+                                    "0037d81b0c6c0a46-000400f740000005",
+                                    "0037d81b07b695ee-000400f740000007"
+                                ],
+                                "_subscriptions": {},
+                                "__created_at": 1770282695.0,
+                                "__field_list": {
+                                    "bgmFill": "BGMFill",
+                                    "bgmNotch": "BGMNotch",
+                                    "masterBar": "MasterBar",
+                                    "bgmBar": "BGMBar",
+                                    "sfxBar": "SFXBar",
+                                    "ResetSpriteGUIDs": {},
+                                    "buttonSFX": {},
+                                    "sfxFill": "SFXFill",
+                                    "sfxNotch": "SFXNotch",
+                                    "BackSpriteGUIDs": {},
+                                    "masterNotch": "MasterNotch",
+                                    "masterFill": "MasterFill"
+                                }
                             }
                         }
                     ]
@@ -5829,8 +5898,8 @@
             }
         },
         {
-            "id": 2946,
-            "guid": "0010bb7997204bac-00041fb10c000053",
+            "id": 27,
+            "guid": "00345ceb6c027d5b-000460df5203edbd",
             "components": {
                 "NameComponent": {
                     "name": "ResetButton"
@@ -6010,7 +6079,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "0010bb79f9327ca0-00041fb25c0001ab"
+                        "00345ceb77f25e0c-000460df5203edbb"
                     ]
                 },
                 "AudioComponent": {
@@ -6134,8 +6203,8 @@
             }
         },
         {
-            "id": 2947,
-            "guid": "0010bb798dd1d2aa-00041fb10c000057",
+            "id": 28,
+            "guid": "00345ceb60049f7e-000460df5203edbf",
             "components": {
                 "NameComponent": {
                     "name": "BackButton"
@@ -6315,7 +6384,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "0010bb79f9327ca0-00041fb25c0001ab"
+                        "00345ceb77f25e0c-000460df5203edbb"
                     ]
                 },
                 "AudioComponent": {
@@ -6439,8 +6508,8 @@
             }
         },
         {
-            "id": 2948,
-            "guid": "0010bb79ca628478-00041fb10c00005b",
+            "id": 29,
+            "guid": "00345ceb087ee1a0-000460df5203edc1",
             "components": {
                 "NameComponent": {
                     "name": "ConfirmationPromptUI"
@@ -6520,10 +6589,10 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "0010bb79fe2efd21-00041fb10c00005d",
-                                "0010bb7996a94abb-00041fb10c00005f",
-                                "0010bb799c934e70-00041fb10c000061",
-                                "0010bb7998eead8c-00041fb10c000065"
+                                "00345ceb37ab917f-000460df5203edc3",
+                                "00345ceb637f911e-000460df5203edc5",
+                                "00345ceb5d7f4d73-000460df5203edc7",
+                                "00345ceb3ca2dde5-000460df5203edc9"
                             ]
                         }
                     ]
@@ -6531,7 +6600,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "0010bb798f4d87f2-00041fb1d80001a9"
+                        "00345ceb4c3e2933-000460df5203ed87"
                     ]
                 },
                 "AudioComponent": {
@@ -6623,6 +6692,30 @@
                             "entryFunction": "OnInit",
                             "autoInvokeEntry": true,
                             "instanceState": {
+                                "StartSafe": null,
+                                "__meta": {},
+                                "Destroy": null,
+                                "NoSpriteGUIDs": [
+                                    "00752ad5ac70df43-00040da46c000013",
+                                    "00752ad5becad683-00040da494000017"
+                                ],
+                                "Start": null,
+                                "OnClickYesButton": null,
+                                "__created_at": 1772418345.0,
+                                "SerializeFields": null,
+                                "DeserializeFields": null,
+                                "Every": null,
+                                "Subscribe": null,
+                                "UpdateSafe": null,
+                                "_call_lifecycle": null,
+                                "AwakeSafe": null,
+                                "Unsubscribe": null,
+                                "OnClickNoButton": null,
+                                "mainMenuScene": "Resources/Scenes/01_MainMenu.scene",
+                                "Update": null,
+                                "After": null,
+                                "_subscriptions": {},
+                                "DisableSafe": null,
                                 "buttonSFX": [
                                     "0037d81b0c6c0a46-000400f740000005",
                                     "0037d81b07b695ee-000400f740000007"
@@ -6631,10 +6724,13 @@
                                     "00752ad5e464d757-00040da454000011",
                                     "00752ad5c86052c4-00040da478000015"
                                 ],
-                                "NoSpriteGUIDs": [
-                                    "00752ad5ac70df43-00040da46c000013",
-                                    "00752ad5becad683-00040da494000017"
-                                ]
+                                "_private": {},
+                                "__field_list": {
+                                    "buttonSFX": {},
+                                    "YesSpriteGUIDs": {},
+                                    "NoSpriteGUIDs": {},
+                                    "mainMenuScene": "Resources/Scenes/01_MainMenu.scene"
+                                }
                             }
                         }
                     ]
@@ -6642,8 +6738,8 @@
             }
         },
         {
-            "id": 2949,
-            "guid": "0010bb79fe2efd21-00041fb10c00005d",
+            "id": 30,
+            "guid": "00345ceb37ab917f-000460df5203edc3",
             "components": {
                 "NameComponent": {
                     "name": "ConfirmationBG"
@@ -6823,7 +6919,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "0010bb79ca628478-00041fb10c00005b"
+                        "00345ceb087ee1a0-000460df5203edc1"
                     ]
                 },
                 "ActiveComponent": {
@@ -6838,8 +6934,8 @@
             }
         },
         {
-            "id": 2950,
-            "guid": "0010bb7996a94abb-00041fb10c00005f",
+            "id": 31,
+            "guid": "00345ceb637f911e-000460df5203edc5",
             "components": {
                 "NameComponent": {
                     "name": "ConfirmationText"
@@ -7066,7 +7162,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "0010bb79ca628478-00041fb10c00005b"
+                        "00345ceb087ee1a0-000460df5203edc1"
                     ]
                 },
                 "ActiveComponent": {
@@ -7081,8 +7177,8 @@
             }
         },
         {
-            "id": 2951,
-            "guid": "0010bb799c934e70-00041fb10c000061",
+            "id": 32,
+            "guid": "00345ceb5d7f4d73-000460df5203edc7",
             "components": {
                 "NameComponent": {
                     "name": "YesButton"
@@ -7262,7 +7358,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "0010bb79ca628478-00041fb10c00005b"
+                        "00345ceb087ee1a0-000460df5203edc1"
                     ]
                 },
                 "AudioComponent": {
@@ -7386,8 +7482,8 @@
             }
         },
         {
-            "id": 2952,
-            "guid": "0010bb7998eead8c-00041fb10c000065",
+            "id": 33,
+            "guid": "00345ceb3ca2dde5-000460df5203edc9",
             "components": {
                 "NameComponent": {
                     "name": "NoButton"
@@ -7567,7 +7663,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "0010bb79ca628478-00041fb10c00005b"
+                        "00345ceb087ee1a0-000460df5203edc1"
                     ]
                 },
                 "AudioComponent": {
@@ -7691,8 +7787,8 @@
             }
         },
         {
-            "id": 2953,
-            "guid": "0010bb79c2e7ac9b-00041fb10c000069",
+            "id": 34,
+            "guid": "00345ceb40ae4573-000460df5203edcb",
             "components": {
                 "NameComponent": {
                     "name": "BlackScreen"
@@ -7872,7 +7968,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "0010bb798f4d87f2-00041fb1d80001a9"
+                        "00345ceb4c3e2933-000460df5203ed87"
                     ]
                 },
                 "ActiveComponent": {
@@ -7887,8 +7983,8 @@
             }
         },
         {
-            "id": 2954,
-            "guid": "0010bb79cc21ded8-00041fb10c00006b",
+            "id": 35,
+            "guid": "00345ceb50d4e701-000460df5203edcd",
             "components": {
                 "NameComponent": {
                     "name": "ButtonHandler"
@@ -7965,7 +8061,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "0010bb798f4d87f2-00041fb1d80001a9"
+                        "00345ceb4c3e2933-000460df5203ed87"
                     ]
                 },
                 "ActiveComponent": {
@@ -7988,22 +8084,37 @@
                             "autoInvokeEntry": true,
                             "instanceState": {
                                 "_confirmButtons": {},
-                                "_pauseButtons": {},
-                                "_subscriptions": {},
-                                "entityId": 43.0,
-                                "__field_list": {},
-                                "__created_at": 1769694721.0,
+                                "_updateButtonStates": null,
+                                "StartSafe": null,
                                 "__meta": {},
-                                "_private": {},
-                                "fields": {
-                                    "__created_at": 1769694721.0,
-                                    "_subscriptions": {},
-                                    "_private": {},
-                                    "__field_list": {},
-                                    "__meta": {}
-                                },
                                 "_settingButtons": {},
-                                "_subs_map": {}
+                                "Start": null,
+                                "_subs_map": {},
+                                "UpdateSafe": null,
+                                "fields": {
+                                    "_subscriptions": {},
+                                    "__meta": {},
+                                    "__created_at": 1769694721.0,
+                                    "_private": {},
+                                    "__field_list": {}
+                                },
+                                "DeserializeFields": null,
+                                "Every": null,
+                                "Subscribe": null,
+                                "entityId": 43.0,
+                                "_pauseButtons": {},
+                                "AwakeSafe": null,
+                                "Unsubscribe": null,
+                                "Destroy": null,
+                                "SerializeFields": null,
+                                "Update": null,
+                                "After": null,
+                                "_subscriptions": {},
+                                "DisableSafe": null,
+                                "_call_lifecycle": null,
+                                "_private": {},
+                                "__created_at": 1769694721.0,
+                                "__field_list": {}
                             }
                         }
                     ]
@@ -8011,8 +8122,8 @@
             }
         },
         {
-            "id": 2955,
-            "guid": "0010bb7989b00cf1-00041fb10c00006d",
+            "id": 36,
+            "guid": "00345ceb0fac98cf-000460df5203edcf",
             "components": {
                 "NameComponent": {
                     "name": "PauseListener"
@@ -8089,7 +8200,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "0010bb798f4d87f2-00041fb1d80001a9"
+                        "00345ceb4c3e2933-000460df5203ed87"
                     ]
                 },
                 "ActiveComponent": {
@@ -8111,16 +8222,39 @@
                             "entryFunction": "OnInit",
                             "autoInvokeEntry": true,
                             "instanceState": {
-                                "_subs_map": {},
-                                "_pauseTimer": -0.0029273993335664217,
-                                "entityId": 44.0,
-                                "__field_list": {},
-                                "__created_at": 1769854620.0,
+                                "Move": null,
+                                "SetScale": null,
+                                "SetRotation": null,
                                 "__meta": {},
-                                "_private": {},
+                                "SetPosition": null,
+                                "UpdateSafe": null,
+                                "_pauseTimer": -0.0029273993335664217,
+                                "GetRotation": null,
+                                "Subscribe": null,
+                                "_subs_map": {},
+                                "Unsubscribe": null,
+                                "DebugTransform": null,
+                                "Update": null,
+                                "After": null,
+                                "SerializeFields": null,
+                                "GetTransform": null,
+                                "StartSafe": null,
+                                "Start": null,
+                                "entityId": 44.0,
+                                "_isGamePaused": false,
+                                "Destroy": null,
+                                "AwakeSafe": null,
                                 "_transform_fetched": false,
+                                "GetPosition": null,
+                                "_call_lifecycle": null,
+                                "Every": null,
+                                "__field_list": {},
                                 "_subscriptions": {},
-                                "_isGamePaused": false
+                                "DisableSafe": null,
+                                "DeserializeFields": null,
+                                "__created_at": 1769854620.0,
+                                "_private": {},
+                                "GetScale": null
                             }
                         }
                     ]

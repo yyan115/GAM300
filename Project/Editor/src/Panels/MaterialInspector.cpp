@@ -1,7 +1,6 @@
 #include "Panels/MaterialInspector.hpp"
 #include "Panels/AssetBrowserPanel.hpp"
 #include "EditorComponents.hpp"
-#include "Logging.hpp"
 #include "imgui.h"
 #include "../../../Libraries/IconFontCppHeaders/IconsFontAwesome6.h"
 #include <Graphics/Texture.h>
@@ -20,64 +19,46 @@
 #include <commdlg.h>
 #endif
 
-// Helper function to draw color component with input fields and color picker
+// Label width for consistent two-column layout (Unity-style)
+static const float kMaterialLabelWidth = 110.0f;
+
+// Helper function to draw color component (Unity-style: label + color bar)
 static bool DrawColorComponent(const char* label, float color[3], const char* popupId) {
     bool changed = false;
 
     ImGui::Text("%s", label);
-    ImGui::SameLine();
+    ImGui::SameLine(kMaterialLabelWidth);
+    ImGui::SetNextItemWidth(-1);
 
-    // Create unique IDs using the label
-    std::string rId = std::string("##r_") + label;
-    std::string gId = std::string("##g_") + label;
-    std::string bId = std::string("##b_") + label;
     std::string colorId = std::string("##color_") + label;
-
-    // R input field
-    float r = color[0] * 255.0f;
-    ImGui::PushItemWidth(50);
-    if (ImGui::DragFloat(rId.c_str(), &r, 1.0f, 0.0f, 255.0f, "%.0f")) {
-        color[0] = r / 255.0f;
+    if (ImGui::ColorEdit3(colorId.c_str(), color, ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_NoLabel)) {
         changed = true;
     }
-    ImGui::PopItemWidth();
-    ImGui::SameLine();
-    ImGui::Text("G:");
-    ImGui::SameLine();
 
-    // G input field
-    float g = color[1] * 255.0f;
-    ImGui::PushItemWidth(50);
-    if (ImGui::DragFloat(gId.c_str(), &g, 1.0f, 0.0f, 255.0f, "%.0f")) {
-        color[1] = g / 255.0f;
+    return changed;
+}
+
+// Helper function to draw vector2 component (Unity-style: label + two float fields)
+static bool DrawVec2Component(const char* label, float vec2[2], const char* popupId) {
+    bool changed = false;
+
+    std::string xId = std::string("##x_") + label;
+    std::string yId = std::string("##y_") + label;
+
+    ImGui::Text("%s", label);
+    ImGui::SameLine(kMaterialLabelWidth);
+
+    float availWidth = ImGui::GetContentRegionAvail().x;
+    float halfWidth = (availWidth - ImGui::GetStyle().ItemSpacing.x) * 0.5f;
+
+    ImGui::SetNextItemWidth(halfWidth);
+    if (ImGui::DragFloat(xId.c_str(), &vec2[0], 0.01f, -FLT_MAX, FLT_MAX, "X: %.2f")) {
         changed = true;
     }
-    ImGui::PopItemWidth();
     ImGui::SameLine();
-    ImGui::Text("B:");
-    ImGui::SameLine();
-
-    // B input field
-    float b = color[2] * 255.0f;
-    ImGui::PushItemWidth(50);
-    if (ImGui::DragFloat(bId.c_str(), &b, 1.0f, 0.0f, 255.0f, "%.0f")) {
-        color[2] = b / 255.0f;
+    ImGui::SetNextItemWidth(halfWidth);
+    if (ImGui::DragFloat(yId.c_str(), &vec2[1], 0.01f, -FLT_MAX, FLT_MAX, "Y: %.2f")) {
         changed = true;
-    }
-    ImGui::PopItemWidth();
-    ImGui::SameLine();
-
-    // Color picker button
-    if (ImGui::ColorButton(colorId.c_str(), ImVec4(color[0], color[1], color[2], 1), ImGuiColorEditFlags_NoTooltip, ImVec2(30, 20))) {
-        ImGui::OpenPopup(popupId);
-    }
-
-    // Color picker popup
-    if (ImGui::BeginPopup(popupId)) {
-        if (ImGui::ColorPicker3("Color", color)) {
-            changed = true;
-        }
-        ImGui::EndPopup();
     }
 
     return changed;
@@ -137,17 +118,62 @@ void MaterialInspector::DrawMaterialAsset(std::shared_ptr<Material> material, co
             materialChanged = true;
         }
 
-        // Shininess row
+        // Shininess
         float shininess = material->GetShininess();
         float normalizedShininess = shininess / 256.0f;
-
         ImGui::Text("Shininess");
-        ImGui::SameLine();
-        ImGui::Text("%.3f", normalizedShininess);
-        ImGui::SameLine();
-        ImGui::SetNextItemWidth(100.0f);
-        if (ImGui::SliderFloat("##shininess_slider", &normalizedShininess, 0.0f, 1.0f, "")) {
+        ImGui::SameLine(kMaterialLabelWidth);
+        ImGui::SetNextItemWidth(-1);
+        if (ImGui::DragFloat("##shininess_slider", &normalizedShininess, 0.005f, 0.0f, 1.0f, "%.3f")) {
             material->SetShininess(normalizedShininess * 256.0f);
+            materialChanged = true;
+        }
+
+        // Metallic
+        float metallic = material->GetMetallic();
+        ImGui::Text("Metallic");
+        ImGui::SameLine(kMaterialLabelWidth);
+        ImGui::SetNextItemWidth(-1);
+        if (ImGui::DragFloat("##metallic_slider", &metallic, 0.005f, 0.0f, 1.0f, "%.3f")) {
+            material->SetMetallic(metallic);
+            materialChanged = true;
+        }
+
+        // Roughness
+        float roughness = material->GetRoughness();
+        ImGui::Text("Roughness");
+        ImGui::SameLine(kMaterialLabelWidth);
+        ImGui::SetNextItemWidth(-1);
+        if (ImGui::DragFloat("##roughness_slider", &roughness, 0.005f, 0.0f, 1.0f, "%.3f")) {
+            material->SetRoughness(roughness);
+            materialChanged = true;
+        }
+
+        // AO
+        float ao = material->GetAO();
+        ImGui::Text("AO");
+        ImGui::SameLine(kMaterialLabelWidth);
+        ImGui::SetNextItemWidth(-1);
+        if (ImGui::DragFloat("##ao_slider", &ao, 0.005f, 0.0f, 1.0f, "%.3f")) {
+            material->SetAO(ao);
+            materialChanged = true;
+        }
+
+        // Emissive
+        glm::vec3 emissive = material->GetEmissive();
+        float emissiveColor[3] = { emissive.r, emissive.g, emissive.b };
+        if (DrawColorComponent("Emissive", emissiveColor, "emissive_color_picker")) {
+            material->SetEmissive(glm::vec3(emissiveColor[0], emissiveColor[1], emissiveColor[2]));
+            materialChanged = true;
+        }
+
+        // Opacity
+        float opacity = material->GetOpacity();
+        ImGui::Text("Opacity");
+        ImGui::SameLine(kMaterialLabelWidth);
+        ImGui::SetNextItemWidth(-1);
+        if (ImGui::DragFloat("##opacity_slider", &opacity, 0.005f, 0.0f, 1.0f, "%.3f")) {
+            material->SetOpacity(opacity);
             materialChanged = true;
         }
 
@@ -164,11 +190,12 @@ void MaterialInspector::DrawMaterialAsset(std::shared_ptr<Material> material, co
         static const std::vector<std::pair<Material::TextureType, std::string>> textureTypes = {
             {Material::TextureType::DIFFUSE, "Diffuse"},
             {Material::TextureType::SPECULAR, "Specular"},
-            {Material::TextureType::AMBIENT_OCCLUSION, "Ambient Occlusion"},
-            {Material::TextureType::HEIGHT, "Height"},
             {Material::TextureType::NORMAL, "Normal"},
+            {Material::TextureType::EMISSIVE, "Emissive"},
             {Material::TextureType::METALLIC, "Metallic"},
-            {Material::TextureType::ROUGHNESS, "Roughness"}
+            {Material::TextureType::ROUGHNESS, "Roughness"},
+            {Material::TextureType::AMBIENT_OCCLUSION, "Ambient Occlusion"},
+            {Material::TextureType::HEIGHT, "Height"}
         };
 
         for (const auto& textureType : textureTypes) {
@@ -183,14 +210,13 @@ void MaterialInspector::DrawMaterialAsset(std::shared_ptr<Material> material, co
                 currentPath = textureInfo->get().filePath;
             }
 
-            
-            ImGui::Text("%s:", name.c_str());
-            ImGui::SameLine();
+            ImGui::Text("%s", name.c_str());
+            ImGui::SameLine(kMaterialLabelWidth);
 
             // Calculate sizes for layout
             float availableWidth = ImGui::GetContentRegionAvail().x;
-            float removeButtonWidth = 35.0f;
-            float selectButtonWidth = 35.0f;
+            float removeButtonWidth = 25.0f;
+            float selectButtonWidth = 25.0f;
             float spacing = ImGui::GetStyle().ItemSpacing.x;
             float textureFieldWidth = availableWidth - removeButtonWidth - selectButtonWidth - (spacing * 2);
 
@@ -198,13 +224,13 @@ void MaterialInspector::DrawMaterialAsset(std::shared_ptr<Material> material, co
             std::string textureDisplay;
             if (currentPath.empty()) {
                 textureDisplay = "None (Texture)";
-            } else {
+            }
+            else {
                 // Show just the filename for cleaner display
                 std::filesystem::path pathObj(currentPath);
                 textureDisplay = pathObj.filename().string();
             }
 
-            
             EditorComponents::DrawDragDropButton(textureDisplay.c_str(), textureFieldWidth);
 
             // Drag-drop target for textures with visual feedback
@@ -219,13 +245,13 @@ void MaterialInspector::DrawMaterialAsset(std::shared_ptr<Material> material, co
                     // Use the original path as-is since it already has the correct relative path
                     std::string assetPathStr = pathStr;
 
-                    ENGINE_PRINT("[MaterialInspector] Using original path: ", assetPathStr);
+                    std::cout << "[MaterialInspector] Using original path: " << assetPathStr << std::endl;
 
                     // Create a TextureInfo with the path - the texture will be loaded when actually needed by the renderer
                     auto textureInfo = std::make_unique<TextureInfo>(assetPathStr, nullptr);
                     material->SetTexture(type, std::move(textureInfo));
                     materialChanged = true;
-                    ENGINE_PRINT("[MaterialInspector] Successfully set texture path on material: ", assetPathStr);
+                    std::cout << "[MaterialInspector] Successfully set texture path on material: " << assetPathStr << std::endl;
                 }
                 EditorComponents::EndDragDropTarget();
             }
@@ -234,11 +260,11 @@ void MaterialInspector::DrawMaterialAsset(std::shared_ptr<Material> material, co
             ImGui::SameLine();
             ImGui::PushStyleVar(ImGuiStyleVar_ButtonTextAlign, ImVec2(0.5f, 0.5f));
             std::string removeButtonLabel = std::string(ICON_FA_XMARK) + "##remove_" + name;
-            if (ImGui::Button(removeButtonLabel.c_str(), ImVec2(removeButtonWidth, ImGui::GetTextLineHeightWithSpacing()))) {
+            if (ImGui::Button(removeButtonLabel.c_str(), ImVec2(removeButtonWidth, 0))) {
                 // Remove the texture
                 material->RemoveTexture(type);
                 materialChanged = true;
-                ENGINE_PRINT("[MaterialInspector] Removed ", name, " texture");
+                std::cout << "[MaterialInspector] Removed " << name << " texture" << std::endl;
             }
             ImGui::PopStyleVar();
             if (ImGui::IsItemHovered()) {
@@ -249,51 +275,51 @@ void MaterialInspector::DrawMaterialAsset(std::shared_ptr<Material> material, co
             ImGui::SameLine();
             ImGui::PushStyleVar(ImGuiStyleVar_ButtonTextAlign, ImVec2(0.5f, 0.5f)); // Center text in button
             std::string selectButtonLabel = std::string(ICON_FA_FOLDER_OPEN) + "##select_" + name;
-            if (ImGui::Button(selectButtonLabel.c_str(), ImVec2(selectButtonWidth, ImGui::GetTextLineHeightWithSpacing()))) {
+            if (ImGui::Button(selectButtonLabel.c_str(), ImVec2(selectButtonWidth, 0))) {
                 // Open file dialog
-                #ifdef _WIN32
-                    // Store current working directory to restore it later
-                    std::filesystem::path originalWorkingDir = std::filesystem::current_path();
+#ifdef _WIN32
+    // Store current working directory to restore it later
+                std::filesystem::path originalWorkingDir = std::filesystem::current_path();
 
-                    // Proper filter format with embedded nulls
-                    char filter[] = "Image Files (*.png;*.jpg;*.jpeg;*.bmp;*.tga)\0*.png;*.jpg;*.jpeg;*.bmp;*.tga\0All Files (*.*)\0*.*\0";
-                    char filename[260] = {0};
-                    std::string title = "Select " + name + " Texture";
+                // Proper filter format with embedded nulls
+                char filter[] = "Image Files (*.png;*.jpg;*.jpeg;*.bmp;*.tga)\0*.png;*.jpg;*.jpeg;*.bmp;*.tga\0All Files (*.*)\0*.*\0";
+                char filename[260] = { 0 };
+                std::string title = "Select " + name + " Texture";
 
-                    OPENFILENAMEA ofn;
-                    ZeroMemory(&filename, sizeof(filename));
-                    ZeroMemory(&ofn, sizeof(ofn));
-                    ofn.lStructSize = sizeof(ofn);
-                    ofn.lpstrFilter = filter;
-                    ofn.lpstrFile = filename;
-                    ofn.nMaxFile = sizeof(filename);
-                    ofn.lpstrTitle = title.c_str();
-                    ofn.Flags = OFN_DONTADDTORECENT | OFN_FILEMUSTEXIST | OFN_NOCHANGEDIR;
+                OPENFILENAMEA ofn;
+                ZeroMemory(&filename, sizeof(filename));
+                ZeroMemory(&ofn, sizeof(ofn));
+                ofn.lStructSize = sizeof(ofn);
+                ofn.lpstrFilter = filter;
+                ofn.lpstrFile = filename;
+                ofn.nMaxFile = sizeof(filename);
+                ofn.lpstrTitle = title.c_str();
+                ofn.Flags = OFN_DONTADDTORECENT | OFN_FILEMUSTEXIST | OFN_NOCHANGEDIR;
 
-                    if (GetOpenFileNameA(&ofn)) {
-                        std::string selectedPath = filename;
+                if (GetOpenFileNameA(&ofn)) {
+                    std::string selectedPath = filename;
 
-                        // Convert to relative path if possible (use original working dir as reference)
-                        std::filesystem::path absolutePath = std::filesystem::absolute(selectedPath);
-                        std::filesystem::path relativePath = std::filesystem::relative(absolutePath, originalWorkingDir);
+                    // Convert to relative path if possible (use original working dir as reference)
+                    std::filesystem::path absolutePath = std::filesystem::absolute(selectedPath);
+                    std::filesystem::path relativePath = std::filesystem::relative(absolutePath, originalWorkingDir);
 
-                        std::string finalPath = relativePath.string();
-                        std::replace(finalPath.begin(), finalPath.end(), '\\', '/');
+                    std::string finalPath = relativePath.string();
+                    std::replace(finalPath.begin(), finalPath.end(), '\\', '/');
 
-                        // Create a TextureInfo with the path
-                        auto textureInfo = std::make_unique<TextureInfo>(finalPath, nullptr);
-                        material->SetTexture(type, std::move(textureInfo));
-                        materialChanged = true;
-                        ENGINE_PRINT("[MaterialInspector] Selected texture: ", finalPath);
-                    }
+                    // Create a TextureInfo with the path
+                    auto textureInfo = std::make_unique<TextureInfo>(finalPath, nullptr);
+                    material->SetTexture(type, std::move(textureInfo));
+                    materialChanged = true;
+                    std::cout << "[MaterialInspector] Selected texture: " << finalPath << std::endl;
+                }
 
-                    // Restore the original working directory to ensure asset browser isn't affected
-                    std::filesystem::current_path(originalWorkingDir);
-                    ENGINE_PRINT("[MaterialInspector] Restored working directory to: ", originalWorkingDir.string());
-                #else
-                    // For non-Windows platforms, show a message
-                    ENGINE_PRINT("[MaterialInspector] File dialog not implemented for this platform");
-                #endif
+                // Restore the original working directory to ensure asset browser isn't affected
+                std::filesystem::current_path(originalWorkingDir);
+                std::cout << "[MaterialInspector] Restored working directory to: " << originalWorkingDir << std::endl;
+#else
+    // For non-Windows platforms, show a message
+                std::cout << "[MaterialInspector] File dialog not implemented for this platform" << std::endl;
+#endif
             }
             ImGui::PopStyleVar(); // Pop ButtonTextAlign style
             if (ImGui::IsItemHovered()) {
@@ -303,6 +329,22 @@ void MaterialInspector::DrawMaterialAsset(std::shared_ptr<Material> material, co
             // Pop the unique ID
             ImGui::PopID();
         }
+
+        // Texture wrapping options (Tiling, Offset)
+        glm::vec2 tiling = material->GetTiling();
+        float tilingXY[2] = { tiling.x, tiling.y };
+        if (DrawVec2Component("Tiling", tilingXY, "tiling_popup")) {
+            material->SetTiling(glm::vec2(tilingXY[0], tilingXY[1]));
+			materialChanged = true;
+        }
+
+		glm::vec2 offset = material->GetOffset();
+		float offsetXY[2] = { offset.x, offset.y };
+        if (DrawVec2Component("Offset", offsetXY, "offset_popup")) {
+			material->SetOffset(glm::vec2(offsetXY[0], offsetXY[1]));
+			materialChanged = true;
+        }
+
     } else {
         ImGui::PopStyleColor(3); // Pop header colors if not open
     }
@@ -314,7 +356,7 @@ void MaterialInspector::DrawMaterialAsset(std::shared_ptr<Material> material, co
         std::filesystem::path absoluteSavePath = std::filesystem::absolute(assetPath);
         std::string absoluteSavePathStr = absoluteSavePath.string();
         
-        ENGINE_PRINT("[MaterialInspector] Attempting to save material to: ", absoluteSavePathStr);
+        std::cout << "[MaterialInspector] Attempting to save material to: " << absoluteSavePathStr << std::endl;
         //material->CompileUpdatedAssetToResource(assetPath);
 		AssetManager::GetInstance().CompileUpdatedMaterial(assetPath, material, true);
         //AssetManager::GetInstance().AddToEventQueue(AssetManager::Event::modified, assetPath);
@@ -367,13 +409,13 @@ void MaterialInspector::ApplyMaterialToModel(Entity entity, const GUID_128& mate
         
         if (!materialMeta) {
             // Try fallback GUID lookup
-            ENGINE_PRINT("[MaterialInspector] AssetMeta not found, trying fallback path lookup");
+            std::cout << "[MaterialInspector] AssetMeta not found, trying fallback path lookup" << std::endl;
             sourceFilePath = AssetBrowserPanel::GetFallbackGuidFilePath(materialGuid);
             if (sourceFilePath.empty()) {
                 std::cerr << "[MaterialInspector] Material asset not found and no fallback path available" << std::endl;
                 return;
             }
-            ENGINE_PRINT("[MaterialInspector] Found fallback path: ", sourceFilePath);
+            std::cout << "[MaterialInspector] Found fallback path: " << sourceFilePath << std::endl;
         } else {
             sourceFilePath = materialMeta->sourceFilePath;
         }
@@ -394,13 +436,13 @@ void MaterialInspector::ApplyMaterialToModel(Entity entity, const GUID_128& mate
             std::filesystem::path path(sourceFilePath);
             std::string name = path.stem().string(); // Get filename without extension
             material->SetName(name);
-            ENGINE_PRINT("[MaterialInspector] Set material name to: ", name);
+            std::cout << "[MaterialInspector] Set material name to: " << name << std::endl;
         }
 
         // Apply the material to the entire entity (like Unity)
         modelRenderer.SetMaterial(material);
         modelRenderer.materialGUID = materialGuid;
-        ENGINE_PRINT("[MaterialInspector] Applied material '", material->GetName(), "' to entity");
+        std::cout << "[MaterialInspector] Applied material '" << material->GetName() << "' to entity" << std::endl;
     }
     catch (const std::exception& e) {
         std::cerr << "[MaterialInspector] Error applying material to model: " << e.what() << std::endl;
@@ -439,12 +481,12 @@ void MaterialInspector::ApplyMaterialToModelByPath(Entity entity, const std::str
             std::filesystem::path path(materialPath);
             std::string name = path.stem().string(); // Get filename without extension
             material->SetName(name);
-            ENGINE_PRINT("[MaterialInspector] Set material name to: ", name);
+            std::cout << "[MaterialInspector] Set material name to: " << name << std::endl;
         }
 
         // Apply the material to the entire entity (like Unity)
         modelRenderer.SetMaterial(material);
-        ENGINE_PRINT("[MaterialInspector] Applied material '", material->GetName(), "' to entity (by path)");
+        std::cout << "[MaterialInspector] Applied material '" << material->GetName() << "' to entity (by path)" << std::endl;
     }
     catch (const std::exception& e) {
         std::cerr << "[MaterialInspector] Error applying material to model by path: " << e.what() << std::endl;

@@ -7,8 +7,10 @@
 #include "Transform/TransformComponent.hpp"
 #include <Asset Manager/AssetManager.hpp>
 #include <Asset Manager/MetaFilesManager.hpp>
-#include "Performance/PerformanceProfiler.hpp"
 #include "ECS/ActiveComponent.hpp"
+#include "ECS/LayerComponent.hpp"
+#include "Graphics/PostProcessing/PostProcessingManager.hpp"
+#include "Graphics/BloomComponent.hpp"
 
 bool TextRenderingSystem::Initialise()
 {
@@ -107,6 +109,24 @@ void TextRenderingSystem::Update()
         if (textComponent.isVisible && TextUtils::IsValid(textComponent))
         {
             auto textRenderItem = std::make_unique<TextRenderComponent>(textComponent);
+
+            // Per-entity bloom emission
+            if (ecsManager.HasComponent<BloomComponent>(entity)) {
+                auto& bloom = ecsManager.GetComponent<BloomComponent>(entity);
+                if (bloom.enabled) {
+                    textRenderItem->bloomColor = bloom.bloomColor;
+                    textRenderItem->bloomIntensity = bloom.bloomIntensity;
+                }
+            }
+
+            // Tag items on excluded layers for deferred rendering
+            uint32_t exMask = PostProcessingManager::GetInstance().GetExcludedLayerMask();
+            if (exMask != 0) {
+                int layerIdx = GetEffectiveLayerIndex(entity, ecsManager);
+                if (exMask & (1u << layerIdx))
+                    textRenderItem->excludeFromPostProcess = true;
+            }
+
             gfxManager.Submit(std::move(textRenderItem));
         }
     }

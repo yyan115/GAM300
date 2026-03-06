@@ -159,6 +159,7 @@ public:
 
 	void ENGINE_API AddToEventQueue(AssetManager::Event event, const std::filesystem::path& assetPath);
 	void ENGINE_API RunEventQueue();
+	void ENGINE_API SetShouldRunEventQueue(bool shouldRun) { shouldRunEventQueue = shouldRun; }
 
 	const std::filesystem::path& GetAndroidResourcesPath();
 	std::string ExtractRelativeAndroidPath(const std::string& fullAndroidPath);
@@ -179,6 +180,7 @@ private:
 	std::list<std::pair<AssetManager::Event, std::filesystem::path>> assetEventQueue;
 	std::pair<AssetManager::Event, std::filesystem::path> previousEvent;
 	std::chrono::steady_clock::time_point previousEventTime;
+	bool shouldRunEventQueue = true;
 	
 	std::string rootAssetDirectory;
 	std::filesystem::path androidResourcesPath{ "../../../AndroidProject/app/src/main/assets" };

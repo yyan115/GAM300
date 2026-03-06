@@ -11,6 +11,7 @@
 #include <Graphics/Model/ModelFactory.hpp>
 #include <Prefab/PrefabIO.hpp>
 #include "Video/VideoComponent.hpp"
+#include "Graphics/BloomComponent.hpp"
 
 // ---------- helpers ----------
 auto readVec3FromArray = [](const rapidjson::Value& a, Vector3D& out) -> bool {
@@ -311,7 +312,7 @@ void Serializer::SerializeEntityRecursively(Entity entity, rapidjson::Document::
         std::string path = ecs.GetComponent<PrefabLinkComponent>(entity).prefabPath;
 
         // Load the Original Prefab
-        Entity baselineRoot = InstantiatePrefabFromFile(path);
+        Entity baselineRoot = InstantiatePrefabFromFile(path, true);
 
         // Calculate Diffs
         rapidjson::Value prefabNode(rapidjson::kObjectType);
@@ -338,7 +339,7 @@ void Serializer::SerializeEntityRecursively(Entity entity, rapidjson::Document::
         //          overridesArray.PushBack(wrapper, alloc);
         //      }
 
-              // D. Save recursive overrides
+        // D. Save recursive overrides
         SerializePrefabOverridesRecursive(ecs, entity, baselineRoot, alloc, prefabNode);
 
         ecs.DestroyEntity(baselineRoot); // clean up baseline prefab entity
@@ -409,6 +410,29 @@ rapidjson::Value Serializer::SerializeEntity(Entity entity, rapidjson::Document:
         indexVal.SetInt(c.layerIndex);
         layerObj.AddMember(rapidjson::Value("layerIndex", alloc).Move(), indexVal, alloc);
         compsObj.AddMember(rapidjson::Value("LayerComponent", alloc).Move(), layerObj, alloc);
+    }
+    // Ensure ALL entities have a SiblingIndexComponent.
+    if (!ecs.HasComponent<SiblingIndexComponent>(entity)) {
+        int nextIndex = 0;
+
+        // Check if the entity has a parent to determine sibling context
+        if (ecs.HasComponent<ParentComponent>(entity)) {
+            GUID_128 parentGUID = ecs.GetComponent<ParentComponent>(entity).parent;
+            Entity parentEnt = EntityGUIDRegistry::GetInstance().GetEntityByGUID(parentGUID);
+
+            // If parent exists and has children, find the highest current index
+            if (parentEnt != static_cast<Entity>(-1) && ecs.HasComponent<ChildrenComponent>(parentEnt)) {
+                auto& siblings = ecs.GetComponent<ChildrenComponent>(parentEnt).children;
+                for (const auto& sibGUID : siblings) {
+                    Entity sibEnt = EntityGUIDRegistry::GetInstance().GetEntityByGUID(sibGUID);
+                    if (sibEnt != static_cast<Entity>(-1) && ecs.HasComponent<SiblingIndexComponent>(sibEnt)) {
+                        nextIndex = std::max(nextIndex, ecs.GetComponent<SiblingIndexComponent>(sibEnt).siblingIndex + 1);
+                    }
+                }
+            }
+        }
+        // Add the component with the calculated unique index
+        ecs.AddComponent<SiblingIndexComponent>(entity, SiblingIndexComponent{ nextIndex });
     }
     if (ecs.HasComponent<SiblingIndexComponent>(entity)) {
         auto& c = ecs.GetComponent<SiblingIndexComponent>(entity);
@@ -495,6 +519,11 @@ rapidjson::Value Serializer::SerializeEntity(Entity entity, rapidjson::Document:
         auto& c = ecs.GetComponent<ParticleComponent>(entity);
         rapidjson::Value v = SerializeComponentToValue(c, alloc);
         compsObj.AddMember("ParticleComponent", v, alloc);
+    }
+    if (ecs.HasComponent<FogVolumeComponent>(entity)) {
+        auto& c = ecs.GetComponent<FogVolumeComponent>(entity);
+        rapidjson::Value v = SerializeComponentToValue(c, alloc);
+        compsObj.AddMember("FogVolumeComponent", v, alloc);
     }
     //if (ecs.HasComponent<DebugDrawComponent>(entity)) {
     //    auto& c = ecs.GetComponent<DebugDrawComponent>(entity);
@@ -603,6 +632,41 @@ rapidjson::Value Serializer::SerializeEntity(Entity entity, rapidjson::Document:
         rapidjson::Value skyboxPathVal;
         skyboxPathVal.SetString(c.skyboxTexturePath.c_str(), static_cast<rapidjson::SizeType>(c.skyboxTexturePath.size()), alloc);
         v.AddMember("skyboxTexturePath", skyboxPathVal, alloc);
+
+        // Post-processing settings
+        v.AddMember("blurEnabled", c.blurEnabled, alloc);
+        v.AddMember("blurIntensity", c.blurIntensity, alloc);
+        v.AddMember("blurRadius", c.blurRadius, alloc);
+        v.AddMember("blurPasses", c.blurPasses, alloc);
+        v.AddMember("blurLayerMask", c.blurLayerMask, alloc);
+        v.AddMember("bloomEnabled", c.bloomEnabled, alloc);
+        v.AddMember("bloomThreshold", c.bloomThreshold, alloc);
+        v.AddMember("bloomIntensity", c.bloomIntensity, alloc);
+        v.AddMember("bloomSpread", c.bloomSpread, alloc);
+        v.AddMember("vignetteEnabled", c.vignetteEnabled, alloc);
+        v.AddMember("vignetteIntensity", c.vignetteIntensity, alloc);
+        v.AddMember("vignetteSmoothness", c.vignetteSmoothness, alloc);
+        {
+            rapidjson::Value vigColorVal(rapidjson::kObjectType);
+            vigColorVal.AddMember("type", "glm::vec3", alloc);
+            rapidjson::Value vigColorData(rapidjson::kArrayType);
+            vigColorData.PushBack(c.vignetteColor.x, alloc); vigColorData.PushBack(c.vignetteColor.y, alloc); vigColorData.PushBack(c.vignetteColor.z, alloc);
+            vigColorVal.AddMember("data", vigColorData, alloc);
+            v.AddMember("vignetteColor", vigColorVal, alloc);
+        }
+        v.AddMember("colorGradingEnabled", c.colorGradingEnabled, alloc);
+        v.AddMember("cgBrightness", c.cgBrightness, alloc);
+        v.AddMember("cgContrast", c.cgContrast, alloc);
+        v.AddMember("cgSaturation", c.cgSaturation, alloc);
+        rapidjson::Value tintVal(rapidjson::kObjectType);
+        tintVal.AddMember("type", "glm::vec3", alloc);
+        rapidjson::Value tintData(rapidjson::kArrayType);
+        tintData.PushBack(c.cgTint.x, alloc); tintData.PushBack(c.cgTint.y, alloc); tintData.PushBack(c.cgTint.z, alloc);
+        tintVal.AddMember("data", tintData, alloc);
+        v.AddMember("cgTint", tintVal, alloc);
+        v.AddMember("chromaticAberrationEnabled", c.chromaticAberrationEnabled, alloc);
+        v.AddMember("chromaticAberrationIntensity", c.chromaticAberrationIntensity, alloc);
+        v.AddMember("chromaticAberrationPadding", c.chromaticAberrationPadding, alloc);
 
         compsObj.AddMember("CameraComponent", v, alloc);
     }
@@ -735,6 +799,25 @@ rapidjson::Value Serializer::SerializeEntity(Entity entity, rapidjson::Document:
         rapidjson::Value v = SerializeComponentToValue(c, alloc);
         compsObj.AddMember("VideoComponent", v, alloc);
     }
+    if (ecs.HasComponent<DialogueComponent>(entity)) {
+        auto& c = ecs.GetComponent<DialogueComponent>(entity);
+        rapidjson::Value v = SerializeComponentToValue(c, alloc);
+        compsObj.AddMember("DialogueComponent", v, alloc);
+    }
+    if (ecs.HasComponent<BloomComponent>(entity)) {
+        auto& c = ecs.GetComponent<BloomComponent>(entity);
+        rapidjson::Value v = SerializeComponentToValue(c, alloc);
+        // bloomColor needs custom serialization (glm::vec3)
+        rapidjson::Value colorVal(rapidjson::kObjectType);
+        colorVal.AddMember("type", "glm::vec3", alloc);
+        rapidjson::Value colorData(rapidjson::kArrayType);
+        colorData.PushBack(c.bloomColor.x, alloc);
+        colorData.PushBack(c.bloomColor.y, alloc);
+        colorData.PushBack(c.bloomColor.z, alloc);
+        colorVal.AddMember("data", colorData, alloc);
+        v.AddMember("bloomColor", colorVal, alloc);
+        compsObj.AddMember("BloomComponent", v, alloc);
+    }
 
 
     entObj.AddMember("components", compsObj, alloc);
@@ -755,6 +838,7 @@ void Serializer::SerializePrefabInstanceDelta(ECSManager& sceneECS, Entity insta
     CheckAndSerializeDelta<SpriteRenderComponent>("SpriteRenderComponent", sceneECS, instanceEnt, baselineEnt, alloc, outComponentsArray, standardSerializer);
     CheckAndSerializeDelta<TextRenderComponent>("TextRenderComponent", sceneECS, instanceEnt, baselineEnt, alloc, outComponentsArray, standardSerializer);
     CheckAndSerializeDelta<ParticleComponent>("ParticleComponent", sceneECS, instanceEnt, baselineEnt, alloc, outComponentsArray, standardSerializer);
+    CheckAndSerializeDelta<FogVolumeComponent>("FogVolumeComponent", sceneECS, instanceEnt, baselineEnt, alloc, outComponentsArray, standardSerializer);
     CheckAndSerializeDelta<AudioComponent>("AudioComponent", sceneECS, instanceEnt, baselineEnt, alloc, outComponentsArray, standardSerializer);
     CheckAndSerializeDelta<AudioListenerComponent>("AudioListenerComponent", sceneECS, instanceEnt, baselineEnt, alloc, outComponentsArray, standardSerializer);
     CheckAndSerializeDelta<AudioReverbZoneComponent>("AudioReverbZoneComponent", sceneECS, instanceEnt, baselineEnt, alloc, outComponentsArray, standardSerializer);
@@ -770,11 +854,26 @@ void Serializer::SerializePrefabInstanceDelta(ECSManager& sceneECS, Entity insta
     CheckAndSerializeDelta<ButtonComponent>("ButtonComponent", sceneECS, instanceEnt, baselineEnt, alloc, outComponentsArray, standardSerializer);
     CheckAndSerializeDelta<SliderComponent>("SliderComponent", sceneECS, instanceEnt, baselineEnt, alloc, outComponentsArray, standardSerializer);
     CheckAndSerializeDelta<VideoComponent>("VideoComponent", sceneECS, instanceEnt, baselineEnt, alloc, outComponentsArray, standardSerializer);
+    CheckAndSerializeDelta<DialogueComponent>("DialogueComponent", sceneECS, instanceEnt, baselineEnt, alloc, outComponentsArray, standardSerializer);
+    CheckAndSerializeDelta<BloomComponent>("BloomComponent", sceneECS, instanceEnt, baselineEnt, alloc, outComponentsArray,
+        [&](const BloomComponent& c, auto& a) {
+            rapidjson::Value v = SerializeComponentToValue(c, a);
+            // bloomColor needs custom serialization (glm::vec3)
+            rapidjson::Value colorVal(rapidjson::kObjectType);
+            colorVal.AddMember("type", "glm::vec3", a);
+            rapidjson::Value colorData(rapidjson::kArrayType);
+            colorData.PushBack(c.bloomColor.x, a);
+            colorData.PushBack(c.bloomColor.y, a);
+            colorData.PushBack(c.bloomColor.z, a);
+            colorVal.AddMember("data", colorData, a);
+            v.AddMember("bloomColor", colorVal, a);
+            return v;
+        });
 
     // Note: ChildrenComponent and ParentComponent are intentionally SKIPPED.
     if (baselineEnt == static_cast<Entity>(-1)) {
         CheckAndSerializeDelta<ChildrenComponent>("ChildrenComponent", sceneECS, instanceEnt, baselineEnt, alloc, outComponentsArray, standardSerializer);
-		CheckAndSerializeDelta<ParentComponent>("ParentComponent", sceneECS, instanceEnt, baselineEnt, alloc, outComponentsArray, standardSerializer);
+        CheckAndSerializeDelta<ParentComponent>("ParentComponent", sceneECS, instanceEnt, baselineEnt, alloc, outComponentsArray, standardSerializer);
     }
 
     // --- 2. Manual Components (Name, Tag, Layer, Sibling) ---
@@ -912,6 +1011,41 @@ void Serializer::SerializePrefabInstanceDelta(ECSManager& sceneECS, Entity insta
             skyboxPathVal.SetString(c.skyboxTexturePath.c_str(), static_cast<rapidjson::SizeType>(c.skyboxTexturePath.size()), a);
             v.AddMember("skyboxTexturePath", skyboxPathVal, a);
 
+            // Post-processing settings
+            v.AddMember("blurEnabled", c.blurEnabled, a);
+            v.AddMember("blurIntensity", c.blurIntensity, a);
+            v.AddMember("blurRadius", c.blurRadius, a);
+            v.AddMember("blurPasses", c.blurPasses, a);
+            v.AddMember("blurLayerMask", c.blurLayerMask, a);
+            v.AddMember("bloomEnabled", c.bloomEnabled, a);
+            v.AddMember("bloomThreshold", c.bloomThreshold, a);
+            v.AddMember("bloomIntensity", c.bloomIntensity, a);
+            v.AddMember("bloomSpread", c.bloomSpread, a);
+            v.AddMember("vignetteEnabled", c.vignetteEnabled, a);
+            v.AddMember("vignetteIntensity", c.vignetteIntensity, a);
+            v.AddMember("vignetteSmoothness", c.vignetteSmoothness, a);
+            {
+                rapidjson::Value vigColorVal(rapidjson::kObjectType);
+                vigColorVal.AddMember("type", "glm::vec3", a);
+                rapidjson::Value vigColorData(rapidjson::kArrayType);
+                vigColorData.PushBack(c.vignetteColor.x, a); vigColorData.PushBack(c.vignetteColor.y, a); vigColorData.PushBack(c.vignetteColor.z, a);
+                vigColorVal.AddMember("data", vigColorData, a);
+                v.AddMember("vignetteColor", vigColorVal, a);
+            }
+            v.AddMember("colorGradingEnabled", c.colorGradingEnabled, a);
+            v.AddMember("cgBrightness", c.cgBrightness, a);
+            v.AddMember("cgContrast", c.cgContrast, a);
+            v.AddMember("cgSaturation", c.cgSaturation, a);
+            rapidjson::Value tintVal(rapidjson::kObjectType);
+            tintVal.AddMember("type", "glm::vec3", a);
+            rapidjson::Value tintData(rapidjson::kArrayType);
+            tintData.PushBack(c.cgTint.x, a); tintData.PushBack(c.cgTint.y, a); tintData.PushBack(c.cgTint.z, a);
+            tintVal.AddMember("data", tintData, a);
+            v.AddMember("cgTint", tintVal, a);
+            v.AddMember("chromaticAberrationEnabled", c.chromaticAberrationEnabled, a);
+            v.AddMember("chromaticAberrationIntensity", c.chromaticAberrationIntensity, a);
+            v.AddMember("chromaticAberrationPadding", c.chromaticAberrationPadding, a);
+
             return v;
         });
 
@@ -1019,8 +1153,40 @@ void Serializer::SerializePrefabOverridesRecursive(ECSManager& sceneECS, Entity 
     // We usually save the Name or Sibling Index to identify the entity on load.
     outEntityNode = SerializeEntityGUID(instanceEnt, alloc, outEntityNode);
     if (sceneECS.HasComponent<NameComponent>(instanceEnt)) {
-        outEntityNode.AddMember("Name", rapidjson::StringRef(sceneECS.GetComponent<NameComponent>(instanceEnt).name.c_str()), alloc);
+        const std::string& entityName = sceneECS.GetComponent<NameComponent>(instanceEnt).name;
+        rapidjson::Value nameVal;
+        nameVal.SetString(entityName.c_str(), static_cast<rapidjson::SizeType>(entityName.size()), alloc);
+        outEntityNode.AddMember("Name", nameVal, alloc);
     }
+
+    // NEW: Always save sibling index so RestorePrefabHierarchy can use it as a tiebreaker
+    // Ensure ALL entities have a SiblingIndexComponent.
+    if (!sceneECS.HasComponent<SiblingIndexComponent>(instanceEnt)) {
+        int nextIndex = 0;
+
+        // Check if the entity has a parent to determine sibling context
+        if (sceneECS.HasComponent<ParentComponent>(instanceEnt)) {
+            GUID_128 parentGUID = sceneECS.GetComponent<ParentComponent>(instanceEnt).parent;
+            Entity parentEnt = EntityGUIDRegistry::GetInstance().GetEntityByGUID(parentGUID);
+
+            // If parent exists and has children, find the highest current index
+            if (parentEnt != static_cast<Entity>(-1) && sceneECS.HasComponent<ChildrenComponent>(parentEnt)) {
+                auto& siblings = sceneECS.GetComponent<ChildrenComponent>(parentEnt).children;
+                for (const auto& sibGUID : siblings) {
+                    Entity sibEnt = EntityGUIDRegistry::GetInstance().GetEntityByGUID(sibGUID);
+                    if (sibEnt != static_cast<Entity>(-1) && sceneECS.HasComponent<SiblingIndexComponent>(sibEnt)) {
+                        nextIndex = std::max(nextIndex, sceneECS.GetComponent<SiblingIndexComponent>(sibEnt).siblingIndex + 1);
+                    }
+                }
+            }
+        }
+        // Add the component with the calculated unique index
+        sceneECS.AddComponent<SiblingIndexComponent>(instanceEnt, SiblingIndexComponent{ nextIndex });
+    }
+    outEntityNode.AddMember("SiblingIndex",
+        sceneECS.GetComponent<SiblingIndexComponent>(instanceEnt).siblingIndex,
+        alloc);
+
     if (sceneECS.HasComponent<ParentComponent>(instanceEnt)) {
         rapidjson::Value v = SerializeComponentToValue(sceneECS.GetComponent<ParentComponent>(instanceEnt), alloc);
         outEntityNode.AddMember("ParentComponent", v, alloc);
@@ -1037,7 +1203,16 @@ void Serializer::SerializePrefabOverridesRecursive(ECSManager& sceneECS, Entity 
     // 3. Recurse Children
     if (sceneECS.HasComponent<ChildrenComponent>(instanceEnt)) {
         auto& instChildren = sceneECS.GetComponent<ChildrenComponent>(instanceEnt).children;
+        //if (baselineEnt == static_cast<Entity>(-1) || !sceneECS.HasComponent<ChildrenComponent>(baselineEnt)) {
+        //    // No baseline - serialize all instance children as new additions
+        //    return;
+        //}
         auto& baseChildren = sceneECS.GetComponent<ChildrenComponent>(baselineEnt).children;
+
+        std::list<GUID_128> deletedBaseChildren{};
+        for (const auto& baseChild : baseChildren) {
+            deletedBaseChildren.push_back(baseChild);
+        }
 
         rapidjson::Value childrenOverrides(rapidjson::kArrayType);
 
@@ -1053,6 +1228,7 @@ void Serializer::SerializePrefabOverridesRecursive(ECSManager& sceneECS, Entity 
                 // Actually, for a dummy world, you might just iterate entities directly.
                 if (sceneECS.GetComponent<NameComponent>(bChild).name == childName) {
                     baseChild = bChild;
+                    deletedBaseChildren.remove(baseChildGUID);
                     break;
                 }
             }
@@ -1060,10 +1236,71 @@ void Serializer::SerializePrefabOverridesRecursive(ECSManager& sceneECS, Entity 
             rapidjson::Value childNode(rapidjson::kObjectType);
             SerializePrefabOverridesRecursive(sceneECS, instChild, baseChild, alloc, childNode);
 
-            // Only add to list if there was actually an override inside
-            if (childNode.HasMember("ComponentOverrides") || childNode.HasMember("Children")) {
-                childrenOverrides.PushBack(childNode, alloc);
+            childrenOverrides.PushBack(childNode, alloc);
+        }
+
+        // For each of the deleted base child entities, mark them as 'deleted' in the JSON so that they can be deleted when deserialized later.
+        // CHANGED: We must add the child if it has a "Name" (which is added at the start of this function).
+        // This ensures that even if there are no component overrides, the Child is saved so its 
+        // GUID can be restored reliably by RestorePrefabHierarchy on load.
+        std::vector<std::pair<Entity, std::string>> deletedChildren{};
+
+        rapidjson::Value deletedChildrenNode(rapidjson::kArrayType);
+        for (const auto& deletedChild : deletedBaseChildren) {
+            Entity deletedEntity = EntityGUIDRegistry::GetInstance().GetEntityByGUID(deletedChild);
+            //rapidjson::Value deletedChildNode(rapidjson::kObjectType);
+
+            // Serialize the information required to deserialize and restore the prefab hierarchy when deserializing later.
+            //deletedChildNode = SerializeEntityGUID(deletedEntity, alloc, deletedChildNode);
+            if (sceneECS.HasComponent<NameComponent>(deletedEntity)) {
+                std::string& name = sceneECS.GetComponent<NameComponent>(deletedEntity).name;
+                deletedChildren.push_back({ deletedEntity, name });
+                //rapidjson::Value nameVal;
+                //nameVal.SetString(name.c_str(), static_cast<rapidjson::SizeType>(name.length()), alloc);
+
+                //deletedChildNode.AddMember("Name", nameVal, alloc);
             }
+
+            //deletedChildrenNode.PushBack(deletedChildNode, alloc);
+        }
+
+        // Sort the deletedChildrenNames vector by entity id to ensure consistent order in the scene file.
+        std::sort(deletedChildren.begin(), deletedChildren.end(),
+            [](const auto& a, const auto& b) {
+                return a.second < b.second;
+            });
+
+        // Now add the sorted deleted children name and sibling index to the scene JSON.
+        for (const auto& deletedChild : deletedChildren) {
+            rapidjson::Value deletedChildNode(rapidjson::kObjectType);
+
+            //// Add GUID and Entity ID.
+            //deletedChildNode = SerializeEntityGUID(deletedChild, alloc, deletedChildNode);
+
+            // Add entity name.
+            rapidjson::Value nameVal;
+            std::string name{};
+            if (sceneECS.HasComponent<NameComponent>(deletedChild.first)) {
+                 name = sceneECS.GetComponent<NameComponent>(deletedChild.first).name;
+			}
+            nameVal.SetString(name.c_str(), static_cast<rapidjson::SizeType>(name.length()), alloc);
+            deletedChildNode.AddMember("Name", nameVal, alloc);
+
+			// Add sibling index (if it exists) so we can restore the original hierarchy order on load. If it doesn't exist, add a default value of 0.
+            rapidjson::Value siblingIndexVal;
+            int siblingIndex{};
+            if (sceneECS.HasComponent<SiblingIndexComponent>(deletedChild.first)) {
+                siblingIndex = sceneECS.GetComponent<SiblingIndexComponent>(deletedChild.first).siblingIndex;
+			}
+            siblingIndexVal.SetInt(siblingIndex);
+            deletedChildNode.AddMember("SiblingIndex", siblingIndexVal, alloc);
+
+			// Push the deleted child node to the DeletedChildren array in the JSON.
+            deletedChildrenNode.PushBack(deletedChildNode, alloc);
+        }
+
+        if (!deletedChildrenNode.Empty()) {
+            outEntityNode.AddMember("DeletedChildren", deletedChildrenNode, alloc);
         }
 
         if (!childrenOverrides.Empty()) {
@@ -1110,8 +1347,7 @@ void Serializer::UpdateEntityGUID_Safe(ECSManager& ecs, Entity entity, GUID_128 
 
 void Serializer::RestorePrefabHierarchy(ECSManager& ecs, Entity currentEntity, const rapidjson::Value& jsonNode) {
     // 1. Restore GUID for THIS entity
-    // (This calls the safe swapper we wrote above)
-    if (jsonNode.HasMember("guid")) { // Ensure this key matches your save format ("guid" vs "GUID")
+    if (jsonNode.HasMember("guid")) {
         GUID_128 savedGUID = DeserializeEntityGUID(jsonNode);
         UpdateEntityGUID_Safe(ecs, currentEntity, savedGUID);
     }
@@ -1121,39 +1357,64 @@ void Serializer::RestorePrefabHierarchy(ECSManager& ecs, Entity currentEntity, c
         const auto& jsonChildren = jsonNode["Children"];
         auto& childrenComp = ecs.GetComponent<ChildrenComponent>(currentEntity);
 
-        // COPY the real children entities to a vector first.
-        // Why? Because 'UpdateEntityGUID_Safe' modifies the GUIDs, which effectively modifies
-        // the map/registry lookups. We want a stable list of Entity IDs to iterate.
-        std::vector<Entity> realChildrenEntities;
-        for (auto& g : childrenComp.children) {
-            realChildrenEntities.push_back(EntityGUIDRegistry::GetInstance().GetEntityByGUID(g));
+        // Build candidate pool from live children
+        std::list<Entity> candidates;
+        for (auto& childGUID : childrenComp.children) {
+            Entity childEnt = EntityGUIDRegistry::GetInstance().GetEntityByGUID(childGUID);
+            if (childEnt != static_cast<Entity>(-1))
+                candidates.push_back(childEnt);
         }
 
-        // Iterate JSON children
         for (const auto& jsonChild : jsonChildren.GetArray()) {
             if (!jsonChild.HasMember("Name")) continue;
-            std::string nameToFind = jsonChild["Name"].GetString();
+            std::string savedName = jsonChild["Name"].GetString();
 
-            // Find match in real hierarchy by Name
+            // Read saved sibling index if present
+            bool hasSavedSiblingIndex = jsonChild.HasMember("SiblingIndex");
+            int savedSiblingIndex = hasSavedSiblingIndex ? jsonChild["SiblingIndex"].GetInt() : -1;
+
             Entity match = static_cast<Entity>(-1);
-            for (Entity ent : realChildrenEntities) {
-                if (ent != static_cast<Entity>(-1) && ecs.GetComponent<NameComponent>(ent).name == nameToFind) {
-                    match = ent;
-                    break;
+            auto matchIt = candidates.end();
+
+            // Pass 1: Match by Name AND SiblingIndex (exact, unambiguous)
+            if (hasSavedSiblingIndex) {
+                for (auto it = candidates.begin(); it != candidates.end(); ++it) {
+                    if (!ecs.HasComponent<NameComponent>(*it)) continue;
+                    if (ecs.GetComponent<NameComponent>(*it).name != savedName) continue;
+
+                    if (ecs.HasComponent<SiblingIndexComponent>(*it) &&
+                        ecs.GetComponent<SiblingIndexComponent>(*it).siblingIndex == savedSiblingIndex) {
+                        match = *it;
+                        matchIt = it;
+                        break;
+                    }
                 }
             }
 
-            // If found, recurse down
+            // Pass 2: Fallback � name only (for old scene files that lack SiblingIndex,
+            //         or entities that genuinely have unique names)
+            if (match == static_cast<Entity>(-1)) {
+                for (auto it = candidates.begin(); it != candidates.end(); ++it) {
+                    if (!ecs.HasComponent<NameComponent>(*it)) continue;
+                    if (ecs.GetComponent<NameComponent>(*it).name == savedName) {
+                        match = *it;
+                        matchIt = it;
+                        break;
+                    }
+                }
+            }
+
             if (match != static_cast<Entity>(-1)) {
                 RestorePrefabHierarchy(ecs, match, jsonChild);
+                candidates.erase(matchIt);
             }
         }
     }
 }
 
-Entity Serializer::DeserializeEntity(ECSManager& ecs, const rapidjson::Value& entObj, bool isPrefab, Entity entity, bool skipSpawnChildren) {
+Entity Serializer::DeserializeEntity(ECSManager& ecs, const rapidjson::Value& entObj, bool isPrefab, Entity entity, bool skipSpawnChildren, bool initialiseAnimation) {
     if (!entObj.IsObject()) {
-		ENGINE_LOG_WARN("[Serializer] DeserializeEntity: Invalid entity JSON object.");
+        ENGINE_LOG_WARN("[Serializer] DeserializeEntity: Invalid entity JSON object.");
         return static_cast<Entity>(-1);
     }
 
@@ -1193,7 +1454,9 @@ Entity Serializer::DeserializeEntity(ECSManager& ecs, const rapidjson::Value& en
 
                     std::vector<Entity> realChildrenEntities;
                     for (auto& g : childComp.children) {
-                        realChildrenEntities.push_back(EntityGUIDRegistry::GetInstance().GetEntityByGUID(g));
+                        Entity realChildEntity = EntityGUIDRegistry::GetInstance().GetEntityByGUID(g);
+                        if (realChildEntity != INVALID_ENTITY)
+                            realChildrenEntities.push_back(realChildEntity);
                     }
 
                     for (size_t i = 0; i < realChildrenEntities.size(); ++i) {
@@ -1339,6 +1602,14 @@ Entity Serializer::DeserializeEntity(ECSManager& ecs, const rapidjson::Value& en
         DeserializeParticleComponent(particleComp, tv);
     }
 
+    // FogVolumeComponent
+    if (comps.HasMember("FogVolumeComponent") && comps["FogVolumeComponent"].IsObject()) {
+        const rapidjson::Value& tv = comps["FogVolumeComponent"];
+        ecs.AddComponent<FogVolumeComponent>(newEnt, FogVolumeComponent{});
+        auto& fogComp = ecs.GetComponent<FogVolumeComponent>(newEnt);
+        TypeResolver<FogVolumeComponent>::Get()->Deserialize(&fogComp, tv);
+    }
+
     // DirectionalLightComponent
     if (comps.HasMember("DirectionalLightComponent") && comps["DirectionalLightComponent"].IsObject()) {
         const rapidjson::Value& tv = comps["DirectionalLightComponent"];
@@ -1423,7 +1694,7 @@ Entity Serializer::DeserializeEntity(ECSManager& ecs, const rapidjson::Value& en
         }
 
         // For prefabs, we need to initialise the animation component after deserialization.
-        if (isPrefab && ecs.HasComponent<ModelRenderComponent>(newEnt)) {
+        if (initialiseAnimation && isPrefab && ecs.HasComponent<ModelRenderComponent>(newEnt)) {
             auto& modelComp = ecs.GetComponent<ModelRenderComponent>(newEnt);
             auto& actualAnimComp = ecs.GetComponent<AnimationComponent>(newEnt);
             ecs.animationSystem->InitialiseAnimationComponent(newEnt, modelComp, actualAnimComp);
@@ -1471,6 +1742,32 @@ Entity Serializer::DeserializeEntity(ECSManager& ecs, const rapidjson::Value& en
         ecs.AddComponent<VideoComponent>(newEnt, VideoComponent{});
         auto& videoComp = ecs.GetComponent<VideoComponent>(newEnt);
         DeserializeVideoComponent(videoComp, videoCompJSON);
+    }
+    // DialogueComponent
+    if (comps.HasMember("DialogueComponent") && comps["DialogueComponent"].IsObject()) {
+        const auto& dialogueCompJSON = comps["DialogueComponent"];
+        ecs.AddComponent<DialogueComponent>(newEnt, DialogueComponent{});
+        auto& dialogueComp = ecs.GetComponent<DialogueComponent>(newEnt);
+        TypeDescriptor* td = TypeResolver<DialogueComponent>::Get();
+        if (td) td->Deserialize(&dialogueComp, dialogueCompJSON);
+    }
+
+    // BloomComponent
+    if (comps.HasMember("BloomComponent") && comps["BloomComponent"].IsObject()) {
+        const auto& bloomCompJSON = comps["BloomComponent"];
+        ecs.AddComponent<BloomComponent>(newEnt, BloomComponent{});
+        auto& bloomComp = ecs.GetComponent<BloomComponent>(newEnt);
+        TypeDescriptor* td = TypeResolver<BloomComponent>::Get();
+        if (td) td->Deserialize(&bloomComp, bloomCompJSON);
+        // bloomColor (custom glm::vec3)
+        if (bloomCompJSON.HasMember("bloomColor") && bloomCompJSON["bloomColor"].IsObject()) {
+            const auto& colorObj = bloomCompJSON["bloomColor"];
+            if (colorObj.HasMember("data") && colorObj["data"].IsArray() && colorObj["data"].Size() >= 3) {
+                bloomComp.bloomColor.x = static_cast<float>(colorObj["data"][0].GetDouble());
+                bloomComp.bloomColor.y = static_cast<float>(colorObj["data"][1].GetDouble());
+                bloomComp.bloomColor.z = static_cast<float>(colorObj["data"][2].GetDouble());
+            }
+        }
     }
 
 
@@ -1549,6 +1846,10 @@ void Serializer::ApplyPrefabOverridesRecursive(ECSManager& ecs, Entity& currentE
                 else if (typeName == "ParticleComponent") {
                     if (!ecs.HasComponent<ParticleComponent>(currentEntity)) ecs.AddComponent<ParticleComponent>(currentEntity, ParticleComponent{});
                     DeserializeParticleComponent(ecs.GetComponent<ParticleComponent>(currentEntity), data);
+                }
+                else if (typeName == "FogVolumeComponent") {
+                    if (!ecs.HasComponent<FogVolumeComponent>(currentEntity)) ecs.AddComponent<FogVolumeComponent>(currentEntity, FogVolumeComponent{});
+                    TypeResolver<FogVolumeComponent>::Get()->Deserialize(&ecs.GetComponent<FogVolumeComponent>(currentEntity), data);
                 }
                 else if (typeName == "CameraComponent") {
                     if (!ecs.HasComponent<CameraComponent>(currentEntity)) ecs.AddComponent<CameraComponent>(currentEntity, CameraComponent{});
@@ -1634,14 +1935,89 @@ void Serializer::ApplyPrefabOverridesRecursive(ECSManager& ecs, Entity& currentE
                     if (!ecs.HasComponent<VideoComponent>(currentEntity)) ecs.AddComponent<VideoComponent>(currentEntity, VideoComponent{});
                     DeserializeVideoComponent(ecs.GetComponent<VideoComponent>(currentEntity), data);
                 }
+                else if (typeName == "DialogueComponent") {
+                    if (!ecs.HasComponent<DialogueComponent>(currentEntity)) ecs.AddComponent<DialogueComponent>(currentEntity, DialogueComponent{});
+                    TypeDescriptor* td = TypeResolver<DialogueComponent>::Get();
+                    if (td) td->Deserialize(&ecs.GetComponent<DialogueComponent>(currentEntity), data);
+                }
+                else if (typeName == "BloomComponent") {
+                    if (!ecs.HasComponent<BloomComponent>(currentEntity)) ecs.AddComponent<BloomComponent>(currentEntity, BloomComponent{});
+                    TypeDescriptor* td = TypeResolver<BloomComponent>::Get();
+                    if (td) td->Deserialize(&ecs.GetComponent<BloomComponent>(currentEntity), data);
+                    // bloomColor (custom glm::vec3)
+                    if (data.HasMember("bloomColor") && data["bloomColor"].IsObject()) {
+                        const auto& colorObj = data["bloomColor"];
+                        if (colorObj.HasMember("data") && colorObj["data"].IsArray() && colorObj["data"].Size() >= 3) {
+                            auto& bloomComp = ecs.GetComponent<BloomComponent>(currentEntity);
+                            bloomComp.bloomColor.x = static_cast<float>(colorObj["data"][0].GetDouble());
+                            bloomComp.bloomColor.y = static_cast<float>(colorObj["data"][1].GetDouble());
+                            bloomComp.bloomColor.z = static_cast<float>(colorObj["data"][2].GetDouble());
+                        }
+                    }
+                }
 
+            }
+        }
+    }
+
+    // =========================================================================================
+    // 1.5. Handle Deleted Children (NEW LOGIC)
+    // We do this BEFORE recursion to ensure we remove the entities before trying to process them.
+    // =========================================================================================
+    if (jsonNode.HasMember("DeletedChildren") && ecs.HasComponent<ChildrenComponent>(currentEntity)) {
+        const auto& deletedArray = jsonNode["DeletedChildren"];
+        auto& childrenComp = ecs.GetComponent<ChildrenComponent>(currentEntity);
+
+        // Iterate through the list of 'deleted' definitions from the JSON
+        for (const auto& deletedNode : deletedArray.GetArray()) {
+            if (!deletedNode.HasMember("Name")) continue;
+
+            std::string nameToDelete = deletedNode["Name"].GetString();
+
+            // Iterate the LIVE children to find the matching entity to destroy.
+            // We use a while loop with an iterator because we might erase from the vector.
+            auto it = childrenComp.children.begin();
+            while (it != childrenComp.children.end()) {
+                Entity childEntity = EntityGUIDRegistry::GetInstance().GetEntityByGUID(*it);
+
+                bool matchFound = false;
+                if (ecs.HasComponent<NameComponent>(childEntity)) {
+                    // Match by Name (standard approach for hierarchy overrides)
+                    if (ecs.GetComponent<NameComponent>(childEntity).name == nameToDelete) {
+                        matchFound = true;
+                    }
+                }
+
+                if (matchFound) {
+                    // 1. Destroy the entity from the ECS (Recursively destroys its children too usually)
+                    // Note: Ensure your ECS has a DestroyEntity function. 
+                    // If you have a specific "DestroyEntityDup" use that instead.
+                    ecs.DestroyEntity(childEntity);
+
+                    //// 2. Remove the GUID from the parent's children list
+                    //// erase returns the *next* valid iterator, so we update 'it' directly
+                    //it = childrenComp.children.erase(it);
+
+                    // We found and deleted the specific named child, break to process the next deletedNode
+                    break;
+                }
+                else {
+                    // Move to next child
+                    ++it;
+                }
             }
         }
     }
 
     // 2. Recursively Handle Children
     // We only descend if the JSON has overrides for children
-    if (jsonNode.HasMember("Children") && ecs.HasComponent<ChildrenComponent>(currentEntity)) {
+    if (jsonNode.HasMember("Children")) {
+        // Ensure the entity has a ChildrenComponent before we try to populate it.
+        // Newly added entities won't have this component by default.
+        if (!ecs.HasComponent<ChildrenComponent>(currentEntity)) {
+            ecs.AddComponent<ChildrenComponent>(currentEntity, ChildrenComponent{});
+        }
+
         const auto& jsonChildren = jsonNode["Children"];
         auto& childrenComp = ecs.GetComponent<ChildrenComponent>(currentEntity);
 
@@ -1700,7 +2076,12 @@ void Serializer::ApplyPrefabOverridesRecursive(ECSManager& ecs, Entity& currentE
                     }
 
                     GUID_128 childGUID = EntityGUIDRegistry::GetInstance().GetGUIDByEntity(matchingChild);
-                    childrenComp.children.push_back(childGUID);
+                    // Prevent duplicate child links if the GUID was already added 
+                    // via the ComponentOverrides parsing step above.
+                    auto it = std::find(childrenComp.children.begin(), childrenComp.children.end(), childGUID);
+                    if (it == childrenComp.children.end()) {
+                        childrenComp.children.push_back(childGUID);
+                    }
                 }
             }
         }
@@ -2163,10 +2544,11 @@ void Serializer::ReloadScene(const std::string& tempScenePath, const std::string
     for (const auto& entity : ecs.GetAllEntities()) {
         if (ecs.HasComponent<ModelRenderComponent>(entity)) {
             auto& modelComp = ecs.GetComponent<ModelRenderComponent>(entity);
+            std::string entityName = ecs.GetComponent<NameComponent>(entity).name;
             if (modelComp.model) {
-                modelComp.boneNameToEntityMap.clear();
-                modelComp.boneNameToEntityMap[modelComp.model->modelName] = entity;
-                ModelFactory::PopulateBoneNameToEntityMap(entity, modelComp.boneNameToEntityMap, *modelComp.model);
+                //modelComp.boneNameToEntityMap.clear();
+                //modelComp.boneNameToEntityMap[entityName] = entity;
+                ModelFactory::PopulateBoneNameToEntityMap(entity, modelComp.boneNameToEntityMap, *modelComp.model, true);
             }
         }
     }
@@ -2385,7 +2767,7 @@ void Serializer::DeserializeModelComponent(ModelRenderComponent& modelComp, cons
                 // During ReloadScene, all entities including children are in the JSON,
                 // so we must not spawn them here to avoid duplication.
                 if (!modelComp.childBonesSaved && !skipSpawnChildren) {
-                    ModelFactory::SpawnModelNode(modelComp.model->rootNode, MAX_ENTITIES, modelComp.boneNameToEntityMap, root);
+                    ModelFactory::SpawnModelNode(modelComp.model->rootNode, INVALID_ENTITY, modelComp.boneNameToEntityMap, root);
                 }
             }
         }
@@ -2489,6 +2871,22 @@ void Serializer::DeserializeSpriteComponent(SpriteRenderComponent& spriteComp, c
                     spriteComp.sortingOrder = Serializer::GetInt(d, startIdx + 10);
                     if (d.Size() > static_cast<rapidjson::SizeType>(startIdx + 11)) {
                         readVec3Generic(d[startIdx + 11], spriteComp.saved3DPosition);
+                    }
+                    // Fill properties (backward compatible - defaults to Solid/1.0/1.0)
+                    if (d.Size() > static_cast<rapidjson::SizeType>(startIdx + 12)) {
+                        spriteComp.fillMode = Serializer::GetInt(d, startIdx + 12, 0);
+                    }
+                    if (d.Size() > static_cast<rapidjson::SizeType>(startIdx + 13)) {
+                        spriteComp.fillMaxValue = Serializer::GetFloat(d, startIdx + 13, 1.0f);
+                    }
+                    if (d.Size() > static_cast<rapidjson::SizeType>(startIdx + 14)) {
+                        spriteComp.fillValue = Serializer::GetFloat(d, startIdx + 14, 1.0f);
+                    }
+                    if (d.Size() > static_cast<rapidjson::SizeType>(startIdx + 15)) {
+                        spriteComp.fillGlow = Serializer::GetFloat(d, startIdx + 15, 0.5f);
+                    }
+                    if (d.Size() > static_cast<rapidjson::SizeType>(startIdx + 16)) {
+                        spriteComp.fillBackground = Serializer::GetFloat(d, startIdx + 16, 0.3f);
                     }
                 }
                 else {
@@ -2600,7 +2998,7 @@ void Serializer::DeserializeAnimationComponent(AnimationComponent& animComp, con
         animComp.isLoop = Serializer::GetBool(d, 2);
         animComp.speed = Serializer::GetFloat(d, 3);
         animComp.clipCount = Serializer::GetInt(d, 4);
-        
+
         const auto& clipPathsJSON = animJSON["data"][5]["data"].GetArray();
         size_t index = 0;
         for (const auto& clipPathJSON : clipPathsJSON) {
@@ -2616,6 +3014,9 @@ void Serializer::DeserializeAnimationComponent(AnimationComponent& animComp, con
         }
 
         animComp.controllerPath = Serializer::GetString(d, 7);
+#ifndef EDITOR
+        animComp.controllerPath = animComp.controllerPath.substr(animComp.controllerPath.find("Resources"));
+#endif
     }
 }
 
@@ -2678,32 +3079,62 @@ void Serializer::DeserializeTextComponent(TextRenderComponent& textComp, const r
         readVec3Generic(d[startIdx + 4], textComp.position);
         readVec3Generic(d[startIdx + 5], textComp.color);
 
-        // Detect old vs new format by checking if index 6 is float (old scale) or bool (new is3D)
+        // Detect format by checking what's at index startIdx+6:
+        //   - bool  → "middle" format (no scale, no alpha): is3D at +6
+        //   - float → could be old "scale" or new "alpha"; differentiate by remaining field count
+        //     Old format (scale):  9 fields from startIdx  (text..alignmentInt)
+        //     Newest format (alpha): 15 fields from startIdx (text..lineSpacing)
+        int remainingFields = static_cast<int>(d.Size()) - startIdx;
+        bool hasAlpha = false;
         bool hasOldScaleField = false;
+
         if (d.Size() > static_cast<rapidjson::SizeType>(startIdx + 6) &&
             d[startIdx + 6].IsObject() && d[startIdx + 6].HasMember("type") &&
             d[startIdx + 6]["type"].GetString() == std::string("float")) {
-            // OLD format with scale field - read and discard it
-            hasOldScaleField = true;
-            // float oldScale = d[startIdx + 6]["data"].GetFloat();
+            if (remainingFields >= 12) {
+                // Newest format: alpha field at +6 (many fields follow)
+                hasAlpha = true;
+            } else {
+                // OLD format: scale field at +6 (few fields follow)
+                hasOldScaleField = true;
+            }
         }
 
-        if (hasOldScaleField) {
+        if (hasAlpha) {
+            // Newest format indices (with alpha)
+            // Order: text, fontSize, fontGUID, shaderGUID, position, color, alpha, is3D, sortingLayer, sortingOrder, transform, alignmentInt, wordWrap, maxWidth, lineSpacing
+            textComp.alpha = Serializer::GetFloat(d, startIdx + 6, 1.0f);
+            textComp.is3D = Serializer::GetBool(d, startIdx + 7);
+            textComp.sortingLayer = Serializer::GetInt(d, startIdx + 8);
+            textComp.sortingOrder = Serializer::GetInt(d, startIdx + 9);
+            // Skip transform at index 10 (Matrix4x4 - handled elsewhere)
+            textComp.alignmentInt = Serializer::GetInt(d, startIdx + 11);
+
+            if (d.Size() > static_cast<rapidjson::SizeType>(startIdx + 12)) {
+                textComp.wordWrap = Serializer::GetBool(d, startIdx + 12, false);
+            }
+            if (d.Size() > static_cast<rapidjson::SizeType>(startIdx + 13)) {
+                textComp.maxWidth = Serializer::GetFloat(d, startIdx + 13, 0.0f);
+            }
+            if (d.Size() > static_cast<rapidjson::SizeType>(startIdx + 14)) {
+                textComp.lineSpacing = Serializer::GetFloat(d, startIdx + 14, 1.2f);
+            }
+        }
+        else if (hasOldScaleField) {
             // OLD format indices (with scale at 6)
             // Old order: text, fontSize, fontGUID, shaderGUID, position, color, scale, is3D, alignmentInt
             textComp.is3D = Serializer::GetBool(d, startIdx + 7);
-            // sortingLayer and sortingOrder didn't exist in old format - use defaults
             textComp.sortingLayer = 0;
             textComp.sortingOrder = 0;
             textComp.alignmentInt = Serializer::GetInt(d, startIdx + 8);
         }
         else {
-            // NEW format indices (without scale)
-            // New order: text, fontSize, fontGUID, shaderGUID, position, color, is3D, sortingLayer, sortingOrder, transform, alignmentInt
+            // Middle format indices (no scale, no alpha)
+            // Order: text, fontSize, fontGUID, shaderGUID, position, color, is3D, sortingLayer, sortingOrder, transform, alignmentInt
             textComp.is3D = Serializer::GetBool(d, startIdx + 6);
             textComp.sortingLayer = Serializer::GetInt(d, startIdx + 7);
             textComp.sortingOrder = Serializer::GetInt(d, startIdx + 8);
-            // Skip transform at index 9 (Matrix4x4 - not used, handled elsewhere)
+            // Skip transform at index 9 (Matrix4x4 - handled elsewhere)
             textComp.alignmentInt = Serializer::GetInt(d, startIdx + 10);
 
             // LINE WRAPPING PROPERTIES (indices 11, 12, 13)
@@ -2795,8 +3226,6 @@ void Serializer::DeserializeParticleComponent(ParticleComponent& particleComp, c
         readVec3Generic(d[startIdx + 11], particleComp.gravity);
         particleComp.velocityRandomness = Serializer::GetFloat(d, startIdx + 12);
         readVec3Generic(d[startIdx + 13], particleComp.initialVelocity);
-        particleComp.sortingLayer = Serializer::GetInt(d, startIdx + 14);
-        particleComp.sortingOrder = Serializer::GetInt(d, startIdx + 15);
     }
 }
 
@@ -2847,6 +3276,7 @@ void Serializer::DeserializePointLightComponent(PointLightComponent& pointLightC
         readVec3Generic(d[7], pointLightComp.diffuse);
         readVec3Generic(d[8], pointLightComp.specular);
         pointLightComp.castShadows = Serializer::GetBool(d, 9);
+        if (d.Size() > 10) pointLightComp.range = Serializer::GetFloat(d, 10);
     }
 }
 
@@ -2943,8 +3373,7 @@ void Serializer::DeserializeColliderComponent(ColliderComponent& colliderComp, c
         colliderComp.cylinderRadius = Serializer::GetFloat(d, 8);
         colliderComp.cylinderHalfHeight = Serializer::GetFloat(d, 9);
         colliderComp.center = Serializer::GetVector3D(d, 10);
-        //readVec3Generic(d[10], colliderComp.center);
-        //readVec3Generic(d[11], colliderComp.offset);
+        if (d.Size() > 11) colliderComp.shapeRotation = Serializer::GetVector3D(d, 11);
     }
 }
 
@@ -3043,6 +3472,21 @@ void Serializer::DeserializeCameraComponent(CameraComponent& cameraComp, const r
             idx++;
             cameraComp.skyboxTextureGUID = GUIDUtilities::ConvertStringToGUID128(skyboxGUIDStr);
         }
+        // Post-processing fields (index-based)
+        if (d.Size() > idx) cameraComp.blurEnabled = Serializer::GetBool(d, idx++);
+        if (d.Size() > idx) cameraComp.blurIntensity = Serializer::GetFloat(d, idx++);
+        if (d.Size() > idx) cameraComp.blurRadius = Serializer::GetFloat(d, idx++);
+        if (d.Size() > idx) cameraComp.blurPasses = Serializer::GetInt(d, idx++);
+        if (d.Size() > idx) cameraComp.bloomEnabled = Serializer::GetBool(d, idx++);
+        if (d.Size() > idx) cameraComp.bloomThreshold = Serializer::GetFloat(d, idx++);
+        if (d.Size() > idx) cameraComp.bloomIntensity = Serializer::GetFloat(d, idx++);
+        if (d.Size() > idx) cameraComp.vignetteEnabled = Serializer::GetBool(d, idx++);
+        if (d.Size() > idx) cameraComp.vignetteIntensity = Serializer::GetFloat(d, idx++);
+        if (d.Size() > idx) cameraComp.vignetteSmoothness = Serializer::GetFloat(d, idx++);
+        if (d.Size() > idx) cameraComp.colorGradingEnabled = Serializer::GetBool(d, idx++);
+        if (d.Size() > idx) cameraComp.cgBrightness = Serializer::GetFloat(d, idx++);
+        if (d.Size() > idx) cameraComp.cgContrast = Serializer::GetFloat(d, idx++);
+        if (d.Size() > idx) cameraComp.cgSaturation = Serializer::GetFloat(d, idx++);
     }
 
     // Check if we have custom serialized target and up vectors
@@ -3102,6 +3546,64 @@ void Serializer::DeserializeCameraComponent(CameraComponent& cameraComp, const r
     if (cameraJSON.HasMember("skyboxTexturePath") && cameraJSON["skyboxTexturePath"].IsString()) {
         cameraComp.skyboxTexturePath = cameraJSON["skyboxTexturePath"].GetString();
     }
+
+    // Post-processing settings (backward-compatible)
+    if (cameraJSON.HasMember("blurEnabled") && cameraJSON["blurEnabled"].IsBool())
+        cameraComp.blurEnabled = cameraJSON["blurEnabled"].GetBool();
+    if (cameraJSON.HasMember("blurIntensity") && cameraJSON["blurIntensity"].IsNumber())
+        cameraComp.blurIntensity = cameraJSON["blurIntensity"].GetFloat();
+    if (cameraJSON.HasMember("blurRadius") && cameraJSON["blurRadius"].IsNumber())
+        cameraComp.blurRadius = cameraJSON["blurRadius"].GetFloat();
+    if (cameraJSON.HasMember("blurPasses") && cameraJSON["blurPasses"].IsInt())
+        cameraComp.blurPasses = cameraJSON["blurPasses"].GetInt();
+    if (cameraJSON.HasMember("blurLayerMask") && cameraJSON["blurLayerMask"].IsUint())
+        cameraComp.blurLayerMask = cameraJSON["blurLayerMask"].GetUint();
+    if (cameraJSON.HasMember("bloomEnabled") && cameraJSON["bloomEnabled"].IsBool())
+        cameraComp.bloomEnabled = cameraJSON["bloomEnabled"].GetBool();
+    if (cameraJSON.HasMember("bloomThreshold") && cameraJSON["bloomThreshold"].IsNumber())
+        cameraComp.bloomThreshold = cameraJSON["bloomThreshold"].GetFloat();
+    if (cameraJSON.HasMember("bloomIntensity") && cameraJSON["bloomIntensity"].IsNumber())
+        cameraComp.bloomIntensity = cameraJSON["bloomIntensity"].GetFloat();
+    if (cameraJSON.HasMember("bloomSpread") && cameraJSON["bloomSpread"].IsNumber())
+        cameraComp.bloomSpread = cameraJSON["bloomSpread"].GetFloat();
+    if (cameraJSON.HasMember("vignetteEnabled") && cameraJSON["vignetteEnabled"].IsBool())
+        cameraComp.vignetteEnabled = cameraJSON["vignetteEnabled"].GetBool();
+    if (cameraJSON.HasMember("vignetteIntensity") && cameraJSON["vignetteIntensity"].IsNumber())
+        cameraComp.vignetteIntensity = cameraJSON["vignetteIntensity"].GetFloat();
+    if (cameraJSON.HasMember("vignetteSmoothness") && cameraJSON["vignetteSmoothness"].IsNumber())
+        cameraComp.vignetteSmoothness = cameraJSON["vignetteSmoothness"].GetFloat();
+    if (cameraJSON.HasMember("vignetteColor") && cameraJSON["vignetteColor"].IsObject()) {
+        const auto& vigColorObj = cameraJSON["vignetteColor"];
+        if (vigColorObj.HasMember("data") && vigColorObj["data"].IsArray() && vigColorObj["data"].Size() >= 3) {
+            const auto& vec = vigColorObj["data"];
+            cameraComp.vignetteColor.x = vec[0].GetFloat();
+            cameraComp.vignetteColor.y = vec[1].GetFloat();
+            cameraComp.vignetteColor.z = vec[2].GetFloat();
+        }
+    }
+    if (cameraJSON.HasMember("colorGradingEnabled") && cameraJSON["colorGradingEnabled"].IsBool())
+        cameraComp.colorGradingEnabled = cameraJSON["colorGradingEnabled"].GetBool();
+    if (cameraJSON.HasMember("cgBrightness") && cameraJSON["cgBrightness"].IsNumber())
+        cameraComp.cgBrightness = cameraJSON["cgBrightness"].GetFloat();
+    if (cameraJSON.HasMember("cgContrast") && cameraJSON["cgContrast"].IsNumber())
+        cameraComp.cgContrast = cameraJSON["cgContrast"].GetFloat();
+    if (cameraJSON.HasMember("cgSaturation") && cameraJSON["cgSaturation"].IsNumber())
+        cameraComp.cgSaturation = cameraJSON["cgSaturation"].GetFloat();
+    if (cameraJSON.HasMember("cgTint") && cameraJSON["cgTint"].IsObject()) {
+        const auto& tintObj = cameraJSON["cgTint"];
+        if (tintObj.HasMember("data") && tintObj["data"].IsArray() && tintObj["data"].Size() >= 3) {
+            const auto& vec = tintObj["data"];
+            cameraComp.cgTint.x = vec[0].GetFloat();
+            cameraComp.cgTint.y = vec[1].GetFloat();
+            cameraComp.cgTint.z = vec[2].GetFloat();
+        }
+    }
+    if (cameraJSON.HasMember("chromaticAberrationEnabled") && cameraJSON["chromaticAberrationEnabled"].IsBool())
+        cameraComp.chromaticAberrationEnabled = cameraJSON["chromaticAberrationEnabled"].GetBool();
+    if (cameraJSON.HasMember("chromaticAberrationIntensity") && cameraJSON["chromaticAberrationIntensity"].IsNumber())
+        cameraComp.chromaticAberrationIntensity = cameraJSON["chromaticAberrationIntensity"].GetFloat();
+    if (cameraJSON.HasMember("chromaticAberrationPadding") && cameraJSON["chromaticAberrationPadding"].IsNumber())
+        cameraComp.chromaticAberrationPadding = cameraJSON["chromaticAberrationPadding"].GetFloat();
 }
 
 // Helper function to deserialize a single script instance
@@ -3221,13 +3723,13 @@ void Serializer::DeserializeScriptComponent(Entity entity, const rapidjson::Valu
                 }
             }
 
-			// Check if the ScriptComponent already has a script with the same path. If so, skip adding this one to avoid duplicates.
-			bool duplicateFound = false;
+            // Check if the ScriptComponent already has a script with the same path. If so, skip adding this one to avoid duplicates.
+            bool duplicateFound = false;
             for (const auto& existingScript : scriptComp.scripts) {
                 if (existingScript.scriptPath == sd.scriptPath) {
                     duplicateFound = true;
                     break;
-				}
+                }
             }
             if (duplicateFound) continue;
 
@@ -3485,46 +3987,29 @@ void Serializer::DeserializeVideoComponent(VideoComponent& videoComp, const rapi
     if (videoJSON.HasMember("data") && videoJSON["data"].IsArray()) {
         const auto& d = videoJSON["data"];
 
-        // Index 0: enabled
-        videoComp.enabled = Serializer::GetBool(d, 0);
+        // Detect old format: index 1 was "isPlaying" (bool type)
+        // New format: index 1 is "cutsceneName" (string type)
+        bool isOldFormat = (d.Size() > 1 && d[1].HasMember("type") &&
+                           std::string(d[1]["type"].GetString()) == "bool");
 
-        // Index 1: isPlaying
-        videoComp.isPlaying = Serializer::GetBool(d, 1);
+        if (isOldFormat) {
+            // Legacy scene file — old VideoComponent format
+            // These fields no longer exist; load with defaults
+            ENGINE_PRINT("[Serializer] WARNING: Old VideoComponent format detected. "
+                         "Please re-save the scene to migrate to the new format.\n");
 
-        // Index 2: loop
-        videoComp.loop = Serializer::GetBool(d, 2);
+            // Try to salvage loop from old index 2
+            if (d.Size() > 2)
+                videoComp.loop = Serializer::GetBool(d, 2);
 
-        // Index 3: playbackSpeed
-        videoComp.playbackSpeed = Serializer::GetFloat(d, 3);
-
-        // Index 4: currentTime
-        videoComp.currentTime = Serializer::GetFloat(d, 4);
-
-        // Index 5: videoPath
-        if (d.Size() > 5 && d[5].HasMember("data") && d[5]["data"].IsString()) {
-            videoComp.videoPath = d[5]["data"].GetString();
-            if (videoComp.videoPath.find("../../Resources") == 0) {
-                videoComp.videoPath = videoComp.videoPath.substr(6);
-            }
-
-            // IMPORTANT: Process the configuration file after loading the path
-            if (!videoComp.videoPath.empty()) {
-                videoComp.ProcessMetaData(videoComp.videoPath);
-                videoComp.asset_dirty = true;
-            }
+            videoComp.needsInit = true;
+            return;
         }
 
-        // Index 6: dialoguePath
-        if (d.Size() > 6 && d[6].HasMember("data") && d[6]["data"].IsString()) {
-            videoComp.dialoguePath = d[6]["data"].GetString();
-            if (videoComp.dialoguePath.find("../../Resources") == 0) {
-                videoComp.dialoguePath = videoComp.dialoguePath.substr(6);
-            }
-
-            // IMPORTANT: Process the dialogue file after loading the path
-            if (!videoComp.dialoguePath.empty()) {
-                videoComp.ProcessDialogueData(videoComp.dialoguePath);
-            }
+        // New format: use reflection-based deserialization
+        TypeDescriptor* td = TypeResolver<VideoComponent>::Get();
+        if (td) {
+            td->Deserialize(&videoComp, videoJSON);
         }
     }
 }

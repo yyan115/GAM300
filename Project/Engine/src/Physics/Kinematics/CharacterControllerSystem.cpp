@@ -6,8 +6,11 @@
 #include "ECS/ECSManager.hpp"
 #include "ECS/ECSRegistry.hpp"
 #include "Physics/ColliderComponent.hpp"
+#include "Physics/RigidBodyComponent.hpp"
+#include "Physics/PhysicsSystem.hpp"
 #include "Transform/TransformComponent.hpp"
-#include "Performance/PerformanceProfiler.hpp"
+#include "Transform/TransformSystem.hpp"
+#include "Hierarchy/ParentComponent.hpp"
 
 
 CharacterController* CharacterControllerSystem::CreateController(Entity id,
@@ -44,6 +47,18 @@ CharacterController* CharacterControllerSystem::CreateController(Entity id,
     //add into map
     m_controllers.emplace(id, std::move(controller));
 
+    // Remove the regular physics body — CharacterVirtual handles movement.
+    // Hurtboxes are separate bone-attached colliders on the HURTBOX layer (set up in editor).
+    auto& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
+    if (ecs.physicsSystem) {
+        ecs.physicsSystem->RemoveBody(id);
+    }
+    if (ecs.HasComponent<RigidBodyComponent>(id)) {
+        auto& rb = ecs.GetComponent<RigidBodyComponent>(id);
+        rb.enabled = false;
+        rb.gravityFactor = 0.0f;
+    }
+
     return ptr;
 }
 
@@ -54,8 +69,18 @@ void CharacterControllerSystem::Update(float deltaTime, ECSManager& ecsManager) 
     PROFILE_FUNCTION();
 
     for (auto& [entityId, controller] : m_controllers) {
-        if (controller)
-            controller->Update(deltaTime);
+        if (!controller) continue;
+
+        controller->Update(deltaTime);
+
+        // Sync CharacterVirtual position back to Transform (same role as PhysicsSyncBack for regular bodies)
+        if (ecsManager.HasComponent<Transform>(entityId)) {
+            Vector3D pos = controller->GetPosition();
+            if (ecsManager.HasComponent<ParentComponent>(entityId))
+                ecsManager.transformSystem->SetWorldPosition(entityId, pos);
+            else
+                ecsManager.transformSystem->SetLocalPosition(entityId, pos);
+        }
     }
 }
 
@@ -94,4 +119,15 @@ CharacterController* CharacterControllerSystem::GetController(Entity entity)
 {
     auto it = m_controllers.find(entity);
     return (it != m_controllers.end()) ? it->second.get() : nullptr;
+}
+
+void CharacterControllerSystem::DisableCollision(Entity entity)
+{
+    auto it = m_controllers.find(entity);
+    if (it == m_controllers.end()) return;
+    JPH::CharacterVirtual* ch = const_cast<JPH::CharacterVirtual*>(it->second->GetCharacterVirtual());
+    if (!ch) return;
+    if (m_charVsCharCollision)
+        m_charVsCharCollision->Remove(ch);
+    ch->SetCharacterVsCharacterCollision(nullptr);
 }

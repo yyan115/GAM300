@@ -134,6 +134,38 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${OUTPUT_DIR})
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${OUTPUT_DIR})
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})  # .lib files stay in intermediate
 
+# Download Tracy profiler GUI (Windows only, non-Release builds)
+if(WIN32)
+    set(TRACY_PROFILER_DIR "${CMAKE_CURRENT_SOURCE_DIR}/Libraries/tracy")
+    set(TRACY_PROFILER_EXE "${TRACY_PROFILER_DIR}/tracy-profiler.exe")
+    if(NOT EXISTS "${TRACY_PROFILER_EXE}")
+        set(TRACY_VERSION "0.11.1")
+        set(TRACY_ZIP "${TRACY_PROFILER_DIR}/tracy-profiler.zip")
+        set(TRACY_URL "https://github.com/wolfpld/tracy/releases/download/v${TRACY_VERSION}/windows-${TRACY_VERSION}.zip")
+        file(MAKE_DIRECTORY "${TRACY_PROFILER_DIR}")
+        message(STATUS "Downloading Tracy profiler GUI v${TRACY_VERSION}...")
+        file(DOWNLOAD "${TRACY_URL}" "${TRACY_ZIP}"
+            STATUS TRACY_DL_STATUS
+            TIMEOUT 60
+        )
+        list(GET TRACY_DL_STATUS 0 TRACY_DL_CODE)
+        if(TRACY_DL_CODE EQUAL 0)
+            message(STATUS "Extracting tracy-profiler.exe only...")
+            file(ARCHIVE_EXTRACT INPUT "${TRACY_ZIP}" DESTINATION "${TRACY_PROFILER_DIR}"
+                PATTERNS "tracy-profiler.exe")
+            file(REMOVE "${TRACY_ZIP}")
+            if(EXISTS "${TRACY_PROFILER_EXE}")
+                message(STATUS "Tracy profiler GUI ready at: ${TRACY_PROFILER_EXE}")
+            else()
+                message(WARNING "Tracy profiler GUI download succeeded but exe not found at expected path")
+            endif()
+        else()
+            message(WARNING "Failed to download Tracy profiler GUI (code: ${TRACY_DL_CODE}). You can download manually from: ${TRACY_URL}")
+            file(REMOVE "${TRACY_ZIP}")
+        endif()
+    endif()
+endif()
+
 # Platform-specific dependencies
 if(ANDROID)
     # Android uses OpenGL ES, not desktop OpenGL

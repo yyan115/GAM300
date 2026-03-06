@@ -27,6 +27,8 @@
 #include <ECS/ECSRegistry.hpp>
 #include <Serialization/Serializer.hpp>
 #include <Graphics/Model/ModelFactory.hpp>
+#include <Physics/ColliderComponent.hpp>
+#include <Physics/RigidBodyComponent.hpp>
 
 // ---------- helpers ----------
 static inline bool IsZeroGUID(const GUID_128& g) { return g.high == 0 && g.low == 0; }
@@ -156,11 +158,24 @@ static void ApplyOne(ECSManager& ecs,
         return;
     }
 
+    if (strcmp(typeName, "ColliderComponent") == 0) {
+        ColliderComponent comp{};
+        Serializer::DeserializeColliderComponent(comp, val);
+        if (ecs.HasComponent<ColliderComponent>(e)) ecs.GetComponent<ColliderComponent>(e) = comp;
+        else                                        ecs.AddComponent<ColliderComponent>(e, comp);
+        return;
+    }
+
+    if (strcmp(typeName, "RigidBodyComponent") == 0) {
+        ApplyReflectedComponent<RigidBodyComponent>(ecs, e, val, fromPrefabUpdate);
+        return;
+    }
+
     std::cerr << "[PrefabIO] No applier for component '" << typeName << "'\n";
 }
 
 // ============ INSTANTIATE (new entity) ============ 
-Entity SpawnPrefab(const rapidjson::Value& ents, ECSManager& ecs) {
+Entity SpawnPrefab(const rapidjson::Value& ents, ECSManager& ecs, bool isSerializing = false) {
     std::unordered_map<GUID_128, GUID_128> guidRemap;
     std::vector<Entity> newEntities;
 
@@ -197,9 +212,10 @@ Entity SpawnPrefab(const rapidjson::Value& ents, ECSManager& ecs) {
         }
 
         // Deserialize standard non-prefab components.
-        // Pass true for skipSpawnChildren since all entities (including bone children)
-        // were created in the first pass above and shouldn't be spawned again
-        Serializer::DeserializeEntity(ecs, entObj, true, entity, true);
+        // Only skip spawning bone children if the prefab actually contains them
+        // (multi-entity prefabs have bones saved; single-entity prefabs need them spawned)
+        bool skipChildren = (ents.Size() > 1);
+        Serializer::DeserializeEntity(ecs, entObj, true, entity, skipChildren, !isSerializing);
 
 		// Fix parent/child references based on the GUID remapping.
         const rapidjson::Value& comps = entObj["components"];
@@ -220,12 +236,36 @@ Entity SpawnPrefab(const rapidjson::Value& ents, ECSManager& ecs) {
             auto& childComp = ecs.GetComponent<ChildrenComponent>(entity);
             Serializer::DeserializeChildrenComponent(childComp, childrenCompJSON, &guidRemap);
         }
+
+        // Ensure ALL entities have a SiblingIndexComponent.
+        if (!ecs.HasComponent<SiblingIndexComponent>(entity)) {
+            int nextIndex = 0;
+
+            // Check if the entity has a parent to determine sibling context
+            if (ecs.HasComponent<ParentComponent>(entity)) {
+                GUID_128 parentGUID = ecs.GetComponent<ParentComponent>(entity).parent;
+                Entity parentEnt = EntityGUIDRegistry::GetInstance().GetEntityByGUID(parentGUID);
+
+                // If parent exists and has children, find the highest current index
+                if (parentEnt != static_cast<Entity>(-1) && ecs.HasComponent<ChildrenComponent>(parentEnt)) {
+                    auto& siblings = ecs.GetComponent<ChildrenComponent>(parentEnt).children;
+                    for (const auto& sibGUID : siblings) {
+                        Entity sibEnt = EntityGUIDRegistry::GetInstance().GetEntityByGUID(sibGUID);
+                        if (sibEnt != static_cast<Entity>(-1) && ecs.HasComponent<SiblingIndexComponent>(sibEnt)) {
+                            nextIndex = std::max(nextIndex, ecs.GetComponent<SiblingIndexComponent>(sibEnt).siblingIndex + 1);
+                        }
+                    }
+                }
+            }
+            // Add the component with the calculated unique index
+            ecs.AddComponent<SiblingIndexComponent>(entity, SiblingIndexComponent{ nextIndex });
+        }
     }
 
 	return newEntities.empty() ? static_cast<Entity>(-1) : newEntities[0];
 }
 
-ENGINE_API Entity InstantiatePrefabFromFile(const std::string& prefabPath)
+ENGINE_API Entity InstantiatePrefabFromFile(const std::string& prefabPath, bool isSerializing)
 {
     //ENGINE_LOG_INFO("[PrefabIO_v2] InstantiatePrefabFromFile called with: " + prefabPath);
     ECSManager& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
@@ -276,7 +316,7 @@ ENGINE_API Entity InstantiatePrefabFromFile(const std::string& prefabPath)
         buffer = platform->ReadAsset(assetPath);
         if (buffer.empty()) {
             ENGINE_LOG_ERROR("[PrefabIO] Failed to read prefab: " + prefabPath);
-            return MAX_ENTITIES;
+            return INVALID_ENTITY;
         }
         finalRelativePath = assetPath; // Use the working path for PrefabLinkComponent
     }
@@ -287,22 +327,24 @@ ENGINE_API Entity InstantiatePrefabFromFile(const std::string& prefabPath)
     rapidjson::Document doc;
     doc.Parse(json.c_str());
     if (doc.HasParseError() || !doc.IsObject()) {
-        std::cerr << "[PrefabIO] Invalid JSON in " << finalRelativePath << "\n"; return MAX_ENTITIES;
+        std::cerr << "[PrefabIO] Invalid JSON in " << finalRelativePath << "\n"; return INVALID_ENTITY;
     }
-    if (doc.MemberCount() == 0) { std::cout << "[PrefabIO] Prefab has no components (empty): " << finalRelativePath << "\n"; return MAX_ENTITIES; }
+    if (doc.MemberCount() == 0) { std::cout << "[PrefabIO] Prefab has no components (empty): " << finalRelativePath << "\n"; return INVALID_ENTITY; }
     if (!doc.HasMember("prefab_entities") || !doc["prefab_entities"].IsArray()) {
         ENGINE_LOG_WARN("[PrefabIO] Doc has no prefab_entities array.");
-        return MAX_ENTITIES;
+        return INVALID_ENTITY;
     }
 
     const rapidjson::Value& ents = doc["prefab_entities"];
-    Entity prefab = SpawnPrefab(ents, ecs);
+    Entity prefab = SpawnPrefab(ents, ecs, isSerializing);
     EnsurePrefabLinkOn(ecs, prefab, finalRelativePath);
 
     // Ensure the BoneNameToEntityMap is populated if the prefab has a ModelRenderComponent.
     if (ecs.HasComponent<ModelRenderComponent>(prefab)) {
         auto& modelComp = ecs.GetComponent<ModelRenderComponent>(prefab);
-        ModelFactory::PopulateBoneNameToEntityMap(prefab, modelComp.boneNameToEntityMap, *modelComp.model);
+        std::string entityName = ecs.GetComponent<NameComponent>(prefab).name;
+        modelComp.boneNameToEntityMap[entityName] = prefab;
+        ModelFactory::PopulateBoneNameToEntityMap(prefab, modelComp.boneNameToEntityMap, *modelComp.model, true);
     }
 
     // Ensure the root prefab object has no parent component.
@@ -354,7 +396,7 @@ ENGINE_API Entity InstantiatePrefabIntoEntity(const std::string& prefabPath, Ent
         buffer = platform->ReadAsset(assetPath);
         if (buffer.empty()) {
             std::cerr << "[PrefabIO] Failed to read prefab: " << prefabPath << " (tried: " << finalRelativePath << ", " << assetPath << ")\n";
-            return MAX_ENTITIES;
+            return INVALID_ENTITY;
         }
         finalRelativePath = assetPath;
     }
@@ -364,12 +406,12 @@ ENGINE_API Entity InstantiatePrefabIntoEntity(const std::string& prefabPath, Ent
     rapidjson::Document doc;
     doc.Parse(json.c_str());
     if (doc.HasParseError() || !doc.IsObject()) {
-        std::cerr << "[PrefabIO] Invalid JSON in " << finalRelativePath << "\n"; return MAX_ENTITIES;
+        std::cerr << "[PrefabIO] Invalid JSON in " << finalRelativePath << "\n"; return INVALID_ENTITY;
     }
-    if (doc.MemberCount() == 0) { std::cout << "[PrefabIO] Prefab has no components (empty): " << finalRelativePath << "\n"; return MAX_ENTITIES; }
+    if (doc.MemberCount() == 0) { std::cout << "[PrefabIO] Prefab has no components (empty): " << finalRelativePath << "\n"; return INVALID_ENTITY; }
     if (!doc.HasMember("prefab_entities") || !doc["prefab_entities"].IsArray()) {
         ENGINE_LOG_WARN("[PrefabIO] Doc has no prefab_entities array.");
-        return MAX_ENTITIES;
+        return INVALID_ENTITY;
     }
 
     const rapidjson::Value& ents = doc["prefab_entities"];
@@ -393,7 +435,9 @@ ENGINE_API Entity InstantiatePrefabIntoEntity(const std::string& prefabPath, Ent
     // Ensure the BoneNameToEntityMap is populated if the prefab has a ModelRenderComponent.
     if (ecs.HasComponent<ModelRenderComponent>(prefab)) {
         auto& modelComp = ecs.GetComponent<ModelRenderComponent>(prefab);
-        ModelFactory::PopulateBoneNameToEntityMap(prefab, modelComp.boneNameToEntityMap, *modelComp.model);
+        std::string entityName = ecs.GetComponent<NameComponent>(prefab).name;
+        modelComp.boneNameToEntityMap[entityName] = prefab;
+        ModelFactory::PopulateBoneNameToEntityMap(prefab, modelComp.boneNameToEntityMap, *modelComp.model, true);
     }
 
     // Ensure the root prefab object has no parent component.
@@ -566,5 +610,44 @@ ENGINE_API bool SaveEntityToPrefabFile(
     std::ofstream f(outPath, std::ios::binary);
     if (!f) return false;
     f.write(sb.GetString(), static_cast<std::streamsize>(sb.GetSize()));
+    f.close();
+
+    // Save to BOTH the Editor/Resources folder and the ROOT PROJECT Resources folder to ensure ALL prefab files are synced when saved.
+    std::filesystem::path editorResourcesPath(outPath.substr(outPath.find("Resources")));
+    if (outPath != editorResourcesPath.generic_string()) {
+        if (FileUtilities::StrictDirectoryExists(editorResourcesPath)) {
+            if (FileUtilities::CopyFile(outPath, editorResourcesPath.generic_string())) {
+                ENGINE_LOG_INFO("[PrefabIO] Prefab saved to Editor/Resources: " + editorResourcesPath.generic_string());
+            }
+            else {
+                ENGINE_LOG_WARN("[PrefabIO] Failed to copy prefab to Editor/Resources: " + editorResourcesPath.generic_string());
+            }
+        }
+        else {
+            ENGINE_LOG_WARN("[PrefabIO] Editor/Resources path does not exist: " + editorResourcesPath.generic_string());
+        }
+    }
+    else {
+        ENGINE_LOG_DEBUG("[PrefabIO] Current prefab path is already in Editor/Resources: " + outPath);
+    }
+
+    std::filesystem::path projectRootPath(std::filesystem::path(AssetManager::GetInstance().GetRootAssetDirectory()) / std::filesystem::path(outPath.substr(outPath.find("Resources") + 10)));
+    if (outPath != projectRootPath.generic_string()) {
+        if (FileUtilities::StrictDirectoryExists(projectRootPath)) {
+            if (FileUtilities::CopyFile(outPath, projectRootPath.generic_string())) {
+                ENGINE_LOG_INFO("[PrefabIO] Prefab saved to Root Project/Resources: " + projectRootPath.generic_string());
+            }
+            else {
+                ENGINE_LOG_WARN("[PrefabIO] Failed to copy prefab to Root Project/Resources: " + projectRootPath.generic_string());
+            }
+        }
+        else {
+            ENGINE_LOG_WARN("[PrefabIO] Root Project/Resources path does not exist: " + projectRootPath.generic_string());
+        }
+    }
+    else {
+        ENGINE_LOG_DEBUG("[PrefabIO] Current prefab path is already in Root Project/Resources: " + outPath);
+    }
+
     return true;
 }

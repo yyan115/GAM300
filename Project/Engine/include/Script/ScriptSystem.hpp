@@ -25,6 +25,7 @@ public:
     void Shutdown();
     void ReloadScriptForEntity(Entity e, ECSManager& ecsManager);
     bool CallEntityFunction(Entity e, const std::string& funcName, ECSManager& ecsManager);
+    bool CallEntityFunctionWithInt(Entity e, const std::string& funcName, int intArg, ECSManager& ecsManager);
     void ReloadSystem();
     void ReloadAllInstances();
 
@@ -49,12 +50,20 @@ public:
     using InstancesChangedCb = std::function<void(Entity)>;
     void RegisterInstancesChangedCallback(InstancesChangedCb cb);
     void UnregisterInstancesChangedCallback(void* cbId);
+
+    // Push an entity to be pending for destroy.
+    void AddEntityPendingDestroy(Entity entity);
+    // Clear entitiesPendingDestroy queue.
+    void ClearEntitiesPendingDestroy();
+
 private:
     // Notify registered callbacks that instances for entity 'e' changed.
     // Kept private: only ScriptSystem will call this when instances are created/destroyed/reloaded.
     void NotifyInstancesChanged(Entity e);
 
     bool EnsureInstanceForEntity(Entity e, ECSManager& ecsManager);
+    // Creates instances without calling Awake/Start - used for phased initialization
+    bool EnsureInstanceForEntityNoLifecycle(Entity e, ECSManager& ecsManager);
     void DestroyInstanceForEntity(Entity e);
     ScriptComponentData* GetScriptComponent(Entity e, ECSManager& ecsManager);
     const ScriptComponentData* GetScriptComponentConst(Entity e, const ECSManager& ecsManager) const;
@@ -67,8 +76,11 @@ private:
     // Standalone script instances (keyed by scriptGuidStr) - for ButtonComponent callbacks
     std::unordered_map<std::string, std::unique_ptr<Scripting::ScriptComponent>> m_standaloneInstances;
 
+    // Store entities that are pending for destroy (called DestroyEntity via Lua script).
+    std::queue<Entity> entitiesPendingDestroy;
+
     ECSManager* m_ecs = nullptr;
-    std::mutex m_mutex;
+    std::recursive_mutex m_mutex;
 
     bool m_needsReconcile = true;
 };

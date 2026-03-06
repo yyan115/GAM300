@@ -75,7 +75,7 @@ list(APPEND ENGINE_HEADERS ${SCRIPTING_HEADERS})
 message(STATUS "Building Engine as shared library for ${CMAKE_BUILD_TYPE}")
 
 # Engine is ALWAYS a shared library
-add_library(Engine SHARED ${ENGINE_SOURCES} ${ENGINE_HEADERS} "src/UI/Button/ButtonSystem.cpp"  "src/UI/Button/ButtonComponent.cpp" "src/Multi-threading/ParallelSystemOrchestrator.cpp" "src/Multi-threading/SequentialSystemOrchestrator.cpp" "src/Animation/AnimationStateMachine.cpp" "src/Animation/AnimatorController.cpp" "src/Graphics/Model/ModelFactory.cpp" "src/Graphics/Shadows/PointShadowMap.cpp" "src/Prefab/PrefabLinkComponent.cpp")
+add_library(Engine SHARED ${ENGINE_SOURCES} ${ENGINE_HEADERS} "src/UI/Button/ButtonSystem.cpp"  "src/UI/Button/ButtonComponent.cpp" "src/Multi-threading/ParallelSystemOrchestrator.cpp" "src/Multi-threading/SequentialSystemOrchestrator.cpp" "src/Animation/AnimationStateMachine.cpp" "src/Animation/AnimatorController.cpp" "src/Graphics/Model/ModelFactory.cpp" "src/Graphics/Shadows/PointShadowMap.cpp" "src/Prefab/PrefabLinkComponent.cpp" "src/Graphics/Instancing/InstanceBatch.cpp" "src/Graphics/Instancing/InstancingManager.cpp" "src/Graphics/Fog/FogSystem.cpp" "src/Graphics/Fog/FogComponent.cpp")
 
 # Enable precompiled headers for faster compilation (C++ only)
 target_precompile_headers(Engine PRIVATE
@@ -96,6 +96,15 @@ endif()
 target_compile_definitions(Engine PUBLIC
     $<$<OR:$<CONFIG:EditorDebug>,$<CONFIG:EditorRelease>>:EDITOR>
 )
+
+# Enable Tracy profiler for all builds except Release
+# Tracy compiles to no-ops when TRACY_ENABLE is not defined (zero overhead)
+# TRACY_ON_DEMAND is baked into the Tracy DLL via vcpkg feature (see vcpkg.json)
+if(NOT ANDROID)
+    target_compile_definitions(Engine PUBLIC
+        $<$<NOT:$<CONFIG:Release>>:TRACY_ENABLE>
+    )
+endif()
 
 # Jolt Physics compile definitions:
 # For Android: Jolt's CMakeLists.txt exports all defines as INTERFACE (via patch in ImportDependencies.cmake)
@@ -178,6 +187,7 @@ else()
     find_package(RapidJSON CONFIG REQUIRED)
     find_package(gli CONFIG REQUIRED)
     find_package(meshoptimizer CONFIG REQUIRED)
+    find_package(Tracy CONFIG REQUIRED)
 endif()
 
 # Manual libraries that aren't available in vcpkg or need custom versions
@@ -269,6 +279,7 @@ else()
             spdlog::spdlog
             gli
             meshoptimizer::meshoptimizer
+            Tracy::TracyClient
     )
 
     # Platform-specific FMOD and system libraries

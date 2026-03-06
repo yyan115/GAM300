@@ -26,7 +26,7 @@ VAO::~VAO()
 	}
 }
 
-void VAO::LinkAttrib(VBO VBO, GLuint layout, GLuint numComponents, GLenum type, GLsizeiptr stride, void* offset)
+void VAO::LinkAttrib(VBO& VBO, GLuint layout, GLuint numComponents, GLenum type, GLsizeiptr stride, void* offset)
 {
 	VBO.Bind();
 	glVertexAttribPointer(layout, numComponents, type, GL_FALSE, static_cast<GLsizei>(stride), offset);
@@ -34,7 +34,7 @@ void VAO::LinkAttrib(VBO VBO, GLuint layout, GLuint numComponents, GLenum type, 
 	VBO.Unbind();
 }
 
-void VAO::LinkAttribInt(VBO VBO, GLuint layout, GLuint numComponents, GLenum type, GLsizeiptr stride, void* offset)
+void VAO::LinkAttribInt(VBO& VBO, GLuint layout, GLuint numComponents, GLenum type, GLsizeiptr stride, void* offset)
 {
 	VBO.Bind();
 	glVertexAttribIPointer(layout, numComponents, type, static_cast<GLsizei>(stride), offset);

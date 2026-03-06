@@ -1,35 +1,29 @@
 #pragma once
 #include "EditorPanel.hpp"
 #include "imgui.h"
-#include <vector>
-#include <string>
+
+#ifdef _WIN32
+#include <Windows.h>
+#endif
 
 /**
- * @brief Panel that displays performance metrics like FPS, frame time graphs, and zone statistics
+ * @brief Panel that displays FPS/frame time and provides a button to launch the Tracy profiler GUI
  */
 class PerformancePanel : public EditorPanel {
 public:
     PerformancePanel();
-    virtual ~PerformancePanel() = default;
+    virtual ~PerformancePanel();
 
 protected:
     void OnImGuiRender() override;
 
 private:
-    void RenderFrameTimeGraph();
-    void RenderFpsGraph();
-    void RenderZoneStatistics();
-    void RenderZoneGraph(const std::string& zoneName);
-    
-    // Helper to get color based on timing
-    ImVec4 GetTimingColor(double timeMs) const;
-    
-    // UI state (pascalCase for variables)
-    bool showFrameTimeGraph = true;
-    bool showFpsGraph = true;
-    bool showZoneStats = true;
-    float graphHeight = 80.0f;
-    
-    // Selected zone for detailed graph view
-    std::string selectedZone;
+    void LaunchTracyProfiler();
+    bool IsTracyProfilerRunning() const;
+
+#ifdef _WIN32
+    HANDLE tracyProcessHandle = nullptr;
+#else
+    pid_t tracyProcessPid = 0;
+#endif
 };

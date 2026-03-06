@@ -1,0 +1,14 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "004752178545e260-000460448a001b0d",
+        "source": "../../Resources/Sprites/PlayerHUD/Jump.png",
+        "compiled": "../../Resources/Sprites/PlayerHUD/Jump.dds"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp"
+    }
+}

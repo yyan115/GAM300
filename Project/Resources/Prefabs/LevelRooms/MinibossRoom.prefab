@@ -1,9 +1,18 @@
 {
     "prefab_entities": [
         {
-            "id": 2580,
-            "guid": "004bc8ac9caa1ec7-00041b9f8000b4cb",
+            "id": 0,
+            "guid": "00345ceb44b69fde-000460dfe6094d7d",
             "components": {
+                "PrefabLinkComponent": {
+                    "type": "PrefabLinkComponent",
+                    "data": [
+                        {
+                            "type": "std::string",
+                            "data": "../../Resources/Prefabs/LevelRooms/MinibossRoom.prefab"
+                        }
+                    ]
+                },
                 "NameComponent": {
                     "name": "MinibossRoom"
                 },
@@ -82,29 +91,23 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "004bc8acc0c6b0a0-00041ba27a00baef",
-                                "004bc8ac8ac9f35c-00041bca8200d46d",
-                                "004bc8acc5519bbe-00041bcbc400d473",
-                                "004bc8acdc6463e1-00041ba04600bae3",
-                                "001955a0f485a19d-00041e7c4e008825",
-                                "001955a0988ad32a-00041e7c4e008827",
-                                "001955a0834ab9f4-00041e7c4e008829",
-                                "004e592ce372cc87-00041cb4de000f73",
-                                "004bc8accac580e4-00041bc57c00cb1d",
-                                "004bc8acdef695bd-00041bca0a00ce53",
-                                "004bc8acbe9f3d90-00041bca1600ce55",
-                                "004bc8acd2a808c0-00041bca1600ce57",
-                                "004bc8acb2bc5aab-00041bcc1c00d47b",
-                                "004bc8acfb35abcb-00041bcc0a00d479",
-                                "004bc8ac8a99d88e-00041bc49200c507"
+                                "00345ceb2cf03276-000460dfe6094d7f",
+                                "00345ceb53627144-000460dfe6094d81",
+                                "00345ceb6e5fb8dc-000460dfe6094d85",
+                                "00345ceb44baa4a4-000460dfe6094d89",
+                                "00345ceb3c851925-000460dfe6094e41",
+                                "00345ceb617fe5fb-000460dfe6094e43",
+                                "00345ceb7991956b-000460dfe6094e45",
+                                "00345ceb49ca2c70-000460dfe6094e47",
+                                "00345ceb7da17d80-000460dfe6094e49",
+                                "00345ceb34382b98-000460dfe6094e4b",
+                                "00345ceb367a077a-000460dfe6094e4d",
+                                "00345ceb06892814-000460dfe6094e4f",
+                                "00345ceb098274e6-000460dfe6094e51",
+                                "00345ceb1ac04ee7-000460dfe6094e55",
+                                "00345ceb64f8c00c-000460dfe6094e59"
                             ]
                         }
-                    ]
-                },
-                "ParentComponent": {
-                    "type": "ParentComponent",
-                    "data": [
-                        "002f74130b102c59-000361c1e4000009"
                     ]
                 },
                 "ActiveComponent": {
@@ -119,8 +122,8 @@
             }
         },
         {
-            "id": 2581,
-            "guid": "004bc8acc0c6b0a0-00041ba27a00baef",
+            "id": 1,
+            "guid": "00345ceb2cf03276-000460dfe6094d7f",
             "components": {
                 "NameComponent": {
                     "name": "Light"
@@ -197,7 +200,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004bc8ac9caa1ec7-00041b9f8000b4cb"
+                        "00345ceb44b69fde-000460dfe6094d7d"
                     ]
                 },
                 "PointLightComponent": {
@@ -309,8 +312,8 @@
             }
         },
         {
-            "id": 2582,
-            "guid": "004bc8ac8ac9f35c-00041bca8200d46d",
+            "id": 2,
+            "guid": "00345ceb53627144-000460dfe6094d81",
             "components": {
                 "NameComponent": {
                     "name": "LanternHolder (1) (1) (1)"
@@ -475,7 +478,7 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "004bc8ac8883cef1-00041bca8a00d46f"
+                                "00345ceb6317800c-000460dfe6094d83"
                             ]
                         }
                     ]
@@ -483,7 +486,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004bc8ac9caa1ec7-00041b9f8000b4cb"
+                        "00345ceb44b69fde-000460dfe6094d7d"
                     ]
                 },
                 "RigidBodyComponent": {
@@ -640,8 +643,8 @@
             }
         },
         {
-            "id": 2583,
-            "guid": "004bc8ac8883cef1-00041bca8a00d46f",
+            "id": 3,
+            "guid": "00345ceb6317800c-000460dfe6094d83",
             "components": {
                 "NameComponent": {
                     "name": "Lantern (1) (1) (1) (1)"
@@ -803,7 +806,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004bc8ac8ac9f35c-00041bca8200d46d"
+                        "00345ceb53627144-000460dfe6094d81"
                     ]
                 },
                 "ActiveComponent": {
@@ -818,8 +821,8 @@
             }
         },
         {
-            "id": 2584,
-            "guid": "004bc8acc5519bbe-00041bcbc400d473",
+            "id": 4,
+            "guid": "00345ceb6e5fb8dc-000460dfe6094d85",
             "components": {
                 "NameComponent": {
                     "name": "LanternHolder (1) (1) (1) (1)"
@@ -984,7 +987,7 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "004bc8ac9c2f9540-00041bcbd800d475"
+                                "00345ceb2c0f3000-000460dfe6094d87"
                             ]
                         }
                     ]
@@ -992,7 +995,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004bc8ac9caa1ec7-00041b9f8000b4cb"
+                        "00345ceb44b69fde-000460dfe6094d7d"
                     ]
                 },
                 "RigidBodyComponent": {
@@ -1149,8 +1152,8 @@
             }
         },
         {
-            "id": 2585,
-            "guid": "004bc8ac9c2f9540-00041bcbd800d475",
+            "id": 5,
+            "guid": "00345ceb2c0f3000-000460dfe6094d87",
             "components": {
                 "NameComponent": {
                     "name": "Lantern (1) (1) (1) (1) (1)"
@@ -1312,7 +1315,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004bc8acc5519bbe-00041bcbc400d473"
+                        "00345ceb6e5fb8dc-000460dfe6094d85"
                     ]
                 },
                 "ActiveComponent": {
@@ -1327,8 +1330,8 @@
             }
         },
         {
-            "id": 2586,
-            "guid": "004bc8acdc6463e1-00041ba04600bae3",
+            "id": 6,
+            "guid": "00345ceb44baa4a4-000460dfe6094d89",
             "components": {
                 "NameComponent": {
                     "name": "Ground (1)"
@@ -1408,78 +1411,78 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "004bc8acd187bca5-00041ba0c400bae5",
-                                "004bc8accae10366-00041ba1c200bae9",
-                                "004bc8aca9c24332-00041ba1e200baeb",
-                                "004bc8ac83697a3d-00041ba20e00baed",
-                                "004bc8ac996a94df-00041ba4ca00be05",
-                                "004bc8acb4943fd2-00041ba4da00be07",
-                                "004bc8acae789367-00041ba65200be1b",
-                                "004bc8acfcc8eda0-00041ba6a200be1f",
-                                "004bc8acce35ef3c-00041ba6fc00be23",
-                                "004bc8ac99ab97a2-00041bbb3a00c44f",
-                                "004bc8acc6f285bf-00041bbb3a00c453",
-                                "004bc8ac87455227-00041bbb3a00c457",
-                                "004bc8ace1200f7f-00041bbb3a00c467",
-                                "004bc8acadc05373-00041bbb3a00c46b",
-                                "004bc8aca434b300-00041bbb3a00c46f",
-                                "004bc8acdba30c3a-00041bbc6a00c47f",
-                                "004bc8acfc035017-00041bbc6a00c489",
-                                "004bc8ac9f40ee29-00041bbc6a00c48b",
-                                "004bc8acecec0bfb-00041bbc7a00c491",
-                                "004bc8acd86a12ac-00041bbc7a00c495",
-                                "004bc8aca0cabd20-00041bbc7a00c49f",
-                                "004bc8aca3c7d649-00041bbc7a00c4a1",
-                                "004bc8acabc7fe94-00041bbcac00c4a9",
-                                "004bc8acbb4d4ad7-00041bbcac00c4b3",
-                                "004bc8acd3d4155f-00041bbcac00c4b5",
-                                "004bc8acc717ff53-00041bbcc400c4bd",
-                                "004bc8ac9c70d759-00041bbcc400c4bf",
-                                "004bc8acf392e08e-00041bbcc400c4c7",
-                                "004bc8ace7dafe4b-00041bbcc400c4c9",
-                                "004bc8acd5c9c7f2-00041bbcc400c4cb",
-                                "004bc8aca8adfd54-00041bbcc400c4d1",
-                                "004bc8ace02e313e-00041bbcd000c4d3",
-                                "004bc8ac8e628dd4-00041bbcd000c4d5",
-                                "004bc8acc7b4feb8-00041bbcd200c4dd",
-                                "004bc8acff5a2b71-00041bbcd200c4df",
-                                "004bc8acf19c65dc-00041bbcd200c4e1",
-                                "004bc8acfa154223-00041bbcd200c4e7",
-                                "004bc8acf4236231-00041bbb3a00c451",
-                                "004bc8acd65f32f9-00041ba58200be11",
-                                "004bc8acb6272ae8-00041ba58800be13",
-                                "004bc8acde3d2d06-00041ba65200be1d",
-                                "004bc8aca2a7959a-00041ba6a600be21",
-                                "004bc8acca85c1cc-00041ba70c00be25",
-                                "004bc8acd78bee07-00041bc08c00c4e9",
-                                "004bc8ac932dcc25-00041bc08c00c4eb",
-                                "004bc8acd2dd2931-00041bc08c00c4ed",
-                                "004bc8acca3d2b76-00041bc08c00c4ef",
-                                "004bc8acf7ef99cb-00041bc08c00c4f1",
-                                "004bc8acabb5f67b-00041bc08c00c4f3",
-                                "004bc8acff157e79-00041bc08c00c4f5",
-                                "004bc8ac911d0614-00041bc0c000c4f7",
-                                "004bc8ac94bdbb60-00041bc0e600c4f9",
-                                "004bc8acccb6a494-00041bc5e800cb1f",
-                                "004bc8acb9193c9e-00041bc61a00cb21",
-                                "004bc8acf09bd2ee-00041bc61c00cb23",
-                                "004bc8acebc012c2-00041bc61e00cb25",
-                                "004bc8acb76f5a88-00041bc62200cb27",
-                                "004bc8acab0b2abe-00041bc94200cb3b",
-                                "004bc8acc49249aa-00041bc94200cb3d",
-                                "004bc8aca663a1fe-00041bc94400cb3f",
-                                "004bc8acd3bedd11-00041bc94400cb41",
-                                "004bc8ac83f5517a-00041bc94400cb43",
-                                "004e592c80a50625-00041cb2f2000c39",
-                                "004e592ca63bc70e-00041cb354000c3f",
-                                "004e592ce2aa709d-00041cb358000c41",
-                                "004e592cf3c31722-00041cb3a4000c4f",
-                                "004e592cd2cbc1c0-00041cb3b2000c53",
-                                "004e592c9827c928-00041cb3b4000c55",
-                                "004e592c80d85a74-00041cb3e4000c5b",
-                                "004e592c85b045c8-00041cb3e4000c5d",
-                                "004e592cf5c29dfa-00041cb3e4000c5f",
-                                "001955a0cc4af286-00041e7b9e008821"
+                                "00345ceb1e368b65-000460dfe6094d8b",
+                                "00345ceb264d5180-000460dfe6094d8f",
+                                "00345ceb7af9a9f1-000460dfe6094d93",
+                                "00345ceb315f21d6-000460dfe6094d97",
+                                "00345ceb571dc369-000460dfe6094d9b",
+                                "00345ceb4716e911-000460dfe6094d9f",
+                                "00345ceb576f7e48-000460dfe6094da3",
+                                "00345ceb60f8b50d-000460dfe6094da7",
+                                "00345ceb4e87447d-000460dfe6094dab",
+                                "00345ceb5ce8be17-000460dfe6094daf",
+                                "00345ceb3cd95078-000460dfe6094db1",
+                                "00345ceb56b3f104-000460dfe6094db3",
+                                "00345ceb65f5e8e2-000460dfe6094db5",
+                                "00345ceb2a3ed700-000460dfe6094db7",
+                                "00345ceb068ff661-000460dfe6094db9",
+                                "00345ceb6453ac22-000460dfe6094dbb",
+                                "00345ceb36bd677a-000460dfe6094dbd",
+                                "00345ceb5fbde2da-000460dfe6094dbf",
+                                "00345ceb4a6ac923-000460dfe6094dc1",
+                                "00345ceb647e60b9-000460dfe6094dc3",
+                                "00345ceb6c724486-000460dfe6094dc5",
+                                "00345ceb7d9d06a2-000460dfe6094dc7",
+                                "00345ceb51e87231-000460dfe6094dc9",
+                                "00345ceb6a03c30e-000460dfe6094dcb",
+                                "00345ceb558238fe-000460dfe6094dcd",
+                                "00345ceb11446526-000460dfe6094dcf",
+                                "00345ceb41517bf2-000460dfe6094dd1",
+                                "00345ceb55f8a654-000460dfe6094dd3",
+                                "00345ceb2d132137-000460dfe6094dd5",
+                                "00345ceb45d00a65-000460dfe6094dd7",
+                                "00345ceb47c479bf-000460dfe6094dd9",
+                                "00345ceb517841c9-000460dfe6094ddb",
+                                "00345ceb0078962a-000460dfe6094ddd",
+                                "00345ceb145d0568-000460dfe6094ddf",
+                                "00345ceb676badee-000460dfe6094de1",
+                                "00345ceb7ed16ef0-000460dfe6094de3",
+                                "00345ceb0a76a8bf-000460dfe6094de5",
+                                "00345ceb0b519406-000460dfe6094de7",
+                                "00345ceb3a7a086e-000460dfe6094de9",
+                                "00345ceb68a68fae-000460dfe6094deb",
+                                "00345ceb5af98ed9-000460dfe6094ded",
+                                "00345ceb03704f14-000460dfe6094def",
+                                "00345ceb4c124100-000460dfe6094df1",
+                                "00345ceb42c9b7ad-000460dfe6094df3",
+                                "00345ceb2074933d-000460dfe6094df5",
+                                "00345ceb5888e343-000460dfe6094df7",
+                                "00345ceb6c034482-000460dfe6094df9",
+                                "00345ceb7af5bca2-000460dfe6094dfb",
+                                "00345ceb270a9b13-000460dfe6094dfd",
+                                "00345ceb6f229dab-000460dfe6094dff",
+                                "00345ceb6244bd04-000460dfe6094e01",
+                                "00345ceb54f7f3d5-000460dfe6094e03",
+                                "00345ceb4459522d-000460dfe6094e05",
+                                "00345ceb150ac7db-000460dfe6094e07",
+                                "00345ceb636e2dba-000460dfe6094e09",
+                                "00345ceb57818c58-000460dfe6094e0b",
+                                "00345ceb749acf9f-000460dfe6094e0d",
+                                "00345ceb4aab420c-000460dfe6094e0f",
+                                "00345ceb314f50b5-000460dfe6094e11",
+                                "00345ceb3465774c-000460dfe6094e13",
+                                "00345ceb0a24356a-000460dfe6094e15",
+                                "00345ceb0cb51f19-000460dfe6094e17",
+                                "00345ceb4f51da89-000460dfe6094e19",
+                                "00345ceb55cd0090-000460dfe6094e1d",
+                                "00345ceb23a9dc09-000460dfe6094e21",
+                                "00345ceb2bf6d90d-000460dfe6094e25",
+                                "00345ceb0062fbf6-000460dfe6094e29",
+                                "00345ceb75b4ca81-000460dfe6094e2d",
+                                "00345ceb3ac9722c-000460dfe6094e31",
+                                "00345ceb4d6e3be8-000460dfe6094e35",
+                                "00345ceb60b89a03-000460dfe6094e39",
+                                "00345ceb136aa548-000460dfe6094e3d"
                             ]
                         }
                     ]
@@ -1487,7 +1490,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004bc8ac9caa1ec7-00041b9f8000b4cb"
+                        "00345ceb44b69fde-000460dfe6094d7d"
                     ]
                 },
                 "ActiveComponent": {
@@ -1502,8 +1505,8 @@
             }
         },
         {
-            "id": 2587,
-            "guid": "004bc8acd187bca5-00041ba0c400bae5",
+            "id": 7,
+            "guid": "00345ceb1e368b65-000460dfe6094d8b",
             "components": {
                 "NameComponent": {
                     "name": "GroundedPlatform (1) (1) (1) (1) (2)"
@@ -1668,7 +1671,7 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "004bc8aca5605d5c-00041bbb3800c445"
+                                "00345ceb752c0592-000460dfe6094d8d"
                             ]
                         }
                     ]
@@ -1676,7 +1679,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004bc8acdc6463e1-00041ba04600bae3"
+                        "00345ceb44baa4a4-000460dfe6094d89"
                     ]
                 },
                 "RigidBodyComponent": {
@@ -1833,8 +1836,8 @@
             }
         },
         {
-            "id": 2588,
-            "guid": "004bc8aca5605d5c-00041bbb3800c445",
+            "id": 8,
+            "guid": "00345ceb752c0592-000460dfe6094d8d",
             "components": {
                 "NameComponent": {
                     "name": "Column (1) (1) (2) (1) (2) (2) (2) (1) (1) (3) (1) (1) (1) (1) (1) (1) (2) (2) (2)"
@@ -1996,7 +1999,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004bc8acd187bca5-00041ba0c400bae5"
+                        "00345ceb1e368b65-000460dfe6094d8b"
                     ]
                 },
                 "RigidBodyComponent": {
@@ -2153,8 +2156,8 @@
             }
         },
         {
-            "id": 2589,
-            "guid": "004bc8accae10366-00041ba1c200bae9",
+            "id": 9,
+            "guid": "00345ceb264d5180-000460dfe6094d8f",
             "components": {
                 "NameComponent": {
                     "name": "GroundedPlatform (1) (1) (1) (1) (2) (1)"
@@ -2319,7 +2322,7 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "004bc8acf9c8b7e6-00041bbb3800c449"
+                                "00345ceb58aa06b9-000460dfe6094d91"
                             ]
                         }
                     ]
@@ -2327,7 +2330,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004bc8acdc6463e1-00041ba04600bae3"
+                        "00345ceb44baa4a4-000460dfe6094d89"
                     ]
                 },
                 "RigidBodyComponent": {
@@ -2484,8 +2487,8 @@
             }
         },
         {
-            "id": 2590,
-            "guid": "004bc8acf9c8b7e6-00041bbb3800c449",
+            "id": 10,
+            "guid": "00345ceb58aa06b9-000460dfe6094d91",
             "components": {
                 "NameComponent": {
                     "name": "Column (1) (1) (2) (1) (2) (2) (2) (1) (1) (3) (1) (1) (1) (1) (1) (1) (2) (2) (1) (2)"
@@ -2647,7 +2650,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004bc8accae10366-00041ba1c200bae9"
+                        "00345ceb264d5180-000460dfe6094d8f"
                     ]
                 },
                 "RigidBodyComponent": {
@@ -2804,8 +2807,8 @@
             }
         },
         {
-            "id": 2591,
-            "guid": "004bc8aca9c24332-00041ba1e200baeb",
+            "id": 11,
+            "guid": "00345ceb7af9a9f1-000460dfe6094d93",
             "components": {
                 "NameComponent": {
                     "name": "GroundedPlatform (1) (1) (1) (1) (2) (1) (1)"
@@ -2970,7 +2973,7 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "004bc8acc2207175-00041bbb3a00c44d"
+                                "00345ceb7dd34c89-000460dfe6094d95"
                             ]
                         }
                     ]
@@ -2978,7 +2981,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004bc8acdc6463e1-00041ba04600bae3"
+                        "00345ceb44baa4a4-000460dfe6094d89"
                     ]
                 },
                 "RigidBodyComponent": {
@@ -3135,8 +3138,8 @@
             }
         },
         {
-            "id": 2592,
-            "guid": "004bc8acc2207175-00041bbb3a00c44d",
+            "id": 12,
+            "guid": "00345ceb7dd34c89-000460dfe6094d95",
             "components": {
                 "NameComponent": {
                     "name": "Column (1) (1) (2) (1) (2) (2) (2) (1) (1) (3) (1) (1) (1) (1) (1) (1) (2) (2) (1) (1) (2)"
@@ -3298,7 +3301,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004bc8aca9c24332-00041ba1e200baeb"
+                        "00345ceb7af9a9f1-000460dfe6094d93"
                     ]
                 },
                 "RigidBodyComponent": {
@@ -3455,8 +3458,8 @@
             }
         },
         {
-            "id": 2593,
-            "guid": "004bc8ac83697a3d-00041ba20e00baed",
+            "id": 13,
+            "guid": "00345ceb315f21d6-000460dfe6094d97",
             "components": {
                 "NameComponent": {
                     "name": "GroundedPlatform (1) (1) (1) (1) (2) (1) (1) (1)"
@@ -3621,7 +3624,7 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "004bc8acd9af6467-00041ba4aa00be03"
+                                "00345ceb0c2ce377-000460dfe6094d99"
                             ]
                         }
                     ]
@@ -3629,7 +3632,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004bc8acdc6463e1-00041ba04600bae3"
+                        "00345ceb44baa4a4-000460dfe6094d89"
                     ]
                 },
                 "RigidBodyComponent": {
@@ -3786,8 +3789,8 @@
             }
         },
         {
-            "id": 2594,
-            "guid": "004bc8acd9af6467-00041ba4aa00be03",
+            "id": 14,
+            "guid": "00345ceb0c2ce377-000460dfe6094d99",
             "components": {
                 "NameComponent": {
                     "name": "Column (1) (1) (2) (1) (2) (2) (2) (1) (1) (3) (1) (1) (1) (1) (1) (1) (2) (2) (1) (1) (1)"
@@ -3949,7 +3952,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004bc8ac83697a3d-00041ba20e00baed"
+                        "00345ceb315f21d6-000460dfe6094d97"
                     ]
                 },
                 "RigidBodyComponent": {
@@ -4106,8 +4109,8 @@
             }
         },
         {
-            "id": 2595,
-            "guid": "004bc8ac996a94df-00041ba4ca00be05",
+            "id": 15,
+            "guid": "00345ceb571dc369-000460dfe6094d9b",
             "components": {
                 "NameComponent": {
                     "name": "GroundedPlatform (1) (1) (1) (1) (2) (1) (1) (1) (1)"
@@ -4272,7 +4275,7 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "004bc8acdac20f39-00041bbb3a00c455"
+                                "00345ceb13430cf4-000460dfe6094d9d"
                             ]
                         }
                     ]
@@ -4280,7 +4283,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004bc8acdc6463e1-00041ba04600bae3"
+                        "00345ceb44baa4a4-000460dfe6094d89"
                     ]
                 },
                 "RigidBodyComponent": {
@@ -4437,8 +4440,8 @@
             }
         },
         {
-            "id": 2596,
-            "guid": "004bc8acdac20f39-00041bbb3a00c455",
+            "id": 16,
+            "guid": "00345ceb13430cf4-000460dfe6094d9d",
             "components": {
                 "NameComponent": {
                     "name": "Column (1) (1) (2) (1) (2) (2) (2) (1) (1) (3) (1) (1) (1) (1) (1) (1) (2) (2) (1) (1) (1) (1) (3)"
@@ -4600,7 +4603,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004bc8ac996a94df-00041ba4ca00be05"
+                        "00345ceb571dc369-000460dfe6094d9b"
                     ]
                 },
                 "RigidBodyComponent": {
@@ -4757,8 +4760,8 @@
             }
         },
         {
-            "id": 2597,
-            "guid": "004bc8acb4943fd2-00041ba4da00be07",
+            "id": 17,
+            "guid": "00345ceb4716e911-000460dfe6094d9f",
             "components": {
                 "NameComponent": {
                     "name": "GroundedPlatform (1) (1) (1) (1) (2) (1) (1) (1) (1) (1)"
@@ -4923,7 +4926,7 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "004bc8ac9825c0f1-00041bbb3a00c459"
+                                "00345ceb3c9c61a2-000460dfe6094da1"
                             ]
                         }
                     ]
@@ -4931,7 +4934,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004bc8acdc6463e1-00041ba04600bae3"
+                        "00345ceb44baa4a4-000460dfe6094d89"
                     ]
                 },
                 "RigidBodyComponent": {
@@ -5088,8 +5091,8 @@
             }
         },
         {
-            "id": 2598,
-            "guid": "004bc8ac9825c0f1-00041bbb3a00c459",
+            "id": 18,
+            "guid": "00345ceb3c9c61a2-000460dfe6094da1",
             "components": {
                 "NameComponent": {
                     "name": "Column (1) (1) (2) (1) (2) (2) (2) (1) (1) (3) (1) (1) (1) (1) (1) (1) (2) (2) (1) (1) (1) (1) (1) (1)"
@@ -5251,7 +5254,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004bc8acb4943fd2-00041ba4da00be07"
+                        "00345ceb4716e911-000460dfe6094d9f"
                     ]
                 },
                 "RigidBodyComponent": {
@@ -5408,8 +5411,8 @@
             }
         },
         {
-            "id": 2599,
-            "guid": "004bc8acae789367-00041ba65200be1b",
+            "id": 19,
+            "guid": "00345ceb576f7e48-000460dfe6094da3",
             "components": {
                 "NameComponent": {
                     "name": "GroundedPlatform (1) (1) (1) (1) (2) (1) (1) (1) (1) (1) (1) (1) (1) (1)"
@@ -5574,7 +5577,7 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "004bc8acb6e4ab40-00041bbb3a00c469"
+                                "00345ceb0c12442f-000460dfe6094da5"
                             ]
                         }
                     ]
@@ -5582,7 +5585,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004bc8acdc6463e1-00041ba04600bae3"
+                        "00345ceb44baa4a4-000460dfe6094d89"
                     ]
                 },
                 "RigidBodyComponent": {
@@ -5739,8 +5742,8 @@
             }
         },
         {
-            "id": 2600,
-            "guid": "004bc8acb6e4ab40-00041bbb3a00c469",
+            "id": 20,
+            "guid": "00345ceb0c12442f-000460dfe6094da5",
             "components": {
                 "NameComponent": {
                     "name": "Column (1) (1) (2) (1) (2) (2) (2) (1) (1) (3) (1) (1) (1) (1) (1) (1) (2) (2) (1) (1) (1) (1) (2) (1) (1) (1) (2)"
@@ -5902,7 +5905,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004bc8acae789367-00041ba65200be1b"
+                        "00345ceb576f7e48-000460dfe6094da3"
                     ]
                 },
                 "RigidBodyComponent": {
@@ -6059,8 +6062,8 @@
             }
         },
         {
-            "id": 2601,
-            "guid": "004bc8acfcc8eda0-00041ba6a200be1f",
+            "id": 21,
+            "guid": "00345ceb60f8b50d-000460dfe6094da7",
             "components": {
                 "NameComponent": {
                     "name": "GroundedPlatform (1) (1) (1) (1) (2) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1)"
@@ -6225,7 +6228,7 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "004bc8ac913847e7-00041bbb3a00c46d"
+                                "00345ceb7894c6d5-000460dfe6094da9"
                             ]
                         }
                     ]
@@ -6233,7 +6236,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004bc8acdc6463e1-00041ba04600bae3"
+                        "00345ceb44baa4a4-000460dfe6094d89"
                     ]
                 },
                 "RigidBodyComponent": {
@@ -6390,8 +6393,8 @@
             }
         },
         {
-            "id": 2602,
-            "guid": "004bc8ac913847e7-00041bbb3a00c46d",
+            "id": 22,
+            "guid": "00345ceb7894c6d5-000460dfe6094da9",
             "components": {
                 "NameComponent": {
                     "name": "Column (1) (1) (2) (1) (2) (2) (2) (1) (1) (3) (1) (1) (1) (1) (1) (1) (2) (2) (1) (1) (1) (1) (2) (1) (1) (1) (1) (2)"
@@ -6553,7 +6556,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004bc8acfcc8eda0-00041ba6a200be1f"
+                        "00345ceb60f8b50d-000460dfe6094da7"
                     ]
                 },
                 "RigidBodyComponent": {
@@ -6710,8 +6713,8 @@
             }
         },
         {
-            "id": 2603,
-            "guid": "004bc8acce35ef3c-00041ba6fc00be23",
+            "id": 23,
+            "guid": "00345ceb4e87447d-000460dfe6094dab",
             "components": {
                 "NameComponent": {
                     "name": "GroundedPlatform (1) (1) (1) (1) (2) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1)"
@@ -6876,7 +6879,7 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "004bc8acb933009a-00041bbb3a00c471"
+                                "00345ceb2f4a90cb-000460dfe6094dad"
                             ]
                         }
                     ]
@@ -6884,7 +6887,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004bc8acdc6463e1-00041ba04600bae3"
+                        "00345ceb44baa4a4-000460dfe6094d89"
                     ]
                 },
                 "RigidBodyComponent": {
@@ -7041,8 +7044,8 @@
             }
         },
         {
-            "id": 2604,
-            "guid": "004bc8acb933009a-00041bbb3a00c471",
+            "id": 24,
+            "guid": "00345ceb2f4a90cb-000460dfe6094dad",
             "components": {
                 "NameComponent": {
                     "name": "Column (1) (1) (2) (1) (2) (2) (2) (1) (1) (3) (1) (1) (1) (1) (1) (1) (2) (2) (1) (1) (1) (1) (2) (1) (1) (1) (1) (1) (3)"
@@ -7204,7 +7207,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004bc8acce35ef3c-00041ba6fc00be23"
+                        "00345ceb4e87447d-000460dfe6094dab"
                     ]
                 },
                 "RigidBodyComponent": {
@@ -7361,8 +7364,8 @@
             }
         },
         {
-            "id": 2605,
-            "guid": "004bc8ac99ab97a2-00041bbb3a00c44f",
+            "id": 25,
+            "guid": "00345ceb5ce8be17-000460dfe6094daf",
             "components": {
                 "NameComponent": {
                     "name": "GroundedPlatform (1) (1) (1) (1) (2) (1) (1) (1) (2)"
@@ -7524,7 +7527,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004bc8acdc6463e1-00041ba04600bae3"
+                        "00345ceb44baa4a4-000460dfe6094d89"
                     ]
                 },
                 "RigidBodyComponent": {
@@ -7681,8 +7684,8 @@
             }
         },
         {
-            "id": 2606,
-            "guid": "004bc8acc6f285bf-00041bbb3a00c453",
+            "id": 26,
+            "guid": "00345ceb3cd95078-000460dfe6094db1",
             "components": {
                 "NameComponent": {
                     "name": "GroundedPlatform (1) (1) (1) (1) (2) (1) (1) (1) (1) (2)"
@@ -7844,7 +7847,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004bc8acdc6463e1-00041ba04600bae3"
+                        "00345ceb44baa4a4-000460dfe6094d89"
                     ]
                 },
                 "RigidBodyComponent": {
@@ -8001,8 +8004,8 @@
             }
         },
         {
-            "id": 2607,
-            "guid": "004bc8ac87455227-00041bbb3a00c457",
+            "id": 27,
+            "guid": "00345ceb56b3f104-000460dfe6094db3",
             "components": {
                 "NameComponent": {
                     "name": "GroundedPlatform (1) (1) (1) (1) (2) (1) (1) (1) (1) (1) (2)"
@@ -8164,7 +8167,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004bc8acdc6463e1-00041ba04600bae3"
+                        "00345ceb44baa4a4-000460dfe6094d89"
                     ]
                 },
                 "RigidBodyComponent": {
@@ -8321,8 +8324,8 @@
             }
         },
         {
-            "id": 2608,
-            "guid": "004bc8ace1200f7f-00041bbb3a00c467",
+            "id": 28,
+            "guid": "00345ceb65f5e8e2-000460dfe6094db5",
             "components": {
                 "NameComponent": {
                     "name": "GroundedPlatform (1) (1) (1) (1) (2) (1) (1) (1) (1) (1) (1) (1) (1) (1) (2)"
@@ -8484,7 +8487,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004bc8acdc6463e1-00041ba04600bae3"
+                        "00345ceb44baa4a4-000460dfe6094d89"
                     ]
                 },
                 "RigidBodyComponent": {
@@ -8641,8 +8644,8 @@
             }
         },
         {
-            "id": 2609,
-            "guid": "004bc8acadc05373-00041bbb3a00c46b",
+            "id": 29,
+            "guid": "00345ceb2a3ed700-000460dfe6094db7",
             "components": {
                 "NameComponent": {
                     "name": "GroundedPlatform (1) (1) (1) (1) (2) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (2)"
@@ -8804,7 +8807,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004bc8acdc6463e1-00041ba04600bae3"
+                        "00345ceb44baa4a4-000460dfe6094d89"
                     ]
                 },
                 "RigidBodyComponent": {
@@ -8961,8 +8964,8 @@
             }
         },
         {
-            "id": 2610,
-            "guid": "004bc8aca434b300-00041bbb3a00c46f",
+            "id": 30,
+            "guid": "00345ceb068ff661-000460dfe6094db9",
             "components": {
                 "NameComponent": {
                     "name": "GroundedPlatform (1) (1) (1) (1) (2) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (2)"
@@ -9124,7 +9127,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004bc8acdc6463e1-00041ba04600bae3"
+                        "00345ceb44baa4a4-000460dfe6094d89"
                     ]
                 },
                 "RigidBodyComponent": {
@@ -9281,8 +9284,8 @@
             }
         },
         {
-            "id": 2611,
-            "guid": "004bc8acdba30c3a-00041bbc6a00c47f",
+            "id": 31,
+            "guid": "00345ceb6453ac22-000460dfe6094dbb",
             "components": {
                 "NameComponent": {
                     "name": "GroundedPlatform (1) (1) (1) (1) (2) (1) (1) (1) (1) (1) (2) (1)"
@@ -9444,7 +9447,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004bc8acdc6463e1-00041ba04600bae3"
+                        "00345ceb44baa4a4-000460dfe6094d89"
                     ]
                 },
                 "RigidBodyComponent": {
@@ -9601,8 +9604,8 @@
             }
         },
         {
-            "id": 2612,
-            "guid": "004bc8acfc035017-00041bbc6a00c489",
+            "id": 32,
+            "guid": "00345ceb36bd677a-000460dfe6094dbd",
             "components": {
                 "NameComponent": {
                     "name": "GroundedPlatform (1) (1) (1) (1) (2) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (2) (1)"
@@ -9764,7 +9767,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004bc8acdc6463e1-00041ba04600bae3"
+                        "00345ceb44baa4a4-000460dfe6094d89"
                     ]
                 },
                 "RigidBodyComponent": {
@@ -9921,8 +9924,8 @@
             }
         },
         {
-            "id": 2613,
-            "guid": "004bc8ac9f40ee29-00041bbc6a00c48b",
+            "id": 33,
+            "guid": "00345ceb5fbde2da-000460dfe6094dbf",
             "components": {
                 "NameComponent": {
                     "name": "GroundedPlatform (1) (1) (1) (1) (2) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (2) (1)"
@@ -10084,7 +10087,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004bc8acdc6463e1-00041ba04600bae3"
+                        "00345ceb44baa4a4-000460dfe6094d89"
                     ]
                 },
                 "RigidBodyComponent": {
@@ -10241,8 +10244,8 @@
             }
         },
         {
-            "id": 2614,
-            "guid": "004bc8acecec0bfb-00041bbc7a00c491",
+            "id": 34,
+            "guid": "00345ceb4a6ac923-000460dfe6094dc1",
             "components": {
                 "NameComponent": {
                     "name": "GroundedPlatform (1) (1) (1) (1) (2) (1) (1) (1) (2) (1) (1)"
@@ -10404,7 +10407,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004bc8acdc6463e1-00041ba04600bae3"
+                        "00345ceb44baa4a4-000460dfe6094d89"
                     ]
                 },
                 "RigidBodyComponent": {
@@ -10561,8 +10564,8 @@
             }
         },
         {
-            "id": 2615,
-            "guid": "004bc8acd86a12ac-00041bbc7a00c495",
+            "id": 35,
+            "guid": "00345ceb647e60b9-000460dfe6094dc3",
             "components": {
                 "NameComponent": {
                     "name": "GroundedPlatform (1) (1) (1) (1) (2) (1) (1) (1) (1) (1) (2) (1) (1)"
@@ -10724,7 +10727,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004bc8acdc6463e1-00041ba04600bae3"
+                        "00345ceb44baa4a4-000460dfe6094d89"
                     ]
                 },
                 "RigidBodyComponent": {
@@ -10881,8 +10884,8 @@
             }
         },
         {
-            "id": 2616,
-            "guid": "004bc8aca0cabd20-00041bbc7a00c49f",
+            "id": 36,
+            "guid": "00345ceb6c724486-000460dfe6094dc5",
             "components": {
                 "NameComponent": {
                     "name": "GroundedPlatform (1) (1) (1) (1) (2) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (2) (1) (1)"
@@ -11044,7 +11047,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004bc8acdc6463e1-00041ba04600bae3"
+                        "00345ceb44baa4a4-000460dfe6094d89"
                     ]
                 },
                 "RigidBodyComponent": {
@@ -11201,8 +11204,8 @@
             }
         },
         {
-            "id": 2617,
-            "guid": "004bc8aca3c7d649-00041bbc7a00c4a1",
+            "id": 37,
+            "guid": "00345ceb7d9d06a2-000460dfe6094dc7",
             "components": {
                 "NameComponent": {
                     "name": "GroundedPlatform (1) (1) (1) (1) (2) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (2) (1) (1)"
@@ -11364,7 +11367,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004bc8acdc6463e1-00041ba04600bae3"
+                        "00345ceb44baa4a4-000460dfe6094d89"
                     ]
                 },
                 "RigidBodyComponent": {
@@ -11521,8 +11524,8 @@
             }
         },
         {
-            "id": 2618,
-            "guid": "004bc8acabc7fe94-00041bbcac00c4a9",
+            "id": 38,
+            "guid": "00345ceb51e87231-000460dfe6094dc9",
             "components": {
                 "NameComponent": {
                     "name": "GroundedPlatform (1) (1) (1) (1) (2) (1) (1) (1) (1) (1) (2) (1) (1) (1)"
@@ -11684,7 +11687,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004bc8acdc6463e1-00041ba04600bae3"
+                        "00345ceb44baa4a4-000460dfe6094d89"
                     ]
                 },
                 "RigidBodyComponent": {
@@ -11841,8 +11844,8 @@
             }
         },
         {
-            "id": 2619,
-            "guid": "004bc8acbb4d4ad7-00041bbcac00c4b3",
+            "id": 39,
+            "guid": "00345ceb6a03c30e-000460dfe6094dcb",
             "components": {
                 "NameComponent": {
                     "name": "GroundedPlatform (1) (1) (1) (1) (2) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (2) (1) (1) (1)"
@@ -12004,7 +12007,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004bc8acdc6463e1-00041ba04600bae3"
+                        "00345ceb44baa4a4-000460dfe6094d89"
                     ]
                 },
                 "RigidBodyComponent": {
@@ -12161,8 +12164,8 @@
             }
         },
         {
-            "id": 2620,
-            "guid": "004bc8acd3d4155f-00041bbcac00c4b5",
+            "id": 40,
+            "guid": "00345ceb558238fe-000460dfe6094dcd",
             "components": {
                 "NameComponent": {
                     "name": "GroundedPlatform (1) (1) (1) (1) (2) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (2) (1) (1) (1)"
@@ -12324,7 +12327,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004bc8acdc6463e1-00041ba04600bae3"
+                        "00345ceb44baa4a4-000460dfe6094d89"
                     ]
                 },
                 "RigidBodyComponent": {
@@ -12481,8 +12484,8 @@
             }
         },
         {
-            "id": 2621,
-            "guid": "004bc8acc717ff53-00041bbcc400c4bd",
+            "id": 41,
+            "guid": "00345ceb11446526-000460dfe6094dcf",
             "components": {
                 "NameComponent": {
                     "name": "GroundedPlatform (1) (1) (1) (1) (2) (1) (1) (1) (1) (2) (1) (1) (1) (1)"
@@ -12644,7 +12647,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004bc8acdc6463e1-00041ba04600bae3"
+                        "00345ceb44baa4a4-000460dfe6094d89"
                     ]
                 },
                 "RigidBodyComponent": {
@@ -12801,8 +12804,8 @@
             }
         },
         {
-            "id": 2622,
-            "guid": "004bc8ac9c70d759-00041bbcc400c4bf",
+            "id": 42,
+            "guid": "00345ceb41517bf2-000460dfe6094dd1",
             "components": {
                 "NameComponent": {
                     "name": "GroundedPlatform (1) (1) (1) (1) (2) (1) (1) (1) (1) (1) (2) (1) (1) (1) (1)"
@@ -12964,7 +12967,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004bc8acdc6463e1-00041ba04600bae3"
+                        "00345ceb44baa4a4-000460dfe6094d89"
                     ]
                 },
                 "RigidBodyComponent": {
@@ -13121,8 +13124,8 @@
             }
         },
         {
-            "id": 2623,
-            "guid": "004bc8acf392e08e-00041bbcc400c4c7",
+            "id": 43,
+            "guid": "00345ceb55f8a654-000460dfe6094dd3",
             "components": {
                 "NameComponent": {
                     "name": "GroundedPlatform (1) (1) (1) (1) (2) (1) (1) (1) (1) (1) (1) (1) (1) (1) (2) (1) (1) (1) (1)"
@@ -13284,7 +13287,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004bc8acdc6463e1-00041ba04600bae3"
+                        "00345ceb44baa4a4-000460dfe6094d89"
                     ]
                 },
                 "RigidBodyComponent": {
@@ -13441,8 +13444,8 @@
             }
         },
         {
-            "id": 2624,
-            "guid": "004bc8ace7dafe4b-00041bbcc400c4c9",
+            "id": 44,
+            "guid": "00345ceb2d132137-000460dfe6094dd5",
             "components": {
                 "NameComponent": {
                     "name": "GroundedPlatform (1) (1) (1) (1) (2) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (2) (1) (1) (1) (1)"
@@ -13604,7 +13607,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004bc8acdc6463e1-00041ba04600bae3"
+                        "00345ceb44baa4a4-000460dfe6094d89"
                     ]
                 },
                 "RigidBodyComponent": {
@@ -13761,8 +13764,8 @@
             }
         },
         {
-            "id": 2625,
-            "guid": "004bc8acd5c9c7f2-00041bbcc400c4cb",
+            "id": 45,
+            "guid": "00345ceb45d00a65-000460dfe6094dd7",
             "components": {
                 "NameComponent": {
                     "name": "GroundedPlatform (1) (1) (1) (1) (2) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (2) (1) (1) (1) (1)"
@@ -13924,7 +13927,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004bc8acdc6463e1-00041ba04600bae3"
+                        "00345ceb44baa4a4-000460dfe6094d89"
                     ]
                 },
                 "RigidBodyComponent": {
@@ -14081,8 +14084,8 @@
             }
         },
         {
-            "id": 2626,
-            "guid": "004bc8aca8adfd54-00041bbcc400c4d1",
+            "id": 46,
+            "guid": "00345ceb47c479bf-000460dfe6094dd9",
             "components": {
                 "NameComponent": {
                     "name": "GroundedPlatform (1) (1) (1) (1) (2) (1) (1) (1) (2) (1) (1) (1) (1)"
@@ -14244,7 +14247,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004bc8acdc6463e1-00041ba04600bae3"
+                        "00345ceb44baa4a4-000460dfe6094d89"
                     ]
                 },
                 "RigidBodyComponent": {
@@ -14401,8 +14404,8 @@
             }
         },
         {
-            "id": 2627,
-            "guid": "004bc8ace02e313e-00041bbcd000c4d3",
+            "id": 47,
+            "guid": "00345ceb517841c9-000460dfe6094ddb",
             "components": {
                 "NameComponent": {
                     "name": "GroundedPlatform (1) (1) (1) (1) (2) (1) (1) (1) (1) (2) (1) (1) (1) (1) (1)"
@@ -14564,7 +14567,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004bc8acdc6463e1-00041ba04600bae3"
+                        "00345ceb44baa4a4-000460dfe6094d89"
                     ]
                 },
                 "RigidBodyComponent": {
@@ -14721,8 +14724,8 @@
             }
         },
         {
-            "id": 2628,
-            "guid": "004bc8ac8e628dd4-00041bbcd000c4d5",
+            "id": 48,
+            "guid": "00345ceb0078962a-000460dfe6094ddd",
             "components": {
                 "NameComponent": {
                     "name": "GroundedPlatform (1) (1) (1) (1) (2) (1) (1) (1) (1) (1) (2) (1) (1) (1) (1) (1)"
@@ -14884,7 +14887,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004bc8acdc6463e1-00041ba04600bae3"
+                        "00345ceb44baa4a4-000460dfe6094d89"
                     ]
                 },
                 "RigidBodyComponent": {
@@ -15041,8 +15044,8 @@
             }
         },
         {
-            "id": 2629,
-            "guid": "004bc8acc7b4feb8-00041bbcd200c4dd",
+            "id": 49,
+            "guid": "00345ceb145d0568-000460dfe6094ddf",
             "components": {
                 "NameComponent": {
                     "name": "GroundedPlatform (1) (1) (1) (1) (2) (1) (1) (1) (1) (1) (1) (1) (1) (1) (2) (1) (1) (1) (1) (1)"
@@ -15204,7 +15207,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004bc8acdc6463e1-00041ba04600bae3"
+                        "00345ceb44baa4a4-000460dfe6094d89"
                     ]
                 },
                 "RigidBodyComponent": {
@@ -15361,8 +15364,8 @@
             }
         },
         {
-            "id": 2630,
-            "guid": "004bc8acff5a2b71-00041bbcd200c4df",
+            "id": 50,
+            "guid": "00345ceb676badee-000460dfe6094de1",
             "components": {
                 "NameComponent": {
                     "name": "GroundedPlatform (1) (1) (1) (1) (2) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (2) (1) (1) (1) (1) (1)"
@@ -15524,7 +15527,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004bc8acdc6463e1-00041ba04600bae3"
+                        "00345ceb44baa4a4-000460dfe6094d89"
                     ]
                 },
                 "RigidBodyComponent": {
@@ -15681,8 +15684,8 @@
             }
         },
         {
-            "id": 2631,
-            "guid": "004bc8acf19c65dc-00041bbcd200c4e1",
+            "id": 51,
+            "guid": "00345ceb7ed16ef0-000460dfe6094de3",
             "components": {
                 "NameComponent": {
                     "name": "GroundedPlatform (1) (1) (1) (1) (2) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (2) (1) (1) (1) (1) (1)"
@@ -15844,7 +15847,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004bc8acdc6463e1-00041ba04600bae3"
+                        "00345ceb44baa4a4-000460dfe6094d89"
                     ]
                 },
                 "RigidBodyComponent": {
@@ -16001,8 +16004,8 @@
             }
         },
         {
-            "id": 2632,
-            "guid": "004bc8acfa154223-00041bbcd200c4e7",
+            "id": 52,
+            "guid": "00345ceb0a76a8bf-000460dfe6094de5",
             "components": {
                 "NameComponent": {
                     "name": "GroundedPlatform (1) (1) (1) (1) (2) (1) (1) (1) (2) (1) (1) (1) (1) (1)"
@@ -16164,7 +16167,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004bc8acdc6463e1-00041ba04600bae3"
+                        "00345ceb44baa4a4-000460dfe6094d89"
                     ]
                 },
                 "RigidBodyComponent": {
@@ -16321,8 +16324,8 @@
             }
         },
         {
-            "id": 2633,
-            "guid": "004bc8acf4236231-00041bbb3a00c451",
+            "id": 53,
+            "guid": "00345ceb0b519406-000460dfe6094de7",
             "components": {
                 "NameComponent": {
                     "name": "Column (1) (1) (2) (1) (2) (2) (2) (1) (1) (3) (1) (1) (1) (1) (1) (1) (2) (2) (1) (1) (1) (2)"
@@ -16484,7 +16487,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004bc8acdc6463e1-00041ba04600bae3"
+                        "00345ceb44baa4a4-000460dfe6094d89"
                     ]
                 },
                 "RigidBodyComponent": {
@@ -16641,8 +16644,8 @@
             }
         },
         {
-            "id": 2634,
-            "guid": "004bc8acd65f32f9-00041ba58200be11",
+            "id": 54,
+            "guid": "00345ceb3a7a086e-000460dfe6094de9",
             "components": {
                 "NameComponent": {
                     "name": "Column (1) (1) (2) (1) (2) (2) (2) (1) (1) (3) (1) (1) (1) (1) (1) (1) (2) (2) (1) (1) (1) (1)"
@@ -16804,7 +16807,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004bc8acdc6463e1-00041ba04600bae3"
+                        "00345ceb44baa4a4-000460dfe6094d89"
                     ]
                 },
                 "RigidBodyComponent": {
@@ -16961,8 +16964,8 @@
             }
         },
         {
-            "id": 2635,
-            "guid": "004bc8acb6272ae8-00041ba58800be13",
+            "id": 55,
+            "guid": "00345ceb68a68fae-000460dfe6094deb",
             "components": {
                 "NameComponent": {
                     "name": "Column (1) (1) (2) (1) (2) (2) (2) (1) (1) (3) (1) (1) (1) (1) (1) (1) (2) (2) (1) (1) (1) (1) (1)"
@@ -17124,7 +17127,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004bc8acdc6463e1-00041ba04600bae3"
+                        "00345ceb44baa4a4-000460dfe6094d89"
                     ]
                 },
                 "RigidBodyComponent": {
@@ -17281,8 +17284,8 @@
             }
         },
         {
-            "id": 2636,
-            "guid": "004bc8acde3d2d06-00041ba65200be1d",
+            "id": 56,
+            "guid": "00345ceb5af98ed9-000460dfe6094ded",
             "components": {
                 "NameComponent": {
                     "name": "Column (1) (1) (2) (1) (2) (2) (2) (1) (1) (3) (1) (1) (1) (1) (1) (1) (2) (2) (1) (1) (1) (1) (2) (1) (1) (1)"
@@ -17444,7 +17447,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004bc8acdc6463e1-00041ba04600bae3"
+                        "00345ceb44baa4a4-000460dfe6094d89"
                     ]
                 },
                 "RigidBodyComponent": {
@@ -17601,8 +17604,8 @@
             }
         },
         {
-            "id": 2637,
-            "guid": "004bc8aca2a7959a-00041ba6a600be21",
+            "id": 57,
+            "guid": "00345ceb03704f14-000460dfe6094def",
             "components": {
                 "NameComponent": {
                     "name": "Column (1) (1) (2) (1) (2) (2) (2) (1) (1) (3) (1) (1) (1) (1) (1) (1) (2) (2) (1) (1) (1) (1) (2) (1) (1) (1) (1)"
@@ -17764,7 +17767,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004bc8acdc6463e1-00041ba04600bae3"
+                        "00345ceb44baa4a4-000460dfe6094d89"
                     ]
                 },
                 "RigidBodyComponent": {
@@ -17921,8 +17924,8 @@
             }
         },
         {
-            "id": 2638,
-            "guid": "004bc8acca85c1cc-00041ba70c00be25",
+            "id": 58,
+            "guid": "00345ceb4c124100-000460dfe6094df1",
             "components": {
                 "NameComponent": {
                     "name": "Column (1) (1) (2) (1) (2) (2) (2) (1) (1) (3) (1) (1) (1) (1) (1) (1) (2) (2) (1) (1) (1) (1) (2) (1) (1) (1) (1) (1)"
@@ -18084,7 +18087,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004bc8acdc6463e1-00041ba04600bae3"
+                        "00345ceb44baa4a4-000460dfe6094d89"
                     ]
                 },
                 "RigidBodyComponent": {
@@ -18241,8 +18244,8 @@
             }
         },
         {
-            "id": 2639,
-            "guid": "004bc8acd78bee07-00041bc08c00c4e9",
+            "id": 59,
+            "guid": "00345ceb42c9b7ad-000460dfe6094df3",
             "components": {
                 "NameComponent": {
                     "name": "GroundedPlatform (1) (1) (1) (1) (2) (1) (1) (1) (1) (1) (2) (1) (1) (1) (1) (1) (1)"
@@ -18404,7 +18407,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004bc8acdc6463e1-00041ba04600bae3"
+                        "00345ceb44baa4a4-000460dfe6094d89"
                     ]
                 },
                 "RigidBodyComponent": {
@@ -18561,8 +18564,8 @@
             }
         },
         {
-            "id": 2640,
-            "guid": "004bc8ac932dcc25-00041bc08c00c4eb",
+            "id": 60,
+            "guid": "00345ceb2074933d-000460dfe6094df5",
             "components": {
                 "NameComponent": {
                     "name": "GroundedPlatform (1) (1) (1) (1) (2) (1) (1) (1) (1) (1) (2) (1) (1) (1) (1) (2)"
@@ -18724,7 +18727,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004bc8acdc6463e1-00041ba04600bae3"
+                        "00345ceb44baa4a4-000460dfe6094d89"
                     ]
                 },
                 "RigidBodyComponent": {
@@ -18881,8 +18884,8 @@
             }
         },
         {
-            "id": 2641,
-            "guid": "004bc8acd2dd2931-00041bc08c00c4ed",
+            "id": 61,
+            "guid": "00345ceb5888e343-000460dfe6094df7",
             "components": {
                 "NameComponent": {
                     "name": "GroundedPlatform (1) (1) (1) (1) (2) (1) (1) (1) (1) (1) (2) (1) (1) (2)"
@@ -19044,7 +19047,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004bc8acdc6463e1-00041ba04600bae3"
+                        "00345ceb44baa4a4-000460dfe6094d89"
                     ]
                 },
                 "RigidBodyComponent": {
@@ -19201,8 +19204,8 @@
             }
         },
         {
-            "id": 2642,
-            "guid": "004bc8acca3d2b76-00041bc08c00c4ef",
+            "id": 62,
+            "guid": "00345ceb6c034482-000460dfe6094df9",
             "components": {
                 "NameComponent": {
                     "name": "GroundedPlatform (1) (1) (1) (1) (2) (1) (1) (1) (1) (1) (2) (1) (1) (1) (2)"
@@ -19364,7 +19367,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004bc8acdc6463e1-00041ba04600bae3"
+                        "00345ceb44baa4a4-000460dfe6094d89"
                     ]
                 },
                 "RigidBodyComponent": {
@@ -19521,8 +19524,8 @@
             }
         },
         {
-            "id": 2643,
-            "guid": "004bc8acf7ef99cb-00041bc08c00c4f1",
+            "id": 63,
+            "guid": "00345ceb7af5bca2-000460dfe6094dfb",
             "components": {
                 "NameComponent": {
                     "name": "GroundedPlatform (1) (1) (1) (1) (2) (1) (1) (1) (1) (1) (2) (1) (2)"
@@ -19684,7 +19687,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004bc8acdc6463e1-00041ba04600bae3"
+                        "00345ceb44baa4a4-000460dfe6094d89"
                     ]
                 },
                 "RigidBodyComponent": {
@@ -19841,8 +19844,8 @@
             }
         },
         {
-            "id": 2644,
-            "guid": "004bc8acabb5f67b-00041bc08c00c4f3",
+            "id": 64,
+            "guid": "00345ceb270a9b13-000460dfe6094dfd",
             "components": {
                 "NameComponent": {
                     "name": "GroundedPlatform (1) (1) (1) (1) (2) (1) (1) (1) (1) (1) (2) (2)"
@@ -20004,7 +20007,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004bc8acdc6463e1-00041ba04600bae3"
+                        "00345ceb44baa4a4-000460dfe6094d89"
                     ]
                 },
                 "RigidBodyComponent": {
@@ -20161,8 +20164,8 @@
             }
         },
         {
-            "id": 2645,
-            "guid": "004bc8acff157e79-00041bc08c00c4f5",
+            "id": 65,
+            "guid": "00345ceb6f229dab-000460dfe6094dff",
             "components": {
                 "NameComponent": {
                     "name": "GroundedPlatform (1) (1) (1) (1) (2) (1) (1) (1) (1) (1) (1)"
@@ -20324,7 +20327,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004bc8acdc6463e1-00041ba04600bae3"
+                        "00345ceb44baa4a4-000460dfe6094d89"
                     ]
                 },
                 "RigidBodyComponent": {
@@ -20481,8 +20484,8 @@
             }
         },
         {
-            "id": 2646,
-            "guid": "004bc8ac911d0614-00041bc0c000c4f7",
+            "id": 66,
+            "guid": "00345ceb6244bd04-000460dfe6094e01",
             "components": {
                 "NameComponent": {
                     "name": "Column (1) (1) (2) (1) (2) (2) (2) (1) (1) (3) (1) (1) (1) (1) (1) (1) (2) (2) (1) (1) (1) (1) (1) (2)"
@@ -20644,7 +20647,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004bc8acdc6463e1-00041ba04600bae3"
+                        "00345ceb44baa4a4-000460dfe6094d89"
                     ]
                 },
                 "RigidBodyComponent": {
@@ -20801,8 +20804,8 @@
             }
         },
         {
-            "id": 2647,
-            "guid": "004bc8ac94bdbb60-00041bc0e600c4f9",
+            "id": 67,
+            "guid": "00345ceb54f7f3d5-000460dfe6094e03",
             "components": {
                 "NameComponent": {
                     "name": "Column (1) (1) (2) (1) (2) (2) (2) (1) (1) (3) (1) (1) (1) (1) (1) (1) (2) (2) (1) (1) (1) (1) (1) (2) (1)"
@@ -20964,7 +20967,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004bc8acdc6463e1-00041ba04600bae3"
+                        "00345ceb44baa4a4-000460dfe6094d89"
                     ]
                 },
                 "RigidBodyComponent": {
@@ -21121,8 +21124,8 @@
             }
         },
         {
-            "id": 2648,
-            "guid": "004bc8acccb6a494-00041bc5e800cb1f",
+            "id": 68,
+            "guid": "00345ceb4459522d-000460dfe6094e05",
             "components": {
                 "NameComponent": {
                     "name": "Column (1) (1) (2) (1) (2) (2) (2) (1) (1) (3) (1) (1) (1) (1) (1) (1) (2) (2) (1) (1) (1) (1) (1) (2) (2)"
@@ -21284,7 +21287,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004bc8acdc6463e1-00041ba04600bae3"
+                        "00345ceb44baa4a4-000460dfe6094d89"
                     ]
                 },
                 "RigidBodyComponent": {
@@ -21441,8 +21444,8 @@
             }
         },
         {
-            "id": 2649,
-            "guid": "004bc8acb9193c9e-00041bc61a00cb21",
+            "id": 69,
+            "guid": "00345ceb150ac7db-000460dfe6094e07",
             "components": {
                 "NameComponent": {
                     "name": "Column (1) (1) (2) (1) (2) (2) (2) (1) (1) (3) (1) (1) (1) (1) (1) (1) (2) (2) (1) (1) (1) (1) (1) (2) (2) (1)"
@@ -21604,7 +21607,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004bc8acdc6463e1-00041ba04600bae3"
+                        "00345ceb44baa4a4-000460dfe6094d89"
                     ]
                 },
                 "RigidBodyComponent": {
@@ -21761,8 +21764,8 @@
             }
         },
         {
-            "id": 2650,
-            "guid": "004bc8acf09bd2ee-00041bc61c00cb23",
+            "id": 70,
+            "guid": "00345ceb636e2dba-000460dfe6094e09",
             "components": {
                 "NameComponent": {
                     "name": "Column (1) (1) (2) (1) (2) (2) (2) (1) (1) (3) (1) (1) (1) (1) (1) (1) (2) (2) (1) (1) (1) (1) (1) (2) (2) (1) (1)"
@@ -21924,7 +21927,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004bc8acdc6463e1-00041ba04600bae3"
+                        "00345ceb44baa4a4-000460dfe6094d89"
                     ]
                 },
                 "RigidBodyComponent": {
@@ -22081,8 +22084,8 @@
             }
         },
         {
-            "id": 2651,
-            "guid": "004bc8acebc012c2-00041bc61e00cb25",
+            "id": 71,
+            "guid": "00345ceb57818c58-000460dfe6094e0b",
             "components": {
                 "NameComponent": {
                     "name": "Column (1) (1) (2) (1) (2) (2) (2) (1) (1) (3) (1) (1) (1) (1) (1) (1) (2) (2) (1) (1) (1) (1) (1) (2) (2) (1) (1) (1)"
@@ -22244,7 +22247,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004bc8acdc6463e1-00041ba04600bae3"
+                        "00345ceb44baa4a4-000460dfe6094d89"
                     ]
                 },
                 "RigidBodyComponent": {
@@ -22401,8 +22404,8 @@
             }
         },
         {
-            "id": 2652,
-            "guid": "004bc8acb76f5a88-00041bc62200cb27",
+            "id": 72,
+            "guid": "00345ceb749acf9f-000460dfe6094e0d",
             "components": {
                 "NameComponent": {
                     "name": "Column (1) (1) (2) (1) (2) (2) (2) (1) (1) (3) (1) (1) (1) (1) (1) (1) (2) (2) (1) (1) (1) (1) (1) (2) (2) (1) (1) (1) (1)"
@@ -22564,7 +22567,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004bc8acdc6463e1-00041ba04600bae3"
+                        "00345ceb44baa4a4-000460dfe6094d89"
                     ]
                 },
                 "RigidBodyComponent": {
@@ -22721,8 +22724,8 @@
             }
         },
         {
-            "id": 2653,
-            "guid": "004bc8acab0b2abe-00041bc94200cb3b",
+            "id": 73,
+            "guid": "00345ceb4aab420c-000460dfe6094e0f",
             "components": {
                 "NameComponent": {
                     "name": "Column (1) (1) (2) (1) (2) (2) (2) (1) (1) (3) (1) (1) (1) (1) (1) (1) (2) (2) (1) (1) (1) (1) (1) (2) (2) (2)"
@@ -22884,7 +22887,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004bc8acdc6463e1-00041ba04600bae3"
+                        "00345ceb44baa4a4-000460dfe6094d89"
                     ]
                 },
                 "RigidBodyComponent": {
@@ -23041,8 +23044,8 @@
             }
         },
         {
-            "id": 2654,
-            "guid": "004bc8acc49249aa-00041bc94200cb3d",
+            "id": 74,
+            "guid": "00345ceb314f50b5-000460dfe6094e11",
             "components": {
                 "NameComponent": {
                     "name": "Column (1) (1) (2) (1) (2) (2) (2) (1) (1) (3) (1) (1) (1) (1) (1) (1) (2) (2) (1) (1) (1) (1) (1) (2) (2) (1) (2)"
@@ -23204,7 +23207,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004bc8acdc6463e1-00041ba04600bae3"
+                        "00345ceb44baa4a4-000460dfe6094d89"
                     ]
                 },
                 "RigidBodyComponent": {
@@ -23361,8 +23364,8 @@
             }
         },
         {
-            "id": 2655,
-            "guid": "004bc8aca663a1fe-00041bc94400cb3f",
+            "id": 75,
+            "guid": "00345ceb3465774c-000460dfe6094e13",
             "components": {
                 "NameComponent": {
                     "name": "Column (1) (1) (2) (1) (2) (2) (2) (1) (1) (3) (1) (1) (1) (1) (1) (1) (2) (2) (1) (1) (1) (1) (1) (2) (2) (1) (1) (2)"
@@ -23524,7 +23527,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004bc8acdc6463e1-00041ba04600bae3"
+                        "00345ceb44baa4a4-000460dfe6094d89"
                     ]
                 },
                 "RigidBodyComponent": {
@@ -23681,8 +23684,8 @@
             }
         },
         {
-            "id": 2656,
-            "guid": "004bc8acd3bedd11-00041bc94400cb41",
+            "id": 76,
+            "guid": "00345ceb0a24356a-000460dfe6094e15",
             "components": {
                 "NameComponent": {
                     "name": "Column (1) (1) (2) (1) (2) (2) (2) (1) (1) (3) (1) (1) (1) (1) (1) (1) (2) (2) (1) (1) (1) (1) (1) (2) (2) (1) (1) (1) (2)"
@@ -23844,7 +23847,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004bc8acdc6463e1-00041ba04600bae3"
+                        "00345ceb44baa4a4-000460dfe6094d89"
                     ]
                 },
                 "RigidBodyComponent": {
@@ -24001,8 +24004,8 @@
             }
         },
         {
-            "id": 2657,
-            "guid": "004bc8ac83f5517a-00041bc94400cb43",
+            "id": 77,
+            "guid": "00345ceb0cb51f19-000460dfe6094e17",
             "components": {
                 "NameComponent": {
                     "name": "Column (1) (1) (2) (1) (2) (2) (2) (1) (1) (3) (1) (1) (1) (1) (1) (1) (2) (2) (1) (1) (1) (1) (1) (2) (2) (1) (1) (1) (1) (1)"
@@ -24164,7 +24167,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004bc8acdc6463e1-00041ba04600bae3"
+                        "00345ceb44baa4a4-000460dfe6094d89"
                     ]
                 },
                 "RigidBodyComponent": {
@@ -24321,8 +24324,8 @@
             }
         },
         {
-            "id": 2658,
-            "guid": "004e592c80a50625-00041cb2f2000c39",
+            "id": 78,
+            "guid": "00345ceb4f51da89-000460dfe6094e19",
             "components": {
                 "NameComponent": {
                     "name": "GroundedPlatform (1) (1) (1) (1) (2) (2)"
@@ -24487,7 +24490,7 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "004e592ccafc21ef-00041cb2f4000c3b"
+                                "00345ceb1d1f100a-000460dfe6094e1b"
                             ]
                         }
                     ]
@@ -24495,7 +24498,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004bc8acdc6463e1-00041ba04600bae3"
+                        "00345ceb44baa4a4-000460dfe6094d89"
                     ]
                 },
                 "RigidBodyComponent": {
@@ -24652,8 +24655,8 @@
             }
         },
         {
-            "id": 2659,
-            "guid": "004e592ccafc21ef-00041cb2f4000c3b",
+            "id": 79,
+            "guid": "00345ceb1d1f100a-000460dfe6094e1b",
             "components": {
                 "NameComponent": {
                     "name": "Column (1) (1) (2) (1) (2) (2) (2) (1) (1) (3) (1) (1) (1) (1) (1) (1) (2) (2) (2) (1)"
@@ -24815,7 +24818,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004e592c80a50625-00041cb2f2000c39"
+                        "00345ceb4f51da89-000460dfe6094e19"
                     ]
                 },
                 "RigidBodyComponent": {
@@ -24972,8 +24975,8 @@
             }
         },
         {
-            "id": 2660,
-            "guid": "004e592ca63bc70e-00041cb354000c3f",
+            "id": 80,
+            "guid": "00345ceb55cd0090-000460dfe6094e1d",
             "components": {
                 "NameComponent": {
                     "name": "GroundedPlatform (1) (1) (1) (1) (2) (2) (1)"
@@ -25138,7 +25141,7 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "004e592cc1a25f5f-00041cb37e000c4b"
+                                "00345ceb1fbbdd39-000460dfe6094e1f"
                             ]
                         }
                     ]
@@ -25146,7 +25149,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004bc8acdc6463e1-00041ba04600bae3"
+                        "00345ceb44baa4a4-000460dfe6094d89"
                     ]
                 },
                 "RigidBodyComponent": {
@@ -25303,8 +25306,8 @@
             }
         },
         {
-            "id": 2661,
-            "guid": "004e592cc1a25f5f-00041cb37e000c4b",
+            "id": 81,
+            "guid": "00345ceb1fbbdd39-000460dfe6094e1f",
             "components": {
                 "NameComponent": {
                     "name": "Column (1) (1) (2) (1) (2) (2) (2) (1) (1) (3) (1) (1) (1) (1) (1) (1) (2) (2) (2) (1) (1)"
@@ -25466,7 +25469,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004e592ca63bc70e-00041cb354000c3f"
+                        "00345ceb55cd0090-000460dfe6094e1d"
                     ]
                 },
                 "RigidBodyComponent": {
@@ -25623,8 +25626,8 @@
             }
         },
         {
-            "id": 2662,
-            "guid": "004e592ce2aa709d-00041cb358000c41",
+            "id": 82,
+            "guid": "00345ceb23a9dc09-000460dfe6094e21",
             "components": {
                 "NameComponent": {
                     "name": "GroundedPlatform (1) (1) (1) (1) (2) (2) (1) (1)"
@@ -25789,7 +25792,7 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "004e592c9974d9a9-00041cb38a000c4d"
+                                "00345ceb4e3bcea8-000460dfe6094e23"
                             ]
                         }
                     ]
@@ -25797,7 +25800,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004bc8acdc6463e1-00041ba04600bae3"
+                        "00345ceb44baa4a4-000460dfe6094d89"
                     ]
                 },
                 "RigidBodyComponent": {
@@ -25954,8 +25957,8 @@
             }
         },
         {
-            "id": 2663,
-            "guid": "004e592c9974d9a9-00041cb38a000c4d",
+            "id": 83,
+            "guid": "00345ceb4e3bcea8-000460dfe6094e23",
             "components": {
                 "NameComponent": {
                     "name": "Column (1) (1) (2) (1) (2) (2) (2) (1) (1) (3) (1) (1) (1) (1) (1) (1) (2) (2) (2) (1) (2)"
@@ -26117,7 +26120,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004e592ce2aa709d-00041cb358000c41"
+                        "00345ceb23a9dc09-000460dfe6094e21"
                     ]
                 },
                 "RigidBodyComponent": {
@@ -26274,8 +26277,8 @@
             }
         },
         {
-            "id": 2664,
-            "guid": "004e592cf3c31722-00041cb3a4000c4f",
+            "id": 84,
+            "guid": "00345ceb2bf6d90d-000460dfe6094e25",
             "components": {
                 "NameComponent": {
                     "name": "GroundedPlatform (1) (1) (1) (1) (2) (2) (2)"
@@ -26440,7 +26443,7 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "004e592ce62c5d13-00041cb3ac000c51"
+                                "00345ceb22bfde6c-000460dfe6094e27"
                             ]
                         }
                     ]
@@ -26448,7 +26451,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004bc8acdc6463e1-00041ba04600bae3"
+                        "00345ceb44baa4a4-000460dfe6094d89"
                     ]
                 },
                 "RigidBodyComponent": {
@@ -26605,8 +26608,8 @@
             }
         },
         {
-            "id": 2665,
-            "guid": "004e592ce62c5d13-00041cb3ac000c51",
+            "id": 85,
+            "guid": "00345ceb22bfde6c-000460dfe6094e27",
             "components": {
                 "NameComponent": {
                     "name": "Column (1) (1) (2) (1) (2) (2) (2) (1) (1) (3) (1) (1) (1) (1) (1) (1) (2) (2) (2) (1) (3)"
@@ -26768,7 +26771,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004e592cf3c31722-00041cb3a4000c4f"
+                        "00345ceb2bf6d90d-000460dfe6094e25"
                     ]
                 },
                 "RigidBodyComponent": {
@@ -26925,8 +26928,8 @@
             }
         },
         {
-            "id": 2666,
-            "guid": "004e592cd2cbc1c0-00041cb3b2000c53",
+            "id": 86,
+            "guid": "00345ceb0062fbf6-000460dfe6094e29",
             "components": {
                 "NameComponent": {
                     "name": "GroundedPlatform (1) (1) (1) (1) (2) (2) (1) (2)"
@@ -27091,7 +27094,7 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "004e592ce943a80e-00041cb3b6000c57"
+                                "00345ceb797c034e-000460dfe6094e2b"
                             ]
                         }
                     ]
@@ -27099,7 +27102,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004bc8acdc6463e1-00041ba04600bae3"
+                        "00345ceb44baa4a4-000460dfe6094d89"
                     ]
                 },
                 "RigidBodyComponent": {
@@ -27256,8 +27259,8 @@
             }
         },
         {
-            "id": 2667,
-            "guid": "004e592ce943a80e-00041cb3b6000c57",
+            "id": 87,
+            "guid": "00345ceb797c034e-000460dfe6094e2b",
             "components": {
                 "NameComponent": {
                     "name": "Column (1) (1) (2) (1) (2) (2) (2) (1) (1) (3) (1) (1) (1) (1) (1) (1) (2) (2) (2) (1) (1) (1)"
@@ -27419,7 +27422,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004e592cd2cbc1c0-00041cb3b2000c53"
+                        "00345ceb0062fbf6-000460dfe6094e29"
                     ]
                 },
                 "RigidBodyComponent": {
@@ -27576,8 +27579,8 @@
             }
         },
         {
-            "id": 2668,
-            "guid": "004e592c9827c928-00041cb3b4000c55",
+            "id": 88,
+            "guid": "00345ceb75b4ca81-000460dfe6094e2d",
             "components": {
                 "NameComponent": {
                     "name": "GroundedPlatform (1) (1) (1) (1) (2) (2) (1) (1) (1)"
@@ -27742,7 +27745,7 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "004e592c9953e5d3-00041cb3c0000c59"
+                                "00345ceb0880f515-000460dfe6094e2f"
                             ]
                         }
                     ]
@@ -27750,7 +27753,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004bc8acdc6463e1-00041ba04600bae3"
+                        "00345ceb44baa4a4-000460dfe6094d89"
                     ]
                 },
                 "RigidBodyComponent": {
@@ -27907,8 +27910,8 @@
             }
         },
         {
-            "id": 2669,
-            "guid": "004e592c9953e5d3-00041cb3c0000c59",
+            "id": 89,
+            "guid": "00345ceb0880f515-000460dfe6094e2f",
             "components": {
                 "NameComponent": {
                     "name": "Column (1) (1) (2) (1) (2) (2) (2) (1) (1) (3) (1) (1) (1) (1) (1) (1) (2) (2) (2) (1) (2) (1)"
@@ -28070,7 +28073,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004e592c9827c928-00041cb3b4000c55"
+                        "00345ceb75b4ca81-000460dfe6094e2d"
                     ]
                 },
                 "RigidBodyComponent": {
@@ -28227,8 +28230,8 @@
             }
         },
         {
-            "id": 2670,
-            "guid": "004e592c80d85a74-00041cb3e4000c5b",
+            "id": 90,
+            "guid": "00345ceb3ac9722c-000460dfe6094e31",
             "components": {
                 "NameComponent": {
                     "name": "GroundedPlatform (1) (1) (1) (1) (2) (2) (2) (1)"
@@ -28393,7 +28396,7 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "004e592cfd70f6b9-00041cb3f2000c61"
+                                "00345ceb20ae73e9-000460dfe6094e33"
                             ]
                         }
                     ]
@@ -28401,7 +28404,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004bc8acdc6463e1-00041ba04600bae3"
+                        "00345ceb44baa4a4-000460dfe6094d89"
                     ]
                 },
                 "RigidBodyComponent": {
@@ -28558,8 +28561,8 @@
             }
         },
         {
-            "id": 2671,
-            "guid": "004e592cfd70f6b9-00041cb3f2000c61",
+            "id": 91,
+            "guid": "00345ceb20ae73e9-000460dfe6094e33",
             "components": {
                 "NameComponent": {
                     "name": "Column (1) (1) (2) (1) (2) (2) (2) (1) (1) (3) (1) (1) (1) (1) (1) (1) (2) (2) (2) (1) (3) (1)"
@@ -28721,7 +28724,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004e592c80d85a74-00041cb3e4000c5b"
+                        "00345ceb3ac9722c-000460dfe6094e31"
                     ]
                 },
                 "RigidBodyComponent": {
@@ -28878,8 +28881,8 @@
             }
         },
         {
-            "id": 2672,
-            "guid": "004e592c85b045c8-00041cb3e4000c5d",
+            "id": 92,
+            "guid": "00345ceb4d6e3be8-000460dfe6094e35",
             "components": {
                 "NameComponent": {
                     "name": "GroundedPlatform (1) (1) (1) (1) (2) (2) (1) (2) (1)"
@@ -29044,7 +29047,7 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "004e592ca599cd42-00041cb3f2000c63"
+                                "00345ceb4da86a42-000460dfe6094e37"
                             ]
                         }
                     ]
@@ -29052,7 +29055,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004bc8acdc6463e1-00041ba04600bae3"
+                        "00345ceb44baa4a4-000460dfe6094d89"
                     ]
                 },
                 "ActiveComponent": {
@@ -29067,8 +29070,8 @@
             }
         },
         {
-            "id": 2673,
-            "guid": "004e592ca599cd42-00041cb3f2000c63",
+            "id": 93,
+            "guid": "00345ceb4da86a42-000460dfe6094e37",
             "components": {
                 "NameComponent": {
                     "name": "Column (1) (1) (2) (1) (2) (2) (2) (1) (1) (3) (1) (1) (1) (1) (1) (1) (2) (2) (2) (1) (1) (1) (1)"
@@ -29230,7 +29233,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004e592c85b045c8-00041cb3e4000c5d"
+                        "00345ceb4d6e3be8-000460dfe6094e35"
                     ]
                 },
                 "RigidBodyComponent": {
@@ -29387,8 +29390,8 @@
             }
         },
         {
-            "id": 2674,
-            "guid": "004e592cf5c29dfa-00041cb3e4000c5f",
+            "id": 94,
+            "guid": "00345ceb60b89a03-000460dfe6094e39",
             "components": {
                 "NameComponent": {
                     "name": "GroundedPlatform (1) (1) (1) (1) (2) (2) (1) (1) (1) (1)"
@@ -29553,7 +29556,7 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "004e592cefbc0c07-00041cb3f2000c65"
+                                "00345ceb3bbe515f-000460dfe6094e3b"
                             ]
                         }
                     ]
@@ -29561,7 +29564,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004bc8acdc6463e1-00041ba04600bae3"
+                        "00345ceb44baa4a4-000460dfe6094d89"
                     ]
                 },
                 "ActiveComponent": {
@@ -29576,8 +29579,8 @@
             }
         },
         {
-            "id": 2675,
-            "guid": "004e592cefbc0c07-00041cb3f2000c65",
+            "id": 95,
+            "guid": "00345ceb3bbe515f-000460dfe6094e3b",
             "components": {
                 "NameComponent": {
                     "name": "Column (1) (1) (2) (1) (2) (2) (2) (1) (1) (3) (1) (1) (1) (1) (1) (1) (2) (2) (2) (1) (2) (1) (1)"
@@ -29739,7 +29742,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004e592cf5c29dfa-00041cb3e4000c5f"
+                        "00345ceb60b89a03-000460dfe6094e39"
                     ]
                 },
                 "RigidBodyComponent": {
@@ -29896,8 +29899,8 @@
             }
         },
         {
-            "id": 2676,
-            "guid": "001955a0cc4af286-00041e7b9e008821",
+            "id": 96,
+            "guid": "00345ceb136aa548-000460dfe6094e3d",
             "components": {
                 "NameComponent": {
                     "name": "GroundedPlatform (1) (1) (1) (1) (2) (2) (2) (1) (1)"
@@ -30062,7 +30065,7 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "001955a09092b91f-00041e7ba0008823"
+                                "00345ceb25f068ea-000460dfe6094e3f"
                             ]
                         }
                     ]
@@ -30070,7 +30073,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004bc8acdc6463e1-00041ba04600bae3"
+                        "00345ceb44baa4a4-000460dfe6094d89"
                     ]
                 },
                 "RigidBodyComponent": {
@@ -30227,8 +30230,8 @@
             }
         },
         {
-            "id": 2677,
-            "guid": "001955a09092b91f-00041e7ba0008823",
+            "id": 97,
+            "guid": "00345ceb25f068ea-000460dfe6094e3f",
             "components": {
                 "NameComponent": {
                     "name": "Column (1) (1) (2) (1) (2) (2) (2) (1) (1) (3) (1) (1) (1) (1) (1) (1) (2) (2) (2) (1) (3) (1) (1)"
@@ -30390,7 +30393,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "001955a0cc4af286-00041e7b9e008821"
+                        "00345ceb136aa548-000460dfe6094e3d"
                     ]
                 },
                 "RigidBodyComponent": {
@@ -30547,8 +30550,8 @@
             }
         },
         {
-            "id": 2678,
-            "guid": "001955a0f485a19d-00041e7c4e008825",
+            "id": 98,
+            "guid": "00345ceb3c851925-000460dfe6094e41",
             "components": {
                 "NameComponent": {
                     "name": "Door (1) (1)"
@@ -30710,7 +30713,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004bc8ac9caa1ec7-00041b9f8000b4cb"
+                        "00345ceb44b69fde-000460dfe6094d7d"
                     ]
                 },
                 "ActiveComponent": {
@@ -30725,8 +30728,8 @@
             }
         },
         {
-            "id": 2679,
-            "guid": "001955a0988ad32a-00041e7c4e008827",
+            "id": 99,
+            "guid": "00345ceb617fe5fb-000460dfe6094e43",
             "components": {
                 "NameComponent": {
                     "name": "LeftDoor (1) (1)"
@@ -30888,7 +30891,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004bc8ac9caa1ec7-00041b9f8000b4cb"
+                        "00345ceb44b69fde-000460dfe6094d7d"
                     ]
                 },
                 "RigidBodyComponent": {
@@ -31045,8 +31048,8 @@
             }
         },
         {
-            "id": 2680,
-            "guid": "001955a0834ab9f4-00041e7c4e008829",
+            "id": 100,
+            "guid": "00345ceb7991956b-000460dfe6094e45",
             "components": {
                 "NameComponent": {
                     "name": "RightDoor (1) (1)"
@@ -31208,7 +31211,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004bc8ac9caa1ec7-00041b9f8000b4cb"
+                        "00345ceb44b69fde-000460dfe6094d7d"
                     ]
                 },
                 "RigidBodyComponent": {
@@ -31365,8 +31368,8 @@
             }
         },
         {
-            "id": 2681,
-            "guid": "004e592ce372cc87-00041cb4de000f73",
+            "id": 101,
+            "guid": "00345ceb49ca2c70-000460dfe6094e47",
             "components": {
                 "NameComponent": {
                     "name": "LongStairsModular"
@@ -31528,7 +31531,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004bc8ac9caa1ec7-00041b9f8000b4cb"
+                        "00345ceb44b69fde-000460dfe6094d7d"
                     ]
                 },
                 "RigidBodyComponent": {
@@ -31685,8 +31688,8 @@
             }
         },
         {
-            "id": 2682,
-            "guid": "004bc8accac580e4-00041bc57c00cb1d",
+            "id": 102,
+            "guid": "00345ceb7da17d80-000460dfe6094e49",
             "components": {
                 "NameComponent": {
                     "name": "Pillar (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (2)"
@@ -31848,7 +31851,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004bc8ac9caa1ec7-00041b9f8000b4cb"
+                        "00345ceb44b69fde-000460dfe6094d7d"
                     ]
                 },
                 "RigidBodyComponent": {
@@ -32005,8 +32008,8 @@
             }
         },
         {
-            "id": 2683,
-            "guid": "004bc8acdef695bd-00041bca0a00ce53",
+            "id": 103,
+            "guid": "00345ceb34382b98-000460dfe6094e4b",
             "components": {
                 "NameComponent": {
                     "name": "Pillar (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (2) (1)"
@@ -32168,7 +32171,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004bc8ac9caa1ec7-00041b9f8000b4cb"
+                        "00345ceb44b69fde-000460dfe6094d7d"
                     ]
                 },
                 "RigidBodyComponent": {
@@ -32325,8 +32328,8 @@
             }
         },
         {
-            "id": 2684,
-            "guid": "004bc8acbe9f3d90-00041bca1600ce55",
+            "id": 104,
+            "guid": "00345ceb367a077a-000460dfe6094e4d",
             "components": {
                 "NameComponent": {
                     "name": "Pillar (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (2) (2)"
@@ -32488,7 +32491,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004bc8ac9caa1ec7-00041b9f8000b4cb"
+                        "00345ceb44b69fde-000460dfe6094d7d"
                     ]
                 },
                 "RigidBodyComponent": {
@@ -32645,8 +32648,8 @@
             }
         },
         {
-            "id": 2685,
-            "guid": "004bc8acd2a808c0-00041bca1600ce57",
+            "id": 105,
+            "guid": "00345ceb06892814-000460dfe6094e4f",
             "components": {
                 "NameComponent": {
                     "name": "Pillar (1) (1) (1) (1) (1) (1) (1) (1) (1) (1) (2) (1) (1)"
@@ -32808,7 +32811,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004bc8ac9caa1ec7-00041b9f8000b4cb"
+                        "00345ceb44b69fde-000460dfe6094d7d"
                     ]
                 },
                 "RigidBodyComponent": {
@@ -32965,8 +32968,8 @@
             }
         },
         {
-            "id": 2686,
-            "guid": "004bc8acb2bc5aab-00041bcc1c00d47b",
+            "id": 106,
+            "guid": "00345ceb098274e6-000460dfe6094e51",
             "components": {
                 "NameComponent": {
                     "name": "LanternHolder (1) (1) (1) (1) (1) (1)"
@@ -33131,7 +33134,7 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "004e592cc3ba852d-00041cb022000313"
+                                "00345ceb1414c834-000460dfe6094e53"
                             ]
                         }
                     ]
@@ -33139,7 +33142,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004bc8ac9caa1ec7-00041b9f8000b4cb"
+                        "00345ceb44b69fde-000460dfe6094d7d"
                     ]
                 },
                 "RigidBodyComponent": {
@@ -33296,8 +33299,8 @@
             }
         },
         {
-            "id": 2687,
-            "guid": "004e592cc3ba852d-00041cb022000313",
+            "id": 107,
+            "guid": "00345ceb1414c834-000460dfe6094e53",
             "components": {
                 "NameComponent": {
                     "name": "Lantern (1) (1) (1) (1) (3)"
@@ -33459,7 +33462,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004bc8acb2bc5aab-00041bcc1c00d47b"
+                        "00345ceb098274e6-000460dfe6094e51"
                     ]
                 },
                 "ActiveComponent": {
@@ -33474,8 +33477,8 @@
             }
         },
         {
-            "id": 2688,
-            "guid": "004bc8acfb35abcb-00041bcc0a00d479",
+            "id": 108,
+            "guid": "00345ceb1ac04ee7-000460dfe6094e55",
             "components": {
                 "NameComponent": {
                     "name": "LanternHolder (1) (1) (1) (1) (1)"
@@ -33640,7 +33643,7 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "004e592c91369b59-00041cb01600030f"
+                                "00345ceb575e860a-000460dfe6094e57"
                             ]
                         }
                     ]
@@ -33648,7 +33651,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004bc8ac9caa1ec7-00041b9f8000b4cb"
+                        "00345ceb44b69fde-000460dfe6094d7d"
                     ]
                 },
                 "RigidBodyComponent": {
@@ -33805,8 +33808,8 @@
             }
         },
         {
-            "id": 2689,
-            "guid": "004e592c91369b59-00041cb01600030f",
+            "id": 109,
+            "guid": "00345ceb575e860a-000460dfe6094e57",
             "components": {
                 "NameComponent": {
                     "name": "Lantern (1) (1) (1) (1) (2)"
@@ -33968,7 +33971,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004bc8acfb35abcb-00041bcc0a00d479"
+                        "00345ceb1ac04ee7-000460dfe6094e55"
                     ]
                 },
                 "ActiveComponent": {
@@ -33983,8 +33986,8 @@
             }
         },
         {
-            "id": 2690,
-            "guid": "004bc8ac8a99d88e-00041bc49200c507",
+            "id": 110,
+            "guid": "00345ceb64f8c00c-000460dfe6094e59",
             "components": {
                 "NameComponent": {
                     "name": "Miniboss"
@@ -34146,7 +34149,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004bc8ac9caa1ec7-00041b9f8000b4cb"
+                        "00345ceb44b69fde-000460dfe6094d7d"
                     ]
                 },
                 "AnimationComponent": {
@@ -34170,23 +34173,11 @@
                         },
                         {
                             "type": "int",
-                            "data": 8
+                            "data": 5
                         },
                         {
                             "type": "std::vector<std::string>",
                             "data": [
-                                {
-                                    "type": "std::string",
-                                    "data": ""
-                                },
-                                {
-                                    "type": "std::string",
-                                    "data": ""
-                                },
-                                {
-                                    "type": "std::string",
-                                    "data": ""
-                                },
                                 {
                                     "type": "std::string",
                                     "data": ""
@@ -34216,10 +34207,7 @@
                                 "001b9f1475670420-00041a3ca4003e6f",
                                 "001b9f140591dd23-00041a417e003e8d",
                                 "001b9f146e3b530a-00041a3ca8003e7b",
-                                "001b9f147d529815-00041a3ffe003e85",
-                                "002b77b56a01f104-00041d333c000121",
-                                "002b77b50bcbbef6-00041d334e000125",
-                                "002b77b50b1ded08-00041d472a004681"
+                                "001b9f147d529815-00041a3ffe003e85"
                             ]
                         },
                         {
@@ -34247,126 +34235,73 @@
                             "entryFunction": "OnInit",
                             "autoInvokeEntry": true,
                             "instanceState": {
-                                "Awake": null,
-                                "dead": false,
-                                "DebugTransform": null,
-                                "_LaunchKnife": null,
-                                "SpawnKnifeSingleAtPlayer": null,
-                                "ApplyGravity": null,
-                                "MaxHealth": 90.0,
-                                "FacePlayer": null,
-                                "UpdateSafe": null,
-                                "SpawnKnifeFan4_NoCenter": null,
-                                "_BeginMove": null,
-                                "ChooseMove": null,
-                                "ApplyHook": null,
-                                "_knifeVolleyId": 0.0,
-                                "RecoverDuration": 1.0,
-                                "GetRotation": null,
-                                "Update": null,
-                                "_FreeReserved": null,
-                                "_lockAction": false,
-                                "ApplyHit": null,
-                                "CheckPhaseTransition": null,
-                                "Every": null,
-                                "_private": {},
-                                "GetScale": null,
-                                "Move": null,
-                                "GetEnemyPosXZ": null,
-                                "StartPhaseTransform": null,
-                                "UnlockActions": null,
-                                "_hitLockTimer": 0.0,
-                                "_subscriptions": {},
-                                "__field_list": {
-                                    "Gravity": -9.81,
-                                    "MaxHealth": 30.0,
-                                    "PhaseTransformDuration": 3.2,
-                                    "RecoverDuration": 1.0,
-                                    "HookedDuration": 4.0,
-                                    "HitIFrame": 0.2,
-                                    "GroundStickVel": -0.2,
-                                    "MaxFallSpeed": -25.0,
-                                    "PlayerName": "Player"
-                                },
-                                "Gravity": -9.81,
-                                "IsInMove": null,
-                                "FinishPhaseTransform": null,
-                                "_transform_fetched": false,
-                                "PlayerName": "Player",
-                                "_vy": 0.0,
-                                "_hooked": false,
-                                "DeserializeFields": null,
-                                "GetPosition": null,
-                                "_transforming": false,
-                                "After": null,
-                                "_lastPhaseProcessed": 1.0,
-                                "_phase": 1.0,
-                                "_lockTimer": 0.0,
-                                "IsActionLocked": null,
-                                "_moveFinished": true,
-                                "_call_lifecycle": null,
-                                "_recoverTimer": 0.0,
                                 "__created_at": 1770241522.0,
-                                "_moveCooldowns": {},
-                                "states": {
-                                    "Choose": {
-                                        "Update": null,
-                                        "Enter": null
-                                    },
-                                    "Execute": {
-                                        "Exit": null,
-                                        "Enter": null,
-                                        "Update": null
-                                    },
-                                    "Recover": {
-                                        "Update": null,
-                                        "Enter": null
-                                    }
-                                },
                                 "fsm": {
-                                    "owner": null,
-                                    "timeInState": 0.0,
-                                    "enabled": true
+                                    "enabled": true,
+                                    "timeInState": 0.0
                                 },
-                                "HitIFrame": 0.2,
-                                "health": 30.0,
-                                "OnDisable": null,
-                                "__meta": {},
-                                "GetPhase": null,
-                                "_GetSpawnPos": null,
-                                "_GetPlayerPos": null,
-                                "StartMoveCooldown": null,
-                                "SerializeFields": null,
-                                "DisableSafe": null,
-                                "IsMoveOnCooldown": null,
-                                "StartSafe": null,
-                                "AwakeSafe": null,
-                                "Unsubscribe": null,
-                                "PhaseTransformDuration": 3.2,
-                                "HookedDuration": 4.0,
+                                "_lockAction": false,
+                                "_subscriptions": {},
+                                "Gravity": -9.81,
+                                "BasicAttack": null,
                                 "GroundStickVel": -0.2,
-                                "GetMoveWeightForPhase": null,
-                                "ApplyRotation": null,
-                                "_DirToPlayerXZ": null,
-                                "TickMove": null,
-                                "SpawnForwardSpray3": null,
-                                "Subscribe": null,
-                                "GetNextMoveReadyTime": null,
-                                "Destroy": null,
-                                "SpawnKnifeVolley3": null,
-                                "LockActions": null,
+                                "_lastPhaseProcessed": 1.0,
+                                "HitIFrame": 0.2,
+                                "_hooked": false,
+                                "_moveFinished": true,
+                                "_transforming": false,
+                                "SpawnKnifeFan8_NoCenter": null,
+                                "AntiDodge": null,
+                                "BurstFire": null,
+                                "DeathLotus": null,
+                                "enemyRangedAttackSFX": {},
+                                "_phase": 1.0,
+                                "_introDone": false,
+                                "HookedDuration": 4.0,
+                                "_inIntro": false,
+                                "EnsureController": null,
+                                "_hitLockTimer": 0.0,
+                                "enemyHurtSFX": {},
+                                "states": {
+                                    "Execute": {},
+                                    "Choose": {},
+                                    "Recover": {}
+                                },
+                                "dead": false,
+                                "_moveCooldowns": {},
+                                "GetPlayerPosForAI": null,
+                                "enemyMeleeHitSFX": {},
+                                "FateSealed": null,
+                                "IntroDuration": 5.0,
+                                "MaxHealth": 90.0,
+                                "__meta": {},
+                                "enemyDeathSFX": {},
+                                "health": 30.0,
+                                "_knifeVolleyId": 0.0,
+                                "enemyTauntSFX": {},
+                                "_transform_fetched": false,
                                 "MaxFallSpeed": -25.0,
-                                "_NewVolleyToken": null,
-                                "Die": null,
-                                "SetPosition": null,
-                                "IsCurrentMoveFinished": null,
-                                "_EndMove": null,
-                                "GetCurrentPhase": null,
-                                "Start": null,
-                                "GetTransform": null,
-                                "SetRotation": null,
-                                "SetScale": null,
-                                "OnDestroy": null
+                                "_recoverTimer": 0.0,
+                                "enemyMeleeAttackSFX": {},
+                                "AggroRange": 15.0,
+                                "RecoverDuration": 1.0,
+                                "PlayerName": "Player",
+                                "_lockTimer": 0.0,
+                                "_vy": 0.0,
+                                "PhaseTransformDuration": 3.2,
+                                "_private": {},
+                                "__field_list": {
+                                    "MaxFallSpeed": -25.0,
+                                    "PhaseTransformDuration": 3.2,
+                                    "HookedDuration": 4.0,
+                                    "GroundStickVel": -0.2,
+                                    "HitIFrame": 0.2,
+                                    "PlayerName": "Player",
+                                    "MaxHealth": 30.0,
+                                    "RecoverDuration": 1.0,
+                                    "Gravity": -9.81
+                                },
+                                "enemyRangedHitSFX": {}
                             }
                         }
                     ]

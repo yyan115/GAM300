@@ -1,0 +1,14 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "0041f1063728b473-000467b03c3361e3",
+        "source": "../../Resources/Textures/M5/AltarTable_Roughness.png",
+        "compiled": "../../Resources/Textures/M5/AltarTable_Roughness.dds"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp"
+    }
+}

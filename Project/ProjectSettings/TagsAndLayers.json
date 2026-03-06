@@ -14,7 +14,8 @@
         "DialogueBox",
         "BlackScreen",
         "SkipButton",
-        "Checkpoint"
+        "Checkpoint",
+        "LockOn"
     ],
     "layers": [
         {

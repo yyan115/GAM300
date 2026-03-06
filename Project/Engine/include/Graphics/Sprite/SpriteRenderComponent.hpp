@@ -37,6 +37,13 @@ public:
     glm::vec2 uvOffset = glm::vec2(0.0f);
     glm::vec2 uvScale = glm::vec2(1.0f);
 
+    // Fill properties
+    int fillMode = 0;          // 0 = Solid (no fill), 1 = Radial
+    float fillMaxValue = 1.0f; // Max value for fill ratio
+    float fillValue = 1.0f;    // Current value (fillAmount = fillValue / fillMaxValue)
+    float fillGlow = 0.5f;     // Edge glow intensity (0 = off, 1 = max)
+    float fillBackground = 0.3f; // Unfilled area brightness (0=hidden, 0.3=dark overlay, 1=full)
+
     std::shared_ptr<Texture> texture;
     std::shared_ptr<Shader> shader;
 

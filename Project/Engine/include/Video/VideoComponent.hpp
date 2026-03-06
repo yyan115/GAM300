@@ -1,75 +1,98 @@
 #pragma once
 #include "pch.h"
 #include "Reflection/ReflectionBase.hpp"
-#include "Asset Manager/AssetManager.hpp"
-#include "Video/cutscene.hpp"
+#include "ECS/Entity.hpp"
+#include <string>
+#include <vector>
 
-//std::string newCutscenePath = "../../Resources/Cutscenes/Kusane_OpeningCutscene/" + videoComp.cutSceneName;
+// A single board (frame) in a cutscene sequence
+struct CutsceneBoard {
+	REFL_SERIALIZABLE
 
+	// --- Image ---
+	std::string imagePath;              // Drag-drop texture path
 
+	// --- Text ---
+	std::string text;                   // Dialogue text to display
+	float textSpeed = 50.0f;            // Typewriter chars/sec (0 = instant)
+	bool continueText = false;          // Continue typewriter from previous board
 
+	// --- Timing ---
+	float duration = 3.0f;             // How long this board displays (seconds)
+	float fadeDuration = 0.5f;         // Fade time for transition INTO this board (seconds)
+	bool disableFadeOut = false;       // Skip fade-to-black when leaving this board
+
+	// --- Blur ---
+	float blurDelay = 0.0f;            // Seconds to stay sharp before blur starts
+	float blurIntensity = 0.0f;        // Blur at start of board (0=sharp, 1=full)
+	float blurIntensityEnd = -1.0f;    // Blur at end of board (-1=same as start, i.e. static)
+	float blurRadius = 2.0f;           // Blur kernel radius
+	int blurPasses = 2;                // Blur iterations
+};
+
+// Inspector-driven cutscene component (replaces old text-file-based system)
 struct ENGINE_API VideoComponent {
 	REFL_SERIALIZABLE
-	bool enabled = true;          // Component enabled state (can be toggled in inspector)
 
-	// --- State Control ---
-	bool isPlaying = false;     // Play/Pause state			
-	bool loop = false;          // Restart video when it reaches the end
-	
-	// --- Playback Properties ---
-	float playbackSpeed = 1.0f; 
-	float currentTime = 0.0f;   // Current seek position in seconds		
-	float playbackduration = 0.0f;      // Total length (usually set by the Engine/Decoder)
-	
-	// --- CUTSCENE Asset Management ---
-	std::string videoPath = ""; // Path to the video file (.mp4, .webm, etc.)
-	int frameStart = 0;   ///< Starting frame
-	int frameEnd = 0;     ///< Ending frame
-	int activeFrame = 0;
+	// === Serialized Fields ===
+	bool enabled = true;                        // Component enabled toggle
+	std::string cutsceneName;                   // Display name
 
-	// Timing configuration
-	float fadeDuration = 0.5f;      ///< Fade in/out between boards (seconds)
-	float boardDuration = 3.0f;     ///< How long a board stays before auto-advancing (seconds)
-	float panelDuration = 6.0f;     ///< How long before fading to next panel on last board (seconds)
-	float skipFadeDuration = 1.0f;  ///< Fade duration when skipping or ending (seconds)
+	// Entity references (GUID drag-drop from hierarchy)
+	std::string textEntityGuidStr;              // Entity with TextRenderComponent
+	std::string blackScreenEntityGuidStr;       // Entity with SpriteRenderComponent (fade overlay)
+	std::string skipButtonEntityGuidStr;        // Entity with SpriteRenderComponent (optional)
 
-	// Legacy timing (kept for compatibility)
-	float preTime = 0.0f;  ///< Delay before first frame starts
-	float duration = 0.0f; ///< Active playback time
-	float postTime = 0.0f; ///< Delay after last frame reached
-	std::string cutSceneName = "";
+	// Global settings
+	float startDelay = 0.0f;                    // Seconds to wait before starting (e.g. wait for scene fade)
+	float skipFadeDuration = 1.0f;              // Fade duration when skip pressed
+	bool autoStart = false;                     // Start on scene load
+	bool loop = false;                          // Restart when done
+	std::string nextScenePath;                  // Scene to load on finish (empty = none)
 
-	// Panel system
-	int currentPanel = 1;           ///< Current panel (1-indexed)
-	float boardTimer = 0.0f;        ///< Timer for auto-advancing boards
-	bool isLastBoardInPanel = false; ///< Whether current board is last in its panel
+	// Board list
+	std::vector<CutsceneBoard> boards;
 
+	// === Runtime State (NOT serialized) ===
+	enum class Phase {
+		Inactive,
+		FadingIn,
+		Displaying,
+		TransitionOut,
+		TransitionIn,
+		EndingFade,
+		Finished
+	};
 
-	// --- Rendering Data ---
-	// This ID links to the Engine's VideoSystem texture/resource
-	uint32_t textureID = 0;     
-	
-	// --- Synchronization Flags ---
-	bool asset_dirty = false;   // Set to true when videoPath changes 
-	bool seek_dirty = false;    // Set to true if currentTime is modified manually (seeking)
+	Phase phase = Phase::Inactive;
+	int currentBoardIndex = -1;
+	float startDelayTimer = 0.0f;
+	float stateTimer = 0.0f;
+	float typewriterTimer = 0.0f;
+	int revealedChars = 0;
+	int previousBoardChars = 0;
+	bool skipRequested = false;
+	bool cutsceneEnded = false;
 
-	bool cutsceneEnded = false;	//To change scene when toggled.
+	// Resolved entity handles
+	Entity textEntity = 0;
+	Entity blackScreenEntity = 0;
+	Entity skipButtonEntity = 0;
+	bool needsInit = true;
+
+	// Saved camera blur state (restored when cutscene ends)
+	bool savedCameraBlur = false;
+	bool origBlurEnabled = false;
+	float origBlurIntensity = 0.0f;
+	float origBlurRadius = 2.0f;
+	int origBlurPasses = 2;
+
+	// Blur continuity state (smooth transitions between boards)
+	float boardElapsedTime = 0.0f;      // Blur-dedicated timer (independent of phase stateTimer)
+	float lastComputedBlur = 0.0f;      // Current blur value (carries across transitions)
+	float transitionBlurFrom = 0.0f;    // Blur value when transition started
+	float transitionBlurTo = 0.0f;      // Target blur for incoming board
 
 	VideoComponent() = default;
 	~VideoComponent() = default;
-
-	bool ProcessMetaData(std::string resourcePath);
-
-	bool ProcessDialogueData(std::string dialoguePath);
-
-	std::string PadNumber(int num);
-
-
-	//DIALOGUE ASSET MANAGEMENT
-	std::string dialoguePath = "";		//For reference/display purposes
-
-	std::unordered_map<int, std::string> dialogueMap;       // Frame-based dialogue (legacy)
-	std::unordered_map<int, std::string> panelDialogueMap;  // Panel-based dialogue (new)
-
-
 };

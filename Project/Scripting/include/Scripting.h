@@ -74,6 +74,9 @@ namespace Scripting {
     // Returns true on success (function executed with no errors).
     SCRIPTING_API bool CallInstanceFunction(int instanceRef, const std::string& funcName);
 
+    // Call named function on instance with a single integer argument (e.g. OnTriggerEnter(self, otherEntityId)).
+    SCRIPTING_API bool CallInstanceFunctionWithInt(int instanceRef, const std::string& funcName, int intArg);
+
     // Host logger injection (single string parameter). The binding `cpp_log(s)` will call this handler.
     // If not set, messages go to ENGINE_PRINT with LogLevel::Info.
     SCRIPTING_API void SetHostLogHandler(HostLogFn fn);

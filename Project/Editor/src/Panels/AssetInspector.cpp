@@ -25,7 +25,7 @@ void AssetInspector::DrawAssetMetaInfo(std::shared_ptr<AssetMeta> assetMeta, con
         else if (assetMeta->GetType() == AssetMeta::Type::Texture) {
             std::shared_ptr<TextureMeta> textureMeta = static_pointer_cast<TextureMeta>(assetMeta);
 			currentTextureMeta->PopulateAssetMeta(assetMeta->guid, assetMeta->sourceFilePath, assetMeta->compiledFilePath, assetMeta->version, assetMeta->androidCompiledFilePath);
-			currentTextureMeta->PopulateTextureMeta(textureMeta->type, textureMeta->flipUVs, textureMeta->generateMipmaps);
+			currentTextureMeta->PopulateTextureMeta(textureMeta->type, textureMeta->flipUVs, textureMeta->generateMipmaps, textureMeta->textureWrapMode);
         }
     }
 
@@ -107,6 +107,26 @@ void AssetInspector::DrawAssetMetaInfo(std::shared_ptr<AssetMeta> assetMeta, con
                     ImGui::TextUnformatted("Generate Mipmaps");
                     ImGui::TableSetColumnIndex(1);
                     ImGui::Checkbox("##Generate Mipmaps", &currentTextureMeta->generateMipmaps);
+
+					// Texture Wrap Mode
+					ImGui::TableNextRow();
+					ImGui::TableSetColumnIndex(0);
+					ImGui::TextUnformatted("Wrap Mode");
+					ImGui::TableSetColumnIndex(1);
+					ImGui::SetNextItemWidth(-FLT_MIN); // fill the whole column
+                    if (ImGui::BeginCombo("##Wrap Mode", currentTextureMeta->textureWrapModeStr.c_str())) {
+                        for (int n = 0; n < TextureMeta::textureWrapModes.size(); n++) {
+                            bool isSelected = (currentTextureMeta->textureWrapModeStr == TextureMeta::textureWrapModes[n]);
+                            if (ImGui::Selectable(TextureMeta::textureWrapModes[n].c_str(), isSelected)) {
+                                currentTextureMeta->textureWrapModeStr = TextureMeta::textureWrapModes[n];
+								currentTextureMeta->textureWrapMode = static_cast<TextureMeta::TextureWrapMode>(n);
+                            }
+                            if (isSelected) {
+                                ImGui::SetItemDefaultFocus();
+                            }
+						}
+                        ImGui::EndCombo();
+                    }
 
                     ImGui::EndTable();
                 }

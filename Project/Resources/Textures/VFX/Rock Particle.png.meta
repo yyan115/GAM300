@@ -1,0 +1,14 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "00245f72edddd2b7-000466b12600003b",
+        "source": "../../Resources/Textures/VFX/Rock Particle.png",
+        "compiled": "../../Resources/Textures/VFX/Rock Particle.dds"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp"
+    }
+}

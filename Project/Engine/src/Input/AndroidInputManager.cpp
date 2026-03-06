@@ -267,12 +267,17 @@ void AndroidInputManager::Update(float deltaTime) {
         touch.duration = m_currentTime - touch.startTime;
 
         // Transition Began -> Moved or Stationary
+        // Keep Began for one full frame so IsPointerJustPressed works
         if (touch.phase == TouchPhase::Began) {
-            // After first frame, check if moved
-            if (glm::length(touch.delta) > 0.001f) {
-                touch.phase = TouchPhase::Moved;
+            if (touch.beganConsumed) {
+                // Second Update call - now transition
+                if (glm::length(touch.delta) > 0.001f) {
+                    touch.phase = TouchPhase::Moved;
+                } else {
+                    touch.phase = TouchPhase::Stationary;
+                }
             } else {
-                touch.phase = TouchPhase::Stationary;
+                touch.beganConsumed = true;
             }
         }
         // For subsequent frames, delta is reset each frame
@@ -489,7 +494,6 @@ void AndroidInputManager::OnTouchDown(int pointerId, float x, float y) {
 
             touch.isHandled = true;
             touch.entityName = entityAction.entityName;
-            m_currentActions.insert(entityAction.actionName);
 
             LOGI("[AndroidInput] HIT! Touch %d on entity '%s' for action '%s' relPos=(%.1f,%.1f)",
                  pointerId, entityAction.entityName.c_str(), entityAction.actionName.c_str(),
@@ -570,7 +574,6 @@ void AndroidInputManager::OnTouchUp(int pointerId, float x, float y) {
             entityAction.isPressed = false;
             entityAction.activeTouchId = -1;
             entityAction.touchPositionRelative = glm::vec2(0.0f);
-            m_currentActions.erase(entityAction.actionName);
         }
     }
 

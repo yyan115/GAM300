@@ -1,0 +1,11 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "006bd5bb4e101365-00046ab8de004025",
+        "source": "../../Resources/Models/Rooms/Room1/Room1_Wooden_beams_ceiling.fbx",
+        "compiled": "../../Resources/Models/Rooms/Room1/Room1_Wooden_beams_ceiling.mesh"
+    },
+    "ModelMetaData": {
+        "optimizeMeshes": true
+    }
+}

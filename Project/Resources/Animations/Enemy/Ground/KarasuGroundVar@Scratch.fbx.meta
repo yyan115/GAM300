@@ -1,0 +1,11 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "006bd5bb7de4c516-00046ab570000031",
+        "source": "../../Resources/Animations/Enemy/Ground/KarasuGroundVar@Scratch.fbx",
+        "compiled": "../../Resources/Animations/Enemy/Ground/KarasuGroundVar@Scratch.mesh"
+    },
+    "ModelMetaData": {
+        "optimizeMeshes": true
+    }
+}

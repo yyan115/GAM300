@@ -1,0 +1,14 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "0041f10601edb5ae-000467b8f6336225",
+        "source": "../../Resources/Textures/M5/enemy_ground_01_Height.png",
+        "compiled": "../../Resources/Textures/M5/enemy_ground_01_Height.dds"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp"
+    }
+}

@@ -13,7 +13,7 @@
         "keys": ["SPACE"]
       },
       "android": {
-        "entity": "ChainIcon"
+        "entity": "(ANDROID)Jump"
       }
     },
 
@@ -35,6 +35,16 @@
       },
       "android": {
         "entity": "(ANDROID)ChainAttackButton"
+      }
+    },
+
+    "FeatherSkill": {
+      "description": "Activate the feather skill",
+      "desktop": {
+        "keys": ["Z"]
+      },
+      "android": {
+        "entity": "SkillIcon"
       }
     },
 

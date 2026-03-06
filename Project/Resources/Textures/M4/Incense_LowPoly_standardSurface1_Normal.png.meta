@@ -1,0 +1,14 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "005e129f0a569eb4-000421171600627b",
+        "source": "../../Resources/Textures/M4/Incense_LowPoly_standardSurface1_Normal.png",
+        "compiled": "../../Resources/Textures/M4/Incense_LowPoly_standardSurface1_Normal.dds"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp"
+    }
+}
