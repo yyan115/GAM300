@@ -320,6 +320,7 @@ return Component {
         self._rb        = self:GetComponent("RigidBodyComponent")
         self._animator  = self:GetComponent("AnimationComponent")
         self._audio     = self:GetComponent("AudioComponent")
+        self._entityName = Engine.GetEntityName(self.entityId)
 
         -- (Re)create controller safely
         if self._controller then
@@ -422,6 +423,13 @@ return Component {
                 playRandomSFX(self._audio, self.enemyMeleeHitSFX)
             end)
         end
+
+        self._chainEndpointHitSub = _G.event_bus.subscribe("chain.endpoint_hit_entity", function(payload)
+            if not payload then return end
+            if payload.rootName ~= self._entityName then return end
+            print("[MinibossAI] chain.endpoint_hit_entity received")
+            self._animator:SetBool("Hooked", true)
+        end)
 
         -- Seed prevY for grounded heuristic
         local _, y, _ = self:GetPosition()
@@ -934,6 +942,8 @@ return Component {
     BeginSlamDown = function(self)
         if not self._inAir then return end
         self._slamActive = true
+        self._animator:SetBool("Hooked", false)
+        self._animator:SetTrigger("Pulldown")
     end,
 
     UpdateSlamDown = function(self, dtSec)
@@ -949,7 +959,6 @@ return Component {
         if Nav and Nav.GetGroundY then
             local g = Nav.GetGroundY(self.entityId)
             if g ~= nil then gy = g end
-            self._animator:SetTrigger("Pulldown")
         else
             gy = y
         end

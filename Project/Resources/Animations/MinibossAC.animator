@@ -49,29 +49,33 @@
             "name": "Hurt3",
             "type": "Trigger",
             "defaultValue": 0.0
+        },
+        {
+            "name": "Flying",
+            "type": "Bool",
+            "defaultValue": 0.0
+        },
+        {
+            "name": "Pulldown",
+            "type": "Trigger",
+            "defaultValue": 0.0
+        },
+        {
+            "name": "Slammed",
+            "type": "Trigger",
+            "defaultValue": 0.0
         }
     ],
     "states": [
         {
-            "id": "Taunt",
-            "clipIndex": 0,
+            "id": "Hurt1",
+            "clipIndex": 3,
             "loop": false,
             "speed": 2.000000238418579,
             "crossfadeDuration": 0.0,
             "nodePosition": {
-                "x": -55.0,
-                "y": -222.0
-            }
-        },
-        {
-            "id": "Idle",
-            "clipIndex": 6,
-            "loop": true,
-            "speed": 1.0,
-            "crossfadeDuration": 0.0,
-            "nodePosition": {
-                "x": -54.0,
-                "y": -138.0
+                "x": 169.0,
+                "y": -14.75
             }
         },
         {
@@ -86,14 +90,25 @@
             }
         },
         {
-            "id": "Hurt1",
-            "clipIndex": 3,
+            "id": "Idle",
+            "clipIndex": 6,
+            "loop": true,
+            "speed": 1.0,
+            "crossfadeDuration": 0.0,
+            "nodePosition": {
+                "x": -54.0,
+                "y": -138.0
+            }
+        },
+        {
+            "id": "Taunt",
+            "clipIndex": 0,
             "loop": false,
             "speed": 2.000000238418579,
             "crossfadeDuration": 0.0,
             "nodePosition": {
-                "x": 169.0,
-                "y": -14.75
+                "x": -55.0,
+                "y": -222.0
             }
         },
         {
@@ -160,6 +175,50 @@
             "nodePosition": {
                 "x": 568.7233276367188,
                 "y": -13.607952117919922
+            }
+        },
+        {
+            "id": "Flying",
+            "clipIndex": 8,
+            "loop": true,
+            "speed": 1.0,
+            "crossfadeDuration": 0.20000000298023224,
+            "nodePosition": {
+                "x": -220.18141174316406,
+                "y": -529.7160034179688
+            }
+        },
+        {
+            "id": "Falling",
+            "clipIndex": 9,
+            "loop": true,
+            "speed": 2.0,
+            "crossfadeDuration": 0.20000000298023224,
+            "nodePosition": {
+                "x": -109.51815795898438,
+                "y": 151.10987854003906
+            }
+        },
+        {
+            "id": "Fall Impact",
+            "clipIndex": 10,
+            "loop": false,
+            "speed": 1.5000001192092896,
+            "crossfadeDuration": 0.20000000298023224,
+            "nodePosition": {
+                "x": 97.3889389038086,
+                "y": 150.94435119628906
+            }
+        },
+        {
+            "id": "Stand Up",
+            "clipIndex": 11,
+            "loop": true,
+            "speed": 1.5000001192092896,
+            "crossfadeDuration": 0.20000000298023224,
+            "nodePosition": {
+                "x": 304.43829345703125,
+                "y": 152.3826904296875
             }
         }
     ],
@@ -841,6 +900,174 @@
                     "threshold": 0.0
                 }
             ]
+        },
+        {
+            "from": "Recovery",
+            "to": "Flying",
+            "anyState": false,
+            "hasExitTime": true,
+            "exitTime": 0.05000000074505806,
+            "transitionDuration": 0.05000000074505806,
+            "conditions": [
+                {
+                    "paramName": "Flying",
+                    "mode": "Equals",
+                    "threshold": 1.0
+                }
+            ]
+        },
+        {
+            "from": "Flying",
+            "to": "Ranged Attack",
+            "anyState": false,
+            "hasExitTime": true,
+            "exitTime": 0.03999999910593033,
+            "transitionDuration": 0.05000000074505806,
+            "conditions": [
+                {
+                    "paramName": "Ranged",
+                    "mode": "TriggerFired",
+                    "threshold": 0.0
+                }
+            ]
+        },
+        {
+            "from": "Flying",
+            "to": "Idle",
+            "anyState": false,
+            "hasExitTime": true,
+            "exitTime": 0.05000000074505806,
+            "transitionDuration": 0.05000000074505806,
+            "conditions": [
+                {
+                    "paramName": "Flying",
+                    "mode": "Equals",
+                    "threshold": 0.0
+                }
+            ]
+        },
+        {
+            "from": "",
+            "to": "Falling",
+            "anyState": true,
+            "hasExitTime": true,
+            "exitTime": 0.10999999940395355,
+            "transitionDuration": 0.10000000149011612,
+            "conditions": [
+                {
+                    "paramName": "Pulldown",
+                    "mode": "TriggerFired",
+                    "threshold": 0.0
+                }
+            ]
+        },
+        {
+            "from": "Falling",
+            "to": "Fall Impact",
+            "anyState": false,
+            "hasExitTime": true,
+            "exitTime": 0.05000000074505806,
+            "transitionDuration": 0.05000000074505806,
+            "conditions": [
+                {
+                    "paramName": "Slammed",
+                    "mode": "TriggerFired",
+                    "threshold": 0.0
+                }
+            ]
+        },
+        {
+            "from": "Fall Impact",
+            "to": "Stand Up",
+            "anyState": false,
+            "hasExitTime": true,
+            "exitTime": 0.4099999964237213,
+            "transitionDuration": 0.4099999964237213,
+            "conditions": []
+        },
+        {
+            "from": "Stand Up",
+            "to": "Recovery",
+            "anyState": false,
+            "hasExitTime": true,
+            "exitTime": 0.699999988079071,
+            "transitionDuration": 0.699999988079071,
+            "conditions": []
+        },
+        {
+            "from": "Stand Up",
+            "to": "Melee Attack",
+            "anyState": false,
+            "hasExitTime": true,
+            "exitTime": 0.6600000262260437,
+            "transitionDuration": 0.6499999761581421,
+            "conditions": [
+                {
+                    "paramName": "Melee",
+                    "mode": "TriggerFired",
+                    "threshold": 0.0
+                }
+            ]
+        },
+        {
+            "from": "Stand Up",
+            "to": "Death",
+            "anyState": false,
+            "hasExitTime": true,
+            "exitTime": 0.3499999940395355,
+            "transitionDuration": 0.3499999940395355,
+            "conditions": [
+                {
+                    "paramName": "Death",
+                    "mode": "TriggerFired",
+                    "threshold": 0.0
+                }
+            ]
+        },
+        {
+            "from": "Stand Up",
+            "to": "Ranged Attack",
+            "anyState": false,
+            "hasExitTime": true,
+            "exitTime": 0.6399999856948853,
+            "transitionDuration": 0.6200000047683716,
+            "conditions": [
+                {
+                    "paramName": "Ranged",
+                    "mode": "TriggerFired",
+                    "threshold": 0.0
+                }
+            ]
+        },
+        {
+            "from": "Stand Up",
+            "to": "Taunt",
+            "anyState": false,
+            "hasExitTime": true,
+            "exitTime": 0.5299999713897705,
+            "transitionDuration": 0.5299999713897705,
+            "conditions": [
+                {
+                    "paramName": "Taunt",
+                    "mode": "TriggerFired",
+                    "threshold": 0.0
+                }
+            ]
+        },
+        {
+            "from": "Stand Up",
+            "to": "Flying",
+            "anyState": false,
+            "hasExitTime": true,
+            "exitTime": 0.5099999904632568,
+            "transitionDuration": 0.5,
+            "conditions": [
+                {
+                    "paramName": "Flying",
+                    "mode": "Equals",
+                    "threshold": 1.0
+                }
+            ]
         }
     ],
     "clipPaths": [
@@ -851,6 +1078,10 @@
         "Resources/Animations/Enemy@Hurt2.fbx",
         "Resources/Animations/Enemy@Hurt3.fbx",
         "Resources/Animations/Enemy/Flying/KarasuFlying@IdleRangedGround.fbx",
-        "Resources/Animations/Enemy/Ground/KarasuGroundVar@Scratch.fbx"
+        "Resources/Animations/Enemy/Ground/KarasuGroundVar@Scratch.fbx",
+        "Resources/Animations/Enemy/Flying/KarasuFlying@IdleRangedAir.fbx",
+        "Resources/Animations/Enemy/Flying/KarasuFlying@Falling.fbx",
+        "Resources/Animations/Enemy/Flying/KarasuFlying@FallImpact.fbx",
+        "Resources/Animations/Enemy/Flying/KarasuFlying@StandUp.fbx"
     ]
 }

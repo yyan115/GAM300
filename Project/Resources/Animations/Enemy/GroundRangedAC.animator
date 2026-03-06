@@ -16,22 +16,17 @@
             "defaultValue": 0.0
         },
         {
+            "name": "Melee",
+            "type": "Bool",
+            "defaultValue": 0.0
+        },
+        {
             "name": "PlayerInDetectionRange",
             "type": "Bool",
             "defaultValue": 0.0
         },
         {
             "name": "Hurt1",
-            "type": "Bool",
-            "defaultValue": 0.0
-        },
-        {
-            "name": "Hooked",
-            "type": "Bool",
-            "defaultValue": 0.0
-        },
-        {
-            "name": "Melee",
             "type": "Bool",
             "defaultValue": 0.0
         },
@@ -74,34 +69,17 @@
             "name": "ReadyToAttack",
             "type": "Bool",
             "defaultValue": 0.0
+        },
+        {
+            "name": "Hooked",
+            "type": "Trigger",
+            "defaultValue": 0.0
         }
     ],
     "states": [
         {
-            "id": "Hooked",
-            "clipIndex": 5,
-            "loop": false,
-            "speed": 1.0,
-            "crossfadeDuration": 0.0,
-            "nodePosition": {
-                "x": 428.5,
-                "y": 75.0
-            }
-        },
-        {
-            "id": "Idle",
-            "clipIndex": 9,
-            "loop": true,
-            "speed": 1.0,
-            "crossfadeDuration": 0.0,
-            "nodePosition": {
-                "x": -59.5,
-                "y": -127.5
-            }
-        },
-        {
             "id": "Hurt1",
-            "clipIndex": 6,
+            "clipIndex": 4,
             "loop": false,
             "speed": 2.499999761581421,
             "crossfadeDuration": 0.0,
@@ -111,8 +89,30 @@
             }
         },
         {
+            "id": "Idle",
+            "clipIndex": 2,
+            "loop": true,
+            "speed": 1.0,
+            "crossfadeDuration": 0.0,
+            "nodePosition": {
+                "x": -59.5,
+                "y": -127.5
+            }
+        },
+        {
+            "id": "Hooked",
+            "clipIndex": 6,
+            "loop": false,
+            "speed": 1.0,
+            "crossfadeDuration": 0.0,
+            "nodePosition": {
+                "x": 428.5,
+                "y": 75.0
+            }
+        },
+        {
             "id": "Death",
-            "clipIndex": 5,
+            "clipIndex": 7,
             "loop": false,
             "speed": 1.0,
             "crossfadeDuration": 0.0,
@@ -122,19 +122,8 @@
             }
         },
         {
-            "id": "Melee Attack",
-            "clipIndex": 3,
-            "loop": true,
-            "speed": 1.2000000476837158,
-            "crossfadeDuration": 0.0,
-            "nodePosition": {
-                "x": 438.5,
-                "y": -546.0
-            }
-        },
-        {
             "id": "Hurt3",
-            "clipIndex": 8,
+            "clipIndex": 6,
             "loop": false,
             "speed": 2.000000238418579,
             "crossfadeDuration": 0.0,
@@ -144,10 +133,21 @@
             }
         },
         {
-            "id": "Ranged Attack",
-            "clipIndex": 4,
+            "id": "Melee Attack",
+            "clipIndex": 1,
             "loop": true,
-            "speed": 2.000000238418579,
+            "speed": 1.2000000476837158,
+            "crossfadeDuration": 0.0,
+            "nodePosition": {
+                "x": 438.5,
+                "y": -546.0
+            }
+        },
+        {
+            "id": "Ranged Attack",
+            "clipIndex": 8,
+            "loop": true,
+            "speed": 1.7000001668930054,
             "crossfadeDuration": 0.0,
             "nodePosition": {
                 "x": 595.5,
@@ -156,7 +156,7 @@
         },
         {
             "id": "Hurt2",
-            "clipIndex": 7,
+            "clipIndex": 5,
             "loop": false,
             "speed": 2.000000238418579,
             "crossfadeDuration": 0.0,
@@ -167,7 +167,7 @@
         },
         {
             "id": "Ground Chase",
-            "clipIndex": 2,
+            "clipIndex": 9,
             "loop": true,
             "speed": 1.0,
             "crossfadeDuration": 0.20000000298023224,
@@ -178,7 +178,7 @@
         },
         {
             "id": "Ground Patrol",
-            "clipIndex": 1,
+            "clipIndex": 3,
             "loop": true,
             "speed": 1.0,
             "crossfadeDuration": 0.0,
@@ -256,8 +256,8 @@
             "conditions": [
                 {
                     "paramName": "Hooked",
-                    "mode": "Equals",
-                    "threshold": 1.0
+                    "mode": "TriggerFired",
+                    "threshold": 0.0
                 }
             ]
         },
@@ -275,11 +275,6 @@
                     "threshold": 0.0
                 },
                 {
-                    "paramName": "Melee",
-                    "mode": "Equals",
-                    "threshold": 0.0
-                },
-                {
                     "paramName": "Ranged",
                     "mode": "Equals",
                     "threshold": 0.0
@@ -293,13 +288,7 @@
             "hasExitTime": false,
             "exitTime": 1.0,
             "transitionDuration": 0.0,
-            "conditions": [
-                {
-                    "paramName": "Melee",
-                    "mode": "Equals",
-                    "threshold": 1.0
-                }
-            ]
+            "conditions": []
         },
         {
             "from": "Hooked",
@@ -337,13 +326,7 @@
             "hasExitTime": false,
             "exitTime": 1.0,
             "transitionDuration": 0.0,
-            "conditions": [
-                {
-                    "paramName": "Melee",
-                    "mode": "Equals",
-                    "threshold": 0.0
-                }
-            ]
+            "conditions": []
         },
         {
             "from": "Ranged Attack",
@@ -494,11 +477,6 @@
                     "threshold": 0.0
                 },
                 {
-                    "paramName": "Melee",
-                    "mode": "Equals",
-                    "threshold": 0.0
-                },
-                {
                     "paramName": "Ranged",
                     "mode": "Equals",
                     "threshold": 0.0
@@ -522,11 +500,6 @@
                     "paramName": "Ranged",
                     "mode": "Equals",
                     "threshold": 1.0
-                },
-                {
-                    "paramName": "Melee",
-                    "mode": "Equals",
-                    "threshold": 0.0
                 }
             ]
         },
@@ -592,11 +565,6 @@
                     "paramName": "Hurt3",
                     "mode": "Equals",
                     "threshold": 0.0
-                },
-                {
-                    "paramName": "Melee",
-                    "mode": "Equals",
-                    "threshold": 1.0
                 }
             ]
         },
@@ -610,11 +578,6 @@
             "conditions": [
                 {
                     "paramName": "Hurt3",
-                    "mode": "Equals",
-                    "threshold": 0.0
-                },
-                {
-                    "paramName": "Melee",
                     "mode": "Equals",
                     "threshold": 0.0
                 },
@@ -667,11 +630,6 @@
                     "paramName": "Hurt2",
                     "mode": "Equals",
                     "threshold": 0.0
-                },
-                {
-                    "paramName": "Melee",
-                    "mode": "Equals",
-                    "threshold": 1.0
                 }
             ]
         },
@@ -702,11 +660,6 @@
                     "paramName": "Hurt1",
                     "mode": "Equals",
                     "threshold": 0.0
-                },
-                {
-                    "paramName": "Melee",
-                    "mode": "Equals",
-                    "threshold": 1.0
                 }
             ]
         },
@@ -834,12 +787,12 @@
                     "threshold": 0.0
                 },
                 {
-                    "paramName": "Melee",
+                    "paramName": "PlayerInAttackRange",
                     "mode": "Equals",
                     "threshold": 1.0
                 },
                 {
-                    "paramName": "PlayerInAttackRange",
+                    "paramName": "Melee",
                     "mode": "Equals",
                     "threshold": 1.0
                 }
@@ -853,11 +806,6 @@
             "exitTime": 0.9100000262260437,
             "transitionDuration": 0.8999999761581421,
             "conditions": [
-                {
-                    "paramName": "Melee",
-                    "mode": "Equals",
-                    "threshold": 0.0
-                },
                 {
                     "paramName": "Dead",
                     "mode": "Equals",
@@ -955,11 +903,6 @@
                 },
                 {
                     "paramName": "Dead",
-                    "mode": "Equals",
-                    "threshold": 0.0
-                },
-                {
-                    "paramName": "Ranged",
                     "mode": "Equals",
                     "threshold": 0.0
                 },
@@ -1244,11 +1187,6 @@
             "transitionDuration": 0.03999999910593033,
             "conditions": [
                 {
-                    "paramName": "Melee",
-                    "mode": "Equals",
-                    "threshold": 1.0
-                },
-                {
                     "paramName": "PlayerInAttackRange",
                     "mode": "Equals",
                     "threshold": 1.0
@@ -1257,6 +1195,11 @@
                     "paramName": "Passive",
                     "mode": "Equals",
                     "threshold": 0.0
+                },
+                {
+                    "paramName": "Melee",
+                    "mode": "Equals",
+                    "threshold": 1.0
                 }
             ]
         },
@@ -1293,14 +1236,14 @@
     ],
     "clipPaths": [
         "Resources/Animations/Enemy/Enemy@Idle.fbx",
-        "Resources/Animations/Enemy/Enemy@Walk.fbx",
-        "Resources/Animations/Enemy/Enemy@Run.fbx",
         "Resources/Animations/Enemy/Enemy@AttackScratch.fbx",
-        "Resources/Animations/Enemy/Enemy@AttackThrow.fbx",
-        "Resources/Animations/Enemy/Enemy@Death.fbx",
-        "Resources/Animations/Enemy/Enemy@Hurt.fbx",
-        "Resources/Animations/Enemy/Enemy@Hurt2.fbx",
-        "Resources/Animations/Enemy/Enemy@Hurt3.fbx",
-        "Resources/Animations/Enemy/Ground/KarasuGroundVar@IdleRanged.fbx"
+        "Resources/Animations/Enemy/Ground/KarasuGroundVar@IdleRanged.fbx",
+        "Resources/Animations/Enemy/Ground/KarasuGroundVar@WalkPatrol.fbx",
+        "Resources/Animations/Enemy/Ground/KarasuGroundVar@Hurt1.fbx",
+        "Resources/Animations/Enemy/Ground/KarasuGroundVar@Hurt2.fbx",
+        "Resources/Animations/Enemy/Ground/KarasuGroundVar@Hurt3.fbx",
+        "Resources/Animations/Enemy/Ground/KarasuGroundVar@Death.fbx",
+        "Resources/Animations/Enemy/Ground/KarasuGroundVar@FeatherAttack.fbx",
+        "Resources/Animations/Enemy/Ground/KarasuGroundVar@Chase.fbx"
     ]
 }

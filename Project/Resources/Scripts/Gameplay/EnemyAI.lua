@@ -253,6 +253,8 @@ return Component {
         self._transform = self:GetComponent("Transform")
         self._rb        = self:GetComponent("RigidBodyComponent")
         self.particles  = self:GetComponent("ParticleComponent")
+
+        self._entityName = Engine.GetEntityName(self.entityId)
         self._featherEntities = {}
 
         if self._controller then
@@ -345,6 +347,13 @@ return Component {
                 local damage = payload.damage or 10
                 local hitType = payload.hitType or "COMBO"
                 self:ApplyHit(damage, hitType)
+            end)
+
+            self._chainEndpointHitSub = _G.event_bus.subscribe("chain.endpoint_hit_entity", function(payload)
+                if not payload then return end
+                if payload.rootName ~= self._entityName then return end
+                print("[EnemyAI] chain.endpoint_hit_entity received")
+                self._animator:SetTrigger("Hooked")
             end)
 
             self._chainHookSub = _G.event_bus.subscribe("chain.enemy_hooked", function(payload)
@@ -1077,6 +1086,8 @@ return Component {
 
     BeginSlamDown = function(self)
         if not self:IsFlying() then return end
+        print("[EnemyAI] PULLDOWN")
+        self._animator:SetTrigger("Pulldown")
 
         self._slamActive = true
         self._slamVy = 0
@@ -1091,11 +1102,10 @@ return Component {
         if x == nil then return false end
 
         local gy = 0
-        self._animator:SetBool("Hooked", false)
+        -- self._animator:SetBool("Hooked", false)
         if Nav and Nav.GetGroundY then
             local g = Nav.GetGroundY(self.entityId)
             if g ~= nil then gy = g end
-            self._animator:SetTrigger("Pulldown")
         end
 
         local targetY = gy
@@ -1110,6 +1120,7 @@ return Component {
 
             self._slamActive = false
             self._slamVy = 0
+            print("[EnemyAI] SLAMMED")
             self._animator:SetTrigger("Slammed")
             return true
         end

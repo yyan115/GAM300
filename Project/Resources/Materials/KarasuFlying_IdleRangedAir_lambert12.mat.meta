@@ -1,8 +1,8 @@
 {
     "AssetMetaData": {
         "version": 7,
-        "guid": "0021c38475741df1-00046c18b2001b4f",
-        "source": "../../Resources/Materials/KarasuFlying@IdleRangedAir_lambert12.mat",
+        "guid": "005a62378649fbe6-00046c8c5c000011",
+        "source": "../../Resources/Materials/KarasuFlying_IdleRangedAir_lambert12.mat",
         "compiled": "../../Resources/Materials/KarasuFlying_IdleRangedAir_lambert12.mat"
     }
 }

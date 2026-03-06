@@ -14,8 +14,8 @@ local Component = require("extension.mono_helper")
 
 return Component {
     fields = {
-        -- Body part entity IDs, populated in the editor.
-        PartEntityIds = {},
+        -- Body part entity names, populated in the editor.
+        PartEntityNames = {},
 
         -- Radius within which the endpoint is considered to have hit a part.
         -- Should match or slightly exceed the endpoint trigger collider radius.
@@ -23,6 +23,30 @@ return Component {
     },
 
     Start = function(self)
+        -- Initialize the empty table to hold the IDs
+        self.PartEntityIds = {}
+        local parentId = Engine.GetParentEntity(self.entityId)
+
+        -- Loop through all the names provided by the editor
+        for _, partName in pairs(self.PartEntityNames) do
+            
+            -- Skip any empty strings just in case the editor left a blank entry
+            if partName and partName ~= "" then
+                
+                -- Search the hierarchy starting from parentId
+                print("Calling Engine.FindChildByName")
+                local childId = Engine.FindChildByName(parentId, partName)
+                
+                if childId ~= -1 then
+                    -- Store it in the dictionary using the name as the key
+                    self.PartEntityIds[partName] = childId
+                    print("[LockOnPoint] Found body part: " .. partName .. " (ID: " .. childId .. ")")
+                else
+                    print("[LockOnPoint] WARNING: Could not find child named: " .. partName)
+                end
+            end
+        end
+
         -- Resolve our own entity ID so we can pass it in the sweep hit event.
         self._entityId = nil
         pcall(function() if self.GetEntityId then self._entityId = self:GetEntityId() end end)
