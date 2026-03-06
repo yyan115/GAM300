@@ -27,9 +27,10 @@ function M.New(params)
     self.endPointLocked = false
     self.lockedEndPoint = {0,0,0}
     self.hookedTag      = ""
-    self._raycastSnapped  = false
-    self._lockedChainLen  = 0.0
-    self._flopping        = false
+    self._raycastSnapped        = false
+    self._lockedChainLen        = 0.0
+    self._flopping              = false
+    self._justEnteredFlopFromExt = false
     self.losAnchors       = {}
     self.VerletState = VerletAdapter.Init{positions=self.positions, prev=self.prev, invMass=self.invMass}
     return self
@@ -42,6 +43,7 @@ function M:StartExtension(forward, maxLength, linkMaxDistance)
     self.isExtending, self.isRetracting = true, false
     self.extensionTime, self.chainLen   = 0, 0
     self._lockedChainLen, self._raycastSnapped, self._flopping = 0, false, false
+    self._justEnteredFlopFromExt = false
     self.endPointLocked = false
     self.lockedEndPoint = {0,0,0}
     self.hookedTag      = ""
@@ -373,6 +375,7 @@ function M:Update(dt, settings)
         self.chainLen = desired
         if maxLenSetting>0 and desired>=maxLenSetting and not self._raycastSnapped and not self.endPointLocked then
             self.isExtending=false; self._flopping=true
+            self._justEnteredFlopFromExt = true
         end
     end
     if self.isRetracting then
@@ -584,6 +587,19 @@ function M:Update(dt, settings)
     local restLen = (maxLenSetting>0) and maxLenSetting or math.max(curEndDist,1e-6)
     local segmentLen = (aN>1) and ((self._flopping and restLen or totalLen)/(aN-1)) or 0
     if (not isElastic) and linkMax and linkMax>0 and segmentLen>linkMax then segmentLen=linkMax end
+
+    -- 5) First-frame flop-from-extension: redistribute links uniformly so no
+    --    spring energy is stored from the kinematic extension placement.
+    --    Only fires when flop was entered mid-extension (not from a wall release,
+    --    which carries real Verlet velocity and produces the intentional tension launch).
+    if self._flopping and self._justEnteredFlopFromExt then
+        self._justEnteredFlopFromExt = false
+        for i = 1, aN do
+            local t = (aN > 1) and ((i-1)/(aN-1)) or 0
+            self.positions[i] = {sx + (ex-sx)*t, sy + (ey-sy)*t, sz + (ez-sz)*t}
+            self.prev[i]      = {self.positions[i][1], self.positions[i][2], self.positions[i][3]}
+        end
+    end
 
     -- 5) Per-link kinematic state
     for i = 1,self.n do
