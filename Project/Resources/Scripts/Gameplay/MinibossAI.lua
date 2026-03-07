@@ -428,7 +428,7 @@ return Component {
             if not payload then return end
             if payload.rootName ~= self._entityName then return end
             print("[MinibossAI] chain.endpoint_hit_entity received")
-            self._animator:SetBool("Hooked", true)
+            self._animator:SetTrigger("Hooked")
         end)
 
         -- Seed prevY for grounded heuristic
@@ -663,6 +663,7 @@ return Component {
             end)
         end
         self._controller = nil
+        self._animator:SetBool("Flying", true)
     end,
 
     CreateCC = function(self)
@@ -685,6 +686,7 @@ return Component {
             if CharacterController.SetPosition then
                 pcall(function() CharacterController.SetPosition(self._controller, x, y, z) end)
             end
+            self._animator:SetBool("Flying", false)
             return true
         end
 
@@ -942,7 +944,6 @@ return Component {
     BeginSlamDown = function(self)
         if not self._inAir then return end
         self._slamActive = true
-        self._animator:SetBool("Hooked", false)
         self._animator:SetTrigger("Pulldown")
     end,
 
@@ -955,7 +956,6 @@ return Component {
         if x == nil then return false end
 
         local gy = 0
-        self._animator:SetBool("Hooked", false)
         if Nav and Nav.GetGroundY then
             local g = Nav.GetGroundY(self.entityId)
             if g ~= nil then gy = g end

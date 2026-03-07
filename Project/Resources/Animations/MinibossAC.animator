@@ -21,7 +21,7 @@
             "defaultValue": 0.0
         },
         {
-            "name": "Hooked",
+            "name": "Hook",
             "type": "Bool",
             "defaultValue": 0.0
         },
@@ -64,29 +64,23 @@
             "name": "Slammed",
             "type": "Trigger",
             "defaultValue": 0.0
+        },
+        {
+            "name": "Hooked",
+            "type": "Trigger",
+            "defaultValue": 0.0
         }
     ],
     "states": [
         {
-            "id": "Hurt1",
-            "clipIndex": 3,
+            "id": "Taunt",
+            "clipIndex": 0,
             "loop": false,
             "speed": 2.000000238418579,
             "crossfadeDuration": 0.0,
             "nodePosition": {
-                "x": 169.0,
-                "y": -14.75
-            }
-        },
-        {
-            "id": "Hooked",
-            "clipIndex": 3,
-            "loop": false,
-            "speed": 1.0,
-            "crossfadeDuration": 0.0,
-            "nodePosition": {
-                "x": 918.5,
-                "y": -149.0
+                "x": -55.0,
+                "y": -222.0
             }
         },
         {
@@ -101,14 +95,25 @@
             }
         },
         {
-            "id": "Taunt",
-            "clipIndex": 0,
+            "id": "Hooked",
+            "clipIndex": 3,
+            "loop": false,
+            "speed": 1.0,
+            "crossfadeDuration": 0.0,
+            "nodePosition": {
+                "x": 918.5,
+                "y": -149.0
+            }
+        },
+        {
+            "id": "Hurt1",
+            "clipIndex": 3,
             "loop": false,
             "speed": 2.000000238418579,
             "crossfadeDuration": 0.0,
             "nodePosition": {
-                "x": -55.0,
-                "y": -222.0
+                "x": 169.0,
+                "y": -14.75
             }
         },
         {
@@ -434,7 +439,7 @@
             "conditions": [
                 {
                     "paramName": "Hooked",
-                    "mode": "Equals",
+                    "mode": "TriggerFired",
                     "threshold": 1.0
                 }
             ]
