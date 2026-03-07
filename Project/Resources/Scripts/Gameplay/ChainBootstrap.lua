@@ -98,25 +98,34 @@ return Component {
         -- AUDIO CLIPS
         -- Arrays: ChainAudio picks randomly on each trigger.
         -- Add more GUIDs at any time — no code changes needed.
-        -- Strings: single clips for continuous loops.
         --
-        -- Currently mapped to the 12 available assets:
+        -- Currently mapped to available assets:
         --   Throw    <- ChainThrow1, ChainThrow2, ChainThrow3, ChainThrow4
         --   Retract  <- ChainRetract1, ChainRetract2, ChainRetract3
         --   HitFlesh <- ChainHitFlesh1, ChainHitFlesh2, ChainHitFlesh3
         --   HitWall  <- ChainHitWall1, ChainHitWall2, ChainHitWall3
         --
-        -- No current assets for:
-        --   Flop  (chain tip in free physics — leave "" until asset is ready)
-        --   Aim   (aim camera held           — leave "" until asset is ready)
+        -- Awaiting new assets:
+        --   Flop     <- ChainFlop1/2/3     (looping, chain swinging loose)
+        --   WallRub  <- ChainWallRub1/2    (looping, chain scraping geometry)
+        --   Aim      <- ChainAim1          (looping, helicopter spin overhead)
+        --   Taut     <- ChainTaut1/2/3     (one-shot, chain snapping to tension)
+        --   Lax      <- ChainLax1/2        (one-shot, tension releasing)
         -- =====================================================================
         AudioClips_Throw    = {},
         AudioClips_Retract  = {},
         AudioClips_HitFlesh = {},
         AudioClips_HitWall  = {},
-        AudioClips_Flop     = {},   -- loops while tip is in free physics (ChainRetract2 assigned)
-        AudioClips_WallRub  = {},   -- loops while chain wraps around geometry — NEW ASSET NEEDED
-        AudioClips_Aim      = {},   -- loops while aim camera held — NEW ASSET NEEDED
+        AudioClips_Flop     = {},
+        AudioClips_WallRub  = {},
+        AudioClips_Aim      = {},
+        AudioClips_Taut     = {},
+        AudioClips_Lax      = {},
+
+        -- HitFlesh plays louder than the global AudioVolume since enemy impact
+        -- needs to cut through other sounds clearly.
+        -- 1.0 = same as global volume, 1.5 = 50% louder.
+        AudioHitFleshVolumeMultiplier = 1.5,
     },
 
     _unpack_pos = function(self, a, b, c)
@@ -395,14 +404,17 @@ return Component {
                 flop     = self.AudioClips_Flop,
                 wallRub  = self.AudioClips_WallRub,
                 aim      = self.AudioClips_Aim,
+                taut     = self.AudioClips_Taut,
+                lax      = self.AudioClips_Lax,
             },
             {
-                volume         = self.AudioVolume,
-                minDistance    = self.AudioMinDistance,
-                maxDistance    = self.AudioMaxDistance,
-                dopplerLevel   = self.AudioDopplerLevel,
-                pitchVariation = self.AudioPitchVariation,
-                volVariation   = self.AudioVolumeVariation,
+                volume             = self.AudioVolume,
+                minDistance        = self.AudioMinDistance,
+                maxDistance        = self.AudioMaxDistance,
+                dopplerLevel       = self.AudioDopplerLevel,
+                pitchVariation     = self.AudioPitchVariation,
+                volVariation       = self.AudioVolumeVariation,
+                hitFleshVolMult    = self.AudioHitFleshVolumeMultiplier,
             }
         )
         self.audioHandler:Start()
