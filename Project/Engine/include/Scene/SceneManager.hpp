@@ -9,6 +9,7 @@ enum class SceneLoadState {
 	UNLOADING_CURRENT,
 	PARSING_JSON,
 	DESERIALIZING,
+	INITIALIZING_SYSTEMS,
 	INITIALIZING,
 	COMPLETE
 };
@@ -83,6 +84,7 @@ private:
 	rapidjson::Document     asyncDoc;
 	rapidjson::SizeType     asyncEntityIndex = 0;
 	rapidjson::SizeType     asyncEntityTotal = 0;
-	int                     entitiesPerChunk = 20;
+	int                     entitiesPerChunk = 1;
 	std::unique_ptr<IScene> pendingScene;  // IScene not SceneInstance, matching your currentScene type
+	int						asyncSystemInitStep = 0;
 };

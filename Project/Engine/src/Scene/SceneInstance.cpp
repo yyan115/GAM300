@@ -288,6 +288,13 @@ void SceneInstance::ShutDownPhysics()
 	ECSRegistry::GetInstance().GetECSManager(scenePath).physicsSystem->Shutdown();
 }
 
+void SceneInstance::initializeOrchestrator() {
+	if (!multithreadSystems)
+		systemOrchestrator = std::make_unique<SequentialSystemOrchestrator>();
+	else
+		systemOrchestrator = std::make_unique<ParallelSystemOrchestrator>();
+}
+
 void SceneInstance::processInput(float deltaTime)
 {
 	// ESC handling is now done in Lua (camera_follow.lua) for cursor lock toggle

@@ -694,7 +694,6 @@ void Engine::Update() {
     //RunBrainInitSystem(ecs);
 
     //RunBrainUpdateSystem(ecs, static_cast<float>(TimeManager::GetDeltaTime()));
-    ENGINE_PRINT("[Engine] About to call UpdateAsyncLoad, loadState=" + std::to_string((int)SceneManager::GetInstance().IsLoading()));
     SceneManager::GetInstance().UpdateAsyncLoad();
 
 	// Only update the scene if the game should be running (not paused)

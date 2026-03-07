@@ -22,6 +22,8 @@ return Component {
         self._started = false
         -- Cache bar
         self._barEntity = Engine.GetEntityByName(self.barFillName)
+        self._barContainer = Engine.GetEntityByName("LoadingBarContainer")
+        self._barContainerTransform = GetComponent(self._barContainer, "Transform")
         if self._barEntity then
             self._barTransform = GetComponent(self._barEntity, "Transform")
             if self._barTransform then
@@ -48,11 +50,11 @@ return Component {
         end
     end,
     _applyBarProgress = function(self, p)
-        if not self._barTransform or not self._barTransform.localScale then return end
+        if not self._barTransform or not self._barContainerTransform then return end
         if p < 0 then p = 0 elseif p > 1 then p = 1 end
         local fullX = (self._barBaseScaleX or 1.0) * (self.fullScaleX or 1.0)
         local newScaleX = fullX * p
-        self._barTransform.localScale.x = newScaleX
+        self._barTransform.localScale.x =  self._barContainerTransform.localScale.x * p
         if self.anchorLeft and self._barBasePosX then
             local missing = fullX - newScaleX
             self._barTransform.localPosition.x = self._barBasePosX - (missing * 0.5)
