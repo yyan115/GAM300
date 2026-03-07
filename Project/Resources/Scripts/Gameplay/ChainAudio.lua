@@ -47,7 +47,6 @@ function M.New(linkName, clips, settings)
     self._rubLinkIndex      = 1
     self._flopLinkIndex     = 1
     self._prevIsTaut        = false   -- previous frame taut state for edge detection
-    self._configured        = {}
     self._subAim            = nil
     return self
 end
@@ -85,13 +84,11 @@ function M:Update(dt, pub, positions, activeN)
     if isTaut ~= self._prevIsTaut then
         local midIdx = math.max(1, math.floor(activeN / 2))
         if isTaut then
-            -- lax -> taut transition
             local ac = self:_getLink(midIdx)
-            self:_playVaried(ac, midIdx, _pickRandom(self.clips.taut), 1.0, false)
+            self:_playVaried(ac, _pickRandom(self.clips.taut), 1.0, false)
         else
-            -- taut -> lax transition
             local ac = self:_getLink(midIdx)
-            self:_playVaried(ac, midIdx, _pickRandom(self.clips.lax), 1.0, false)
+            self:_playVaried(ac, _pickRandom(self.clips.lax), 1.0, false)
         end
         self._prevIsTaut = isTaut
     end
@@ -119,7 +116,6 @@ function M:Cleanup()
         local ac = self:_getLink(self._flopLinkIndex)
         if ac and ac:GetIsPlaying() then ac:Stop() end
     end)
-    self._configured  = {}
     self._prevIsTaut  = false
     if _G.event_bus and _G.event_bus.unsubscribe then
         if self._subAim then pcall(function() _G.event_bus.unsubscribe(self._subAim) end) end
@@ -146,24 +142,21 @@ function M:_getLink(index)
     return (ok and ac ~= nil) and ac or nil
 end
 
-function M:_ensureConfigured(ac, index, blend, doppler)
-    local key = tostring(index) .. "_" .. tostring(blend)
-    if self._configured[key] then return end
+function M:_configureSpatial(ac, blend, doppler)
     pcall(function()
         ac.SpatialBlend = blend
         ac.MinDistance  = self.minDistance
         ac.MaxDistance  = self.maxDistance
         ac.DopplerLevel = doppler and self.dopplerLevel or 0
     end)
-    self._configured[key] = true
 end
 
 -- Play a one-shot with pitch+volume variation. volMult scales on top of base volume.
-function M:_playVaried(ac, index, clipGuid, blend, doppler, volMult)
+function M:_playVaried(ac, clipGuid, blend, doppler, volMult)
     if not ac or not clipGuid or clipGuid == "" then return end
     volMult = volMult or 1.0
     pcall(function()
-        self:_ensureConfigured(ac, index, blend or 1.0, doppler or false)
+        self:_configureSpatial(ac, blend or 1.0, doppler or false)
         ac:SetPitch(_randVariation(1.0, self.pitchVariation))
         ac:SetVolume(math.min(1.0, _randVariation(self.volume * volMult,
                                                    self.volume * volMult * self.volVariation)))
@@ -172,11 +165,17 @@ function M:_playVaried(ac, index, clipGuid, blend, doppler, volMult)
 end
 
 function M:_resolveState(pub)
-    if pub.IsRetracting                             then return STATE.RETRACTING
-    elseif pub.IsExtending                          then return STATE.EXTENDING
-    elseif pub.Flopping                             then return STATE.FLOPPING
-    elseif pub.EndPointLocked or pub.RaycastSnapped then return STATE.LOCKED
-    else                                                 return STATE.IDLE
+    -- EndPointLocked must be checked BEFORE IsExtending.
+    -- When an entity hit occurs, Bootstrap sets endPointLocked=true but does
+    -- not clear isExtending in the same frame, so IsExtending and EndPointLocked
+    -- are both true simultaneously. Checking EndPointLocked first ensures the
+    -- LOCKED transition fires and HitFlesh plays correctly.
+    if pub.EndPointLocked                          then return STATE.LOCKED
+    elseif pub.IsRetracting                        then return STATE.RETRACTING
+    elseif pub.RaycastSnapped                      then return STATE.LOCKED
+    elseif pub.IsExtending                         then return STATE.EXTENDING
+    elseif pub.Flopping                            then return STATE.FLOPPING
+    else                                                return STATE.IDLE
     end
 end
 
@@ -190,23 +189,20 @@ function M:_onStateChange(from, to, pub, activeN)
     end
 
     if to == STATE.EXTENDING then
-        -- Throw: from Link1 (hand), 3D
         local ac = self:_getLink(1)
-        self:_playVaried(ac, 1, _pickRandom(self.clips.throw), 1.0, false)
+        self:_playVaried(ac, _pickRandom(self.clips.throw), 1.0, false)
 
     elseif to == STATE.RETRACTING then
-        -- Retract: from Link1 (hand), 3D
         local ac = self:_getLink(1)
-        self:_playVaried(ac, 1, _pickRandom(self.clips.retract), 1.0, false)
+        self:_playVaried(ac, _pickRandom(self.clips.retract), 1.0, false)
 
     elseif to == STATE.FLOPPING then
-        -- Flop: looping from tip link, doppler on
         local ac = self:_getLink(activeN)
         local clip = _pickRandom(self.clips.flop)
         if ac and clip then
             self._flopLinkIndex = activeN
-            self:_ensureConfigured(ac, activeN, 1.0, true)
             pcall(function()
+                self:_configureSpatial(ac, 1.0, true)
                 ac:SetVolume(self.volume)
                 ac:SetPitch(1.0)
                 ac:SetClip(clip)
@@ -216,19 +212,15 @@ function M:_onStateChange(from, to, pub, activeN)
         end
 
     elseif to == STATE.LOCKED then
-        -- HitFlesh: entity lock — louder via hitFleshVolMult, from tip link
         if pub.EndPointLocked then
             local ac = self:_getLink(activeN)
-            self:_playVaried(ac, activeN, _pickRandom(self.clips.hitFlesh),
-                             1.0, false, self.hitFleshVolMult)
-        -- HitWall: geometry snap — normal volume, from tip link
+            self:_playVaried(ac, _pickRandom(self.clips.hitFlesh), 1.0, false, self.hitFleshVolMult)
         elseif pub.RaycastSnapped then
             local ac = self:_getLink(activeN)
-            self:_playVaried(ac, activeN, _pickRandom(self.clips.hitWall), 1.0, false)
+            self:_playVaried(ac, _pickRandom(self.clips.hitWall), 1.0, false)
         end
 
     elseif to == STATE.IDLE then
-        -- no sound needed
     end
 end
 
@@ -248,7 +240,7 @@ function M:_startWallRub(activeN)
     self._rubbing      = true
     self._rubLinkIndex = rubIdx
     pcall(function()
-        self:_ensureConfigured(ac, rubIdx, 1.0, false)
+        self:_configureSpatial(ac, 1.0, false)
         ac:SetVolume(self.volume * 0.6)
         ac:SetPitch(1.0)
         ac:SetClip(clip)
@@ -275,7 +267,7 @@ function M:_onAim(active)
         local clip = _pickRandom(self.clips.aim)
         if clip then
             pcall(function()
-                self:_ensureConfigured(ac, 1, 0.0, false)
+                self:_configureSpatial(ac, 0.0, false)
                 ac:SetVolume(self.volume)
                 ac:SetPitch(1.0)
                 ac:SetClip(clip)
