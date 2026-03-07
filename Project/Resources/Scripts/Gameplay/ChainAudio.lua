@@ -3,20 +3,32 @@
 -- Bootstrap calls New(), Start(), Update(dt, pub, positions, activeN), Cleanup().
 --
 -- =============================================================================
--- SOUND TRIGGERS SUMMARY
+-- FIXES IN THIS VERSION
+--   1. HitFlesh moved from event subscription to state transition so it fires
+--      reliably at the correct activeN without timing/ordering issues.
+--   2. Flop clip now uses _pickRandom(array) — fixes silent flop caused by
+--      engine storing the field as a table instead of a plain string.
+--   3. Wall rub loop added: plays while LOSAnchorCount > 0 (chain wrapped
+--      around geometry). Requires new asset — see MISSING ASSETS below.
 --
---   Throw       one-shot   Link1 (hand)       chain starts extending
---   Retract     one-shot   Link1 (hand)       chain starts retracting
---   HitFlesh    one-shot   Link[tip]           endpoint locks onto entity
---   HitWall     one-shot   Link[tip]           endpoint snaps to geometry
---   Flop        loop       Link[tip]           tip in free physics mode
---   WallRub     loop       Link[mid]           LOS anchors present (chain wrapped)
---   Aim         loop       Link1, 2D           aim camera held
---   Taut        one-shot   Link[mid]           chain transitions lax -> taut
---   Lax         one-shot   Link[mid]           chain transitions taut -> lax
+-- MISSING ASSETS (none of the current 12 sounds suit these slots)
+--   AudioClips_WallRub
+--     Looping metallic chain scraping/dragging against stone.
+--     Duration  : seamlessly loopable, ~2 sec loop point
+--     Character : dry metallic drag, light resonance, not percussive
+--     Trigger   : starts when first LOS anchor appears, stops when all clear
 --
--- HitFlesh plays at volume * hitFleshVolMult (default 1.5) to cut through.
--- IsTaut edge is detected frame-to-frame — one-shot fires only on the transition.
+--   AudioClips_Aim
+--     Looping ambient while aim camera is held.
+--     Currently no asset — leave array empty until sourced.
+--
+-- LINK SPATIAL STRATEGY
+--   Throw / Retract : Link1 (hand) — sound originates at player
+--   HitFlesh        : Link[activeN] (tip) — impact at endpoint
+--   HitWall         : Link[activeN] (tip) — impact at geometry hit point
+--   Flop loop       : Link[activeN] (tip) — moves with physics tip
+--   Wall rub loop   : Link[activeN/2] (midchain) — approximates wrap point
+--   Aim loop        : Link1, SpatialBlend=0 (2D)
 -- =============================================================================
 
 local M = {}
@@ -30,25 +42,23 @@ local STATE = {
 }
 
 function M.New(linkName, clips, settings)
-    local self              = setmetatable({}, {__index = M})
-    self.linkName           = linkName or "Link"
-    self.clips              = clips    or {}
-    self.volume             = tonumber(settings and settings.volume)          or 1.0
-    self.minDistance        = tonumber(settings and settings.minDistance)     or 1.0
-    self.maxDistance        = tonumber(settings and settings.maxDistance)     or 15.0
-    self.dopplerLevel       = tonumber(settings and settings.dopplerLevel)    or 0.5
-    self.pitchVariation     = tonumber(settings and settings.pitchVariation)  or 0.1
-    self.volVariation       = tonumber(settings and settings.volVariation)    or 0.08
-    self.hitFleshVolMult    = tonumber(settings and settings.hitFleshVolMult) or 1.5
-    self._state             = STATE.IDLE
-    self._aiming            = false
-    self._tipIndex          = 1
-    self._rubbing           = false
-    self._rubLinkIndex      = 1
-    self._flopLinkIndex     = 1
-    self._prevIsTaut        = false   -- previous frame taut state for edge detection
-    self._configured        = {}
-    self._subAim            = nil
+    local self           = setmetatable({}, {__index = M})
+    self.linkName        = linkName or "Link"
+    self.clips           = clips    or {}
+    self.volume          = tonumber(settings and settings.volume)         or 1.0
+    self.minDistance     = tonumber(settings and settings.minDistance)    or 1.0
+    self.maxDistance     = tonumber(settings and settings.maxDistance)    or 15.0
+    self.dopplerLevel    = tonumber(settings and settings.dopplerLevel)   or 0.5
+    self.pitchVariation  = tonumber(settings and settings.pitchVariation) or 0.1
+    self.volVariation    = tonumber(settings and settings.volVariation)   or 0.08
+    self._state          = STATE.IDLE
+    self._aiming         = false
+    self._tipIndex       = 1
+    self._rubbing        = false   -- true while wall-rub loop is active
+    self._rubLinkIndex   = 1       -- which link the rub loop is playing on
+    self._flopLinkIndex  = 1       -- which link the flop loop is playing on
+    self._configured     = {}
+    self._subAim         = nil
     return self
 end
 
@@ -62,6 +72,8 @@ function M:Start()
         if not payload then return end
         pcall(function() self:_onAim(payload.active == true) end)
     end)
+    -- NOTE: HitFlesh is now handled in _onStateChange (LOCKED + EndPointLocked)
+    -- rather than via event subscription, so timing is deterministic.
 end
 
 -- ---------------------------------------------------------------------------
@@ -72,33 +84,16 @@ function M:Update(dt, pub, positions, activeN)
     activeN = activeN or 1
     self._tipIndex = activeN
 
-    -- Chain state machine
+    -- State machine — drives throw/retract/flop/hit sounds
     local newState = self:_resolveState(pub)
     if newState ~= self._state then
         self:_onStateChange(self._state, newState, pub, activeN)
         self._state = newState
     end
 
-    -- Taut / Lax edge detection — independent of main state machine
-    -- so it fires correctly whether chain is LOCKED, FLOPPING, or IDLE
-    local isTaut = pub.IsTaut or false
-    if isTaut ~= self._prevIsTaut then
-        local midIdx = math.max(1, math.floor(activeN / 2))
-        if isTaut then
-            -- lax -> taut transition
-            local ac = self:_getLink(midIdx)
-            self:_playVaried(ac, midIdx, _pickRandom(self.clips.taut), 1.0, false)
-        else
-            -- taut -> lax transition
-            local ac = self:_getLink(midIdx)
-            self:_playVaried(ac, midIdx, _pickRandom(self.clips.lax), 1.0, false)
-        end
-        self._prevIsTaut = isTaut
-    end
-
-    -- Wall rub loop — driven by LOSAnchorCount, independent of state machine
+    -- Wall rub loop — independent of state machine, driven by LOSAnchorCount
     local anchorCount = pub.LOSAnchorCount or 0
-    local chainActive = (pub.ChainLength or 0) > 1e-4
+    local chainActive = pub.ChainLength and pub.ChainLength > 1e-4
     if anchorCount > 0 and chainActive then
         self:_startWallRub(activeN)
     else
@@ -119,8 +114,7 @@ function M:Cleanup()
         local ac = self:_getLink(self._flopLinkIndex)
         if ac and ac:GetIsPlaying() then ac:Stop() end
     end)
-    self._configured  = {}
-    self._prevIsTaut  = false
+    self._configured = {}
     if _G.event_bus and _G.event_bus.unsubscribe then
         if self._subAim then pcall(function() _G.event_bus.unsubscribe(self._subAim) end) end
     end
@@ -158,15 +152,12 @@ function M:_ensureConfigured(ac, index, blend, doppler)
     self._configured[key] = true
 end
 
--- Play a one-shot with pitch+volume variation. volMult scales on top of base volume.
-function M:_playVaried(ac, index, clipGuid, blend, doppler, volMult)
+function M:_playVaried(ac, index, clipGuid, blend, doppler)
     if not ac or not clipGuid or clipGuid == "" then return end
-    volMult = volMult or 1.0
     pcall(function()
         self:_ensureConfigured(ac, index, blend or 1.0, doppler or false)
         ac:SetPitch(_randVariation(1.0, self.pitchVariation))
-        ac:SetVolume(math.min(1.0, _randVariation(self.volume * volMult,
-                                                   self.volume * volMult * self.volVariation)))
+        ac:SetVolume(_randVariation(self.volume, self.volume * self.volVariation))
         ac:PlayOneShot(clipGuid)
     end)
 end
@@ -190,17 +181,15 @@ function M:_onStateChange(from, to, pub, activeN)
     end
 
     if to == STATE.EXTENDING then
-        -- Throw: from Link1 (hand), 3D
         local ac = self:_getLink(1)
         self:_playVaried(ac, 1, _pickRandom(self.clips.throw), 1.0, false)
 
     elseif to == STATE.RETRACTING then
-        -- Retract: from Link1 (hand), 3D
         local ac = self:_getLink(1)
         self:_playVaried(ac, 1, _pickRandom(self.clips.retract), 1.0, false)
 
     elseif to == STATE.FLOPPING then
-        -- Flop: looping from tip link, doppler on
+        -- Flop: looping, plays from tip link, doppler on
         local ac = self:_getLink(activeN)
         local clip = _pickRandom(self.clips.flop)
         if ac and clip then
@@ -216,12 +205,11 @@ function M:_onStateChange(from, to, pub, activeN)
         end
 
     elseif to == STATE.LOCKED then
-        -- HitFlesh: entity lock — louder via hitFleshVolMult, from tip link
+        -- HitFlesh: endpoint locked onto an entity — play from tip link
         if pub.EndPointLocked then
             local ac = self:_getLink(activeN)
-            self:_playVaried(ac, activeN, _pickRandom(self.clips.hitFlesh),
-                             1.0, false, self.hitFleshVolMult)
-        -- HitWall: geometry snap — normal volume, from tip link
+            self:_playVaried(ac, activeN, _pickRandom(self.clips.hitFlesh), 1.0, false)
+        -- HitWall: geometry raycast snap — play from tip link
         elseif pub.RaycastSnapped then
             local ac = self:_getLink(activeN)
             self:_playVaried(ac, activeN, _pickRandom(self.clips.hitWall), 1.0, false)
@@ -232,14 +220,18 @@ function M:_onStateChange(from, to, pub, activeN)
     end
 end
 
--- Wall rub loop: midchain link, slightly quieter, starts when anchors appear
+-- Wall rub: start loop if not already playing on the correct link
 function M:_startWallRub(activeN)
     local clip = _pickRandom(self.clips.wallRub)
-    if not clip then return end
+    if not clip then return end  -- no asset assigned yet
 
+    -- Use midchain link as approximate anchor contact point
     local rubIdx = math.max(1, math.floor(activeN / 2))
+
+    -- Already rubbing on the same link — do nothing
     if self._rubbing and self._rubLinkIndex == rubIdx then return end
 
+    -- Stop old rub if it was on a different link
     self:_stopWallRub()
 
     local ac = self:_getLink(rubIdx)
@@ -249,7 +241,7 @@ function M:_startWallRub(activeN)
     self._rubLinkIndex = rubIdx
     pcall(function()
         self:_ensureConfigured(ac, rubIdx, 1.0, false)
-        ac:SetVolume(self.volume * 0.6)
+        ac:SetVolume(self.volume * 0.6)  -- slightly quieter than hit sounds
         ac:SetPitch(1.0)
         ac:SetClip(clip)
         ac:SetLoop(true)
