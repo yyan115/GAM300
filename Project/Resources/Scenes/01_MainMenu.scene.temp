@@ -181,6 +181,10 @@
                             "data": 1
                         },
                         {
+                            "type": "float",
+                            "data": 0.5
+                        },
+                        {
                             "type": "bool",
                             "data": false
                         },
@@ -257,6 +261,7 @@
                     "bloomEnabled": false,
                     "bloomThreshold": 1.0,
                     "bloomIntensity": 1.0,
+                    "bloomSpread": 0.5,
                     "vignetteEnabled": false,
                     "vignetteIntensity": 0.5,
                     "vignetteSmoothness": 0.5,

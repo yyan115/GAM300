@@ -33,14 +33,15 @@ return Component {
     mixins = { TransformMixin },
     
     fields = {
-        StartRot = 60,     --Adjust Start Rotation
-        EndRot = -200,     --Adjust End Rotation
-        RollOffset = 0,    --Adjust RollOffset for Top - Down Orientation 
-        OffsetHeight = 0, --Adjust OffsetHeight for dagger starting height
-        OffsetDistance = -0.2, --Adjust how far VFX spawn based on player position
-        SideOffset = 0,        --Adjust VFX Spawn (+ve for Right, -ve for Left)
+        StartRot = 60,         -- Adjust Start Rotation
+        EndRot = -200,         -- Adjust End Rotation
+        RollOffset = 0,        -- Left/Right tilt
+        PitchOffset = 0,       -- Front/Back tilt
+        OffsetHeight = 0,      -- Adjust OffsetHeight for dagger starting height
+        OffsetDistance = -0.2, -- Adjust how far VFX spawn based on player position
+        SideOffset = 0,        -- Adjust VFX Spawn (+ve for Right, -ve for Left)
         Speed = 750,
-        SpawnTime = 0.14,  -- Threshold for triggering (Normalized Time)
+        SpawnTime = 0.14,      -- Threshold for triggering (Normalized Time)
         AttackState = "NA3",
     },
     
@@ -62,8 +63,8 @@ return Component {
         
         -- Runtime State
         self.active = false
-        self._hasTriggered = false -- The "Gate": Ensures one slash per animation cycle
-        self._playerYawQuat = {w=1, x=0, y=0, z=0} 
+        self._hasTriggered = false
+        self._playerYawQuat = {w=1, x=0, y=0, z=0}
 
         -- Initial Visibility
         if self.model then 
@@ -76,24 +77,18 @@ return Component {
         local cleanAttackState = self.AttackState:gsub('"', '')
         local isAttacking = currentState == cleanAttackState
         
-        -- Get the value directly from your C++ function
         local normalizedTime = self._playerAnimation:GetNormalizedTime()
 
         if isAttacking then
-            -- 1. Trigger Logic
-            -- Check against SpawnTime (was Delay)
             if normalizedTime >= self.SpawnTime and not self._hasTriggered then
                 self:TriggerSlash(self.StartRot, self.EndRot, self.Speed)
                 self._hasTriggered = true
             end
 
-            -- 2. Loop Reset
-            -- If the animation loops back to the start, allow it to trigger again
             if normalizedTime < self.SpawnTime * 0.5 then
                 self._hasTriggered = false
             end
         else
-            -- Reset when the state ends/changes
             self._hasTriggered = false
         end
         
@@ -102,39 +97,38 @@ return Component {
             self.age = self.age + dt
             local sweptAngle = self._currentSpeed * self.age
             
-            -- End the effect once the arc is finished
             if math.abs(sweptAngle) >= self._arcLength then
                 self.active = false
                 if self.model then ModelRenderComponent.SetVisible(self.model, false) end
                 return  
             end
             
-            -- Calculate rotation relative to player anchor
             local localYaw = self._currentStartRot + sweptAngle
-            local localSlashQuat = eulerToQuat(0, localYaw, self.RollOffset)
-            local finalQuat = multiplyQuats(self._playerYawQuat, localSlashQuat)
+
+            local sweepQuat      = eulerToQuat(0, localYaw, 0)
+            local tiltQuat       = eulerToQuat(self.PitchOffset, 0, self.RollOffset)
+            local localSlashQuat = multiplyQuats(tiltQuat, sweepQuat)
+            local finalQuat      = multiplyQuats(self._playerYawQuat, localSlashQuat)
 
             self:SetRotation(finalQuat.w, finalQuat.x, finalQuat.y, finalQuat.z)
         end
     end,
 
-TriggerSlash = function(self, startRot, endRot, speed)
+    TriggerSlash = function(self, startRot, endRot, speed)
         self._currentStartRot = startRot or self.StartRot
         local targetEndRot = endRot or self.EndRot
         self._currentSpeed = speed or self.Speed
         self._arcLength = math.abs(targetEndRot - self._currentStartRot)
         
-        -- Set direction based on start/end rotation values
         if targetEndRot < self._currentStartRot then
             self._currentSpeed = -math.abs(self._currentSpeed)
         else
             self._currentSpeed = math.abs(self._currentSpeed)
         end
         
-        -- Capture orientation (Anchor) to keep the slash stable while moving
         local playerRot = self._playerTransform.localRotation
         local playerYawRad = math.atan(2.0 * (playerRot.w * playerRot.y + playerRot.x * playerRot.z),
-                                       1.0 - 2.0 * (playerRot.y * playerRot.y + playerRot.z * playerRot.z))        
+                                    1.0 - 2.0 * (playerRot.y * playerRot.y + playerRot.z * playerRot.z))        
         self._playerYawQuat = eulerToQuat(0, math.deg(playerYawRad), 0)
         
         local daggerPos = self._daggerTransform.worldPosition
@@ -148,7 +142,6 @@ TriggerSlash = function(self, startRot, endRot, speed)
         self._transform.localPosition.y = daggerPos.y + self.OffsetHeight
         self._transform.localPosition.z = daggerPos.z + combinedOffsetZ
         
-        -- Start sweep state
         self.active = true
         self.age = 0
         
