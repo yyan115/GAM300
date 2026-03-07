@@ -1,0 +1,11 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "000f98f744d469cc-00046f5cb4000009",
+        "source": "../../Resources/Animations/Enemy/Boss/KarasuBoss@FeatherBomb.fbx",
+        "compiled": "../../Resources/Animations/Enemy/Boss/KarasuBoss@FeatherBomb.mesh"
+    },
+    "ModelMetaData": {
+        "optimizeMeshes": true
+    }
+}
