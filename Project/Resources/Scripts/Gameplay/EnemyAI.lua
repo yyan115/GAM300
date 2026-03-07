@@ -852,11 +852,9 @@ return Component {
         return false
     end,
 
-     -- Pull enemy toward player 
     PullTowardPlayer = function(self, dtSec)
         if not self._controller then return end
         if (self._kbT or 0) > 0 then
-            -- let knockback override hook pull
             return
         end
 
@@ -877,7 +875,7 @@ return Component {
         local dx, dz = px - ex, pz - ez
         local d2 = dx*dx + dz*dz
 
-        -- stop once close enough (prevents jitter at the end)
+        -- stop once close enough
         local stopR = self.HookStopDistance or 1.2
         if d2 <= (stopR * stopR) then
             self:StopCC()
@@ -892,19 +890,9 @@ return Component {
 
         local dirX, dirZ = dx / d, dz / d
 
-        -- Two-phase pull: short stagger, then hard pull into melee range
-        self._hookPullT = (self._hookPullT or 0) + (dtSec or 0)
-
-        local staggerTime = tonumber(self.HookStaggerTime) or 1.0
-
-        local pullSpeed, maxStep
-        if self._hookPullT < staggerTime then
-            pullSpeed = tonumber(self.HookStaggerSpeed) or 10.0
-            maxStep   = tonumber(self.HookStaggerMaxStep) or 0.08
-        else
-            pullSpeed = tonumber(self.HookHardSpeed) or (tonumber(self.HookPullSpeed) or 60.0)
-            maxStep   = tonumber(self.HookHardMaxStep) or 0.35
-        end
+        -- ONE quick hard pull only
+        local pullSpeed = tonumber(self.HookHardSpeed) or 1200.0
+        local maxStep   = tonumber(self.HookHardMaxStep) or 600.0
 
         local step = pullSpeed * (dtSec or 0)
         if step > maxStep then step = maxStep end
