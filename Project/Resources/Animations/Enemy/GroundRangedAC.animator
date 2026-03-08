@@ -78,14 +78,14 @@
     ],
     "states": [
         {
-            "id": "Hurt1",
-            "clipIndex": 4,
+            "id": "Hooked",
+            "clipIndex": 6,
             "loop": false,
-            "speed": 2.499999761581421,
+            "speed": 1.0,
             "crossfadeDuration": 0.0,
             "nodePosition": {
-                "x": 279.0,
-                "y": -25.5
+                "x": 428.5,
+                "y": 75.0
             }
         },
         {
@@ -100,14 +100,14 @@
             }
         },
         {
-            "id": "Hooked",
-            "clipIndex": 6,
+            "id": "Hurt1",
+            "clipIndex": 4,
             "loop": false,
-            "speed": 1.0,
+            "speed": 2.499999761581421,
             "crossfadeDuration": 0.0,
             "nodePosition": {
-                "x": 428.5,
-                "y": 75.0
+                "x": 279.0,
+                "y": -25.5
             }
         },
         {
@@ -122,17 +122,6 @@
             }
         },
         {
-            "id": "Hurt3",
-            "clipIndex": 6,
-            "loop": false,
-            "speed": 2.000000238418579,
-            "crossfadeDuration": 0.0,
-            "nodePosition": {
-                "x": 645.9998168945313,
-                "y": -123.99993896484375
-            }
-        },
-        {
             "id": "Melee Attack",
             "clipIndex": 1,
             "loop": true,
@@ -141,6 +130,17 @@
             "nodePosition": {
                 "x": 438.5,
                 "y": -546.0
+            }
+        },
+        {
+            "id": "Hurt3",
+            "clipIndex": 6,
+            "loop": false,
+            "speed": 2.000000238418579,
+            "crossfadeDuration": 0.0,
+            "nodePosition": {
+                "x": 645.9998168945313,
+                "y": -123.99993896484375
             }
         },
         {
@@ -893,8 +893,8 @@
             "to": "Ground Chase",
             "anyState": false,
             "hasExitTime": true,
-            "exitTime": 0.9300000071525574,
-            "transitionDuration": 0.949999988079071,
+            "exitTime": 0.05000000074505806,
+            "transitionDuration": 0.05000000074505806,
             "conditions": [
                 {
                     "paramName": "PlayerInAttackRange",
