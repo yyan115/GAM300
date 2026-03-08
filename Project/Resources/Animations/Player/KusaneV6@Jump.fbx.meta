@@ -1,0 +1,11 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "005bba211cc2da6c-00046707b0072ead",
+        "source": "../../Resources/Animations/Player/KusaneV6@Jump.fbx",
+        "compiled": "../../Resources/Animations/Player/KusaneV6@Jump.mesh"
+    },
+    "ModelMetaData": {
+        "optimizeMeshes": true
+    }
+}

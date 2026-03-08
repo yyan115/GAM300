@@ -5,42 +5,47 @@ local Component = require("extension.mono_helper")
 local TransformMixin = require("extension.transform_mixin")
 
 local Engine    = _G.Engine
-local Input     = _G.Input
-local Time      = _G.Time
 local event_bus = _G.event_bus
 
 local DoorTriggerMode = {
     InputKeyDown = 1,
     AutoOnEnter  = 2,
-    OnEntitiesDestroyed = 3,
 }
 
 -------------------------------------------------
 -- Helpers
 -------------------------------------------------
 
-local function OpenDoors(self)
-    if self.hasOpened then return end
-
-    print(string.format(
-        "[DoorTrigger] Opening Doors: %s and %s",
-        self.targetLeftDoor,
-        self.targetRightDoor
-    ))
-
-    self.hasOpened = true
-    self.isOpening = true
-    self.openingTime = 0.0
-    self.isActivatable = false
-
-    if event_bus and event_bus.publish then
-        event_bus.publish("cinematic.trigger", true)
-        print("[DoorTrigger] Cinematic mode ENABLED")
-    end
-end
-
 local function Lerp(a, b, t)
     return a + (b - a) * t
+end
+
+-- Convert Euler angles (degrees) to Quaternion
+local function eulerToQuat(pitch, yaw, roll)
+    local p = math.rad(pitch or 0) * 0.5
+    local y = math.rad(yaw or 0)   * 0.5
+    local r = math.rad(roll or 0)  * 0.5
+
+    local sinP, cosP = math.sin(p), math.cos(p)
+    local sinY, cosY = math.sin(y), math.cos(y)
+    local sinR, cosR = math.sin(r), math.cos(r)
+
+    return {
+        w = cosP * cosY * cosR + sinP * sinY * sinR,
+        x = sinP * cosY * cosR - cosP * sinY * sinR,
+        y = cosP * sinY * cosR + sinP * cosY * sinR,
+        z = cosP * cosY * sinR - sinP * sinY * cosR
+    }
+end
+
+-- Multiply two Quaternions together to combine rotations
+local function multiplyQuat(q1, q2)
+    return {
+        w = q1.w * q2.w - q1.x * q2.x - q1.y * q2.y - q1.z * q2.z,
+        x = q1.w * q2.x + q1.x * q2.w + q1.y * q2.z - q1.z * q2.y,
+        y = q1.w * q2.y - q1.x * q2.z + q1.y * q2.w + q1.z * q2.x,
+        z = q1.w * q2.z + q1.x * q2.y - q1.y * q2.x + q1.z * q2.w
+    }
 end
 
 local function CheckPlayerInRange(self)
@@ -62,22 +67,6 @@ local function CheckPlayerInRange(self)
     return distSq <= (r*r)
 end
 
-local function AreEntitiesInactive(entityNames)
-    for _, name in ipairs(entityNames) do
-        local ent = Engine.GetEntityByName(name)
-
-        if ent then
-            local activeComp = GetComponent(ent, "ActiveComponent")
-
-            if activeComp and activeComp.isActive then
-                return false
-            end
-        end
-    end
-
-    return true
-end
-
 -------------------------------------------------
 -- Component
 -------------------------------------------------
@@ -91,34 +80,34 @@ return Component {
         triggerRadius = 0.5,
         isActivatable = false,
 
-        triggerMode = DoorTriggerMode.InputKeyDown,
+        triggerMode = DoorTriggerMode.AutoOnEnter,
 
         targetLeftDoor = "LeftDoor1",
         targetRightDoor = "RightDoor2",
 
-        weaponPickup = "WeaponPickup",
+        weaponPickup = "LowPolyFeatherChainPickUp",
         weaponOnHand = "LowPolyFeatherChain",
 
-        openZ = false, -- move the door by z axis instead of x
-        openOffset = 1.0,
-        openDuration = 3.0,
+        -- [NEW] Weapon Fly Timing and Offsets
+        weaponFlyDuration = 0.5, 
+        weaponHandOffsetY = 0.6, -- Approximates the hand/chest height from the player's root
+        weaponHandOffsetX = -0.1,
+
+        openDuration = 2.5,
         postOpenDelay = 2.0,
+        openAngle = 115,
+        overshootAngle = 10,
+
+        pickupSFX = {},     -- table of AudioClips for pickup
+        doorOpenSFX = {},   -- table of AudioClips for door
 
         hasOpened = false,
         openingTime = 0.0,
-        delayTime = 0.0,
         isOpening = false,
         isWaiting = false,
 
-        entitiesToCheckInactive = {
-            "EnemyMeleeA",
-            "EnemyMeleeB",
-            "EnemyMeleeC",
-            "EnemyRangeD"
-        },
-
-        pickupSFX = {},
-        doorOpenSFX = {}
+        isWeaponFlying = false,
+        weaponFlyTime = 0.0,
     },
 
     -------------------------------------------------
@@ -126,9 +115,6 @@ return Component {
     -------------------------------------------------
 
     Start = function(self)
-
-        print("[DoorTrigger] Start called for Entity: " .. tostring(self.entityId))
-
         self.leftTransform  = Engine.FindTransformByName(self.targetLeftDoor)
         self.rightTransform = Engine.FindTransformByName(self.targetRightDoor)
 
@@ -144,24 +130,10 @@ return Component {
             return
         end
 
-        local leftPos  = Engine.GetTransformPosition(self.leftTransform)
-        local rightPos = Engine.GetTransformPosition(self.rightTransform)
-
-        local lx, ly, lz = leftPos[1], leftPos[2], leftPos[3]
-        local rx, ry, rz = rightPos[1], rightPos[2], rightPos[3]
-
-        self.leftStartPos  = {x=lx, y=ly, z=lz}
-        self.rightStartPos = {x=rx, y=ry, z=rz}
-
-        if not openZ then
-            self.leftTargetPos  = {x = lx - self.openOffset, y = ly, z = lz}
-            self.rightTargetPos = {x = rx + self.openOffset, y = ry, z = rz}
-        end
-
-        if openZ then
-            self.leftTargetPos  = {x = lx, y = ly, z = lz - self.openOffset}
-            self.rightTargetPos = {x = rx, y = ry, z = rz + self.openOffset}
-        end
+        local lRot = self.leftTransform.localRotation
+        local rRot = self.rightTransform.localRotation
+        self.leftStartRot  = { w = lRot.w, x = lRot.x, y = lRot.y, z = lRot.z }
+        self.rightStartRot = { w = rRot.w, x = rRot.x, y = rRot.y, z = rRot.z }
     end,
 
     -------------------------------------------------
@@ -169,131 +141,167 @@ return Component {
     -------------------------------------------------
 
     Update = function(self, dt)
-
         if self.initFailed then return end
 
         -------------------------------------------------
         -- Player range detection
         -------------------------------------------------
-
         if not self.hasOpened then
-
             local inRange = CheckPlayerInRange(self)
+            self.isActivatable = inRange
 
-            if inRange ~= self.isActivatable then
+            if inRange then
+                self.hasOpened = true
 
-                self.isActivatable = inRange
-
-                print("[DoorTrigger] Player " ..
-                    (inRange and "ENTERED" or "EXITED") ..
-                    " trigger zone")
-
-                local weaponPickupActive =
-                    GetComponent(self.weaponPickupEnt, "ActiveComponent")
-
-                local weaponOnHandActive =
-                    GetComponent(self.weaponOnHandEnt, "ActiveComponent")
-
-                if inRange then
-                    if weaponPickupActive and weaponPickupActive.isActive then
-                        local weaponSFX = self:GetComponent("AudioComponent")
-                        if weaponSFX then
-                            weaponSFX:PlayOneShot(self.pickupSFX[1])
-                        end
-                        weaponPickupActive.isActive = false        
+                -- --- Start Weapon Fly ---
+                if self.weaponPickupEnt and self.weaponOnHandEnt then
+                    self.isWeaponFlying = true
+                    self.weaponFlyTime = 0.0
+                    
+                    self.pickupTr = GetComponent(self.weaponPickupEnt, "Transform")
+                    if self.pickupTr then
+                        self.pickupStartPos = { 
+                            x = self.pickupTr.localPosition.x, 
+                            y = self.pickupTr.localPosition.y, 
+                            z = self.pickupTr.localPosition.z 
+                        }
                     end
 
-                    if weaponOnHandActive and not weaponOnHandActive.isActive then
-                        weaponOnHandActive.isActive = true
-                        _G.playerHasWeapon = true
+                    if event_bus and event_bus.publish then
+                        event_bus.publish("picked_up_weapon", true)
                     end
+                end
+
+                -- --- Start door opening ---
+                self.isOpening = true
+                self.openingTime = 0.0
+
+                -- Play door open SFX
+                local DoorTriggerSFX = self:GetComponent("AudioComponent")
+                if DoorTriggerSFX and self.doorOpenSFX[1] then
+                    DoorTriggerSFX:PlayOneShot(self.doorOpenSFX[1])
+                end
+
+                if event_bus and event_bus.publish then
+                    event_bus.publish("cinematic.trigger", true)
                 end
             end
         end
 
         -------------------------------------------------
-        -- Trigger Modes
+        -- Weapon Flying Animation
         -------------------------------------------------
+        if self.isWeaponFlying and self.pickupTr then
+            self.weaponFlyTime = self.weaponFlyTime + dt
+            local t = math.min(self.weaponFlyTime / self.weaponFlyDuration, 1.0)
+            local easeT = t * t * (3 - 2 * t) -- Smoothstep
 
-        if not self.hasOpened then
+            -- Dynamically track the player so it homes in even if they walk away
+            local playerEnt = Engine.GetEntityByName(self.playerName)
+            local playerTrComp = GetComponent(playerEnt, "Transform")
 
-            if self.triggerMode == DoorTriggerMode.AutoOnEnter then
-                if self.isActivatable then
-                    OpenDoors(self)
-                    local doorSFX = GetComponent(self.leftDoorEnt, "AudioComponent")
-                    if doorSFX then
-                        doorSFX:Play()
-                    end
-                end
+            if playerTrComp then
+                local targetX = playerTrComp.localPosition.x + self.weaponHandOffsetX
+                local targetY = playerTrComp.localPosition.y + self.weaponHandOffsetY
+                local targetZ = playerTrComp.localPosition.z
+
+                self.pickupTr.localPosition.x = Lerp(self.pickupStartPos.x, targetX, easeT)
+                self.pickupTr.localPosition.y = Lerp(self.pickupStartPos.y, targetY, easeT)
+                self.pickupTr.localPosition.z = Lerp(self.pickupStartPos.z, targetZ, easeT)
+                self.pickupTr.isDirty = true
             end
 
-            if self.triggerMode == DoorTriggerMode.OnEntitiesDestroyed then
-                if self.isActivatable and
-                   AreEntitiesInactive(self.entitiesToCheckInactive) then
+            -- Once it hits the hand, finalize the swap!
+            if t >= 1.0 then
+                self.isWeaponFlying = false
 
-                    print("[DoorTrigger] All required entities inactive.")
-                    OpenDoors(self)
+                local pickupActiveComp = GetComponent(self.weaponPickupEnt, "ActiveComponent")
+                local handActiveComp   = GetComponent(self.weaponOnHandEnt, "ActiveComponent")
+
+                -- Play pickup SFX exactly when it hits the hand
+                local pickupWeaponSFX = self:GetComponent("AudioComponent")
+                if pickupWeaponSFX and self.pickupSFX[1] then
+                    pickupWeaponSFX:PlayOneShot(self.pickupSFX[1])
                 end
+
+                if pickupActiveComp then pickupActiveComp.isActive = false end
+                if handActiveComp then handActiveComp.isActive = true end
+                
+                _G.playerHasWeapon = true
+                print("[DoorTrigger] Weapon successfully caught!")
             end
         end
 
         -------------------------------------------------
         -- Door Animation
         -------------------------------------------------
-
-        if self.isOpening then
-
+        if self.isOpening and self.leftTransform and self.rightTransform then
             self.openingTime = self.openingTime + dt
-            local t = math.min(self.openingTime / self.openDuration, 1.0)
+            
+            local p = math.min(self.openingTime / self.openDuration, 1.0)
+            
+            local lAngle = 0
+            local rAngle = 0
 
-            local lx = Lerp(self.leftStartPos.x,  self.leftTargetPos.x,  t)
-            local rx = Lerp(self.rightStartPos.x, self.rightTargetPos.x, t)
-
-            if self.leftTransform and self.rightTransform then
-
-                self.leftTransform.localPosition.x = lx
-                self.leftTransform.localPosition.y = self.leftStartPos.y
-                self.leftTransform.localPosition.z = self.leftStartPos.z
-                self.leftTransform.isDirty = true
-
-                self.rightTransform.localPosition.x = rx
-                self.rightTransform.localPosition.y = self.rightStartPos.y
-                self.rightTransform.localPosition.z = self.rightStartPos.z
-                self.rightTransform.isDirty = true
+            -- Phase 1: SmoothStep to the Overshoot angle (First 80% of the duration)
+            if p < 0.8 then
+                local lp = p / 0.8 
+                local t = lp * lp * (3 - 2 * lp) 
+                lAngle = Lerp(0, -(self.openAngle + self.overshootAngle), t)
+                rAngle = Lerp(0, (self.openAngle + self.overshootAngle), t)
+            
+            -- Phase 2: SmoothStep back to the resting angle (Last 20% of the duration)
+            else
+                local lp = (p - 0.8) / 0.2 
+                local t = lp * lp * (3 - 2 * lp) 
+                lAngle = Lerp(-(self.openAngle + self.overshootAngle), -self.openAngle, t)
+                rAngle = Lerp((self.openAngle + self.overshootAngle), self.openAngle, t)
             end
 
-            if t >= 1.0 then
+            local lQuatOffset = eulerToQuat(0, lAngle, 0)
+            local rQuatOffset = eulerToQuat(0, rAngle, 0)
+            
+            local finalLeftRot = multiplyQuat(self.leftStartRot, lQuatOffset)
+            local finalRightRot = multiplyQuat(self.rightStartRot, rQuatOffset)
+
+            self.leftTransform.localRotation.w = finalLeftRot.w
+            self.leftTransform.localRotation.x = finalLeftRot.x
+            self.leftTransform.localRotation.y = finalLeftRot.y
+            self.leftTransform.localRotation.z = finalLeftRot.z
+
+            self.rightTransform.localRotation.w = finalRightRot.w
+            self.rightTransform.localRotation.x = finalRightRot.x
+            self.rightTransform.localRotation.y = finalRightRot.y
+            self.rightTransform.localRotation.z = finalRightRot.z
+            
+            self.leftTransform.isDirty = true
+            self.rightTransform.isDirty = true
+
+            if p >= 1.0 then
                 self.isOpening = false
                 self.isWaiting = true
                 self.delayTime = 0.0
+
+                if self.leftDoorEnt then
+                    local leftCol = GetComponent(self.leftDoorEnt, "ColliderComponent")
+                    if leftCol then leftCol.enabled = false end
+                end
+                if self.rightDoorEnt then
+                    local rightCol = GetComponent(self.rightDoorEnt, "ColliderComponent")
+                    if rightCol then rightCol.enabled = false end
+                end
+
+                print("[DoorTrigger] Doors fully opened and colliders disabled")
             end
         end
 
         -------------------------------------------------
-        -- Post Delay
+        -- Post Delay (doors stay visible)
         -------------------------------------------------
-
         if self.isWaiting then
-
             self.delayTime = self.delayTime + dt
-
             if self.delayTime >= self.postOpenDelay then
-
                 self.isWaiting = false
-
-                local leftDoorActive =
-                    GetComponent(self.leftDoorEnt, "ActiveComponent")
-
-                local rightDoorActive =
-                    GetComponent(self.rightDoorEnt, "ActiveComponent")
-
-                if leftDoorActive then
-                    leftDoorActive.isActive = false
-                end
-
-                if rightDoorActive then
-                    rightDoorActive.isActive = false
-                end
             end
         end
     end

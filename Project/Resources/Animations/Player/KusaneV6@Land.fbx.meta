@@ -1,0 +1,11 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "005bba2112cded38-00046707ac072ea9",
+        "source": "../../Resources/Animations/Player/KusaneV6@Land.fbx",
+        "compiled": "../../Resources/Animations/Player/KusaneV6@Land.mesh"
+    },
+    "ModelMetaData": {
+        "optimizeMeshes": true
+    }
+}

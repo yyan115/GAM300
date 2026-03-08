@@ -31,6 +31,7 @@ public:
 	static std::string SanitizeFilePath(const std::string& fullPath);
 
 	static bool StrictExists(const std::filesystem::path& p);
+	static bool StrictDirectoryExists(std::filesystem::path p);
 
 private:
 	static std::filesystem::path solutionRootDir;

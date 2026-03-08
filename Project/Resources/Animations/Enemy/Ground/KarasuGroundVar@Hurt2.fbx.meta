@@ -1,0 +1,11 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "006bd5bb4a5b3811-00046ab56c00001d",
+        "source": "../../Resources/Animations/Enemy/Ground/KarasuGroundVar@Hurt2.fbx",
+        "compiled": "../../Resources/Animations/Enemy/Ground/KarasuGroundVar@Hurt2.mesh"
+    },
+    "ModelMetaData": {
+        "optimizeMeshes": true
+    }
+}

@@ -17,6 +17,7 @@
 #include "Animation/AnimationComponent.hpp"
 #include "Graphics/Frustum/Frustum.hpp"
 #include "RenderSorter.hpp"
+#include "Fog/FogComponent.hpp"
 
 struct ViewportDimensions {
     int width = 0;
@@ -97,6 +98,14 @@ public:
     void Render();
     void RenderSkybox();
 
+    // Deferred rendering (items excluded from post-processing, rendered on top)
+    void RenderDeferred();
+    bool HasDeferredItems() const { return !deferredQueue.empty(); }
+
+    // Game panel active flag (prevents double deferred render)
+    void SetGamePanelActive(bool active) { gamePanelActive = active; }
+    bool IsGamePanelActive() const { return gamePanelActive; }
+
 	// Face Culling
 	void SetFaceCulling(bool enabled);
 	bool IsFaceCullingEnabled() const { return faceCullingEnabled; }
@@ -110,6 +119,10 @@ public:
     bool IsFrustumCullingEnabled() const { return frustumCullingEnabled; }
     const Frustum& GetFrustum() const { return viewFrustum; }
     void ENGINE_API UpdateFrustum(); // Update frustum based on current camera and viewport
+
+    // Per-light shadow culling: call before each point light shadow render
+    void SetPointShadowCullData(const glm::vec3& lightPos, float farPlane) { m_shadowLightPos = lightPos; m_shadowFarPlane = farPlane; }
+    void ClearPointShadowCullData() { m_shadowFarPlane = -1.0f; }
 
     const SortingStats& GetSortingStats() const { return m_sortingStats; }
 
@@ -131,6 +144,7 @@ private:
     void Setup2DTextMatrices(Shader& shader, const glm::vec3& position, float scaleX, float scaleY);
 
     std::vector<std::unique_ptr<IRenderComponent>> renderQueue;
+    std::vector<std::unique_ptr<IRenderComponent>> deferredQueue; // Post-process excluded items
     Camera* currentCamera = nullptr;
     int screenWidth = 0;
     int screenHeight = 0;
@@ -144,6 +158,9 @@ private:
 
     // Flag to indicate if currently rendering for editor (vs game)
     bool isRenderingForEditor = false;
+
+    // Flag to indicate game panel is active (editor handles deferred rendering)
+    bool gamePanelActive = false;
 
     // Target game resolution for 2D rendering synchronization
     int targetGameWidth = 1920;
@@ -184,6 +201,11 @@ private:
 
     void RenderSceneForShadows(Shader& depthShader);
 
+    // Current point light shadow data for per-light culling
+    // Set before each point shadow render, -1 farPlane means directional (no sphere cull)
+    glm::vec3 m_shadowLightPos = glm::vec3(0.0f);
+    float m_shadowFarPlane = -1.0f;
+
     // State sorting support
     ResourceIdCache m_idCache;
     SortingStats m_sortingStats;
@@ -193,4 +215,7 @@ private:
     Material* m_currentMaterial = nullptr;
 
     void RenderModelOptimized(const ModelRenderComponent& item);
+
+    // Fog
+    void RenderFogVolume(const FogVolumeComponent& item);
 };

@@ -5,6 +5,8 @@
 #include "ECS/ECSRegistry.hpp"
 #include "Graphics/Sprite/SpriteRenderComponent.hpp"
 #include "Graphics/TextRendering/TextRenderComponent.hpp"
+#include "Graphics/Camera/CameraSystem.hpp"
+#include "Graphics/Camera/CameraComponent.hpp"
 #include "Graphics/PostProcessing/PostProcessingManager.hpp"
 #include "Asset Manager/ResourceManager.hpp"
 #include "Hierarchy/EntityGUIDRegistry.hpp"
@@ -66,13 +68,38 @@ void VideoSystem::BeginCutscene(VideoComponent& vc)
     vc.previousBoardChars = 0;
     vc.cutsceneEnded = false;
     vc.skipRequested = false;
+    vc.boardElapsedTime = 0.0f;
+    vc.lastComputedBlur = 0.0f;
+
+    // Save camera's original blur settings so we can restore after cutscene
+    auto cameraSystem = m_ecs->GetSystem<CameraSystem>();
+    Entity camEntity = cameraSystem ? cameraSystem->GetActiveCameraEntity() : UINT32_MAX;
+    if (camEntity != UINT32_MAX && m_ecs->HasComponent<CameraComponent>(camEntity))
+    {
+        auto& cam = m_ecs->GetComponent<CameraComponent>(camEntity);
+        vc.origBlurEnabled = cam.blurEnabled;
+        vc.origBlurIntensity = cam.blurIntensity;
+        vc.origBlurRadius = cam.blurRadius;
+        vc.origBlurPasses = cam.blurPasses;
+        vc.savedCameraBlur = true;
+    }
 
     // Set initial board image
     SwapBoardImage(vc, 0);
 
-    // Start with black screen, then fade in
-    SetBlackScreenAlpha(vc, 1.0f);
-    vc.phase = VideoComponent::Phase::FadingIn;
+    // If first board has no fade, skip directly to displaying
+    if (vc.boards[0].fadeDuration <= 0.0f)
+    {
+        SetBlackScreenAlpha(vc, 0.0f);
+        vc.phase = VideoComponent::Phase::Displaying;
+        vc.stateTimer = 0.0f;
+    }
+    else
+    {
+        // Start with black screen, then fade in
+        SetBlackScreenAlpha(vc, 1.0f);
+        vc.phase = VideoComponent::Phase::FadingIn;
+    }
 }
 
 void VideoSystem::AdvanceToBoard(VideoComponent& vc, int boardIndex)
@@ -83,12 +110,116 @@ void VideoSystem::AdvanceToBoard(VideoComponent& vc, int boardIndex)
         return;
     }
 
+    const auto& nextBoard = vc.boards[boardIndex];
+
+    // If the next board has continueText, skip the black fade entirely —
+    // treat it as part of the same scene (seamless transition)
+    if (nextBoard.continueText)
+    {
+        SwapBoardImage(vc, boardIndex);
+
+        // Preserve typewriter state
+        vc.previousBoardChars = vc.revealedChars;
+
+        vc.currentBoardIndex = boardIndex;
+        vc.boardElapsedTime = 0.0f;
+        vc.stateTimer = 0.0f;
+
+        // Jump blur to the new board's value immediately (no lerp since we skip the fade)
+        vc.lastComputedBlur = nextBoard.blurIntensity;
+
+        // Apply blur immediately so there's no 1-frame lag from the previous board
+        float intensity = nextBoard.blurIntensity;
+        float radius = nextBoard.blurRadius;
+        int passes = nextBoard.blurPasses;
+
+        auto cameraSystem = m_ecs->GetSystem<CameraSystem>();
+        Entity camEntity = cameraSystem ? cameraSystem->GetActiveCameraEntity() : UINT32_MAX;
+        if (camEntity != UINT32_MAX && m_ecs->HasComponent<CameraComponent>(camEntity))
+        {
+            auto& cam = m_ecs->GetComponent<CameraComponent>(camEntity);
+            cam.blurEnabled = (intensity > 0.0f);
+            cam.blurIntensity = intensity;
+            cam.blurRadius = radius;
+            cam.blurPasses = passes;
+        }
+
+        BlurEffect* blur = PostProcessingManager::GetInstance().GetBlurEffect();
+        if (blur)
+        {
+            blur->SetIntensity(intensity);
+            blur->SetRadius(radius);
+            blur->SetPasses(passes);
+        }
+
+        vc.phase = VideoComponent::Phase::Displaying;
+        return;
+    }
+
+    // If next board has no fade, or current board disables fade-out, do an instant swap
+    bool currentDisablesFadeOut = (vc.currentBoardIndex >= 0
+        && vc.currentBoardIndex < static_cast<int>(vc.boards.size())
+        && vc.boards[vc.currentBoardIndex].disableFadeOut);
+    if (nextBoard.fadeDuration <= 0.0f || currentDisablesFadeOut)
+    {
+        SwapBoardImage(vc, boardIndex);
+
+        vc.previousBoardChars = 0;
+        vc.typewriterTimer = 0.0f;
+        vc.revealedChars = 0;
+
+        vc.currentBoardIndex = boardIndex;
+        vc.boardElapsedTime = 0.0f;
+        vc.stateTimer = 0.0f;
+
+        vc.lastComputedBlur = nextBoard.blurIntensity;
+
+        // Apply blur immediately (same pattern as continueText path)
+        float intensity = nextBoard.blurIntensity;
+        float radius = nextBoard.blurRadius;
+        int passes = nextBoard.blurPasses;
+
+        auto cameraSystem = m_ecs->GetSystem<CameraSystem>();
+        Entity camEntity = cameraSystem ? cameraSystem->GetActiveCameraEntity() : UINT32_MAX;
+        if (camEntity != UINT32_MAX && m_ecs->HasComponent<CameraComponent>(camEntity))
+        {
+            auto& cam = m_ecs->GetComponent<CameraComponent>(camEntity);
+            cam.blurEnabled = (intensity > 0.0f);
+            cam.blurIntensity = intensity;
+            cam.blurRadius = radius;
+            cam.blurPasses = passes;
+        }
+
+        BlurEffect* blur = PostProcessingManager::GetInstance().GetBlurEffect();
+        if (blur)
+        {
+            blur->SetIntensity(intensity);
+            blur->SetRadius(radius);
+            blur->SetPasses(passes);
+        }
+
+        vc.phase = VideoComponent::Phase::Displaying;
+        return;
+    }
+
+    // Save blur endpoints for smooth transition
+    vc.transitionBlurFrom = vc.lastComputedBlur;
+    vc.transitionBlurTo = (nextBoard.blurDelay > 0.0f) ? 0.0f : nextBoard.blurIntensity;
+
     vc.stateTimer = 0.0f;
     vc.phase = VideoComponent::Phase::TransitionOut;
 }
 
 void VideoSystem::BeginEndingFade(VideoComponent& vc)
 {
+    // Check if the current board has fade-out disabled
+    if (vc.currentBoardIndex >= 0 && vc.currentBoardIndex < static_cast<int>(vc.boards.size())
+        && vc.boards[vc.currentBoardIndex].disableFadeOut)
+    {
+        SetBlackScreenAlpha(vc, 0.0f);
+        FinishCutscene(vc);
+        return;
+    }
     vc.stateTimer = 0.0f;
     vc.phase = VideoComponent::Phase::EndingFade;
 }
@@ -99,9 +230,27 @@ void VideoSystem::FinishCutscene(VideoComponent& vc)
     vc.phase = VideoComponent::Phase::Finished;
     ClearText(vc);
 
-    // Reset blur
+    // Restore camera's original blur settings
+    auto cameraSystem = m_ecs->GetSystem<CameraSystem>();
+    Entity camEntity = cameraSystem ? cameraSystem->GetActiveCameraEntity() : UINT32_MAX;
+    if (camEntity != UINT32_MAX && m_ecs->HasComponent<CameraComponent>(camEntity) && vc.savedCameraBlur)
+    {
+        auto& cam = m_ecs->GetComponent<CameraComponent>(camEntity);
+        cam.blurEnabled = vc.origBlurEnabled;
+        cam.blurIntensity = vc.origBlurIntensity;
+        cam.blurRadius = vc.origBlurRadius;
+        cam.blurPasses = vc.origBlurPasses;
+    }
+    vc.savedCameraBlur = false;
+
+    // Also apply restored values directly for same-frame effect
     BlurEffect* blur = PostProcessingManager::GetInstance().GetBlurEffect();
-    if (blur) blur->SetIntensity(0.0f);
+    if (blur)
+    {
+        blur->SetIntensity(vc.origBlurEnabled ? vc.origBlurIntensity : 0.0f);
+        blur->SetRadius(vc.origBlurRadius);
+        blur->SetPasses(vc.origBlurPasses);
+    }
 }
 
 // ============================================================================
@@ -167,27 +316,79 @@ bool VideoSystem::IsTypewriterFinished(const VideoComponent& vc) const
 // Blur
 // ============================================================================
 
-void VideoSystem::ApplyBlur(const VideoComponent& vc)
+void VideoSystem::ApplyBlur(VideoComponent& vc, float dt)
 {
     if (vc.currentBoardIndex < 0 || vc.currentBoardIndex >= static_cast<int>(vc.boards.size()))
         return;
 
     const CutsceneBoard& board = vc.boards[vc.currentBoardIndex];
-    BlurEffect* blur = PostProcessingManager::GetInstance().GetBlurEffect();
-    if (!blur) return;
+    float intensity = vc.lastComputedBlur;
+    float radius = board.blurRadius;
+    int passes = board.blurPasses;
 
-    float intensity = board.blurIntensity;
+    bool inTransition = (vc.phase == VideoComponent::Phase::TransitionOut ||
+                         vc.phase == VideoComponent::Phase::TransitionIn);
 
-    // Interpolate between start and end if blurIntensityEnd is set (>= 0)
-    if (board.blurIntensityEnd >= 0.0f && board.duration > 0.0f)
+    if (!inTransition)
     {
-        float t = std::clamp(vc.stateTimer / board.duration, 0.0f, 1.0f);
-        intensity = board.blurIntensity + (board.blurIntensityEnd - board.blurIntensity) * t;
+        // Accumulate board elapsed time (only during non-transition phases)
+        vc.boardElapsedTime += dt;
+
+        // Compute target from board settings using boardElapsedTime (NOT stateTimer)
+        if (board.blurDelay > 0.0f && vc.boardElapsedTime < board.blurDelay)
+        {
+            intensity = 0.0f;
+        }
+        else
+        {
+            intensity = board.blurIntensity;
+            if (board.blurIntensityEnd >= 0.0f && board.duration > board.blurDelay)
+            {
+                float elapsed = vc.boardElapsedTime - board.blurDelay;
+                float remaining = board.duration - board.blurDelay;
+                float t = std::clamp(elapsed / remaining, 0.0f, 1.0f);
+                intensity = board.blurIntensity + (board.blurIntensityEnd - board.blurIntensity) * t;
+            }
+        }
+        vc.lastComputedBlur = intensity;
+    }
+    else if (vc.phase == VideoComponent::Phase::TransitionOut)
+    {
+        // Hold blur at last value while fading to black
+        intensity = vc.lastComputedBlur;
+    }
+    else // TransitionIn
+    {
+        // Smoothly lerp from old board's ending blur to new board's starting blur
+        float fadeDur = board.fadeDuration;
+        if (fadeDur <= 0.0f) fadeDur = 0.01f;
+        float halfFade = fadeDur * 0.5f;
+        float t = std::clamp(vc.stateTimer / halfFade, 0.0f, 1.0f);
+        intensity = vc.transitionBlurFrom + (vc.transitionBlurTo - vc.transitionBlurFrom) * t;
+        vc.lastComputedBlur = intensity;
     }
 
-    blur->SetIntensity(intensity);
-    blur->SetRadius(board.blurRadius);
-    blur->SetPasses(board.blurPasses);
+    // Update CameraComponent (centralized blur settings)
+    auto cameraSystem = m_ecs->GetSystem<CameraSystem>();
+    Entity camEntity = cameraSystem ? cameraSystem->GetActiveCameraEntity() : UINT32_MAX;
+    if (camEntity != UINT32_MAX && m_ecs->HasComponent<CameraComponent>(camEntity))
+    {
+        auto& cam = m_ecs->GetComponent<CameraComponent>(camEntity);
+        cam.blurEnabled = (intensity > 0.0f);
+        cam.blurIntensity = intensity;
+        cam.blurRadius = radius;
+        cam.blurPasses = passes;
+    }
+
+    // Also apply directly to PostProcessingManager for same-frame effect
+    // (CameraSystem already ran this frame, so camera changes alone would be 1 frame late)
+    BlurEffect* blur = PostProcessingManager::GetInstance().GetBlurEffect();
+    if (blur)
+    {
+        blur->SetIntensity(intensity);
+        blur->SetRadius(radius);
+        blur->SetPasses(passes);
+    }
 }
 
 // ============================================================================
@@ -302,7 +503,7 @@ void VideoSystem::Update(float dt)
 
         // Always apply blur for active cutscenes
         if (vc.phase != VideoComponent::Phase::Inactive && vc.phase != VideoComponent::Phase::Finished)
-            ApplyBlur(vc);
+            ApplyBlur(vc, dt);
 
         switch (vc.phase)
         {
@@ -408,6 +609,7 @@ void VideoSystem::Update(float dt)
                 }
 
                 vc.currentBoardIndex = nextBoard;
+                vc.boardElapsedTime = 0.0f;  // Reset blur timer for new board
                 vc.stateTimer = 0.0f;
                 vc.phase = VideoComponent::Phase::TransitionIn;
             }

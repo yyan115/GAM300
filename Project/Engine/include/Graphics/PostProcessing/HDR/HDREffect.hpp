@@ -1,6 +1,7 @@
 #pragma once
 #include "Graphics/PostProcessing/PostProcessEffect.hpp"
 #include <memory>
+#include <glm/glm.hpp>
 
 class Shader;
 
@@ -29,9 +30,45 @@ public:
 	void SetToneMappingMode(ToneMappingMode mode) { toneMappingMode = mode; }
 	ToneMappingMode GetToneMappingMode() const { return toneMappingMode; }
 
+	// Vignette (applied in tonemapping shader)
+	void SetVignetteEnabled(bool e) { vignetteEnabled = e; }
+	void SetVignetteIntensity(float i) { vignetteIntensity = i; }
+	void SetVignetteSmoothness(float s) { vignetteSmoothness = s; }
+	void SetVignetteColor(const glm::vec3& c) { vignetteColor = c; }
+
+	// Color Grading (applied in tonemapping shader)
+	void SetColorGradingEnabled(bool e) { colorGradingEnabled = e; }
+	void SetCGBrightness(float b) { cgBrightness = b; }
+	void SetCGContrast(float c) { cgContrast = c; }
+	void SetCGSaturation(float s) { cgSaturation = s; }
+	void SetCGTint(const glm::vec3& t) { cgTint = t; }
+
+	// Chromatic Aberration (applied in tonemapping shader)
+	void SetChromaticAberrationEnabled(bool e) { caEnabled = e; }
+	void SetChromaticAberrationIntensity(float i) { caIntensity = i; }
+	void SetChromaticAberrationPadding(float p) { caPadding = p; }
+
 private:
-	std::shared_ptr<Shader> shader; 
+	std::shared_ptr<Shader> shader;
 	float exposure;
 	float gamma;
 	ToneMappingMode toneMappingMode;
+
+	// Vignette
+	bool vignetteEnabled = false;
+	float vignetteIntensity = 0.5f;
+	float vignetteSmoothness = 0.5f;
+	glm::vec3 vignetteColor = glm::vec3(0.0f);
+
+	// Color Grading
+	bool colorGradingEnabled = false;
+	float cgBrightness = 0.0f;
+	float cgContrast = 1.0f;
+	float cgSaturation = 1.0f;
+	glm::vec3 cgTint = glm::vec3(1.0f);
+
+	// Chromatic Aberration
+	bool caEnabled = false;
+	float caIntensity = 0.5f;
+	float caPadding = 0.5f;
 };

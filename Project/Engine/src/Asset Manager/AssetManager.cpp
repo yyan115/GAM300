@@ -362,8 +362,11 @@ GUID_128 AssetManager::GetGUID128FromAssetMeta(const std::string& assetPath) {
 		}
 	}
 
-	std::cerr << "[AssetManager] ERROR: Failed to get GUID_128 from AssetMeta, asset not found in AssetMetaMap: " << assetPath << std::endl;
-	return GUID_128{};
+	// Fallback: Manually read the GUID_128 directly from the .meta file.
+	return MetaFilesManager::GetGUID128FromAssetFile(assetPath);
+
+	//std::cerr << "[AssetManager] ERROR: Failed to get GUID_128 from AssetMeta, asset not found in AssetMetaMap: " << assetPath << std::endl;
+	//return GUID_128{};
 }
 
 std::shared_ptr<AssetMeta> AssetManager::GetAssetMeta(GUID_128 guid) {

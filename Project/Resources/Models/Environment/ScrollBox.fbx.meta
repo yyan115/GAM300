@@ -1,0 +1,11 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "00327c2b666c89fb-000462073c000005",
+        "source": "../../Resources/Models/Environment/ScrollBox.fbx",
+        "compiled": "../../Resources/Models/Environment/ScrollBox.mesh"
+    },
+    "ModelMetaData": {
+        "optimizeMeshes": true
+    }
+}

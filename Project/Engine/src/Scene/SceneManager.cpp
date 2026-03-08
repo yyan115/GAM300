@@ -301,7 +301,7 @@ void SceneManager::SaveScene()
     // Save to BOTH the Editor/Resources/Scenes folder and the ROOT PROJECT Resources/Scenes folder to ensure ALL scene files are synced when saved.
     std::filesystem::path editorScenesPath(currentScenePath.substr(currentScenePath.find("Resources")));
     if (currentScenePath != editorScenesPath.generic_string()) {
-        if (FileUtilities::StrictExists(editorScenesPath)) {
+        if (FileUtilities::StrictDirectoryExists(editorScenesPath.parent_path())) {
             if (FileUtilities::CopyFile(currentScenePath, editorScenesPath.generic_string())) {
                 ENGINE_LOG_INFO("[SceneManager] Scene saved to Editor/Resources/Scenes: " + editorScenesPath.generic_string());
             }
@@ -319,7 +319,7 @@ void SceneManager::SaveScene()
 
 	std::filesystem::path projectRootScenesPath(std::filesystem::path(AssetManager::GetInstance().GetRootAssetDirectory()) / std::filesystem::path(currentScenePath.substr(currentScenePath.find("Scenes"))));
     if (currentScenePath != projectRootScenesPath.generic_string()) {
-        if (FileUtilities::StrictExists(projectRootScenesPath)) {
+        if (FileUtilities::StrictDirectoryExists(projectRootScenesPath.parent_path())) {
             if (FileUtilities::CopyFile(currentScenePath, projectRootScenesPath.generic_string())) {
                 ENGINE_LOG_INFO("[SceneManager] Scene saved to Root Project/Resources/Scenes: " + projectRootScenesPath.generic_string());
             }
@@ -476,8 +476,8 @@ void SceneManager::ShutDownScenePhysics() {
 void SceneManager::SaveTempScene() {
 	// Serialize the current scene data to a temporary file.
 	std::string tempScenePath = currentScenePath + ".temp";
-    FileUtilities::CopyFile(currentScenePath, tempScenePath);
-	//Serializer::SerializeScene(tempScenePath);
+    //FileUtilities::CopyFile(currentScenePath, tempScenePath);
+	Serializer::SerializeScene(tempScenePath);
 }
 
 void SceneManager::ReloadTempScene() {

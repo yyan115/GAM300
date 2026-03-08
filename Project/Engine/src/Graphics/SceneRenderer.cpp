@@ -148,7 +148,17 @@ void SceneRenderer::BeginSceneRender(int width, int height)
 void SceneRenderer::EndSceneRender()
 {
     // Unbind framebuffer (render to screen again)
-    PostProcessingManager::GetInstance().EndHDRRender(sceneFrameBuffer, sceneWidth, sceneHeight); 
+    PostProcessingManager::GetInstance().EndHDRRender(sceneFrameBuffer, sceneWidth, sceneHeight);
+
+    // Render deferred items (excluded from post-processing) on top of blurred output
+    GraphicsManager& gfxManager = GraphicsManager::GetInstance();
+    if (gfxManager.HasDeferredItems())
+    {
+        glBindFramebuffer(GL_FRAMEBUFFER, sceneFrameBuffer);
+        glViewport(0, 0, sceneWidth, sceneHeight);
+        gfxManager.RenderDeferred();
+    }
+
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
@@ -191,6 +201,11 @@ void SceneRenderer::RenderSceneForEditor(const glm::vec3& cameraPos, const glm::
         // Mark that we're rendering for the editor (for view mode filtering)
         gfxManager.SetRenderingForEditor(true);
 
+        // Clear active hierarchy cache so toggling entity active state in the inspector
+        // takes effect immediately (the orchestrator does this in play mode, but editor
+        // rendering bypasses the orchestrator)
+        mainECS.ClearActiveHierarchyCache();
+
         // Update UI anchors before transform (sets local positions based on viewport)
         if (mainECS.uiAnchorSystem)
         {
@@ -204,6 +219,9 @@ void SceneRenderer::RenderSceneForEditor(const glm::vec3& cameraPos, const glm::
         // Set the static editor camera (this won't be updated by input)
         gfxManager.SetCamera(editorCamera);
 
+        // Update frustum with editor camera for correct culling
+        gfxManager.UpdateFrustum();
+
         // Begin frame and clear (without input processing)
         gfxManager.BeginFrame();
 
@@ -211,6 +229,47 @@ void SceneRenderer::RenderSceneForEditor(const glm::vec3& cameraPos, const glm::
         if (activeCam != UINT32_MAX && mainECS.HasComponent<CameraComponent>(activeCam)) {
             auto& camComp = mainECS.GetComponent<CameraComponent>(activeCam);
             gfxManager.Clear(camComp.backgroundColor.r, camComp.backgroundColor.g, camComp.backgroundColor.b, 1.0f);
+
+            // Apply camera post-processing settings in editor mode
+            // (CameraSystem::Update only runs during play mode)
+            auto& ppManager = PostProcessingManager::GetInstance();
+            BlurEffect* blur = ppManager.GetBlurEffect();
+            if (blur) {
+                if (camComp.blurEnabled) {
+                    blur->SetIntensity(camComp.blurIntensity);
+                    blur->SetRadius(camComp.blurRadius);
+                    blur->SetPasses(camComp.blurPasses);
+                } else {
+                    blur->SetIntensity(0.0f);
+                }
+            }
+            if (camComp.blurEnabled)
+                ppManager.SetExcludedLayerMask(~camComp.blurLayerMask);
+            else
+                ppManager.SetExcludedLayerMask(0);
+            BloomEffect* bloom = ppManager.GetBloomEffect();
+            if (bloom) {
+                if (camComp.bloomEnabled) {
+                    bloom->SetEnabled(true);
+                    bloom->SetThreshold(camComp.bloomThreshold);
+                    bloom->SetIntensity(camComp.bloomIntensity);
+                    bloom->SetScatter(camComp.bloomSpread);
+                } else {
+                    bloom->SetEnabled(false);
+                }
+            }
+            ppManager.SetVignetteEnabled(camComp.vignetteEnabled);
+            ppManager.SetVignetteIntensity(camComp.vignetteIntensity);
+            ppManager.SetVignetteSmoothness(camComp.vignetteSmoothness);
+            ppManager.SetVignetteColor(camComp.vignetteColor);
+            ppManager.SetColorGradingEnabled(camComp.colorGradingEnabled);
+            ppManager.SetCGBrightness(camComp.cgBrightness);
+            ppManager.SetCGContrast(camComp.cgContrast);
+            ppManager.SetCGSaturation(camComp.cgSaturation);
+            ppManager.SetCGTint(camComp.cgTint);
+            ppManager.SetChromaticAberrationEnabled(camComp.chromaticAberrationEnabled);
+            ppManager.SetChromaticAberrationIntensity(camComp.chromaticAberrationIntensity);
+            ppManager.SetChromaticAberrationPadding(camComp.chromaticAberrationPadding);
         } else {
             gfxManager.Clear(0.192f, 0.301f, 0.475f, 1.0f);
         }
@@ -236,6 +295,10 @@ void SceneRenderer::RenderSceneForEditor(const glm::vec3& cameraPos, const glm::
         {
             mainECS.particleSystem->Update();
         }
+        if (mainECS.fogSystem)
+        {
+            mainECS.fogSystem->Update();
+        }
 
         // Render the scene
         gfxManager.Render();
@@ -260,6 +323,8 @@ void SceneRenderer::RenderSceneForEditor(const glm::vec3& cameraPos, const glm::
 
 void SceneRenderer::BeginGameRender(int width, int height)
 {
+    GraphicsManager::GetInstance().SetGamePanelActive(true);
+
     // Create or resize game framebuffer if needed
     if (gameFrameBuffer == 0 || width != gameWidth || height != gameHeight) {
         // Delete existing game framebuffer if it exists
@@ -321,9 +386,34 @@ void SceneRenderer::EndGameRender()
     BlurEffect* blur = PostProcessingManager::GetInstance().GetBlurEffect();
     if (blur) blur->SetIntensity(0.0f);
 
+    // Prevent double bloom: same issue as blur — SceneInstance::Draw already applied
+    // bloom in its first EndHDRRender pass. Save/restore since bloom intensity is persistent.
+    BloomEffect* bloom = PostProcessingManager::GetInstance().GetBloomEffect();
+    float savedBloomIntensity = bloom ? bloom->GetIntensity() : 0.0f;
+    if (bloom) bloom->SetIntensity(0.0f);
+
+    // NOTE: Chromatic aberration, vignette, and color grading are NOT zeroed here.
+    // They are tonemapping shader effects that sample hdrColorTexture read-only,
+    // so they don't cause double-application. They must stay active because this
+    // second EndHDRRender pass is what writes to the game framebuffer.
+
     PostProcessingManager::GetInstance().EndHDRRender(gameFrameBuffer, gameWidth, gameHeight);
+
+    // Restore bloom intensity for next frame
+    if (bloom) bloom->SetIntensity(savedBloomIntensity);
+
+    // Render deferred items (excluded from post-processing) on top of blurred output
+    GraphicsManager& gfxManager = GraphicsManager::GetInstance();
+    if (gfxManager.HasDeferredItems())
+    {
+        glBindFramebuffer(GL_FRAMEBUFFER, gameFrameBuffer);
+        glViewport(0, 0, gameWidth, gameHeight);
+        gfxManager.RenderDeferred();
+    }
+
     // Unbind framebuffer (render to screen again)
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    gfxManager.SetGamePanelActive(false);
 }
 
 unsigned int SceneRenderer::GetGameTexture()

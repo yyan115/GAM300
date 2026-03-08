@@ -27,7 +27,7 @@ private:
     void UpdateTypewriter(VideoComponent& vc, float dt);
     void CompleteTypewriter(VideoComponent& vc);
     bool IsTypewriterFinished(const VideoComponent& vc) const;
-    void ApplyBlur(const VideoComponent& vc);
+    void ApplyBlur(VideoComponent& vc, float dt);
     void SwapBoardImage(VideoComponent& vc, int boardIndex);
     void SetBlackScreenAlpha(VideoComponent& vc, float alpha);
     void ClearText(VideoComponent& vc);

@@ -1,0 +1,14 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "0041f1063ae7eac1-000467b8e833620d",
+        "source": "../../Resources/Textures/M5/enemy_flying_Normal.png",
+        "compiled": "../../Resources/Textures/M5/enemy_flying_Normal.dds"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp"
+    }
+}

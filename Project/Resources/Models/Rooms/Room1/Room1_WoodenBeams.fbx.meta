@@ -1,0 +1,11 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "00322fe918ef2044-00047126e80005ff",
+        "source": "../../Resources/Models/Rooms/Room1/Room1_WoodenBeams.fbx",
+        "compiled": "../../Resources/Models/Rooms/Room1/Room1_WoodenBeams.mesh"
+    },
+    "ModelMetaData": {
+        "optimizeMeshes": true
+    }
+}

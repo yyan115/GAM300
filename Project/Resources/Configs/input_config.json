@@ -38,6 +38,16 @@
       }
     },
 
+    "FeatherSkill": {
+      "description": "Activate the feather skill",
+      "desktop": {
+        "keys": ["Z"]
+      },
+      "android": {
+        "entity": "SkillIcon"
+      }
+    },
+
     "Interact": {
       "description": "Interact with objects",
       "desktop": {

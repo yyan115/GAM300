@@ -1,6 +1,8 @@
 #pragma once
 #include "Math/Vector3D.hpp"
+#include "Math/Matrix4x4.hpp"
 #include "Reflection/ReflectionBase.hpp"
+#include <Hierarchy/ChildrenComponent.hpp>
 #include <tuple>
 // ============================================================================
 // VECTOR2D (for 2D values like axis input, pointer position)
@@ -56,6 +58,13 @@ namespace InputWrappers {
         if (!g_inputManager) return Vector2D(0.0f, 0.0f);
         glm::vec2 axis = g_inputManager->GetAxis(axisName);
         return Vector2D(axis.x, axis.y);
+    }
+
+    // Scroll wheel delta this frame (desktop only; 0 on Android)
+    // Positive = scroll up (zoom in), negative = scroll down (zoom out)
+    inline float GetScrollY() {
+        if (!g_inputManager) return 0.0f;
+        return g_inputManager->GetScrollY();
     }
 
     // Batch API for Lua optimization - returns all action states at once
@@ -226,6 +235,50 @@ namespace PhysicsSystemWrappers {
         return result.hit ? result.distance : -1.0f;
     }
 
+    inline std::tuple<bool, float, float, float, float, float, float, float, uint32_t> RaycastFull(
+        float originX, float originY, float originZ,
+        float dirX, float dirY, float dirZ,
+        float maxDistance)
+    {
+        if (!g_PhysicsSystem) {
+            return { false, -1.0f, 0.f, 0.f, 0.f, 0.f, 1.f, 0.f, 0 };
+        }
+        Vector3D origin(originX, originY, originZ);
+        Vector3D direction(dirX, dirY, dirZ);
+        auto result = g_PhysicsSystem->Raycast(origin, direction, maxDistance);
+        if (!result.hit) {
+            return { false, -1.0f, 0.f, 0.f, 0.f, 0.f, 1.f, 0.f, 0 };
+        }
+        return {
+            true,
+            result.distance,
+            result.hitPoint.x,  result.hitPoint.y,  result.hitPoint.z,
+            result.hitNormal.x, result.hitNormal.y, result.hitNormal.z,
+            result.bodyId.GetIndexAndSequenceNumber()
+        };
+    }
+
+    inline std::tuple<float, int> RaycastGetEntity(
+        float originX, float originY, float originZ,
+        float dirX, float dirY, float dirZ,
+        float maxDistance)
+    {
+        if (!g_PhysicsSystem) {
+            return std::make_tuple(-1.0f, -1);
+        }
+
+        Vector3D origin(originX, originY, originZ);
+        Vector3D direction(dirX, dirY, dirZ);
+
+        auto result = g_PhysicsSystem->Raycast(origin, direction, maxDistance);
+
+        if (result.hit) {
+            // Cast entityId to int to guarantee Lua can read it safely as a standard number
+            return std::make_tuple(result.distance, static_cast<int>(result.entityId));
+        }
+
+        return std::make_tuple(-1.0f, -1);
+    }
     // Check if two entities are within a certain distance
     // Usage: local hit = Physics.CheckDistance(entityA, entityB, maxDistance)
     // Returns: true if distance <= maxDistance, false otherwise
@@ -1146,6 +1199,30 @@ namespace EntityQueryWrappers {
         return nameOpt.value().get().name;
     }
 
+    // Get entity tag - returns string
+    inline std::string GetEntityTag(Entity entity) {
+        ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
+
+        auto tagOpt = ecsManager.TryGetComponent<TagComponent>(entity);
+        if (!tagOpt.has_value()) {
+            return "";
+        }
+
+        return tagOpt.value().get().GetTagName();
+    }
+
+    // Get entity layer - returns string
+    inline std::string GetEntityLayer(Entity entity) {
+        ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
+
+        auto layerOpt = ecsManager.TryGetComponent<LayerComponent>(entity);
+        if (!layerOpt.has_value()) {
+            return "";
+        }
+
+        return layerOpt.value().get().GetLayerName();
+    }
+
     // Check if entity is active - returns bool
     inline bool IsEntityActive(Entity entity) {
         ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
@@ -1168,6 +1245,179 @@ namespace EntityQueryWrappers {
         return 1;
     }
 
+    inline int SetParentEntity(lua_State* L) {
+        // Args: (childEntityId, parentEntityId) -- parentEntityId < 0 means detach
+        Entity child = static_cast<Entity>(luaL_checkinteger(L, 1));
+        int parentArg = static_cast<int>(luaL_checkinteger(L, 2)); // -1 to detach
+
+        ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
+        EntityGUIDRegistry& guidRegistry = EntityGUIDRegistry::GetInstance();
+
+        if (child < 0 || !ecsManager.HasComponent<Transform>(child)) {
+            lua_pushboolean(L, 0);
+            return 1;
+        }
+
+        // [FIX] Grab the world matrix directly from the component, exactly like ReparentEntity does.
+        // This perfectly matches the engine's internal math and prevents floating-point shifts.
+        Matrix4x4 childWorld = ecsManager.GetComponent<Transform>(child).worldMatrix;
+
+        // DETACH case: parentArg < 0
+        if (parentArg < 0) {
+            // If previously had a parent, remove the ParentComponent and update parent's children list
+            if (ecsManager.HasComponent<ParentComponent>(child)) {
+                ParentComponent& prevPC = ecsManager.GetComponent<ParentComponent>(child);
+                GUID_128 prevParentGUID = prevPC.parent;
+                Entity prevParent = guidRegistry.GetEntityByGUID(prevParentGUID);
+
+                // Remove ParentComponent from child
+                ecsManager.RemoveComponent<ParentComponent>(child);
+
+                // Update old parent's ChildrenComponent if present
+                if (prevParent != static_cast<Entity>(-1) && ecsManager.HasComponent<ChildrenComponent>(prevParent)) {
+                    auto& oldChildren = ecsManager.GetComponent<ChildrenComponent>(prevParent).children;
+                    GUID_128 childGUID = guidRegistry.GetGUIDByEntity(child);
+                    auto it = std::find(oldChildren.begin(), oldChildren.end(), childGUID);
+                    if (it != oldChildren.end()) {
+                        oldChildren.erase(it);
+                    }
+                    if (oldChildren.empty()) {
+                        ecsManager.RemoveComponent<ChildrenComponent>(prevParent);
+                    }
+                }
+            }
+
+            // Apply preserved world transform via transformSystem if available
+            if (ecsManager.transformSystem) {
+                Vector3D worldPos = Matrix4x4::ExtractTranslation(childWorld);
+                Vector3D worldScale = Matrix4x4::ExtractScale(childWorld);
+                Matrix4x4 noScale = Matrix4x4::RemoveScale(childWorld);
+                Quaternion worldRot = Quaternion::FromMatrix(noScale);
+                ecsManager.transformSystem->SetWorldPosition(child, worldPos);
+                ecsManager.transformSystem->SetWorldRotation(child, worldRot.ToEulerDegrees());
+                ecsManager.transformSystem->SetWorldScale(child, worldScale);
+            }
+            else {
+                Transform& ct = ecsManager.GetComponent<Transform>(child);
+                ct.localPosition = Matrix4x4::ExtractTranslation(childWorld);
+                ct.localScale = Matrix4x4::ExtractScale(childWorld);
+                ct.localRotation = Quaternion::FromEulerDegrees(Matrix4x4::ExtractRotation(childWorld));
+                ct.isDirty = true;
+            }
+
+            lua_pushboolean(L, 1);
+            return 1;
+        }
+
+        // ATTACH case
+        Entity parent = static_cast<Entity>(parentArg);
+
+        // Prevent self-parenting
+        if (parent == child) {
+            lua_pushboolean(L, 0);
+            return 1;
+        }
+
+        // Verify parent exists and get its GUID
+        GUID_128 parentGuid = guidRegistry.GetGUIDByEntity(parent);
+        if (parentGuid == GUID_128{}) {
+            lua_pushboolean(L, 0);
+            return 1;
+        }
+
+        // Cycle detection: walk up from parent to root and ensure we don't hit child
+        {
+            Entity cur = parent;
+            while (cur >= 0 && ecsManager.HasComponent<ParentComponent>(cur)) {
+                const ParentComponent& pc = ecsManager.GetComponent<ParentComponent>(cur);
+                Entity up = guidRegistry.GetEntityByGUID(pc.parent);
+                if (up == child) {
+                    lua_pushboolean(L, 0); // would create cycle
+                    return 1;
+                }
+                cur = up;
+            }
+        }
+
+        // If the dragged entity had a previous parent, remove it from the old parent's children list
+        if (ecsManager.HasComponent<ParentComponent>(child)) {
+            ParentComponent& prevPC = ecsManager.GetComponent<ParentComponent>(child);
+            GUID_128 oldParentGUID = prevPC.parent;
+            Entity oldParent = guidRegistry.GetEntityByGUID(oldParentGUID);
+
+            // Update child's ParentComponent in-place
+            if (oldParentGUID == parentGuid) {
+                lua_pushboolean(L, 1);
+                return 1;
+            }
+
+            prevPC.parent = parentGuid;
+
+            if (oldParent != static_cast<Entity>(-1) && ecsManager.HasComponent<ChildrenComponent>(oldParent)) {
+                auto& oldChildren = ecsManager.GetComponent<ChildrenComponent>(oldParent).children;
+                GUID_128 childGuid = guidRegistry.GetGUIDByEntity(child);
+                auto it = std::find(oldChildren.begin(), oldChildren.end(), childGuid);
+                if (it != oldChildren.end()) {
+                    oldChildren.erase(it);
+                }
+                if (oldChildren.empty()) {
+                    ecsManager.RemoveComponent<ChildrenComponent>(oldParent);
+                }
+            }
+        }
+        else {
+            ecsManager.AddComponent<ParentComponent>(child, ParentComponent{ parentGuid });
+        }
+
+        // Add child GUID to new parent's children array
+        GUID_128 childGuid = guidRegistry.GetGUIDByEntity(child);
+        if (ecsManager.HasComponent<ChildrenComponent>(parent)) {
+            auto& newChildren = ecsManager.GetComponent<ChildrenComponent>(parent).children;
+            if (std::find(newChildren.begin(), newChildren.end(), childGuid) == newChildren.end()) {
+                newChildren.push_back(childGuid);
+            }
+        }
+        else {
+            ChildrenComponent cc;
+            cc.children.clear();
+            cc.children.push_back(childGuid);
+            ecsManager.AddComponent<ChildrenComponent>(parent, cc);
+        }
+
+        // Re-apply child's world transform via transformSystem
+        if (ecsManager.transformSystem) {
+            Vector3D worldPos = Matrix4x4::ExtractTranslation(childWorld);
+            Vector3D worldScale = Matrix4x4::ExtractScale(childWorld);
+            Matrix4x4 noScale = Matrix4x4::RemoveScale(childWorld);
+            Quaternion worldRot = Quaternion::FromMatrix(noScale);
+            ecsManager.transformSystem->SetWorldPosition(child, worldPos);
+            ecsManager.transformSystem->SetWorldRotation(child, worldRot.ToEulerDegrees());
+            ecsManager.transformSystem->SetWorldScale(child, worldScale);
+        }
+        else {
+            // Fallback calculation using the exact world matrices
+            Matrix4x4 parentWorld = Matrix4x4::Identity();
+            if (ecsManager.HasComponent<Transform>(parent)) {
+                parentWorld = ecsManager.GetComponent<Transform>(parent).worldMatrix;
+            }
+            Matrix4x4 invParent;
+            if (!parentWorld.TryInverse(invParent)) {
+                lua_pushboolean(L, 0);
+                return 1;
+            }
+
+            Matrix4x4 childLocalMat = invParent * childWorld;
+            Transform& ct = ecsManager.GetComponent<Transform>(child);
+            ct.localPosition = Matrix4x4::ExtractTranslation(childLocalMat);
+            ct.localScale = Matrix4x4::ExtractScale(childLocalMat);
+            ct.localRotation = Quaternion::FromEulerDegrees(Matrix4x4::ExtractRotation(childLocalMat));
+            ct.isDirty = true;
+        }
+
+        lua_pushboolean(L, 1);
+        return 1;
+    }
+
     // Return all children entities
     // Args: entityId
     inline int GetChildrenEntities(lua_State* L) {
@@ -1186,6 +1436,40 @@ namespace EntityQueryWrappers {
 		}
 
         return 1;
+    }
+
+    inline int FindChildEntityByName(Entity parentId, const std::string& targetName) {
+        ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
+
+        // 1. Safety check to ensure the parent actually exists and has a transform
+        if (!ecsManager.HasComponent<ChildrenComponent>(parentId)) {
+            return -1;
+        }
+
+        auto& childrenComp = ecsManager.GetComponent<ChildrenComponent>(parentId);
+
+        // 2. Loop through all direct children
+        for (const auto childGUID : childrenComp.children) {
+            Entity childId = EntityGUIDRegistry::GetInstance().GetEntityByGUID(childGUID);
+            if (childId == INVALID_ENTITY) continue;
+
+            // 3. Check if THIS child is the one we want
+            if (ecsManager.HasComponent<NameComponent>(childId)) {
+                auto& nameComp = ecsManager.GetComponent<NameComponent>(childId);
+                if (nameComp.name == targetName) {
+                    return childId; // Found it!
+                }
+            }
+
+            // 4. If not found, recursively search inside this child's children
+            Entity foundId = FindChildEntityByName(childId, targetName);
+            if (foundId != -1) {
+                return foundId;
+            }
+        }
+
+        // 5. If we finish the loop and find nothing, return invalid
+        return -1;
     }
 }
 

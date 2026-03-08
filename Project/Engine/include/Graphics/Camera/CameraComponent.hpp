@@ -75,6 +75,37 @@ public:
     std::string skyboxTexturePath;
     bool useSkybox = true;
 
+    // === Post-Processing: Blur ===
+    bool blurEnabled = false;
+    float blurIntensity = 0.5f;
+    float blurRadius = 2.0f;
+    int blurPasses = 2;
+    uint32_t blurLayerMask = 0xFFFFFFFF; // checked=blurred, all by default
+
+    // === Post-Processing: Bloom ===
+    bool bloomEnabled = false;
+    float bloomThreshold = 1.0f;
+    float bloomIntensity = 1.0f;
+    float bloomSpread = 0.5f;
+
+    // === Post-Processing: Vignette ===
+    bool vignetteEnabled = false;
+    float vignetteIntensity = 0.5f;
+    float vignetteSmoothness = 0.5f;
+    glm::vec3 vignetteColor = glm::vec3(0.0f);  // Vignette tint color (black by default, like Unity)
+
+    // === Post-Processing: Color Grading ===
+    bool colorGradingEnabled = false;
+    float cgBrightness = 0.0f;
+    float cgContrast = 1.0f;
+    float cgSaturation = 1.0f;
+    glm::vec3 cgTint = glm::vec3(1.0f);
+
+    // === Post-Processing: Chromatic Aberration ===
+    bool chromaticAberrationEnabled = false;
+    float chromaticAberrationIntensity = 0.5f;  // Strength of RGB separation (0-3)
+    float chromaticAberrationPadding = 0.5f;    // Edge falloff: 0 = everywhere, 1 = only at very edges
+
     CameraComponent() = default;
     ~CameraComponent() = default;
 };

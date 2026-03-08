@@ -88,6 +88,8 @@ return Component {
 
         local targetId = self:_toRoot(otherEntityId)
 
+        print("[AttackHitbox] HIT targetId=", tostring(targetId), "from otherEntityId=", tostring(otherEntityId))
+
         if self._playerEntityId and targetId == self._playerEntityId then return end
         if self._hitThisSwing[targetId] then return end
         self._hitThisSwing[targetId] = true
@@ -96,6 +98,7 @@ return Component {
             event_bus.publish("deal_damage_to_entity", {
                 entityId = targetId,
                 damage   = self._currentDamage,
+                hitType  = "COMBO",
             })
             print("[AttackHitbox] Dealt " .. tostring(self._currentDamage)
                 .. " damage to entity " .. tostring(targetId))

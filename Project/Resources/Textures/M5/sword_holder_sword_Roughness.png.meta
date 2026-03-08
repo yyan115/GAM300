@@ -1,0 +1,14 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "00322fe960014ae0-0004713e42000f29",
+        "source": "../../Resources/Textures/M5/sword_holder_sword_Roughness.png",
+        "compiled": "../../Resources/Textures/M5/sword_holder_sword_Roughness.dds"
+    },
+    "TextureMetaData": {
+        "type": "roughness",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp"
+    }
+}

@@ -48,12 +48,15 @@ public:
     // Force a re-render next frame (call when scene geometry changes significantly)
     void Invalidate();
 
+    // Set the phase offset for round-robin staggered updates (0..updateInterval-1)
+    void SetPhaseOffset(int phase) { m_phaseOffset = phase; }
+
     // Configuration for caching behavior
     struct CacheConfig {
         float positionThreshold = 0.05f;   // Min movement to trigger update (world units)
         float farPlaneThreshold = 0.1f;    // Min far plane change to trigger update
-        int maxStaleFrames = 60;           // Force update after this many frames
-        int updateInterval = 1;            // Minimum frames between updates (1 = every frame if needed)
+        int maxStaleFrames = 10;           // Force update after this many frames (keeps as fallback)
+        int updateInterval = 8;            // Frames between updates per map (matches MAX_POINT_LIGHT_SHADOWS)
     };
 
     CacheConfig cacheConfig;
@@ -107,6 +110,7 @@ private:
     int m_framesSinceUpdate = 999;  // Start high to force initial render
     int m_framesSinceLastCheck = 0;
     bool m_forceDirty = true;       // Start dirty to ensure first render
+    int m_phaseOffset = 0;          // Round-robin stagger: offset within the update cycle
 
     // Stats
     CacheStats cacheStats;

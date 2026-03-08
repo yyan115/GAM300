@@ -57,6 +57,9 @@ BEGIN_SYSTEM("Input")
     // Axes (returns Vector2D object with .x and .y properties)
     FUNCTION("GetAxis", InputWrappers::GetAxis)
 
+    // Scroll wheel (desktop only; returns delta this frame, positive = scroll up)
+    FUNCTION("GetScrollY", InputWrappers::GetScrollY)
+
     // Entity-based touch position (Android joysticks)
     // Returns touch position relative to entity center - use for calculating joystick direction
     // Example: local pos = Input.GetActionTouchPosition("Movement")
@@ -265,6 +268,8 @@ BEGIN_SYSTEM("Physics")
     // Raycast(originX, originY, originZ, dirX, dirY, dirZ, maxDistance)
     // Returns: distance (float, -1.0 if no hit)
     FUNCTION("Raycast", PhysicsSystemWrappers::Raycast)
+    FUNCTION("RaycastFull", PhysicsSystemWrappers::RaycastFull)
+    FUNCTION("RaycastGetEntity", PhysicsSystemWrappers::RaycastGetEntity)
     FUNCTION("CheckDistance", PhysicsSystemWrappers::CheckDistance)
 END_SYSTEM()
 
@@ -301,6 +306,7 @@ END_SYSTEM()
 // ============================================================================
 BEGIN_SYSTEM("Engine")
     FUNCTION("FindTransformByName", &Lua_FindTransformByName)
+    FUNCTION("FindTransformByID", &Lua_FindTransformByID)
     FUNCTION("GetTransformPosition", &Lua_GetTransformPosition)
     FUNCTION("GetTransformWorldPosition", &Lua_GetTransformWorldPosition)
     FUNCTION("GetClipIndexByName", &Lua_FindCurrentClipByName)      //TEMPHACK
@@ -317,16 +323,19 @@ BEGIN_SYSTEM("Engine")
     FUNCTION("FindEntitiesWithScript", &EntityQueryWrappers::FindEntitiesWithScript)
     FUNCTION("GetEntityPosition", &EntityQueryWrappers::GetEntityPosition)
     FUNCTION("GetEntityName", &EntityQueryWrappers::GetEntityName)
+    FUNCTION("GetEntityTag", &EntityQueryWrappers::GetEntityTag)
+    FUNCTION("GetEntityLayer", &EntityQueryWrappers::GetEntityLayer)
     FUNCTION("IsEntityActive", &EntityQueryWrappers::IsEntityActive)
     FUNCTION("GetChildrenEntities", &EntityQueryWrappers::GetChildrenEntities)
+    FUNCTION("FindChildByName", &EntityQueryWrappers::FindChildEntityByName)
     FUNCTION("GetParentEntity", &EntityQueryWrappers::GetParentEntity)
+    FUNCTION("SetParentEntity", &EntityQueryWrappers::SetParentEntity)
 
     FUNCTION("UpdateCacheTiming", &EntityQueryWrappers::UpdateCacheTiming)
     FUNCTION("UpdateEnemyCache", &EntityQueryWrappers::UpdateEnemyCache)
     FUNCTION("SetCacheUpdateInterval", &EntityQueryWrappers::SetCacheUpdateInterval)
     FUNCTION("ClearEnemyCaches", &EntityQueryWrappers::ClearEnemyCaches)
     FUNCTION("GetCacheInfo", &EntityQueryWrappers::GetCacheInfo)
-
 END_SYSTEM()
 
 

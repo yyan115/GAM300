@@ -123,6 +123,33 @@ static Transform* Lua_FindTransformByName(const std::string& name)
     return nullptr;
 }
 
+static Transform* Lua_FindTransformByID(const Entity& id)
+{
+    if (!g_ecsManager) return nullptr;
+    ECSManager& ecs = *g_ecsManager;
+
+    // Get all active entities (same pattern as InspectorPanel)
+    const auto& entities = ecs.GetActiveEntities();
+
+    for (Entity e : entities)
+    {
+        if (e == id)
+        {
+            // Found the entity with matching name, now ensure it has a Transform
+            if (ecs.HasComponent<Transform>(e))
+            {
+                return &ecs.GetComponent<Transform>(e);
+            }
+
+            // Name matched but no Transform; stop searching if names are unique
+            break;
+        }
+    }
+
+    return nullptr;
+}
+
+
 static std::tuple<float, float, float> Lua_GetTransformPosition(Transform* t)
 {
     if (!t)

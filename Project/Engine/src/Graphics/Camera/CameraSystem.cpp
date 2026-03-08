@@ -20,6 +20,8 @@ prior written consent of DigiPen Institute of Technology is prohibited.
 #include "TimeManager.hpp"
 #include "Asset Manager/AssetManager.hpp"
 #include "Asset Manager/ResourceManager.hpp"
+#include "Graphics/PostProcessing/PostProcessingManager.hpp"
+#include "Graphics/PostProcessing/Blur/BlurEffect.hpp"
 
 bool CameraSystem::Initialise()
 {
@@ -126,6 +128,65 @@ void CameraSystem::Update()
 	if (activeCameraEntity != UINT32_MAX && entities.find(activeCameraEntity) != entities.end())
 	{
 		UpdateCameraFromComponent(activeCameraEntity);
+	}
+
+	// Apply active camera's post-processing settings
+	if (activeCameraEntity != UINT32_MAX && ecsManager.HasComponent<CameraComponent>(activeCameraEntity))
+	{
+		auto& camComp = ecsManager.GetComponent<CameraComponent>(activeCameraEntity);
+		auto& ppManager = PostProcessingManager::GetInstance();
+
+		// Blur
+		BlurEffect* blur = ppManager.GetBlurEffect();
+		if (blur) {
+			if (camComp.blurEnabled) {
+				blur->SetIntensity(camComp.blurIntensity);
+				blur->SetRadius(camComp.blurRadius);
+				blur->SetPasses(camComp.blurPasses);
+			} else {
+				blur->SetIntensity(0.0f);
+			}
+		}
+
+		// Blur layer mask: checked=blurred, so excluded = ~blurLayerMask
+		if (camComp.blurEnabled)
+			ppManager.SetExcludedLayerMask(~camComp.blurLayerMask);
+		else
+			ppManager.SetExcludedLayerMask(0);
+
+		// Bloom
+		BloomEffect* bloom = ppManager.GetBloomEffect();
+		if (bloom) {
+			if (camComp.bloomEnabled) {
+				bloom->SetEnabled(true);
+				bloom->SetThreshold(camComp.bloomThreshold);
+				bloom->SetIntensity(camComp.bloomIntensity);
+				bloom->SetScatter(camComp.bloomSpread);
+			} else {
+				bloom->SetEnabled(false);
+			}
+		}
+
+		// Vignette + Color Grading
+		ppManager.SetVignetteEnabled(camComp.vignetteEnabled);
+		ppManager.SetVignetteIntensity(camComp.vignetteIntensity);
+		ppManager.SetVignetteSmoothness(camComp.vignetteSmoothness);
+		ppManager.SetVignetteColor(camComp.vignetteColor);
+		ppManager.SetColorGradingEnabled(camComp.colorGradingEnabled);
+		ppManager.SetCGBrightness(camComp.cgBrightness);
+		ppManager.SetCGContrast(camComp.cgContrast);
+		ppManager.SetCGSaturation(camComp.cgSaturation);
+		ppManager.SetCGTint(camComp.cgTint);
+
+		// Chromatic Aberration
+		ppManager.SetChromaticAberrationEnabled(camComp.chromaticAberrationEnabled);
+		ppManager.SetChromaticAberrationIntensity(camComp.chromaticAberrationIntensity);
+		ppManager.SetChromaticAberrationPadding(camComp.chromaticAberrationPadding);
+	}
+	else
+	{
+		// No active camera — reset PP state so stale effects don't linger
+		PostProcessingManager::GetInstance().ResetRuntimeState();
 	}
 }
 

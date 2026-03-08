@@ -1,0 +1,11 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "000f98f71649d362-00046f5cb2000005",
+        "source": "../../Resources/Animations/Enemy/Boss/KarasuBoss@DiveSmash.fbx",
+        "compiled": "../../Resources/Animations/Enemy/Boss/KarasuBoss@DiveSmash.mesh"
+    },
+    "ModelMetaData": {
+        "optimizeMeshes": true
+    }
+}

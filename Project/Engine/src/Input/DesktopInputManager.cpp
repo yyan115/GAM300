@@ -47,6 +47,11 @@ glm::vec2 DesktopInputManager::GetDragDelta() {
     return glm::vec2(0.0f);
 }
 
+float DesktopInputManager::GetScrollY() {
+    if (!m_platform) return 0.0f;
+    return m_platform->GetScrollY();
+}
+
 glm::vec2 DesktopInputManager::GetAxis(const std::string& axisName) {
     auto it = m_axisBindings.find(axisName);
     if (it == m_axisBindings.end()) {

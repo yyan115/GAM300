@@ -60,5 +60,6 @@ private:
     bool showWarnings = true;
     bool showErrors = true;
     bool autoScroll = true;
+    char searchFilter[256] = "";
     static const int MAX_LOG_ENTRIES = 1000;
 };
