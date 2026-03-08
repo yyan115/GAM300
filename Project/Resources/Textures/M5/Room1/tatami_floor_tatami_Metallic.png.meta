@@ -6,9 +6,9 @@
         "compiled": "../../Resources/Textures/M5/Room1/tatami_floor_tatami_Metallic.dds"
     },
     "TextureMetaData": {
-        "type": "diffuse",
+        "type": "metallic",
         "flipUVs": false,
         "generateMipmaps": true,
-        "textureWrapMode": "Clamp"
+        "textureWrapMode": "Repeat"
     }
 }
