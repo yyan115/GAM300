@@ -68,6 +68,18 @@ return Component {
         LockOnAngleDeg = 45.0,      -- half-cone: LockOn targets outside this angle from player forward are ignored
 
         -- =====================================================================
+        -- SPIN (aim-hold from retracted state)
+        -- Chain spins in a circle on the X axis (YZ plane) while aim is held.
+        -- Released when tip points within SpinReleaseAngleTolerance of camera forward.
+        -- =====================================================================
+        SpinRadius               = 0.75,  -- radius of the circular spin path (metres)
+        SpinSpeed                = 25.0,  -- full speed in rad/s (~4 rotations/sec), multiplied by dt so framerate-independent
+        SpinWindUpTime           = 0.4,   -- seconds to reach full speed from 0
+        SpinVerletBlendTime      = 0.3,   -- seconds to blend from Verlet → scripted positions
+        SpinReleaseAngleTolerance= 20.0,  -- degrees: tip must point within this of camera forward to release
+        SpinDirection            = 1,     -- 1 = forward→up→back→down, -1 = reverse. Tweak if spin looks wrong.
+
+        -- =====================================================================
         -- AUDIO CHANNELS
         -- ChainAudio resolves AudioComponents from link entities by name at
         -- runtime using Engine.FindAudioCompByName.
@@ -208,8 +220,12 @@ return Component {
         dbg("up chain control")
         self._chain_pressing = false
 
-        if _G.event_bus and _G.event_bus.publish then
-            _G.event_bus.publish("chain.aim_camera", {active = false})
+        -- Aim camera off — suppressed if we are entering spin-release mode
+        -- (_intentAimFire means we were spinning; _resetSpin will publish it after fire)
+        if not self._intentAimFire then
+            if _G.event_bus and _G.event_bus.publish then
+                _G.event_bus.publish("chain.aim_camera", {active = false})
+            end
         end
 
         if not self.controller then
@@ -241,10 +257,11 @@ return Component {
             dbg(string.format("[ChainBootstrap] AdjustLength release -> confirmed chainLen=%.4f", self.controller.chainLen or 0))
 
         elseif self._intentAimFire then
-            -- Held from retracted: fire with camera forward on release.
-            local dir = self._cameraForward
-            dbg(string.format("[ChainBootstrap] AimFire release -> StartExtension (%.3f,%.3f,%.3f)", dir[1],dir[2],dir[3]))
-            self.controller:StartExtension(dir, self.MaxLength, self.LinkMaxDistance)
+            -- Button released during spin — don't fire immediately.
+            -- _pendingSpinRelease lets Update keep spinning until the tip
+            -- points at camera forward within SpinReleaseAngleTolerance.
+            self._pendingSpinRelease = true
+            dbg("[ChainBootstrap] SpinRelease pending — waiting for correct angle window")
 
         elseif isExt and not isRet then
             -- Released during extension before hold threshold.
@@ -320,7 +337,10 @@ return Component {
         -- driven continuously in Update (every frame while held), not from this event.
         if len <= 1e-4 and not isExt then
             self._intentAimFire = true
+            -- Snapshot player body facing NOW — frozen for the entire spin.
+            -- Requesting once here; response arrives next frame via _subPlayerForward.
             if _G.event_bus and _G.event_bus.publish then
+                _G.event_bus.publish("request_player_forward", true)
                 _G.event_bus.publish("chain.aim_camera", {active = true})
             end
         elseif len > 1e-4 and not isExt and isAttached then
@@ -391,6 +411,16 @@ return Component {
         self._pendingTapFire     = false
         self._pendingPlayerForward = nil
 
+        -- Spin state
+        self._spinTime           = 0
+        self._spinAngle          = 0
+        self._spinCurrentSpeed   = 0
+        self._spinVerletBlend    = 1.0
+        self._pendingSpinRelease = false
+        self._spinFacingX        = 0
+        self._spinFacingZ        = 1
+        self._spinFacingLocked   = false  -- true once facing is snapshotted, prevents mid-spin updates
+
         -- =====================================================================
         -- AUDIO: ChainAudio resolves link AudioComponents by name each frame
         -- =====================================================================
@@ -449,9 +479,19 @@ return Component {
 
             self._subPlayerForward = _G.event_bus.subscribe("player_forward_response", function(payload)
                 if not payload then return end
-                if self._pendingPlayerForward then return end
                 local x = payload.x
                 local z = payload.z
+                -- Always update spin facing — continuity correction in _computeSpinPositions
+                -- prevents the tip from teleporting when facing changes mid-spin.
+                if x and z then
+                    local flen = math.sqrt(x*x + z*z)
+                    if flen > 1e-6 then
+                        self._spinFacingX = x / flen
+                        self._spinFacingZ = z / flen
+                    end
+                end
+                -- Tap-fire one-shot use
+                if self._pendingPlayerForward then return end
                 if not x or not z then return end
                 self._pendingPlayerForward = { x, payload.y or 0, z }
             end)
@@ -587,6 +627,95 @@ return Component {
         return bestDX, bestDY, bestDZ
     end,
 
+    -- =========================================================================
+    -- SPIN HELPERS
+    -- =========================================================================
+
+    -- Advance spin angle and blend weight each frame, returns current angular speed.
+    -- SpinSpeed is in rad/s and multiplied by dt — uniform across all framerates.
+    _tickSpin = function(self, dt)
+        self._spinTime = self._spinTime + dt
+        local t = math.min(self._spinTime / math.max(self.SpinWindUpTime, 1e-4), 1.0)
+        local dir = (tonumber(self.SpinDirection) or 1) >= 0 and 1 or -1
+        local currentSpeed = (tonumber(self.SpinSpeed) or 25.0) * t * dir
+        self._spinAngle = self._spinAngle + currentSpeed * dt
+        self._spinVerletBlend = math.max(0.0,
+            1.0 - self._spinTime / math.max(self.SpinVerletBlendTime, 1e-4))
+        -- Request player body facing — response updates _spinFacingX/_spinFacingZ each frame
+        if _G.event_bus and _G.event_bus.publish then
+            _G.event_bus.publish("request_player_forward", true)
+        end
+        return currentSpeed
+    end,
+
+    -- Compute scripted circular positions in the player's local forward-up plane.
+    -- Rotation axis = player's right (local X), so circle sweeps forward↔up↔back↔down
+    -- relative to wherever the player is facing.
+    -- Returns positions table AND the tangent direction at the tip (for endpoint rotation).
+    -- Spin plane: vertical circle in front of the player, axis = player right (local X).
+    -- forward = player body facing (XZ), up = world up (0,1,0).
+    -- Circle: cos(a)*forward + sin(a)*up.  Tangent: -sin(a)*forward + cos(a)*up.
+    -- SpinFacing is updated each frame by _tickSpin via request_player_forward.
+    _computeSpinPositions = function(self, startPos, angle, spinActiveN)
+        local result = {}
+        local r      = tonumber(self.SpinRadius) or 0.75
+        local fx, fz = self._spinFacingX or 0, self._spinFacingZ or 1
+        local flen   = math.sqrt(fx*fx + fz*fz)
+        if flen < 1e-6 then fx, fz = 0, 1 else fx, fz = fx/flen, fz/flen end
+
+        -- Angle continuity: when facing rotates mid-spin, adjust _spinAngle so the
+        -- tip stays at the same world position instead of teleporting.
+        local prevFX = self._spinPrevFacingX or fx
+        local prevFZ = self._spinPrevFacingZ or fz
+        local facingChanged = math.abs(prevFX - fx) > 1e-4 or math.abs(prevFZ - fz) > 1e-4
+        if facingChanged and self._spinTime > 0.05 then
+            local prevCa = math.cos(angle)
+            local prevSa = math.sin(angle)
+            local tipFwdComponent = (prevFX * fx + prevFZ * fz) * prevCa
+            tipFwdComponent = math.max(-1, math.min(1, tipFwdComponent))
+            self._spinAngle = math.atan(prevSa, tipFwdComponent)
+        end
+        self._spinPrevFacingX = fx
+        self._spinPrevFacingZ = fz
+
+        local sa, ca = math.sin(self._spinAngle), math.cos(self._spinAngle)
+        for i = 1, spinActiveN do
+            local frac = i / spinActiveN
+            result[i] = {
+                startPos[1] + fx * ca * r * frac,
+                startPos[2] + sa * r * frac,
+                startPos[3] + fz * ca * r * frac,
+            }
+        end
+
+        -- Radial direction (startPos to tip) for endpoint rotation
+        local tip = result[spinActiveN]
+        local dx = tip[1] - startPos[1]
+        local dy = tip[2] - startPos[2]
+        local dz = tip[3] - startPos[3]
+        local dlen = math.sqrt(dx*dx + dy*dy + dz*dz)
+        if dlen > 1e-6 then dx,dy,dz = dx/dlen, dy/dlen, dz/dlen end
+
+        return result, dx, dy, dz
+    end,
+
+    -- Stop spin, reset all spin state, publish aim camera off
+    _resetSpin = function(self)
+        self._spinTime           = 0
+        self._spinAngle          = 0
+        self._spinCurrentSpeed   = 0
+        self._spinVerletBlend    = 1.0
+        self._pendingSpinRelease = false
+        self._spinFacingX        = 0
+        self._spinFacingZ        = 1
+        self._spinFacingLocked   = false
+        self._spinPrevFacingX    = nil
+        self._spinPrevFacingZ    = nil
+        if _G.event_bus and _G.event_bus.publish then
+            _G.event_bus.publish("chain.aim_camera", {active = false})
+        end
+    end,
+
     Update = function(self, dt)
         if not self.controller then return end
 
@@ -674,9 +803,12 @@ return Component {
 
             elseif not self._intentContinue and not self._intentAimFire then
                 -- FUTURE: hold on extended, idle, unattached chain.
-                -- Interaction not yet defined. Add logic here when needed.
-                -- (ContinueExtension removed — was incorrectly re-shooting the chain.)
                 dbg("[ChainBootstrap] Hold on free extended chain — no interaction defined yet")
+            end
+
+        -- Spin tick: runs every frame while aim-spin is held
+            if self._intentAimFire then
+                self._spinCurrentSpeed = self:_tickSpin(dt)
             end
         end
         ----------------------------------------------------------------------
@@ -722,6 +854,137 @@ return Component {
 
         local positions, startPos, endPos = self.controller:Update(dt, settings)
         local activeN = self.controller.activeN
+
+        -- Ensure endpoint transform is cached before spin block needs it
+        if not self._endpointTransform and self.ChainEndpointName and self.ChainEndpointName ~= "" then
+            self._endpointTransform = Engine.FindTransformByName(self.ChainEndpointName)
+        end
+
+        -- =====================================================================
+        -- SPIN OVERRIDE
+        -- While spinning (held or pending release), blend Verlet positions with
+        -- scripted circular positions and check the release angle window.
+        -- =====================================================================
+        local spinHeld    = self._intentAimFire and self._chain_pressing and self._chain_held
+        local spinPending = self._pendingSpinRelease
+
+        if spinHeld or spinPending then
+            -- Keep ticking spin during pending release (button already up)
+            if spinPending and not spinHeld then
+                self._spinCurrentSpeed = self:_tickSpin(dt)
+            end
+
+            -- Compute how many links to show during spin
+            local lmd = tonumber(self.LinkMaxDistance) or 0.025
+            local spinR = tonumber(self.SpinRadius) or 2.0
+            local spinActiveN = lmd > 0
+                and math.min(math.ceil(spinR / lmd) + 1, self.controller.n)
+                or activeN
+
+            -- Scripted circular positions in player-body-forward plane
+            local scripted, radX, radY, radZ = self:_computeSpinPositions(startPos, self._spinAngle, spinActiveN)
+
+            -- LOG: print every 30 frames so console isn't flooded
+            self._spinLogTimer = (self._spinLogTimer or 0) + 1
+            if self._spinLogTimer >= 30 then
+                self._spinLogTimer = 0
+                print(string.format("[SpinDBG] facingX=%.3f facingZ=%.3f locked=%s | angle=%.2f | tip=(%.2f,%.2f,%.2f) | start=(%.2f,%.2f,%.2f)",
+                    self._spinFacingX or 0, self._spinFacingZ or 0,
+                    tostring(self._spinFacingLocked),
+                    self._spinAngle,
+                    scripted[spinActiveN] and scripted[spinActiveN][1] or 0,
+                    scripted[spinActiveN] and scripted[spinActiveN][2] or 0,
+                    scripted[spinActiveN] and scripted[spinActiveN][3] or 0,
+                    startPos[1], startPos[2], startPos[3]))
+            end
+
+            -- Blend: spinVerletBlend=1 → full Verlet, =0 → full scripted
+            local scriptedWeight = 1.0 - self._spinVerletBlend
+            for i = 1, spinActiveN do
+                local vp = positions[i] or startPos
+                local sp = scripted[i]
+                positions[i] = {
+                    vp[1] + (sp[1] - vp[1]) * scriptedWeight,
+                    vp[2] + (sp[2] - vp[2]) * scriptedWeight,
+                    vp[3] + (sp[3] - vp[3]) * scriptedWeight,
+                }
+            end
+
+            -- Override activeN and endPos so rotations use spin tip
+            activeN = spinActiveN
+            endPos  = positions[spinActiveN]
+
+            -- Write endpoint transform — position + rotation aligned to circle tangent
+            local tip = positions[spinActiveN]
+            if self._endpointTransform and tip then
+                self:_write_world_pos(self._endpointTransform, tip[1], tip[2], tip[3])
+
+                -- Rotation: point outward from start toward tip (radial, not tangential)
+                if tip then
+                    local dx = tip[1] - startPos[1]
+                    local dy = tip[2] - startPos[2]
+                    local dz = tip[3] - startPos[3]
+                    local dlen = math.sqrt(dx*dx + dy*dy + dz*dz)
+                    if dlen > 1e-6 then
+                        dx, dy, dz = dx/dlen, dy/dlen, dz/dlen
+                        local ux, uy, uz = 0, 1, 0
+                        local dotv = ux*dx + uy*dy + uz*dz
+                        local rx = uy*dz - uz*dy
+                        local ry = uz*dx - ux*dz
+                        local rz = ux*dy - uy*dx
+                        local axisLen = math.sqrt(rx*rx + ry*ry + rz*rz)
+                        local qw, qx, qy, qz
+                        if axisLen < 1e-6 then
+                            qw, qx, qy, qz = dotv > 0 and 1 or 0, dotv > 0 and 0 or 1, 0, 0
+                        else
+                            rx, ry, rz = rx/axisLen, ry/axisLen, rz/axisLen
+                            local half = math.acos(math.max(-1, math.min(1, dotv))) * 0.5
+                            local s = math.sin(half)
+                            qw = math.cos(half)
+                            qx, qy, qz = rx*s, ry*s, rz*s
+                        end
+                        local qlen = math.sqrt(qw*qw + qx*qx + qy*qy + qz*qz)
+                        if qlen > 1e-12 then qw,qx,qy,qz = qw/qlen,qx/qlen,qy/qlen,qz/qlen end
+                        pcall(function()
+                            local rot = self._endpointTransform.localRotation
+                            if rot and (type(rot) == "table" or type(rot) == "userdata") then
+                                rot.w, rot.x, rot.y, rot.z = qw, qx, qy, qz
+                                self._endpointTransform.isDirty = true
+                            end
+                        end)
+                    end
+                end
+
+                if _G.event_bus and _G.event_bus.publish then
+                    _G.event_bus.publish("chain.endpoint_moved", {
+                        position    = { x = tip[1], y = tip[2], z = tip[3] },
+                        isExtending = false,
+                    })
+                end
+            end
+
+            -- Release window check (only when button has been released)
+            if spinPending then
+                local tolRad = math.rad(tonumber(self.SpinReleaseAngleTolerance) or 20.0)
+                -- At high spin speeds the tip can skip past the window in a single frame.
+                -- Extend the window by half the frame's angular step to guarantee it
+                -- is always caught regardless of framerate or SpinSpeed.
+                local step = (self._spinCurrentSpeed or 0) * dt
+                local extendedTol = tolRad + step * 0.5
+
+                -- Normalise angle to [-π, π] so 0 = tip pointing at camera forward
+                local a = self._spinAngle % (2 * math.pi)
+                if a > math.pi then a = a - 2 * math.pi end
+
+                if math.abs(a) <= extendedTol then
+                    dbg(string.format("[ChainBootstrap] SpinRelease fired at normAngle=%.3f tolRad=%.3f", a, extendedTol))
+                    local cf = self._cameraForward
+                    self:_resetSpin()
+                    self.controller:StartExtension(cf, self.MaxLength, self.LinkMaxDistance)
+                end
+            end
+        end
+        -- =====================================================================
 
         -- Publish movement constraint — ChainController computed it, Bootstrap owns event_bus
         if self.controller.constraintResult and _G.event_bus and _G.event_bus.publish then
@@ -873,18 +1136,22 @@ return Component {
 
                 self._wasChainActive = true
             else
-                -- Chain inactive: always drive endpoint back to start
-                local sp = self.controller.startPos
-                self:_write_world_pos(self._endpointTransform, sp[1], sp[2], sp[3])
+                -- Chain inactive: drive endpoint back to start
+                -- Skip during spin — spin block already wrote the tip position above
+                local spinActive = self._intentAimFire or self._pendingSpinRelease
+                if not spinActive then
+                    local sp = self.controller.startPos
+                    self:_write_world_pos(self._endpointTransform, sp[1], sp[2], sp[3])
 
                 if self._wasChainActive then
-                    self._wasChainActive = false
-                    if _G.event_bus and _G.event_bus.publish then
-                        _G.event_bus.publish("chain.endpoint_retracted", {
-                            position = { x = sp[1], y = sp[2], z = sp[3] },
-                        })
+                        self._wasChainActive = false
+                        if _G.event_bus and _G.event_bus.publish then
+                            _G.event_bus.publish("chain.endpoint_retracted", {
+                                position = { x = sp[1], y = sp[2], z = sp[3] },
+                            })
+                        end
                     end
-                end
+                end -- if not spinActive
             end
         end
     end,
@@ -892,6 +1159,11 @@ return Component {
     OnDisable = function(self)
         -- === Audio ===
         if self.audioHandler then pcall(function() self.audioHandler:Cleanup() end) end
+
+        -- === Spin cleanup ===
+        if self._pendingSpinRelease or self._intentAimFire then
+            pcall(function() self:_resetSpin() end)
+        end
 
         if _G.event_bus and _G.event_bus.unsubscribe then
             if self._cameraForwardSub then pcall(function() _G.event_bus.unsubscribe(self._cameraForwardSub) end) end
