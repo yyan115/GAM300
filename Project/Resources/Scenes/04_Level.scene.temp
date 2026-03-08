@@ -11526,7 +11526,9 @@
                                 "isOpening": false,
                                 "weaponPickup": "WeaponPickup",
                                 "openAngle": 90.0,
-                                "doorOpenSFX": {},
+                                "pickupSFX": [
+                                    "00264c30db67fa81-0004683702005857"
+                                ],
                                 "targetLeftDoor": "LeftDoor1",
                                 "openZ": false,
                                 "isWaiting": false,
@@ -11544,9 +11546,7 @@
                                 "isPickingUp": false,
                                 "_private": {},
                                 "targetRightDoor": "RightDoor2",
-                                "pickupSFX": [
-                                    "005e129f47370bf3-000421172400628b"
-                                ],
+                                "weaponHandOffsetX": -0.15,
                                 "__created_at": 1770314120.0,
                                 "_subscriptions": {},
                                 "__meta": {},
@@ -11574,7 +11574,9 @@
                                 "triggerRadius": 1.0,
                                 "isActivatable": false,
                                 "weaponFlyDuration": 0.15,
-                                "weaponHandOffsetX": -0.15
+                                "doorOpenSFX": [
+                                    "001521729a1c6852-0004276d680062ad"
+                                ]
                             }
                         }
                     ]
@@ -58154,8 +58156,7 @@
                             "type": "std::vector<GUID_128>",
                             "data": [
                                 "003d2c077308765f-00045cbf28001b0f",
-                                "003d2c076a2563e2-00045cbe80001b0b",
-                                "005d3ee7942d136a-00045cc46a00511f"
+                                "003d2c076a2563e2-00045cbe80001b0b"
                             ]
                         }
                     ]
@@ -58635,258 +58636,6 @@
         },
         {
             "id": 593,
-            "guid": "005d3ee7942d136a-00045cc46a00511f",
-            "components": {
-                "NameComponent": {
-                    "name": "DoorTrigger"
-                },
-                "TagComponent": {
-                    "tagIndex": 0
-                },
-                "LayerComponent": {
-                    "layerIndex": 0
-                },
-                "SiblingIndexComponent": {
-                    "siblingIndex": 61
-                },
-                "Transform": {
-                    "type": "Transform",
-                    "data": [
-                        {
-                            "type": "Vector3D",
-                            "data": [
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0.56281
-                                },
-                                {
-                                    "type": "float",
-                                    "data": -7.38842
-                                }
-                            ]
-                        },
-                        {
-                            "type": "Vector3D",
-                            "data": [
-                                {
-                                    "type": "float",
-                                    "data": 1
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 1
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 1
-                                }
-                            ]
-                        },
-                        {
-                            "type": "Quaternion",
-                            "data": [
-                                {
-                                    "type": "float",
-                                    "data": 1
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                }
-                            ]
-                        }
-                    ]
-                },
-                "ParentComponent": {
-                    "type": "ParentComponent",
-                    "data": [
-                        "003d2c074d00d4be-00045cbebe001b0d"
-                    ]
-                },
-                "RigidBodyComponent": {
-                    "type": "RigidBodyComponent",
-                    "data": [
-                        {
-                            "type": "bool",
-                            "data": true
-                        },
-                        {
-                            "type": "int",
-                            "data": 0
-                        },
-                        {
-                            "type": "bool",
-                            "data": false
-                        },
-                        {
-                            "type": "float",
-                            "data": 1
-                        },
-                        {
-                            "type": "Vector3D",
-                            "data": [
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                }
-                            ]
-                        },
-                        {
-                            "type": "Vector3D",
-                            "data": [
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                },
-                                {
-                                    "type": "float",
-                                    "data": -9.81
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                }
-                            ]
-                        },
-                        {
-                            "type": "bool",
-                            "data": true
-                        },
-                        {
-                            "type": "float",
-                            "data": 0
-                        },
-                        {
-                            "type": "float",
-                            "data": 0
-                        }
-                    ]
-                },
-                "ColliderComponent": {
-                    "type": "ColliderComponent",
-                    "data": [
-                        {
-                            "type": "bool",
-                            "data": true
-                        },
-                        {
-                            "type": "int",
-                            "data": 1
-                        },
-                        {
-                            "type": "unsigned",
-                            "data": 197
-                        },
-                        {
-                            "type": "int",
-                            "data": 0
-                        },
-                        {
-                            "type": "Vector3D",
-                            "data": [
-                                {
-                                    "type": "float",
-                                    "data": 3.01
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 1
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 1
-                                }
-                            ]
-                        },
-                        {
-                            "type": "float",
-                            "data": 0.5
-                        },
-                        {
-                            "type": "float",
-                            "data": 0.5
-                        },
-                        {
-                            "type": "float",
-                            "data": 0.5
-                        },
-                        {
-                            "type": "float",
-                            "data": 0.5
-                        },
-                        {
-                            "type": "float",
-                            "data": 0.5
-                        },
-                        {
-                            "type": "Vector3D",
-                            "data": [
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                }
-                            ]
-                        },
-                        {
-                            "type": "Vector3D",
-                            "data": [
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                }
-                            ]
-                        }
-                    ]
-                },
-                "ActiveComponent": {
-                    "type": "ActiveComponent",
-                    "data": [
-                        {
-                            "type": "bool",
-                            "data": true
-                        }
-                    ]
-                }
-            }
-        },
-        {
-            "id": 594,
             "guid": "002d02e4bba9e8ef-00046add5800a783",
             "components": {
                 "NameComponent": {
@@ -58993,7 +58742,7 @@
             }
         },
         {
-            "id": 595,
+            "id": 594,
             "guid": "002d02e4a0116955-00046add5800a785",
             "components": {
                 "NameComponent": {
@@ -59221,7 +58970,7 @@
             }
         },
         {
-            "id": 596,
+            "id": 595,
             "guid": "002d02e4c8731c47-00046add5800a787",
             "components": {
                 "NameComponent": {
@@ -59449,7 +59198,7 @@
             }
         },
         {
-            "id": 597,
+            "id": 596,
             "guid": "002d02e4929117bb-00046add5800a789",
             "components": {
                 "NameComponent": {
@@ -59707,7 +59456,7 @@
             }
         },
         {
-            "id": 598,
+            "id": 597,
             "guid": "002d02e4bdf1c98a-00046add5800a78b",
             "components": {
                 "NameComponent": {
@@ -59923,7 +59672,7 @@
             }
         },
         {
-            "id": 599,
+            "id": 598,
             "guid": "002d02e4e834ba91-00046add5800a78d",
             "components": {
                 "NameComponent": {
@@ -60139,7 +59888,7 @@
             }
         },
         {
-            "id": 600,
+            "id": 599,
             "guid": "002d02e487fba994-00046add5800a78f",
             "components": {
                 "NameComponent": {
@@ -60247,7 +59996,7 @@
             }
         },
         {
-            "id": 601,
+            "id": 600,
             "guid": "002d02e4abeac250-00046add5800a791",
             "components": {
                 "NameComponent": {
@@ -60463,7 +60212,7 @@
             }
         },
         {
-            "id": 602,
+            "id": 601,
             "guid": "002d02e4f18d9ee3-00046add5800a793",
             "components": {
                 "NameComponent": {
@@ -60679,7 +60428,7 @@
             }
         },
         {
-            "id": 603,
+            "id": 602,
             "guid": "002d02e4cb282443-00046add5800a795",
             "components": {
                 "NameComponent": {
@@ -60895,7 +60644,7 @@
             }
         },
         {
-            "id": 604,
+            "id": 603,
             "guid": "002d02e4c25692b8-00046add5800a797",
             "components": {
                 "NameComponent": {
@@ -61111,7 +60860,7 @@
             }
         },
         {
-            "id": 605,
+            "id": 604,
             "guid": "002d02e4fbed2c94-00046add5800a799",
             "components": {
                 "NameComponent": {
@@ -61327,7 +61076,7 @@
             }
         },
         {
-            "id": 606,
+            "id": 605,
             "guid": "002d02e4e5c3e47d-00046add5800a79b",
             "components": {
                 "NameComponent": {
@@ -61556,7 +61305,7 @@
             }
         },
         {
-            "id": 607,
+            "id": 606,
             "guid": "002d02e4fd5e04b8-00046add5800a79d",
             "components": {
                 "NameComponent": {
@@ -61784,7 +61533,7 @@
             }
         },
         {
-            "id": 608,
+            "id": 607,
             "guid": "002d02e4ff74f541-00046add5800a79f",
             "components": {
                 "NameComponent": {
@@ -62000,7 +61749,7 @@
             }
         },
         {
-            "id": 609,
+            "id": 608,
             "guid": "002d02e4c480818d-00046add5800a7a1",
             "components": {
                 "NameComponent": {
@@ -62216,7 +61965,7 @@
             }
         },
         {
-            "id": 610,
+            "id": 609,
             "guid": "002d02e4a7411670-00046add5800a7a3",
             "components": {
                 "NameComponent": {
@@ -62463,7 +62212,7 @@
             }
         },
         {
-            "id": 611,
+            "id": 610,
             "guid": "002d02e4f0cff80e-00046add5800a7a5",
             "components": {
                 "NameComponent": {
@@ -62679,7 +62428,7 @@
             }
         },
         {
-            "id": 612,
+            "id": 611,
             "guid": "002d02e4cd1d51fa-00046add5800a7a7",
             "components": {
                 "NameComponent": {
@@ -62918,7 +62667,7 @@
             }
         },
         {
-            "id": 613,
+            "id": 612,
             "guid": "002d02e4bf35164a-00046add5800a7a9",
             "components": {
                 "NameComponent": {
@@ -63134,7 +62883,7 @@
             }
         },
         {
-            "id": 614,
+            "id": 613,
             "guid": "002d02e4c507bc05-00046add5800a7ab",
             "components": {
                 "NameComponent": {
