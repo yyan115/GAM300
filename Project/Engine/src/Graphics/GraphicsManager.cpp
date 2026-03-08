@@ -991,11 +991,12 @@ void GraphicsManager::RenderSprite(const SpriteRenderComponent& item)
 	item.shader->setVec2("uvOffset", item.uvOffset);
 	item.shader->setVec2("uvScale", item.uvScale);
 	item.shader->setInt("fillMode", item.fillMode);
-	if (item.fillMode == 1) {
+	if (item.fillMode >= 1 && item.fillMode <= 3) {
 		float fillAmount = (item.fillMaxValue > 0.0f)
 			? glm::clamp(item.fillValue / item.fillMaxValue, 0.0f, 1.0f)
 			: 0.0f;
 		item.shader->setFloat("fillAmount", fillAmount);
+		item.shader->setInt("fillDirection", item.fillDirection);
 		item.shader->setFloat("fillGlow", item.fillGlow);
 		item.shader->setFloat("fillBackground", item.fillBackground);
 	}

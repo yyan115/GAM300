@@ -58,6 +58,25 @@ void SpriteAnimationEditorWindow::Close() {
 void SpriteAnimationEditorWindow::OnImGuiRender() {
     if (!m_IsOpen || !m_AnimComponent) return;
 
+    // Re-fetch the component pointer each frame to avoid stale pointer after ECS reallocation
+    {
+        ECSManager& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
+        try {
+            if (!ecs.HasComponent<SpriteAnimationComponent>(m_CurrentEntity)) {
+                m_IsOpen = false;
+                SetOpen(false);
+                m_AnimComponent = nullptr;
+                return;
+            }
+            m_AnimComponent = &ecs.GetComponent<SpriteAnimationComponent>(m_CurrentEntity);
+        } catch (...) {
+            m_IsOpen = false;
+            SetOpen(false);
+            m_AnimComponent = nullptr;
+            return;
+        }
+    }
+
     // Create a large window for the animation editor
     ImGui::SetNextWindowSize(ImVec2(1400, 800), ImGuiCond_FirstUseEver);
 
@@ -163,6 +182,13 @@ void SpriteAnimationEditorWindow::OnImGuiRender() {
         ImGui::EndChild(); // MainContent
     }
     ImGui::End();
+
+    // If the user closed the window via the X button, sync state
+    if (!m_IsOpen) {
+        SetOpen(false);
+        m_AnimComponent = nullptr;
+        return;
+    }
 
     // Update animation preview if playing
     if (m_EditorState.isPlaying) {
@@ -857,7 +883,7 @@ void SpriteAnimationEditorWindow::UpdatePreviewAnimation(float deltaTime) {
 }
 
 void SpriteAnimationEditorWindow::HandleKeyboardShortcuts() {
-    if (!ImGui::IsWindowFocused()) return;
+    if (!ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows)) return;
 
     if (ImGui::IsKeyPressed(ImGuiKey_Space)) {
         m_EditorState.isPlaying = !m_EditorState.isPlaying;

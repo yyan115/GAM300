@@ -38,7 +38,8 @@ public:
     glm::vec2 uvScale = glm::vec2(1.0f);
 
     // Fill properties
-    int fillMode = 0;          // 0 = Solid (no fill), 1 = Radial
+    int fillMode = 0;          // 0 = Solid (no fill), 1 = Radial, 2 = Horizontal, 3 = Vertical
+    int fillDirection = 0;     // 0 = default (left→right / bottom→top), 1 = reverse (right→left / top→bottom)
     float fillMaxValue = 1.0f; // Max value for fill ratio
     float fillValue = 1.0f;    // Current value (fillAmount = fillValue / fillMaxValue)
     float fillGlow = 0.5f;     // Edge glow intensity (0 = off, 1 = max)

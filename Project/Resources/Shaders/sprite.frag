@@ -6,7 +6,8 @@ layout(location = 1) out vec4 BloomEmission;
 
 uniform sampler2D spriteTexture;
 uniform vec4 spriteColor;
-uniform int fillMode;           // 0 = solid, 1 = radial
+uniform int fillMode;           // 0 = solid, 1 = radial, 2 = horizontal, 3 = vertical
+uniform int fillDirection;      // 0 = default, 1 = reverse
 uniform float fillAmount;       // 0.0 to 1.0
 uniform float fillGlow;         // edge glow intensity
 uniform float fillBackground;   // unfilled area brightness (0=hidden, 0.3=dark, 1=full)
@@ -34,6 +35,34 @@ void main()
         if (fillAmount > 0.01 && fillAmount < 0.99) {
             float edgeDist = abs(normalizedAngle - fillAmount);
             float glowWidth = 0.04;
+            edgeGlow = smoothstep(glowWidth, 0.0, edgeDist) * fillGlow;
+        }
+    }
+    else if (fillMode == 2) {
+        // Horizontal fill (left to right by default, right to left if reversed)
+        float coord = (fillDirection == 0) ? TexCoord.x : (1.0 - TexCoord.x);
+
+        if (coord > fillAmount) {
+            dimFactor = fillBackground;
+        }
+
+        if (fillAmount > 0.01 && fillAmount < 0.99) {
+            float edgeDist = abs(coord - fillAmount);
+            float glowWidth = 0.02;
+            edgeGlow = smoothstep(glowWidth, 0.0, edgeDist) * fillGlow;
+        }
+    }
+    else if (fillMode == 3) {
+        // Vertical fill (bottom to top by default, top to bottom if reversed)
+        float coord = (fillDirection == 0) ? TexCoord.y : (1.0 - TexCoord.y);
+
+        if (coord > fillAmount) {
+            dimFactor = fillBackground;
+        }
+
+        if (fillAmount > 0.01 && fillAmount < 0.99) {
+            float edgeDist = abs(coord - fillAmount);
+            float glowWidth = 0.02;
             edgeGlow = smoothstep(glowWidth, 0.0, edgeDist) * fillGlow;
         }
     }
