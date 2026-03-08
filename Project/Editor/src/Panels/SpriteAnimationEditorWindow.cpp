@@ -13,6 +13,13 @@
 #include <algorithm>
 #include <sstream>
 #include <iomanip>
+#include <filesystem>
+
+#ifdef _WIN32
+#define NOMINMAX  // Prevent Windows.h from defining min/max macros
+#include <Windows.h>
+#include <shobjidl.h>
+#endif
 
 // Global instance
 static SpriteAnimationEditorWindow* g_AnimationEditor = nullptr;
@@ -541,6 +548,29 @@ void SpriteAnimationEditorWindow::DrawPreviewPanel() {
     // Draw current sprite
     DrawPreviewSprite();
 
+    // Drag-drop target for the preview panel (assigns texture to current frame)
+    ImGui::SetCursorScreenPos(canvas_pos);
+    ImGui::InvisibleButton("PreviewDragDropArea", canvas_size);
+    if (EditorComponents::BeginDragDropTarget()) {
+        ImGui::SetTooltip("Assign texture to current frame");
+        if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("TEXTURE_PAYLOAD")) {
+            if (m_EditorState.selectedClipIndex >= 0 && m_EditorState.selectedFrameIndex >= 0) {
+                auto& clip = m_EditBuffer.clips[m_EditorState.selectedClipIndex];
+                if (m_EditorState.selectedFrameIndex < (int)clip.frames.size()) {
+                    auto& frame = clip.frames[m_EditorState.selectedFrameIndex];
+                    const char* texturePath = (const char*)payload->Data;
+                    std::string pathStr(texturePath, payload->DataSize);
+                    pathStr.erase(std::find(pathStr.begin(), pathStr.end(), '\0'), pathStr.end());
+
+                    frame.texturePath = pathStr;
+                    frame.textureGUID = AssetManager::GetInstance().GetGUID128FromAssetMeta(pathStr);
+                    m_HasUnsavedChanges = true;
+                }
+            }
+        }
+        EditorComponents::EndDragDropTarget();
+    }
+
     // Handle preview input (pan/zoom)
     HandlePreviewInput();
 }
@@ -740,14 +770,7 @@ void SpriteAnimationEditorWindow::DrawPropertiesPanel() {
                 ImGui::Button(("Texture: " + texDisplay + "###TextureField").c_str(),
                              ImVec2(ImGui::GetContentRegionAvail().x - 80, 0));
 
-                ImGui::PopStyleColor(3);
-
-                ImGui::SameLine();
-                if (ImGui::Button("Browse")) {
-                    // Open file browser
-                }
-
-                // Drag-drop target for the texture field
+                // Drag-drop target on the texture button (must be right after the button widget)
                 if (EditorComponents::BeginDragDropTarget()) {
                     ImGui::SetTooltip("Drop texture here");
                     if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("TEXTURE_PAYLOAD")) {
@@ -760,6 +783,67 @@ void SpriteAnimationEditorWindow::DrawPropertiesPanel() {
                         m_HasUnsavedChanges = true;
                     }
                     EditorComponents::EndDragDropTarget();
+                }
+
+                ImGui::PopStyleColor(3);
+
+                ImGui::SameLine();
+                if (ImGui::Button("Browse")) {
+#ifdef _WIN32
+                    std::filesystem::path originalWorkingDir = std::filesystem::current_path();
+                    std::string chosenPath;
+
+                    HRESULT hrCo = CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED);
+                    bool coInitialized = SUCCEEDED(hrCo);
+
+                    if (coInitialized) {
+                        IFileOpenDialog* pFileOpen = nullptr;
+                        HRESULT hr = CoCreateInstance(CLSID_FileOpenDialog, nullptr, CLSCTX_INPROC_SERVER, IID_PPV_ARGS(&pFileOpen));
+                        if (SUCCEEDED(hr) && pFileOpen) {
+                            const COMDLG_FILTERSPEC fileTypes[] = {
+                                { L"Image Files (*.png;*.jpg;*.jpeg;*.bmp;*.tga)", L"*.png;*.jpg;*.jpeg;*.bmp;*.tga" },
+                                { L"All Files (*.*)", L"*.*" }
+                            };
+
+                            pFileOpen->SetFileTypes(ARRAYSIZE(fileTypes), fileTypes);
+                            pFileOpen->SetTitle(L"Select Frame Texture");
+
+                            DWORD options = 0;
+                            if (SUCCEEDED(pFileOpen->GetOptions(&options))) {
+                                pFileOpen->SetOptions(options | FOS_FILEMUSTEXIST | FOS_PATHMUSTEXIST);
+                            }
+
+                            hr = pFileOpen->Show(nullptr);
+                            if (SUCCEEDED(hr)) {
+                                IShellItem* pItem = nullptr;
+                                if (SUCCEEDED(pFileOpen->GetResult(&pItem)) && pItem) {
+                                    PWSTR pszFilePath = nullptr;
+                                    if (SUCCEEDED(pItem->GetDisplayName(SIGDN_FILESYSPATH, &pszFilePath)) && pszFilePath) {
+                                        std::filesystem::path p(pszFilePath);
+                                        chosenPath = p.string();
+                                        CoTaskMemFree(pszFilePath);
+                                    }
+                                    pItem->Release();
+                                }
+                            }
+                            pFileOpen->Release();
+                        }
+                        CoUninitialize();
+                    }
+
+                    if (!chosenPath.empty()) {
+                        std::filesystem::path absolutePath = std::filesystem::absolute(chosenPath);
+                        std::filesystem::path relativePath = std::filesystem::relative(absolutePath, originalWorkingDir);
+                        std::string finalPath = relativePath.string();
+                        std::replace(finalPath.begin(), finalPath.end(), '\\', '/');
+
+                        frame.texturePath = finalPath;
+                        frame.textureGUID = AssetManager::GetInstance().GetGUID128FromAssetMeta(finalPath);
+                        m_HasUnsavedChanges = true;
+                    }
+
+                    std::filesystem::current_path(originalWorkingDir);
+#endif
                 }
 
                 // Duration
@@ -805,9 +889,21 @@ void SpriteAnimationEditorWindow::DrawPropertiesPanel() {
                 // Frame selectable with delete button
                 bool isSelected = (i == m_EditorState.selectedFrameIndex);
 
+                // Build display label with texture info
+                std::string frameLabel = "Frame " + std::to_string(i + 1);
+                if (!clip.frames[i].texturePath.empty()) {
+                    std::string texName = clip.frames[i].texturePath;
+                    size_t lastSlash = texName.find_last_of("/\\");
+                    if (lastSlash != std::string::npos)
+                        texName = texName.substr(lastSlash + 1);
+                    if (texName.length() > 15)
+                        texName = texName.substr(0, 12) + "...";
+                    frameLabel += " [" + texName + "]";
+                }
+
                 // Calculate width for selectable
                 float availWidth = ImGui::GetContentRegionAvail().x;
-                if (ImGui::Selectable(("Frame " + std::to_string(i + 1)).c_str(), isSelected,
+                if (ImGui::Selectable((frameLabel + "##frame" + std::to_string(i)).c_str(), isSelected,
                                      ImGuiSelectableFlags_None, ImVec2(availWidth - 30, 0))) {
                     m_EditorState.selectedFrameIndex = i;
                     m_EditorState.currentTime = GetFrameStartTime(clip, i);
@@ -844,11 +940,22 @@ void SpriteAnimationEditorWindow::DrawPropertiesPanel() {
                 }
 
                 if (ImGui::BeginDragDropTarget()) {
+                    // Accept frame reorder
                     if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("FRAME_REORDER")) {
                         int sourceIndex = *(const int*)payload->Data;
                         if (sourceIndex != i) {
                             MoveFrame(m_EditorState.selectedClipIndex, sourceIndex, i);
                         }
+                    }
+                    // Accept texture from Asset Browser
+                    if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("TEXTURE_PAYLOAD")) {
+                        const char* texturePath = (const char*)payload->Data;
+                        std::string pathStr(texturePath, payload->DataSize);
+                        pathStr.erase(std::find(pathStr.begin(), pathStr.end(), '\0'), pathStr.end());
+
+                        clip.frames[i].texturePath = pathStr;
+                        clip.frames[i].textureGUID = AssetManager::GetInstance().GetGUID128FromAssetMeta(pathStr);
+                        m_HasUnsavedChanges = true;
                     }
                     ImGui::EndDragDropTarget();
                 }
