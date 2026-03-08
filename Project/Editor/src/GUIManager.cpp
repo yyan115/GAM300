@@ -209,12 +209,12 @@ void GUIManager::SetupDefaultPanels() {
 	assert(tagsLayersPanel != nullptr && "Failed to create TagsLayersPanel");
 	panelManager->RegisterPanel(tagsLayersPanel);
 
-	// Register the sprite animation editor window
-	auto spriteAnimEditor = std::shared_ptr<EditorPanel>(GetSpriteAnimationEditor());
+	// Register the sprite animation editor window (no-op deleter to avoid double-free of singleton)
+	auto spriteAnimEditor = std::shared_ptr<EditorPanel>(GetSpriteAnimationEditor(), [](EditorPanel*){});
 	panelManager->RegisterPanel(spriteAnimEditor);
 
-	// Register the 3D animator editor window (use singleton pattern like SpriteAnimationEditor)
-	auto animatorEditor = std::shared_ptr<EditorPanel>(GetAnimatorEditor());
+	// Register the 3D animator editor window (no-op deleter to avoid double-free of singleton)
+	auto animatorEditor = std::shared_ptr<EditorPanel>(GetAnimatorEditor(), [](EditorPanel*){});
 	panelManager->RegisterPanel(animatorEditor);
 
 	ENGINE_PRINT("[GUIManager] Default panels registered\n");

@@ -57,6 +57,15 @@ bool PostProcessingManager::Initialize()
         return false;
     }
 
+    // Initialize SSAO effect (applied before blur/bloom)
+    ssaoEffect = std::make_unique<SSAOEffect>();
+    if (!ssaoEffect->Initialize())
+    {
+        ENGINE_PRINT(EngineLogging::LogLevel::Error, "[PostProcessingManager] Failed to initialize SSAO effect!\n");
+        // Non-fatal: SSAO is optional
+    }
+    ssaoEffect->SetEnabled(false);  // Default to off — CameraSystem enables when needed
+
     // Initialize Bloom effect (applied after blur, before HDR tonemapping)
     bloomEffect = std::make_unique<BloomEffect>();
     if (!bloomEffect->Initialize())
@@ -74,6 +83,12 @@ bool PostProcessingManager::Initialize()
 
 void PostProcessingManager::Shutdown()
 {
+    if (ssaoEffect)
+    {
+        ssaoEffect->Shutdown();
+        ssaoEffect.reset();
+    }
+
     if (blurEffect)
     {
         blurEffect->Shutdown();
@@ -110,10 +125,19 @@ void PostProcessingManager::Process(unsigned int inputTexture, unsigned int outp
         return;
     }
 
-    // Current pipeline: Blur -> HDR tone mapping -> Output
+    // Current pipeline: SSAO -> Blur -> Bloom -> HDR tone mapping -> Output
 
     unsigned int currentInput = inputTexture;
     unsigned int currentOutput = outputFBO;
+
+    // Apply SSAO (generates half-res AO texture, consumed by HDR pass)
+    if (ssaoEffect && ssaoEffect->IsEnabled())
+    {
+        ssaoEffect->SetDepthTexture(hdrDepthTexture);
+        ssaoEffect->SetProjectionMatrix(currentProjection);
+        ssaoEffect->SetInvProjectionMatrix(currentInvProjection);
+        ssaoEffect->Apply(currentInput, hdrFramebuffer, width, height);
+    }
 
     // Apply blur before tonemapping (modifies HDR framebuffer in-place)
     if (blurEffect && blurEffect->IsEnabled() && blurEffect->GetIntensity() > 0.01f)
@@ -145,6 +169,18 @@ void PostProcessingManager::Process(unsigned int inputTexture, unsigned int outp
         hdrEffect->SetChromaticAberrationEnabled(caEnabled_);
         hdrEffect->SetChromaticAberrationIntensity(caIntensity_);
         hdrEffect->SetChromaticAberrationPadding(caPadding_);
+
+        // Pass SSAO texture to HDR effect
+        if (ssaoEffect && ssaoEffect->IsEnabled())
+        {
+            hdrEffect->SetSSAOEnabled(true);
+            hdrEffect->SetSSAOTexture(ssaoEffect->GetSSAOTexture());
+        }
+        else
+        {
+            hdrEffect->SetSSAOEnabled(false);
+            hdrEffect->SetSSAOTexture(0);
+        }
 
         // Bind output framebuffer
         glBindFramebuffer(GL_FRAMEBUFFER, currentOutput);

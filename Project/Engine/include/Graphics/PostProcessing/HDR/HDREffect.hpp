@@ -48,6 +48,10 @@ public:
 	void SetChromaticAberrationIntensity(float i) { caIntensity = i; }
 	void SetChromaticAberrationPadding(float p) { caPadding = p; }
 
+	// SSAO (applied in tonemapping shader)
+	void SetSSAOEnabled(bool e) { ssaoEnabled = e; }
+	void SetSSAOTexture(unsigned int tex) { ssaoTexture = tex; }
+
 private:
 	std::shared_ptr<Shader> shader;
 	float exposure;
@@ -71,4 +75,8 @@ private:
 	bool caEnabled = false;
 	float caIntensity = 0.5f;
 	float caPadding = 0.5f;
+
+	// SSAO
+	bool ssaoEnabled = false;
+	unsigned int ssaoTexture = 0;
 };

@@ -117,6 +117,11 @@ uniform vec3 cameraPos;
 uniform float bloomIntensity;
 uniform vec3 bloomColor;
 
+// Environment reflections
+uniform sampler2D envMap;
+uniform bool hasEnvMap;
+uniform float envReflectionIntensity;
+
 // ============================================================================
 // Helper functions for materials
 // ============================================================================
@@ -388,6 +393,22 @@ void main()
     }
 
     result *= (1.0 - dirShadow * 0.7);
+
+    // Environment reflections (skybox equirectangular map)
+    if (hasEnvMap) {
+        vec3 reflectDir = reflect(-viewDir, norm);
+        float u = 0.5 + atan(reflectDir.z, reflectDir.x) / (2.0 * 3.14159265359);
+        float v = 0.5 - asin(clamp(reflectDir.y, -1.0, 1.0)) / 3.14159265359;
+        vec3 envColor = texture(envMap, vec2(u, v)).rgb;
+
+        // Fresnel (Schlick approximation)
+        float cosTheta = max(dot(norm, viewDir), 0.0);
+        float fresnel = 0.04 + 0.96 * pow(1.0 - cosTheta, 5.0);
+
+        // Metallic surfaces reflect strongly; roughness dims reflections
+        float reflectStrength = mix(fresnel * 0.3, fresnel, metallic) * (1.0 - roughness * 0.9);
+        result = mix(result, envColor, reflectStrength * envReflectionIntensity);
+    }
 
     FragColor = vec4(result, material.opacity);
 
