@@ -1,0 +1,14 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "00322fe965152b69-00047152d2003a6f",
+        "source": "../../Resources/Textures/M5/Player_Retexture_lambert6_Roughness.png",
+        "compiled": "../../Resources/Textures/M5/Player_Retexture_lambert6_Roughness.dds"
+    },
+    "TextureMetaData": {
+        "type": "roughness",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp"
+    }
+}

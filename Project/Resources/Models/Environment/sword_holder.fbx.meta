@@ -1,0 +1,11 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "00322fe901ca12f5-0004713e52000f33",
+        "source": "../../Resources/Models/Environment/sword_holder.fbx",
+        "compiled": "../../Resources/Models/Environment/sword_holder.mesh"
+    },
+    "ModelMetaData": {
+        "optimizeMeshes": true
+    }
+}
