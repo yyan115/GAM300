@@ -198,3 +198,52 @@ add_subdirectory(Game)
 if(CMAKE_BUILD_TYPE MATCHES "Editor")
     add_subdirectory(Editor)
 endif()
+
+# ==============================================================================
+# CPack — Installer (Windows only, requires NSIS to be installed)
+# Place required files before building installer:
+#   Project/Installer/DigiPen_EULA.txt
+#   Project/Installer/VC_redist.x64.exe
+# ==============================================================================
+if(WIN32 AND NOT ANDROID)
+    set(CPACK_GENERATOR "NSIS")
+
+    set(CPACK_PACKAGE_NAME                "Kusane")
+    set(CPACK_PACKAGE_VERSION             "0.1")
+    set(CPACK_PACKAGE_VENDOR              "DigiPen Institute of Technology")
+    set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "Kusane")
+    set(CPACK_PACKAGE_FILE_NAME           "Kusane_Setup")
+    set(CPACK_PACKAGE_INSTALL_DIRECTORY   "DigiPen/Kusane")
+
+    # EULA (required for DigiPen TCR)
+    if(EXISTS "${CMAKE_SOURCE_DIR}/Installer/DigiPen_EULA.txt")
+        set(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_SOURCE_DIR}/Installer/DigiPen_EULA.txt")
+    endif()
+
+    # Icons
+    set(CPACK_NSIS_MUI_ICON    "${CMAKE_SOURCE_DIR}/Resources/SetupIcon.ico")
+    set(CPACK_NSIS_MUI_UNIICON "${CMAKE_SOURCE_DIR}/Resources/SetupIcon.ico")
+
+    # Display names
+    set(CPACK_NSIS_DISPLAY_NAME "Kusane")
+    set(CPACK_NSIS_PACKAGE_NAME "Kusane")
+
+    # Start menu shortcut + desktop shortcut
+    set(CPACK_PACKAGE_EXECUTABLES  "Kusane" "Kusane")
+    set(CPACK_CREATE_DESKTOP_LINKS "Kusane")
+
+    # No admin required (DigiPen TCR — sandbox machines)
+    # Installs to %LOCALAPPDATA%\DigiPen\Kusane (always writable)
+    set(CPACK_NSIS_DEFINES      "RequestExecutionLevel user")
+    set(CPACK_NSIS_INSTALL_ROOT "$LOCALAPPDATA")
+
+    # Run VC redist silently then remove from install dir
+    set(CPACK_NSIS_EXTRA_INSTALL_COMMANDS
+        "ExecWait '\\\"$INSTDIR\\\\VC_redist.x64.exe\\\" /q'\nDelete '$INSTDIR\\\\VC_redist.x64.exe'"
+    )
+
+    # "Run Kusane" checkbox on finish page
+    set(CPACK_NSIS_MUI_FINISHPAGE_RUN "Kusane.exe")
+
+    include(CPack)
+endif()

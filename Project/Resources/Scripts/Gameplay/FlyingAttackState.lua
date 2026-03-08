@@ -33,6 +33,7 @@ function FlyingAttack:Update(ai, dt)
     -- if player left disengage range -> chase
     if not ai:IsPlayerInRange(diseng) then
         ai._animator:SetBool("ReadyToAttack", false)
+        ai._animator:SetBool("PlayerInAttackRange", false)
         ai._readyLatched = false
         ai.fsm:Change("Chase", ai.states.Chase)
         return
@@ -44,6 +45,7 @@ function FlyingAttack:Update(ai, dt)
     -- If not in attack range yet, keep moving closer
     if not ai:IsPlayerInRange(attackR) then
         ai._animator:SetBool("ReadyToAttack", false)
+        ai._animator:SetBool("PlayerInAttackRange", false)
         ai._readyLatched = false
         ai._readySettleT = 0
 
@@ -58,6 +60,7 @@ function FlyingAttack:Update(ai, dt)
         if ai._readySettleT >= settleDelay then
             ai._readyLatched = true
             ai._animator:SetBool("ReadyToAttack", true)
+            ai._animator:SetBool("PlayerInAttackRange", true)
         end
     end
 

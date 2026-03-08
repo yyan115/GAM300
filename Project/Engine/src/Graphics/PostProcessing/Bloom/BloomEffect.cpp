@@ -99,7 +99,7 @@ void BloomEffect::CreateFBOs(int w, int h)
     }
 
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
-    ENGINE_PRINT("[BloomEffect] Created mip chain with ", activeMipLevels, " levels\n");
+    //ENGINE_PRINT("[BloomEffect] Created mip chain with ", activeMipLevels, " levels\n");
 }
 
 void BloomEffect::DeleteFBOs()

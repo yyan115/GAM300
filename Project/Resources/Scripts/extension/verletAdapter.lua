@@ -9,6 +9,9 @@ function M.Init(state)
     state.prev = state.prev or {}
     state.invMass = state.invMass or {}
     state.n = #state.positions
+    -- Accumulator for fixed-timestep mode (see M.Step / FixedDt param).
+    -- Carries sub-frame remainder across calls so physics rate is decoupled from render rate.
+    state.accumulator = 0
     return state
 end
 
@@ -229,11 +232,56 @@ end
 function M.Step(state, dt, params)
     if not state or dt <= 0 or (state.n or 0) == 0 then return end
 
-    local subSteps = math.max(1, tonumber((params and params.SubSteps) or 4))
-    local subDt = dt / subSteps
+    local fixedDt = tonumber(params and params.FixedDt) or 0
 
-    for step = 1, subSteps do
-        stepOnce(state, subDt, params)
+    if fixedDt > 0 then
+        -- -----------------------------------------------------------------------
+        -- Fixed-timestep accumulator mode (recommended for frame-rate independence)
+        --
+        -- The Verlet velocity term is (pos - prev_pos), which implicitly encodes
+        -- velocity × dt_prev.  When subDt varies with frame rate the chain receives
+        -- a different effective impulse every frame, making behaviour differ between
+        -- 30 / 60 / 120 fps.  Stepping with a constant fixedDt eliminates that.
+        --
+        -- Usage: pass  FixedDt = 1/120  (or 1/60) in your params / settings table.
+        --   • 30 fps  → ~4 steps/frame   (4 × 1/120 ≈ 33 ms)
+        --   • 60 fps  → ~2 steps/frame   (2 × 1/120 ≈ 16 ms)
+        --   • 120 fps → ~1 step/frame    (1 × 1/120 ≈  8 ms)
+        -- The accumulator carries the sub-frame remainder to the next call so no
+        -- time is lost or double-counted.
+        -- -----------------------------------------------------------------------
+        state.accumulator = (state.accumulator or 0) + dt
+
+        -- Safety cap: prevents a "spiral of death" if the game freezes for several
+        -- frames and the accumulator grows unbounded.  Defaults to 20 steps; tune
+        -- via params.MaxSubSteps if your physics needs more per frame.
+        local maxSteps = math.max(1, tonumber((params and params.MaxSubSteps) or 20))
+        local steps = 0
+
+        while state.accumulator >= fixedDt and steps < maxSteps do
+            stepOnce(state, fixedDt, params)
+            state.accumulator = state.accumulator - fixedDt
+            steps = steps + 1
+        end
+
+        -- If we hit the cap the simulation has fallen irretrievably behind.
+        -- Drain the accumulator so we don't compound the debt next frame.
+        if steps >= maxSteps then
+            state.accumulator = 0
+        end
+    else
+        -- -----------------------------------------------------------------------
+        -- Legacy variable-dt mode (original behaviour, kept for compatibility).
+        -- Subdivides the frame dt into SubSteps equal slices.  This reduces
+        -- constraint error but does NOT remove the frame-rate dependence because
+        -- each slice still has a different length at different frame rates.
+        -- -----------------------------------------------------------------------
+        local subSteps = math.max(1, tonumber((params and params.SubSteps) or 4))
+        local subDt = dt / subSteps
+
+        for step = 1, subSteps do
+            stepOnce(state, subDt, params)
+        end
     end
 
     return state.positions, state.prev, state.invMass

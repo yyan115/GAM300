@@ -151,16 +151,30 @@ return Component {
             self._lungeDirX  = 0
             self._lungeDirZ  = 0
             self._attackLungeSub = event_bus.subscribe("attack_performed", function(data)
-                local w = self._currentRotW
-                local y = self._currentRotY
-                local fwdX = 2.0 * w * y
-                local fwdZ = w * w - y * y
-                local len = math.sqrt(fwdX * fwdX + fwdZ * fwdZ)
+                -- Use camera forward direction for both lunge and player facing
+                local cameraYaw = _G.CAMERA_YAW or self._cameraYaw or 180.0
+                local yr   = math.rad(cameraYaw)
+                local fwdX = -math.sin(yr)
+                local fwdZ = -math.cos(yr)
+                local len  = math.sqrt(fwdX * fwdX + fwdZ * fwdZ)
                 if len > 0.001 then
-                    self._lungeDirX = fwdX / len
-                    self._lungeDirZ = fwdZ / len
+                    fwdX = fwdX / len
+                    fwdZ = fwdZ / len
                 end
+
+                self._lungeDirX = fwdX
+                self._lungeDirZ = fwdZ
                 self._lungeTimer = self.AttackLungeDuration or 0.12
+
+                -- Snap player rotation to face camera direction
+                local targetW, targetX, targetY, targetZ = directionToQuaternion(fwdX, fwdZ)
+                self._currentRotW = targetW
+                self._currentRotX = targetX
+                self._currentRotY = targetY
+                self._currentRotZ = targetZ
+                self._facingX = fwdX
+                self._facingZ = fwdZ
+                pcall(self.SetRotation, self, targetW, targetX, targetY, targetZ)
             end)
 
             -- Snap rotation to face camera exactly when a skill is cast
@@ -181,6 +195,20 @@ return Component {
                 self._facingX = fwdX
                 self._facingZ = fwdZ
                 
+                pcall(self.SetRotation, self, targetW, targetX, targetY, targetZ)
+            end)
+
+            self._chainFiredRotSub = event_bus.subscribe("force_player_rotation_to_direction", function(payload)
+                if not payload then return end
+                local dx, dz = payload.x, payload.z
+                if not dx or not dz then return end
+                local len = math.sqrt(dx * dx + dz * dz)
+                if len < 0.001 then return end
+                dx, dz = dx / len, dz / len
+                local targetW, targetX, targetY, targetZ = directionToQuaternion(dx, dz)
+                self._currentRotW, self._currentRotX, self._currentRotY, self._currentRotZ = targetW, targetX, targetY, targetZ
+                self._facingX = dx
+                self._facingZ = dz
                 pcall(self.SetRotation, self, targetW, targetX, targetY, targetZ)
             end)
 

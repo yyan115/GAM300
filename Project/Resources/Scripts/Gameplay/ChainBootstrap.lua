@@ -184,6 +184,9 @@ return Component {
             local dir = self._cameraForward
             dbg(string.format("[ChainBootstrap] AimFire release -> StartExtension (%.3f,%.3f,%.3f)", dir[1],dir[2],dir[3]))
             self.controller:StartExtension(dir, self.MaxLength, self.LinkMaxDistance)
+            if _G.event_bus and _G.event_bus.publish then
+                _G.event_bus.publish("force_player_rotation_to_direction", {x = dir[1], z = dir[3]})
+            end
 
         elseif isExt and not isRet then
             -- Released during extension before hold threshold.
@@ -196,8 +199,9 @@ return Component {
                 dbg("[ChainBootstrap] Tap-release mid-extension but already attached -> StartRetraction")
             else
                 -- Nothing hit yet: drop into flop so tip falls from wherever it stopped.
-                self.controller.isExtending = false
-                self.controller._flopping   = true
+                self.controller.isExtending              = false
+                self.controller._flopping                = true
+                self.controller._justEnteredFlopFromExt  = true
                 dbg("[ChainBootstrap] Tap-release mid-extension -> Flop")
             end
 
@@ -515,6 +519,9 @@ return Component {
                 end
 
                 self.controller:StartExtension(direction, self.MaxLength, self.LinkMaxDistance)
+                if _G.event_bus and _G.event_bus.publish then
+                    _G.event_bus.publish("force_player_rotation_to_direction", {x = direction[1], z = direction[3]})
+                end
                 self._pendingTapFire = false
                 self._pendingPlayerForward = nil
             end
@@ -806,7 +813,11 @@ return Component {
 
     StartExtension = function(self)
         if self.controller then
-            self.controller:StartExtension(self._cameraForward, self.MaxLength, self.LinkMaxDistance)
+            local dir = self._cameraForward
+            self.controller:StartExtension(dir, self.MaxLength, self.LinkMaxDistance)
+            if _G.event_bus and _G.event_bus.publish then
+                _G.event_bus.publish("force_player_rotation_to_direction", {x = dir[1], z = dir[3]})
+            end
         end
     end,
     StartRetraction = function(self) if self.controller then self.controller:StartRetraction() end end,

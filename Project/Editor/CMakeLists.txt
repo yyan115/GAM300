@@ -142,3 +142,10 @@ elseif(CMAKE_SYSTEM_NAME STREQUAL "Linux")
         ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}
     )
 endif()
+
+# Paths used by the "Build Installer" button in the editor
+target_compile_definitions(Editor PRIVATE
+    PROJECT_SOURCE_DIR="${CMAKE_SOURCE_DIR}"
+    INTERMEDIATE_RELEASE_DIR="${CMAKE_SOURCE_DIR}/Build/Intermediate/Release"
+    INSTALLER_OUTPUT_DIR="${CMAKE_SOURCE_DIR}/Build/Installer"
+)

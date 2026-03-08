@@ -205,7 +205,7 @@ void PostProcessingManager::Process(unsigned int inputTexture, unsigned int outp
 
 unsigned int PostProcessingManager::CreateHDRFramebuffer(int width, int height)
 {
-    std::cout << "[PostProcessingManager] Reallocating HDR Framebuffer: " << width << " x " << height << std::endl;
+    //std::cout << "[PostProcessingManager] Reallocating HDR Framebuffer: " << width << " x " << height << std::endl;
     // Delete existing framebuffer if it exists
     if (hdrFramebuffer != 0) 
     {

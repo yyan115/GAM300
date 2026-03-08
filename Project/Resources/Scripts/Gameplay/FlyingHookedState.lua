@@ -3,7 +3,7 @@ local FlyingHooked = {}
 
 function FlyingHooked:Enter(ai)
     if ai._animator then
-        ai._animator:SetBool("Hooked", true)
+        --ai._animator:SetBool("Hooked", true)
     end
 
     ai._hookedTimer = 0
@@ -27,7 +27,7 @@ end
 
 function FlyingHooked:Exit(ai)
     if ai._animator then
-        ai._animator:SetBool("Hooked", false)
+        --ai._animator:SetBool("Hooked", false)
     end
 end
 

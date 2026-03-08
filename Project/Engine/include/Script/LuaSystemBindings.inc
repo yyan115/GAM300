@@ -327,6 +327,7 @@ BEGIN_SYSTEM("Engine")
     FUNCTION("GetEntityLayer", &EntityQueryWrappers::GetEntityLayer)
     FUNCTION("IsEntityActive", &EntityQueryWrappers::IsEntityActive)
     FUNCTION("GetChildrenEntities", &EntityQueryWrappers::GetChildrenEntities)
+    FUNCTION("FindChildByName", &EntityQueryWrappers::FindChildEntityByName)
     FUNCTION("GetParentEntity", &EntityQueryWrappers::GetParentEntity)
     FUNCTION("SetParentEntity", &EntityQueryWrappers::SetParentEntity)
 

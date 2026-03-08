@@ -1,0 +1,14 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "00322fe97ad20aa4-0004713e48000f31",
+        "source": "../../Resources/Textures/M5/sword_holder_sword_Normal.png",
+        "compiled": "../../Resources/Textures/M5/sword_holder_sword_Normal.dds"
+    },
+    "TextureMetaData": {
+        "type": "normal",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp"
+    }
+}

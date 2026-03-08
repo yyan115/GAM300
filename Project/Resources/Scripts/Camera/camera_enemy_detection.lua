@@ -17,7 +17,7 @@ function M.findClosestEnemy(self)
     local closestDist  = math.huge
     local closestEnemy = nil
 
-    for _, scriptName in ipairs(self.enemyNames) do
+    for _, scriptName in ipairs(self.enemyComponents or {}) do
         local entities = Engine.FindEntitiesWithScript(scriptName)
         if entities and #entities > 0 then
             for i = 1, #entities do

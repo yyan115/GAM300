@@ -57,6 +57,10 @@ return Component {
         if self.health <= 0 then
             self._isDead = true
 
+            if event_bus and event_bus.publish then
+                event_bus.publish("enemy_died", { entityId = self._myEntityId })
+            end
+
             if self.debugPrintHits then
                 print("[LUA][EnemyHealth] Died - destroying entity")
             end

@@ -320,6 +320,7 @@ return Component {
         self._rb        = self:GetComponent("RigidBodyComponent")
         self._animator  = self:GetComponent("AnimationComponent")
         self._audio     = self:GetComponent("AudioComponent")
+        self._entityName = Engine.GetEntityName(self.entityId)
 
         -- (Re)create controller safely
         if self._controller then
@@ -423,6 +424,13 @@ return Component {
             end)
         end
 
+        self._chainEndpointHitSub = _G.event_bus.subscribe("chain.endpoint_hit_entity", function(payload)
+            if not payload then return end
+            if payload.rootName ~= self._entityName then return end
+            print("[MinibossAI] chain.endpoint_hit_entity received")
+            self._animator:SetTrigger("Hooked")
+        end)
+
         -- Seed prevY for grounded heuristic
         local _, y, _ = self:GetPosition()
         self._prevY = y
@@ -485,7 +493,7 @@ return Component {
 
         -- 3) Phase change detection (NEW system only)
         -- Only start a phase transition if we're not already transforming.
-        -- Use computed phase, not GetPhase/PHASE_THRESHOLDS.
+        -- Use computed phase
         local computed = self:_ComputePhase()
         if (computed ~= (self._phase or 1)) and (not self._transforming) and (not self.dead) then
             self:StartBossPhaseTransition(computed)
@@ -655,6 +663,7 @@ return Component {
             end)
         end
         self._controller = nil
+        self._animator:SetBool("Flying", true)
     end,
 
     CreateCC = function(self)
@@ -677,6 +686,7 @@ return Component {
             if CharacterController.SetPosition then
                 pcall(function() CharacterController.SetPosition(self._controller, x, y, z) end)
             end
+            self._animator:SetBool("Flying", false)
             return true
         end
 
@@ -687,6 +697,7 @@ return Component {
 
     _EnterAirMode = function(self)
         self._inAir = true
+        self._animator:SetBool("Flying", true)
         -- Stop gravity/vertical integration
         self._vy = 0
 
@@ -703,6 +714,7 @@ return Component {
 
     _EnterGroundMode = function(self)
         self._inAir = false
+        self._animator:SetBool("Flying", false)
 
         -- Re-enable RB gravity if present (optional)
         if self._rb then
@@ -932,6 +944,7 @@ return Component {
     BeginSlamDown = function(self)
         if not self._inAir then return end
         self._slamActive = true
+        self._animator:SetTrigger("Pulldown")
     end,
 
     UpdateSlamDown = function(self, dtSec)
@@ -957,6 +970,7 @@ return Component {
             newY = gy
             self:SetPosition(x, newY, z)
             self._slamActive = false
+            self._animator:SetTrigger("Slammed")
             return true
         end
 
@@ -1631,53 +1645,51 @@ return Component {
         return true
     end,
 
-    -- forward spray (not aimed): shoot 3 knives in facing direction with sideways offsets
-    SpawnForwardSpray3 = function(self, fx, fz, range, spread, yOffset)
+    -- forward single shot (not aimed): shoot 1 knife in facing direction
+    SpawnForwardSingle = function(self, fx, fz, range, yOffset)
         range = range or 12.0
-        spread = spread or 0.6
 
-        local knives = KnifePool.RequestMany(3)
-        if not knives then
-            print("[Miniboss][Knife] RequestMany(3) FAILED")
+        local knives = KnifePool.RequestMany(1)
+        if not knives or not knives[1] then
+            print("[Miniboss][Knife] RequestMany(1) FAILED")
             return false
         end
 
+        local k = knives[1]
+
         local sx, sy, sz = self:_GetSpawnPos()
         if not sx then
-            self:_FreeReserved(knives)
+            k.reserved = false
+            k._reservedToken = nil
             return false
         end
 
         local len = math.sqrt((fx or 0)*(fx or 0) + (fz or 0)*(fz or 0))
         if len < 1e-6 then
-            self:_FreeReserved(knives)
+            k.reserved = false
+            k._reservedToken = nil
             return false
         end
-        fx, fz = fx/len, fz/len
-        local rx, rz = -fz, fx
-
-        local token = self:_NewVolleyToken()
-        for i=1,3 do
-            knives[i]._reservedToken = token
-            knives[i].reserved = true
-        end
+        fx, fz = fx / len, fz / len
 
         local _, py, _ = self:_GetPlayerPos(yOffset or 0.0)
         local targetY = py or sy
-        local baseTx, baseTy, baseTz = sx + fx*range, targetY, sz + fz*range
 
-        local t0x, t0y, t0z = baseTx, baseTy, baseTz
-        local t1x, t1y, t1z = baseTx - rx*spread, baseTy, baseTz - rz*spread
-        local t2x, t2y, t2z = baseTx + rx*spread, baseTy, baseTz + rz*spread
+        local tx = sx + fx * range
+        local ty = targetY
+        local tz = sz + fz * range
 
-        local ok1 = self:_LaunchKnife(knives[1], sx, sy, sz, t0x, t0y, t0z, token, "F")
-        local ok2 = self:_LaunchKnife(knives[2], sx, sy, sz, t1x, t1y, t1z, token, "FL")
-        local ok3 = self:_LaunchKnife(knives[3], sx, sy, sz, t2x, t2y, t2z, token, "FR")
+        local token = self:_NewVolleyToken()
+        k._reservedToken = token
+        k.reserved = true
 
-        if not (ok1 and ok2 and ok3) then
-            for i=1,3 do if knives[i] then knives[i]:Reset() end end
+        local ok = self:_LaunchKnife(k, sx, sy, sz, tx, ty, tz, token, "F")
+
+        if not ok then
+            k:Reset()
             return false
         end
+
         return true
     end,
 
@@ -1702,8 +1714,8 @@ return Component {
         -- longer windup + further range
         if self._animator then self._animator:SetTrigger("Melee") end
         self:_BeginMove("BossMelee", {
-            windup = self.BossMeleeWindup or 0.85,
-            range  = self.BossMeleeRange or 2.2,
+            windup = self.BossMeleeWindup or 0.4,
+            range  = self.BossMeleeRange or 2.95,
             dmg    = 1,
             postDelay = 0.4
         })
@@ -1902,6 +1914,7 @@ return Component {
             if m.step == 0 then
                 -- face player during charge (feels intentional)
                 self:FacePlayer()
+                self._animator:SetTrigger("Melee")
 
                 m.chargeT = (m.chargeT or 0) + dtSec
                 local chargeDur = m.chargeDur or 0.45
@@ -1926,7 +1939,6 @@ return Component {
                     m.dx, m.dz = dx, dz
                     m.dashT = 0
 
-                    self._animator:SetTrigger("Melee")
                     m.step = 1
                 end
 
@@ -2039,7 +2051,7 @@ return Component {
             while m.fireAcc >= fireInterval do
                 m.fireAcc = m.fireAcc - fireInterval
                 print("[MinibossAI] SPAWNING DEATHLOTUS")
-                self:SpawnForwardSpray3(fx, fz, m.range or 12.0, m.spread or 0.7, m.lotusYOffset or 0.0)
+                self:SpawnForwardSingle(fx, fz, m.range or 12.0, m.lotusYOffset or 0.0)
             end
 
             if m.t >= dur then
@@ -2321,22 +2333,45 @@ return Component {
         -- Ensure we're in air while approaching
         self:_SetInAir(true)
 
-        local n = self:_GetPlayerGridNumpad()
-        local gx, gz = self:_GetGridXZ(n)
+        local px, py, pz = self:GetPlayerPosForAI()
+        if not px then
+            return false
+        end
+
+        local x, y, z = self:GetPosition()
+        if x == nil then return false end
+
+        local stopOffset = 0.6
+
+        -- Direction from boss -> player
+        local dxp = px - x
+        local dzp = pz - z
+        local dist2 = dxp*dxp + dzp*dzp
+        local dist = math.sqrt(dist2)
+
+        local tx, tz = px, pz
+
+        -- Stop a bit before the player instead of directly on them
+        if dist > 1e-6 then
+            local nx = dxp / dist
+            local nz = dzp / dist
+            tx = px - nx * stopOffset
+            tz = pz - nz * stopOffset
+        end
 
         -- Phase 3 dive state init
         if not self._phase3Dive then
             self._phase3Dive = {
-                cell = n,
-                gx = gx, gz = gz,
-                startedSlam = false,
-                impacted = false,
+                gx = tx,
+                gz = tz,
             }
         end
 
         local d = self._phase3Dive
-        d.cell = n
-        d.gx, d.gz = gx, gz
+
+        -- Continuously update target until slam commit
+        d.gx = tx
+        d.gz = tz
 
         -- If slamming, keep falling until landed
         if self._slamActive then
@@ -2345,7 +2380,7 @@ return Component {
                 return false
             end
 
-            -- Landed: switch to ground mode and snap onto exact grid center
+            -- Landed: switch to ground mode and snap onto exact target position
             self:_SetInAir(false)
 
             local gy = (Nav and Nav.GetGroundY and Nav.GetGroundY(self.entityId)) or select(2, self:GetPosition()) or 0
@@ -2357,8 +2392,7 @@ return Component {
             if _G.event_bus and _G.event_bus.publish then
                 _G.event_bus.publish("boss_dive_impact", {
                     entityId = self.entityId,
-                    cell = d.cell,
-                    x=d.gx, y=gy, z=d.gz,
+                    x = d.gx, y = gy, z = d.gz,
                     dmg = 1,
                     radius = 1.4,
                 })
@@ -2368,19 +2402,14 @@ return Component {
             return true
         end
 
-        -- Approach XZ (hover handled by MaintainHover in Update)
-        local x, y, z = self:GetPosition()
-        if x == nil then return true end
-
+        -- Approach offset target instead of exact player position
         local dx, dz = d.gx - x, d.gz - z
         local r = self.P3_DiveCommitRadius or 0.20
         if (dx*dx + dz*dz) <= (r*r) then
-            -- Commit slam when we're aligned over the target cell
             self:BeginSlamDown()
             return false
         end
 
-        -- Move toward target XZ using your air mover
         self:_MoveToXZ_Air(d.gx, d.gz, dtSec)
         return false
     end,
@@ -2551,11 +2580,10 @@ return Component {
         self._animator:SetTrigger("Ranged")
         self:_BeginMove("DeathLotus", {
             duration = 4.5,
-            spinSpeed = math.pi * 1.0,  -- rad/s
-            fireInterval = 0.80,
+            spinSpeed = math.pi * 1.0,
+            fireInterval = 0.20,
             range = 12.0,
-            spread = 7.7,
-            lotusYOffset = -3.0,
+            lotusYOffset = -5.0,
         })
     end,
 }

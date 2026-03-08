@@ -48,6 +48,7 @@ GUID_128 GUIManager::selectedAsset = GUID_128{0, 0};
 std::string GUIManager::notificationMessage = "";
 float GUIManager::notificationTimer = 0.0f;
 bool GUIManager::showSelectionOutline = true;
+GUIManager::GameBuildStatus GUIManager::gameBuildStatus;
 
 // Function definitions
 void GUIManager::SetSelectedEntities(const std::vector<Entity>& entities) { selectedEntities = entities; selectedAsset = GUID_128{0, 0}; }
@@ -331,6 +332,44 @@ void GUIManager::RenderMenuBar() {
 					});
 			}
 			ImGui::EndDisabled();
+			ImGui::BeginDisabled(gameBuildStatus.isBuilding);
+			if (ImGui::MenuItem(ICON_FA_BOX_ARCHIVE " Build Installer")) {
+				gameBuildStatus.isBuilding = true;
+				gameBuildStatus.step.store(1);
+				gameBuildStatus.future = std::async(std::launch::async, [] {
+					// Write a batch file that sets up the VS environment via vcvarsall
+					// before running cmake — needed when editor is launched outside of VS
+					std::filesystem::create_directories(INSTALLER_OUTPUT_DIR);
+					std::string batPath = std::string(INSTALLER_OUTPUT_DIR) + "\\build_installer.bat";
+					{
+						std::ofstream bat(batPath);
+						bat << "@echo off\r\n";
+						bat << "for /f \"usebackq tokens=*\" %%i in (`\"C:\\Program Files (x86)\\Microsoft Visual Studio\\Installer\\vswhere.exe\" -latest -property installationPath`) do (\r\n";
+						bat << "  call \"%%i\\VC\\Auxiliary\\Build\\vcvarsall.bat\" x64\r\n";
+						bat << ")\r\n";
+						bat << "cd /d \"" PROJECT_SOURCE_DIR "\"\r\n";
+						bat << "cmake --preset release\r\n";
+						bat << "if errorlevel 1 exit /b 1\r\n";
+						bat << "cmake --build \"" INTERMEDIATE_RELEASE_DIR "\"\r\n";
+						bat << "if errorlevel 1 exit /b 1\r\n";
+						bat << "cd /d \"" INTERMEDIATE_RELEASE_DIR "\"\r\n";
+						bat << "cpack -C Release -B \"" INSTALLER_OUTPUT_DIR "\"\r\n";
+					}
+
+					gameBuildStatus.step.store(1);
+					// Step tracking: we can't know exactly which step the bat is on,
+					// so advance steps on a timer as a visual hint
+					std::thread([]{
+						std::this_thread::sleep_for(std::chrono::seconds(5));
+						if (gameBuildStatus.isBuilding) gameBuildStatus.step.store(2);
+						std::this_thread::sleep_for(std::chrono::seconds(10));
+						if (gameBuildStatus.isBuilding) gameBuildStatus.step.store(3);
+					}).detach();
+
+					return system(("\"" + batPath + "\"").c_str());
+				});
+			}
+			ImGui::EndDisabled();
 			ImGui::Separator();
 			if (ImGui::MenuItem(ICON_FA_RIGHT_FROM_BRACKET " Exit", "Alt+F4")) {
 				// TODO: Exit application
@@ -406,6 +445,27 @@ void GUIManager::RenderMenuBar() {
 		std::string overlay = std::to_string((int)(fraction * 100)) + "%";
 		ImGui::ProgressBar(fraction, ImVec2(300, 0), overlay.c_str());
 		ImGui::End();
+	}
+
+	if (gameBuildStatus.isBuilding) {
+		if (gameBuildStatus.future.wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
+			int exitCode = gameBuildStatus.future.get();
+			gameBuildStatus.isBuilding = false;
+			gameBuildStatus.step.store(0);
+			if (exitCode == 0) {
+				ShowNotification("Installer built! Check Build/Installer/", 5.0f);
+			} else {
+				ShowNotification("Build failed! Check console output.", 5.0f);
+			}
+		} else {
+			static const char* stepNames[] = { "Starting...", "Configuring...", "Building...", "Packaging..." };
+			int step = gameBuildStatus.step.load();
+			const char* spinner = "|/-\\";
+			int spinnerIdx = (int)(ImGui::GetTime() * 8) % 4;
+			ImGui::Begin("Building Installer...");
+			ImGui::Text("%c  Step %d/3: %s", spinner[spinnerIdx], step, stepNames[step]);
+			ImGui::End();
+		}
 	}
 }
 
