@@ -290,6 +290,8 @@ return Component {
 
         self._hoverT = 0
         self._slamActive = false
+        self._slamMode = nil
+        self._phase3DiveStarted = false
 
         -- CC / movement state
         self._controller = nil
@@ -947,7 +949,7 @@ return Component {
         self._animator:SetTrigger("Pulldown")
     end,
 
-    UpdateSlamDown = function(self, dtSec)
+    UpdateSlamDown = function(self, dtSec, mode)
         if not self._slamActive then return false end
         dtSec = toDtSec(dtSec)
         if dtSec <= 0 then return false end
@@ -970,7 +972,15 @@ return Component {
             newY = gy
             self:SetPosition(x, newY, z)
             self._slamActive = false
-            self._animator:SetTrigger("Slammed")
+
+            if self._animator then
+                if mode == "dive_attack" then
+                    self._animator:SetTrigger("DiveSmash")
+                else
+                    self._animator:SetTrigger("Slammed")
+                end
+            end
+
             return true
         end
 
@@ -991,7 +1001,9 @@ return Component {
 
     _ComputePhase = function(self)
         local pct = self:_GetHpPct()
-        if pct <= (self.Phase3HpPct or 0.33) then return 3 end
+        if pct <= (self.Phase3HpPct or 0.33) then 
+            return 3 
+        end
         if pct <= (self.Phase2HpPct or 0.66) then return 2 end
         return 1
     end,
@@ -1021,6 +1033,7 @@ return Component {
         if newPhase == 2 then
             self:EnterPhase2_Air()
         elseif newPhase == 3 then
+            self._animator:SetBool("Phase3", true)
             self:EnterPhase3_Air()
         end
     end,
@@ -2138,7 +2151,7 @@ return Component {
     _UpdatePhase2 = function(self, dtSec)
         -- If slamming down, keep falling until landed
         if self._slamActive then
-            local landed = self:UpdateSlamDown(dtSec)
+            local landed = self:UpdateSlamDown(dtSec, "hook_slam")
             if not landed then
                 return -- still slamming
             end
@@ -2262,6 +2275,7 @@ return Component {
         self._immuneChain = true
         self._phase3Step = 0
         self._phase3RainCount = 0
+        self._phase3DiveStarted = false
     end,
 
     _PickRainCells5 = function(self)
@@ -2375,7 +2389,7 @@ return Component {
 
         -- If slamming, keep falling until landed
         if self._slamActive then
-            local landed = self:UpdateSlamDown(dtSec)
+            local landed = self:UpdateSlamDown(dtSec, "dive_attack")
             if not landed then
                 return false
             end
@@ -2425,6 +2439,7 @@ return Component {
             self._p3FateDelayT = nil
             self._phase3Dive = nil
             self._slamActive = false
+            self._phase3DiveStarted = false
 
             local tx,ty,tz = self:_GetAirWaypoint(5)
             local arrived = self:_MoveToXZ_Air(tx,tz,dtSec)
@@ -2442,8 +2457,7 @@ return Component {
             if not self._phase3FeatherCastT and not self._phase3RainT then
                 self._phase3FeatherCastT = self.P3_FeatherCastTime or 0.05
 
-                -- Play a "cast" animation here (use what looks best)
-                if self._animator then self._animator:SetTrigger("Ranged") end
+                if self._animator then self._animator:SetTrigger("FeatherBomb") end
                 playRandomSFX(self._audio, self.enemyRangedAttackSFX)
 
                 return
@@ -2485,7 +2499,7 @@ return Component {
         -- step 2: dive onto player's grid (approach then slam)
         if self._phase3Step == 2 then
             self._immuneChain = true -- not hookable in air
-            local done = self:_DoDiveToPlayerGrid(dtSec) -- NOTE dtSec passed
+            local done = self:_DoDiveToPlayerGrid(dtSec)
             if done then
                 self._immuneChain = false -- hookable on ground during lotus
                 self._phase3Step = 3

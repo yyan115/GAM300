@@ -69,6 +69,21 @@
             "name": "Hooked",
             "type": "Trigger",
             "defaultValue": 0.0
+        },
+        {
+            "name": "Phase3",
+            "type": "Bool",
+            "defaultValue": 0.0
+        },
+        {
+            "name": "FeatherBomb",
+            "type": "Trigger",
+            "defaultValue": 0.0
+        },
+        {
+            "name": "DiveSmash",
+            "type": "Trigger",
+            "defaultValue": 0.0
         }
     ],
     "states": [
@@ -196,12 +211,23 @@
         {
             "id": "Falling",
             "clipIndex": 9,
-            "loop": true,
+            "loop": false,
             "speed": 2.0,
             "crossfadeDuration": 0.20000000298023224,
             "nodePosition": {
                 "x": -109.51815795898438,
                 "y": 151.10987854003906
+            }
+        },
+        {
+            "id": "Feather Bomb",
+            "clipIndex": 12,
+            "loop": false,
+            "speed": 1.0,
+            "crossfadeDuration": 0.20000000298023224,
+            "nodePosition": {
+                "x": -498.5,
+                "y": -227.0
             }
         },
         {
@@ -224,6 +250,17 @@
             "nodePosition": {
                 "x": 304.43829345703125,
                 "y": 152.3826904296875
+            }
+        },
+        {
+            "id": "Dive Smash",
+            "clipIndex": 13,
+            "loop": false,
+            "speed": 1.0,
+            "crossfadeDuration": 0.20000000298023224,
+            "nodePosition": {
+                "x": -386.5,
+                "y": -321.0
             }
         }
     ],
@@ -454,7 +491,7 @@
             "conditions": [
                 {
                     "paramName": "Hooked",
-                    "mode": "Equals",
+                    "mode": "TriggerFired",
                     "threshold": 1.0
                 }
             ]
@@ -1073,6 +1110,64 @@
                     "threshold": 1.0
                 }
             ]
+        },
+        {
+            "from": "Idle",
+            "to": "Feather Bomb",
+            "anyState": false,
+            "hasExitTime": true,
+            "exitTime": 1.0,
+            "transitionDuration": 0.20000000298023224,
+            "conditions": [
+                {
+                    "paramName": "Phase3",
+                    "mode": "Equals",
+                    "threshold": 1.0
+                },
+                {
+                    "paramName": "FeatherBomb",
+                    "mode": "TriggerFired",
+                    "threshold": 0.0
+                }
+            ]
+        },
+        {
+            "from": "Idle",
+            "to": "Dive Smash",
+            "anyState": false,
+            "hasExitTime": true,
+            "exitTime": 1.0,
+            "transitionDuration": 0.20000000298023224,
+            "conditions": [
+                {
+                    "paramName": "Phase3",
+                    "mode": "Equals",
+                    "threshold": 1.0
+                },
+                {
+                    "paramName": "DiveSmash",
+                    "mode": "TriggerFired",
+                    "threshold": 0.0
+                }
+            ]
+        },
+        {
+            "from": "Dive Smash",
+            "to": "Idle",
+            "anyState": false,
+            "hasExitTime": true,
+            "exitTime": 1.0,
+            "transitionDuration": 0.20000000298023224,
+            "conditions": []
+        },
+        {
+            "from": "Feather Bomb",
+            "to": "Idle",
+            "anyState": false,
+            "hasExitTime": true,
+            "exitTime": 1.0,
+            "transitionDuration": 0.20000000298023224,
+            "conditions": []
         }
     ],
     "clipPaths": [
@@ -1087,6 +1182,8 @@
         "Resources/Animations/Enemy/Flying/KarasuFlying@IdleRangedAir.fbx",
         "Resources/Animations/Enemy/Flying/KarasuFlying@Falling.fbx",
         "Resources/Animations/Enemy/Flying/KarasuFlying@FallImpact.fbx",
-        "Resources/Animations/Enemy/Flying/KarasuFlying@StandUp.fbx"
+        "Resources/Animations/Enemy/Flying/KarasuFlying@StandUp.fbx",
+        "Resources/Animations/Enemy/Boss/KarasuBoss@FeatherBomb.fbx",
+        "Resources/Animations/Enemy/Boss/KarasuBoss@DiveSmash.fbx"
     ]
 }
