@@ -177,9 +177,9 @@ return Component {
                 self.openingTime = 0.0
 
                 -- Play door open SFX
-                local doorAudio = GetComponent(self.leftDoorEnt, "AudioComponent")
-                if doorAudio and self.doorOpenSFX[0] then
-                    doorAudio:PlayOneShot(self.doorOpenSFX[0])
+                local DoorTriggerSFX = self:GetComponent("AudioComponent")
+                if DoorTriggerSFX and self.doorOpenSFX[1] then
+                    DoorTriggerSFX:PlayOneShot(self.doorOpenSFX[1])
                 end
 
                 if event_bus and event_bus.publish then
@@ -219,9 +219,9 @@ return Component {
                 local handActiveComp   = GetComponent(self.weaponOnHandEnt, "ActiveComponent")
 
                 -- Play pickup SFX exactly when it hits the hand
-                local weaponSFX = GetComponent(self.weaponPickupEnt, "AudioComponent")
-                if weaponSFX and self.pickupSFX[0] then
-                    weaponSFX:PlayOneShot(self.pickupSFX[0])
+                local pickupWeaponSFX = self:GetComponent("AudioComponent")
+                if pickupWeaponSFX and self.pickupSFX[1] then
+                    pickupWeaponSFX:PlayOneShot(self.pickupSFX[1])
                 end
 
                 if pickupActiveComp then pickupActiveComp.isActive = false end
