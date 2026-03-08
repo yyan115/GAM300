@@ -493,7 +493,7 @@ return Component {
 
         -- 3) Phase change detection (NEW system only)
         -- Only start a phase transition if we're not already transforming.
-        -- Use computed phase, not GetPhase/PHASE_THRESHOLDS.
+        -- Use computed phase
         local computed = self:_ComputePhase()
         if (computed ~= (self._phase or 1)) and (not self._transforming) and (not self.dead) then
             self:StartBossPhaseTransition(computed)
@@ -1716,8 +1716,8 @@ return Component {
         -- longer windup + further range
         if self._animator then self._animator:SetTrigger("Melee") end
         self:_BeginMove("BossMelee", {
-            windup = self.BossMeleeWindup or 0.85,
-            range  = self.BossMeleeRange or 2.2,
+            windup = self.BossMeleeWindup or 0.4,
+            range  = self.BossMeleeRange or 2.95,
             dmg    = 1,
             postDelay = 0.4
         })
@@ -1916,6 +1916,7 @@ return Component {
             if m.step == 0 then
                 -- face player during charge (feels intentional)
                 self:FacePlayer()
+                self._animator:SetTrigger("Melee")
 
                 m.chargeT = (m.chargeT or 0) + dtSec
                 local chargeDur = m.chargeDur or 0.45
@@ -1940,7 +1941,6 @@ return Component {
                     m.dx, m.dz = dx, dz
                     m.dashT = 0
 
-                    self._animator:SetTrigger("Melee")
                     m.step = 1
                 end
 
