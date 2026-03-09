@@ -5,10 +5,10 @@ local Component = require("extension.mono_helper")
 return Component {
     fields = {
         Mass = 1.0,
-        ThrowForce = 150.0,
+        ThrowForce = 10000.0,
         ThrowRampTime = 0.4,
         ThrowLiftBias = 0.35,
-        SpringConstant = 120.0,  -- N/m. how stiff the chain feels. raise if barely moves, lower if rushes
+        SpringConstant = 1200.0,  -- N/m. how stiff the chain feels. raise if barely moves, lower if rushes
         SpringDamping  = 8.0,    -- kills bounce. raise if obj oscillates back toward you
         PlayerName = "Kusane_Player_LeftHandMiddle1",
         RestCheckDelay = 1.5,
