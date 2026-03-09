@@ -11,7 +11,7 @@
     },
     "parameters": [
         {
-            "name": "Hurt1",
+            "name": "Taunt",
             "type": "Trigger",
             "defaultValue": 0.0
         },
@@ -21,22 +21,22 @@
             "defaultValue": 0.0
         },
         {
-            "name": "Hook",
-            "type": "Bool",
-            "defaultValue": 0.0
-        },
-        {
-            "name": "Taunt",
-            "type": "Trigger",
-            "defaultValue": 0.0
-        },
-        {
-            "name": "Death",
+            "name": "Hurt1",
             "type": "Trigger",
             "defaultValue": 0.0
         },
         {
             "name": "Ranged",
+            "type": "Trigger",
+            "defaultValue": 0.0
+        },
+        {
+            "name": "Hook",
+            "type": "Bool",
+            "defaultValue": 0.0
+        },
+        {
+            "name": "Death",
             "type": "Trigger",
             "defaultValue": 0.0
         },
@@ -956,8 +956,8 @@
             "to": "Falling",
             "anyState": true,
             "hasExitTime": true,
-            "exitTime": 0.10999999940395355,
-            "transitionDuration": 0.10000000149011612,
+            "exitTime": 0.029999999329447746,
+            "transitionDuration": 0.029999999329447746,
             "conditions": [
                 {
                     "paramName": "Pulldown",
@@ -1004,8 +1004,8 @@
             "to": "Melee Attack",
             "anyState": false,
             "hasExitTime": true,
-            "exitTime": 0.6600000262260437,
-            "transitionDuration": 0.6499999761581421,
+            "exitTime": 0.30000001192092896,
+            "transitionDuration": 0.30000001192092896,
             "conditions": [
                 {
                     "paramName": "Melee",

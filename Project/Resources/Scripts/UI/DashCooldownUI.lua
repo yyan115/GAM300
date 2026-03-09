@@ -24,8 +24,11 @@ return Component {
                     self._dashCooldownMax = payload.cooldown
                     self._dashCooldown = payload.cooldown
                     self._state = "fadein"
-                    self._spriteRender.alpha = 0.0
-                    self._spriteRender.fillValue = 0.0
+
+                    if self._spriteRender then
+                        self._spriteRender.alpha = 0.0
+                        self._spriteRender.fillValue = 0.0
+                    end
                 end
             end)
         end
@@ -42,6 +45,7 @@ return Component {
             return
         end
 
+        self._spriteRender = self:GetComponent("SpriteRenderComponent")
         if self._state == "fadein" then
             local alpha = self._spriteRender.alpha + FADE_IN_SPEED * dt
             if alpha >= 1.0 then
