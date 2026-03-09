@@ -21,6 +21,11 @@
             "defaultValue": 0.0
         },
         {
+            "name": "IsDead",
+            "type": "Bool",
+            "defaultValue": 0.0
+        },
+        {
             "name": "IsGrounded",
             "type": "Bool",
             "defaultValue": 0.0
@@ -31,7 +36,7 @@
             "defaultValue": 0.0
         },
         {
-            "name": "IsDead",
+            "name": "IsJumping",
             "type": "Bool",
             "defaultValue": 0.0
         },
@@ -41,12 +46,12 @@
             "defaultValue": 0.0
         },
         {
-            "name": "IsJumping",
-            "type": "Bool",
+            "name": "Attack",
+            "type": "Trigger",
             "defaultValue": 0.0
         },
         {
-            "name": "Attack",
+            "name": "SlamChain",
             "type": "Trigger",
             "defaultValue": 0.0
         },
@@ -64,20 +69,24 @@
             "name": "FeatherSkill",
             "type": "Trigger",
             "defaultValue": 0.0
+        },
+        {
+            "name": "IsAimingChain",
+            "type": "Bool",
+            "defaultValue": 0.0
+        },
+        {
+            "name": "ThrowChain",
+            "type": "Trigger",
+            "defaultValue": 0.0
+        },
+        {
+            "name": "PullChain",
+            "type": "Trigger",
+            "defaultValue": 0.0
         }
     ],
     "states": [
-        {
-            "id": "NA1",
-            "clipIndex": 1,
-            "loop": false,
-            "speed": 2.000000238418579,
-            "crossfadeDuration": 0.0,
-            "nodePosition": {
-                "x": 1059.2657470703125,
-                "y": -380.439208984375
-            }
-        },
         {
             "id": "Idle",
             "clipIndex": 0,
@@ -90,14 +99,14 @@
             }
         },
         {
-            "id": "FeatherLaunchEnd",
-            "clipIndex": 11,
+            "id": "NA1",
+            "clipIndex": 1,
             "loop": false,
-            "speed": 1.0,
-            "crossfadeDuration": 0.20000000298023224,
+            "speed": 2.000000238418579,
+            "crossfadeDuration": 0.0,
             "nodePosition": {
-                "x": 188.404052734375,
-                "y": -623.8199462890625
+                "x": 1059.2657470703125,
+                "y": -380.439208984375
             }
         },
         {
@@ -109,6 +118,17 @@
             "nodePosition": {
                 "x": 275.0,
                 "y": 147.0
+            }
+        },
+        {
+            "id": "FeatherLaunchEnd",
+            "clipIndex": 11,
+            "loop": false,
+            "speed": 1.0,
+            "crossfadeDuration": 0.20000000298023224,
+            "nodePosition": {
+                "x": 188.404052734375,
+                "y": -623.8199462890625
             }
         },
         {
@@ -209,6 +229,61 @@
                 "x": 385.9041748046875,
                 "y": -542.7482299804688
             }
+        },
+        {
+            "id": "ThrowChain",
+            "clipIndex": 13,
+            "loop": false,
+            "speed": 1.8000001907348633,
+            "crossfadeDuration": 0.20000000298023224,
+            "nodePosition": {
+                "x": 224.53451538085938,
+                "y": 252.49636840820313
+            }
+        },
+        {
+            "id": "AimThrow",
+            "clipIndex": 14,
+            "loop": false,
+            "speed": 2.000000238418579,
+            "crossfadeDuration": 0.20000000298023224,
+            "nodePosition": {
+                "x": 24.851280212402344,
+                "y": 252.80160522460938
+            }
+        },
+        {
+            "id": "PullChain",
+            "clipIndex": 15,
+            "loop": false,
+            "speed": 2.9999992847442627,
+            "crossfadeDuration": 0.20000000298023224,
+            "nodePosition": {
+                "x": 539.447021484375,
+                "y": 254.65863037109375
+            }
+        },
+        {
+            "id": "SlamChain",
+            "clipIndex": 17,
+            "loop": false,
+            "speed": 1.0,
+            "crossfadeDuration": 0.20000000298023224,
+            "nodePosition": {
+                "x": 87.93179321289063,
+                "y": 356.98248291015625
+            }
+        },
+        {
+            "id": "RetractChain",
+            "clipIndex": 16,
+            "loop": false,
+            "speed": 2.000000238418579,
+            "crossfadeDuration": 0.20000000298023224,
+            "nodePosition": {
+                "x": 374.5981140136719,
+                "y": 358.4973449707031
+            }
         }
     ],
     "transitions": [
@@ -243,7 +318,7 @@
             "anyState": false,
             "hasExitTime": true,
             "exitTime": 0.029999999329447746,
-            "transitionDuration": 0.10999999940395355,
+            "transitionDuration": 0.029999999329447746,
             "conditions": [
                 {
                     "paramName": "Hurt",
@@ -915,7 +990,7 @@
             "transitionDuration": 1.0,
             "conditions": [
                 {
-                    "paramName": "Hurt",
+                    "paramName": "FeatherSkill",
                     "mode": "TriggerFired",
                     "threshold": 0.0
                 }
@@ -1155,6 +1230,212 @@
                     "threshold": 0.0
                 }
             ]
+        },
+        {
+            "from": "AimThrow",
+            "to": "ThrowChain",
+            "anyState": false,
+            "hasExitTime": true,
+            "exitTime": 0.05000000074505806,
+            "transitionDuration": 0.05000000074505806,
+            "conditions": [
+                {
+                    "paramName": "ThrowChain",
+                    "mode": "TriggerFired",
+                    "threshold": 0.0
+                },
+                {
+                    "paramName": "IsAimingChain",
+                    "mode": "Equals",
+                    "threshold": 0.0
+                }
+            ]
+        },
+        {
+            "from": "ThrowChain",
+            "to": "SlamChain",
+            "anyState": false,
+            "hasExitTime": true,
+            "exitTime": 0.44999998807907104,
+            "transitionDuration": 0.44999998807907104,
+            "conditions": [
+                {
+                    "paramName": "SlamChain",
+                    "mode": "TriggerFired",
+                    "threshold": 0.0
+                }
+            ]
+        },
+        {
+            "from": "ThrowChain",
+            "to": "PullChain",
+            "anyState": false,
+            "hasExitTime": true,
+            "exitTime": 0.44999998807907104,
+            "transitionDuration": 0.44999998807907104,
+            "conditions": [
+                {
+                    "paramName": "PullChain",
+                    "mode": "TriggerFired",
+                    "threshold": 0.0
+                }
+            ]
+        },
+        {
+            "from": "SlamChain",
+            "to": "RetractChain",
+            "anyState": false,
+            "hasExitTime": true,
+            "exitTime": 0.800000011920929,
+            "transitionDuration": 0.800000011920929,
+            "conditions": []
+        },
+        {
+            "from": "ThrowChain",
+            "to": "Idle",
+            "anyState": false,
+            "hasExitTime": true,
+            "exitTime": 0.5,
+            "transitionDuration": 0.5,
+            "conditions": []
+        },
+        {
+            "from": "Idle",
+            "to": "AimThrow",
+            "anyState": false,
+            "hasExitTime": true,
+            "exitTime": 0.029999999329447746,
+            "transitionDuration": 0.019999999552965164,
+            "conditions": [
+                {
+                    "paramName": "IsAimingChain",
+                    "mode": "Equals",
+                    "threshold": 1.0
+                }
+            ]
+        },
+        {
+            "from": "Jump",
+            "to": "AimThrow",
+            "anyState": false,
+            "hasExitTime": true,
+            "exitTime": 0.20000000298023224,
+            "transitionDuration": 0.20000000298023224,
+            "conditions": [
+                {
+                    "paramName": "IsAimingChain",
+                    "mode": "Equals",
+                    "threshold": 1.0
+                }
+            ]
+        },
+        {
+            "from": "Run",
+            "to": "AimThrow",
+            "anyState": false,
+            "hasExitTime": true,
+            "exitTime": 0.029999999329447746,
+            "transitionDuration": 0.029999999329447746,
+            "conditions": [
+                {
+                    "paramName": "IsAimingChain",
+                    "mode": "Equals",
+                    "threshold": 1.0
+                }
+            ]
+        },
+        {
+            "from": "AimThrow",
+            "to": "Death",
+            "anyState": false,
+            "hasExitTime": true,
+            "exitTime": 0.10000000149011612,
+            "transitionDuration": 0.10000000149011612,
+            "conditions": [
+                {
+                    "paramName": "IsDead",
+                    "mode": "Equals",
+                    "threshold": 1.0
+                }
+            ]
+        },
+        {
+            "from": "ThrowChain",
+            "to": "Death",
+            "anyState": false,
+            "hasExitTime": true,
+            "exitTime": 0.10000000149011612,
+            "transitionDuration": 0.10000000149011612,
+            "conditions": [
+                {
+                    "paramName": "IsDead",
+                    "mode": "Equals",
+                    "threshold": 1.0
+                }
+            ]
+        },
+        {
+            "from": "SlamChain",
+            "to": "Death",
+            "anyState": false,
+            "hasExitTime": true,
+            "exitTime": 0.20000000298023224,
+            "transitionDuration": 0.20000000298023224,
+            "conditions": [
+                {
+                    "paramName": "IsDead",
+                    "mode": "Equals",
+                    "threshold": 1.0
+                }
+            ]
+        },
+        {
+            "from": "PullChain",
+            "to": "Death",
+            "anyState": false,
+            "hasExitTime": true,
+            "exitTime": 0.20000000298023224,
+            "transitionDuration": 0.20000000298023224,
+            "conditions": [
+                {
+                    "paramName": "IsDead",
+                    "mode": "Equals",
+                    "threshold": 1.0
+                }
+            ]
+        },
+        {
+            "from": "RetractChain",
+            "to": "Death",
+            "anyState": false,
+            "hasExitTime": true,
+            "exitTime": 0.1899999976158142,
+            "transitionDuration": 0.20000000298023224,
+            "conditions": [
+                {
+                    "paramName": "IsDead",
+                    "mode": "Equals",
+                    "threshold": 1.0
+                }
+            ]
+        },
+        {
+            "from": "RetractChain",
+            "to": "Idle",
+            "anyState": false,
+            "hasExitTime": true,
+            "exitTime": 0.8500000238418579,
+            "transitionDuration": 0.8500000238418579,
+            "conditions": []
+        },
+        {
+            "from": "PullChain",
+            "to": "Idle",
+            "anyState": false,
+            "hasExitTime": true,
+            "exitTime": 0.8700000047683716,
+            "transitionDuration": 0.8600000143051147,
+            "conditions": []
         }
     ],
     "clipPaths": [
@@ -1170,6 +1451,11 @@
         "Resources/Animations/Player/KusaneV6@Hurt.fbx",
         "Resources/Animations/Player/KusaneV6@FeatherLaunch.fbx",
         "Resources/Animations/Player/KusaneV6@FeatherLaunchEnd.fbx",
-        "Resources/Animations/Player/KusaneV6@DashRoll.fbx"
+        "Resources/Animations/Player/KusaneV6@DashRoll.fbx",
+        "Resources/Animations/Player/KusaneV6@ThrowChain.fbx",
+        "Resources/Animations/Player/KusaneV6@AimThrow.fbx",
+        "Resources/Animations/Player/KusaneV6@PullChain.fbx",
+        "Resources/Animations/Player/KusaneV6@RetractChain.fbx",
+        "Resources/Animations/Player/KusaneV6@SlamChain.fbx"
     ]
 }

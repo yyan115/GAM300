@@ -17,7 +17,9 @@ local EnemyDet  = require("Camera.camera_enemy_detection")
 local CamInput  = require("Camera.camera_input")
 local Cinematic = require("Camera.camera_cinematic_mode")
 local ChainAim  = require("Camera.camera_chain_aim")
-local Collision = require("Camera.camera_collision")
+local Collision  = require("Camera.camera_collision")
+local SlamTilt   = require("Camera.camera_slam_tilt")
+local LockOn     = require("Camera.camera_lockon")
 
 local clamp = utils.clamp
 
@@ -30,7 +32,7 @@ return Component {
     mixins = { TransformMixin },
 
     fields = {
-        followDistance   = 2.0,
+        -- === Follow ===
         heightOffset     = 1.0,
         followLerp       = 10.0,
         mouseSensitivity = 0.15,
@@ -39,16 +41,16 @@ return Component {
         minZoom          = 2.0,
         maxZoom          = 15.0,
         zoomSpeed        = 1.0,
-        zoomLerpSpeed    = 6.0,   -- how fast the camera eases to a new zoom level (lower = smoother)
+        zoomLerpSpeed    = 6.0,
 
-        -- Camera collision
+        -- === Collision ===
         collisionEnabled             = true,
         collisionOffset              = 0.2,
         collisionLerpIn              = 20.0,
         collisionLerpOut             = 5.0,
-        maxCameraHeightAbovePlayer   = 4.0,   -- hard Y cap (units above player feet); set 0 to disable
+        maxCameraHeightAbovePlayer   = 4.0,
 
-        -- Action mode
+        -- === Action Mode ===
         actionModeEnabled      = false,
         actionModeDuration     = 3.0,
         actionModePitch        = 25.0,
@@ -56,29 +58,50 @@ return Component {
         actionModeTransition   = 8.0,
         actionModeLockRotation = false,
 
-        -- Chain aim
+        -- === Chain Aim ===
         chainAimPosName         = "ChainAimPointLeft",
         chainAimTargetName      = "ChainAimPointLeftEnd",
         chainAimTransitionSpeed = 5.0,
-        chainAimZoomDistance    = 0.8,  -- orbit radius while chain aim is active
-        chainAimSideOffset      = 0.3,  -- rightward shift for over-the-shoulder view (negative = left)
+        chainAimZoomDistance    = 0.8,
+        chainAimSideOffset      = 0.3,
 
-        -- Chain aim assist (soft gravity toward nearby enemies while aiming)
-        chainAimAssistEnemyNames   = {"EnemyAI", "FlyingEnemyLogic"},
-        chainAimAssistAngle        = 20.0,  -- angular window (degrees) around crosshair
-        chainAimAssistStrength     = 3.0,   -- max pull speed (degrees/second)
-        chainAimAssistRange        = 25.0,  -- max world-space distance to consider enemies
-        chainAimAssistHeightOffset = 0.5,   -- upward offset from enemy origin to aim at body center
+        -- === Chain Aim Assist ===
+        chainAimAssistComponents   = {"EnemyAI", "FlyingEnemyLogic"},
+        chainAimAssistAngle        = 30.0,
+        chainAimAssistStrength     = 15.0,
+        chainAimAssistRange        = 12.0,
+        chainAimAssistHeightOffset = 0.5,
 
-        -- Rotation lock
+        -- === Slam Tilt ===
+        TriggerSlam        = false,
+        SlamGroundAngle    = 60.0,
+        SlamReturnAngle    = 0.0,
+        SlamDownDuration   = 0.15,
+        SlamReturnDuration = 0.25,
+
+        -- === Screen Shake ===
+        TriggerShake       = false,
+        ShakeIntensity     = 0.3,
+        ShakeDuration      = 0.4,
+        ShakeFrequency     = 25.0,
+
+        -- === Lock-On ===
+        lockOnBreakDistance   = 15.0,
+        lockOnRotSpeed        = 20.0,
+        lockOnSnapFraction    = 0.85,
+        lockOnMouseThreshold  = 2.0,
+        lockOnLOSHeight       = 1.0,
+        lockOnLOSGrace        = 0.5,
+
+        -- === Rotation ===
         lockCameraRotation = false,
 
-        -- Enemy detection
+        -- === Enemy Detection ===
         enableEnemyDetection = true,
         enemyDetectionRange  = 8.0,
         enemyDisengageRange  = 10.0,
         enemyDisengageDelay  = 2.0,
-        enemyNames           = {"EnemyAI"},
+        enemyComponents      = {"EnemyAI"},
         cacheUpdateInterval  = 1.0,
         debugEnemyDetection  = false,
     },
@@ -123,9 +146,32 @@ return Component {
         -- Respawn teleport flag
         self._teleportToPlayer = false
 
+        -- Screen shake
+        self._shakeTimer       = 0.0
+        self._shakeDuration    = 0.0
+        self._shakeIntensity   = 0.0
+        self._shakeFrequency   = 0.0
+        self._shakePitchOffset = 0.0
+        self._shakeYawOffset   = 0.0
+
+        -- Slam tilt
+        SlamTilt.init(self)
+
+        -- Lock-on
+        LockOn.init(self)
+
         -- Configure C++ entity cache intervals
         if Engine and Engine.SetCacheUpdateInterval then
-            for _, scriptName in ipairs(self.enemyNames) do
+            -- Deduplicate: register both enemy-detection names and chain-aim-assist names
+            local registered = {}
+            local allNames = {}
+            for _, n in ipairs(self.enemyComponents or {}) do
+                if not registered[n] then registered[n] = true; allNames[#allNames+1] = n end
+            end
+            for _, n in ipairs(self.chainAimAssistComponents or {}) do
+                if not registered[n] then registered[n] = true; allNames[#allNames+1] = n end
+            end
+            for _, scriptName in ipairs(allNames) do
                 print("[CameraFollow] Setting cache interval for: " .. tostring(scriptName))
                 Engine.SetCacheUpdateInterval(scriptName, self.cacheUpdateInterval)
             end
@@ -153,6 +199,7 @@ return Component {
                 self._chainAiming = payload.active or false
                 if self._chainAiming and not wasAiming then
                     self._chainAimInitialized = false
+                    self._preChainAimPitch = self._normalPitch
                     -- Tell the player to face the current camera look direction.
                     -- self._yaw accumulates without wrapping, so collapse through
                     -- sin/cos + atan2 to get a canonical angle in (-180, 180].
@@ -171,9 +218,11 @@ return Component {
                         self._yaw = self._chainAimYaw + 180.0
                     end
                     if self._chainAimPitch then
-                        self._pitch        = self._chainAimPitch
-                        self._normalPitch  = self._chainAimPitch
+                        self._pitch = self._chainAimPitch
                     end
+                    -- Restore the pre-chain-aim normal pitch so the camera
+                    -- doesn't drop to 0 after chain aim ends.
+                    self._normalPitch = self._preChainAimPitch or self._normalPitch
                 end
             end)
 
@@ -205,6 +254,8 @@ return Component {
 
     -- ─────────────────────────────────────────────────────────────────────────
     OnDisable = function(self)
+        SlamTilt.cleanup(self)
+        LockOn.cleanup(self)
         if event_bus and event_bus.unsubscribe then
             for _, sub in ipairs({
                 "_posSub", "_chainAimSub",
@@ -287,7 +338,10 @@ return Component {
                 or (self._actionModeActive and self.actionModeLockRotation)
 
             if cursorOk and not shouldLock then
-                CamInput.updateMouseLook(self, dt)
+                local lockedOn = LockOn.update(self, dt)
+                if not lockedOn then
+                    CamInput.updateMouseLook(self, dt)
+                end
             end
         end
         -- Always called so the scroll buffer is drained every frame;
@@ -311,9 +365,27 @@ return Component {
         local chainActive, chainX, chainY, chainZ = ChainAim.updateChainAim(self, dt)
 
         -- ── Orbit follow position ────────────────────────────────────────────
-        local radius   = self.followDistance or 5.0
-        local pitchRad = math.rad(self._pitch)
-        local yawRad   = math.rad(self._yaw)
+        local radius     = self.followDistance or 5.0
+        if self.TriggerShake then
+            self.TriggerShake    = false
+            self._shakeTimer     = 0.0
+            self._shakeDuration  = self.ShakeDuration  or 0.4
+            self._shakeIntensity = self.ShakeIntensity or 0.3
+            self._shakeFrequency = self.ShakeFrequency or 25.0
+        end
+
+        local slamAbsPitch = SlamTilt.update(self, dt)
+        local pitchRad
+        if slamAbsPitch then
+            -- Keep _pitch and _normalPitch in sync so action-mode lerp
+            -- doesn't fight the slam and the camera settles correctly on release.
+            self._pitch       = slamAbsPitch
+            self._normalPitch = slamAbsPitch
+            pitchRad = math.rad(slamAbsPitch)
+        else
+            pitchRad = math.rad(self._pitch)
+        end
+        local yawRad     = math.rad(self._yaw)
 
         -- Export camera angles globally for skills to read
         _G.CAMERA_YAW = self._yaw
@@ -359,9 +431,11 @@ return Component {
             desiredX, desiredY, desiredZ, dt
         )
 
-        -- ── Blend orbit + chain aim positions ───────────────────────────────
+        -- ── Blend position with chain aim when active ─────────────────────
+        -- Lerp between orbit and chain-aim positions based on blend factor
+        -- so zoom-out and rotation change happen simultaneously on release.
         local blend = self._chainAimBlend
-        if chainActive and blend > 0.0 and chainX then
+        if chainActive and chainX then
             desiredX = desiredX + (chainX - desiredX) * blend
             desiredY = desiredY + (chainY - desiredY) * blend
             desiredZ = desiredZ + (chainZ - desiredZ) * blend
@@ -399,8 +473,37 @@ return Component {
 
         self:SetPosition(newX, newY, newZ)
 
+        -- ── Screen shake (angular, applied to rotation) ──────────────────────
+        if self._shakeTimer < self._shakeDuration then
+            self._shakeTimer = self._shakeTimer + dt
+            local decay     = 1.0 - (self._shakeTimer / self._shakeDuration)
+            local intensity = self._shakeIntensity * decay
+            local t         = self._shakeTimer * self._shakeFrequency
+            self._shakePitchOffset = math.sin(t * 1.7) * intensity
+            self._shakeYawOffset   = math.sin(t * 1.3) * intensity
+        else
+            self._shakePitchOffset = 0.0
+            self._shakeYawOffset   = 0.0
+        end
+
         -- ── Rotation ─────────────────────────────────────────────────────────
+        local utils_eu = require("Camera.camera_utils")
+        local shakeQ = utils_eu.eulerToQuat(
+            self._shakePitchOffset,
+            self._shakeYawOffset,
+            0.0
+        )
         ChainAim.applyRotation(self, newX, newY, newZ, cameraTarget, chainActive, blend)
+        -- Multiply shake onto the rotation after base rotation is set
+        local rw, rx, ry, rz = self:GetRotation()
+        if type(rw) == "table" then rw, rx, ry, rz = rw.w, rw.x, rw.y, rw.z end
+        local sw, sx, sy, sz = shakeQ.w, shakeQ.x, shakeQ.y, shakeQ.z
+        self:SetRotation(
+            rw*sw - rx*sx - ry*sy - rz*sz,
+            rw*sx + rx*sw + ry*sz - rz*sy,
+            rw*sy - rx*sz + ry*sw + rz*sx,
+            rw*sz + rx*sy - ry*sx + rz*sw
+        )
 
         self.isDirty = true
     end,

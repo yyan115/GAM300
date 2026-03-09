@@ -1,0 +1,11 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "006945cf175af40a-00047203b80030cb",
+        "source": "../../Resources/Models/Rooms/Stairsup/Stairsup_Wall3.fbx",
+        "compiled": "../../Resources/Models/Rooms/Stairsup/Stairsup_Wall3.mesh"
+    },
+    "ModelMetaData": {
+        "optimizeMeshes": true
+    }
+}

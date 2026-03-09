@@ -1,0 +1,11 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "006bd5bb1caef313-00046ab572000039",
+        "source": "../../Resources/Models/KarasuGroundModelV2.fbx",
+        "compiled": "../../Resources/Models/KarasuGroundModelV2.mesh"
+    },
+    "ModelMetaData": {
+        "optimizeMeshes": true
+    }
+}

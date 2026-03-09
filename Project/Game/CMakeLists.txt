@@ -85,6 +85,11 @@ else()
 
 endif()
 
+# Rename game executable to Kusane.exe (not applicable to static lib builds)
+if(NOT CMAKE_BUILD_TYPE MATCHES "Editor" AND NOT ANDROID)
+    set_target_properties(Game PROPERTIES OUTPUT_NAME "Kusane")
+endif()
+
 
 # Automatically include all subdirectories
 file(GLOB_RECURSE GAME_INCLUDE_SUBDIRS 
@@ -154,5 +159,20 @@ if(NOT CMAKE_BUILD_TYPE MATCHES "Editor")
             ${CMAKE_SOURCE_DIR}/Libraries/FMOD/core/lib/x64/libfmod.so.14.9
             ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}
         )
+    endif()
+endif()
+
+# ==============================================================================
+# Install rules — used by CPack to build the installer (Windows Release only)
+# ==============================================================================
+if(WIN32 AND NOT CMAKE_BUILD_TYPE MATCHES "Editor")
+    install(TARGETS Game DESTINATION .)
+    install(DIRECTORY ${CMAKE_SOURCE_DIR}/Resources DESTINATION .)
+    install(FILES ${CMAKE_SOURCE_DIR}/Libraries/FMOD/core/lib/x64/fmod.dll DESTINATION .)
+    install(DIRECTORY ${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/bin/
+        DESTINATION . FILES_MATCHING PATTERN "*.dll"
+    )
+    if(EXISTS "${CMAKE_SOURCE_DIR}/Installer/VC_redist.x64.exe")
+        install(FILES ${CMAKE_SOURCE_DIR}/Installer/VC_redist.x64.exe DESTINATION .)
     endif()
 endif()

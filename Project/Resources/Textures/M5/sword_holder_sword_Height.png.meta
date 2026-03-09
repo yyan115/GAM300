@@ -1,0 +1,14 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "00322fe96c8e7dda-0004713e46000f2d",
+        "source": "../../Resources/Textures/M5/sword_holder_sword_Height.png",
+        "compiled": "../../Resources/Textures/M5/sword_holder_sword_Height.dds"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp"
+    }
+}

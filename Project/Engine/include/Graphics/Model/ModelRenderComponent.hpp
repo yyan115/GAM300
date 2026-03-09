@@ -23,6 +23,12 @@ public:
 	Matrix4x4 transform;
 	bool isVisible = true;
 	bool childBonesSaved = false;
+	// Depth offset to fix z-fighting on coplanar geometry.
+	// factor/units match glPolygonOffset(factor, units).
+	// Negative values push towards the camera (render on top).
+	bool depthOffset = false;
+	float depthOffsetFactor = -1.0f;
+	float depthOffsetUnits = -1.0f;
 
 	// Don't serialize these.
 	std::shared_ptr<Model> model; 

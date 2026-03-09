@@ -1,0 +1,14 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "000e2fe059f20f26-00047165b00037fd",
+        "source": "../../Resources/Sprites/DialogueUI/MonologueBorder.png",
+        "compiled": "../../Resources/Sprites/DialogueUI/MonologueBorder.dds"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": true,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp"
+    }
+}

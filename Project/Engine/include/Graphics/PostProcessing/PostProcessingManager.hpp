@@ -4,6 +4,7 @@
 #include "HDR/HDREffect.hpp"
 #include "Blur/BlurEffect.hpp"
 #include "Bloom/BloomEffect.hpp"
+#include "SSAO/SSAOEffect.hpp"
 #include <memory>
 #include <vector>
 #include <glm/glm.hpp>
@@ -37,6 +38,11 @@ public:
     HDREffect* GetHDREffect() { return hdrEffect.get(); }
     BlurEffect* GetBlurEffect() { return blurEffect.get(); }
     BloomEffect* GetBloomEffect() { return bloomEffect.get(); }
+    SSAOEffect* GetSSAOEffect() { return ssaoEffect.get(); }
+
+    // Set camera matrices for SSAO (call before EndHDRRender)
+    void SetProjectionMatrix(const glm::mat4& proj) { currentProjection = proj; }
+    void SetInvProjectionMatrix(const glm::mat4& invProj) { currentInvProjection = invProj; }
 
     void RenderScreenQuad();
 
@@ -96,9 +102,14 @@ private:
     void DeleteScreenQuad();
 
     // Effects (in order of application)
+    std::unique_ptr<SSAOEffect> ssaoEffect;
     std::unique_ptr<BlurEffect> blurEffect;
     std::unique_ptr<BloomEffect> bloomEffect;
     std::unique_ptr<HDREffect> hdrEffect;
+
+    // Camera matrices for SSAO
+    glm::mat4 currentProjection = glm::mat4(1.0f);
+    glm::mat4 currentInvProjection = glm::mat4(1.0f);
 
     // HDR framebuffer resources
     unsigned int hdrFramebuffer{};

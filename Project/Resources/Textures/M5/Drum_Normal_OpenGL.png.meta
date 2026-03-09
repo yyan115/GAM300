@@ -6,7 +6,7 @@
         "compiled": "../../Resources/Textures/M5/Drum_Normal_OpenGL.dds"
     },
     "TextureMetaData": {
-        "type": "diffuse",
+        "type": "normal",
         "flipUVs": false,
         "generateMipmaps": true,
         "textureWrapMode": "Clamp"

@@ -1,0 +1,14 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "000e2fe03af04364-00047165ae0037fb",
+        "source": "../../Resources/Sprites/DialogueUI/MonologueSoundWavesSS.png",
+        "compiled": "../../Resources/Sprites/DialogueUI/MonologueSoundWavesSS.dds"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp"
+    }
+}

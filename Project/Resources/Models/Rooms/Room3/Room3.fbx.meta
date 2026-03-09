@@ -1,0 +1,11 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "002de1873e45f9f5-0004728fe600d729",
+        "source": "../../Resources/Models/Rooms/Room3/Room3.fbx",
+        "compiled": "../../Resources/Models/Rooms/Room3/Room3.mesh"
+    },
+    "ModelMetaData": {
+        "optimizeMeshes": true
+    }
+}

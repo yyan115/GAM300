@@ -1,0 +1,14 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "00322fe90d5ff844-0004711e720005eb",
+        "source": "../../Resources/Textures/M5/Room1/Room1_woodenbeams_wooden_beams_Roughness.png",
+        "compiled": "../../Resources/Textures/M5/Room1/Room1_woodenbeams_wooden_beams_Roughness.dds"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp"
+    }
+}
