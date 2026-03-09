@@ -87,6 +87,19 @@ void DirectionalShadowMap::Shutdown()
     initialized = false;
 }
 
+void DirectionalShadowMap::Clear()
+{
+    if (!initialized) return;
+
+    GLint previousFramebuffer;
+    glGetIntegerv(GL_FRAMEBUFFER_BINDING, &previousFramebuffer);
+
+    glBindFramebuffer(GL_FRAMEBUFFER, depthMapFBO);
+    glClear(GL_DEPTH_BUFFER_BIT);
+
+    glBindFramebuffer(GL_FRAMEBUFFER, previousFramebuffer);
+}
+
 void DirectionalShadowMap::CalculateLightSpaceMatrix(const glm::vec3& lightDir, const glm::vec3& sceneCenter, float shadowDistance)
 {
     glm::vec3 lightDirection = glm::normalize(lightDir);

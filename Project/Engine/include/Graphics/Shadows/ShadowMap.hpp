@@ -18,6 +18,9 @@ public:
     void Render(const glm::vec3& lightDir, const glm::vec3& sceneCenter,
         float shadowDistance, std::function<void(Shader&)> renderCallback);
 
+    // Clear shadow map to max depth (no shadow) - call when no directional light exists
+    void Clear();
+
     // Apply shadow uniforms to a shader
     void Apply(Shader& shader, int textureUnit = 8);
 
