@@ -30,7 +30,8 @@ function M.New(params)
     self._raycastSnapped         = false
     self._lockedChainLen         = 0.0
     self._flopping               = false
-    self._justEnteredFlopFromExt = false  -- one-frame flag: redistribute links and zero velocity
+    self._justEnteredFlopFromExt  = false  -- one-frame flag: redistribute links and zero velocity
+    self._justEnteredRaycastSnap  = false  -- one-frame flag: redistribute links on wall snap
     self.losAnchors       = {}
     self.VerletState = VerletAdapter.Init{positions=self.positions, prev=self.prev, invMass=self.invMass}
     return self
@@ -44,6 +45,7 @@ function M:StartExtension(forward, maxLength, linkMaxDistance)
     self.extensionTime, self.chainLen   = 0, 0
     self._lockedChainLen, self._raycastSnapped, self._flopping = 0, false, false
     self._justEnteredFlopFromExt = false
+    self._justEnteredRaycastSnap = false
     self.endPointLocked = false
     self.lockedEndPoint = {0,0,0}
     self.hookedTag      = ""
@@ -68,6 +70,7 @@ function M:StartRetraction()
     self.isRetracting, self.isExtending = true, false
     self._raycastSnapped, self._flopping = false, false
     self._justEnteredFlopFromExt = false
+    self._justEnteredRaycastSnap = false
     self.hookedTag       = ""
     self.losAnchors      = {}
     self._lockedChainLen = self.chainLen
@@ -92,6 +95,7 @@ function M:ContinueExtension(forward, maxLength, linkMaxDistance)
     self._raycastSnapped = false
     self._flopping       = false
     self._justEnteredFlopFromExt = false
+    self._justEnteredRaycastSnap = false
     self.hookedTag       = ""
     self.losAnchors      = {}
     self._lockedChainLen = 0
@@ -483,6 +487,7 @@ function M:Update(dt, settings)
         local rc = self:PerformRaycast(sx,sy,sz, theorDist*1.1)
         if rc and rc.hit then
             self.chainLen=rc.distance; self.isExtending=false; self._raycastSnapped=true
+            self._justEnteredRaycastSnap = true
             local lmfs = tonumber(settings.LinkMaxDistance) or tonumber(self.params.LinkMaxDistance) or 0
             if lmfs>0 then self.activeN=math.min(math.ceil(rc.distance/lmfs)+1,self.n); aN=self.activeN end
             self.lockedEndPoint[1],self.lockedEndPoint[2],self.lockedEndPoint[3] =
@@ -499,8 +504,17 @@ function M:Update(dt, settings)
     end
     self.endPos[1],self.endPos[2],self.endPos[3] = ex,ey,ez
 
-    -- =========================================================================
-    -- LOS ANCHOR MODE
+    -- One-frame redistribution on wall snap: evenly place active links from start to hit point
+    -- and zero Verlet velocity. Must run before both LOS and non-LOS branches so it covers
+    -- both cases (UseLOSAnchors=true returns early and never reaches the non-LOS section).
+    if self._raycastSnapped and self._justEnteredRaycastSnap then
+        self._justEnteredRaycastSnap = false
+        for i = 1, aN do
+            local t = (aN > 1) and ((i-1)/(aN-1)) or 0
+            self.positions[i] = {sx + (ex-sx)*t, sy + (ey-sy)*t, sz + (ez-sz)*t}
+            self.prev[i]      = {self.positions[i][1], self.positions[i][2], self.positions[i][3]}
+        end
+    end
     -- =========================================================================
     if settings.UseLOSAnchors and (self.chainLen or 0)>1e-4 and not self._flopping
        and (self.endPointLocked or self._raycastSnapped) then
