@@ -1,6 +1,8 @@
 require("extension.engine_bootstrap")
 local Component = require("extension.mono_helper")
 
+local event_bus = _G.event_bus
+
 -- Unified Settings Slider Script
 -- Attach to each slider notch entity and configure via fields
 -- settingType: "master", "bgm", "sfx", or "gamma"
@@ -11,6 +13,15 @@ return Component {
         sliderFill = "",              -- Name of the fill entity (optional, leave empty if no fill)
         settingType = "master",       -- "master", "bgm", "sfx", or "gamma"
     },
+
+    Awake = function(self)
+        self._pendingReset = false
+        if event_bus and event_bus.subscribe then
+            self._settingsResetSub = event_bus.subscribe("settings_reset", function()
+                self._pendingReset = true
+            end)
+        end
+    end,
 
     Start = function(self)
         -- Helper to strip quotes from string values (in case user entered them in editor)
@@ -129,6 +140,17 @@ return Component {
             return
         end
 
+        -- React to settings_reset event: reposition notch and fill to match new GameSettings value
+        if self._pendingReset then
+            self._pendingReset = false
+            local resetValue = self:GetCurrentValue()
+            local resetNormalized = self:ValueToNormalized(resetValue)
+            local resetPosX = self._minSliderX + (resetNormalized * (self._maxSliderX - self._minSliderX))
+            self._sliderTransform.localPosition.x = resetPosX
+            self._sliderTransform.isDirty = true
+            self:UpdateFillBar(resetNormalized)
+        end
+
         local pointerPressed = Input.IsPointerPressed()
         local pointerJustPressed = Input.IsPointerJustPressed()
 
@@ -219,6 +241,13 @@ return Component {
             GameSettings.SetSFXVolume(value)
         elseif self._settingType == "gamma" then
             GameSettings.SetGamma(value)
+        end
+    end,
+
+    OnDisable = function(self)
+        if event_bus and event_bus.unsubscribe and self._settingsResetSub then
+            event_bus.unsubscribe(self._settingsResetSub)
+            self._settingsResetSub = nil
         end
     end,
 }

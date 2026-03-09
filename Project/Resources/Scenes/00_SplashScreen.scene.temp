@@ -365,7 +365,7 @@
                                 },
                                 {
                                     "type": "float",
-                                    "data": 150
+                                    "data": 204.26
                                 },
                                 {
                                     "type": "float",
@@ -503,10 +503,6 @@
                         },
                         {
                             "type": "int",
-                            "data": 0
-                        },
-                        {
-                            "type": "float",
                             "data": 1
                         },
                         {
@@ -516,6 +512,10 @@
                         {
                             "type": "float",
                             "data": 0.5
+                        },
+                        {
+                            "type": "float",
+                            "data": 0.3
                         },
                         {
                             "type": "float",
@@ -717,10 +717,6 @@
                         },
                         {
                             "type": "int",
-                            "data": 0
-                        },
-                        {
-                            "type": "float",
                             "data": 1
                         },
                         {
@@ -730,6 +726,10 @@
                         {
                             "type": "float",
                             "data": 0.5
+                        },
+                        {
+                            "type": "float",
+                            "data": 0.3
                         },
                         {
                             "type": "float",
@@ -931,10 +931,6 @@
                         },
                         {
                             "type": "int",
-                            "data": 0
-                        },
-                        {
-                            "type": "float",
                             "data": 1
                         },
                         {
@@ -944,6 +940,10 @@
                         {
                             "type": "float",
                             "data": 0.5
+                        },
+                        {
+                            "type": "float",
+                            "data": 0.3
                         },
                         {
                             "type": "float",

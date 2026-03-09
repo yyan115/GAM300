@@ -1,18 +1,10 @@
 require("extension.engine_bootstrap")
 local Component = require("extension.mono_helper")
 
+local event_bus = _G.event_bus
+
 return Component {
     fields = {
-        -- Entity names for slider notches to update visual positions
-        masterNotch = "MasterNotch",
-        masterBar = "MasterBar",
-        masterFill = "MasterFill",
-        bgmNotch = "BGMNotch",
-        bgmBar = "BGMBar",
-        bgmFill = "BGMFill",
-        sfxNotch = "SFXNotch",
-        sfxBar = "SFXBar",
-        sfxFill = "SFXFill",
         -- Sprite GUIDs array: [1] = normal sprite, [2] = hover sprite
         -- Drag-drop textures from editor (recognized via "sprite" in field name)
         spriteGUIDs = {},
@@ -84,64 +76,11 @@ return Component {
         -- Reset to defaults (this also applies and saves via C++)
         GameSettings.ResetToDefaults()
 
-        -- Update slider visual positions to reflect default values
-        self:UpdateSliderPositions()
-
-        print("[ResetSettings] All settings reset to defaults")
-    end,
-
-    UpdateSliderPositions = function(self)
-        -- Helper function to update a slider's visual position and fill bar
-        local function updateSlider(notchName, barName, fillName, value, minVal, maxVal)
-            local notchEntity = Engine.GetEntityByName(notchName)
-            local barEntity = Engine.GetEntityByName(barName)
-
-            if notchEntity and notchEntity ~= -1 and barEntity and barEntity ~= -1 then
-                local notchTransform = GetComponent(notchEntity, "Transform")
-                local barTransform = GetComponent(barEntity, "Transform")
-
-                if notchTransform and barTransform then
-                    local offsetX = barTransform.localScale.x / 2.0
-                    local minX = barTransform.localPosition.x - offsetX
-                    local maxX = barTransform.localPosition.x + offsetX
-
-                    -- Normalize value to 0-1 range
-                    local normalized = (value - minVal) / (maxVal - minVal)
-
-                    local newPosX = minX + (normalized * (maxX - minX))
-                    notchTransform.localPosition.x = newPosX
-                    notchTransform.isDirty = true
-
-                    -- Update fill bar if specified
-                    if fillName and fillName ~= "" then
-                        local fillEntity = Engine.GetEntityByName(fillName)
-                        if fillEntity and fillEntity ~= -1 then
-                            local fillTransform = GetComponent(fillEntity, "Transform")
-                            if fillTransform then
-                                local fillMaxWidth = barTransform.localScale.x
-                                local fillWidth = normalized * fillMaxWidth
-                                if fillWidth < 1 then fillWidth = 1 end
-
-                                fillTransform.localScale.x = fillWidth
-                                fillTransform.localPosition.x = minX + (fillWidth / 2)
-                                fillTransform.isDirty = true
-                            end
-                        end
-                    end
-
-                    print("[ResetSettings] Updated " .. notchName .. " to value " .. value)
-                end
-            else
-                print("[ResetSettings] Warning: Could not find " .. notchName .. " or " .. barName)
-            end
+        -- Notify all sliders to update their positions
+        if event_bus then
+            event_bus.publish("settings_reset", {})
         end
 
-        -- Update all sliders using default values from C++
-        -- Volume sliders: 0-1 range
-        -- Gamma slider: 1-3 range
-        updateSlider(self.masterNotch, self.masterBar, self.masterFill, GameSettings.GetDefaultMasterVolume(), 0, 1)
-        updateSlider(self.bgmNotch, self.bgmBar, self.bgmFill, GameSettings.GetDefaultBGMVolume(), 0, 1)
-        updateSlider(self.sfxNotch, self.sfxBar, self.sfxFill, GameSettings.GetDefaultSFXVolume(), 0, 1)
-        -- updateSlider(self.gammaNotch, self.gammaBar, self.gammaFill, GameSettings.GetDefaultGamma(), 1, 3)
+        print("[ResetSettings] All settings reset to defaults")
     end,
 }

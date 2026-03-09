@@ -1,13 +1,18 @@
 -- LockOnPoint.lua
--- Attach to the LockOn child entity on an enemy (one tier below root).
--- PartEntityIds: list of entity IDs for the body parts to consider for attachment.
--- IDs are assigned in the editor — no name lookups, no duplicates.
+-- Attach to the LockOn child entity on an enemy (one tier below root),
+-- OR to the root of a throwable object (tag: "Throwable").
 --
--- Secondary sweep check: each Update while the endpoint is extending, performs a
--- point-to-segment radius check + raycast against each part so a fast-moving
--- endpoint that tunnels through the trigger volume is still detected.
--- Publishes "chain.lockon_sweep_hit" with { entityId, partId, partX, partY, partZ }
--- so ChainEndpointController treats it identically to a real OnTriggerEnter.
+-- ENEMY mode (tag == "Enemy" on root):
+--   Existing behaviour preserved — sweeps against PartEntityIds body parts,
+--   publishes "chain.lockon_sweep_hit" with closest part pos so
+--   ChainEndpointController snaps to the nearest bone.
+--
+-- THROWABLE mode (tag == "Throwable" on root):
+--   PartEntityIds is ignored. The sweep checks only the root entity's own
+--   transform. This acts as a fast-endpoint backup for the OnTriggerEnter
+--   that fires when the chain collider overlaps the throwable's static body.
+--   Publishes the same "chain.lockon_sweep_hit" so ChainEndpointController
+--   handles it identically — no snap to a part, just root position.
 
 require("extension.engine_bootstrap")
 local Component = require("extension.mono_helper")
@@ -17,7 +22,7 @@ return Component {
         -- Body part entity names, populated in the editor.
         PartEntityNames = {},
 
-        -- Radius within which the endpoint is considered to have hit a part.
+        -- Radius within which the endpoint is considered to have hit a part/root.
         -- Should match or slightly exceed the endpoint trigger collider radius.
         SweepRadius = 0.3,
     },
@@ -55,10 +60,39 @@ return Component {
         end
         if not self._entityId and self.entityId then self._entityId = self.entityId end
 
-        self._endpointPos  = nil   -- {x,y,z} last known endpoint world position
-        self._endpointPrev = nil   -- position one frame ago for segment sweep
-        self._sweepActive  = false -- only sweep while endpoint is extending
-        self._sweepFired   = false -- prevent double-firing until chain resets
+        -- Walk up to root and detect mode via tag.
+        self._rootEntityId = self._entityId
+        self._isThrowable  = false
+        self._isEnemy      = false
+
+        if Engine and Engine.GetParentEntity and self._entityId then
+            local current = self._entityId
+            local depth   = 0
+            while true do
+                depth = depth + 1
+                if depth > 32 then break end
+                local parentId = Engine.GetParentEntity(current)
+                if not parentId or parentId < 0 then break end
+                current = parentId
+            end
+            self._rootEntityId = current
+        end
+
+        if Engine and Engine.GetEntityTag and self._rootEntityId then
+            local ok, tag = pcall(function() return Engine.GetEntityTag(self._rootEntityId) end)
+            if ok and tag then
+                if tag == "Throwable" then
+                    self._isThrowable = true
+                elseif tag == "Enemy" then
+                    self._isEnemy = true
+                end
+            end
+        end
+
+        self._endpointPos  = nil
+        self._endpointPrev = nil
+        self._sweepActive  = false
+        self._sweepFired   = false
 
         if _G.event_bus and _G.event_bus.subscribe then
             self._subMoved = _G.event_bus.subscribe("chain.endpoint_moved", function(payload)
@@ -76,7 +110,6 @@ return Component {
                 self._sweepActive = payload.isExtending or false
             end)
 
-            -- Reset sweep state when chain fully retracts
             self._subRetracted = _G.event_bus.subscribe("chain.endpoint_retracted", function(_)
                 self._sweepActive  = false
                 self._sweepFired   = false
@@ -84,17 +117,39 @@ return Component {
                 self._endpointPrev = nil
             end)
 
-            -- Suppress sweep if trigger collision already handled it
+            -- Suppress sweep once a collision is already confirmed.
             self._subHit = _G.event_bus.subscribe("chain.endpoint_hit_entity", function(_)
                 self._sweepFired = true
             end)
         end
     end,
 
-    -- Returns the world position {x,y,z}, entity ID, and distance of the closest
-    -- body part to the given world position (px, py, pz).
-    -- Returns nil if no parts are registered or Engine API unavailable.
+    -- Returns world position {x,y,z}, entity ID, and distance of the closest
+    -- body part (Enemy mode) or own root (Throwable mode) to the given point.
+    -- Returns nil if nothing is available.
     GetClosestPart = function(self, px, py, pz)
+        -- ── Throwable mode: return root position directly ─────────────────
+        if self._isThrowable then
+            if not (Engine and Engine.FindTransformByID and Engine.GetTransformWorldPosition) then return nil end
+            if not self._rootEntityId then return nil end
+            local transform = Engine.FindTransformByID(self._rootEntityId)
+            if not transform then return nil end
+            local p = Engine.GetTransformWorldPosition(transform)
+            local ex, ey, ez
+            if type(p) == "table" then
+                ex = p[1] or p.x or 0.0
+                ey = p[2] or p.y or 0.0
+                ez = p[3] or p.z or 0.0
+            else
+                ex, ey, ez = p or 0.0, 0.0, 0.0
+            end
+            local dx = px - ex
+            local dy = py - ey
+            local dz = pz - ez
+            return { x = ex, y = ey, z = ez }, self._rootEntityId, math.sqrt(dx*dx + dy*dy + dz*dz)
+        end
+
+        -- ── Enemy mode: iterate PartEntityIds ─────────────────────────────
         local ids = self.PartEntityIds
         if not ids or #ids == 0 then return nil end
         if not (Engine and Engine.FindTransformByID and Engine.GetTransformWorldPosition) then return nil end
@@ -106,29 +161,28 @@ return Component {
         for i = 1, #ids do
             local id = tonumber(ids[i])
             if id and id ~= 0 then
-            local transform = Engine.FindTransformByID(id)
-            if transform then
-                local p = Engine.GetTransformWorldPosition(transform)
-                local ex, ey, ez
-                if type(p) == "table" then
-                    ex = p[1] or p.x or 0.0
-                    ey = p[2] or p.y or 0.0
-                    ez = p[3] or p.z or 0.0
-                else
-                    ex, ey, ez = p or 0.0, 0.0, 0.0
-                end
-
-                local dx = px - ex
-                local dy = py - ey
-                local dz = pz - ez
-                local distSq = dx*dx + dy*dy + dz*dz
-                if distSq < bestDistSq then
-                    bestDistSq = distSq
-                    bestPos    = { x = ex, y = ey, z = ez }
-                    bestId     = id
+                local transform = Engine.FindTransformByID(id)
+                if transform then
+                    local p = Engine.GetTransformWorldPosition(transform)
+                    local ex, ey, ez
+                    if type(p) == "table" then
+                        ex = p[1] or p.x or 0.0
+                        ey = p[2] or p.y or 0.0
+                        ez = p[3] or p.z or 0.0
+                    else
+                        ex, ey, ez = p or 0.0, 0.0, 0.0
+                    end
+                    local dx = px - ex
+                    local dy = py - ey
+                    local dz = pz - ez
+                    local distSq = dx*dx + dy*dy + dz*dz
+                    if distSq < bestDistSq then
+                        bestDistSq = distSq
+                        bestPos    = { x = ex, y = ey, z = ez }
+                        bestId     = id
+                    end
                 end
             end
-            end -- if id valid
         end
 
         return bestPos, bestId, math.sqrt(bestDistSq)
@@ -137,9 +191,6 @@ return Component {
     Update = function(self, dt)
         if not self._sweepActive or self._sweepFired then return end
         if not self._endpointPos then return end
-
-        local ids = self.PartEntityIds
-        if not ids or #ids == 0 then return end
         if not (Engine and Engine.FindTransformByID and Engine.GetTransformWorldPosition) then return end
 
         local ex = self._endpointPos.x
@@ -153,14 +204,93 @@ return Component {
         local sweepRad   = tonumber(self.SweepRadius) or 0.3
         local sweepRadSq = sweepRad * sweepRad
 
-        -- Endpoint movement segment prev→current for tunnelling check
         local segDX, segDY, segDZ = ex - px, ey - py, ez - pz
         local segLenSq = segDX*segDX + segDY*segDY + segDZ*segDZ
+
+        -- ── Throwable mode: single root-entity check ───────────────────────
+        if self._isThrowable then
+            if not self._rootEntityId then return end
+            repeat
+                local transform = Engine.FindTransformByID(self._rootEntityId)
+                if not transform then break end
+
+                local p = Engine.GetTransformWorldPosition(transform)
+                local partX, partY, partZ
+                if type(p) == "table" then
+                    partX = p[1] or p.x or 0.0
+                    partY = p[2] or p.y or 0.0
+                    partZ = p[3] or p.z or 0.0
+                else
+                    partX, partY, partZ = p or 0.0, 0.0, 0.0
+                end
+
+                local closestX, closestY, closestZ
+                if segLenSq < 1e-8 then
+                    closestX, closestY, closestZ = ex, ey, ez
+                else
+                    local t = ((partX-px)*segDX + (partY-py)*segDY + (partZ-pz)*segDZ) / segLenSq
+                    t = math.max(0, math.min(1, t))
+                    closestX = px + segDX * t
+                    closestY = py + segDY * t
+                    closestZ = pz + segDZ * t
+                end
+
+                local ddx = partX - closestX
+                local ddy = partY - closestY
+                local ddz = partZ - closestZ
+                if ddx*ddx + ddy*ddy + ddz*ddz > sweepRadSq then break end
+
+                -- LOS check toward root
+                local toPX   = partX - ex
+                local toPY   = partY - ey
+                local toPZ   = partZ - ez
+                local toDist = math.sqrt(toPX*toPX + toPY*toPY + toPZ*toPZ)
+                local hasLOS = true
+                if Physics and toDist > 1e-4 then
+                    local ndx = toPX / toDist
+                    local ndy = toPY / toDist
+                    local ndz = toPZ / toDist
+                    if Physics.RaycastFull then
+                        local ok, hit, hitDist, _, _, _, _, _, _, hitBodyId = pcall(function()
+                            return Physics.RaycastFull(ex, ey, ez, ndx, ndy, ndz, toDist)
+                        end)
+                        if ok and hit and hitDist and hitDist < toDist - 0.05 then
+                            hasLOS = (hitBodyId == self._rootEntityId)
+                        end
+                    elseif Physics.Raycast then
+                        local ok, hitDist = pcall(function()
+                            return Physics.Raycast(ex, ey, ez, ndx, ndy, ndz, toDist)
+                        end)
+                        if ok and hitDist and hitDist > 0 and hitDist < toDist - 0.05 then
+                            hasLOS = false
+                        end
+                    end
+                end
+                if not hasLOS then break end
+
+                self._sweepFired = true
+                if _G.event_bus and _G.event_bus.publish and self._entityId then
+                    _G.event_bus.publish("chain.lockon_sweep_hit", {
+                        entityId = self._entityId,   -- the LockOnPoint entity (may be root for throwables)
+                        partId   = self._rootEntityId,
+                        partX    = partX,
+                        partY    = partY,
+                        partZ    = partZ,
+                    })
+                end
+                return
+            until true
+            return
+        end
+
+        -- ── Enemy mode: iterate PartEntityIds (original logic) ────────────
+        local ids = self.PartEntityIds
+        if not ids or #ids == 0 then return end
 
         for i = 1, #ids do
             local id = tonumber(ids[i])
             if not id or id == 0 then
-                -- skip unset/empty slots in the editor-populated list
+                -- skip unset/empty slots
             else
             repeat
                 local transform = Engine.FindTransformByID(id)
@@ -176,7 +306,6 @@ return Component {
                     partX, partY, partZ = p or 0.0, 0.0, 0.0
                 end
 
-                -- Find closest point on the endpoint movement segment to this part
                 local closestX, closestY, closestZ
                 if segLenSq < 1e-8 then
                     closestX, closestY, closestZ = ex, ey, ez
@@ -191,22 +320,17 @@ return Component {
                 local ddx = partX - closestX
                 local ddy = partY - closestY
                 local ddz = partZ - closestZ
-
-                -- Radius check: closest point on segment must be within SweepRadius of the part
                 if ddx*ddx + ddy*ddy + ddz*ddz > sweepRadSq then break end
 
-                -- LOS check: raycast from current endpoint position toward part
-                local toPX = partX - ex
-                local toPY = partY - ey
-                local toPZ = partZ - ez
+                local toPX   = partX - ex
+                local toPY   = partY - ey
+                local toPZ   = partZ - ez
                 local toDist = math.sqrt(toPX*toPX + toPY*toPY + toPZ*toPZ)
                 local hasLOS = true
-
                 if Physics and toDist > 1e-4 then
                     local ndx = toPX / toDist
                     local ndy = toPY / toDist
                     local ndz = toPZ / toDist
-
                     if Physics.RaycastFull then
                         local ok, hit, hitDist, _, _, _, _, _, _, hitBodyId = pcall(function()
                             return Physics.RaycastFull(ex, ey, ez, ndx, ndy, ndz, toDist)
@@ -223,10 +347,8 @@ return Component {
                         end
                     end
                 end
-
                 if not hasLOS then break end
 
-                -- Hit confirmed — publish sweep hit and stop checking
                 self._sweepFired = true
                 if _G.event_bus and _G.event_bus.publish and self._entityId then
                     _G.event_bus.publish("chain.lockon_sweep_hit", {
@@ -239,7 +361,7 @@ return Component {
                 end
                 return
             until true
-            end -- if id valid
+            end
         end
     end,
 
