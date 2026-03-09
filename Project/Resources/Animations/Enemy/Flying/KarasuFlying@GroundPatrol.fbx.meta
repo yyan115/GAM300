@@ -1,0 +1,11 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "000f98f730b4c617-00046f5cb6000015",
+        "source": "../../Resources/Animations/Enemy/Flying/KarasuFlying@GroundPatrol.fbx",
+        "compiled": "../../Resources/Animations/Enemy/Flying/KarasuFlying@GroundPatrol.mesh"
+    },
+    "ModelMetaData": {
+        "optimizeMeshes": true
+    }
+}

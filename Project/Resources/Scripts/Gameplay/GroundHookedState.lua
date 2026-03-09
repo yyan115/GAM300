@@ -9,6 +9,28 @@ local function toDtSec(dt)
     return dtSec
 end
 
+local function reachedPlayer(ai)
+    local tr = ai._playerTr
+    if not tr then
+        tr = Engine.FindTransformByName(ai.PlayerName or "Player")
+        ai._playerTr = tr
+    end
+    if not tr then return false end
+
+    local pp = Engine.GetTransformPosition(tr)
+    if not pp then return false end
+    local px, pz = pp[1], pp[3]
+
+    local ex, ez = ai:GetEnemyPosXZ()
+    if ex == nil or ez == nil then return false end
+
+    local dx, dz = px - ex, pz - ez
+    local d2 = dx*dx + dz*dz
+
+    local stopR = tonumber(ai.HookStopDistance) or 1.2
+    return d2 <= (stopR * stopR)
+end
+
 function HookedState:Enter(ai)
     if ai._animator then
         ai._animator:SetBool("Hooked", true)
@@ -16,7 +38,8 @@ function HookedState:Enter(ai)
 
     ai._hookedTimer = 0
     ai.attackTimer = 0
-    ai._hookPullT = 0
+
+    ai._hookReachedPlayer = false
 
     -- Delay only if this hook was entered due to flying->ground conversion
     if ai._justConvertedFromFlying then
@@ -29,7 +52,6 @@ function HookedState:Enter(ai)
     if ai.ClearPath then ai:ClearPath() end
     if ai.StopCC then ai:StopCC() end
 end
-
 
 function HookedState:Update(ai, dt)
     local dtSec = toDtSec(dt)
@@ -47,14 +69,23 @@ function HookedState:Update(ai, dt)
     if ai._hookedLandingTimer and ai._hookedLandingTimer > 0 then
         ai._hookedLandingTimer = ai._hookedLandingTimer - dtSec
         if ai._hookedLandingTimer < 0 then ai._hookedLandingTimer = 0 end
-        -- keep enemy still during this “impact / stagger” window
         if ai.StopCC then ai:StopCC() end
         return
     end
 
-    -- PULL toward player every frame while hooked
-    if ai.PullTowardPlayer then
-        ai:PullTowardPlayer(dtSec)
+    if not ai._hookReachedPlayer then
+        if reachedPlayer(ai) then
+            ai._hookReachedPlayer = true
+            if ai.StopCC then ai:StopCC() end
+        else
+            -- PULL toward player every frame while hooked
+            if ai.PullTowardPlayer then
+                ai:PullTowardPlayer(dtSec)
+            end
+        end
+    else
+        -- keep still (prevents micro-movement / run-in-place)
+        if ai.StopCC then ai:StopCC() end
     end
 
     -- Exit hooked after duration
@@ -79,6 +110,7 @@ function HookedState:Exit(ai)
     if ai.StopCC then ai:StopCC() end
 
     ai._hookedLandingTimer = nil
+    ai._hookReachedPlayer = nil
 end
 
 return HookedState

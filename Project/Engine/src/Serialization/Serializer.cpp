@@ -642,6 +642,7 @@ rapidjson::Value Serializer::SerializeEntity(Entity entity, rapidjson::Document:
         v.AddMember("bloomEnabled", c.bloomEnabled, alloc);
         v.AddMember("bloomThreshold", c.bloomThreshold, alloc);
         v.AddMember("bloomIntensity", c.bloomIntensity, alloc);
+        v.AddMember("bloomSpread", c.bloomSpread, alloc);
         v.AddMember("vignetteEnabled", c.vignetteEnabled, alloc);
         v.AddMember("vignetteIntensity", c.vignetteIntensity, alloc);
         v.AddMember("vignetteSmoothness", c.vignetteSmoothness, alloc);
@@ -1019,6 +1020,7 @@ void Serializer::SerializePrefabInstanceDelta(ECSManager& sceneECS, Entity insta
             v.AddMember("bloomEnabled", c.bloomEnabled, a);
             v.AddMember("bloomThreshold", c.bloomThreshold, a);
             v.AddMember("bloomIntensity", c.bloomIntensity, a);
+            v.AddMember("bloomSpread", c.bloomSpread, a);
             v.AddMember("vignetteEnabled", c.vignetteEnabled, a);
             v.AddMember("vignetteIntensity", c.vignetteIntensity, a);
             v.AddMember("vignetteSmoothness", c.vignetteSmoothness, a);
@@ -2937,16 +2939,19 @@ void Serializer::DeserializeSpriteComponent(SpriteRenderComponent& spriteComp, c
                         spriteComp.fillMode = Serializer::GetInt(d, startIdx + 12, 0);
                     }
                     if (d.Size() > static_cast<rapidjson::SizeType>(startIdx + 13)) {
-                        spriteComp.fillMaxValue = Serializer::GetFloat(d, startIdx + 13, 1.0f);
+                        spriteComp.fillDirection = Serializer::GetInt(d, startIdx + 13, 0);
                     }
                     if (d.Size() > static_cast<rapidjson::SizeType>(startIdx + 14)) {
-                        spriteComp.fillValue = Serializer::GetFloat(d, startIdx + 14, 1.0f);
+                        spriteComp.fillMaxValue = Serializer::GetFloat(d, startIdx + 14, 1.0f);
                     }
                     if (d.Size() > static_cast<rapidjson::SizeType>(startIdx + 15)) {
-                        spriteComp.fillGlow = Serializer::GetFloat(d, startIdx + 15, 0.5f);
+                        spriteComp.fillValue = Serializer::GetFloat(d, startIdx + 15, 1.0f);
                     }
                     if (d.Size() > static_cast<rapidjson::SizeType>(startIdx + 16)) {
-                        spriteComp.fillBackground = Serializer::GetFloat(d, startIdx + 16, 0.3f);
+                        spriteComp.fillGlow = Serializer::GetFloat(d, startIdx + 16, 0.5f);
+                    }
+                    if (d.Size() > static_cast<rapidjson::SizeType>(startIdx + 17)) {
+                        spriteComp.fillBackground = Serializer::GetFloat(d, startIdx + 17, 0.3f);
                     }
                 }
                 else {
@@ -3624,6 +3629,8 @@ void Serializer::DeserializeCameraComponent(CameraComponent& cameraComp, const r
         cameraComp.bloomThreshold = cameraJSON["bloomThreshold"].GetFloat();
     if (cameraJSON.HasMember("bloomIntensity") && cameraJSON["bloomIntensity"].IsNumber())
         cameraComp.bloomIntensity = cameraJSON["bloomIntensity"].GetFloat();
+    if (cameraJSON.HasMember("bloomSpread") && cameraJSON["bloomSpread"].IsNumber())
+        cameraComp.bloomSpread = cameraJSON["bloomSpread"].GetFloat();
     if (cameraJSON.HasMember("vignetteEnabled") && cameraJSON["vignetteEnabled"].IsBool())
         cameraComp.vignetteEnabled = cameraJSON["vignetteEnabled"].GetBool();
     if (cameraJSON.HasMember("vignetteIntensity") && cameraJSON["vignetteIntensity"].IsNumber())

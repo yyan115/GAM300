@@ -106,6 +106,9 @@ public:
 
     AABB GetBoundingBox() const { return modelBoundingBox; }
 
+    // Force material re-extraction on next compile (used by reimport)
+    static bool forceReimportMaterials;
+
     void CalculateBoundingBox() 
     {
         if (meshes.empty()) 
@@ -148,6 +151,6 @@ private:
 	void WriteModelNode(std::ofstream& meshFile, const ModelNode& node);
 	void ReadModelNode(std::vector<unsigned char>& buffer, size_t& offset, ModelNode& node);
 
-    void LoadMaterialTexture(std::shared_ptr<Material> material, aiMaterial* mat, aiTextureType type, std::string typeName);
+    void LoadMaterialTexture(std::shared_ptr<Material> material, aiMaterial* mat, aiTextureType type, std::string typeName, Material::TextureType targetType = Material::TextureType::NONE);
     AABB modelBoundingBox;
 };

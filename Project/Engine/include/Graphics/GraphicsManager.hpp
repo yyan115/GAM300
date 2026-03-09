@@ -126,6 +126,10 @@ public:
 
     const SortingStats& GetSortingStats() const { return m_sortingStats; }
 
+    // Environment reflection state (read by instancing manager)
+    bool IsEnvReflectionActive() const { return envReflectionActive; }
+    float GetEnvReflectionIntensity() const { return envReflectionIntensityValue; }
+
 private:
     GraphicsManager() = default;
     ~GraphicsManager() = default;
@@ -213,6 +217,10 @@ private:
     // Track current bound state to avoid redundant switches
     Shader* m_currentShader = nullptr;
     Material* m_currentMaterial = nullptr;
+
+    // Environment reflection state (set per-frame from active camera)
+    bool envReflectionActive = false;
+    float envReflectionIntensityValue = 1.0f;
 
     void RenderModelOptimized(const ModelRenderComponent& item);
 

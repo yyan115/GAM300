@@ -2645,6 +2645,10 @@ void InspectorPanel::ProcessPendingComponentRemovals() {
 				ecsManager.RemoveComponent<SpriteRenderComponent>(request.entity);
 				std::cout << "[Inspector] Removed SpriteRenderComponent from entity " << request.entity << std::endl;
 			}
+			else if (request.componentType == "SpriteAnimationComponent") {
+				ecsManager.RemoveComponent<SpriteAnimationComponent>(request.entity);
+				std::cout << "[Inspector] Removed SpriteAnimationComponent from entity " << request.entity << std::endl;
+			}
 			else if (request.componentType == "TextRenderComponent") {
 				ecsManager.RemoveComponent<TextRenderComponent>(request.entity);
 				std::cout << "[Inspector] Removed TextRenderComponent from entity " << request.entity << std::endl;

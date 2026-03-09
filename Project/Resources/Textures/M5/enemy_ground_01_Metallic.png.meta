@@ -6,7 +6,7 @@
         "compiled": "../../Resources/Textures/M5/enemy_ground_01_Metallic.dds"
     },
     "TextureMetaData": {
-        "type": "diffuse",
+        "type": "metallic",
         "flipUVs": false,
         "generateMipmaps": true,
         "textureWrapMode": "Clamp"

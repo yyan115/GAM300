@@ -30,10 +30,13 @@ function BattlecryState:Update(ai, dt)
     if ai._introTimer >= (ai.IntroDuration or 5.0) then
         ai._inIntro = false
         ai:UnlockActions()
-        ai._recoverTimer = math.max(ai.RecoverDuration or 0.6, 0.35)
-        print("[Miniboss] Intro END -> Combat")
-        ai.fsm:Change("Recover", ai.states.Recover) -- small recovery before first move
-        ai._audio.SpatialBlend = 1
+
+        -- NEW SYSTEM: just use a timer, no FSM combat states
+        ai._postIntroRecoverT = math.max(ai.RecoverDuration or 0.6, 0.35)
+
+        print("[Miniboss] Intro END -> Combat (new system)")
+
+        if ai._audio then ai._audio.SpatialBlend = 1 end
     end
 end
 

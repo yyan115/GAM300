@@ -1,0 +1,11 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "006bd5bb34801a0e-00046ab56a000011",
+        "source": "../../Resources/Animations/Enemy/Ground/KarasuGroundVar@Death.fbx",
+        "compiled": "../../Resources/Animations/Enemy/Ground/KarasuGroundVar@Death.mesh"
+    },
+    "ModelMetaData": {
+        "optimizeMeshes": true
+    }
+}

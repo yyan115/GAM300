@@ -128,10 +128,10 @@ void Material::ApplyToShader(Shader& shader) const
 	shader.setFloat("material.shininess", m_shininess);
 	shader.setFloat("material.opacity", m_opacity);
 
-	// Apply PBR properties - For Future Use
-	//shader.setFloat("material.metallic", m_metallic);
-	//shader.setFloat("material.roughness", m_roughness);
-	//shader.setFloat("material.ao", m_ao);
+	// PBR properties
+	shader.setFloat("material.metallic", m_metallic);
+	shader.setFloat("material.roughness", m_roughness);
+	shader.setFloat("material.ao", m_ao);
 
 	// DEBUG: Print emissive value
 	//static int callCount = 0;
@@ -158,6 +158,10 @@ void Material::BindTextures(Shader& shader) const
 	bool hasSpecular = HasTexture(TextureType::SPECULAR);
 	bool hasNormal = HasTexture(TextureType::NORMAL);
 	bool hasEmissive = HasTexture(TextureType::EMISSIVE);
+	bool hasHeight = HasTexture(TextureType::HEIGHT);
+	bool hasAO = HasTexture(TextureType::AMBIENT_OCCLUSION);
+	bool hasMetallic = HasTexture(TextureType::METALLIC);
+	bool hasRoughness = HasTexture(TextureType::ROUGHNESS);
 
 #if defined(ANDROID) || defined(__ANDROID__)
 	// Android shader has samplers outside of Material struct (OpenGL ES compatibility)
@@ -172,17 +176,20 @@ void Material::BindTextures(Shader& shader) const
 	shader.setBool("hasSpecularMap", hasSpecular);
 	shader.setBool("hasNormalMap", hasNormal);
 	shader.setBool("hasEmissiveMap", hasEmissive);
+	shader.setBool("hasHeightMap", hasHeight);
+	shader.setBool("hasAOMap", hasAO);
+	shader.setBool("hasMetallicMap", hasMetallic);
+	shader.setBool("hasRoughnessMap", hasRoughness);
 #else
 	shader.setBool("material.hasDiffuseMap", hasDiffuse);
 	shader.setBool("material.hasSpecularMap", hasSpecular);
 	shader.setBool("material.hasNormalMap", hasNormal);
 	shader.setBool("material.hasEmissiveMap", hasEmissive);
+	shader.setBool("material.hasHeightMap", hasHeight);
+	shader.setBool("material.hasAOMap", hasAO);
+	shader.setBool("material.hasMetallicMap", hasMetallic);
+	shader.setBool("material.hasRoughnessMap", hasRoughness);
 #endif
-	// For Future Use
-	/*shader.setBool("material.hasHeightMap", hasTexture(TextureType::HEIGHT));
-	shader.setBool("material.hasAOMap", hasTexture(TextureType::AMBIENT_OCCLUSION));
-	shader.setBool("material.hasMetallicMap", hasTexture(TextureType::METALLIC));
-	shader.setBool("material.hasRoughnessMap", hasTexture(TextureType::ROUGHNESS));*/
 
 	// Bind each texture type
 	for (auto it = m_textureInfo.begin(); it != m_textureInfo.end(); ++it)

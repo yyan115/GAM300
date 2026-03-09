@@ -32,6 +32,7 @@ REFL_REGISTER_START(CameraComponent)
 	REFL_REGISTER_PROPERTY(bloomEnabled)
 	REFL_REGISTER_PROPERTY(bloomThreshold)
 	REFL_REGISTER_PROPERTY(bloomIntensity)
+	REFL_REGISTER_PROPERTY(bloomSpread)
 	REFL_REGISTER_PROPERTY(vignetteEnabled)
 	REFL_REGISTER_PROPERTY(vignetteIntensity)
 	REFL_REGISTER_PROPERTY(vignetteSmoothness)
@@ -43,5 +44,12 @@ REFL_REGISTER_START(CameraComponent)
 	REFL_REGISTER_PROPERTY(chromaticAberrationEnabled)
 	REFL_REGISTER_PROPERTY(chromaticAberrationIntensity)
 	REFL_REGISTER_PROPERTY(chromaticAberrationPadding)
+	// SSAO
+	REFL_REGISTER_PROPERTY(ssaoEnabled)
+	REFL_REGISTER_PROPERTY(ssaoRadius)
+	REFL_REGISTER_PROPERTY(ssaoIntensity)
+	// Environment Reflections
+	REFL_REGISTER_PROPERTY(envReflectionEnabled)
+	REFL_REGISTER_PROPERTY(envReflectionIntensity)
 REFL_REGISTER_END
 #pragma endregion

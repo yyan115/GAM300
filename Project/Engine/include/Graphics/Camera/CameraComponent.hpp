@@ -86,6 +86,7 @@ public:
     bool bloomEnabled = false;
     float bloomThreshold = 1.0f;
     float bloomIntensity = 1.0f;
+    float bloomSpread = 0.5f;
 
     // === Post-Processing: Vignette ===
     bool vignetteEnabled = false;
@@ -104,6 +105,15 @@ public:
     bool chromaticAberrationEnabled = false;
     float chromaticAberrationIntensity = 0.5f;  // Strength of RGB separation (0-3)
     float chromaticAberrationPadding = 0.5f;    // Edge falloff: 0 = everywhere, 1 = only at very edges
+
+    // === Post-Processing: SSAO ===
+    bool ssaoEnabled = false;
+    float ssaoRadius = 0.5f;
+    float ssaoIntensity = 1.0f;
+
+    // === Environment Reflections ===
+    bool envReflectionEnabled = true;
+    float envReflectionIntensity = 1.0f;
 
     CameraComponent() = default;
     ~CameraComponent() = default;

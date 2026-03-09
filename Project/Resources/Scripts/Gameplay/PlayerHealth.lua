@@ -32,6 +32,30 @@ local function PlayerTakeDmg(self, dmg)
     self._knifeHitPlayer = false
 end
 
+local function clamp(v, a, b)
+    if v < a then return a end
+    if v > b then return b end
+    return v
+end
+
+local function playerCellFromXZ(px, pz, cx, cz, step)
+    step = step or 4.0
+    cx = cx or 0.0
+    cz = cz or 0.0
+
+    local ix = math.floor((px - cx)/step + 0.5)
+    local iz = math.floor((pz - cz)/step + 0.5)
+    ix = clamp(ix, -1, 1)
+    iz = clamp(iz, -1, 1)
+
+    local map = {
+        ["-1,-1"]=1, ["0,-1"]=2, ["1,-1"]=3,
+        ["-1,0"]=4,  ["0,0"]=5,  ["1,0"]=6,
+        ["-1,1"]=7,  ["0,1"]=8,  ["1,1"]=9,
+    }
+    return map[tostring(ix)..","..tostring(iz)] or 5
+end
+
 return Component {
     mixins = { TransformMixin },
 
@@ -195,6 +219,63 @@ return Component {
                 end
             end)
             print("[PlayerHealth] Subscribed to boss_shout_aoe: " .. tostring(self._bossShoutAoeSub))
+
+            print("[PlayerHealth] Subscribing to boss_rain_explosives (INSTANT)")
+            self._bossRainExplosivesSub = event_bus.subscribe("boss_rain_explosives", function(payload)
+                if not payload then return end
+                if self.CurrentHealth <= 0 then return end
+                if self._isIFrame then return end
+
+                -- payload expected:
+                -- cells (array), dmg, step, cx, cz
+                local px, py, pz = self:GetPosition()
+                if not px then return end
+
+                local step = payload.step or 4.0
+                local cx   = payload.cx or 0.0
+                local cz   = payload.cz or 0.0
+
+                local cell = playerCellFromXZ(px, pz, cx, cz, step)
+
+                local cells = payload.cells or {}
+                local onDanger = false
+                for i = 1, #cells do
+                    if cells[i] == cell then
+                        onDanger = true
+                        break
+                    end
+                end
+
+                print(string.format(
+                    "[PlayerHealth] rain_explosives INSTANT check: playerCell=%d dmg=%s onDanger=%s cellsCount=%d",
+                    cell, tostring(payload.dmg), tostring(onDanger), #cells
+                ))
+
+                if onDanger then
+                    PlayerTakeDmg(self, payload.dmg or 1)
+                    self._isIFrame = true
+                end
+            end)
+            print("[PlayerHealth] Subscribed to boss_rain_explosives: " .. tostring(self._bossRainExplosivesSub))
+
+            print("[PlayerHealth] Subscribing to boss_dive_impact")
+            self._bossDiveImpactSub = event_bus.subscribe("boss_dive_impact", function(payload)
+                if not payload then return end
+                if self._isIFrame then return end
+
+                local px, py, pz = self:GetPosition()
+                if not px then return end
+
+                local dx = px - (payload.x or 0)
+                local dz = pz - (payload.z or 0)
+                local r  = (payload.radius or 1.4)
+
+                if (dx*dx + dz*dz) <= (r*r) then
+                    PlayerTakeDmg(self, payload.dmg or 1)
+                    self._isIFrame = true
+                end
+            end)
+            print("[PlayerHealth] Subscribed to boss_dive_impact: " .. tostring(self._bossDiveImpactSub))
 
             print("[PlayerHealth] Subscribing to playerHeal")
             self._playerHealSub = event_bus.subscribe("playerHeal", function(amount)

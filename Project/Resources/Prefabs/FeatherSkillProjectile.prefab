@@ -2,7 +2,7 @@
     "prefab_entities": [
         {
             "id": 0,
-            "guid": "0041bbedb3efab9a-000467cd320c3a89",
+            "guid": "0066d2df00411ec1-00046a603a08dee9",
             "components": {
                 "PrefabLinkComponent": {
                     "type": "PrefabLinkComponent",
@@ -170,13 +170,144 @@
                         }
                     ]
                 },
+                "ParticleComponent": {
+                    "type": "ParticleComponent",
+                    "data": [
+                        {
+                            "type": "bool",
+                            "data": true
+                        },
+                        "001b4a95e1e5aaba-0003ef19b4000005",
+                        {
+                            "type": "Vector3D",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                }
+                            ]
+                        },
+                        {
+                            "type": "float",
+                            "data": 50
+                        },
+                        {
+                            "type": "int",
+                            "data": 1000
+                        },
+                        {
+                            "type": "float",
+                            "data": 0.5
+                        },
+                        {
+                            "type": "float",
+                            "data": 0.05
+                        },
+                        {
+                            "type": "float",
+                            "data": 0
+                        },
+                        {
+                            "type": "Vector3D",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                }
+                            ]
+                        },
+                        {
+                            "type": "float",
+                            "data": 1
+                        },
+                        {
+                            "type": "Vector3D",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                }
+                            ]
+                        },
+                        {
+                            "type": "float",
+                            "data": 1
+                        },
+                        {
+                            "type": "Vector3D",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": -0.01
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                }
+                            ]
+                        },
+                        {
+                            "type": "float",
+                            "data": 0
+                        },
+                        {
+                            "type": "Vector3D",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                }
+                            ]
+                        },
+                        {
+                            "type": "bool",
+                            "data": false
+                        }
+                    ]
+                },
                 "ChildrenComponent": {
                     "type": "ChildrenComponent",
                     "data": [
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "0041bbedd8e35ee1-000467cd320c3a8b"
+                                "0066d2df19f7a562-00046a603a08deeb"
                             ]
                         }
                     ]
@@ -362,7 +493,7 @@
                         },
                         {
                             "type": "unsigned",
-                            "data": 104
+                            "data": 129
                         },
                         {
                             "type": "int",
@@ -377,7 +508,7 @@
                                 },
                                 {
                                     "type": "float",
-                                    "data": 0.2
+                                    "data": 0.1
                                 },
                                 {
                                     "type": "float",
@@ -414,7 +545,7 @@
                                 },
                                 {
                                     "type": "float",
-                                    "data": 0.05
+                                    "data": 0.08
                                 },
                                 {
                                     "type": "float",
@@ -460,21 +591,49 @@
                             "entryFunction": "OnInit",
                             "autoInvokeEntry": true,
                             "instanceState": {
-                                "__meta": {},
-                                "__created_at": 1772633527.0,
-                                "ProjectileDamage": 1.0,
-                                "_private": {},
-                                "FeatherRemnantPrefabPath": "Resources/Prefabs/FeatherSkillProjectileRemnant.prefab",
-                                "__field_list": {
-                                    "PlayerEntityName": "Player",
-                                    "FeatherRemnantPrefabPath": "Resources/Prefabs/FeatherSkillProjectileRemnant.prefab"
-                                },
-                                "PlayerEntityName": "Player",
-                                "ColliderDisabledDuration": 0.7,
+                                "OnTriggerEnter": null,
+                                "Awake": null,
+                                "ProjectileSpeed": 5.0,
+                                "SetRotation": null,
                                 "SpawnRemnantOffset": 1.0,
                                 "_transform_fetched": false,
+                                "SetPosition": null,
+                                "OnDisable": null,
+                                "Unsubscribe": null,
+                                "AwakeSafe": null,
+                                "__field_list": {
+                                    "FeatherRemnantPrefabPath": "Resources/Prefabs/FeatherSkillProjectileRemnant.prefab",
+                                    "PlayerEntityName": "Player"
+                                },
+                                "Subscribe": null,
+                                "Every": null,
+                                "StartSafe": null,
+                                "SetScale": null,
+                                "After": null,
+                                "GetRotation": null,
+                                "GetScale": null,
+                                "Update": null,
                                 "RigidbodyKinematicDuration": 0.7,
-                                "_subscriptions": {}
+                                "UpdateSafe": null,
+                                "DebugTransform": null,
+                                "DeserializeFields": null,
+                                "SerializeFields": null,
+                                "Start": null,
+                                "PlayerEntityName": "Player",
+                                "ColliderDisabledDuration": 0.7,
+                                "_private": {},
+                                "Destroy": null,
+                                "DisableSafe": null,
+                                "Move": null,
+                                "__created_at": 1772633527.0,
+                                "_call_lifecycle": null,
+                                "_subscriptions": {},
+                                "GetTransform": null,
+                                "GetPosition": null,
+                                "_toRoot": null,
+                                "__meta": {},
+                                "ProjectileDamage": 1.0,
+                                "FeatherRemnantPrefabPath": "Resources/Prefabs/FeatherSkillProjectileRemnant.prefab"
                             }
                         }
                     ]
@@ -504,7 +663,7 @@
         },
         {
             "id": 1,
-            "guid": "0041bbedd8e35ee1-000467cd320c3a8b",
+            "guid": "0066d2df19f7a562-00046a603a08deeb",
             "components": {
                 "NameComponent": {
                     "name": "Feather"
@@ -581,7 +740,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "0041bbedb3efab9a-000467cd320c3a89"
+                        "0066d2df00411ec1-00046a603a08dee9"
                     ]
                 },
                 "ActiveComponent": {

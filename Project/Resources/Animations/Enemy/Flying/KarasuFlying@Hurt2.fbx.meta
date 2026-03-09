@@ -1,0 +1,11 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "0021c3845a6dad42-00046c18a8001b45",
+        "source": "../../Resources/Animations/Enemy/Flying/KarasuFlying@Hurt2.fbx",
+        "compiled": "../../Resources/Animations/Enemy/Flying/KarasuFlying@Hurt2.mesh"
+    },
+    "ModelMetaData": {
+        "optimizeMeshes": true
+    }
+}

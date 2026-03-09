@@ -37,6 +37,7 @@ return Component {
 
     Start = function(self)
         self._transform = self:GetComponent("Transform")
+        self._maxHealthScale = self._transform.localScale.x
 
         -- Get the HealthBarFill entity
         self._healthBarFillEntity = Engine.GetEntityByName(self.healthBarFillName)
@@ -67,7 +68,7 @@ return Component {
         end
 
         -- Update HealthBarFillFollow (this entity) immediately
-        self._transform.localScale.x = healthPercentage
+        self._transform.localScale.x = healthPercentage * self._maxHealthScale
         self._transform.localPosition.x = -(1.0 - healthPercentage) * 0.5
         self._transform.isDirty = true
 
@@ -83,7 +84,7 @@ return Component {
             -- Only update fill bar after delay
             if self._delayTimer >= self.followDelay then
                 -- Smoothly interpolate toward target scale
-                local targetScale = healthPercentage
+                local targetScale = healthPercentage * self._maxHealthScale
                 self._currentFillScale = self._currentFillScale or targetScale
 
                 -- Lerp toward target
@@ -95,7 +96,7 @@ return Component {
                 end
 
                 self._healthBarFillTransform.localScale.x = self._currentFillScale
-                self._healthBarFillTransform.localPosition.x = -(1.0 - self._currentFillScale) * 0.5
+                self._healthBarFillTransform.localPosition.x = -(self._maxHealthScale - self._currentFillScale) * 0.5
                 self._healthBarFillTransform.isDirty = true
             else
                 self._delayTimer = self._delayTimer + dt

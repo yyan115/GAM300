@@ -93,9 +93,18 @@ void HDREffect::Apply(unsigned int inputTexture, unsigned int outputFBO, int wid
     shader->setFloat("caIntensity", caIntensity);
     shader->setFloat("caPadding", caPadding);
 
+    // SSAO uniforms
+    shader->setBool("ssaoEnabled", ssaoEnabled);
+    shader->setInt("ssaoTexture", 1);
+
     // Bind input HDR texture
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, inputTexture);
+
+    // Bind SSAO texture
+    glActiveTexture(GL_TEXTURE1);
+    glBindTexture(GL_TEXTURE_2D, ssaoEnabled ? ssaoTexture : 0);
+    glActiveTexture(GL_TEXTURE0);
 
     // Render fullscreen quad (provided by PostProcessingManager)
     PostProcessingManager::GetInstance().RenderScreenQuad();

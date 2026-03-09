@@ -253,6 +253,8 @@ return Component {
         self._transform = self:GetComponent("Transform")
         self._rb        = self:GetComponent("RigidBodyComponent")
         self.particles  = self:GetComponent("ParticleComponent")
+
+        self._entityName = Engine.GetEntityName(self.entityId)
         self._featherEntities = {}
 
         if self._controller then
@@ -345,6 +347,13 @@ return Component {
                 local damage = payload.damage or 10
                 local hitType = payload.hitType or "COMBO"
                 self:ApplyHit(damage, hitType)
+            end)
+
+            self._chainEndpointHitSub = _G.event_bus.subscribe("chain.endpoint_hit_entity", function(payload)
+                if not payload then return end
+                if payload.rootName ~= self._entityName then return end
+                print("[EnemyAI] chain.endpoint_hit_entity received")
+                self._animator:SetTrigger("Hooked")
             end)
 
             self._chainHookSub = _G.event_bus.subscribe("chain.enemy_hooked", function(payload)
@@ -843,11 +852,9 @@ return Component {
         return false
     end,
 
-     -- Pull enemy toward player 
     PullTowardPlayer = function(self, dtSec)
         if not self._controller then return end
         if (self._kbT or 0) > 0 then
-            -- let knockback override hook pull
             return
         end
 
@@ -868,7 +875,7 @@ return Component {
         local dx, dz = px - ex, pz - ez
         local d2 = dx*dx + dz*dz
 
-        -- stop once close enough (prevents jitter at the end)
+        -- stop once close enough
         local stopR = self.HookStopDistance or 1.2
         if d2 <= (stopR * stopR) then
             self:StopCC()
@@ -883,19 +890,9 @@ return Component {
 
         local dirX, dirZ = dx / d, dz / d
 
-        -- Two-phase pull: short stagger, then hard pull into melee range
-        self._hookPullT = (self._hookPullT or 0) + (dtSec or 0)
-
-        local staggerTime = tonumber(self.HookStaggerTime) or 1.0
-
-        local pullSpeed, maxStep
-        if self._hookPullT < staggerTime then
-            pullSpeed = tonumber(self.HookStaggerSpeed) or 10.0
-            maxStep   = tonumber(self.HookStaggerMaxStep) or 0.08
-        else
-            pullSpeed = tonumber(self.HookHardSpeed) or (tonumber(self.HookPullSpeed) or 60.0)
-            maxStep   = tonumber(self.HookHardMaxStep) or 0.35
-        end
+        -- ONE quick hard pull only
+        local pullSpeed = tonumber(self.HookHardSpeed) or 1200.0
+        local maxStep   = tonumber(self.HookHardMaxStep) or 600.0
 
         local step = pullSpeed * (dtSec or 0)
         if step > maxStep then step = maxStep end
@@ -1077,9 +1074,16 @@ return Component {
 
     BeginSlamDown = function(self)
         if not self:IsFlying() then return end
+        print("[EnemyAI] PULLDOWN")
+        self._animator:SetTrigger("Pulldown")
 
         self._slamActive = true
         self._slamVy = 0
+
+        -- Publish a chain.slam_chain event so the player knows to play the SlamChain animation.
+        if _G.event_bus and _G.event_bus.publish then
+            _G.event_bus.publish("chain.slam_chain", true)
+        end
     end,
 
     UpdateSlamDown = function(self, dtSec)
@@ -1091,6 +1095,7 @@ return Component {
         if x == nil then return false end
 
         local gy = 0
+        -- self._animator:SetBool("Hooked", false)
         if Nav and Nav.GetGroundY then
             local g = Nav.GetGroundY(self.entityId)
             if g ~= nil then gy = g end
@@ -1108,6 +1113,8 @@ return Component {
 
             self._slamActive = false
             self._slamVy = 0
+            print("[EnemyAI] SLAMMED")
+            self._animator:SetTrigger("Slammed")
             return true
         end
 
@@ -1407,6 +1414,11 @@ return Component {
 
         if self.fsm.currentName ~= "Hooked" then
             self.fsm:Change("Hooked", self.states.Hooked)
+        end
+
+        -- Publish a chain.pull_chain event so the player knows to play the PullChain animation.
+        if _G.event_bus and _G.event_bus.publish then
+            _G.event_bus.publish("chain.pull_chain", true)
         end
     end,
 

@@ -313,10 +313,29 @@ bool ReflectionRenderer::RenderVector3D(const char* fieldName, void* fieldPtr) {
 }
 
 bool ReflectionRenderer::RenderQuaternion(const char* fieldName, void* fieldPtr) {
+    // Euler hint cache: avoids quaternion→euler round-trip that clamps pitch to ±90°
+    static std::unordered_map<const void*, Vector3D> eulerHints;
+    static std::unordered_map<const void*, Quaternion> lastQuats;
+
     Quaternion* quat = static_cast<Quaternion*>(fieldPtr);
 
-    // Convert to Euler angles for editing
-    Vector3D euler = quat->ToEulerDegrees();
+    // Detect external quaternion change → re-derive euler from quaternion
+    bool quatChangedExternally = false;
+    if (lastQuats.find(fieldPtr) != lastQuats.end()) {
+        Quaternion& lq = lastQuats[fieldPtr];
+        if (std::fabs(lq.w - quat->w) > 0.0001f || std::fabs(lq.x - quat->x) > 0.0001f ||
+            std::fabs(lq.y - quat->y) > 0.0001f || std::fabs(lq.z - quat->z) > 0.0001f) {
+            quatChangedExternally = true;
+        }
+    } else {
+        quatChangedExternally = true;
+    }
+
+    if (quatChangedExternally || eulerHints.find(fieldPtr) == eulerHints.end()) {
+        eulerHints[fieldPtr] = quat->ToEulerDegrees();
+    }
+
+    Vector3D& euler = eulerHints[fieldPtr];
 
     std::string displayName = CamelCaseToProperCase(fieldName);
     const float labelWidth = EditorComponents::GetLabelWidth();
@@ -327,11 +346,15 @@ bool ReflectionRenderer::RenderQuaternion(const char* fieldName, void* fieldPtr)
     float values[3] = { euler.x, euler.y, euler.z };
     std::string id = MakeFieldID(fieldName, fieldPtr);
 
-    if (UndoableWidgets::DragFloat3(id.c_str(), values, 1.0f, -180.0f, 180.0f, "%.1f")) {
-        *quat = Quaternion::FromEulerDegrees(Vector3D(values[0], values[1], values[2]));
+    // No min/max clamping (0.0f, 0.0f) to allow full 360° rotation
+    if (UndoableWidgets::DragFloat3(id.c_str(), values, 1.0f, 0.0f, 0.0f, "%.1f")) {
+        euler = Vector3D(values[0], values[1], values[2]);
+        *quat = Quaternion::FromEulerDegrees(euler);
+        lastQuats[fieldPtr] = *quat;
         return true;
     }
 
+    lastQuats[fieldPtr] = *quat;
     return false;
 }
 

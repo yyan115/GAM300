@@ -14,7 +14,8 @@
         "DialogueBox",
         "BlackScreen",
         "SkipButton",
-        "Checkpoint"
+        "Checkpoint",
+        "LockOn"
     ],
     "layers": [
         {
@@ -59,7 +60,7 @@
         },
         {
             "index": 10,
-            "name": "IgnoreBlur"
+            "name": "test"
         }
     ],
     "sortingLayers": [

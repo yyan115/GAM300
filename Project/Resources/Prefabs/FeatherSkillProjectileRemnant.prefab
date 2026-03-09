@@ -2,7 +2,7 @@
     "prefab_entities": [
         {
             "id": 0,
-            "guid": "006d61b58236606f-000467ab0015bd85",
+            "guid": "0066d2df5a926bf3-00046a6cb0136ab5",
             "components": {
                 "PrefabLinkComponent": {
                     "type": "PrefabLinkComponent",
@@ -176,7 +176,7 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "006d61b58a5d05ba-000467ab0015bd87"
+                                "0066d2df4006e0d1-00046a6cb0136ab7"
                             ]
                         }
                     ]
@@ -240,7 +240,7 @@
                         },
                         {
                             "type": "float",
-                            "data": 10
+                            "data": 20
                         },
                         {
                             "type": "float",
@@ -357,7 +357,22 @@
                             "enabled": true,
                             "preserveKeys": [],
                             "entryFunction": "OnInit",
-                            "autoInvokeEntry": true
+                            "autoInvokeEntry": true,
+                            "instanceState": {
+                                "_transform_fetched": false,
+                                "__field_list": {
+                                    "AliveDuration": 3.0
+                                },
+                                "AliveDuration": 3.0,
+                                "ConeSpread": 0.4,
+                                "__meta": {},
+                                "SpawnForceY": 1.0,
+                                "OnCollisionEnter": null,
+                                "_private": {},
+                                "__created_at": 1772706562.0,
+                                "_subscriptions": {},
+                                "SpawnForce": 1.0
+                            }
                         }
                     ]
                 },
@@ -386,7 +401,7 @@
         },
         {
             "id": 1,
-            "guid": "006d61b58a5d05ba-000467ab0015bd87",
+            "guid": "0066d2df4006e0d1-00046a6cb0136ab7",
             "components": {
                 "NameComponent": {
                     "name": "Feather"
@@ -463,7 +478,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "006d61b58236606f-000467ab0015bd85"
+                        "0066d2df5a926bf3-00046a6cb0136ab5"
                     ]
                 },
                 "ActiveComponent": {

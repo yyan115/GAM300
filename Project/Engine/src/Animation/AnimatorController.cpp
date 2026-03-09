@@ -8,6 +8,8 @@
 #include "Logging.hpp"
 #include "WindowManager.hpp"
 #include "Platform/IPlatform.h"
+#include <Utilities/FileUtilities.hpp>
+#include <Asset Manager/AssetManager.hpp>
 
 using namespace rapidjson;
 
@@ -169,6 +171,44 @@ bool AnimatorController::SaveToFile(const std::string& filePath) const
 	file.close();
 
 	ENGINE_PRINT("[AnimatorController] Saved controller to: ", filePath, "\n");
+
+	// Save to BOTH the Editor/Resources folder and the ROOT PROJECT Resources folder to ensure ALL prefab files are synced when saved.
+	std::filesystem::path editorResourcesPath(filePath.substr(filePath.find("Resources")));
+	if (filePath != editorResourcesPath.generic_string()) {
+		if (FileUtilities::StrictDirectoryExists(editorResourcesPath.parent_path())) {
+			if (FileUtilities::CopyFile(filePath, editorResourcesPath.generic_string())) {
+				ENGINE_LOG_INFO("[AnimatorController] Animator Controller saved to Editor/Resources: " + editorResourcesPath.generic_string());
+			}
+			else {
+				ENGINE_LOG_WARN("[AnimatorController] Failed to copy Animator Controller to Editor/Resources: " + editorResourcesPath.generic_string());
+			}
+		}
+		else {
+			ENGINE_LOG_WARN("[AnimatorController] Editor/Resources path does not exist: " + editorResourcesPath.generic_string());
+		}
+	}
+	else {
+		ENGINE_LOG_DEBUG("[AnimatorController] Current Animator Controller path is already in Editor/Resources: " + filePath);
+	}
+
+	std::filesystem::path projectRootPath(std::filesystem::path(AssetManager::GetInstance().GetRootAssetDirectory()) / std::filesystem::path(filePath.substr(filePath.find("Resources") + 10)));
+	if (filePath != projectRootPath.generic_string()) {
+		if (FileUtilities::StrictDirectoryExists(projectRootPath.parent_path())) {
+			if (FileUtilities::CopyFile(filePath, projectRootPath.generic_string())) {
+				ENGINE_LOG_INFO("[AnimatorController] Animator Controller saved to Root Project/Resources: " + projectRootPath.generic_string());
+			}
+			else {
+				ENGINE_LOG_WARN("[AnimatorController] Failed to copy Animator Controller to Root Project/Resources: " + projectRootPath.generic_string());
+			}
+		}
+		else {
+			ENGINE_LOG_WARN("[AnimatorController] Root Project/Resources path does not exist: " + projectRootPath.generic_string());
+		}
+	}
+	else {
+		ENGINE_LOG_DEBUG("[AnimatorController] Current Animator Controller path is already in Root Project/Resources: " + filePath);
+	}
+
 	return true;
 }
 

@@ -35,6 +35,7 @@
 #include <UI/Slider/SliderComponent.hpp>
 #include <Multi-threading/SequentialSystemOrchestrator.hpp>
 #include <Multi-threading/ParallelSystemOrchestrator.hpp>
+#include "Engine.h"
 
 Entity fpsText;
 
@@ -215,17 +216,30 @@ void SceneInstance::Draw()
 		gfxManager.Clear(0.192f, 0.301f, 0.475f, 1.0f);
 	}
 
-	// Update transforms before camera (camera needs up-to-date transform matrices)
-	//mainECS.transformSystem->Update();
+	// In edit mode, the orchestrator's Update phase doesn't run (no game logic).
+	// We must update rendering-critical systems here so the game panel has correct
+	// transforms, camera state, lighting data, and post-processing settings.
+	if (!Engine::ShouldRunGameLogic())
+	{
+		if (mainECS.transformSystem) mainECS.transformSystem->Update();
+		if (mainECS.cameraSystem) mainECS.cameraSystem->Update();
 
-	// Update camera system (detects camera changes, switches cameras, updates from components)
-	// This needs to run even in edit mode so the game panel shows the correct camera
-	//mainECS.cameraSystem->Update();
+		// Set the game camera on gfxManager BEFORE lighting update.
+		// LightingSystem::CollectLightData() uses GetCurrentCamera() for distance
+		// culling of point/spot lights. Without this, it uses the editor camera
+		// (still set from the Scene Panel render), which can cull lights that are
+		// close to the game camera but far from the editor camera — causing wrong
+		// lighting colors (e.g., red tint from missing cool-colored fill lights).
+		gfxManager.SetCamera(mainECS.cameraSystem->GetActiveCamera());
+		gfxManager.UpdateFrustum();
 
-	gfxManager.SetCamera(mainECS.cameraSystem->GetActiveCamera());
-
-	// Update frustum with the game camera BEFORE model system runs (for proper culling in game panel)
-	gfxManager.UpdateFrustum();
+		if (mainECS.lightingSystem) mainECS.lightingSystem->Update();
+	}
+	else
+	{
+		gfxManager.SetCamera(mainECS.cameraSystem->GetActiveCamera());
+		gfxManager.UpdateFrustum();
+	}
 
 	drawSynchronized = false;
 	systemOrchestrator->Draw();

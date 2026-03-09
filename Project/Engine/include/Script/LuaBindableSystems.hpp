@@ -235,6 +235,50 @@ namespace PhysicsSystemWrappers {
         return result.hit ? result.distance : -1.0f;
     }
 
+    inline std::tuple<bool, float, float, float, float, float, float, float, uint32_t> RaycastFull(
+        float originX, float originY, float originZ,
+        float dirX, float dirY, float dirZ,
+        float maxDistance)
+    {
+        if (!g_PhysicsSystem) {
+            return { false, -1.0f, 0.f, 0.f, 0.f, 0.f, 1.f, 0.f, 0 };
+        }
+        Vector3D origin(originX, originY, originZ);
+        Vector3D direction(dirX, dirY, dirZ);
+        auto result = g_PhysicsSystem->Raycast(origin, direction, maxDistance);
+        if (!result.hit) {
+            return { false, -1.0f, 0.f, 0.f, 0.f, 0.f, 1.f, 0.f, 0 };
+        }
+        return {
+            true,
+            result.distance,
+            result.hitPoint.x,  result.hitPoint.y,  result.hitPoint.z,
+            result.hitNormal.x, result.hitNormal.y, result.hitNormal.z,
+            result.bodyId.GetIndexAndSequenceNumber()
+        };
+    }
+
+    inline std::tuple<float, int> RaycastGetEntity(
+        float originX, float originY, float originZ,
+        float dirX, float dirY, float dirZ,
+        float maxDistance)
+    {
+        if (!g_PhysicsSystem) {
+            return std::make_tuple(-1.0f, -1);
+        }
+
+        Vector3D origin(originX, originY, originZ);
+        Vector3D direction(dirX, dirY, dirZ);
+
+        auto result = g_PhysicsSystem->Raycast(origin, direction, maxDistance);
+
+        if (result.hit) {
+            // Cast entityId to int to guarantee Lua can read it safely as a standard number
+            return std::make_tuple(result.distance, static_cast<int>(result.entityId));
+        }
+
+        return std::make_tuple(-1.0f, -1);
+    }
     // Check if two entities are within a certain distance
     // Usage: local hit = Physics.CheckDistance(entityA, entityB, maxDistance)
     // Returns: true if distance <= maxDistance, false otherwise
@@ -1402,6 +1446,40 @@ namespace EntityQueryWrappers {
 		}
 
         return 1;
+    }
+
+    inline int FindChildEntityByName(Entity parentId, const std::string& targetName) {
+        ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
+
+        // 1. Safety check to ensure the parent actually exists and has a transform
+        if (!ecsManager.HasComponent<ChildrenComponent>(parentId)) {
+            return -1;
+        }
+
+        auto& childrenComp = ecsManager.GetComponent<ChildrenComponent>(parentId);
+
+        // 2. Loop through all direct children
+        for (const auto childGUID : childrenComp.children) {
+            Entity childId = EntityGUIDRegistry::GetInstance().GetEntityByGUID(childGUID);
+            if (childId == INVALID_ENTITY) continue;
+
+            // 3. Check if THIS child is the one we want
+            if (ecsManager.HasComponent<NameComponent>(childId)) {
+                auto& nameComp = ecsManager.GetComponent<NameComponent>(childId);
+                if (nameComp.name == targetName) {
+                    return childId; // Found it!
+                }
+            }
+
+            // 4. If not found, recursively search inside this child's children
+            Entity foundId = FindChildEntityByName(childId, targetName);
+            if (foundId != -1) {
+                return foundId;
+            }
+        }
+
+        // 5. If we finish the loop and find nothing, return invalid
+        return -1;
     }
 }
 

@@ -1,0 +1,11 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "000f98f752a6ef9b-00046f5cb400000d",
+        "source": "../../Resources/Animations/Enemy/Boss/KarasuBoss@GroundScratch.fbx",
+        "compiled": "../../Resources/Animations/Enemy/Boss/KarasuBoss@GroundScratch.mesh"
+    },
+    "ModelMetaData": {
+        "optimizeMeshes": true
+    }
+}
