@@ -215,6 +215,7 @@ return Component {
         P3_FeatherTargetYOffset = 0.25,   -- aim slightly above ground
 
         P3_DiveCommitRadius = 0.20,       -- how close in XZ before slamming down
+        P3_DivePostDelay = 0.50,          -- how long to wait after the dive smash
         P3_FateAfterHookDelay = 2.00,     -- wait after interrupt before casting Fate Sealed
 
         P3_FeatherCastTime = 0.25,         -- longer "windup" before firing all 5
@@ -311,6 +312,8 @@ return Component {
         self._p1DidShout90 = false
         self._p1DidShout75 = false
         self._meleeCdT = 0
+
+        self._p3_dive_postdelay = self.P3_DivePostDelay
 
         self._pendingRainExplosions = {}  -- { {t=seconds, payload=table}, ... }
     end,
@@ -943,10 +946,14 @@ return Component {
         self:SetPosition(x, y + dy, z)
     end,
 
-    BeginSlamDown = function(self)
+    BeginSlamDown = function(self, mode)
         if not self._inAir then return end
         self._slamActive = true
-        self._animator:SetTrigger("Pulldown")
+        if mode == "Pulldown" then
+            self._animator:SetTrigger("Pulldown")
+        elseif mode == "DiveSmash" then
+            self._animator:SetTrigger("DiveSmash")
+        end
     end,
 
     UpdateSlamDown = function(self, dtSec, mode)
@@ -974,9 +981,7 @@ return Component {
             self._slamActive = false
 
             if self._animator then
-                if mode == "dive_attack" then
-                    self._animator:SetTrigger("DiveSmash")
-                else
+                if mode == "hook_slam" then
                     self._animator:SetTrigger("Slammed")
                 end
             end
@@ -1245,7 +1250,7 @@ return Component {
             -- Forcefully cancel BurstFire so it doesn't secretly run 
             -- while the boss is falling and delay the FateSealed move!
             self:_EndMove()
-            self:BeginSlamDown()
+            self:BeginSlamDown("Pulldown")
         end
 
         if self._phase == 3 and not self._inAir then
@@ -2074,6 +2079,10 @@ return Component {
                 print("[MinibossAI] SPAWNING DEATHLOTUS")
                 self:SpawnForwardSingle(fx, fz, m.range or 12.0, m.lotusYOffset or 0.0)
             end
+            
+            if self._animator:GetCurrentState() == "Recovery" then
+                self._animator:SetTrigger("Ranged")
+            end
 
             if m.t >= dur then
                 self:_EndMove()
@@ -2352,7 +2361,51 @@ return Component {
         dtSec = toDtSec(dtSec)
         if dtSec <= 0 then return false end
 
-        -- Ensure we're in air while approaching
+        -- 1. POST-LANDING DELAY (On Ground)
+        -- If we have already landed, just count down the delay. Do NOT execute air logic!
+        if self._diveSlamLanded then
+            self._p3_dive_postdelay = self._p3_dive_postdelay - dtSec
+            if self._p3_dive_postdelay > 0.0 then
+                return false
+            else 
+                self._phase3Dive = nil
+                self._p3_dive_postdelay = self.P3_DivePostDelay
+                self._diveSlamLanded = false
+                return true -- Done! Transition to DeathLotus
+            end
+        end
+
+        -- 2. SLAMMING DOWN (Falling)
+        if self._slamActive then
+            local landed = self:UpdateSlamDown(dtSec, "dive_attack")
+            if not landed then
+                return false
+            end
+
+            -- Landed: switch to ground mode and snap onto exact target position
+            self:_SetInAir(false)
+
+            local gy = (Nav and Nav.GetGroundY and Nav.GetGroundY(self.entityId)) or select(2, self:GetPosition()) or 0
+            self:SetPosition(self._phase3Dive.gx, gy, self._phase3Dive.gz)
+            if self._controller and CharacterController.SetPosition then
+                pcall(function() CharacterController.SetPosition(self._controller, self._phase3Dive.gx, gy, self._phase3Dive.gz) end)
+            end
+
+            if _G.event_bus and _G.event_bus.publish then
+                _G.event_bus.publish("boss_dive_impact", {
+                    entityId = self.entityId,
+                    x = self._phase3Dive.gx, y = gy, z = self._phase3Dive.gz,
+                    dmg = 1,
+                    radius = 1.4,
+                })
+            end
+
+            self._diveSlamLanded = true
+            return false
+        end
+
+        -- 3. APPROACHING TARGET (In Air)
+        -- Ensure we're in air ONLY while we are actively flying towards the player
         self:_SetInAir(true)
 
         local px, py, pz = self:GetPlayerPosForAI()
@@ -2395,40 +2448,11 @@ return Component {
         d.gx = tx
         d.gz = tz
 
-        -- If slamming, keep falling until landed
-        if self._slamActive then
-            local landed = self:UpdateSlamDown(dtSec, "dive_attack")
-            if not landed then
-                return false
-            end
-
-            -- Landed: switch to ground mode and snap onto exact target position
-            self:_SetInAir(false)
-
-            local gy = (Nav and Nav.GetGroundY and Nav.GetGroundY(self.entityId)) or select(2, self:GetPosition()) or 0
-            self:SetPosition(d.gx, gy, d.gz)
-            if self._controller and CharacterController.SetPosition then
-                pcall(function() CharacterController.SetPosition(self._controller, d.gx, gy, d.gz) end)
-            end
-
-            if _G.event_bus and _G.event_bus.publish then
-                _G.event_bus.publish("boss_dive_impact", {
-                    entityId = self.entityId,
-                    x = d.gx, y = gy, z = d.gz,
-                    dmg = 1,
-                    radius = 1.4,
-                })
-            end
-
-            self._phase3Dive = nil
-            return true
-        end
-
         -- Approach offset target instead of exact player position
         local dx, dz = d.gx - x, d.gz - z
         local r = self.P3_DiveCommitRadius or 0.20
         if (dx*dx + dz*dz) <= (r*r) then
-            self:BeginSlamDown()
+            self:BeginSlamDown("DiveSmash")
             return false
         end
 
@@ -2465,6 +2489,7 @@ return Component {
             if not self._phase3FeatherCastT and not self._phase3RainT then
                 self._phase3FeatherCastT = self.P3_FeatherCastTime or 0.05
 
+                print("[Miniboss] Phase 3 Step 1 SetTrigger(FeatherBomb)")
                 if self._animator then self._animator:SetTrigger("FeatherBomb") end
                 playRandomSFX(self._audio, self.enemyRangedAttackSFX)
 
@@ -2599,7 +2624,6 @@ return Component {
     end,
 
     DeathLotus = function(self)
-        self._animator:SetTrigger("Ranged")
         self:_BeginMove("DeathLotus", {
             duration = 4.5,
             spinSpeed = math.pi * 1.0,
@@ -2607,5 +2631,6 @@ return Component {
             range = 12.0,
             lotusYOffset = -5.0,
         })
+        self._animator:SetTrigger("Ranged")
     end,
 }
