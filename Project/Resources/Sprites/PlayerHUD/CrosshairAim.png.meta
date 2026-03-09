@@ -1,9 +1,9 @@
 {
     "AssetMetaData": {
         "version": 7,
-        "guid": "001cbc0ec774bcef-00041fe254014c37",
-        "source": "../../Resources/Sprites/PlayerHUD/HPBarBG.png",
-        "compiled": "../../Resources/Sprites/PlayerHUD/HPBarBG.dds"
+        "guid": "006dfc96f87b9ff3-000474f2ae005605",
+        "source": "../../Resources/Sprites/PlayerHUD/CrosshairAim.png",
+        "compiled": "../../Resources/Sprites/PlayerHUD/CrosshairAim.dds"
     },
     "TextureMetaData": {
         "type": "diffuse",

@@ -1,9 +1,9 @@
 {
     "AssetMetaData": {
         "version": 7,
-        "guid": "003736b7542ba2e6-000417dc1e0006c7",
-        "source": "../../Resources/Sprites/GameOverUI/DeathScreenBG.png",
-        "compiled": "../../Resources/Sprites/GameOverUI/DeathScreenBG.dds"
+        "guid": "006dfc96a3fb0f5f-000474f55400c7a3",
+        "source": "../../Resources/Sprites/GameOverUI/DeathScreenNew.png",
+        "compiled": "../../Resources/Sprites/GameOverUI/DeathScreenNew.dds"
     },
     "TextureMetaData": {
         "type": "diffuse",

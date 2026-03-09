@@ -2,7 +2,7 @@
     "prefab_entities": [
         {
             "id": 0,
-            "guid": "00345ceb7fb7fac5-000460df2802a59d",
+            "guid": "006dfc9690f48d70-000474fb42025411",
             "components": {
                 "PrefabLinkComponent": {
                     "type": "PrefabLinkComponent",
@@ -91,11 +91,11 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "00345ceb2d385810-000460df2802a59f",
-                                "00345ceb3214ac9e-000460df2802a5a1",
-                                "00345ceb00dec946-000460df2802a5a3",
-                                "00345ceb5f63f132-000460df2802a5a5",
-                                "00345ceb1b181767-000460df2802a5a7"
+                                "006dfc96bb6abba6-000474fb42025413",
+                                "006dfc96b9dad93d-000474fb42025415",
+                                "006dfc96eb253d7d-000474fb42025417",
+                                "006dfc969d02f250-000474fb42025419",
+                                "006dfc96a9d5ff04-000474fb4202541b"
                             ]
                         }
                     ]
@@ -189,50 +189,50 @@
                             "entryFunction": "OnInit",
                             "autoInvokeEntry": true,
                             "instanceState": {
-                                "UpdateSafe": null,
                                 "deathAnimationDelay": 3.5,
+                                "SerializeFields": null,
+                                "playerDead": false,
+                                "_subs_map": {},
+                                "_subscriptions": {},
                                 "_respawnPlayerSub": {
-                                    "id": 15.0,
-                                    "event": "respawnPlayer"
+                                    "event": "respawnPlayer",
+                                    "id": 15.0
                                 },
+                                "__meta": {},
+                                "__field_list": {
+                                    "isFading": false,
+                                    "playerDead": false,
+                                    "deathAnimationDelay": 3.0,
+                                    "fadeScreenName": "DeathScreenBG",
+                                    "fadeAlpha": 0.0,
+                                    "fadeDuration": 1.0
+                                },
+                                "Update": null,
+                                "respawnButtonName": "RespawnButton",
+                                "Start": null,
+                                "After": null,
+                                "Destroy": null,
+                                "DeserializeFields": null,
+                                "DisableSafe": null,
                                 "respawnButtonHoveredName": "RespawnButtonHovered",
+                                "UpdateSafe": null,
+                                "StartSafe": null,
+                                "AwakeSafe": null,
+                                "__created_at": 1770048685.0,
+                                "_call_lifecycle": null,
+                                "fadeAlpha": 0.0,
+                                "Awake": null,
+                                "Subscribe": null,
+                                "isFading": false,
+                                "fadeDuration": 1.5,
+                                "fadeScreenName": "DeathScreenBG",
+                                "Unsubscribe": null,
+                                "Every": null,
+                                "_private": {},
                                 "_playerDeadSub": {
                                     "event": "playerDead",
                                     "id": 1.0
-                                },
-                                "Awake": null,
-                                "playerDead": false,
-                                "Destroy": null,
-                                "DeserializeFields": null,
-                                "_subscriptions": {},
-                                "Subscribe": null,
-                                "After": null,
-                                "__field_list": {
-                                    "isFading": false,
-                                    "fadeDuration": 1.0,
-                                    "fadeScreenName": "DeathScreenBG",
-                                    "deathAnimationDelay": 3.0,
-                                    "fadeAlpha": 0.0,
-                                    "playerDead": false
-                                },
-                                "__created_at": 1770048685.0,
-                                "_subs_map": {},
-                                "fadeAlpha": 0.0,
-                                "StartSafe": null,
-                                "__meta": {},
-                                "Update": null,
-                                "respawnButtonName": "RespawnButton",
-                                "isFading": false,
-                                "_call_lifecycle": null,
-                                "Every": null,
-                                "Unsubscribe": null,
-                                "SerializeFields": null,
-                                "_private": {},
-                                "Start": null,
-                                "fadeScreenName": "DeathScreenBG",
-                                "fadeDuration": 1.5,
-                                "AwakeSafe": null,
-                                "DisableSafe": null
+                                }
                             }
                         },
                         {
@@ -244,17 +244,17 @@
                             "autoInvokeEntry": true,
                             "instanceState": {
                                 "_subscriptions": {},
-                                "__field_list": {
-                                    "fadeScreenName": "GameOverFade",
-                                    "fadeDuration": 3.0,
-                                    "playerName": "Player"
-                                },
                                 "__meta": {},
-                                "fadeDuration": 3.0,
-                                "playerName": "Player",
                                 "__created_at": 1770237821.0,
+                                "__field_list": {
+                                    "playerName": "Player",
+                                    "fadeScreenName": "GameOverFade",
+                                    "fadeDuration": 3.0
+                                },
+                                "fadeScreenName": "GameOverFade",
                                 "_private": {},
-                                "fadeScreenName": "GameOverFade"
+                                "playerName": "Player",
+                                "fadeDuration": 3.0
                             }
                         }
                     ]
@@ -263,7 +263,7 @@
         },
         {
             "id": 1,
-            "guid": "00345ceb2d385810-000460df2802a59f",
+            "guid": "006dfc96bb6abba6-000474fb42025413",
             "components": {
                 "NameComponent": {
                     "name": "DeathScreenBG"
@@ -344,7 +344,7 @@
                             "type": "bool",
                             "data": true
                         },
-                        "003736b7542ba2e6-000417dc1e0006c7",
+                        "006dfc96a3fb0f5f-000474f55400c7a3",
                         "00374a216e66dbbc-000331fc80000069",
                         {
                             "type": "Vector3D",
@@ -437,13 +437,37 @@
                                     "data": 0
                                 }
                             ]
+                        },
+                        {
+                            "type": "int",
+                            "data": 0
+                        },
+                        {
+                            "type": "int",
+                            "data": 0
+                        },
+                        {
+                            "type": "float",
+                            "data": 1
+                        },
+                        {
+                            "type": "float",
+                            "data": 1
+                        },
+                        {
+                            "type": "float",
+                            "data": 0.5
+                        },
+                        {
+                            "type": "float",
+                            "data": 0.3
                         }
                     ]
                 },
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "00345ceb7fb7fac5-000460df2802a59d"
+                        "006dfc9690f48d70-000474fb42025411"
                     ]
                 },
                 "ActiveComponent": {
@@ -459,7 +483,7 @@
         },
         {
             "id": 2,
-            "guid": "00345ceb3214ac9e-000460df2802a5a1",
+            "guid": "006dfc96b9dad93d-000474fb42025415",
             "components": {
                 "NameComponent": {
                     "name": "RespawnButton"
@@ -485,7 +509,7 @@
                                 },
                                 {
                                     "type": "float",
-                                    "data": 70
+                                    "data": 80
                                 },
                                 {
                                     "type": "float",
@@ -633,13 +657,37 @@
                                     "data": 0
                                 }
                             ]
+                        },
+                        {
+                            "type": "int",
+                            "data": 0
+                        },
+                        {
+                            "type": "int",
+                            "data": 0
+                        },
+                        {
+                            "type": "float",
+                            "data": 1
+                        },
+                        {
+                            "type": "float",
+                            "data": 1
+                        },
+                        {
+                            "type": "float",
+                            "data": 0.5
+                        },
+                        {
+                            "type": "float",
+                            "data": 0.3
                         }
                     ]
                 },
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "00345ceb7fb7fac5-000460df2802a59d"
+                        "006dfc9690f48d70-000474fb42025411"
                     ]
                 },
                 "AudioComponent": {
@@ -764,7 +812,7 @@
         },
         {
             "id": 3,
-            "guid": "00345ceb00dec946-000460df2802a5a3",
+            "guid": "006dfc96eb253d7d-000474fb42025417",
             "components": {
                 "NameComponent": {
                     "name": "RespawnButtonHovered"
@@ -790,7 +838,7 @@
                                 },
                                 {
                                     "type": "float",
-                                    "data": 70
+                                    "data": 80
                                 },
                                 {
                                     "type": "float",
@@ -938,13 +986,37 @@
                                     "data": 0
                                 }
                             ]
+                        },
+                        {
+                            "type": "int",
+                            "data": 0
+                        },
+                        {
+                            "type": "int",
+                            "data": 0
+                        },
+                        {
+                            "type": "float",
+                            "data": 1
+                        },
+                        {
+                            "type": "float",
+                            "data": 1
+                        },
+                        {
+                            "type": "float",
+                            "data": 0.5
+                        },
+                        {
+                            "type": "float",
+                            "data": 0.3
                         }
                     ]
                 },
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "00345ceb7fb7fac5-000460df2802a59d"
+                        "006dfc9690f48d70-000474fb42025411"
                     ]
                 },
                 "ActiveComponent": {
@@ -973,7 +1045,7 @@
         },
         {
             "id": 4,
-            "guid": "00345ceb5f63f132-000460df2802a5a5",
+            "guid": "006dfc969d02f250-000474fb42025419",
             "components": {
                 "NameComponent": {
                     "name": "GameOverFade"
@@ -1147,13 +1219,37 @@
                                     "data": 0
                                 }
                             ]
+                        },
+                        {
+                            "type": "int",
+                            "data": 0
+                        },
+                        {
+                            "type": "int",
+                            "data": 0
+                        },
+                        {
+                            "type": "float",
+                            "data": 1
+                        },
+                        {
+                            "type": "float",
+                            "data": 1
+                        },
+                        {
+                            "type": "float",
+                            "data": 0.5
+                        },
+                        {
+                            "type": "float",
+                            "data": 0.3
                         }
                     ]
                 },
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "00345ceb7fb7fac5-000460df2802a59d"
+                        "006dfc9690f48d70-000474fb42025411"
                     ]
                 },
                 "ActiveComponent": {
@@ -1169,7 +1265,7 @@
         },
         {
             "id": 5,
-            "guid": "00345ceb1b181767-000460df2802a5a7",
+            "guid": "006dfc96a9d5ff04-000474fb4202541b",
             "components": {
                 "NameComponent": {
                     "name": "DeathScreenBGM"
@@ -1246,7 +1342,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "00345ceb7fb7fac5-000460df2802a59d"
+                        "006dfc9690f48d70-000474fb42025411"
                     ]
                 },
                 "AudioComponent": {

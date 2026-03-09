@@ -1,9 +1,9 @@
 {
     "AssetMetaData": {
         "version": 7,
-        "guid": "00717c64e9721f62-00036d0ed20000f1",
-        "source": "../../Resources/Sprites/PlayerHUD/HealthBacking.png",
-        "compiled": "../../Resources/Sprites/PlayerHUD/HealthBacking.dds"
+        "guid": "006dfc96b345cd00-000474f3c0007229",
+        "source": "../../Resources/Sprites/PlayerHUD/CrosshairDefault.png",
+        "compiled": "../../Resources/Sprites/PlayerHUD/CrosshairDefault.dds"
     },
     "TextureMetaData": {
         "type": "diffuse",
