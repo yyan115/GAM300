@@ -1,12 +1,12 @@
 {
     "AssetMetaData": {
         "version": 7,
-        "guid": "007650f18db867e5-000473d782028b11",
-        "source": "../../Resources/Textures/M5/Room2/ceiling_ceiling_Normal.png",
-        "compiled": "../../Resources/Textures/M5/Room2/ceiling_ceiling_Normal.dds"
+        "guid": "004e5c2f7d833438-00047468c4000001",
+        "source": "../../Resources/Textures/M5/StairsUp/ceiling_ceiling_Normal.png",
+        "compiled": "../../Resources/Textures/M5/StairsUp/ceiling_ceiling_Normal.dds"
     },
     "TextureMetaData": {
-        "type": "normal",
+        "type": "diffuse",
         "flipUVs": false,
         "generateMipmaps": true,
         "textureWrapMode": "Clamp"
