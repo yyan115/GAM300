@@ -223,6 +223,26 @@
                         {
                             "type": "float",
                             "data": 0.5
+                        },
+                        {
+                            "type": "bool",
+                            "data": false
+                        },
+                        {
+                            "type": "float",
+                            "data": 0.5
+                        },
+                        {
+                            "type": "float",
+                            "data": 1
+                        },
+                        {
+                            "type": "bool",
+                            "data": true
+                        },
+                        {
+                            "type": "float",
+                            "data": 1
                         }
                     ],
                     "target": {
@@ -482,6 +502,10 @@
                             "data": 0
                         },
                         {
+                            "type": "int",
+                            "data": 0
+                        },
+                        {
                             "type": "float",
                             "data": 1
                         },
@@ -692,6 +716,10 @@
                             "data": 0
                         },
                         {
+                            "type": "int",
+                            "data": 0
+                        },
+                        {
                             "type": "float",
                             "data": 1
                         },
@@ -896,6 +924,10 @@
                                     "data": 0
                                 }
                             ]
+                        },
+                        {
+                            "type": "int",
+                            "data": 0
                         },
                         {
                             "type": "int",

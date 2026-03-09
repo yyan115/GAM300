@@ -6,9 +6,9 @@
         "compiled": "../../Resources/Textures/M5/Room1/tatami_floor_tatami_Normal.dds"
     },
     "TextureMetaData": {
-        "type": "normal",
+        "type": "diffuse",
         "flipUVs": false,
         "generateMipmaps": true,
-        "textureWrapMode": "Repeat"
+        "textureWrapMode": "Clamp"
     }
 }
