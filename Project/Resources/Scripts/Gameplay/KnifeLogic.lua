@@ -52,7 +52,7 @@ return Component {
 
     fields = {
         Speed    = 8.0,
-        Lifetime = 1.2,
+        Lifetime = 3.0,
         Damage   = 1,
 
         -- ===== HIT DETECTION TUNING =====
