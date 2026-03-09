@@ -2877,16 +2877,19 @@ void Serializer::DeserializeSpriteComponent(SpriteRenderComponent& spriteComp, c
                         spriteComp.fillMode = Serializer::GetInt(d, startIdx + 12, 0);
                     }
                     if (d.Size() > static_cast<rapidjson::SizeType>(startIdx + 13)) {
-                        spriteComp.fillMaxValue = Serializer::GetFloat(d, startIdx + 13, 1.0f);
+                        spriteComp.fillDirection = Serializer::GetInt(d, startIdx + 13, 0);
                     }
                     if (d.Size() > static_cast<rapidjson::SizeType>(startIdx + 14)) {
-                        spriteComp.fillValue = Serializer::GetFloat(d, startIdx + 14, 1.0f);
+                        spriteComp.fillMaxValue = Serializer::GetFloat(d, startIdx + 14, 1.0f);
                     }
                     if (d.Size() > static_cast<rapidjson::SizeType>(startIdx + 15)) {
-                        spriteComp.fillGlow = Serializer::GetFloat(d, startIdx + 15, 0.5f);
+                        spriteComp.fillValue = Serializer::GetFloat(d, startIdx + 15, 1.0f);
                     }
                     if (d.Size() > static_cast<rapidjson::SizeType>(startIdx + 16)) {
-                        spriteComp.fillBackground = Serializer::GetFloat(d, startIdx + 16, 0.3f);
+                        spriteComp.fillGlow = Serializer::GetFloat(d, startIdx + 16, 0.5f);
+                    }
+                    if (d.Size() > static_cast<rapidjson::SizeType>(startIdx + 17)) {
+                        spriteComp.fillBackground = Serializer::GetFloat(d, startIdx + 17, 0.3f);
                     }
                 }
                 else {
