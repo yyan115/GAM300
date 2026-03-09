@@ -30,7 +30,8 @@ function M.New(params)
     self._raycastSnapped         = false
     self._lockedChainLen         = 0.0
     self._flopping               = false
-    self._justEnteredFlopFromExt = false  -- one-frame flag: redistribute links and zero velocity
+    self._justEnteredFlopFromExt  = false
+    self._justEnteredRaycastSnap  = false
     self.losAnchors       = {}
     self.VerletState = VerletAdapter.Init{positions=self.positions, prev=self.prev, invMass=self.invMass}
     return self
@@ -44,6 +45,7 @@ function M:StartExtension(forward, maxLength, linkMaxDistance)
     self.extensionTime, self.chainLen   = 0, 0
     self._lockedChainLen, self._raycastSnapped, self._flopping = 0, false, false
     self._justEnteredFlopFromExt = false
+    self._justEnteredRaycastSnap = false
     self.endPointLocked = false
     self.lockedEndPoint = {0,0,0}
     self.hookedTag      = ""
@@ -68,51 +70,34 @@ function M:StartRetraction()
     self.isRetracting, self.isExtending = true, false
     self._raycastSnapped, self._flopping = false, false
     self._justEnteredFlopFromExt = false
+    self._justEnteredRaycastSnap = false
     self.hookedTag       = ""
     self.losAnchors      = {}
     self._lockedChainLen = self.chainLen
 end
 
--- ContinueExtension: resume extending from the current chain length and active link count.
--- Call this when the chain is already out (locked/snapped) and the player holds the button
--- again to extend further. Links are added proportionally to chainLen via LinkMaxDistance,
--- exactly mirroring how normal StartExtension + Update activates them one by one.
 function M:ContinueExtension(forward, maxLength, linkMaxDistance)
     local maxLen  = tonumber(maxLength)       or tonumber(self.params.MaxLength)       or 0
     local linkMax = tonumber(linkMaxDistance) or tonumber(self.params.LinkMaxDistance) or 0
-
-    -- Back-solve extensionTime so chainLen is continuous from its current value.
-    -- Update() does: chainLen = chainSpeed * extensionTime, accumulating dt each frame.
-    -- Setting extensionTime here means the very next Update tick adds only dt worth of length.
     local chainSpeed = tonumber(self.params.ChainSpeed) or 10
     self.extensionTime = (self.chainLen or 0) / math.max(chainSpeed, 1e-6)
-
-    -- Unlock endpoint so Verlet is free to push the tip outward again.
     self.endPointLocked  = false
     self._raycastSnapped = false
     self._flopping       = false
     self._justEnteredFlopFromExt = false
+    self._justEnteredRaycastSnap = false
     self.hookedTag       = ""
     self.losAnchors      = {}
     self._lockedChainLen = 0
-
-    -- Set activeN to the FULL ceiling of links that maxLength could ever need.
-    -- This is identical to what StartExtension does. Update's per-link kinematic
-    -- gate (reqDist = (i-1)*segmentLen compared against chainLen) then naturally
-    -- activates new links one by one as chainLen grows, proportional to distance.
-    -- Links already placed keep their positions because chainLen doesn't reset to 0.
     if linkMax > 0 and maxLen > 0 then
         self.activeN = math.min(math.ceil(maxLen / linkMax) + 1, self.n)
     else
         self.activeN = self.n
     end
-
-    -- Update aim direction if provided.
     if forward and type(forward) == "table" and #forward >= 3 then
         local nx,ny,nz = normalize(forward[1], forward[2], forward[3])
         if nx ~= 0 or ny ~= 0 or nz ~= 0 then self.lastForward = {nx,ny,nz} end
     end
-
     self.isExtending  = true
     self.isRetracting = false
 end
@@ -192,7 +177,6 @@ end
 function M:UpdateLOSAnchors(sx,sy,sz,ex,ey,ez)
     if not Physics then self.losAnchors={} return end
 
-    -- Per-frame topology test cache: is player still on opposite side of anchor's body?
     local _sideCache = {}
     local function isWrapped(anchor)
         if anchor.bodyId==nil then return false end
@@ -238,8 +222,6 @@ function M:UpdateLOSAnchors(sx,sy,sz,ex,ey,ez)
             if anchor.bodyId then dissolvedThisFrame[anchor.bodyId]=true end
             table.remove(self.losAnchors, i)
         else
-            -- Sliding refresh: re-derive position by shooting toward anchor's stored pos
-            -- (skip if clearFrames>0 — re-locking a dissolving anchor causes stickiness)
             if (anchor.clearFrames or 0) == 0 then
                 local toAx,toAy,toAz = anchor[1]-prev[1], anchor[2]-prev[2], anchor[3]-prev[3]
                 local toADist = math.sqrt(toAx*toAx+toAy*toAy+toAz*toAz)
@@ -250,7 +232,6 @@ function M:UpdateLOSAnchors(sx,sy,sz,ex,ey,ez)
                     if hit2 then
                         local ref = make_anchor(prev[1],prev[2],prev[3], tdx,tdy,tdz,
                                                 dist2,px,py,pz, nx2,ny2,nz2, bodyId2)
-                        -- Validate refreshed→next_ doesn't re-cut same body (wrong face guard)
                         local rnx,rny,rnz = next_[1]-ref[1], next_[2]-ref[2], next_[3]-ref[3]
                         local rnDist = math.sqrt(rnx*rnx+rny*rny+rnz*rnz)
                         local refreshOk = true
@@ -297,7 +278,7 @@ function M:UpdateLOSAnchors(sx,sy,sz,ex,ey,ez)
         if #self.losAnchors >= LOS_MAX_ANCHORS then break end
     end
 
-    -- VALIDATION PASS: catch any newly-blocked segments across the full path
+    -- VALIDATION PASS
     local passes, changed = 0, true
     while changed and passes<LOS_MAX_ANCHORS and #self.losAnchors<LOS_MAX_ANCHORS do
         changed=false; passes=passes+1
@@ -409,10 +390,8 @@ function M:Update(dt, settings)
         local chainLength = self.chainLen or 0
         local isDragType  = (dragTag~="" and self.hookedTag==dragTag)
         local hardLimit   = chainLength + slack
-        -- Use arc length when LOS anchors active; straight-line player→endpoint otherwise
         local usingArcLen   = settings.UseLOSAnchors and self._arcLen and (#self.losAnchors>0)
         local effectiveDist = usingArcLen and self._arcLen or vec_len(sx-ex0,sy-ey0,sz-ez0)
-        -- Tension direction: toward first anchor, or locked endpoint if no anchors
         local tensionX,tensionY,tensionZ
         if #self.losAnchors>0 then
             tensionX,tensionY,tensionZ = self.losAnchors[1][1],self.losAnchors[1][2],self.losAnchors[1][3]
@@ -421,6 +400,17 @@ function M:Update(dt, settings)
         end
         dbg(string.format("[CONSTRAINT] effectiveDist=%.3f arcLen=%s chainLen=%.3f hardLimit=%.3f usingArcLen=%s",
             effectiveDist,tostring(self._arcLen),chainLength,hardLimit,tostring(usingArcLen)))
+        -- Pull target for throwable: the nearest chain point on the player side of the endpoint.
+        -- = last LOS anchor (closest to the hooked obj so it follows the chain path around corners),
+        -- or player/startPos if no anchors (straight line pull).
+        local pullTX, pullTY, pullTZ
+        if #self.losAnchors > 0 then
+            local la = self.losAnchors[#self.losAnchors]
+            pullTX, pullTY, pullTZ = la[1], la[2], la[3]
+        else
+            pullTX, pullTY, pullTZ = sx, sy, sz
+        end
+
         if isDragType then
             if effectiveDist > chainLength+1e-4 then
                 local dx,dy,dz = sx-ex0,sy-ey0,sz-ez0
@@ -429,10 +419,13 @@ function M:Update(dt, settings)
                     self.constraintResult = {ratio=0,exceeded=false,drag=true,
                         targetX=ex0+(dx/dist)*chainLength,
                         targetY=ey0+(dy/dist)*chainLength,
-                        targetZ=ez0+(dz/dist)*chainLength}
+                        targetZ=ez0+(dz/dist)*chainLength,
+                        pullTargetX=pullTX,pullTargetY=pullTY,pullTargetZ=pullTZ}
                 end
             else
-                self.constraintResult = {ratio=0,exceeded=false,drag=false}
+                self.constraintResult = {ratio=0,exceeded=false,drag=false,
+                    effectiveDist=effectiveDist,chainLength=chainLength,
+                    pullTargetX=pullTX,pullTargetY=pullTY,pullTargetZ=pullTZ}
             end
         else
             local ratio = (effectiveDist>chainLength)
@@ -441,14 +434,46 @@ function M:Update(dt, settings)
                 dbg("[CONSTRAINT] TAUT + EXCEEDED -> flopping")
                 self.endPointLocked,self._raycastSnapped,self._flopping = false,false,true
                 self.hookedTag=""
-                self.constraintResult = {ratio=0,exceeded=true,drag=false}
+                self.constraintResult = {ratio=0,exceeded=true,drag=false,
+                    effectiveDist=effectiveDist,chainLength=chainLength}
             else
                 self.constraintResult = {ratio=ratio,exceeded=false,drag=false,
-                    endX=tensionX,endY=tensionY,endZ=tensionZ}
+                    endX=tensionX,endY=tensionY,endZ=tensionZ,
+                    effectiveDist=effectiveDist,chainLength=chainLength,
+                    pullTargetX=pullTX,pullTargetY=pullTY,pullTargetZ=pullTZ}
             end
         end
     else
         self.constraintResult = {ratio=0,exceeded=false,drag=false}
+    end
+
+    -- Throwable tension: computed separately so it fires during retraction too.
+    -- constraintActive blocks on isRetracting, but we need effectiveDist/chainLength
+    -- the whole time the chain is pulling the throwable in.
+    local throwableTag = settings.ThrowableTag or "Throwable"
+    if self.endPointLocked and self.hookedTag == throwableTag then
+        local ex0,ey0,ez0 = self.lockedEndPoint[1],self.lockedEndPoint[2],self.lockedEndPoint[3]
+        local tEffDist = vec_len(sx-ex0,sy-ey0,sz-ez0)
+        if settings.UseLOSAnchors and self._arcLen and #self.losAnchors>0 then
+            tEffDist = self._arcLen
+        end
+        local tChainLen = self.chainLen or 0
+        local tPullTX, tPullTY, tPullTZ
+        if #self.losAnchors > 0 then
+            local la = self.losAnchors[#self.losAnchors]
+            tPullTX, tPullTY, tPullTZ = la[1], la[2], la[3]
+        else
+            tPullTX, tPullTY, tPullTZ = sx, sy, sz
+        end
+        self.throwableTension = {
+            effectiveDist = tEffDist,
+            chainLength   = tChainLen,
+            pullTargetX   = tPullTX,
+            pullTargetY   = tPullTY,
+            pullTargetZ   = tPullTZ,
+        }
+    else
+        self.throwableTension = nil
     end
 
     -- Ground clamp
@@ -482,9 +507,17 @@ function M:Update(dt, settings)
         local theorDist = self.chainLen or 0
         local rc = self:PerformRaycast(sx,sy,sz, theorDist*1.1)
         if rc and rc.hit then
-            self.chainLen=rc.distance; self.isExtending=false; self._raycastSnapped=true
+            -- FIX: trim chainLen to actual hit distance so visual length matches geometry
+            self.chainLen = rc.distance
+            self.isExtending = false
+            self._raycastSnapped = true
+            self._justEnteredRaycastSnap = true
             local lmfs = tonumber(settings.LinkMaxDistance) or tonumber(self.params.LinkMaxDistance) or 0
-            if lmfs>0 then self.activeN=math.min(math.ceil(rc.distance/lmfs)+1,self.n); aN=self.activeN end
+            local snapMult = tonumber(settings.RaycastSnapLinkMultiplier) or 0.8
+            if lmfs > 0 then
+                self.activeN = math.min(math.ceil(rc.distance / lmfs * snapMult), self.n)
+                aN = self.activeN
+            end
             self.lockedEndPoint[1],self.lockedEndPoint[2],self.lockedEndPoint[3] =
                 rc.hitPoint[1],rc.hitPoint[2],rc.hitPoint[3]
             ex,ey,ez = rc.hitPoint[1],rc.hitPoint[2],rc.hitPoint[3]
@@ -499,15 +532,21 @@ function M:Update(dt, settings)
     end
     self.endPos[1],self.endPos[2],self.endPos[3] = ex,ey,ez
 
-    -- =========================================================================
-    -- LOS ANCHOR MODE
+    -- One-frame redistribution on wall snap
+    if self._raycastSnapped and self._justEnteredRaycastSnap then
+        self._justEnteredRaycastSnap = false
+        for i = 1, aN do
+            local t = (aN > 1) and ((i-1)/(aN-1)) or 0
+            self.positions[i] = {sx + (ex-sx)*t, sy + (ey-sy)*t, sz + (ez-sz)*t}
+            self.prev[i]      = {self.positions[i][1], self.positions[i][2], self.positions[i][3]}
+        end
+    end
     -- =========================================================================
     if settings.UseLOSAnchors and (self.chainLen or 0)>1e-4 and not self._flopping
        and (self.endPointLocked or self._raycastSnapped) then
 
         self:UpdateLOSAnchors(sx,sy,sz,ex,ey,ez)
 
-        -- Build XZ path for post-physics correction
         local path = {{sx,sy,sz}}
         for _,a in ipairs(self.losAnchors) do table.insert(path,a) end
         table.insert(path,{ex,ey,ez})
@@ -518,7 +557,6 @@ function M:Update(dt, settings)
             cumLens[i] = totalPathLen
         end
 
-        -- Park pool links; make active links dynamic (start+end hard-pinned)
         for i = aN+1,self.n do self.positions[i]={sx,sy,sz}; self.prev[i]={sx,sy,sz}; self.invMass[i]=0 end
         for i = 1,aN do self.invMass[i]=(self.anchors[i]) and 0 or 1 end
         self.invMass[1]=0; self.invMass[aN]=0
@@ -541,10 +579,6 @@ function M:Update(dt, settings)
             MaxSubSteps=settings.MaxSubSteps or self.params.MaxSubSteps,
         })
 
-        -- FIX: Post-physics XZ path projection only when chain is taut.
-        -- When the chain is lax (slack), the path is shorter than the chain length,
-        -- so projecting all links onto it collapses them into a V shape.
-        -- Instead, trust Verlet's positions when there is meaningful slack.
         local isTautForProjection = (totalPathLen >= (self.chainLen or 0) * 0.97)
 
         if totalPathLen > 1e-9 and isTautForProjection then
@@ -565,7 +599,6 @@ function M:Update(dt, settings)
             end
         end
 
-        -- Re-pin start and end (including Y)
         self.positions[1]={sx,sy,sz}; self.prev[1]={sx,sy,sz}
         self.positions[aN]={ex,ey,ez}; self.prev[aN]={ex,ey,ez}
 
@@ -589,18 +622,12 @@ function M:Update(dt, settings)
         totalLen = (self.chainLen and self.chainLen>1e-8) and self.chainLen or math.max(curEndDist,1e-6)
         if maxLenSetting>0 then totalLen=math.min(totalLen,maxLenSetting) end
     end
-    -- restLen uses chainLen during flop so segmentLen matches actual chain length.
-    -- Using maxLenSetting here inflated segmentLen for short chains (e.g. double-tap at 2m
-    -- would get segmentLen=10/81=0.125 instead of 2/81=0.025), causing constraint expansion.
     local restLen = self._flopping
         and math.max((self.chainLen or 0), 1e-6)
         or ((maxLenSetting>0) and maxLenSetting or math.max(curEndDist,1e-6))
     local segmentLen = (aN>1) and ((self._flopping and restLen or totalLen)/(aN-1)) or 0
     if (not isElastic) and linkMax and linkMax>0 and segmentLen>linkMax then segmentLen=linkMax end
 
-    -- First-frame flop-from-extension: redistribute links uniformly and zero Verlet velocity.
-    -- Only fires for extension/tap→flop; wall-tension flop deliberately skips this so its
-    -- built-up Verlet velocity (from the player pulling away) produces the launch effect.
     if self._flopping and self._justEnteredFlopFromExt then
         self._justEnteredFlopFromExt = false
         for i = 1, aN do
@@ -663,7 +690,6 @@ function M:Update(dt, settings)
     end
     for idx,_ in pairs(self.anchors) do if idx>=1 and idx<=aN then self.invMass[idx]=0 end end
 
-    -- Compute isTaut
     local arcLen = 0
     for i = 2,aN do
         arcLen=arcLen+vec_len(self.positions[i][1]-self.positions[i-1][1],
