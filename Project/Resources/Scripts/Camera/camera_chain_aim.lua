@@ -10,6 +10,14 @@ local event_bus = _G.event_bus
 
 local M = {}
 
+-- Wraps an angle difference to the [-180, 180] range so we always interpolate
+-- the short way around the circle.
+local function shortestDelta(from, to)
+    local d = (to - from) % 360.0
+    if d > 180.0 then d = d - 360.0 end
+    return d
+end
+
 -- Returns true if there is an unobstructed line from the player to the enemy.
 -- Casts from player center-mass toward the enemy; if geometry is hit before
 -- reaching the enemy the line-of-sight is blocked.
@@ -147,7 +155,7 @@ function M.updateChainAim(self, dt)
     if self._chainAimYaw then
         local blend = self._chainAimBlend
         local chainAsOrbit = self._chainAimYaw + 180.0
-        local effectiveYaw = self._yaw + (chainAsOrbit - self._yaw) * blend
+        local effectiveYaw = self._yaw + shortestDelta(self._yaw, chainAsOrbit) * blend
         _G.CAMERA_YAW = effectiveYaw
         if event_bus and event_bus.publish then
             event_bus.publish("camera_yaw", effectiveYaw)
@@ -155,14 +163,6 @@ function M.updateChainAim(self, dt)
     end
 
     return true, camX, camY, camZ
-end
-
--- Wraps an angle difference to the [-180, 180] range so we always pull the
--- short way around the circle.
-local function shortestDelta(from, to)
-    local d = (to - from) % 360.0
-    if d > 180.0 then d = d - 360.0 end
-    return d
 end
 
 -- Aim assist during chain aim.
@@ -295,8 +295,8 @@ function M.applyRotation(self, newX, newY, newZ, cameraTarget, chainAimActive, b
             orbitPitch = -math.deg(math.asin(ofy))
         end
 
-        -- Blend toward chain-aim rotation
-        local blendedYaw   = orbitYaw   + (self._chainAimYaw   - orbitYaw)   * blend
+        -- Blend toward chain-aim rotation (shortest path to avoid 360° spin)
+        local blendedYaw   = orbitYaw   + shortestDelta(orbitYaw, self._chainAimYaw) * blend
         local blendedPitch = orbitPitch + (self._chainAimPitch - orbitPitch) * blend
         local q = eulerToQuat(blendedPitch, blendedYaw, 0.0)
         self:SetRotation(q.w, q.x, q.y, q.z)
