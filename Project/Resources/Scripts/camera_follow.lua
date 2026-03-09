@@ -431,14 +431,14 @@ return Component {
             desiredX, desiredY, desiredZ, dt
         )
 
-        -- ── Override position with chain aim when active ────────────────────
-        -- Skip the orbit→chain lerp and let followLerp smooth the travel,
-        -- so the camera moves directly from its current spot to the aim position.
+        -- ── Blend position with chain aim when active ─────────────────────
+        -- Lerp between orbit and chain-aim positions based on blend factor
+        -- so zoom-out and rotation change happen simultaneously on release.
         local blend = self._chainAimBlend
         if chainActive and chainX then
-            desiredX = chainX
-            desiredY = chainY
-            desiredZ = chainZ
+            desiredX = desiredX + (chainX - desiredX) * blend
+            desiredY = desiredY + (chainY - desiredY) * blend
+            desiredZ = desiredZ + (chainZ - desiredZ) * blend
         end
 
         -- ── Smooth position follow ───────────────────────────────────────────
