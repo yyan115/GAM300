@@ -400,6 +400,17 @@ function M:Update(dt, settings)
         end
         dbg(string.format("[CONSTRAINT] effectiveDist=%.3f arcLen=%s chainLen=%.3f hardLimit=%.3f usingArcLen=%s",
             effectiveDist,tostring(self._arcLen),chainLength,hardLimit,tostring(usingArcLen)))
+        -- Pull target for throwable: the nearest chain point on the player side of the endpoint.
+        -- = last LOS anchor (closest to the hooked obj so it follows the chain path around corners),
+        -- or player/startPos if no anchors (straight line pull).
+        local pullTX, pullTY, pullTZ
+        if #self.losAnchors > 0 then
+            local la = self.losAnchors[#self.losAnchors]
+            pullTX, pullTY, pullTZ = la[1], la[2], la[3]
+        else
+            pullTX, pullTY, pullTZ = sx, sy, sz
+        end
+
         if isDragType then
             if effectiveDist > chainLength+1e-4 then
                 local dx,dy,dz = sx-ex0,sy-ey0,sz-ez0
@@ -408,10 +419,13 @@ function M:Update(dt, settings)
                     self.constraintResult = {ratio=0,exceeded=false,drag=true,
                         targetX=ex0+(dx/dist)*chainLength,
                         targetY=ey0+(dy/dist)*chainLength,
-                        targetZ=ez0+(dz/dist)*chainLength}
+                        targetZ=ez0+(dz/dist)*chainLength,
+                        pullTargetX=pullTX,pullTargetY=pullTY,pullTargetZ=pullTZ}
                 end
             else
-                self.constraintResult = {ratio=0,exceeded=false,drag=false}
+                self.constraintResult = {ratio=0,exceeded=false,drag=false,
+                    effectiveDist=effectiveDist,chainLength=chainLength,
+                    pullTargetX=pullTX,pullTargetY=pullTY,pullTargetZ=pullTZ}
             end
         else
             local ratio = (effectiveDist>chainLength)
@@ -420,14 +434,46 @@ function M:Update(dt, settings)
                 dbg("[CONSTRAINT] TAUT + EXCEEDED -> flopping")
                 self.endPointLocked,self._raycastSnapped,self._flopping = false,false,true
                 self.hookedTag=""
-                self.constraintResult = {ratio=0,exceeded=true,drag=false}
+                self.constraintResult = {ratio=0,exceeded=true,drag=false,
+                    effectiveDist=effectiveDist,chainLength=chainLength}
             else
                 self.constraintResult = {ratio=ratio,exceeded=false,drag=false,
-                    endX=tensionX,endY=tensionY,endZ=tensionZ}
+                    endX=tensionX,endY=tensionY,endZ=tensionZ,
+                    effectiveDist=effectiveDist,chainLength=chainLength,
+                    pullTargetX=pullTX,pullTargetY=pullTY,pullTargetZ=pullTZ}
             end
         end
     else
         self.constraintResult = {ratio=0,exceeded=false,drag=false}
+    end
+
+    -- Throwable tension: computed separately so it fires during retraction too.
+    -- constraintActive blocks on isRetracting, but we need effectiveDist/chainLength
+    -- the whole time the chain is pulling the throwable in.
+    local throwableTag = settings.ThrowableTag or "Throwable"
+    if self.endPointLocked and self.hookedTag == throwableTag then
+        local ex0,ey0,ez0 = self.lockedEndPoint[1],self.lockedEndPoint[2],self.lockedEndPoint[3]
+        local tEffDist = vec_len(sx-ex0,sy-ey0,sz-ez0)
+        if settings.UseLOSAnchors and self._arcLen and #self.losAnchors>0 then
+            tEffDist = self._arcLen
+        end
+        local tChainLen = self.chainLen or 0
+        local tPullTX, tPullTY, tPullTZ
+        if #self.losAnchors > 0 then
+            local la = self.losAnchors[#self.losAnchors]
+            tPullTX, tPullTY, tPullTZ = la[1], la[2], la[3]
+        else
+            tPullTX, tPullTY, tPullTZ = sx, sy, sz
+        end
+        self.throwableTension = {
+            effectiveDist = tEffDist,
+            chainLength   = tChainLen,
+            pullTargetX   = tPullTX,
+            pullTargetY   = tPullTY,
+            pullTargetZ   = tPullTZ,
+        }
+    else
+        self.throwableTension = nil
     end
 
     -- Ground clamp

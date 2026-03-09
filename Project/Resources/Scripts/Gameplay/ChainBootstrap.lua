@@ -66,7 +66,6 @@ return Component {
         DragTag = "HeavyEnemy",     -- entity tag that drags the player instead of flopping
         UseLOSAnchors = true,       -- when true: anchors auto-created wherever geometry breaks LOS
         LockOnAngleDeg = 45.0,      -- half-cone: LockOn targets outside this angle from player forward are ignored
-        RaycastSnapLinkMultiplier = 0.8,  -- fraction of links to activate when chain snaps to a wall (< 1.0 = shorter visual chain)
 
         -- =====================================================================
         -- SPIN (aim-hold from retracted state)
@@ -321,16 +320,27 @@ return Component {
             print(string.format("[ChainBootstrap] TAP extended idle: hookedIsThrowable=%s hookedId=%s len=%.3f",
                 tostring(self._hookedIsThrowable), tostring(self._hookedThrowableEntityId), len))
             if self._hookedIsThrowable and self._hookedThrowableEntityId then
-                -- Always throw in camera forward direction on tap.
-                local cf = self._cameraForward
+                -- Throw direction: throwable toward player
+                local ep = self.controller.lockedEndPoint
+                local sp = self.controller.startPos
+                local tdx = sp[1] - ep[1]
+                local tdy = sp[2] - ep[2]
+                local tdz = sp[3] - ep[3]
+                local tdist = math.sqrt(tdx*tdx + tdy*tdy + tdz*tdz)
+                if tdist > 0.01 then
+                    tdx, tdy, tdz = tdx/tdist, tdy/tdist, tdz/tdist
+                else
+                    local cf = self._cameraForward
+                    tdx, tdy, tdz = cf[1], cf[2], cf[3]
+                end
                 print(string.format("[ChainBootstrap] THROW publishing: entityId=%s dir=(%.2f,%.2f,%.2f)",
-                    tostring(self._hookedThrowableEntityId), cf[1] or 0, cf[2] or 0, cf[3] or 0))
+                    tostring(self._hookedThrowableEntityId), tdx, tdy, tdz))
                 if _G.event_bus and _G.event_bus.publish then
                     _G.event_bus.publish("chain.throwable_throw", {
                         entityId = self._hookedThrowableEntityId,
-                        dirX     = cf[1] or 0,
-                        dirY     = cf[2] or 0,
-                        dirZ     = cf[3] or 0,
+                        dirX     = tdx,
+                        dirY     = tdy,
+                        dirZ     = tdz,
                     })
                 end
                 self._hookedIsThrowable       = false
@@ -600,6 +610,14 @@ return Component {
                                     end
                                 end
                             end
+                        end
+
+                        -- Tell the throwable it is now attached so it can start receiving pull
+                        if self._hookedIsThrowable and self._hookedThrowableEntityId then
+                            _G.event_bus.publish("chain.throwable_attached", {
+                                entityId = self._hookedThrowableEntityId,
+                            })
+                            print(string.format("[ChainBootstrap] throwable_attached published for id=%s", tostring(self._hookedThrowableEntityId)))
                         end
                     end
                 end)
@@ -900,7 +918,6 @@ return Component {
             UseLOSAnchors = self.UseLOSAnchors,
             AnchorAngleThresholdRad = math.rad(self.AnchorAngleThresholdDeg or 45),
             PinEndWhenExtended = self.PinEndWhenExtended,
-            RaycastSnapLinkMultiplier = self.RaycastSnapLinkMultiplier,
             getStart = function()
                 if not self.playerTransform then
                     self.playerTransform = Engine.FindTransformByName(self.PlayerName)
@@ -1053,6 +1070,11 @@ return Component {
             dbg(string.format("[ChainBootstrap][CONSTRAINT] publishing ratio=%.3f exceeded=%s drag=%s",
                 cr.ratio or 0, tostring(cr.exceeded), tostring(cr.drag)))
             _G.event_bus.publish("chain.movement_constraint", cr)
+        end
+
+        -- Throwable tension: always published while throwable is hooked, including during retraction
+        if self.controller.throwableTension and _G.event_bus and _G.event_bus.publish then
+            _G.event_bus.publish("chain.throwable_tension", self.controller.throwableTension)
         end
 
         self.linkHandler:ApplyPositions(positions, activeN)
