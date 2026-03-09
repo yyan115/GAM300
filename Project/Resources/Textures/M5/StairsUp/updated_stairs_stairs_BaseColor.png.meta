@@ -1,0 +1,14 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "007650f1a2a81632-000473d77a0280a9",
+        "source": "../../Resources/Textures/M5/StairsUp/updated_stairs_stairs_BaseColor.png",
+        "compiled": "../../Resources/Textures/M5/StairsUp/updated_stairs_stairs_BaseColor.dds"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp"
+    }
+}

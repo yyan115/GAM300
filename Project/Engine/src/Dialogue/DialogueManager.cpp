@@ -223,18 +223,23 @@ void NarrativeDialogueManager::OnTriggerEnter(Entity triggerEntity, Entity other
 
         if (triggerEntity == dialogue.textEntity) continue; // Skip text entity matches
 
-        // Check ALL entries for a matching trigger GUID (not just current entry).
-        // This allows a trigger to skip/advance even if the current entry uses Time scroll.
+        // Only check the CURRENT entry for a matching trigger GUID.
+        // Previously this checked ALL entries, which caused a bug: touching trigger A
+        // would set triggerActivated even when the current entry expected trigger B,
+        // causing dialogue to scroll through all entries uncontrollably.
+        if (dialogue.currentIndex < 0 ||
+            dialogue.currentIndex >= static_cast<int>(dialogue.entries.size())) continue;
+
+        auto& currentEntry = dialogue.entries[dialogue.currentIndex];
+        if (currentEntry.scrollTypeID != static_cast<int>(DialogueScrollType::Trigger)) continue;
+
         auto& registry = EntityGUIDRegistry::GetInstance();
         GUID_128 triggerGuid = registry.GetGUIDByEntity(triggerEntity);
         std::string triggerGuidStr = GUIDUtilities::ConvertGUID128ToString(triggerGuid);
 
-        for (auto& entry : dialogue.entries) {
-            if (entry.scrollTypeID != static_cast<int>(DialogueScrollType::Trigger)) continue;
-            if (!entry.triggerEntityGuidStr.empty() && triggerGuidStr == entry.triggerEntityGuidStr) {
-                dialogue.triggerActivated = true;
-                break;
-            }
+        if (!currentEntry.triggerEntityGuidStr.empty() &&
+            triggerGuidStr == currentEntry.triggerEntityGuidStr) {
+            dialogue.triggerActivated = true;
         }
     }
 }
