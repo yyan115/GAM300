@@ -541,7 +541,7 @@
                             "type": "bool",
                             "data": true
                         },
-                        "002e4c7c7478043c-00046759981d07df",
+                        "0037d81b75c76d96-000400f740000003",
                         {
                             "type": "bool",
                             "data": false
@@ -564,7 +564,7 @@
                         },
                         {
                             "type": "float",
-                            "data": 1
+                            "data": 0.795181
                         },
                         {
                             "type": "float",
@@ -10423,6 +10423,12 @@
                     }
                 }
             ],
+            "DeletedChildren": [
+                {
+                    "Name": "DoorTrigger",
+                    "SiblingIndex": 66
+                }
+            ],
             "Children": [
                 {
                     "id": 43,
@@ -11177,93 +11183,6 @@
                     }
                 },
                 {
-                    "id": 89,
-                    "guid": "004e5c2f7dfdb919-0004746e023ac607",
-                    "Name": "DoorTrigger",
-                    "SiblingIndex": 66,
-                    "ParentComponent": {
-                        "type": "ParentComponent",
-                        "data": [
-                            "004e5c2f7b95e8c2-0004746e023ac5a9"
-                        ]
-                    },
-                    "ComponentOverrides": [
-                        {
-                            "ScriptComponent": {
-                                "scripts": [
-                                    {
-                                        "scriptGuidStr": "00169954ee308ed9-00041ea880002d8b",
-                                        "scriptPath": "../../Resources/Scripts/Gameplay/DoorTrigger.lua",
-                                        "enabled": true,
-                                        "preserveKeys": [],
-                                        "entryFunction": "OnInit",
-                                        "autoInvokeEntry": true,
-                                        "instanceState": {
-                                            "weaponOnHand": "LowPolyFeatherChain",
-                                            "pickupAnimTime": 0.0,
-                                            "_transform_fetched": false,
-                                            "isOpening": false,
-                                            "weaponPickup": "WeaponPickup",
-                                            "openAngle": 90.0,
-                                            "pickupSFX": [
-                                                "00264c30db67fa81-0004683702005857"
-                                            ],
-                                            "targetLeftDoor": "LeftDoor1",
-                                            "openZ": false,
-                                            "isWaiting": false,
-                                            "overshootAngle": 10.0,
-                                            "pickupDuration": 0.8,
-                                            "delayTime": 0.0,
-                                            "openOffset": 1.0,
-                                            "playerName": "Player",
-                                            "entitiesToCheckInactive": [
-                                                "EnemyMeleeA",
-                                                "EnemyMeleeB",
-                                                "EnemyMeleeC",
-                                                "EnemyRangeD"
-                                            ],
-                                            "isPickingUp": false,
-                                            "_private": {},
-                                            "targetRightDoor": "RightDoor2",
-                                            "weaponHandOffsetX": -0.15,
-                                            "__created_at": 1770314120.0,
-                                            "_subscriptions": {},
-                                            "__meta": {},
-                                            "openDuration": 3.0,
-                                            "triggerMode": 2.0,
-                                            "hasOpened": false,
-                                            "__field_list": {
-                                                "delayTime": 0.0,
-                                                "isOpening": false,
-                                                "playerName": "Player",
-                                                "isActivatable": false,
-                                                "openDuration": 3.0,
-                                                "postOpenDelay": 2.0,
-                                                "targetLeftDoor": "LeftDoor1",
-                                                "openOffset": 0.5,
-                                                "isWaiting": false,
-                                                "targetRightDoor": "RightDoor2",
-                                                "triggerMode": 1.0,
-                                                "hasOpened": false,
-                                                "triggerRadius": 0.5,
-                                                "openingTime": 0.0
-                                            },
-                                            "postOpenDelay": 0.1,
-                                            "openingTime": 0.0,
-                                            "triggerRadius": 1.0,
-                                            "isActivatable": false,
-                                            "weaponFlyDuration": 0.15,
-                                            "doorOpenSFX": [
-                                                "001521729a1c6852-0004276d680062ad"
-                                            ]
-                                        }
-                                    }
-                                ]
-                            }
-                        }
-                    ]
-                },
-                {
                     "id": 90,
                     "guid": "004e5c2f69f7e8eb-0004746e023ac609",
                     "Name": "RightDoor2",
@@ -11632,7 +11551,7 @@
                     ]
                 },
                 {
-                    "id": 242,
+                    "id": 98,
                     "guid": "004e5c2f5d6c2228-00047473d43b7d01",
                     "Name": "Spot Light (1)",
                     "SiblingIndex": 50001,
@@ -11870,7 +11789,7 @@
         },
         {
             "PrefabPath": "../../Resources/Prefabs/Player_GameLevelMap.prefab",
-            "id": 98,
+            "id": 99,
             "guid": "004e5c2f2de42e09-0004746fae3b6b17",
             "Name": "Player",
             "SiblingIndex": 50000,
@@ -12437,7 +12356,7 @@
             ],
             "Children": [
                 {
-                    "id": 99,
+                    "id": 100,
                     "guid": "004e5c2f053d5350-0004746fae3b6b19",
                     "Name": "Player",
                     "SiblingIndex": 0,
@@ -12449,7 +12368,7 @@
                     },
                     "Children": [
                         {
-                            "id": 100,
+                            "id": 101,
                             "guid": "004e5c2f77f0740d-0004746fae3b6b1b",
                             "Name": "Head",
                             "SiblingIndex": 0,
@@ -12461,7 +12380,7 @@
                             }
                         },
                         {
-                            "id": 101,
+                            "id": 102,
                             "guid": "004e5c2f69118051-0004746fae3b6b1d",
                             "Name": "Ring",
                             "SiblingIndex": 1,
@@ -12473,7 +12392,7 @@
                             }
                         },
                         {
-                            "id": 102,
+                            "id": 103,
                             "guid": "004e5c2f5231c1a2-0004746fae3b6b1f",
                             "Name": "Obi",
                             "SiblingIndex": 2,
@@ -12485,7 +12404,7 @@
                             }
                         },
                         {
-                            "id": 103,
+                            "id": 104,
                             "guid": "004e5c2f6b551ab5-0004746fae3b6b21",
                             "Name": "Rope",
                             "SiblingIndex": 3,
@@ -12497,7 +12416,7 @@
                             },
                             "Children": [
                                 {
-                                    "id": 104,
+                                    "id": 105,
                                     "guid": "004e5c2f0c05e16d-0004746fae3b6b23",
                                     "Name": "kusanemask:polySurface5",
                                     "SiblingIndex": 0,
@@ -12509,7 +12428,7 @@
                                     }
                                 },
                                 {
-                                    "id": 105,
+                                    "id": 106,
                                     "guid": "004e5c2f2dfff946-0004746fae3b6b25",
                                     "Name": "kusanemask:polySurface1",
                                     "SiblingIndex": 1,
@@ -12521,7 +12440,7 @@
                                     }
                                 },
                                 {
-                                    "id": 106,
+                                    "id": 107,
                                     "guid": "004e5c2f421aca33-0004746fae3b6b27",
                                     "Name": "kusanemask:polySurface6",
                                     "SiblingIndex": 2,
@@ -12533,7 +12452,7 @@
                                     }
                                 },
                                 {
-                                    "id": 107,
+                                    "id": 108,
                                     "guid": "004e5c2f3190c6b5-0004746fae3b6b29",
                                     "Name": "kusanemask:polySurface2",
                                     "SiblingIndex": 3,
@@ -12545,7 +12464,7 @@
                                     }
                                 },
                                 {
-                                    "id": 108,
+                                    "id": 109,
                                     "guid": "004e5c2f0df163b8-0004746fae3b6b2b",
                                     "Name": "kusanemask:polySurface3",
                                     "SiblingIndex": 4,
@@ -12557,7 +12476,7 @@
                                     }
                                 },
                                 {
-                                    "id": 109,
+                                    "id": 110,
                                     "guid": "004e5c2f65db36ed-0004746fae3b6b2d",
                                     "Name": "kusanemask:polySurface4",
                                     "SiblingIndex": 5,
@@ -12571,7 +12490,7 @@
                             ]
                         },
                         {
-                            "id": 110,
+                            "id": 111,
                             "guid": "004e5c2f33a9e46f-0004746fae3b6b2f",
                             "Name": "Mask",
                             "SiblingIndex": 4,
@@ -12583,7 +12502,7 @@
                             },
                             "Children": [
                                 {
-                                    "id": 111,
+                                    "id": 112,
                                     "guid": "004e5c2f4ac45ce6-0004746fae3b6b31",
                                     "Name": "eyebrows:EyeBrow",
                                     "SiblingIndex": 0,
@@ -12595,7 +12514,7 @@
                                     }
                                 },
                                 {
-                                    "id": 112,
+                                    "id": 113,
                                     "guid": "004e5c2f0fa2acb6-0004746fae3b6b33",
                                     "Name": "kusanemask:Mask",
                                     "SiblingIndex": 1,
@@ -12607,7 +12526,7 @@
                                     }
                                 },
                                 {
-                                    "id": 113,
+                                    "id": 114,
                                     "guid": "004e5c2f514f7406-0004746fae3b6b35",
                                     "Name": "kusanemask:Fangs",
                                     "SiblingIndex": 2,
@@ -12619,7 +12538,7 @@
                                     }
                                 },
                                 {
-                                    "id": 114,
+                                    "id": 115,
                                     "guid": "004e5c2f24e54b7e-0004746fae3b6b37",
                                     "Name": "kusanemask:Teeth",
                                     "SiblingIndex": 3,
@@ -12633,7 +12552,7 @@
                             ]
                         },
                         {
-                            "id": 115,
+                            "id": 116,
                             "guid": "004e5c2f25ce4798-0004746fae3b6b39",
                             "Name": "R_Feet",
                             "SiblingIndex": 5,
@@ -12645,7 +12564,7 @@
                             },
                             "Children": [
                                 {
-                                    "id": 116,
+                                    "id": 117,
                                     "guid": "004e5c2f12e0d897-0004746fae3b6b3b",
                                     "Name": "R_Shoe",
                                     "SiblingIndex": 0,
@@ -12657,7 +12576,7 @@
                                     }
                                 },
                                 {
-                                    "id": 117,
+                                    "id": 118,
                                     "guid": "004e5c2f50749ad6-0004746fae3b6b3d",
                                     "Name": "R_Sock",
                                     "SiblingIndex": 1,
@@ -12669,7 +12588,7 @@
                                     }
                                 },
                                 {
-                                    "id": 118,
+                                    "id": 119,
                                     "guid": "004e5c2f4c9258e0-0004746fae3b6b3f",
                                     "Name": "R_Shoe_String",
                                     "SiblingIndex": 2,
@@ -12681,7 +12600,7 @@
                                     }
                                 },
                                 {
-                                    "id": 119,
+                                    "id": 120,
                                     "guid": "004e5c2f3ffc0c7d-0004746fae3b6b41",
                                     "Name": "R_Ankle_Bandage",
                                     "SiblingIndex": 3,
@@ -12695,7 +12614,7 @@
                             ]
                         },
                         {
-                            "id": 120,
+                            "id": 121,
                             "guid": "004e5c2f056468ee-0004746fae3b6b43",
                             "Name": "L_Feet",
                             "SiblingIndex": 6,
@@ -12707,7 +12626,7 @@
                             },
                             "Children": [
                                 {
-                                    "id": 121,
+                                    "id": 122,
                                     "guid": "004e5c2f327b9f0f-0004746fae3b6b45",
                                     "Name": "L_Shoe",
                                     "SiblingIndex": 0,
@@ -12719,7 +12638,7 @@
                                     }
                                 },
                                 {
-                                    "id": 122,
+                                    "id": 123,
                                     "guid": "004e5c2f0105a4ec-0004746fae3b6b47",
                                     "Name": "L_Sock",
                                     "SiblingIndex": 1,
@@ -12731,7 +12650,7 @@
                                     }
                                 },
                                 {
-                                    "id": 123,
+                                    "id": 124,
                                     "guid": "004e5c2f7eac87b6-0004746fae3b6b49",
                                     "Name": "L_Shoe_String",
                                     "SiblingIndex": 2,
@@ -12743,7 +12662,7 @@
                                     }
                                 },
                                 {
-                                    "id": 124,
+                                    "id": 125,
                                     "guid": "004e5c2f5d91ea8d-0004746fae3b6b4b",
                                     "Name": "L_Ankle_Bandage",
                                     "SiblingIndex": 3,
@@ -12757,7 +12676,7 @@
                             ]
                         },
                         {
-                            "id": 125,
+                            "id": 126,
                             "guid": "004e5c2f4e302925-0004746fae3b6b4d",
                             "Name": "Hair1",
                             "SiblingIndex": 7,
@@ -12769,7 +12688,7 @@
                             },
                             "Children": [
                                 {
-                                    "id": 126,
+                                    "id": 127,
                                     "guid": "004e5c2f7502721c-0004746fae3b6b4f",
                                     "Name": "Front_Hair",
                                     "SiblingIndex": 0,
@@ -12781,7 +12700,7 @@
                                     },
                                     "Children": [
                                         {
-                                            "id": 127,
+                                            "id": 128,
                                             "guid": "004e5c2f6857ceb0-0004746fae3b6b51",
                                             "Name": "L_Hair_Piece",
                                             "SiblingIndex": 0,
@@ -12793,7 +12712,7 @@
                                             }
                                         },
                                         {
-                                            "id": 128,
+                                            "id": 129,
                                             "guid": "004e5c2f4a0ea784-0004746fae3b6b53",
                                             "Name": "Front_Hair_Piece",
                                             "SiblingIndex": 1,
@@ -12805,7 +12724,7 @@
                                             }
                                         },
                                         {
-                                            "id": 129,
+                                            "id": 130,
                                             "guid": "004e5c2f3bc15b6b-0004746fae3b6b55",
                                             "Name": "R_Hair_Piece",
                                             "SiblingIndex": 2,
@@ -12819,7 +12738,7 @@
                                     ]
                                 },
                                 {
-                                    "id": 130,
+                                    "id": 131,
                                     "guid": "004e5c2f5ed5b2af-0004746fae3b6b57",
                                     "Name": "Back_Hair",
                                     "SiblingIndex": 1,
@@ -12833,7 +12752,7 @@
                             ]
                         },
                         {
-                            "id": 131,
+                            "id": 132,
                             "guid": "004e5c2f39d6e109-0004746fae3b6b59",
                             "Name": "Pants",
                             "SiblingIndex": 8,
@@ -12845,7 +12764,7 @@
                             },
                             "Children": [
                                 {
-                                    "id": 132,
+                                    "id": 133,
                                     "guid": "004e5c2f745f9652-0004746fae3b6b5b",
                                     "Name": "polySurface56",
                                     "SiblingIndex": 0,
@@ -12859,7 +12778,7 @@
                             ]
                         },
                         {
-                            "id": 133,
+                            "id": 134,
                             "guid": "004e5c2f363621a5-0004746fae3b6b5d",
                             "Name": "Kimono",
                             "SiblingIndex": 9,
@@ -12871,7 +12790,7 @@
                             },
                             "Children": [
                                 {
-                                    "id": 134,
+                                    "id": 135,
                                     "guid": "004e5c2f120f53f3-0004746fae3b6b5f",
                                     "Name": "Outer_Kimono",
                                     "SiblingIndex": 0,
@@ -12883,7 +12802,7 @@
                                     }
                                 },
                                 {
-                                    "id": 135,
+                                    "id": 136,
                                     "guid": "004e5c2f00e8fe56-0004746fae3b6b61",
                                     "Name": "Inner_Kimono",
                                     "SiblingIndex": 1,
@@ -12895,7 +12814,7 @@
                                     }
                                 },
                                 {
-                                    "id": 136,
+                                    "id": 137,
                                     "guid": "004e5c2f5db71e3c-0004746fae3b6b63",
                                     "Name": "Gear_Strap",
                                     "SiblingIndex": 2,
@@ -12907,7 +12826,7 @@
                                     }
                                 },
                                 {
-                                    "id": 137,
+                                    "id": 138,
                                     "guid": "004e5c2f79eb5b7c-0004746fae3b6b65",
                                     "Name": "Threads",
                                     "SiblingIndex": 3,
@@ -12919,7 +12838,7 @@
                                     }
                                 },
                                 {
-                                    "id": 138,
+                                    "id": 139,
                                     "guid": "004e5c2f322f7e09-0004746fae3b6b67",
                                     "Name": "Skirt",
                                     "SiblingIndex": 4,
@@ -12933,7 +12852,7 @@
                             ]
                         },
                         {
-                            "id": 139,
+                            "id": 140,
                             "guid": "004e5c2f655189d0-0004746fae3b6b69",
                             "Name": "L_Eyelash",
                             "SiblingIndex": 10,
@@ -12945,7 +12864,7 @@
                             },
                             "Children": [
                                 {
-                                    "id": 140,
+                                    "id": 141,
                                     "guid": "004e5c2f24e16e0d-0004746fae3b6b6b",
                                     "Name": "L_Lower_Eyelash",
                                     "SiblingIndex": 0,
@@ -12957,7 +12876,7 @@
                                     }
                                 },
                                 {
-                                    "id": 141,
+                                    "id": 142,
                                     "guid": "004e5c2f49a753b3-0004746fae3b6b6d",
                                     "Name": "L_Upper_Eyelash",
                                     "SiblingIndex": 1,
@@ -12971,7 +12890,7 @@
                             ]
                         },
                         {
-                            "id": 142,
+                            "id": 143,
                             "guid": "004e5c2f304ce898-0004746fae3b6b6f",
                             "Name": "R_Eyelash",
                             "SiblingIndex": 11,
@@ -12983,7 +12902,7 @@
                             },
                             "Children": [
                                 {
-                                    "id": 143,
+                                    "id": 144,
                                     "guid": "004e5c2f2c001bba-0004746fae3b6b71",
                                     "Name": "R_Upper_Eyelash",
                                     "SiblingIndex": 0,
@@ -12995,7 +12914,7 @@
                                     }
                                 },
                                 {
-                                    "id": 144,
+                                    "id": 145,
                                     "guid": "004e5c2f5a9f7b1b-0004746fae3b6b73",
                                     "Name": "R_Lower_Eyelash",
                                     "SiblingIndex": 1,
@@ -13009,7 +12928,7 @@
                             ]
                         },
                         {
-                            "id": 145,
+                            "id": 146,
                             "guid": "004e5c2f57385584-0004746fae3b6b75",
                             "Name": "Top_Torso",
                             "SiblingIndex": 12,
@@ -13021,7 +12940,7 @@
                             },
                             "Children": [
                                 {
-                                    "id": 146,
+                                    "id": 147,
                                     "guid": "004e5c2f5be25a6f-0004746fae3b6b77",
                                     "Name": "polySurface234",
                                     "SiblingIndex": 0,
@@ -13033,7 +12952,7 @@
                                     }
                                 },
                                 {
-                                    "id": 147,
+                                    "id": 148,
                                     "guid": "004e5c2f56421182-0004746fae3b6b79",
                                     "Name": "polySurface235",
                                     "SiblingIndex": 1,
@@ -13045,7 +12964,7 @@
                                     }
                                 },
                                 {
-                                    "id": 148,
+                                    "id": 149,
                                     "guid": "004e5c2f20359017-0004746fae3b6b7b",
                                     "Name": "polySurface236",
                                     "SiblingIndex": 2,
@@ -13057,7 +12976,7 @@
                                     }
                                 },
                                 {
-                                    "id": 149,
+                                    "id": 150,
                                     "guid": "004e5c2f60a46655-0004746fae3b6b7d",
                                     "Name": "polySurface237",
                                     "SiblingIndex": 3,
@@ -13069,7 +12988,7 @@
                                     }
                                 },
                                 {
-                                    "id": 150,
+                                    "id": 151,
                                     "guid": "004e5c2f0d15ea5e-0004746fae3b6b7f",
                                     "Name": "polySurface238",
                                     "SiblingIndex": 4,
@@ -13081,7 +13000,7 @@
                                     }
                                 },
                                 {
-                                    "id": 151,
+                                    "id": 152,
                                     "guid": "004e5c2f06980ace-0004746fae3b6b81",
                                     "Name": "polySurface239",
                                     "SiblingIndex": 5,
@@ -13093,7 +13012,7 @@
                                     }
                                 },
                                 {
-                                    "id": 152,
+                                    "id": 153,
                                     "guid": "004e5c2f2149edad-0004746fae3b6b83",
                                     "Name": "polySurface240",
                                     "SiblingIndex": 6,
@@ -13105,7 +13024,7 @@
                                     }
                                 },
                                 {
-                                    "id": 153,
+                                    "id": 154,
                                     "guid": "004e5c2f621fe647-0004746fae3b6b85",
                                     "Name": "polySurface241",
                                     "SiblingIndex": 7,
@@ -13117,7 +13036,7 @@
                                     }
                                 },
                                 {
-                                    "id": 154,
+                                    "id": 155,
                                     "guid": "004e5c2f33bdd72d-0004746fae3b6b87",
                                     "Name": "polySurface242",
                                     "SiblingIndex": 8,
@@ -13129,7 +13048,7 @@
                                     }
                                 },
                                 {
-                                    "id": 155,
+                                    "id": 156,
                                     "guid": "004e5c2f34f75576-0004746fae3b6b89",
                                     "Name": "polySurface243",
                                     "SiblingIndex": 9,
@@ -13141,7 +13060,7 @@
                                     }
                                 },
                                 {
-                                    "id": 156,
+                                    "id": 157,
                                     "guid": "004e5c2f44c213d4-0004746fae3b6b8b",
                                     "Name": "polySurface244",
                                     "SiblingIndex": 10,
@@ -13153,7 +13072,7 @@
                                     }
                                 },
                                 {
-                                    "id": 157,
+                                    "id": 158,
                                     "guid": "004e5c2f61bc95bf-0004746fae3b6b8d",
                                     "Name": "polySurface245",
                                     "SiblingIndex": 11,
@@ -13165,7 +13084,7 @@
                                     }
                                 },
                                 {
-                                    "id": 158,
+                                    "id": 159,
                                     "guid": "004e5c2f06d4f69e-0004746fae3b6b8f",
                                     "Name": "polySurface246",
                                     "SiblingIndex": 12,
@@ -13177,7 +13096,7 @@
                                     }
                                 },
                                 {
-                                    "id": 159,
+                                    "id": 160,
                                     "guid": "004e5c2f14670784-0004746fae3b6b91",
                                     "Name": "polySurface247",
                                     "SiblingIndex": 13,
@@ -13189,7 +13108,7 @@
                                     }
                                 },
                                 {
-                                    "id": 160,
+                                    "id": 161,
                                     "guid": "004e5c2f580a9b91-0004746fae3b6b93",
                                     "Name": "polySurface248",
                                     "SiblingIndex": 14,
@@ -13201,7 +13120,7 @@
                                     }
                                 },
                                 {
-                                    "id": 161,
+                                    "id": 162,
                                     "guid": "004e5c2f3d0f9e21-0004746fae3b6b95",
                                     "Name": "polySurface249",
                                     "SiblingIndex": 15,
@@ -13213,7 +13132,7 @@
                                     }
                                 },
                                 {
-                                    "id": 162,
+                                    "id": 163,
                                     "guid": "004e5c2f56ed8f79-0004746fae3b6b97",
                                     "Name": "polySurface250",
                                     "SiblingIndex": 16,
@@ -13229,7 +13148,7 @@
                     ]
                 },
                 {
-                    "id": 163,
+                    "id": 164,
                     "guid": "004e5c2f28aa9927-0004746fae3b6b99",
                     "Name": "Hair:backhair1",
                     "SiblingIndex": 1,
@@ -13241,7 +13160,7 @@
                     }
                 },
                 {
-                    "id": 164,
+                    "id": 165,
                     "guid": "004e5c2f3e3134ec-0004746fae3b6b9b",
                     "Name": "Kusane_Player_Reference",
                     "SiblingIndex": 2,
@@ -13317,7 +13236,7 @@
                     ],
                     "Children": [
                         {
-                            "id": 165,
+                            "id": 166,
                             "guid": "004e5c2f29ace414-0004746fae3b6b9d",
                             "Name": "Kusane_Player_Hips",
                             "SiblingIndex": 0,
@@ -13393,7 +13312,7 @@
                             ],
                             "Children": [
                                 {
-                                    "id": 166,
+                                    "id": 167,
                                     "guid": "004e5c2f427cb357-0004746fae3b6b9f",
                                     "Name": "Kusane_Player_LeftUpLeg",
                                     "SiblingIndex": 0,
@@ -13469,7 +13388,7 @@
                                     ],
                                     "Children": [
                                         {
-                                            "id": 167,
+                                            "id": 168,
                                             "guid": "004e5c2f45da44e3-0004746fae3b6ba1",
                                             "Name": "Kusane_Player_LeftLeg",
                                             "SiblingIndex": 0,
@@ -13545,7 +13464,7 @@
                                             ],
                                             "Children": [
                                                 {
-                                                    "id": 168,
+                                                    "id": 169,
                                                     "guid": "004e5c2f37a2956c-0004746fae3b6ba3",
                                                     "Name": "Kusane_Player_LeftFoot",
                                                     "SiblingIndex": 0,
@@ -13621,7 +13540,7 @@
                                                     ],
                                                     "Children": [
                                                         {
-                                                            "id": 169,
+                                                            "id": 170,
                                                             "guid": "004e5c2f314b9694-0004746fae3b6ba5",
                                                             "Name": "Kusane_Player_LeftToeBase",
                                                             "SiblingIndex": 0,
@@ -13703,7 +13622,7 @@
                                     ]
                                 },
                                 {
-                                    "id": 170,
+                                    "id": 171,
                                     "guid": "004e5c2f7a628fd5-0004746fae3b6ba7",
                                     "Name": "Kusane_Player_RightUpLeg",
                                     "SiblingIndex": 1,
@@ -13779,7 +13698,7 @@
                                     ],
                                     "Children": [
                                         {
-                                            "id": 171,
+                                            "id": 172,
                                             "guid": "004e5c2f7249b77e-0004746fae3b6ba9",
                                             "Name": "Kusane_Player_RightLeg",
                                             "SiblingIndex": 0,
@@ -13855,7 +13774,7 @@
                                             ],
                                             "Children": [
                                                 {
-                                                    "id": 172,
+                                                    "id": 173,
                                                     "guid": "004e5c2f4ba40f0c-0004746fae3b6bab",
                                                     "Name": "Kusane_Player_RightFoot",
                                                     "SiblingIndex": 0,
@@ -13931,7 +13850,7 @@
                                                     ],
                                                     "Children": [
                                                         {
-                                                            "id": 173,
+                                                            "id": 174,
                                                             "guid": "004e5c2f42729faa-0004746fae3b6bad",
                                                             "Name": "Kusane_Player_RightToeBase",
                                                             "SiblingIndex": 0,
@@ -14013,7 +13932,7 @@
                                     ]
                                 },
                                 {
-                                    "id": 174,
+                                    "id": 175,
                                     "guid": "004e5c2f0b9e9837-0004746fae3b6baf",
                                     "Name": "Kusane_Player_Spine",
                                     "SiblingIndex": 2,
@@ -14089,7 +14008,7 @@
                                     ],
                                     "Children": [
                                         {
-                                            "id": 175,
+                                            "id": 176,
                                             "guid": "004e5c2f414567bf-0004746fae3b6bb1",
                                             "Name": "Kusane_Player_Spine1",
                                             "SiblingIndex": 0,
@@ -14101,7 +14020,7 @@
                                             },
                                             "Children": [
                                                 {
-                                                    "id": 176,
+                                                    "id": 177,
                                                     "guid": "004e5c2f33ba1837-0004746fae3b6bb3",
                                                     "Name": "Kusane_Player_Spine2",
                                                     "SiblingIndex": 0,
@@ -14113,7 +14032,7 @@
                                                     },
                                                     "Children": [
                                                         {
-                                                            "id": 177,
+                                                            "id": 178,
                                                             "guid": "004e5c2f533aa54c-0004746fae3b6bb5",
                                                             "Name": "Kusane_Player_LeftShoulder",
                                                             "SiblingIndex": 0,
@@ -14125,7 +14044,7 @@
                                                             },
                                                             "Children": [
                                                                 {
-                                                                    "id": 178,
+                                                                    "id": 179,
                                                                     "guid": "004e5c2f6476f21d-0004746fae3b6bb7",
                                                                     "Name": "Kusane_Player_LeftArm",
                                                                     "SiblingIndex": 0,
@@ -14201,7 +14120,7 @@
                                                                     ],
                                                                     "Children": [
                                                                         {
-                                                                            "id": 179,
+                                                                            "id": 180,
                                                                             "guid": "004e5c2f7d55fe53-0004746fae3b6bb9",
                                                                             "Name": "Kusane_Player_LeftForeArm",
                                                                             "SiblingIndex": 0,
@@ -14277,7 +14196,7 @@
                                                                             ],
                                                                             "Children": [
                                                                                 {
-                                                                                    "id": 180,
+                                                                                    "id": 181,
                                                                                     "guid": "004e5c2f7e8dee59-0004746fae3b6bbb",
                                                                                     "Name": "Kusane_Player_LeftHand",
                                                                                     "SiblingIndex": 0,
@@ -14353,7 +14272,7 @@
                                                                                     ],
                                                                                     "Children": [
                                                                                         {
-                                                                                            "id": 181,
+                                                                                            "id": 182,
                                                                                             "guid": "004e5c2f72f09f4e-0004746fae3b6bbd",
                                                                                             "Name": "Kusane_Player_LeftHandThumb1",
                                                                                             "SiblingIndex": 0,
@@ -14365,7 +14284,7 @@
                                                                                             },
                                                                                             "Children": [
                                                                                                 {
-                                                                                                    "id": 182,
+                                                                                                    "id": 183,
                                                                                                     "guid": "004e5c2f0de28d3c-0004746fae3b6bbf",
                                                                                                     "Name": "Kusane_Player_LeftHandThumb2",
                                                                                                     "SiblingIndex": 0,
@@ -14377,7 +14296,7 @@
                                                                                                     },
                                                                                                     "Children": [
                                                                                                         {
-                                                                                                            "id": 183,
+                                                                                                            "id": 184,
                                                                                                             "guid": "004e5c2f3345a097-0004746fae3b6bc1",
                                                                                                             "Name": "Kusane_Player_LeftHandThumb3",
                                                                                                             "SiblingIndex": 0,
@@ -14389,7 +14308,7 @@
                                                                                                             },
                                                                                                             "Children": [
                                                                                                                 {
-                                                                                                                    "id": 184,
+                                                                                                                    "id": 185,
                                                                                                                     "guid": "004e5c2f03a7cd09-0004746fae3b6bc3",
                                                                                                                     "Name": "Kusane_Player_LeftHandThumb4",
                                                                                                                     "SiblingIndex": 0,
@@ -14407,7 +14326,7 @@
                                                                                             ]
                                                                                         },
                                                                                         {
-                                                                                            "id": 185,
+                                                                                            "id": 186,
                                                                                             "guid": "004e5c2f3ebe3120-0004746fae3b6bc5",
                                                                                             "Name": "Kusane_Player_LeftHandIndex1",
                                                                                             "SiblingIndex": 1,
@@ -14419,7 +14338,7 @@
                                                                                             },
                                                                                             "Children": [
                                                                                                 {
-                                                                                                    "id": 186,
+                                                                                                    "id": 187,
                                                                                                     "guid": "004e5c2f678306a8-0004746fae3b6bc7",
                                                                                                     "Name": "Kusane_Player_LeftHandIndex2",
                                                                                                     "SiblingIndex": 0,
@@ -14431,7 +14350,7 @@
                                                                                                     },
                                                                                                     "Children": [
                                                                                                         {
-                                                                                                            "id": 187,
+                                                                                                            "id": 188,
                                                                                                             "guid": "004e5c2f57680eda-0004746fae3b6bc9",
                                                                                                             "Name": "Kusane_Player_LeftHandIndex3",
                                                                                                             "SiblingIndex": 0,
@@ -14443,7 +14362,7 @@
                                                                                                             },
                                                                                                             "Children": [
                                                                                                                 {
-                                                                                                                    "id": 188,
+                                                                                                                    "id": 189,
                                                                                                                     "guid": "004e5c2f2984e91e-0004746fae3b6bcb",
                                                                                                                     "Name": "Kusane_Player_LeftHandIndex4",
                                                                                                                     "SiblingIndex": 0,
@@ -14461,7 +14380,7 @@
                                                                                             ]
                                                                                         },
                                                                                         {
-                                                                                            "id": 189,
+                                                                                            "id": 190,
                                                                                             "guid": "004e5c2f5a60d20e-0004746fae3b6bcd",
                                                                                             "Name": "Kusane_Player_LeftHandMiddle1",
                                                                                             "SiblingIndex": 2,
@@ -14473,7 +14392,7 @@
                                                                                             },
                                                                                             "Children": [
                                                                                                 {
-                                                                                                    "id": 190,
+                                                                                                    "id": 191,
                                                                                                     "guid": "004e5c2f40fae1d2-0004746fae3b6bcf",
                                                                                                     "Name": "Kusane_Player_LeftHandMiddle2",
                                                                                                     "SiblingIndex": 0,
@@ -14485,7 +14404,7 @@
                                                                                                     },
                                                                                                     "Children": [
                                                                                                         {
-                                                                                                            "id": 191,
+                                                                                                            "id": 192,
                                                                                                             "guid": "004e5c2f6cea03e7-0004746fae3b6bd1",
                                                                                                             "Name": "Kusane_Player_LeftHandMiddle3",
                                                                                                             "SiblingIndex": 0,
@@ -14497,7 +14416,7 @@
                                                                                                             },
                                                                                                             "Children": [
                                                                                                                 {
-                                                                                                                    "id": 192,
+                                                                                                                    "id": 193,
                                                                                                                     "guid": "004e5c2f5a3edfc0-0004746fae3b6bd3",
                                                                                                                     "Name": "Kusane_Player_LeftHandMiddle4",
                                                                                                                     "SiblingIndex": 0,
@@ -14515,7 +14434,7 @@
                                                                                             ]
                                                                                         },
                                                                                         {
-                                                                                            "id": 193,
+                                                                                            "id": 194,
                                                                                             "guid": "004e5c2f680400ef-0004746fae3b6bd5",
                                                                                             "Name": "Kusane_Player_LeftHandRing1",
                                                                                             "SiblingIndex": 3,
@@ -14527,7 +14446,7 @@
                                                                                             },
                                                                                             "Children": [
                                                                                                 {
-                                                                                                    "id": 194,
+                                                                                                    "id": 195,
                                                                                                     "guid": "004e5c2f248b2c1e-0004746fae3b6bd7",
                                                                                                     "Name": "Kusane_Player_LeftHandRing2",
                                                                                                     "SiblingIndex": 0,
@@ -14539,7 +14458,7 @@
                                                                                                     },
                                                                                                     "Children": [
                                                                                                         {
-                                                                                                            "id": 195,
+                                                                                                            "id": 196,
                                                                                                             "guid": "004e5c2f7f67962f-0004746fae3b6bd9",
                                                                                                             "Name": "Kusane_Player_LeftHandRing3",
                                                                                                             "SiblingIndex": 0,
@@ -14551,7 +14470,7 @@
                                                                                                             },
                                                                                                             "Children": [
                                                                                                                 {
-                                                                                                                    "id": 196,
+                                                                                                                    "id": 197,
                                                                                                                     "guid": "004e5c2f57d3b71b-0004746fae3b6bdb",
                                                                                                                     "Name": "Kusane_Player_LeftHandRing4",
                                                                                                                     "SiblingIndex": 0,
@@ -14569,7 +14488,7 @@
                                                                                             ]
                                                                                         },
                                                                                         {
-                                                                                            "id": 197,
+                                                                                            "id": 198,
                                                                                             "guid": "004e5c2f61d0147a-0004746fae3b6bdd",
                                                                                             "Name": "Kusane_Player_LeftHandPinky1",
                                                                                             "SiblingIndex": 4,
@@ -14581,7 +14500,7 @@
                                                                                             },
                                                                                             "Children": [
                                                                                                 {
-                                                                                                    "id": 198,
+                                                                                                    "id": 199,
                                                                                                     "guid": "004e5c2f27726610-0004746fae3b6bdf",
                                                                                                     "Name": "Kusane_Player_LeftHandPinky2",
                                                                                                     "SiblingIndex": 0,
@@ -14593,7 +14512,7 @@
                                                                                                     },
                                                                                                     "Children": [
                                                                                                         {
-                                                                                                            "id": 199,
+                                                                                                            "id": 200,
                                                                                                             "guid": "004e5c2f56581294-0004746fae3b6be1",
                                                                                                             "Name": "Kusane_Player_LeftHandPinky3",
                                                                                                             "SiblingIndex": 0,
@@ -14605,7 +14524,7 @@
                                                                                                             },
                                                                                                             "Children": [
                                                                                                                 {
-                                                                                                                    "id": 200,
+                                                                                                                    "id": 201,
                                                                                                                     "guid": "004e5c2f44ebfee9-0004746fae3b6be3",
                                                                                                                     "Name": "Kusane_Player_LeftHandPinky4",
                                                                                                                     "SiblingIndex": 0,
@@ -14631,7 +14550,7 @@
                                                             ]
                                                         },
                                                         {
-                                                            "id": 201,
+                                                            "id": 202,
                                                             "guid": "004e5c2f5f5db024-0004746fae3b6be5",
                                                             "Name": "Kusane_Player_RightShoulder",
                                                             "SiblingIndex": 1,
@@ -14643,7 +14562,7 @@
                                                             },
                                                             "Children": [
                                                                 {
-                                                                    "id": 202,
+                                                                    "id": 203,
                                                                     "guid": "004e5c2f17107af5-0004746fae3b6be7",
                                                                     "Name": "Kusane_Player_RightArm",
                                                                     "SiblingIndex": 0,
@@ -14719,7 +14638,7 @@
                                                                     ],
                                                                     "Children": [
                                                                         {
-                                                                            "id": 203,
+                                                                            "id": 204,
                                                                             "guid": "004e5c2f5be68feb-0004746fae3b6be9",
                                                                             "Name": "Kusane_Player_RightForeArm",
                                                                             "SiblingIndex": 0,
@@ -14795,7 +14714,7 @@
                                                                             ],
                                                                             "Children": [
                                                                                 {
-                                                                                    "id": 204,
+                                                                                    "id": 205,
                                                                                     "guid": "004e5c2f04463e40-0004746fae3b6beb",
                                                                                     "Name": "Kusane_Player_RightHand",
                                                                                     "SiblingIndex": 0,
@@ -14871,7 +14790,7 @@
                                                                                     ],
                                                                                     "Children": [
                                                                                         {
-                                                                                            "id": 205,
+                                                                                            "id": 206,
                                                                                             "guid": "004e5c2f6b27b2bd-0004746fae3b6bed",
                                                                                             "Name": "Kusane_Player_RightHandThumb1",
                                                                                             "SiblingIndex": 0,
@@ -14883,7 +14802,7 @@
                                                                                             },
                                                                                             "Children": [
                                                                                                 {
-                                                                                                    "id": 206,
+                                                                                                    "id": 207,
                                                                                                     "guid": "004e5c2f0b717149-0004746fae3b6bef",
                                                                                                     "Name": "Kusane_Player_RightHandThumb2",
                                                                                                     "SiblingIndex": 0,
@@ -14895,7 +14814,7 @@
                                                                                                     },
                                                                                                     "Children": [
                                                                                                         {
-                                                                                                            "id": 207,
+                                                                                                            "id": 208,
                                                                                                             "guid": "004e5c2f02f12b4f-0004746fae3b6bf1",
                                                                                                             "Name": "Kusane_Player_RightHandThumb3",
                                                                                                             "SiblingIndex": 0,
@@ -14907,7 +14826,7 @@
                                                                                                             },
                                                                                                             "Children": [
                                                                                                                 {
-                                                                                                                    "id": 208,
+                                                                                                                    "id": 209,
                                                                                                                     "guid": "004e5c2f49451ec8-0004746fae3b6bf3",
                                                                                                                     "Name": "Kusane_Player_RightHandThumb4",
                                                                                                                     "SiblingIndex": 0,
@@ -14925,7 +14844,7 @@
                                                                                             ]
                                                                                         },
                                                                                         {
-                                                                                            "id": 209,
+                                                                                            "id": 210,
                                                                                             "guid": "004e5c2f77fc8dd4-0004746fae3b6bf5",
                                                                                             "Name": "Kusane_Player_RightHandIndex1",
                                                                                             "SiblingIndex": 1,
@@ -14937,7 +14856,7 @@
                                                                                             },
                                                                                             "Children": [
                                                                                                 {
-                                                                                                    "id": 210,
+                                                                                                    "id": 211,
                                                                                                     "guid": "004e5c2f44da8b2c-0004746fae3b6bf7",
                                                                                                     "Name": "Kusane_Player_RightHandIndex2",
                                                                                                     "SiblingIndex": 0,
@@ -14949,7 +14868,7 @@
                                                                                                     },
                                                                                                     "Children": [
                                                                                                         {
-                                                                                                            "id": 211,
+                                                                                                            "id": 212,
                                                                                                             "guid": "004e5c2f525f6d3e-0004746fae3b6bf9",
                                                                                                             "Name": "Kusane_Player_RightHandIndex3",
                                                                                                             "SiblingIndex": 0,
@@ -14961,7 +14880,7 @@
                                                                                                             },
                                                                                                             "Children": [
                                                                                                                 {
-                                                                                                                    "id": 212,
+                                                                                                                    "id": 213,
                                                                                                                     "guid": "004e5c2f6d68a0b1-0004746fae3b6bfb",
                                                                                                                     "Name": "Kusane_Player_RightHandIndex4",
                                                                                                                     "SiblingIndex": 0,
@@ -14979,7 +14898,7 @@
                                                                                             ]
                                                                                         },
                                                                                         {
-                                                                                            "id": 213,
+                                                                                            "id": 214,
                                                                                             "guid": "004e5c2f58309679-0004746fae3b6bfd",
                                                                                             "Name": "Kusane_Player_RightHandMiddle1",
                                                                                             "SiblingIndex": 2,
@@ -14991,7 +14910,7 @@
                                                                                             },
                                                                                             "Children": [
                                                                                                 {
-                                                                                                    "id": 214,
+                                                                                                    "id": 215,
                                                                                                     "guid": "004e5c2f7395ab3a-0004746fae3b6bff",
                                                                                                     "Name": "Kusane_Player_RightHandMiddle2",
                                                                                                     "SiblingIndex": 0,
@@ -15003,7 +14922,7 @@
                                                                                                     },
                                                                                                     "Children": [
                                                                                                         {
-                                                                                                            "id": 215,
+                                                                                                            "id": 216,
                                                                                                             "guid": "004e5c2f7e3058ee-0004746fae3b6c01",
                                                                                                             "Name": "Kusane_Player_RightHandMiddle3",
                                                                                                             "SiblingIndex": 0,
@@ -15015,7 +14934,7 @@
                                                                                                             },
                                                                                                             "Children": [
                                                                                                                 {
-                                                                                                                    "id": 216,
+                                                                                                                    "id": 217,
                                                                                                                     "guid": "004e5c2f35466a3a-0004746fae3b6c03",
                                                                                                                     "Name": "Kusane_Player_RightHandMiddle4",
                                                                                                                     "SiblingIndex": 0,
@@ -15033,7 +14952,7 @@
                                                                                             ]
                                                                                         },
                                                                                         {
-                                                                                            "id": 217,
+                                                                                            "id": 218,
                                                                                             "guid": "004e5c2f11eec583-0004746fae3b6c05",
                                                                                             "Name": "Kusane_Player_RightHandRing1",
                                                                                             "SiblingIndex": 3,
@@ -15045,7 +14964,7 @@
                                                                                             },
                                                                                             "Children": [
                                                                                                 {
-                                                                                                    "id": 218,
+                                                                                                    "id": 219,
                                                                                                     "guid": "004e5c2f067eba96-0004746fae3b6c07",
                                                                                                     "Name": "Kusane_Player_RightHandRing2",
                                                                                                     "SiblingIndex": 0,
@@ -15057,7 +14976,7 @@
                                                                                                     },
                                                                                                     "Children": [
                                                                                                         {
-                                                                                                            "id": 219,
+                                                                                                            "id": 220,
                                                                                                             "guid": "004e5c2f134c0a82-0004746fae3b6c09",
                                                                                                             "Name": "Kusane_Player_RightHandRing3",
                                                                                                             "SiblingIndex": 0,
@@ -15069,7 +14988,7 @@
                                                                                                             },
                                                                                                             "Children": [
                                                                                                                 {
-                                                                                                                    "id": 220,
+                                                                                                                    "id": 221,
                                                                                                                     "guid": "004e5c2f4824f07b-0004746fae3b6c0b",
                                                                                                                     "Name": "Kusane_Player_RightHandRing4",
                                                                                                                     "SiblingIndex": 0,
@@ -15087,7 +15006,7 @@
                                                                                             ]
                                                                                         },
                                                                                         {
-                                                                                            "id": 221,
+                                                                                            "id": 222,
                                                                                             "guid": "004e5c2f2d95fe81-0004746fae3b6c0d",
                                                                                             "Name": "Kusane_Player_RightHandPinky1",
                                                                                             "SiblingIndex": 4,
@@ -15099,7 +15018,7 @@
                                                                                             },
                                                                                             "Children": [
                                                                                                 {
-                                                                                                    "id": 222,
+                                                                                                    "id": 223,
                                                                                                     "guid": "004e5c2f202b12a4-0004746fae3b6c0f",
                                                                                                     "Name": "Kusane_Player_RightHandPinky2",
                                                                                                     "SiblingIndex": 0,
@@ -15111,7 +15030,7 @@
                                                                                                     },
                                                                                                     "Children": [
                                                                                                         {
-                                                                                                            "id": 223,
+                                                                                                            "id": 224,
                                                                                                             "guid": "004e5c2f41366211-0004746fae3b6c11",
                                                                                                             "Name": "Kusane_Player_RightHandPinky3",
                                                                                                             "SiblingIndex": 0,
@@ -15123,7 +15042,7 @@
                                                                                                             },
                                                                                                             "Children": [
                                                                                                                 {
-                                                                                                                    "id": 224,
+                                                                                                                    "id": 225,
                                                                                                                     "guid": "004e5c2f19155476-0004746fae3b6c13",
                                                                                                                     "Name": "Kusane_Player_RightHandPinky4",
                                                                                                                     "SiblingIndex": 0,
@@ -15149,7 +15068,7 @@
                                                             ]
                                                         },
                                                         {
-                                                            "id": 225,
+                                                            "id": 226,
                                                             "guid": "004e5c2f199e7236-0004746fae3b6c15",
                                                             "Name": "Kusane_Player_Neck",
                                                             "SiblingIndex": 2,
@@ -15225,7 +15144,7 @@
                                                             ],
                                                             "Children": [
                                                                 {
-                                                                    "id": 226,
+                                                                    "id": 227,
                                                                     "guid": "004e5c2f0999dfc2-0004746fae3b6c17",
                                                                     "Name": "Kusane_Player_Head",
                                                                     "SiblingIndex": 0,
@@ -15301,7 +15220,7 @@
                                                                     ],
                                                                     "Children": [
                                                                         {
-                                                                            "id": 227,
+                                                                            "id": 228,
                                                                             "guid": "004e5c2f449f695d-0004746fae3b6c19",
                                                                             "Name": "joint49",
                                                                             "SiblingIndex": 0,
@@ -15313,7 +15232,7 @@
                                                                             },
                                                                             "Children": [
                                                                                 {
-                                                                                    "id": 228,
+                                                                                    "id": 229,
                                                                                     "guid": "004e5c2f2f0e7cc3-0004746fae3b6c1b",
                                                                                     "Name": "joint50",
                                                                                     "SiblingIndex": 0,
@@ -15325,7 +15244,7 @@
                                                                                     },
                                                                                     "Children": [
                                                                                         {
-                                                                                            "id": 229,
+                                                                                            "id": 230,
                                                                                             "guid": "004e5c2f6bde2103-0004746fae3b6c1d",
                                                                                             "Name": "joint52",
                                                                                             "SiblingIndex": 0,
@@ -15337,7 +15256,7 @@
                                                                                             },
                                                                                             "Children": [
                                                                                                 {
-                                                                                                    "id": 230,
+                                                                                                    "id": 231,
                                                                                                     "guid": "004e5c2f3f138adb-0004746fae3b6c1f",
                                                                                                     "Name": "joint53",
                                                                                                     "SiblingIndex": 0,
@@ -15349,7 +15268,7 @@
                                                                                                     },
                                                                                                     "Children": [
                                                                                                         {
-                                                                                                            "id": 231,
+                                                                                                            "id": 232,
                                                                                                             "guid": "004e5c2f604dfd06-0004746fae3b6c21",
                                                                                                             "Name": "joint54",
                                                                                                             "SiblingIndex": 0,
@@ -15361,7 +15280,7 @@
                                                                                                             },
                                                                                                             "Children": [
                                                                                                                 {
-                                                                                                                    "id": 232,
+                                                                                                                    "id": 233,
                                                                                                                     "guid": "004e5c2f37459ff7-0004746fae3b6c23",
                                                                                                                     "Name": "joint55",
                                                                                                                     "SiblingIndex": 0,
@@ -15373,7 +15292,7 @@
                                                                                                                     },
                                                                                                                     "Children": [
                                                                                                                         {
-                                                                                                                            "id": 233,
+                                                                                                                            "id": 234,
                                                                                                                             "guid": "004e5c2f7aa17d2f-0004746fae3b6c25",
                                                                                                                             "Name": "joint56",
                                                                                                                             "SiblingIndex": 0,
@@ -15395,7 +15314,7 @@
                                                                                     ]
                                                                                 },
                                                                                 {
-                                                                                    "id": 234,
+                                                                                    "id": 235,
                                                                                     "guid": "004e5c2f7dcdbb31-0004746fae3b6c27",
                                                                                     "Name": "joint47",
                                                                                     "SiblingIndex": 1,
@@ -15407,7 +15326,7 @@
                                                                                     }
                                                                                 },
                                                                                 {
-                                                                                    "id": 235,
+                                                                                    "id": 236,
                                                                                     "guid": "004e5c2f11eeafde-0004746fae3b6c29",
                                                                                     "Name": "joint51",
                                                                                     "SiblingIndex": 2,
@@ -15435,7 +15354,7 @@
                     ]
                 },
                 {
-                    "id": 236,
+                    "id": 237,
                     "guid": "004e5c2f577470aa-0004746fae3b6c2b",
                     "Name": "Kusane_Player_Ctrl_Reference",
                     "SiblingIndex": 3,
@@ -15511,7 +15430,7 @@
                     ]
                 },
                 {
-                    "id": 237,
+                    "id": 238,
                     "guid": "004e5c2f14b3f14b-0004746fae3b6c2d",
                     "Name": "ChainAimPointLeft",
                     "SiblingIndex": 38,
@@ -15523,7 +15442,7 @@
                     },
                     "Children": [
                         {
-                            "id": 238,
+                            "id": 239,
                             "guid": "004e5c2f1657b531-0004746fae3b6c2f",
                             "Name": "ChainAimPointLeftEnd",
                             "SiblingIndex": 39,
@@ -15537,7 +15456,7 @@
                     ]
                 },
                 {
-                    "id": 239,
+                    "id": 240,
                     "guid": "004e5c2f457b185b-0004746fae3b6c31",
                     "Name": "ChainAimPointRight",
                     "SiblingIndex": 38,
@@ -15549,7 +15468,7 @@
                     },
                     "Children": [
                         {
-                            "id": 240,
+                            "id": 241,
                             "guid": "004e5c2f7768ebc0-0004746fae3b6c33",
                             "Name": "ChainAimPointRightEnd",
                             "SiblingIndex": 39,
@@ -15563,7 +15482,7 @@
                     ]
                 },
                 {
-                    "id": 241,
+                    "id": 242,
                     "guid": "004e5c2f27c710fc-0004746fae3b6c35",
                     "Name": "LowPolyFeatherChain",
                     "SiblingIndex": 60,

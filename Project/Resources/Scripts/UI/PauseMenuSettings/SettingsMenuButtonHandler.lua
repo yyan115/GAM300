@@ -1,18 +1,10 @@
 require("extension.engine_bootstrap")
 local Component = require("extension.mono_helper")
 
+local event_bus = _G.event_bus
+
 return Component {
     fields = {
-        -- Entity names for slider notches to update visual positions
-        masterNotch = "MasterNotch",
-        masterBar = "MasterBar",
-        masterFill = "MasterFill",
-        bgmNotch = "BGMNotch",
-        bgmBar = "BGMBar",
-        bgmFill = "BGMFill",
-        sfxNotch = "SFXNotch",
-        sfxBar = "SFXBar",
-        sfxFill = "SFXFill",
         -- Audio: [1] = hover SFX, [2] = click SFX
         buttonSFX = {},
         -- Sprite GUIDs: [1] = normal, [2] = hover
@@ -109,8 +101,10 @@ return Component {
         -- Reset to defaults (this also applies and saves via C++)
         GameSettings.ResetToDefaults()
 
-        -- Update slider visual positions to reflect default values
-        self:UpdateSliderPositions()
+        -- Notify all sliders to update their positions
+        if event_bus then
+            event_bus.publish("settings_reset", {})
+        end
 
         print("[SettingsMenuButtonHandler] All settings reset to defaults")
     end,
@@ -131,54 +125,4 @@ return Component {
         if PauseComp then PauseComp.isActive = true end
     end,
 
-    -- Helper function to update all slider visual positions
-    UpdateSliderPositions = function(self)
-        local function updateSlider(notchName, barName, fillName, value, minVal, maxVal)
-            local notchEntity = Engine.GetEntityByName(notchName)
-            local barEntity = Engine.GetEntityByName(barName)
-
-            if notchEntity and notchEntity ~= -1 and barEntity and barEntity ~= -1 then
-                local notchTransform = GetComponent(notchEntity, "Transform")
-                local barTransform = GetComponent(barEntity, "Transform")
-
-                if notchTransform and barTransform then
-                    local offsetX = barTransform.localScale.x / 2.0
-                    local minX = barTransform.localPosition.x - offsetX
-                    local maxX = barTransform.localPosition.x + offsetX
-
-                    -- Normalize value to 0-1 range
-                    local normalized = (value - minVal) / (maxVal - minVal)
-
-                    local newPosX = minX + (normalized * (maxX - minX))
-                    notchTransform.localPosition.x = newPosX
-                    notchTransform.isDirty = true
-
-                    -- Update fill bar if specified
-                    if fillName and fillName ~= "" then
-                        local fillEntity = Engine.GetEntityByName(fillName)
-                        if fillEntity and fillEntity ~= -1 then
-                            local fillTransform = GetComponent(fillEntity, "Transform")
-                            if fillTransform then
-                                local fillMaxWidth = barTransform.localScale.x
-                                local fillWidth = normalized * fillMaxWidth
-                                if fillWidth < 1 then fillWidth = 1 end
-
-                                fillTransform.localScale.x = fillWidth
-                                fillTransform.localPosition.x = minX + (fillWidth / 2)
-                                fillTransform.isDirty = true
-                            end
-                        end
-                    end
-                end
-            else
-                print("[SettingsMenuButtonHandler] Warning: Could not find " .. notchName .. " or " .. barName)
-            end
-        end
-
-        -- Update all sliders using default values from C++
-        -- Volume sliders: 0-1 range
-        updateSlider(self.masterNotch, self.masterBar, self.masterFill, GameSettings.GetDefaultMasterVolume(), 0, 1)
-        updateSlider(self.bgmNotch, self.bgmBar, self.bgmFill, GameSettings.GetDefaultBGMVolume(), 0, 1)
-        updateSlider(self.sfxNotch, self.sfxBar, self.sfxFill, GameSettings.GetDefaultSFXVolume(), 0, 1)
-    end,
 }
