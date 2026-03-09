@@ -69,7 +69,7 @@ return Component {
         chainAimAssistComponents   = {"EnemyAI", "FlyingEnemyLogic"},
         chainAimAssistAngle        = 30.0,
         chainAimAssistStrength     = 15.0,
-        chainAimAssistRange        = 25.0,
+        chainAimAssistRange        = 12.0,
         chainAimAssistHeightOffset = 0.5,
 
         -- === Slam Tilt ===
