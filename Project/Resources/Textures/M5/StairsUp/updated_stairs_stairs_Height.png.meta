@@ -1,0 +1,14 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "007650f1eb5a2827-000473d78a02924d",
+        "source": "../../Resources/Textures/M5/StairsUp/updated_stairs_stairs_Height.png",
+        "compiled": "../../Resources/Textures/M5/StairsUp/updated_stairs_stairs_Height.dds"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp"
+    }
+}

@@ -1,0 +1,14 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "007650f1bda492e4-000473d78e02946f",
+        "source": "../../Resources/Textures/M5/Room2/updated_stairs_stairs_Roughness.png",
+        "compiled": "../../Resources/Textures/M5/Room2/updated_stairs_stairs_Roughness.dds"
+    },
+    "TextureMetaData": {
+        "type": "roughness",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp"
+    }
+}
