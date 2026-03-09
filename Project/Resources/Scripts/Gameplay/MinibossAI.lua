@@ -178,7 +178,7 @@ return Component {
         -- Shout AOE
         ShoutRadius = 4.0,
         ShoutDamage = 1,
-        ShoutKnockback = 240.0,
+        ShoutKnockback = 120.0,
         ShoutWindup = 0.95,
         ShoutPostDelay = 2.15,
         ShoutCooldown = 999, -- checkpoint only (or set if you want it to recur)
@@ -1202,7 +1202,7 @@ return Component {
                     windup    = self.ShoutWindup or 0.55,
                     postDelay = self.ShoutPostDelay or 0.25,
                     radius    = self.ShoutRadius or 4.0,
-                    dmg       = self.ShoutDamage or 1,
+                    dmg       = self.ShoutDamage or 2,
                     kb        = self.ShoutKnockback or 240.0,
                 })
                 print("[MinibossAI] Queued ShoutAOE")
@@ -1725,7 +1725,7 @@ return Component {
                 entityId = self.entityId,
                 x=x,y=y,z=z,
                 radius = self.ShoutRadius or 4.0,
-                dmg = self.ShoutDamage or 1,
+                dmg = self.ShoutDamage or 2,
                 kb = self.ShoutKnockback or 240.0,
             })
         end
@@ -1738,7 +1738,7 @@ return Component {
         self:_BeginMove("BossMelee", {
             windup = self.BossMeleeWindup or 0.4,
             range  = self.BossMeleeRange or 2.95,
-            dmg    = 1,
+            dmg    = 4,
             postDelay = 0.4
         })
     end,
@@ -1802,7 +1802,7 @@ return Component {
                         entityId = self.entityId,
                         x=x,y=y,z=z,
                         radius = m.radius or (self.ShoutRadius or 5.5),
-                        dmg    = m.dmg or (self.ShoutDamage or 1),
+                        dmg    = m.dmg or (self.ShoutDamage or 2),
                         kb     = m.kb or (self.ShoutKnockback or 18.0),
                     })
                 end
@@ -1830,7 +1830,7 @@ return Component {
                         entityId = self.entityId,
                         x = ex, y = ey, z = ez,
                         radius = m.slashRadius or 1.4,
-                        dmg = m.dmg or 1,
+                        dmg = m.dmg or 4,
 
                         kbStrength = m.kbStrength or 8.0,
                         kbUp = 0.0,
@@ -2019,7 +2019,7 @@ return Component {
                             entityId = self.entityId,
                             x = ex, y = ey, z = ez,
                             radius = m.slashRadius or 1.4,
-                            dmg = m.dmg or 1,
+                            dmg = m.dmg or 4,
 
                             kbStrength = m.kbStrength or 8.0,
                             kbUp = 0.0,
@@ -2191,7 +2191,7 @@ return Component {
 
             if self._phase2QueuedFate and self:IsCurrentMoveFinished() and (not self:IsActionLocked()) then
                 self._phase2QueuedFate = false
-                self:FateSealed()
+                self:FateSealed(2.0)
                 return
             end
 
@@ -2327,7 +2327,7 @@ return Component {
             payload = {
                 entityId = self.entityId,
                 cells = cells,
-                dmg = 1,
+                dmg = 2,
 
                 -- grid config so PlayerHealth can compute what cell they’re in
                 step = self.GridStep or 4.0,
@@ -2395,7 +2395,7 @@ return Component {
                 _G.event_bus.publish("boss_dive_impact", {
                     entityId = self.entityId,
                     x = self._phase3Dive.gx, y = gy, z = self._phase3Dive.gz,
-                    dmg = 1,
+                    dmg = 2,
                     radius = 1.4,
                 })
             end
@@ -2562,7 +2562,7 @@ return Component {
                 if self._p3FateDelayT <= 0 and self:IsCurrentMoveFinished() and (not self:IsActionLocked()) then
                     self._p3PendingFate = false
                     self._p3FateDelayT = nil
-                    self:FateSealed()
+                    self:FateSealed(1.0)
                     return
                 end
                 return
@@ -2608,16 +2608,16 @@ return Component {
         })
     end,
 
-    FateSealed = function(self)
+    FateSealed = function(self, chargeTime)
         playRandomSFX(self._audio, self.enemyMeleeAttackSFX)
         self:_BeginMove("FateSealed", {
-            chargeDur = 2.00,
+            chargeDur = chargeTime,
             dashDur = 0.4,
             dashSpeed = 700.0,
             stopDist = 0.8,
             slashAt = 0.90,
             slashRadius = 1.4,
-            dmg = 1,
+            dmg = 4,
             kbStrength = 8.0,
             postDelay = 2.60
         })
