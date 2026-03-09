@@ -1,0 +1,14 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "004e5c2f269727ab-00047468c6000007",
+        "source": "../../Resources/Textures/M5/StairsUp/updated_stairs_stairs_Roughness.png",
+        "compiled": "../../Resources/Textures/M5/StairsUp/updated_stairs_stairs_Roughness.dds"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp"
+    }
+}

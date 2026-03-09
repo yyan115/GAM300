@@ -149,6 +149,60 @@ static Transform* Lua_FindTransformByID(const Entity& id)
     return nullptr;
 }
 
+static AudioComponent* Lua_FindAudioCompByName(const std::string& name)
+{
+    if (!g_ecsManager) return nullptr;
+    ECSManager& ecs = *g_ecsManager;
+
+    // Get all active entities (same pattern as InspectorPanel)
+    const auto& entities = ecs.GetActiveEntities();
+
+    for (Entity e : entities)
+    {
+        if (!ecs.HasComponent<NameComponent>(e))
+            continue;
+
+        auto& nc = ecs.GetComponent<NameComponent>(e);
+        if (nc.name == name)
+        {
+            // Found the entity with matching name, now ensure it has a AudioComponent
+            if (ecs.HasComponent<AudioComponent>(e))
+            {
+                return &ecs.GetComponent<AudioComponent>(e);
+            }
+
+            // Name matched but no AudioComponent; stop searching if names are unique
+            break;
+        }
+    }
+
+    return nullptr;
+}
+static AudioComponent* Lua_FindAudioCompByID(const Entity& id)
+{
+    if (!g_ecsManager) return nullptr;
+    ECSManager& ecs = *g_ecsManager;
+
+    // Get all active entities (same pattern as InspectorPanel)
+    const auto& entities = ecs.GetActiveEntities();
+
+    for (Entity e : entities)
+    {
+        if (e == id)
+        {
+            // Found the entity with matching name, now ensure it has a AudioComponent
+            if (ecs.HasComponent<AudioComponent>(e))
+            {
+                return &ecs.GetComponent<AudioComponent>(e);
+            }
+
+            // Name matched but no AudioComponent; stop searching if names are unique
+            break;
+        }
+    }
+
+    return nullptr;
+}
 
 static std::tuple<float, float, float> Lua_GetTransformPosition(Transform* t)
 {

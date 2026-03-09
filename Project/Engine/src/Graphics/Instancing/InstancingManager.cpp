@@ -7,6 +7,7 @@
 #include "Graphics/Frustum/Frustum.hpp"
 #include "Logging.hpp"
 #include <ECS/ECSRegistry.hpp>
+#include "Graphics/GraphicsManager.hpp"
 
 InstancingManager& InstancingManager::GetInstance() 
 {
@@ -155,10 +156,18 @@ void InstancingManager::RenderBatches(const glm::mat4& view, const glm::mat4& pr
 
             // Apply lighting on shader switch
             ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
-            if (ecsManager.lightingSystem) 
+            if (ecsManager.lightingSystem)
             {
                 ecsManager.lightingSystem->ApplyLighting(*batch->GetShader());
                 ecsManager.lightingSystem->ApplyShadows(*batch->GetShader());
+            }
+
+            // Environment reflections (skybox already bound to texture unit 12 by GraphicsManager)
+            auto& gfx = GraphicsManager::GetInstance();
+            batch->GetShader()->setBool("hasEnvMap", gfx.IsEnvReflectionActive());
+            if (gfx.IsEnvReflectionActive()) {
+                batch->GetShader()->setInt("envMap", 12);
+                batch->GetShader()->setFloat("envReflectionIntensity", gfx.GetEnvReflectionIntensity());
             }
 
             currentShader = batch->GetShader();

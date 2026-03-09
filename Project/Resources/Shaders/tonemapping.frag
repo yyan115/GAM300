@@ -27,6 +27,10 @@ uniform bool caEnabled;
 uniform float caIntensity;
 uniform float caPadding;
 
+// SSAO
+uniform sampler2D ssaoTexture;
+uniform bool ssaoEnabled;
+
 vec3 ReinhardToneMapping(vec3 color)
 {
     return color / (color + vec3(1.0));
@@ -69,6 +73,12 @@ void main()
         hdrColor = texture(hdrBuffer, TexCoords).rgb;
     }
     
+    // Apply SSAO
+    if (ssaoEnabled) {
+        float ao = texture(ssaoTexture, TexCoords).r;
+        hdrColor *= ao;
+    }
+
     // Apply exposure adjustment
     vec3 mapped = hdrColor * exposure;
     

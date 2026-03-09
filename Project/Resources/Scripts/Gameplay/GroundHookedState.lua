@@ -38,7 +38,6 @@ function HookedState:Enter(ai)
 
     ai._hookedTimer = 0
     ai.attackTimer = 0
-    ai._hookPullT = 0
 
     ai._hookReachedPlayer = false
 

@@ -10,6 +10,42 @@ local event_bus = _G.event_bus
 
 local M = {}
 
+-- Wraps an angle difference to the [-180, 180] range so we always interpolate
+-- the short way around the circle.
+local function shortestDelta(from, to)
+    local d = (to - from) % 360.0
+    if d > 180.0 then d = d - 360.0 end
+    return d
+end
+
+-- Returns true if there is an unobstructed line from the player to the enemy.
+-- Casts from player center-mass toward the enemy; if geometry is hit before
+-- reaching the enemy the line-of-sight is blocked.
+local function hasLineOfSight(self, ex, ey, ez)
+    if not (Physics and Physics.Raycast) then return true end
+
+    -- Ray origin: player position raised to center-mass
+    local ox = self._targetPos.x
+    local oy = self._targetPos.y + (self.chainAimAssistHeightOffset or 1.0)
+    local oz = self._targetPos.z
+
+    local dx = ex - ox
+    local dy = ey - oy
+    local dz = ez - oz
+    local dist = math.sqrt(dx * dx + dy * dy + dz * dz)
+    if dist < 0.01 then return true end
+
+    local ndx, ndy, ndz = dx / dist, dy / dist, dz / dist
+
+    -- Physics.Raycast returns hit distance (>= 0) or -1 if no hit.
+    -- If something is hit closer than the enemy (with 0.3 tolerance), LOS is blocked.
+    local hitDist = Physics.Raycast(ox, oy, oz, ndx, ndy, ndz, dist)
+    if hitDist >= 0 and hitDist < dist - 0.3 then
+        return false
+    end
+    return true
+end
+
 -- Advance the chain-aim blend each frame and compute the aim camera position.
 -- Returns: chainAimActive (bool), chainDesiredX, chainDesiredY, chainDesiredZ
 -- chainDesiredX/Y/Z are nil when chainAimActive is false.
@@ -119,7 +155,7 @@ function M.updateChainAim(self, dt)
     if self._chainAimYaw then
         local blend = self._chainAimBlend
         local chainAsOrbit = self._chainAimYaw + 180.0
-        local effectiveYaw = self._yaw + (chainAsOrbit - self._yaw) * blend
+        local effectiveYaw = self._yaw + shortestDelta(self._yaw, chainAsOrbit) * blend
         _G.CAMERA_YAW = effectiveYaw
         if event_bus and event_bus.publish then
             event_bus.publish("camera_yaw", effectiveYaw)
@@ -127,14 +163,6 @@ function M.updateChainAim(self, dt)
     end
 
     return true, camX, camY, camZ
-end
-
--- Wraps an angle difference to the [-180, 180] range so we always pull the
--- short way around the circle.
-local function shortestDelta(from, to)
-    local d = (to - from) % 360.0
-    if d > 180.0 then d = d - 360.0 end
-    return d
 end
 
 -- Aim assist during chain aim.
@@ -149,7 +177,7 @@ function M.updateAimAssist(self, dt, camX, camY, camZ)
 
     local assistAngle    = self.chainAimAssistAngle         or 30.0
     local assistStrength = self.chainAimAssistStrength     or 15.0   -- corrective pull deg/s
-    local assistRange    = self.chainAimAssistRange        or 25.0
+    local assistRange    = self.chainAimAssistRange        or 12.0
     local heightOffset   = self.chainAimAssistHeightOffset or 1.0
     local enemyNames     = self.chainAimAssistComponents   or {}
 
@@ -176,8 +204,9 @@ function M.updateAimAssist(self, dt, camX, camY, camZ)
                         local dx = ex - camX
                         local dy = (ey + heightOffset) - camY
                         local dz = ez - camZ
-                        local distSq = dx*dx + dz*dz
-                        if distSq <= assistRange * assistRange then
+                        local distSq = dx*dx + dy*dy + dz*dz
+                        if distSq <= assistRange * assistRange
+                        and hasLineOfSight(self, ex, ey + heightOffset, ez) then
                             local len3d = math.sqrt(dx*dx + dy*dy + dz*dz)
                             if len3d > 0.01 then
                                 local targetYaw   = math.deg(atan2(dx, dz))
@@ -266,8 +295,8 @@ function M.applyRotation(self, newX, newY, newZ, cameraTarget, chainAimActive, b
             orbitPitch = -math.deg(math.asin(ofy))
         end
 
-        -- Blend toward chain-aim rotation
-        local blendedYaw   = orbitYaw   + (self._chainAimYaw   - orbitYaw)   * blend
+        -- Blend toward chain-aim rotation (shortest path to avoid 360° spin)
+        local blendedYaw   = orbitYaw   + shortestDelta(orbitYaw, self._chainAimYaw) * blend
         local blendedPitch = orbitPitch + (self._chainAimPitch - orbitPitch) * blend
         local q = eulerToQuat(blendedPitch, blendedYaw, 0.0)
         self:SetRotation(q.w, q.x, q.y, q.z)

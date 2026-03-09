@@ -167,6 +167,17 @@ BEGIN_COMPONENT(CameraComponent, "CameraComponent")
     // Skybox
     PROPERTY("skyboxTexturePath", &CameraComponent::skyboxTexturePath)
     PROPERTY("useSkybox", &CameraComponent::useSkybox)
+    // Post-Processing: Blur
+    PROPERTY("blurEnabled", &CameraComponent::blurEnabled)
+    PROPERTY("blurIntensity", &CameraComponent::blurIntensity)
+    PROPERTY("blurRadius", &CameraComponent::blurRadius)
+    // Post-Processing: Vignette
+    PROPERTY("vignetteEnabled", &CameraComponent::vignetteEnabled)
+    PROPERTY("vignetteIntensity", &CameraComponent::vignetteIntensity)
+    PROPERTY("vignetteSmoothness", &CameraComponent::vignetteSmoothness)
+    // Post-Processing: Chromatic Aberration
+    PROPERTY("chromaticAberrationEnabled", &CameraComponent::chromaticAberrationEnabled)
+    PROPERTY("chromaticAberrationIntensity", &CameraComponent::chromaticAberrationIntensity)
 END_COMPONENT()
 
 // ============================================================================

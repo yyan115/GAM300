@@ -1,0 +1,11 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "0021c3842a9d65b1-00046c18b4001b51",
+        "source": "../../Resources/Animations/Enemy/Flying/KarasuFlying@Death.fbx",
+        "compiled": "../../Resources/Animations/Enemy/Flying/KarasuFlying@Death.mesh"
+    },
+    "ModelMetaData": {
+        "optimizeMeshes": true
+    }
+}

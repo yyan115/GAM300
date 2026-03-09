@@ -1,0 +1,11 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "0021c38472d6f0b4-00046c18ac001b49",
+        "source": "../../Resources/Animations/Enemy/Flying/KarasuFlying@IdleRangedGround.fbx",
+        "compiled": "../../Resources/Animations/Enemy/Flying/KarasuFlying@IdleRangedGround.mesh"
+    },
+    "ModelMetaData": {
+        "optimizeMeshes": true
+    }
+}

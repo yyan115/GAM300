@@ -1,0 +1,11 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "0015275d5bfe849e-0004720eae000a1d",
+        "source": "../../Resources/Models/Rooms/Room2Tatami/Room2Tatami_Wall2.fbx",
+        "compiled": "../../Resources/Models/Rooms/Room2Tatami/Room2Tatami_Wall2.mesh"
+    },
+    "ModelMetaData": {
+        "optimizeMeshes": true
+    }
+}

@@ -1437,6 +1437,40 @@ namespace EntityQueryWrappers {
 
         return 1;
     }
+
+    inline int FindChildEntityByName(Entity parentId, const std::string& targetName) {
+        ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
+
+        // 1. Safety check to ensure the parent actually exists and has a transform
+        if (!ecsManager.HasComponent<ChildrenComponent>(parentId)) {
+            return -1;
+        }
+
+        auto& childrenComp = ecsManager.GetComponent<ChildrenComponent>(parentId);
+
+        // 2. Loop through all direct children
+        for (const auto childGUID : childrenComp.children) {
+            Entity childId = EntityGUIDRegistry::GetInstance().GetEntityByGUID(childGUID);
+            if (childId == INVALID_ENTITY) continue;
+
+            // 3. Check if THIS child is the one we want
+            if (ecsManager.HasComponent<NameComponent>(childId)) {
+                auto& nameComp = ecsManager.GetComponent<NameComponent>(childId);
+                if (nameComp.name == targetName) {
+                    return childId; // Found it!
+                }
+            }
+
+            // 4. If not found, recursively search inside this child's children
+            Entity foundId = FindChildEntityByName(childId, targetName);
+            if (foundId != -1) {
+                return foundId;
+            }
+        }
+
+        // 5. If we finish the loop and find nothing, return invalid
+        return -1;
+    }
 }
 
 // ============================================================================

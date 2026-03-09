@@ -327,6 +327,7 @@ BEGIN_SYSTEM("Engine")
     FUNCTION("GetEntityLayer", &EntityQueryWrappers::GetEntityLayer)
     FUNCTION("IsEntityActive", &EntityQueryWrappers::IsEntityActive)
     FUNCTION("GetChildrenEntities", &EntityQueryWrappers::GetChildrenEntities)
+    FUNCTION("FindChildByName", &EntityQueryWrappers::FindChildEntityByName)
     FUNCTION("GetParentEntity", &EntityQueryWrappers::GetParentEntity)
     FUNCTION("SetParentEntity", &EntityQueryWrappers::SetParentEntity)
 
@@ -335,6 +336,9 @@ BEGIN_SYSTEM("Engine")
     FUNCTION("SetCacheUpdateInterval", &EntityQueryWrappers::SetCacheUpdateInterval)
     FUNCTION("ClearEnemyCaches", &EntityQueryWrappers::ClearEnemyCaches)
     FUNCTION("GetCacheInfo", &EntityQueryWrappers::GetCacheInfo)
+
+    FUNCTION("FindAudioCompByName", &Lua_FindAudioCompByName)
+    FUNCTION("FindAudioCompByID", &Lua_FindAudioCompByID)
 END_SYSTEM()
 
 

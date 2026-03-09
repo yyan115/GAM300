@@ -1,0 +1,14 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "00322fe93fa42253-000471481a002275",
+        "source": "../../Resources/Textures/M5/Drum_Height.png",
+        "compiled": "../../Resources/Textures/M5/Drum_Height.dds"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp"
+    }
+}

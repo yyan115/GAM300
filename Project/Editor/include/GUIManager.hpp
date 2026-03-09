@@ -6,6 +6,8 @@ class WindowManager;
 #include <memory>
 #include <vector>
 #include <algorithm>
+#include <future>
+#include <atomic>
 #include "Panels/PanelManager.hpp"
 #include <ECS/Entity.hpp>
 #include "Utilities/GUID.hpp"
@@ -146,4 +148,11 @@ private:
 	static std::string notificationMessage;
 	static float notificationTimer;
 	static bool showSelectionOutline;
+
+	struct GameBuildStatus {
+		bool isBuilding = false;
+		std::atomic<int> step{0}; // 1=Configuring, 2=Building, 3=Packaging
+		std::future<int> future;
+	};
+	static GameBuildStatus gameBuildStatus;
 };

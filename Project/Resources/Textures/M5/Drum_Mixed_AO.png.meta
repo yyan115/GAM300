@@ -1,0 +1,14 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "00322fe95389af8d-000471481a002279",
+        "source": "../../Resources/Textures/M5/Drum_Mixed_AO.png",
+        "compiled": "../../Resources/Textures/M5/Drum_Mixed_AO.dds"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp"
+    }
+}

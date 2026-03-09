@@ -1,0 +1,11 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "005bcd780e7ab5eb-00047118e000000d",
+        "source": "../../Resources/Animations/Player/KusaneV6@ThrowChain.fbx",
+        "compiled": "../../Resources/Animations/Player/KusaneV6@ThrowChain.mesh"
+    },
+    "ModelMetaData": {
+        "optimizeMeshes": true
+    }
+}

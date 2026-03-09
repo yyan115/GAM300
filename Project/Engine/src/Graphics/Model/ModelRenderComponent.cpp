@@ -10,5 +10,8 @@ REFL_REGISTER_START(ModelRenderComponent)
 	REFL_REGISTER_PROPERTY(transform)
 	REFL_REGISTER_PROPERTY(isVisible)
 	REFL_REGISTER_PROPERTY(childBonesSaved)
+	REFL_REGISTER_PROPERTY(depthOffset)
+	REFL_REGISTER_PROPERTY(depthOffsetFactor)
+	REFL_REGISTER_PROPERTY(depthOffsetUnits)
 REFL_REGISTER_END;
 #pragma endregion

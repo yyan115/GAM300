@@ -698,11 +698,25 @@ void RegisterInspectorCustomRenderers()
     {
         static std::unordered_map<Entity, Vector3D> startRotations;
         static std::unordered_map<Entity, bool> isEditingRotation;
+        // Euler cache: avoids quaternion→euler round-trip that clamps pitch to ±90°
+        static std::unordered_map<Entity, Vector3D> cachedEuler;
+        static std::unordered_map<Entity, Quaternion> lastQuat;
 
         Quaternion *quat = static_cast<Quaternion *>(ptr);
-        Vector3D euler = quat->ToEulerDegrees();
-        float arr[3] = {euler.x, euler.y, euler.z};
         const float labelWidth = EditorComponents::GetLabelWidth();
+
+        // Detect external quaternion change (physics, animation, script) → re-derive euler
+        bool externalChange = (lastQuat.find(entity) == lastQuat.end()) ||
+            (lastQuat[entity].x != quat->x || lastQuat[entity].y != quat->y ||
+             lastQuat[entity].z != quat->z || lastQuat[entity].w != quat->w);
+
+        if (externalChange && !isEditingRotation[entity]) {
+            cachedEuler[entity] = quat->ToEulerDegrees();
+            lastQuat[entity] = *quat;
+        }
+
+        Vector3D& euler = cachedEuler[entity];
+        float arr[3] = {euler.x, euler.y, euler.z};
 
         // Capture start value when not editing
         if (!isEditingRotation[entity]) {
@@ -713,8 +727,8 @@ void RegisterInspectorCustomRenderers()
         ImGui::SameLine(labelWidth);
         ImGui::SetNextItemWidth(-1);
 
-        // Use raw ImGui - we handle undo ourselves
-        bool changed = ImGui::DragFloat3("##Rotation", arr, 1.0f, -180.0f, 180.0f, "%.1f");
+        // Use raw ImGui - we handle undo ourselves (no min/max clamp)
+        bool changed = ImGui::DragFloat3("##Rotation", arr, 1.0f, 0.0f, 0.0f, "%.1f");
 
         // Track editing state
         if (ImGui::IsItemActivated()) {
@@ -723,7 +737,9 @@ void RegisterInspectorCustomRenderers()
         }
 
         if (changed) {
-            ecs.transformSystem->SetLocalRotation(entity, {arr[0], arr[1], arr[2]});
+            euler = {arr[0], arr[1], arr[2]};
+            ecs.transformSystem->SetLocalRotation(entity, euler);
+            lastQuat[entity] = *quat; // sync so we don't detect our own change as external
         }
 
         // Record undo command when editing ends
@@ -2639,6 +2655,103 @@ void RegisterInspectorCustomRenderers()
             ImGui::Unindent(10.0f);
         }
 
+        // ==================== SSAO ====================
+        if (ImGui::CollapsingHeader("SSAO##PP", ImGuiTreeNodeFlags_DefaultOpen)) {
+            ImGui::Indent(10.0f);
+
+            bool ssaoOn = camera.ssaoEnabled;
+            if (ImGui::Checkbox("Enable SSAO##PP", &ssaoOn)) {
+                bool oldVal = camera.ssaoEnabled;
+                camera.ssaoEnabled = ssaoOn;
+                if (UndoSystem::GetInstance().IsEnabled()) {
+                    bool newVal = ssaoOn;
+                    UndoSystem::GetInstance().RecordLambdaChange(
+                        [entity, newVal]() { auto& ecs = ECSRegistry::GetInstance().GetActiveECSManager(); if (ecs.HasComponent<CameraComponent>(entity)) ecs.GetComponent<CameraComponent>(entity).ssaoEnabled = newVal; },
+                        [entity, oldVal]() { auto& ecs = ECSRegistry::GetInstance().GetActiveECSManager(); if (ecs.HasComponent<CameraComponent>(entity)) ecs.GetComponent<CameraComponent>(entity).ssaoEnabled = oldVal; },
+                        "Toggle SSAO");
+                }
+            }
+
+            if (camera.ssaoEnabled) {
+                static std::unordered_map<Entity, float> startSSAORadius;
+                static std::unordered_map<Entity, float> startSSAOIntensity;
+
+                ImGui::Text("Radius");
+                ImGui::SameLine(labelWidth);
+                ImGui::SetNextItemWidth(-1);
+                if (!isEditingPP[entity]) startSSAORadius[entity] = camera.ssaoRadius;
+                if (ImGui::DragFloat("##SSAORadius", &camera.ssaoRadius, 0.01f, 0.05f, 5.0f)) { isEditingPP[entity] = true; }
+                if (isEditingPP[entity] && !ImGui::IsItemActive()) {
+                    float oldVal = startSSAORadius[entity]; float newVal = camera.ssaoRadius;
+                    if (oldVal != newVal && UndoSystem::GetInstance().IsEnabled()) {
+                        UndoSystem::GetInstance().RecordLambdaChange(
+                            [entity, newVal]() { auto& ecs = ECSRegistry::GetInstance().GetActiveECSManager(); if (ecs.HasComponent<CameraComponent>(entity)) ecs.GetComponent<CameraComponent>(entity).ssaoRadius = newVal; },
+                            [entity, oldVal]() { auto& ecs = ECSRegistry::GetInstance().GetActiveECSManager(); if (ecs.HasComponent<CameraComponent>(entity)) ecs.GetComponent<CameraComponent>(entity).ssaoRadius = oldVal; },
+                            "Change SSAO Radius");
+                    }
+                    isEditingPP[entity] = false;
+                }
+
+                ImGui::Text("Intensity");
+                ImGui::SameLine(labelWidth);
+                ImGui::SetNextItemWidth(-1);
+                if (!isEditingPP[entity]) startSSAOIntensity[entity] = camera.ssaoIntensity;
+                if (ImGui::DragFloat("##SSAOIntensity", &camera.ssaoIntensity, 0.01f, 0.0f, 5.0f)) { isEditingPP[entity] = true; }
+                if (isEditingPP[entity] && !ImGui::IsItemActive()) {
+                    float oldVal = startSSAOIntensity[entity]; float newVal = camera.ssaoIntensity;
+                    if (oldVal != newVal && UndoSystem::GetInstance().IsEnabled()) {
+                        UndoSystem::GetInstance().RecordLambdaChange(
+                            [entity, newVal]() { auto& ecs = ECSRegistry::GetInstance().GetActiveECSManager(); if (ecs.HasComponent<CameraComponent>(entity)) ecs.GetComponent<CameraComponent>(entity).ssaoIntensity = newVal; },
+                            [entity, oldVal]() { auto& ecs = ECSRegistry::GetInstance().GetActiveECSManager(); if (ecs.HasComponent<CameraComponent>(entity)) ecs.GetComponent<CameraComponent>(entity).ssaoIntensity = oldVal; },
+                            "Change SSAO Intensity");
+                    }
+                    isEditingPP[entity] = false;
+                }
+            }
+
+            ImGui::Unindent(10.0f);
+        }
+
+        // ==================== Environment Reflections ====================
+        if (ImGui::CollapsingHeader("Environment Reflections##PP", ImGuiTreeNodeFlags_DefaultOpen)) {
+            ImGui::Indent(10.0f);
+
+            bool envOn = camera.envReflectionEnabled;
+            if (ImGui::Checkbox("Enable Reflections##PP", &envOn)) {
+                bool oldVal = camera.envReflectionEnabled;
+                camera.envReflectionEnabled = envOn;
+                if (UndoSystem::GetInstance().IsEnabled()) {
+                    bool newVal = envOn;
+                    UndoSystem::GetInstance().RecordLambdaChange(
+                        [entity, newVal]() { auto& ecs = ECSRegistry::GetInstance().GetActiveECSManager(); if (ecs.HasComponent<CameraComponent>(entity)) ecs.GetComponent<CameraComponent>(entity).envReflectionEnabled = newVal; },
+                        [entity, oldVal]() { auto& ecs = ECSRegistry::GetInstance().GetActiveECSManager(); if (ecs.HasComponent<CameraComponent>(entity)) ecs.GetComponent<CameraComponent>(entity).envReflectionEnabled = oldVal; },
+                        "Toggle Env Reflections");
+                }
+            }
+
+            if (camera.envReflectionEnabled) {
+                static std::unordered_map<Entity, float> startEnvIntensity;
+
+                ImGui::Text("Intensity");
+                ImGui::SameLine(labelWidth);
+                ImGui::SetNextItemWidth(-1);
+                if (!isEditingPP[entity]) startEnvIntensity[entity] = camera.envReflectionIntensity;
+                if (ImGui::DragFloat("##EnvReflIntensity", &camera.envReflectionIntensity, 0.01f, 0.0f, 5.0f)) { isEditingPP[entity] = true; }
+                if (isEditingPP[entity] && !ImGui::IsItemActive()) {
+                    float oldVal = startEnvIntensity[entity]; float newVal = camera.envReflectionIntensity;
+                    if (oldVal != newVal && UndoSystem::GetInstance().IsEnabled()) {
+                        UndoSystem::GetInstance().RecordLambdaChange(
+                            [entity, newVal]() { auto& ecs = ECSRegistry::GetInstance().GetActiveECSManager(); if (ecs.HasComponent<CameraComponent>(entity)) ecs.GetComponent<CameraComponent>(entity).envReflectionIntensity = newVal; },
+                            [entity, oldVal]() { auto& ecs = ECSRegistry::GetInstance().GetActiveECSManager(); if (ecs.HasComponent<CameraComponent>(entity)) ecs.GetComponent<CameraComponent>(entity).envReflectionIntensity = oldVal; },
+                            "Change Env Reflection Intensity");
+                    }
+                    isEditingPP[entity] = false;
+                }
+            }
+
+            ImGui::Unindent(10.0f);
+        }
+
         return false;
     });
 
@@ -2731,6 +2844,33 @@ void RegisterInspectorCustomRenderers()
                 return true;
             }
             EditorComponents::EndDragDropTarget();
+        }
+
+        // "Reimport Materials" button — re-extracts PBR properties from source FBX
+        if (!modelPath.empty() && ecs.HasComponent<ModelRenderComponent>(entity)) {
+            auto& modelRenderer = ecs.GetComponent<ModelRenderComponent>(entity);
+            if (modelRenderer.model) {
+                if (ImGui::Button("Reimport Materials")) {
+                    // Set flag to force material re-compilation during import
+                    Model::forceReimportMaterials = true;
+                    // Re-compile the source model (FBX/OBJ) which re-runs Assimp import
+                    AssetManager::GetInstance().CompileAsset(modelPath, true);
+                    Model::forceReimportMaterials = false;
+                    // Force reload the model from newly compiled data
+                    auto reloaded = ResourceManager::GetInstance().GetResource<Model>(modelPath, true);
+                    if (reloaded) {
+                        modelRenderer.model = reloaded;
+                        if (!reloaded->meshes.empty() && reloaded->meshes[0].material) {
+                            modelRenderer.material = reloaded->meshes[0].material;
+                            std::string newMatPath = AssetManager::GetInstance().GetAssetPathFromAssetName(
+                                modelRenderer.material->GetName() + ".mat");
+                            modelRenderer.materialGUID = AssetManager::GetInstance().GetGUID128FromAssetMeta(newMatPath);
+                        }
+                    }
+                }
+                if (ImGui::IsItemHovered())
+                    ImGui::SetTooltip("Re-extract material properties (metallic, roughness, etc.) from source model file");
+            }
         }
 
         return false;
@@ -2854,6 +2994,25 @@ void RegisterInspectorCustomRenderers()
     ReflectionRenderer::RegisterFieldRenderer("ModelRenderComponent", "childBonesSaved",
         [](const char*, void*, Entity, ECSManager&)
         { return true; });
+
+    // Depth offset (z-fighting fix) — show factor/units only when enabled.
+    ReflectionRenderer::RegisterFieldRenderer("ModelRenderComponent", "depthOffset",
+        [](const char*, void*, Entity entity, ECSManager& ecs) -> bool {
+            auto& comp = ecs.GetComponent<ModelRenderComponent>(entity);
+            if (ImGui::Checkbox("Depth Offset (Z-Fight Fix)", &comp.depthOffset)) {}
+            if (comp.depthOffset) {
+                ImGui::Indent();
+                ImGui::DragFloat("Factor", &comp.depthOffsetFactor, 0.1f, -10.0f, 10.0f);
+                ImGui::DragFloat("Units",  &comp.depthOffsetUnits,  0.1f, -10.0f, 10.0f);
+                ImGui::Unindent();
+            }
+            return true;
+        });
+    // Hide raw factor/units fields — rendered inside the depthOffset renderer above.
+    ReflectionRenderer::RegisterFieldRenderer("ModelRenderComponent", "depthOffsetFactor",
+        [](const char*, void*, Entity, ECSManager&) { return true; });
+    ReflectionRenderer::RegisterFieldRenderer("ModelRenderComponent", "depthOffsetUnits",
+        [](const char*, void*, Entity, ECSManager&) { return true; });
 
     // Hide position, scale, rotation from SpriteRenderComponent (controlled by Transform)
     ReflectionRenderer::RegisterFieldRenderer("SpriteRenderComponent", "position",
@@ -3025,7 +3184,9 @@ void RegisterInspectorCustomRenderers()
         "bloomEnabled", "bloomThreshold", "bloomIntensity", "bloomSpread",
         "vignetteEnabled", "vignetteIntensity", "vignetteSmoothness",
         "colorGradingEnabled", "cgBrightness", "cgContrast", "cgSaturation",
-        "chromaticAberrationEnabled", "chromaticAberrationIntensity", "chromaticAberrationPadding"
+        "chromaticAberrationEnabled", "chromaticAberrationIntensity", "chromaticAberrationPadding",
+        "ssaoEnabled", "ssaoRadius", "ssaoIntensity",
+        "envReflectionEnabled", "envReflectionIntensity"
     }) {
         ReflectionRenderer::RegisterFieldRenderer("CameraComponent", field,
             [](const char*, void*, Entity, ECSManager&) { return true; });
@@ -3127,9 +3288,9 @@ void RegisterInspectorCustomRenderers()
         ImGui::SameLine(labelWidth);
         ImGui::SetNextItemWidth(-1);
 
-        const char* items[] = { "Solid", "Radial" };
+        const char* items[] = { "Solid", "Radial", "Horizontal", "Vertical" };
         EditorComponents::PushComboColors();
-        bool changed = ImGui::Combo("##FillMode", mode, items, 2);
+        bool changed = ImGui::Combo("##FillMode", mode, items, 4);
         EditorComponents::PopComboColors();
 
         if (changed) {
@@ -3138,11 +3299,38 @@ void RegisterInspectorCustomRenderers()
         return true;
     });
 
-    // Fill Max Value - only visible when fillMode == Radial
+    // Fill Direction dropdown - only visible for Horizontal/Vertical modes
+    ReflectionRenderer::RegisterFieldRenderer("SpriteRenderComponent", "fillDirection",
+    [](const char*, void* ptr, Entity entity, ECSManager& ecs) {
+        auto& sprite = ecs.GetComponent<SpriteRenderComponent>(entity);
+        if (sprite.fillMode < 2) return true; // Only show for Horizontal/Vertical
+
+        int* dir = static_cast<int*>(ptr);
+        const float labelWidth = EditorComponents::GetLabelWidth();
+
+        ImGui::Text("Fill Direction");
+        ImGui::SameLine(labelWidth);
+        ImGui::SetNextItemWidth(-1);
+
+        const char* hItems[] = { "Left to Right", "Right to Left" };
+        const char* vItems[] = { "Bottom to Top", "Top to Bottom" };
+        const char** dirItems = (sprite.fillMode == 2) ? hItems : vItems;
+
+        EditorComponents::PushComboColors();
+        bool changed = ImGui::Combo("##FillDirection", dir, dirItems, 2);
+        EditorComponents::PopComboColors();
+
+        if (changed) {
+            SnapshotManager::GetInstance().TakeSnapshot("Change Fill Direction");
+        }
+        return true;
+    });
+
+    // Fill Max Value - only visible when fillMode != Solid
     ReflectionRenderer::RegisterFieldRenderer("SpriteRenderComponent", "fillMaxValue",
     [](const char*, void* ptr, Entity entity, ECSManager& ecs) {
         auto& sprite = ecs.GetComponent<SpriteRenderComponent>(entity);
-        if (sprite.fillMode != 1) return true; // Hide when Solid
+        if (sprite.fillMode == 0) return true; // Hide when Solid
 
         float* val = static_cast<float*>(ptr);
         const float labelWidth = EditorComponents::GetLabelWidth();
@@ -3157,11 +3345,11 @@ void RegisterInspectorCustomRenderers()
         return true;
     });
 
-    // Fill Value slider - only visible when fillMode == Radial
+    // Fill Value slider - only visible when fillMode != Solid
     ReflectionRenderer::RegisterFieldRenderer("SpriteRenderComponent", "fillValue",
     [](const char*, void* ptr, Entity entity, ECSManager& ecs) {
         auto& sprite = ecs.GetComponent<SpriteRenderComponent>(entity);
-        if (sprite.fillMode != 1) return true; // Hide when Solid
+        if (sprite.fillMode == 0) return true; // Hide when Solid
 
         float* val = static_cast<float*>(ptr);
         const float labelWidth = EditorComponents::GetLabelWidth();
@@ -3176,11 +3364,11 @@ void RegisterInspectorCustomRenderers()
         return true;
     });
 
-    // Fill Edge Glow slider - only visible when fillMode == Radial
+    // Fill Edge Glow slider - only visible when fillMode != Solid
     ReflectionRenderer::RegisterFieldRenderer("SpriteRenderComponent", "fillGlow",
     [](const char*, void* ptr, Entity entity, ECSManager& ecs) {
         auto& sprite = ecs.GetComponent<SpriteRenderComponent>(entity);
-        if (sprite.fillMode != 1) return true; // Hide when Solid
+        if (sprite.fillMode == 0) return true; // Hide when Solid
 
         float* val = static_cast<float*>(ptr);
         const float labelWidth = EditorComponents::GetLabelWidth();
@@ -3195,11 +3383,11 @@ void RegisterInspectorCustomRenderers()
         return true;
     });
 
-    // Fill Background brightness slider - only visible when fillMode == Radial
+    // Fill Background brightness slider - only visible when fillMode != Solid
     ReflectionRenderer::RegisterFieldRenderer("SpriteRenderComponent", "fillBackground",
     [](const char*, void* ptr, Entity entity, ECSManager& ecs) {
         auto& sprite = ecs.GetComponent<SpriteRenderComponent>(entity);
-        if (sprite.fillMode != 1) return true; // Hide when Solid
+        if (sprite.fillMode == 0) return true; // Hide when Solid
 
         float* val = static_cast<float*>(ptr);
         const float labelWidth = EditorComponents::GetLabelWidth();

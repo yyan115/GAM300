@@ -228,6 +228,10 @@ return Component {
         self._currentStateData = self.COMBO_TREE["idle"]
         self._stateTimer = 0
         self._comboChain = {}  -- Track combo sequence for UI/scoring
+
+        -- Throwable hook tracking: true while chain endpoint is hooked to a Throwable.
+        -- When true, chain input is routed to throw/swing logic instead of chain_attack.
+        self._chainHasThrowable = false
     end,
 
     Start = function(self)
@@ -268,6 +272,35 @@ return Component {
         self._animator:SetInt("ComboStep", 0)        -- Note: SetInt, not SetInteger
         self._animator:SetBool("IsAttacking", false)
         self._animator:SetBool("IsHeavyCharging", false)
+
+        -- ── Throwable awareness ──────────────────────────────────────────────
+        -- Track whether the chain endpoint is currently hooked to a Throwable.
+        -- While true, chain input must NOT become chain_attack — ChainBootstrap
+        -- owns that input to decide throw vs swing.
+        if _G.event_bus and _G.event_bus.subscribe then
+            self._subHitEntity = _G.event_bus.subscribe("chain.endpoint_hit_entity", function(payload)
+                if not payload then return end
+                if payload.isThrowable then
+                    self._chainHasThrowable = true
+                    print("[ComboManager] Throwable hooked — chain_attack blocked")
+                end
+            end)
+            -- Clear on retract (chain fully pulled back)
+            self._subRetracted = _G.event_bus.subscribe("chain.endpoint_retracted", function(payload)
+                if self._chainHasThrowable then
+                    self._chainHasThrowable = false
+                    print("[ComboManager] Throwable released — chain_attack unblocked")
+                end
+            end)
+            -- Clear immediately when throw is fired (chain still retracting)
+            self._subThrowFired = _G.event_bus.subscribe("chain.throwable_throw", function(payload)
+                if self._chainHasThrowable then
+                    self._chainHasThrowable = false
+                    print("[ComboManager] Throwable thrown — chain_attack unblocked")
+                end
+            end)
+        end
+        -- ────────────────────────────────────────────────────────────────────
 
         print("[ComboManager] Initialized successfully")
     end,
@@ -362,7 +395,14 @@ return Component {
             end
         elseif input:HasBufferedChain() then
             print("[ComboManager] HasBufferedChain=true, player_is_dashing=" .. tostring(_G.player_is_dashing))
-            candidateStateId = state.transitions.chain
+            -- If a throwable is hooked, the chain input belongs to ChainBootstrap
+            -- (throw vs swing decision). Do NOT consume it here — let it pass through
+            -- to chain.up so Bootstrap can act on it.
+            if self._chainHasThrowable then
+                print("[ComboManager] chain input suppressed — throwable is hooked, deferring to ChainBootstrap")
+            else
+                candidateStateId = state.transitions.chain
+            end
         elseif input:HasBufferedDash() then
             candidateStateId = state.transitions.dash
         end
