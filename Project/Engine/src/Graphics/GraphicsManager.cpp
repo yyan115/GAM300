@@ -1481,13 +1481,24 @@ void GraphicsManager::RenderModelOptimized(const ModelRenderComponent& item)
 	}
 
 	// Draw the model
-	if (item.HasAnimation()) 
+	if (item.depthOffset)
+	{
+		glEnable(GL_POLYGON_OFFSET_FILL);
+		glPolygonOffset(item.depthOffsetFactor, item.depthOffsetUnits);
+	}
+
+	if (item.HasAnimation())
 	{
 		item.model->Draw(*shader, *currentCamera, item.material, item, item.animator);
 	}
-	else 
+	else
 	{
 		item.model->Draw(*shader, *currentCamera, item.material, item);
+	}
+
+	if (item.depthOffset)
+	{
+		glDisable(GL_POLYGON_OFFSET_FILL);
 	}
 
 	m_sortingStats.drawCalls++;
