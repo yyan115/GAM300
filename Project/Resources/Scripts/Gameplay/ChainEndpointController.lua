@@ -30,7 +30,7 @@ return Component {
             dbg("[ChainEndpointController] WARNING: Engine.GetEntityByName not available")
         end
 
-        -- Resolve this component's entity id for parenting calls
+        -- Resolve this component's entity id
         self._entityId = nil
         do
             local ok, eid = pcall(function() if self.GetEntityId then return self:GetEntityId() end end)
@@ -44,8 +44,7 @@ return Component {
         if not self._entityId and self.entity and type(self.entity) == "number" then self._entityId = self.entity end
         if not self._entityId and self.gameObject and self.gameObject.EntityId then self._entityId = self.gameObject.EntityId end
 
-        -- Resolve our own transform handle so we can read our world position
-        -- when parented to the enemy (engine maintains it, we just read it back)
+        -- Resolve own transform handle
         self._endpointTransform = nil
         if self._entityId and Engine then
             pcall(function()
@@ -69,11 +68,13 @@ return Component {
         self._isVisible       = false
         self._isExtending     = false
         self._hookedEntityId  = nil
+        self._hookedRootId    = nil   -- root entity of whatever is hooked
         self._hookedTransform = nil
         self._hookedColliderTransform = nil
         self._hookedOffsetX   = 0
         self._hookedOffsetY   = 0
         self._hookedOffsetZ   = 0
+        self._hookedIsThrowable = false   -- true when the hooked entity is a Throwable
 
         self:_setModelVisible(false)
 
@@ -102,6 +103,18 @@ return Component {
             self._subSweepHit = _G.event_bus.subscribe("chain.lockon_sweep_hit", function(payload)
                 if not payload then return end
                 pcall(function() self:_onSweepHit(payload) end)
+            end)
+            -- When a throwable is thrown, Bootstrap publishes this so we immediately
+            -- clear the hook — the chain retracts freely with nothing at the end.
+            self._subThrowableThrow = _G.event_bus.subscribe("chain.throwable_throw", function(payload)
+                if not payload then return end
+                pcall(function()
+                    if self._hookedIsThrowable then
+                        self:_dbg("[ChainEndpointController] throwable_throw received — clearing hook")
+                        self:_clearHook()
+                        if self._rb then self._rb:SetEnabled(false) end
+                    end
+                end)
             end)
         else
             dbg("[ChainEndpointController] WARNING: event_bus not available")
@@ -144,7 +157,6 @@ return Component {
     _clearHook = function(self)
         self:_dbg("[ChainEndpointController] _clearHook — releasing '" .. self:_getEntityDebugName(self._hookedEntityId) .. "'")
 
-        -- Unparent from enemy so Bootstrap can drive the transform freely again
         if self._isParented and self._entityId and Engine and Engine.SetParentEntity then
             pcall(function() Engine.SetParentEntity(self._entityId, -1) end)
             self:_dbg("[ChainEndpointController] Unparented endpoint")
@@ -152,11 +164,13 @@ return Component {
         self._isParented = false
 
         self._hookedEntityId          = nil
+        self._hookedRootId            = nil
         self._hookedTransform         = nil
         self._hookedColliderTransform = nil
         self._hookedOffsetX           = 0
         self._hookedOffsetY           = 0
         self._hookedOffsetZ           = 0
+        self._hookedIsThrowable       = false
     end,
 
     _setModelVisible = function(self, visible)
@@ -201,11 +215,9 @@ return Component {
             end
         end
 
-        -- When hooked and parented, read OUR OWN world position from the engine.
-        -- The engine already moved us with the enemy via parenting — no manual
-        -- root+offset math needed. We publish it so ChainBootstrap updates
-        -- lockedEndPoint every frame, which keeps Verlet pinning positions[aN]
-        -- at the correct moving world position and allows retraction to work correctly.
+        -- When hooked and parented, read our own world position from the engine.
+        -- Publish it so ChainBootstrap keeps lockedEndPoint updated each frame,
+        -- which pins Verlet positions[aN] to the correct moving world position.
         if self._hookedEntityId and self._isParented then
             local wx, wy, wz = nil, nil, nil
 
@@ -244,17 +256,31 @@ return Component {
         end
         self:_dbg("[ChainEndpointController] Endpoint retracted — clearing hook state")
 
-        -- Notify enemy AI to trigger hooked/slam behaviour
         if self._hookedEntityId then
             local hookedName = self:_getEntityDebugName(self._hookedEntityId)
-            local rootId = self:_getRootEntityId(self._hookedEntityId)
-            local rootName = self:_getEntityDebugName(rootId)
-            self:_dbg("[ChainEndpointController] Was hooked to '" .. hookedName .. "' (root='" .. rootName .. "') on retract — publishing chain.enemy_hooked")
-            if _G.event_bus and _G.event_bus.publish then
-                _G.event_bus.publish("chain.enemy_hooked", {
-                    entityId = rootId,
-                    duration = 2.0,
-                })
+            local rootId     = self._hookedRootId or self:_getRootEntityId(self._hookedEntityId)
+            local rootName   = self:_getEntityDebugName(rootId)
+
+            if self._hookedIsThrowable then
+                -- Throwable: Bootstrap already decided throw vs swing before retraction
+                -- started. If we reach here normally (not via throwable_throw clearing hook
+                -- early), it means the chain finished retracting with throwable still on.
+                -- Publish detach so ThrowableController resets to static.
+                self:_dbg("[ChainEndpointController] Was hooked to throwable '" .. rootName .. "' — publishing chain.throwable_detached")
+                if _G.event_bus and _G.event_bus.publish then
+                    _G.event_bus.publish("chain.throwable_detached", {
+                        entityId = rootId,
+                    })
+                end
+            else
+                -- Enemy: notify AI to trigger hooked/slam behaviour
+                self:_dbg("[ChainEndpointController] Was hooked to enemy '" .. hookedName .. "' (root='" .. rootName .. "') — publishing chain.enemy_hooked")
+                if _G.event_bus and _G.event_bus.publish then
+                    _G.event_bus.publish("chain.enemy_hooked", {
+                        entityId = rootId,
+                        duration = 2.0,
+                    })
+                end
             end
         end
 
@@ -291,9 +317,9 @@ return Component {
         end
 
         -- Tag check via root
-        local rootId = self:_getRootEntityId(otherEntityId)
+        local rootId   = self:_getRootEntityId(otherEntityId)
         local rootName = self:_getEntityDebugName(rootId)
-        local tag = nil
+        local tag      = nil
         if Engine and Engine.GetEntityTag then
             local ok, t = pcall(function() return Engine.GetEntityTag(rootId) end)
             if ok then tag = t else
@@ -304,38 +330,41 @@ return Component {
         self:_dbg("[ChainEndpointController] OnTriggerEnter entity='" .. otherName .. "' root='" .. rootName .. "' tag='" .. tostring(tag) .. "'")
         dbg(string.format("[ChainEndpointController][TRIGGER] tag check — entity='%s' root='%s' tag='%s'", otherName, rootName, tostring(tag)))
 
-        -- Extend here for more hookable types: (tag == "Enemy") or (tag == "Hookable")
-        local isHookable = (tag == "Enemy")
+        local isHookable = (tag == "Enemy") or (tag == "Throwable")
         if not isHookable then
             dbg("[ChainEndpointController][TRIGGER] REJECTED — tag='" .. tostring(tag) .. "' not hookable")
             self:_dbg("[ChainEndpointController] OnTriggerEnter ignored — root='" .. rootName .. "' tag='" .. tostring(tag) .. "' not hookable")
             return
         end
-        dbg("[ChainEndpointController][TRIGGER] PASSED all guards — proceeding to hook and snap")
+        dbg("[ChainEndpointController][TRIGGER] PASSED all guards — proceeding to hook")
 
-        -- Query LockOnPoint on the collided child entity for closest body part snap
         local snapImpactX = self._lastEndpointX or 0
         local snapImpactY = self._lastEndpointY or 0
         local snapImpactZ = self._lastEndpointZ or 0
-        local snapPartId  = nil  -- if set, parent endpoint to this part instead of root
-        local lockOnComp = nil
-        pcall(function() lockOnComp = GetComponent(otherEntityId, "LockOnPoint") end)
-        if lockOnComp then
-            local partPos, partId = lockOnComp:GetClosestPart(snapImpactX, snapImpactY, snapImpactZ)
-            if partPos then
-                snapImpactX = partPos.x
-                snapImpactY = partPos.y
-                snapImpactZ = partPos.z
-                snapPartId  = partId
-                self:_dbg(string.format("[ChainEndpointController] Snapping to closest part id=%s pos=(%.3f,%.3f,%.3f)",
-                    tostring(partId), snapImpactX, snapImpactY, snapImpactZ))
+        local snapPartId  = nil
+
+        if tag == "Enemy" then
+            -- Query LockOnPoint for closest body part snap
+            local lockOnComp = nil
+            pcall(function() lockOnComp = GetComponent(otherEntityId, "LockOnPoint") end)
+            if lockOnComp then
+                local partPos, partId = lockOnComp:GetClosestPart(snapImpactX, snapImpactY, snapImpactZ)
+                if partPos then
+                    snapImpactX = partPos.x
+                    snapImpactY = partPos.y
+                    snapImpactZ = partPos.z
+                    snapPartId  = partId
+                    self:_dbg(string.format("[ChainEndpointController] Snapping to closest part id=%s pos=(%.3f,%.3f,%.3f)",
+                        tostring(partId), snapImpactX, snapImpactY, snapImpactZ))
+                end
             end
         end
+        -- Throwable: no body-part snap — use root position as-is (snapPartId stays nil)
 
         self:_doHook(otherEntityId, otherName, rootId, rootName, tag, snapImpactX, snapImpactY, snapImpactZ, snapPartId)
     end,
 
-    -- Sweep hit from LockOnPoint (handles fast endpoint tunnelling through trigger)
+    -- Sweep hit from LockOnPoint
     _onSweepHit = function(self, payload)
         local rbActive = self._rb and self._rb:IsEnabled()
         if not rbActive then return end
@@ -355,54 +384,58 @@ return Component {
             if ok then tag = t end
         end
 
-        local isHookable = (tag == "Enemy")
+        local isHookable = (tag == "Enemy") or (tag == "Throwable")
         if not isHookable then return end
 
         dbg("[ChainEndpointController] Sweep hit confirmed — hooking entity='" .. otherName .. "' root='" .. rootName .. "'")
 
-        -- Use the part position reported by LockOnPoint directly as snap target
-        local snapX = payload.partX or self._lastEndpointX or 0
-        local snapY = payload.partY or self._lastEndpointY or 0
-        local snapZ = payload.partZ or self._lastEndpointZ or 0
+        local snapX      = payload.partX or self._lastEndpointX or 0
+        local snapY      = payload.partY or self._lastEndpointY or 0
+        local snapZ      = payload.partZ or self._lastEndpointZ or 0
         local snapPartId = payload.partId or nil
+
+        -- For throwables, ignore the partId (it's the root anyway)
+        if tag == "Throwable" then snapPartId = nil end
 
         self:_doHook(otherEntityId, otherName, rootId, rootName, tag, snapX, snapY, snapZ, snapPartId)
     end,
 
     -- Shared hook + snap logic used by both OnTriggerEnter and _onSweepHit
     _doHook = function(self, otherEntityId, otherName, rootId, rootName, tag, impactX, impactY, impactZ, partId)
-        self:_dbg("[ChainEndpointController] _doHook — entity='" .. otherName .. "' root='" .. rootName .. "' partId=" .. tostring(partId))
+        local isThrowable = (tag == "Throwable")
+        self:_dbg("[ChainEndpointController] _doHook — entity='" .. otherName .. "' root='" .. rootName .. "' tag='" .. tostring(tag) .. "' isThrowable=" .. tostring(isThrowable) .. " partId=" .. tostring(partId))
 
-        self._hookedEntityId = otherEntityId
-        self._isExtending = false
+        self._hookedEntityId    = otherEntityId
+        self._hookedRootId      = rootId
+        self._hookedIsThrowable = isThrowable
+        self._isExtending       = false
         if self._rb then self._rb:SetEnabled(false) end
 
-        self._hookedTransform = nil
+        self._hookedTransform         = nil
         self._hookedColliderTransform = nil
         pcall(function()
-            self._hookedTransform = Engine.FindTransformByID(rootId)
+            self._hookedTransform         = Engine.FindTransformByID(rootId)
             self._hookedColliderTransform = Engine.FindTransformByID(otherEntityId)
         end)
 
-        -- Determine the parent target: use specific body part bone if provided,
-        -- otherwise fall back to root. This makes the endpoint follow animated bones.
-        local parentId = (partId and partId ~= 0) and partId or rootId
-        local parentTransform = nil
-        pcall(function()
-            if partId and partId ~= 0 then
-                parentTransform = Engine.FindTransformByID(partId)
+        -- For enemies: parent to specific body-part bone if provided.
+        -- For throwables: always parent to root (no body-part hierarchy).
+        local parentId        = rootId
+        local parentTransform = self._hookedTransform
+
+        if not isThrowable and partId and partId ~= 0 then
+            local boneTransform = nil
+            pcall(function() boneTransform = Engine.FindTransformByID(partId) end)
+            if boneTransform then
+                parentId        = partId
+                parentTransform = boneTransform
             end
-        end)
-        if not parentTransform then
-            parentTransform = self._hookedTransform
-            parentId = rootId
         end
 
         self:_dbg("[ChainEndpointController] hookedTransform=" .. tostring(self._hookedTransform ~= nil)
             .. " parentId=" .. tostring(parentId) .. " partId=" .. tostring(partId))
 
-        -- Parent endpoint to the body part bone (or root as fallback)
-        -- Local position 0,0,0 sits the endpoint exactly on the bone pivot.
+        -- Parent endpoint to the chosen entity
         if self._entityId and Engine and Engine.SetParentEntity then
             local ok = pcall(function() Engine.SetParentEntity(self._entityId, parentId) end)
             if ok then
@@ -414,7 +447,7 @@ return Component {
             end
         end
 
-        -- Write local position 0,0,0 — sit exactly on the part bone pivot
+        -- Write local position 0,0,0 — sit exactly on the parent pivot
         if self._isParented and self._endpointTransform then
             pcall(function()
                 local pos = self._endpointTransform.localPosition
@@ -425,18 +458,29 @@ return Component {
                 end
                 self._endpointTransform.isDirty = true
             end)
-            self:_dbg("[ChainEndpointController][SNAP] parented to bone -> local=(0,0,0)")
+            self:_dbg("[ChainEndpointController][SNAP] parented to bone/root -> local=(0,0,0)")
         end
 
-        -- hookedTransform still tracks root for constraint/physics purposes
-        -- lockedEndPoint in ChainBootstrap will follow the endpoint transform world pos
+        -- Publish general hit event (Bootstrap uses this to lock endPointLocked)
         if _G.event_bus and _G.event_bus.publish then
             _G.event_bus.publish("chain.endpoint_hit_entity", {
-                entityId   = otherEntityId,
-                entityName = otherName,
-                rootName   = rootName,
-                rootTag    = tag,
+                entityId       = otherEntityId,
+                entityName     = otherName,
+                rootEntityId   = rootId,       -- explicit root id for Bootstrap throwable tracking
+                rootName       = rootName,
+                rootTag        = tag,
+                isThrowable    = isThrowable,
             })
+        end
+
+        -- Throwable: additionally notify ThrowableController to become dynamic
+        if isThrowable then
+            if _G.event_bus and _G.event_bus.publish then
+                _G.event_bus.publish("chain.throwable_attached", {
+                    entityId = rootId,
+                })
+            end
+            self:_dbg("[ChainEndpointController] Published chain.throwable_attached for rootId=" .. tostring(rootId))
         end
     end,
 
@@ -458,16 +502,18 @@ return Component {
     end,
 
     OnDisable = function(self)
-        self._isExtending = false
+        self._isExtending     = false
+        self._hookedIsThrowable = false
         self:_clearHook()
         if self._rb then self._rb:SetEnabled(false) end
         if _G.event_bus and _G.event_bus.unsubscribe then
-            if self._subMoved          then pcall(function() _G.event_bus.unsubscribe(self._subMoved)          end) end
-            if self._subRetracted      then pcall(function() _G.event_bus.unsubscribe(self._subRetracted)      end) end
-            if self._subAttach         then pcall(function() _G.event_bus.unsubscribe(self._subAttach)         end) end
-            if self._subDetach         then pcall(function() _G.event_bus.unsubscribe(self._subDetach)         end) end
-            if self._subCheckCollision then pcall(function() _G.event_bus.unsubscribe(self._subCheckCollision) end) end
-            if self._subSweepHit       then pcall(function() _G.event_bus.unsubscribe(self._subSweepHit)       end) end
+            if self._subMoved            then pcall(function() _G.event_bus.unsubscribe(self._subMoved)            end) end
+            if self._subRetracted        then pcall(function() _G.event_bus.unsubscribe(self._subRetracted)        end) end
+            if self._subAttach           then pcall(function() _G.event_bus.unsubscribe(self._subAttach)           end) end
+            if self._subDetach           then pcall(function() _G.event_bus.unsubscribe(self._subDetach)           end) end
+            if self._subCheckCollision   then pcall(function() _G.event_bus.unsubscribe(self._subCheckCollision)   end) end
+            if self._subSweepHit         then pcall(function() _G.event_bus.unsubscribe(self._subSweepHit)         end) end
+            if self._subThrowableThrow   then pcall(function() _G.event_bus.unsubscribe(self._subThrowableThrow)   end) end
         end
     end,
 }

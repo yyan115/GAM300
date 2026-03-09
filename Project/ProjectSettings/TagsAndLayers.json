@@ -15,7 +15,8 @@
         "BlackScreen",
         "SkipButton",
         "Checkpoint",
-        "LockOn"
+        "LockOn",
+        "Throwable"
     ],
     "layers": [
         {
