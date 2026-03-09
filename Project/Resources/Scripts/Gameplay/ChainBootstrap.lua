@@ -66,6 +66,7 @@ return Component {
         DragTag = "HeavyEnemy",     -- entity tag that drags the player instead of flopping
         UseLOSAnchors = true,       -- when true: anchors auto-created wherever geometry breaks LOS
         LockOnAngleDeg = 45.0,      -- half-cone: LockOn targets outside this angle from player forward are ignored
+        RaycastSnapLinkMultiplier = 0.8,  -- fraction of links to activate when chain snaps to a wall (< 1.0 = shorter visual chain)
 
         -- =====================================================================
         -- SPIN (aim-hold from retracted state)
@@ -270,8 +271,14 @@ return Component {
             local isAttached = self.controller.endPointLocked or self.controller._raycastSnapped
             if isAttached then
                 self.controller.isExtending = false
-                self.controller:StartRetraction()
-                dbg("[ChainBootstrap] Tap-release mid-extension but already attached -> StartRetraction")
+                if self._hookedIsThrowable then
+                    -- Throwable hooked mid-extension: stop extending but STAY locked.
+                    -- Player taps again to throw or swing — handled in the len>1e-4 branch.
+                    dbg("[ChainBootstrap] Tap-release mid-extension: throwable hooked — staying locked, no retract")
+                else
+                    self.controller:StartRetraction()
+                    dbg("[ChainBootstrap] Tap-release mid-extension but already attached -> StartRetraction")
+                end
             else
                 -- Nothing hit yet: drop into flop so tip falls from wherever it stopped.
                 self.controller.isExtending              = false
@@ -310,10 +317,31 @@ return Component {
             end
 
         elseif len > 1e-4 and not isRet and not isExt then
-            -- Tap (hold never reached) on extended idle chain: retract.
-            -- (Skipped if we just finished an adjust-length hold — length was already confirmed above.)
-            self.controller:StartRetraction()
-            dbg("[ChainBootstrap] TAP on extended idle -> StartRetraction")
+            -- Tap on extended idle chain.
+            print(string.format("[ChainBootstrap] TAP extended idle: hookedIsThrowable=%s hookedId=%s len=%.3f",
+                tostring(self._hookedIsThrowable), tostring(self._hookedThrowableEntityId), len))
+            if self._hookedIsThrowable and self._hookedThrowableEntityId then
+                -- Always throw in camera forward direction on tap.
+                local cf = self._cameraForward
+                print(string.format("[ChainBootstrap] THROW publishing: entityId=%s dir=(%.2f,%.2f,%.2f)",
+                    tostring(self._hookedThrowableEntityId), cf[1] or 0, cf[2] or 0, cf[3] or 0))
+                if _G.event_bus and _G.event_bus.publish then
+                    _G.event_bus.publish("chain.throwable_throw", {
+                        entityId = self._hookedThrowableEntityId,
+                        dirX     = cf[1] or 0,
+                        dirY     = cf[2] or 0,
+                        dirZ     = cf[3] or 0,
+                    })
+                end
+                self._hookedIsThrowable       = false
+                self._hookedThrowableEntityId = nil
+                self.controller:StartRetraction()
+                print("[ChainBootstrap] Throwable TAP: THROW -> StartRetraction")
+            else
+                -- Normal (enemy or no hook): retract.
+                self.controller:StartRetraction()
+                print("[ChainBootstrap] TAP on extended idle -> StartRetraction (no throwable)")
+            end
         end
 
         self._chain_held         = false
@@ -344,11 +372,15 @@ return Component {
                 _G.event_bus.publish("chain.aim_camera", {active = true})
             end
         elseif len > 1e-4 and not isExt and isAttached then
-            -- Chain is extended AND attached to something: enter length-adjust mode.
-            -- Update will set chainLen to the live player→endpoint distance each frame.
-            -- The length is confirmed (chain stays locked) when the button is released.
-            self._intentAdjustLength = true
-            dbg(string.format("[ChainBootstrap] hold on attached chain (len=%.4f) -> AdjustLength mode", len))
+            if self._hookedIsThrowable then
+                -- Throwable hooked: never enter length-adjust mode.
+                -- Tap-release must reach the throw/swing branch in _on_chain_up.
+                dbg("[ChainBootstrap] hold on throwable — skipping AdjustLength, tap-release will throw/swing")
+            else
+                -- Chain is extended AND attached to something: enter length-adjust mode.
+                self._intentAdjustLength = true
+                dbg(string.format("[ChainBootstrap] hold on attached chain (len=%.4f) -> AdjustLength mode", len))
+            end
         end
     end,
 
@@ -420,6 +452,11 @@ return Component {
         self._spinFacingX        = 0
         self._spinFacingZ        = 1
         self._spinFacingLocked   = false  -- true once facing is snapshotted, prevents mid-spin updates
+
+        -- Throwable interaction state
+        self._hookedIsThrowable      = false   -- true while endpoint is on a Throwable
+        self._hookedThrowableEntityId = nil    -- root entity id of the attached throwable
+        self._throwAimThreshold      = 0.3    -- dot-product cutoff for "facing the throwable"
 
         -- =====================================================================
         -- AUDIO: ChainAudio resolves link AudioComponents by name each frame
@@ -517,10 +554,15 @@ return Component {
                     if self.controller then
                         dbg("[ChainBootstrap] Endpoint hit entity '" .. tostring(payload.entityName) .. "' — locking endpoint")
                         self.controller.endPointLocked = true
-                        self.controller.hookedTag = payload.rootTag or ""
-                        -- Snapshot lockedEndPoint at moment of hit as initial value.
-                        -- ChainEndpointController will keep updating it every frame via
-                        -- chain.endpoint_hooked_position so Verlet stays pinned correctly.
+                        self.controller.hookedTag      = payload.rootTag or ""
+
+                        -- NEW: track whether the hooked entity is a throwable
+                        self._hookedIsThrowable       = payload.isThrowable or false
+                        self._hookedThrowableEntityId = self._hookedIsThrowable
+                                                        and payload.rootEntityId
+                                                        or nil
+
+                        -- Snapshot lockedEndPoint at moment of hit (unchanged)
                         if self._endpointTransform then
                             local ok, a, b, c = pcall(function()
                                 return Engine.GetTransformWorldPosition(self._endpointTransform)
@@ -537,13 +579,31 @@ return Component {
                                     self.controller.lockedEndPoint[2] = ly
                                     self.controller.lockedEndPoint[3] = lz
                                     dbg(string.format("[ChainBootstrap] lockedEndPoint snapshot at hit: (%.3f,%.3f,%.3f)", lx, ly, lz))
+
+                                    -- For throwables: trim chain to actual player→endpoint distance
+                                    -- so the chain doesn't hang loose at full MaxLength.
+                                    if self._hookedIsThrowable then
+                                        local sp = self.controller.startPos
+                                        local ddx = lx - sp[1]
+                                        local ddy = ly - sp[2]
+                                        local ddz = lz - sp[3]
+                                        local actualDist = math.sqrt(ddx*ddx + ddy*ddy + ddz*ddz)
+                                        self.controller.chainLen = actualDist
+                                        local lmd = tonumber(self.LinkMaxDistance) or 0.025
+                                        if lmd > 0 then
+                                            self.controller.activeN = math.min(
+                                                math.ceil(actualDist / lmd) + 1,
+                                                self.controller.n
+                                            )
+                                        end
+                                        dbg(string.format("[ChainBootstrap] Throwable hit — trimmed chainLen=%.3f activeN=%d", actualDist, self.controller.activeN))
+                                    end
                                 end
                             end
                         end
                     end
                 end)
             end)
-
         end
     end,
 
@@ -840,6 +900,7 @@ return Component {
             UseLOSAnchors = self.UseLOSAnchors,
             AnchorAngleThresholdRad = math.rad(self.AnchorAngleThresholdDeg or 45),
             PinEndWhenExtended = self.PinEndWhenExtended,
+            RaycastSnapLinkMultiplier = self.RaycastSnapLinkMultiplier,
             getStart = function()
                 if not self.playerTransform then
                     self.playerTransform = Engine.FindTransformByName(self.PlayerName)
@@ -1164,6 +1225,9 @@ return Component {
         if self._pendingSpinRelease or self._intentAimFire then
             pcall(function() self:_resetSpin() end)
         end
+
+        self._hookedIsThrowable       = false
+        self._hookedThrowableEntityId = nil
 
         if _G.event_bus and _G.event_bus.unsubscribe then
             if self._cameraForwardSub then pcall(function() _G.event_bus.unsubscribe(self._cameraForwardSub) end) end
