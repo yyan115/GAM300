@@ -74,17 +74,16 @@ return Component {
         self._maxSliderY = self._barTransform.localPosition.y + offsetY
         self._minSliderY = self._barTransform.localPosition.y - offsetY
 
-        -- Cache fill bar transform (optional)
-        self._fillTransform = nil
-        self._fillMaxWidth = nil
+        -- Cache fill bar sprite (optional) - uses SpriteRenderComponent fill mode
+        self._fillSprite = nil
         if fillName and fillName ~= "" then
             local fillEntity = Engine.GetEntityByName(fillName)
             if fillEntity then
-                self._fillTransform = GetComponent(fillEntity, "Transform")
-                if self._fillTransform then
-                    -- Max width is the full bar width
-                    self._fillMaxWidth = self._barTransform.localScale.x
+                self._fillSprite = GetComponent(fillEntity, "SpriteRenderComponent")
+                if self._fillSprite then
                     print("[SettingsSlider] Fill bar configured: " .. fillName)
+                else
+                    print("[SettingsSlider] Warning: Fill entity missing SpriteRenderComponent: " .. fillName)
                 end
             else
                 print("[SettingsSlider] Warning: Fill entity not found: " .. fillName)
@@ -118,23 +117,10 @@ return Component {
 
     -- Update the fill bar based on normalized value (0-1)
     UpdateFillBar = function(self, normalized)
-        if not self._fillTransform or not self._fillMaxWidth then
+        if not self._fillSprite then
             return
         end
-
-        -- Calculate fill width based on normalized value
-        local fillWidth = normalized * self._fillMaxWidth
-        
-        -- Minimum width to prevent zero-scale issues
-        if fillWidth < 1 then fillWidth = 1 end
-
-        -- Update fill scale (width)
-        self._fillTransform.localScale.x = fillWidth
-
-        -- Position the fill bar so its left edge aligns with the bar's left edge
-        -- The fill's center should be at: leftEdge + (fillWidth / 2)
-        self._fillTransform.localPosition.x = self._minSliderX + (fillWidth / 2)
-        self._fillTransform.isDirty = true
+        self._fillSprite.fillValue = normalized
     end,
 
     Update = function(self, dt)

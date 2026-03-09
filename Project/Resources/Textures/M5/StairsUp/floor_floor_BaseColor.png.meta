@@ -1,9 +1,9 @@
 {
     "AssetMetaData": {
         "version": 7,
-        "guid": "007650f1ca34e51c-000473d778027e7f",
-        "source": "../../Resources/Textures/M5/Room2/floor_floor_BaseColor.png",
-        "compiled": "../../Resources/Textures/M5/Room2/floor_floor_BaseColor.dds"
+        "guid": "004e5c2f348107e7-00047468c6000005",
+        "source": "../../Resources/Textures/M5/StairsUp/floor_floor_BaseColor.png",
+        "compiled": "../../Resources/Textures/M5/StairsUp/floor_floor_BaseColor.dds"
     },
     "TextureMetaData": {
         "type": "diffuse",
