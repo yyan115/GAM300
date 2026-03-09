@@ -1242,6 +1242,9 @@ return Component {
         -- phase 2: hooking forces boss down
         if self._phase == 2 and self._inAir then
             self._hookedDownRequested = true
+            -- Forcefully cancel BurstFire so it doesn't secretly run 
+            -- while the boss is falling and delay the FateSealed move!
+            self:_EndMove()
             self:BeginSlamDown()
         end
 
@@ -1725,6 +1728,7 @@ return Component {
 
     _DoMeleeAttack = function(self)
         -- longer windup + further range
+        print("[Miniboss] _DoMeleeAttack: SetTrigger(Melee)")
         if self._animator then self._animator:SetTrigger("Melee") end
         self:_BeginMove("BossMelee", {
             windup = self.BossMeleeWindup or 0.4,
@@ -1927,14 +1931,15 @@ return Component {
             if m.step == 0 then
                 -- face player during charge (feels intentional)
                 self:FacePlayer()
-                self._animator:SetTrigger("Melee")
-
+                
                 m.chargeT = (m.chargeT or 0) + dtSec
                 local chargeDur = m.chargeDur or 0.45
-
+                
                 -- OPTIONAL: play charge animation / VFX / SFX once
                 if not m.chargeStarted then
                     m.chargeStarted = true
+                    print("[Miniboss] FateSealed: SetTrigger(Melee)")
+                    self._animator:SetTrigger("Melee")
                 end
 
                 if m.chargeT >= chargeDur then
@@ -1953,6 +1958,7 @@ return Component {
                     m.dashT = 0
 
                     m.step = 1
+                    m.chargeT = 0
                 end
 
                 return
@@ -2019,6 +2025,7 @@ return Component {
                 if m.dashT >= dashDur then
                     m.step = 2
                     m.recoverT = 0
+                    m.dashT = 0
                 end
 
                 return
@@ -2029,6 +2036,7 @@ return Component {
                 m.recoverT = (m.recoverT or 0) + dtSec
                 if m.recoverT >= (m.postDelay or 0.55) then
                     self:_EndMove()
+                    m.recoverT = 0
                 end
                 return
             end

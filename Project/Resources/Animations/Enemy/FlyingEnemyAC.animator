@@ -11,7 +11,17 @@
     },
     "parameters": [
         {
+            "name": "Moving",
+            "type": "Bool",
+            "defaultValue": 0.0
+        },
+        {
             "name": "Dead",
+            "type": "Bool",
+            "defaultValue": 0.0
+        },
+        {
+            "name": "Melee",
             "type": "Bool",
             "defaultValue": 0.0
         },
@@ -26,11 +36,6 @@
             "defaultValue": 0.0
         },
         {
-            "name": "Melee",
-            "type": "Bool",
-            "defaultValue": 0.0
-        },
-        {
             "name": "PatrolEnabled",
             "type": "Bool",
             "defaultValue": 0.0
@@ -41,12 +46,12 @@
             "defaultValue": 0.0
         },
         {
-            "name": "Hurt2",
+            "name": "Passive",
             "type": "Bool",
             "defaultValue": 0.0
         },
         {
-            "name": "Passive",
+            "name": "Hurt2",
             "type": "Bool",
             "defaultValue": 0.0
         },
@@ -83,6 +88,11 @@
         {
             "name": "Hooked",
             "type": "Trigger",
+            "defaultValue": 0.0
+        },
+        {
+            "name": "Attacking",
+            "type": "Bool",
             "defaultValue": 0.0
         }
     ],
@@ -157,7 +167,7 @@
             "id": "Ranged Attack",
             "clipIndex": 9,
             "loop": true,
-            "speed": 2.000000238418579,
+            "speed": 1.7000001668930054,
             "crossfadeDuration": 0.0,
             "nodePosition": {
                 "x": 595.5,
@@ -857,9 +867,9 @@
             "transitionDuration": 0.03999999910593033,
             "conditions": [
                 {
-                    "paramName": "Flying",
+                    "paramName": "PlayerInDetectionRange",
                     "mode": "Equals",
-                    "threshold": 0.0
+                    "threshold": 1.0
                 }
             ]
         },
@@ -942,7 +952,7 @@
             "transitionDuration": 0.03999999910593033,
             "conditions": [
                 {
-                    "paramName": "PlayerInAttackRange",
+                    "paramName": "PlayerInDetectionRange",
                     "mode": "Equals",
                     "threshold": 0.0
                 }
@@ -983,8 +993,8 @@
             "to": "Ground Chase",
             "anyState": false,
             "hasExitTime": true,
-            "exitTime": 0.9300000071525574,
-            "transitionDuration": 0.949999988079071,
+            "exitTime": 0.05000000074505806,
+            "transitionDuration": 0.05000000074505806,
             "conditions": [
                 {
                     "paramName": "PlayerInAttackRange",
@@ -993,11 +1003,6 @@
                 },
                 {
                     "paramName": "Dead",
-                    "mode": "Equals",
-                    "threshold": 0.0
-                },
-                {
-                    "paramName": "Ranged",
                     "mode": "Equals",
                     "threshold": 0.0
                 },
@@ -1143,8 +1148,8 @@
             "to": "Flying Chase",
             "anyState": false,
             "hasExitTime": true,
-            "exitTime": 0.9300000071525574,
-            "transitionDuration": 0.949999988079071,
+            "exitTime": 0.05000000074505806,
+            "transitionDuration": 0.05000000074505806,
             "conditions": [
                 {
                     "paramName": "Flying",
@@ -1153,11 +1158,6 @@
                 },
                 {
                     "paramName": "PlayerInAttackRange",
-                    "mode": "Equals",
-                    "threshold": 0.0
-                },
-                {
-                    "paramName": "Ranged",
                     "mode": "Equals",
                     "threshold": 0.0
                 },

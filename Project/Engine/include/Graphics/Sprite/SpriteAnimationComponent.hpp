@@ -6,8 +6,8 @@
 struct SpriteFrame
 {
 	REFL_SERIALIZABLE
-	GUID_128 textureGUID; // Texture for this frame
-	std::string texturePath; // Path to the texture (for reference)
+    GUID_128 textureGUID{}; // Texture for this frame
+    std::string texturePath{}; // Path to the texture (for reference)
 	glm::vec2 uvOffset;   // bottom-left or top-left depending on your convention
 	glm::vec2 uvScale;    // size of the frame in UV space
 	float duration = 0.1f; // seconds this frame is shown

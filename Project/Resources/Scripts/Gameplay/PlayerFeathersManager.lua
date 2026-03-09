@@ -9,6 +9,8 @@ return Component {
 
     fields = {
         FeathersCollectedTextName = "FeathersCollectedText",
+        FeathersSpriteEntityName = "FeathersSprite",
+        FeathersCollectionAnimationFrames = 25,
     },
 
     Awake = function(self)
@@ -28,6 +30,13 @@ return Component {
                     _G._numFeathers = _G._numFeathers + 1
                     if self._feathersCollectedTextComponent then
                         self._feathersCollectedTextComponent.text = string.format("x%d", _G._numFeathers)
+                    end
+
+                    if self._feathersSpriteEntity then
+                        local feathersSpriteAnimator = GetComponent(self._feathersSpriteEntity, "SpriteAnimationComponent")
+                        feathersSpriteAnimator.currentFrameIndex = 0
+                        feathersSpriteAnimator.currentClipIndex = 0
+                        feathersSpriteAnimator:Resume()
                     end
                 end
             end)
@@ -54,6 +63,7 @@ return Component {
 
     Start = function(self)
         self._transform = self:GetComponent("Transform")
+
         self._feathersCollectedTextEntity = Engine.GetEntityByName(self.FeathersCollectedTextName)
         if self._feathersCollectedTextEntity then
             self._feathersCollectedTextComponent = GetComponent(self._feathersCollectedTextEntity, "TextRenderComponent")
@@ -61,10 +71,21 @@ return Component {
                 self._feathersCollectedTextComponent.text = "x0"
             end
         end
+
+        self._feathersSpriteEntity = Engine.GetEntityByName(self.FeathersSpriteEntityName)
+        local feathersSpriteAnimator = GetComponent(self._feathersSpriteEntity, "SpriteAnimationComponent")
+        feathersSpriteAnimator.currentFrameIndex = 1
+        feathersSpriteAnimator:Stop()
     end,
 
     Update = function(self, dt) 
-
+        local feathersSpriteAnimator = GetComponent(self._feathersSpriteEntity, "SpriteAnimationComponent")
+        if feathersSpriteAnimator.currentClipIndex == 0 then
+            if feathersSpriteAnimator.currentFrameIndex == (self.FeathersCollectionAnimationFrames - 1) then
+                feathersSpriteAnimator.currentClipIndex = 1
+                feathersSpriteAnimator:Stop()
+            end
+        end
     end,
 
     OnDisable = function(self)

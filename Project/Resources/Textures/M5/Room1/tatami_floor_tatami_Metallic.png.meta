@@ -1,0 +1,14 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "00322fe95acc9ae7-0004711e760005f1",
+        "source": "../../Resources/Textures/M5/Room1/tatami_floor_tatami_Metallic.png",
+        "compiled": "../../Resources/Textures/M5/Room1/tatami_floor_tatami_Metallic.dds"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp"
+    }
+}

@@ -77,6 +77,11 @@ void LightingSystem::RenderShadowMaps()
             shadowRenderCallback
         );
     }
+    else
+    {
+        // No directional light - clear stale shadow data so deleted lights don't leave ghost shadows
+        directionalShadowMap.Clear();
+    }
 
     // =========================================================================
     // POINT LIGHT SHADOWS WITH CACHING

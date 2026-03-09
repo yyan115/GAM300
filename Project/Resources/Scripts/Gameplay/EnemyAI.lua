@@ -1079,6 +1079,11 @@ return Component {
 
         self._slamActive = true
         self._slamVy = 0
+
+        -- Publish a chain.slam_chain event so the player knows to play the SlamChain animation.
+        if _G.event_bus and _G.event_bus.publish then
+            _G.event_bus.publish("chain.slam_chain", true)
+        end
     end,
 
     UpdateSlamDown = function(self, dtSec)
@@ -1409,6 +1414,11 @@ return Component {
 
         if self.fsm.currentName ~= "Hooked" then
             self.fsm:Change("Hooked", self.states.Hooked)
+        end
+
+        -- Publish a chain.pull_chain event so the player knows to play the PullChain animation.
+        if _G.event_bus and _G.event_bus.publish then
+            _G.event_bus.publish("chain.pull_chain", true)
         end
     end,
 

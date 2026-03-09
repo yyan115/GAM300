@@ -6,7 +6,7 @@
         "compiled": "../../Resources/Textures/M5/enemy_ground_01_Height.dds"
     },
     "TextureMetaData": {
-        "type": "height",
+        "type": "diffuse",
         "flipUVs": false,
         "generateMipmaps": true,
         "textureWrapMode": "Clamp"

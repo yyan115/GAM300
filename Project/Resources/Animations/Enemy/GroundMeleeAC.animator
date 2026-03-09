@@ -16,9 +16,14 @@
             "defaultValue": 0.0
         },
         {
+            "name": "Melee",
+            "type": "Bool",
+            "defaultValue": 0.0
+        },
+        {
             "name": "PlayerInDetectionRange",
             "type": "Bool",
-            "defaultValue": 1.0
+            "defaultValue": 0.0
         },
         {
             "name": "Hurt1",
@@ -26,14 +31,9 @@
             "defaultValue": 0.0
         },
         {
-            "name": "Melee",
-            "type": "Bool",
-            "defaultValue": 0.0
-        },
-        {
             "name": "PatrolEnabled",
             "type": "Bool",
-            "defaultValue": 1.0
+            "defaultValue": 0.0
         },
         {
             "name": "PlayerInAttackRange",
@@ -845,8 +845,8 @@
             "to": "Ground Chase",
             "anyState": false,
             "hasExitTime": true,
-            "exitTime": 0.9100000262260437,
-            "transitionDuration": 0.8999999761581421,
+            "exitTime": 0.05000000074505806,
+            "transitionDuration": 0.05000000074505806,
             "conditions": [
                 {
                     "paramName": "Melee",

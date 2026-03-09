@@ -1,0 +1,14 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "00322fe90598f58e-000471481c00227b",
+        "source": "../../Resources/Textures/M5/Drum_Roughness.png",
+        "compiled": "../../Resources/Textures/M5/Drum_Roughness.dds"
+    },
+    "TextureMetaData": {
+        "type": "roughness",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp"
+    }
+}

@@ -176,11 +176,19 @@ void RegisterSpriteAnimationInspector() {
                 }
             } else {
                 if (ImGui::SmallButton(ICON_FA_PLAY)) {
-                    previewStates[entity] = PreviewState::Playing;
+                    // Reset preview to start when playing from stopped state
                     if (previewStates[entity] == PreviewState::Stopped) {
                         anim.editorPreviewTime = 0.0f;
                         anim.editorPreviewFrameIndex = 0;
                     }
+                    // Clamp frame index to valid range
+                    if (anim.currentClipIndex >= 0 && anim.currentClipIndex < static_cast<int>(anim.clips.size())) {
+                        if (anim.editorPreviewFrameIndex >= static_cast<int>(anim.clips[anim.currentClipIndex].frames.size())) {
+                            anim.editorPreviewFrameIndex = 0;
+                            anim.editorPreviewTime = 0.0f;
+                        }
+                    }
+                    previewStates[entity] = PreviewState::Playing;
                 }
             }
 

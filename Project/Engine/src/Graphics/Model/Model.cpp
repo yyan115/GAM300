@@ -89,6 +89,8 @@ inline glm::mat4 aiMatrix4x4ToGlm(const aiMatrix4x4& from)
     return to;
 }
 
+bool Model::forceReimportMaterials = false;
+
 Model::Model() {
 	// Default constructor - meshes vector is empty by default
     metaData = std::make_shared<ModelMeta>();
@@ -429,16 +431,29 @@ Mesh Model::ProcessMesh(aiMesh* mesh, const aiScene* scene)
 
         // Shininess
         float shininess;
-        if (assimpMaterial->Get(AI_MATKEY_SHININESS, shininess) == AI_SUCCESS) 
+        if (assimpMaterial->Get(AI_MATKEY_SHININESS, shininess) == AI_SUCCESS)
         {
             material->SetShininess(shininess);
         }
 
         // Opacity
         float opacity;
-        if (assimpMaterial->Get(AI_MATKEY_OPACITY, opacity) == AI_SUCCESS) 
+        if (assimpMaterial->Get(AI_MATKEY_OPACITY, opacity) == AI_SUCCESS)
         {
             material->SetOpacity(opacity);
+        }
+
+        // PBR properties (from glTF/FBX PBR materials)
+        float metallicFactor;
+        if (assimpMaterial->Get(AI_MATKEY_METALLIC_FACTOR, metallicFactor) == AI_SUCCESS)
+        {
+            material->SetMetallic(metallicFactor);
+        }
+
+        float roughnessFactor;
+        if (assimpMaterial->Get(AI_MATKEY_ROUGHNESS_FACTOR, roughnessFactor) == AI_SUCCESS)
+        {
+            material->SetRoughness(roughnessFactor);
         }
 
         // Load textures and assign to material
@@ -448,6 +463,22 @@ Mesh Model::ProcessMesh(aiMesh* mesh, const aiScene* scene)
             LoadMaterialTexture(material, assimpMaterial, aiTextureType_SPECULAR, "specular");
         if (assimpMaterial->GetTextureCount(aiTextureType_NORMALS) > 0)
             LoadMaterialTexture(material, assimpMaterial, aiTextureType_NORMALS, "normal");
+        if (assimpMaterial->GetTextureCount(aiTextureType_EMISSIVE) > 0)
+            LoadMaterialTexture(material, assimpMaterial, aiTextureType_EMISSIVE, "emissive");
+        if (assimpMaterial->GetTextureCount(aiTextureType_HEIGHT) > 0)
+            LoadMaterialTexture(material, assimpMaterial, aiTextureType_HEIGHT, "height");
+        // Metallic map (aiTextureType_METALNESS = 15 matches Material::TextureType::METALLIC = 15)
+        if (assimpMaterial->GetTextureCount(aiTextureType_METALNESS) > 0)
+            LoadMaterialTexture(material, assimpMaterial, aiTextureType_METALNESS, "metallic");
+        // Roughness map (aiTextureType_DIFFUSE_ROUGHNESS = 16 matches Material::TextureType::ROUGHNESS = 16)
+        if (assimpMaterial->GetTextureCount(aiTextureType_DIFFUSE_ROUGHNESS) > 0)
+            LoadMaterialTexture(material, assimpMaterial, aiTextureType_DIFFUSE_ROUGHNESS, "roughness");
+        // AO map (aiTextureType_AMBIENT_OCCLUSION = 17, but Material::TextureType::AMBIENT_OCCLUSION = 3)
+        if (assimpMaterial->GetTextureCount(aiTextureType_AMBIENT_OCCLUSION) > 0)
+            LoadMaterialTexture(material, assimpMaterial, aiTextureType_AMBIENT_OCCLUSION, "ao", Material::TextureType::AMBIENT_OCCLUSION);
+        // Some FBX files store PBR textures under BASE_COLOR instead of DIFFUSE
+        if (assimpMaterial->GetTextureCount(aiTextureType_BASE_COLOR) > 0 && assimpMaterial->GetTextureCount(aiTextureType_DIFFUSE) == 0)
+            LoadMaterialTexture(material, assimpMaterial, aiTextureType_BASE_COLOR, "diffuse", Material::TextureType::DIFFUSE);
 
     }
 
@@ -469,7 +500,7 @@ Mesh Model::ProcessMesh(aiMesh* mesh, const aiScene* scene)
 
     std::string materialPath = AssetManager::GetInstance().GetRootAssetDirectory() + "/Materials/" + modelName + "_" + sanitizedMatName + ".mat";
     material->SetName(modelName + "_" + sanitizedMatName);
-    if (!AssetManager::GetInstance().IsAssetCompiled(materialPath)) {
+    if (forceReimportMaterials || !AssetManager::GetInstance().IsAssetCompiled(materialPath)) {
         AssetManager::GetInstance().CompileUpdatedMaterial(materialPath, material, true);
     }
 
@@ -478,7 +509,7 @@ Mesh Model::ProcessMesh(aiMesh* mesh, const aiScene* scene)
     return newMesh;
 }
 
-void Model::LoadMaterialTexture(std::shared_ptr<Material> material, aiMaterial* mat, aiTextureType type, std::string typeName) {
+void Model::LoadMaterialTexture(std::shared_ptr<Material> material, aiMaterial* mat, aiTextureType type, std::string typeName, Material::TextureType targetType) {
     unsigned int textureCount = mat->GetTextureCount(type);
     for (unsigned int i = 0; i < textureCount; i++) {
         aiString str;
@@ -496,7 +527,9 @@ void Model::LoadMaterialTexture(std::shared_ptr<Material> material, aiMaterial* 
         // The texture will be loaded when the model is rendered.
         AssetManager::GetInstance().CompileTexture(texturePath, typeName, -1, flipUVs, true);
         std::unique_ptr<TextureInfo> textureInfo = std::make_unique<TextureInfo>(texturePath, nullptr);
-        material->SetTexture(static_cast<Material::TextureType>(type), std::move(textureInfo));
+        // Use explicit target type if provided, otherwise map from Assimp enum
+        Material::TextureType matType = (targetType != Material::TextureType::NONE) ? targetType : static_cast<Material::TextureType>(type);
+        material->SetTexture(matType, std::move(textureInfo));
     }
 	(void)typeName;
 }
