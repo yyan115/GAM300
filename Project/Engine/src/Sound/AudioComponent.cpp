@@ -85,6 +85,12 @@ void AudioComponent::PlayOneShot(std::string guidStr) {
     
     if (oneShotChannel != 0) {
         audioMgr.SetChannelPitch(oneShotChannel, Pitch);
+        audioMgr.SetChannelReverbMix(oneShotChannel, bypassListenerEffects ? 0.0f : reverbZoneMix);
+        audioMgr.SetChannelPriority(oneShotChannel, Priority);
+        if (!(Spatialize && SpatialBlend > 0.0f)) {
+            audioMgr.SetChannelStereoPan(oneShotChannel, StereoPan);
+        }
+        audioMgr.SetChannelDopplerLevel(oneShotChannel, DopplerLevel);
     }
 }
 
