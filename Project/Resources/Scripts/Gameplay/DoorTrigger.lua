@@ -228,6 +228,8 @@ return Component {
                 if handActiveComp then handActiveComp.isActive = true end
                 
                 _G.playerHasWeapon = true
+                local playerAnim = GetComponent(playerEnt, "AnimationComponent")
+                playerAnim:SetBool("IsArmed", true)
                 print("[DoorTrigger] Weapon successfully caught!")
             end
         end
@@ -304,5 +306,9 @@ return Component {
                 self.isWaiting = false
             end
         end
+    end,
+
+    OnDisable = function(self)
+
     end
 }

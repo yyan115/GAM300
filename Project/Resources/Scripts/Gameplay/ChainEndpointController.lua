@@ -273,14 +273,14 @@ return Component {
                     })
                 end
             else
-                -- Enemy: notify AI to trigger hooked/slam behaviour
-                self:_dbg("[ChainEndpointController] Was hooked to enemy '" .. hookedName .. "' (root='" .. rootName .. "') — publishing chain.enemy_hooked")
-                if _G.event_bus and _G.event_bus.publish then
-                    _G.event_bus.publish("chain.enemy_hooked", {
-                        entityId = rootId,
-                        duration = 2.0,
-                    })
-                end
+                -- -- Enemy: notify AI to trigger hooked/slam behaviour
+                -- self:_dbg("[ChainEndpointController] Was hooked to enemy '" .. hookedName .. "' (root='" .. rootName .. "') — publishing chain.enemy_hooked")
+                -- if _G.event_bus and _G.event_bus.publish then
+                --     _G.event_bus.publish("chain.enemy_hooked", {
+                --         entityId = rootId,
+                --         duration = 2.0,
+                --     })
+                -- end
             end
         end
 

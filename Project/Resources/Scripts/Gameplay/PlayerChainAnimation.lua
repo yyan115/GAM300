@@ -16,6 +16,12 @@ return Component {
         animator:SetBool("IsAimingChain", true)
     end,
 
+    PlayThrowChainAnimation = function(self)
+        local animator = self:GetComponent("AnimationComponent")
+        animator:SetBool("IsAimingChain", false)
+        animator:SetTrigger("ThrowChain")
+    end,
+
     PlayPullChainAnimation = function(self)
         local animator = self:GetComponent("AnimationComponent")
         animator:SetTrigger("PullChain")
@@ -26,18 +32,37 @@ return Component {
         animator:SetTrigger("SlamChain")
     end,
 
+    PlayRetractChainAnimation = function(self)
+        local animator = self:GetComponent("AnimationComponent")
+        animator:SetTrigger("RetractChain")
+    end,
+
     Awake = function(self)
 
     end,
 
     Start = function(self)
         if event_bus and event_bus.subscribe then
-            print("[PlayerChainAnimation] Subscribing to chain.aim_throw")
-            self._chainAimSub = event_bus.subscribe("chain.aim_throw", function(payload)
-                if payload then
+            -- Prevent double-subscription on the SAME instance
+            if self._chainAimSub then return end
+
+            print("[PlayerChainAnimation] Subscribing to chain.aim_camera")
+            self._chainAimSub = event_bus.subscribe("chain.aim_camera", function(payload)
+                if payload and payload.active then
                     self:PlayAimThrowAnimation()
                 end
             end)
+
+            if self._chainThrowSub then return end
+
+            print("[PlayerChainAnimation] Subscribing to chain.throw_chain")
+            self._chainThrowSub = event_bus.subscribe("chain.throw_chain", function(payload)
+                if payload then
+                    self:PlayThrowChainAnimation()
+                end
+            end)
+
+            if self._chainPullSub then return end
 
             print("[PlayerChainAnimation] Subscribing to chain.pull_chain")
             self._chainPullSub = event_bus.subscribe("chain.pull_chain", function(payload)
@@ -45,6 +70,15 @@ return Component {
                     self:PlayPullChainAnimation()
                 end
             end)
+
+            print("[PlayerChainAnimation] Subscribing to chain.retract_chain")
+            self._chainPullSub = event_bus.subscribe("chain.retract_chain", function(payload)
+                if payload then
+                    self:PlayRetractChainAnimation()
+                end
+            end)
+
+            if self._chainSlamSub then return end
 
             print("[PlayerChainAnimation] Subscribing to chain.slam_chain")
             self._chainSlamSub = event_bus.subscribe("chain.slam_chain", function(payload)
