@@ -344,20 +344,24 @@ return Component {
         local snapPartId  = nil
 
         if tag == "Enemy" then
-            -- Query LockOnPoint for closest body part snap
-            local lockOnComp = nil
-            pcall(function() lockOnComp = GetComponent(otherEntityId, "LockOnPoint") end)
-            if lockOnComp then
-                local partPos, partId = lockOnComp:GetClosestPart(snapImpactX, snapImpactY, snapImpactZ)
-                if partPos then
-                    snapImpactX = partPos.x
-                    snapImpactY = partPos.y
-                    snapImpactZ = partPos.z
-                    snapPartId  = partId
-                    self:_dbg(string.format("[ChainEndpointController] Snapping to closest part id=%s pos=(%.3f,%.3f,%.3f)",
-                        tostring(partId), snapImpactX, snapImpactY, snapImpactZ))
-                end
+            -- Snap to specific bone entity by name, searched within this enemy's hierarchy
+            local ok, spineId = pcall(function() return Engine.FindChildByName(rootId, "Enemy_new_Spine") end)
+            if ok and spineId and spineId ~= -1 then
+                snapPartId = spineId
+                self:_dbg("[ChainEndpointController] Snapping to Enemy_new_Spine id=" .. tostring(spineId))
             end
+            -- OLD: snap to closest body part via LockOnPoint
+            -- local lockOnComp = nil
+            -- pcall(function() lockOnComp = GetComponent(otherEntityId, "LockOnPoint") end)
+            -- if lockOnComp then
+            --     local partPos, partId = lockOnComp:GetClosestPart(snapImpactX, snapImpactY, snapImpactZ)
+            --     if partPos then
+            --         snapImpactX = partPos.x
+            --         snapImpactY = partPos.y
+            --         snapImpactZ = partPos.z
+            --         snapPartId  = partId
+            --     end
+            -- end
         end
         -- Throwable: no body-part snap — use root position as-is (snapPartId stays nil)
 

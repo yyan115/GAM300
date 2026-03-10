@@ -1198,12 +1198,12 @@ void RegisterInspectorCustomRenderers()
         ImGui::Text("Layer");
         ImGui::SameLine(labelWidth);
         ImGui::SetNextItemWidth(-1);
-        const char *layers[] = {"Non-Moving", "Moving", "Character", "Sensor", "Debris", "Nav Ground", "Nav Obstacle", "Hurtbox"};
+        const char *layers[] = {"Non-Moving", "Moving", "Character", "Sensor", "Debris", "Nav Ground", "Nav Obstacle", "Hurtbox", "Chain Hitbox"};
         int currentLayer = static_cast<int>(collider.layer);
         int oldLayer = currentLayer;
 
         EditorComponents::PushComboColors();
-        bool changed = ImGui::Combo("##Layer", &currentLayer, layers, 8);
+        bool changed = ImGui::Combo("##Layer", &currentLayer, layers, 9);
         EditorComponents::PopComboColors();
 
         if (changed) {
