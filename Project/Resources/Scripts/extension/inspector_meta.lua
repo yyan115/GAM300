@@ -23,4 +23,8 @@ function IM.enum(list)
     return { type = "enum", choices = list }
 end
 
+function IM.entity()
+    return { type = "string", editorHint = "entity" }
+end
+
 return IM

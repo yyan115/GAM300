@@ -228,7 +228,12 @@ void BloomEffect::Apply(unsigned int inputTexture, unsigned int outputFBO, int w
     glViewport(0, 0, width, height);
 
     // Only write to attachment 0 (main color) during composite
+#ifdef ANDROID
+    GLenum drawBufs[] = { GL_COLOR_ATTACHMENT0 };
+    glDrawBuffers(1, drawBufs);
+#else
     glDrawBuffer(GL_COLOR_ATTACHMENT0);
+#endif
 
     glEnable(GL_BLEND);
     glBlendFunc(GL_ONE, GL_ONE); // Additive blending

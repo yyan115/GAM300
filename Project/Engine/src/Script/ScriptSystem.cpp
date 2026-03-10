@@ -644,6 +644,9 @@ void ScriptSystem::Initialise(ECSManager& ecsManager)
                 .addFunction("SetFloat", &LuaAnimationComponent::SetFloat)
                 .addFunction("SetInt", &LuaAnimationComponent::SetInt)
                 .addFunction("GetCurrentState", &LuaAnimationComponent::GetCurrentState)
+                .addFunction("GetStateTime", &LuaAnimationComponent::GetStateTime)
+                .addFunction("GetNormalizedTime", &LuaAnimationComponent::GetNormalizedTime)
+                .addFunction("GetClipDuration", &LuaAnimationComponent::GetClipDuration)
                 .addFunction("IsPlaying", &LuaAnimationComponent::IsPlaying)
                 .endClass();
 

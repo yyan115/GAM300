@@ -1,9 +1,18 @@
 {
     "prefab_entities": [
         {
-            "id": 2136,
-            "guid": "00717c64b8dc22a9-00036d0ef800010b",
+            "id": 0,
+            "guid": "0022c894cb016556-000476334a023d79",
             "components": {
+                "PrefabLinkComponent": {
+                    "type": "PrefabLinkComponent",
+                    "data": [
+                        {
+                            "type": "std::string",
+                            "data": "../../Resources/Prefabs/PlayerHUD.prefab"
+                        }
+                    ]
+                },
                 "NameComponent": {
                     "name": "PlayerHUD"
                 },
@@ -82,19 +91,18 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "00717c6493c0f819-00036d0f8600010f",
-                                "00717c648e7647ff-00036d108e000111",
-                                "0057e3bfb562b10f-000468ce5e00362b",
-                                "00717c64db8bba79-00036d123c000115",
-                                "00717c64c18b30a8-00036d1544000119",
-                                "00717c64c96ca92d-00036d1b6000013d",
-                                "00717c6496aa1ea4-00036d17be00011b",
-                                "0024d9819f8c5e73-00046185ec001b0d",
-                                "0024d9818af6447a-0004618582001b0b",
-                                "003d4b89eaf3b681-000468d2a8001b0b",
-                                "006c84238e26e4dc-000469f7c8001cb9",
-                                "006116e567a33009-0004604aa0001b0b",
-                                "0040d44d6d8260e7-0004605b44001b0b"
+                                "0022c894efa79f22-000476334a023d7b",
+                                "0022c894a2f779e4-000476334a023d7d",
+                                "0022c894c56a149b-000476334a023d7f",
+                                "0022c894e9be4b42-000476334a023d81",
+                                "0022c894a8696fdc-000476334a023d83",
+                                "0022c894b443c1b6-000476334a023d8f",
+                                "0022c894d305ace0-000476334a023d97",
+                                "0022c8949d5b475e-000476334a023d99",
+                                "0022c894e3e1db6f-000476334a023d9b",
+                                "0022c89484842d2b-000476334a023d9d",
+                                "0022c894a9b0d13c-000476334a023d9f",
+                                "0022c894b4bb8410-000476334a023da3"
                             ]
                         }
                     ]
@@ -111,8 +119,8 @@
             }
         },
         {
-            "id": 2137,
-            "guid": "00717c6493c0f819-00036d0f8600010f",
+            "id": 1,
+            "guid": "0022c894efa79f22-000476334a023d7b",
             "components": {
                 "NameComponent": {
                     "name": "ChainIcon"
@@ -316,7 +324,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "00717c64b8dc22a9-00036d0ef800010b"
+                        "0022c894cb016556-000476334a023d79"
                     ]
                 },
                 "ActiveComponent": {
@@ -336,15 +344,16 @@
                             "enabled": true,
                             "preserveKeys": [],
                             "entryFunction": "OnInit",
-                            "autoInvokeEntry": true
+                            "autoInvokeEntry": true,
+                            "instanceState": {}
                         }
                     ]
                 }
             }
         },
         {
-            "id": 2138,
-            "guid": "00717c648e7647ff-00036d108e000111",
+            "id": 2,
+            "guid": "0022c894a2f779e4-000476334a023d7d",
             "components": {
                 "NameComponent": {
                     "name": "AttackIcon"
@@ -548,7 +557,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "00717c64b8dc22a9-00036d0ef800010b"
+                        "0022c894cb016556-000476334a023d79"
                     ]
                 },
                 "ActiveComponent": {
@@ -568,15 +577,16 @@
                             "enabled": true,
                             "preserveKeys": [],
                             "entryFunction": "OnInit",
-                            "autoInvokeEntry": true
+                            "autoInvokeEntry": true,
+                            "instanceState": {}
                         }
                     ]
                 }
             }
         },
         {
-            "id": 2139,
-            "guid": "0057e3bfb562b10f-000468ce5e00362b",
+            "id": 3,
+            "guid": "0022c894c56a149b-000476334a023d7f",
             "components": {
                 "NameComponent": {
                     "name": "SkillIcon"
@@ -780,7 +790,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "00717c64b8dc22a9-00036d0ef800010b"
+                        "0022c894cb016556-000476334a023d79"
                     ]
                 },
                 "ActiveComponent": {
@@ -800,493 +810,16 @@
                             "enabled": true,
                             "preserveKeys": [],
                             "entryFunction": "OnInit",
-                            "autoInvokeEntry": true
+                            "autoInvokeEntry": true,
+                            "instanceState": {}
                         }
                     ]
                 }
             }
         },
         {
-            "id": 2140,
-            "guid": "00717c64db8bba79-00036d123c000115",
-            "components": {
-                "NameComponent": {
-                    "name": "ActText"
-                },
-                "TagComponent": {
-                    "tagIndex": 0
-                },
-                "LayerComponent": {
-                    "layerIndex": 0
-                },
-                "SiblingIndexComponent": {
-                    "siblingIndex": 16
-                },
-                "Transform": {
-                    "type": "Transform",
-                    "data": [
-                        {
-                            "type": "Vector3D",
-                            "data": [
-                                {
-                                    "type": "float",
-                                    "data": 608.6
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 800
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                }
-                            ]
-                        },
-                        {
-                            "type": "Vector3D",
-                            "data": [
-                                {
-                                    "type": "float",
-                                    "data": 1
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 1
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 1
-                                }
-                            ]
-                        },
-                        {
-                            "type": "Quaternion",
-                            "data": [
-                                {
-                                    "type": "float",
-                                    "data": 1
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                }
-                            ]
-                        }
-                    ]
-                },
-                "TextRenderComponent": {
-                    "type": "TextRenderComponent",
-                    "data": [
-                        {
-                            "type": "bool",
-                            "data": true
-                        },
-                        {
-                            "type": "std::string",
-                            "data": "Act I - The Fall of the Tengu Clan"
-                        },
-                        {
-                            "type": "unsigned",
-                            "data": 40
-                        },
-                        "00602042db559215-00036778be000001",
-                        "00374a2171ad928d-000331fc8200006d",
-                        {
-                            "type": "Vector3D",
-                            "data": [
-                                {
-                                    "type": "float",
-                                    "data": 608.6
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 800
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                }
-                            ]
-                        },
-                        {
-                            "type": "Vector3D",
-                            "data": [
-                                {
-                                    "type": "float",
-                                    "data": 1
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 1
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 1
-                                }
-                            ]
-                        },
-                        {
-                            "type": "float",
-                            "data": 1
-                        },
-                        {
-                            "type": "bool",
-                            "data": false
-                        },
-                        {
-                            "type": "int",
-                            "data": 0
-                        },
-                        {
-                            "type": "int",
-                            "data": 0
-                        },
-                        {
-                            "type": "Matrix4x4",
-                            "data": [
-                                {
-                                    "type": "float",
-                                    "data": 1
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 1
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 1
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 1
-                                }
-                            ]
-                        },
-                        {
-                            "type": "int",
-                            "data": 0
-                        },
-                        {
-                            "type": "bool",
-                            "data": false
-                        },
-                        {
-                            "type": "float",
-                            "data": 0
-                        },
-                        {
-                            "type": "float",
-                            "data": 1.2
-                        }
-                    ]
-                },
-                "ChildrenComponent": {
-                    "type": "ChildrenComponent",
-                    "data": [
-                        {
-                            "type": "std::vector<GUID_128>",
-                            "data": [
-                                "00717c64e86db6ba-00036d145c000117"
-                            ]
-                        }
-                    ]
-                },
-                "ParentComponent": {
-                    "type": "ParentComponent",
-                    "data": [
-                        "00717c64b8dc22a9-00036d0ef800010b"
-                    ]
-                },
-                "ActiveComponent": {
-                    "type": "ActiveComponent",
-                    "data": [
-                        {
-                            "type": "bool",
-                            "data": false
-                        }
-                    ]
-                }
-            }
-        },
-        {
-            "id": 2141,
-            "guid": "00717c64e86db6ba-00036d145c000117",
-            "components": {
-                "NameComponent": {
-                    "name": "TextUnderline"
-                },
-                "TagComponent": {
-                    "tagIndex": 0
-                },
-                "LayerComponent": {
-                    "layerIndex": 0
-                },
-                "SiblingIndexComponent": {
-                    "siblingIndex": 17
-                },
-                "Transform": {
-                    "type": "Transform",
-                    "data": [
-                        {
-                            "type": "Vector3D",
-                            "data": [
-                                {
-                                    "type": "float",
-                                    "data": 361.9
-                                },
-                                {
-                                    "type": "float",
-                                    "data": -50
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                }
-                            ]
-                        },
-                        {
-                            "type": "Vector3D",
-                            "data": [
-                                {
-                                    "type": "float",
-                                    "data": 500
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 50
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 1
-                                }
-                            ]
-                        },
-                        {
-                            "type": "Quaternion",
-                            "data": [
-                                {
-                                    "type": "float",
-                                    "data": 1
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                }
-                            ]
-                        }
-                    ]
-                },
-                "SpriteRenderComponent": {
-                    "type": "SpriteRenderComponent",
-                    "data": [
-                        {
-                            "type": "bool",
-                            "data": true
-                        },
-                        "00717c64c768cf09-00036d0d48000013",
-                        "00374a216e66dbbc-000331fc80000069",
-                        {
-                            "type": "Vector3D",
-                            "data": [
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                }
-                            ]
-                        },
-                        {
-                            "type": "Vector3D",
-                            "data": [
-                                {
-                                    "type": "float",
-                                    "data": 100
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 100
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 1
-                                }
-                            ]
-                        },
-                        {
-                            "type": "float",
-                            "data": 0
-                        },
-                        {
-                            "type": "Vector3D",
-                            "data": [
-                                {
-                                    "type": "float",
-                                    "data": 1
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 1
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 1
-                                }
-                            ]
-                        },
-                        {
-                            "type": "float",
-                            "data": 1
-                        },
-                        {
-                            "type": "bool",
-                            "data": false
-                        },
-                        {
-                            "type": "bool",
-                            "data": false
-                        },
-                        {
-                            "type": "int",
-                            "data": 0
-                        },
-                        {
-                            "type": "int",
-                            "data": 0
-                        },
-                        {
-                            "type": "Vector3D",
-                            "data": [
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                }
-                            ]
-                        },
-                        {
-                            "type": "int",
-                            "data": 0
-                        },
-                        {
-                            "type": "int",
-                            "data": 0
-                        },
-                        {
-                            "type": "float",
-                            "data": 0
-                        },
-                        {
-                            "type": "float",
-                            "data": 0
-                        },
-                        {
-                            "type": "float",
-                            "data": 0
-                        },
-                        {
-                            "type": "float",
-                            "data": 0
-                        }
-                    ]
-                },
-                "ParentComponent": {
-                    "type": "ParentComponent",
-                    "data": [
-                        "00717c64db8bba79-00036d123c000115"
-                    ]
-                },
-                "ActiveComponent": {
-                    "type": "ActiveComponent",
-                    "data": [
-                        {
-                            "type": "bool",
-                            "data": true
-                        }
-                    ]
-                }
-            }
-        },
-        {
-            "id": 2142,
-            "guid": "00717c64c18b30a8-00036d1544000119",
+            "id": 4,
+            "guid": "0022c894e9be4b42-000476334a023d81",
             "components": {
                 "NameComponent": {
                     "name": "CrossHair"
@@ -1367,7 +900,7 @@
                             "type": "bool",
                             "data": true
                         },
-                        "00717c64d2a32e8e-00036d0d8c000031",
+                        "006dfc96b345cd00-000474f3c0007229",
                         "00374a216e66dbbc-000331fc80000069",
                         {
                             "type": "Vector3D",
@@ -1490,7 +1023,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "00717c64b8dc22a9-00036d0ef800010b"
+                        "0022c894cb016556-000476334a023d79"
                     ]
                 },
                 "ActiveComponent": {
@@ -1505,8 +1038,8 @@
             }
         },
         {
-            "id": 2143,
-            "guid": "00717c64c96ca92d-00036d1b6000013d",
+            "id": 5,
+            "guid": "0022c894a8696fdc-000476334a023d83",
             "components": {
                 "NameComponent": {
                     "name": "FeatherGroup"
@@ -1586,11 +1119,11 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "00717c64d6101c6c-00036d1b7e00013f",
-                                "00717c648c44ee5f-00036d1c48000141",
-                                "00717c64a725163f-00036d1c74000143",
-                                "00717c64d31cf79e-00036d1c8a000145",
-                                "00717c64ca0d9439-00036d1c8e000147"
+                                "0022c8948059ac15-000476334a023d85",
+                                "0022c894e08b9088-000476334a023d87",
+                                "0022c894dcab9abe-000476334a023d89",
+                                "0022c894b51a4434-000476334a023d8b",
+                                "0022c894e57e89ff-000476334a023d8d"
                             ]
                         }
                     ]
@@ -1598,7 +1131,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "00717c64b8dc22a9-00036d0ef800010b"
+                        "0022c894cb016556-000476334a023d79"
                     ]
                 },
                 "ActiveComponent": {
@@ -1613,8 +1146,8 @@
             }
         },
         {
-            "id": 2144,
-            "guid": "00717c64d6101c6c-00036d1b7e00013f",
+            "id": 6,
+            "guid": "0022c8948059ac15-000476334a023d85",
             "components": {
                 "NameComponent": {
                     "name": "FeatherIcon1"
@@ -1818,7 +1351,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "00717c64c96ca92d-00036d1b6000013d"
+                        "0022c894a8696fdc-000476334a023d83"
                     ]
                 },
                 "ActiveComponent": {
@@ -1833,8 +1366,8 @@
             }
         },
         {
-            "id": 2145,
-            "guid": "00717c648c44ee5f-00036d1c48000141",
+            "id": 7,
+            "guid": "0022c894e08b9088-000476334a023d87",
             "components": {
                 "NameComponent": {
                     "name": "FeatherIcon2"
@@ -2038,7 +1571,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "00717c64c96ca92d-00036d1b6000013d"
+                        "0022c894a8696fdc-000476334a023d83"
                     ]
                 },
                 "ActiveComponent": {
@@ -2053,8 +1586,8 @@
             }
         },
         {
-            "id": 2146,
-            "guid": "00717c64a725163f-00036d1c74000143",
+            "id": 8,
+            "guid": "0022c894dcab9abe-000476334a023d89",
             "components": {
                 "NameComponent": {
                     "name": "FeatherIcon3"
@@ -2258,7 +1791,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "00717c64c96ca92d-00036d1b6000013d"
+                        "0022c894a8696fdc-000476334a023d83"
                     ]
                 },
                 "ActiveComponent": {
@@ -2273,8 +1806,8 @@
             }
         },
         {
-            "id": 2147,
-            "guid": "00717c64d31cf79e-00036d1c8a000145",
+            "id": 9,
+            "guid": "0022c894b51a4434-000476334a023d8b",
             "components": {
                 "NameComponent": {
                     "name": "FeatherIcon4"
@@ -2478,7 +2011,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "00717c64c96ca92d-00036d1b6000013d"
+                        "0022c894a8696fdc-000476334a023d83"
                     ]
                 },
                 "ActiveComponent": {
@@ -2493,8 +2026,8 @@
             }
         },
         {
-            "id": 2148,
-            "guid": "00717c64ca0d9439-00036d1c8e000147",
+            "id": 10,
+            "guid": "0022c894e57e89ff-000476334a023d8d",
             "components": {
                 "NameComponent": {
                     "name": "FeatherIcon5"
@@ -2698,7 +2231,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "00717c64c96ca92d-00036d1b6000013d"
+                        "0022c894a8696fdc-000476334a023d83"
                     ]
                 },
                 "ActiveComponent": {
@@ -2713,8 +2246,8 @@
             }
         },
         {
-            "id": 2149,
-            "guid": "00717c6496aa1ea4-00036d17be00011b",
+            "id": 11,
+            "guid": "0022c894b443c1b6-000476334a023d8f",
             "components": {
                 "NameComponent": {
                     "name": "HealthBarBorder"
@@ -2921,9 +2454,9 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "00717c64ac5f0778-00036d18c600011d",
-                                "00717c64e308e56d-00036d193600011f",
-                                "00717c64eb815917-00036d1aa000013b"
+                                "0022c894d2616997-000476334a023d91",
+                                "0022c894b24fa288-000476334a023d93",
+                                "0022c894a59b10c3-000476334a023d95"
                             ]
                         }
                     ]
@@ -2931,7 +2464,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "00717c64b8dc22a9-00036d0ef800010b"
+                        "0022c894cb016556-000476334a023d79"
                     ]
                 },
                 "ActiveComponent": {
@@ -2946,8 +2479,8 @@
             }
         },
         {
-            "id": 2150,
-            "guid": "00717c64ac5f0778-00036d18c600011d",
+            "id": 12,
+            "guid": "0022c894d2616997-000476334a023d91",
             "components": {
                 "NameComponent": {
                     "name": "HealthBarFillFollow"
@@ -3151,7 +2684,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "00717c6496aa1ea4-00036d17be00011b"
+                        "0022c894b443c1b6-000476334a023d8f"
                     ]
                 },
                 "ActiveComponent": {
@@ -3171,15 +2704,38 @@
                             "enabled": true,
                             "preserveKeys": [],
                             "entryFunction": "OnInit",
-                            "autoInvokeEntry": true
+                            "autoInvokeEntry": true,
+                            "instanceState": {
+                                "healthBarFillName": "HealthBarFill",
+                                "_playerCurrentHealthSub": {
+                                    "id": 30.0,
+                                    "event": "playerCurrentHealth"
+                                },
+                                "followDelay": 0.5,
+                                "_subscriptions": {},
+                                "_private": {},
+                                "followSpeed": 2.0,
+                                "_playerMaxHealthSub": {
+                                    "id": 29.0,
+                                    "event": "playerMaxhealth"
+                                },
+                                "__meta": {},
+                                "__field_list": {
+                                    "followDelay": 0.5,
+                                    "followSpeed": 2.0,
+                                    "healthBarFillName": "HealthBarFill"
+                                },
+                                "_transform_fetched": false,
+                                "__created_at": 1773113824.0
+                            }
                         }
                     ]
                 }
             }
         },
         {
-            "id": 2151,
-            "guid": "00717c64e308e56d-00036d193600011f",
+            "id": 13,
+            "guid": "0022c894b24fa288-000476334a023d93",
             "components": {
                 "NameComponent": {
                     "name": "HealthBarFill"
@@ -3383,7 +2939,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "00717c6496aa1ea4-00036d17be00011b"
+                        "0022c894b443c1b6-000476334a023d8f"
                     ]
                 },
                 "ActiveComponent": {
@@ -3398,8 +2954,8 @@
             }
         },
         {
-            "id": 2152,
-            "guid": "00717c64eb815917-00036d1aa000013b",
+            "id": 14,
+            "guid": "0022c894a59b10c3-000476334a023d95",
             "components": {
                 "NameComponent": {
                     "name": "HealthNotch"
@@ -3603,7 +3159,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "00717c6496aa1ea4-00036d17be00011b"
+                        "0022c894b443c1b6-000476334a023d8f"
                     ]
                 },
                 "ActiveComponent": {
@@ -3618,8 +3174,8 @@
             }
         },
         {
-            "id": 2153,
-            "guid": "0024d9819f8c5e73-00046185ec001b0d",
+            "id": 15,
+            "guid": "0022c894d305ace0-000476334a023d97",
             "components": {
                 "NameComponent": {
                     "name": "FeathersSprite"
@@ -4184,7 +3740,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "00717c64b8dc22a9-00036d0ef800010b"
+                        "0022c894cb016556-000476334a023d79"
                     ]
                 },
                 "ActiveComponent": {
@@ -4199,8 +3755,8 @@
             }
         },
         {
-            "id": 2154,
-            "guid": "0024d9818af6447a-0004618582001b0b",
+            "id": 16,
+            "guid": "0022c8949d5b475e-000476334a023d99",
             "components": {
                 "NameComponent": {
                     "name": "FeathersCollectedText"
@@ -4287,7 +3843,7 @@
                         },
                         {
                             "type": "unsigned",
-                            "data": 48
+                            "data": 32
                         },
                         "00602042db559215-00036778be000001",
                         "00374a2171ad928d-000331fc8200006d",
@@ -4431,7 +3987,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "00717c64b8dc22a9-00036d0ef800010b"
+                        "0022c894cb016556-000476334a023d79"
                     ]
                 },
                 "ActiveComponent": {
@@ -4446,8 +4002,8 @@
             }
         },
         {
-            "id": 2155,
-            "guid": "003d4b89eaf3b681-000468d2a8001b0b",
+            "id": 17,
+            "guid": "0022c894e3e1db6f-000476334a023d9b",
             "components": {
                 "NameComponent": {
                     "name": "SkillCooldown"
@@ -4651,7 +4207,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "00717c64b8dc22a9-00036d0ef800010b"
+                        "0022c894cb016556-000476334a023d79"
                     ]
                 },
                 "ActiveComponent": {
@@ -4673,46 +4229,46 @@
                             "entryFunction": "OnInit",
                             "autoInvokeEntry": true,
                             "instanceState": {
-                                "GetPosition": null,
-                                "SetRotation": null,
-                                "SetScale": null,
-                                "GetRotation": null,
-                                "DisableSafe": null,
-                                "FeatherSkillCooldown": 10.0,
+                                "StartSafe": null,
+                                "DebugTransform": null,
                                 "Every": null,
-                                "Unsubscribe": null,
-                                "UpdateSafe": null,
-                                "_private": {},
-                                "SetSkillIconColorToWhite": null,
+                                "SerializeFields": null,
+                                "Start": null,
+                                "FeatherSkillCooldown": 10.0,
+                                "GetPosition": null,
+                                "GetRotation": null,
                                 "__meta": {},
+                                "_call_lifecycle": null,
+                                "_subscriptions": {},
+                                "Awake": null,
+                                "DisableSafe": null,
+                                "_private": {},
                                 "DeserializeFields": null,
+                                "SetSkillIconColorToWhite": null,
+                                "UpdateSafe": null,
+                                "Destroy": null,
+                                "GetTransform": null,
+                                "Move": null,
                                 "__field_list": {
                                     "FeatherSkillCooldown": 3.0
                                 },
-                                "Subscribe": null,
-                                "GreyOutSkillIcon": null,
-                                "DebugTransform": null,
-                                "_transform_fetched": false,
+                                "GetScale": null,
                                 "_activatedFeatherSkillSub": {
                                     "id": 1.0,
                                     "event": "activated_feather_skill"
                                 },
-                                "__created_at": 1772700852.0,
-                                "Awake": null,
-                                "After": null,
-                                "Destroy": null,
+                                "GreyOutSkillIcon": null,
                                 "SetPosition": null,
-                                "StartSafe": null,
-                                "GetTransform": null,
-                                "SerializeFields": null,
-                                "_call_lifecycle": null,
-                                "_activatedFeatherSkill": false,
+                                "Subscribe": null,
                                 "Update": null,
-                                "Move": null,
-                                "GetScale": null,
-                                "_subscriptions": {},
                                 "AwakeSafe": null,
-                                "Start": null
+                                "_activatedFeatherSkill": false,
+                                "SetRotation": null,
+                                "__created_at": 1772700852.0,
+                                "Unsubscribe": null,
+                                "After": null,
+                                "SetScale": null,
+                                "_transform_fetched": false
                             }
                         }
                     ]
@@ -4720,8 +4276,8 @@
             }
         },
         {
-            "id": 2156,
-            "guid": "006c84238e26e4dc-000469f7c8001cb9",
+            "id": 18,
+            "guid": "0022c89484842d2b-000476334a023d9d",
             "components": {
                 "NameComponent": {
                     "name": "DashCooldown"
@@ -4925,7 +4481,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "00717c64b8dc22a9-00036d0ef800010b"
+                        "0022c894cb016556-000476334a023d79"
                     ]
                 },
                 "ActiveComponent": {
@@ -4945,15 +4501,31 @@
                             "enabled": true,
                             "preserveKeys": [],
                             "entryFunction": "OnInit",
-                            "autoInvokeEntry": true
+                            "autoInvokeEntry": true,
+                            "instanceState": {
+                                "_state": "hidden",
+                                "_dashEndedSub": {
+                                    "id": 32.0,
+                                    "event": "dash_ended"
+                                },
+                                "__meta": {},
+                                "_subscriptions": {},
+                                "_private": {},
+                                "_dashCooldown": 0.0,
+                                "_transform_fetched": false,
+                                "_fadeOutTimer": 0.0,
+                                "__field_list": {},
+                                "__created_at": 1773113824.0,
+                                "_dashCooldownMax": 0.0
+                            }
                         }
                     ]
                 }
             }
         },
         {
-            "id": 2157,
-            "guid": "006116e567a33009-0004604aa0001b0b",
+            "id": 19,
+            "guid": "0022c894a9b0d13c-000476334a023d9f",
             "components": {
                 "NameComponent": {
                     "name": "(ANDROID)Joystick"
@@ -5160,7 +4732,7 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "006116e54898d44c-0004604b10001b0d"
+                                "0022c894a4d7d440-000476334a023da1"
                             ]
                         }
                     ]
@@ -5168,7 +4740,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "00717c64b8dc22a9-00036d0ef800010b"
+                        "0022c894cb016556-000476334a023d79"
                     ]
                 },
                 "ActiveComponent": {
@@ -5188,15 +4760,25 @@
                             "enabled": true,
                             "preserveKeys": [],
                             "entryFunction": "OnInit",
-                            "autoInvokeEntry": true
+                            "autoInvokeEntry": true,
+                            "instanceState": {
+                                "joystickRadius": 0.35,
+                                "_baseX": 0.0,
+                                "innerJoystickName": "(ANDROID)JoystickInner",
+                                "_isAndroid": false,
+                                "_moveX": 0.0,
+                                "_baseZ": 0.0,
+                                "_baseY": 0.0,
+                                "_moveY": 0.0
+                            }
                         }
                     ]
                 }
             }
         },
         {
-            "id": 2158,
-            "guid": "006116e54898d44c-0004604b10001b0d",
+            "id": 20,
+            "guid": "0022c894a4d7d440-000476334a023da1",
             "components": {
                 "NameComponent": {
                     "name": "(ANDROID)JoystickInner"
@@ -5400,7 +4982,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "006116e567a33009-0004604aa0001b0b"
+                        "0022c894a9b0d13c-000476334a023d9f"
                     ]
                 },
                 "ActiveComponent": {
@@ -5415,8 +4997,8 @@
             }
         },
         {
-            "id": 2159,
-            "guid": "0040d44d6d8260e7-0004605b44001b0b",
+            "id": 21,
+            "guid": "0022c894b4bb8410-000476334a023da3",
             "components": {
                 "NameComponent": {
                     "name": "(ANDROID)Jump"
@@ -5620,7 +5202,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "00717c64b8dc22a9-00036d0ef800010b"
+                        "0022c894cb016556-000476334a023d79"
                     ]
                 },
                 "ActiveComponent": {
@@ -5640,7 +5222,8 @@
                             "enabled": true,
                             "preserveKeys": [],
                             "entryFunction": "OnInit",
-                            "autoInvokeEntry": true
+                            "autoInvokeEntry": true,
+                            "instanceState": {}
                         }
                     ]
                 }
