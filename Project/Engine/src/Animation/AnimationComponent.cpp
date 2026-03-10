@@ -578,3 +578,8 @@ bool AnimationComponent::HasLoopJustCompleted()
     }
     return false;
 }
+
+float AnimationComponent::GetClipDuration(size_t clipIndex) const {
+    if (clips.size() <= 0 || clipIndex >= clips.size()) return 0.0f;
+    return clips[clipIndex]->GetDuration();
+}

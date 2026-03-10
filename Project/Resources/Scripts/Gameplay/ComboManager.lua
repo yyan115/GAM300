@@ -74,9 +74,10 @@ return Component {
         self.COMBO_TREE = {
 
             idle = {
-                id          = "idle",
-                animParam   = 0,
-                duration    = 0,
+                id           = "idle",
+                animParam    = 0,
+                clipDuration = nil,  -- no duration measurement needed for idle
+                duration     = 0,
                 damage      = 0,
                 canMove     = true,
                 comboWindow = nil,
@@ -91,9 +92,10 @@ return Component {
 
             -- ── Light combo ───────────────────────────────────────────────
             light_1 = {
-                id          = "light_1",
-                animParam   = 1,
-                duration    = 1.0,
+                id           = "light_1",
+                animParam    = 1,
+                clipDuration = 1.0,  -- natural clip length in seconds at speed 1.0
+                duration     = 1.0,
                 damage      = 10,
                 knockback   = 20.0,
                 canMove     = false,
@@ -106,9 +108,10 @@ return Component {
             },
 
             light_2 = {
-                id          = "light_2",
-                animParam   = 2,
-                duration    = 1.0,
+                id           = "light_2",
+                animParam    = 2,
+                clipDuration = 1.0,  -- natural clip length in seconds at speed 1.0
+                duration     = 1.0,
                 damage      = 12,
                 knockback   = 20.0,
                 canMove     = false,
@@ -121,9 +124,10 @@ return Component {
             },
 
             light_3 = {
-                id          = "light_3",
-                animParam   = 3,
-                duration    = 0.8,
+                id           = "light_3",
+                animParam    = 3,
+                clipDuration = 0.8,  -- natural clip length in seconds at speed 1.0
+                duration     = 0.8,
                 damage      = 20,
                 knockback   = 200.0,
                 canMove     = false,
@@ -134,9 +138,10 @@ return Component {
 
             -- ── Heavy attack ──────────────────────────────────────────────
             heavy_charge = {
-                id          = "heavy_charge",
-                animParam   = 10,
-                duration    = 999,  -- indefinite until release or full charge
+                id           = "heavy_charge",
+                animParam    = 10,
+                clipDuration = nil,  -- indefinite; timer-driven by HeavyChargeTime
+                duration     = 999,  -- indefinite until release or full charge
                 damage      = 0,
                 canMove     = false,
                 comboWindow = nil,
@@ -162,9 +167,10 @@ return Component {
             },
 
             heavy_release = {
-                id          = "heavy_release",
-                animParam   = 11,
-                duration    = 0.8,
+                id           = "heavy_release",
+                animParam    = 11,
+                clipDuration = 0.8,  -- natural clip length in seconds at speed 1.0
+                duration     = 0.8,
                 damage      = 30,
                 knockback   = 20.0,
                 canMove     = false,
@@ -193,9 +199,10 @@ return Component {
 
             -- ── Chain attack ──────────────────────────────────────────────
             chain_attack = {
-                id          = "chain_attack",
-                animParam   = 20,
-                duration    = 0.5,
+                id           = "chain_attack",
+                animParam    = 20,
+                clipDuration = 0.5,  -- natural clip length in seconds at speed 1.0
+                duration     = 0.5,
                 damage      = 25,
                 knockback   = 1.0,
                 canMove     = false,
@@ -212,9 +219,10 @@ return Component {
             -- The duration is published so PlayerMovement has a single source
             -- of truth — it does not maintain its own separate dash duration.
             dash = {
-                id          = "dash",
-                animParam   = 30,
-                duration    = 1.0,
+                id           = "dash",
+                animParam    = 30,
+                clipDuration = nil,  -- dash animation timing owned by PlayerMovement
+                duration     = 1.0,
                 damage      = 0,
                 canMove     = false,
                 comboWindow = nil,
@@ -373,18 +381,15 @@ return Component {
 
         -- ══════════════════════════════════════════════════════════════════
         -- COMPUTE TIME REMAINING
-        -- Prefer animator's own playback position; fall back to state.duration.
+        -- clipDuration is the natural clip length in seconds at speed 1.0,
+        -- set as a field on each combo state — no animator queries.
+        -- timeRemaining = clipDuration - stateTimer
+        -- Falls back to state.duration - stateTimer if clipDuration is nil.
         -- ══════════════════════════════════════════════════════════════════
         local timeRemaining = nil
-        if self._animator.GetCurrentStateLength and self._animator.GetCurrentStateTime then
-            local length = self._animator:GetCurrentStateLength()
-            local time   = self._animator:GetCurrentStateTime()
-            if length and time then
-                timeRemaining = math.max(0, length - time)
-            end
-        end
-        if not timeRemaining and state.duration and state.duration > 0 then
-            timeRemaining = state.duration - self._stateTimer
+        local refDuration = state.clipDuration or state.duration
+        if refDuration and refDuration > 0 then
+            timeRemaining = math.max(0, refDuration - self._stateTimer)
         end
 
         -- Combo window scaled to real-time (constant regardless of anim speed)

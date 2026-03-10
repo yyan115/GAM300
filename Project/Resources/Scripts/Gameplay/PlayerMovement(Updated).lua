@@ -69,7 +69,8 @@ local tensionRadialX = 0
 local tensionRadialZ = 0
 local tensionScale   = 7.0
 
--- ── Quaternion helpers ────────────────────────────────────────────────────────
+-- =====================================================================
+-- Quaternion helpers
 
 local function directionToQuaternion(dx, dz)
     local angle
@@ -108,22 +109,22 @@ local function playRandomSFX(audio, clips)
     audio:PlayOneShot(clips[idx])
 end
 
--- ─────────────────────────────────────────────────────────────────────────────
+-- =====================================================================
 
 return Component {
     mixins = { TransformMixin },
 
     fields = {
-        -- ════════════════════════════════════════════════════════════════
         -- MOVEMENT
-        -- ════════════════════════════════════════════════════════════════
+        -- =====================================================================
 
         -- Top running speed (world units per second).
         -- Raise this to make the player feel faster overall.
         -- Suggested range: 2.5 (slow/deliberate) – 6.0 (fast/arcade)
         Speed = 4.0,
 
-        -- ── Momentum rates ───────────────────────────────────────────────
+        -- =====================================================================
+        -- Momentum rates
         -- These control how velocity changes, not raw speed.
 
         -- How quickly velocity climbs toward Speed when input is held.
@@ -148,9 +149,8 @@ return Component {
         -- Suggested range: 3 (long carry) – 12 (short carry)
         AttackDecay = 6.0,
 
-        -- ════════════════════════════════════════════════════════════════
         -- DASH
-        -- ════════════════════════════════════════════════════════════════
+        -- =====================================================================
 
         -- Speed of the dash impulse (world units per second).
         -- This is independent of Speed — tune it relative to how far you
@@ -167,31 +167,53 @@ return Component {
         -- Suggested range: 0.8 (aggressive) – 2.0 (punishing)
         DashCooldown = 1.2,
 
+        -- Maximum number of consecutive dashes available.
+        -- Each dash consumes one use. Uses regenerate one at a time,
+        -- each taking DashCooldown seconds after the previous use was spent.
+        -- Example: DashMaxUses=2, DashCooldown=1.2 → two quick dashes,
+        -- then first use returns after 1.2s, second after another 1.2s.
+        DashMaxUses = 2,
+
+        -- Fraction of the current dash that must elapse before a new dash
+        -- input is accepted and fires immediately (cutting the animation short).
+        -- Progress = (DashDuration - dashTimer) / DashDuration, checked each frame.
+        --   0.0 = next dash can start instantly (no wait)
+        --   0.9 = next dash fires at 90% through the current dash
+        --   1.0 = must wait for the full dash to finish (no early cancel)
+        -- Inputs received before the window opens are held, not dropped, so
+        -- pressing dash slightly early still chains at the exact threshold.
+        -- Suggested range: 0.7 (snappy chains) – 0.95 (tight window)
+        DashEarlyCancelRatio = 0.9,
+
         -- Speed multiplier applied to DashSpeed when dashing in the air.
         -- > 1.0 = air dash travels further than ground dash.
         AirDashSpeedMultiplier = 1.3,
+
+        -- How quickly the player can steer the dash direction (degrees per second).
+        -- Input rotates the dash direction toward the stick at this rate.
+        -- 0 = no steering (locked direction). 180 = very responsive steering.
+        -- Suggested range: 90 (tight) – 270 (loose)
+        DashSteerSpeed = 135.0,
 
         -- Upward velocity added during an air dash (gives a slight lift).
         -- Set to 0 to make air dashes purely horizontal.
         AirDashLift = 1.5,
 
-        -- ── Post-dash speed burst ────────────────────────────────────────
-        -- When the dash ends, velocity is set to DashExitSpeedMult * Speed
-        -- in the dash direction, then decays back to normal via Deceleration.
-        -- Creates a snappy feeling of momentum coming out of the dash.
+        -- =====================================================================
+        -- Post-dash speed burst
+        -- When the dash ends, velocity is locked at DashExitSpeedMult * Speed
+        -- in the dash direction for DashExitDuration seconds, then normal
+        -- deceleration resumes. Feels like a brief momentum window after dash.
         --
         -- DashExitSpeedMult: multiplier on Speed for the burst velocity.
-        --   1.0 = no burst (exits at normal speed)
-        --   1.8 = exits at 1.8× normal speed, then decays naturally
-        -- DashExitDecay: how quickly the burst fades back to normal speed.
-        --   High = burst is very brief. Low = lingers longer.
-        --   Suggested range: 8 (quick snap back) – 20 (long afterburn)
+        --   1.0 = exits at normal speed. 1.8 = exits at 1.8x speed.
+        -- DashExitDuration: how long (seconds) the burst velocity is held.
+        --   0.25 = brief snap. 0.5 = noticeable lunge out of dash.
         DashExitSpeedMult = 1.8,
-        DashExitDecay     = 12.0,
+        DashExitDuration  = 0.25,
 
-        -- ════════════════════════════════════════════════════════════════
         -- JUMP
-        -- ════════════════════════════════════════════════════════════════
+        -- =====================================================================
 
         -- Vertical impulse height. Engine interprets this as jump force.
         -- Suggested range: 0.8 (low hop) – 2.5 (high jump)
@@ -201,9 +223,8 @@ return Component {
         -- Suggested range: 0.2 (snappy) – 0.8 (weighty)
         LandingDuration = 0.4,
 
-        -- ════════════════════════════════════════════════════════════════
         -- COMBAT
-        -- ════════════════════════════════════════════════════════════════
+        -- =====================================================================
 
         -- Fallback attack lunge speed (world units per second).
         -- The real per-attack value comes from ComboManager's lunge table.
@@ -213,9 +234,8 @@ return Component {
         -- Fallback attack lunge duration in seconds. Same fallback rule as above.
         AttackLungeDuration = 0.12,
 
-        -- ════════════════════════════════════════════════════════════════
         -- FEEL / TIMING
-        -- ════════════════════════════════════════════════════════════════
+        -- =====================================================================
 
         -- Seconds the damage stun lasts before the player regains control.
         DamageStunDuration = 1.0,
@@ -229,9 +249,8 @@ return Component {
         -- Suggested range: 0.25 (fast run) – 0.5 (slow walk)
         footstepInterval = 0.30,
 
-        -- ════════════════════════════════════════════════════════════════
         -- AUDIO (populate with clip GUIDs in the editor)
-        -- ════════════════════════════════════════════════════════════════
+        -- =====================================================================
         playerFootstepSFX = {},
         playerHurtSFX     = {},
         playerJumpSFX     = {},
@@ -258,10 +277,12 @@ return Component {
         self._chainDragTargetY        = 0
         self._chainDragTargetZ        = 0
 
-        -- ── Movement lock from combat ─────────────────────────────────────
+        -- =====================================================================
+        -- Movement lock from combat
         self._playerCanMove = true
 
-        -- ── Persistent velocity (momentum-based movement) ─────────────────
+        -- =====================================================================
+        -- Persistent velocity (momentum-based movement)
         -- This is the single source of truth for how fast the player is moving.
         -- Acceleration / deceleration / direction-change rates operate on this
         -- each frame rather than writing speed directly to the CharacterController.
@@ -270,16 +291,18 @@ return Component {
         self._velX = 0
         self._velZ = 0
 
-        -- Post-dash speed burst: set on dash end, decays each frame
-        self._dashExitBoost = 0.0   -- current burst multiplier (0 = inactive)
+        -- Post-dash speed burst timer (counts down DashExitDuration)
+        self._dashExitTimer = 0.0
 
-        -- ── Lunge state (per-attack values from attack_performed event) ────
+        -- =====================================================================
+        -- Lunge state (per-attack values from attack_performed event)
         self._lungeTimer  = 0
         self._lungeDirX   = 0
         self._lungeDirZ   = 0
         self._lungeSpeed  = self.AttackLungeSpeed
 
-        -- ── Knockback ─────────────────────────────────────────────────────
+        -- =====================================================================
+        -- Knockback
         self._kbPending = false
         self._kbX       = 0
         self._kbZ       = 0
@@ -361,7 +384,8 @@ return Component {
                 end
             end)
 
-            -- ── Attack lunge ──────────────────────────────────────────────
+            -- =====================================================================
+            -- Attack lunge
             -- ComboManager publishes lunge = { speed, duration } per state.
             -- PlayerMovement executes the impulse; it does not decide the values.
             self._attackLungeSub = event_bus.subscribe("attack_performed", function(data)
@@ -391,7 +415,8 @@ return Component {
                 pcall(self.SetRotation, self, targetW, targetX, targetY, targetZ)
             end)
 
-            -- ── Combat state → movement lock ─────────────────────────────
+            -- =====================================================================
+            -- Combat state → movement lock
             -- canMove from ComboManager tells us whether this state allows
             -- movement. Velocity (_velX/_velZ) is NOT zeroed here — it
             -- decays naturally at AttackDecay so momentum carries into hits.
@@ -437,7 +462,8 @@ return Component {
                 pcall(self.SetRotation, self, targetW, targetX, targetY, targetZ)
             end)
 
-            -- ── Dash ──────────────────────────────────────────────────────────
+            -- =====================================================================
+            -- Dash
             -- ComboManager signals that a dash should happen.
             -- DashDuration is owned entirely by this script — ComboManager
             -- has no opinion on how long the dash lasts.
@@ -447,7 +473,8 @@ return Component {
                 print("[PlayerMovement] dash_performed received")
             end)
 
-            -- ── Chain movement constraint ─────────────────────────────────
+            -- =====================================================================
+            -- Chain movement constraint
             self._chainConstraintSub = event_bus.subscribe("chain.movement_constraint", function(payload)
                 if not payload then return end
                 self._chainConstraintRatio    = payload.ratio    or 0
@@ -495,11 +522,17 @@ return Component {
 
         self._isDashing          = false
         self._dashTimer          = 0
-        self._dashCooldownTimer  = 0
         self._dashDirX           = 0
         self._dashDirZ           = 0
         self._wasDashingInAir    = false
         _G.player_is_dashing     = false
+
+        -- Dash charge system:
+        -- _dashUses        : current available uses (starts full)
+        -- _dashRegenTimer  : counts down DashCooldown for the next regen
+        --                    only ticks when _dashUses < DashMaxUses
+        self._dashUses       = self.DashMaxUses
+        self._dashRegenTimer = 0
 
         self._footstepTimer = 0
         self._wasRunning    = false
@@ -528,8 +561,12 @@ return Component {
         self._justRespawnedPlayer = true
 
         -- Reset movement lock and momentum on respawn
-        self._playerCanMove = true
+        self._playerCanMove  = true
         self._velX, self._velZ = 0, 0
+
+        -- Reset dash charges on respawn
+        self._dashUses       = self.DashMaxUses
+        self._dashRegenTimer = 0
 
         -- Reset chain constraint
         self._chainConstraintRatio    = 0
@@ -551,7 +588,8 @@ return Component {
         _G.player_is_dead    = self._playerDead or false
         _G.player_is_frozen  = self._frozenBycinematic or self._freezePending or false
 
-        -- ── Respawn ───────────────────────────────────────────────────────
+        -- =====================================================================
+        -- Respawn
         if self._respawnPlayer then
             self:RespawnPlayer()
             return
@@ -567,7 +605,8 @@ return Component {
             return
         end
 
-        -- ── Cinematic freeze settle timer ─────────────────────────────────
+        -- =====================================================================
+        -- Cinematic freeze settle timer
         if self._freezePending then
             self._freezeSettleTimer = self._freezeSettleTimer - dt
             if self._freezeSettleTimer <= 0 then
@@ -585,14 +624,16 @@ return Component {
             return
         end
 
-        -- ── Knockback ─────────────────────────────────────────────────────
+        -- =====================================================================
+        -- Knockback
         if self._kbPending then
             self._kbPending = false
             CharacterController.Move(self._controller, self._kbX or 0, 0, self._kbZ or 0)
             self._kbX, self._kbZ = 0, 0
         end
 
-        -- ── Damage stun timer ─────────────────────────────────────────────
+        -- =====================================================================
+        -- Damage stun timer
         if self._isDamageStun then
             self._damageStunDuration = self._damageStunDuration - dt
             if self._damageStunDuration <= 0 then
@@ -601,7 +642,8 @@ return Component {
             end
         end
 
-        -- ── Landing recovery timer ─────────────────────────────────────────
+        -- =====================================================================
+        -- Landing recovery timer
         if self._isLanding then
             self._landingDuration = self._landingDuration - dt
             if self._landingDuration <= 0 then
@@ -624,12 +666,25 @@ return Component {
             return
         end
 
-        -- ── Dash cooldown ─────────────────────────────────────────────────
-        if self._dashCooldownTimer > 0 then
-            self._dashCooldownTimer = self._dashCooldownTimer - dt
+        -- =====================================================================
+        -- Dash charge regen
+        -- Only ticks when uses are depleted. Regenerates one use per
+        -- DashCooldown duration, then immediately starts timing the next.
+        if self._dashUses < self.DashMaxUses then
+            self._dashRegenTimer = self._dashRegenTimer - dt
+            if self._dashRegenTimer <= 0 then
+                self._dashUses = self._dashUses + 1
+                if self._dashUses < self.DashMaxUses then
+                    -- Still missing uses — start timing the next regen immediately
+                    self._dashRegenTimer = self.DashCooldown
+                else
+                    self._dashRegenTimer = 0
+                end
+            end
         end
 
-        -- ── Attack lunge impulse ──────────────────────────────────────────
+        -- =====================================================================
+        -- Attack lunge impulse
         -- Speed and duration are set by the attack_performed subscriber.
         -- This block just applies the cached values each frame.
         if self._lungeTimer and self._lungeTimer > 0 then
@@ -640,7 +695,8 @@ return Component {
                 self._lungeDirZ * self._lungeSpeed)
         end
 
-        -- ── Skill cast lock ───────────────────────────────────────────────
+        -- =====================================================================
+        -- Skill cast lock
         if _G.player_is_casting_skill then
             self._animator:SetBool("IsRunning", false)
             self._isRunning = false
@@ -652,11 +708,17 @@ return Component {
             return
         end
 
-        -- ── Combat movement lock ──────────────────────────────────────────
+        -- =====================================================================
+        -- Combat movement lock
         -- While attacking (and this state doesn't allow movement), bleed the
         -- persistent velocity using AttackDecay — much slower than Deceleration
         -- so the player visibly carries momentum into the first hit, then stops.
-        if _G.player_is_attacking and not _G.player_can_move then
+        --
+        -- self._playerCanMove is kept in sync via the combat_state_changed
+        -- subscriber (set by ComboManager before the event fires, so no lag).
+        -- Using the local copy rather than _G.player_can_move directly makes
+        -- the data flow explicit and removes a hidden global dependency.
+        if _G.player_is_attacking and not self._playerCanMove then
             local decay = 1.0 - math.min(self.AttackDecay * dt, 1.0)
             self._velX = self._velX * decay
             self._velZ = self._velZ * decay
@@ -678,7 +740,8 @@ return Component {
             return
         end
 
-        -- ── Chain movement constraint ─────────────────────────────────────
+        -- =====================================================================
+        -- Chain movement constraint
         tensionRadialX = 0
         tensionRadialZ = 0
 
@@ -703,7 +766,8 @@ return Component {
             end
         end
 
-        -- ── Read movement axis from InputInterpreter ──────────────────────
+        -- =====================================================================
+        -- Read movement axis from InputInterpreter
         -- PlayerMovement never touches _G.Input directly. InputInterpreter
         -- is the single owner of raw input polling.
         local axis
@@ -717,7 +781,8 @@ return Component {
         local rawX = -axis.x
         local rawZ =  axis.y
 
-        -- ── Camera-relative movement ──────────────────────────────────────
+        -- =====================================================================
+        -- Camera-relative movement
         local cameraYaw = _G.CAMERA_YAW or self._cameraYaw or 180.0
         local moveX, moveZ = 0, 0
 
@@ -738,7 +803,8 @@ return Component {
         local isJumping  = false
         self._animator:SetBool("IsGrounded", isGrounded)
 
-        -- ── Death pending ─────────────────────────────────────────────────
+        -- =====================================================================
+        -- Death pending
         if self._playerDeadPending and isGrounded then
             if self._animator then
                 self._animator:SetBool("IsDead", true)
@@ -749,22 +815,42 @@ return Component {
             return
         end
 
-        -- ── Dash execution ────────────────────────────────────────────────
+        -- =====================================================================
+        -- Dash execution
         -- ComboManager decides a dash happens; this block executes the physics.
-        -- combo tree is the single source of truth for dash timing.
-        if not self._isDashing
+        --
+        -- Early-cancel: while a dash is active a new input is held (not dropped).
+        -- It fires the moment progress >= DashEarlyCancelRatio, resetting the
+        -- timer and consuming a use. Inputs before the window stay buffered so
+        -- pressing dash a frame early still chains at the exact threshold.
+        local earlyCancel = self._isDashing and
+            (self.DashDuration - self._dashTimer) / self.DashDuration
+                >= (self.DashEarlyCancelRatio or 0.9)
+
+        if (not self._isDashing or earlyCancel)
             and self._dashRequested
-            and self._dashCooldownTimer <= 0
+            and self._dashUses > 0
             and not self._isDamageStun
             and not self._isLanding
             and not self._freezePending
         then
-            self._dashRequested = false
-            self._isDashing     = true
-            self._dashTimer     = self.DashDuration   -- this script owns the duration
+            self._dashRequested  = false
+            self._isDashing      = true
+            self._dashTimer      = self.DashDuration
             _G.player_is_dashing = true
-            print("[PlayerMovement] Dash started (duration=" .. tostring(self._dashTimer) .. ")")
             self._wasDashingInAir = not isGrounded
+
+            if earlyCancel then
+                print("[PlayerMovement] Dash early-cancelled and re-triggered")
+            else
+                print("[PlayerMovement] Dash started (duration=" .. tostring(self._dashTimer) .. ")")
+            end
+
+            -- Consume one use and immediately start the regen countdown.
+            -- Always reset the timer so each use begins its own cooldown right away,
+            -- regardless of whether a previous regen was already in progress.
+            self._dashUses       = self._dashUses - 1
+            self._dashRegenTimer = self.DashCooldown
 
             -- Dash direction: prefer input, fall back to current facing
             if isMoving then
@@ -789,12 +875,24 @@ return Component {
             self._isJumping = false
             self._animator:SetBool("IsRunning", false)
             self._isRunning = false
-            self._animator:SetBool("IsDashing", true)
+            -- Only set IsDashing bool on a fresh dash — the animator state machine
+            -- needs it to transition in from idle/run. On an early-cancel the dash
+            -- state is already active, so only the trigger is needed to restart it.
+            if not earlyCancel then
+                self._animator:SetBool("IsDashing", true)
+            end
+            self._animator:SetTrigger("Dash")
+
             playRandomSFX(self._audio, self.playerDashSFX)
 
+        elseif self._dashRequested and self._isDashing then
+            -- Inside the dash but before the early-cancel window — hold the
+            -- request so it fires the moment the threshold is crossed.
+            -- (do nothing: _dashRequested stays true)
+
         elseif self._dashRequested then
-            -- Conditions not met — discard request
-            print("[PlayerMovement] Dash discarded (cooldown=" .. self._dashCooldownTimer
+            -- All other blocking conditions (stun, landing, no uses) — discard.
+            print("[PlayerMovement] Dash discarded (uses=" .. self._dashUses
                 .. " stun=" .. tostring(self._isDamageStun)
                 .. " landing=" .. tostring(self._isLanding) .. ")")
             self._dashRequested = false
@@ -808,21 +906,55 @@ return Component {
                 self._isDashing          = false
                 _G.player_is_dashing     = false
                 self._wasDashingInAir    = false
+                -- SetBool false then immediately true on a consecutive dash would
+                -- be ignored by the state machine (no idle transition between them).
+                -- SetTrigger fires a one-shot that re-enters the dash state from
+                -- anywhere, so back-to-back dashes always retrigger the animation.
                 self._animator:SetBool("IsDashing", false)
-                self._dashCooldownTimer  = self.DashCooldown
 
                 local burstSpeed = self.Speed * (self.DashExitSpeedMult or 1.8)
                 self._velX = self._dashDirX * burstSpeed
                 self._velZ = self._dashDirZ * burstSpeed
-                self._dashExitBoost = 1.0
+                -- Start the timed boost window. Velocity is held at burst speed
+                -- for DashExitDuration seconds, then normal decel resumes.
+                self._dashExitTimer = self.DashExitDuration or 0.25
 
                 if event_bus and event_bus.publish then
-                    event_bus.publish("dash_ended", { cooldown = self.DashCooldown })
+                    event_bus.publish("dash_ended", {
+                        uses       = self._dashUses,
+                        maxUses    = self.DashMaxUses,
+                        regenTimer = self._dashRegenTimer,
+                        cooldown   = self.DashCooldown,
+                    })
                 end
-                print("[PlayerMovement] Dash ended")
+                print("[PlayerMovement] Dash ended (uses remaining=" .. self._dashUses .. ")")
             else
                 -- Dash active: apply impulse and sync position.
-                -- No early return — jump input is still reachable below.
+                -- Player retains directional influence — input steers the dash
+                -- direction at DashSteerSpeed (degrees/sec) but cannot reverse
+                -- or brake. The dash momentum stays dominant; input only rotates
+                -- the direction the dash is travelling.
+                if isMoving then
+                    local inputLen = math.sqrt(moveX * moveX + moveZ * moveZ)
+                    local inputDirX = moveX / inputLen
+                    local inputDirZ = moveZ / inputLen
+
+                    -- Only steer if input has a forward component (dot > 0).
+                    -- This prevents the player from braking by pushing backward.
+                    local dot = inputDirX * self._dashDirX + inputDirZ * self._dashDirZ
+                    if dot > 0 then
+                        local maxRotRad = math.rad(self.DashSteerSpeed or 180.0) * dt
+                        local t = math.min(maxRotRad, 1.0)
+                        local newX = self._dashDirX + (inputDirX - self._dashDirX) * t
+                        local newZ = self._dashDirZ + (inputDirZ - self._dashDirZ) * t
+                        local len  = math.sqrt(newX * newX + newZ * newZ)
+                        if len > 0.001 then
+                            self._dashDirX = newX / len
+                            self._dashDirZ = newZ / len
+                        end
+                    end
+                end
+
                 local speed = self.DashSpeed
                 local liftY = 0
                 if not isGrounded or self._wasDashingInAir then
@@ -853,7 +985,8 @@ return Component {
 
         if not self._isDashing then
 
-        -- ── Jump ──────────────────────────────────────────────────────────
+        -- =====================================================================
+        -- Jump
         local interp = _G.InputInterpreter
         if not self._isLanding and not self._freezePending
             and interp and interp:IsJumpJustPressed() and isGrounded
@@ -864,18 +997,16 @@ return Component {
             playRandomSFX(self._audio, self.playerJumpSFX)
         end
 
-        -- ── Momentum-based velocity update ────────────────────────────────
+        -- =====================================================================
+        -- Momentum-based velocity update
         if not isJumping then
             if isMoving then
-                -- Player takes directional control — cancel the dash burst flag
-                -- so Acceleration governs from here rather than DashExitDecay.
-                self._dashExitBoost = 0
+                -- Input taken — cancel the boost window so Acceleration governs.
+                self._dashExitTimer = 0
 
                 local targetX = moveX * self.Speed
                 local targetZ = moveZ * self.Speed
 
-                -- Detect direction change: dot < 0 means input opposes current velocity.
-                -- Apply TurnDecel in that case for a quick pivot without instant snap.
                 local dot = self._velX * targetX + self._velZ * targetZ
                 local rate = (dot < 0) and self.TurnDecel or self.Acceleration
                 local t = math.min(rate * dt, 1.0)
@@ -883,26 +1014,17 @@ return Component {
                 self._velX = self._velX + (targetX - self._velX) * t
                 self._velZ = self._velZ + (targetZ - self._velZ) * t
             else
-                -- No input: decelerate toward zero.
-                -- If a dash-exit burst is active, use DashExitDecay (slower)
-                -- so the burst lingers briefly before normal decel takes over.
-                local rate
-                if self._dashExitBoost > 0 then
-                    rate = self.DashExitDecay or 12.0
-                    -- Clear the boost flag once velocity drops near normal Speed
-                    local velMag = math.sqrt(self._velX * self._velX + self._velZ * self._velZ)
-                    if velMag <= self.Speed * 1.05 then
-                        self._dashExitBoost = 0
-                    end
+                -- No input: hold burst velocity for DashExitDuration, then decel.
+                if self._dashExitTimer > 0 then
+                    self._dashExitTimer = self._dashExitTimer - dt
+                    -- Velocity is already set to burst speed — hold it this frame.
                 else
-                    rate = self.Deceleration
-                end
-                local decay = 1.0 - math.min(rate * dt, 1.0)
-                self._velX = self._velX * decay
-                self._velZ = self._velZ * decay
-                if math.sqrt(self._velX * self._velX + self._velZ * self._velZ) < 0.001 then
-                    self._velX, self._velZ = 0, 0
-                    self._dashExitBoost = 0
+                    local decay = 1.0 - math.min(self.Deceleration * dt, 1.0)
+                    self._velX = self._velX * decay
+                    self._velZ = self._velZ * decay
+                    if math.sqrt(self._velX * self._velX + self._velZ * self._velZ) < 0.001 then
+                        self._velX, self._velZ = 0, 0
+                    end
                 end
             end
 
@@ -920,11 +1042,27 @@ return Component {
             end
         end
 
-        -- ── Animation ─────────────────────────────────────────────────────
+        -- =====================================================================
+        -- Animation
+        -- isEffectivelyMoving covers two cases:
+        --   • isMoving  : stick is held (normal run)
+        --   • velMag    : velocity is still high from a dash-exit burst or
+        --                 post-attack carry-over with no stick input.
+        -- Without the velMag check the character would slide visibly but
+        -- play no run animation during those coast-off periods.
+        local coastVelMag = math.sqrt(self._velX * self._velX + self._velZ * self._velZ)
+        local isEffectivelyMoving = isMoving or coastVelMag > 0.1
+
         if not isGrounded then
             if not self._isJumping then
+                -- Player became airborne without pressing Jump (e.g. walked off a ledge).
+                -- Previously only the internal flags were set; the animator was never told,
+                -- causing the run clip to keep playing mid-air and the jump/fall bool to
+                -- never flip. Now we mirror what the explicit jump-press path does.
                 self._isJumping = true
                 self._isRunning = false
+                self._animator:SetBool("IsRunning", false)
+                self._animator:SetBool("IsJumping", true)
             end
         else
             if self._isJumping then
@@ -932,7 +1070,7 @@ return Component {
                 self._animator:SetBool("IsJumping", false)
                 self._isLanding = true
                 playRandomSFX(self._audio, self.playerLandSFX)
-                if isMoving then
+                if isEffectivelyMoving then
                     self._animator:SetBool("IsRunning", true)
                     self._isRunning = true
                     self._isRolling = true
@@ -940,7 +1078,7 @@ return Component {
                     self._animator:SetBool("IsRunning", false)
                     self._isRunning = false
                 end
-            elseif isMoving and not self._isRunning then
+            elseif isEffectivelyMoving and not self._isRunning then
                 self._animator:SetBool("IsRunning", true)
                 self._isRunning = true
             elseif not isMoving and self._isRunning then
@@ -954,7 +1092,8 @@ return Component {
             end
         end
 
-        -- ── Footsteps ─────────────────────────────────────────────────────
+        -- =====================================================================
+        -- Footsteps
         if self._isRunning and isGrounded and not self._isLanding then
             if not self._wasRunning then
                 playRandomSFX(self._audio, self.playerFootstepSFX)
@@ -970,7 +1109,8 @@ return Component {
         end
         self._wasRunning = self._isRunning
 
-        -- ── Rotation ──────────────────────────────────────────────────────
+        -- =====================================================================
+        -- Rotation
         -- Rotate toward input direction while input is held.
         -- While coasting (no input but still moving), hold the last facing.
         if isMoving then
@@ -992,7 +1132,8 @@ return Component {
 
         end -- if not self._isDashing
 
-        -- ── Position sync ─────────────────────────────────────────────────
+        -- =====================================================================
+        -- Position sync
         local position = CharacterController.GetPosition(self._controller)
         if position then
             self:SetPosition(position.x, position.y, position.z)
@@ -1022,7 +1163,9 @@ return Component {
         self._playerCanMove           = true
         self._velX                    = 0
         self._velZ                    = 0
-        self._dashExitBoost           = 0
+        self._dashExitTimer           = 0
+        self._dashUses                = self.DashMaxUses
+        self._dashRegenTimer          = 0
         self._chainConstraintRatio    = 0
         self._chainConstraintExceeded = false
         self._chainDrag               = false

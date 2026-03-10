@@ -28,7 +28,7 @@
         {
             "name": "IsGrounded",
             "type": "Bool",
-            "defaultValue": 0.0
+            "defaultValue": 1.0
         },
         {
             "name": "IsHeavyCharging",
@@ -58,7 +58,7 @@
         {
             "name": "ComboStep",
             "type": "Int",
-            "defaultValue": 1.0
+            "defaultValue": 0.0
         },
         {
             "name": "IsDashing",
@@ -67,6 +67,11 @@
         },
         {
             "name": "FeatherSkill",
+            "type": "Trigger",
+            "defaultValue": 0.0
+        },
+        {
+            "name": "Dash",
             "type": "Trigger",
             "defaultValue": 0.0
         },
@@ -88,17 +93,6 @@
     ],
     "states": [
         {
-            "id": "Idle",
-            "clipIndex": 0,
-            "loop": true,
-            "speed": 1.0,
-            "crossfadeDuration": 0.0,
-            "nodePosition": {
-                "x": 100.0,
-                "y": -128.0
-            }
-        },
-        {
             "id": "NA1",
             "clipIndex": 1,
             "loop": false,
@@ -110,14 +104,14 @@
             }
         },
         {
-            "id": "Hurt",
-            "clipIndex": 9,
-            "loop": false,
+            "id": "Idle",
+            "clipIndex": 0,
+            "loop": true,
             "speed": 1.0,
             "crossfadeDuration": 0.0,
             "nodePosition": {
-                "x": 275.0,
-                "y": 147.0
+                "x": 100.0,
+                "y": -128.0
             }
         },
         {
@@ -132,10 +126,21 @@
             }
         },
         {
+            "id": "Hurt",
+            "clipIndex": 9,
+            "loop": false,
+            "speed": 1.0,
+            "crossfadeDuration": 0.0,
+            "nodePosition": {
+                "x": 275.0,
+                "y": 147.0
+            }
+        },
+        {
             "id": "Run",
             "clipIndex": 4,
             "loop": true,
-            "speed": 1.0,
+            "speed": 1.2000000476837158,
             "crossfadeDuration": 0.0,
             "nodePosition": {
                 "x": 449.0,
@@ -212,11 +217,11 @@
             "id": "Dash",
             "clipIndex": 12,
             "loop": false,
-            "speed": 1.8999998569488525,
+            "speed": 2.499999523162842,
             "crossfadeDuration": 0.0,
             "nodePosition": {
-                "x": -300.0,
-                "y": -130.0
+                "x": -107.3333740234375,
+                "y": -206.66668701171875
             }
         },
         {
@@ -261,6 +266,17 @@
             "nodePosition": {
                 "x": 539.447021484375,
                 "y": 254.65863037109375
+            }
+        },
+        {
+            "id": "LOOP",
+            "clipIndex": 18446744073709551615,
+            "loop": true,
+            "speed": 1.0,
+            "crossfadeDuration": 0.20000000298023224,
+            "nodePosition": {
+                "x": -285.66790771484375,
+                "y": -207.90553283691406
             }
         },
         {
@@ -1435,6 +1451,30 @@
             "hasExitTime": true,
             "exitTime": 0.8700000047683716,
             "transitionDuration": 0.8600000143051147,
+            "conditions": []
+        },
+        {
+            "from": "Dash",
+            "to": "LOOP",
+            "anyState": false,
+            "hasExitTime": false,
+            "exitTime": 1.0,
+            "transitionDuration": 0.0,
+            "conditions": [
+                {
+                    "paramName": "Dash",
+                    "mode": "TriggerFired",
+                    "threshold": 0.0
+                }
+            ]
+        },
+        {
+            "from": "LOOP",
+            "to": "Dash",
+            "anyState": false,
+            "hasExitTime": false,
+            "exitTime": 1.0,
+            "transitionDuration": 0.0,
             "conditions": []
         }
     ],
