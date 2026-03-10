@@ -210,14 +210,21 @@ return Component {
         -- Suggested range: 0.2 (snappy) – 0.8 (weighty)
         LandingDuration = 0.4,
 
-        -- Fraction of Acceleration applied while airborne.
-        -- Input steers horizontal velocity at this rate; directly opposing
-        -- input is ignored so the player arcs instead of reversing mid-air.
-        --   0.0 = no air control (ballistic)
-        --   0.3 = responsive nudge (default)
+        -- Scales air control: applies to both the turn rate and the
+        -- speed-build rate when jumping from standstill.
+        --   0.0 = ballistic (no steering at all)
+        --   0.3 = nudge (default — noticeable but not arcade)
         --   1.0 = full ground-level control
-        -- Suggested range: 0.2 – 0.5
+        -- Suggested range: 0.1 – 0.5
         AirControlMultiplier = 0.3,
+
+        -- How quickly the player can steer their velocity direction while airborne
+        -- (degrees per second). Mirrors DashSteerSpeed — input rotates the velocity
+        -- vector toward the stick at this rate, but only if the input has a forward
+        -- component (dot > 0) relative to the current velocity. Opposing input is
+        -- ignored so the player arcs rather than reversing mid-air. Speed magnitude
+        -- is always preserved, identical to how dash steering works.
+        -- 0   = no steering (ballistic arc)
 
         -- COMBAT
         -- =====================================================================
@@ -684,10 +691,11 @@ return Component {
             end
         end
 
-        -- During damage stun: keep position in sync, skip all other logic
-        if self._isDamageStun then
-            local isGrounded = CharacterController.IsGrounded(self._controller)
-            self._animator:SetBool("IsGrounded", isGrounded)
+        -- During damage stun: keep position in sync, skip all other logic.
+        -- Ground-only: if airborne, fall through so movement stays active.
+        local isGroundedStun = CharacterController.IsGrounded(self._controller)
+        if self._isDamageStun and isGroundedStun then
+            self._animator:SetBool("IsGrounded", isGroundedStun)
             self._animator:SetBool("IsRunning", self._isRunning)
             local position = CharacterController.GetPosition(self._controller)
             if position then
@@ -727,8 +735,10 @@ return Component {
         end
 
         -- =====================================================================
-        -- Skill cast lock
-        if _G.player_is_casting_skill then
+        -- Skill cast lock (ground-only)
+        -- Airborne: fall through so movement stays active during aerial skills.
+        local isGroundedSkill = CharacterController.IsGrounded(self._controller)
+        if _G.player_is_casting_skill and isGroundedSkill then
             self._animator:SetBool("IsRunning", false)
             self._isRunning = false
             local position = CharacterController.GetPosition(self._controller)
@@ -749,7 +759,13 @@ return Component {
         -- subscriber (set by ComboManager before the event fires, so no lag).
         -- Using the local copy rather than _G.player_can_move directly makes
         -- the data flow explicit and removes a hidden global dependency.
-        if _G.player_is_attacking and not self._playerCanMove then
+        -- IMPORTANT: The lock is ground-only. If the player becomes airborne
+        -- mid-combo (explicit jump or walking off a ledge), we bypass the lock
+        -- entirely so air control remains fully responsive. Without this, the
+        -- early return below blocks ALL movement for the entire airtime whenever
+        -- an attack was active at the moment of becoming airborne.
+        local isGroundedForLock = CharacterController.IsGrounded(self._controller)
+        if _G.player_is_attacking and not self._playerCanMove and isGroundedForLock then
             local decay = 1.0 - math.min(self.AttackDecay * dt, 1.0)
             self._velX = self._velX * decay
             self._velZ = self._velZ * decay
@@ -838,6 +854,7 @@ return Component {
         local isGrounded = CharacterController.IsGrounded(self._controller)
         local isJumping  = false
         self._animator:SetBool("IsGrounded", isGrounded)
+
 
         -- =====================================================================
         -- Death pending
@@ -1037,30 +1054,15 @@ return Component {
                 local dot = self._velX * targetX + self._velZ * targetZ
 
                 if not isGrounded then
-                    -- Air steering: same authority control as dash but via acceleration.
-                    -- Input steers at Acceleration * AirControlMultiplier toward the
-                    -- input direction. Directly opposing input (dot < -0.3) is ignored
-                    -- so the player arcs rather than reversing. Sideways input is fine.
-                    -- Speed builds naturally — magnitude is NOT frozen.
-                    local inputLen  = math.sqrt(moveX * moveX + moveZ * moveZ)
-                    local inputDirX = moveX / inputLen
-                    local inputDirZ = moveZ / inputLen
-
-                    local velMagAir = math.sqrt(self._velX * self._velX + self._velZ * self._velZ)
-                    local opposes   = false
-                    if velMagAir > 0.001 then
-                        local velDirX = self._velX / velMagAir
-                        local velDirZ = self._velZ / velMagAir
-                        opposes = (inputDirX * velDirX + inputDirZ * velDirZ) < -0.3
-                    end
-
-                    if not opposes then
-                        local rate = self.Acceleration * (self.AirControlMultiplier or 0.3)
-                        local t    = math.min(rate * dt, 1.0)
-                        self._velX = self._velX + (inputDirX * self.Speed - self._velX) * t
-                        self._velZ = self._velZ + (inputDirZ * self.Speed - self._velZ) * t
-                    end
-                    -- Opposing input: do nothing — momentum carries through the arc.
+                    -- Air control: same acceleration/pivot as ground but scaled
+                    -- down by AirControlMultiplier.
+                    --   0.0 = ballistic (no steering)
+                    --   1.0 = full ground-level control
+                    local rate = (dot < 0) and self.TurnDecel or self.Acceleration
+                    rate = rate * (self.AirControlMultiplier or 0.3)
+                    local t = math.min(rate * dt, 1.0)
+                    self._velX = self._velX + (targetX - self._velX) * t
+                    self._velZ = self._velZ + (targetZ - self._velZ) * t
                 else
                     -- Grounded: normal accelerate or pivot.
                     local rate = (dot < 0) and self.TurnDecel or self.Acceleration
@@ -1069,12 +1071,17 @@ return Component {
                     self._velZ = self._velZ + (targetZ - self._velZ) * t
                 end
             else
-                local decay = 1.0 - math.min(self.Deceleration * dt, 1.0)
-                self._velX = self._velX * decay
-                self._velZ = self._velZ * decay
-                if math.sqrt(self._velX * self._velX + self._velZ * self._velZ) < 0.001 then
-                    self._velX, self._velZ = 0, 0
+                if isGrounded then
+                    -- Grounded: bleed to stop when stick is released.
+                    local decay = 1.0 - math.min(self.Deceleration * dt, 1.0)
+                    self._velX = self._velX * decay
+                    self._velZ = self._velZ * decay
+                    if math.sqrt(self._velX * self._velX + self._velZ * self._velZ) < 0.001 then
+                        self._velX, self._velZ = 0, 0
+                    end
                 end
+                -- In air with no input: preserve momentum entirely.
+                -- C++ gravity handles the arc; Lua doesn't bleed XZ.
             end
 
             -- Apply chain tension: resist outward component, leave lateral/inward free
@@ -1161,6 +1168,8 @@ return Component {
         -- =====================================================================
         -- Rotation
         -- Rotate toward input direction while input is held.
+        -- In air, rotation speed is scaled by AirControlMultiplier so the
+        -- character doesn't snap to a new direction faster than it can move there.
         -- While coasting (no input but still moving), hold the last facing.
         if isMoving then
             local mag = math.sqrt(moveX * moveX + moveZ * moveZ)
@@ -1168,7 +1177,11 @@ return Component {
             self._facingZ = moveZ / mag
 
             local targetW, targetX, targetY, targetZ = directionToQuaternion(moveX, moveZ)
-            local t = math.min(self.rotationSpeed * dt, 1.0)
+            local rotRate = self.rotationSpeed
+            if not isGrounded then
+                rotRate = rotRate * (self.AirControlMultiplier or 0.1)
+            end
+            local t = math.min(rotRate * dt, 1.0)
             local newW, newX, newY, newZ = lerpQuaternion(
                 self._currentRotW, self._currentRotX,
                 self._currentRotY, self._currentRotZ,

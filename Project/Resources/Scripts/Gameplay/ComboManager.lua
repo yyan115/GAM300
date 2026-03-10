@@ -194,7 +194,10 @@ return Component {
                     print("[ComboManager] Heavy released: " .. math.floor(chargePercent * 100) .. "% charge")
                 end,
 
-                transitions = {},
+                transitions = {
+                    jump = "lift_attack",
+                    dash = "dash",
+                },
             },
 
             -- ── Chain attack ──────────────────────────────────────────────
@@ -210,6 +213,8 @@ return Component {
                 lunge       = { speed = 2.0, duration = 0.08 },  -- subtle pull
                 transitions = {
                     attack = "light_1",
+                    jump   = "lift_attack",
+                    dash   = "dash",
                 },
             },
 
@@ -237,6 +242,78 @@ return Component {
                 end,
 
                 transitions = {},
+            },
+
+            -- ── Lift attack (ground→air launcher) ────────────────────────────────
+            -- Fired by jump-just-pressed during any ground attack.
+            -- canMove = true so PlayerMovement's jump check runs this frame.
+            -- isAerial = true sets IsAirAttacking on the animator.
+            lift_attack = {
+                id           = "lift_attack",
+                animParam    = 40,
+                clipDuration = 0.5,
+                duration     = 0.5,
+                damage       = 15,
+                knockback    = 80.0,
+                canMove      = true,
+                isAerial     = true,
+                comboWindow  = 0.4,
+                lunge        = { speed = 3.0, duration = 0.12 },
+                transitions  = {
+                    attack = "air_light_1",
+                },
+            },
+
+            -- ── Aerial combo ─────────────────────────────────────────────────────────────────
+            -- All aerial states have canMove = true so air-steering stays active.
+            air_light_1 = {
+                id           = "air_light_1",
+                animParam    = 41,
+                clipDuration = 0.55,
+                duration     = 0.55,
+                damage       = 12,
+                knockback    = 25.0,
+                canMove      = true,
+                isAerial     = true,
+                comboWindow  = 0.25,
+                lunge        = { speed = 2.5, duration = 0.09 },
+                transitions  = {
+                    attack = "air_light_2",
+                    dash   = "dash",
+                },
+            },
+
+            air_light_2 = {
+                id           = "air_light_2",
+                animParam    = 42,
+                clipDuration = 0.55,
+                duration     = 0.55,
+                damage       = 14,
+                knockback    = 30.0,
+                canMove      = true,
+                isAerial     = true,
+                comboWindow  = 0.25,
+                lunge        = { speed = 2.5, duration = 0.09 },
+                transitions  = {
+                    attack = "air_light_3",
+                    dash   = "dash",
+                },
+            },
+
+            air_light_3 = {
+                id           = "air_light_3",
+                animParam    = 43,
+                clipDuration = 0.6,
+                duration     = 0.6,
+                damage       = 22,
+                knockback    = 150.0,
+                canMove      = true,
+                isAerial     = true,
+                comboWindow  = nil,
+                lunge        = { speed = 4.0, duration = 0.15 },
+                transitions  = {
+                    dash = "dash",
+                },
             },
         }
 
@@ -399,6 +476,37 @@ return Component {
         end
 
         -- ══════════════════════════════════════════════════════════════════
+        -- IMMEDIATE CANCELS  (dash cancel / lift attack)
+        -- These bypass the combo window and queuing system entirely.
+        -- Priority: dash cancel > lift attack.
+        --   Dash cancel : dash buffered AND current state has transitions.dash.
+        --                 Fires immediately, clears any queued input.
+        --   Lift attack : jump just-pressed AND not already airborne AND
+        --                 current state has transitions.jump.
+        --                 canMove=true on lift_attack lets PlayerMovement
+        --                 execute the jump on the same frame.
+        -- ══════════════════════════════════════════════════════════════════
+        if state.id ~= "idle" then
+            if input:HasBufferedDash() and state.transitions.dash then
+                input:ConsumeBufferedDash()
+                self._queuedCombo = nil
+                print("[ComboManager] DASH CANCEL: " .. state.id .. " → dash")
+                self:_transitionTo("dash")
+                return
+            end
+
+            if input:IsJumpJustPressed()
+                and not _G.player_is_jumping
+                and state.transitions.jump
+            then
+                self._queuedCombo = nil
+                print("[ComboManager] LIFT ATTACK: " .. state.id .. " → " .. state.transitions.jump)
+                self:_transitionTo(state.transitions.jump)
+                return
+            end
+        end
+
+        -- ══════════════════════════════════════════════════════════════════
         -- EXECUTE QUEUED COMBO (fires when the window opens or on idle)
         -- ══════════════════════════════════════════════════════════════════
         if self._queuedCombo then
@@ -552,12 +660,21 @@ return Component {
         if stateId == "heavy_charge" then
             self._animator:SetBool("IsHeavyCharging", true)
             self._animator:SetBool("IsAttacking", false)
+            self._animator:SetBool("IsAirAttacking", false)
         elseif stateId == "idle" or stateId == "dash" then
+            self._animator:SetBool("IsAttacking", false)
+            self._animator:SetBool("IsHeavyCharging", false)
+            self._animator:SetBool("IsAirAttacking", false)
+        elseif newState.isAerial then
+            -- Aerial states drive a separate animator layer so ground
+            -- and air attack clips don't share the same bool.
+            self._animator:SetBool("IsAirAttacking", true)
             self._animator:SetBool("IsAttacking", false)
             self._animator:SetBool("IsHeavyCharging", false)
         else
             self._animator:SetBool("IsAttacking", true)
             self._animator:SetBool("IsHeavyCharging", false)
+            self._animator:SetBool("IsAirAttacking", false)
         end
 
         if stateId ~= "idle" and stateId ~= "dash" then
@@ -574,6 +691,7 @@ return Component {
                 state      = stateId,
                 canMove    = newState.canMove or false,
                 comboChain = self._comboChain,
+                isAerial   = newState.isAerial or false,
             })
         end
 
@@ -595,10 +713,11 @@ return Component {
             -- PlayerMovement can execute the correct impulse without hardcoding.
             if event_bus then
                 event_bus.publish("attack_performed", {
-                    state    = stateId,
-                    damage   = newState.damage,
+                    state     = stateId,
+                    damage    = newState.damage,
                     knockback = newState.knockback or 0,
-                    lunge    = newState.lunge,
+                    lunge     = newState.lunge,
+                    isAerial  = newState.isAerial or false,
                 })
             end
         end
