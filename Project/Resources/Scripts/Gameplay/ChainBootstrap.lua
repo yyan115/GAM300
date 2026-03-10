@@ -214,6 +214,10 @@ return Component {
         self._intentContinue     = false
         self._intentAimFire      = false
         self._intentAdjustLength = false
+        -- Track whether this press is a retract so chain.up doesn't re-fire
+        local len = self.controller and (self.controller.chainLen or 0) or 0
+        local isExt = self.controller and self.controller.isExtending or false
+        self._retractTriggeredThisPress = (len > 1e-4 or isExt)
     end,
 
     _on_chain_up = function(self, payload)
@@ -293,9 +297,24 @@ return Component {
                 dbg("[ChainBootstrap] Tap-release mid-extension -> Flop")
             end
 
+        elseif isRet and not isExt then
+            -- Chain is still retracting when button released — queue a fire
+            -- for when retraction completes, unless this press was itself a retract.
+            if not self._retractTriggeredThisPress then
+                self._pendingTapFire = true
+                self._pendingPlayerForward = nil
+                if _G.event_bus and _G.event_bus.publish then
+                    _G.event_bus.publish("request_player_forward", true)
+                end
+                dbg("[ChainBootstrap] chain.up during retraction — queued tap-fire for after retract")
+            end
+
         elseif not isExt and not isRet and len <= 1e-4 then
             local isAttached = self.controller.endPointLocked or self.controller._raycastSnapped
-            if isAttached then
+            if self._retractTriggeredThisPress then
+                -- This up event is the release of a retract press — don't re-fire.
+                dbg("[ChainBootstrap] chain.up: retract press released, skipping tap-fire")
+            elseif isAttached then
                 -- Chain hit something on the very first frame so chainLen is still near zero.
                 -- StartRetraction guards against len=0 so force-clear the lock directly and
                 -- publish endpoint_retracted so ChainEndpointController fires enemy_hooked.
@@ -361,10 +380,11 @@ return Component {
             end
         end
 
-        self._chain_held         = false
-        self._intentContinue     = false
-        self._intentAimFire      = false
-        self._intentAdjustLength = false
+        self._chain_held                = false
+        self._intentContinue            = false
+        self._intentAimFire             = false
+        self._intentAdjustLength        = false
+        self._retractTriggeredThisPress = false
     end,
 
     _on_chain_hold = function(self, payload)
@@ -505,6 +525,8 @@ return Component {
 
         -- LockOn targets are queried live via Engine.GetEntitiesByTag at fire time.
 
+        self._lastPublishedExtended = false
+        self._retractTriggeredThisPress = false
         self._endpointTransform = nil
         if self.ChainEndpointName and self.ChainEndpointName ~= "" then
             self._endpointTransform = Engine.FindTransformByName(self.ChainEndpointName)
@@ -943,6 +965,18 @@ return Component {
         local positions, startPos, endPos = self.controller:Update(dt, settings)
         local activeN = self.controller.activeN
 
+        -- Publish chain extended state change so other scripts (ComboManager)
+        -- can react without relying on a global that may be one frame stale.
+        local nowExtended = (self.controller.chainLen or 0) > 1e-4 or self.controller.isExtending or false
+        if nowExtended ~= self._lastPublishedExtended then
+            self._lastPublishedExtended = nowExtended
+            print(string.format("[ChainBootstrap] chain.extended_changed -> isExtended=%s (chainLen=%.3f)",
+                tostring(nowExtended), self.controller.chainLen or 0))
+            if _G.event_bus and _G.event_bus.publish then
+                _G.event_bus.publish("chain.extended_changed", { isExtended = nowExtended })
+            end
+        end
+
         -- Ensure endpoint transform is cached before spin block needs it
         if not self._endpointTransform and self.ChainEndpointName and self.ChainEndpointName ~= "" then
             self._endpointTransform = Engine.FindTransformByName(self.ChainEndpointName)
@@ -1074,12 +1108,26 @@ return Component {
         end
         -- =====================================================================
 
-        -- Publish movement constraint — ChainController computed it, Bootstrap owns event_bus
-        if self.controller.constraintResult and _G.event_bus and _G.event_bus.publish then
+        -- Publish movement constraint — only when chain is taut (attached and idle).
+        -- Publishing during extension/retraction incorrectly locks player movement
+        -- even when well within the chain's range.
+        local chainIdle     = not self.controller.isExtending and not self.controller.isRetracting
+        local chainAttached = self.controller.endPointLocked or self.controller._raycastSnapped
+        if self.controller.constraintResult and chainIdle and chainAttached
+            and _G.event_bus and _G.event_bus.publish
+        then
             local cr = self.controller.constraintResult
             dbg(string.format("[ChainBootstrap][CONSTRAINT] publishing ratio=%.3f exceeded=%s drag=%s",
                 cr.ratio or 0, tostring(cr.exceeded), tostring(cr.drag)))
             _G.event_bus.publish("chain.movement_constraint", cr)
+        elseif (not chainAttached or not chainIdle) and _G.event_bus and _G.event_bus.publish then
+            -- Chain not taut — clear any stale constraint so PlayerMovement doesn't
+            -- keep applying a ratio from the last taut frame.
+            _G.event_bus.publish("chain.movement_constraint", {
+                ratio    = 0,
+                exceeded = false,
+                drag     = false,
+            })
         end
 
         -- Throwable tension: always published while throwable is hooked, including during retraction

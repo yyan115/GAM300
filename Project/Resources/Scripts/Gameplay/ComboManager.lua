@@ -57,9 +57,12 @@ local event_bus = _G.event_bus
 
 return Component {
     fields = {
-        DefaultComboWindow = 0.5,
-        HeavyChargeTime    = 0.8,
-        MaxComboAnimSpeed  = 2.0,
+        DefaultComboWindow  = 0.5,
+        HeavyChargeTime     = 0.8,
+        MaxComboAnimSpeed   = 2.0,
+        -- Minimum seconds between chain attacks. The tap-fire (ChainBootstrap)
+        -- still fires every press; only the attack animation is gated.
+        ChainAttackCooldown = 0.6,
         -- No SFX fields. Audio is owned by CombatAudio, which reacts to
         -- attack_performed events. ComboManager publishes; it does not play sounds.
     },
@@ -208,7 +211,7 @@ return Component {
                 duration     = 0.5,
                 damage      = 25,
                 knockback   = 1.0,
-                canMove     = false,
+                canMove     = true,    -- movement allowed; chain tap fires simultaneously via ChainBootstrap
                 comboWindow = 0.5,
                 lunge       = { speed = 2.0, duration = 0.08 },  -- subtle pull
                 transitions = {
@@ -330,8 +333,10 @@ return Component {
 
         -- Chain weapon awareness: while a Throwable is hooked the chain input
         -- must NOT route into chain_attack — ChainBootstrap owns that decision.
-        self._chainHasThrowable  = false
-        self._chainHoldPublished = false
+        self._chainHasThrowable   = false
+        self._chainHoldPublished  = false
+        self._chainAttackCooldown = 0
+        self._chainPressBlocked   = false
     end,
 
     Start = function(self)
@@ -382,6 +387,9 @@ return Component {
                     print("[ComboManager] Throwable thrown — chain_attack unblocked")
                 end
             end)
+            self._chainExtendedSub = _G.event_bus.subscribe("chain.extended_changed", function(payload)
+                self._chainIsExtended = payload and payload.isExtended or false
+            end)
         end
 
         print("[ComboManager] Initialized successfully")
@@ -400,11 +408,24 @@ return Component {
         -- ══════════════════════════════════════════════════════════════════
         if _G.playerHasWeapon and not _G.player_is_dashing and event_bus then
             if input:IsChainJustPressed() then
-                event_bus.publish("chain.down", {})
+                -- Always allow if chain is already extended (retract path).
+                -- Block only if retracted and cooldown is active (would start new extension).
+                local chainIsOut = self._chainIsExtended
+                print(string.format("[ComboManager] chain press: cooldown=%.2f isExtended=%s",
+                    self._chainAttackCooldown, tostring(chainIsOut)))
+                if self._chainAttackCooldown <= 0 or chainIsOut then
+                    event_bus.publish("chain.down", {})
+                    self._chainPressBlocked = false
+                else
+                    self._chainPressBlocked = true
+                end
             end
 
             if input:IsChainJustReleased() then
-                event_bus.publish("chain.up", {})
+                if not self._chainPressBlocked then
+                    event_bus.publish("chain.up", {})
+                end
+                self._chainPressBlocked = false
             end
 
             -- Publish hold once when threshold is crossed, not every frame
@@ -437,6 +458,9 @@ return Component {
         -- auto-transition fire at the correct moment even when boosted.
         -- ══════════════════════════════════════════════════════════════════
         local animSpeed = self._animator.speed or 1.0
+        if self._chainAttackCooldown > 0 then
+            self._chainAttackCooldown = self._chainAttackCooldown - dt
+        end
         self._stateTimer = self._stateTimer + dt * animSpeed
         local state = self._currentStateData
 
@@ -547,7 +571,13 @@ return Component {
             -- The chain.down event was already published above — don't consume
             -- this buffer for chain_attack, let it pass through.
             if not self._chainHasThrowable then
-                candidateStateId = state.transitions.chain
+                -- Only trigger chain_attack when retracted AND cooldown clear.
+                -- If chain is already out, the press is a retract — don't attack.
+                if self._chainAttackCooldown <= 0 and not self._chainIsExtended then
+                    candidateStateId = state.transitions.chain
+                else
+                    input:ConsumeBufferedChain()
+                end
             else
                 print("[ComboManager] chain input suppressed — throwable hooked")
             end
@@ -621,6 +651,9 @@ return Component {
         if not newState then
             print("[ComboManager] ERROR: Invalid state: " .. tostring(stateId))
             return
+        end
+        if stateId == "chain_attack" then
+            self._chainAttackCooldown = self.ChainAttackCooldown or 0.6
         end
         if not self._animator then
             print("[ComboManager] ERROR: Animator not available for transition")

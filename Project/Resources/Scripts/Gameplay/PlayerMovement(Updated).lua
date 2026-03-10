@@ -67,7 +67,6 @@ local JUMP = 2
 -- Chain tension (updated from chain.movement_constraint event)
 local tensionRadialX = 0
 local tensionRadialZ = 0
-local tensionScale   = 7.0
 
 -- =====================================================================
 -- Quaternion helpers
@@ -214,6 +213,12 @@ return Component {
         -- instead of playing the soft land animation.
         -- Suggested range: 1.5 (rolls often) – 4.0 (only big drops)
         RollHeightThreshold = 2.5,
+
+        -- How strongly the chain resists movement toward the endpoint when taut.
+        --   0.0 = chain has no effect on movement direction
+        --   1.0 = full resistance (cannot push through the chain at all)
+        -- Suggested range: 0.5 – 0.95
+        TensionScale = 0.85,
 
         -- Scales air control: applies to both the turn rate and the
         -- speed-build rate when jumping from standstill.
@@ -819,7 +824,7 @@ return Component {
                 if radLen > 1e-4 then
                     tensionRadialX = radX / radLen
                     tensionRadialZ = radZ / radLen
-                    tensionScale   = math.max(0.0, 1.0 - self._chainConstraintRatio^3 * 0.95)
+                    tensionScale   = math.max(0.0, 1.0 - self._chainConstraintRatio^3 * (self.TensionScale or 0.85))
                 end
             end
         end
