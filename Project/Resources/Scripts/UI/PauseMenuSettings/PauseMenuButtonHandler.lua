@@ -31,7 +31,7 @@ return Component {
             if baseEnt then
                 local transform = GetComponent(baseEnt, "Transform")
                 local sprite = GetComponent(baseEnt, "SpriteRenderComponent")
-                
+
                 -- Guard against missing components
                 if transform and sprite then
                     local pos = transform.localPosition
@@ -107,17 +107,9 @@ return Component {
             if pauseComp then pauseComp.isActive = false end
         end
 
-        -- Resume BGM and Ambience
-        local bgmEntity = Engine.GetEntityByName("BGM1")
-        if bgmEntity then
-            local bgmAudio = GetComponent(bgmEntity, "AudioComponent")
-            if bgmAudio then bgmAudio:UnPause() end
-        end
-        local ambienceEntity = Engine.GetEntityByName("Ambience")
-        if ambienceEntity then
-            local ambienceAudio = GetComponent(ambienceEntity, "AudioComponent")
-            if ambienceAudio then ambienceAudio:UnPause() end
-        end
+        -- Unpause all game audio
+        Audio.SetBusPaused("BGM", false)
+        Audio.SetBusPaused("SFX", false)
 
         Time.SetPaused(false)
 
