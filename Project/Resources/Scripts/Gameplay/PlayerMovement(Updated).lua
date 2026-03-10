@@ -220,6 +220,17 @@ return Component {
         -- Suggested range: 0.5 – 0.95
         TensionScale = 0.85,
 
+        -- Seconds after a dash ends during which reverse steering is progressively
+        -- restored. At t=0 the player can barely pivot back; at t=PostDashRecoveryTime
+        -- full TurnDecel is available again.
+        -- 0 = no restriction. Suggested range: 0.15 – 0.4
+        PostDashRecoveryTime = 0.25,
+
+        -- Kickback speed applied in the OPPOSITE direction of a chain throw.
+        -- Gives physical weight to the chain launch.
+        -- 0 = no kickback. Suggested range: 1.5 – 4.0
+        ChainKickbackSpeed = 2.5,
+
         -- Scales air control: applies to both the turn rate and the
         -- speed-build rate when jumping from standstill.
         --   0.0 = ballistic (no steering at all)
@@ -444,8 +455,16 @@ return Component {
                     end
                 end
 
-                self._lungeDirX = dirX
-                self._lungeDirZ = dirZ
+                local isChainAttack = (data and data.state == "chain_attack")
+                if isChainAttack then
+                    -- Kickback: push opposite to throw direction
+                    self._lungeDirX = -dirX
+                    self._lungeDirZ = -dirZ
+                    self._lungeSpeed = self.ChainKickbackSpeed or 2.5
+                else
+                    self._lungeDirX = dirX
+                    self._lungeDirZ = dirZ
+                end
 
                 -- Use per-attack lunge data from ComboManager; fall back to inspector defaults.
                 local lunge = data and data.lunge
@@ -570,6 +589,7 @@ return Component {
 
         self._isDashing          = false
         self._dashTimer          = 0
+        self._postDashTimer      = 0
         self._dashDirX           = 0
         self._dashDirZ           = 0
         self._wasDashingInAir    = false
@@ -985,6 +1005,7 @@ return Component {
                 self._animator:SetBool("IsDashing", false)
                 self._velX = self._dashDirX * self.Speed
                 self._velZ = self._dashDirZ * self.Speed
+                self._postDashTimer      = self.PostDashRecoveryTime or 0
 
                 if event_bus and event_bus.publish then
                     event_bus.publish("dash_ended", {
@@ -1087,10 +1108,28 @@ return Component {
                     self._velZ = self._velZ + (targetZ - self._velZ) * t
                 else
                     -- Grounded: normal accelerate or pivot.
-                    local rate = (dot < 0) and self.TurnDecel or self.Acceleration
-                    local t = math.min(rate * dt, 1.0)
-                    self._velX = self._velX + (targetX - self._velX) * t
-                    self._velZ = self._velZ + (targetZ - self._velZ) * t
+                    -- Post-dash: restrict reverse steering for PostDashRecoveryTime seconds.
+                    if self._postDashTimer > 0 then
+                        self._postDashTimer = self._postDashTimer - dt
+                        local recovery = 1.0 - math.max(0, self._postDashTimer / (self.PostDashRecoveryTime or 0.25))
+                        -- Check input against dash direction, not velocity (velocity may already be drifting)
+                        local dashInputDot = (moveX * self._dashDirX + moveZ * self._dashDirZ)
+                        if dashInputDot < 0 then
+                            local rate = self.TurnDecel * (0.1 + 0.9 * recovery)
+                            local t = math.min(rate * dt, 1.0)
+                            self._velX = self._velX + (targetX - self._velX) * t
+                            self._velZ = self._velZ + (targetZ - self._velZ) * t
+                        else
+                            local t = math.min(self.Acceleration * dt, 1.0)
+                            self._velX = self._velX + (targetX - self._velX) * t
+                            self._velZ = self._velZ + (targetZ - self._velZ) * t
+                        end
+                    else
+                        local rate = (dot < 0) and self.TurnDecel or self.Acceleration
+                        local t = math.min(rate * dt, 1.0)
+                        self._velX = self._velX + (targetX - self._velX) * t
+                        self._velZ = self._velZ + (targetZ - self._velZ) * t
+                    end
                 end
             else
                 if isGrounded then
@@ -1224,6 +1263,14 @@ return Component {
             local rotRate = self.rotationSpeed
             if not isGrounded then
                 rotRate = rotRate * (self.AirControlMultiplier or 0.1)
+            elseif self._postDashTimer > 0 then
+                -- Post-dash: restrict rotation speed if input opposes the dash direction.
+                -- Use _dashDirX/Z (not _facingX/Z which is already updated to new input).
+                local dashDot = (moveX * self._dashDirX + moveZ * self._dashDirZ)
+                if dashDot < 0 then
+                    local recovery = 1.0 - math.max(0, self._postDashTimer / (self.PostDashRecoveryTime or 0.25))
+                    rotRate = rotRate * (0.1 + 0.9 * recovery)
+                end
             end
             local t = math.min(rotRate * dt, 1.0)
             local newW, newX, newY, newZ = lerpQuaternion(
