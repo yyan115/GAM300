@@ -210,6 +210,11 @@ return Component {
         -- Suggested range: 0.2 (snappy) – 0.8 (weighty)
         LandingDuration = 0.4,
 
+        -- Fall distance (world units) above which the player rolls on landing
+        -- instead of playing the soft land animation.
+        -- Suggested range: 1.5 (rolls often) – 4.0 (only big drops)
+        RollHeightThreshold = 2.5,
+
         -- Scales air control: applies to both the turn rate and the
         -- speed-build rate when jumping from standstill.
         --   0.0 = ballistic (no steering at all)
@@ -688,6 +693,7 @@ return Component {
                 self._landingDuration = self.LandingDuration
                 self._isLanding       = false
                 self._isRolling       = false
+                self._animator:SetBool("IsRolling", false)
             end
         end
 
@@ -854,6 +860,14 @@ return Component {
         local isGrounded = CharacterController.IsGrounded(self._controller)
         local isJumping  = false
         self._animator:SetBool("IsGrounded", isGrounded)
+
+        -- Track peak Y while airborne so fall distance = peakY - landY
+        if not isGrounded then
+            local airPos = CharacterController.GetPosition(self._controller)
+            if airPos and airPos.y > (self._peakAirY or airPos.y) then
+                self._peakAirY = airPos.y
+            end
+        end
 
 
         -- =====================================================================
@@ -1043,6 +1057,9 @@ return Component {
             isJumping = true
             self._animator:SetBool("IsJumping", true)
             playRandomSFX(self._audio, self.playerJumpSFX)
+            -- Reset peak height tracker at jump start
+            local launchPos = CharacterController.GetPosition(self._controller)
+            self._peakAirY = launchPos and launchPos.y or 0
         end
 
         -- =====================================================================
@@ -1119,6 +1136,9 @@ return Component {
                 self._isRunning = false
                 self._animator:SetBool("IsRunning", false)
                 self._animator:SetBool("IsJumping", true)
+                -- Reset peak height tracker on walk-off
+                local walkOffPos = CharacterController.GetPosition(self._controller)
+                self._peakAirY = walkOffPos and walkOffPos.y or 0
             end
         else
             if self._isJumping then
@@ -1126,13 +1146,32 @@ return Component {
                 self._animator:SetBool("IsJumping", false)
                 self._isLanding = true
                 playRandomSFX(self._audio, self.playerLandSFX)
-                if isEffectivelyMoving then
-                    self._animator:SetBool("IsRunning", true)
-                    self._isRunning = true
+
+                -- Measure fall distance from peak height to landing position
+                local landPos  = CharacterController.GetPosition(self._controller)
+                local landY    = landPos and landPos.y or 0
+                local fallDist = (self._peakAirY or landY) - landY
+                local hardLand = fallDist >= (self.RollHeightThreshold or 2.5)
+                print(string.format("[Landing] peakY=%.2f landY=%.2f fallDist=%.2f threshold=%.2f roll=%s",
+                    self._peakAirY or 0, landY, fallDist, self.RollHeightThreshold or 2.5, tostring(hardLand)))
+
+                if hardLand then
+                    -- Fell far enough: roll landing
                     self._isRolling = true
-                else
+                    self._animator:SetBool("IsRolling", true)
                     self._animator:SetBool("IsRunning", false)
                     self._isRunning = false
+                else
+                    -- Soft land
+                    self._isRolling = false
+                    self._animator:SetBool("IsRolling", false)
+                    if isEffectivelyMoving then
+                        self._animator:SetBool("IsRunning", true)
+                        self._isRunning = true
+                    else
+                        self._animator:SetBool("IsRunning", false)
+                        self._isRunning = false
+                    end
                 end
             elseif isEffectivelyMoving and not self._isRunning then
                 self._animator:SetBool("IsRunning", true)

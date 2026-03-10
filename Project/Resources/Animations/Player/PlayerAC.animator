@@ -21,11 +21,6 @@
             "defaultValue": 0.0
         },
         {
-            "name": "IsDead",
-            "type": "Bool",
-            "defaultValue": 0.0
-        },
-        {
             "name": "IsGrounded",
             "type": "Bool",
             "defaultValue": 1.0
@@ -36,7 +31,7 @@
             "defaultValue": 0.0
         },
         {
-            "name": "IsJumping",
+            "name": "IsDead",
             "type": "Bool",
             "defaultValue": 0.0
         },
@@ -46,12 +41,17 @@
             "defaultValue": 0.0
         },
         {
-            "name": "Attack",
-            "type": "Trigger",
+            "name": "IsJumping",
+            "type": "Bool",
             "defaultValue": 0.0
         },
         {
             "name": "SlamChain",
+            "type": "Trigger",
+            "defaultValue": 0.0
+        },
+        {
+            "name": "Attack",
             "type": "Trigger",
             "defaultValue": 0.0
         },
@@ -66,12 +66,12 @@
             "defaultValue": 0.0
         },
         {
-            "name": "FeatherSkill",
+            "name": "Dash",
             "type": "Trigger",
             "defaultValue": 0.0
         },
         {
-            "name": "Dash",
+            "name": "FeatherSkill",
             "type": "Trigger",
             "defaultValue": 0.0
         },
@@ -88,6 +88,11 @@
         {
             "name": "PullChain",
             "type": "Trigger",
+            "defaultValue": 0.0
+        },
+        {
+            "name": "IsRolling",
+            "type": "Bool",
             "defaultValue": 0.0
         }
     ],
@@ -184,7 +189,7 @@
             "id": "Roll",
             "clipIndex": 7,
             "loop": false,
-            "speed": 1.3000000715255737,
+            "speed": 1.8000001907348633,
             "crossfadeDuration": 0.0,
             "nodePosition": {
                 "x": -155.5,
@@ -540,6 +545,11 @@
                     "paramName": "IsRunning",
                     "mode": "Equals",
                     "threshold": 0.0
+                },
+                {
+                    "paramName": "IsRolling",
+                    "mode": "Equals",
+                    "threshold": 0.0
                 }
             ]
         },
@@ -628,7 +638,7 @@
             "to": "Roll",
             "anyState": false,
             "hasExitTime": true,
-            "exitTime": 0.27000001072883606,
+            "exitTime": 0.0,
             "transitionDuration": 0.27000001072883606,
             "conditions": [
                 {
@@ -643,6 +653,11 @@
                 },
                 {
                     "paramName": "IsRunning",
+                    "mode": "Equals",
+                    "threshold": 1.0
+                },
+                {
+                    "paramName": "IsRolling",
                     "mode": "Equals",
                     "threshold": 1.0
                 }
@@ -1476,6 +1491,36 @@
             "exitTime": 1.0,
             "transitionDuration": 0.0,
             "conditions": []
+        },
+        {
+            "from": "Jump",
+            "to": "Run",
+            "anyState": false,
+            "hasExitTime": true,
+            "exitTime": 0.0,
+            "transitionDuration": 0.11999999731779099,
+            "conditions": [
+                {
+                    "paramName": "IsGrounded",
+                    "mode": "Equals",
+                    "threshold": 1.0
+                },
+                {
+                    "paramName": "IsJumping",
+                    "mode": "Equals",
+                    "threshold": 0.0
+                },
+                {
+                    "paramName": "IsRunning",
+                    "mode": "Equals",
+                    "threshold": 1.0
+                },
+                {
+                    "paramName": "IsRolling",
+                    "mode": "Equals",
+                    "threshold": 0.0
+                }
+            ]
         }
     ],
     "clipPaths": [
