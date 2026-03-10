@@ -6587,11 +6587,15 @@ void RegisterInspectorCustomRenderers()
                         continue;
                     }
 
+                    // Capture depth before counting braces on this line
+                    int depthBeforeLine = braceDepth;
+
                     // Count braces outside strings and comments
                     countBracesOutsideStrings(trimmedLine, braceDepth);
 
-                    // Only process lines with '=' that have the = before any comment
-                    if (eqPos != std::string::npos && (commentPos == std::string::npos || eqPos < commentPos)) {
+                    // Only process lines with '=' that are direct children of the fields table (depth 1)
+                    // Skip nested table contents (e.g. __editor = { tooltipEntity = { ... } })
+                    if (depthBeforeLine == 1 && eqPos != std::string::npos && (commentPos == std::string::npos || eqPos < commentPos)) {
                         std::string fieldName = trimmedLine.substr(0, eqPos);
 
                         // Trim whitespace and commas from field name
@@ -6971,6 +6975,32 @@ void RegisterInspectorCustomRenderers()
             continue; // Skip to next script
         }
 
+        // Read __editor metadata directly from the Lua instance as a fallback
+        // (ScriptInspector may not propagate editorHint through caching/preview paths)
+        std::unordered_map<std::string, std::string> editorHintMap;
+        if (L && instanceToInspect != -1) {
+            lua_rawgeti(L, LUA_REGISTRYINDEX, instanceToInspect);
+            if (lua_istable(L, -1)) {
+                lua_getfield(L, -1, "__editor");
+                if (lua_istable(L, -1)) {
+                    lua_pushnil(L);
+                    while (lua_next(L, -2) != 0) {
+                        if (lua_type(L, -2) == LUA_TSTRING && lua_istable(L, -1)) {
+                            const char* key = lua_tostring(L, -2);
+                            lua_getfield(L, -1, "editorHint");
+                            if (lua_isstring(L, -1)) {
+                                editorHintMap[key] = lua_tostring(L, -1);
+                            }
+                            lua_pop(L, 1); // pop editorHint
+                        }
+                        lua_pop(L, 1); // pop value, keep key
+                    }
+                }
+                lua_pop(L, 1); // pop __editor
+            }
+            lua_pop(L, 1); // pop instance
+        }
+
         // Render each field
         bool anyModified = false;
         for (const auto& field : filteredFields)
@@ -7063,6 +7093,44 @@ void RegisterInspectorCustomRenderers()
                     if (currentValue.size() > 1 && currentValue.front() == '"' && currentValue.back() == '"')
                     {
                         currentValue = currentValue.substr(1, currentValue.size() - 2);
+                    }
+
+                    // Check if this is an entity reference field (editorHint == "entity")
+                    // Check both ScriptInspector metadata and direct Lua lookup fallback
+                    std::string editorHint = field.meta.editorHint;
+                    if (editorHint.empty()) {
+                        auto hintIt = editorHintMap.find(field.name);
+                        if (hintIt != editorHintMap.end()) {
+                            editorHint = hintIt->second;
+                        }
+                    }
+                    if (editorHint == "entity")
+                    {
+                        renderLabelWithTooltip();
+                        ImGui::SameLine(labelWidth);
+                        float fieldWidth = ImGui::GetContentRegionAvail().x;
+
+                        std::string display = currentValue.empty() ? "None" : currentValue;
+                        EditorComponents::DrawDragDropButton(display.c_str(), fieldWidth);
+
+                        if (ImGui::BeginDragDropTarget()) {
+                            if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("HIERARCHY_ENTITY")) {
+                                Entity dropped = *(Entity*)payload->Data;
+                                if (ecs.HasComponent<NameComponent>(dropped)) {
+                                    std::string entityName = ecs.GetComponent<NameComponent>(dropped).name;
+                                    newValue = "\"" + entityName + "\"";
+                                    fieldModified = true;
+                                }
+                            }
+                            ImGui::EndDragDropTarget();
+                        }
+
+                        // Right-click to clear
+                        if (ImGui::IsItemClicked(ImGuiMouseButton_Right) && !currentValue.empty()) {
+                            newValue = "\"\"";
+                            fieldModified = true;
+                        }
+                        break;
                     }
 
                     // Check if this is an asset GUID field
@@ -9340,6 +9408,42 @@ void RegisterInspectorCustomRenderers()
                                 [entity, idx, oldVal]() { auto& e = ECSRegistry::GetInstance().GetActiveECSManager(); if (e.HasComponent<DialogueComponent>(entity)) { auto& b = e.GetComponent<DialogueComponent>(entity).entries; if (idx < b.size()) b[idx].text = oldVal; } },
                                 "Change Dialogue Text");
                         }
+                    }
+                }
+
+                // --- Sprite Entity (optional, per-entry) ---
+                ImGui::Text("Sprite Entity");
+                ImGui::SameLine(labelWidth);
+                {
+                    float spriteFieldWidth = ImGui::GetContentRegionAvail().x;
+                    std::string spriteDisplay = "None (Sprite)";
+                    if (!entry.spriteEntityGuidStr.empty()) {
+                        GUID_128 sGuid = GUIDUtilities::ConvertStringToGUID128(entry.spriteEntityGuidStr);
+                        Entity spriteEntity = EntityGUIDRegistry::GetInstance().GetEntityByGUID(sGuid);
+                        if (spriteEntity != 0 && ecs.HasComponent<NameComponent>(spriteEntity)) {
+                            spriteDisplay = ecs.GetComponent<NameComponent>(spriteEntity).name;
+                        }
+                    }
+                    EditorComponents::DrawDragDropButton(spriteDisplay.c_str(), spriteFieldWidth);
+                    if (ImGui::BeginDragDropTarget()) {
+                        if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("HIERARCHY_ENTITY")) {
+                            Entity droppedEntity = *(Entity*)payload->Data;
+                            // Validate it has a SpriteRenderComponent
+                            if (ecs.HasComponent<SpriteRenderComponent>(droppedEntity)) {
+                                std::string oldGuid = entry.spriteEntityGuidStr;
+                                GUID_128 sGuid = EntityGUIDRegistry::GetInstance().GetGUIDByEntity(droppedEntity);
+                                std::string newGuid = GUIDUtilities::ConvertGUID128ToString(sGuid);
+                                entry.spriteEntityGuidStr = newGuid;
+                                if (UndoSystem::GetInstance().IsEnabled()) {
+                                    size_t idx = i;
+                                    UndoSystem::GetInstance().RecordLambdaChange(
+                                        [entity, idx, newGuid]() { auto& e = ECSRegistry::GetInstance().GetActiveECSManager(); if (e.HasComponent<DialogueComponent>(entity)) { auto& b = e.GetComponent<DialogueComponent>(entity).entries; if (idx < b.size()) b[idx].spriteEntityGuidStr = newGuid; } },
+                                        [entity, idx, oldGuid]() { auto& e = ECSRegistry::GetInstance().GetActiveECSManager(); if (e.HasComponent<DialogueComponent>(entity)) { auto& b = e.GetComponent<DialogueComponent>(entity).entries; if (idx < b.size()) b[idx].spriteEntityGuidStr = oldGuid; } },
+                                        "Assign Dialogue Sprite Entity");
+                                }
+                            }
+                        }
+                        ImGui::EndDragDropTarget();
                     }
                 }
 

@@ -1,0 +1,14 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "000c89d989e590c1-000476bc60002103",
+        "source": "../../Resources/Sprites/Tutorial/DashControl.png",
+        "compiled": "../../Resources/Sprites/Tutorial/DashControl.dds"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": true,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp"
+    }
+}

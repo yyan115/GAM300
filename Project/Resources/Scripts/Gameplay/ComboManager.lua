@@ -308,6 +308,9 @@ return Component {
     Update = function(self, dt)
         if not self._inputInterpreter or not self._animator or Time.IsPaused() then return end
 
+        -- Block all combo input near interactable (tooltip active)
+        if _G.playerNearInteractable then return end
+
         -- Block all combo input during dash
         if _G.player_is_dashing then
             -- Also clear any queued combo to prevent it firing after dash ends
