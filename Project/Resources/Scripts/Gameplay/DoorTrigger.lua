@@ -88,7 +88,7 @@ return Component {
         weaponPickup = "LowPolyFeatherChainPickUp",
         weaponOnHand = "LowPolyFeatherChain",
 
-        -- [NEW] Weapon Fly Timing and Offsets
+        -- Weapon Fly Timing and Offsets
         weaponFlyDuration = 0.5, 
         weaponHandOffsetY = 0.6, -- Approximates the hand/chest height from the player's root
         weaponHandOffsetX = -0.1,

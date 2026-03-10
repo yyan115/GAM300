@@ -1,0 +1,14 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "0022c894ba1f6665-0004761b7e00e55b",
+        "source": "../../Resources/Sprites/PlayerHUD/TheStatueRoomTxt.png",
+        "compiled": "../../Resources/Sprites/PlayerHUD/TheStatueRoomTxt.dds"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": true,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp"
+    }
+}
