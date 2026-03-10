@@ -2,7 +2,7 @@
     "prefab_entities": [
         {
             "id": 0,
-            "guid": "0022c894dc4130ff-0004761f8401731f",
+            "guid": "00408567f22eb18c-00047670520072eb",
             "components": {
                 "PrefabLinkComponent": {
                     "type": "PrefabLinkComponent",
@@ -91,9 +91,9 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "0022c894e6c95193-0004761f84017321",
-                                "0022c894aaf749a9-0004761f8401732d",
-                                "0022c894ff66f561-0004761f8401732f"
+                                "00408567b4f77491-00047670520072ed",
+                                "00408567e99aede0-00047670520072f9",
+                                "004085679c56d5e6-00047670520072fb"
                             ]
                         }
                     ]
@@ -111,7 +111,7 @@
         },
         {
             "id": 1,
-            "guid": "0022c894e6c95193-0004761f84017321",
+            "guid": "00408567b4f77491-00047670520072ed",
             "components": {
                 "NameComponent": {
                     "name": "Monologue"
@@ -191,11 +191,11 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "0022c894f9e18715-0004761f84017323",
-                                "0022c894bb27c4ad-0004761f84017325",
-                                "0022c894c7c92355-0004761f84017327",
-                                "0022c89492d7d53a-0004761f84017329",
-                                "0022c894ccb7dae3-0004761f8401732b"
+                                "0040856799b2e001-00047670520072ef",
+                                "00408567e179df69-00047670520072f1",
+                                "00408567d6db34ea-00047670520072f3",
+                                "00408567f0330f59-00047670520072f5",
+                                "00408567909ead88-00047670520072f7"
                             ]
                         }
                     ]
@@ -203,7 +203,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "0022c894dc4130ff-0004761f8401731f"
+                        "00408567f22eb18c-00047670520072eb"
                     ]
                 },
                 "ActiveComponent": {
@@ -219,7 +219,7 @@
         },
         {
             "id": 2,
-            "guid": "0022c894f9e18715-0004761f84017323",
+            "guid": "0040856799b2e001-00047670520072ef",
             "components": {
                 "NameComponent": {
                     "name": "MonologueBorder"
@@ -423,7 +423,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "0022c894e6c95193-0004761f84017321"
+                        "00408567b4f77491-00047670520072ed"
                     ]
                 },
                 "ActiveComponent": {
@@ -439,7 +439,7 @@
         },
         {
             "id": 3,
-            "guid": "0022c894bb27c4ad-0004761f84017325",
+            "guid": "00408567e179df69-00047670520072f1",
             "components": {
                 "NameComponent": {
                     "name": "MonologueOverlay"
@@ -520,7 +520,7 @@
                             "type": "bool",
                             "data": true
                         },
-                        "000e2fe079804e05-00047165ae0037f9",
+                        "00408567d3bb5c60-000476701a000001",
                         "00374a216e66dbbc-000331fc80000069",
                         {
                             "type": "Vector3D",
@@ -643,7 +643,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "0022c894e6c95193-0004761f84017321"
+                        "00408567b4f77491-00047670520072ed"
                     ]
                 },
                 "ActiveComponent": {
@@ -659,7 +659,7 @@
         },
         {
             "id": 4,
-            "guid": "0022c894c7c92355-0004761f84017327",
+            "guid": "00408567d6db34ea-00047670520072f3",
             "components": {
                 "NameComponent": {
                     "name": "MonologueSoundwave"
@@ -958,7 +958,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "0022c894e6c95193-0004761f84017321"
+                        "00408567b4f77491-00047670520072ed"
                     ]
                 },
                 "ActiveComponent": {
@@ -974,7 +974,7 @@
         },
         {
             "id": 5,
-            "guid": "0022c89492d7d53a-0004761f84017329",
+            "guid": "00408567f0330f59-00047670520072f5",
             "components": {
                 "NameComponent": {
                     "name": "SubtitleText"
@@ -1205,7 +1205,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "0022c894e6c95193-0004761f84017321"
+                        "00408567b4f77491-00047670520072ed"
                     ]
                 },
                 "ActiveComponent": {
@@ -1221,7 +1221,7 @@
         },
         {
             "id": 6,
-            "guid": "0022c894ccb7dae3-0004761f8401732b",
+            "guid": "00408567909ead88-00047670520072f7",
             "components": {
                 "NameComponent": {
                     "name": "SpeakerText"
@@ -1452,7 +1452,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "0022c894e6c95193-0004761f84017321"
+                        "00408567b4f77491-00047670520072ed"
                     ]
                 },
                 "ActiveComponent": {
@@ -1468,7 +1468,7 @@
         },
         {
             "id": 7,
-            "guid": "0022c894aaf749a9-0004761f8401732d",
+            "guid": "00408567e99aede0-00047670520072f9",
             "components": {
                 "NameComponent": {
                     "name": "DoorTrigger"
@@ -1545,7 +1545,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "0022c894dc4130ff-0004761f8401731f"
+                        "00408567f22eb18c-00047670520072eb"
                     ]
                 },
                 "RigidBodyComponent": {
@@ -1720,7 +1720,7 @@
         },
         {
             "id": 8,
-            "guid": "0022c894ff66f561-0004761f8401732f",
+            "guid": "004085679c56d5e6-00047670520072fb",
             "components": {
                 "NameComponent": {
                     "name": "RoomIndicator"
@@ -1800,12 +1800,12 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "0022c8949bea7fa5-0004761f84017333",
-                                "0022c89481258fad-00047620d6017343",
-                                "0022c894f8fcb670-0004762100017345",
-                                "0022c894be40fd09-000476210201734b",
-                                "0022c894f5890755-0004762104017351",
-                                "0022c894f3b25aad-0004762104017357"
+                                "00408567bddc3997-00047670520072fd",
+                                "00408567a48ddfbd-00047670520072ff",
+                                "0040856790777e1b-0004767052007305",
+                                "00408567b6c3ffb9-000476705200730b",
+                                "00408567b6e5c9e6-0004767052007311",
+                                "00408567f3db6689-0004767052007317"
                             ]
                         }
                     ]
@@ -1813,7 +1813,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "0022c894dc4130ff-0004761f8401731f"
+                        "00408567f22eb18c-00047670520072eb"
                     ]
                 },
                 "ActiveComponent": {
@@ -1828,8 +1828,8 @@
             }
         },
         {
-            "id": 10,
-            "guid": "0022c8949bea7fa5-0004761f84017333",
+            "id": 9,
+            "guid": "00408567bddc3997-00047670520072fd",
             "components": {
                 "NameComponent": {
                     "name": "RoomLabelText"
@@ -2060,7 +2060,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "0022c894ff66f561-0004761f8401732f"
+                        "004085679c56d5e6-00047670520072fb"
                     ]
                 },
                 "ActiveComponent": {
@@ -2075,8 +2075,8 @@
             }
         },
         {
-            "id": 18,
-            "guid": "0022c89481258fad-00047620d6017343",
+            "id": 10,
+            "guid": "00408567a48ddfbd-00047670520072ff",
             "components": {
                 "NameComponent": {
                     "name": "TempleHallGroup"
@@ -2156,8 +2156,8 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "0022c894f55f2bd0-0004761f84017331",
-                                "0022c8948944cdd8-0004761f98017335"
+                                "004085678cd220a1-0004767052007301",
+                                "00408567f8f404ba-0004767052007303"
                             ]
                         }
                     ]
@@ -2165,7 +2165,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "0022c894ff66f561-0004761f8401732f"
+                        "004085679c56d5e6-00047670520072fb"
                     ]
                 },
                 "ActiveComponent": {
@@ -2180,8 +2180,8 @@
             }
         },
         {
-            "id": 9,
-            "guid": "0022c894f55f2bd0-0004761f84017331",
+            "id": 11,
+            "guid": "004085678cd220a1-0004767052007301",
             "components": {
                 "NameComponent": {
                     "name": "RoomLabelImage_TempleHall"
@@ -2385,7 +2385,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "0022c89481258fad-00047620d6017343"
+                        "00408567a48ddfbd-00047670520072ff"
                     ]
                 },
                 "ActiveComponent": {
@@ -2400,8 +2400,8 @@
             }
         },
         {
-            "id": 11,
-            "guid": "0022c8948944cdd8-0004761f98017335",
+            "id": 12,
+            "guid": "00408567f8f404ba-0004767052007303",
             "components": {
                 "NameComponent": {
                     "name": "RoomTrigger_TempleHall"
@@ -2478,7 +2478,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "0022c89481258fad-00047620d6017343"
+                        "00408567a48ddfbd-00047670520072ff"
                     ]
                 },
                 "RigidBodyComponent": {
@@ -2652,8 +2652,8 @@
             }
         },
         {
-            "id": 19,
-            "guid": "0022c894f8fcb670-0004762100017345",
+            "id": 13,
+            "guid": "0040856790777e1b-0004767052007305",
             "components": {
                 "NameComponent": {
                     "name": "LibraryGroup"
@@ -2733,8 +2733,8 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "0022c894df860295-0004762100017347",
-                                "0022c894c00473ab-0004761fd6017337"
+                                "00408567eee1e808-0004767052007307",
+                                "00408567b23716c1-0004767052007309"
                             ]
                         }
                     ]
@@ -2742,7 +2742,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "0022c894ff66f561-0004761f8401732f"
+                        "004085679c56d5e6-00047670520072fb"
                     ]
                 },
                 "ActiveComponent": {
@@ -2757,8 +2757,8 @@
             }
         },
         {
-            "id": 20,
-            "guid": "0022c894df860295-0004762100017347",
+            "id": 14,
+            "guid": "00408567eee1e808-0004767052007307",
             "components": {
                 "NameComponent": {
                     "name": "RoomLabelImage_Library"
@@ -2962,7 +2962,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "0022c894f8fcb670-0004762100017345"
+                        "0040856790777e1b-0004767052007305"
                     ]
                 },
                 "ActiveComponent": {
@@ -2977,8 +2977,8 @@
             }
         },
         {
-            "id": 12,
-            "guid": "0022c894c00473ab-0004761fd6017337",
+            "id": 15,
+            "guid": "00408567b23716c1-0004767052007309",
             "components": {
                 "NameComponent": {
                     "name": "RoomTrigger_Library"
@@ -3055,7 +3055,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "0022c894f8fcb670-0004762100017345"
+                        "0040856790777e1b-0004767052007305"
                     ]
                 },
                 "RigidBodyComponent": {
@@ -3229,8 +3229,8 @@
             }
         },
         {
-            "id": 22,
-            "guid": "0022c894be40fd09-000476210201734b",
+            "id": 16,
+            "guid": "00408567b6c3ffb9-000476705200730b",
             "components": {
                 "NameComponent": {
                     "name": "StatueGroup"
@@ -3310,8 +3310,8 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "0022c894bc932509-000476210201734d",
-                                "0022c894f954a3f7-000476210201734f"
+                                "004085678d3cc6b6-000476705200730d",
+                                "00408567efd6b380-000476705200730f"
                             ]
                         }
                     ]
@@ -3319,7 +3319,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "0022c894ff66f561-0004761f8401732f"
+                        "004085679c56d5e6-00047670520072fb"
                     ]
                 },
                 "ActiveComponent": {
@@ -3334,8 +3334,8 @@
             }
         },
         {
-            "id": 23,
-            "guid": "0022c894bc932509-000476210201734d",
+            "id": 17,
+            "guid": "004085678d3cc6b6-000476705200730d",
             "components": {
                 "NameComponent": {
                     "name": "RoomLabelImage_Statue"
@@ -3539,7 +3539,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "0022c894be40fd09-000476210201734b"
+                        "00408567b6c3ffb9-000476705200730b"
                     ]
                 },
                 "ActiveComponent": {
@@ -3554,8 +3554,8 @@
             }
         },
         {
-            "id": 24,
-            "guid": "0022c894f954a3f7-000476210201734f",
+            "id": 18,
+            "guid": "00408567efd6b380-000476705200730f",
             "components": {
                 "NameComponent": {
                     "name": "RoomTrigger_Statue"
@@ -3632,7 +3632,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "0022c894be40fd09-000476210201734b"
+                        "00408567b6c3ffb9-000476705200730b"
                     ]
                 },
                 "RigidBodyComponent": {
@@ -3806,8 +3806,8 @@
             }
         },
         {
-            "id": 25,
-            "guid": "0022c894f5890755-0004762104017351",
+            "id": 19,
+            "guid": "00408567b6e5c9e6-0004767052007311",
             "components": {
                 "NameComponent": {
                     "name": "WeaponRoomGroup"
@@ -3887,8 +3887,8 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "0022c8948fc4a5d6-0004762104017353",
-                                "0022c894eb48ca3e-0004762104017355"
+                                "00408567837e5c0b-0004767052007313",
+                                "00408567fb138f80-0004767052007315"
                             ]
                         }
                     ]
@@ -3896,7 +3896,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "0022c894ff66f561-0004761f8401732f"
+                        "004085679c56d5e6-00047670520072fb"
                     ]
                 },
                 "ActiveComponent": {
@@ -3911,8 +3911,8 @@
             }
         },
         {
-            "id": 26,
-            "guid": "0022c8948fc4a5d6-0004762104017353",
+            "id": 20,
+            "guid": "00408567837e5c0b-0004767052007313",
             "components": {
                 "NameComponent": {
                     "name": "RoomLabelImage_WeaponRoom"
@@ -4116,7 +4116,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "0022c894f5890755-0004762104017351"
+                        "00408567b6e5c9e6-0004767052007311"
                     ]
                 },
                 "ActiveComponent": {
@@ -4131,8 +4131,8 @@
             }
         },
         {
-            "id": 27,
-            "guid": "0022c894eb48ca3e-0004762104017355",
+            "id": 21,
+            "guid": "00408567fb138f80-0004767052007315",
             "components": {
                 "NameComponent": {
                     "name": "RoomTrigger_WeaponRoom"
@@ -4209,7 +4209,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "0022c894f5890755-0004762104017351"
+                        "00408567b6e5c9e6-0004767052007311"
                     ]
                 },
                 "RigidBodyComponent": {
@@ -4383,8 +4383,8 @@
             }
         },
         {
-            "id": 28,
-            "guid": "0022c894f3b25aad-0004762104017357",
+            "id": 22,
+            "guid": "00408567f3db6689-0004767052007317",
             "components": {
                 "NameComponent": {
                     "name": "BattleHallGroup"
@@ -4464,8 +4464,8 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "0022c894dcf5d7ed-0004762104017359",
-                                "0022c894d7dfba47-000476210401735b"
+                                "00408567d173fd1d-0004767052007319",
+                                "00408567804a94e8-000476705200731b"
                             ]
                         }
                     ]
@@ -4473,7 +4473,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "0022c894ff66f561-0004761f8401732f"
+                        "004085679c56d5e6-00047670520072fb"
                     ]
                 },
                 "ActiveComponent": {
@@ -4488,8 +4488,8 @@
             }
         },
         {
-            "id": 29,
-            "guid": "0022c894dcf5d7ed-0004762104017359",
+            "id": 23,
+            "guid": "00408567d173fd1d-0004767052007319",
             "components": {
                 "NameComponent": {
                     "name": "RoomLabelImage_BattleHall"
@@ -4693,7 +4693,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "0022c894f3b25aad-0004762104017357"
+                        "00408567f3db6689-0004767052007317"
                     ]
                 },
                 "ActiveComponent": {
@@ -4708,8 +4708,8 @@
             }
         },
         {
-            "id": 30,
-            "guid": "0022c894d7dfba47-000476210401735b",
+            "id": 24,
+            "guid": "00408567804a94e8-000476705200731b",
             "components": {
                 "NameComponent": {
                     "name": "RoomTrigger_BattleHall"
@@ -4786,7 +4786,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "0022c894f3b25aad-0004762104017357"
+                        "00408567f3db6689-0004767052007317"
                     ]
                 },
                 "RigidBodyComponent": {

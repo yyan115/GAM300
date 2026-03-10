@@ -57860,6 +57860,1060 @@
                     ]
                 }
             }
+        },
+        {
+            "PrefabPath": "../../Resources/Prefabs/PauseMenu.prefab",
+            "id": 453,
+            "guid": "005d940140ea453d-0004778992060481",
+            "Name": "PauseMenu",
+            "SiblingIndex": 50000,
+            "ComponentOverrides": [
+                {
+                    "SiblingIndexComponent": {
+                        "siblingIndex": 50000
+                    }
+                }
+            ],
+            "Children": [
+                {
+                    "id": 454,
+                    "guid": "005d94017a2ce7b7-0004778992060483",
+                    "Name": "PauseMenuUI",
+                    "SiblingIndex": 1,
+                    "ParentComponent": {
+                        "type": "ParentComponent",
+                        "data": [
+                            "005d940140ea453d-0004778992060481"
+                        ]
+                    },
+                    "Children": [
+                        {
+                            "id": 455,
+                            "guid": "005d9401352ddbb3-0004778992060485",
+                            "Name": "PauseBG",
+                            "SiblingIndex": 1,
+                            "ParentComponent": {
+                                "type": "ParentComponent",
+                                "data": [
+                                    "005d94017a2ce7b7-0004778992060483"
+                                ]
+                            }
+                        },
+                        {
+                            "id": 456,
+                            "guid": "005d94013aa428e4-0004778992060487",
+                            "Name": "PauseText",
+                            "SiblingIndex": 4,
+                            "ParentComponent": {
+                                "type": "ParentComponent",
+                                "data": [
+                                    "005d94017a2ce7b7-0004778992060483"
+                                ]
+                            }
+                        },
+                        {
+                            "id": 457,
+                            "guid": "005d94011e8cc85e-0004778992060489",
+                            "Name": "ContinueButton",
+                            "SiblingIndex": 4,
+                            "ParentComponent": {
+                                "type": "ParentComponent",
+                                "data": [
+                                    "005d94017a2ce7b7-0004778992060483"
+                                ]
+                            }
+                        },
+                        {
+                            "id": 458,
+                            "guid": "005d94011aa6baf1-000477899206048b",
+                            "Name": "SettingsButton",
+                            "SiblingIndex": 5,
+                            "ParentComponent": {
+                                "type": "ParentComponent",
+                                "data": [
+                                    "005d94017a2ce7b7-0004778992060483"
+                                ]
+                            }
+                        },
+                        {
+                            "id": 459,
+                            "guid": "005d94017f30c050-000477899206048d",
+                            "Name": "MainMenuButton",
+                            "SiblingIndex": 6,
+                            "ParentComponent": {
+                                "type": "ParentComponent",
+                                "data": [
+                                    "005d94017a2ce7b7-0004778992060483"
+                                ]
+                            }
+                        }
+                    ]
+                },
+                {
+                    "id": 460,
+                    "guid": "005d940119712756-000477899206048f",
+                    "Name": "SettingsUI",
+                    "SiblingIndex": 2,
+                    "ParentComponent": {
+                        "type": "ParentComponent",
+                        "data": [
+                            "005d940140ea453d-0004778992060481"
+                        ]
+                    },
+                    "Children": [
+                        {
+                            "id": 461,
+                            "guid": "005d940100a19a81-0004778992060491",
+                            "Name": "BackGround + Banner",
+                            "SiblingIndex": 13,
+                            "ParentComponent": {
+                                "type": "ParentComponent",
+                                "data": [
+                                    "005d940119712756-000477899206048f"
+                                ]
+                            },
+                            "Children": [
+                                {
+                                    "id": 462,
+                                    "guid": "005d9401368aa755-0004778992060493",
+                                    "Name": "SettingsBackground",
+                                    "SiblingIndex": 5,
+                                    "ParentComponent": {
+                                        "type": "ParentComponent",
+                                        "data": [
+                                            "005d940100a19a81-0004778992060491"
+                                        ]
+                                    }
+                                },
+                                {
+                                    "id": 463,
+                                    "guid": "005d9401412c4052-0004778992060495",
+                                    "Name": "SettingsAudioBanner",
+                                    "SiblingIndex": 6,
+                                    "ParentComponent": {
+                                        "type": "ParentComponent",
+                                        "data": [
+                                            "005d940100a19a81-0004778992060491"
+                                        ]
+                                    }
+                                },
+                                {
+                                    "id": 464,
+                                    "guid": "005d940135705361-0004778992060497",
+                                    "Name": "SettingsBanner",
+                                    "SiblingIndex": 7,
+                                    "ParentComponent": {
+                                        "type": "ParentComponent",
+                                        "data": [
+                                            "005d940100a19a81-0004778992060491"
+                                        ]
+                                    }
+                                }
+                            ]
+                        },
+                        {
+                            "id": 465,
+                            "guid": "005d94013ec5004a-0004778992060499",
+                            "Name": "AudioText",
+                            "SiblingIndex": 12,
+                            "ParentComponent": {
+                                "type": "ParentComponent",
+                                "data": [
+                                    "005d940119712756-000477899206048f"
+                                ]
+                            },
+                            "Children": [
+                                {
+                                    "id": 466,
+                                    "guid": "005d94010846f4b8-000477899206049b",
+                                    "Name": "MasterText",
+                                    "SiblingIndex": 8,
+                                    "ParentComponent": {
+                                        "type": "ParentComponent",
+                                        "data": [
+                                            "005d94013ec5004a-0004778992060499"
+                                        ]
+                                    }
+                                },
+                                {
+                                    "id": 467,
+                                    "guid": "005d940131bb5a69-000477899206049d",
+                                    "Name": "BGMText",
+                                    "SiblingIndex": 9,
+                                    "ParentComponent": {
+                                        "type": "ParentComponent",
+                                        "data": [
+                                            "005d94013ec5004a-0004778992060499"
+                                        ]
+                                    }
+                                },
+                                {
+                                    "id": 468,
+                                    "guid": "005d940158ada253-000477899206049f",
+                                    "Name": "SFXText",
+                                    "SiblingIndex": 10,
+                                    "ParentComponent": {
+                                        "type": "ParentComponent",
+                                        "data": [
+                                            "005d94013ec5004a-0004778992060499"
+                                        ]
+                                    }
+                                }
+                            ]
+                        },
+                        {
+                            "id": 469,
+                            "guid": "005d94016aa022c5-00047789920604a1",
+                            "Name": "AudioBars",
+                            "SiblingIndex": 13,
+                            "ParentComponent": {
+                                "type": "ParentComponent",
+                                "data": [
+                                    "005d940119712756-000477899206048f"
+                                ]
+                            },
+                            "Children": [
+                                {
+                                    "id": 470,
+                                    "guid": "005d94015741d41e-00047789920604a3",
+                                    "Name": "MasterBar",
+                                    "SiblingIndex": 12,
+                                    "ParentComponent": {
+                                        "type": "ParentComponent",
+                                        "data": [
+                                            "005d94016aa022c5-00047789920604a1"
+                                        ]
+                                    }
+                                },
+                                {
+                                    "id": 471,
+                                    "guid": "005d94015bfffa9b-00047789920604a5",
+                                    "Name": "BGMBar",
+                                    "SiblingIndex": 12,
+                                    "ParentComponent": {
+                                        "type": "ParentComponent",
+                                        "data": [
+                                            "005d94016aa022c5-00047789920604a1"
+                                        ]
+                                    }
+                                },
+                                {
+                                    "id": 472,
+                                    "guid": "005d9401780c5a13-00047789920604a7",
+                                    "Name": "SFXBar",
+                                    "SiblingIndex": 13,
+                                    "ParentComponent": {
+                                        "type": "ParentComponent",
+                                        "data": [
+                                            "005d94016aa022c5-00047789920604a1"
+                                        ]
+                                    }
+                                },
+                                {
+                                    "id": 473,
+                                    "guid": "005d940145715d97-00047789920604a9",
+                                    "Name": "MasterNotch",
+                                    "SiblingIndex": 5,
+                                    "ParentComponent": {
+                                        "type": "ParentComponent",
+                                        "data": [
+                                            "005d94016aa022c5-00047789920604a1"
+                                        ]
+                                    }
+                                },
+                                {
+                                    "id": 474,
+                                    "guid": "005d9401681c9d37-00047789920604ab",
+                                    "Name": "BGMNotch",
+                                    "SiblingIndex": 6,
+                                    "ParentComponent": {
+                                        "type": "ParentComponent",
+                                        "data": [
+                                            "005d94016aa022c5-00047789920604a1"
+                                        ]
+                                    }
+                                },
+                                {
+                                    "id": 475,
+                                    "guid": "005d94015fb15bef-00047789920604ad",
+                                    "Name": "SFXNotch",
+                                    "SiblingIndex": 7,
+                                    "ParentComponent": {
+                                        "type": "ParentComponent",
+                                        "data": [
+                                            "005d94016aa022c5-00047789920604a1"
+                                        ]
+                                    }
+                                },
+                                {
+                                    "id": 476,
+                                    "guid": "005d9401726c425c-00047789920604af",
+                                    "Name": "MasterFill",
+                                    "SiblingIndex": 5,
+                                    "ParentComponent": {
+                                        "type": "ParentComponent",
+                                        "data": [
+                                            "005d94016aa022c5-00047789920604a1"
+                                        ]
+                                    }
+                                },
+                                {
+                                    "id": 477,
+                                    "guid": "005d940140177e0e-00047789920604b1",
+                                    "Name": "BGMFill",
+                                    "SiblingIndex": 7,
+                                    "ParentComponent": {
+                                        "type": "ParentComponent",
+                                        "data": [
+                                            "005d94016aa022c5-00047789920604a1"
+                                        ]
+                                    }
+                                },
+                                {
+                                    "id": 478,
+                                    "guid": "005d940115568550-00047789920604b3",
+                                    "Name": "SFXFill",
+                                    "SiblingIndex": 8,
+                                    "ParentComponent": {
+                                        "type": "ParentComponent",
+                                        "data": [
+                                            "005d94016aa022c5-00047789920604a1"
+                                        ]
+                                    }
+                                }
+                            ]
+                        },
+                        {
+                            "id": 479,
+                            "guid": "005d9401564ef9b6-00047789920604b5",
+                            "Name": "SettingsUIButtons",
+                            "SiblingIndex": 5004,
+                            "ParentComponent": {
+                                "type": "ParentComponent",
+                                "data": [
+                                    "005d940119712756-000477899206048f"
+                                ]
+                            },
+                            "Children": [
+                                {
+                                    "id": 480,
+                                    "guid": "005d94016ee81cbc-00047789920604b7",
+                                    "Name": "ResetButton",
+                                    "SiblingIndex": 12,
+                                    "ParentComponent": {
+                                        "type": "ParentComponent",
+                                        "data": [
+                                            "005d9401564ef9b6-00047789920604b5"
+                                        ]
+                                    }
+                                },
+                                {
+                                    "id": 481,
+                                    "guid": "005d94014db187ac-00047789920604b9",
+                                    "Name": "BackButton",
+                                    "SiblingIndex": 3,
+                                    "ParentComponent": {
+                                        "type": "ParentComponent",
+                                        "data": [
+                                            "005d9401564ef9b6-00047789920604b5"
+                                        ]
+                                    }
+                                }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "id": 482,
+                    "guid": "005d9401490cceab-00047789920604bb",
+                    "Name": "ConfirmationPromptUI",
+                    "SiblingIndex": 5,
+                    "ParentComponent": {
+                        "type": "ParentComponent",
+                        "data": [
+                            "005d940140ea453d-0004778992060481"
+                        ]
+                    },
+                    "Children": [
+                        {
+                            "id": 483,
+                            "guid": "005d94016ae7df8f-00047789920604bd",
+                            "Name": "ConfirmationBG",
+                            "SiblingIndex": 6,
+                            "ParentComponent": {
+                                "type": "ParentComponent",
+                                "data": [
+                                    "005d9401490cceab-00047789920604bb"
+                                ]
+                            }
+                        },
+                        {
+                            "id": 484,
+                            "guid": "005d940119745420-00047789920604bf",
+                            "Name": "ConfirmationText",
+                            "SiblingIndex": 7,
+                            "ParentComponent": {
+                                "type": "ParentComponent",
+                                "data": [
+                                    "005d9401490cceab-00047789920604bb"
+                                ]
+                            }
+                        },
+                        {
+                            "id": 485,
+                            "guid": "005d94012005f6d9-00047789920604c1",
+                            "Name": "YesButton",
+                            "SiblingIndex": 8,
+                            "ParentComponent": {
+                                "type": "ParentComponent",
+                                "data": [
+                                    "005d9401490cceab-00047789920604bb"
+                                ]
+                            }
+                        },
+                        {
+                            "id": 486,
+                            "guid": "005d94015bda2c34-00047789920604c3",
+                            "Name": "NoButton",
+                            "SiblingIndex": 10,
+                            "ParentComponent": {
+                                "type": "ParentComponent",
+                                "data": [
+                                    "005d9401490cceab-00047789920604bb"
+                                ]
+                            }
+                        }
+                    ]
+                },
+                {
+                    "id": 487,
+                    "guid": "005d940122d6bf37-00047789920604c5",
+                    "Name": "BlackScreen",
+                    "SiblingIndex": 4,
+                    "ParentComponent": {
+                        "type": "ParentComponent",
+                        "data": [
+                            "005d940140ea453d-0004778992060481"
+                        ]
+                    }
+                },
+                {
+                    "id": 488,
+                    "guid": "005d94017a217119-00047789920604c7",
+                    "Name": "ButtonHandler",
+                    "SiblingIndex": 37,
+                    "ParentComponent": {
+                        "type": "ParentComponent",
+                        "data": [
+                            "005d940140ea453d-0004778992060481"
+                        ]
+                    }
+                },
+                {
+                    "id": 489,
+                    "guid": "005d940143f66017-00047789920604c9",
+                    "Name": "PauseListener",
+                    "SiblingIndex": 8,
+                    "ParentComponent": {
+                        "type": "ParentComponent",
+                        "data": [
+                            "005d940140ea453d-0004778992060481"
+                        ]
+                    }
+                }
+            ]
+        },
+        {
+            "PrefabPath": "../../Resources/Prefabs/PlayerHUD.prefab",
+            "id": 490,
+            "guid": "005d940101d4e82f-0004778998061a5b",
+            "Name": "PlayerHUD",
+            "SiblingIndex": 50000,
+            "ComponentOverrides": [
+                {
+                    "SiblingIndexComponent": {
+                        "siblingIndex": 50000
+                    }
+                }
+            ],
+            "Children": [
+                {
+                    "id": 491,
+                    "guid": "005d940149fb742d-0004778998061a5d",
+                    "Name": "ChainIcon",
+                    "SiblingIndex": 16,
+                    "ParentComponent": {
+                        "type": "ParentComponent",
+                        "data": [
+                            "005d940101d4e82f-0004778998061a5b"
+                        ]
+                    }
+                },
+                {
+                    "id": 492,
+                    "guid": "005d94011511482b-0004778998061a5f",
+                    "Name": "AttackIcon",
+                    "SiblingIndex": 17,
+                    "ParentComponent": {
+                        "type": "ParentComponent",
+                        "data": [
+                            "005d940101d4e82f-0004778998061a5b"
+                        ]
+                    }
+                },
+                {
+                    "id": 493,
+                    "guid": "005d94016663de68-0004778998061a61",
+                    "Name": "SkillIcon",
+                    "SiblingIndex": 88,
+                    "ParentComponent": {
+                        "type": "ParentComponent",
+                        "data": [
+                            "005d940101d4e82f-0004778998061a5b"
+                        ]
+                    }
+                },
+                {
+                    "id": 494,
+                    "guid": "005d94013d2181a7-0004778998061a63",
+                    "Name": "CrossHair",
+                    "SiblingIndex": 18,
+                    "ParentComponent": {
+                        "type": "ParentComponent",
+                        "data": [
+                            "005d940101d4e82f-0004778998061a5b"
+                        ]
+                    }
+                },
+                {
+                    "id": 495,
+                    "guid": "005d940135bc385b-0004778998061a65",
+                    "Name": "FeatherGroup",
+                    "SiblingIndex": 16,
+                    "ParentComponent": {
+                        "type": "ParentComponent",
+                        "data": [
+                            "005d940101d4e82f-0004778998061a5b"
+                        ]
+                    },
+                    "Children": [
+                        {
+                            "id": 496,
+                            "guid": "005d94010b0c4b08-0004778998061a67",
+                            "Name": "FeatherIcon1",
+                            "SiblingIndex": 17,
+                            "ParentComponent": {
+                                "type": "ParentComponent",
+                                "data": [
+                                    "005d940135bc385b-0004778998061a65"
+                                ]
+                            }
+                        },
+                        {
+                            "id": 497,
+                            "guid": "005d9401604fea12-0004778998061a69",
+                            "Name": "FeatherIcon2",
+                            "SiblingIndex": 16,
+                            "ParentComponent": {
+                                "type": "ParentComponent",
+                                "data": [
+                                    "005d940135bc385b-0004778998061a65"
+                                ]
+                            }
+                        },
+                        {
+                            "id": 498,
+                            "guid": "005d9401091381b0-0004778998061a6b",
+                            "Name": "FeatherIcon3",
+                            "SiblingIndex": 16,
+                            "ParentComponent": {
+                                "type": "ParentComponent",
+                                "data": [
+                                    "005d940135bc385b-0004778998061a65"
+                                ]
+                            }
+                        },
+                        {
+                            "id": 499,
+                            "guid": "005d94016ed33ee2-0004778998061a6d",
+                            "Name": "FeatherIcon4",
+                            "SiblingIndex": 16,
+                            "ParentComponent": {
+                                "type": "ParentComponent",
+                                "data": [
+                                    "005d940135bc385b-0004778998061a65"
+                                ]
+                            }
+                        },
+                        {
+                            "id": 500,
+                            "guid": "005d940144e85a37-0004778998061a6f",
+                            "Name": "FeatherIcon5",
+                            "SiblingIndex": 16,
+                            "ParentComponent": {
+                                "type": "ParentComponent",
+                                "data": [
+                                    "005d940135bc385b-0004778998061a65"
+                                ]
+                            }
+                        }
+                    ]
+                },
+                {
+                    "id": 501,
+                    "guid": "005d9401428e04e3-0004778998061a71",
+                    "Name": "HealthBarBorder",
+                    "SiblingIndex": 16,
+                    "ParentComponent": {
+                        "type": "ParentComponent",
+                        "data": [
+                            "005d940101d4e82f-0004778998061a5b"
+                        ]
+                    },
+                    "Children": [
+                        {
+                            "id": 502,
+                            "guid": "005d94017f70aae7-0004778998061a73",
+                            "Name": "HealthBarFillFollow",
+                            "SiblingIndex": 17,
+                            "ParentComponent": {
+                                "type": "ParentComponent",
+                                "data": [
+                                    "005d9401428e04e3-0004778998061a71"
+                                ]
+                            }
+                        },
+                        {
+                            "id": 503,
+                            "guid": "005d9401224928bc-0004778998061a75",
+                            "Name": "HealthBarFill",
+                            "SiblingIndex": 17,
+                            "ParentComponent": {
+                                "type": "ParentComponent",
+                                "data": [
+                                    "005d9401428e04e3-0004778998061a71"
+                                ]
+                            }
+                        },
+                        {
+                            "id": 504,
+                            "guid": "005d9401564f0862-0004778998061a77",
+                            "Name": "HealthNotch",
+                            "SiblingIndex": 17,
+                            "ParentComponent": {
+                                "type": "ParentComponent",
+                                "data": [
+                                    "005d9401428e04e3-0004778998061a71"
+                                ]
+                            }
+                        }
+                    ]
+                },
+                {
+                    "id": 505,
+                    "guid": "005d940175b51da1-0004778998061a79",
+                    "Name": "FeathersSprite",
+                    "SiblingIndex": 91,
+                    "ParentComponent": {
+                        "type": "ParentComponent",
+                        "data": [
+                            "005d940101d4e82f-0004778998061a5b"
+                        ]
+                    }
+                },
+                {
+                    "id": 506,
+                    "guid": "005d94016d8f6feb-0004778998061a7b",
+                    "Name": "FeathersCollectedText",
+                    "SiblingIndex": 91,
+                    "ParentComponent": {
+                        "type": "ParentComponent",
+                        "data": [
+                            "005d940101d4e82f-0004778998061a5b"
+                        ]
+                    }
+                },
+                {
+                    "id": 507,
+                    "guid": "005d94012f2dd3ca-0004778998061a7d",
+                    "Name": "SkillCooldown",
+                    "SiblingIndex": 88,
+                    "ParentComponent": {
+                        "type": "ParentComponent",
+                        "data": [
+                            "005d940101d4e82f-0004778998061a5b"
+                        ]
+                    }
+                },
+                {
+                    "id": 508,
+                    "guid": "005d9401597f0871-0004778998061a7f",
+                    "Name": "DashCooldown",
+                    "SiblingIndex": 90,
+                    "ParentComponent": {
+                        "type": "ParentComponent",
+                        "data": [
+                            "005d940101d4e82f-0004778998061a5b"
+                        ]
+                    }
+                },
+                {
+                    "id": 509,
+                    "guid": "005d940131f7d3c1-0004778998061a81",
+                    "Name": "(ANDROID)Joystick",
+                    "SiblingIndex": 89,
+                    "ParentComponent": {
+                        "type": "ParentComponent",
+                        "data": [
+                            "005d940101d4e82f-0004778998061a5b"
+                        ]
+                    },
+                    "Children": [
+                        {
+                            "id": 510,
+                            "guid": "005d9401322194cd-0004778998061a83",
+                            "Name": "(ANDROID)JoystickInner",
+                            "SiblingIndex": 90,
+                            "ParentComponent": {
+                                "type": "ParentComponent",
+                                "data": [
+                                    "005d940131f7d3c1-0004778998061a81"
+                                ]
+                            }
+                        }
+                    ]
+                },
+                {
+                    "id": 511,
+                    "guid": "005d94010f1f2c50-0004778998061a85",
+                    "Name": "(ANDROID)Jump",
+                    "SiblingIndex": 90,
+                    "ParentComponent": {
+                        "type": "ParentComponent",
+                        "data": [
+                            "005d940101d4e82f-0004778998061a5b"
+                        ]
+                    }
+                }
+            ]
+        },
+        {
+            "PrefabPath": "../../Resources/Prefabs/UI.prefab",
+            "id": 512,
+            "guid": "005d94013a1f1f1c-000477899c06290f",
+            "Name": "UI",
+            "SiblingIndex": 50000,
+            "ComponentOverrides": [
+                {
+                    "SiblingIndexComponent": {
+                        "siblingIndex": 50000
+                    }
+                }
+            ],
+            "Children": [
+                {
+                    "id": 513,
+                    "guid": "005d94013ecd941d-000477899c062911",
+                    "Name": "Monologue",
+                    "SiblingIndex": 98,
+                    "ParentComponent": {
+                        "type": "ParentComponent",
+                        "data": [
+                            "005d94013a1f1f1c-000477899c06290f"
+                        ]
+                    },
+                    "Children": [
+                        {
+                            "id": 514,
+                            "guid": "005d94011d754710-000477899c062913",
+                            "Name": "MonologueBorder",
+                            "SiblingIndex": 98,
+                            "ParentComponent": {
+                                "type": "ParentComponent",
+                                "data": [
+                                    "005d94013ecd941d-000477899c062911"
+                                ]
+                            }
+                        },
+                        {
+                            "id": 515,
+                            "guid": "005d940149ad11bd-000477899c062915",
+                            "Name": "MonologueOverlay",
+                            "SiblingIndex": 98,
+                            "ParentComponent": {
+                                "type": "ParentComponent",
+                                "data": [
+                                    "005d94013ecd941d-000477899c062911"
+                                ]
+                            }
+                        },
+                        {
+                            "id": 516,
+                            "guid": "005d94012a311f63-000477899c062917",
+                            "Name": "MonologueSoundwave",
+                            "SiblingIndex": 98,
+                            "ParentComponent": {
+                                "type": "ParentComponent",
+                                "data": [
+                                    "005d94013ecd941d-000477899c062911"
+                                ]
+                            }
+                        },
+                        {
+                            "id": 517,
+                            "guid": "005d94012319b7c1-000477899c062919",
+                            "Name": "SubtitleText",
+                            "SiblingIndex": 87,
+                            "ParentComponent": {
+                                "type": "ParentComponent",
+                                "data": [
+                                    "005d94013ecd941d-000477899c062911"
+                                ]
+                            }
+                        },
+                        {
+                            "id": 518,
+                            "guid": "005d9401209f1af8-000477899c06291b",
+                            "Name": "SpeakerText",
+                            "SiblingIndex": 98,
+                            "ParentComponent": {
+                                "type": "ParentComponent",
+                                "data": [
+                                    "005d94013ecd941d-000477899c062911"
+                                ]
+                            }
+                        }
+                    ]
+                },
+                {
+                    "id": 519,
+                    "guid": "005d94013d32ce6a-000477899c06291d",
+                    "Name": "DoorTrigger",
+                    "SiblingIndex": 61,
+                    "ParentComponent": {
+                        "type": "ParentComponent",
+                        "data": [
+                            "005d94013a1f1f1c-000477899c06290f"
+                        ]
+                    }
+                },
+                {
+                    "id": 520,
+                    "guid": "005d94010ab5e4a2-000477899c06291f",
+                    "Name": "RoomIndicator",
+                    "SiblingIndex": 4,
+                    "ParentComponent": {
+                        "type": "ParentComponent",
+                        "data": [
+                            "005d94013a1f1f1c-000477899c06290f"
+                        ]
+                    },
+                    "Children": [
+                        {
+                            "id": 521,
+                            "guid": "005d9401399d974f-000477899c062921",
+                            "Name": "RoomLabelText",
+                            "SiblingIndex": 4,
+                            "ParentComponent": {
+                                "type": "ParentComponent",
+                                "data": [
+                                    "005d94010ab5e4a2-000477899c06291f"
+                                ]
+                            }
+                        },
+                        {
+                            "id": 522,
+                            "guid": "005d940112bed3e7-000477899c062923",
+                            "Name": "TempleHallGroup",
+                            "SiblingIndex": 6,
+                            "ParentComponent": {
+                                "type": "ParentComponent",
+                                "data": [
+                                    "005d94010ab5e4a2-000477899c06291f"
+                                ]
+                            },
+                            "Children": [
+                                {
+                                    "id": 523,
+                                    "guid": "005d9401762e8387-000477899c062925",
+                                    "Name": "RoomLabelImage_TempleHall",
+                                    "SiblingIndex": 4,
+                                    "ParentComponent": {
+                                        "type": "ParentComponent",
+                                        "data": [
+                                            "005d940112bed3e7-000477899c062923"
+                                        ]
+                                    }
+                                },
+                                {
+                                    "id": 524,
+                                    "guid": "005d940151339b06-000477899c062927",
+                                    "Name": "RoomTrigger_TempleHall",
+                                    "SiblingIndex": 4,
+                                    "ParentComponent": {
+                                        "type": "ParentComponent",
+                                        "data": [
+                                            "005d940112bed3e7-000477899c062923"
+                                        ]
+                                    }
+                                }
+                            ]
+                        },
+                        {
+                            "id": 525,
+                            "guid": "005d94016e4e466e-000477899c062929",
+                            "Name": "LibraryGroup",
+                            "SiblingIndex": 6,
+                            "ParentComponent": {
+                                "type": "ParentComponent",
+                                "data": [
+                                    "005d94010ab5e4a2-000477899c06291f"
+                                ]
+                            },
+                            "Children": [
+                                {
+                                    "id": 526,
+                                    "guid": "005d940108af7031-000477899c06292b",
+                                    "Name": "RoomLabelImage_Library",
+                                    "SiblingIndex": 6,
+                                    "ParentComponent": {
+                                        "type": "ParentComponent",
+                                        "data": [
+                                            "005d94016e4e466e-000477899c062929"
+                                        ]
+                                    }
+                                },
+                                {
+                                    "id": 527,
+                                    "guid": "005d940142f8c555-000477899c06292d",
+                                    "Name": "RoomTrigger_Library",
+                                    "SiblingIndex": 4,
+                                    "ParentComponent": {
+                                        "type": "ParentComponent",
+                                        "data": [
+                                            "005d94016e4e466e-000477899c062929"
+                                        ]
+                                    }
+                                }
+                            ]
+                        },
+                        {
+                            "id": 528,
+                            "guid": "005d9401155ac5fa-000477899c06292f",
+                            "Name": "StatueGroup",
+                            "SiblingIndex": 6,
+                            "ParentComponent": {
+                                "type": "ParentComponent",
+                                "data": [
+                                    "005d94010ab5e4a2-000477899c06291f"
+                                ]
+                            },
+                            "Children": [
+                                {
+                                    "id": 529,
+                                    "guid": "005d94011df8867e-000477899c062931",
+                                    "Name": "RoomLabelImage_Statue",
+                                    "SiblingIndex": 6,
+                                    "ParentComponent": {
+                                        "type": "ParentComponent",
+                                        "data": [
+                                            "005d9401155ac5fa-000477899c06292f"
+                                        ]
+                                    }
+                                },
+                                {
+                                    "id": 530,
+                                    "guid": "005d94013753cf07-000477899c062933",
+                                    "Name": "RoomTrigger_Statue",
+                                    "SiblingIndex": 6,
+                                    "ParentComponent": {
+                                        "type": "ParentComponent",
+                                        "data": [
+                                            "005d9401155ac5fa-000477899c06292f"
+                                        ]
+                                    }
+                                }
+                            ]
+                        },
+                        {
+                            "id": 531,
+                            "guid": "005d94012d21e48a-000477899c062935",
+                            "Name": "WeaponRoomGroup",
+                            "SiblingIndex": 6,
+                            "ParentComponent": {
+                                "type": "ParentComponent",
+                                "data": [
+                                    "005d94010ab5e4a2-000477899c06291f"
+                                ]
+                            },
+                            "Children": [
+                                {
+                                    "id": 532,
+                                    "guid": "005d940113f7e939-000477899c062937",
+                                    "Name": "RoomLabelImage_WeaponRoom",
+                                    "SiblingIndex": 6,
+                                    "ParentComponent": {
+                                        "type": "ParentComponent",
+                                        "data": [
+                                            "005d94012d21e48a-000477899c062935"
+                                        ]
+                                    }
+                                },
+                                {
+                                    "id": 533,
+                                    "guid": "005d94013830733f-000477899c062939",
+                                    "Name": "RoomTrigger_WeaponRoom",
+                                    "SiblingIndex": 6,
+                                    "ParentComponent": {
+                                        "type": "ParentComponent",
+                                        "data": [
+                                            "005d94012d21e48a-000477899c062935"
+                                        ]
+                                    }
+                                }
+                            ]
+                        },
+                        {
+                            "id": 534,
+                            "guid": "005d94017bf45217-000477899c06293b",
+                            "Name": "BattleHallGroup",
+                            "SiblingIndex": 6,
+                            "ParentComponent": {
+                                "type": "ParentComponent",
+                                "data": [
+                                    "005d94010ab5e4a2-000477899c06291f"
+                                ]
+                            },
+                            "Children": [
+                                {
+                                    "id": 535,
+                                    "guid": "005d9401714bfc9d-000477899c06293d",
+                                    "Name": "RoomLabelImage_BattleHall",
+                                    "SiblingIndex": 6,
+                                    "ParentComponent": {
+                                        "type": "ParentComponent",
+                                        "data": [
+                                            "005d94017bf45217-000477899c06293b"
+                                        ]
+                                    }
+                                },
+                                {
+                                    "id": 536,
+                                    "guid": "005d94012c4da24f-000477899c06293f",
+                                    "Name": "RoomTrigger_BattleHall",
+                                    "SiblingIndex": 6,
+                                    "ParentComponent": {
+                                        "type": "ParentComponent",
+                                        "data": [
+                                            "005d94017bf45217-000477899c06293b"
+                                        ]
+                                    }
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
         }
     ],
     "layers": [

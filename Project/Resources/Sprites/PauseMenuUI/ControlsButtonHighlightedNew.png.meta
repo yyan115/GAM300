@@ -1,0 +1,14 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "005d94010cbbcf21-00047773dc00ad5b",
+        "source": "../../Resources/Sprites/PauseMenuUI/ControlsButtonHighlightedNew.png",
+        "compiled": "../../Resources/Sprites/PauseMenuUI/ControlsButtonHighlightedNew.dds"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": true,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp"
+    }
+}
