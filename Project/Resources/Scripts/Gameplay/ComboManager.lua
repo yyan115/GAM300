@@ -25,7 +25,7 @@ NOT RESPONSIBLE FOR:
 
 EVENTS PUBLISHED:
     attack_performed     { state, damage, knockback, lunge, chargePercent? }
-    dash_performed       { duration }
+    dash_performed       {}          -- PlayerMovement owns DashDuration
     combat_state_changed { state, canMove, comboChain }
     chain.down           {}
     chain.up             {}
@@ -221,10 +221,10 @@ return Component {
                 lunge       = nil,
 
                 onEnter = function(self, state, data)
+                    -- Publish with no duration: PlayerMovement owns DashDuration.
+                    -- ComboManager's job is to say "dash now", not how long it lasts.
                     if event_bus then
-                        event_bus.publish("dash_performed", {
-                            duration = self.COMBO_TREE["dash"].duration,
-                        })
+                        event_bus.publish("dash_performed", {})
                     end
                 end,
 

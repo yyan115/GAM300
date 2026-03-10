@@ -12,7 +12,7 @@ SINGLE RESPONSIBILITY: Execute movement and physics. Nothing else.
 RESPONSIBILITIES:
     - Read movement axis and jump from InputInterpreter (never raw Input)
     - Execute CharacterController movement, dash physics, jump, and lunge
-    - Respond to combat_state_changed: lock/unlock movement, bleed momentum
+    - Respond to combat_state_changed: lock/unlock movement (velocity carries naturally)
     - Respond to attack_performed: apply per-attack lunge impulse
     - Respond to dash_performed: execute the dash (duration from ComboManager)
     - Respond to chain events: apply movement constraints
@@ -42,7 +42,7 @@ EVENTS CONSUMED:
     attack_performed               → execute per-attack lunge impulse
     force_player_rotation_to_camera → snap rotation to camera forward
     force_player_rotation_to_direction → snap rotation to arbitrary direction
-    combat_state_changed           → update movement lock and momentum bleed
+    combat_state_changed           → update movement lock (velocity handles carry-over)
     dash_performed                 → begin dash (duration supplied by event)
     chain.movement_constraint      → apply chain length / drag constraint
 
@@ -114,25 +114,130 @@ return Component {
     mixins = { TransformMixin },
 
     fields = {
-        Speed                 = 1.5,
-        JumpHeight            = 1.2,
-        DamageStunDuration    = 1.0,
-        LandingDuration       = 0.5,
-        footstepInterval      = 0.35,
-        DashSpeed             = 5.0,
-        DashDuration          = 1.0,   -- fallback; ComboManager publishes the real value
-        DashCooldown          = 1.5,
-        CinematicSettleTime   = 0.8,
-        AirDashSpeedMultiplier = 1.5,
-        AirDashLift           = 2.0,
-        AttackLungeSpeed      = 3.0,   -- fallback; ComboManager publishes per-attack values
-        AttackLungeDuration   = 0.12,  -- fallback
-        playerFootstepSFX     = {},
-        playerHurtSFX         = {},
-        playerJumpSFX         = {},
-        playerLandSFX         = {},
-        playerDeadSFX         = {},
-        playerDashSFX         = {},
+        -- ════════════════════════════════════════════════════════════════
+        -- MOVEMENT
+        -- ════════════════════════════════════════════════════════════════
+
+        -- Top running speed (world units per second).
+        -- Raise this to make the player feel faster overall.
+        -- Suggested range: 2.5 (slow/deliberate) – 6.0 (fast/arcade)
+        Speed = 4.0,
+
+        -- ── Momentum rates ───────────────────────────────────────────────
+        -- These control how velocity changes, not raw speed.
+
+        -- How quickly velocity climbs toward Speed when input is held.
+        -- High = snappy start. Low = heavy, takes time to reach full speed.
+        -- Suggested range: 10 (tank) – 30 (responsive)
+        Acceleration = 22.0,
+
+        -- How quickly velocity bleeds to zero when input is released.
+        -- High = stops fast. Low = slides to a halt.
+        -- Suggested range: 8 (slidey) – 20 (firm stop)
+        Deceleration = 16.0,
+
+        -- Extra deceleration rate when input direction opposes current velocity.
+        -- Controls how quickly the player pivots into a new direction.
+        -- High = sharp pivot. Low = wide drifty arc.
+        -- Suggested range: 15 (loose) – 50 (instant pivot)
+        TurnDecel = 32.0,
+
+        -- Velocity bleed rate while a combo lock is active (player is attacking).
+        -- Intentionally lower than Deceleration so momentum carries into hits.
+        -- High = stops dead on attack. Low = slides further into the hit.
+        -- Suggested range: 3 (long carry) – 12 (short carry)
+        AttackDecay = 6.0,
+
+        -- ════════════════════════════════════════════════════════════════
+        -- DASH
+        -- ════════════════════════════════════════════════════════════════
+
+        -- Speed of the dash impulse (world units per second).
+        -- This is independent of Speed — tune it relative to how far you
+        -- want the player to travel during DashDuration.
+        -- Suggested range: 6.0 (short hop) – 15.0 (long burst)
+        DashSpeed = 9.0,
+
+        -- Fallback dash duration in seconds. The real value comes from
+        -- ComboManager's dash state duration — only used if that event
+        -- is missing. Match this to your dash animation length.
+        DashDuration = 0.25,
+
+        -- Seconds before the player can dash again after landing.
+        -- Suggested range: 0.8 (aggressive) – 2.0 (punishing)
+        DashCooldown = 1.2,
+
+        -- Speed multiplier applied to DashSpeed when dashing in the air.
+        -- > 1.0 = air dash travels further than ground dash.
+        AirDashSpeedMultiplier = 1.3,
+
+        -- Upward velocity added during an air dash (gives a slight lift).
+        -- Set to 0 to make air dashes purely horizontal.
+        AirDashLift = 1.5,
+
+        -- ── Post-dash speed burst ────────────────────────────────────────
+        -- When the dash ends, velocity is set to DashExitSpeedMult * Speed
+        -- in the dash direction, then decays back to normal via Deceleration.
+        -- Creates a snappy feeling of momentum coming out of the dash.
+        --
+        -- DashExitSpeedMult: multiplier on Speed for the burst velocity.
+        --   1.0 = no burst (exits at normal speed)
+        --   1.8 = exits at 1.8× normal speed, then decays naturally
+        -- DashExitDecay: how quickly the burst fades back to normal speed.
+        --   High = burst is very brief. Low = lingers longer.
+        --   Suggested range: 8 (quick snap back) – 20 (long afterburn)
+        DashExitSpeedMult = 1.8,
+        DashExitDecay     = 12.0,
+
+        -- ════════════════════════════════════════════════════════════════
+        -- JUMP
+        -- ════════════════════════════════════════════════════════════════
+
+        -- Vertical impulse height. Engine interprets this as jump force.
+        -- Suggested range: 0.8 (low hop) – 2.5 (high jump)
+        JumpHeight = 1.2,
+
+        -- Seconds the landing animation plays before movement resumes.
+        -- Suggested range: 0.2 (snappy) – 0.8 (weighty)
+        LandingDuration = 0.4,
+
+        -- ════════════════════════════════════════════════════════════════
+        -- COMBAT
+        -- ════════════════════════════════════════════════════════════════
+
+        -- Fallback attack lunge speed (world units per second).
+        -- The real per-attack value comes from ComboManager's lunge table.
+        -- Only used if attack_performed carries no lunge data.
+        AttackLungeSpeed = 4.0,
+
+        -- Fallback attack lunge duration in seconds. Same fallback rule as above.
+        AttackLungeDuration = 0.12,
+
+        -- ════════════════════════════════════════════════════════════════
+        -- FEEL / TIMING
+        -- ════════════════════════════════════════════════════════════════
+
+        -- Seconds the damage stun lasts before the player regains control.
+        DamageStunDuration = 1.0,
+
+        -- Seconds after a cinematic freeze event before movement fully locks.
+        -- Gives the character time to settle into position before cutting.
+        CinematicSettleTime = 0.8,
+
+        -- Seconds between footstep SFX triggers while running.
+        -- Match this to your footstep animation cycle length.
+        -- Suggested range: 0.25 (fast run) – 0.5 (slow walk)
+        footstepInterval = 0.30,
+
+        -- ════════════════════════════════════════════════════════════════
+        -- AUDIO (populate with clip GUIDs in the editor)
+        -- ════════════════════════════════════════════════════════════════
+        playerFootstepSFX = {},
+        playerHurtSFX     = {},
+        playerJumpSFX     = {},
+        playerLandSFX     = {},
+        playerDeadSFX     = {},
+        playerDashSFX     = {},
     },
 
     Awake = function(self)
@@ -154,18 +259,19 @@ return Component {
         self._chainDragTargetZ        = 0
 
         -- ── Movement lock from combat ─────────────────────────────────────
-        -- Updated by combat_state_changed event; true by default so movement
-        -- works before any combat event has been received.
         self._playerCanMove = true
 
-        -- ── Momentum bleed ────────────────────────────────────────────────
-        -- On attack entry, carry a fraction of running velocity for a short
-        -- window so the transition feels grounded rather than a dead stop.
-        self._momentumX        = 0
-        self._momentumZ        = 0
-        self._momentumTimer    = 0
-        self._MOMENTUM_DURATION = 0.12  -- seconds
-        self._MOMENTUM_SCALE    = 0.6   -- fraction of running speed to carry
+        -- ── Persistent velocity (momentum-based movement) ─────────────────
+        -- This is the single source of truth for how fast the player is moving.
+        -- Acceleration / deceleration / direction-change rates operate on this
+        -- each frame rather than writing speed directly to the CharacterController.
+        -- On attack entry the velocity is NOT zeroed — it decays at AttackDecay
+        -- so momentum carries naturally into the first frames of a combo.
+        self._velX = 0
+        self._velZ = 0
+
+        -- Post-dash speed burst: set on dash end, decays each frame
+        self._dashExitBoost = 0.0   -- current burst multiplier (0 = inactive)
 
         -- ── Lunge state (per-attack values from attack_performed event) ────
         self._lungeTimer  = 0
@@ -285,23 +391,13 @@ return Component {
                 pcall(self.SetRotation, self, targetW, targetX, targetY, targetZ)
             end)
 
-            -- ── Combat state → movement lock + momentum bleed ─────────────
-            -- When an attack begins, capture running velocity and bleed it
-            -- out over _MOMENTUM_DURATION so the transition feels grounded.
+            -- ── Combat state → movement lock ─────────────────────────────
+            -- canMove from ComboManager tells us whether this state allows
+            -- movement. Velocity (_velX/_velZ) is NOT zeroed here — it
+            -- decays naturally at AttackDecay so momentum carries into hits.
             self._combatStateSub = event_bus.subscribe("combat_state_changed", function(data)
                 if not data then return end
                 self._playerCanMove = data.canMove ~= false
-
-                if data.state ~= "idle" and data.state ~= "dash" then
-                    -- Capture current facing velocity as bleed momentum
-                    local speed = self.Speed or 1.5
-                    self._momentumX     = (self._facingX or 0) * speed * self._MOMENTUM_SCALE
-                    self._momentumZ     = (self._facingZ or 0) * speed * self._MOMENTUM_SCALE
-                    self._momentumTimer = self._MOMENTUM_DURATION
-                else
-                    -- Returning to idle or dashing: clear bleed
-                    self._momentumTimer = 0
-                end
             end)
 
             -- Snap rotation to camera forward (skill / cutscene trigger)
@@ -341,16 +437,14 @@ return Component {
                 pcall(self.SetRotation, self, targetW, targetX, targetY, targetZ)
             end)
 
-            -- ── Dash ──────────────────────────────────────────────────────
-            -- ComboManager publishes dash_performed with duration when it
-            -- decides a dash should happen. PlayerMovement just executes it.
-            -- Duration comes from the event so there is a single source of truth.
+            -- ── Dash ──────────────────────────────────────────────────────────
+            -- ComboManager signals that a dash should happen.
+            -- DashDuration is owned entirely by this script — ComboManager
+            -- has no opinion on how long the dash lasts.
             self._dashRequested = false
-            self._dashDuration  = self.DashDuration  -- will be overwritten by event
-            self._dashPerformedSub = event_bus.subscribe("dash_performed", function(data)
+            self._dashPerformedSub = event_bus.subscribe("dash_performed", function()
                 self._dashRequested = true
-                self._dashDuration  = (data and data.duration) or self.DashDuration
-                print("[PlayerMovement] dash_performed: duration=" .. tostring(self._dashDuration))
+                print("[PlayerMovement] dash_performed received")
             end)
 
             -- ── Chain movement constraint ─────────────────────────────────
@@ -435,7 +529,7 @@ return Component {
 
         -- Reset movement lock and momentum on respawn
         self._playerCanMove = true
-        self._momentumTimer = 0
+        self._velX, self._velZ = 0, 0
 
         -- Reset chain constraint
         self._chainConstraintRatio    = 0
@@ -559,17 +653,19 @@ return Component {
         end
 
         -- ── Combat movement lock ──────────────────────────────────────────
-        -- _G.player_is_attacking is set by ComboManager.
-        -- _G.player_can_move refines it: even during an attack, canMove=true
-        -- states (future design space) allow the player to keep moving.
-        -- Momentum bleed always runs to carry entry velocity into the lock.
+        -- While attacking (and this state doesn't allow movement), bleed the
+        -- persistent velocity using AttackDecay — much slower than Deceleration
+        -- so the player visibly carries momentum into the first hit, then stops.
         if _G.player_is_attacking and not _G.player_can_move then
-            -- Momentum bleed: decay into the attack so entry doesn't feel abrupt
-            if self._momentumTimer and self._momentumTimer > 0 then
-                self._momentumTimer = self._momentumTimer - dt
-                local t = math.max(0, self._momentumTimer / self._MOMENTUM_DURATION)
-                CharacterController.Move(self._controller,
-                    self._momentumX * t, 0, self._momentumZ * t)
+            local decay = 1.0 - math.min(self.AttackDecay * dt, 1.0)
+            self._velX = self._velX * decay
+            self._velZ = self._velZ * decay
+
+            local velMag = math.sqrt(self._velX * self._velX + self._velZ * self._velZ)
+            if velMag > 0.01 then
+                CharacterController.Move(self._controller, self._velX, 0, self._velZ)
+            else
+                self._velX, self._velZ = 0, 0
             end
 
             self._animator:SetBool("IsRunning", false)
@@ -655,7 +751,6 @@ return Component {
 
         -- ── Dash execution ────────────────────────────────────────────────
         -- ComboManager decides a dash happens; this block executes the physics.
-        -- self._dashDuration is set by the dash_performed event so ComboManager's
         -- combo tree is the single source of truth for dash timing.
         if not self._isDashing
             and self._dashRequested
@@ -666,7 +761,7 @@ return Component {
         then
             self._dashRequested = false
             self._isDashing     = true
-            self._dashTimer     = self._dashDuration  -- from dash_performed event
+            self._dashTimer     = self.DashDuration   -- this script owns the duration
             _G.player_is_dashing = true
             print("[PlayerMovement] Dash started (duration=" .. tostring(self._dashTimer) .. ")")
             self._wasDashingInAir = not isGrounded
@@ -709,17 +804,25 @@ return Component {
             self._dashTimer = self._dashTimer - dt
 
             if self._dashTimer <= 0 then
+                -- Dash finished: inject burst velocity. Decays via DashExitDecay.
                 self._isDashing          = false
                 _G.player_is_dashing     = false
                 self._wasDashingInAir    = false
                 self._animator:SetBool("IsDashing", false)
                 self._dashCooldownTimer  = self.DashCooldown
 
+                local burstSpeed = self.Speed * (self.DashExitSpeedMult or 1.8)
+                self._velX = self._dashDirX * burstSpeed
+                self._velZ = self._dashDirZ * burstSpeed
+                self._dashExitBoost = 1.0
+
                 if event_bus and event_bus.publish then
                     event_bus.publish("dash_ended", { cooldown = self.DashCooldown })
                 end
                 print("[PlayerMovement] Dash ended")
             else
+                -- Dash active: apply impulse and sync position.
+                -- No early return — jump input is still reachable below.
                 local speed = self.DashSpeed
                 local liftY = 0
                 if not isGrounded or self._wasDashingInAir then
@@ -728,27 +831,29 @@ return Component {
                 end
                 CharacterController.Move(self._controller,
                     self._dashDirX * speed, liftY, self._dashDirZ * speed)
-            end
 
-            if not isGrounded then self._wasDashingInAir = true end
+                if not isGrounded then self._wasDashingInAir = true end
 
-            if self.SetRotation then
-                local targetW, targetX, targetY, targetZ = directionToQuaternion(self._dashDirX, self._dashDirZ)
-                self._currentRotW, self._currentRotX, self._currentRotY, self._currentRotZ =
-                    targetW, targetX, targetY, targetZ
-                pcall(self.SetRotation, self, targetW, targetX, targetY, targetZ)
-            end
+                if self.SetRotation then
+                    local targetW, targetX, targetY, targetZ = directionToQuaternion(self._dashDirX, self._dashDirZ)
+                    self._currentRotW, self._currentRotX, self._currentRotY, self._currentRotZ =
+                        targetW, targetX, targetY, targetZ
+                    pcall(self.SetRotation, self, targetW, targetX, targetY, targetZ)
+                end
 
-            local position = CharacterController.GetPosition(self._controller)
-            if position then
-                self:SetPosition(position.x, position.y, position.z)
-                if event_bus and event_bus.publish then event_bus.publish("player_position", position) end
+                local position = CharacterController.GetPosition(self._controller)
+                if position then
+                    self:SetPosition(position.x, position.y, position.z)
+                    if event_bus and event_bus.publish then event_bus.publish("player_position", position) end
+                end
+
+                -- Dash still active: skip movement + animation this frame.
             end
-            return
         end
 
+        if not self._isDashing then
+
         -- ── Jump ──────────────────────────────────────────────────────────
-        -- Read from InputInterpreter — no direct Input access.
         local interp = _G.InputInterpreter
         if not self._isLanding and not self._freezePending
             and interp and interp:IsJumpJustPressed() and isGrounded
@@ -759,34 +864,60 @@ return Component {
             playRandomSFX(self._audio, self.playerJumpSFX)
         end
 
-        -- ── Apply movement ─────────────────────────────────────────────────
-        if not isJumping and isMoving then
-            local mx, mz = moveX * self.Speed, moveZ * self.Speed
+        -- ── Momentum-based velocity update ────────────────────────────────
+        if not isJumping then
+            if isMoving then
+                -- Player takes directional control — cancel the dash burst flag
+                -- so Acceleration governs from here rather than DashExitDecay.
+                self._dashExitBoost = 0
 
-            -- Resist the outward component against chain tension;
-            -- lateral / inward movement is unaffected.
-            local dot = mx * tensionRadialX + mz * tensionRadialZ
-            if dot > 0 then
-                mx = mx - tensionRadialX * dot * (1.0 - tensionScale)
-                mz = mz - tensionRadialZ * dot * (1.0 - tensionScale)
-            end
-            CharacterController.Move(self._controller, mx, 0, mz)
-        end
+                local targetX = moveX * self.Speed
+                local targetZ = moveZ * self.Speed
 
-        -- Rolling momentum (carry previous direction on landing without input)
-        if self._isRolling and not isMoving then
-            local yawRad = math.rad(cameraYaw)
-            local sinYaw = math.sin(yawRad)
-            local cosYaw = math.cos(yawRad)
-            moveX = self._prevRawZ * (-sinYaw) - self._prevRawX * cosYaw
-            moveZ = self._prevRawZ * (-cosYaw) + self._prevRawX * sinYaw
-            local mx, mz = moveX * self.Speed, moveZ * self.Speed
-            local dot = mx * tensionRadialX + mz * tensionRadialZ
-            if dot > 0 then
-                mx = mx - tensionRadialX * dot * (1.0 - tensionScale)
-                mz = mz - tensionRadialZ * dot * (1.0 - tensionScale)
+                -- Detect direction change: dot < 0 means input opposes current velocity.
+                -- Apply TurnDecel in that case for a quick pivot without instant snap.
+                local dot = self._velX * targetX + self._velZ * targetZ
+                local rate = (dot < 0) and self.TurnDecel or self.Acceleration
+                local t = math.min(rate * dt, 1.0)
+
+                self._velX = self._velX + (targetX - self._velX) * t
+                self._velZ = self._velZ + (targetZ - self._velZ) * t
+            else
+                -- No input: decelerate toward zero.
+                -- If a dash-exit burst is active, use DashExitDecay (slower)
+                -- so the burst lingers briefly before normal decel takes over.
+                local rate
+                if self._dashExitBoost > 0 then
+                    rate = self.DashExitDecay or 12.0
+                    -- Clear the boost flag once velocity drops near normal Speed
+                    local velMag = math.sqrt(self._velX * self._velX + self._velZ * self._velZ)
+                    if velMag <= self.Speed * 1.05 then
+                        self._dashExitBoost = 0
+                    end
+                else
+                    rate = self.Deceleration
+                end
+                local decay = 1.0 - math.min(rate * dt, 1.0)
+                self._velX = self._velX * decay
+                self._velZ = self._velZ * decay
+                if math.sqrt(self._velX * self._velX + self._velZ * self._velZ) < 0.001 then
+                    self._velX, self._velZ = 0, 0
+                    self._dashExitBoost = 0
+                end
             end
-            CharacterController.Move(self._controller, mx, 0, mz)
+
+            -- Apply chain tension: resist outward component, leave lateral/inward free
+            local mx, mz = self._velX, self._velZ
+            local tensionDot = mx * tensionRadialX + mz * tensionRadialZ
+            if tensionDot > 0 then
+                mx = mx - tensionRadialX * tensionDot * (1.0 - tensionScale)
+                mz = mz - tensionRadialZ * tensionDot * (1.0 - tensionScale)
+            end
+
+            local velMag = math.sqrt(mx * mx + mz * mz)
+            if velMag > 0.001 then
+                CharacterController.Move(self._controller, mx, 0, mz)
+            end
         end
 
         -- ── Animation ─────────────────────────────────────────────────────
@@ -813,8 +944,13 @@ return Component {
                 self._animator:SetBool("IsRunning", true)
                 self._isRunning = true
             elseif not isMoving and self._isRunning then
-                self._animator:SetBool("IsRunning", false)
-                self._isRunning = false
+                -- Only cut the run anim when velocity has actually bled off,
+                -- not the instant the stick is released.
+                local velMag = math.sqrt(self._velX * self._velX + self._velZ * self._velZ)
+                if velMag < 0.05 then
+                    self._animator:SetBool("IsRunning", false)
+                    self._isRunning = false
+                end
             end
         end
 
@@ -835,6 +971,8 @@ return Component {
         self._wasRunning = self._isRunning
 
         -- ── Rotation ──────────────────────────────────────────────────────
+        -- Rotate toward input direction while input is held.
+        -- While coasting (no input but still moving), hold the last facing.
         if isMoving then
             local mag = math.sqrt(moveX * moveX + moveZ * moveZ)
             self._facingX = moveX / mag
@@ -851,6 +989,8 @@ return Component {
                 newW, newX, newY, newZ
             pcall(self.SetRotation, self, newW, newX, newY, newZ)
         end
+
+        end -- if not self._isDashing
 
         -- ── Position sync ─────────────────────────────────────────────────
         local position = CharacterController.GetPosition(self._controller)
@@ -880,7 +1020,9 @@ return Component {
 
         self._frozenBycinematic       = false
         self._playerCanMove           = true
-        self._momentumTimer           = 0
+        self._velX                    = 0
+        self._velZ                    = 0
+        self._dashExitBoost           = 0
         self._chainConstraintRatio    = 0
         self._chainConstraintExceeded = false
         self._chainDrag               = false
