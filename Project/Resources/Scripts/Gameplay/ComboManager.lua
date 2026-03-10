@@ -1,40 +1,52 @@
 --[[
 ================================================================================
-COMBO MANAGER - DATA-DRIVEN COMBAT SYSTEM
+COMBO MANAGER
 ================================================================================
 PURPOSE:
-    Manages all combat states, combos, and attack execution for fighting game.
-    Uses data-driven combo tree structure for easy addition of new combos.
+    Reads processed input from InputInterpreter and decides what combat action
+    to execute. Manages the combo state machine and publishes decisions for
+    PlayerMovement and the chain weapon system to act on.
+
+SINGLE RESPONSIBILITY: Decide combat actions. Nothing else.
 
 RESPONSIBILITIES:
-    - Execute attacks based on player input and current combo state
-    - Manage combo chains and branching paths
-    - Handle attack timing windows and cancels
-    - Update animator parameters (not PlayClip)
-    - Broadcast damage events
-    - Support diverse combo types (tap, hold, charge, special inputs)
+    - Read buffered input from InputInterpreter each frame
+    - Run the combo state machine (transitions, windows, input queuing)
+    - Publish combat decisions via event_bus
+    - Publish chain weapon events (chain.down / chain.up / chain.hold) with
+      full context awareness (throwable hooked, dashing, weapon equipped)
+    - Set global combat flags (_G.player_is_attacking, _G.player_can_move)
+    - Drive combat-specific animator parameters (ComboStep, IsAttacking, etc.)
 
-ADDING NEW COMBOS:
-    Modify the COMBO_TREE table in Awake(). Each node defines:
-    - id: Unique state identifier
-    - animParam: Integer value for ComboStep animator parameter
-    - duration: Animation length (seconds)
-    - damage: Base damage value
-    - canMove: Whether player can move during this state
-    - comboWindow: Time window to input next attack (nil = no combo)
-    - onEnter: Optional callback when state begins
-    - onUpdate: Optional callback during state (e.g., charging)
-    - onExit: Optional callback when state ends
-    - transitions: Table of {inputType → nextStateId} for combo paths
-    
-ANIMATOR PARAMETERS REQUIRED:
-    - Integer: ComboStep (0 = idle, 1+ = attack states)
-    - Bool: isAttacking
-    - Bool: isHeavyCharging
-    - Trigger: Attack
+NOT RESPONSIBLE FOR:
+    - Reading raw engine input (owned by InputInterpreter)
+    - Moving the CharacterController (owned by PlayerMovement)
+    - Physics execution of any kind (owned by PlayerMovement)
+
+EVENTS PUBLISHED:
+    attack_performed     { state, damage, knockback, lunge, chargePercent? }
+    dash_performed       { duration }
+    combat_state_changed { state, canMove, comboChain }
+    chain.down           {}
+    chain.up             {}
+    chain.hold           {}
+
+COMBO TREE NODE FIELDS:
+    id          : Unique state identifier string
+    animParam   : Integer → ComboStep animator parameter
+    duration    : Animation length in seconds (999 = indefinite)
+    damage      : Base damage value
+    knockback   : Knockback impulse magnitude
+    canMove     : Whether PlayerMovement may move during this state
+    lunge       : { speed, duration } impulse injected into PlayerMovement on entry
+    comboWindow : Seconds before end during which next input is accepted (nil = no chain)
+    onEnter     : function(self, stateObj, data)  — called on state entry
+    onUpdate    : function(self, stateObj, dt)    — overrides default logic if set
+    onExit      : function(self, stateObj, data)  — called on state exit
+    transitions : { inputType → nextStateId }
 
 AUTHOR: Soh Wei Jie
-VERSION: 3.0 (Animator Parameter-Driven)
+VERSION: 4.0
 ================================================================================
 --]]
 
@@ -45,262 +57,247 @@ local event_bus = _G.event_bus
 
 return Component {
     fields = {
-        -- Global combo settings (editable in editor)
-        DefaultComboWindow = 0.5,    -- Default time to continue combo
-        HeavyChargeTime = 0.8,       -- Time to fully charge heavy
-        MaxComboAnimSpeed = 2.0,     -- Max animation speed when chaining quickly (multiplied on top of base)
-
-        -- SFX clip arrays (populate in editor with audio GUIDs)
-        playerSlashSFX = {},      -- FastSlash (whoosh on swing)
-        playerChainSFX = {},      -- FastSlashHitonFlesh (impact on hit)
+        DefaultComboWindow = 0.5,
+        HeavyChargeTime    = 0.8,
+        MaxComboAnimSpeed  = 2.0,
+        -- No SFX fields. Audio is owned by CombatAudio, which reacts to
+        -- attack_performed events. ComboManager publishes; it does not play sounds.
     },
 
     Awake = function(self)
-        -- ===============================
+        -- ══════════════════════════════════════════════════════════════════
         -- COMBO TREE DEFINITION
-        -- ===============================
-        
+        -- Each state owns its lunge data so PlayerMovement can execute it
+        -- without hardcoding anything. Change a value here and every system
+        -- that reacts to attack_performed automatically gets the new data.
+        -- ══════════════════════════════════════════════════════════════════
         self.COMBO_TREE = {
-            -- IDLE STATE (starting point)
+
             idle = {
-                id = "idle",
-                animParam = 0,
-                duration = 0,
-                damage = 0,
-                canMove = true,
-                comboWindow = nil,  -- Always ready for input
+                id          = "idle",
+                animParam   = 0,
+                duration    = 0,
+                damage      = 0,
+                canMove     = true,
+                comboWindow = nil,
+                lunge       = nil,
                 transitions = {
-                    attack = "light_1",
+                    attack      = "light_1",
                     attack_hold = "heavy_charge",
-                    chain = "chain_attack",
-                    dash = "dash"
-                }
+                    chain       = "chain_attack",
+                    dash        = "dash",
+                },
             },
 
-            -- LIGHT ATTACK CHAIN (tap-tap-tap)
+            -- ── Light combo ───────────────────────────────────────────────
             light_1 = {
-                id = "light_1",
-                animParam = 1,
-                duration = 1.0,
-                damage = 10,
-                knockback = 20.0,
-                canMove = false,
+                id          = "light_1",
+                animParam   = 1,
+                duration    = 1.0,
+                damage      = 10,
+                knockback   = 20.0,
+                canMove     = false,
                 comboWindow = 0.2,
+                lunge       = { speed = 3.0, duration = 0.10 },  -- quick jab
                 transitions = {
                     attack = "light_2",
-                    chain = "chain_attack"  -- Can cancel into chain
-                }
+                    chain  = "chain_attack",
+                },
             },
 
             light_2 = {
-                id = "light_2",
-                animParam = 2,
-                duration = 1.0,
-                damage = 12,
-                knockback = 20.0,
-                canMove = false,
+                id          = "light_2",
+                animParam   = 2,
+                duration    = 1.0,
+                damage      = 12,
+                knockback   = 20.0,
+                canMove     = false,
                 comboWindow = 0.2,
+                lunge       = { speed = 3.5, duration = 0.11 },  -- slightly more committed
                 transitions = {
                     attack = "light_3",
-                    chain = "chain_attack"
-                }
+                    chain  = "chain_attack",
+                },
             },
 
             light_3 = {
-                id = "light_3",
-                animParam = 3,
-                duration = 0.8,
-                damage = 20,
-                knockback = 200.0,
-                canMove = false,
-                comboWindow = nil,  -- Finisher - no combo continuation
-                transitions = {}
+                id          = "light_3",
+                animParam   = 3,
+                duration    = 0.8,
+                damage      = 20,
+                knockback   = 200.0,
+                canMove     = false,
+                comboWindow = nil,
+                lunge       = { speed = 5.0, duration = 0.18 },  -- finisher shove
+                transitions = {},
             },
 
-            -- HEAVY ATTACK (hold-release)
+            -- ── Heavy attack ──────────────────────────────────────────────
             heavy_charge = {
-                id = "heavy_charge",
-                animParam = 10,
-                duration = 999,  -- Indefinite until release
-                damage = 0,
-                canMove = false,
+                id          = "heavy_charge",
+                animParam   = 10,
+                duration    = 999,  -- indefinite until release or full charge
+                damage      = 0,
+                canMove     = false,
                 comboWindow = nil,
-                
-                -- Custom charging logic
+                lunge       = nil,
+
                 onUpdate = function(self, state, dt)
                     local input = self._inputInterpreter
-                    local chargeTime = state.timer
-                    
+
                     -- Auto-release at full charge
-                    if chargeTime >= self.HeavyChargeTime then
+                    if state.timer >= self.HeavyChargeTime then
                         self:_transitionTo("heavy_release", { chargePercent = 1.0 })
                         return
                     end
-                    
-                    -- Check for manual release
+
+                    -- Manual release
                     if input:IsAttackJustReleased() then
-                        local chargePercent = math.min(chargeTime / self.HeavyChargeTime, 1.0)
-                        self:_transitionTo("heavy_release", { chargePercent = chargePercent })
+                        local pct = math.min(state.timer / self.HeavyChargeTime, 1.0)
+                        self:_transitionTo("heavy_release", { chargePercent = pct })
                     end
                 end,
-                
-                transitions = {}  -- Handled by onUpdate
+
+                transitions = {},
             },
 
             heavy_release = {
-                id = "heavy_release",
-                animParam = 11,
-                duration = 0.8,
-                damage = 30,  -- Will be multiplied by chargePercent
-                knockback = 20.0,
-                canMove = false,
+                id          = "heavy_release",
+                animParam   = 11,
+                duration    = 0.8,
+                damage      = 30,
+                knockback   = 20.0,
+                canMove     = false,
                 comboWindow = nil,
-                
-                -- Apply charge multiplier to damage
+                lunge       = { speed = 6.0, duration = 0.22 },  -- heavy shove
+
                 onEnter = function(self, state, data)
                     data = data or {}
                     local chargePercent = data.chargePercent or 0.5
                     state.actualDamage = state.damage * (1.0 + chargePercent)
-                    
-                    -- Broadcast with charge info
+
                     if event_bus then
                         event_bus.publish("attack_performed", {
-                            state = state.id,
-                            damage = state.actualDamage,
-                            chargePercent = chargePercent
+                            state         = state.id,
+                            damage        = state.actualDamage,
+                            knockback     = self.COMBO_TREE["heavy_release"].knockback or 0,
+                            chargePercent = chargePercent,
+                            lunge         = self.COMBO_TREE["heavy_release"].lunge,
                         })
                     end
-                    
-                    print("[ComboManager] Heavy released: " .. (chargePercent * 100) .. "% charge")
+                    print("[ComboManager] Heavy released: " .. math.floor(chargePercent * 100) .. "% charge")
                 end,
-                
-                transitions = {}
+
+                transitions = {},
             },
 
-            -- CHAIN ATTACK
+            -- ── Chain attack ──────────────────────────────────────────────
             chain_attack = {
-                id = "chain_attack",
-                animParam = 20,
-                duration = 0.5,
-                damage = 25,
-                knockback = 1.0,
-                canMove = false,
+                id          = "chain_attack",
+                animParam   = 20,
+                duration    = 0.5,
+                damage      = 25,
+                knockback   = 1.0,
+                canMove     = false,
                 comboWindow = 0.5,
+                lunge       = { speed = 2.0, duration = 0.08 },  -- subtle pull
                 transitions = {
-                    attack = "light_1"  -- Chain can combo into lights
-                }
+                    attack = "light_1",
+                },
             },
 
-            -- DASH
+            -- ── Dash ──────────────────────────────────────────────────────
+            -- ComboManager decides a dash should happen and publishes the
+            -- event. PlayerMovement owns the physics of actually dashing.
+            -- The duration is published so PlayerMovement has a single source
+            -- of truth — it does not maintain its own separate dash duration.
             dash = {
-                id = "dash",
-                animParam = 30,
-                duration = 1.0,
-                damage = 0,
-                canMove = false,
+                id          = "dash",
+                animParam   = 30,
+                duration    = 1.0,
+                damage      = 0,
+                canMove     = false,
                 comboWindow = nil,
+                lunge       = nil,
 
                 onEnter = function(self, state, data)
                     if event_bus then
-                        event_bus.publish("dash_performed", {})
+                        event_bus.publish("dash_performed", {
+                            duration = self.COMBO_TREE["dash"].duration,
+                        })
                     end
                 end,
 
-                transitions = {}
+                transitions = {},
             },
         }
 
-        -- ===============================
-        -- SPECIAL INPUT SEQUENCES
-        -- ===============================
-        self.SPECIAL_INPUTS = {
-            -- Example: Double-tap attack within 10 frames = special move
-        }
-
-        -- ===============================
-        -- RUNTIME STATE
-        -- ===============================
+        -- ── Runtime state ─────────────────────────────────────────────────
         self._inputInterpreter = nil
-        self._animator = nil
-        self._playerObj = nil
-        
-        self._currentStateId = "idle"
-        self._currentStateData = self.COMBO_TREE["idle"]
-        self._stateTimer = 0
-        self._comboChain = {}  -- Track combo sequence for UI/scoring
+        self._animator         = nil
+        self._playerAudio      = nil
 
-        -- Throwable hook tracking: true while chain endpoint is hooked to a Throwable.
-        -- When true, chain input is routed to throw/swing logic instead of chain_attack.
-        self._chainHasThrowable = false
+        self._currentStateId   = "idle"
+        self._currentStateData = self.COMBO_TREE["idle"]
+        self._stateTimer       = 0
+        self._queuedCombo      = nil
+        self._comboChain       = {}
+
+        -- Chain weapon awareness: while a Throwable is hooked the chain input
+        -- must NOT route into chain_attack — ChainBootstrap owns that decision.
+        self._chainHasThrowable  = false
+        self._chainHoldPublished = false
     end,
 
     Start = function(self)
-        -- Find Player Entity ID
         local playerEntityId = Engine.GetEntityByName("Player")
         if not playerEntityId then
             print("[ComboManager] ERROR: Player entity not found!")
             return
         end
+        self._playerEntityId = playerEntityId
         print("[ComboManager] Player entity found (ID: " .. tostring(playerEntityId) .. ")")
 
-        -- Store entity ID for later use if needed
-        self._playerEntityId = playerEntityId
-
-        -- Get animator from Player using entity ID
         self._animator = Engine.FindAnimatorByName("Player")
         if not self._animator then
             print("[ComboManager] ERROR: Player AnimationComponent not found!")
             return
         end
-        print("[ComboManager] Player AnimationComponent found")
 
-        -- Get InputInterpreter from global singleton
         self._inputInterpreter = _G.InputInterpreter
         if not self._inputInterpreter then
             print("[ComboManager] ERROR: InputInterpreter not found!")
             return
         end
-        print("[ComboManager] InputInterpreter found")
 
-        -- Get AudioComponent from Player for attack SFX
-        self._playerAudio = GetComponent(self._playerEntityId, "AudioComponent")
-        if not self._playerAudio then
-            print("[ComboManager] WARNING: Player AudioComponent not found")
-        end
+        -- Note: no AudioComponent needed here. SFX is owned by CombatAudio,
+        -- which subscribes to attack_performed and plays sounds independently.
 
-        -- Initialize animator parameters using the bound methods
-        self._animator:SetInt("ComboStep", 0)        -- Note: SetInt, not SetInteger
+        self._animator:SetInt("ComboStep", 0)
         self._animator:SetBool("IsAttacking", false)
         self._animator:SetBool("IsHeavyCharging", false)
 
-        -- ── Throwable awareness ──────────────────────────────────────────────
-        -- Track whether the chain endpoint is currently hooked to a Throwable.
-        -- While true, chain input must NOT become chain_attack — ChainBootstrap
-        -- owns that input to decide throw vs swing.
+        -- ── Chain weapon awareness subscriptions ──────────────────────────
         if _G.event_bus and _G.event_bus.subscribe then
             self._subHitEntity = _G.event_bus.subscribe("chain.endpoint_hit_entity", function(payload)
-                if not payload then return end
-                if payload.isThrowable then
+                if payload and payload.isThrowable then
                     self._chainHasThrowable = true
                     print("[ComboManager] Throwable hooked — chain_attack blocked")
                 end
             end)
-            -- Clear on retract (chain fully pulled back)
-            self._subRetracted = _G.event_bus.subscribe("chain.endpoint_retracted", function(payload)
+            self._subRetracted = _G.event_bus.subscribe("chain.endpoint_retracted", function()
                 if self._chainHasThrowable then
                     self._chainHasThrowable = false
                     print("[ComboManager] Throwable released — chain_attack unblocked")
                 end
             end)
-            -- Clear immediately when throw is fired (chain still retracting)
-            self._subThrowFired = _G.event_bus.subscribe("chain.throwable_throw", function(payload)
+            self._subThrowFired = _G.event_bus.subscribe("chain.throwable_throw", function()
                 if self._chainHasThrowable then
                     self._chainHasThrowable = false
                     print("[ComboManager] Throwable thrown — chain_attack unblocked")
                 end
             end)
         end
-        -- ────────────────────────────────────────────────────────────────────
 
         print("[ComboManager] Initialized successfully")
     end,
@@ -308,9 +305,40 @@ return Component {
     Update = function(self, dt)
         if not self._inputInterpreter or not self._animator or Time.IsPaused() then return end
 
-        -- Block all combo input during dash
+        local input = self._inputInterpreter
+
+        -- ══════════════════════════════════════════════════════════════════
+        -- CHAIN WEAPON EVENTS
+        -- InputInterpreter knows that chain was pressed/released/held.
+        -- ComboManager decides what that means in context and publishes
+        -- the appropriate event for the chain weapon system to act on.
+        -- ══════════════════════════════════════════════════════════════════
+        if _G.playerHasWeapon and not _G.player_is_dashing and event_bus then
+            if input:IsChainJustPressed() then
+                event_bus.publish("chain.down", {})
+            end
+
+            if input:IsChainJustReleased() then
+                event_bus.publish("chain.up", {})
+            end
+
+            -- Publish hold once when threshold is crossed, not every frame
+            if input:IsChainHeld() then
+                if not self._chainHoldPublished then
+                    event_bus.publish("chain.hold", {})
+                    self._chainHoldPublished = true
+                end
+            else
+                self._chainHoldPublished = false
+            end
+        end
+
+        -- ══════════════════════════════════════════════════════════════════
+        -- DASH LOCK
+        -- During a dash the combo state machine is paused. Clear any queued
+        -- input so it doesn't fire the instant the dash ends.
+        -- ══════════════════════════════════════════════════════════════════
         if _G.player_is_dashing then
-            -- Also clear any queued combo to prevent it firing after dash ends
             if self._queuedCombo then
                 print("[ComboManager] DASH ACTIVE: clearing queued combo '" .. tostring(self._queuedCombo.stateId) .. "'")
                 self._queuedCombo = nil
@@ -318,39 +346,39 @@ return Component {
             return
         end
 
-        -- Advance logical timer at the same rate as the animation playback.
-        -- When boosted (e.g. speed=4.0), timer runs 4x faster so the combo
-        -- window and auto-transition fire at the right moment instead of lagging behind.
+        -- ══════════════════════════════════════════════════════════════════
+        -- ADVANCE STATE TIMER
+        -- Scaled by animation playback speed so the combo window and
+        -- auto-transition fire at the correct moment even when boosted.
+        -- ══════════════════════════════════════════════════════════════════
         local animSpeed = self._animator.speed or 1.0
         self._stateTimer = self._stateTimer + dt * animSpeed
         local state = self._currentStateData
-        
-        -- Create state object for callbacks
+
         local stateObj = {
-            id = state.id,
-            timer = self._stateTimer,
-            damage = state.damage,
-            actualDamage = state.actualDamage or state.damage
+            id           = state.id,
+            timer        = self._stateTimer,
+            damage       = state.damage,
+            actualDamage = state.actualDamage or state.damage,
         }
 
-        -- ===============================
+        -- ══════════════════════════════════════════════════════════════════
         -- CUSTOM STATE LOGIC (onUpdate)
-        -- ===============================
+        -- If a state defines onUpdate it takes full control for this tick.
+        -- ══════════════════════════════════════════════════════════════════
         if state.onUpdate then
             state.onUpdate(self, stateObj, dt)
-            return  -- Custom logic takes full control
+            return
         end
 
-        -- ===============================
-        -- CHECK FOR TRANSITIONS (queued inputs, combo window at animation end)
-        -- ===============================
-        local input = self._inputInterpreter
-
-        -- Helper: compute time remaining using animator playback info when available, otherwise fallback to state.duration
+        -- ══════════════════════════════════════════════════════════════════
+        -- COMPUTE TIME REMAINING
+        -- Prefer animator's own playback position; fall back to state.duration.
+        -- ══════════════════════════════════════════════════════════════════
         local timeRemaining = nil
-        if self._animator and self._animator.GetCurrentStateLength and self._animator.GetCurrentStateTime then
+        if self._animator.GetCurrentStateLength and self._animator.GetCurrentStateTime then
             local length = self._animator:GetCurrentStateLength()
-            local time = self._animator:GetCurrentStateTime()
+            local time   = self._animator:GetCurrentStateTime()
             if length and time then
                 timeRemaining = math.max(0, length - time)
             end
@@ -359,22 +387,26 @@ return Component {
             timeRemaining = state.duration - self._stateTimer
         end
 
-        -- Combo window for this state (real-time seconds). nil means "no continuation allowed".
-        -- Scale by animSpeed so the real-time window stays constant regardless of playback rate.
+        -- Combo window scaled to real-time (constant regardless of anim speed)
         local window = state.comboWindow
         if window ~= nil then
-            window = (window or self.DefaultComboWindow) * animSpeed
+            window = window * animSpeed
         end
 
-        -- If we have a queued combo input, try to execute it once the window opens (or immediately if idle)
+        -- ══════════════════════════════════════════════════════════════════
+        -- EXECUTE QUEUED COMBO (fires when the window opens or on idle)
+        -- ══════════════════════════════════════════════════════════════════
         if self._queuedCombo then
-            if state.id == "idle" or (timeRemaining and window and timeRemaining <= window) then
+            local isWindowOpen = state.id == "idle"
+                or (timeRemaining and window and timeRemaining <= window)
+
+            if isWindowOpen then
                 local queued = self._queuedCombo
                 self._queuedCombo = nil
                 self:_transitionTo(queued.stateId, queued.data)
                 return
             else
-                -- Optional: expire stale queued inputs (avoid forever queue). Lifetime = 1.0s by default.
+                -- Expire stale queued inputs to prevent forever-queue
                 local maxQueueLife = self.maxQueuedInputLife or 1.0
                 if (self._stateTimer - (self._queuedCombo.requestedAt or 0)) > maxQueueLife then
                     self._queuedCombo = nil
@@ -382,100 +414,104 @@ return Component {
             end
         end
 
-        -- Read buffered inputs (priority: attack > chain > dash)
+        -- ══════════════════════════════════════════════════════════════════
+        -- READ BUFFERED INPUTS → CANDIDATE TRANSITION
+        -- Priority: attack > chain > dash
+        -- ══════════════════════════════════════════════════════════════════
         local candidateStateId = nil
-        local candidateData = nil
+        local candidateData    = nil
 
         if input:HasBufferedAttack() then
-            print("[ComboManager] HasBufferedAttack=true, player_is_dashing=" .. tostring(_G.player_is_dashing))
+            -- Hold-start or tap
             if input:IsAttackHeld() then
                 candidateStateId = state.transitions.attack_hold
             else
                 candidateStateId = state.transitions.attack
             end
+
         elseif input:HasBufferedChain() then
-            print("[ComboManager] HasBufferedChain=true, player_is_dashing=" .. tostring(_G.player_is_dashing))
-            -- If a throwable is hooked, the chain input belongs to ChainBootstrap
-            -- (throw vs swing decision). Do NOT consume it here — let it pass through
-            -- to chain.up so Bootstrap can act on it.
-            if self._chainHasThrowable then
-                print("[ComboManager] chain input suppressed — throwable is hooked, deferring to ChainBootstrap")
-            else
+            -- If a throwable is hooked, chain input belongs to ChainBootstrap.
+            -- The chain.down event was already published above — don't consume
+            -- this buffer for chain_attack, let it pass through.
+            if not self._chainHasThrowable then
                 candidateStateId = state.transitions.chain
+            else
+                print("[ComboManager] chain input suppressed — throwable hooked")
             end
+
         elseif input:HasBufferedDash() then
             candidateStateId = state.transitions.dash
         end
 
-        if candidateStateId then
-            print("[ComboManager] Candidate transition: " .. tostring(candidateStateId) .. " from state: " .. state.id)
-            -- Consume the buffered input immediately so it doesn't re-fire repeatedly
-            if input:HasBufferedAttack() then input:ConsumeBufferedAttack()
-            elseif input:HasBufferedChain() then input:ConsumeBufferedChain()
-            elseif input:HasBufferedDash() then input:ConsumeBufferedDash() end
-
-            -- If we're idle -> transition immediately
-            if state.id == "idle" then
-                self:_transitionTo(candidateStateId, candidateData)
-                return
+        -- No valid transition — check for auto-idle at end of animation
+        if not candidateStateId then
+            if self._stateTimer >= state.duration and state.id ~= "idle" then
+                self:_transitionTo("idle")
             end
-
-            -- If this state has no combo continuation (comboWindow == nil) -> ignore/consume input (no queue)
-            if window == nil then
-                -- nothing to do (input consumed)
-                return
-            end
-
-            -- If we're already inside the *end* of the animation (final `window` seconds) -> transition now
-            if timeRemaining and window and timeRemaining <= window then
-                self:_transitionTo(candidateStateId, candidateData)
-                return
-            end
-
-            -- Otherwise: queue the input so it will fire when the window opens.
-            -- Replace any existing queued input with the latest (player intent = latest press).
-            self._queuedCombo = {
-                stateId = candidateStateId,
-                data = candidateData,
-                requestedAt = self._stateTimer
-            }
-
-            -- Speed up current animation based on how early the input came in.
-            -- earlyFactor=1 (pressed right at start) → maxSpeed, earlyFactor=0 (pressed at window) → 1.0
-            if timeRemaining and state.duration and state.duration > 0 and self._animator then
-                -- window is already in animation-time (scaled by animSpeed above).
-                -- earlyFactor: 1.0 = pressed at the very start, 0.0 = pressed right at window open.
-                local earlyTime = math.max(0, timeRemaining - (window or 0))
-                local earlyFactor = math.min(1.0, earlyTime / math.max(0.001, state.duration - (window or 0)))
-                -- Read the state machine's configured speed for this state (e.g. 2.0).
-                -- Boost is a multiplier on top of that: MaxComboAnimSpeed=2 means "up to 2x faster than normal".
-                local base = self._animator.speed
-                local speedMult = base * (1.0 + (self.MaxComboAnimSpeed - 1.0) * earlyFactor)
-                self._animator:SetSpeed(speedMult)
-            end
+            return
         end
 
-        -- ===============================
-        -- AUTO-TRANSITION ON ANIMATION END
-        -- ===============================
+        -- Consume the buffered input immediately
+        if input:HasBufferedAttack() then
+            input:ConsumeBufferedAttack()
+        elseif input:HasBufferedChain() then
+            input:ConsumeBufferedChain()
+        elseif input:HasBufferedDash() then
+            input:ConsumeBufferedDash()
+        end
+
+        print("[ComboManager] Candidate: " .. tostring(candidateStateId) .. " from: " .. state.id)
+
+        -- Idle → transition immediately
+        if state.id == "idle" then
+            self:_transitionTo(candidateStateId, candidateData)
+            return
+        end
+
+        -- State has no combo continuation → silently discard
+        if window == nil then
+            return
+        end
+
+        -- Already inside the combo window → transition now
+        if timeRemaining and timeRemaining <= window then
+            self:_transitionTo(candidateStateId, candidateData)
+            return
+        end
+
+        -- Pressed too early → queue and accelerate animation toward the window
+        self._queuedCombo = {
+            stateId     = candidateStateId,
+            data        = candidateData,
+            requestedAt = self._stateTimer,
+        }
+
+        if timeRemaining and state.duration and state.duration > 0 and self._animator then
+            local earlyTime   = math.max(0, timeRemaining - (window or 0))
+            local earlyFactor = math.min(1.0, earlyTime / math.max(0.001, state.duration - (window or 0)))
+            local base        = self._animator.speed
+            local speedMult   = base * (1.0 + (self.MaxComboAnimSpeed - 1.0) * earlyFactor)
+            self._animator:SetSpeed(speedMult)
+        end
+
+        -- Check for auto-idle at end of animation (in case nothing queued fires)
         if self._stateTimer >= state.duration and state.id ~= "idle" then
             self:_transitionTo("idle")
         end
     end,
 
-    -- ===============================
-    -- STATE TRANSITION SYSTEM
-    -- ===============================
+    -- ══════════════════════════════════════════════════════════════════════
+    -- STATE TRANSITION
+    -- ══════════════════════════════════════════════════════════════════════
     _transitionTo = function(self, stateId, data)
         local newState = self.COMBO_TREE[stateId]
         if not newState then
             print("[ComboManager] ERROR: Invalid state: " .. tostring(stateId))
             return
         end
-
-        if not self._animator then 
+        if not self._animator then
             print("[ComboManager] ERROR: Animator not available for transition")
-            return 
+            return
         end
 
         -- Exit current state
@@ -485,26 +521,29 @@ return Component {
         end
 
         -- Enter new state
-        self._currentStateId = stateId
+        self._currentStateId   = stateId
         self._currentStateData = newState
-        self._stateTimer = 0
+        self._stateTimer       = 0
 
-        -- Update global attacking flag so PlayerMovement can lock movement
+        -- ── Update global combat flags ────────────────────────────────────
+        -- PlayerMovement reads _G.player_is_attacking to know when to suppress
+        -- movement logic. _G.player_can_move refines that — even during an
+        -- attack the state may allow movement (e.g. a walking combo).
         _G.player_is_attacking = (stateId ~= "idle" and stateId ~= "dash")
+        _G.player_can_move     = newState.canMove or false
 
-        -- Update combo chain tracking
+        -- Track combo chain sequence (for UI / scoring)
         if stateId ~= "idle" and stateId ~= "dash" then
             table.insert(self._comboChain, stateId)
         else
             self._comboChain = {}
         end
 
-        -- ===============================
-        -- UPDATE ANIMATOR PARAMETERS
-        -- ===============================
-        self._animator:SetInt("ComboStep", newState.animParam)  -- Changed from SetInteger
-        
-        -- Set state bools
+        -- ── Animator: combat parameters only ─────────────────────────────
+        -- Movement parameters (IsRunning, IsJumping, IsDashing) remain
+        -- exclusively owned by PlayerMovement.
+        self._animator:SetInt("ComboStep", newState.animParam)
+
         if stateId == "heavy_charge" then
             self._animator:SetBool("IsHeavyCharging", true)
             self._animator:SetBool("IsAttacking", false)
@@ -515,61 +554,54 @@ return Component {
             self._animator:SetBool("IsAttacking", true)
             self._animator:SetBool("IsHeavyCharging", false)
         end
-        
-        -- Trigger transition (skip for idle and dash to avoid unnecessary triggers/SFX)
+
         if stateId ~= "idle" and stateId ~= "dash" then
             self._animator:SetTrigger("Attack")
-            if stateId == "chain_attack" then
-                self:_playRandomSFX(self.playerChainSFX)
-            else
-                self:_playRandomSFX(self.playerSlashSFX)
-            end
+            -- SFX is handled by CombatAudio, which reacts to attack_performed.
+            -- ComboManager triggers the animation; it does not play sounds.
         end
 
-        -- Broadcast state change
+        -- ── Broadcast: combat_state_changed ──────────────────────────────
+        -- Carries canMove so PlayerMovement can adjust movement without
+        -- polling _G globals directly.
         if event_bus then
-            event_bus.publish("combat_state_changed", { 
-                state = stateId,
-                comboChain = self._comboChain
+            event_bus.publish("combat_state_changed", {
+                state      = stateId,
+                canMove    = newState.canMove or false,
+                comboChain = self._comboChain,
             })
         end
 
-        print("[ComboManager] Transition: " .. oldState.id .. " → " .. stateId .. " (ComboStep: " .. newState.animParam .. ")")
+        print("[ComboManager] " .. oldState.id .. " → " .. stateId
+            .. " (ComboStep: " .. newState.animParam .. ")")
 
-        -- Call onEnter callback
+        -- ── State entry callbacks ─────────────────────────────────────────
         if newState.onEnter then
             local stateObj = {
-                id = newState.id,
-                timer = 0,
-                damage = newState.damage,
-                actualDamage = newState.actualDamage or newState.damage
+                id           = newState.id,
+                timer        = 0,
+                damage       = newState.damage,
+                actualDamage = newState.actualDamage or newState.damage,
             }
             newState.onEnter(self, stateObj, data)
+
         elseif stateId ~= "idle" and stateId ~= "dash" and stateId ~= "heavy_charge" then
-            -- Default attack broadcast (if no custom onEnter)
+            -- Default: broadcast attack_performed with per-state lunge data so
+            -- PlayerMovement can execute the correct impulse without hardcoding.
             if event_bus then
                 event_bus.publish("attack_performed", {
-                    state = stateId,
-                    damage = newState.damage,
-                    knockback = newState.knockback or 0
+                    state    = stateId,
+                    damage   = newState.damage,
+                    knockback = newState.knockback or 0,
+                    lunge    = newState.lunge,
                 })
-                
             end
         end
     end,
 
-    -- ===============================
-    -- SFX HELPERS
-    -- ===============================
-    _playRandomSFX = function(self, clips)
-        local audio = self._playerAudio
-        if not audio or not clips or #clips == 0 then return end
-        audio:PlayOneShot(clips[math.random(1, #clips)])
-    end,
-
-    -- ===============================
-    -- PUBLIC QUERY API
-    -- ===============================
+    -- ══════════════════════════════════════════════════════════════════════
+    -- PUBLIC API
+    -- ══════════════════════════════════════════════════════════════════════
     GetCurrentState = function(self)
         return self._currentStateId
     end,
@@ -579,7 +611,7 @@ return Component {
     end,
 
     CanMove = function(self)
-        return self._currentStateData.canMove
+        return self._currentStateData.canMove or false
     end,
 
     GetCurrentComboChain = function(self)
