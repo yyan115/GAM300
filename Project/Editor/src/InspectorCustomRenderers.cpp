@@ -8948,6 +8948,8 @@ void RegisterInspectorCustomRenderers()
         static std::unordered_map<Entity, bool>     isEditingNoiseScale;
         static std::unordered_map<Entity, float>    startNoiseStrength;
         static std::unordered_map<Entity, bool>     isEditingNoiseStrength;
+        static std::unordered_map<Entity, float>    startWarpStrength;
+        static std::unordered_map<Entity, bool>     isEditingWarpStrength;
         static std::unordered_map<Entity, float>    startHeightFadeStart;
         static std::unordered_map<Entity, bool>     isEditingHeightFadeStart;
         static std::unordered_map<Entity, float>    startHeightFadeEnd;
@@ -8965,6 +8967,7 @@ void RegisterInspectorCustomRenderers()
         if (isEditingScrollY.find(entity)        == isEditingScrollY.end())        isEditingScrollY[entity]        = false;
         if (isEditingNoiseScale.find(entity)     == isEditingNoiseScale.end())     isEditingNoiseScale[entity]     = false;
         if (isEditingNoiseStrength.find(entity)  == isEditingNoiseStrength.end())  isEditingNoiseStrength[entity]  = false;
+        if (isEditingWarpStrength.find(entity)   == isEditingWarpStrength.end())   isEditingWarpStrength[entity]   = false;
         if (isEditingHeightFadeStart.find(entity)== isEditingHeightFadeStart.end())isEditingHeightFadeStart[entity]= false;
         if (isEditingHeightFadeEnd.find(entity)  == isEditingHeightFadeEnd.end())  isEditingHeightFadeEnd[entity]  = false;
         if (isEditingEdgeSoftness.find(entity)   == isEditingEdgeSoftness.end())   isEditingEdgeSoftness[entity]   = false;
@@ -9102,6 +9105,25 @@ void RegisterInspectorCustomRenderers()
             isEditingNoiseStrength[entity] = false;
         }
 
+        // --- Warp Strength ---
+        ImGui::Text("Warp");
+        ImGui::SameLine(labelWidth);
+        ImGui::SetNextItemWidth(-1);
+        if (!isEditingWarpStrength[entity]) startWarpStrength[entity] = fog.warpStrength;
+        if (ImGui::IsItemActivated()) { startWarpStrength[entity] = fog.warpStrength; isEditingWarpStrength[entity] = true; }
+        if (ImGui::DragFloat("##FogWarpStrength", &fog.warpStrength, 0.01f, 0.0f, 2.0f))
+            isEditingWarpStrength[entity] = true;
+        if (isEditingWarpStrength[entity] && !ImGui::IsItemActive())
+        {
+            float oldVal = startWarpStrength[entity]; float newVal = fog.warpStrength;
+            if (oldVal != newVal && UndoSystem::GetInstance().IsEnabled())
+                UndoSystem::GetInstance().RecordLambdaChange(
+                    [entity, newVal]() { ECSManager& e = ECSRegistry::GetInstance().GetActiveECSManager(); if (e.HasComponent<FogVolumeComponent>(entity)) e.GetComponent<FogVolumeComponent>(entity).warpStrength = newVal; },
+                    [entity, oldVal]() { ECSManager& e = ECSRegistry::GetInstance().GetActiveECSManager(); if (e.HasComponent<FogVolumeComponent>(entity)) e.GetComponent<FogVolumeComponent>(entity).warpStrength = oldVal; },
+                    "Change Fog Warp Strength");
+            isEditingWarpStrength[entity] = false;
+        }
+
         // --- Scroll Speed X ---
         ImGui::Text("Scroll X");
         ImGui::SameLine(labelWidth);
@@ -9232,6 +9254,7 @@ void RegisterInspectorCustomRenderers()
     ReflectionRenderer::RegisterFieldRenderer("FogVolumeComponent", "scrollSpeedY",     [](const char*, void*, Entity, ECSManager&) { return true; });
     ReflectionRenderer::RegisterFieldRenderer("FogVolumeComponent", "noiseScale",       [](const char*, void*, Entity, ECSManager&) { return true; });
     ReflectionRenderer::RegisterFieldRenderer("FogVolumeComponent", "noiseStrength",    [](const char*, void*, Entity, ECSManager&) { return true; });
+    ReflectionRenderer::RegisterFieldRenderer("FogVolumeComponent", "warpStrength",     [](const char*, void*, Entity, ECSManager&) { return true; });
     ReflectionRenderer::RegisterFieldRenderer("FogVolumeComponent", "useHeightFade",    [](const char*, void*, Entity, ECSManager&) { return true; });
     ReflectionRenderer::RegisterFieldRenderer("FogVolumeComponent", "heightFadeStart",  [](const char*, void*, Entity, ECSManager&) { return true; });
     ReflectionRenderer::RegisterFieldRenderer("FogVolumeComponent", "heightFadeEnd",    [](const char*, void*, Entity, ECSManager&) { return true; });

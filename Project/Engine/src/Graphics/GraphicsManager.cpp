@@ -1571,6 +1571,7 @@ void GraphicsManager::RenderFogVolume(const FogVolumeComponent& item)
 	item.fogShader->setFloat("scrollSpeedY", item.scrollSpeedY);
 	item.fogShader->setFloat("noiseScale", item.noiseScale);
 	item.fogShader->setFloat("noiseStrength", item.noiseStrength);
+	item.fogShader->setFloat("warpStrength", item.warpStrength);
 
 	// --- Height fade ---
 	item.fogShader->setBool("useHeightFade", item.useHeightFade);
