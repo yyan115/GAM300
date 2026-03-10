@@ -240,7 +240,13 @@ unsigned int PostProcessingManager::CreateHDRFramebuffer(int width, int height)
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D, hdrBloomEmissionTexture, 0);
 
     // Default: draw to attachment 0 only (bloom MRT enabled on demand)
+    // glDrawBuffer is desktop OpenGL only; glDrawBuffers is the ES 3.0 equivalent
+#ifdef ANDROID
+    GLenum drawBufs[] = { GL_COLOR_ATTACHMENT0 };
+    glDrawBuffers(1, drawBufs);
+#else
     glDrawBuffer(GL_COLOR_ATTACHMENT0);
+#endif
 
     // Create depth texture (sampleable, so fog can read scene depth for soft intersections)
     glGenTextures(1, &hdrDepthTexture);
@@ -309,7 +315,12 @@ void PostProcessingManager::BeginHDRRender(int width, int height)
     glClear(GL_COLOR_BUFFER_BIT);
 
     // Restore single draw buffer (attachment 0 only) for normal rendering
+#ifdef ANDROID
+    GLenum drawBufs[] = { GL_COLOR_ATTACHMENT0 };
+    glDrawBuffers(1, drawBufs);
+#else
     glDrawBuffer(GL_COLOR_ATTACHMENT0);
+#endif
 }
 
 void PostProcessingManager::EndHDRRender(unsigned int outputFBO, int width, int height)
@@ -331,7 +342,12 @@ void PostProcessingManager::EnableBloomMRT()
 
 void PostProcessingManager::DisableBloomMRT()
 {
+#ifdef ANDROID
+    GLenum drawBufs[] = { GL_COLOR_ATTACHMENT0 };
+    glDrawBuffers(1, drawBufs);
+#else
     glDrawBuffer(GL_COLOR_ATTACHMENT0);
+#endif
 }
 
 void PostProcessingManager::RenderScreenQuad()
