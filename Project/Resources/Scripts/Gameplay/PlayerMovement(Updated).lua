@@ -156,16 +156,16 @@ return Component {
         -- This is independent of Speed — tune it relative to how far you
         -- want the player to travel during DashDuration.
         -- Suggested range: 6.0 (short hop) – 15.0 (long burst)
-        DashSpeed = 9.0,
+        DashSpeed = 5.0,
 
-        -- Fallback dash duration in seconds. The real value comes from
-        -- ComboManager's dash state duration — only used if that event
-        -- is missing. Match this to your dash animation length.
-        DashDuration = 0.25,
+        -- How long the dash lasts in seconds.
+        -- Match this to your dash animation length.
+        -- Suggested range: 0.15 (snappy) – 0.4 (long slide)
+        DashDuration = 0.7,
 
-        -- Seconds before the player can dash again after landing.
+        -- Seconds before a consumed dash use regenerates.
         -- Suggested range: 0.8 (aggressive) – 2.0 (punishing)
-        DashCooldown = 1.2,
+        DashCooldown = 2.5,
 
         -- Maximum number of consecutive dashes available.
         -- Each dash consumes one use. Uses regenerate one at a time,
@@ -183,7 +183,7 @@ return Component {
         -- Inputs received before the window opens are held, not dropped, so
         -- pressing dash slightly early still chains at the exact threshold.
         -- Suggested range: 0.7 (snappy chains) – 0.95 (tight window)
-        DashEarlyCancelRatio = 0.9,
+        DashEarlyCancelRatio = 0.5,
 
         -- Speed multiplier applied to DashSpeed when dashing in the air.
         -- > 1.0 = air dash travels further than ground dash.
@@ -199,19 +199,6 @@ return Component {
         -- Set to 0 to make air dashes purely horizontal.
         AirDashLift = 1.5,
 
-        -- =====================================================================
-        -- Post-dash speed burst
-        -- When the dash ends, velocity is locked at DashExitSpeedMult * Speed
-        -- in the dash direction for DashExitDuration seconds, then normal
-        -- deceleration resumes. Feels like a brief momentum window after dash.
-        --
-        -- DashExitSpeedMult: multiplier on Speed for the burst velocity.
-        --   1.0 = exits at normal speed. 1.8 = exits at 1.8x speed.
-        -- DashExitDuration: how long (seconds) the burst velocity is held.
-        --   0.25 = brief snap. 0.5 = noticeable lunge out of dash.
-        DashExitSpeedMult = 1.8,
-        DashExitDuration  = 0.25,
-
         -- JUMP
         -- =====================================================================
 
@@ -222,6 +209,15 @@ return Component {
         -- Seconds the landing animation plays before movement resumes.
         -- Suggested range: 0.2 (snappy) – 0.8 (weighty)
         LandingDuration = 0.4,
+
+        -- Fraction of Acceleration applied while airborne.
+        -- Input steers horizontal velocity at this rate; directly opposing
+        -- input is ignored so the player arcs instead of reversing mid-air.
+        --   0.0 = no air control (ballistic)
+        --   0.3 = responsive nudge (default)
+        --   1.0 = full ground-level control
+        -- Suggested range: 0.2 – 0.5
+        AirControlMultiplier = 0.3,
 
         -- COMBAT
         -- =====================================================================
@@ -238,7 +234,7 @@ return Component {
         -- =====================================================================
 
         -- Seconds the damage stun lasts before the player regains control.
-        DamageStunDuration = 1.0,
+        DamageStunDuration = 0.5,
 
         -- Seconds after a cinematic freeze event before movement fully locks.
         -- Gives the character time to settle into position before cutting.
@@ -290,9 +286,6 @@ return Component {
         -- so momentum carries naturally into the first frames of a combo.
         self._velX = 0
         self._velZ = 0
-
-        -- Post-dash speed burst timer (counts down DashExitDuration)
-        self._dashExitTimer = 0.0
 
         -- =====================================================================
         -- Lunge state (per-attack values from attack_performed event)
@@ -391,27 +384,65 @@ return Component {
             self._attackLungeSub = event_bus.subscribe("attack_performed", function(data)
                 local cameraYaw = _G.CAMERA_YAW or self._cameraYaw or 180.0
                 local yr   = math.rad(cameraYaw)
-                local fwdX = -math.sin(yr)
-                local fwdZ = -math.cos(yr)
-                local len  = math.sqrt(fwdX * fwdX + fwdZ * fwdZ)
-                if len > 0.001 then fwdX = fwdX / len; fwdZ = fwdZ / len end
+                local sinYaw = math.sin(yr)
+                local cosYaw = math.cos(yr)
 
-                self._lungeDirX = fwdX
-                self._lungeDirZ = fwdZ
+                -- Camera forward and right axes (world space)
+                local fwdX = -sinYaw
+                local fwdZ = -cosYaw
+                local rgtX =  cosYaw
+                local rgtZ = -sinYaw
+
+                -- Default lunge direction is camera forward.
+                -- If input is held, take only its sideways component relative to
+                -- the camera and offset the lunge by it. This produces a sidestep
+                -- lunge when strafing but never redirects the attack backwards.
+                -- A pure backwards input is ignored — lunge stays camera forward.
+                local dirX, dirZ = fwdX, fwdZ
+                local interp = _G.InputInterpreter
+                local axis   = interp and interp:GetMovementAxis()
+                local rawX   = axis and -axis.x or 0
+                local rawZ   = axis and  axis.y or 0
+                if rawX ~= 0 or rawZ ~= 0 then
+                    local wX = rawZ * (-sinYaw) - rawX * cosYaw
+                    local wZ = rawZ * (-cosYaw) + rawX * sinYaw
+                    local wLen = math.sqrt(wX * wX + wZ * wZ)
+                    if wLen > 0.001 then
+                        wX, wZ = wX / wLen, wZ / wLen
+                        -- Forward component of input relative to camera
+                        local fwdDot  = wX * fwdX + wZ * fwdZ
+                        -- Sideways component only — never let a backward input pull the lunge back
+                        local sideDot = wX * rgtX + wZ * rgtZ
+                        if fwdDot >= 0 then
+                            -- Input has a forward lean: blend input direction with camera forward
+                            dirX = fwdX + wX
+                            dirZ = fwdZ + wZ
+                        else
+                            -- Input is sideways or backward: offset by side component only
+                            dirX = fwdX + rgtX * sideDot
+                            dirZ = fwdZ + rgtZ * sideDot
+                        end
+                        local dLen = math.sqrt(dirX * dirX + dirZ * dirZ)
+                        if dLen > 0.001 then dirX = dirX / dLen; dirZ = dirZ / dLen end
+                    end
+                end
+
+                self._lungeDirX = dirX
+                self._lungeDirZ = dirZ
 
                 -- Use per-attack lunge data from ComboManager; fall back to inspector defaults.
                 local lunge = data and data.lunge
                 self._lungeTimer = (lunge and lunge.duration) or self.AttackLungeDuration or 0.12
                 self._lungeSpeed = (lunge and lunge.speed)    or self.AttackLungeSpeed    or 3.0
 
-                -- Snap rotation to face camera direction on attack
-                local targetW, targetX, targetY, targetZ = directionToQuaternion(fwdX, fwdZ)
+                -- Snap rotation to face the lunge direction
+                local targetW, targetX, targetY, targetZ = directionToQuaternion(dirX, dirZ)
                 self._currentRotW = targetW
                 self._currentRotX = targetX
                 self._currentRotY = targetY
                 self._currentRotZ = targetZ
-                self._facingX     = fwdX
-                self._facingZ     = fwdZ
+                self._facingX     = dirX
+                self._facingZ     = dirZ
                 pcall(self.SetRotation, self, targetW, targetX, targetY, targetZ)
             end)
 
@@ -723,11 +754,16 @@ return Component {
             self._velX = self._velX * decay
             self._velZ = self._velZ * decay
 
-            local velMag = math.sqrt(self._velX * self._velX + self._velZ * self._velZ)
-            if velMag > 0.01 then
-                CharacterController.Move(self._controller, self._velX, 0, self._velZ)
-            else
-                self._velX, self._velZ = 0, 0
+            -- Only push the decayed velocity if no lunge is active this frame.
+            -- The lunge already called CharacterController.Move above; a second
+            -- call here would overwrite it and kill the impulse entirely.
+            if not (self._lungeTimer and self._lungeTimer > 0) then
+                local velMag = math.sqrt(self._velX * self._velX + self._velZ * self._velZ)
+                if velMag > 0.01 then
+                    CharacterController.Move(self._controller, self._velX, 0, self._velZ)
+                else
+                    self._velX, self._velZ = 0, 0
+                end
             end
 
             self._animator:SetBool("IsRunning", false)
@@ -902,22 +938,17 @@ return Component {
             self._dashTimer = self._dashTimer - dt
 
             if self._dashTimer <= 0 then
-                -- Dash finished: inject burst velocity. Decays via DashExitDecay.
+                -- Dash finished: carry dash velocity into normal movement so the
+                -- momentum system can arc it naturally. TurnDecel will bleed the
+                -- speed off in a smooth arc when the player steers the other way,
+                -- rather than snapping from zero. Clamp to Speed so it doesn't
+                -- overshoot normal top speed on exit.
                 self._isDashing          = false
                 _G.player_is_dashing     = false
                 self._wasDashingInAir    = false
-                -- SetBool false then immediately true on a consecutive dash would
-                -- be ignored by the state machine (no idle transition between them).
-                -- SetTrigger fires a one-shot that re-enters the dash state from
-                -- anywhere, so back-to-back dashes always retrigger the animation.
                 self._animator:SetBool("IsDashing", false)
-
-                local burstSpeed = self.Speed * (self.DashExitSpeedMult or 1.8)
-                self._velX = self._dashDirX * burstSpeed
-                self._velZ = self._dashDirZ * burstSpeed
-                -- Start the timed boost window. Velocity is held at burst speed
-                -- for DashExitDuration seconds, then normal decel resumes.
-                self._dashExitTimer = self.DashExitDuration or 0.25
+                self._velX = self._dashDirX * self.Speed
+                self._velZ = self._dashDirZ * self.Speed
 
                 if event_bus and event_bus.publish then
                     event_bus.publish("dash_ended", {
@@ -1001,30 +1032,48 @@ return Component {
         -- Momentum-based velocity update
         if not isJumping then
             if isMoving then
-                -- Input taken — cancel the boost window so Acceleration governs.
-                self._dashExitTimer = 0
-
                 local targetX = moveX * self.Speed
                 local targetZ = moveZ * self.Speed
-
                 local dot = self._velX * targetX + self._velZ * targetZ
-                local rate = (dot < 0) and self.TurnDecel or self.Acceleration
-                local t = math.min(rate * dt, 1.0)
 
-                self._velX = self._velX + (targetX - self._velX) * t
-                self._velZ = self._velZ + (targetZ - self._velZ) * t
-            else
-                -- No input: hold burst velocity for DashExitDuration, then decel.
-                if self._dashExitTimer > 0 then
-                    self._dashExitTimer = self._dashExitTimer - dt
-                    -- Velocity is already set to burst speed — hold it this frame.
-                else
-                    local decay = 1.0 - math.min(self.Deceleration * dt, 1.0)
-                    self._velX = self._velX * decay
-                    self._velZ = self._velZ * decay
-                    if math.sqrt(self._velX * self._velX + self._velZ * self._velZ) < 0.001 then
-                        self._velX, self._velZ = 0, 0
+                if not isGrounded then
+                    -- Air steering: same authority control as dash but via acceleration.
+                    -- Input steers at Acceleration * AirControlMultiplier toward the
+                    -- input direction. Directly opposing input (dot < -0.3) is ignored
+                    -- so the player arcs rather than reversing. Sideways input is fine.
+                    -- Speed builds naturally — magnitude is NOT frozen.
+                    local inputLen  = math.sqrt(moveX * moveX + moveZ * moveZ)
+                    local inputDirX = moveX / inputLen
+                    local inputDirZ = moveZ / inputLen
+
+                    local velMagAir = math.sqrt(self._velX * self._velX + self._velZ * self._velZ)
+                    local opposes   = false
+                    if velMagAir > 0.001 then
+                        local velDirX = self._velX / velMagAir
+                        local velDirZ = self._velZ / velMagAir
+                        opposes = (inputDirX * velDirX + inputDirZ * velDirZ) < -0.3
                     end
+
+                    if not opposes then
+                        local rate = self.Acceleration * (self.AirControlMultiplier or 0.3)
+                        local t    = math.min(rate * dt, 1.0)
+                        self._velX = self._velX + (inputDirX * self.Speed - self._velX) * t
+                        self._velZ = self._velZ + (inputDirZ * self.Speed - self._velZ) * t
+                    end
+                    -- Opposing input: do nothing — momentum carries through the arc.
+                else
+                    -- Grounded: normal accelerate or pivot.
+                    local rate = (dot < 0) and self.TurnDecel or self.Acceleration
+                    local t = math.min(rate * dt, 1.0)
+                    self._velX = self._velX + (targetX - self._velX) * t
+                    self._velZ = self._velZ + (targetZ - self._velZ) * t
+                end
+            else
+                local decay = 1.0 - math.min(self.Deceleration * dt, 1.0)
+                self._velX = self._velX * decay
+                self._velZ = self._velZ * decay
+                if math.sqrt(self._velX * self._velX + self._velZ * self._velZ) < 0.001 then
+                    self._velX, self._velZ = 0, 0
                 end
             end
 
@@ -1163,7 +1212,6 @@ return Component {
         self._playerCanMove           = true
         self._velX                    = 0
         self._velZ                    = 0
-        self._dashExitTimer           = 0
         self._dashUses                = self.DashMaxUses
         self._dashRegenTimer          = 0
         self._chainConstraintRatio    = 0
