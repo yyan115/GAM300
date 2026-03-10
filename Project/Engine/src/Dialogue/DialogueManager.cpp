@@ -5,6 +5,7 @@
 #include "ECS/ActiveComponent.hpp"
 #include "Graphics/TextRendering/TextRenderComponent.hpp"
 #include "Graphics/TextRendering/TextUtils.hpp"
+#include "Graphics/Sprite/SpriteRenderComponent.hpp"
 #include "Hierarchy/EntityGUIDRegistry.hpp"
 #include "Utilities/GUID.hpp"
 #include "Logging.hpp"
@@ -116,6 +117,27 @@ void NarrativeDialogueManager::StartDialogue(const std::string& name) {
                 TextUtils::SetText(textComp, dialogue.entries[0].text);
             }
             textComp.isVisible = true;
+        }
+    }
+
+    // Activate first entry's sprite entity (if any)
+    if (!dialogue.entries.empty() && !dialogue.entries[0].spriteEntityGuidStr.empty()) {
+        GUID_128 spriteGuid = GUIDUtilities::ConvertStringToGUID128(dialogue.entries[0].spriteEntityGuidStr);
+        Entity spriteEnt = EntityGUIDRegistry::GetInstance().GetEntityByGUID(spriteGuid);
+        if (spriteEnt != 0) {
+            if (m_ecs->HasComponent<ActiveComponent>(spriteEnt)) {
+                m_ecs->GetComponent<ActiveComponent>(spriteEnt).isActive = true;
+            }
+            if (m_ecs->HasComponent<SpriteRenderComponent>(spriteEnt)) {
+                auto& spriteComp = m_ecs->GetComponent<SpriteRenderComponent>(spriteEnt);
+                auto mode = static_cast<DialogueAppearanceMode>(dialogue.appearanceModeID);
+                if (mode == DialogueAppearanceMode::FadeInOut && dialogue.fadeDuration > 0.0f) {
+                    spriteComp.alpha = 0.0f;
+                } else {
+                    spriteComp.alpha = 1.0f;
+                }
+                spriteComp.isVisible = true;
+            }
         }
     }
 

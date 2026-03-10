@@ -2,7 +2,7 @@
     "prefab_entities": [
         {
             "id": 0,
-            "guid": "0066d2df00411ec1-00046a603a08dee9",
+            "guid": "0042d14e0e6573b9-000476461e038553",
             "components": {
                 "PrefabLinkComponent": {
                     "type": "PrefabLinkComponent",
@@ -167,6 +167,18 @@
                         {
                             "type": "bool",
                             "data": true
+                        },
+                        {
+                            "type": "bool",
+                            "data": false
+                        },
+                        {
+                            "type": "float",
+                            "data": -1
+                        },
+                        {
+                            "type": "float",
+                            "data": -1
                         }
                     ]
                 },
@@ -307,7 +319,7 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "0066d2df19f7a562-00046a603a08deeb"
+                                "0042d14e6eb81542-000476461e038555"
                             ]
                         }
                     ]
@@ -591,49 +603,22 @@
                             "entryFunction": "OnInit",
                             "autoInvokeEntry": true,
                             "instanceState": {
-                                "OnTriggerEnter": null,
-                                "Awake": null,
-                                "ProjectileSpeed": 5.0,
-                                "SetRotation": null,
-                                "SpawnRemnantOffset": 1.0,
-                                "_transform_fetched": false,
-                                "SetPosition": null,
-                                "OnDisable": null,
-                                "Unsubscribe": null,
-                                "AwakeSafe": null,
                                 "__field_list": {
-                                    "FeatherRemnantPrefabPath": "Resources/Prefabs/FeatherSkillProjectileRemnant.prefab",
-                                    "PlayerEntityName": "Player"
+                                    "PlayerEntityName": "Player",
+                                    "FeatherRemnantPrefabPath": "Resources/Prefabs/FeatherSkillProjectileRemnant.prefab"
                                 },
-                                "Subscribe": null,
-                                "Every": null,
-                                "StartSafe": null,
-                                "SetScale": null,
-                                "After": null,
-                                "GetRotation": null,
-                                "GetScale": null,
-                                "Update": null,
-                                "RigidbodyKinematicDuration": 0.7,
-                                "UpdateSafe": null,
-                                "DebugTransform": null,
-                                "DeserializeFields": null,
-                                "SerializeFields": null,
-                                "Start": null,
-                                "PlayerEntityName": "Player",
-                                "ColliderDisabledDuration": 0.7,
-                                "_private": {},
-                                "Destroy": null,
-                                "DisableSafe": null,
-                                "Move": null,
-                                "__created_at": 1772633527.0,
-                                "_call_lifecycle": null,
                                 "_subscriptions": {},
-                                "GetTransform": null,
-                                "GetPosition": null,
-                                "_toRoot": null,
+                                "ProjectileSpeed": 5.0,
+                                "ColliderDisabledDuration": 0.7,
+                                "SpawnRemnantOffset": 1.0,
+                                "_private": {},
+                                "FeatherRemnantPrefabPath": "Resources/Prefabs/FeatherSkillProjectileRemnant.prefab",
                                 "__meta": {},
+                                "_transform_fetched": false,
+                                "__created_at": 1772633527.0,
+                                "RigidbodyKinematicDuration": 0.7,
                                 "ProjectileDamage": 1.0,
-                                "FeatherRemnantPrefabPath": "Resources/Prefabs/FeatherSkillProjectileRemnant.prefab"
+                                "PlayerEntityName": "Player"
                             }
                         }
                     ]
@@ -663,7 +648,7 @@
         },
         {
             "id": 1,
-            "guid": "0066d2df19f7a562-00046a603a08deeb",
+            "guid": "0042d14e6eb81542-000476461e038555",
             "components": {
                 "NameComponent": {
                     "name": "Feather"
@@ -740,7 +725,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "0066d2df00411ec1-00046a603a08dee9"
+                        "0042d14e0e6573b9-000476461e038553"
                     ]
                 },
                 "ActiveComponent": {

@@ -444,6 +444,10 @@ return Component {
         -- During a dash the combo state machine is paused. Clear any queued
         -- input so it doesn't fire the instant the dash ends.
         -- ══════════════════════════════════════════════════════════════════
+        -- Block all combo input near interactable (tooltip active)
+        if _G.playerNearInteractable then return end
+
+        -- Block all combo input during dash
         if _G.player_is_dashing then
             if self._queuedCombo then
                 print("[ComboManager] DASH ACTIVE: clearing queued combo '" .. tostring(self._queuedCombo.stateId) .. "'")

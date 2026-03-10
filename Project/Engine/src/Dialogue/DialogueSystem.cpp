@@ -8,8 +8,42 @@
 #include "Hierarchy/EntityGUIDRegistry.hpp"
 #include "Utilities/GUID.hpp"
 #include "ECS/ActiveComponent.hpp"
+#include "Graphics/Sprite/SpriteRenderComponent.hpp"
 #include "Logging.hpp"
 #include <algorithm>
+
+// === Sprite entity helpers (per-entry) ===
+
+static Entity ResolveSpriteEntity(const DialogueEntry& entry, ECSManager* ecs) {
+    if (entry.spriteEntityGuidStr.empty() || !ecs) return 0;
+    GUID_128 guid = GUIDUtilities::ConvertStringToGUID128(entry.spriteEntityGuidStr);
+    return EntityGUIDRegistry::GetInstance().GetEntityByGUID(guid);
+}
+
+static SpriteRenderComponent* GetSpriteComp(Entity spriteEntity, ECSManager* ecs) {
+    if (spriteEntity == 0 || !ecs) return nullptr;
+    if (!ecs->HasComponent<SpriteRenderComponent>(spriteEntity)) return nullptr;
+    return &ecs->GetComponent<SpriteRenderComponent>(spriteEntity);
+}
+
+static void ActivateSpriteEntity(Entity spriteEntity, ECSManager* ecs) {
+    if (spriteEntity == 0 || !ecs) return;
+    if (ecs->HasComponent<ActiveComponent>(spriteEntity)) {
+        ecs->GetComponent<ActiveComponent>(spriteEntity).isActive = true;
+    }
+}
+
+static void DeactivateSpriteEntity(Entity spriteEntity, ECSManager* ecs) {
+    if (spriteEntity == 0 || !ecs) return;
+    auto* spriteComp = GetSpriteComp(spriteEntity, ecs);
+    if (spriteComp) {
+        spriteComp->alpha = 0.0f;
+        spriteComp->isVisible = false;
+    }
+    if (ecs->HasComponent<ActiveComponent>(spriteEntity)) {
+        ecs->GetComponent<ActiveComponent>(spriteEntity).isActive = false;
+    }
+}
 
 void DialogueSystem::Initialise(ECSManager& ecsManager) {
     m_ecs = &ecsManager;
@@ -94,6 +128,16 @@ void DialogueSystem::Update(float dt) {
                     auto& entry = dialogue.entries[dialogue.currentIndex];
                     TextUtils::SetText(*textComp, entry.text);
                     textComp->isVisible = true;
+                }
+            }
+
+            // Fade sprite alpha in sync with text
+            if (dialogue.currentIndex >= 0 &&
+                dialogue.currentIndex < static_cast<int>(dialogue.entries.size())) {
+                Entity spriteEnt = ResolveSpriteEntity(dialogue.entries[dialogue.currentIndex], m_ecs);
+                auto* spriteComp = GetSpriteComp(spriteEnt, m_ecs);
+                if (spriteComp) {
+                    spriteComp->alpha = progress;
                 }
             }
 
@@ -193,9 +237,33 @@ void DialogueSystem::Update(float dt) {
                 textComp->alpha = 1.0f - progress;
             }
 
+            // Fade sprite alpha in sync with text
+            if (dialogue.currentIndex >= 0 &&
+                dialogue.currentIndex < static_cast<int>(dialogue.entries.size())) {
+                Entity spriteEnt = ResolveSpriteEntity(dialogue.entries[dialogue.currentIndex], m_ecs);
+                auto* spriteComp = GetSpriteComp(spriteEnt, m_ecs);
+                if (spriteComp) {
+                    spriteComp->alpha = 1.0f - progress;
+                }
+            }
+
             if (progress >= 1.0f) {
-                // FadingOut only happens on last entry now - end dialogue
-                EndDialogue(dialogue);
+                // Deactivate current entry's sprite before transitioning
+                if (dialogue.currentIndex >= 0 &&
+                    dialogue.currentIndex < static_cast<int>(dialogue.entries.size())) {
+                    Entity spriteEnt = ResolveSpriteEntity(dialogue.entries[dialogue.currentIndex], m_ecs);
+                    DeactivateSpriteEntity(spriteEnt, m_ecs);
+                }
+
+                int nextIndex = dialogue.currentIndex + 1;
+                if (nextIndex < static_cast<int>(dialogue.entries.size())) {
+                    // More entries remaining - advance and fade in the next one
+                    dialogue.currentIndex = nextIndex;
+                    BeginEntry(dialogue); // will set FadingIn phase
+                } else {
+                    // Last entry done - end dialogue
+                    EndDialogue(dialogue);
+                }
             }
             break;
         }
@@ -205,6 +273,12 @@ void DialogueSystem::Update(float dt) {
             if (textComp) {
                 textComp->alpha = 0.0f;
                 textComp->isVisible = false;
+            }
+            // Clean up current entry's sprite entity
+            if (dialogue.currentIndex >= 0 &&
+                dialogue.currentIndex < static_cast<int>(dialogue.entries.size())) {
+                Entity spriteEnt = ResolveSpriteEntity(dialogue.entries[dialogue.currentIndex], m_ecs);
+                DeactivateSpriteEntity(spriteEnt, m_ecs);
             }
             dialogue.phase = DialogueComponent::Phase::Inactive;
             dialogue.currentIndex = -1;
@@ -223,21 +297,30 @@ void DialogueSystem::Update(float dt) {
 }
 
 void DialogueSystem::AdvanceToNextEntry(DialogueComponent& dialogue) {
-    int nextIndex = dialogue.currentIndex + 1;
     auto mode = static_cast<DialogueAppearanceMode>(dialogue.appearanceModeID);
 
-    if (nextIndex >= static_cast<int>(dialogue.entries.size())) {
-        // Last entry done - fade out if FadeInOut, else end immediately
-        if (mode == DialogueAppearanceMode::FadeInOut && dialogue.fadeDuration > 0.0f) {
-            dialogue.phase = DialogueComponent::Phase::FadingOut;
-            dialogue.stateTimer = 0.0f;
-        } else {
-            EndDialogue(dialogue);
-        }
+    // FadeInOut mode: fade out current entry first, then FadingOut handler
+    // will either advance to next entry or end dialogue
+    if (mode == DialogueAppearanceMode::FadeInOut && dialogue.fadeDuration > 0.0f) {
+        dialogue.phase = DialogueComponent::Phase::FadingOut;
+        dialogue.stateTimer = 0.0f;
         return;
     }
 
-    // Between entries - always instant transition
+    // Non-fade modes: instant transition
+    // Deactivate the current entry's sprite entity before advancing
+    if (dialogue.currentIndex >= 0 &&
+        dialogue.currentIndex < static_cast<int>(dialogue.entries.size())) {
+        Entity prevSprite = ResolveSpriteEntity(dialogue.entries[dialogue.currentIndex], m_ecs);
+        DeactivateSpriteEntity(prevSprite, m_ecs);
+    }
+
+    int nextIndex = dialogue.currentIndex + 1;
+    if (nextIndex >= static_cast<int>(dialogue.entries.size())) {
+        EndDialogue(dialogue);
+        return;
+    }
+
     dialogue.currentIndex = nextIndex;
     BeginEntry(dialogue);
 }
@@ -260,8 +343,20 @@ void DialogueSystem::BeginEntry(DialogueComponent& dialogue) {
 
     bool isFirstEntry = (dialogue.currentIndex == 0);
 
-    if (mode == DialogueAppearanceMode::FadeInOut && dialogue.fadeDuration > 0.0f && isFirstEntry) {
-        // Fade in only on the first entry
+    // Resolve and activate sprite entity for this entry
+    Entity spriteEnt = 0;
+    SpriteRenderComponent* spriteComp = nullptr;
+    if (dialogue.currentIndex >= 0 &&
+        dialogue.currentIndex < static_cast<int>(dialogue.entries.size())) {
+        spriteEnt = ResolveSpriteEntity(dialogue.entries[dialogue.currentIndex], m_ecs);
+        if (spriteEnt != 0) {
+            ActivateSpriteEntity(spriteEnt, m_ecs);
+            spriteComp = GetSpriteComp(spriteEnt, m_ecs);
+        }
+    }
+
+    if (mode == DialogueAppearanceMode::FadeInOut && dialogue.fadeDuration > 0.0f) {
+        // Fade in this entry
         dialogue.phase = DialogueComponent::Phase::FadingIn;
         if (textComp) {
             textComp->alpha = 0.0f;
@@ -271,12 +366,20 @@ void DialogueSystem::BeginEntry(DialogueComponent& dialogue) {
             }
             textComp->isVisible = true;
         }
+        if (spriteComp) {
+            spriteComp->alpha = 0.0f;
+            spriteComp->isVisible = true;
+        }
     } else if (mode == DialogueAppearanceMode::Typewriter) {
         dialogue.phase = DialogueComponent::Phase::Typing;
         if (textComp) {
             textComp->alpha = 1.0f;
             textComp->isVisible = true;
             TextUtils::SetText(*textComp, "");
+        }
+        if (spriteComp) {
+            spriteComp->alpha = 1.0f;
+            spriteComp->isVisible = true;
         }
     } else {
         // Instant
@@ -288,6 +391,10 @@ void DialogueSystem::BeginEntry(DialogueComponent& dialogue) {
                 dialogue.currentIndex < static_cast<int>(dialogue.entries.size())) {
                 TextUtils::SetText(*textComp, dialogue.entries[dialogue.currentIndex].text);
             }
+        }
+        if (spriteComp) {
+            spriteComp->alpha = 1.0f;
+            spriteComp->isVisible = true;
         }
     }
 }
@@ -309,6 +416,13 @@ void DialogueSystem::EndDialogue(DialogueComponent& dialogue) {
     if (dialogue.textEntity != 0 && m_ecs &&
         m_ecs->HasComponent<ActiveComponent>(dialogue.textEntity)) {
         m_ecs->GetComponent<ActiveComponent>(dialogue.textEntity).isActive = false;
+    }
+
+    // Deactivate current entry's sprite entity
+    if (dialogue.currentIndex >= 0 &&
+        dialogue.currentIndex < static_cast<int>(dialogue.entries.size())) {
+        Entity spriteEnt = ResolveSpriteEntity(dialogue.entries[dialogue.currentIndex], m_ecs);
+        DeactivateSpriteEntity(spriteEnt, m_ecs);
     }
 
     dialogue.phase = DialogueComponent::Phase::Inactive;

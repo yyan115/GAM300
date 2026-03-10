@@ -1,0 +1,14 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "000c89d9a6ef353f-000476bc6200230f",
+        "source": "../../Resources/Sprites/Tutorial/SlashControl.png",
+        "compiled": "../../Resources/Sprites/Tutorial/SlashControl.dds"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp"
+    }
+}
