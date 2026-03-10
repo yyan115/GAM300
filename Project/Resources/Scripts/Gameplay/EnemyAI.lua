@@ -1115,6 +1115,17 @@ return Component {
             self._slamVy = 0
             print("[EnemyAI] SLAMMED")
             self._animator:SetTrigger("Slammed")
+            
+        --Publish VFX EVENT (GroundSlamVFX)
+            if _G.event_bus and _G.event_bus.publish then
+                _G.event_bus.publish("SlammedDown",{
+                    targetId = self.entityId,
+                    posX = x,
+                    posY = newY,
+                    posZ = z
+                })
+            end
+
             return true
         end
 
@@ -1405,6 +1416,7 @@ return Component {
         if self:IsFlying() then
             -- start slam instead of instant convert
             self:BeginSlamDown()
+
             -- keep whatever your FlyingHookedState does (animations etc.)
             if self.fsm.currentName ~= "Hooked" then
                 self.fsm:Change("Hooked", self.states.Hooked)
