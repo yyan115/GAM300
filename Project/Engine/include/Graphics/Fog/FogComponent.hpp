@@ -32,6 +32,7 @@ public:
 	float scrollSpeedY = 0.01f;
 	float noiseScale = 1.0f;
 	float noiseStrength = 0.5f;
+	float warpStrength = 0.5f;  // Domain warp: 0 = plain scroll, 0.5 = smoky, 1+ = heavy swirl
 
 	bool useHeightFade = true;
 	float heightFadeStart = 0.0f;

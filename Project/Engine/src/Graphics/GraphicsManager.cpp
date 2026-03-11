@@ -397,7 +397,8 @@ void GraphicsManager::Render()
 		if (instancing.IsEnabled() &&
 			!modelItem->HasAnimation() &&
 			modelItem->model &&
-			modelItem->model->mBoneInfoMap.empty()) 
+			modelItem->model->mBoneInfoMap.empty() &&
+			!modelItem->depthOffset)
 		{
 			continue;  // Already rendered via instancing
 		}
@@ -548,10 +549,21 @@ void GraphicsManager::RenderModel(const ModelRenderComponent& item)
 
 
 	// Draw the model with entity material
+	if (item.depthOffset)
+	{
+		glEnable(GL_POLYGON_OFFSET_FILL);
+		glPolygonOffset(item.depthOffsetFactor, item.depthOffsetUnits);
+	}
+
 	if (item.HasAnimation())
 		item.model->Draw(*item.shader, *currentCamera, item.material, item, item.animator);
 	else
 		item.model->Draw(*item.shader, *currentCamera, item.material, item);
+
+	if (item.depthOffset)
+	{
+		glDisable(GL_POLYGON_OFFSET_FILL);
+	}
 
 	//std::cout << "rendered model\n";
 }
@@ -1571,6 +1583,7 @@ void GraphicsManager::RenderFogVolume(const FogVolumeComponent& item)
 	item.fogShader->setFloat("scrollSpeedY", item.scrollSpeedY);
 	item.fogShader->setFloat("noiseScale", item.noiseScale);
 	item.fogShader->setFloat("noiseStrength", item.noiseStrength);
+	item.fogShader->setFloat("warpStrength", item.warpStrength);
 
 	// --- Height fade ---
 	item.fogShader->setBool("useHeightFade", item.useHeightFade);

@@ -20,6 +20,7 @@ uniform float scrollSpeedX;
 uniform float scrollSpeedY;
 uniform float noiseScale;
 uniform float noiseStrength;
+uniform float warpStrength;
 
 uniform bool  useHeightFade;
 uniform float heightFadeStart;
@@ -153,69 +154,86 @@ void main()
     }
 
     tEntry = max(tEntry, 0.0);
-    if (tExit <= tEntry) discard; 
-    
+    if (tExit <= tEntry) discard;
+
     float thickness = tExit - tEntry;
 
-    vec3 sampleLocal = localCamPos + (tEntry + thickness * 0.5) * localRayDir;
-    vec3 samplePos   = clamp(sampleLocal + 0.5, 0.0, 1.0);
+    // Ray march — 8 steps on mobile for performance
+    const int MARCH_STEPS = 8;
+    float stepSize     = thickness / float(MARCH_STEPS);
+    float transmittance = 1.0;
 
-    // --- Noise Sampling ---
-    vec3 noiseCoord = samplePos * noiseScale + vec3(
-        time * scrollSpeedX,
-        time * scrollSpeedY,
-        time * scrollSpeedX * 0.5
-    );
-
-    float noiseValue;
-    if (hasNoiseMap)
+    for (int i = 0; i < MARCH_STEPS; i++)
     {
-        vec2 noiseUV = samplePos.xz * noiseScale + vec2(time * scrollSpeedX, time * scrollSpeedY);
-        noiseValue = texture(noiseMap, noiseUV).r;
-    }
-    else
-    {
-        noiseValue = fbm(noiseCoord);
-    }
+        float t = tEntry + (float(i) + 0.5) * stepSize;
+        vec3 sampleLocal = localCamPos + t * localRayDir;
+        vec3 samplePos   = clamp(sampleLocal + 0.5, 0.0, 1.0);
 
-    float fogDensity = density * thickness * mix(1.0, noiseValue, noiseStrength);
+        vec3 noiseCoord = samplePos * noiseScale + vec3(
+            time * scrollSpeedX,
+            time * scrollSpeedY,
+            time * scrollSpeedX * 0.5
+        );
 
-    // --- Height Fade ---
-    if (useHeightFade)
-    {
-        float heightFactor = smoothstep(heightFadeEnd, heightFadeStart, samplePos.y);
-        fogDensity *= heightFactor;
-    }
-
-    // --- Edge Softness based on shape ---
-    if (edgeSoftness > 0.0)
-    {
-        float edgeDist = 0.0;
-        
-        if (fogShape == 0) // BOX
+        if (warpStrength > 0.0)
         {
-            float edgeX = min(samplePos.x, 1.0 - samplePos.x);
-            float edgeY = min(samplePos.y, 1.0 - samplePos.y);
-            float edgeZ = min(samplePos.z, 1.0 - samplePos.z);
-            edgeDist = min(edgeX, min(edgeY, edgeZ));
-        } 
-        else if (fogShape == 1) // SPHERE
-        {
-            edgeDist = 0.5 - length(sampleLocal);
-        } 
-        else if (fogShape == 2) // CYLINDER
-        {
-            float radialDist = 0.5 - length(sampleLocal.xz);
-            float verticalDist = 0.5 - abs(sampleLocal.y);
-            edgeDist = min(radialDist, verticalDist);
+            vec3 warp = vec3(
+                fbm(noiseCoord + vec3(1.7, 9.2, 3.4)),
+                fbm(noiseCoord + vec3(8.3, 2.8, 5.1)),
+                fbm(noiseCoord + vec3(4.5, 6.1, 1.9))
+            );
+            noiseCoord += warpStrength * warp;
         }
-        
-        float edgeFade = smoothstep(0.0, edgeSoftness * 0.5, edgeDist);
-        fogDensity *= edgeFade;
+
+        float noiseValue;
+        if (hasNoiseMap)
+        {
+            vec2 noiseUV = samplePos.xz * noiseScale + vec2(time * scrollSpeedX, time * scrollSpeedY);
+            noiseValue = texture(noiseMap, noiseUV).r;
+        }
+        else
+        {
+            noiseValue = fbm(noiseCoord);
+        }
+
+        float shapedNoise = smoothstep(0.3, 0.7, noiseValue);
+        float stepDensity = density * stepSize * mix(1.0, shapedNoise, noiseStrength);
+
+        if (useHeightFade)
+        {
+            float heightFactor = smoothstep(heightFadeEnd, heightFadeStart, samplePos.y);
+            stepDensity *= heightFactor;
+        }
+
+        if (edgeSoftness > 0.0)
+        {
+            float edgeDist = 0.0;
+            if (fogShape == 0)
+            {
+                float edgeX = min(samplePos.x, 1.0 - samplePos.x);
+                float edgeY = min(samplePos.y, 1.0 - samplePos.y);
+                float edgeZ = min(samplePos.z, 1.0 - samplePos.z);
+                edgeDist = min(edgeX, min(edgeY, edgeZ));
+            }
+            else if (fogShape == 1)
+            {
+                edgeDist = 0.5 - length(sampleLocal);
+            }
+            else if (fogShape == 2)
+            {
+                float radialDist   = 0.5 - length(sampleLocal.xz);
+                float verticalDist = 0.5 - abs(sampleLocal.y);
+                edgeDist = min(radialDist, verticalDist);
+            }
+            float edgeFade = smoothstep(0.0, edgeSoftness * 0.5, edgeDist);
+            stepDensity *= edgeFade;
+        }
+
+        transmittance *= exp(-stepDensity);
+        if (transmittance < 0.01) break;
     }
 
-    float finalAlpha = 1.0 - exp(-fogDensity);
-    finalAlpha = clamp(finalAlpha * opacity, 0.0, opacity);
+    float finalAlpha = clamp((1.0 - transmittance) * opacity, 0.0, opacity);
 
     if (finalAlpha < 0.001)
     {

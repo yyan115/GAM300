@@ -456,7 +456,7 @@ return Component {
         dbg("transform y: ", self._transform.localPosition.y)
         self._controller = CharacterController.Create(self.entityId, self._collider, self._transform)
 
-        if self._animator then self._animator:PlayClip(IDLE, true) end
+        --if self._animator then self._animator:PlayClip(IDLE, true) end
 
         self.rotationSpeed = 10.0
 

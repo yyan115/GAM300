@@ -32,7 +32,7 @@ struct AudioComponent
     float MaxDistance{ 100.0f }; // Distance for minimum volume    
     
     // Output routing
-    std::string OutputAudioMixerGroup;  // Bus/Mixer group (Unity naming)
+    std::string OutputAudioMixerGroup{"SFX"};  // Bus/Mixer group - defaults to SFX bus
 
     // Runtime state (read-only in Unity inspector)
     bool IsPlaying{ false };

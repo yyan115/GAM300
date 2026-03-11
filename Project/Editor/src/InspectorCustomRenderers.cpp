@@ -1198,12 +1198,12 @@ void RegisterInspectorCustomRenderers()
         ImGui::Text("Layer");
         ImGui::SameLine(labelWidth);
         ImGui::SetNextItemWidth(-1);
-        const char *layers[] = {"Non-Moving", "Moving", "Character", "Sensor", "Debris", "Nav Ground", "Nav Obstacle", "Hurtbox"};
+        const char *layers[] = {"Non-Moving", "Moving", "Character", "Sensor", "Debris", "Nav Ground", "Nav Obstacle", "Hurtbox", "Chain Hitbox"};
         int currentLayer = static_cast<int>(collider.layer);
         int oldLayer = currentLayer;
 
         EditorComponents::PushComboColors();
-        bool changed = ImGui::Combo("##Layer", &currentLayer, layers, 8);
+        bool changed = ImGui::Combo("##Layer", &currentLayer, layers, 9);
         EditorComponents::PopComboColors();
 
         if (changed) {
@@ -3703,7 +3703,7 @@ void RegisterInspectorCustomRenderers()
         ImGui::SetNextItemWidth(-1);
 
         // Define available mixer groups
-        const char* mixerGroups[] = { "Default", "BGM", "SFX" };
+        const char* mixerGroups[] = { "Default", "BGM", "SFX", "UI" };
         int currentMixerIndex = 0;
 
         // Find current selection
@@ -3711,14 +3711,16 @@ void RegisterInspectorCustomRenderers()
             currentMixerIndex = 1;
         } else if (audio.OutputAudioMixerGroup == "SFX") {
             currentMixerIndex = 2;
+        } else if (audio.OutputAudioMixerGroup == "UI") {
+            currentMixerIndex = 3;
         } else {
-            currentMixerIndex = 0; // Default or empty
+            currentMixerIndex = 0; // Default (routes to SFX)
         }
 
         startMixerGroup[entity] = currentMixerIndex;
         EditorComponents::PushComboColors();
         if (ImGui::BeginCombo("##OutputMixerGroup", mixerGroups[currentMixerIndex])) {
-            for (int i = 0; i < 3; i++) {
+            for (int i = 0; i < 4; i++) {
                 bool isSelected = (currentMixerIndex == i);
                 if (ImGui::Selectable(mixerGroups[i], isSelected)) {
                     int oldVal = startMixerGroup[entity];
@@ -3727,6 +3729,8 @@ void RegisterInspectorCustomRenderers()
                         audio.SetOutputAudioMixerGroup("BGM");
                     } else if (newVal == 2) {
                         audio.SetOutputAudioMixerGroup("SFX");
+                    } else if (newVal == 3) {
+                        audio.SetOutputAudioMixerGroup("UI");
                     } else {
                         audio.SetOutputAudioMixerGroup("");
                     }
@@ -3738,6 +3742,7 @@ void RegisterInspectorCustomRenderers()
                                     auto& a = ecs.GetComponent<AudioComponent>(entity);
                                     if (newVal == 1) a.SetOutputAudioMixerGroup("BGM");
                                     else if (newVal == 2) a.SetOutputAudioMixerGroup("SFX");
+                                    else if (newVal == 3) a.SetOutputAudioMixerGroup("UI");
                                     else a.SetOutputAudioMixerGroup("");
                                 }
                             },
@@ -3747,6 +3752,7 @@ void RegisterInspectorCustomRenderers()
                                     auto& a = ecs.GetComponent<AudioComponent>(entity);
                                     if (oldVal == 1) a.SetOutputAudioMixerGroup("BGM");
                                     else if (oldVal == 2) a.SetOutputAudioMixerGroup("SFX");
+                                    else if (oldVal == 3) a.SetOutputAudioMixerGroup("UI");
                                     else a.SetOutputAudioMixerGroup("");
                                 }
                             },
@@ -8948,6 +8954,8 @@ void RegisterInspectorCustomRenderers()
         static std::unordered_map<Entity, bool>     isEditingNoiseScale;
         static std::unordered_map<Entity, float>    startNoiseStrength;
         static std::unordered_map<Entity, bool>     isEditingNoiseStrength;
+        static std::unordered_map<Entity, float>    startWarpStrength;
+        static std::unordered_map<Entity, bool>     isEditingWarpStrength;
         static std::unordered_map<Entity, float>    startHeightFadeStart;
         static std::unordered_map<Entity, bool>     isEditingHeightFadeStart;
         static std::unordered_map<Entity, float>    startHeightFadeEnd;
@@ -8965,6 +8973,7 @@ void RegisterInspectorCustomRenderers()
         if (isEditingScrollY.find(entity)        == isEditingScrollY.end())        isEditingScrollY[entity]        = false;
         if (isEditingNoiseScale.find(entity)     == isEditingNoiseScale.end())     isEditingNoiseScale[entity]     = false;
         if (isEditingNoiseStrength.find(entity)  == isEditingNoiseStrength.end())  isEditingNoiseStrength[entity]  = false;
+        if (isEditingWarpStrength.find(entity)   == isEditingWarpStrength.end())   isEditingWarpStrength[entity]   = false;
         if (isEditingHeightFadeStart.find(entity)== isEditingHeightFadeStart.end())isEditingHeightFadeStart[entity]= false;
         if (isEditingHeightFadeEnd.find(entity)  == isEditingHeightFadeEnd.end())  isEditingHeightFadeEnd[entity]  = false;
         if (isEditingEdgeSoftness.find(entity)   == isEditingEdgeSoftness.end())   isEditingEdgeSoftness[entity]   = false;
@@ -9102,6 +9111,25 @@ void RegisterInspectorCustomRenderers()
             isEditingNoiseStrength[entity] = false;
         }
 
+        // --- Warp Strength ---
+        ImGui::Text("Warp");
+        ImGui::SameLine(labelWidth);
+        ImGui::SetNextItemWidth(-1);
+        if (!isEditingWarpStrength[entity]) startWarpStrength[entity] = fog.warpStrength;
+        if (ImGui::IsItemActivated()) { startWarpStrength[entity] = fog.warpStrength; isEditingWarpStrength[entity] = true; }
+        if (ImGui::DragFloat("##FogWarpStrength", &fog.warpStrength, 0.01f, 0.0f, 2.0f))
+            isEditingWarpStrength[entity] = true;
+        if (isEditingWarpStrength[entity] && !ImGui::IsItemActive())
+        {
+            float oldVal = startWarpStrength[entity]; float newVal = fog.warpStrength;
+            if (oldVal != newVal && UndoSystem::GetInstance().IsEnabled())
+                UndoSystem::GetInstance().RecordLambdaChange(
+                    [entity, newVal]() { ECSManager& e = ECSRegistry::GetInstance().GetActiveECSManager(); if (e.HasComponent<FogVolumeComponent>(entity)) e.GetComponent<FogVolumeComponent>(entity).warpStrength = newVal; },
+                    [entity, oldVal]() { ECSManager& e = ECSRegistry::GetInstance().GetActiveECSManager(); if (e.HasComponent<FogVolumeComponent>(entity)) e.GetComponent<FogVolumeComponent>(entity).warpStrength = oldVal; },
+                    "Change Fog Warp Strength");
+            isEditingWarpStrength[entity] = false;
+        }
+
         // --- Scroll Speed X ---
         ImGui::Text("Scroll X");
         ImGui::SameLine(labelWidth);
@@ -9232,6 +9260,7 @@ void RegisterInspectorCustomRenderers()
     ReflectionRenderer::RegisterFieldRenderer("FogVolumeComponent", "scrollSpeedY",     [](const char*, void*, Entity, ECSManager&) { return true; });
     ReflectionRenderer::RegisterFieldRenderer("FogVolumeComponent", "noiseScale",       [](const char*, void*, Entity, ECSManager&) { return true; });
     ReflectionRenderer::RegisterFieldRenderer("FogVolumeComponent", "noiseStrength",    [](const char*, void*, Entity, ECSManager&) { return true; });
+    ReflectionRenderer::RegisterFieldRenderer("FogVolumeComponent", "warpStrength",     [](const char*, void*, Entity, ECSManager&) { return true; });
     ReflectionRenderer::RegisterFieldRenderer("FogVolumeComponent", "useHeightFade",    [](const char*, void*, Entity, ECSManager&) { return true; });
     ReflectionRenderer::RegisterFieldRenderer("FogVolumeComponent", "heightFadeStart",  [](const char*, void*, Entity, ECSManager&) { return true; });
     ReflectionRenderer::RegisterFieldRenderer("FogVolumeComponent", "heightFadeEnd",    [](const char*, void*, Entity, ECSManager&) { return true; });
