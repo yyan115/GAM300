@@ -617,6 +617,23 @@ return Component {
     -- ==========================================================================
     Update = function(self, dt)
 
+        -- ── [KEYBOARD INPUT REFERENCE] ────────────────────────────────────────
+        -- Example of raw Keyboard bindings (PC only).
+        -- Prefer Input.IsActionPressed() for normal cross-platform game code.
+        --
+        -- local kHeld = Keyboard.IsKeyPressed(Keyboard.Key.K)
+        -- if kHeld and not self._kbWasHeld then
+        --     print("[KeyboardTest] K pressed")
+        --     print("[KeyboardTest] Space held:       ", Keyboard.IsKeyPressed(Keyboard.Key.Space))
+        --     print("[KeyboardTest] Left mouse held:  ", Keyboard.IsMouseButtonPressed(Keyboard.Mouse.Left))
+        --     print("[KeyboardTest] Right mouse held: ", Keyboard.IsMouseButtonPressed(Keyboard.Mouse.Right))
+        --     print("[KeyboardTest] Mouse pos:        ", Keyboard.GetMouseX(), Keyboard.GetMouseY())
+        -- elseif not kHeld and self._kbWasHeld then
+        --     print("[KeyboardTest] K released")
+        -- end
+        -- self._kbWasHeld = kHeld
+        -- ── [END KEYBOARD INPUT REFERENCE] ───────────────────────────────────
+
         -- ── 1. Global flags ───────────────────────────────────────────────────
         -- Written first so every other system sees current values this frame.
         _G.player_is_jumping = self._isJumping    or false
