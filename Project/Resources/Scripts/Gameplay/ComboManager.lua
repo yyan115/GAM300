@@ -111,6 +111,8 @@ return Component {
                 transitions = {
                     attack = "light_2",
                     chain  = "chain_attack",
+                    jump   = "lift_attack",   -- lift available on 1st attack
+                    dash   = "dash",
                 },
             },
 
@@ -127,6 +129,8 @@ return Component {
                 transitions = {
                     attack = "light_3",
                     chain  = "chain_attack",
+                    -- no jump transition: jump during light_2 is a plain cancel, not a lift
+                    dash   = "dash",
                 },
             },
 
@@ -140,7 +144,10 @@ return Component {
                 canMove     = false,
                 comboWindow = nil,
                 lunge       = { speed = 5.0, duration = 0.18 },  -- finisher shove
-                transitions = {},
+                transitions = {
+                    jump = "lift_attack",   -- lift available on 3rd attack
+                    dash = "dash",
+                },
             },
 
             -- ── Heavy attack ──────────────────────────────────────────────
@@ -156,6 +163,23 @@ return Component {
 
                 onUpdate = function(self, state, dt)
                     local input = self._inputInterpreter
+
+                    -- Dash cancel: exit charge immediately into dash
+                    if input:HasBufferedDash() then
+                        input:ConsumeBufferedDash()
+                        self._queuedCombo = nil
+                        print("[ComboManager] DASH CANCEL: heavy_charge → dash")
+                        self:_transitionTo("dash")
+                        return
+                    end
+
+                    -- Jump cancel: exit charge cleanly; PlayerMovement fires the jump this frame
+                    if input:IsJumpJustPressed() and not _G.player_is_jumping then
+                        self._queuedCombo = nil
+                        print("[ComboManager] JUMP CANCEL: heavy_charge → idle")
+                        self:_transitionTo("idle")
+                        return
+                    end
 
                     -- Auto-release at full charge
                     if state.timer >= self.HeavyChargeTime then
@@ -302,22 +326,28 @@ return Component {
                 comboWindow  = 0.25,
                 lunge        = { speed = 2.5, duration = 0.09 },
                 transitions  = {
-                    attack = "air_light_3",
+                    attack = "air_slam",
                     dash   = "dash",
                 },
             },
 
-            air_light_3 = {
-                id           = "air_light_3",
-                animParam    = 43,
-                clipDuration = 0.6,
-                duration     = 0.6,
-                damage       = 22,
-                knockback    = 150.0,
-                canMove      = true,
+            -- ── Air slam (aerial ender + standalone aerial attack) ────────────────
+            -- Reached from air_light_2 → attack, or directly from idle when airborne.
+            -- isSlam = true tells PlayerMovement to drive -Y instead of normal velocity.
+            -- canMove = false so XZ input is ignored during the dive; PlayerMovement
+            -- kills lateral velocity on slam entry.
+            air_slam = {
+                id           = "air_slam",
+                animParam    = 44,
+                clipDuration = 0.8,
+                duration     = 0.8,
+                damage       = 30,
+                knockback    = 180.0,
+                canMove      = false,
                 isAerial     = true,
+                isSlam       = true,    -- PlayerMovement reads this to arm slam descent
                 comboWindow  = nil,
-                lunge        = { speed = 4.0, duration = 0.15 },
+                lunge        = nil,     -- no XZ lunge; PlayerMovement drives pure -Y
                 transitions  = {
                     dash = "dash",
                 },
@@ -537,15 +567,23 @@ return Component {
         end
 
         -- ══════════════════════════════════════════════════════════════════
-        -- IMMEDIATE CANCELS  (dash cancel / lift attack)
+        -- IMMEDIATE CANCELS  (dash cancel / lift attack / jump cancel)
         -- These bypass the combo window and queuing system entirely.
-        -- Priority: dash cancel > lift attack.
-        --   Dash cancel : dash buffered AND current state has transitions.dash.
-        --                 Fires immediately, clears any queued input.
-        --   Lift attack : jump just-pressed AND not already airborne AND
-        --                 current state has transitions.jump.
-        --                 canMove=true on lift_attack lets PlayerMovement
-        --                 execute the jump on the same frame.
+        -- Priority: dash cancel > lift attack / jump cancel.
+        --
+        --   Dash cancel  : dash buffered from any non-idle state.
+        --                  Fires immediately, clears any queued input.
+        --
+        --   Lift attack  : jump just-pressed AND state has transitions.jump.
+        --                  Only light_1 and light_3 route here (per combo list).
+        --                  canMove=true on lift_attack lets PlayerMovement
+        --                  execute the jump on the same frame.
+        --
+        --   Jump cancel  : jump just-pressed AND state has NO transitions.jump
+        --                  AND state is not aerial (already airborne).
+        --                  Exits to idle cleanly — PlayerMovement sees
+        --                  IsJumpJustPressed() still true this frame and fires
+        --                  a normal jump, cutting the attack's recovery frames.
         -- ══════════════════════════════════════════════════════════════════
         if state.id ~= "idle" then
             if input:HasBufferedDash() and state.transitions.dash then
@@ -556,14 +594,21 @@ return Component {
                 return
             end
 
-            if input:IsJumpJustPressed()
-                and not _G.player_is_jumping
-                and state.transitions.jump
-            then
-                self._queuedCombo = nil
-                print("[ComboManager] LIFT ATTACK: " .. state.id .. " → " .. state.transitions.jump)
-                self:_transitionTo(state.transitions.jump)
-                return
+            if input:IsJumpJustPressed() and not _G.player_is_jumping then
+                if state.transitions.jump then
+                    -- Lift attack: this state explicitly launches into an aerial state
+                    self._queuedCombo = nil
+                    print("[ComboManager] LIFT ATTACK: " .. state.id .. " → " .. state.transitions.jump)
+                    self:_transitionTo(state.transitions.jump)
+                    return
+                elseif not state.isAerial then
+                    -- Jump cancel: no lift on this state — exit to idle so
+                    -- PlayerMovement's jump check fires naturally this frame.
+                    self._queuedCombo = nil
+                    print("[ComboManager] JUMP CANCEL: " .. state.id .. " → idle")
+                    self:_transitionTo("idle")
+                    return
+                end
             end
         end
 
@@ -599,6 +644,9 @@ return Component {
             -- Hold-start or tap
             if input:IsAttackHeld() then
                 candidateStateId = state.transitions.attack_hold
+            elseif state.id == "idle" and _G.player_is_jumping then
+                -- Standalone aerial slam: airborne with no active combo
+                candidateStateId = "air_slam"
             else
                 candidateStateId = state.transitions.attack
             end
@@ -788,6 +836,7 @@ return Component {
                     knockback = newState.knockback or 0,
                     lunge     = newState.lunge,
                     isAerial  = newState.isAerial or false,
+                    isSlam    = newState.isSlam or false,
                 })
             end
         end

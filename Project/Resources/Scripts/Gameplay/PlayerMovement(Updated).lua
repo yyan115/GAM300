@@ -189,7 +189,13 @@ return Component {
         TensionScale = 0.85,  -- Resistance to outward movement when chain is taut. 0=none, 1=full block.
         -- TO ADD chain swing / pull-toward modes: add fields here.
 
-        -- === Landing ===
+        -- === Aerial combat ===
+        -- AirAttackLift : height passed to CharacterController.Jump on each aerial hit.
+        --                 Resets vertical velocity so gravity can't end a combo mid-string.
+        --                 Tune like JumpHeight — 0.8 is subtle, 1.5 gives generous hang time.
+        -- AirSlamSpeed  : downward velocity (units/sec) during slam descent.
+        AirAttackLift = 1.2,
+        AirSlamSpeed  = 22.0,
         LandingDuration     = 0.4,   -- Seconds of recovery before movement restores.
         RollHeightThreshold = 2.5,   -- Fall distance (world units) that triggers roll instead of soft land.
         -- TO ADD landing SFX variation or ledge-grab: add fields here.
@@ -271,46 +277,53 @@ return Component {
             return
         end
 
-        -- ── Camera yaw ────────────────────────────────────────────────────────
-        self._cameraYawSub = event_bus.subscribe("camera_yaw", function(yaw)
+        -- Guard: unsubscribe any existing handle before (re-)subscribing.
+        -- The engine may call Awake more than once; this makes every subscription
+        -- idempotent regardless of call order or timing.
+        local function sub(self, key, event, fn)
+            if self[key] and event_bus.unsubscribe then
+                event_bus.unsubscribe(self[key])
+            end
+            self[key] = event_bus.subscribe(event, fn)
+        end
+
+        sub(self, "_cameraYawSub", "camera_yaw", function(yaw)
             if yaw then self._cameraYaw = yaw end
         end)
 
-        -- ── Player state ──────────────────────────────────────────────────────
-        self._playerDeadSub = event_bus.subscribe("playerDead", function(playerDead)
+        -- ── Player state ──────────────────────────────────────────────────────────────────────────
+        sub(self, "_playerDeadSub", "playerDead", function(playerDead)
             if playerDead then
                 self._playerDeadPending = playerDead
                 playRandomSFX(self._audio, self.playerDeadSFX)
             end
         end)
 
-        self._playerHurtTriggeredSub = event_bus.subscribe("playerHurtTriggered", function(hit)
+        sub(self, "_playerHurtTriggeredSub", "playerHurtTriggered", function(hit)
             if hit then
                 self._isDamageStun = true
                 if self._animator then self._animator:SetBool("IsJumping", false) end
                 playRandomSFX(self._audio, self.playerHurtSFX)
-                -- Hit reaction: horizontal squash (pushed-sideways feel)
                 self:_squashTrigger("horizontal", 0.5)
             end
         end)
 
-        if self._knockSub then event_bus.unsubscribe(self._knockSub) end
-        self._knockSub = event_bus.subscribe("player_knockback", function(p)
+        sub(self, "_knockSub", "player_knockback", function(p)
             if not p then return end
             self._kbX = (p.x or 0) * (p.strength or 0)
             self._kbZ = (p.z or 0) * (p.strength or 0)
             self._kbPending = true
         end)
 
-        self._respawnPlayerSub = event_bus.subscribe("respawnPlayer", function(respawn)
+        sub(self, "_respawnPlayerSub", "respawnPlayer", function(respawn)
             if respawn then self._respawnPlayer = true end
         end)
 
-        self._activatedCheckpointSub = event_bus.subscribe("activatedCheckpoint", function(entityId)
+        sub(self, "_activatedCheckpointSub", "activatedCheckpoint", function(entityId)
             if entityId then self._activatedCheckpoint = entityId end
         end)
 
-        self._freezePlayerSub = event_bus.subscribe("freeze_player", function(frozen)
+        sub(self, "_freezePlayerSub", "freeze_player", function(frozen)
             if frozen then
                 self._freezePending     = true
                 self._freezeSettleTimer = self.CinematicSettleTime or 0.8
@@ -321,14 +334,14 @@ return Component {
         end)
 
         -- ── Rotation overrides ────────────────────────────────────────────────
-        self._requestPlayerForwardSub = event_bus.subscribe("request_player_forward", function(_)
+        sub(self, "_requestPlayerForwardSub", "request_player_forward", function(_)
             if not self._facingX or not self._facingZ then return end
             event_bus.publish("player_forward_response", {
                 x = self._facingX, y = 0, z = self._facingZ,
             })
         end)
 
-        self._forceRotSub = event_bus.subscribe("force_player_rotation_to_camera", function()
+        sub(self, "_forceRotSub", "force_player_rotation_to_camera", function()
             local yr   = math.rad(_G.CAMERA_YAW or self._cameraYaw or 180.0)
             local fwdX = -math.sin(yr)
             local fwdZ = -math.cos(yr)
@@ -340,7 +353,7 @@ return Component {
             pcall(self.SetRotation, self, w, x, y, z)
         end)
 
-        self._chainFiredRotSub = event_bus.subscribe("force_player_rotation_to_direction", function(payload)
+        sub(self, "_chainFiredRotSub", "force_player_rotation_to_direction", function(payload)
             if not payload then return end
             local dx, dz = payload.x, payload.z
             if not dx or not dz then return end
@@ -357,7 +370,7 @@ return Component {
         -- attack_performed carries { state, lunge={speed,duration} }.
         -- Direction is computed from current input + camera yaw.
         -- Chain attack inverts the direction (kickback).
-        self._attackLungeSub = event_bus.subscribe("attack_performed", function(data)
+        sub(self, "_attackLungeSub", "attack_performed", function(data)
             local yr     = math.rad(_G.CAMERA_YAW or self._cameraYaw or 180.0)
             local sinYaw = math.sin(yr); local cosYaw = math.cos(yr)
             local fwdX   = -sinYaw;     local fwdZ   = -cosYaw
@@ -393,6 +406,23 @@ return Component {
                 self._lungeDirZ  = -dirZ
                 self._lungeSpeed = self.ChainKickbackSpeed or 2.5
                 self:_squashTrigger("horizontal", 0.5)
+            elseif data and data.isSlam then
+                -- Slam entry: arm descent, kill XZ momentum so player dives straight down.
+                self._isAirSlam      = true
+                self._airLiftPending = false
+                self._velX           = 0
+                self._velZ           = 0
+                self._lungeTimer     = 0
+                self._animator:SetBool("IsSlamming", true)
+            elseif data and data.isAerial then
+                -- Air time extension: only arm when already airborne.
+                -- lift_attack fires while grounded (it IS the launcher); the normal
+                -- jump check handles getting the player airborne that frame.
+                if not CharacterController.IsGrounded(self._controller) then
+                    self._airLiftPending = true
+                end
+                self._lungeDirX = dirX
+                self._lungeDirZ = dirZ
             else
                 self._lungeDirX = dirX
                 self._lungeDirZ = dirZ
@@ -410,26 +440,29 @@ return Component {
         end)
 
         -- combat_state_changed: update movement lock. Velocity NOT zeroed here.
-        -- When ComboManager leaves an attacking state (idle, dash), any lunge that
-        -- was mid-flight must be cancelled so it does not carry into the new state.
-        self._combatStateSub = event_bus.subscribe("combat_state_changed", function(data)
+        -- When ComboManager leaves an attacking state, lunge is cancelled.
+        -- _airLiftPending is NOT cleared here — it must survive until section 21
+        -- consumes it, even if the state machine returns to idle mid-air.
+        sub(self, "_combatStateSub", "combat_state_changed", function(data)
             if not data then return end
             self._playerCanMove = data.canMove ~= false
             if not _G.player_is_attacking then
                 self._lungeTimer = 0
+                self._isAirSlam  = false
+                if self._animator then self._animator:SetBool("IsSlamming", false) end
             end
         end)
 
         -- ── Dash ──────────────────────────────────────────────────────────────
         -- ComboManager signals intent. All dash physics is owned here.
         self._dashRequested    = false
-        self._dashPerformedSub = event_bus.subscribe("dash_performed", function()
+        sub(self, "_dashPerformedSub", "dash_performed", function()
             self._dashRequested = true
         end)
 
         -- ── Chain movement constraint ─────────────────────────────────────────
         -- Payload: { ratio, exceeded, drag, endX/Y/Z, targetX/Y/Z }
-        self._chainConstraintSub = event_bus.subscribe("chain.movement_constraint", function(payload)
+        sub(self, "_chainConstraintSub", "chain.movement_constraint", function(payload)
             if not payload then return end
             self._chainConstraintRatio    = payload.ratio    or 0
             self._chainConstraintExceeded = payload.exceeded or false
@@ -445,19 +478,16 @@ return Component {
         end)
 
         -- ── Enemy proximity (vault gate) ──────────────────────────────────────
-        -- Each live enemy publishes its world position every frame.
-        -- We store the latest position per entityId so we can check the nearest
-        -- enemy distance in the vault detection block without polling or globals.
         self._nearbyEnemyPositions = {}
-        self._enemyPosSub = event_bus.subscribe("enemy_position", function(payload)
+        sub(self, "_enemyPosSub", "enemy_position", function(payload)
             if not payload or not payload.entityId then return end
             self._nearbyEnemyPositions[payload.entityId] = {
                 x = payload.x, y = payload.y, z = payload.z
             }
         end)
 
-        -- TO ADD new subscriptions: follow the pattern above.
-        -- Always add the handle key to the unsubscribe list in OnDisable.
+        -- TO ADD new subscriptions: use sub(self, "_handleKey", "event.name", fn).
+        -- sub() automatically unsubscribes the previous handle if Awake re-fires.
     end,
 
     -- ==========================================================================
@@ -522,6 +552,16 @@ return Component {
         self._squashTimer     = 0
         self._squashIntensity = 1.0
         self._squashMode      = "vertical"
+
+        -- ── Aerial combat ─────────────────────────────────────────────────────
+        -- _airLiftPending : set by attack_performed on any aerial hit; consumed
+        --                   in section 21 (Jump) to re-call CharacterController.Jump
+        --                   and reset vertical velocity, counteracting gravity.
+        -- _isAirSlam      : true while slam descent is active; PlayerMovement drives -Y.
+        -- _slamLanding    : one-frame flag so section 22 forces full-intensity hard landing.
+        self._airLiftPending = false
+        self._isAirSlam      = false
+        self._slamLanding    = false
 
         -- ── Air tracking ──────────────────────────────────────────────────────
         -- Records highest Y this airborne period for fall distance calculation.
@@ -1173,6 +1213,26 @@ return Component {
 
         -- ── 21. Jump ──────────────────────────────────────────────────────────
         local interp = _G.InputInterpreter
+
+        -- Air time extension: re-apply a fresh Jump on the frame an aerial hit lands.
+        -- CharacterController.Jump resets whatever downward velocity gravity has
+        -- accumulated, giving the player hang time without fighting gravity per-frame.
+        -- Consumed as a one-shot flag set by the attack_performed subscriber.
+        if self._airLiftPending then
+            self._airLiftPending = false
+            local grounded = CharacterController.IsGrounded(self._controller)
+            print(string.format("[AirLift] CONSUMED — IsGrounded=%s AirAttackLift=%s",
+                tostring(grounded), tostring(self.AirAttackLift)))
+            if not grounded then
+                local ok, err = pcall(function()
+                    CharacterController.Jump(self._controller, self.AirAttackLift or 1.2)
+                end)
+                print(string.format("[AirLift] Jump called — ok=%s err=%s", tostring(ok), tostring(err)))
+            else
+                print("[AirLift] SKIPPED — player is grounded, no lift applied")
+            end
+        end
+
         if not self._isLanding and not self._freezePending
             and interp and interp:IsJumpJustPressed() and isGrounded
         then
@@ -1208,7 +1268,20 @@ return Component {
         -- ── 21. Velocity ──────────────────────────────────────────────────────
         -- All XZ movement is driven through _velX/_velZ.
         -- C++ CharacterController owns vertical (gravity + jump).
-        if not isJumping then
+        -- Slam descent takes full priority: ignores all XZ input, drives -Y directly.
+        if self._isAirSlam then
+            if not isGrounded then
+                -- Slam active: drive straight down, bypass all XZ logic.
+                CharacterController.Move(self._controller, 0, -(self.AirSlamSpeed or 22.0) * dt, 0)
+            else
+                -- Landed: hand off to section 22 with slam-landing flag so it
+                -- forces full-intensity squash and hard-landing animation.
+                self._isAirSlam   = false
+                self._slamLanding = true
+                self._animator:SetBool("IsSlamming", false)
+                self._animator:SetTrigger("SlamLanded")
+            end
+        elseif not isJumping then
             if isMoving then
                 local targetX = moveX * self.Speed
                 local targetZ = moveZ * self.Speed
@@ -1319,7 +1392,7 @@ return Component {
                 -- Landed.
                 self._isJumping        = false
                 self._isLanding        = true
-                self._vaultJumpActive  = false   -- clear regardless of how the air was entered
+                self._vaultJumpActive  = false
                 self._vaultAscentLock  = false
                 self._animator:SetBool("IsJumping", false)
                 playRandomSFX(self._audio, self.playerLandSFX)
@@ -1328,14 +1401,21 @@ return Component {
                 local landY    = landPos and landPos.y or 0
                 local fallDist = (self._peakAirY or landY) - landY
 
-                -- Landing intensity: small hop = 0.3, big drop = 1.0
-                -- Tune SquashStrength to control overall scale; this just weights by height.
-                local intensity = math.max(0.3, math.min(1.0, fallDist / 3.0))
-                self:_squashTrigger("vertical", intensity)
+                local intensity, hardLand
+                if self._slamLanding then
+                    -- Slam landing always hits at full intensity with a hard land.
+                    intensity         = 1.0
+                    hardLand          = true
+                    self._slamLanding = false
+                else
+                    -- Landing intensity: small hop = 0.3, big drop = 1.0
+                    intensity = math.max(0.3, math.min(1.0, fallDist / 3.0))
+                    hardLand  = fallDist >= (self.RollHeightThreshold or 2.5)
+                    print(string.format("[Landing] fallDist=%.2f intensity=%.2f roll=%s",
+                        fallDist, intensity, tostring(hardLand)))
+                end
 
-                local hardLand = fallDist >= (self.RollHeightThreshold or 2.5)
-                print(string.format("[Landing] fallDist=%.2f intensity=%.2f roll=%s",
-                    fallDist, intensity, tostring(hardLand)))
+                self:_squashTrigger("vertical", intensity)
 
                 if hardLand then
                     self._isRolling = true

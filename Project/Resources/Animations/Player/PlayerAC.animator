@@ -66,6 +66,11 @@
             "defaultValue": 0.0
         },
         {
+            "name": "Dash",
+            "type": "Trigger",
+            "defaultValue": 0.0
+        },
+        {
             "name": "FeatherSkill",
             "type": "Trigger",
             "defaultValue": 0.0
@@ -94,6 +99,16 @@
             "name": "IsArmed",
             "type": "Bool",
             "defaultValue": 0.0
+        },
+        {
+            "name": "IsRolling",
+            "type": "Bool",
+            "defaultValue": 0.0
+        },
+        {
+            "name": "DONTACTIVATE",
+            "type": "Trigger",
+            "defaultValue": 0.0
         }
     ],
     "states": [
@@ -104,8 +119,8 @@
             "speed": 2.000000238418579,
             "crossfadeDuration": 0.0,
             "nodePosition": {
-                "x": 1059.2657470703125,
-                "y": -380.439208984375
+                "x": 1071.992919921875,
+                "y": -324.0755920410156
             }
         },
         {
@@ -203,8 +218,8 @@
             "speed": 2.000000238418579,
             "crossfadeDuration": 0.0,
             "nodePosition": {
-                "x": 1239.0,
-                "y": -384.5
+                "x": 1248.0908203125,
+                "y": -324.5
             }
         },
         {
@@ -214,8 +229,8 @@
             "speed": 2.000000238418579,
             "crossfadeDuration": 0.0,
             "nodePosition": {
-                "x": 1410.0,
-                "y": -388.5
+                "x": 1420.7274169921875,
+                "y": -326.1817321777344
             }
         },
         {
@@ -225,8 +240,8 @@
             "speed": 1.8999998569488525,
             "crossfadeDuration": 0.0,
             "nodePosition": {
-                "x": -283.75,
-                "y": -195.0
+                "x": -17.544811248779297,
+                "y": -216.97007751464844
             }
         },
         {
@@ -315,6 +330,61 @@
             "nodePosition": {
                 "x": -22.03935432434082,
                 "y": -134.7531280517578
+            }
+        },
+        {
+            "id": "Lift",
+            "clipIndex": 18446744073709551615,
+            "loop": true,
+            "speed": 1.0,
+            "crossfadeDuration": 0.20000000298023224,
+            "nodePosition": {
+                "x": 1056.9166259765625,
+                "y": -122.63087463378906
+            }
+        },
+        {
+            "id": "Aerial1",
+            "clipIndex": 18446744073709551615,
+            "loop": true,
+            "speed": 1.0,
+            "crossfadeDuration": 0.20000000298023224,
+            "nodePosition": {
+                "x": 1059.2030029296875,
+                "y": -45.46285629272461
+            }
+        },
+        {
+            "id": "Aerial1 2",
+            "clipIndex": 18446744073709551615,
+            "loop": true,
+            "speed": 1.0,
+            "crossfadeDuration": 0.20000000298023224,
+            "nodePosition": {
+                "x": 1233.0361328125,
+                "y": -47.629512786865234
+            }
+        },
+        {
+            "id": "Slam",
+            "clipIndex": 18446744073709551615,
+            "loop": true,
+            "speed": 1.0,
+            "crossfadeDuration": 0.20000000298023224,
+            "nodePosition": {
+                "x": 1063.1632080078125,
+                "y": 48.14955139160156
+            }
+        },
+        {
+            "id": "Loopdash",
+            "clipIndex": 18446744073709551615,
+            "loop": true,
+            "speed": 1.0,
+            "crossfadeDuration": 0.20000000298023224,
+            "nodePosition": {
+                "x": -467.03759765625,
+                "y": -197.22396850585938
             }
         }
     ],
@@ -561,6 +631,11 @@
                     "paramName": "IsRunning",
                     "mode": "Equals",
                     "threshold": 0.0
+                },
+                {
+                    "paramName": "IsRolling",
+                    "mode": "Equals",
+                    "threshold": 0.0
                 }
             ]
         },
@@ -669,6 +744,11 @@
                 },
                 {
                     "paramName": "IsRunning",
+                    "mode": "Equals",
+                    "threshold": 1.0
+                },
+                {
+                    "paramName": "IsRolling",
                     "mode": "Equals",
                     "threshold": 1.0
                 }
@@ -1862,6 +1942,266 @@
                     "threshold": 0.0
                 }
             ]
+        },
+        {
+            "from": "NA1",
+            "to": "Lift",
+            "anyState": false,
+            "hasExitTime": false,
+            "exitTime": 1.0,
+            "transitionDuration": 0.20000000298023224,
+            "conditions": [
+                {
+                    "paramName": "DONTACTIVATE",
+                    "mode": "TriggerFired",
+                    "threshold": 0.0
+                }
+            ]
+        },
+        {
+            "from": "NA3",
+            "to": "Lift",
+            "anyState": false,
+            "hasExitTime": false,
+            "exitTime": 1.0,
+            "transitionDuration": 0.20000000298023224,
+            "conditions": [
+                {
+                    "paramName": "DONTACTIVATE",
+                    "mode": "TriggerFired",
+                    "threshold": 0.0
+                }
+            ]
+        },
+        {
+            "from": "Aerial1",
+            "to": "Aerial1 2",
+            "anyState": false,
+            "hasExitTime": false,
+            "exitTime": 1.0,
+            "transitionDuration": 0.20000000298023224,
+            "conditions": [
+                {
+                    "paramName": "DONTACTIVATE",
+                    "mode": "TriggerFired",
+                    "threshold": 0.0
+                }
+            ]
+        },
+        {
+            "from": "Lift",
+            "to": "Aerial1",
+            "anyState": false,
+            "hasExitTime": false,
+            "exitTime": 1.0,
+            "transitionDuration": 0.20000000298023224,
+            "conditions": [
+                {
+                    "paramName": "DONTACTIVATE",
+                    "mode": "TriggerFired",
+                    "threshold": 0.0
+                }
+            ]
+        },
+        {
+            "from": "Jump",
+            "to": "Aerial1",
+            "anyState": false,
+            "hasExitTime": false,
+            "exitTime": 1.0,
+            "transitionDuration": 0.20000000298023224,
+            "conditions": [
+                {
+                    "paramName": "DONTACTIVATE",
+                    "mode": "TriggerFired",
+                    "threshold": 0.0
+                }
+            ]
+        },
+        {
+            "from": "Jump",
+            "to": "Run",
+            "anyState": false,
+            "hasExitTime": true,
+            "exitTime": 0.20999999344348907,
+            "transitionDuration": 0.20000000298023224,
+            "conditions": [
+                {
+                    "paramName": "IsGrounded",
+                    "mode": "Equals",
+                    "threshold": 1.0
+                },
+                {
+                    "paramName": "IsJumping",
+                    "mode": "Equals",
+                    "threshold": 0.0
+                },
+                {
+                    "paramName": "IsRunning",
+                    "mode": "Equals",
+                    "threshold": 1.0
+                },
+                {
+                    "paramName": "IsRolling",
+                    "mode": "Equals",
+                    "threshold": 0.0
+                }
+            ]
+        },
+        {
+            "from": "Dash",
+            "to": "Loopdash",
+            "anyState": false,
+            "hasExitTime": false,
+            "exitTime": 1.0,
+            "transitionDuration": 0.0,
+            "conditions": [
+                {
+                    "paramName": "Dash",
+                    "mode": "TriggerFired",
+                    "threshold": 0.0
+                }
+            ]
+        },
+        {
+            "from": "Loopdash",
+            "to": "Dash",
+            "anyState": false,
+            "hasExitTime": false,
+            "exitTime": 1.0,
+            "transitionDuration": 0.0,
+            "conditions": []
+        },
+        {
+            "from": "Jump",
+            "to": "Slam",
+            "anyState": false,
+            "hasExitTime": false,
+            "exitTime": 1.0,
+            "transitionDuration": 0.20000000298023224,
+            "conditions": [
+                {
+                    "paramName": "DONTACTIVATE",
+                    "mode": "TriggerFired",
+                    "threshold": 0.0
+                }
+            ]
+        },
+        {
+            "from": "Aerial1 2",
+            "to": "Slam",
+            "anyState": false,
+            "hasExitTime": false,
+            "exitTime": 1.0,
+            "transitionDuration": 0.20000000298023224,
+            "conditions": [
+                {
+                    "paramName": "DONTACTIVATE",
+                    "mode": "TriggerFired",
+                    "threshold": 0.0
+                }
+            ]
+        },
+        {
+            "from": "NA1",
+            "to": "Dash",
+            "anyState": false,
+            "hasExitTime": false,
+            "exitTime": 1.0,
+            "transitionDuration": 0.0,
+            "conditions": [
+                {
+                    "paramName": "IsDashing",
+                    "mode": "Equals",
+                    "threshold": 1.0
+                }
+            ]
+        },
+        {
+            "from": "NA2",
+            "to": "Dash",
+            "anyState": false,
+            "hasExitTime": false,
+            "exitTime": 1.0,
+            "transitionDuration": 0.0,
+            "conditions": [
+                {
+                    "paramName": "IsDashing",
+                    "mode": "Equals",
+                    "threshold": 1.0
+                }
+            ]
+        },
+        {
+            "from": "NA3",
+            "to": "Dash",
+            "anyState": false,
+            "hasExitTime": false,
+            "exitTime": 1.0,
+            "transitionDuration": 0.0,
+            "conditions": [
+                {
+                    "paramName": "IsDashing",
+                    "mode": "Equals",
+                    "threshold": 1.0
+                }
+            ]
+        },
+        {
+            "from": "Dash",
+            "to": "NA1",
+            "anyState": false,
+            "hasExitTime": false,
+            "exitTime": 1.0,
+            "transitionDuration": 0.20000000298023224,
+            "conditions": [
+                {
+                    "paramName": "Attack",
+                    "mode": "TriggerFired",
+                    "threshold": 1.0
+                },
+                {
+                    "paramName": "ComboStep",
+                    "mode": "Equals",
+                    "threshold": 1.0
+                }
+            ]
+        },
+        {
+            "from": "Aerial1",
+            "to": "Land",
+            "anyState": false,
+            "hasExitTime": false,
+            "exitTime": 1.0,
+            "transitionDuration": 0.20000000298023224,
+            "conditions": []
+        },
+        {
+            "from": "Aerial1",
+            "to": "Roll",
+            "anyState": false,
+            "hasExitTime": false,
+            "exitTime": 1.0,
+            "transitionDuration": 0.20000000298023224,
+            "conditions": []
+        },
+        {
+            "from": "Aerial1 2",
+            "to": "Land",
+            "anyState": false,
+            "hasExitTime": false,
+            "exitTime": 1.0,
+            "transitionDuration": 0.20000000298023224,
+            "conditions": []
+        },
+        {
+            "from": "Aerial1 2",
+            "to": "Roll",
+            "anyState": false,
+            "hasExitTime": false,
+            "exitTime": 1.0,
+            "transitionDuration": 0.20000000298023224,
+            "conditions": []
         }
     ],
     "clipPaths": [
