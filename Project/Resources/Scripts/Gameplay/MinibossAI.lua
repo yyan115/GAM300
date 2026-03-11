@@ -436,6 +436,13 @@ return Component {
             self._animator:SetTrigger("Hooked")
         end)
 
+        self._chainEnemyHookedSub = _G.event_bus.subscribe("chain.enemy_hooked", function(payload)
+            if not payload then return end
+            if payload.entityId ~= self.entityId then return end
+            print("[MinibossAI] chain.enemy_hooked received — calling ApplyHook")
+            pcall(function() self:ApplyHook(payload.duration or self.HookedDuration) end)
+        end)
+
         -- Seed prevY for grounded heuristic
         local _, y, _ = self:GetPosition()
         self._prevY = y
@@ -1329,12 +1336,16 @@ return Component {
             if self._hookSub then pcall(function() _G.event_bus.unsubscribe(self._hookSub) end) end
             if self._meleeHitSub then pcall(function() _G.event_bus.unsubscribe(self._meleeHitSub) end) end
             if self._freezeEnemySub then pcall(function() _G.event_bus.unsubscribe(self._freezeEnemySub) end) end
+            if self._chainEndpointHitSub then pcall(function() _G.event_bus.unsubscribe(self._chainEndpointHitSub) end) end
+            if self._chainEnemyHookedSub then pcall(function() _G.event_bus.unsubscribe(self._chainEnemyHookedSub) end) end
         end
         self._damageSub = nil
         self._comboDamageSub = nil
         self._hookSub = nil
         self._meleeHitSub = nil
         self._freezeEnemySub = nil
+        self._chainEndpointHitSub = nil
+        self._chainEnemyHookedSub = nil
         self._frozenBycinematic = false
     end,
 
@@ -1353,12 +1364,16 @@ return Component {
             if self._hookSub then pcall(function() _G.event_bus.unsubscribe(self._hookSub) end) end
             if self._meleeHitSub then pcall(function() _G.event_bus.unsubscribe(self._meleeHitSub) end) end
             if self._freezeEnemySub then pcall(function() _G.event_bus.unsubscribe(self._freezeEnemySub) end) end
+            if self._chainEndpointHitSub then pcall(function() _G.event_bus.unsubscribe(self._chainEndpointHitSub) end) end
+            if self._chainEnemyHookedSub then pcall(function() _G.event_bus.unsubscribe(self._chainEnemyHookedSub) end) end
         end
         self._damageSub = nil
         self._comboDamageSub = nil
         self._hookSub = nil
         self._meleeHitSub = nil
         self._freezeEnemySub = nil
+        self._chainEndpointHitSub = nil
+        self._chainEnemyHookedSub = nil
     end,
 
     -------------------------------------------------
