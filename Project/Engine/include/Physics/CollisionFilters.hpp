@@ -16,7 +16,8 @@ public:
         mObjectToBroadPhase[Layers::DEBRIS] = BroadPhaseLayers::MOVING;
         mObjectToBroadPhase[Layers::NAV_GROUND] = BroadPhaseLayers::NON_MOVING;
         mObjectToBroadPhase[Layers::NAV_OBSTACLE] = BroadPhaseLayers::NON_MOVING;
-        mObjectToBroadPhase[Layers::HURTBOX] = BroadPhaseLayers::MOVING;
+        mObjectToBroadPhase[Layers::HURTBOX]       = BroadPhaseLayers::MOVING;
+        mObjectToBroadPhase[Layers::CHAIN_HITBOX]  = BroadPhaseLayers::MOVING;  // Chain hitbox: must be visible to SENSOR (chain endpoint)
     }
 
     ~MyBroadPhaseLayerInterface() override = default;
@@ -68,6 +69,9 @@ public:
         case Layers::HURTBOX:
             return bp == BroadPhaseLayers::MOVING;  // Only need to see SENSOR (which is on MOVING broadphase)
 
+        case Layers::CHAIN_HITBOX:
+            return bp == BroadPhaseLayers::MOVING;  // Only needs to see SENSOR (chain endpoint trigger)
+
         default:
             return false;
         }
@@ -103,8 +107,15 @@ public:
         if ((a == Layers::NAV_GROUND || a == Layers::NAV_OBSTACLE) && b == Layers::NON_MOVING) return false;
         if (a == Layers::NON_MOVING && (b == Layers::NAV_GROUND || b == Layers::NAV_OBSTACLE)) return false;
 
-        // Hurtbox: only collides with SENSOR (weapon triggers can detect hurtboxes, nothing else)
-        if (a == Layers::HURTBOX || b == Layers::HURTBOX) {
+        // OLD: Hurtbox collides with SENSOR — uncomment to restore:
+        // if (a == Layers::HURTBOX || b == Layers::HURTBOX) {
+        //     return (a == Layers::SENSOR || b == Layers::SENSOR);
+        // }
+        // NEW: Hurtbox does not collide with SENSOR — use CHAIN_HITBOX for chain detection
+        if (a == Layers::HURTBOX || b == Layers::HURTBOX) return false;
+
+        // Chain hitbox: only collides with SENSOR (chain endpoint trigger detects it; weapon attacks do NOT)
+        if (a == Layers::CHAIN_HITBOX || b == Layers::CHAIN_HITBOX) {
             return (a == Layers::SENSOR || b == Layers::SENSOR);
         }
 
