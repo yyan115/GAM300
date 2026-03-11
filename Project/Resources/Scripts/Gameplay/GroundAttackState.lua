@@ -66,6 +66,13 @@ function AttackState:Update(ai, dt)
             if d2 <= (meleeR * meleeR) then
                 ai._animator:SetBool("Melee", true)
                 ai.meleeAnimTriggered = true
+                if _G.event_bus and _G.event_bus.publish then
+                    _G.event_bus.publish("melee_incoming", {
+                        dmg = (ai.MeleeDamage or 1),
+                        src = "GroundEnemy",
+                        enemyEntityId = ai.entityId,
+                    })
+                end
             elseif d2 > (diseng * diseng) then
                 ai.fsm:Change("Patrol", ai.states.Patrol)
                 return

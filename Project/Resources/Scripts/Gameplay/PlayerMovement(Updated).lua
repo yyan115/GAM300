@@ -50,6 +50,11 @@ EVENTS CONSUMED:
 -- TO ADD new events: subscribe in Awake under the appropriate section header,
 -- unsubscribe in OnDisable, and document the event name + payload above.
 
+EVENTS PUBLISHED:
+    player_position   { x, y, z }  → broadcast every frame after position sync
+    player_forward_response { x, y, z }  → reply to request_player_forward
+    dash_executed     {}  → fires only when a dash actually runs (not on discard)
+
 AUTHOR: Soh Wei Jie
 VERSION: 3.0
 ================================================================================
@@ -918,6 +923,13 @@ return Component {
             if not earlyCancel then self._animator:SetBool("IsDashing", true) end
             self._animator:SetTrigger("Dash")
             playRandomSFX(self._audio, self.playerDashSFX)
+
+            -- Confirmed: dash actually ran. Downstream systems (PlayerHealth i-frame,
+            -- camera_effects dodge feedback) should listen to this, not dash_performed,
+            -- which fires on intent and can be discarded before execution.
+            if event_bus and event_bus.publish then
+                event_bus.publish("dash_executed", {})
+            end
 
         elseif self._dashRequested and self._isDashing then
             -- Inside dash, before early-cancel window. Hold the request.

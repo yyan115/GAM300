@@ -105,11 +105,27 @@ return Component {
 
         if event_bus and event_bus.subscribe then
 
+            -- ── Predictive dodge ─────────────────────────────────────────────
+            -- These fire before the damage event reaches PlayerHealth, giving
+            -- checkDodge a chance to confirm the dodge at the moment of danger
+            -- rather than at the moment damage would be applied.
+
+            self._knifeIncomingSub = event_bus.subscribe("knife_incoming", function(payload)
+                if not payload then return end
+                checkDodge(self, "knife", payload)
+            end)
+
+            self._meleeIncomingSub = event_bus.subscribe("melee_incoming", function(payload)
+                if not payload then return end
+                checkDodge(self, "melee", payload)
+            end)
+
             -- ── Dash i-frame ─────────────────────────────────────────────────
-            -- Starts the moment a dash fires. Lasts exactly DashIFrameDuration.
-            -- Separate from _isIFrame so a post-hit i-frame doesn't block dodge
-            -- detection, and a dodge doesn't reset the post-hit i-frame timer.
-            self._dashPerformedSub = event_bus.subscribe("dash_performed", function()
+            -- Listens to dash_executed (not dash_performed) so the i-frame only
+            -- opens when PlayerMovement confirms the dash actually ran.
+            -- dash_performed can be discarded (no uses, stun, landing) which
+            -- would open a false i-frame with no animation playing.
+            self._dashExecutedSub = event_bus.subscribe("dash_executed", function()
                 self._isDashIFrame    = true
                 self._dashIFrameTimer = self.DashIFrameDuration or 0.7
             end)
@@ -327,7 +343,8 @@ return Component {
     OnDisable = function(self)
         if event_bus and event_bus.unsubscribe then
             local subs = {
-                "_dashPerformedSub", "_knifeHitPlayerDmgSub", "_meleeHitPlayerDmgSub",
+                "_knifeIncomingSub", "_meleeIncomingSub",
+                "_dashExecutedSub", "_knifeHitPlayerDmgSub", "_meleeHitPlayerDmgSub",
                 "_minibossSlashSub", "_bossShoutAoeSub", "_bossRainExplosivesSub",
                 "_bossDiveImpactSub", "_playerHealSub", "_respawnPlayerSub",
             }
