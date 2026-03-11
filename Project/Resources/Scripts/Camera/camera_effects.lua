@@ -27,6 +27,7 @@ EVENTS CONSUMED:
     fx_sequence         { name }  → run a named scripted sequence from SEQUENCES
     fx_sequence_cancel  {}        → abort the currently running sequence
     dodge_success       { attackType, payload }  → chromatic spike + freeze-frame slow-mo
+    vault_jump          {}                        → chromatic spike + freeze-frame slow-mo on confirmed vault
 
 EVENTS PUBLISHED:
     fx_time_scale_restored  {}  → fires when time scale returns to 1.0
@@ -119,6 +120,14 @@ return Component {
         DodgeChromaticDuration  = 0.35,  -- Seconds the chromatic spike is held before fading.
         DodgeTimeScale          = 0.15,  -- Time scale during the freeze-frame dip. Lower = more dramatic.
         DodgeTimeScaleDuration  = 0.45,  -- Seconds the time dilation is held before restoring.
+
+        -- === Vault Jump ===
+        -- Chromatic spike + freeze-frame slow-mo on a confirmed vault jump.
+        -- Independent from Dodge Success — tune each separately to match their feel.
+        VaultChromaticIntensity = 0.90,  -- Chromatic aberration intensity at peak.
+        VaultChromaticDuration  = 0.35,  -- Seconds the chromatic spike is held before fading.
+        VaultTimeScale          = 0.15,  -- Time scale during the freeze-frame dip. Lower = more dramatic.
+        VaultTimeScaleDuration  = 0.45,  -- Seconds the time dilation is held before restoring.
 
         -- === Defaults ===
         DefaultVignetteSmoothness = 0.4,
@@ -220,6 +229,22 @@ return Component {
 
             self._timeScaleTarget   = self.DodgeTimeScale          or 0.15
             self._timeScaleDuration = self.DodgeTimeScaleDuration  or 0.12
+            self._timeScaleTimer    = 0
+            self._timeScaleHeld     = false
+            Time.SetTimeScale(self._timeScaleTarget)
+        end)
+
+        -- === Vault Jump ===
+        -- Fires a chromatic spike and a freeze-frame time dip on a confirmed vault jump.
+        -- Tune VaultTimeScale closer to 1.0 to soften the dip.
+        self._vaultJumpSub = event_bus.subscribe("vault_jump", function()
+            self._chromaticTarget   = self.VaultChromaticIntensity or 0.90
+            self._chromaticDuration = self.VaultChromaticDuration  or 0.35
+            self._chromaticTimer    = 0
+            self._chromaticHeld     = false
+
+            self._timeScaleTarget   = self.VaultTimeScale          or 0.15
+            self._timeScaleDuration = self.VaultTimeScaleDuration  or 0.45
             self._timeScaleTimer    = 0
             self._timeScaleHeld     = false
             Time.SetTimeScale(self._timeScaleTarget)
@@ -441,7 +466,7 @@ return Component {
                 "_motionBlurSub",
                 "_timeScaleSub", "_timeScaleClearSub",
                 "_clearAllSub",
-                "_dodgeSuccessSub",
+                "_dodgeSuccessSub", "_vaultJumpSub",
                 "_sequenceSub", "_sequenceCancelSub",
             }
             for _, key in ipairs(subs) do

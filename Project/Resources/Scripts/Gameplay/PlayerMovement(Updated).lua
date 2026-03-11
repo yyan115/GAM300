@@ -47,13 +47,16 @@ EVENTS CONSUMED:
     dash_performed                      → begin dash
     chain.movement_constraint           → apply chain length / drag constraint
 
+EVENTS PUBLISHED:
+    dash_executed                       → confirms dash actually ran (i-frame gate in PlayerHealth)
+    dash_ended                          → dash finished; carries uses/regen state
+    player_forward_response             → reply to request_player_forward
+    player_position                     → world position each frame
+    playerRespawned                     → respawn complete; carries spawn position
+    vault_jump                          → confirmed vault jump executed
+
 -- TO ADD new events: subscribe in Awake under the appropriate section header,
 -- unsubscribe in OnDisable, and document the event name + payload above.
-
-EVENTS PUBLISHED:
-    player_position   { x, y, z }  → broadcast every frame after position sync
-    player_forward_response { x, y, z }  → reply to request_player_forward
-    dash_executed     {}  → fires only when a dash actually runs (not on discard)
 
 AUTHOR: Soh Wei Jie
 VERSION: 3.0
@@ -149,7 +152,15 @@ return Component {
         -- === Jump & air control ===
         JumpHeight           = 1.2,   -- Vertical impulse magnitude.
         AirControlMultiplier = 0.3,   -- Scales both turn rate and accel in air. 0=ballistic, 1=full control.
-        -- TO ADD double-jump / wall-jump: add fields here, handle in the Jump section of Update.
+
+        -- === Vault jump ===
+        -- Two forward rays at VaultMinHeight and VaultMaxHeight probe for vaultable obstacles.
+        -- Object qualifies when the min ray hits and the max ray does not.
+        VaultMinHeight       = 0.2,   -- Lower ray origin height above feet. Object must be at least this tall.
+        VaultMaxHeight       = 2.0,   -- Upper ray origin height above feet. Object must be shorter than this.
+        VaultDetectRange     = 2.5,   -- Forward ray length (world units). How far ahead to probe.
+        VaultMinApproachDist = 0.4,   -- Min distance to obstacle for vault to register. Prevents trigger while standing right at the base.
+        VaultJumpHeight      = 2.0,   -- Fixed jump height used for all vault jumps. Tune this in the editor.
 
         -- === Dash ===
         DashSpeed              = 5.0,   -- Dash impulse speed — independent of Speed.
@@ -483,6 +494,19 @@ return Component {
         -- ── Air tracking ──────────────────────────────────────────────────────
         -- Records highest Y this airborne period for fall distance calculation.
         self._peakAirY = 0
+
+        -- ── Vault jump ────────────────────────────────────────────────────────
+        -- _vaultDetected: true when this frame's ray probe found a vaultable obstacle.
+        -- Cleared after jump consumes it, or when player stops approaching.
+        self._vaultDetected        = false
+        self._vaultJumpHeight      = 0
+        self._vaultJumpActive      = false   -- true while airborne from a vault jump
+        self._vaultLaunchY         = 0
+        self._vaultPeakY           = 0
+        self._vaultAirControlBlend = 0       -- 1.0 = full control, 0.0 = normal AirControlMultiplier
+        self._vaultAscentLock      = false   -- suppresses landing detection while player is still rising
+        self._vaultReadyTimer      = 0       -- holds _vaultDetected alive briefly for forgiving timing
+        self._prevAirY             = 0       -- previous frame Y; used to detect peak and start of descent
 
         -- ── Spawn position ────────────────────────────────────────────────────
         local pos = self._transform.worldPosition
@@ -900,6 +924,13 @@ return Component {
             self._dashUses       = self._dashUses - 1
             self._dashRegenTimer = self.DashCooldown
 
+            -- Confirm the dash actually ran so PlayerHealth can open the i-frame window.
+            -- dash_performed may be discarded (no uses, stun, landing) — dash_executed
+            -- only fires here, after all guard checks pass.
+            if event_bus and event_bus.publish then
+                event_bus.publish("dash_executed", {})
+            end
+
             -- Direction: prefer current input, fall back to current facing.
             if isMoving then
                 local len = math.sqrt(moveX*moveX + moveZ*moveZ)
@@ -923,13 +954,6 @@ return Component {
             if not earlyCancel then self._animator:SetBool("IsDashing", true) end
             self._animator:SetTrigger("Dash")
             playRandomSFX(self._audio, self.playerDashSFX)
-
-            -- Confirmed: dash actually ran. Downstream systems (PlayerHealth i-frame,
-            -- camera_effects dodge feedback) should listen to this, not dash_performed,
-            -- which fires on intent and can be discarded before execution.
-            if event_bus and event_bus.publish then
-                event_bus.publish("dash_executed", {})
-            end
 
         elseif self._dashRequested and self._isDashing then
             -- Inside dash, before early-cancel window. Hold the request.
@@ -1012,17 +1036,90 @@ return Component {
             end
         end
 
-        -- ── 20. Jump ──────────────────────────────────────────────────────────
+        -- ── 20. Vault detection ───────────────────────────────────────────────
+        -- Runs every frame while grounded and moving forward.
+        -- Fires a min and max forward ray. If min hits and max misses, vault is ready.
+        -- _vaultReadyTimer holds the result alive briefly so a slightly late jump still catches it.
+        -- Result is stored in _vaultDetected / _vaultJumpHeight for the jump block.
+
+        -- Tick the ready timer — keeps _vaultDetected alive even if the ray misses this frame
+        if self._vaultReadyTimer > 0 then
+            self._vaultReadyTimer = self._vaultReadyTimer - dt
+            if self._vaultReadyTimer <= 0 then
+                self._vaultDetected = false
+            end
+        else
+            self._vaultDetected = false
+        end
+
+        if isGrounded and isMoving and not self._isDamageStun then
+            -- Low threshold so detection fires early as the player approaches.
+            -- 0.15 * Speed means almost any forward-facing movement qualifies.
+            local approachDot = self._velX * self._facingX + self._velZ * self._facingZ
+            local approachThreshold = (self.Speed or 4.0) * 0.15
+            if approachDot > approachThreshold then
+                local vpos = CharacterController.GetPosition(self._controller)
+                if vpos and Physics and Physics.Raycast then
+                    local fx, fz  = self._facingX, self._facingZ
+                    local range   = self.VaultDetectRange     or 2.5
+                    local minH    = self.VaultMinHeight        or 0.2
+                    local maxH    = self.VaultMaxHeight        or 2.0
+                    local minDist = self.VaultMinApproachDist  or 0.4
+
+                    -- Min ray: obstacle must reach at least this height
+                    local minOk, minHitDist = pcall(function()
+                        return Physics.Raycast(vpos.x, vpos.y + minH, vpos.z, fx, 0, fz, range)
+                    end)
+                    local minHit = minOk and minHitDist and minHitDist > 0
+
+                    if minHit and minHitDist > minDist then
+                        -- Max ray: obstacle must NOT reach this height (too tall to vault)
+                        local maxOk, maxHitDist = pcall(function()
+                            return Physics.Raycast(vpos.x, vpos.y + maxH, vpos.z, fx, 0, fz, range)
+                        end)
+                        local maxHit = maxOk and maxHitDist and maxHitDist > 0
+
+                        if not maxHit then
+                            self._vaultDetected   = true
+                            self._vaultJumpHeight = self.VaultJumpHeight or 2.0
+                            self._vaultReadyTimer = 0.25   -- hold detection alive for forgiving jump timing
+                        end
+                    end
+                end
+            end
+        end
+
+        -- ── 21. Jump ──────────────────────────────────────────────────────────
         local interp = _G.InputInterpreter
         if not self._isLanding and not self._freezePending
             and interp and interp:IsJumpJustPressed() and isGrounded
         then
-            CharacterController.Jump(self._controller, self.JumpHeight)
+            local jumpH = (self._vaultDetected and self._vaultJumpHeight) or self.JumpHeight
+            CharacterController.Jump(self._controller, jumpH)
             isJumping = true
             self._animator:SetBool("IsJumping", true)
             playRandomSFX(self._audio, self.playerJumpSFX)
             local launchPos = CharacterController.GetPosition(self._controller)
             self._peakAirY  = launchPos and launchPos.y or 0
+
+            if self._vaultDetected then
+                -- Arm vault air control: starts full, tapers to normal as player reaches peak.
+                self._vaultJumpActive      = true
+                self._vaultLaunchY         = self._peakAirY
+                self._vaultPeakY           = self._peakAirY + jumpH
+                self._vaultAirControlBlend = 1.0
+                self._vaultDetected        = false
+                self._vaultReadyTimer      = 0
+                self._vaultAscentLock      = true   -- block landing detection until player starts descending
+                self._prevAirY             = self._peakAirY
+                if event_bus and event_bus.publish then
+                    event_bus.publish("vault_jump", {
+                        height  = jumpH,
+                        launchY = self._vaultLaunchY,
+                        peakY   = self._vaultPeakY,
+                    })
+                end
+            end
             -- TO ADD double-jump: track jump count here, gate on _jumpCount, call Jump again.
         end
 
@@ -1036,9 +1133,23 @@ return Component {
                 local dot = self._velX * targetX + self._velZ * targetZ
 
                 if not isGrounded then
-                    -- Air control: same logic as ground, scaled by AirControlMultiplier.
-                    local rate = ((dot < 0) and self.TurnDecel or self.Acceleration)
-                        * (self.AirControlMultiplier or 0.3)
+                    -- Vault jump: blend from full control at launch down to normal at peak.
+                    -- Progress tracks how far through the ascent the player is.
+                    if self._vaultJumpActive then
+                        local airPos   = CharacterController.GetPosition(self._controller)
+                        local curY     = airPos and airPos.y or self._vaultLaunchY
+                        local span     = math.max(0.01, self._vaultPeakY - self._vaultLaunchY)
+                        local progress = math.min(1.0, (curY - self._vaultLaunchY) / span)
+                        self._vaultAirControlBlend = math.max(0.0, 1.0 - progress)
+                    end
+
+                    local baseAir    = self.AirControlMultiplier or 0.3
+                    local airControl = self._vaultJumpActive
+                        and (baseAir + (1.0 - baseAir) * self._vaultAirControlBlend)
+                        or  baseAir
+
+                    -- Air control: same logic as ground, scaled by airControl.
+                    local rate = ((dot < 0) and self.TurnDecel or self.Acceleration) * airControl
                     local t = math.min(rate * dt, 1.0)
                     self._velX = self._velX + (targetX - self._velX) * t
                     self._velZ = self._velZ + (targetZ - self._velZ) * t
@@ -1109,11 +1220,25 @@ return Component {
                 local walkOffPos = CharacterController.GetPosition(self._controller)
                 self._peakAirY   = walkOffPos and walkOffPos.y or 0
             end
+
+            -- Track Y each airborne frame to detect when ascent has peaked.
+            -- Once the player starts descending, release the ascent lock.
+            if self._vaultAscentLock then
+                local airPos = CharacterController.GetPosition(self._controller)
+                local curY   = airPos and airPos.y or self._prevAirY
+                if curY < self._prevAirY - 0.01 then
+                    -- Y has dropped since last frame — past the peak, safe to land now
+                    self._vaultAscentLock = false
+                end
+                self._prevAirY = curY
+            end
         else
-            if self._isJumping then
+            if self._isJumping and not self._vaultAscentLock then
                 -- Landed.
-                self._isJumping = false
-                self._isLanding = true
+                self._isJumping        = false
+                self._isLanding        = true
+                self._vaultJumpActive  = false   -- clear regardless of how the air was entered
+                self._vaultAscentLock  = false
                 self._animator:SetBool("IsJumping", false)
                 playRandomSFX(self._audio, self.playerLandSFX)
 
@@ -1245,6 +1370,7 @@ return Component {
         self._chainConstraintExceeded = false
         self._chainDrag               = false
         self._squashPhase             = nil
+        self._vaultAscentLock         = false
         _G.player_is_dashing          = false
     end,
 }
