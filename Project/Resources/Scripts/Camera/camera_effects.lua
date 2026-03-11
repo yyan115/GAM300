@@ -9,7 +9,7 @@ PURPOSE:
 SINGLE RESPONSIBILITY: Apply visual effects. Nothing else.
 
 EFFECTS MANAGED:
-    Vignette, chromatic aberration, blur, time scale.
+    Vignette, chromatic aberration, blur, motion blur, time scale.
 
 ALL timers use Time.GetUnscaledDeltaTime() so effects survive time dilation.
 
@@ -17,6 +17,7 @@ EVENTS CONSUMED:
     fx_vignette         { intensity, smoothness?, duration? }  nil duration = hold
     fx_chromatic        { intensity, duration? }               nil duration = hold
     fx_blur             { intensity, radius?, duration? }      nil duration = hold
+    fx_motion_blur      { intensity }                          → driven each frame by camera_follow
     fx_time_scale       { scale, duration? }                   nil duration = hold
     fx_vignette_clear   {}
     fx_chromatic_clear  {}
@@ -102,6 +103,11 @@ return Component {
         BlurFadeSpeed     = 6.0,
         DefaultBlurRadius = 2.0,
 
+        -- === Motion Blur ===
+        MotionBlurMaxIntensity = 0.6,   -- peak blur intensity at full camera speed (0=off, 1=max).
+        MotionBlurFadeSpeed    = 12.0,  -- lerp speed for motion blur response. Higher = snappier onset and decay.
+        MotionBlurRadius       = 1.5,   -- blur radius used when motion blur is the dominant contribution.
+
         -- === Time Scale ===
         TimeScaleRestoreSpeed = 4.0,   -- how fast time lerps back to 1.0 after a timed slow-mo
 
@@ -177,12 +183,20 @@ return Component {
             self._timeScaleHeld   = false
         end)
 
+        -- === Motion Blur ===
+        -- Driven every frame by camera_follow; intensity is pre-normalised (0–1).
+        self._motionBlurSub = event_bus.subscribe("fx_motion_blur", function(p)
+            if not p then return end
+            self._motionBlurTarget = (p.intensity or 0) * (self.MotionBlurMaxIntensity or 0.6)
+        end)
+
         -- === Clear All ===
         self._clearAllSub = event_bus.subscribe("fx_clear_all", function()
             self._vignetteTarget  = self.BaselineVignetteIntensity; self._vignetteHeld  = false
             self._chromaticTarget = 0;                              self._chromaticHeld = false
             self._blurTarget      = 0;                              self._blurHeld      = false
             self._timeScaleTarget = 1.0;                            self._timeScaleHeld = false
+            self._motionBlurTarget = 0
         end)
 
         -- === Scripted Sequences ===
@@ -252,6 +266,10 @@ return Component {
         self._camera.blurEnabled   = false
         self._camera.blurIntensity = 0
         self._camera.blurRadius    = self._blurRadCurrent
+
+        -- === Motion blur state ===
+        self._motionBlurTarget  = 0   -- set each frame by fx_motion_blur from camera_follow
+        self._motionBlurCurrent = 0   -- lerped toward target; drives camera when dominant
 
         -- === Time scale state ===
         self._timeScaleTarget   = 1.0
@@ -349,9 +367,17 @@ return Component {
             self._blurCurrent    = self._blurCurrent    + (self._blurTarget    - self._blurCurrent)    * t
             self._blurRadCurrent = self._blurRadCurrent + (self._blurRadTarget - self._blurRadCurrent) * t
 
-            self._camera.blurEnabled   = self._blurCurrent > 0.001
-            self._camera.blurIntensity = self._blurCurrent
-            self._camera.blurRadius    = self._blurRadCurrent
+            -- Motion blur lerps independently; the stronger signal wins so manual
+            -- blur events and camera-speed blur never fight each other.
+            local mt = math.min((self.MotionBlurFadeSpeed or 12.0) * udt, 1.0)
+            self._motionBlurCurrent = self._motionBlurCurrent + (self._motionBlurTarget - self._motionBlurCurrent) * mt
+
+            local finalIntensity = math.max(self._blurCurrent, self._motionBlurCurrent)
+            local motionDominant = self._motionBlurCurrent > self._blurCurrent
+
+            self._camera.blurEnabled   = finalIntensity > 0.001
+            self._camera.blurIntensity = finalIntensity
+            self._camera.blurRadius    = motionDominant and (self.MotionBlurRadius or 1.5) or self._blurRadCurrent
         end
 
         -- === Time Scale =======================================================
@@ -386,6 +412,7 @@ return Component {
                 "_vignetteSub", "_vignetteClearSub",
                 "_chromaticSub", "_chromaticClearSub",
                 "_blurSub", "_blurClearSub",
+                "_motionBlurSub",
                 "_timeScaleSub", "_timeScaleClearSub",
                 "_clearAllSub",
                 "_sequenceSub", "_sequenceCancelSub",
