@@ -335,6 +335,13 @@ return Component {
         self._squashIntensity = 1.0
         self._squashMode      = "vertical"
 
+        -- Capture authored scale once so the effect always springs back to the
+        -- editor-set proportions rather than a hardcoded 1,1,1.
+        local _initScale      = self._transform and self._transform.localScale
+        self._normalScaleX    = (_initScale and _initScale.x) or 1.0
+        self._normalScaleY    = (_initScale and _initScale.y) or 1.0
+        self._normalScaleZ    = (_initScale and _initScale.z) or 1.0
+
         -- === Damage event subscription ===
         self._damageSub = nil
         if _G.event_bus and _G.event_bus.subscribe then
@@ -509,24 +516,31 @@ return Component {
                 self._squashTimer = self._squashTimer + dtSec
                 local i    = (self.SquashStrength or 0.4) * (self._squashIntensity or 1.0)
                 local mode = self._squashMode or "vertical"
-                local sx, sy, sz = 1.0, 1.0, 1.0
+
+                -- Rest scale: use the authored transform scale captured in Start,
+                -- not a hardcoded 1,1,1, so the effect springs back correctly for
+                -- enemies whose scale differs from the default.
+                local nX = self._normalScaleX or 1.0
+                local nY = self._normalScaleY or 1.0
+                local nZ = self._normalScaleZ or 1.0
+                local sx, sy, sz = nX, nY, nZ
 
                 local yPeak, xzPeak, yOver
                 if mode == "vertical" then
-                    yPeak  = 1.0 - 0.30 * i
-                    xzPeak = 1.0 + 0.18 * i
-                    yOver  = 1.0 + 0.08 * i
+                    yPeak  = nY * (1.0 - 0.30 * i)
+                    xzPeak = nX * (1.0 + 0.18 * i)
+                    yOver  = nY * (1.0 + 0.08 * i)
                 elseif mode == "horizontal" then
-                    yPeak  = 1.0 + 0.08 * i
-                    xzPeak = 1.0 - 0.10 * i
-                    yOver  = 1.0
+                    yPeak  = nY * (1.0 + 0.08 * i)
+                    xzPeak = nX * (1.0 - 0.10 * i)
+                    yOver  = nY
                 end
 
                 if self._squashPhase == "squash" then
                     local t = math.min(self._squashTimer / math.max(self.SquashDuration or 0.07, 1e-4), 1.0)
-                    sy = 1.0 + (yPeak  - 1.0) * t
-                    sx = 1.0 + (xzPeak - 1.0) * t
-                    sz = sx
+                    sy = nY + (yPeak  - nY) * t
+                    sx = nX + (xzPeak - nX) * t
+                    sz = nZ + (xzPeak - nX) * t   -- Z tracks X offset (uniform XZ)
                     if t >= 1.0 then
                         self._squashPhase = "stretch"
                         self._squashTimer = 0
@@ -536,16 +550,16 @@ return Component {
                     local t = math.min(self._squashTimer / math.max(self.StretchDuration or 0.20, 1e-4), 1.0)
                     if t < 0.5 then
                         local t2 = t * 2
-                        sy = yPeak  + (yOver   - yPeak)  * t2
-                        sx = xzPeak + (1.0     - xzPeak) * t2
+                        sy = yPeak  + (yOver - yPeak)  * t2
+                        sx = xzPeak + (nX    - xzPeak) * t2
                     else
                         local t2 = (t - 0.5) * 2
-                        sy = yOver + (1.0 - yOver) * t2
-                        sx = 1.0
+                        sy = yOver + (nY - yOver) * t2
+                        sx = nX
                     end
-                    sz = sx
+                    sz = nZ + (sx - nX)   -- Z tracks X offset (uniform XZ)
                     if t >= 1.0 then
-                        sx, sy, sz        = 1.0, 1.0, 1.0
+                        sx, sy, sz        = nX, nY, nZ
                         self._squashPhase = nil
                     end
                 end

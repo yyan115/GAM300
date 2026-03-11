@@ -190,8 +190,9 @@ public:
 	static void DeserializeButtonComponent(ButtonComponent& buttonComp, const rapidjson::Value& buttonJSON);
 	static void DeserializeSliderComponent(SliderComponent& sliderComp, const rapidjson::Value& sliderJSON);
 	static void DeserializePrefabLinkComponent(PrefabLinkComponent& prefabComp, const rapidjson::Value& prefabJSON);
-
     static void DeserializeVideoComponent(VideoComponent & videoComp, const rapidjson::Value& sliderJSON);
+
+    static void DeserializeSceneMetadata(const rapidjson::Document& doc, ECSManager& ecs);
     // ==================================================================================
     // Boolean Helper
     // Handles: [true] OR [{"type": "bool", "data": true}]

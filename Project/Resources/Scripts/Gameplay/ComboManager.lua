@@ -63,6 +63,10 @@ return Component {
         -- Minimum seconds between chain attacks. The tap-fire (ChainBootstrap)
         -- still fires every press; only the attack animation is gated.
         ChainAttackCooldown = 0.6,
+        -- When false, all attack and combo inputs are suppressed and the combo
+        -- state machine does not run. Chain weapon events and movement are
+        -- unaffected. Toggle from any external system (cutscene, tutorial gate).
+        AttacksEnabled      = true,
         -- No SFX fields. Audio is owned by CombatAudio, which reacts to
         -- attack_performed events. ComboManager publishes; it does not play sounds.
     },
@@ -392,6 +396,17 @@ return Component {
             end)
         end
 
+        -- ── Attack enable/disable ─────────────────────────────────────────
+        -- External systems (e.g. DoorTrigger during a cutscene/pickup sequence)
+        -- publish set_attacks_enabled with a boolean to gate the state machine
+        -- without touching raw input or global flags.
+        if _G.event_bus and _G.event_bus.subscribe then
+            self._attacksEnabledSub = _G.event_bus.subscribe("set_attacks_enabled", function(enabled)
+                self.AttacksEnabled = (enabled ~= false)
+                print("[ComboManager] AttacksEnabled = " .. tostring(self.AttacksEnabled))
+            end)
+        end
+
         print("[ComboManager] Initialized successfully")
     end,
 
@@ -447,6 +462,24 @@ return Component {
         -- Block all combo input near interactable (tooltip active)
         if _G.playerNearInteractable then return end
 
+        -- When attacks are disabled, drain stale buffers, force idle if mid-combo,
+        -- and skip the state machine entirely. Chain weapon events (published above)
+        -- and player movement are unaffected.
+        if not self.AttacksEnabled then
+            if input:HasBufferedAttack() then input:ConsumeBufferedAttack() end
+            if input:HasBufferedChain()  then input:ConsumeBufferedChain()  end
+            if self._currentStateId ~= "idle" and self._currentStateId ~= "dash" then
+                self:_transitionTo("idle")
+            end
+            self._queuedCombo = nil
+            return
+        end
+
+        -- ══════════════════════════════════════════════════════════════════
+        -- DASH LOCK
+        -- During a dash the combo state machine is paused. Clear any queued
+        -- input so it doesn't fire the instant the dash ends.
+        -- ══════════════════════════════════════════════════════════════════
         -- Block all combo input during dash
         if _G.player_is_dashing then
             if self._queuedCombo then

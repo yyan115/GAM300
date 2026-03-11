@@ -1,0 +1,14 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "00289b57328ff8af-000479919c1876e7",
+        "source": "../../Resources/Textures/M5/Room3/Rm3_railing_Normal.png",
+        "compiled": "../../Resources/Textures/M5/Room3/Rm3_railing_Normal.dds"
+    },
+    "TextureMetaData": {
+        "type": "normal",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp"
+    }
+}

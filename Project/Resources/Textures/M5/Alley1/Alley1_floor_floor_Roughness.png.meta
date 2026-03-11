@@ -1,0 +1,14 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "00289b5731892435-000479976e18a66d",
+        "source": "../../Resources/Textures/M5/Alley1/Alley1_floor_floor_Roughness.png",
+        "compiled": "../../Resources/Textures/M5/Alley1/Alley1_floor_floor_Roughness.dds"
+    },
+    "TextureMetaData": {
+        "type": "roughness",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp"
+    }
+}

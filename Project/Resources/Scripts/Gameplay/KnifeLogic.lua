@@ -92,7 +92,7 @@ return Component {
         self._life = self.Lifetime
         self._sx, self._sy, self._sz = 0,0,0
 
-        self._baseScaleX, self._baseScaleY, self._baseScaleZ = 2, 2, 2
+        self._baseScaleX, self._baseScaleY, self._baseScaleZ = 4, 4, 4
 
         self._playerPos = nil
         self._playerPosSub = nil

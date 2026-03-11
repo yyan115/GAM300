@@ -3,6 +3,17 @@
 #include <Scene/Scene.hpp>
 #include "Engine.h"
 
+
+enum class SceneLoadState {
+	IDLE,
+	UNLOADING_CURRENT,
+	PARSING_JSON,
+	DESERIALIZING,
+	INITIALIZING_SYSTEMS,
+	INITIALIZING,
+	COMPLETE
+};
+
 class SceneManager {
 public:
 	static ENGINE_API SceneManager& GetInstance();
@@ -22,6 +33,13 @@ public:
 
 	void ENGINE_API InitializeScenePhysics();
 	void ENGINE_API ShutDownScenePhysics();
+
+	//These 4 functions are for loading screen
+	//To be called when loading scene in the background is needed
+	void ENGINE_API LoadSceneAsync(const std::string& scenePath, bool fromGameCode = false);
+	void UpdateAsyncLoad();
+	float GetLoadProgress() const;
+	bool IsLoading() const;
 
 	// Saves the current scene to a temporary file.
 	// To be called when the play button is pressed in the editor to save the scene state just before hitting play.
@@ -59,4 +77,14 @@ private:
 	std::string sceneToLoadNextFrame{};
 	bool deferredSceneFromLua = false;  // Track if deferred load was from Lua/game code
 	bool isExecutingDeferredLoad = false;  // Prevent re-deferral during deferred execution
+
+	// Async loading state
+	SceneLoadState          loadState = SceneLoadState::IDLE;
+	std::string             asyncScenePath;
+	rapidjson::Document     asyncDoc;
+	rapidjson::SizeType     asyncEntityIndex = 0;
+	rapidjson::SizeType     asyncEntityTotal = 0;
+	int                     entitiesPerChunk = 1;
+	std::unique_ptr<IScene> pendingScene;  // IScene not SceneInstance, matching your currentScene type
+	int						asyncSystemInitStep = 0;
 };
