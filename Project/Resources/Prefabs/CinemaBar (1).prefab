@@ -1,7 +1,7 @@
 {
     "prefab_entities": [
         {
-            "id": 2657,
+            "id": 2634,
             "guid": "00195816c8defba1-00046a32fc001e39",
             "components": {
                 "NameComponent": {
@@ -152,7 +152,7 @@
             }
         },
         {
-            "id": 2658,
+            "id": 2635,
             "guid": "004fb88b95fdbdc2-00046a363e005757",
             "components": {
                 "NameComponent": {
@@ -346,11 +346,11 @@
                         },
                         {
                             "type": "float",
-                            "data": 1
+                            "data": 0
                         },
                         {
                             "type": "float",
-                            "data": 1
+                            "data": 0
                         }
                     ]
                 },
@@ -372,7 +372,7 @@
             }
         },
         {
-            "id": 2659,
+            "id": 2636,
             "guid": "004fb88b9e0c5151-00046a3666005759",
             "components": {
                 "NameComponent": {
@@ -566,11 +566,11 @@
                         },
                         {
                             "type": "float",
-                            "data": 1
+                            "data": 0
                         },
                         {
                             "type": "float",
-                            "data": 1
+                            "data": 0
                         }
                     ]
                 },

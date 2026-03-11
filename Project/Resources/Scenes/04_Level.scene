@@ -1267,41 +1267,64 @@
                                         "entryFunction": "OnInit",
                                         "autoInvokeEntry": true,
                                         "instanceState": {
-                                            "SerializeFields": null,
-                                            "_setTooltipVisible": null,
-                                            "GetScale": null,
+                                            "weaponFlyTime": 0.0,
+                                            "weaponOnHand": "LowPolyFeatherChain",
+                                            "__created_at": 1770314120.0,
+                                            "pickupAnimTime": 0.0,
+                                            "_private": {},
+                                            "pickupDuration": 0.8,
+                                            "delayTime": 0.0,
+                                            "tooltipEntity": "ChainHookPickupTooltip",
+                                            "_subscriptions": {},
+                                            "isPickingUp": false,
+                                            "targetRightDoor": "RightDoor2",
+                                            "openAngle": 90.0,
+                                            "__field_list": {
+                                                "triggerMode": 1.0,
+                                                "openDuration": 3.0,
+                                                "openingTime": 0.0,
+                                                "isOpening": false,
+                                                "isWaiting": false,
+                                                "isActivatable": false,
+                                                "openOffset": 0.5,
+                                                "postOpenDelay": 2.0,
+                                                "hasOpened": false,
+                                                "playerName": "Player",
+                                                "delayTime": 0.0,
+                                                "targetLeftDoor": "LeftDoor1",
+                                                "targetRightDoor": "RightDoor2",
+                                                "triggerRadius": 0.5
+                                            },
+                                            "openZ": false,
+                                            "pickupSFX": [
+                                                "00264c30db67fa81-0004683702005857"
+                                            ],
                                             "overshootAngle": 10.0,
+                                            "weaponPickup": "WeaponPickup",
+                                            "openDuration": 3.0,
                                             "entitiesToCheckInactive": [
                                                 "EnemyMeleeA",
                                                 "EnemyMeleeB",
                                                 "EnemyMeleeC",
                                                 "EnemyRangeD"
                                             ],
-                                            "GetRotation": null,
-                                            "isPickingUp": false,
+                                            "openingTime": 0.0,
+                                            "playerName": "Player",
+                                            "_transform_fetched": false,
+                                            "weaponHandOffsetY": 0.6,
+                                            "triggerMode": 2.0,
+                                            "isWeaponFlying": false,
+                                            "isOpening": false,
+                                            "weaponHandOffsetX": -0.15,
+                                            "__meta": {},
+                                            "doorOpenSFX": [
+                                                "001521729a1c6852-0004276d680062ad"
+                                            ],
+                                            "isWaiting": false,
+                                            "triggerRadius": 1.0,
                                             "openOffset": 1.0,
-                                            "delayTime": 0.0,
-                                            "Update": null,
-                                            "pickupDuration": 0.8,
-                                            "openZ": false,
-                                            "hasOpened": false,
-                                            "Unsubscribe": null,
-                                            "weaponPickup": "WeaponPickup",
-                                            "_call_lifecycle": null,
-                                            "SetPosition": null,
-                                            "StartSafe": null,
-                                            "openDuration": 3.0,
-                                            "Every": null,
+                                            "isActivatable": false,
                                             "__editor": {
-                                                "weaponPickup": {
-                                                    "editorHint": "entity"
-                                                },
-                                                "tooltipEntity": {
-                                                    "editorHint": "entity"
-                                                },
-                                                "targetLeftDoor": {
-                                                    "editorHint": "entity"
-                                                },
                                                 "targetRightDoor": {
                                                     "editorHint": "entity"
                                                 },
@@ -1310,68 +1333,21 @@
                                                 },
                                                 "playerName": {
                                                     "editorHint": "entity"
+                                                },
+                                                "targetLeftDoor": {
+                                                    "editorHint": "entity"
+                                                },
+                                                "weaponPickup": {
+                                                    "editorHint": "entity"
+                                                },
+                                                "tooltipEntity": {
+                                                    "editorHint": "entity"
                                                 }
                                             },
-                                            "DeserializeFields": null,
-                                            "doorOpenSFX": [
-                                                "001521729a1c6852-0004276d680062ad"
-                                            ],
-                                            "weaponFlyDuration": 0.15,
-                                            "GetTransform": null,
-                                            "SetRotation": null,
-                                            "__meta": {},
-                                            "DisableSafe": null,
-                                            "weaponOnHand": "LowPolyFeatherChain",
-                                            "openAngle": 90.0,
-                                            "UpdateSafe": null,
-                                            "AwakeSafe": null,
-                                            "pickupAnimTime": 0.0,
-                                            "isOpening": false,
-                                            "triggerRadius": 1.0,
-                                            "Destroy": null,
-                                            "GetPosition": null,
-                                            "Start": null,
-                                            "isActivatable": false,
-                                            "openingTime": 0.0,
-                                            "weaponHandOffsetY": 0.6,
-                                            "Subscribe": null,
-                                            "postOpenDelay": 0.1,
-                                            "DebugTransform": null,
-                                            "SetScale": null,
-                                            "playerName": "Player",
-                                            "Move": null,
-                                            "__created_at": 1770314120.0,
-                                            "weaponFlyTime": 0.0,
+                                            "hasOpened": false,
                                             "targetLeftDoor": "LeftDoor1",
-                                            "_subscriptions": {},
-                                            "triggerMode": 2.0,
-                                            "isWaiting": false,
-                                            "tooltipEntity": "ChainHookPickupTooltip",
-                                            "_private": {},
-                                            "weaponHandOffsetX": -0.15,
-                                            "targetRightDoor": "RightDoor2",
-                                            "isWeaponFlying": false,
-                                            "__field_list": {
-                                                "openingTime": 0.0,
-                                                "targetLeftDoor": "LeftDoor1",
-                                                "delayTime": 0.0,
-                                                "triggerRadius": 0.5,
-                                                "isWaiting": false,
-                                                "postOpenDelay": 2.0,
-                                                "isActivatable": false,
-                                                "triggerMode": 1.0,
-                                                "targetRightDoor": "RightDoor2",
-                                                "isOpening": false,
-                                                "openOffset": 0.5,
-                                                "openDuration": 3.0,
-                                                "hasOpened": false,
-                                                "playerName": "Player"
-                                            },
-                                            "After": null,
-                                            "pickupSFX": [
-                                                "00264c30db67fa81-0004683702005857"
-                                            ],
-                                            "_transform_fetched": false
+                                            "postOpenDelay": 0.1,
+                                            "weaponFlyDuration": 0.15
                                         }
                                     }
                                 ]
@@ -1454,48 +1430,24 @@
                                         "entryFunction": "OnInit",
                                         "autoInvokeEntry": true,
                                         "instanceState": {
-                                            "SerializeFields": null,
-                                            "floatHeight": 0.1,
-                                            "GetScale": null,
-                                            "GetRotation": null,
-                                            "Update": null,
-                                            "Unsubscribe": null,
-                                            "_call_lifecycle": null,
-                                            "Every": null,
-                                            "StartSafe": null,
-                                            "floatSpeed": 0.3,
-                                            "DisableSafe": null,
-                                            "SetRotation": null,
-                                            "__meta": {},
-                                            "SetScale": null,
-                                            "rotateSpeed": 90.0,
-                                            "Destroy": null,
-                                            "GetPosition": null,
-                                            "Start": null,
-                                            "DebugTransform": null,
-                                            "UpdateSafe": null,
-                                            "_pickedUpWeaponSub": {
-                                                "event": "picked_up_weapon",
-                                                "id": 26.0
-                                            },
-                                            "_disableHover": false,
-                                            "Subscribe": null,
-                                            "_subscriptions": {},
-                                            "DeserializeFields": null,
-                                            "__created_at": 1773212529.0,
-                                            "Awake": null,
-                                            "AwakeSafe": null,
                                             "_private": {},
-                                            "Move": null,
-                                            "GetTransform": null,
+                                            "_subscriptions": {},
+                                            "_pickedUpWeaponSub": {
+                                                "id": 26.0,
+                                                "event": "picked_up_weapon"
+                                            },
                                             "__field_list": {
                                                 "rotateSpeed": 90.0,
-                                                "floatHeight": 0.1,
-                                                "floatSpeed": 0.3
+                                                "floatSpeed": 0.3,
+                                                "floatHeight": 0.1
                                             },
-                                            "After": null,
-                                            "SetPosition": null,
-                                            "_transform_fetched": false
+                                            "rotateSpeed": 90.0,
+                                            "_transform_fetched": false,
+                                            "floatSpeed": 0.3,
+                                            "floatHeight": 0.1,
+                                            "__meta": {},
+                                            "_disableHover": false,
+                                            "__created_at": 1773212529.0
                                         }
                                     }
                                 ]
@@ -6284,7 +6236,7 @@
                         },
                         {
                             "type": "float",
-                            "data": 1
+                            "data": 2
                         },
                         {
                             "type": "float",
@@ -11234,202 +11186,178 @@
                             "entryFunction": "OnInit",
                             "autoInvokeEntry": true,
                             "instanceState": {
-                                "_lockonActive": false,
-                                "GetScale": null,
-                                "collisionOffset": 0.2,
-                                "SlamReturnDuration": 0.25,
-                                "Subscribe": null,
-                                "_chainAimInitialized": false,
-                                "_lastMouseY": 0.0,
-                                "chainAimPosName": "ChainAimPointLeft",
-                                "enemyNames": {},
-                                "lockOnLOSGrace": 0.5,
-                                "_lastMouseX": 0.0,
-                                "OnDisable": null,
-                                "Awake": null,
-                                "SetScale": null,
-                                "DeserializeFields": null,
-                                "SetRotation": null,
-                                "_cinematicTargetSub": {
-                                    "event": "cinematic.target",
-                                    "id": 2.0
-                                },
-                                "_cinematicActiveSub": {
-                                    "event": "cinematic.active",
-                                    "id": 1.0
-                                },
                                 "_chainAimSub": {
                                     "event": "chain.aim_camera",
                                     "id": 4.0
                                 },
-                                "enemyDetectionRange": 5.0,
-                                "_posSub": {
-                                    "event": "player_position",
-                                    "id": 3.0
-                                },
-                                "_yaw": 180.0,
-                                "_enemyInRange": false,
-                                "_chainAimBlend": 0.0,
-                                "_slamDownDuration": 0.0,
-                                "StartSafe": null,
-                                "actionModePitch": 25.0,
-                                "TriggerSlam": false,
-                                "_chainAiming": false,
-                                "ShakeFrequency": 25.0,
-                                "_slamSub": {
-                                    "event": "camera_slam",
-                                    "id": 1.0
-                                },
-                                "_slamReturnAngle": 0.0,
-                                "_slamGroundAngle": 0.0,
-                                "enemyDisengageDelay": 2.0,
-                                "chainAimAssistEnemyNames": [
-                                    "EnemyAi"
-                                ],
-                                "Update": null,
-                                "_slamTimer": 0.0,
-                                "_shakeYawOffset": 0.0,
-                                "enableEnemyDetection": true,
-                                "_shakePitchOffset": 0.0,
-                                "_shakeFrequency": 0.0,
-                                "heightOffset": 1.0,
-                                "_shakeIntensity": 0.0,
-                                "SlamDownDuration": 0.15,
-                                "_actionModeTimer": 0.0,
-                                "_shakeDuration": 0.0,
-                                "collisionLerpOut": 5.0,
-                                "_hasTarget": false,
-                                "_shakeTimer": 0.0,
-                                "Move": null,
-                                "_actionModeActive": false,
-                                "chainAimAssistComponents": [
-                                    "EnemyAI",
-                                    "FlyingEnemyLogic"
-                                ],
-                                "_teleportToPlayer": false,
-                                "_subscriptions": {},
-                                "After": null,
-                                "_cinematicActive": false,
-                                "chainAimAssistStrength": 3.0,
-                                "_normalPitch": 15.0,
-                                "_slamReturnDuration": 0.0,
-                                "ShakeDuration": 0.4,
-                                "_enemyDisengageTimer": 0.0,
-                                "cacheUpdateInterval": 1.0,
-                                "collisionLerpIn": 20.0,
-                                "actionModeEnabled": false,
-                                "_lockonDeathSub": {
-                                    "event": "enemy_died",
-                                    "id": 2.0
-                                },
-                                "_lockonLOSLostTimer": 0.0,
-                                "actionModeDistance": 3.5,
-                                "GetRotation": null,
-                                "_transform_fetched": false,
-                                "_enemyTriggeredActionMode": false,
-                                "_toggleCooldown": 0.0,
-                                "chainAimZoomDistance": 0.8,
-                                "chainAimTargetName": "ChainAimPointLeftEnd",
-                                "DebugTransform": null,
-                                "ShakeIntensity": 0.3,
-                                "zoomLerpSpeed": 6.0,
-                                "followDistance": 2.0,
-                                "AwakeSafe": null,
-                                "_firstMouse": true,
-                                "lockCameraRotation": false,
-                                "collisionEnabled": true,
-                                "DisableSafe": null,
-                                "maxPitch": 60.0,
-                                "SlamReturnAngle": 0.0,
-                                "_private": {},
-                                "__meta": {},
-                                "lockOnBreakDistance": 15.0,
-                                "SetPosition": null,
-                                "Every": null,
-                                "_lockonDamageSub": {
-                                    "event": "deal_damage_to_entity",
-                                    "id": 3.0
-                                },
-                                "actionModeDuration": 3.0,
-                                "SlamGroundAngle": 60.0,
-                                "Destroy": null,
-                                "actionModeTransition": 8.0,
-                                "GetTransform": null,
-                                "Unsubscribe": null,
-                                "_targetPos": {
-                                    "x": 0.0,
-                                    "y": 0.0,
-                                    "z": 0.0
-                                },
-                                "UpdateSafe": null,
-                                "chainAimSideOffset": 0.3,
-                                "minPitch": -30.0,
-                                "_normalDistance": 2.0,
-                                "_call_lifecycle": null,
-                                "SerializeFields": null,
                                 "_playerRespawnedSub": {
                                     "event": "playerRespawned",
                                     "id": 5.0
                                 },
-                                "_slamStartPitch": 0.0,
-                                "_pitch": 15.0,
-                                "chainAimAssistAngle": 20.0,
-                                "minZoom": 4.0,
-                                "mouseSensitivity": 0.15,
-                                "__created_at": 1771568330.0,
-                                "followLerp": 10.0,
-                                "enemyDisengageRange": 7.0,
-                                "GetPosition": null,
+                                "_lastMouseX": 0.0,
+                                "_chainAimBlend": 0.0,
+                                "TriggerShake": false,
+                                "actionModeTransition": 8.0,
+                                "lockOnMouseThreshold": 2.0,
+                                "_actionModeTimer": 0.0,
+                                "_lastMouseY": 0.0,
+                                "enemyNames": {},
+                                "_cinematicTargetSub": {
+                                    "event": "cinematic.target",
+                                    "id": 2.0
+                                },
+                                "_toggleCooldown": 0.0,
+                                "enableEnemyDetection": false,
+                                "chainAimZoomDistance": 0.8,
                                 "__field_list": {
-                                    "enemyDisengageDelay": 2.0,
-                                    "collisionOffset": 0.2,
-                                    "followLerp": 10.0,
-                                    "mouseSensitivity": 0.15,
-                                    "enableEnemyDetection": true,
-                                    "chainAimPosName": "ChainAimPointLeft",
+                                    "actionModeEnabled": false,
                                     "chainAimTargetName": "ChainAimPointLeftEnd",
-                                    "heightOffset": 1.0,
-                                    "minZoom": 2.0,
-                                    "actionModeTransition": 8.0,
-                                    "enemyDisengageRange": 10.0,
-                                    "actionModePitch": 25.0,
-                                    "collisionLerpOut": 5.0,
-                                    "lockCameraRotation": false,
-                                    "collisionEnabled": true,
-                                    "zoomSpeed": 1.0,
                                     "maxPitch": 60.0,
                                     "enemyDetectionRange": 8.0,
+                                    "actionModeTransition": 8.0,
+                                    "enemyDisengageRange": 10.0,
                                     "cacheUpdateInterval": 1.0,
-                                    "followDistance": 2.0,
-                                    "chainAimTransitionSpeed": 5.0,
-                                    "actionModeDistance": 3.5,
-                                    "collisionLerpIn": 20.0,
-                                    "debugEnemyDetection": false,
-                                    "actionModeDuration": 3.0,
-                                    "minPitch": -30.0,
-                                    "maxZoom": 15.0,
-                                    "actionModeLockRotation": false,
+                                    "minZoom": 2.0,
                                     "enemyNames": [
                                         "EnemyAI"
                                     ],
-                                    "actionModeEnabled": false
+                                    "minPitch": -30.0,
+                                    "actionModeDuration": 3.0,
+                                    "enemyDisengageDelay": 2.0,
+                                    "enableEnemyDetection": true,
+                                    "mouseSensitivity": 0.15,
+                                    "collisionLerpIn": 20.0,
+                                    "debugEnemyDetection": false,
+                                    "collisionEnabled": true,
+                                    "collisionLerpOut": 5.0,
+                                    "lockCameraRotation": false,
+                                    "followDistance": 2.0,
+                                    "actionModeDistance": 3.5,
+                                    "actionModePitch": 25.0,
+                                    "maxZoom": 15.0,
+                                    "actionModeLockRotation": false,
+                                    "chainAimTransitionSpeed": 5.0,
+                                    "chainAimPosName": "ChainAimPointLeft",
+                                    "followLerp": 10.0,
+                                    "collisionOffset": 0.2,
+                                    "heightOffset": 1.0,
+                                    "zoomSpeed": 1.0
                                 },
-                                "chainAimTransitionSpeed": 10.0,
-                                "actionModeLockRotation": false,
-                                "lockOnRotSpeed": 20.0,
-                                "TriggerShake": false,
+                                "maxZoom": 6.0,
+                                "collisionEnabled": true,
+                                "_yaw": 180.0,
+                                "heightOffset": 1.0,
+                                "collisionLerpIn": 20.0,
+                                "_shakeFrequency": 0.0,
                                 "chainAimAssistHeightOffset": 0.5,
+                                "_normalDistance": 2.0,
+                                "_lockonActive": false,
+                                "_slamSub": {
+                                    "event": "camera_slam",
+                                    "id": 1.0
+                                },
+                                "_slamReturnDuration": 0.0,
+                                "_slamDownDuration": 0.0,
+                                "chainAimPosName": "ChainAimPointLeft",
+                                "_slamStartPitch": 0.0,
+                                "_slamGroundAngle": 0.0,
+                                "maxPitch": 60.0,
+                                "_lockonLOSLostTimer": 0.0,
+                                "TriggerSlam": false,
+                                "_shakePitchOffset": 0.0,
+                                "cacheUpdateInterval": 1.0,
+                                "minZoom": 4.0,
+                                "_lockonDeathSub": {
+                                    "event": "enemy_died",
+                                    "id": 2.0
+                                },
+                                "chainAimAssistAngle": 20.0,
+                                "ShakeDuration": 0.4,
+                                "_targetPos": {
+                                    "z": 0.0,
+                                    "y": 0.0,
+                                    "x": 0.0
+                                },
+                                "mouseSensitivity": 0.15,
+                                "_shakeIntensity": 0.0,
+                                "_enemyInRange": false,
+                                "collisionLerpOut": 5.0,
+                                "_subscriptions": {},
+                                "minPitch": -30.0,
+                                "_shakeTimer": 0.0,
+                                "_normalPitch": 15.0,
+                                "SlamReturnAngle": 0.0,
+                                "_teleportToPlayer": false,
+                                "chainAimTransitionSpeed": 10.0,
+                                "_cinematicActive": false,
+                                "_enemyTriggeredActionMode": false,
+                                "_enemyDisengageTimer": 0.0,
+                                "__created_at": 1771568330.0,
+                                "_shakeDuration": 0.0,
+                                "zoomSpeed": 1.0,
+                                "chainAimTargetName": "ChainAimPointLeftEnd",
+                                "_chainAimInitialized": false,
+                                "_chainAiming": false,
+                                "chainAimAssistRange": 25.0,
+                                "enemyDisengageRange": 7.0,
+                                "_cinematicActiveSub": {
+                                    "event": "cinematic.active",
+                                    "id": 1.0
+                                },
+                                "followDistance": 2.0,
+                                "_shakeYawOffset": 0.0,
+                                "_actionModeActive": false,
+                                "_firstMouse": true,
+                                "lockOnSnapFraction": 0.85,
+                                "lockOnLOSGrace": 0.5,
+                                "SlamDownDuration": 0.15,
+                                "ShakeIntensity": 0.3,
+                                "collisionOffset": 0.2,
+                                "_pitch": 15.0,
+                                "_lockonDamageSub": {
+                                    "event": "deal_damage_to_entity",
+                                    "id": 3.0
+                                },
+                                "_slamTimer": 0.0,
+                                "actionModePitch": 25.0,
+                                "actionModeLockRotation": false,
+                                "chainAimAssistEnemyNames": [
+                                    "EnemyAi"
+                                ],
+                                "lockOnBreakDistance": 15.0,
+                                "_posSub": {
+                                    "event": "player_position",
+                                    "id": 3.0
+                                },
+                                "lockOnRotSpeed": 20.0,
+                                "enemyDetectionRange": 5.0,
+                                "_slamReturnAngle": 0.0,
+                                "actionModeDuration": 3.0,
+                                "maxCameraHeightAbovePlayer": 4.0,
+                                "_hasTarget": false,
+                                "chainAimAssistComponents": [
+                                    "EnemyAI",
+                                    "FlyingEnemyLogic"
+                                ],
+                                "ShakeFrequency": 25.0,
                                 "lockOnLOSHeight": 1.0,
+                                "enemyDisengageDelay": 2.0,
+                                "zoomLerpSpeed": 6.0,
+                                "_transform_fetched": false,
+                                "debugEnemyDetection": false,
+                                "SlamReturnDuration": 0.25,
+                                "lockCameraRotation": false,
+                                "actionModeEnabled": false,
+                                "SlamGroundAngle": 60.0,
+                                "actionModeDistance": 3.5,
+                                "_private": {},
+                                "followLerp": 10.0,
+                                "chainAimAssistStrength": 3.0,
                                 "enemyComponents": [
                                     "EnemyAI"
                                 ],
-                                "debugEnemyDetection": false,
-                                "maxCameraHeightAbovePlayer": 4.0,
-                                "lockOnMouseThreshold": 2.0,
-                                "maxZoom": 6.0,
-                                "chainAimAssistRange": 25.0,
-                                "lockOnSnapFraction": 0.85,
-                                "zoomSpeed": 1.0
+                                "__meta": {},
+                                "chainAimSideOffset": 0.0
                             }
                         },
                         {
@@ -11440,88 +11368,65 @@
                             "entryFunction": "OnInit",
                             "autoInvokeEntry": true,
                             "instanceState": {
-                                "DisableSafe": null,
-                                "Update": null,
-                                "GetPosition": null,
-                                "targetPosition": {
-                                    "z": -2.0,
-                                    "y": 1.0,
-                                    "x": -2.0
-                                },
-                                "SerializeFields": null,
-                                "targetRotation": {
-                                    "z": 0.0,
-                                    "y": 0.0,
-                                    "x": 0.0
-                                },
-                                "stayDuration": 3.0,
-                                "_transform_fetched": false,
-                                "DeserializeFields": null,
-                                "_stayTimer": 0.0,
-                                "cinematicActive": false,
-                                "transitionDuration": 3.0,
-                                "Destroy": null,
+                                "cinematicPositionNames": [
+                                    "DoorCameraTarget",
+                                    "Player"
+                                ],
                                 "debugMode": true,
-                                "Every": null,
-                                "GetTransform": null,
                                 "targetTransformName": "",
-                                "Move": null,
-                                "cinematicPositionIndex": 0.0,
-                                "_call_lifecycle": null,
-                                "_cinematicTriggerSub": {
-                                    "id": 5.0,
-                                    "event": "cinematic.trigger"
-                                },
-                                "Awake": null,
+                                "_wasCinematicActive": false,
+                                "freezePlayer": true,
                                 "__field_list": {
                                     "cinematicPositionIndex": 1.0,
                                     "cinematicPositionNames": [
                                         "DoorCameraTarget"
                                     ],
-                                    "cinematicActive": false,
-                                    "freezePlayer": false,
-                                    "transitionDuration": 3.0,
                                     "targetPosition": {
                                         "z": -2.0,
                                         "y": 1.0,
                                         "x": -2.0
                                     },
+                                    "cinematicActive": false,
+                                    "stayDuration": 3.0,
+                                    "freezePlayer": false,
+                                    "debugMode": true,
+                                    "transitionDuration": 3.0,
+                                    "freezeEnemy": false,
+                                    "targetTransformName": "",
                                     "targetRotation": {
                                         "z": 0.0,
                                         "y": 0.0,
                                         "x": 0.0
-                                    },
-                                    "freezeEnemy": false,
-                                    "targetTransformName": "",
-                                    "stayDuration": 3.0,
-                                    "debugMode": true
+                                    }
                                 },
-                                "SetScale": null,
-                                "_transitionTimer": 0.0,
-                                "_subscriptions": {},
-                                "_cinematicPositionIndex": 0.0,
-                                "_phase": "transition",
-                                "_wasCinematicActive": false,
-                                "SetRotation": null,
-                                "UpdateSafe": null,
-                                "cinematicPositionNames": [
-                                    "DoorCameraTarget",
-                                    "Player"
-                                ],
-                                "StartSafe": null,
-                                "AwakeSafe": null,
-                                "DebugTransform": null,
-                                "Subscribe": null,
-                                "__created_at": 1771524379.0,
                                 "freezeEnemy": false,
+                                "__created_at": 1771524379.0,
+                                "_stayTimer": 0.0,
                                 "__meta": {},
-                                "_private": {},
-                                "After": null,
-                                "GetRotation": null,
-                                "SetPosition": null,
-                                "GetScale": null,
-                                "freezePlayer": true,
-                                "Unsubscribe": null
+                                "targetPosition": {
+                                    "z": -2.0,
+                                    "y": 1.0,
+                                    "x": -2.0
+                                },
+                                "_subscriptions": {},
+                                "stayDuration": 1.0,
+                                "transitionDuration": 3.0,
+                                "_cinematicPositionIndex": 0.0,
+                                "_cinematicTriggerSub": {
+                                    "id": 5.0,
+                                    "event": "cinematic.trigger"
+                                },
+                                "cinematicPositionIndex": 0.0,
+                                "_phase": "transition",
+                                "_transitionTimer": 0.0,
+                                "targetRotation": {
+                                    "z": 0.0,
+                                    "y": 0.0,
+                                    "x": 0.0
+                                },
+                                "cinematicActive": false,
+                                "_transform_fetched": false,
+                                "_private": {}
                             }
                         }
                     ]
@@ -12078,219 +11983,6 @@
         },
         {
             "id": 311,
-            "guid": "0030061d49f5e503-0004260d64001387",
-            "components": {
-                "NameComponent": {
-                    "name": "ChainManager"
-                },
-                "TagComponent": {
-                    "tagIndex": 0
-                },
-                "LayerComponent": {
-                    "layerIndex": 0
-                },
-                "SiblingIndexComponent": {
-                    "siblingIndex": 56
-                },
-                "Transform": {
-                    "type": "Transform",
-                    "data": [
-                        {
-                            "type": "Vector3D",
-                            "data": [
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                }
-                            ]
-                        },
-                        {
-                            "type": "Vector3D",
-                            "data": [
-                                {
-                                    "type": "float",
-                                    "data": 1
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 1
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 1
-                                }
-                            ]
-                        },
-                        {
-                            "type": "Quaternion",
-                            "data": [
-                                {
-                                    "type": "float",
-                                    "data": 1
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                }
-                            ]
-                        }
-                    ]
-                },
-                "AudioComponent": {
-                    "type": "AudioComponent",
-                    "data": [
-                        {
-                            "type": "bool",
-                            "data": true
-                        },
-                        "0000000000000000-0000000000000000",
-                        {
-                            "type": "bool",
-                            "data": false
-                        },
-                        {
-                            "type": "bool",
-                            "data": false
-                        },
-                        {
-                            "type": "bool",
-                            "data": false
-                        },
-                        {
-                            "type": "bool",
-                            "data": false
-                        },
-                        {
-                            "type": "int",
-                            "data": 128
-                        },
-                        {
-                            "type": "float",
-                            "data": 1
-                        },
-                        {
-                            "type": "float",
-                            "data": 1
-                        },
-                        {
-                            "type": "float",
-                            "data": 0
-                        },
-                        {
-                            "type": "float",
-                            "data": 1
-                        },
-                        {
-                            "type": "bool",
-                            "data": true
-                        },
-                        {
-                            "type": "float",
-                            "data": 1
-                        },
-                        {
-                            "type": "float",
-                            "data": 1
-                        },
-                        {
-                            "type": "float",
-                            "data": 5
-                        },
-                        {
-                            "type": "float",
-                            "data": 8
-                        },
-                        {
-                            "type": "std::string",
-                            "data": "SFX"
-                        }
-                    ]
-                },
-                "ActiveComponent": {
-                    "type": "ActiveComponent",
-                    "data": [
-                        {
-                            "type": "bool",
-                            "data": true
-                        }
-                    ]
-                },
-                "ScriptComponent": {
-                    "scripts": [
-                        {
-                            "scriptGuidStr": "002e3c80fea7efb6-0004102b42000003",
-                            "scriptPath": "../../Resources/Scripts/Gameplay/ChainBootstrap.lua",
-                            "enabled": true,
-                            "preserveKeys": [],
-                            "entryFunction": "OnInit",
-                            "autoInvokeEntry": true,
-                            "instanceState": {
-                                "GroundClamp": true,
-                                "LinkName": "Link",
-                                "ChainSpeed": 30.0,
-                                "ChainEndpointName": "ChainEndpoint",
-                                "SubSteps": 4.0,
-                                "__created_at": 1770490951.0,
-                                "_private": {},
-                                "AutoStart": false,
-                                "_subscriptions": {},
-                                "EnableLogs": false,
-                                "PinEndWhenExtended": true,
-                                "AnchorAngleThresholdDeg": 45.0,
-                                "__meta": {},
-                                "MaxLength": 10.0,
-                                "PlayerName": "Kusane_Player_LeftHandMiddle1",
-                                "WallClamp": true,
-                                "ConstraintIterations": 20.0,
-                                "VerletGravity": 2.0,
-                                "IsElastic": true,
-                                "WallClampInterval": 10.0,
-                                "NumberOfLinks": 150.0,
-                                "__field_list": {
-                                    "MaxLength": 10.0,
-                                    "AutoStart": false,
-                                    "LinkMaxDistance": 0.025,
-                                    "ChainSpeed": 10.0,
-                                    "PlayerName": "Kusane_Player_LeftHandMiddle1",
-                                    "IsElastic": false,
-                                    "LinkName": "Link",
-                                    "NumberOfLinks": 200.0,
-                                    "ConstraintIterations": 20.0,
-                                    "VerletGravity": 0.5,
-                                    "VerletDamping": 0.02,
-                                    "EnableLogs": false,
-                                    "PinEndWhenExtended": true,
-                                    "AnchorAngleThresholdDeg": 45.0
-                                },
-                                "GroundClampOffset": 0.0,
-                                "VerletDamping": 0.02,
-                                "WallClampRadius": 0.0,
-                                "LinkMaxDistance": 0.025,
-                                "ChainSlackDistance": 3.0
-                            }
-                        }
-                    ]
-                }
-            }
-        },
-        {
-            "id": 312,
             "guid": "00641bd2cb102212-000427a450003b19",
             "components": {
                 "NameComponent": {
@@ -12390,7 +12082,7 @@
             }
         },
         {
-            "id": 313,
+            "id": 312,
             "guid": "00641bd2afbd5a53-000427a47c003b1b",
             "components": {
                 "NameComponent": {
@@ -12652,7 +12344,7 @@
             }
         },
         {
-            "id": 314,
+            "id": 313,
             "guid": "00641bd2b4127812-000427a6460062b7",
             "components": {
                 "NameComponent": {
@@ -12745,7 +12437,7 @@
             }
         },
         {
-            "id": 315,
+            "id": 314,
             "guid": "00641bd2dd945249-000427a4de003b1f",
             "components": {
                 "NameComponent": {
@@ -13007,7 +12699,7 @@
             }
         },
         {
-            "id": 316,
+            "id": 315,
             "guid": "00641bd2ce5d965f-000427a6460062b9",
             "components": {
                 "NameComponent": {
@@ -13100,7 +12792,7 @@
             }
         },
         {
-            "id": 317,
+            "id": 316,
             "guid": "00641bd2aad8bb8e-000427a506003b21",
             "components": {
                 "NameComponent": {
@@ -13313,7 +13005,7 @@
             }
         },
         {
-            "id": 318,
+            "id": 317,
             "guid": "00641bd2cdcf897a-000427a6460062bb",
             "components": {
                 "NameComponent": {
@@ -13406,376 +13098,7 @@
             }
         },
         {
-            "id": 319,
-            "guid": "00532b5cf34ec585-00044af84603bea3",
-            "components": {
-                "NameComponent": {
-                    "name": "ChainEndpoint"
-                },
-                "TagComponent": {
-                    "tagIndex": 0
-                },
-                "LayerComponent": {
-                    "layerIndex": 0
-                },
-                "SiblingIndexComponent": {
-                    "siblingIndex": 57
-                },
-                "Transform": {
-                    "type": "Transform",
-                    "data": [
-                        {
-                            "type": "Vector3D",
-                            "data": [
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                },
-                                {
-                                    "type": "float",
-                                    "data": -5
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                }
-                            ]
-                        },
-                        {
-                            "type": "Vector3D",
-                            "data": [
-                                {
-                                    "type": "float",
-                                    "data": 1
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 1
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 1
-                                }
-                            ]
-                        },
-                        {
-                            "type": "Quaternion",
-                            "data": [
-                                {
-                                    "type": "float",
-                                    "data": 1
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                }
-                            ]
-                        }
-                    ]
-                },
-                "ModelRenderComponent": {
-                    "type": "ModelRenderComponent",
-                    "data": [
-                        "00169954ce50c4ad-00041e971c000329",
-                        "0060f444e1e8808c-000337e664000011",
-                        "00169954d3dc24da-00041e971c00032b",
-                        {
-                            "type": "Matrix4x4",
-                            "data": [
-                                {
-                                    "type": "float",
-                                    "data": 1
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 1
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 1
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 1
-                                }
-                            ]
-                        },
-                        {
-                            "type": "bool",
-                            "data": true
-                        },
-                        {
-                            "type": "bool",
-                            "data": true
-                        },
-                        {
-                            "type": "bool",
-                            "data": false
-                        },
-                        {
-                            "type": "float",
-                            "data": -1
-                        },
-                        {
-                            "type": "float",
-                            "data": -1
-                        }
-                    ]
-                },
-                "RigidBodyComponent": {
-                    "type": "RigidBodyComponent",
-                    "data": [
-                        {
-                            "type": "bool",
-                            "data": false
-                        },
-                        {
-                            "type": "int",
-                            "data": 1
-                        },
-                        {
-                            "type": "bool",
-                            "data": false
-                        },
-                        {
-                            "type": "float",
-                            "data": 1
-                        },
-                        {
-                            "type": "Vector3D",
-                            "data": [
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                }
-                            ]
-                        },
-                        {
-                            "type": "Vector3D",
-                            "data": [
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                },
-                                {
-                                    "type": "float",
-                                    "data": -9.81
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                }
-                            ]
-                        },
-                        {
-                            "type": "bool",
-                            "data": true
-                        },
-                        {
-                            "type": "float",
-                            "data": 0
-                        },
-                        {
-                            "type": "float",
-                            "data": 0
-                        }
-                    ]
-                },
-                "ColliderComponent": {
-                    "type": "ColliderComponent",
-                    "data": [
-                        {
-                            "type": "bool",
-                            "data": true
-                        },
-                        {
-                            "type": "int",
-                            "data": 3
-                        },
-                        {
-                            "type": "unsigned",
-                            "data": 86
-                        },
-                        {
-                            "type": "int",
-                            "data": 0
-                        },
-                        {
-                            "type": "Vector3D",
-                            "data": [
-                                {
-                                    "type": "float",
-                                    "data": 0.026832
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0.07
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0.00972271
-                                }
-                            ]
-                        },
-                        {
-                            "type": "float",
-                            "data": 0.5
-                        },
-                        {
-                            "type": "float",
-                            "data": 0.5
-                        },
-                        {
-                            "type": "float",
-                            "data": 0.5
-                        },
-                        {
-                            "type": "float",
-                            "data": 0.5
-                        },
-                        {
-                            "type": "float",
-                            "data": 0.5
-                        },
-                        {
-                            "type": "Vector3D",
-                            "data": [
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0.07
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                }
-                            ]
-                        },
-                        {
-                            "type": "Vector3D",
-                            "data": [
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                }
-                            ]
-                        }
-                    ]
-                },
-                "ActiveComponent": {
-                    "type": "ActiveComponent",
-                    "data": [
-                        {
-                            "type": "bool",
-                            "data": true
-                        }
-                    ]
-                },
-                "ScriptComponent": {
-                    "scripts": [
-                        {
-                            "scriptGuidStr": "00532b5cb46324cb-00044b0016049951",
-                            "scriptPath": "../../Resources/Scripts/Gameplay/ChainEndpointController.lua",
-                            "enabled": true,
-                            "preserveKeys": [],
-                            "entryFunction": "OnInit",
-                            "autoInvokeEntry": true,
-                            "instanceState": {
-                                "__field_list": {
-                                    "PlayerName": "Player",
-                                    "HookSnapDistance": 0.0,
-                                    "DebugLogs": false
-                                },
-                                "DebugLogs": false,
-                                "PlayerName": "Player",
-                                "__created_at": 1772526588.0,
-                                "_private": {},
-                                "_subscriptions": {},
-                                "__meta": {},
-                                "HookSnapDistance": 0.0
-                            }
-                        }
-                    ]
-                }
-            }
-        },
-        {
-            "id": 320,
+            "id": 318,
             "guid": "000c89d98b308281-000476bcd8006c7b",
             "components": {
                 "NameComponent": {
@@ -13877,7 +13200,7 @@
             }
         },
         {
-            "id": 321,
+            "id": 319,
             "guid": "0009edd2f50daa82-000476f042000131",
             "components": {
                 "NameComponent": {
@@ -14062,7 +13385,7 @@
             }
         },
         {
-            "id": 322,
+            "id": 320,
             "guid": "001d6711f9700e3f-000476f11a001d87",
             "components": {
                 "NameComponent": {
@@ -14309,7 +13632,7 @@
             }
         },
         {
-            "id": 323,
+            "id": 321,
             "guid": "002a323be386d99c-000477019a000131",
             "components": {
                 "NameComponent": {
@@ -14529,7 +13852,7 @@
             }
         },
         {
-            "id": 324,
+            "id": 322,
             "guid": "000c89d9d1a87289-000476bcea006c7d",
             "components": {
                 "NameComponent": {
@@ -14749,7 +14072,7 @@
             }
         },
         {
-            "id": 325,
+            "id": 323,
             "guid": "000c89d9d5b45285-000476be60006daf",
             "components": {
                 "NameComponent": {
@@ -14970,7 +14293,7 @@
         },
         {
             "PrefabPath": "../../Resources/Prefabs/PlayerHUD.prefab",
-            "id": 326,
+            "id": 324,
             "guid": "0046481eb2497902-0004779c2400e833",
             "Name": "PlayerHUD",
             "SiblingIndex": 61,
@@ -14983,7 +14306,7 @@
             ],
             "Children": [
                 {
-                    "id": 327,
+                    "id": 325,
                     "guid": "0046481eb7e0387e-0004779c2400e835",
                     "Name": "ChainIcon",
                     "SiblingIndex": 16,
@@ -15012,7 +14335,7 @@
                     ]
                 },
                 {
-                    "id": 328,
+                    "id": 326,
                     "guid": "0046481ed55e3563-0004779c2400e837",
                     "Name": "AttackIcon",
                     "SiblingIndex": 17,
@@ -15041,7 +14364,7 @@
                     ]
                 },
                 {
-                    "id": 329,
+                    "id": 327,
                     "guid": "0046481e82e7dde5-0004779c2400e839",
                     "Name": "SkillIcon",
                     "SiblingIndex": 88,
@@ -15070,7 +14393,7 @@
                     ]
                 },
                 {
-                    "id": 330,
+                    "id": 328,
                     "guid": "0046481e9bb5943b-0004779c2400e83b",
                     "Name": "CrossHair",
                     "SiblingIndex": 18,
@@ -15082,7 +14405,7 @@
                     }
                 },
                 {
-                    "id": 331,
+                    "id": 329,
                     "guid": "0046481edc519a7b-0004779c2400e83d",
                     "Name": "FeatherGroup",
                     "SiblingIndex": 16,
@@ -15094,7 +14417,7 @@
                     },
                     "Children": [
                         {
-                            "id": 332,
+                            "id": 330,
                             "guid": "0046481eabf36a19-0004779c2400e83f",
                             "Name": "FeatherIcon1",
                             "SiblingIndex": 17,
@@ -15106,7 +14429,7 @@
                             }
                         },
                         {
-                            "id": 333,
+                            "id": 331,
                             "guid": "0046481e81e7156d-0004779c2400e841",
                             "Name": "FeatherIcon2",
                             "SiblingIndex": 16,
@@ -15118,7 +14441,7 @@
                             }
                         },
                         {
-                            "id": 334,
+                            "id": 332,
                             "guid": "0046481ead927382-0004779c2400e843",
                             "Name": "FeatherIcon3",
                             "SiblingIndex": 16,
@@ -15130,7 +14453,7 @@
                             }
                         },
                         {
-                            "id": 335,
+                            "id": 333,
                             "guid": "0046481ed09f35e3-0004779c2400e845",
                             "Name": "FeatherIcon4",
                             "SiblingIndex": 16,
@@ -15142,7 +14465,7 @@
                             }
                         },
                         {
-                            "id": 336,
+                            "id": 334,
                             "guid": "0046481e8a72240e-0004779c2400e847",
                             "Name": "FeatherIcon5",
                             "SiblingIndex": 16,
@@ -15156,7 +14479,7 @@
                     ]
                 },
                 {
-                    "id": 337,
+                    "id": 335,
                     "guid": "0046481e873d952b-0004779c2400e849",
                     "Name": "HealthBarBorder",
                     "SiblingIndex": 16,
@@ -15168,7 +14491,7 @@
                     },
                     "Children": [
                         {
-                            "id": 338,
+                            "id": 336,
                             "guid": "0046481ee6cad569-0004779c2400e84b",
                             "Name": "HealthBarFillFollow",
                             "SiblingIndex": 17,
@@ -15219,7 +14542,7 @@
                             ]
                         },
                         {
-                            "id": 339,
+                            "id": 337,
                             "guid": "0046481e90d84d56-0004779c2400e84d",
                             "Name": "HealthBarFill",
                             "SiblingIndex": 17,
@@ -15231,7 +14554,7 @@
                             }
                         },
                         {
-                            "id": 340,
+                            "id": 338,
                             "guid": "0046481e83f11e02-0004779c2400e84f",
                             "Name": "HealthNotch",
                             "SiblingIndex": 17,
@@ -15245,7 +14568,7 @@
                     ]
                 },
                 {
-                    "id": 341,
+                    "id": 339,
                     "guid": "0046481efb74c998-0004779c2400e851",
                     "Name": "FeathersSprite",
                     "SiblingIndex": 91,
@@ -15257,7 +14580,7 @@
                     }
                 },
                 {
-                    "id": 342,
+                    "id": 340,
                     "guid": "0046481eec0f4100-0004779c2400e853",
                     "Name": "FeathersCollectedText",
                     "SiblingIndex": 91,
@@ -15269,7 +14592,7 @@
                     }
                 },
                 {
-                    "id": 343,
+                    "id": 341,
                     "guid": "0046481edd4a43a3-0004779c2400e855",
                     "Name": "SkillCooldown",
                     "SiblingIndex": 88,
@@ -15339,7 +14662,7 @@
                     ]
                 },
                 {
-                    "id": 344,
+                    "id": 342,
                     "guid": "0046481e97dc179a-0004779c2400e857",
                     "Name": "DashCooldown",
                     "SiblingIndex": 90,
@@ -15383,7 +14706,7 @@
                     ]
                 },
                 {
-                    "id": 345,
+                    "id": 343,
                     "guid": "0046481e978a3512-0004779c2400e859",
                     "Name": "(ANDROID)Joystick",
                     "SiblingIndex": 89,
@@ -15421,7 +14744,7 @@
                     ],
                     "Children": [
                         {
-                            "id": 346,
+                            "id": 344,
                             "guid": "0046481eccdb4b05-0004779c2400e85b",
                             "Name": "(ANDROID)JoystickInner",
                             "SiblingIndex": 90,
@@ -15435,7 +14758,7 @@
                     ]
                 },
                 {
-                    "id": 347,
+                    "id": 345,
                     "guid": "0046481efa504b3f-0004779c2400e85d",
                     "Name": "(ANDROID)Jump",
                     "SiblingIndex": 90,
@@ -15467,7 +14790,7 @@
         },
         {
             "PrefabPath": "../../Resources/Prefabs/UI.prefab",
-            "id": 348,
+            "id": 346,
             "guid": "006f7aa40cc47dfb-0004792d40236cad",
             "Name": "UI",
             "SiblingIndex": 62,
@@ -15480,7 +14803,7 @@
             ],
             "Children": [
                 {
-                    "id": 349,
+                    "id": 347,
                     "guid": "006f7aa41d4da5e3-0004792d40236caf",
                     "Name": "Monologue",
                     "SiblingIndex": 98,
@@ -15492,7 +14815,7 @@
                     },
                     "Children": [
                         {
-                            "id": 350,
+                            "id": 348,
                             "guid": "006f7aa421af6eb3-0004792d40236cb1",
                             "Name": "MonologueBorder",
                             "SiblingIndex": 98,
@@ -15504,7 +14827,7 @@
                             }
                         },
                         {
-                            "id": 351,
+                            "id": 349,
                             "guid": "006f7aa45b8b305b-0004792d40236cb3",
                             "Name": "MonologueOverlay",
                             "SiblingIndex": 98,
@@ -15516,7 +14839,7 @@
                             }
                         },
                         {
-                            "id": 352,
+                            "id": 350,
                             "guid": "006f7aa4447138a4-0004792d40236cb5",
                             "Name": "MonologueSoundwave",
                             "SiblingIndex": 98,
@@ -15528,7 +14851,7 @@
                             }
                         },
                         {
-                            "id": 353,
+                            "id": 351,
                             "guid": "006f7aa42981fc28-0004792d40236cb7",
                             "Name": "SubtitleText",
                             "SiblingIndex": 87,
@@ -15540,7 +14863,7 @@
                             }
                         },
                         {
-                            "id": 354,
+                            "id": 352,
                             "guid": "006f7aa40f6e6653-0004792d40236cb9",
                             "Name": "SpeakerText",
                             "SiblingIndex": 98,
@@ -15554,7 +14877,7 @@
                     ]
                 },
                 {
-                    "id": 355,
+                    "id": 353,
                     "guid": "006f7aa4225619b8-0004792d40236cbb",
                     "Name": "DoorTrigger",
                     "SiblingIndex": 61,
@@ -15563,10 +14886,81 @@
                         "data": [
                             "006f7aa40cc47dfb-0004792d40236cad"
                         ]
-                    }
+                    },
+                    "ComponentOverrides": [
+                        {
+                            "RigidBodyComponent": {
+                                "type": "RigidBodyComponent",
+                                "data": [
+                                    {
+                                        "type": "bool",
+                                        "data": false
+                                    },
+                                    {
+                                        "type": "int",
+                                        "data": 0
+                                    },
+                                    {
+                                        "type": "bool",
+                                        "data": false
+                                    },
+                                    {
+                                        "type": "float",
+                                        "data": 1
+                                    },
+                                    {
+                                        "type": "Vector3D",
+                                        "data": [
+                                            {
+                                                "type": "float",
+                                                "data": 0
+                                            },
+                                            {
+                                                "type": "float",
+                                                "data": 0
+                                            },
+                                            {
+                                                "type": "float",
+                                                "data": 0
+                                            }
+                                        ]
+                                    },
+                                    {
+                                        "type": "Vector3D",
+                                        "data": [
+                                            {
+                                                "type": "float",
+                                                "data": 0
+                                            },
+                                            {
+                                                "type": "float",
+                                                "data": -9.81
+                                            },
+                                            {
+                                                "type": "float",
+                                                "data": 0
+                                            }
+                                        ]
+                                    },
+                                    {
+                                        "type": "bool",
+                                        "data": true
+                                    },
+                                    {
+                                        "type": "float",
+                                        "data": 0
+                                    },
+                                    {
+                                        "type": "float",
+                                        "data": 0
+                                    }
+                                ]
+                            }
+                        }
+                    ]
                 },
                 {
-                    "id": 356,
+                    "id": 354,
                     "guid": "006f7aa470709a2a-0004792d40236cbd",
                     "Name": "RoomIndicator",
                     "SiblingIndex": 4,
@@ -15578,7 +14972,7 @@
                     },
                     "Children": [
                         {
-                            "id": 357,
+                            "id": 355,
                             "guid": "006f7aa413e8e95d-0004792d40236cbf",
                             "Name": "RoomLabelText",
                             "SiblingIndex": 4,
@@ -15810,7 +15204,7 @@
                             ]
                         },
                         {
-                            "id": 358,
+                            "id": 356,
                             "guid": "006f7aa47532daa5-0004792d40236cc1",
                             "Name": "RoomLabelImage_TempleHall",
                             "SiblingIndex": 4,
@@ -15822,7 +15216,7 @@
                             }
                         },
                         {
-                            "id": 359,
+                            "id": 357,
                             "guid": "006f7aa403afb29f-0004792d40236cc3",
                             "Name": "RoomLabelImage_Library",
                             "SiblingIndex": 6,
@@ -15834,7 +15228,7 @@
                             }
                         },
                         {
-                            "id": 360,
+                            "id": 358,
                             "guid": "006f7aa4138abb72-0004792d40236cc5",
                             "Name": "RoomLabelImage_Statue",
                             "SiblingIndex": 6,
@@ -15846,7 +15240,7 @@
                             }
                         },
                         {
-                            "id": 361,
+                            "id": 359,
                             "guid": "006f7aa4000fa2d6-0004792d40236cc7",
                             "Name": "RoomLabelImage_WeaponRoom",
                             "SiblingIndex": 6,
@@ -15858,7 +15252,7 @@
                             }
                         },
                         {
-                            "id": 362,
+                            "id": 360,
                             "guid": "006f7aa426b56786-0004792d40236cc9",
                             "Name": "RoomLabelImage_BattleHall",
                             "SiblingIndex": 6,
@@ -15875,7 +15269,7 @@
         },
         {
             "PrefabPath": "../../Resources/Prefabs/PauseMenu.prefab",
-            "id": 363,
+            "id": 361,
             "guid": "006f7aa42d1fa872-0004792d4a239683",
             "Name": "PauseMenu",
             "SiblingIndex": 63,
@@ -15888,7 +15282,7 @@
             ],
             "Children": [
                 {
-                    "id": 364,
+                    "id": 362,
                     "guid": "006f7aa421eeda9b-0004792d4a239685",
                     "Name": "PauseMenuUI",
                     "SiblingIndex": 1,
@@ -16062,7 +15456,7 @@
                     ],
                     "Children": [
                         {
-                            "id": 365,
+                            "id": 363,
                             "guid": "006f7aa46f9a6199-0004792d4a239687",
                             "Name": "PauseBG",
                             "SiblingIndex": 1,
@@ -16074,7 +15468,7 @@
                             }
                         },
                         {
-                            "id": 366,
+                            "id": 364,
                             "guid": "006f7aa44320fb8c-0004792d4a239689",
                             "Name": "PauseText",
                             "SiblingIndex": 4,
@@ -16086,7 +15480,7 @@
                             }
                         },
                         {
-                            "id": 367,
+                            "id": 365,
                             "guid": "006f7aa42f709c5e-0004792d4a23968b",
                             "Name": "ContinueButton",
                             "SiblingIndex": 4,
@@ -16098,7 +15492,7 @@
                             }
                         },
                         {
-                            "id": 368,
+                            "id": 366,
                             "guid": "006f7aa469176f2d-0004792d4a23968d",
                             "Name": "SettingsButton",
                             "SiblingIndex": 5,
@@ -16110,7 +15504,7 @@
                             }
                         },
                         {
-                            "id": 369,
+                            "id": 367,
                             "guid": "006f7aa4379abeed-0004792d4a23968f",
                             "Name": "MainMenuButton",
                             "SiblingIndex": 6,
@@ -16124,7 +15518,7 @@
                     ]
                 },
                 {
-                    "id": 370,
+                    "id": 368,
                     "guid": "006f7aa440db5163-0004792d4a239691",
                     "Name": "SettingsUI",
                     "SiblingIndex": 2,
@@ -16180,7 +15574,7 @@
                     ],
                     "Children": [
                         {
-                            "id": 371,
+                            "id": 369,
                             "guid": "006f7aa4369df9aa-0004792d4a239693",
                             "Name": "BackGround + Banner",
                             "SiblingIndex": 13,
@@ -16192,7 +15586,7 @@
                             },
                             "Children": [
                                 {
-                                    "id": 372,
+                                    "id": 370,
                                     "guid": "006f7aa40ddf540a-0004792d4a239695",
                                     "Name": "SettingsBackground",
                                     "SiblingIndex": 5,
@@ -16204,7 +15598,7 @@
                                     }
                                 },
                                 {
-                                    "id": 373,
+                                    "id": 371,
                                     "guid": "006f7aa45156258b-0004792d4a239697",
                                     "Name": "SettingsAudioBanner",
                                     "SiblingIndex": 6,
@@ -16216,7 +15610,7 @@
                                     }
                                 },
                                 {
-                                    "id": 374,
+                                    "id": 372,
                                     "guid": "006f7aa43ec08f4a-0004792d4a239699",
                                     "Name": "SettingsBanner",
                                     "SiblingIndex": 7,
@@ -16230,7 +15624,7 @@
                             ]
                         },
                         {
-                            "id": 375,
+                            "id": 373,
                             "guid": "006f7aa43761938e-0004792d4a23969b",
                             "Name": "AudioText",
                             "SiblingIndex": 12,
@@ -16242,7 +15636,7 @@
                             },
                             "Children": [
                                 {
-                                    "id": 376,
+                                    "id": 374,
                                     "guid": "006f7aa4173fbaf1-0004792d4a23969d",
                                     "Name": "MasterText",
                                     "SiblingIndex": 8,
@@ -16254,7 +15648,7 @@
                                     }
                                 },
                                 {
-                                    "id": 377,
+                                    "id": 375,
                                     "guid": "006f7aa42de2963f-0004792d4a23969f",
                                     "Name": "BGMText",
                                     "SiblingIndex": 9,
@@ -16266,7 +15660,7 @@
                                     }
                                 },
                                 {
-                                    "id": 378,
+                                    "id": 376,
                                     "guid": "006f7aa477e39ccc-0004792d4a2396a1",
                                     "Name": "SFXText",
                                     "SiblingIndex": 10,
@@ -16280,7 +15674,7 @@
                             ]
                         },
                         {
-                            "id": 379,
+                            "id": 377,
                             "guid": "006f7aa46cc5212f-0004792d4a2396a3",
                             "Name": "AudioBars",
                             "SiblingIndex": 13,
@@ -16292,7 +15686,7 @@
                             },
                             "Children": [
                                 {
-                                    "id": 380,
+                                    "id": 378,
                                     "guid": "006f7aa472d51996-0004792d4a2396a5",
                                     "Name": "MasterBar",
                                     "SiblingIndex": 12,
@@ -16304,7 +15698,7 @@
                                     }
                                 },
                                 {
-                                    "id": 381,
+                                    "id": 379,
                                     "guid": "006f7aa43197fe32-0004792d4a2396a7",
                                     "Name": "BGMBar",
                                     "SiblingIndex": 12,
@@ -16316,7 +15710,7 @@
                                     }
                                 },
                                 {
-                                    "id": 382,
+                                    "id": 380,
                                     "guid": "006f7aa45b118862-0004792d4a2396a9",
                                     "Name": "SFXBar",
                                     "SiblingIndex": 13,
@@ -16328,7 +15722,7 @@
                                     }
                                 },
                                 {
-                                    "id": 383,
+                                    "id": 381,
                                     "guid": "006f7aa45eac9244-0004792d4a2396ab",
                                     "Name": "MasterNotch",
                                     "SiblingIndex": 5,
@@ -16396,7 +15790,7 @@
                                     ]
                                 },
                                 {
-                                    "id": 384,
+                                    "id": 382,
                                     "guid": "006f7aa42a53e831-0004792d4a2396ad",
                                     "Name": "BGMNotch",
                                     "SiblingIndex": 6,
@@ -16496,7 +15890,7 @@
                                     ]
                                 },
                                 {
-                                    "id": 385,
+                                    "id": 383,
                                     "guid": "006f7aa4172125ab-0004792d4a2396af",
                                     "Name": "SFXNotch",
                                     "SiblingIndex": 7,
@@ -16596,7 +15990,7 @@
                                     ]
                                 },
                                 {
-                                    "id": 386,
+                                    "id": 384,
                                     "guid": "006f7aa448449a50-0004792d4a2396b1",
                                     "Name": "MasterFill",
                                     "SiblingIndex": 5,
@@ -16608,7 +16002,7 @@
                                     }
                                 },
                                 {
-                                    "id": 387,
+                                    "id": 385,
                                     "guid": "006f7aa43abeafb7-0004792d4a2396b3",
                                     "Name": "BGMFill",
                                     "SiblingIndex": 7,
@@ -16620,7 +16014,7 @@
                                     }
                                 },
                                 {
-                                    "id": 388,
+                                    "id": 386,
                                     "guid": "006f7aa46b0b4173-0004792d4a2396b5",
                                     "Name": "SFXFill",
                                     "SiblingIndex": 8,
@@ -16634,7 +16028,7 @@
                             ]
                         },
                         {
-                            "id": 389,
+                            "id": 387,
                             "guid": "006f7aa439633c29-0004792d4a2396b7",
                             "Name": "SettingsUIButtons",
                             "SiblingIndex": 5004,
@@ -16769,7 +16163,7 @@
                             ],
                             "Children": [
                                 {
-                                    "id": 390,
+                                    "id": 388,
                                     "guid": "006f7aa443094e5f-0004792d4a2396b9",
                                     "Name": "ResetButton",
                                     "SiblingIndex": 12,
@@ -16781,7 +16175,7 @@
                                     }
                                 },
                                 {
-                                    "id": 391,
+                                    "id": 389,
                                     "guid": "006f7aa458c809ec-0004792d4a2396bb",
                                     "Name": "BackButton",
                                     "SiblingIndex": 3,
@@ -16797,7 +16191,7 @@
                     ]
                 },
                 {
-                    "id": 392,
+                    "id": 390,
                     "guid": "006f7aa44f039052-0004792d4a2396bd",
                     "Name": "ConfirmationPromptUI",
                     "SiblingIndex": 5,
@@ -16918,7 +16312,7 @@
                     ],
                     "Children": [
                         {
-                            "id": 393,
+                            "id": 391,
                             "guid": "006f7aa45f8074f0-0004792d4a2396bf",
                             "Name": "ConfirmationBG",
                             "SiblingIndex": 6,
@@ -16930,7 +16324,7 @@
                             }
                         },
                         {
-                            "id": 394,
+                            "id": 392,
                             "guid": "006f7aa42d319b1c-0004792d4a2396c1",
                             "Name": "ConfirmationText",
                             "SiblingIndex": 7,
@@ -16942,7 +16336,7 @@
                             }
                         },
                         {
-                            "id": 395,
+                            "id": 393,
                             "guid": "006f7aa453d18a18-0004792d4a2396c3",
                             "Name": "YesButton",
                             "SiblingIndex": 8,
@@ -16954,7 +16348,7 @@
                             }
                         },
                         {
-                            "id": 396,
+                            "id": 394,
                             "guid": "006f7aa4684b9d2e-0004792d4a2396c5",
                             "Name": "NoButton",
                             "SiblingIndex": 10,
@@ -16968,7 +16362,7 @@
                     ]
                 },
                 {
-                    "id": 397,
+                    "id": 395,
                     "guid": "006f7aa4336801c7-0004792d4a2396c7",
                     "Name": "BlackScreen",
                     "SiblingIndex": 4,
@@ -16980,7 +16374,7 @@
                     }
                 },
                 {
-                    "id": 398,
+                    "id": 396,
                     "guid": "006f7aa448e5ef39-0004792d4a2396c9",
                     "Name": "ButtonHandler",
                     "SiblingIndex": 37,
@@ -17053,7 +16447,7 @@
                     ]
                 },
                 {
-                    "id": 399,
+                    "id": 397,
                     "guid": "006f7aa400e00474-0004792d4a2396cb",
                     "Name": "PauseListener",
                     "SiblingIndex": 8,
@@ -17139,7 +16533,7 @@
             ]
         },
         {
-            "id": 400,
+            "id": 398,
             "guid": "006f7aa465c4f3d3-0004792d86243dbd",
             "components": {
                 "NameComponent": {
@@ -17152,7 +16546,7 @@
                     "layerIndex": 0
                 },
                 "SiblingIndexComponent": {
-                    "siblingIndex": 65
+                    "siblingIndex": 64
                 },
                 "Transform": {
                     "type": "Transform",
@@ -17382,7 +16776,7 @@
             }
         },
         {
-            "id": 401,
+            "id": 399,
             "guid": "006f7aa4743d65be-0004792d86243dbf",
             "components": {
                 "NameComponent": {
@@ -17670,7 +17064,7 @@
             }
         },
         {
-            "id": 402,
+            "id": 400,
             "guid": "006f7aa4133be3c4-0004792d88243dc1",
             "components": {
                 "NameComponent": {
@@ -17957,7 +17351,7 @@
             }
         },
         {
-            "id": 403,
+            "id": 401,
             "guid": "006f7aa45f9f6b6c-0004792d88243dc3",
             "components": {
                 "NameComponent": {
@@ -18231,7 +17625,7 @@
             }
         },
         {
-            "id": 404,
+            "id": 402,
             "guid": "006f7aa431efdf10-0004792d88243dc5",
             "components": {
                 "NameComponent": {
@@ -18505,7 +17899,7 @@
             }
         },
         {
-            "id": 405,
+            "id": 403,
             "guid": "006f7aa41989fa4a-0004792d88243dc7",
             "components": {
                 "NameComponent": {
@@ -18779,7 +18173,7 @@
             }
         },
         {
-            "id": 406,
+            "id": 404,
             "guid": "0071d71f6ac6e441-0004793a2c024609",
             "components": {
                 "NameComponent": {
@@ -18792,7 +18186,7 @@
                     "layerIndex": 0
                 },
                 "SiblingIndexComponent": {
-                    "siblingIndex": 1
+                    "siblingIndex": 2
                 },
                 "Transform": {
                     "type": "Transform",
@@ -19118,7 +18512,7 @@
                         },
                         {
                             "type": "unsigned",
-                            "data": 11
+                            "data": 44
                         },
                         {
                             "type": "int",
@@ -19133,11 +18527,11 @@
                                 },
                                 {
                                     "type": "float",
-                                    "data": 0.465187
+                                    "data": 0.465174
                                 },
                                 {
                                     "type": "float",
-                                    "data": 0.144217
+                                    "data": 0.144133
                                 }
                             ]
                         },
@@ -19147,11 +18541,11 @@
                         },
                         {
                             "type": "float",
-                            "data": 0.2
+                            "data": 0.31
                         },
                         {
                             "type": "float",
-                            "data": 0.3
+                            "data": 0.01
                         },
                         {
                             "type": "float",
@@ -19166,15 +18560,15 @@
                             "data": [
                                 {
                                     "type": "float",
-                                    "data": 0.000285804
+                                    "data": 2.98023e-8
                                 },
                                 {
                                     "type": "float",
-                                    "data": 0.46529
+                                    "data": 0.365
                                 },
                                 {
                                     "type": "float",
-                                    "data": 0.0232098
+                                    "data": 0.023
                                 }
                             ]
                         },
@@ -19321,13 +18715,13 @@
                                 "005bba21264559e3-0004670f06072ec1",
                                 "005bba216753f407-0004670f08072ec5",
                                 "003e43ff2be91aa4-000467fbfa000003",
+                                "00307f8fda607b86-000476cc8a03bc6f",
+                                "006c646644ac701a-000466f4b800000b",
+                                "006cbc50f794cf81-0004778c7c001c3f",
                                 "005bcd780e7ab5eb-00047118e000000d",
-                                "005bba21184a8d54-00046707a2072e95",
-                                "005bcd7872b76722-00047118de000001",
-                                "005bcd7828158c18-00047118de000005",
                                 "005bcd78774c7172-00047118e0000009",
-                                "0000000000000000-0000000000000000",
-                                "0000000000000000-0000000000000000"
+                                "005bcd7828158c18-00047118de000005",
+                                "005bcd7872b76722-00047118de000001"
                             ]
                         },
                         {
@@ -19783,7 +19177,7 @@
             }
         },
         {
-            "id": 407,
+            "id": 405,
             "guid": "0071d71f1bf60bd6-0004793a2c02460b",
             "components": {
                 "NameComponent": {
@@ -19899,7 +19293,7 @@
             }
         },
         {
-            "id": 408,
+            "id": 406,
             "guid": "0071d71f7be110a6-0004793a2c02460d",
             "components": {
                 "NameComponent": {
@@ -19992,7 +19386,7 @@
             }
         },
         {
-            "id": 409,
+            "id": 407,
             "guid": "0071d71f14b62c53-0004793a2c02460f",
             "components": {
                 "NameComponent": {
@@ -20085,7 +19479,7 @@
             }
         },
         {
-            "id": 410,
+            "id": 408,
             "guid": "0071d71f1c0f179e-0004793a2c024611",
             "components": {
                 "NameComponent": {
@@ -20178,7 +19572,7 @@
             }
         },
         {
-            "id": 411,
+            "id": 409,
             "guid": "0071d71f612c4931-0004793a2e024613",
             "components": {
                 "NameComponent": {
@@ -20287,7 +19681,7 @@
             }
         },
         {
-            "id": 412,
+            "id": 410,
             "guid": "0071d71f647cffcf-0004793a2e024615",
             "components": {
                 "NameComponent": {
@@ -20380,7 +19774,7 @@
             }
         },
         {
-            "id": 413,
+            "id": 411,
             "guid": "0071d71f4a6a8fce-0004793a2e024617",
             "components": {
                 "NameComponent": {
@@ -20473,7 +19867,7 @@
             }
         },
         {
-            "id": 414,
+            "id": 412,
             "guid": "0071d71f27f26067-0004793a2e024619",
             "components": {
                 "NameComponent": {
@@ -20566,7 +19960,7 @@
             }
         },
         {
-            "id": 415,
+            "id": 413,
             "guid": "0071d71f7a7c631a-0004793a2e02461b",
             "components": {
                 "NameComponent": {
@@ -20659,7 +20053,7 @@
             }
         },
         {
-            "id": 416,
+            "id": 414,
             "guid": "0071d71f246df595-0004793a2e02461d",
             "components": {
                 "NameComponent": {
@@ -20752,7 +20146,7 @@
             }
         },
         {
-            "id": 417,
+            "id": 415,
             "guid": "0071d71f685df139-0004793a2e02461f",
             "components": {
                 "NameComponent": {
@@ -20845,7 +20239,7 @@
             }
         },
         {
-            "id": 418,
+            "id": 416,
             "guid": "0071d71f3cf80622-0004793a2e024621",
             "components": {
                 "NameComponent": {
@@ -20952,7 +20346,7 @@
             }
         },
         {
-            "id": 419,
+            "id": 417,
             "guid": "0071d71f2f8a669b-0004793a2e024623",
             "components": {
                 "NameComponent": {
@@ -21045,7 +20439,7 @@
             }
         },
         {
-            "id": 420,
+            "id": 418,
             "guid": "0071d71f48843cb6-0004793a2e024625",
             "components": {
                 "NameComponent": {
@@ -21138,7 +20532,7 @@
             }
         },
         {
-            "id": 421,
+            "id": 419,
             "guid": "0071d71f6dd210c3-0004793a2e024627",
             "components": {
                 "NameComponent": {
@@ -21231,7 +20625,7 @@
             }
         },
         {
-            "id": 422,
+            "id": 420,
             "guid": "0071d71f4a0465bb-0004793a2e024629",
             "components": {
                 "NameComponent": {
@@ -21324,7 +20718,7 @@
             }
         },
         {
-            "id": 423,
+            "id": 421,
             "guid": "0071d71f1ab23411-0004793a2e02462b",
             "components": {
                 "NameComponent": {
@@ -21431,7 +20825,7 @@
             }
         },
         {
-            "id": 424,
+            "id": 422,
             "guid": "0071d71f0572adeb-0004793a2e02462d",
             "components": {
                 "NameComponent": {
@@ -21524,7 +20918,7 @@
             }
         },
         {
-            "id": 425,
+            "id": 423,
             "guid": "0071d71f056cff2c-0004793a2e02462f",
             "components": {
                 "NameComponent": {
@@ -21617,7 +21011,7 @@
             }
         },
         {
-            "id": 426,
+            "id": 424,
             "guid": "0071d71f5c0fe1b2-0004793a2e024631",
             "components": {
                 "NameComponent": {
@@ -21710,7 +21104,7 @@
             }
         },
         {
-            "id": 427,
+            "id": 425,
             "guid": "0071d71f35b57787-0004793a2e024633",
             "components": {
                 "NameComponent": {
@@ -21803,7 +21197,7 @@
             }
         },
         {
-            "id": 428,
+            "id": 426,
             "guid": "0071d71f1c20d87b-0004793a2e024635",
             "components": {
                 "NameComponent": {
@@ -21910,7 +21304,7 @@
             }
         },
         {
-            "id": 429,
+            "id": 427,
             "guid": "0071d71f6abbcaa3-0004793a2e024637",
             "components": {
                 "NameComponent": {
@@ -22003,7 +21397,7 @@
             }
         },
         {
-            "id": 430,
+            "id": 428,
             "guid": "0071d71f55dd8f13-0004793a2e024639",
             "components": {
                 "NameComponent": {
@@ -22096,7 +21490,7 @@
             }
         },
         {
-            "id": 431,
+            "id": 429,
             "guid": "0071d71f6559da9f-0004793a2e02463b",
             "components": {
                 "NameComponent": {
@@ -22189,7 +21583,7 @@
             }
         },
         {
-            "id": 432,
+            "id": 430,
             "guid": "0071d71f5b08a4ec-0004793a2e02463d",
             "components": {
                 "NameComponent": {
@@ -22282,7 +21676,7 @@
             }
         },
         {
-            "id": 433,
+            "id": 431,
             "guid": "0071d71f48895b43-0004793a2e02463f",
             "components": {
                 "NameComponent": {
@@ -22387,7 +21781,7 @@
             }
         },
         {
-            "id": 434,
+            "id": 432,
             "guid": "0071d71f67628678-0004793a2e024641",
             "components": {
                 "NameComponent": {
@@ -22493,7 +21887,7 @@
             }
         },
         {
-            "id": 435,
+            "id": 433,
             "guid": "0071d71f49f6a77f-0004793a2e024643",
             "components": {
                 "NameComponent": {
@@ -22586,7 +21980,7 @@
             }
         },
         {
-            "id": 436,
+            "id": 434,
             "guid": "0071d71f5e73e163-0004793a2e024645",
             "components": {
                 "NameComponent": {
@@ -22679,7 +22073,7 @@
             }
         },
         {
-            "id": 437,
+            "id": 435,
             "guid": "0071d71f780ccdd6-0004793a2e024647",
             "components": {
                 "NameComponent": {
@@ -22772,7 +22166,7 @@
             }
         },
         {
-            "id": 438,
+            "id": 436,
             "guid": "0071d71f5a6ed35a-0004793a2e024649",
             "components": {
                 "NameComponent": {
@@ -22865,7 +22259,7 @@
             }
         },
         {
-            "id": 439,
+            "id": 437,
             "guid": "0071d71f0bcf1096-0004793a2e02464b",
             "components": {
                 "NameComponent": {
@@ -22969,7 +22363,7 @@
             }
         },
         {
-            "id": 440,
+            "id": 438,
             "guid": "0071d71f6df5f15e-0004793a2e02464d",
             "components": {
                 "NameComponent": {
@@ -23062,7 +22456,7 @@
             }
         },
         {
-            "id": 441,
+            "id": 439,
             "guid": "0071d71f7faf3abb-0004793a2e02464f",
             "components": {
                 "NameComponent": {
@@ -23170,7 +22564,7 @@
             }
         },
         {
-            "id": 442,
+            "id": 440,
             "guid": "0071d71f713d1cd5-0004793a2e024651",
             "components": {
                 "NameComponent": {
@@ -23263,7 +22657,7 @@
             }
         },
         {
-            "id": 443,
+            "id": 441,
             "guid": "0071d71f3387343c-0004793a2e024653",
             "components": {
                 "NameComponent": {
@@ -23356,7 +22750,7 @@
             }
         },
         {
-            "id": 444,
+            "id": 442,
             "guid": "0071d71f082f0459-0004793a2e024655",
             "components": {
                 "NameComponent": {
@@ -23449,7 +22843,7 @@
             }
         },
         {
-            "id": 445,
+            "id": 443,
             "guid": "0071d71f4efa927b-0004793a2e024657",
             "components": {
                 "NameComponent": {
@@ -23542,7 +22936,7 @@
             }
         },
         {
-            "id": 446,
+            "id": 444,
             "guid": "0071d71f4c20f390-0004793a2e024659",
             "components": {
                 "NameComponent": {
@@ -23635,11 +23029,11 @@
             }
         },
         {
-            "id": 447,
+            "id": 445,
             "guid": "0071d71f087f1441-0004793a2e02465b",
             "components": {
                 "NameComponent": {
-                    "name": "L_Eyelash (1)"
+                    "name": "L_Eyelash"
                 },
                 "TagComponent": {
                     "tagIndex": 0
@@ -23740,11 +23134,11 @@
             }
         },
         {
-            "id": 448,
+            "id": 446,
             "guid": "0071d71f1da60eb4-0004793a2e02465d",
             "components": {
                 "NameComponent": {
-                    "name": "L_Lower_Eyelash (1)"
+                    "name": "L_Lower_Eyelash"
                 },
                 "TagComponent": {
                     "tagIndex": 0
@@ -23833,7 +23227,7 @@
             }
         },
         {
-            "id": 449,
+            "id": 447,
             "guid": "0071d71f3b2e060f-0004793a2e02465f",
             "components": {
                 "NameComponent": {
@@ -23926,11 +23320,11 @@
             }
         },
         {
-            "id": 450,
+            "id": 448,
             "guid": "0071d71f1865b868-0004793a2e024661",
             "components": {
                 "NameComponent": {
-                    "name": "R_Eyelash (1)"
+                    "name": "R_Eyelash"
                 },
                 "TagComponent": {
                     "tagIndex": 0
@@ -24031,7 +23425,7 @@
             }
         },
         {
-            "id": 451,
+            "id": 449,
             "guid": "0071d71f4ae95d13-0004793a2e024663",
             "components": {
                 "NameComponent": {
@@ -24124,11 +23518,11 @@
             }
         },
         {
-            "id": 452,
+            "id": 450,
             "guid": "0071d71f558e9582-0004793a2e024665",
             "components": {
                 "NameComponent": {
-                    "name": "R_Lower_Eyelash (1)"
+                    "name": "R_Lower_Eyelash"
                 },
                 "TagComponent": {
                     "tagIndex": 0
@@ -24217,11 +23611,11 @@
             }
         },
         {
-            "id": 453,
+            "id": 451,
             "guid": "0071d71f2fe2fb99-0004793a2e024667",
             "components": {
                 "NameComponent": {
-                    "name": "Top_Torso (1)"
+                    "name": "Top_Torso"
                 },
                 "TagComponent": {
                     "tagIndex": 0
@@ -24337,7 +23731,7 @@
             }
         },
         {
-            "id": 454,
+            "id": 452,
             "guid": "0071d71f3c694c1e-0004793a2e024669",
             "components": {
                 "NameComponent": {
@@ -24430,7 +23824,7 @@
             }
         },
         {
-            "id": 455,
+            "id": 453,
             "guid": "0071d71f3ff8f47d-0004793a2e02466b",
             "components": {
                 "NameComponent": {
@@ -24523,7 +23917,7 @@
             }
         },
         {
-            "id": 456,
+            "id": 454,
             "guid": "0071d71f19aa4632-0004793a2e02466d",
             "components": {
                 "NameComponent": {
@@ -24616,7 +24010,7 @@
             }
         },
         {
-            "id": 457,
+            "id": 455,
             "guid": "0071d71f659a7073-0004793a2e02466f",
             "components": {
                 "NameComponent": {
@@ -24709,7 +24103,7 @@
             }
         },
         {
-            "id": 458,
+            "id": 456,
             "guid": "0071d71f13850972-0004793a2e024671",
             "components": {
                 "NameComponent": {
@@ -24802,7 +24196,7 @@
             }
         },
         {
-            "id": 459,
+            "id": 457,
             "guid": "0071d71f1b28e79e-0004793a2e024673",
             "components": {
                 "NameComponent": {
@@ -24895,7 +24289,7 @@
             }
         },
         {
-            "id": 460,
+            "id": 458,
             "guid": "0071d71f790b9c6d-0004793a2e024675",
             "components": {
                 "NameComponent": {
@@ -24988,7 +24382,7 @@
             }
         },
         {
-            "id": 461,
+            "id": 459,
             "guid": "0071d71f633dae0c-0004793a2e024677",
             "components": {
                 "NameComponent": {
@@ -25081,7 +24475,7 @@
             }
         },
         {
-            "id": 462,
+            "id": 460,
             "guid": "0071d71f17c1b162-0004793a2e024679",
             "components": {
                 "NameComponent": {
@@ -25174,7 +24568,7 @@
             }
         },
         {
-            "id": 463,
+            "id": 461,
             "guid": "0071d71f543d1296-0004793a2e02467b",
             "components": {
                 "NameComponent": {
@@ -25267,7 +24661,7 @@
             }
         },
         {
-            "id": 464,
+            "id": 462,
             "guid": "0071d71f1728d277-0004793a2e02467d",
             "components": {
                 "NameComponent": {
@@ -25360,7 +24754,7 @@
             }
         },
         {
-            "id": 465,
+            "id": 463,
             "guid": "0071d71f23bb2e58-0004793a2e02467f",
             "components": {
                 "NameComponent": {
@@ -25453,7 +24847,7 @@
             }
         },
         {
-            "id": 466,
+            "id": 464,
             "guid": "0071d71f0e47ccbf-0004793a2e024681",
             "components": {
                 "NameComponent": {
@@ -25546,7 +24940,7 @@
             }
         },
         {
-            "id": 467,
+            "id": 465,
             "guid": "0071d71f06bcfe90-0004793a2e024683",
             "components": {
                 "NameComponent": {
@@ -25639,7 +25033,7 @@
             }
         },
         {
-            "id": 468,
+            "id": 466,
             "guid": "0071d71f6161fb2d-0004793a2e024685",
             "components": {
                 "NameComponent": {
@@ -25732,7 +25126,7 @@
             }
         },
         {
-            "id": 469,
+            "id": 467,
             "guid": "0071d71f02d77834-0004793a2e024687",
             "components": {
                 "NameComponent": {
@@ -25825,7 +25219,7 @@
             }
         },
         {
-            "id": 470,
+            "id": 468,
             "guid": "0071d71f21a6b0e8-0004793a2e024689",
             "components": {
                 "NameComponent": {
@@ -25918,11 +25312,11 @@
             }
         },
         {
-            "id": 471,
+            "id": 469,
             "guid": "0071d71f02a80e6c-0004793a2e02468b",
             "components": {
                 "NameComponent": {
-                    "name": "Hair:backhair1 (1)"
+                    "name": "Hair:backhair1"
                 },
                 "TagComponent": {
                     "tagIndex": 0
@@ -26011,11 +25405,11 @@
             }
         },
         {
-            "id": 472,
+            "id": 470,
             "guid": "0071d71f197f13dd-0004793a2e02468d",
             "components": {
                 "NameComponent": {
-                    "name": "Kusane_Player_Reference (1)"
+                    "name": "Kusane_Player_Reference"
                 },
                 "TagComponent": {
                     "tagIndex": 0
@@ -26115,11 +25509,11 @@
             }
         },
         {
-            "id": 473,
+            "id": 471,
             "guid": "0071d71f0e912cab-0004793a2e02468f",
             "components": {
                 "NameComponent": {
-                    "name": "Kusane_Player_Hips (1)"
+                    "name": "Kusane_Player_Hips"
                 },
                 "TagComponent": {
                     "tagIndex": 0
@@ -26221,11 +25615,11 @@
             }
         },
         {
-            "id": 474,
+            "id": 472,
             "guid": "0071d71f49959692-0004793a2e024691",
             "components": {
                 "NameComponent": {
-                    "name": "Kusane_Player_LeftUpLeg (1)"
+                    "name": "Kusane_Player_LeftUpLeg"
                 },
                 "TagComponent": {
                     "tagIndex": 0
@@ -26325,11 +25719,11 @@
             }
         },
         {
-            "id": 475,
+            "id": 473,
             "guid": "0071d71f124e0320-0004793a2e024693",
             "components": {
                 "NameComponent": {
-                    "name": "Kusane_Player_LeftLeg (1)"
+                    "name": "Kusane_Player_LeftLeg"
                 },
                 "TagComponent": {
                     "tagIndex": 0
@@ -26429,11 +25823,11 @@
             }
         },
         {
-            "id": 476,
+            "id": 474,
             "guid": "0071d71f467a77ee-0004793a2e024695",
             "components": {
                 "NameComponent": {
-                    "name": "Kusane_Player_LeftFoot (1)"
+                    "name": "Kusane_Player_LeftFoot"
                 },
                 "TagComponent": {
                     "tagIndex": 0
@@ -26533,11 +25927,11 @@
             }
         },
         {
-            "id": 477,
+            "id": 475,
             "guid": "0071d71f3de822e1-0004793a2e024697",
             "components": {
                 "NameComponent": {
-                    "name": "Kusane_Player_LeftToeBase (1)"
+                    "name": "Kusane_Player_LeftToeBase"
                 },
                 "TagComponent": {
                     "tagIndex": 0
@@ -26626,11 +26020,11 @@
             }
         },
         {
-            "id": 478,
+            "id": 476,
             "guid": "0071d71f18db9b45-0004793a2e024699",
             "components": {
                 "NameComponent": {
-                    "name": "Kusane_Player_RightUpLeg (1)"
+                    "name": "Kusane_Player_RightUpLeg"
                 },
                 "TagComponent": {
                     "tagIndex": 0
@@ -26730,11 +26124,11 @@
             }
         },
         {
-            "id": 479,
+            "id": 477,
             "guid": "0071d71f04eb2e42-0004793a2e02469b",
             "components": {
                 "NameComponent": {
-                    "name": "Kusane_Player_RightLeg (1)"
+                    "name": "Kusane_Player_RightLeg"
                 },
                 "TagComponent": {
                     "tagIndex": 0
@@ -26834,11 +26228,11 @@
             }
         },
         {
-            "id": 480,
+            "id": 478,
             "guid": "0071d71f2b7e15c5-0004793a2e02469d",
             "components": {
                 "NameComponent": {
-                    "name": "Kusane_Player_RightFoot (1)"
+                    "name": "Kusane_Player_RightFoot"
                 },
                 "TagComponent": {
                     "tagIndex": 0
@@ -26938,11 +26332,11 @@
             }
         },
         {
-            "id": 481,
+            "id": 479,
             "guid": "0071d71f0b363da6-0004793a2e02469f",
             "components": {
                 "NameComponent": {
-                    "name": "Kusane_Player_RightToeBase (1)"
+                    "name": "Kusane_Player_RightToeBase"
                 },
                 "TagComponent": {
                     "tagIndex": 0
@@ -27031,11 +26425,11 @@
             }
         },
         {
-            "id": 482,
+            "id": 480,
             "guid": "0071d71f0e91c3ee-0004793a2e0246a1",
             "components": {
                 "NameComponent": {
-                    "name": "Kusane_Player_Spine (1)"
+                    "name": "Kusane_Player_Spine"
                 },
                 "TagComponent": {
                     "tagIndex": 0
@@ -27294,11 +26688,11 @@
             }
         },
         {
-            "id": 483,
+            "id": 481,
             "guid": "0071d71f4a9104a1-0004793a2e0246a3",
             "components": {
                 "NameComponent": {
-                    "name": "Kusane_Player_Spine1 (1)"
+                    "name": "Kusane_Player_Spine1"
                 },
                 "TagComponent": {
                     "tagIndex": 0
@@ -27398,11 +26792,11 @@
             }
         },
         {
-            "id": 484,
+            "id": 482,
             "guid": "0071d71f2b9b43b2-0004793a2e0246a5",
             "components": {
                 "NameComponent": {
-                    "name": "Kusane_Player_Spine2 (1)"
+                    "name": "Kusane_Player_Spine2"
                 },
                 "TagComponent": {
                     "tagIndex": 0
@@ -27504,11 +26898,11 @@
             }
         },
         {
-            "id": 485,
+            "id": 483,
             "guid": "0071d71f62f122d2-0004793a2e0246a7",
             "components": {
                 "NameComponent": {
-                    "name": "Kusane_Player_LeftShoulder (1)"
+                    "name": "Kusane_Player_LeftShoulder"
                 },
                 "TagComponent": {
                     "tagIndex": 0
@@ -27608,11 +27002,11 @@
             }
         },
         {
-            "id": 486,
+            "id": 484,
             "guid": "0071d71f70a5fbe3-0004793a2e0246a9",
             "components": {
                 "NameComponent": {
-                    "name": "Kusane_Player_LeftArm (1)"
+                    "name": "Kusane_Player_LeftArm"
                 },
                 "TagComponent": {
                     "tagIndex": 0
@@ -27712,11 +27106,11 @@
             }
         },
         {
-            "id": 487,
+            "id": 485,
             "guid": "0071d71f76058ec0-0004793a2e0246ab",
             "components": {
                 "NameComponent": {
-                    "name": "Kusane_Player_LeftForeArm (1)"
+                    "name": "Kusane_Player_LeftForeArm"
                 },
                 "TagComponent": {
                     "tagIndex": 0
@@ -27816,11 +27210,11 @@
             }
         },
         {
-            "id": 488,
+            "id": 486,
             "guid": "0071d71f08556773-0004793a2e0246ad",
             "components": {
                 "NameComponent": {
-                    "name": "Kusane_Player_LeftHand (1)"
+                    "name": "Kusane_Player_LeftHand"
                 },
                 "TagComponent": {
                     "tagIndex": 0
@@ -27924,11 +27318,11 @@
             }
         },
         {
-            "id": 489,
+            "id": 487,
             "guid": "0071d71f0e3fe3a3-0004793a2e0246af",
             "components": {
                 "NameComponent": {
-                    "name": "Kusane_Player_LeftHandThumb1 (1)"
+                    "name": "Kusane_Player_LeftHandThumb1"
                 },
                 "TagComponent": {
                     "tagIndex": 0
@@ -28028,11 +27422,11 @@
             }
         },
         {
-            "id": 490,
+            "id": 488,
             "guid": "0071d71f18cc6574-0004793a2e0246b1",
             "components": {
                 "NameComponent": {
-                    "name": "Kusane_Player_LeftHandThumb2 (1)"
+                    "name": "Kusane_Player_LeftHandThumb2"
                 },
                 "TagComponent": {
                     "tagIndex": 0
@@ -28132,11 +27526,11 @@
             }
         },
         {
-            "id": 491,
+            "id": 489,
             "guid": "0071d71f63ea74c6-0004793a2e0246b3",
             "components": {
                 "NameComponent": {
-                    "name": "Kusane_Player_LeftHandThumb3 (1)"
+                    "name": "Kusane_Player_LeftHandThumb3"
                 },
                 "TagComponent": {
                     "tagIndex": 0
@@ -28236,11 +27630,11 @@
             }
         },
         {
-            "id": 492,
+            "id": 490,
             "guid": "0071d71f191bdc7e-0004793a2e0246b5",
             "components": {
                 "NameComponent": {
-                    "name": "Kusane_Player_LeftHandThumb4 (1)"
+                    "name": "Kusane_Player_LeftHandThumb4"
                 },
                 "TagComponent": {
                     "tagIndex": 0
@@ -28329,11 +27723,11 @@
             }
         },
         {
-            "id": 493,
+            "id": 491,
             "guid": "0071d71f0e277126-0004793a2e0246b7",
             "components": {
                 "NameComponent": {
-                    "name": "Kusane_Player_LeftHandIndex1 (1)"
+                    "name": "Kusane_Player_LeftHandIndex1"
                 },
                 "TagComponent": {
                     "tagIndex": 0
@@ -28433,11 +27827,11 @@
             }
         },
         {
-            "id": 494,
+            "id": 492,
             "guid": "0071d71f6ed46f61-0004793a2e0246b9",
             "components": {
                 "NameComponent": {
-                    "name": "Kusane_Player_LeftHandIndex2 (1)"
+                    "name": "Kusane_Player_LeftHandIndex2"
                 },
                 "TagComponent": {
                     "tagIndex": 0
@@ -28537,11 +27931,11 @@
             }
         },
         {
-            "id": 495,
+            "id": 493,
             "guid": "0071d71f05a41c48-0004793a2e0246bb",
             "components": {
                 "NameComponent": {
-                    "name": "Kusane_Player_LeftHandIndex3 (1)"
+                    "name": "Kusane_Player_LeftHandIndex3"
                 },
                 "TagComponent": {
                     "tagIndex": 0
@@ -28641,11 +28035,11 @@
             }
         },
         {
-            "id": 496,
+            "id": 494,
             "guid": "0071d71f7485a1db-0004793a2e0246bd",
             "components": {
                 "NameComponent": {
-                    "name": "Kusane_Player_LeftHandIndex4 (1)"
+                    "name": "Kusane_Player_LeftHandIndex4"
                 },
                 "TagComponent": {
                     "tagIndex": 0
@@ -28734,11 +28128,11 @@
             }
         },
         {
-            "id": 497,
+            "id": 495,
             "guid": "0071d71f00e5f865-0004793a2e0246bf",
             "components": {
                 "NameComponent": {
-                    "name": "Kusane_Player_LeftHandMiddle1 (1)"
+                    "name": "Kusane_Player_LeftHandMiddle1"
                 },
                 "TagComponent": {
                     "tagIndex": 0
@@ -28838,11 +28232,11 @@
             }
         },
         {
-            "id": 498,
+            "id": 496,
             "guid": "0071d71f54f102ca-0004793a2e0246c1",
             "components": {
                 "NameComponent": {
-                    "name": "Kusane_Player_LeftHandMiddle2 (1)"
+                    "name": "Kusane_Player_LeftHandMiddle2"
                 },
                 "TagComponent": {
                     "tagIndex": 0
@@ -28942,11 +28336,11 @@
             }
         },
         {
-            "id": 499,
+            "id": 497,
             "guid": "0071d71f63523620-0004793a2e0246c3",
             "components": {
                 "NameComponent": {
-                    "name": "Kusane_Player_LeftHandMiddle3 (1)"
+                    "name": "Kusane_Player_LeftHandMiddle3"
                 },
                 "TagComponent": {
                     "tagIndex": 0
@@ -29046,11 +28440,11 @@
             }
         },
         {
-            "id": 500,
+            "id": 498,
             "guid": "0071d71f1c2a5df4-0004793a2e0246c5",
             "components": {
                 "NameComponent": {
-                    "name": "Kusane_Player_LeftHandMiddle4 (1)"
+                    "name": "Kusane_Player_LeftHandMiddle4"
                 },
                 "TagComponent": {
                     "tagIndex": 0
@@ -29139,11 +28533,11 @@
             }
         },
         {
-            "id": 501,
+            "id": 499,
             "guid": "0071d71f200a471b-0004793a2e0246c7",
             "components": {
                 "NameComponent": {
-                    "name": "Kusane_Player_LeftHandRing1 (1)"
+                    "name": "Kusane_Player_LeftHandRing1"
                 },
                 "TagComponent": {
                     "tagIndex": 0
@@ -29243,11 +28637,11 @@
             }
         },
         {
-            "id": 502,
+            "id": 500,
             "guid": "0071d71f1e1ebdb7-0004793a2e0246c9",
             "components": {
                 "NameComponent": {
-                    "name": "Kusane_Player_LeftHandRing2 (1)"
+                    "name": "Kusane_Player_LeftHandRing2"
                 },
                 "TagComponent": {
                     "tagIndex": 0
@@ -29347,11 +28741,11 @@
             }
         },
         {
-            "id": 503,
+            "id": 501,
             "guid": "0071d71f6d169ce5-0004793a2e0246cb",
             "components": {
                 "NameComponent": {
-                    "name": "Kusane_Player_LeftHandRing3 (1)"
+                    "name": "Kusane_Player_LeftHandRing3"
                 },
                 "TagComponent": {
                     "tagIndex": 0
@@ -29451,11 +28845,11 @@
             }
         },
         {
-            "id": 504,
+            "id": 502,
             "guid": "0071d71f18b4c102-0004793a2e0246cd",
             "components": {
                 "NameComponent": {
-                    "name": "Kusane_Player_LeftHandRing4 (1)"
+                    "name": "Kusane_Player_LeftHandRing4"
                 },
                 "TagComponent": {
                     "tagIndex": 0
@@ -29544,11 +28938,11 @@
             }
         },
         {
-            "id": 505,
+            "id": 503,
             "guid": "0071d71f5eb41c41-0004793a2e0246cf",
             "components": {
                 "NameComponent": {
-                    "name": "Kusane_Player_LeftHandPinky1 (1)"
+                    "name": "Kusane_Player_LeftHandPinky1"
                 },
                 "TagComponent": {
                     "tagIndex": 0
@@ -29648,11 +29042,11 @@
             }
         },
         {
-            "id": 506,
+            "id": 504,
             "guid": "0071d71f3e1ba7ae-0004793a2e0246d1",
             "components": {
                 "NameComponent": {
-                    "name": "Kusane_Player_LeftHandPinky2 (1)"
+                    "name": "Kusane_Player_LeftHandPinky2"
                 },
                 "TagComponent": {
                     "tagIndex": 0
@@ -29752,11 +29146,11 @@
             }
         },
         {
-            "id": 507,
+            "id": 505,
             "guid": "0071d71f7c67bb8f-0004793a2e0246d3",
             "components": {
                 "NameComponent": {
-                    "name": "Kusane_Player_LeftHandPinky3 (1)"
+                    "name": "Kusane_Player_LeftHandPinky3"
                 },
                 "TagComponent": {
                     "tagIndex": 0
@@ -29856,11 +29250,11 @@
             }
         },
         {
-            "id": 508,
+            "id": 506,
             "guid": "0071d71f1b833634-0004793a2e0246d5",
             "components": {
                 "NameComponent": {
-                    "name": "Kusane_Player_LeftHandPinky4 (1)"
+                    "name": "Kusane_Player_LeftHandPinky4"
                 },
                 "TagComponent": {
                     "tagIndex": 0
@@ -29949,11 +29343,11 @@
             }
         },
         {
-            "id": 509,
+            "id": 507,
             "guid": "0071d71f44ffee24-0004793a2e0246d7",
             "components": {
                 "NameComponent": {
-                    "name": "Kusane_Player_RightShoulder (1)"
+                    "name": "Kusane_Player_RightShoulder"
                 },
                 "TagComponent": {
                     "tagIndex": 0
@@ -30053,11 +29447,11 @@
             }
         },
         {
-            "id": 510,
+            "id": 508,
             "guid": "0071d71f2e5c7294-0004793a2e0246d9",
             "components": {
                 "NameComponent": {
-                    "name": "Kusane_Player_RightArm (1)"
+                    "name": "Kusane_Player_RightArm"
                 },
                 "TagComponent": {
                     "tagIndex": 0
@@ -30157,11 +29551,11 @@
             }
         },
         {
-            "id": 511,
+            "id": 509,
             "guid": "0071d71f77630ec5-0004793a2e0246db",
             "components": {
                 "NameComponent": {
-                    "name": "Kusane_Player_RightForeArm (1)"
+                    "name": "Kusane_Player_RightForeArm"
                 },
                 "TagComponent": {
                     "tagIndex": 0
@@ -30261,11 +29655,11 @@
             }
         },
         {
-            "id": 512,
+            "id": 510,
             "guid": "0071d71f6478ebe0-0004793a2e0246dd",
             "components": {
                 "NameComponent": {
-                    "name": "Kusane_Player_RightHand (1)"
+                    "name": "Kusane_Player_RightHand"
                 },
                 "TagComponent": {
                     "tagIndex": 0
@@ -30369,11 +29763,11 @@
             }
         },
         {
-            "id": 513,
+            "id": 511,
             "guid": "0071d71f6b88ed94-0004793a2e0246df",
             "components": {
                 "NameComponent": {
-                    "name": "Kusane_Player_RightHandThumb1 (1)"
+                    "name": "Kusane_Player_RightHandThumb1"
                 },
                 "TagComponent": {
                     "tagIndex": 0
@@ -30473,7 +29867,7 @@
             }
         },
         {
-            "id": 514,
+            "id": 512,
             "guid": "0071d71f29f7dba2-0004793a2e0246e1",
             "components": {
                 "NameComponent": {
@@ -30577,7 +29971,7 @@
             }
         },
         {
-            "id": 515,
+            "id": 513,
             "guid": "0071d71f1ff30ccf-0004793a2e0246e3",
             "components": {
                 "NameComponent": {
@@ -30681,7 +30075,7 @@
             }
         },
         {
-            "id": 516,
+            "id": 514,
             "guid": "0071d71f14fef725-0004793a2e0246e5",
             "components": {
                 "NameComponent": {
@@ -30774,11 +30168,11 @@
             }
         },
         {
-            "id": 517,
+            "id": 515,
             "guid": "0071d71f5d33feba-0004793a2e0246e7",
             "components": {
                 "NameComponent": {
-                    "name": "Kusane_Player_RightHandIndex1 (1)"
+                    "name": "Kusane_Player_RightHandIndex1"
                 },
                 "TagComponent": {
                     "tagIndex": 0
@@ -30879,11 +30273,11 @@
             }
         },
         {
-            "id": 518,
+            "id": 516,
             "guid": "0071d71f1128e29d-0004793a2e0246e9",
             "components": {
                 "NameComponent": {
-                    "name": "Kusane_Player_RightHandIndex2 (1)"
+                    "name": "Kusane_Player_RightHandIndex2"
                 },
                 "TagComponent": {
                     "tagIndex": 0
@@ -30983,11 +30377,11 @@
             }
         },
         {
-            "id": 519,
+            "id": 517,
             "guid": "0071d71f77716bc0-0004793a2e0246eb",
             "components": {
                 "NameComponent": {
-                    "name": "Kusane_Player_RightHandIndex3 (1)"
+                    "name": "Kusane_Player_RightHandIndex3"
                 },
                 "TagComponent": {
                     "tagIndex": 0
@@ -31087,11 +30481,11 @@
             }
         },
         {
-            "id": 520,
+            "id": 518,
             "guid": "0071d71f65cfb872-0004793a2e0246ed",
             "components": {
                 "NameComponent": {
-                    "name": "Kusane_Player_RightHandIndex4 (1)"
+                    "name": "Kusane_Player_RightHandIndex4"
                 },
                 "TagComponent": {
                     "tagIndex": 0
@@ -31180,7 +30574,7 @@
             }
         },
         {
-            "id": 521,
+            "id": 519,
             "guid": "0071d71f6b399071-0004793a2e0246ef",
             "components": {
                 "NameComponent": {
@@ -31572,11 +30966,11 @@
             }
         },
         {
-            "id": 522,
+            "id": 520,
             "guid": "0071d71f525ecedf-0004793a2e0246f1",
             "components": {
                 "NameComponent": {
-                    "name": "Kusane_Player_RightHandMiddle1 (1)"
+                    "name": "Kusane_Player_RightHandMiddle1"
                 },
                 "TagComponent": {
                     "tagIndex": 0
@@ -31676,11 +31070,11 @@
             }
         },
         {
-            "id": 523,
+            "id": 521,
             "guid": "0071d71f1221e408-0004793a2e0246f3",
             "components": {
                 "NameComponent": {
-                    "name": "Kusane_Player_RightHandMiddle2 (1)"
+                    "name": "Kusane_Player_RightHandMiddle2"
                 },
                 "TagComponent": {
                     "tagIndex": 0
@@ -31780,11 +31174,11 @@
             }
         },
         {
-            "id": 524,
+            "id": 522,
             "guid": "0071d71f1be480d2-0004793a2e0246f5",
             "components": {
                 "NameComponent": {
-                    "name": "Kusane_Player_RightHandMiddle3 (1)"
+                    "name": "Kusane_Player_RightHandMiddle3"
                 },
                 "TagComponent": {
                     "tagIndex": 0
@@ -31884,7 +31278,7 @@
             }
         },
         {
-            "id": 525,
+            "id": 523,
             "guid": "0071d71f57030268-0004793a2e0246f7",
             "components": {
                 "NameComponent": {
@@ -31977,11 +31371,11 @@
             }
         },
         {
-            "id": 526,
+            "id": 524,
             "guid": "0071d71f52a555b6-0004793a2e0246f9",
             "components": {
                 "NameComponent": {
-                    "name": "Kusane_Player_RightHandRing1 (1)"
+                    "name": "Kusane_Player_RightHandRing1"
                 },
                 "TagComponent": {
                     "tagIndex": 0
@@ -32081,11 +31475,11 @@
             }
         },
         {
-            "id": 527,
+            "id": 525,
             "guid": "0071d71f6a42edce-0004793a2e0246fb",
             "components": {
                 "NameComponent": {
-                    "name": "Kusane_Player_RightHandRing2 (1)"
+                    "name": "Kusane_Player_RightHandRing2"
                 },
                 "TagComponent": {
                     "tagIndex": 0
@@ -32185,11 +31579,11 @@
             }
         },
         {
-            "id": 528,
+            "id": 526,
             "guid": "0071d71f5d7ab4ad-0004793a2e0246fd",
             "components": {
                 "NameComponent": {
-                    "name": "Kusane_Player_RightHandRing3 (1)"
+                    "name": "Kusane_Player_RightHandRing3"
                 },
                 "TagComponent": {
                     "tagIndex": 0
@@ -32289,11 +31683,11 @@
             }
         },
         {
-            "id": 529,
+            "id": 527,
             "guid": "0071d71f30ed59bd-0004793a2e0246ff",
             "components": {
                 "NameComponent": {
-                    "name": "Kusane_Player_RightHandRing4 (1)"
+                    "name": "Kusane_Player_RightHandRing4"
                 },
                 "TagComponent": {
                     "tagIndex": 0
@@ -32382,11 +31776,11 @@
             }
         },
         {
-            "id": 530,
+            "id": 528,
             "guid": "0071d71f0a4f96c1-0004793a2e024701",
             "components": {
                 "NameComponent": {
-                    "name": "Kusane_Player_RightHandPinky1 (1)"
+                    "name": "Kusane_Player_RightHandPinky1"
                 },
                 "TagComponent": {
                     "tagIndex": 0
@@ -32486,11 +31880,11 @@
             }
         },
         {
-            "id": 531,
+            "id": 529,
             "guid": "0071d71f2d49a1c7-0004793a2e024703",
             "components": {
                 "NameComponent": {
-                    "name": "Kusane_Player_RightHandPinky2 (1)"
+                    "name": "Kusane_Player_RightHandPinky2"
                 },
                 "TagComponent": {
                     "tagIndex": 0
@@ -32590,11 +31984,11 @@
             }
         },
         {
-            "id": 532,
+            "id": 530,
             "guid": "0071d71f60b36f38-0004793a2e024705",
             "components": {
                 "NameComponent": {
-                    "name": "Kusane_Player_RightHandPinky3 (1)"
+                    "name": "Kusane_Player_RightHandPinky3"
                 },
                 "TagComponent": {
                     "tagIndex": 0
@@ -32694,11 +32088,11 @@
             }
         },
         {
-            "id": 533,
+            "id": 531,
             "guid": "0071d71f7f63e86a-0004793a2e024707",
             "components": {
                 "NameComponent": {
-                    "name": "Kusane_Player_RightHandPinky4 (1)"
+                    "name": "Kusane_Player_RightHandPinky4"
                 },
                 "TagComponent": {
                     "tagIndex": 0
@@ -32787,11 +32181,11 @@
             }
         },
         {
-            "id": 534,
+            "id": 532,
             "guid": "0071d71f1b82a529-0004793a2e024709",
             "components": {
                 "NameComponent": {
-                    "name": "Kusane_Player_Neck (1)"
+                    "name": "Kusane_Player_Neck"
                 },
                 "TagComponent": {
                     "tagIndex": 0
@@ -32891,11 +32285,11 @@
             }
         },
         {
-            "id": 535,
+            "id": 533,
             "guid": "0071d71f07970228-0004793a2e02470b",
             "components": {
                 "NameComponent": {
-                    "name": "Kusane_Player_Head (1)"
+                    "name": "Kusane_Player_Head"
                 },
                 "TagComponent": {
                     "tagIndex": 0
@@ -32995,11 +32389,11 @@
             }
         },
         {
-            "id": 536,
+            "id": 534,
             "guid": "0071d71f550b85cb-0004793a2e02470d",
             "components": {
                 "NameComponent": {
-                    "name": "joint49 (1)"
+                    "name": "joint49"
                 },
                 "TagComponent": {
                     "tagIndex": 0
@@ -33101,11 +32495,11 @@
             }
         },
         {
-            "id": 537,
+            "id": 535,
             "guid": "0071d71f5f953410-0004793a2e02470f",
             "components": {
                 "NameComponent": {
-                    "name": "joint50 (1)"
+                    "name": "joint50"
                 },
                 "TagComponent": {
                     "tagIndex": 0
@@ -33205,11 +32599,11 @@
             }
         },
         {
-            "id": 538,
+            "id": 536,
             "guid": "0071d71f3e50cd4d-0004793a2e024711",
             "components": {
                 "NameComponent": {
-                    "name": "joint52 (1)"
+                    "name": "joint52"
                 },
                 "TagComponent": {
                     "tagIndex": 0
@@ -33309,11 +32703,11 @@
             }
         },
         {
-            "id": 539,
+            "id": 537,
             "guid": "0071d71f63eede09-0004793a2e024713",
             "components": {
                 "NameComponent": {
-                    "name": "joint53 (1)"
+                    "name": "joint53"
                 },
                 "TagComponent": {
                     "tagIndex": 0
@@ -33413,11 +32807,11 @@
             }
         },
         {
-            "id": 540,
+            "id": 538,
             "guid": "0071d71f1c4835b2-0004793a2e024715",
             "components": {
                 "NameComponent": {
-                    "name": "joint54 (1)"
+                    "name": "joint54"
                 },
                 "TagComponent": {
                     "tagIndex": 0
@@ -33517,11 +32911,11 @@
             }
         },
         {
-            "id": 541,
+            "id": 539,
             "guid": "0071d71f570d26f1-0004793a2e024717",
             "components": {
                 "NameComponent": {
-                    "name": "joint55 (1)"
+                    "name": "joint55"
                 },
                 "TagComponent": {
                     "tagIndex": 0
@@ -33621,11 +33015,11 @@
             }
         },
         {
-            "id": 542,
+            "id": 540,
             "guid": "0071d71f59e54c51-0004793a2e024719",
             "components": {
                 "NameComponent": {
-                    "name": "joint56 (1)"
+                    "name": "joint56"
                 },
                 "TagComponent": {
                     "tagIndex": 0
@@ -33714,11 +33108,11 @@
             }
         },
         {
-            "id": 543,
+            "id": 541,
             "guid": "0071d71f5c61dd12-0004793a2e02471b",
             "components": {
                 "NameComponent": {
-                    "name": "joint47 (1)"
+                    "name": "joint47"
                 },
                 "TagComponent": {
                     "tagIndex": 0
@@ -33807,11 +33201,11 @@
             }
         },
         {
-            "id": 544,
+            "id": 542,
             "guid": "0071d71f3edd83d6-0004793a2e02471d",
             "components": {
                 "NameComponent": {
-                    "name": "joint51 (1)"
+                    "name": "joint51"
                 },
                 "TagComponent": {
                     "tagIndex": 0
@@ -33900,11 +33294,11 @@
             }
         },
         {
-            "id": 545,
+            "id": 543,
             "guid": "0071d71f0b4f3c88-0004793a2e02471f",
             "components": {
                 "NameComponent": {
-                    "name": "Kusane_Player_Ctrl_Reference (1)"
+                    "name": "Kusane_Player_Ctrl_Reference"
                 },
                 "TagComponent": {
                     "tagIndex": 0
@@ -33993,11 +33387,11 @@
             }
         },
         {
-            "id": 546,
+            "id": 544,
             "guid": "0071d71f397bfadb-0004793a2e024721",
             "components": {
                 "NameComponent": {
-                    "name": "ChainAimPointLeft (1)"
+                    "name": "ChainAimPointLeft"
                 },
                 "TagComponent": {
                     "tagIndex": 0
@@ -34194,11 +33588,11 @@
             }
         },
         {
-            "id": 547,
+            "id": 545,
             "guid": "0071d71f1176061f-0004793a2e024723",
             "components": {
                 "NameComponent": {
-                    "name": "ChainAimPointLeftEnd (1)"
+                    "name": "ChainAimPointLeftEnd"
                 },
                 "TagComponent": {
                     "tagIndex": 0
@@ -34384,11 +33778,11 @@
             }
         },
         {
-            "id": 548,
+            "id": 546,
             "guid": "0071d71f12be0aa1-0004793a2e024725",
             "components": {
                 "NameComponent": {
-                    "name": "ChainAimPointRight (1)"
+                    "name": "ChainAimPointRight"
                 },
                 "TagComponent": {
                     "tagIndex": 0
@@ -34585,11 +33979,11 @@
             }
         },
         {
-            "id": 549,
+            "id": 547,
             "guid": "0071d71f22ff64cc-0004793a2e024727",
             "components": {
                 "NameComponent": {
-                    "name": "ChainAimPointRightEnd (1)"
+                    "name": "ChainAimPointRightEnd"
                 },
                 "TagComponent": {
                     "tagIndex": 0
@@ -34775,7 +34169,7 @@
             }
         },
         {
-            "id": 550,
+            "id": 548,
             "guid": "0071d71f47f18143-0004793a2e024729",
             "components": {
                 "NameComponent": {
@@ -34869,14 +34263,14 @@
         },
         {
             "PrefabPath": "../../Resources/Prefabs/NarrativeManager.prefab",
-            "id": 551,
+            "id": 549,
             "guid": "0071d71f704e5110-0004793df00687df",
             "Name": "NarrativeManager",
-            "SiblingIndex": 50000,
+            "SiblingIndex": 65,
             "ComponentOverrides": [
                 {
                     "SiblingIndexComponent": {
-                        "siblingIndex": 50000
+                        "siblingIndex": 65
                     }
                 },
                 {
@@ -34931,7 +34325,7 @@
             ],
             "Children": [
                 {
-                    "id": 552,
+                    "id": 550,
                     "guid": "0071d71f54f0415b-0004793df00687e1",
                     "Name": "NarrativeCollider1",
                     "SiblingIndex": 98,
@@ -35003,11 +34397,80 @@
                                     }
                                 ]
                             }
+                        },
+                        {
+                            "RigidBodyComponent": {
+                                "type": "RigidBodyComponent",
+                                "data": [
+                                    {
+                                        "type": "bool",
+                                        "data": false
+                                    },
+                                    {
+                                        "type": "int",
+                                        "data": 0
+                                    },
+                                    {
+                                        "type": "bool",
+                                        "data": false
+                                    },
+                                    {
+                                        "type": "float",
+                                        "data": 1
+                                    },
+                                    {
+                                        "type": "Vector3D",
+                                        "data": [
+                                            {
+                                                "type": "float",
+                                                "data": 0
+                                            },
+                                            {
+                                                "type": "float",
+                                                "data": 0
+                                            },
+                                            {
+                                                "type": "float",
+                                                "data": 0
+                                            }
+                                        ]
+                                    },
+                                    {
+                                        "type": "Vector3D",
+                                        "data": [
+                                            {
+                                                "type": "float",
+                                                "data": 0
+                                            },
+                                            {
+                                                "type": "float",
+                                                "data": -9.81
+                                            },
+                                            {
+                                                "type": "float",
+                                                "data": 0
+                                            }
+                                        ]
+                                    },
+                                    {
+                                        "type": "bool",
+                                        "data": true
+                                    },
+                                    {
+                                        "type": "float",
+                                        "data": 0
+                                    },
+                                    {
+                                        "type": "float",
+                                        "data": 0
+                                    }
+                                ]
+                            }
                         }
                     ]
                 },
                 {
-                    "id": 553,
+                    "id": 551,
                     "guid": "0071d71f258f8d69-0004793df00687e3",
                     "Name": "NarrativeCollider2",
                     "SiblingIndex": 98,
@@ -35083,7 +34546,7 @@
                     ]
                 },
                 {
-                    "id": 554,
+                    "id": 552,
                     "guid": "0071d71f34acfb9b-0004793df00687e5",
                     "Name": "NarrativeCollider3",
                     "SiblingIndex": 98,
@@ -35159,7 +34622,7 @@
                     ]
                 },
                 {
-                    "id": 555,
+                    "id": 553,
                     "guid": "0071d71f09be8b6b-0004793df00687e7",
                     "Name": "IntroDialogue",
                     "SiblingIndex": 87,
@@ -35337,6 +34800,261 @@
                             }
                         }
                     ]
+                }
+            ]
+        },
+        {
+            "PrefabPath": "../../Resources/Prefabs/CinemaBar (1).prefab",
+            "id": 772,
+            "guid": "0071d71f2ff3be29-0004794cfa26eabf",
+            "Name": "CinemaBar",
+            "SiblingIndex": 1,
+            "ComponentOverrides": [
+                {
+                    "ScriptComponent": {
+                        "scripts": [
+                            {
+                                "scriptGuidStr": "001bf119c52b90ee-00046a1e92000001",
+                                "scriptPath": "../../Resources/Scripts/UI/CinemaBarController.lua",
+                                "enabled": true,
+                                "preserveKeys": [],
+                                "entryFunction": "OnInit",
+                                "autoInvokeEntry": true,
+                                "instanceState": {
+                                    "DisableSafe": null,
+                                    "Update": null,
+                                    "SerializeFields": null,
+                                    "Every": null,
+                                    "UpdateSafe": null,
+                                    "topBarRestY": 14.2,
+                                    "Subscribe": null,
+                                    "playerHUDName": "PlayerHUD",
+                                    "After": null,
+                                    "Destroy": null,
+                                    "topBarName": "TopBar",
+                                    "__created_at": 1772723998.0,
+                                    "__meta": {},
+                                    "btmBarRestY": -14.2,
+                                    "Unsubscribe": null,
+                                    "topBarTargetY": 12.0,
+                                    "Start": null,
+                                    "btmBarName": "BtmBar",
+                                    "_subscriptions": {},
+                                    "transitionInDuration": 3.0,
+                                    "__field_list": {
+                                        "btmBarRestY": -14.2,
+                                        "topBarTargetY": 10.0,
+                                        "btmBarName": "BtmBar",
+                                        "transitionInDuration": 3.0,
+                                        "topBarRestY": 14.2,
+                                        "playerHUDName": "PlayerHUD",
+                                        "btmBarTargetY": -10.0,
+                                        "topBarName": "TopBar",
+                                        "transitionOutDuration": 0.0
+                                    },
+                                    "StartSafe": null,
+                                    "AwakeSafe": null,
+                                    "_call_lifecycle": null,
+                                    "btmBarTargetY": -12.0,
+                                    "transitionOutDuration": 0.5,
+                                    "_private": {},
+                                    "DeserializeFields": null
+                                }
+                            }
+                        ]
+                    }
+                }
+            ],
+            "Children": [
+                {
+                    "id": 773,
+                    "guid": "0071d71f719d5cfa-0004794cfa26eac1",
+                    "Name": "TopBar",
+                    "SiblingIndex": 89,
+                    "ParentComponent": {
+                        "type": "ParentComponent",
+                        "data": [
+                            "0071d71f2ff3be29-0004794cfa26eabf"
+                        ]
+                    }
+                },
+                {
+                    "id": 774,
+                    "guid": "0071d71f1f5ff729-0004794cfa26eac3",
+                    "Name": "BtmBar",
+                    "SiblingIndex": 88,
+                    "ParentComponent": {
+                        "type": "ParentComponent",
+                        "data": [
+                            "0071d71f2ff3be29-0004794cfa26eabf"
+                        ]
+                    }
+                }
+            ]
+        },
+        {
+            "PrefabPath": "../../Resources/Prefabs/ChainManager.prefab",
+            "id": 775,
+            "guid": "0071d71f420d41d7-0004794d0226eac5",
+            "Name": "ChainManager",
+            "SiblingIndex": 56,
+            "ComponentOverrides": [
+                {
+                    "SiblingIndexComponent": {
+                        "siblingIndex": 56
+                    }
+                },
+                {
+                    "ScriptComponent": {
+                        "scripts": [
+                            {
+                                "scriptGuidStr": "002e3c80fea7efb6-0004102b42000003",
+                                "scriptPath": "../../Resources/Scripts/Gameplay/ChainBootstrap.lua",
+                                "enabled": true,
+                                "preserveKeys": [],
+                                "entryFunction": "OnInit",
+                                "autoInvokeEntry": true,
+                                "instanceState": {
+                                    "StartRetraction": null,
+                                    "_private": {},
+                                    "DeserializeFields": null,
+                                    "WallClampRadius": 0.0,
+                                    "After": null,
+                                    "SubSteps": 4.0,
+                                    "StartSafe": null,
+                                    "OnDisable": null,
+                                    "PinEndWhenExtended": true,
+                                    "_read_transform_position": null,
+                                    "_subscriptions": {},
+                                    "__created_at": 1772980577.0,
+                                    "Every": null,
+                                    "_on_chain_hold": null,
+                                    "__field_list": {
+                                        "ChainSpeed": 100.0,
+                                        "WallClamp": true,
+                                        "AnchorAngleThresholdDeg": 45.0,
+                                        "VerletGravity": 0.5,
+                                        "SubSteps": 4.0,
+                                        "UseLOSAnchors": true,
+                                        "PinEndWhenExtended": true,
+                                        "MaxLength": 10.0,
+                                        "VerletDamping": 0.02,
+                                        "WallClampInterval": 10.0,
+                                        "GroundClampOffset": 0.1,
+                                        "LinkName": "Link",
+                                        "IsElastic": true,
+                                        "NumberOfLinks": 200.0,
+                                        "WallClampRadius": 0.0,
+                                        "PlayerName": "Kusane_Player_LeftHandMiddle1",
+                                        "ChainSlackDistance": 1.0,
+                                        "LinkMaxDistance": 0.025,
+                                        "ConstraintIterations": 20.0,
+                                        "ChainEndpointName": "ChainEndpoint",
+                                        "LockOnAngleDeg": 45.0,
+                                        "DragTag": "HeavyEnemy",
+                                        "GroundClamp": true
+                                    },
+                                    "GroundClamp": true,
+                                    "ChainSlackDistance": 3.0,
+                                    "_pickLockOnDirection": null,
+                                    "DisableSafe": null,
+                                    "ChainEndpointName": "ChainEndpoint",
+                                    "UpdateSafe": null,
+                                    "VerletDamping": 0.01,
+                                    "__meta": {},
+                                    "AwakeSafe": null,
+                                    "ChainSpeed": 30.0,
+                                    "_call_lifecycle": null,
+                                    "Unsubscribe": null,
+                                    "WallClamp": true,
+                                    "PlayerName": "Kusane_Player_LeftHandMiddle1",
+                                    "Subscribe": null,
+                                    "VerletGravity": 9.82,
+                                    "_unpack_pos": null,
+                                    "_read_world_pos": null,
+                                    "StopExtension": null,
+                                    "UseLOSAnchors": true,
+                                    "Start": null,
+                                    "Update": null,
+                                    "AnchorAngleThresholdDeg": 45.0,
+                                    "_write_world_pos": null,
+                                    "SerializeFields": null,
+                                    "_on_chain_down": null,
+                                    "MaxLength": 10.0,
+                                    "NumberOfLinks": 200.0,
+                                    "LinkName": "Link",
+                                    "GetChainState": null,
+                                    "GroundClampOffset": 0.0,
+                                    "Destroy": null,
+                                    "IsElastic": true,
+                                    "WallClampInterval": 10.0,
+                                    "LinkMaxDistance": 0.025,
+                                    "ConstraintIterations": 20.0,
+                                    "_on_chain_up": null,
+                                    "LockOnAngleDeg": 45.0,
+                                    "DragTag": "HeavyEnemy",
+                                    "StartExtension": null,
+                                    "AudioClips_HitFlesh": [
+                                        "0039434501d5b48d-0004200cb6012d5f",
+                                        "0039434562c0f5f9-0004200cb6012d61"
+                                    ],
+                                    "AudioClips_Throw": [
+                                        "003943450193471a-0004200cb8012d71",
+                                        "003943453339ffdb-0004200cb8012d73"
+                                    ],
+                                    "AudioClips_Retract": [
+                                        "00394345284c9778-0004200cb6012d6b",
+                                        "0039434545120025-0004200cb8012d6f"
+                                    ],
+                                    "AudioClips_HitWall": [
+                                        "003943453bfe6f5e-0004200cb6012d69"
+                                    ]
+                                }
+                            }
+                        ]
+                    }
+                }
+            ]
+        },
+        {
+            "PrefabPath": "../../Resources/Prefabs/ChainEndpoint.prefab",
+            "id": 776,
+            "guid": "0071d71f2851f9f4-0004794d0426eac7",
+            "Name": "ChainEndpoint",
+            "SiblingIndex": 57,
+            "ComponentOverrides": [
+                {
+                    "SiblingIndexComponent": {
+                        "siblingIndex": 57
+                    }
+                },
+                {
+                    "ScriptComponent": {
+                        "scripts": [
+                            {
+                                "scriptGuidStr": "00532b5cb46324cb-00044b0016049951",
+                                "scriptPath": "../../Resources/Scripts/Gameplay/ChainEndpointController.lua",
+                                "enabled": true,
+                                "preserveKeys": [],
+                                "entryFunction": "OnInit",
+                                "autoInvokeEntry": true,
+                                "instanceState": {
+                                    "__field_list": {
+                                        "PlayerName": "Player",
+                                        "HookSnapDistance": 0.0,
+                                        "DebugLogs": false
+                                    },
+                                    "DebugLogs": false,
+                                    "PlayerName": "Player",
+                                    "__created_at": 1772526588.0,
+                                    "_private": {},
+                                    "_subscriptions": {},
+                                    "__meta": {},
+                                    "HookSnapDistance": 0.0
+                                }
+                            }
+                        ]
+                    }
                 }
             ]
         }

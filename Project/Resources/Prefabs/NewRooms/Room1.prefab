@@ -2,7 +2,7 @@
     "prefab_entities": [
         {
             "id": 0,
-            "guid": "006f7aa43f0c05fa-0004791be205ea35",
+            "guid": "0071d71f63e86cfc-00047947c419225b",
             "components": {
                 "PrefabLinkComponent": {
                     "type": "PrefabLinkComponent",
@@ -91,16 +91,16 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "006f7aa46a2c4135-0004791be205ea37",
-                                "006f7aa437e1fb81-0004791be205ea39",
-                                "006f7aa4098fdf15-0004791be205ea99",
-                                "006f7aa467cf5689-0004791be205ea9b",
-                                "006f7aa42b76623a-0004791be205ea9d",
-                                "006f7aa40ddf3ecd-0004791be205ea9f",
-                                "006f7aa42b87a4c6-0004791be205eaa1",
-                                "006f7aa45394baab-0004791be205eaa5",
-                                "006f7aa44a3c046f-0004791be205eaa9",
-                                "006f7aa42e628909-0004791be205eaad"
+                                "0071d71f54a3965f-00047947c419225d",
+                                "0071d71f27721e47-00047947c419225f",
+                                "0071d71f17edaa9f-00047947c41922bf",
+                                "0071d71f276fd077-00047947c41922c1",
+                                "0071d71f134d12e8-00047947c41922c3",
+                                "0071d71f3ad72f62-00047947c41922c5",
+                                "0071d71f214c6573-00047947c41922c7",
+                                "0071d71f75604a91-00047947c41922cb",
+                                "0071d71f55390fda-00047947c41922cf",
+                                "0071d71f1f8c9780-00047947c41922d3"
                             ]
                         }
                     ]
@@ -118,7 +118,7 @@
         },
         {
             "id": 1,
-            "guid": "006f7aa46a2c4135-0004791be205ea37",
+            "guid": "0071d71f54a3965f-00047947c419225d",
             "components": {
                 "NameComponent": {
                     "name": "Room Light"
@@ -195,7 +195,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "006f7aa43f0c05fa-0004791be205ea35"
+                        "0071d71f63e86cfc-00047947c419225b"
                     ]
                 },
                 "PointLightComponent": {
@@ -312,7 +312,7 @@
         },
         {
             "id": 2,
-            "guid": "006f7aa437e1fb81-0004791be205ea39",
+            "guid": "0071d71f27721e47-00047947c419225f",
             "components": {
                 "NameComponent": {
                     "name": "Room1"
@@ -392,27 +392,27 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "006f7aa435aad753-0004791be205ea3b",
-                                "006f7aa433df9131-0004791be205ea3d",
-                                "006f7aa46c78d5b4-0004791be205ea3f",
-                                "006f7aa45e883dc3-0004791be205ea41",
-                                "006f7aa478c140b2-0004791be205ea43",
-                                "006f7aa43614ff26-0004791be205ea45",
-                                "006f7aa402a101f2-0004791be205ea47",
-                                "006f7aa421919cd9-0004791be205ea49",
-                                "006f7aa428913d47-0004791be205ea51",
-                                "006f7aa43234ca85-0004791be205ea53",
-                                "006f7aa43e8ac66b-0004791be205ea55",
-                                "006f7aa4744123fd-0004791be205ea57",
-                                "006f7aa407842aa9-0004791be205ea59",
-                                "006f7aa45d0c96c7-0004791be205ea5b",
-                                "006f7aa44301c97c-0004791be205ea61",
-                                "006f7aa473041296-0004791be205ea8d",
-                                "006f7aa4571fe44e-0004791be205ea8f",
-                                "006f7aa43c62e08a-0004791be205ea91",
-                                "006f7aa40aabece5-0004791be205ea93",
-                                "006f7aa46fb0f7d5-0004791be205ea95",
-                                "006f7aa44a88d772-0004791be205ea97"
+                                "0071d71f6204b266-00047947c4192261",
+                                "0071d71f4c3f3fe0-00047947c4192263",
+                                "0071d71f10e577d4-00047947c4192265",
+                                "0071d71f39ca2a48-00047947c4192267",
+                                "0071d71f6d83da3c-00047947c4192269",
+                                "0071d71f2e983217-00047947c4192271",
+                                "0071d71f0adb4f81-00047947c4192273",
+                                "0071d71f10a725b1-00047947c4192275",
+                                "0071d71f22024d01-00047947c4192277",
+                                "0071d71f40714c53-00047947c4192279",
+                                "0071d71f568046ff-00047947c419227b",
+                                "0071d71f53057591-00047947c419227d",
+                                "0071d71f081bb584-00047947c419227f",
+                                "0071d71f762b49c9-00047947c4192281",
+                                "0071d71f06677e30-00047947c4192287",
+                                "0071d71f1f7b3059-00047947c41922b3",
+                                "0071d71f1d1f7132-00047947c41922b5",
+                                "0071d71f652fe5d9-00047947c41922b7",
+                                "0071d71f7bb6968a-00047947c41922b9",
+                                "0071d71f6a6bac2b-00047947c41922bb",
+                                "0071d71f591794c9-00047947c41922bd"
                             ]
                         }
                     ]
@@ -420,7 +420,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "006f7aa43f0c05fa-0004791be205ea35"
+                        "0071d71f63e86cfc-00047947c419225b"
                     ]
                 },
                 "ActiveComponent": {
@@ -436,7 +436,7 @@
         },
         {
             "id": 3,
-            "guid": "006f7aa435aad753-0004791be205ea3b",
+            "guid": "0071d71f6204b266-00047947c4192261",
             "components": {
                 "NameComponent": {
                     "name": "Room1_Floor"
@@ -610,7 +610,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "006f7aa437e1fb81-0004791be205ea39"
+                        "0071d71f27721e47-00047947c419225f"
                     ]
                 },
                 "RigidBodyComponent": {
@@ -785,7 +785,7 @@
         },
         {
             "id": 4,
-            "guid": "006f7aa433df9131-0004791be205ea3d",
+            "guid": "0071d71f4c3f3fe0-00047947c4192263",
             "components": {
                 "NameComponent": {
                     "name": "Room1_Sliding_door1"
@@ -959,7 +959,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "006f7aa437e1fb81-0004791be205ea39"
+                        "0071d71f27721e47-00047947c419225f"
                     ]
                 },
                 "ActiveComponent": {
@@ -975,7 +975,7 @@
         },
         {
             "id": 5,
-            "guid": "006f7aa46c78d5b4-0004791be205ea3f",
+            "guid": "0071d71f10e577d4-00047947c4192265",
             "components": {
                 "NameComponent": {
                     "name": "Room1_Sliding_door2"
@@ -1149,7 +1149,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "006f7aa437e1fb81-0004791be205ea39"
+                        "0071d71f27721e47-00047947c419225f"
                     ]
                 },
                 "ActiveComponent": {
@@ -1165,7 +1165,7 @@
         },
         {
             "id": 6,
-            "guid": "006f7aa45e883dc3-0004791be205ea41",
+            "guid": "0071d71f39ca2a48-00047947c4192267",
             "components": {
                 "NameComponent": {
                     "name": "Room1_Sliding_door3"
@@ -1339,7 +1339,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "006f7aa437e1fb81-0004791be205ea39"
+                        "0071d71f27721e47-00047947c419225f"
                     ]
                 },
                 "ActiveComponent": {
@@ -1355,7 +1355,7 @@
         },
         {
             "id": 7,
-            "guid": "006f7aa478c140b2-0004791be205ea43",
+            "guid": "0071d71f6d83da3c-00047947c4192269",
             "components": {
                 "NameComponent": {
                     "name": "Room1_Wall1"
@@ -1532,9 +1532,9 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "006f7aa46963fb71-0004791be205ea4b",
-                                "006f7aa42d539719-0004791be205ea4d",
-                                "006f7aa438cb24ae-0004791be205ea4f"
+                                "0071d71f42316aa0-00047947c419226b",
+                                "0071d71f3dbee6bb-00047947c419226d",
+                                "0071d71f4c307af2-00047947c419226f"
                             ]
                         }
                     ]
@@ -1542,7 +1542,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "006f7aa437e1fb81-0004791be205ea39"
+                        "0071d71f27721e47-00047947c419225f"
                     ]
                 },
                 "RigidBodyComponent": {
@@ -1717,7 +1717,7 @@
         },
         {
             "id": 8,
-            "guid": "006f7aa46963fb71-0004791be205ea4b",
+            "guid": "0071d71f42316aa0-00047947c419226b",
             "components": {
                 "NameComponent": {
                     "name": "Col1"
@@ -1794,7 +1794,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "006f7aa478c140b2-0004791be205ea43"
+                        "0071d71f6d83da3c-00047947c4192269"
                     ]
                 },
                 "RigidBodyComponent": {
@@ -1969,7 +1969,7 @@
         },
         {
             "id": 9,
-            "guid": "006f7aa42d539719-0004791be205ea4d",
+            "guid": "0071d71f3dbee6bb-00047947c419226d",
             "components": {
                 "NameComponent": {
                     "name": "Col2"
@@ -2046,7 +2046,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "006f7aa478c140b2-0004791be205ea43"
+                        "0071d71f6d83da3c-00047947c4192269"
                     ]
                 },
                 "RigidBodyComponent": {
@@ -2221,7 +2221,7 @@
         },
         {
             "id": 10,
-            "guid": "006f7aa438cb24ae-0004791be205ea4f",
+            "guid": "0071d71f4c307af2-00047947c419226f",
             "components": {
                 "NameComponent": {
                     "name": "Col3"
@@ -2247,7 +2247,7 @@
                                 },
                                 {
                                     "type": "float",
-                                    "data": 0
+                                    "data": 0.9
                                 },
                                 {
                                     "type": "float",
@@ -2298,7 +2298,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "006f7aa478c140b2-0004791be205ea43"
+                        "0071d71f6d83da3c-00047947c4192269"
                     ]
                 },
                 "RigidBodyComponent": {
@@ -2473,7 +2473,7 @@
         },
         {
             "id": 11,
-            "guid": "006f7aa43614ff26-0004791be205ea45",
+            "guid": "0071d71f2e983217-00047947c4192271",
             "components": {
                 "NameComponent": {
                     "name": "Room1_Wall2"
@@ -2647,7 +2647,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "006f7aa437e1fb81-0004791be205ea39"
+                        "0071d71f27721e47-00047947c419225f"
                     ]
                 },
                 "RigidBodyComponent": {
@@ -2822,7 +2822,7 @@
         },
         {
             "id": 12,
-            "guid": "006f7aa402a101f2-0004791be205ea47",
+            "guid": "0071d71f0adb4f81-00047947c4192273",
             "components": {
                 "NameComponent": {
                     "name": "Room1_Wall3"
@@ -2996,7 +2996,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "006f7aa437e1fb81-0004791be205ea39"
+                        "0071d71f27721e47-00047947c419225f"
                     ]
                 },
                 "RigidBodyComponent": {
@@ -3171,7 +3171,7 @@
         },
         {
             "id": 13,
-            "guid": "006f7aa421919cd9-0004791be205ea49",
+            "guid": "0071d71f10a725b1-00047947c4192275",
             "components": {
                 "NameComponent": {
                     "name": "Room1_Wall4"
@@ -3345,7 +3345,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "006f7aa437e1fb81-0004791be205ea39"
+                        "0071d71f27721e47-00047947c419225f"
                     ]
                 },
                 "RigidBodyComponent": {
@@ -3520,7 +3520,7 @@
         },
         {
             "id": 14,
-            "guid": "006f7aa428913d47-0004791be205ea51",
+            "guid": "0071d71f22024d01-00047947c4192277",
             "components": {
                 "NameComponent": {
                     "name": "Room1_Wallbeams"
@@ -3694,7 +3694,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "006f7aa437e1fb81-0004791be205ea39"
+                        "0071d71f27721e47-00047947c419225f"
                     ]
                 },
                 "ActiveComponent": {
@@ -3710,7 +3710,7 @@
         },
         {
             "id": 15,
-            "guid": "006f7aa43234ca85-0004791be205ea53",
+            "guid": "0071d71f40714c53-00047947c4192279",
             "components": {
                 "NameComponent": {
                     "name": "Room1_Wooden_beams_ceiling"
@@ -3884,7 +3884,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "006f7aa437e1fb81-0004791be205ea39"
+                        "0071d71f27721e47-00047947c419225f"
                     ]
                 },
                 "ActiveComponent": {
@@ -3900,7 +3900,7 @@
         },
         {
             "id": 16,
-            "guid": "006f7aa43e8ac66b-0004791be205ea55",
+            "guid": "0071d71f568046ff-00047947c419227b",
             "components": {
                 "NameComponent": {
                     "name": "Room1_Ceiling"
@@ -4074,7 +4074,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "006f7aa437e1fb81-0004791be205ea39"
+                        "0071d71f27721e47-00047947c419225f"
                     ]
                 },
                 "RigidBodyComponent": {
@@ -4249,7 +4249,7 @@
         },
         {
             "id": 17,
-            "guid": "006f7aa4744123fd-0004791be205ea57",
+            "guid": "0071d71f53057591-00047947c419227d",
             "components": {
                 "NameComponent": {
                     "name": "ArrayOfScrolls"
@@ -4423,7 +4423,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "006f7aa437e1fb81-0004791be205ea39"
+                        "0071d71f27721e47-00047947c419225f"
                     ]
                 },
                 "ActiveComponent": {
@@ -4439,7 +4439,7 @@
         },
         {
             "id": 18,
-            "guid": "006f7aa407842aa9-0004791be205ea59",
+            "guid": "0071d71f081bb584-00047947c419227f",
             "components": {
                 "NameComponent": {
                     "name": "GongDrum"
@@ -4613,7 +4613,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "006f7aa437e1fb81-0004791be205ea39"
+                        "0071d71f27721e47-00047947c419225f"
                     ]
                 },
                 "RigidBodyComponent": {
@@ -4788,7 +4788,7 @@
         },
         {
             "id": 19,
-            "guid": "006f7aa45d0c96c7-0004791be205ea5b",
+            "guid": "0071d71f762b49c9-00047947c4192281",
             "components": {
                 "NameComponent": {
                     "name": "SwordHolders"
@@ -4868,8 +4868,8 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "006f7aa435f051c4-0004791be205ea5d",
-                                "006f7aa46fc4c5a2-0004791be205ea5f"
+                                "0071d71f6bc69c39-00047947c4192283",
+                                "0071d71f2a5a7ea0-00047947c4192285"
                             ]
                         }
                     ]
@@ -4877,7 +4877,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "006f7aa437e1fb81-0004791be205ea39"
+                        "0071d71f27721e47-00047947c419225f"
                     ]
                 },
                 "ActiveComponent": {
@@ -4893,7 +4893,7 @@
         },
         {
             "id": 20,
-            "guid": "006f7aa435f051c4-0004791be205ea5d",
+            "guid": "0071d71f6bc69c39-00047947c4192283",
             "components": {
                 "NameComponent": {
                     "name": "sword_holder"
@@ -5067,7 +5067,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "006f7aa45d0c96c7-0004791be205ea5b"
+                        "0071d71f762b49c9-00047947c4192281"
                     ]
                 },
                 "RigidBodyComponent": {
@@ -5242,7 +5242,7 @@
         },
         {
             "id": 21,
-            "guid": "006f7aa46fc4c5a2-0004791be205ea5f",
+            "guid": "0071d71f2a5a7ea0-00047947c4192285",
             "components": {
                 "NameComponent": {
                     "name": "sword_holder (1)"
@@ -5416,7 +5416,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "006f7aa45d0c96c7-0004791be205ea5b"
+                        "0071d71f762b49c9-00047947c4192281"
                     ]
                 },
                 "RigidBodyComponent": {
@@ -5591,7 +5591,7 @@
         },
         {
             "id": 22,
-            "guid": "006f7aa44301c97c-0004791be205ea61",
+            "guid": "0071d71f06677e30-00047947c4192287",
             "components": {
                 "NameComponent": {
                     "name": "ScrollBoxes"
@@ -5671,27 +5671,27 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "006f7aa439ffa193-0004791be205ea63",
-                                "006f7aa45616b063-0004791be205ea65",
-                                "006f7aa41c96211e-0004791be205ea67",
-                                "006f7aa44abedb2b-0004791be205ea69",
-                                "006f7aa40a35f653-0004791be205ea6b",
-                                "006f7aa47d441b85-0004791be205ea6d",
-                                "006f7aa479331d35-0004791be205ea6f",
-                                "006f7aa46898e483-0004791be205ea71",
-                                "006f7aa4493e5106-0004791be205ea73",
-                                "006f7aa463979e15-0004791be205ea75",
-                                "006f7aa47c63d257-0004791be205ea77",
-                                "006f7aa42b8f5508-0004791be205ea79",
-                                "006f7aa431b040ef-0004791be205ea7b",
-                                "006f7aa44ffc7e30-0004791be205ea7d",
-                                "006f7aa457614de1-0004791be205ea7f",
-                                "006f7aa45ab0ea21-0004791be205ea81",
-                                "006f7aa429615917-0004791be205ea83",
-                                "006f7aa410789c8f-0004791be205ea85",
-                                "006f7aa4221d33d0-0004791be205ea87",
-                                "006f7aa45b66cfac-0004791be205ea89",
-                                "006f7aa4418222c5-0004791be205ea8b"
+                                "0071d71f0c38c7c5-00047947c4192289",
+                                "0071d71f628398f3-00047947c419228b",
+                                "0071d71f1400b54e-00047947c419228d",
+                                "0071d71f1eab53ee-00047947c419228f",
+                                "0071d71f7ca691b1-00047947c4192291",
+                                "0071d71f403411e0-00047947c4192293",
+                                "0071d71f0453d9c9-00047947c4192295",
+                                "0071d71f478576cc-00047947c4192297",
+                                "0071d71f50eb13c6-00047947c4192299",
+                                "0071d71f2f27e3e4-00047947c419229b",
+                                "0071d71f2fd4afd6-00047947c419229d",
+                                "0071d71f23daf480-00047947c419229f",
+                                "0071d71f6fcdb6bd-00047947c41922a1",
+                                "0071d71f66c3a346-00047947c41922a3",
+                                "0071d71f2eed90f1-00047947c41922a5",
+                                "0071d71f48cfce8a-00047947c41922a7",
+                                "0071d71f05599351-00047947c41922a9",
+                                "0071d71f695dbb47-00047947c41922ab",
+                                "0071d71f53352a6f-00047947c41922ad",
+                                "0071d71f65ab0bc0-00047947c41922af",
+                                "0071d71f4a85bf9a-00047947c41922b1"
                             ]
                         }
                     ]
@@ -5699,7 +5699,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "006f7aa437e1fb81-0004791be205ea39"
+                        "0071d71f27721e47-00047947c419225f"
                     ]
                 },
                 "ActiveComponent": {
@@ -5715,7 +5715,7 @@
         },
         {
             "id": 23,
-            "guid": "006f7aa439ffa193-0004791be205ea63",
+            "guid": "0071d71f0c38c7c5-00047947c4192289",
             "components": {
                 "NameComponent": {
                     "name": "ScrollBox 1"
@@ -5889,7 +5889,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "006f7aa44301c97c-0004791be205ea61"
+                        "0071d71f06677e30-00047947c4192287"
                     ]
                 },
                 "RigidBodyComponent": {
@@ -6064,7 +6064,7 @@
         },
         {
             "id": 24,
-            "guid": "006f7aa45616b063-0004791be205ea65",
+            "guid": "0071d71f628398f3-00047947c419228b",
             "components": {
                 "NameComponent": {
                     "name": "ScrollBox 1 (1)"
@@ -6238,7 +6238,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "006f7aa44301c97c-0004791be205ea61"
+                        "0071d71f06677e30-00047947c4192287"
                     ]
                 },
                 "RigidBodyComponent": {
@@ -6413,7 +6413,7 @@
         },
         {
             "id": 25,
-            "guid": "006f7aa41c96211e-0004791be205ea67",
+            "guid": "0071d71f1400b54e-00047947c419228d",
             "components": {
                 "NameComponent": {
                     "name": "ScrollBox 1 (1) (1)"
@@ -6587,7 +6587,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "006f7aa44301c97c-0004791be205ea61"
+                        "0071d71f06677e30-00047947c4192287"
                     ]
                 },
                 "RigidBodyComponent": {
@@ -6762,7 +6762,7 @@
         },
         {
             "id": 26,
-            "guid": "006f7aa44abedb2b-0004791be205ea69",
+            "guid": "0071d71f1eab53ee-00047947c419228f",
             "components": {
                 "NameComponent": {
                     "name": "ScrollBox 1 (1) (1) (1)"
@@ -6936,7 +6936,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "006f7aa44301c97c-0004791be205ea61"
+                        "0071d71f06677e30-00047947c4192287"
                     ]
                 },
                 "RigidBodyComponent": {
@@ -7111,7 +7111,7 @@
         },
         {
             "id": 27,
-            "guid": "006f7aa40a35f653-0004791be205ea6b",
+            "guid": "0071d71f7ca691b1-00047947c4192291",
             "components": {
                 "NameComponent": {
                     "name": "ScrollBox 1 (1) (1) (1) (1)"
@@ -7285,7 +7285,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "006f7aa44301c97c-0004791be205ea61"
+                        "0071d71f06677e30-00047947c4192287"
                     ]
                 },
                 "RigidBodyComponent": {
@@ -7460,7 +7460,7 @@
         },
         {
             "id": 28,
-            "guid": "006f7aa47d441b85-0004791be205ea6d",
+            "guid": "0071d71f403411e0-00047947c4192293",
             "components": {
                 "NameComponent": {
                     "name": "ScrollBox 1 (1) (1) (1) (1) (1)"
@@ -7634,7 +7634,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "006f7aa44301c97c-0004791be205ea61"
+                        "0071d71f06677e30-00047947c4192287"
                     ]
                 },
                 "RigidBodyComponent": {
@@ -7809,7 +7809,7 @@
         },
         {
             "id": 29,
-            "guid": "006f7aa479331d35-0004791be205ea6f",
+            "guid": "0071d71f0453d9c9-00047947c4192295",
             "components": {
                 "NameComponent": {
                     "name": "ScrollBox 1 (1) (1) (1) (1) (1) (1)"
@@ -7983,7 +7983,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "006f7aa44301c97c-0004791be205ea61"
+                        "0071d71f06677e30-00047947c4192287"
                     ]
                 },
                 "RigidBodyComponent": {
@@ -8158,7 +8158,7 @@
         },
         {
             "id": 30,
-            "guid": "006f7aa46898e483-0004791be205ea71",
+            "guid": "0071d71f478576cc-00047947c4192297",
             "components": {
                 "NameComponent": {
                     "name": "ScrollBox 1 (1) (1) (1) (1) (1) (1) (1)"
@@ -8332,7 +8332,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "006f7aa44301c97c-0004791be205ea61"
+                        "0071d71f06677e30-00047947c4192287"
                     ]
                 },
                 "RigidBodyComponent": {
@@ -8507,7 +8507,7 @@
         },
         {
             "id": 31,
-            "guid": "006f7aa4493e5106-0004791be205ea73",
+            "guid": "0071d71f50eb13c6-00047947c4192299",
             "components": {
                 "NameComponent": {
                     "name": "ScrollBox 1 (1) (1) (1) (1) (1) (1) (1) (1)"
@@ -8681,7 +8681,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "006f7aa44301c97c-0004791be205ea61"
+                        "0071d71f06677e30-00047947c4192287"
                     ]
                 },
                 "RigidBodyComponent": {
@@ -8856,7 +8856,7 @@
         },
         {
             "id": 32,
-            "guid": "006f7aa463979e15-0004791be205ea75",
+            "guid": "0071d71f2f27e3e4-00047947c419229b",
             "components": {
                 "NameComponent": {
                     "name": "ScrollBox 1 (1) (1) (1) (1) (1) (1) (1) (2)"
@@ -9030,7 +9030,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "006f7aa44301c97c-0004791be205ea61"
+                        "0071d71f06677e30-00047947c4192287"
                     ]
                 },
                 "RigidBodyComponent": {
@@ -9205,7 +9205,7 @@
         },
         {
             "id": 33,
-            "guid": "006f7aa47c63d257-0004791be205ea77",
+            "guid": "0071d71f2fd4afd6-00047947c419229d",
             "components": {
                 "NameComponent": {
                     "name": "ScrollBox 1 (1) (1) (1) (1) (1) (1) (1) (3)"
@@ -9379,7 +9379,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "006f7aa44301c97c-0004791be205ea61"
+                        "0071d71f06677e30-00047947c4192287"
                     ]
                 },
                 "RigidBodyComponent": {
@@ -9554,7 +9554,7 @@
         },
         {
             "id": 34,
-            "guid": "006f7aa42b8f5508-0004791be205ea79",
+            "guid": "0071d71f23daf480-00047947c419229f",
             "components": {
                 "NameComponent": {
                     "name": "ScrollBox 1 (1) (1) (1) (1) (1) (1) (1) (3) (1)"
@@ -9728,7 +9728,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "006f7aa44301c97c-0004791be205ea61"
+                        "0071d71f06677e30-00047947c4192287"
                     ]
                 },
                 "RigidBodyComponent": {
@@ -9903,7 +9903,7 @@
         },
         {
             "id": 35,
-            "guid": "006f7aa431b040ef-0004791be205ea7b",
+            "guid": "0071d71f6fcdb6bd-00047947c41922a1",
             "components": {
                 "NameComponent": {
                     "name": "ScrollBox 1 (1) (1) (1) (1) (1) (1) (1) (3) (1) (1)"
@@ -10077,7 +10077,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "006f7aa44301c97c-0004791be205ea61"
+                        "0071d71f06677e30-00047947c4192287"
                     ]
                 },
                 "RigidBodyComponent": {
@@ -10252,7 +10252,7 @@
         },
         {
             "id": 36,
-            "guid": "006f7aa44ffc7e30-0004791be205ea7d",
+            "guid": "0071d71f66c3a346-00047947c41922a3",
             "components": {
                 "NameComponent": {
                     "name": "ScrollBox 1 (1) (1) (1) (1) (1) (1) (1) (3) (1) (1) (1)"
@@ -10426,7 +10426,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "006f7aa44301c97c-0004791be205ea61"
+                        "0071d71f06677e30-00047947c4192287"
                     ]
                 },
                 "RigidBodyComponent": {
@@ -10601,7 +10601,7 @@
         },
         {
             "id": 37,
-            "guid": "006f7aa457614de1-0004791be205ea7f",
+            "guid": "0071d71f2eed90f1-00047947c41922a5",
             "components": {
                 "NameComponent": {
                     "name": "ScrollBox 1 (1) (1) (1) (1) (1) (1) (1) (3) (1) (1) (1) (1)"
@@ -10775,7 +10775,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "006f7aa44301c97c-0004791be205ea61"
+                        "0071d71f06677e30-00047947c4192287"
                     ]
                 },
                 "RigidBodyComponent": {
@@ -10950,7 +10950,7 @@
         },
         {
             "id": 38,
-            "guid": "006f7aa45ab0ea21-0004791be205ea81",
+            "guid": "0071d71f48cfce8a-00047947c41922a7",
             "components": {
                 "NameComponent": {
                     "name": "ScrollBox 1 (1) (1) (1) (1) (1) (1) (1) (3) (1) (1) (1) (1) (1)"
@@ -11124,7 +11124,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "006f7aa44301c97c-0004791be205ea61"
+                        "0071d71f06677e30-00047947c4192287"
                     ]
                 },
                 "RigidBodyComponent": {
@@ -11299,7 +11299,7 @@
         },
         {
             "id": 39,
-            "guid": "006f7aa429615917-0004791be205ea83",
+            "guid": "0071d71f05599351-00047947c41922a9",
             "components": {
                 "NameComponent": {
                     "name": "ScrollBox 1 (1) (1) (1) (1) (1) (1) (1) (3) (1) (1) (1) (1) (1) (1)"
@@ -11473,7 +11473,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "006f7aa44301c97c-0004791be205ea61"
+                        "0071d71f06677e30-00047947c4192287"
                     ]
                 },
                 "RigidBodyComponent": {
@@ -11648,7 +11648,7 @@
         },
         {
             "id": 40,
-            "guid": "006f7aa410789c8f-0004791be205ea85",
+            "guid": "0071d71f695dbb47-00047947c41922ab",
             "components": {
                 "NameComponent": {
                     "name": "ScrollBox 1 (1) (1) (1) (1) (1) (1) (1) (3) (1) (1) (1) (1) (1) (1) (1)"
@@ -11822,7 +11822,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "006f7aa44301c97c-0004791be205ea61"
+                        "0071d71f06677e30-00047947c4192287"
                     ]
                 },
                 "RigidBodyComponent": {
@@ -11997,7 +11997,7 @@
         },
         {
             "id": 41,
-            "guid": "006f7aa4221d33d0-0004791be205ea87",
+            "guid": "0071d71f53352a6f-00047947c41922ad",
             "components": {
                 "NameComponent": {
                     "name": "ScrollBox 1 (1) (1) (1) (1) (1) (1) (1) (4)"
@@ -12171,7 +12171,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "006f7aa44301c97c-0004791be205ea61"
+                        "0071d71f06677e30-00047947c4192287"
                     ]
                 },
                 "RigidBodyComponent": {
@@ -12346,7 +12346,7 @@
         },
         {
             "id": 42,
-            "guid": "006f7aa45b66cfac-0004791be205ea89",
+            "guid": "0071d71f65ab0bc0-00047947c41922af",
             "components": {
                 "NameComponent": {
                     "name": "ScrollBox 1 (1) (1) (1) (1) (1) (1) (1) (4) (1)"
@@ -12520,7 +12520,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "006f7aa44301c97c-0004791be205ea61"
+                        "0071d71f06677e30-00047947c4192287"
                     ]
                 },
                 "RigidBodyComponent": {
@@ -12695,7 +12695,7 @@
         },
         {
             "id": 43,
-            "guid": "006f7aa4418222c5-0004791be205ea8b",
+            "guid": "0071d71f4a85bf9a-00047947c41922b1",
             "components": {
                 "NameComponent": {
                     "name": "ScrollBox 1 (1) (1) (1) (2)"
@@ -12869,7 +12869,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "006f7aa44301c97c-0004791be205ea61"
+                        "0071d71f06677e30-00047947c4192287"
                     ]
                 },
                 "RigidBodyComponent": {
@@ -13044,7 +13044,7 @@
         },
         {
             "id": 44,
-            "guid": "006f7aa473041296-0004791be205ea8d",
+            "guid": "0071d71f1f7b3059-00047947c41922b3",
             "components": {
                 "NameComponent": {
                     "name": "DoorRight (1)"
@@ -13218,7 +13218,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "006f7aa437e1fb81-0004791be205ea39"
+                        "0071d71f27721e47-00047947c419225f"
                     ]
                 },
                 "ActiveComponent": {
@@ -13234,7 +13234,7 @@
         },
         {
             "id": 45,
-            "guid": "006f7aa4571fe44e-0004791be205ea8f",
+            "guid": "0071d71f1d1f7132-00047947c41922b5",
             "components": {
                 "NameComponent": {
                     "name": "DoorLeft (1)"
@@ -13408,7 +13408,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "006f7aa437e1fb81-0004791be205ea39"
+                        "0071d71f27721e47-00047947c419225f"
                     ]
                 },
                 "ActiveComponent": {
@@ -13424,7 +13424,7 @@
         },
         {
             "id": 46,
-            "guid": "006f7aa43c62e08a-0004791be205ea91",
+            "guid": "0071d71f652fe5d9-00047947c41922b7",
             "components": {
                 "NameComponent": {
                     "name": "DoorRight (1) (1)"
@@ -13598,7 +13598,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "006f7aa437e1fb81-0004791be205ea39"
+                        "0071d71f27721e47-00047947c419225f"
                     ]
                 },
                 "ActiveComponent": {
@@ -13614,7 +13614,7 @@
         },
         {
             "id": 47,
-            "guid": "006f7aa40aabece5-0004791be205ea93",
+            "guid": "0071d71f7bb6968a-00047947c41922b9",
             "components": {
                 "NameComponent": {
                     "name": "DoorLeft (1) (1)"
@@ -13788,7 +13788,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "006f7aa437e1fb81-0004791be205ea39"
+                        "0071d71f27721e47-00047947c419225f"
                     ]
                 },
                 "ActiveComponent": {
@@ -13804,7 +13804,7 @@
         },
         {
             "id": 48,
-            "guid": "006f7aa46fb0f7d5-0004791be205ea95",
+            "guid": "0071d71f6a6bac2b-00047947c41922bb",
             "components": {
                 "NameComponent": {
                     "name": "DoorRight (1) (1) (1)"
@@ -13978,7 +13978,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "006f7aa437e1fb81-0004791be205ea39"
+                        "0071d71f27721e47-00047947c419225f"
                     ]
                 },
                 "ActiveComponent": {
@@ -13994,7 +13994,7 @@
         },
         {
             "id": 49,
-            "guid": "006f7aa44a88d772-0004791be205ea97",
+            "guid": "0071d71f591794c9-00047947c41922bd",
             "components": {
                 "NameComponent": {
                     "name": "DoorLeft (1) (1) (1)"
@@ -14168,7 +14168,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "006f7aa437e1fb81-0004791be205ea39"
+                        "0071d71f27721e47-00047947c419225f"
                     ]
                 },
                 "ActiveComponent": {
@@ -14184,7 +14184,7 @@
         },
         {
             "id": 50,
-            "guid": "006f7aa4098fdf15-0004791be205ea99",
+            "guid": "0071d71f17edaa9f-00047947c41922bf",
             "components": {
                 "NameComponent": {
                     "name": "Room Light (2)"
@@ -14261,7 +14261,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "006f7aa43f0c05fa-0004791be205ea35"
+                        "0071d71f63e86cfc-00047947c419225b"
                     ]
                 },
                 "PointLightComponent": {
@@ -14378,7 +14378,7 @@
         },
         {
             "id": 51,
-            "guid": "006f7aa467cf5689-0004791be205ea9b",
+            "guid": "0071d71f276fd077-00047947c41922c1",
             "components": {
                 "NameComponent": {
                     "name": "Spot Light"
@@ -14455,7 +14455,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "006f7aa43f0c05fa-0004791be205ea35"
+                        "0071d71f63e86cfc-00047947c419225b"
                     ]
                 },
                 "SpotLightComponent": {
@@ -14589,7 +14589,7 @@
         },
         {
             "id": 52,
-            "guid": "006f7aa42b76623a-0004791be205ea9d",
+            "guid": "0071d71f134d12e8-00047947c41922c3",
             "components": {
                 "NameComponent": {
                     "name": "DoorCameraTarget"
@@ -14666,7 +14666,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "006f7aa43f0c05fa-0004791be205ea35"
+                        "0071d71f63e86cfc-00047947c419225b"
                     ]
                 },
                 "ActiveComponent": {
@@ -14682,7 +14682,7 @@
         },
         {
             "id": 53,
-            "guid": "006f7aa40ddf3ecd-0004791be205ea9f",
+            "guid": "0071d71f3ad72f62-00047947c41922c5",
             "components": {
                 "NameComponent": {
                     "name": "DoorTrigger"
@@ -14759,7 +14759,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "006f7aa43f0c05fa-0004791be205ea35"
+                        "0071d71f63e86cfc-00047947c419225b"
                     ]
                 },
                 "AudioComponent": {
@@ -14851,41 +14851,64 @@
                             "entryFunction": "OnInit",
                             "autoInvokeEntry": true,
                             "instanceState": {
-                                "SerializeFields": null,
-                                "_setTooltipVisible": null,
-                                "GetScale": null,
+                                "weaponFlyTime": 0.0,
+                                "weaponOnHand": "LowPolyFeatherChain",
+                                "__created_at": 1770314120.0,
+                                "pickupAnimTime": 0.0,
+                                "_private": {},
+                                "pickupDuration": 0.8,
+                                "delayTime": 0.0,
+                                "tooltipEntity": "ChainHookPickupTooltip",
+                                "_subscriptions": {},
+                                "isPickingUp": false,
+                                "targetRightDoor": "RightDoor2",
+                                "openAngle": 90.0,
+                                "__field_list": {
+                                    "triggerMode": 1.0,
+                                    "openDuration": 3.0,
+                                    "openingTime": 0.0,
+                                    "isOpening": false,
+                                    "isWaiting": false,
+                                    "isActivatable": false,
+                                    "openOffset": 0.5,
+                                    "postOpenDelay": 2.0,
+                                    "hasOpened": false,
+                                    "playerName": "Player",
+                                    "delayTime": 0.0,
+                                    "targetLeftDoor": "LeftDoor1",
+                                    "targetRightDoor": "RightDoor2",
+                                    "triggerRadius": 0.5
+                                },
+                                "openZ": false,
+                                "pickupSFX": [
+                                    "00264c30db67fa81-0004683702005857"
+                                ],
                                 "overshootAngle": 10.0,
+                                "weaponPickup": "WeaponPickup",
+                                "openDuration": 3.0,
                                 "entitiesToCheckInactive": [
                                     "EnemyMeleeA",
                                     "EnemyMeleeB",
                                     "EnemyMeleeC",
                                     "EnemyRangeD"
                                 ],
-                                "GetRotation": null,
-                                "isPickingUp": false,
+                                "openingTime": 0.0,
+                                "playerName": "Player",
+                                "_transform_fetched": false,
+                                "weaponHandOffsetY": 0.6,
+                                "triggerMode": 2.0,
+                                "isWeaponFlying": false,
+                                "isOpening": false,
+                                "weaponHandOffsetX": -0.15,
+                                "__meta": {},
+                                "doorOpenSFX": [
+                                    "001521729a1c6852-0004276d680062ad"
+                                ],
+                                "isWaiting": false,
+                                "triggerRadius": 1.0,
                                 "openOffset": 1.0,
-                                "delayTime": 0.0,
-                                "Update": null,
-                                "pickupDuration": 0.8,
-                                "openZ": false,
-                                "hasOpened": false,
-                                "Unsubscribe": null,
-                                "weaponPickup": "WeaponPickup",
-                                "_call_lifecycle": null,
-                                "SetPosition": null,
-                                "StartSafe": null,
-                                "openDuration": 3.0,
-                                "Every": null,
+                                "isActivatable": false,
                                 "__editor": {
-                                    "weaponPickup": {
-                                        "editorHint": "entity"
-                                    },
-                                    "tooltipEntity": {
-                                        "editorHint": "entity"
-                                    },
-                                    "targetLeftDoor": {
-                                        "editorHint": "entity"
-                                    },
                                     "targetRightDoor": {
                                         "editorHint": "entity"
                                     },
@@ -14894,68 +14917,21 @@
                                     },
                                     "playerName": {
                                         "editorHint": "entity"
+                                    },
+                                    "targetLeftDoor": {
+                                        "editorHint": "entity"
+                                    },
+                                    "weaponPickup": {
+                                        "editorHint": "entity"
+                                    },
+                                    "tooltipEntity": {
+                                        "editorHint": "entity"
                                     }
                                 },
-                                "DeserializeFields": null,
-                                "doorOpenSFX": [
-                                    "001521729a1c6852-0004276d680062ad"
-                                ],
-                                "weaponFlyDuration": 0.15,
-                                "GetTransform": null,
-                                "SetRotation": null,
-                                "__meta": {},
-                                "DisableSafe": null,
-                                "weaponOnHand": "LowPolyFeatherChain",
-                                "openAngle": 90.0,
-                                "UpdateSafe": null,
-                                "AwakeSafe": null,
-                                "pickupAnimTime": 0.0,
-                                "isOpening": false,
-                                "triggerRadius": 1.0,
-                                "Destroy": null,
-                                "GetPosition": null,
-                                "Start": null,
-                                "isActivatable": false,
-                                "openingTime": 0.0,
-                                "weaponHandOffsetY": 0.6,
-                                "Subscribe": null,
-                                "postOpenDelay": 0.1,
-                                "DebugTransform": null,
-                                "SetScale": null,
-                                "playerName": "Player",
-                                "Move": null,
-                                "__created_at": 1770314120.0,
-                                "weaponFlyTime": 0.0,
+                                "hasOpened": false,
                                 "targetLeftDoor": "LeftDoor1",
-                                "_subscriptions": {},
-                                "triggerMode": 2.0,
-                                "isWaiting": false,
-                                "tooltipEntity": "ChainHookPickupTooltip",
-                                "_private": {},
-                                "weaponHandOffsetX": -0.15,
-                                "targetRightDoor": "RightDoor2",
-                                "isWeaponFlying": false,
-                                "__field_list": {
-                                    "openingTime": 0.0,
-                                    "targetLeftDoor": "LeftDoor1",
-                                    "delayTime": 0.0,
-                                    "triggerRadius": 0.5,
-                                    "isWaiting": false,
-                                    "postOpenDelay": 2.0,
-                                    "isActivatable": false,
-                                    "triggerMode": 1.0,
-                                    "targetRightDoor": "RightDoor2",
-                                    "isOpening": false,
-                                    "openOffset": 0.5,
-                                    "openDuration": 3.0,
-                                    "hasOpened": false,
-                                    "playerName": "Player"
-                                },
-                                "After": null,
-                                "pickupSFX": [
-                                    "00264c30db67fa81-0004683702005857"
-                                ],
-                                "_transform_fetched": false
+                                "postOpenDelay": 0.1,
+                                "weaponFlyDuration": 0.15
                             }
                         }
                     ]
@@ -14964,7 +14940,7 @@
         },
         {
             "id": 54,
-            "guid": "006f7aa42b87a4c6-0004791be205eaa1",
+            "guid": "0071d71f214c6573-00047947c41922c7",
             "components": {
                 "NameComponent": {
                     "name": "RightDoor2"
@@ -15044,7 +15020,7 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "006f7aa4423e5e16-0004791be205eaa3"
+                                "0071d71f2fbfcd45-00047947c41922c9"
                             ]
                         }
                     ]
@@ -15052,7 +15028,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "006f7aa43f0c05fa-0004791be205ea35"
+                        "0071d71f63e86cfc-00047947c419225b"
                     ]
                 },
                 "RigidBodyComponent": {
@@ -15227,7 +15203,7 @@
         },
         {
             "id": 55,
-            "guid": "006f7aa4423e5e16-0004791be205eaa3",
+            "guid": "0071d71f2fbfcd45-00047947c41922c9",
             "components": {
                 "NameComponent": {
                     "name": "DoorRight"
@@ -15401,7 +15377,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "006f7aa42b87a4c6-0004791be205eaa1"
+                        "0071d71f214c6573-00047947c41922c7"
                     ]
                 },
                 "ActiveComponent": {
@@ -15417,7 +15393,7 @@
         },
         {
             "id": 56,
-            "guid": "006f7aa45394baab-0004791be205eaa5",
+            "guid": "0071d71f75604a91-00047947c41922cb",
             "components": {
                 "NameComponent": {
                     "name": "LeftDoor1"
@@ -15497,7 +15473,7 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "006f7aa4671cfae0-0004791be205eaa7"
+                                "0071d71f74a5f7c4-00047947c41922cd"
                             ]
                         }
                     ]
@@ -15505,7 +15481,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "006f7aa43f0c05fa-0004791be205ea35"
+                        "0071d71f63e86cfc-00047947c419225b"
                     ]
                 },
                 "AudioComponent": {
@@ -15750,7 +15726,7 @@
         },
         {
             "id": 57,
-            "guid": "006f7aa4671cfae0-0004791be205eaa7",
+            "guid": "0071d71f74a5f7c4-00047947c41922cd",
             "components": {
                 "NameComponent": {
                     "name": "DoorLeft"
@@ -15924,7 +15900,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "006f7aa45394baab-0004791be205eaa5"
+                        "0071d71f75604a91-00047947c41922cb"
                     ]
                 },
                 "ActiveComponent": {
@@ -15940,7 +15916,7 @@
         },
         {
             "id": 58,
-            "guid": "006f7aa44a3c046f-0004791be205eaa9",
+            "guid": "0071d71f55390fda-00047947c41922cf",
             "components": {
                 "NameComponent": {
                     "name": "WeaponPickup"
@@ -16020,7 +15996,7 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "006f7aa45b66d046-0004791be205eaab"
+                                "0071d71f4c68c475-00047947c41922d1"
                             ]
                         }
                     ]
@@ -16028,7 +16004,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "006f7aa43f0c05fa-0004791be205ea35"
+                        "0071d71f63e86cfc-00047947c419225b"
                     ]
                 },
                 "ActiveComponent": {
@@ -16050,48 +16026,24 @@
                             "entryFunction": "OnInit",
                             "autoInvokeEntry": true,
                             "instanceState": {
-                                "SerializeFields": null,
-                                "floatHeight": 0.1,
-                                "GetScale": null,
-                                "GetRotation": null,
-                                "Update": null,
-                                "Unsubscribe": null,
-                                "_call_lifecycle": null,
-                                "Every": null,
-                                "StartSafe": null,
-                                "floatSpeed": 0.3,
-                                "DisableSafe": null,
-                                "SetRotation": null,
-                                "__meta": {},
-                                "SetScale": null,
-                                "rotateSpeed": 90.0,
-                                "Destroy": null,
-                                "GetPosition": null,
-                                "Start": null,
-                                "DebugTransform": null,
-                                "UpdateSafe": null,
-                                "_pickedUpWeaponSub": {
-                                    "event": "picked_up_weapon",
-                                    "id": 26.0
-                                },
-                                "_disableHover": false,
-                                "Subscribe": null,
-                                "_subscriptions": {},
-                                "DeserializeFields": null,
-                                "__created_at": 1773212529.0,
-                                "Awake": null,
-                                "AwakeSafe": null,
                                 "_private": {},
-                                "Move": null,
-                                "GetTransform": null,
+                                "_subscriptions": {},
+                                "_pickedUpWeaponSub": {
+                                    "id": 26.0,
+                                    "event": "picked_up_weapon"
+                                },
                                 "__field_list": {
                                     "rotateSpeed": 90.0,
-                                    "floatHeight": 0.1,
-                                    "floatSpeed": 0.3
+                                    "floatSpeed": 0.3,
+                                    "floatHeight": 0.1
                                 },
-                                "After": null,
-                                "SetPosition": null,
-                                "_transform_fetched": false
+                                "rotateSpeed": 90.0,
+                                "_transform_fetched": false,
+                                "floatSpeed": 0.3,
+                                "floatHeight": 0.1,
+                                "__meta": {},
+                                "_disableHover": false,
+                                "__created_at": 1773212529.0
                             }
                         }
                     ]
@@ -16100,7 +16052,7 @@
         },
         {
             "id": 59,
-            "guid": "006f7aa45b66d046-0004791be205eaab",
+            "guid": "0071d71f4c68c475-00047947c41922d1",
             "components": {
                 "NameComponent": {
                     "name": "LowPolyFeatherChainPickUp"
@@ -16274,7 +16226,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "006f7aa44a3c046f-0004791be205eaa9"
+                        "0071d71f55390fda-00047947c41922cf"
                     ]
                 },
                 "ActiveComponent": {
@@ -16290,7 +16242,7 @@
         },
         {
             "id": 60,
-            "guid": "006f7aa42e628909-0004791be205eaad",
+            "guid": "0071d71f1f8c9780-00047947c41922d3",
             "components": {
                 "NameComponent": {
                     "name": "AltarTable"
@@ -16464,7 +16416,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "006f7aa43f0c05fa-0004791be205ea35"
+                        "0071d71f63e86cfc-00047947c419225b"
                     ]
                 },
                 "RigidBodyComponent": {

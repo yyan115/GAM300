@@ -21,11 +21,6 @@
             "defaultValue": 0.0
         },
         {
-            "name": "IsDead",
-            "type": "Bool",
-            "defaultValue": 0.0
-        },
-        {
             "name": "IsGrounded",
             "type": "Bool",
             "defaultValue": 1.0
@@ -36,7 +31,7 @@
             "defaultValue": 0.0
         },
         {
-            "name": "IsJumping",
+            "name": "IsDead",
             "type": "Bool",
             "defaultValue": 0.0
         },
@@ -46,12 +41,17 @@
             "defaultValue": 0.0
         },
         {
-            "name": "Attack",
-            "type": "Trigger",
+            "name": "IsJumping",
+            "type": "Bool",
             "defaultValue": 0.0
         },
         {
             "name": "SlamChain",
+            "type": "Trigger",
+            "defaultValue": 0.0
+        },
+        {
+            "name": "Attack",
             "type": "Trigger",
             "defaultValue": 0.0
         },
@@ -98,17 +98,6 @@
     ],
     "states": [
         {
-            "id": "NA1",
-            "clipIndex": 1,
-            "loop": false,
-            "speed": 2.000000238418579,
-            "crossfadeDuration": 0.0,
-            "nodePosition": {
-                "x": 1059.2657470703125,
-                "y": -380.439208984375
-            }
-        },
-        {
             "id": "Idle",
             "clipIndex": 0,
             "loop": true,
@@ -120,14 +109,14 @@
             }
         },
         {
-            "id": "FeatherLaunchEnd",
-            "clipIndex": 11,
+            "id": "NA1",
+            "clipIndex": 1,
             "loop": false,
-            "speed": 1.0,
-            "crossfadeDuration": 0.20000000298023224,
+            "speed": 2.000000238418579,
+            "crossfadeDuration": 0.0,
             "nodePosition": {
-                "x": 188.404052734375,
-                "y": -623.8199462890625
+                "x": 1059.2657470703125,
+                "y": -380.439208984375
             }
         },
         {
@@ -139,6 +128,17 @@
             "nodePosition": {
                 "x": 275.0,
                 "y": 147.0
+            }
+        },
+        {
+            "id": "FeatherLaunchEnd",
+            "clipIndex": 11,
+            "loop": false,
+            "speed": 1.0,
+            "crossfadeDuration": 0.20000000298023224,
+            "nodePosition": {
+                "x": 188.404052734375,
+                "y": -623.8199462890625
             }
         },
         {
@@ -302,8 +302,8 @@
             "speed": 2.9999992847442627,
             "crossfadeDuration": 0.20000000298023224,
             "nodePosition": {
-                "x": -173.8318634033203,
-                "y": 355.2630920410156
+                "x": -292.58203125,
+                "y": 217.76287841796875
             }
         },
         {
