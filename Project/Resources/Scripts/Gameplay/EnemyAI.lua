@@ -107,96 +107,119 @@ return Component {
     mixins = { TransformMixin },
 
     fields = {
-        EnemyType = "Ground",
 
+        -- === Identity ===
+        EnemyType  = "Ground",   -- "Ground" or "Flying". Determines state profile and CC usage.
+        IsMelee    = false,      -- true = melee attacker; false = ranged (knife) attacker.
+        IsPassive  = false,      -- If true enemy never enters Chase/Attack on its own.
+        PlayerName = "Player",   -- Engine entity name of the player; used for transform lookup.
+
+        -- === Health ===
         MaxHealth = 5,
 
-        DetectionRange       = 4.0,
-        AttackRange          = 3.0,   -- actually allowed to shoot
-        AttackDisengageRange = 4.0,   -- exit attack state (slightly bigger)
-        AttackCooldown       = 3.0,
-        RangedAnimDelay      = 1.0,
-        MeleeAnimDelay       = 1.2,
-        IsMelee              = false,
-        IsPassive            = false,
-        MeleeSpeed           = 0.9,
-        MeleeRange           = 1.2,
-        MeleeDamage          = 3,
-        MeleeAttackCooldown  = 5.0,
+        -- === Detection & combat ranges ===
+        DetectionRange       = 4.0,   -- Distance at which enemy first notices the player.
+        AttackRange          = 3.0,   -- Distance at which ranged attack is allowed to fire.
+        AttackDisengageRange = 4.0,   -- Distance at which enemy exits the attack state. Must be >= AttackRange.
+        AttackCooldown       = 3.0,   -- Seconds between attack volleys.
+        RangedAnimDelay      = 1.0,   -- Seconds into the attack animation before the projectile fires.
+        MeleeAnimDelay       = 1.2,   -- Seconds into the melee animation before the hit registers.
 
-        HurtDuration      = 2.0,
-        HitIFrame         = 0.2,
-        HookedDuration    = 4.0,
-        KnockbackStrength = 12.0,
-        KnockbackDuration = 0.5,
+        -- === Melee combat ===
+        MeleeSpeed          = 0.9,   -- Movement speed while charging a melee attack (world units/sec).
+        MeleeRange          = 1.2,   -- Distance at which melee hit registers.
+        MeleeDamage         = 3,     -- Damage dealt per melee swing.
+        MeleeAttackCooldown = 5.0,   -- Seconds between melee swings.
 
-        FeatherSkillBufferDuration = 0.2,
+        -- === Hit response ===
+        HurtDuration      = 2.0,    -- Seconds spent in the Hurt state after taking a hit.
+        HitIFrame         = 0.2,    -- Invincibility window after a hit (seconds). Prevents hit-stacking.
+        KnockbackStrength = 12.0,   -- Speed of the knockback impulse (world units/sec).
+        KnockbackDuration = 0.5,    -- Seconds the knockback velocity is applied.
 
-        HookStopDistance    = 1.2,
-        HookStaggerTime     = 1.0,
-        HookStaggerSpeed    = 50.0,
-        HookStaggerMaxStep  = 25.0,
-        HookHardSpeed       = 1200.0,
-        HookHardMaxStep     = 600.0,
+        -- === Chain hook ===
+        HookedDuration     = 4.0,     -- Seconds the enemy stays hooked before breaking free.
+        HookStopDistance   = 1.2,     -- Pull stops when enemy is within this radius of the player.
+        HookStaggerTime    = 1.0,     -- Duration of the stagger phase during a hook pull.
+        HookStaggerSpeed   = 50.0,    -- Stagger pull speed (world units/sec).
+        HookStaggerMaxStep = 25.0,    -- Max step size per tick during stagger pull.
+        HookHardSpeed      = 1200.0,  -- Hard pull speed after stagger phase ends.
+        HookHardMaxStep    = 600.0,   -- Max step size per tick during hard pull.
+        HookedLandingDelay = 5.0,     -- Seconds before a slammed flying enemy can stand up.
 
-        EnablePatrol     = true,
-        PatrolSpeed      = 0.3,
-        PatrolDistance   = 3.0,
-        PatrolWait       = 1.5,
-        ChaseSpeed       = 0.6,
-        HoverHeight      = 2.0,
-        HoverSnapSpeed   = 8.0,
-        FlyingChaseSpeed = 0.8,
+        -- === Patrol & movement ===
+        EnablePatrol   = true,   -- If false, enemy stands idle instead of patrolling.
+        PatrolSpeed    = 0.3,    -- Movement speed while patrolling (world units/sec).
+        PatrolDistance = 3.0,    -- Max distance from spawn that patrol points are placed.
+        PatrolWait     = 1.5,    -- Seconds the enemy pauses at each patrol point.
+        ChaseSpeed     = 0.6,    -- Movement speed while chasing the player (world units/sec).
 
-        HoverBobAmp        = 0.02,
-        HoverBobFreq       = 0.9,
-        SlamDownSpeed      = 16.0,
-        HookedLandingDelay = 5.0,
-
-        PathRepathInterval = 10,
-        PathGoalMoveThreshold = 0.9,
-        PathWaypointRadius = 0.6,
-        PathStuckTime = 0.75,
-
-        PatrolPointA_X = 2.0,
+        -- Pre-placed patrol endpoints. Set in the editor for each enemy instance.
+        PatrolPointA_X =  2.0,
         PatrolPointA_Z = -1.1,
         PatrolPointB_X = -2.0,
         PatrolPointB_Z = -1.1,
 
+        -- === Pathfinding ===
+        PathRepathInterval    = 10,    -- Seconds between automatic path recalculations.
+        PathGoalMoveThreshold = 0.9,   -- World units the goal must move before forcing a repath.
+        PathWaypointRadius    = 0.6,   -- Distance to a waypoint considered "arrived" (world units).
+        PathStuckTime         = 0.75,  -- Seconds of zero movement before stuck recovery triggers.
+
+        -- === Flying ===
+        HoverHeight      = 2.0,    -- Target height above ground while hovering (world units).
+        HoverSnapSpeed   = 8.0,    -- Lerp speed snapping Y toward hover target. Higher = snappier.
+        FlyingChaseSpeed = 0.8,    -- XZ movement speed while flying toward player (world units/sec).
+        HoverBobAmp      = 0.02,   -- Amplitude of the idle hover bob (world units). 0 = no bob.
+        HoverBobFreq     = 0.9,    -- Frequency of the idle hover bob (Hz).
+        SlamDownSpeed    = 16.0,   -- Descent speed during the chain-hook slam-down (world units/sec).
+
+        -- === Squash & stretch ===
+        -- SquashStrength : how dramatic the effect is. Start here.
+        --                  0.0 = disabled   0.3 = subtle   1.0 = cartoony
+        --                  Scales all events — hit, death, slam landing.
+        -- SquashDuration : seconds to hit peak squash. Match to impact frame.
+        -- StretchDuration: seconds to spring back to normal.
+        SquashStrength  = 0.6,   -- 0.4 was too subtle to read at 0.6 hit intensity. Effective = SquashStrength * intensity.
+        SquashDuration  = 0.07,
+        StretchDuration = 0.20,
+
+        -- === Kinematic grounding ===
+        UseKinematicGrounding = true,
+        GroundRayUp   = 0.35,    -- Ray cast origin height above feet.
+        GroundRayLen  = 3.0,     -- Maximum downward ray length.
+        GroundEps     = 0.08,    -- Considered grounded when hit distance <= GroundRayUp + GroundEps.
+        GroundSnapMax = 0.35,    -- Maximum snap correction applied per step.
+        Gravity       = -9.81,
+        MaxFallSpeed  = -25.0,
+        WallRayUp     = 0.8,     -- Wall probe ray origin height above feet.
+        WallSkin      = 0.18,    -- Wall detection margin (world units).
+        WallOffset    = 0.08,    -- Separation buffer pushed away from wall surface.
+        MinStep       = 0.01,    -- Minimum movement step before the CC is called.
+
+        -- === Abilities / skills ===
+        FeatherSkillBufferDuration   = 0.2,   -- Window (seconds) after a feather hit during which further
+                                              -- feather hits don't re-trigger Hurt FSM state.
+        FeatherPrefabPath            = "Resources/Prefabs/Feather.prefab",
+        NumFeathersSpawnedPerHit     = 5,     -- Feather particles spawned per hit from the feather skill.
+
+        -- === Animation clips ===
+        -- Clip index integers assigned in the editor.
         ClipIdle   = 0,
         ClipAttack = 1,
         ClipHurt   = 2,
         ClipDeath  = 3,
 
-        PlayerName = "Player",
-
-        FeatherPrefabPath = "Resources/Prefabs/Feather.prefab",
-        NumFeathersSpawnedPerHit = 5,
-
-        -- === Kinematic grounding tuning ===
-        UseKinematicGrounding = true,
-
-        GroundRayUp    = 0.35,   -- cast origin is y + this
-        GroundRayLen   = 3.0,    -- max ray distance downward
-        GroundEps      = 0.08,   -- considered grounded if hit <= GroundRayUp + eps
-        GroundSnapMax  = 0.35,   -- max snap correction per step
-
-        Gravity        = -9.81,
-        MaxFallSpeed   = -25.0,
-
-        WallRayUp      = 0.8,
-        WallSkin       = 0.18,
-        WallOffset     = 0.08,
-        MinStep        = 0.01,
-
-        -- SFX clip arrays (populate in editor with audio GUIDs)
-        enemyHurtSFX = {},
-        enemyDeathSFX = {},
-        enemyAlertSFX = {},         -- Growl when first detecting player
-        enemyMeleeAttackSFX = {},   -- Scratch woosh for melee enemies
-        enemyMeleeHitSFX = {},      -- Scratch hit when melee lands on player
-        enemyRangedAttackSFX = {},  -- Throw woosh for ranged enemies
-        enemyRangedHitSFX = {},     -- Throw hit when ranged lands on player
+        -- === Audio ===
+        -- Populate with clip GUIDs in the editor. Each accepts a list for random selection.
+        -- TO ADD new SFX: add a field here and call playRandomSFX at the relevant site.
+        enemyHurtSFX         = {},
+        enemyDeathSFX        = {},
+        enemyAlertSFX        = {},         -- Growl when first detecting player.
+        enemyMeleeAttackSFX  = {},         -- Swing whoosh for melee enemies.
+        enemyMeleeHitSFX     = {},         -- Hit impact when melee lands on player.
+        enemyRangedAttackSFX = {},         -- Throw whoosh for ranged enemies.
+        enemyRangedHitSFX    = {},         -- Impact when ranged projectile lands on player.
     },
 
     Awake = function(self)
@@ -302,6 +325,14 @@ return Component {
             self.particles.isEmitting   = false
             self.particles.emissionRate = 0
         end
+
+        -- ── Squash & stretch ──────────────────────────────────────────────────
+        -- _squashPhase: "squash" → peak → "stretch" → springs back → nil
+        -- Call self:_squashTrigger(mode, intensity) to start an effect.
+        self._squashPhase     = nil
+        self._squashTimer     = 0
+        self._squashIntensity = 1.0
+        self._squashMode      = "vertical"
 
         -- === Damage event subscription ===
         self._damageSub = nil
@@ -462,6 +493,66 @@ return Component {
         local dtSec = toDtSec(dt)
         self._hitLockTimer = math.max(0, (self._hitLockTimer or 0) - dtSec)
         self._featherSkillBufferTimer = math.max(0, (self._featherSkillBufferTimer or 0) - dtSec)
+
+        -- ── Squash & stretch ──────────────────────────────────────────────────
+        -- Modes:
+        --   "vertical"  : slam landing / death collapse — Y squashes down, XZ widens
+        --   "horizontal": hit reaction — Y pops up, XZ squashes in
+        if self._squashPhase and self._transform then
+            local scaleTable = self._transform.localScale
+            if scaleTable then
+                self._squashTimer = self._squashTimer + dtSec
+                local i    = (self.SquashStrength or 0.4) * (self._squashIntensity or 1.0)
+                local mode = self._squashMode or "vertical"
+                local sx, sy, sz = 1.0, 1.0, 1.0
+
+                local yPeak, xzPeak, yOver
+                if mode == "vertical" then
+                    yPeak  = 1.0 - 0.30 * i
+                    xzPeak = 1.0 + 0.18 * i
+                    yOver  = 1.0 + 0.08 * i
+                elseif mode == "horizontal" then
+                    yPeak  = 1.0 + 0.08 * i
+                    xzPeak = 1.0 - 0.10 * i
+                    yOver  = 1.0
+                end
+
+                if self._squashPhase == "squash" then
+                    local t = math.min(self._squashTimer / math.max(self.SquashDuration or 0.07, 1e-4), 1.0)
+                    sy = 1.0 + (yPeak  - 1.0) * t
+                    sx = 1.0 + (xzPeak - 1.0) * t
+                    sz = sx
+                    if t >= 1.0 then
+                        self._squashPhase = "stretch"
+                        self._squashTimer = 0
+                    end
+
+                elseif self._squashPhase == "stretch" then
+                    local t = math.min(self._squashTimer / math.max(self.StretchDuration or 0.20, 1e-4), 1.0)
+                    if t < 0.5 then
+                        local t2 = t * 2
+                        sy = yPeak  + (yOver   - yPeak)  * t2
+                        sx = xzPeak + (1.0     - xzPeak) * t2
+                    else
+                        local t2 = (t - 0.5) * 2
+                        sy = yOver + (1.0 - yOver) * t2
+                        sx = 1.0
+                    end
+                    sz = sx
+                    if t >= 1.0 then
+                        sx, sy, sz        = 1.0, 1.0, 1.0
+                        self._squashPhase = nil
+                    end
+                end
+
+                pcall(function()
+                    scaleTable.x = sx
+                    scaleTable.y = sy
+                    scaleTable.z = sz
+                    self._transform.isDirty = true
+                end)
+            end
+        end
 
         if not self.fsm.current or not self.fsm.currentName then
             self.fsm:ForceChange("Idle", self.states.Idle)
@@ -1113,6 +1204,8 @@ return Component {
 
             self._slamActive = false
             self._slamVy = 0
+            -- Slam landing: vertical squash (crash impact)
+            self:_squashTrigger("vertical", 0.8)
             print("[EnemyAI] SLAMMED")
             self._animator:SetTrigger("Slammed")
             return true
@@ -1311,6 +1404,20 @@ return Component {
         return true
     end,
 
+    -- ==========================================================================
+    -- SQUASH TRIGGER HELPER
+    -- Starts a squash/stretch effect. Call from any trigger site.
+    --   mode      : "vertical" | "horizontal"
+    --   intensity : 0.0–1.0, scales effect magnitude against SquashStrength
+    -- TO ADD a new mode: add an elseif branch in the squash update block in Update.
+    -- ==========================================================================
+    _squashTrigger = function(self, mode, intensity)
+        self._squashPhase     = "squash"
+        self._squashTimer     = 0
+        self._squashMode      = mode or "vertical"
+        self._squashIntensity = intensity or 1.0
+    end,
+
     ApplyHit = function(self, dmg, hitType)
         if self.dead then return end
         if (self._hitLockTimer or 0) > 0 then return end
@@ -1329,11 +1436,16 @@ return Component {
 
         if self.health <= 0 then
             self.health = 0
+            -- Death collapse: vertical squash at half intensity — visible but not cartoony
+            self:_squashTrigger("vertical", 0.5)
             -- Play death SFX
             playRandomSFX(self._audio, self.enemyDeathSFX)
             self.fsm:Change("Death", self.states.Death)
             return
         end
+
+        -- Hit reaction: horizontal squash (pushed sideways)
+        self:_squashTrigger("horizontal", 0.6)
 
         if not self._hurtTriggeredByFeather then
             local myRandomValue = math.random(1, 3)

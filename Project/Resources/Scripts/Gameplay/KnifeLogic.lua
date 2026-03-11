@@ -56,8 +56,9 @@ return Component {
         Damage   = 1,
 
         -- ===== HIT DETECTION TUNING =====
-        HitRadius  = 0.50,
-        ArmDelay   = 0.05,
+        HitRadius     = 0.50,
+        WarningRadius = 1.20,  -- Outer radius that fires knife_incoming before actual contact. Must be > HitRadius.
+        ArmDelay      = 0.05,
 
         -- ===== DESYNC / POOL BEHAVIOR =====
         -- Makes knives expire at slightly different times so they don't all reset together.
@@ -181,14 +182,33 @@ return Component {
         -- Arm + hit check
         self._armedTimer = (self._armedTimer or 0) + dt
         if self._armedTimer >= self.ArmDelay then
-            if self:_CheckHitPlayer() then
-                --print("[KnifeLogic] Hit player")
-                if event_bus and event_bus.publish then
-                    event_bus.publish("isKnifeHitPlayer", true)
-                    event_bus.publish("knifeHitPlayerDmg", self.Damage)
+            local p = self:_GetPlayerPos()
+            if p then
+                local kx, ky, kz = self:GetPosition()
+                local dx = p.x - kx
+                local dy = p.y - ky
+                local dz = p.z - kz
+                local distSq = dx*dx + dy*dy + dz*dz
+
+                -- Predictive: notify before contact so PlayerHealth can check dodge early
+                local wr = self.WarningRadius or 1.2
+                if distSq <= (wr * wr) and not self._warningSent then
+                    self._warningSent = true
+                    if event_bus and event_bus.publish then
+                        event_bus.publish("knife_incoming", { dmg = self.Damage })
+                    end
                 end
-                self:Reset("HIT")
-                return
+
+                -- Actual hit
+                local hr = self.HitRadius or 0.5
+                if distSq <= (hr * hr) then
+                    if event_bus and event_bus.publish then
+                        event_bus.publish("isKnifeHitPlayer", true)
+                        event_bus.publish("knifeHitPlayerDmg", self.Damage)
+                    end
+                    self:Reset("HIT")
+                    return
+                end
             end
         end
 
@@ -332,6 +352,7 @@ return Component {
         self.age = 0
         self.dirX, self.dirY, self.dirZ = 0,0,0
         self._armedTimer = 0
+        self._warningSent = false
 
         if self.model then
             ModelRenderComponent.SetVisible(self.model, false)
