@@ -7,7 +7,7 @@ local Input = _G.Input
 -- Animation States
 local HurtTrigger = "Hurt"
 
-local function PlayerTakeDmg(self, dmg)
+local function PlayerTakeDmg(self, dmg, kbDirX, kbDirZ)
     if self.CurrentHealth <= 0 then return end
     
     self._animator:SetTrigger(HurtTrigger)
@@ -24,6 +24,17 @@ local function PlayerTakeDmg(self, dmg)
     if event_bus and event_bus.publish then
         event_bus.publish("playerMaxhealth", self.MaxHealth)
         event_bus.publish("playerCurrentHealth", self.CurrentHealth)
+
+        -- Slight knockback away from the attacker.
+        -- Only fires when the call site has attacker position data to derive a direction.
+        if kbDirX and kbDirZ and (kbDirX ~= 0 or kbDirZ ~= 0) then
+            event_bus.publish("player_knockback", {
+                x        = kbDirX,
+                z        = kbDirZ,
+                strength = self.HitKnockbackStrength or 3.0,
+                src      = "hit_response",
+            })
+        end
     end
 
     self._knifeHitPlayer = false
@@ -87,6 +98,11 @@ return Component {
         -- TO CHANGE dash duration: update both this and DashDuration in PlayerMovement.
         DashIFrameDuration = 0.7,   -- Invincibility window while dashing (seconds).
 
+        -- === Hit knockback ===
+        HitKnockbackStrength = 3.0,   -- Initial velocity (world units/sec) injected into player movement on hit.
+                                      -- Decays naturally via Deceleration — smooth arc, not a hard shove.
+                                      -- Tune like Speed: 2.0 = subtle nudge, 5.0 = strong stagger.
+
         -- === World ===
         YDeathThreshold = -3.0,   -- Y position below which the player is killed instantly.
     },
@@ -133,11 +149,26 @@ return Component {
             -- ── Damage subscriptions ──────────────────────────────────────────
             -- Every handler checks dodge first, then post-hit i-frame, then deals damage.
 
-            self._knifeHitPlayerDmgSub = event_bus.subscribe("knifeHitPlayerDmg", function(dmg)
-                if not dmg then return end
-                if checkDodge(self, "knife", { dmg = dmg }) then return end
+            self._knifeHitPlayerDmgSub = event_bus.subscribe("knifeHitPlayerDmg", function(payload)
+                if not payload then return end
+                if checkDodge(self, "knife", { dmg = payload }) then return end
                 if self._isIFrame then return end
-                PlayerTakeDmg(self, dmg)
+                -- Payload may be a plain damage number (legacy) or a table with x/z attacker position.
+                -- TO DO: update the knife publisher (KnifePool) to send a table with x/z so
+                --        directional knockback fires here the same way as meleeHitPlayerDmg.
+                local dmg = type(payload) == "table" and payload.dmg or payload
+                if not dmg then return end
+                local kbx, kbz
+                if type(payload) == "table" and payload.x and payload.z then
+                    local px, _, pz = self:GetPosition()
+                    if px then
+                        local dx = px - payload.x
+                        local dz = pz - payload.z
+                        local len = math.sqrt(dx*dx + dz*dz)
+                        if len > 1e-4 then kbx = dx/len; kbz = dz/len end
+                    end
+                end
+                PlayerTakeDmg(self, dmg, kbx, kbz)
                 self._isIFrame = true
             end)
 
@@ -147,7 +178,19 @@ return Component {
                 if self._isIFrame then return end
                 local dmg = type(payload) == "table" and payload.dmg or payload
                 if dmg then
-                    PlayerTakeDmg(self, dmg)
+                    -- Derive knockback direction away from attacker if payload carries attacker XZ.
+                    -- Attacker must publish payload.x / payload.z for directional knockback to fire.
+                    local kbx, kbz
+                    if type(payload) == "table" and payload.x and payload.z then
+                        local px, _, pz = self:GetPosition()
+                        if px then
+                            local dx = px - payload.x
+                            local dz = pz - payload.z
+                            local len = math.sqrt(dx*dx + dz*dz)
+                            if len > 1e-4 then kbx = dx/len; kbz = dz/len end
+                        end
+                    end
+                    PlayerTakeDmg(self, dmg, kbx, kbz)
                     self._isIFrame = true
                 end
             end)
@@ -165,7 +208,12 @@ return Component {
                 local r  = payload.radius or 1.4
 
                 if (dx*dx + dz*dz) <= (r*r) then
-                    PlayerTakeDmg(self, payload.dmg or 1)
+                    local kbx, kbz = dx, dz
+                    local len = math.sqrt(kbx*kbx + kbz*kbz)
+                    if len > 1e-4 then kbx = kbx/len; kbz = kbz/len
+                    else kbx, kbz = 0, 1 end
+
+                    PlayerTakeDmg(self, payload.dmg or 1, kbx, kbz)
 
                     if event_bus and event_bus.publish then
                         event_bus.publish("miniboss_melee_hit_confirmed", { entityId = payload.entityId })
@@ -173,10 +221,6 @@ return Component {
 
                     local strength = payload.kbStrength or 0
                     if strength > 0 and event_bus and event_bus.publish then
-                        local kbx, kbz = dx, dz
-                        local len = math.sqrt(kbx*kbx + kbz*kbz)
-                        if len > 1e-4 then kbx = kbx/len; kbz = kbz/len
-                        else kbx, kbz = 0, 1 end
                         event_bus.publish("player_knockback", { x=kbx, z=kbz, strength=strength })
                     end
 
@@ -197,15 +241,16 @@ return Component {
                 local r  = payload.radius or 5.5
 
                 if (dx*dx + dz*dz) <= (r*r) then
-                    PlayerTakeDmg(self, payload.dmg or 1)
+                    local kbx, kbz = dx, dz
+                    local len = math.sqrt(kbx*kbx + kbz*kbz)
+                    if len > 1e-4 then kbx = kbx/len; kbz = kbz/len
+                    else kbx, kbz = 0, 1 end
+
+                    PlayerTakeDmg(self, payload.dmg or 1, kbx, kbz)
                     self._isIFrame = true
 
                     local strength = payload.kb or 0
                     if strength > 0 and event_bus and event_bus.publish then
-                        local kbx, kbz = dx, dz
-                        local len = math.sqrt(kbx*kbx + kbz*kbz)
-                        if len > 1e-4 then kbx = kbx/len; kbz = kbz/len
-                        else kbx, kbz = 0, 1 end
                         event_bus.publish("player_knockback", {
                             x=kbx, z=kbz, strength=strength,
                             src="boss_shout_aoe", enemyEntityId=payload.entityId,
@@ -249,7 +294,12 @@ return Component {
                 local r  = payload.radius or 1.4
 
                 if (dx*dx + dz*dz) <= (r*r) then
-                    PlayerTakeDmg(self, payload.dmg or 1)
+                    local kbx, kbz = dx, dz
+                    local len = math.sqrt(kbx*kbx + kbz*kbz)
+                    if len > 1e-4 then kbx = kbx/len; kbz = kbz/len
+                    else kbx, kbz = 0, 1 end
+
+                    PlayerTakeDmg(self, payload.dmg or 1, kbx, kbz)
                     self._isIFrame = true
                 end
             end)

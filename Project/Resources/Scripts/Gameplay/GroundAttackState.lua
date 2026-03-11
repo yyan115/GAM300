@@ -67,10 +67,13 @@ function AttackState:Update(ai, dt)
                 ai._animator:SetBool("Melee", true)
                 ai.meleeAnimTriggered = true
                 if _G.event_bus and _G.event_bus.publish then
+                    local ex, _, ez = ai:GetPosition()
                     _G.event_bus.publish("melee_incoming", {
-                        dmg = (ai.MeleeDamage or 1),
-                        src = "GroundEnemy",
+                        dmg           = (ai.MeleeDamage or 1),
+                        src           = "GroundEnemy",
                         enemyEntityId = ai.entityId,
+                        x             = ex or 0,   -- attacker XZ for dodge/knockback direction
+                        z             = ez or 0,
                     })
                 end
             elseif d2 > (diseng * diseng) then
@@ -90,10 +93,13 @@ function AttackState:Update(ai, dt)
             if ai.PlayHitSFX then ai:PlayHitSFX() end
 
             if _G.event_bus and _G.event_bus.publish then
+                local ex, _, ez = ai:GetPosition()
                 _G.event_bus.publish("meleeHitPlayerDmg", {
-                    dmg = (ai.MeleeDamage or 1),
-                    src = "GroundEnemy",
+                    dmg           = (ai.MeleeDamage or 1),
+                    src           = "GroundEnemy",
                     enemyEntityId = ai.entityId,
+                    x             = ex or 0,   -- attacker XZ for knockback direction in PlayerHealth
+                    z             = ez or 0,
                 })
             end
         end

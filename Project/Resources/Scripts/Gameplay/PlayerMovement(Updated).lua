@@ -172,6 +172,8 @@ return Component {
         AirDashLift            = 1.5,   -- Upward velocity added during air dash. 0 = purely horizontal.
         DashSteerSpeed         = 135.0, -- Degrees/sec the player can steer mid-dash. Forward only — no braking.
         PostDashRecoveryTime   = 0.25,  -- Seconds after dash ends before full reverse steering is restored. 0 = no restriction.
+        BackDashDotThreshold   = -0.5,  -- Dot product of input vs facing below which dash is classified as a back dash.
+                                        -- -1.0 = exact opposite only.  0.0 = any sideways-or-back input qualifies.
         -- TO ADD dash variants (dodge roll, air dive): add fields here.
 
         -- === Combat / lunge ===
@@ -286,9 +288,12 @@ return Component {
                 self._isDamageStun = true
                 if self._animator then self._animator:SetBool("IsJumping", false) end
                 playRandomSFX(self._audio, self.playerHurtSFX)
+                -- Hit reaction: horizontal squash (pushed-sideways feel)
+                self:_squashTrigger("horizontal", 0.5)
             end
         end)
 
+        if self._knockSub then event_bus.unsubscribe(self._knockSub) end
         self._knockSub = event_bus.subscribe("player_knockback", function(p)
             if not p then return end
             self._kbX = (p.x or 0) * (p.strength or 0)
@@ -477,6 +482,7 @@ return Component {
         self._dashDirX           = 0
         self._dashDirZ           = 0
         self._wasDashingInAir    = false
+        self._isBackDash         = false   -- true while a back-dash is active; drives IsBackDashing animator bool
         -- _dashUses: available uses (starts full). Resets on respawn.
         -- _dashRegenTimer: counts down DashCooldown between regen ticks.
         self._dashUses           = self.DashMaxUses
@@ -553,6 +559,7 @@ return Component {
         self._velZ                = 0
         self._dashUses            = self.DashMaxUses
         self._dashRegenTimer      = 0
+        self._isBackDash          = false
         self._chainConstraintRatio    = 0
         self._chainConstraintExceeded = false
 
@@ -949,8 +956,19 @@ return Component {
                 end
             end
 
-            self._animator:SetBool("IsJumping", false); self._isJumping = false
-            self._animator:SetBool("IsRunning",  false); self._isRunning  = false
+            -- Classify as back dash when input opposes facing past the threshold.
+            -- No-input dashes always go forward so they are never back dashes.
+            local facingDot  = self._dashDirX * self._facingX + self._dashDirZ * self._facingZ
+            self._isBackDash = isMoving and facingDot < (self.BackDashDotThreshold or -0.5)
+
+            self._animator:SetBool("IsJumping",    false); self._isJumping = false
+            self._animator:SetBool("IsRunning",    false); self._isRunning  = false
+            self._animator:SetBool("IsBackDashing", self._isBackDash)
+            if self._isBackDash then
+                -- TO DO: assign the back dash animation clip in the Animator.
+                -- IsBackDashing is set but no clip exists yet — back dash plays no animation.
+                print("[PlayerMovement] WARN: IsBackDashing=true — back dash animation clip not yet assigned in Animator")
+            end
             if not earlyCancel then self._animator:SetBool("IsDashing", true) end
             self._animator:SetTrigger("Dash")
             playRandomSFX(self._audio, self.playerDashSFX)
@@ -973,7 +991,9 @@ return Component {
                 self._isDashing       = false
                 _G.player_is_dashing  = false
                 self._wasDashingInAir = false
-                self._animator:SetBool("IsDashing", false)
+                self._isBackDash      = false
+                self._animator:SetBool("IsDashing",     false)
+                self._animator:SetBool("IsBackDashing", false)
                 self._velX          = self._dashDirX * self.Speed
                 self._velZ          = self._dashDirZ * self.Speed
                 self._postDashTimer = self.PostDashRecoveryTime or 0
@@ -991,7 +1011,8 @@ return Component {
             else
                 -- Dash active: steer direction, apply impulse, sync position.
                 -- Input steers forward only — pushing back is ignored to prevent braking.
-                if isMoving then
+                -- Back dash skips steer entirely; there is no forward to steer toward.
+                if isMoving and not self._isBackDash then
                     local inputLen  = math.sqrt(moveX*moveX + moveZ*moveZ)
                     local inputDirX = moveX / inputLen
                     local inputDirZ = moveZ / inputLen
@@ -1020,7 +1041,8 @@ return Component {
 
                 if not isGrounded then self._wasDashingInAir = true end
 
-                if self.SetRotation then
+                -- Back dash: player faces forward while sliding backward — skip rotation.
+                if self.SetRotation and not self._isBackDash then
                     local w, x, y, z = directionToQuaternion(self._dashDirX, self._dashDirZ)
                     self._currentRotW, self._currentRotX, self._currentRotY, self._currentRotZ = w, x, y, z
                     pcall(self.SetRotation, self, w, x, y, z)
@@ -1309,7 +1331,13 @@ return Component {
             local rotRate = self.rotationSpeed
 
             if not isGrounded then
-                rotRate = rotRate * (self.AirControlMultiplier or 0.1)
+                -- Vault jump: blend rotation rate from full speed at launch down to
+                -- normal air rate at peak, matching the velocity air control blend.
+                local baseAir = self.AirControlMultiplier or 0.1
+                local airMult = self._vaultJumpActive
+                    and (baseAir + (1.0 - baseAir) * self._vaultAirControlBlend)
+                    or  baseAir
+                rotRate = rotRate * airMult
             elseif self._postDashTimer > 0 then
                 -- Only restrict if input opposes the dash direction.
                 local dashDot = moveX * self._dashDirX + moveZ * self._dashDirZ
@@ -1366,6 +1394,7 @@ return Component {
         self._velZ                    = 0
         self._dashUses                = self.DashMaxUses
         self._dashRegenTimer          = 0
+        self._isBackDash              = false
         self._chainConstraintRatio    = 0
         self._chainConstraintExceeded = false
         self._chainDrag               = false
