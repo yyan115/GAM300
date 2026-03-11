@@ -126,10 +126,11 @@ return Component {
         MeleeAnimDelay       = 1.2,   -- Seconds into the melee animation before the hit registers.
 
         -- === Melee combat ===
-        MeleeSpeed          = 0.9,   -- Movement speed while charging a melee attack (world units/sec).
-        MeleeRange          = 1.2,   -- Distance at which melee hit registers.
-        MeleeDamage         = 3,     -- Damage dealt per melee swing.
-        MeleeAttackCooldown = 5.0,   -- Seconds between melee swings.
+        MeleeSpeed          = 0.9,        -- Movement speed while charging a melee attack (world units/sec).
+        MeleeRange          = 1.2,        -- Distance at which melee hit registers.
+        MeleeDamage         = 3,          -- Damage dealt per melee swing.
+        MeleeAttackCooldown = 5.0,        -- Seconds between melee swings.
+        FirstMeleeAttackHeadStart = 0.80, -- Adjust the first hit to match the animation.
 
         -- === Hit response ===
         HurtDuration      = 2.0,    -- Seconds spent in the Hurt state after taking a hit.
