@@ -396,6 +396,17 @@ return Component {
             end)
         end
 
+        -- ── Attack enable/disable ─────────────────────────────────────────
+        -- External systems (e.g. DoorTrigger during a cutscene/pickup sequence)
+        -- publish set_attacks_enabled with a boolean to gate the state machine
+        -- without touching raw input or global flags.
+        if _G.event_bus and _G.event_bus.subscribe then
+            self._attacksEnabledSub = _G.event_bus.subscribe("set_attacks_enabled", function(enabled)
+                self.AttacksEnabled = (enabled ~= false)
+                print("[ComboManager] AttacksEnabled = " .. tostring(self.AttacksEnabled))
+            end)
+        end
+
         print("[ComboManager] Initialized successfully")
     end,
 
