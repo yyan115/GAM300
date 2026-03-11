@@ -63,6 +63,7 @@ return Component {
         chainAimTargetName      = "ChainAimPointLeftEnd",
         chainAimTransitionSpeed = 5.0,
         chainAimZoomDistance    = 0.8,
+        chainAimHeightOffset    = 1.5,
         chainAimSideOffset      = 0.3,
 
         -- === Chain Aim Assist ===
@@ -421,10 +422,9 @@ return Component {
         end
 
         -- Ideal camera position (spherical offset from pivot)
-        local scaledHeight    = (self.heightOffset or 1.0) * (0.85 + zoomFactor * 0.15)
         local horizRadius     = radius * math.cos(pitchRad)
         local desiredX = cameraTarget.x + horizRadius * math.sin(yawRad)
-        local desiredY = cameraTarget.y + radius * math.sin(pitchRad) + scaledHeight
+        local desiredY = cameraTarget.y + radius * math.sin(pitchRad) + (self.heightOffset or 1.0)
         local desiredZ = cameraTarget.z + horizRadius * math.cos(yawRad)
 
         -- Hard Y cap: prevents the camera from rising above indoor ceilings even
