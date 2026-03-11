@@ -161,6 +161,7 @@ return Component {
         VaultDetectRange     = 2.5,   -- Forward ray length (world units). How far ahead to probe.
         VaultMinApproachDist = 0.4,   -- Min distance to obstacle for vault to register. Prevents trigger while standing right at the base.
         VaultJumpHeight      = 2.0,   -- Fixed jump height used for all vault jumps. Tune this in the editor.
+        VaultEnemyRadius     = 8.0,   -- Max distance an enemy can be for vaulting to be allowed (world units).
 
         -- === Dash ===
         DashSpeed              = 5.0,   -- Dash impulse speed — independent of Speed.
@@ -443,6 +444,18 @@ return Component {
             end
         end)
 
+        -- ── Enemy proximity (vault gate) ──────────────────────────────────────
+        -- Each live enemy publishes its world position every frame.
+        -- We store the latest position per entityId so we can check the nearest
+        -- enemy distance in the vault detection block without polling or globals.
+        self._nearbyEnemyPositions = {}
+        self._enemyPosSub = event_bus.subscribe("enemy_position", function(payload)
+            if not payload or not payload.entityId then return end
+            self._nearbyEnemyPositions[payload.entityId] = {
+                x = payload.x, y = payload.y, z = payload.z
+            }
+        end)
+
         -- TO ADD new subscriptions: follow the pattern above.
         -- Always add the handle key to the unsubscribe list in OnDisable.
     end,
@@ -616,23 +629,6 @@ return Component {
     --   25. Position sync
     -- ==========================================================================
     Update = function(self, dt)
-
-        -- ── [KEYBOARD INPUT REFERENCE] ────────────────────────────────────────
-        -- Example of raw Keyboard bindings (PC only).
-        -- Prefer Input.IsActionPressed() for normal cross-platform game code.
-        --
-        -- local kHeld = Keyboard.IsKeyPressed(Keyboard.Key.K)
-        -- if kHeld and not self._kbWasHeld then
-        --     print("[KeyboardTest] K pressed")
-        --     print("[KeyboardTest] Space held:       ", Keyboard.IsKeyPressed(Keyboard.Key.Space))
-        --     print("[KeyboardTest] Left mouse held:  ", Keyboard.IsMouseButtonPressed(Keyboard.Mouse.Left))
-        --     print("[KeyboardTest] Right mouse held: ", Keyboard.IsMouseButtonPressed(Keyboard.Mouse.Right))
-        --     print("[KeyboardTest] Mouse pos:        ", Keyboard.GetMouseX(), Keyboard.GetMouseY())
-        -- elseif not kHeld and self._kbWasHeld then
-        --     print("[KeyboardTest] K released")
-        -- end
-        -- self._kbWasHeld = kHeld
-        -- ── [END KEYBOARD INPUT REFERENCE] ───────────────────────────────────
 
         -- ── 1. Global flags ───────────────────────────────────────────────────
         -- Written first so every other system sees current values this frame.
@@ -1102,10 +1098,12 @@ return Component {
         end
 
         -- ── 20. Vault detection ───────────────────────────────────────────────
-        -- Runs every frame while grounded and moving forward.
-        -- Fires a min and max forward ray. If min hits and max misses, vault is ready.
-        -- _vaultReadyTimer holds the result alive briefly so a slightly late jump still catches it.
-        -- Result is stored in _vaultDetected / _vaultJumpHeight for the jump block.
+        -- Vaulting is only allowed when at least one enemy is within VaultEnemyRadius.
+        -- This prevents the mechanic from accidentally triggering during normal traversal
+        -- while keeping it fully available the moment a fight is nearby.
+        -- enemy_position events (published every frame by each live EnemyAI) keep
+        -- _nearbyEnemyPositions current; dead/despawned enemies stop publishing and
+        -- naturally fall out of range on the next proximity check.
 
         -- Tick the ready timer — keeps _vaultDetected alive even if the ray misses this frame
         if self._vaultReadyTimer > 0 then
@@ -1117,7 +1115,26 @@ return Component {
             self._vaultDetected = false
         end
 
-        if isGrounded and isMoving and not self._isDamageStun then
+        -- Check whether any known enemy is within VaultEnemyRadius.
+        local enemyNearby = false
+        local vaultRadiusSq = (self.VaultEnemyRadius or 8.0) ^ 2
+        local playerPos = CharacterController.GetPosition(self._controller)
+        if playerPos then
+            for _, epos in pairs(self._nearbyEnemyPositions) do
+                local ex = epos.x - playerPos.x
+                local ez = epos.z - playerPos.z
+                if ex*ex + ez*ez <= vaultRadiusSq then
+                    enemyNearby = true
+                    break
+                end
+            end
+        end
+
+        if not enemyNearby then
+            -- No enemies in range — discard any stale detection and skip probing.
+            self._vaultDetected   = false
+            self._vaultReadyTimer = 0
+        elseif isGrounded and isMoving and not self._isDamageStun then
             -- Low threshold so detection fires early as the player approaches.
             -- 0.15 * Speed means almost any forward-facing movement qualifies.
             local approachDot = self._velX * self._facingX + self._velZ * self._facingZ
@@ -1423,7 +1440,7 @@ return Component {
                 "_knockSub", "_respawnPlayerSub", "_activatedCheckpointSub",
                 "_freezePlayerSub", "_requestPlayerForwardSub", "_attackLungeSub",
                 "_combatStateSub", "_forceRotSub", "_chainFiredRotSub",
-                "_dashPerformedSub", "_chainConstraintSub",
+                "_dashPerformedSub", "_chainConstraintSub", "_enemyPosSub",
             }
             for _, key in ipairs(subs) do
                 if self[key] then event_bus.unsubscribe(self[key]); self[key] = nil end
