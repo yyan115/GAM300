@@ -283,7 +283,7 @@ private:
 				// Special-case APIs that require a different call
 				if constexpr (std::is_same_v<T, Font>) {
 					// If GetFontResource expects a resource path, pass compiledPath.
-					ResourceManager::GetInstance().GetFontResource(compiledPath, 0, true);
+					ResourceManager::GetInstance().GetFontResource(filePath, 0, true);
 				}
 				else if constexpr (std::is_same_v<T, Shader>) {
 					ResourceManager::GetInstance().GetResource<Shader>(filePath, true);
@@ -292,7 +292,7 @@ private:
 					// For model/material/audio/script etc., call typed GetResource<T>.
 					// Some projects store assets keyed by source path; if your ResourceManager expects
 					// compiledPath adjust accordingly.
-					ResourceManager::GetInstance().GetResource<T>(compiledPath, true);
+					ResourceManager::GetInstance().GetResource<T>(filePath, true);
 				}
 			}
 		}
