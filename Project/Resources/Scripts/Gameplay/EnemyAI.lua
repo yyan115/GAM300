@@ -487,13 +487,13 @@ return Component {
         --     self:MoveCC(1.0, 0.0, dt) -- 1 unit/sec to +X
         -- end
 
-        -- if Input.IsActionJustPressed("Interact") then
-        --     self:ApplyHook(self.HookedDuration)
-        -- end
-
-        if Keyboard.IsKeyPressed(Keyboard.Key.F) then
+        if Input.IsActionJustPressed("Interact") then
             self:ApplyHook(self.HookedDuration)
         end
+
+        -- if Keyboard.IsKeyPressed(Keyboard.Key.F) then
+        --     self:ApplyHook(self.HookedDuration)
+        -- end
 
         local dtSec = toDtSec(dt)
         self._hitLockTimer = math.max(0, (self._hitLockTimer or 0) - dtSec)
