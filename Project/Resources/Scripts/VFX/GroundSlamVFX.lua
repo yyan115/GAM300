@@ -12,9 +12,6 @@ return Component {
     
     fields = {
     },
-    
-        -- local cleanAttackState = self.AttackState:gsub('"', '')
-
 
 
     SpawnGroundSlamVFX = function(self, x,y,z)

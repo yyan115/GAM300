@@ -2,7 +2,7 @@
     "prefab_entities": [
         {
             "id": 0,
-            "guid": "0069e52ebc119695-000467b68a017cf5",
+            "guid": "0017e11c882794e0-000479d9ca0037f3",
             "components": {
                 "PrefabLinkComponent": {
                     "type": "PrefabLinkComponent",
@@ -167,6 +167,18 @@
                         {
                             "type": "bool",
                             "data": true
+                        },
+                        {
+                            "type": "bool",
+                            "data": false
+                        },
+                        {
+                            "type": "float",
+                            "data": -1
+                        },
+                        {
+                            "type": "float",
+                            "data": -1
                         }
                     ]
                 },
@@ -176,8 +188,8 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "0069e52efd8c2f36-000467b68a017cf7",
-                                "0069e52e9fdba5b3-000467b68a017cf9"
+                                "0017e11c9e619974-000479d9ca0037f5",
+                                "0017e11cbc861acc-000479d9ca0037f7"
                             ]
                         }
                     ]
@@ -363,23 +375,54 @@
                             "entryFunction": "OnInit",
                             "autoInvokeEntry": true,
                             "instanceState": {
-                                "_subscriptions": {},
-                                "ArmDelay": 0.05,
-                                "_private": {},
-                                "_transform_fetched": false,
-                                "__field_list": {
-                                    "Lifetime": 1.2,
-                                    "Speed": 10.0,
-                                    "Damage": 1.0
-                                },
-                                "__meta": {},
-                                "HitRadius": 0.5,
+                                "Subscribe": null,
                                 "Lifetime": 1.2,
-                                "__created_at": 1769419004.0,
-                                "Speed": 5.0,
-                                "LifeJitter": 0.25,
                                 "Damage": 1.0,
-                                "MaxRange": 10.0
+                                "Start": null,
+                                "Launch": null,
+                                "__meta": {},
+                                "_subscriptions": {},
+                                "DeserializeFields": null,
+                                "After": null,
+                                "StartSafe": null,
+                                "SetScale": null,
+                                "OnDisable": null,
+                                "MaxRange": 10.0,
+                                "Destroy": null,
+                                "DebugTransform": null,
+                                "_GetPlayerPos": null,
+                                "SerializeFields": null,
+                                "BossScale": 2.0,
+                                "HitRadius": 0.5,
+                                "BossDamageMult": 2.0,
+                                "GetScale": null,
+                                "SetRotation": null,
+                                "DisableSafe": null,
+                                "AwakeSafe": null,
+                                "UpdateSafe": null,
+                                "Speed": 5.0,
+                                "_private": {},
+                                "_call_lifecycle": null,
+                                "GetTransform": null,
+                                "Every": null,
+                                "_transform_fetched": false,
+                                "Unsubscribe": null,
+                                "Reset": null,
+                                "ArmDelay": 0.05,
+                                "Update": null,
+                                "GetPosition": null,
+                                "__field_list": {
+                                    "Speed": 10.0,
+                                    "Damage": 1.0,
+                                    "Lifetime": 1.2
+                                },
+                                "LifeJitter": 0.25,
+                                "_CheckHitPlayer": null,
+                                "SetPosition": null,
+                                "BossHitRadiusMult": 1.25,
+                                "Move": null,
+                                "GetRotation": null,
+                                "__created_at": 1769419004.0
                             }
                         }
                     ]
@@ -388,7 +431,7 @@
         },
         {
             "id": 1,
-            "guid": "0069e52efd8c2f36-000467b68a017cf7",
+            "guid": "0017e11c9e619974-000479d9ca0037f5",
             "components": {
                 "NameComponent": {
                     "name": "goose_handle"
@@ -465,7 +508,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "0069e52ebc119695-000467b68a017cf5"
+                        "0017e11c882794e0-000479d9ca0037f3"
                     ]
                 },
                 "ActiveComponent": {
@@ -481,7 +524,7 @@
         },
         {
             "id": 2,
-            "guid": "0069e52e9fdba5b3-000467b68a017cf9",
+            "guid": "0017e11cbc861acc-000479d9ca0037f7",
             "components": {
                 "NameComponent": {
                     "name": "feather_blade"
@@ -558,7 +601,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "0069e52ebc119695-000467b68a017cf5"
+                        "0017e11c882794e0-000479d9ca0037f3"
                     ]
                 },
                 "ActiveComponent": {

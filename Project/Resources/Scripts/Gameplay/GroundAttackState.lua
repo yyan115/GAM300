@@ -66,6 +66,7 @@ function AttackState:Update(ai, dt)
             if d2 <= (meleeR * meleeR) then
                 ai._animator:SetBool("Melee", true)
                 ai.meleeAnimTriggered = true
+
             elseif d2 > (diseng * diseng) then
                 ai.fsm:Change("Patrol", ai.states.Patrol)
                 return
@@ -87,6 +88,20 @@ function AttackState:Update(ai, dt)
                     dmg = (ai.MeleeDamage or 1),
                     src = "GroundEnemy",
                     enemyEntityId = ai.entityId,
+                })
+            end
+
+            -- TRIGGER CLAW VFX HERE
+            if _G.event_bus then
+                local x, y, z = ai:GetPosition()
+                local qW, qX, qY, qZ = ai:GetRotation() -- Get the AI's current facing
+                
+                _G.event_bus.publish("onClawSlashTrigger", {
+                    pos = {x = x, y = y, z = z},
+                    rot = {w = qW, x = qX, y = qY, z = qZ},
+                    entityId = ai.entityId,
+                    variant = "NORMAL",
+                    claimed = false
                 })
             end
         end

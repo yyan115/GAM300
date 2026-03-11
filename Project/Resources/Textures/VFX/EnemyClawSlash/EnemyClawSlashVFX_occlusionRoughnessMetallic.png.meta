@@ -1,0 +1,14 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "002e160d748ef541-000479cf6e000009",
+        "source": "../../Resources/Textures/VFX/EnemyClawSlash/EnemyClawSlashVFX_occlusionRoughnessMetallic.png",
+        "compiled": "../../Resources/Textures/VFX/EnemyClawSlash/EnemyClawSlashVFX_occlusionRoughnessMetallic.dds"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp"
+    }
+}
