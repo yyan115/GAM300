@@ -51,7 +51,10 @@ function M.applyCollision(self, tx, ty, tz, desiredX, desiredY, desiredZ, dt)
             local d = Physics.Raycast(ox, ty, oz, 0, 1, 0, 50.0)
             if d >= 0 then
                 local md = (d - collisionOffset) / dirY
-                if md < bestMaxDist then bestMaxDist = md end
+                -- md <= 0 means the ray started inside geometry (d ≈ 0) or the
+                -- ceiling is below the start point — both produce garbage constraints,
+                -- so skip them.  Only a positive md gives a valid upper bound.
+                if md > 0 and md < bestMaxDist then bestMaxDist = md end
             end
         end
 
@@ -67,9 +70,14 @@ function M.applyCollision(self, tx, ty, tz, desiredX, desiredY, desiredZ, dt)
     if self._currentCollisionDist == nil then
         self._currentCollisionDist = targetDist
     elseif targetDist < self._currentCollisionDist then
-        -- Snap immediately into geometry — no lerp, eliminates the single frame
-        -- where the camera clips through a wall before the lerp catches up.
-        self._currentCollisionDist = targetDist
+        -- Fast lerp into geometry instead of instant snap.
+        -- This prevents a momentary wall graze (e.g. panning along a wall)
+        -- from causing an abrupt full zoom-in while still resolving real
+        -- collisions quickly.  collisionLerpIn defaults to 20.0 which closes
+        -- ~97 % of the gap within 6 frames at 60 fps.
+        local t = 1.0 - math.exp(-(self.collisionLerpIn or 20.0) * dt)
+        self._currentCollisionDist = self._currentCollisionDist
+            + (targetDist - self._currentCollisionDist) * t
     else
         -- Slow ease-out when geometry clears so the camera doesn't snap back.
         local t = 1.0 - math.exp(-(self.collisionLerpOut or 5.0) * dt)
