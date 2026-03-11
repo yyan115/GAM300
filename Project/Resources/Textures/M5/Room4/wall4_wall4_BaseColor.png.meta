@@ -1,0 +1,14 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "002c80ed3fb5c6ce-00047a9cb003c7a7",
+        "source": "../../Resources/Textures/M5/Room4/wall4_wall4_BaseColor.png",
+        "compiled": "../../Resources/Textures/M5/Room4/wall4_wall4_BaseColor.dds"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp"
+    }
+}
