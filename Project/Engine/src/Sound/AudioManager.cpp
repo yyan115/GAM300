@@ -343,6 +343,13 @@ void AudioManager::StopAll() {
         }
     }
     ChannelMap.clear();
+
+    // Reset all bus paused states so a fresh play session starts clean
+    for (auto& kv : BusMap) {
+        if (kv.second) {
+            FMOD_ChannelGroup_SetPaused(kv.second, false);
+        }
+    }
 }
 
 void AudioManager::Pause(ChannelHandle channel) {

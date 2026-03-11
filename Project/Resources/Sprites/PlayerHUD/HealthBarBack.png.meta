@@ -1,0 +1,14 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "006dfc96e03fafaa-000474fd42028c67",
+        "source": "../../Resources/Sprites/PlayerHUD/HealthBarBack.png",
+        "compiled": "../../Resources/Sprites/PlayerHUD/HealthBarBack.dds"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp"
+    }
+}

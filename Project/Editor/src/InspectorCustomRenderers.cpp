@@ -1198,12 +1198,12 @@ void RegisterInspectorCustomRenderers()
         ImGui::Text("Layer");
         ImGui::SameLine(labelWidth);
         ImGui::SetNextItemWidth(-1);
-        const char *layers[] = {"Non-Moving", "Moving", "Character", "Sensor", "Debris", "Nav Ground", "Nav Obstacle", "Hurtbox"};
+        const char *layers[] = {"Non-Moving", "Moving", "Character", "Sensor", "Debris", "Nav Ground", "Nav Obstacle", "Hurtbox", "Chain Hitbox"};
         int currentLayer = static_cast<int>(collider.layer);
         int oldLayer = currentLayer;
 
         EditorComponents::PushComboColors();
-        bool changed = ImGui::Combo("##Layer", &currentLayer, layers, 8);
+        bool changed = ImGui::Combo("##Layer", &currentLayer, layers, 9);
         EditorComponents::PopComboColors();
 
         if (changed) {
@@ -3703,7 +3703,7 @@ void RegisterInspectorCustomRenderers()
         ImGui::SetNextItemWidth(-1);
 
         // Define available mixer groups
-        const char* mixerGroups[] = { "Default", "BGM", "SFX" };
+        const char* mixerGroups[] = { "Default", "BGM", "SFX", "UI" };
         int currentMixerIndex = 0;
 
         // Find current selection
@@ -3711,14 +3711,16 @@ void RegisterInspectorCustomRenderers()
             currentMixerIndex = 1;
         } else if (audio.OutputAudioMixerGroup == "SFX") {
             currentMixerIndex = 2;
+        } else if (audio.OutputAudioMixerGroup == "UI") {
+            currentMixerIndex = 3;
         } else {
-            currentMixerIndex = 0; // Default or empty
+            currentMixerIndex = 0; // Default (routes to SFX)
         }
 
         startMixerGroup[entity] = currentMixerIndex;
         EditorComponents::PushComboColors();
         if (ImGui::BeginCombo("##OutputMixerGroup", mixerGroups[currentMixerIndex])) {
-            for (int i = 0; i < 3; i++) {
+            for (int i = 0; i < 4; i++) {
                 bool isSelected = (currentMixerIndex == i);
                 if (ImGui::Selectable(mixerGroups[i], isSelected)) {
                     int oldVal = startMixerGroup[entity];
@@ -3727,6 +3729,8 @@ void RegisterInspectorCustomRenderers()
                         audio.SetOutputAudioMixerGroup("BGM");
                     } else if (newVal == 2) {
                         audio.SetOutputAudioMixerGroup("SFX");
+                    } else if (newVal == 3) {
+                        audio.SetOutputAudioMixerGroup("UI");
                     } else {
                         audio.SetOutputAudioMixerGroup("");
                     }
@@ -3738,6 +3742,7 @@ void RegisterInspectorCustomRenderers()
                                     auto& a = ecs.GetComponent<AudioComponent>(entity);
                                     if (newVal == 1) a.SetOutputAudioMixerGroup("BGM");
                                     else if (newVal == 2) a.SetOutputAudioMixerGroup("SFX");
+                                    else if (newVal == 3) a.SetOutputAudioMixerGroup("UI");
                                     else a.SetOutputAudioMixerGroup("");
                                 }
                             },
@@ -3747,6 +3752,7 @@ void RegisterInspectorCustomRenderers()
                                     auto& a = ecs.GetComponent<AudioComponent>(entity);
                                     if (oldVal == 1) a.SetOutputAudioMixerGroup("BGM");
                                     else if (oldVal == 2) a.SetOutputAudioMixerGroup("SFX");
+                                    else if (oldVal == 3) a.SetOutputAudioMixerGroup("UI");
                                     else a.SetOutputAudioMixerGroup("");
                                 }
                             },
@@ -6587,11 +6593,15 @@ void RegisterInspectorCustomRenderers()
                         continue;
                     }
 
+                    // Capture depth before counting braces on this line
+                    int depthBeforeLine = braceDepth;
+
                     // Count braces outside strings and comments
                     countBracesOutsideStrings(trimmedLine, braceDepth);
 
-                    // Only process lines with '=' that have the = before any comment
-                    if (eqPos != std::string::npos && (commentPos == std::string::npos || eqPos < commentPos)) {
+                    // Only process lines with '=' that are direct children of the fields table (depth 1)
+                    // Skip nested table contents (e.g. __editor = { tooltipEntity = { ... } })
+                    if (depthBeforeLine == 1 && eqPos != std::string::npos && (commentPos == std::string::npos || eqPos < commentPos)) {
                         std::string fieldName = trimmedLine.substr(0, eqPos);
 
                         // Trim whitespace and commas from field name
@@ -6971,6 +6981,32 @@ void RegisterInspectorCustomRenderers()
             continue; // Skip to next script
         }
 
+        // Read __editor metadata directly from the Lua instance as a fallback
+        // (ScriptInspector may not propagate editorHint through caching/preview paths)
+        std::unordered_map<std::string, std::string> editorHintMap;
+        if (L && instanceToInspect != -1) {
+            lua_rawgeti(L, LUA_REGISTRYINDEX, instanceToInspect);
+            if (lua_istable(L, -1)) {
+                lua_getfield(L, -1, "__editor");
+                if (lua_istable(L, -1)) {
+                    lua_pushnil(L);
+                    while (lua_next(L, -2) != 0) {
+                        if (lua_type(L, -2) == LUA_TSTRING && lua_istable(L, -1)) {
+                            const char* key = lua_tostring(L, -2);
+                            lua_getfield(L, -1, "editorHint");
+                            if (lua_isstring(L, -1)) {
+                                editorHintMap[key] = lua_tostring(L, -1);
+                            }
+                            lua_pop(L, 1); // pop editorHint
+                        }
+                        lua_pop(L, 1); // pop value, keep key
+                    }
+                }
+                lua_pop(L, 1); // pop __editor
+            }
+            lua_pop(L, 1); // pop instance
+        }
+
         // Render each field
         bool anyModified = false;
         for (const auto& field : filteredFields)
@@ -7063,6 +7099,44 @@ void RegisterInspectorCustomRenderers()
                     if (currentValue.size() > 1 && currentValue.front() == '"' && currentValue.back() == '"')
                     {
                         currentValue = currentValue.substr(1, currentValue.size() - 2);
+                    }
+
+                    // Check if this is an entity reference field (editorHint == "entity")
+                    // Check both ScriptInspector metadata and direct Lua lookup fallback
+                    std::string editorHint = field.meta.editorHint;
+                    if (editorHint.empty()) {
+                        auto hintIt = editorHintMap.find(field.name);
+                        if (hintIt != editorHintMap.end()) {
+                            editorHint = hintIt->second;
+                        }
+                    }
+                    if (editorHint == "entity")
+                    {
+                        renderLabelWithTooltip();
+                        ImGui::SameLine(labelWidth);
+                        float fieldWidth = ImGui::GetContentRegionAvail().x;
+
+                        std::string display = currentValue.empty() ? "None" : currentValue;
+                        EditorComponents::DrawDragDropButton(display.c_str(), fieldWidth);
+
+                        if (ImGui::BeginDragDropTarget()) {
+                            if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("HIERARCHY_ENTITY")) {
+                                Entity dropped = *(Entity*)payload->Data;
+                                if (ecs.HasComponent<NameComponent>(dropped)) {
+                                    std::string entityName = ecs.GetComponent<NameComponent>(dropped).name;
+                                    newValue = "\"" + entityName + "\"";
+                                    fieldModified = true;
+                                }
+                            }
+                            ImGui::EndDragDropTarget();
+                        }
+
+                        // Right-click to clear
+                        if (ImGui::IsItemClicked(ImGuiMouseButton_Right) && !currentValue.empty()) {
+                            newValue = "\"\"";
+                            fieldModified = true;
+                        }
+                        break;
                     }
 
                     // Check if this is an asset GUID field
@@ -8880,6 +8954,8 @@ void RegisterInspectorCustomRenderers()
         static std::unordered_map<Entity, bool>     isEditingNoiseScale;
         static std::unordered_map<Entity, float>    startNoiseStrength;
         static std::unordered_map<Entity, bool>     isEditingNoiseStrength;
+        static std::unordered_map<Entity, float>    startWarpStrength;
+        static std::unordered_map<Entity, bool>     isEditingWarpStrength;
         static std::unordered_map<Entity, float>    startHeightFadeStart;
         static std::unordered_map<Entity, bool>     isEditingHeightFadeStart;
         static std::unordered_map<Entity, float>    startHeightFadeEnd;
@@ -8897,6 +8973,7 @@ void RegisterInspectorCustomRenderers()
         if (isEditingScrollY.find(entity)        == isEditingScrollY.end())        isEditingScrollY[entity]        = false;
         if (isEditingNoiseScale.find(entity)     == isEditingNoiseScale.end())     isEditingNoiseScale[entity]     = false;
         if (isEditingNoiseStrength.find(entity)  == isEditingNoiseStrength.end())  isEditingNoiseStrength[entity]  = false;
+        if (isEditingWarpStrength.find(entity)   == isEditingWarpStrength.end())   isEditingWarpStrength[entity]   = false;
         if (isEditingHeightFadeStart.find(entity)== isEditingHeightFadeStart.end())isEditingHeightFadeStart[entity]= false;
         if (isEditingHeightFadeEnd.find(entity)  == isEditingHeightFadeEnd.end())  isEditingHeightFadeEnd[entity]  = false;
         if (isEditingEdgeSoftness.find(entity)   == isEditingEdgeSoftness.end())   isEditingEdgeSoftness[entity]   = false;
@@ -9034,6 +9111,25 @@ void RegisterInspectorCustomRenderers()
             isEditingNoiseStrength[entity] = false;
         }
 
+        // --- Warp Strength ---
+        ImGui::Text("Warp");
+        ImGui::SameLine(labelWidth);
+        ImGui::SetNextItemWidth(-1);
+        if (!isEditingWarpStrength[entity]) startWarpStrength[entity] = fog.warpStrength;
+        if (ImGui::IsItemActivated()) { startWarpStrength[entity] = fog.warpStrength; isEditingWarpStrength[entity] = true; }
+        if (ImGui::DragFloat("##FogWarpStrength", &fog.warpStrength, 0.01f, 0.0f, 2.0f))
+            isEditingWarpStrength[entity] = true;
+        if (isEditingWarpStrength[entity] && !ImGui::IsItemActive())
+        {
+            float oldVal = startWarpStrength[entity]; float newVal = fog.warpStrength;
+            if (oldVal != newVal && UndoSystem::GetInstance().IsEnabled())
+                UndoSystem::GetInstance().RecordLambdaChange(
+                    [entity, newVal]() { ECSManager& e = ECSRegistry::GetInstance().GetActiveECSManager(); if (e.HasComponent<FogVolumeComponent>(entity)) e.GetComponent<FogVolumeComponent>(entity).warpStrength = newVal; },
+                    [entity, oldVal]() { ECSManager& e = ECSRegistry::GetInstance().GetActiveECSManager(); if (e.HasComponent<FogVolumeComponent>(entity)) e.GetComponent<FogVolumeComponent>(entity).warpStrength = oldVal; },
+                    "Change Fog Warp Strength");
+            isEditingWarpStrength[entity] = false;
+        }
+
         // --- Scroll Speed X ---
         ImGui::Text("Scroll X");
         ImGui::SameLine(labelWidth);
@@ -9164,6 +9260,7 @@ void RegisterInspectorCustomRenderers()
     ReflectionRenderer::RegisterFieldRenderer("FogVolumeComponent", "scrollSpeedY",     [](const char*, void*, Entity, ECSManager&) { return true; });
     ReflectionRenderer::RegisterFieldRenderer("FogVolumeComponent", "noiseScale",       [](const char*, void*, Entity, ECSManager&) { return true; });
     ReflectionRenderer::RegisterFieldRenderer("FogVolumeComponent", "noiseStrength",    [](const char*, void*, Entity, ECSManager&) { return true; });
+    ReflectionRenderer::RegisterFieldRenderer("FogVolumeComponent", "warpStrength",     [](const char*, void*, Entity, ECSManager&) { return true; });
     ReflectionRenderer::RegisterFieldRenderer("FogVolumeComponent", "useHeightFade",    [](const char*, void*, Entity, ECSManager&) { return true; });
     ReflectionRenderer::RegisterFieldRenderer("FogVolumeComponent", "heightFadeStart",  [](const char*, void*, Entity, ECSManager&) { return true; });
     ReflectionRenderer::RegisterFieldRenderer("FogVolumeComponent", "heightFadeEnd",    [](const char*, void*, Entity, ECSManager&) { return true; });
@@ -9340,6 +9437,42 @@ void RegisterInspectorCustomRenderers()
                                 [entity, idx, oldVal]() { auto& e = ECSRegistry::GetInstance().GetActiveECSManager(); if (e.HasComponent<DialogueComponent>(entity)) { auto& b = e.GetComponent<DialogueComponent>(entity).entries; if (idx < b.size()) b[idx].text = oldVal; } },
                                 "Change Dialogue Text");
                         }
+                    }
+                }
+
+                // --- Sprite Entity (optional, per-entry) ---
+                ImGui::Text("Sprite Entity");
+                ImGui::SameLine(labelWidth);
+                {
+                    float spriteFieldWidth = ImGui::GetContentRegionAvail().x;
+                    std::string spriteDisplay = "None (Sprite)";
+                    if (!entry.spriteEntityGuidStr.empty()) {
+                        GUID_128 sGuid = GUIDUtilities::ConvertStringToGUID128(entry.spriteEntityGuidStr);
+                        Entity spriteEntity = EntityGUIDRegistry::GetInstance().GetEntityByGUID(sGuid);
+                        if (spriteEntity != 0 && ecs.HasComponent<NameComponent>(spriteEntity)) {
+                            spriteDisplay = ecs.GetComponent<NameComponent>(spriteEntity).name;
+                        }
+                    }
+                    EditorComponents::DrawDragDropButton(spriteDisplay.c_str(), spriteFieldWidth);
+                    if (ImGui::BeginDragDropTarget()) {
+                        if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("HIERARCHY_ENTITY")) {
+                            Entity droppedEntity = *(Entity*)payload->Data;
+                            // Validate it has a SpriteRenderComponent
+                            if (ecs.HasComponent<SpriteRenderComponent>(droppedEntity)) {
+                                std::string oldGuid = entry.spriteEntityGuidStr;
+                                GUID_128 sGuid = EntityGUIDRegistry::GetInstance().GetGUIDByEntity(droppedEntity);
+                                std::string newGuid = GUIDUtilities::ConvertGUID128ToString(sGuid);
+                                entry.spriteEntityGuidStr = newGuid;
+                                if (UndoSystem::GetInstance().IsEnabled()) {
+                                    size_t idx = i;
+                                    UndoSystem::GetInstance().RecordLambdaChange(
+                                        [entity, idx, newGuid]() { auto& e = ECSRegistry::GetInstance().GetActiveECSManager(); if (e.HasComponent<DialogueComponent>(entity)) { auto& b = e.GetComponent<DialogueComponent>(entity).entries; if (idx < b.size()) b[idx].spriteEntityGuidStr = newGuid; } },
+                                        [entity, idx, oldGuid]() { auto& e = ECSRegistry::GetInstance().GetActiveECSManager(); if (e.HasComponent<DialogueComponent>(entity)) { auto& b = e.GetComponent<DialogueComponent>(entity).entries; if (idx < b.size()) b[idx].spriteEntityGuidStr = oldGuid; } },
+                                        "Assign Dialogue Sprite Entity");
+                                }
+                            }
+                        }
+                        ImGui::EndDragDropTarget();
                     }
                 }
 

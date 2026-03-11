@@ -6,7 +6,7 @@
         "compiled": "../../Resources/Textures/M5/Drum_Mixed_AO.dds"
     },
     "TextureMetaData": {
-        "type": "ao",
+        "type": "diffuse",
         "flipUVs": false,
         "generateMipmaps": true,
         "textureWrapMode": "Clamp"

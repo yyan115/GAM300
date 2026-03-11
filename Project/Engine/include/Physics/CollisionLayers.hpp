@@ -12,7 +12,8 @@ namespace Layers {
     static constexpr JPH::ObjectLayer NAV_GROUND = 5;
     static constexpr JPH::ObjectLayer NAV_OBSTACLE = 6;
     static constexpr JPH::ObjectLayer HURTBOX = 7;
-    static constexpr JPH::uint        COUNT = 8;
+    static constexpr JPH::ObjectLayer CHAIN_HITBOX = 8;  // Large body collider for chain grappling (separate from HURTBOX so weapon attacks don't detect it)
+    static constexpr JPH::uint        COUNT = 9;
 }
 
 namespace BroadPhaseLayers {

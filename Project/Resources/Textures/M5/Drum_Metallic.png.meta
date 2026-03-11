@@ -6,7 +6,7 @@
         "compiled": "../../Resources/Textures/M5/Drum_Metallic.dds"
     },
     "TextureMetaData": {
-        "type": "metallic",
+        "type": "diffuse",
         "flipUVs": false,
         "generateMipmaps": true,
         "textureWrapMode": "Clamp"

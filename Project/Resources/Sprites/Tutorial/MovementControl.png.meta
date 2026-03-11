@@ -1,0 +1,14 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "000c89d9d3afbb1d-000476bc60002225",
+        "source": "../../Resources/Sprites/Tutorial/MovementControl.png",
+        "compiled": "../../Resources/Sprites/Tutorial/MovementControl.dds"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": true,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp"
+    }
+}

@@ -1,6 +1,6 @@
 {
     "name": "New Animator",
-    "entryState": "Idle",
+    "entryState": "IdleUnarmed",
     "entryNodePosition": {
         "x": -200.0,
         "y": -100.0
@@ -28,7 +28,7 @@
         {
             "name": "IsGrounded",
             "type": "Bool",
-            "defaultValue": 0.0
+            "defaultValue": 1.0
         },
         {
             "name": "IsHeavyCharging",
@@ -58,7 +58,7 @@
         {
             "name": "ComboStep",
             "type": "Int",
-            "defaultValue": 1.0
+            "defaultValue": 0.0
         },
         {
             "name": "IsDashing",
@@ -84,20 +84,19 @@
             "name": "PullChain",
             "type": "Trigger",
             "defaultValue": 0.0
+        },
+        {
+            "name": "RetractChain",
+            "type": "Trigger",
+            "defaultValue": 0.0
+        },
+        {
+            "name": "IsArmed",
+            "type": "Bool",
+            "defaultValue": 0.0
         }
     ],
     "states": [
-        {
-            "id": "Idle",
-            "clipIndex": 0,
-            "loop": true,
-            "speed": 1.0,
-            "crossfadeDuration": 0.0,
-            "nodePosition": {
-                "x": 100.0,
-                "y": -128.0
-            }
-        },
         {
             "id": "NA1",
             "clipIndex": 1,
@@ -110,14 +109,14 @@
             }
         },
         {
-            "id": "Hurt",
-            "clipIndex": 9,
-            "loop": false,
+            "id": "Idle",
+            "clipIndex": 0,
+            "loop": true,
             "speed": 1.0,
             "crossfadeDuration": 0.0,
             "nodePosition": {
-                "x": 275.0,
-                "y": 147.0
+                "x": 232.66665649414063,
+                "y": -215.33348083496094
             }
         },
         {
@@ -132,6 +131,17 @@
             }
         },
         {
+            "id": "Hurt",
+            "clipIndex": 9,
+            "loop": false,
+            "speed": 1.0,
+            "crossfadeDuration": 0.0,
+            "nodePosition": {
+                "x": 275.0,
+                "y": 147.0
+            }
+        },
+        {
             "id": "Run",
             "clipIndex": 4,
             "loop": true,
@@ -143,17 +153,6 @@
             }
         },
         {
-            "id": "Death",
-            "clipIndex": 6,
-            "loop": false,
-            "speed": 1.0,
-            "crossfadeDuration": 0.0,
-            "nodePosition": {
-                "x": 450.529541015625,
-                "y": -2.4705915451049805
-            }
-        },
-        {
             "id": "Jump",
             "clipIndex": 5,
             "loop": false,
@@ -162,6 +161,17 @@
             "nodePosition": {
                 "x": 100.50003051757813,
                 "y": -2.4705705642700195
+            }
+        },
+        {
+            "id": "Death",
+            "clipIndex": 6,
+            "loop": false,
+            "speed": 1.0,
+            "crossfadeDuration": 0.0,
+            "nodePosition": {
+                "x": 450.529541015625,
+                "y": -2.4705915451049805
             }
         },
         {
@@ -215,8 +225,8 @@
             "speed": 1.8999998569488525,
             "crossfadeDuration": 0.0,
             "nodePosition": {
-                "x": -300.0,
-                "y": -130.0
+                "x": -283.75,
+                "y": -195.0
             }
         },
         {
@@ -232,9 +242,9 @@
         },
         {
             "id": "ThrowChain",
-            "clipIndex": 13,
+            "clipIndex": 16,
             "loop": false,
-            "speed": 1.8000001907348633,
+            "speed": 2.499999761581421,
             "crossfadeDuration": 0.20000000298023224,
             "nodePosition": {
                 "x": 224.53451538085938,
@@ -243,7 +253,7 @@
         },
         {
             "id": "AimThrow",
-            "clipIndex": 14,
+            "clipIndex": 15,
             "loop": false,
             "speed": 2.000000238418579,
             "crossfadeDuration": 0.20000000298023224,
@@ -254,9 +264,9 @@
         },
         {
             "id": "PullChain",
-            "clipIndex": 15,
+            "clipIndex": 19,
             "loop": false,
-            "speed": 2.9999992847442627,
+            "speed": 3.4999988079071045,
             "crossfadeDuration": 0.20000000298023224,
             "nodePosition": {
                 "x": 539.447021484375,
@@ -267,7 +277,7 @@
             "id": "SlamChain",
             "clipIndex": 17,
             "loop": false,
-            "speed": 1.0,
+            "speed": 1.5000001192092896,
             "crossfadeDuration": 0.20000000298023224,
             "nodePosition": {
                 "x": 87.93179321289063,
@@ -276,13 +286,35 @@
         },
         {
             "id": "RetractChain",
-            "clipIndex": 16,
+            "clipIndex": 18,
             "loop": false,
-            "speed": 2.000000238418579,
+            "speed": 2.9999992847442627,
             "crossfadeDuration": 0.20000000298023224,
             "nodePosition": {
-                "x": 374.5981140136719,
-                "y": 358.4973449707031
+                "x": 404.5980529785156,
+                "y": 351.3544006347656
+            }
+        },
+        {
+            "id": "Standing",
+            "clipIndex": 13,
+            "loop": false,
+            "speed": 2.9999992847442627,
+            "crossfadeDuration": 0.20000000298023224,
+            "nodePosition": {
+                "x": -173.8318634033203,
+                "y": 355.2630920410156
+            }
+        },
+        {
+            "id": "IdleUnarmed",
+            "clipIndex": 14,
+            "loop": true,
+            "speed": 1.0,
+            "crossfadeDuration": 0.20000000298023224,
+            "nodePosition": {
+                "x": -22.03935432434082,
+                "y": -134.7531280517578
             }
         }
     ],
@@ -354,6 +386,11 @@
                     "paramName": "IsRunning",
                     "mode": "Equals",
                     "threshold": 0.0
+                },
+                {
+                    "paramName": "IsArmed",
+                    "mode": "Equals",
+                    "threshold": 1.0
                 }
             ]
         },
@@ -542,6 +579,11 @@
                 },
                 {
                     "paramName": "IsGrounded",
+                    "mode": "Equals",
+                    "threshold": 1.0
+                },
+                {
+                    "paramName": "IsArmed",
                     "mode": "Equals",
                     "threshold": 1.0
                 }
@@ -829,6 +871,11 @@
                     "paramName": "IsRunning",
                     "mode": "Equals",
                     "threshold": 0.0
+                },
+                {
+                    "paramName": "IsArmed",
+                    "mode": "Equals",
+                    "threshold": 1.0
                 }
             ]
         },
@@ -914,6 +961,11 @@
                     "paramName": "IsRunning",
                     "mode": "Equals",
                     "threshold": 0.0
+                },
+                {
+                    "paramName": "IsArmed",
+                    "mode": "Equals",
+                    "threshold": 1.0
                 }
             ]
         },
@@ -1271,8 +1323,8 @@
             "to": "PullChain",
             "anyState": false,
             "hasExitTime": true,
-            "exitTime": 0.44999998807907104,
-            "transitionDuration": 0.44999998807907104,
+            "exitTime": 0.20000000298023224,
+            "transitionDuration": 0.20000000298023224,
             "conditions": [
                 {
                     "paramName": "PullChain",
@@ -1282,21 +1334,12 @@
             ]
         },
         {
-            "from": "SlamChain",
-            "to": "RetractChain",
-            "anyState": false,
-            "hasExitTime": true,
-            "exitTime": 0.800000011920929,
-            "transitionDuration": 0.800000011920929,
-            "conditions": []
-        },
-        {
             "from": "ThrowChain",
             "to": "Idle",
             "anyState": false,
             "hasExitTime": true,
-            "exitTime": 0.5,
-            "transitionDuration": 0.5,
+            "exitTime": 1.0,
+            "transitionDuration": 0.18000000715255737,
             "conditions": []
         },
         {
@@ -1375,21 +1418,6 @@
             ]
         },
         {
-            "from": "SlamChain",
-            "to": "Death",
-            "anyState": false,
-            "hasExitTime": true,
-            "exitTime": 0.20000000298023224,
-            "transitionDuration": 0.20000000298023224,
-            "conditions": [
-                {
-                    "paramName": "IsDead",
-                    "mode": "Equals",
-                    "threshold": 1.0
-                }
-            ]
-        },
-        {
             "from": "PullChain",
             "to": "Death",
             "anyState": false,
@@ -1425,7 +1453,7 @@
             "anyState": false,
             "hasExitTime": true,
             "exitTime": 0.8500000238418579,
-            "transitionDuration": 0.8500000238418579,
+            "transitionDuration": 0.11999999731779099,
             "conditions": []
         },
         {
@@ -1433,9 +1461,407 @@
             "to": "Idle",
             "anyState": false,
             "hasExitTime": true,
-            "exitTime": 0.8700000047683716,
-            "transitionDuration": 0.8600000143051147,
+            "exitTime": 1.0,
+            "transitionDuration": 0.20000000298023224,
             "conditions": []
+        },
+        {
+            "from": "Idle",
+            "to": "ThrowChain",
+            "anyState": false,
+            "hasExitTime": true,
+            "exitTime": 0.019999999552965164,
+            "transitionDuration": 0.029999999329447746,
+            "conditions": [
+                {
+                    "paramName": "ThrowChain",
+                    "mode": "TriggerFired",
+                    "threshold": 0.0
+                }
+            ]
+        },
+        {
+            "from": "Jump",
+            "to": "ThrowChain",
+            "anyState": false,
+            "hasExitTime": true,
+            "exitTime": 0.05000000074505806,
+            "transitionDuration": 0.05999999865889549,
+            "conditions": [
+                {
+                    "paramName": "ThrowChain",
+                    "mode": "TriggerFired",
+                    "threshold": 0.0
+                }
+            ]
+        },
+        {
+            "from": "Run",
+            "to": "ThrowChain",
+            "anyState": false,
+            "hasExitTime": true,
+            "exitTime": 0.029999999329447746,
+            "transitionDuration": 0.019999999552965164,
+            "conditions": [
+                {
+                    "paramName": "ThrowChain",
+                    "mode": "TriggerFired",
+                    "threshold": 0.0
+                }
+            ]
+        },
+        {
+            "from": "Idle",
+            "to": "PullChain",
+            "anyState": false,
+            "hasExitTime": true,
+            "exitTime": 0.03999999910593033,
+            "transitionDuration": 0.019999999552965164,
+            "conditions": [
+                {
+                    "paramName": "PullChain",
+                    "mode": "TriggerFired",
+                    "threshold": 0.0
+                }
+            ]
+        },
+        {
+            "from": "Run",
+            "to": "PullChain",
+            "anyState": false,
+            "hasExitTime": true,
+            "exitTime": 0.03999999910593033,
+            "transitionDuration": 0.03999999910593033,
+            "conditions": [
+                {
+                    "paramName": "PullChain",
+                    "mode": "TriggerFired",
+                    "threshold": 0.0
+                }
+            ]
+        },
+        {
+            "from": "Jump",
+            "to": "PullChain",
+            "anyState": false,
+            "hasExitTime": true,
+            "exitTime": 0.029999999329447746,
+            "transitionDuration": 0.05000000074505806,
+            "conditions": [
+                {
+                    "paramName": "PullChain",
+                    "mode": "TriggerFired",
+                    "threshold": 0.0
+                }
+            ]
+        },
+        {
+            "from": "Idle",
+            "to": "SlamChain",
+            "anyState": false,
+            "hasExitTime": true,
+            "exitTime": 0.009999999776482582,
+            "transitionDuration": 0.019999999552965164,
+            "conditions": [
+                {
+                    "paramName": "SlamChain",
+                    "mode": "TriggerFired",
+                    "threshold": 0.0
+                }
+            ]
+        },
+        {
+            "from": "Run",
+            "to": "SlamChain",
+            "anyState": false,
+            "hasExitTime": true,
+            "exitTime": 0.05000000074505806,
+            "transitionDuration": 0.05000000074505806,
+            "conditions": [
+                {
+                    "paramName": "SlamChain",
+                    "mode": "TriggerFired",
+                    "threshold": 0.0
+                }
+            ]
+        },
+        {
+            "from": "Jump",
+            "to": "SlamChain",
+            "anyState": false,
+            "hasExitTime": true,
+            "exitTime": 0.05999999865889549,
+            "transitionDuration": 0.07000000029802322,
+            "conditions": [
+                {
+                    "paramName": "SlamChain",
+                    "mode": "TriggerFired",
+                    "threshold": 0.0
+                }
+            ]
+        },
+        {
+            "from": "PullChain",
+            "to": "SlamChain",
+            "anyState": false,
+            "hasExitTime": true,
+            "exitTime": 0.029999999329447746,
+            "transitionDuration": 0.029999999329447746,
+            "conditions": [
+                {
+                    "paramName": "SlamChain",
+                    "mode": "TriggerFired",
+                    "threshold": 0.0
+                }
+            ]
+        },
+        {
+            "from": "SlamChain",
+            "to": "Death",
+            "anyState": false,
+            "hasExitTime": true,
+            "exitTime": 0.11999999731779099,
+            "transitionDuration": 0.05999999865889549,
+            "conditions": [
+                {
+                    "paramName": "IsDead",
+                    "mode": "Equals",
+                    "threshold": 1.0
+                }
+            ]
+        },
+        {
+            "from": "ThrowChain",
+            "to": "RetractChain",
+            "anyState": false,
+            "hasExitTime": true,
+            "exitTime": 0.20999999344348907,
+            "transitionDuration": 0.20000000298023224,
+            "conditions": [
+                {
+                    "paramName": "RetractChain",
+                    "mode": "TriggerFired",
+                    "threshold": 0.0
+                }
+            ]
+        },
+        {
+            "from": "Idle",
+            "to": "RetractChain",
+            "anyState": false,
+            "hasExitTime": true,
+            "exitTime": 0.05000000074505806,
+            "transitionDuration": 0.05000000074505806,
+            "conditions": [
+                {
+                    "paramName": "RetractChain",
+                    "mode": "TriggerFired",
+                    "threshold": 0.0
+                }
+            ]
+        },
+        {
+            "from": "Run",
+            "to": "RetractChain",
+            "anyState": false,
+            "hasExitTime": true,
+            "exitTime": 0.03999999910593033,
+            "transitionDuration": 0.009999999776482582,
+            "conditions": [
+                {
+                    "paramName": "RetractChain",
+                    "mode": "TriggerFired",
+                    "threshold": 0.0
+                }
+            ]
+        },
+        {
+            "from": "Standing",
+            "to": "Idle",
+            "anyState": false,
+            "hasExitTime": true,
+            "exitTime": 0.20999999344348907,
+            "transitionDuration": 0.20000000298023224,
+            "conditions": []
+        },
+        {
+            "from": "SlamChain",
+            "to": "Idle",
+            "anyState": false,
+            "hasExitTime": true,
+            "exitTime": 0.699999988079071,
+            "transitionDuration": 0.20000000298023224,
+            "conditions": []
+        },
+        {
+            "from": "IdleUnarmed",
+            "to": "Dash",
+            "anyState": false,
+            "hasExitTime": true,
+            "exitTime": 0.029999999329447746,
+            "transitionDuration": 0.029999999329447746,
+            "conditions": [
+                {
+                    "paramName": "IsDashing",
+                    "mode": "Equals",
+                    "threshold": 1.0
+                }
+            ]
+        },
+        {
+            "from": "Dash",
+            "to": "IdleUnarmed",
+            "anyState": false,
+            "hasExitTime": true,
+            "exitTime": 0.8500000238418579,
+            "transitionDuration": 0.20000000298023224,
+            "conditions": [
+                {
+                    "paramName": "IsDashing",
+                    "mode": "Equals",
+                    "threshold": 0.0
+                },
+                {
+                    "paramName": "IsGrounded",
+                    "mode": "Equals",
+                    "threshold": 1.0
+                },
+                {
+                    "paramName": "IsRunning",
+                    "mode": "Equals",
+                    "threshold": 0.0
+                },
+                {
+                    "paramName": "IsArmed",
+                    "mode": "Equals",
+                    "threshold": 0.0
+                }
+            ]
+        },
+        {
+            "from": "IdleUnarmed",
+            "to": "Jump",
+            "anyState": false,
+            "hasExitTime": true,
+            "exitTime": 0.029999999329447746,
+            "transitionDuration": 0.029999999329447746,
+            "conditions": [
+                {
+                    "paramName": "IsJumping",
+                    "mode": "Equals",
+                    "threshold": 1.0
+                }
+            ]
+        },
+        {
+            "from": "Roll",
+            "to": "IdleUnarmed",
+            "anyState": false,
+            "hasExitTime": true,
+            "exitTime": 0.6800000071525574,
+            "transitionDuration": 0.5799999833106995,
+            "conditions": [
+                {
+                    "paramName": "IsArmed",
+                    "mode": "Equals",
+                    "threshold": 0.0
+                },
+                {
+                    "paramName": "IsRunning",
+                    "mode": "Equals",
+                    "threshold": 0.0
+                }
+            ]
+        },
+        {
+            "from": "Land",
+            "to": "IdleUnarmed",
+            "anyState": false,
+            "hasExitTime": true,
+            "exitTime": 0.6700000166893005,
+            "transitionDuration": 0.6600000262260437,
+            "conditions": [
+                {
+                    "paramName": "IsRunning",
+                    "mode": "Equals",
+                    "threshold": 0.0
+                },
+                {
+                    "paramName": "IsGrounded",
+                    "mode": "Equals",
+                    "threshold": 1.0
+                },
+                {
+                    "paramName": "IsArmed",
+                    "mode": "Equals",
+                    "threshold": 0.0
+                }
+            ]
+        },
+        {
+            "from": "IdleUnarmed",
+            "to": "Run",
+            "anyState": false,
+            "hasExitTime": false,
+            "exitTime": 1.0,
+            "transitionDuration": 0.0,
+            "conditions": [
+                {
+                    "paramName": "IsRunning",
+                    "mode": "Equals",
+                    "threshold": 1.0
+                }
+            ]
+        },
+        {
+            "from": "Run",
+            "to": "IdleUnarmed",
+            "anyState": false,
+            "hasExitTime": true,
+            "exitTime": 0.10000000149011612,
+            "transitionDuration": 0.10000000149011612,
+            "conditions": [
+                {
+                    "paramName": "IsRunning",
+                    "mode": "Equals",
+                    "threshold": 0.0
+                },
+                {
+                    "paramName": "IsArmed",
+                    "mode": "Equals",
+                    "threshold": 0.0
+                }
+            ]
+        },
+        {
+            "from": "IdleUnarmed",
+            "to": "Idle",
+            "anyState": false,
+            "hasExitTime": true,
+            "exitTime": 0.05000000074505806,
+            "transitionDuration": 0.5,
+            "conditions": [
+                {
+                    "paramName": "IsArmed",
+                    "mode": "Equals",
+                    "threshold": 1.0
+                }
+            ]
+        },
+        {
+            "from": "Idle",
+            "to": "IdleUnarmed",
+            "anyState": false,
+            "hasExitTime": true,
+            "exitTime": 0.029999999329447746,
+            "transitionDuration": 0.019999999552965164,
+            "conditions": [
+                {
+                    "paramName": "IsArmed",
+                    "mode": "Equals",
+                    "threshold": 0.0
+                }
+            ]
         }
     ],
     "clipPaths": [
@@ -1452,10 +1878,12 @@
         "Resources/Animations/Player/KusaneV6@FeatherLaunch.fbx",
         "Resources/Animations/Player/KusaneV6@FeatherLaunchEnd.fbx",
         "Resources/Animations/Player/KusaneV6@DashRoll.fbx",
+        "Resources/Animations/Player/KusaneV6@Standing.fbx",
+        "Resources/Animations/Player/KusaneV6@IdleUnarmed.fbx",
+        "Resources/Animations/Player/KusaneV6@AimChain.fbx",
         "Resources/Animations/Player/KusaneV6@ThrowChain.fbx",
-        "Resources/Animations/Player/KusaneV6@AimThrow.fbx",
-        "Resources/Animations/Player/KusaneV6@PullChain.fbx",
+        "Resources/Animations/Player/KusaneV6@SlamChain.fbx",
         "Resources/Animations/Player/KusaneV6@RetractChain.fbx",
-        "Resources/Animations/Player/KusaneV6@SlamChain.fbx"
+        "Resources/Animations/Player/KusaneV6@PullChain.fbx"
     ]
 }

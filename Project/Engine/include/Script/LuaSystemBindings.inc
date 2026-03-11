@@ -339,6 +339,9 @@ BEGIN_SYSTEM("Engine")
     FUNCTION("SetCacheUpdateInterval", &EntityQueryWrappers::SetCacheUpdateInterval)
     FUNCTION("ClearEnemyCaches", &EntityQueryWrappers::ClearEnemyCaches)
     FUNCTION("GetCacheInfo", &EntityQueryWrappers::GetCacheInfo)
+
+    FUNCTION("FindAudioCompByName", &Lua_FindAudioCompByName)
+    FUNCTION("FindAudioCompByID", &Lua_FindAudioCompByID)
 END_SYSTEM()
 
 

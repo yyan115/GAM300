@@ -81,6 +81,23 @@ function M.init(self)
             if not data or not data.entityId then return end
             -- Don't activate during chain aim or cinematics
             if self._chainAiming or self._cinematicActive then return end
+            -- Verify the hit entity is actually an enemy (not a wall/prop/ground)
+            if Engine and Engine.FindEntitiesWithScript then
+                local isEnemy = false
+                for _, scriptName in ipairs(self.enemyComponents or {}) do
+                    local entities = Engine.FindEntitiesWithScript(scriptName)
+                    if entities then
+                        for i = 1, #entities do
+                            if entities[i] == data.entityId then
+                                isEnemy = true
+                                break
+                            end
+                        end
+                    end
+                    if isEnemy then break end
+                end
+                if not isEnemy then return end
+            end
             -- Verify the enemy exists and is within range + line-of-sight
             if Engine and Engine.GetEntityPosition then
                 local ex, ey, ez = Engine.GetEntityPosition(data.entityId)

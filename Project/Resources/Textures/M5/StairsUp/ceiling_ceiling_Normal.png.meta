@@ -1,0 +1,14 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "004e5c2f7d833438-00047468c4000001",
+        "source": "../../Resources/Textures/M5/StairsUp/ceiling_ceiling_Normal.png",
+        "compiled": "../../Resources/Textures/M5/StairsUp/ceiling_ceiling_Normal.dds"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp"
+    }
+}

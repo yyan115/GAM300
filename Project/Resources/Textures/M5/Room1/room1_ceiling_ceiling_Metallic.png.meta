@@ -6,7 +6,7 @@
         "compiled": "../../Resources/Textures/M5/Room1/room1_ceiling_ceiling_Metallic.dds"
     },
     "TextureMetaData": {
-        "type": "metallic",
+        "type": "diffuse",
         "flipUVs": false,
         "generateMipmaps": true,
         "textureWrapMode": "Clamp"

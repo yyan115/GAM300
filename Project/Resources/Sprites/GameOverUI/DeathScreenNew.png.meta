@@ -1,0 +1,14 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "006dfc96a3fb0f5f-000474f55400c7a3",
+        "source": "../../Resources/Sprites/GameOverUI/DeathScreenNew.png",
+        "compiled": "../../Resources/Sprites/GameOverUI/DeathScreenNew.dds"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": true,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp"
+    }
+}

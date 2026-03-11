@@ -1,0 +1,14 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "00408567d3bb5c60-000476701a000001",
+        "source": "../../Resources/Sprites/DialogueUI/MonologueOverlay.png",
+        "compiled": "../../Resources/Sprites/DialogueUI/MonologueOverlay.dds"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": true,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp"
+    }
+}

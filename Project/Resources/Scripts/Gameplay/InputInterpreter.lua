@@ -3,64 +3,70 @@
 INPUT INTERPRETER
 ================================================================================
 PURPOSE:
-    Centralized input polling and buffering system for fighting game mechanics.
+    Centralized input polling and buffering system.
     Converts raw engine input into gameplay-ready state with input memory.
 
-RESPONSIBILITIES:
-    - Poll unified input system each frame (Attack, Chain, Dash, Movement)
-    - Maintain input buffer (remembers recent presses for combo responsiveness)
-    - Track hold duration (distinguish taps from holds)
-    - Expose clean query API for combat/movement systems
-    - Support consumable buffers (prevent double-execution)
+SINGLE RESPONSIBILITY: Read and buffer raw input. Nothing else.
 
-USAGE:
-    local inputInterp = self:GetComponent("InputInterpreter")
-    
-    if inputInterp:HasBufferedAttack() then
-        inputInterp:ConsumeBufferedAttack()
-        -- Execute combo continuation
-    end
-    
-    if inputInterp:IsAttackHeld() then
-        -- Charge heavy attack
-    end
+RESPONSIBILITIES:
+    - Poll the unified input system each frame
+    - Maintain input buffers (remembers recent presses for combo responsiveness)
+    - Track hold durations (distinguish taps from holds)
+    - Expose a clean query API for all other systems to consume
+    - Suppress all input during legitimate full-freeze states (cinematic, death)
+
+NOT RESPONSIBLE FOR:
+    - Knowing about game state (dashing, weapons, combo state)
+    - Making decisions about what input means in context
+    - Publishing gameplay events
+    - Blocking specific inputs based on what the player is doing
+
+FREEZE CONDITIONS (appropriate at input level — suppress everything):
+    - cinematic.active : full cinematic freeze
+    - playerDead       : player cannot act
+
+UI CLICK-THROUGH GUARD:
+    If a UI button consumed an LMB press, we block the attack buffer on that
+    same press so the click doesn't trigger a combat action. Cleared on release.
 
 CONFIGURATION:
-    INPUT_BUFFER_FRAMES: How long to remember button presses (frames)
-    HOLD_THRESHOLD: Seconds before a press becomes a hold
-
-DEPENDENCIES:
-    - Requires _G.Input (engine's unified input system)
-    - Uses Input.IsActionPressed/JustPressed/JustReleased
-    - Uses Input.GetAxis for movement
+    INPUT_BUFFER_FRAMES : How long to remember a press (frames). At 60fps,
+                          8 frames ≈ 133ms — forgiving without feeling laggy.
+    HOLD_THRESHOLD      : Seconds before a press is considered a hold.
 
 PUBLIC API:
-    -- Current state queries
-    IsAttackPressed(), IsChainPressed(), IsDashPressed()
-    IsAttackJustPressed(), IsChainJustPressed(), IsDashJustPressed()
-    IsAttackJustReleased(), IsChainJustReleased(), IsDashJustReleased()
-    
-    -- Hold detection
-    IsAttackHeld(), IsChainHeld(), IsDashHeld()
-    GetAttackHoldTime(), GetChainHoldTime(), GetDashHoldTime()
-    
-    -- Buffered inputs (combo system)
-    HasBufferedAttack(), HasBufferedChain(), HasBufferedDash()
-    ConsumeBufferedAttack(), ConsumeBufferedChain(), ConsumeBufferedDash()
-    
-    -- Movement
-    GetMovementAxis(), IsMoving()
-    
-    -- Advanced
-    WasInputSequence(inputName, frameGaps) -- For double-tap detection
+    -- Held this frame
+    IsAttackPressed()  IsChainPressed()  IsDashPressed()
 
-NOTES:
-    - Input buffering makes combos feel responsive (player doesn't need frame-perfect timing)
-    - Consumable buffers prevent buffered input from triggering multiple actions
-    - Hold detection threshold should match game feel (0.2s = fast, 0.5s = deliberate)
+    -- Pressed this frame
+    IsAttackJustPressed()  IsChainJustPressed()  IsDashJustPressed()
+    IsJumpJustPressed()
+
+    -- Released this frame
+    IsAttackJustReleased()  IsChainJustReleased()  IsDashJustReleased()
+
+    -- Hold detection (past HOLD_THRESHOLD)
+    IsAttackHeld()  IsChainHeld()  IsDashHeld()
+
+    -- Raw hold durations (seconds)
+    GetAttackHoldTime()  GetChainHoldTime()  GetDashHoldTime()
+
+    -- Consumable buffers (combat system reads then consumes)
+    HasBufferedAttack()  HasBufferedChain()  HasBufferedDash()
+    ConsumeBufferedAttack()  ConsumeBufferedChain()  ConsumeBufferedDash()
+
+    -- Movement
+    GetMovementAxis()  IsMoving()
+
+    -- Advanced sequence detection
+    WasInputSequence(inputName, frameGaps)
+
+DEPENDENCIES:
+    - _G.Input  (engine unified input system)
+    - _G.event_bus
 
 AUTHOR: Soh Wei Jie
-VERSION: 1.0
+VERSION: 2.0
 ================================================================================
 --]]
 
@@ -71,82 +77,79 @@ local Input = _G.Input
 
 return Component {
     fields = {
-        INPUT_BUFFER_FRAMES = 8,  -- How long to remember button presses (at 60fps = ~133ms)
-        HOLD_THRESHOLD = 0.2,     -- Seconds before press becomes hold
+        INPUT_BUFFER_FRAMES = 8,
+        HOLD_THRESHOLD      = 0.2,
     },
 
     Awake = function(self)
-        -- Register as global singleton (only one player input system)
         _G.InputInterpreter = self
 
-        -- Cinematic freeze flag
+        -- ── Full-freeze flags (suppress ALL input) ─────────────────────────
         self._frozenByCinematic = false
+        self._playerDead        = false
+
         if _G.event_bus and _G.event_bus.subscribe then
             self._cinematicSub = _G.event_bus.subscribe("cinematic.active", function(active)
-                self._frozenByCinematic = active
+                self._frozenByCinematic = active or false
+            end)
+
+            self._playerDeadSub = _G.event_bus.subscribe("playerDead", function(dead)
+                self._playerDead = dead or false
+            end)
+
+            self._respawnPlayerSub = _G.event_bus.subscribe("respawnPlayer", function()
+                self._playerDead = false
             end)
         end
 
-        -- UI button press - should not trigger attacks.
+        -- ── UI click-through guard ─────────────────────────────────────────
+        -- Prevents an LMB click on a UI element from also buffering an attack.
         self._uiButtonPressed = false
-        self._uiButtonPressedSub = _G.event_bus.subscribe("uiButtonPressed", function(pressed)
-            self._uiButtonPressed = pressed
-        end)
+        if _G.event_bus and _G.event_bus.subscribe then
+            self._uiButtonPressedSub = _G.event_bus.subscribe("uiButtonPressed", function(pressed)
+                self._uiButtonPressed = pressed or false
+            end)
+        end
 
-        -- Player dead - should not be able to trigger attacks.
-        self._playerDeadSub = event_bus.subscribe("playerDead", function(dead)
-            self._playerDead = dead
-        end)
-
-        -- Player respawn - enable back attacks.
-        self._respawnPlayerSub = event_bus.subscribe("respawnPlayer", function(respawn)
-            self._playerDead = false
-        end)
-
-        -- Dash started - clear any buffered attack/chain so they don't fire after dash
-        self._dashPerformedSub = _G.event_bus.subscribe("dash_performed", function()
-            print("[InputInterpreter] dash_performed event: clearing attack=" .. self._bufferedInputs.attack .. " chain=" .. self._bufferedInputs.chain)
-            self._bufferedInputs.attack = 0
-            self._bufferedInputs.chain = 0
-        end)
-
-        -- Current frame states (updated every frame)
+        -- ── Current frame state ───────────────────────────────────────────
         self._currentFrame = {
-            attack = false,
-            attackJustPressed = false,
+            attack            = false,
+            attackJustPressed  = false,
             attackJustReleased = false,
-            
-            chain = false,
-            chainJustPressed = false,
+
+            chain            = false,
+            chainJustPressed  = false,
             chainJustReleased = false,
-            
-            dash = false,
-            dashJustPressed = false,
+
+            dash            = false,
+            dashJustPressed  = false,
             dashJustReleased = false,
-            
+
+            jumpJustPressed = false,
+
             movement = { x = 0, y = 0 },
-            isMoving = false
+            isMoving = false,
         }
 
-        -- Input history for buffering
+        -- ── Input history (for sequence / double-tap detection) ───────────
         self._inputHistory = {
             attack = {},
-            chain = {},
-            dash = {}
+            chain  = {},
+            dash   = {},
         }
 
-        -- Hold tracking
+        -- ── Hold timers ───────────────────────────────────────────────────
         self._holdTimers = {
             attack = 0,
-            chain = 0,
-            dash = 0
+            chain  = 0,
+            dash   = 0,
         }
 
-        -- Consumable buffer (for combo system to "eat" inputs)
+        -- ── Consumable buffers (frame countdown) ──────────────────────────
         self._bufferedInputs = {
-            attack = 0,  -- frames remaining
-            chain = 0,
-            dash = 0
+            attack = 0,
+            chain  = 0,
+            dash   = 0,
         }
 
         self._frameCount = 0
@@ -154,86 +157,84 @@ return Component {
 
     Update = function(self, dt)
         if not Input then return end
-        if self._frozenByCinematic then return end
-        if Time.IsPaused() or self._playerDead then return end
+
+        -- Full freeze: clear frame state but still decay buffers so stale
+        -- inputs don't pile up and fire the moment the freeze lifts.
+        if self._frozenByCinematic or self._playerDead then
+            self:_clearFrame()
+            return
+        end
+
+        if Time.IsPaused() then return end
 
         self._frameCount = self._frameCount + 1
 
-        -- ===============================
-        -- POLL ENGINE INPUT
-        -- ===============================
-        local attackPressed = Input.IsActionPressed("Attack")
-        local attackJustPressed = Input.IsActionJustPressed("Attack")
-        local attackJustReleased = Input.IsActionJustReleased("Attack")
+        -- ══════════════════════════════════════════════════════════════════
+        -- POLL RAW ENGINE INPUT
+        -- ══════════════════════════════════════════════════════════════════
+        local attackPressed       = Input.IsActionPressed("Attack")
+        local attackJustPressed   = Input.IsActionJustPressed("Attack")
+        local attackJustReleased  = Input.IsActionJustReleased("Attack")
 
-        local chainPressed = Input.IsActionPressed("ChainAttack")
-        local chainJustPressed = Input.IsActionJustPressed("ChainAttack")
-        local chainJustReleased = Input.IsActionJustReleased("ChainAttack")
+        local chainPressed        = Input.IsActionPressed("ChainAttack")
+        local chainJustPressed    = Input.IsActionJustPressed("ChainAttack")
+        local chainJustReleased   = Input.IsActionJustReleased("ChainAttack")
 
-        local dashPressed = Input.IsActionPressed("Dash")
-        local dashJustPressed = Input.IsActionJustPressed("Dash")
-        local dashJustReleased = Input.IsActionJustReleased("Dash")
+        local dashPressed         = Input.IsActionPressed("Dash")
+        local dashJustPressed     = Input.IsActionJustPressed("Dash")
+        local dashJustReleased    = Input.IsActionJustReleased("Dash")
 
-        local movementAxis = Input.GetAxis("Movement") or { x = 0, y = 0 }
+        local jumpJustPressed     = Input.IsActionJustPressed("Jump")
 
-        -- ===============================
+        local movementAxis        = Input.GetAxis("Movement") or { x = 0, y = 0 }
+
+        -- ══════════════════════════════════════════════════════════════════
         -- UPDATE CURRENT FRAME STATE
-        -- ===============================
-        self._currentFrame.attack = attackPressed
-        self._currentFrame.attackJustPressed = attackJustPressed
+        -- ══════════════════════════════════════════════════════════════════
+        self._currentFrame.attack            = attackPressed
+        self._currentFrame.attackJustPressed  = attackJustPressed
         self._currentFrame.attackJustReleased = attackJustReleased
 
-        self._currentFrame.chain = chainPressed
-        self._currentFrame.chainJustPressed = chainJustPressed
+        self._currentFrame.chain            = chainPressed
+        self._currentFrame.chainJustPressed  = chainJustPressed
         self._currentFrame.chainJustReleased = chainJustReleased
 
-        self._currentFrame.dash = dashPressed
-        self._currentFrame.dashJustPressed = dashJustPressed
+        self._currentFrame.dash            = dashPressed
+        self._currentFrame.dashJustPressed  = dashJustPressed
         self._currentFrame.dashJustReleased = dashJustReleased
 
-        -- Convert Vector2D userdata to plain Lua table for serializability
+        self._currentFrame.jumpJustPressed  = jumpJustPressed
+
+        -- Convert Vector2D userdata to a plain Lua table
         self._currentFrame.movement = {
             x = movementAxis.x or 0,
-            y = movementAxis.y or 0
+            y = movementAxis.y or 0,
         }
-        self._currentFrame.isMoving = (math.abs(movementAxis.x) > 0.1 or math.abs(movementAxis.y) > 0.1)
+        self._currentFrame.isMoving = (
+            math.abs(movementAxis.x) > 0.1 or math.abs(movementAxis.y) > 0.1
+        )
 
-        -- ===============================
+        -- ══════════════════════════════════════════════════════════════════
         -- INPUT BUFFERING
-        -- ===============================
-
-        -- Block combat inputs (attack/chain) while dashing
-        local blockCombat = _G.player_is_dashing
-
-        if blockCombat then
-            -- Force-clear any lingering attack/chain buffers every frame while dashing
-            if self._bufferedInputs.attack > 0 or self._bufferedInputs.chain > 0 then
-                print("[InputInterpreter] DASH ACTIVE: clearing lingering attack=" .. self._bufferedInputs.attack .. " chain=" .. self._bufferedInputs.chain)
-                self._bufferedInputs.attack = 0
-                self._bufferedInputs.chain = 0
+        -- Buffers are ONLY guarded by the UI click-through flag.
+        -- All other context (dashing, attacking, weapon) is for ComboManager
+        -- to evaluate — it is not InputInterpreter's concern.
+        -- ══════════════════════════════════════════════════════════════════
+        if attackJustPressed then
+            if not self._uiButtonPressed then
+                self._bufferedInputs.attack = self.INPUT_BUFFER_FRAMES
+                table.insert(self._inputHistory.attack, self._frameCount)
             end
         end
 
-        -- If attack (LMB) was pressed and a UI button was not pressed first, safely trigger the attack.
-        if attackJustPressed and self._uiButtonPressed == false and not blockCombat then
-            self._bufferedInputs.attack = self.INPUT_BUFFER_FRAMES
-            table.insert(self._inputHistory.attack, self._frameCount)
-            print("[InputInterpreter] Attack buffered (frame " .. self._frameCount .. ")")
-        elseif attackJustPressed and blockCombat then
-            print("[InputInterpreter] Attack BLOCKED by dash (frame " .. self._frameCount .. ")")
-        end
-
-        -- If a UI button was pressed, set the UIButtonPressed flag to false when LMB is released.
-        if attackJustReleased and self._uiButtonPressed == true then
+        -- Clear the UI guard once the attack button is released
+        if attackJustReleased and self._uiButtonPressed then
             self._uiButtonPressed = false
         end
 
-        if chainJustPressed and not blockCombat then
+        if chainJustPressed then
             self._bufferedInputs.chain = self.INPUT_BUFFER_FRAMES
             table.insert(self._inputHistory.chain, self._frameCount)
-            print("[InputInterpreter] Chain buffered (frame " .. self._frameCount .. ")")
-        elseif chainJustPressed and blockCombat then
-            print("[InputInterpreter] Chain BLOCKED by dash (frame " .. self._frameCount .. ")")
         end
 
         if dashJustPressed then
@@ -241,65 +242,51 @@ return Component {
             table.insert(self._inputHistory.dash, self._frameCount)
         end
 
-        -- Decay buffered inputs
+        -- Decay buffered inputs by one frame each tick
         self._bufferedInputs.attack = math.max(0, self._bufferedInputs.attack - 1)
-        self._bufferedInputs.chain = math.max(0, self._bufferedInputs.chain - 1)
-        self._bufferedInputs.dash = math.max(0, self._bufferedInputs.dash - 1)
+        self._bufferedInputs.chain  = math.max(0, self._bufferedInputs.chain  - 1)
+        self._bufferedInputs.dash   = math.max(0, self._bufferedInputs.dash   - 1)
 
-        -- ===============================
+        -- ══════════════════════════════════════════════════════════════════
         -- HOLD TRACKING
-        -- ===============================
-        if attackPressed then
-            self._holdTimers.attack = self._holdTimers.attack + dt
-        else
-            self._holdTimers.attack = 0
-        end
+        -- ══════════════════════════════════════════════════════════════════
+        self._holdTimers.attack = attackPressed and (self._holdTimers.attack + dt) or 0
+        self._holdTimers.chain  = chainPressed  and (self._holdTimers.chain  + dt) or 0
+        self._holdTimers.dash   = dashPressed   and (self._holdTimers.dash   + dt) or 0
 
-        if chainPressed then
-            self._holdTimers.chain = self._holdTimers.chain + dt
-        else
-            self._holdTimers.chain = 0
-        end
-
-        if dashPressed then
-            self._holdTimers.dash = self._holdTimers.dash + dt
-        else
-            self._holdTimers.dash = 0
-        end
-
-        -- ===============================
-        -- PUBLISH CHAIN EVENTS TO EVENT BUS
-        -- ===============================
-        if _G.playerHasWeapon and not blockCombat and _G.event_bus and _G.event_bus.publish then
-            if chainJustPressed then
-                _G.event_bus.publish("chain.down", {})
-            end
-
-            if chainJustReleased then
-                _G.event_bus.publish("chain.up", {})
-            end
-
-            -- Publish hold event if held past threshold
-            if self._holdTimers.chain >= self.HOLD_THRESHOLD and chainPressed then
-                -- Only publish once when threshold is crossed, not every frame
-                if not self._chainHoldPublished then
-                    _G.event_bus.publish("chain.hold", {})
-                    self._chainHoldPublished = true
-                end
-            else
-                self._chainHoldPublished = false
-            end
-        end
-
-        -- ===============================
-        -- CLEANUP OLD HISTORY
-        -- ===============================
+        -- ══════════════════════════════════════════════════════════════════
+        -- CLEAN UP OLD HISTORY
+        -- ══════════════════════════════════════════════════════════════════
         self:_cleanHistory(self._inputHistory.attack)
         self:_cleanHistory(self._inputHistory.chain)
         self:_cleanHistory(self._inputHistory.dash)
     end,
 
-    -- Internal: Remove inputs older than buffer window
+    -- ══════════════════════════════════════════════════════════════════════
+    -- INTERNAL HELPERS
+    -- ══════════════════════════════════════════════════════════════════════
+
+    -- Zero the frame state while still decaying buffers (called during freeze).
+    _clearFrame = function(self)
+        self._currentFrame.attack            = false
+        self._currentFrame.attackJustPressed  = false
+        self._currentFrame.attackJustReleased = false
+        self._currentFrame.chain            = false
+        self._currentFrame.chainJustPressed  = false
+        self._currentFrame.chainJustReleased = false
+        self._currentFrame.dash            = false
+        self._currentFrame.dashJustPressed  = false
+        self._currentFrame.dashJustReleased = false
+        self._currentFrame.jumpJustPressed  = false
+        self._currentFrame.movement = { x = 0, y = 0 }
+        self._currentFrame.isMoving = false
+
+        -- Still decay so stale inputs don't fire the moment the freeze lifts
+        self._bufferedInputs.attack = math.max(0, self._bufferedInputs.attack - 1)
+        self._bufferedInputs.chain  = math.max(0, self._bufferedInputs.chain  - 1)
+        self._bufferedInputs.dash   = math.max(0, self._bufferedInputs.dash   - 1)
+    end,
+
     _cleanHistory = function(self, history)
         local cutoff = self._frameCount - self.INPUT_BUFFER_FRAMES * 2
         while #history > 0 and history[1] < cutoff do
@@ -307,47 +294,41 @@ return Component {
         end
     end,
 
-    -- ===============================
+    -- ══════════════════════════════════════════════════════════════════════
     -- PUBLIC QUERY API
-    -- ===============================
+    -- ══════════════════════════════════════════════════════════════════════
 
-    -- Check if button is currently held
-    IsAttackPressed = function(self) return self._currentFrame.attack end,
-    IsChainPressed = function(self) return self._currentFrame.chain end,
-    IsDashPressed = function(self) return self._currentFrame.dash end,
+    -- Held this frame
+    IsAttackPressed  = function(self) return self._currentFrame.attack end,
+    IsChainPressed   = function(self) return self._currentFrame.chain  end,
+    IsDashPressed    = function(self) return self._currentFrame.dash   end,
 
-    -- Check if button was just pressed THIS frame
-    IsAttackJustPressed = function(self) return self._currentFrame.attackJustPressed end,
-    IsChainJustPressed = function(self) return self._currentFrame.chainJustPressed end,
-    IsDashJustPressed = function(self) return self._currentFrame.dashJustPressed end,
+    -- Pressed this frame
+    IsAttackJustPressed  = function(self) return self._currentFrame.attackJustPressed  end,
+    IsChainJustPressed   = function(self) return self._currentFrame.chainJustPressed   end,
+    IsDashJustPressed    = function(self) return self._currentFrame.dashJustPressed    end,
+    IsJumpJustPressed    = function(self) return self._currentFrame.jumpJustPressed    end,
 
-    -- Check if button was just released THIS frame
+    -- Released this frame
     IsAttackJustReleased = function(self) return self._currentFrame.attackJustReleased end,
-    IsChainJustReleased = function(self) return self._currentFrame.chainJustReleased end,
-    IsDashJustReleased = function(self) return self._currentFrame.dashJustReleased end,
+    IsChainJustReleased  = function(self) return self._currentFrame.chainJustReleased  end,
+    IsDashJustReleased   = function(self) return self._currentFrame.dashJustReleased   end,
 
-    -- Check if button is being held (past threshold)
+    -- Hold detection (past HOLD_THRESHOLD)
     IsAttackHeld = function(self) return self._holdTimers.attack >= self.HOLD_THRESHOLD end,
-    IsChainHeld = function(self) return self._holdTimers.chain >= self.HOLD_THRESHOLD end,
-    IsDashHeld = function(self) return self._holdTimers.dash >= self.HOLD_THRESHOLD end,
+    IsChainHeld  = function(self) return self._holdTimers.chain  >= self.HOLD_THRESHOLD end,
+    IsDashHeld   = function(self) return self._holdTimers.dash   >= self.HOLD_THRESHOLD end,
 
-    -- Get hold duration
+    -- Raw hold durations (seconds)
     GetAttackHoldTime = function(self) return self._holdTimers.attack end,
-    GetChainHoldTime = function(self) return self._holdTimers.chain end,
-    GetDashHoldTime = function(self) return self._holdTimers.dash end,
+    GetChainHoldTime  = function(self) return self._holdTimers.chain  end,
+    GetDashHoldTime   = function(self) return self._holdTimers.dash   end,
 
-    -- Buffered input (remembers recent presses even if released)
-    HasBufferedAttack = function(self)
-        if not _G.playerHasWeapon then return false end
-        return self._bufferedInputs.attack > 0
-    end,
-    HasBufferedChain = function(self)
-        if not _G.playerHasWeapon then return false end
-        return self._bufferedInputs.chain > 0
-    end,
-    HasBufferedDash = function(self) return self._bufferedInputs.dash > 0 end,
+    -- Buffered inputs — ComboManager reads these, then immediately consumes them
+    HasBufferedAttack = function(self) return self._bufferedInputs.attack > 0 end,
+    HasBufferedChain  = function(self) return self._bufferedInputs.chain  > 0 end,
+    HasBufferedDash   = function(self) return self._bufferedInputs.dash   > 0 end,
 
-    -- Consume buffered input (combo system should call this when using a buffered input)
     ConsumeBufferedAttack = function(self)
         if self._bufferedInputs.attack > 0 then
             self._bufferedInputs.attack = 0
@@ -372,27 +353,21 @@ return Component {
         return false
     end,
 
-    -- Movement queries
+    -- Movement
     GetMovementAxis = function(self) return self._currentFrame.movement end,
-    IsMoving = function(self) return self._currentFrame.isMoving end,
+    IsMoving        = function(self) return self._currentFrame.isMoving  end,
 
-    -- Advanced: Check input sequence (e.g., double-tap detection)
-    -- Example: WasInputSequence("attack", {0, 10}) checks if attack was pressed twice within 10 frames
+    -- Sequence detection. frameGaps is an array of maximum inter-press gaps.
+    -- Example: WasInputSequence("attack", {10}) checks for 2 presses within 10 frames.
     WasInputSequence = function(self, inputName, frameGaps)
         local history = self._inputHistory[inputName]
-        if not history or #history < #frameGaps + 1 then
-            return false
-        end
+        if not history or #history < #frameGaps + 1 then return false end
 
-        -- Check if last N presses match the timing pattern
         local startIdx = #history - #frameGaps
         for i = 1, #frameGaps do
             local gap = history[startIdx + i] - history[startIdx + i - 1]
-            if gap > frameGaps[i] then
-                return false
-            end
+            if gap > frameGaps[i] then return false end
         end
-
         return true
     end,
 }

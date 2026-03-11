@@ -27,6 +27,7 @@ struct DialogueEntry {
     int scrollTypeID = 0;                 // Serialized int; maps to DialogueScrollType
     float autoTime = 3.0f;               // Seconds before auto-advance (Time mode only)
     std::string triggerEntityGuidStr;     // GUID string of trigger entity (Trigger mode only)
+    std::string spriteEntityGuidStr;     // GUID string of sprite entity to show/hide with this entry
 };
 
 // The main dialogue component attached to an entity

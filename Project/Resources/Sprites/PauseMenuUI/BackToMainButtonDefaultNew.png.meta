@@ -1,0 +1,14 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "005d94014d252074-000477755c00ad65",
+        "source": "../../Resources/Sprites/PauseMenuUI/BackToMainButtonDefaultNew.png",
+        "compiled": "../../Resources/Sprites/PauseMenuUI/BackToMainButtonDefaultNew.dds"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": true,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp"
+    }
+}

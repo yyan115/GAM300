@@ -88,8 +88,11 @@ return Component {
         weaponPickup = "LowPolyFeatherChainPickUp",
         weaponOnHand = "LowPolyFeatherChain",
 
-        -- [NEW] Weapon Fly Timing and Offsets
-        weaponFlyDuration = 0.5, 
+        -- Tooltip entity name (sprite that appears when player is near)
+        tooltipEntity = "",
+
+        -- Weapon Fly Timing and Offsets
+        weaponFlyDuration = 0.5,
         weaponHandOffsetY = 0.6, -- Approximates the hand/chest height from the player's root
         weaponHandOffsetX = -0.1,
 
@@ -110,6 +113,15 @@ return Component {
         weaponFlyTime = 0.0,
     },
 
+    meta = {
+        tooltipEntity = { editorHint = "entity" },
+        targetLeftDoor = { editorHint = "entity" },
+        targetRightDoor = { editorHint = "entity" },
+        weaponPickup = { editorHint = "entity" },
+        weaponOnHand = { editorHint = "entity" },
+        playerName = { editorHint = "entity" },
+    },
+
     -------------------------------------------------
     -- Start
     -------------------------------------------------
@@ -123,6 +135,12 @@ return Component {
 
         self.weaponPickupEnt = Engine.GetEntityByName(self.weaponPickup)
         self.weaponOnHandEnt = Engine.GetEntityByName(self.weaponOnHand)
+
+        -- Tooltip sprite entity (shown when player is near, hidden after interaction)
+        self._tooltipShown = false
+        if self.tooltipEntity ~= "" then
+            self._tooltipEnt = Engine.GetEntityByName(self.tooltipEntity)
+        end
 
         if not self.leftTransform or not self.rightTransform then
             print("[DoorTrigger] ERROR: Door transforms not found")
@@ -144,26 +162,44 @@ return Component {
         if self.initFailed then return end
 
         -------------------------------------------------
-        -- Player range detection
+        -- Player range detection (tooltip + attack to interact)
         -------------------------------------------------
         if not self.hasOpened then
             local inRange = CheckPlayerInRange(self)
             self.isActivatable = inRange
 
-            if inRange then
+            -- Show tooltip when entering range, hide when leaving
+            if inRange and not self._tooltipShown then
+                self:_setTooltipVisible(true)
+                self._tooltipShown = true
+            elseif not inRange and self._tooltipShown then
+                self:_setTooltipVisible(false)
+                self._tooltipShown = false
+            end
+
+            -- Wait for attack button press while in range
+            if inRange and Input and Input.IsActionJustPressed
+                and Input.IsActionJustPressed("Attack") then
+
+                -- Hide tooltip and proceed with pickup
+                self:_setTooltipVisible(false)
+                self._tooltipShown = false
+                -- Keep interactable flag active during pickup so combat scripts
+                -- don't process the same Attack input as a swing
+                _G.playerNearInteractable = true
                 self.hasOpened = true
 
                 -- --- Start Weapon Fly ---
                 if self.weaponPickupEnt and self.weaponOnHandEnt then
                     self.isWeaponFlying = true
                     self.weaponFlyTime = 0.0
-                    
+
                     self.pickupTr = GetComponent(self.weaponPickupEnt, "Transform")
                     if self.pickupTr then
-                        self.pickupStartPos = { 
-                            x = self.pickupTr.localPosition.x, 
-                            y = self.pickupTr.localPosition.y, 
-                            z = self.pickupTr.localPosition.z 
+                        self.pickupStartPos = {
+                            x = self.pickupTr.localPosition.x,
+                            y = self.pickupTr.localPosition.y,
+                            z = self.pickupTr.localPosition.z
                         }
                     end
 
@@ -228,6 +264,10 @@ return Component {
                 if handActiveComp then handActiveComp.isActive = true end
                 
                 _G.playerHasWeapon = true
+                local playerAnim = GetComponent(playerEnt, "AnimationComponent")
+                playerAnim:SetBool("IsArmed", true)
+                -- Don't clear playerNearInteractable here — the input buffer
+                -- still has the Attack press. Wait until the door sequence ends.
                 print("[DoorTrigger] Weapon successfully caught!")
             end
         end
@@ -302,7 +342,30 @@ return Component {
             self.delayTime = self.delayTime + dt
             if self.delayTime >= self.postOpenDelay then
                 self.isWaiting = false
+                -- Now safe to allow attacks — input buffer is long expired
+                _G.playerNearInteractable = false
             end
         end
-    end
+    end,
+
+    -------------------------------------------------
+    -- Tooltip show/hide helper
+    -------------------------------------------------
+    _setTooltipVisible = function(self, visible)
+        if not self._tooltipEnt then return end
+
+        local activeComp = GetComponent(self._tooltipEnt, "ActiveComponent")
+        if activeComp then
+            activeComp.isActive = visible
+        end
+
+        local spriteComp = GetComponent(self._tooltipEnt, "SpriteRenderComponent")
+        if spriteComp then
+            spriteComp.isVisible = visible
+            spriteComp.alpha = visible and 1.0 or 0.0
+        end
+
+        -- Set global flag so combat scripts know to skip attacks
+        _G.playerNearInteractable = visible
+    end,
 }

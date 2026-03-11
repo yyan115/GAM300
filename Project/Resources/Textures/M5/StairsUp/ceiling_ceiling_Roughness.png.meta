@@ -1,0 +1,14 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "004e5c2f2baf1014-00047468c6000003",
+        "source": "../../Resources/Textures/M5/StairsUp/ceiling_ceiling_Roughness.png",
+        "compiled": "../../Resources/Textures/M5/StairsUp/ceiling_ceiling_Roughness.dds"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp"
+    }
+}

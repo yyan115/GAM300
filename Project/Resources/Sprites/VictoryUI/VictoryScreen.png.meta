@@ -1,0 +1,14 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "0031bc29e8eb3841-0004778f30000131",
+        "source": "../../Resources/Sprites/VictoryUI/VictoryScreen.png",
+        "compiled": "../../Resources/Sprites/VictoryUI/VictoryScreen.dds"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp"
+    }
+}

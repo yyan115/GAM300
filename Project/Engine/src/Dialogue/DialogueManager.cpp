@@ -5,6 +5,7 @@
 #include "ECS/ActiveComponent.hpp"
 #include "Graphics/TextRendering/TextRenderComponent.hpp"
 #include "Graphics/TextRendering/TextUtils.hpp"
+#include "Graphics/Sprite/SpriteRenderComponent.hpp"
 #include "Hierarchy/EntityGUIDRegistry.hpp"
 #include "Utilities/GUID.hpp"
 #include "Logging.hpp"
@@ -119,6 +120,27 @@ void NarrativeDialogueManager::StartDialogue(const std::string& name) {
         }
     }
 
+    // Activate first entry's sprite entity (if any)
+    if (!dialogue.entries.empty() && !dialogue.entries[0].spriteEntityGuidStr.empty()) {
+        GUID_128 spriteGuid = GUIDUtilities::ConvertStringToGUID128(dialogue.entries[0].spriteEntityGuidStr);
+        Entity spriteEnt = EntityGUIDRegistry::GetInstance().GetEntityByGUID(spriteGuid);
+        if (spriteEnt != 0) {
+            if (m_ecs->HasComponent<ActiveComponent>(spriteEnt)) {
+                m_ecs->GetComponent<ActiveComponent>(spriteEnt).isActive = true;
+            }
+            if (m_ecs->HasComponent<SpriteRenderComponent>(spriteEnt)) {
+                auto& spriteComp = m_ecs->GetComponent<SpriteRenderComponent>(spriteEnt);
+                auto mode = static_cast<DialogueAppearanceMode>(dialogue.appearanceModeID);
+                if (mode == DialogueAppearanceMode::FadeInOut && dialogue.fadeDuration > 0.0f) {
+                    spriteComp.alpha = 0.0f;
+                } else {
+                    spriteComp.alpha = 1.0f;
+                }
+                spriteComp.isVisible = true;
+            }
+        }
+    }
+
     // Determine starting phase based on appearance mode
     auto mode = static_cast<DialogueAppearanceMode>(dialogue.appearanceModeID);
     if (mode == DialogueAppearanceMode::FadeInOut && dialogue.fadeDuration > 0.0f) {
@@ -223,18 +245,23 @@ void NarrativeDialogueManager::OnTriggerEnter(Entity triggerEntity, Entity other
 
         if (triggerEntity == dialogue.textEntity) continue; // Skip text entity matches
 
-        // Check ALL entries for a matching trigger GUID (not just current entry).
-        // This allows a trigger to skip/advance even if the current entry uses Time scroll.
+        // Only check the CURRENT entry for a matching trigger GUID.
+        // Previously this checked ALL entries, which caused a bug: touching trigger A
+        // would set triggerActivated even when the current entry expected trigger B,
+        // causing dialogue to scroll through all entries uncontrollably.
+        if (dialogue.currentIndex < 0 ||
+            dialogue.currentIndex >= static_cast<int>(dialogue.entries.size())) continue;
+
+        auto& currentEntry = dialogue.entries[dialogue.currentIndex];
+        if (currentEntry.scrollTypeID != static_cast<int>(DialogueScrollType::Trigger)) continue;
+
         auto& registry = EntityGUIDRegistry::GetInstance();
         GUID_128 triggerGuid = registry.GetGUIDByEntity(triggerEntity);
         std::string triggerGuidStr = GUIDUtilities::ConvertGUID128ToString(triggerGuid);
 
-        for (auto& entry : dialogue.entries) {
-            if (entry.scrollTypeID != static_cast<int>(DialogueScrollType::Trigger)) continue;
-            if (!entry.triggerEntityGuidStr.empty() && triggerGuidStr == entry.triggerEntityGuidStr) {
-                dialogue.triggerActivated = true;
-                break;
-            }
+        if (!currentEntry.triggerEntityGuidStr.empty() &&
+            triggerGuidStr == currentEntry.triggerEntityGuidStr) {
+            dialogue.triggerActivated = true;
         }
     }
 }

@@ -11,7 +11,7 @@
     },
     "parameters": [
         {
-            "name": "Taunt",
+            "name": "Hurt1",
             "type": "Trigger",
             "defaultValue": 0.0
         },
@@ -21,18 +21,18 @@
             "defaultValue": 0.0
         },
         {
-            "name": "Hurt1",
-            "type": "Trigger",
-            "defaultValue": 0.0
-        },
-        {
-            "name": "Ranged",
+            "name": "Taunt",
             "type": "Trigger",
             "defaultValue": 0.0
         },
         {
             "name": "Hook",
             "type": "Bool",
+            "defaultValue": 0.0
+        },
+        {
+            "name": "Ranged",
+            "type": "Trigger",
             "defaultValue": 0.0
         },
         {
@@ -43,6 +43,11 @@
         {
             "name": "Hurt2",
             "type": "Trigger",
+            "defaultValue": 0.0
+        },
+        {
+            "name": "Phase3",
+            "type": "Bool",
             "defaultValue": 0.0
         },
         {
@@ -67,6 +72,16 @@
         },
         {
             "name": "Hooked",
+            "type": "Trigger",
+            "defaultValue": 0.0
+        },
+        {
+            "name": "FeatherBomb",
+            "type": "Trigger",
+            "defaultValue": 0.0
+        },
+        {
+            "name": "DiveSmash",
             "type": "Trigger",
             "defaultValue": 0.0
         }
@@ -196,12 +211,23 @@
         {
             "id": "Falling",
             "clipIndex": 9,
-            "loop": true,
+            "loop": false,
             "speed": 2.0,
             "crossfadeDuration": 0.20000000298023224,
             "nodePosition": {
                 "x": -109.51815795898438,
                 "y": 151.10987854003906
+            }
+        },
+        {
+            "id": "Feather Bomb",
+            "clipIndex": 12,
+            "loop": false,
+            "speed": 2.000000238418579,
+            "crossfadeDuration": 0.20000000298023224,
+            "nodePosition": {
+                "x": -470.72235107421875,
+                "y": -269.2222900390625
             }
         },
         {
@@ -224,6 +250,17 @@
             "nodePosition": {
                 "x": 304.43829345703125,
                 "y": 152.3826904296875
+            }
+        },
+        {
+            "id": "Dive Smash",
+            "clipIndex": 13,
+            "loop": false,
+            "speed": 2.000000238418579,
+            "crossfadeDuration": 0.20000000298023224,
+            "nodePosition": {
+                "x": -535.2877197265625,
+                "y": -433.82843017578125
             }
         }
     ],
@@ -332,8 +369,8 @@
             "to": "Ranged Attack",
             "anyState": false,
             "hasExitTime": true,
-            "exitTime": 0.0,
-            "transitionDuration": 0.0,
+            "exitTime": 0.05000000074505806,
+            "transitionDuration": 0.05000000074505806,
             "conditions": [
                 {
                     "paramName": "Ranged",
@@ -454,7 +491,7 @@
             "conditions": [
                 {
                     "paramName": "Hooked",
-                    "mode": "Equals",
+                    "mode": "TriggerFired",
                     "threshold": 1.0
                 }
             ]
@@ -514,7 +551,7 @@
             "conditions": [
                 {
                     "paramName": "Hooked",
-                    "mode": "Equals",
+                    "mode": "TriggerFired",
                     "threshold": 1.0
                 }
             ]
@@ -937,21 +974,6 @@
             ]
         },
         {
-            "from": "Flying",
-            "to": "Idle",
-            "anyState": false,
-            "hasExitTime": true,
-            "exitTime": 0.05000000074505806,
-            "transitionDuration": 0.05000000074505806,
-            "conditions": [
-                {
-                    "paramName": "Flying",
-                    "mode": "Equals",
-                    "threshold": 0.0
-                }
-            ]
-        },
-        {
             "from": "",
             "to": "Falling",
             "anyState": true,
@@ -1073,6 +1095,154 @@
                     "threshold": 1.0
                 }
             ]
+        },
+        {
+            "from": "Dive Smash",
+            "to": "Recovery",
+            "anyState": false,
+            "hasExitTime": true,
+            "exitTime": 0.8999999761581421,
+            "transitionDuration": 0.8999999761581421,
+            "conditions": []
+        },
+        {
+            "from": "Feather Bomb",
+            "to": "Recovery",
+            "anyState": false,
+            "hasExitTime": true,
+            "exitTime": 1.0,
+            "transitionDuration": 0.20000000298023224,
+            "conditions": []
+        },
+        {
+            "from": "Recovery",
+            "to": "Dive Smash",
+            "anyState": false,
+            "hasExitTime": true,
+            "exitTime": 0.019999999552965164,
+            "transitionDuration": 0.029999999329447746,
+            "conditions": [
+                {
+                    "paramName": "Phase3",
+                    "mode": "Equals",
+                    "threshold": 1.0
+                },
+                {
+                    "paramName": "DiveSmash",
+                    "mode": "TriggerFired",
+                    "threshold": 0.0
+                }
+            ]
+        },
+        {
+            "from": "Recovery",
+            "to": "Feather Bomb",
+            "anyState": false,
+            "hasExitTime": true,
+            "exitTime": 0.019999999552965164,
+            "transitionDuration": 0.029999999329447746,
+            "conditions": [
+                {
+                    "paramName": "Phase3",
+                    "mode": "Equals",
+                    "threshold": 1.0
+                },
+                {
+                    "paramName": "FeatherBomb",
+                    "mode": "TriggerFired",
+                    "threshold": 0.0
+                }
+            ]
+        },
+        {
+            "from": "Flying",
+            "to": "Recovery",
+            "anyState": false,
+            "hasExitTime": true,
+            "exitTime": 0.05000000074505806,
+            "transitionDuration": 0.05000000074505806,
+            "conditions": [
+                {
+                    "paramName": "Flying",
+                    "mode": "Equals",
+                    "threshold": 0.0
+                }
+            ]
+        },
+        {
+            "from": "Flying",
+            "to": "Dive Smash",
+            "anyState": false,
+            "hasExitTime": true,
+            "exitTime": 0.029999999329447746,
+            "transitionDuration": 0.029999999329447746,
+            "conditions": [
+                {
+                    "paramName": "Phase3",
+                    "mode": "Equals",
+                    "threshold": 1.0
+                },
+                {
+                    "paramName": "DiveSmash",
+                    "mode": "TriggerFired",
+                    "threshold": 0.0
+                }
+            ]
+        },
+        {
+            "from": "Flying",
+            "to": "Feather Bomb",
+            "anyState": false,
+            "hasExitTime": true,
+            "exitTime": 0.029999999329447746,
+            "transitionDuration": 0.029999999329447746,
+            "conditions": [
+                {
+                    "paramName": "Phase3",
+                    "mode": "Equals",
+                    "threshold": 1.0
+                },
+                {
+                    "paramName": "FeatherBomb",
+                    "mode": "TriggerFired",
+                    "threshold": 0.0
+                }
+            ]
+        },
+        {
+            "from": "Feather Bomb",
+            "to": "Dive Smash",
+            "anyState": false,
+            "hasExitTime": true,
+            "exitTime": 0.029999999329447746,
+            "transitionDuration": 0.029999999329447746,
+            "conditions": [
+                {
+                    "paramName": "DiveSmash",
+                    "mode": "TriggerFired",
+                    "threshold": 0.0
+                }
+            ]
+        },
+        {
+            "from": "Taunt",
+            "to": "Feather Bomb",
+            "anyState": false,
+            "hasExitTime": true,
+            "exitTime": 0.6000000238418579,
+            "transitionDuration": 0.6000000238418579,
+            "conditions": [
+                {
+                    "paramName": "Phase3",
+                    "mode": "Equals",
+                    "threshold": 1.0
+                },
+                {
+                    "paramName": "FeatherBomb",
+                    "mode": "TriggerFired",
+                    "threshold": 0.0
+                }
+            ]
         }
     ],
     "clipPaths": [
@@ -1087,6 +1257,8 @@
         "Resources/Animations/Enemy/Flying/KarasuFlying@IdleRangedAir.fbx",
         "Resources/Animations/Enemy/Flying/KarasuFlying@Falling.fbx",
         "Resources/Animations/Enemy/Flying/KarasuFlying@FallImpact.fbx",
-        "Resources/Animations/Enemy/Flying/KarasuFlying@StandUp.fbx"
+        "Resources/Animations/Enemy/Flying/KarasuFlying@StandUp.fbx",
+        "Resources/Animations/Enemy/Boss/KarasuBoss@FeatherBomb.fbx",
+        "Resources/Animations/Enemy/Boss/KarasuBoss@DiveSmash.fbx"
     ]
 }

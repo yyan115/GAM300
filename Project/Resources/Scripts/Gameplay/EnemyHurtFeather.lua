@@ -32,12 +32,14 @@ return Component {
         SpawnForce = 0.2,
         SpawnForceY = 0.1,
         AliveDuration = 10.0,
+        featherDropSFX = {},
     },
 
     Awake = function(self)
         self._triggerDuration = self.TriggerDuration
         self._isTriggerDisabled = false
         self._aliveDuration = self.AliveDuration
+        self._dropSFXPlayed = false
     end,
 
     -- GetRandomForce = function(self, canBeNegative)
@@ -63,6 +65,7 @@ return Component {
     Start = function(self)
         self._transform = self:GetComponent("Transform")
         self._rb = self:GetComponent("RigidBodyComponent")
+        self._audio = self:GetComponent("AudioComponent")
     end,
 
     Update = function(self, dt)
@@ -139,6 +142,21 @@ return Component {
             self._rb.linearVel.y = 0.000001
 
             self._appliedInitialForce = true
+        end
+    end,
+
+    OnCollisionEnter = function(self, otherEntityId)
+        if self._dropSFXPlayed then return end
+        local otherEntityLayer = Engine.GetEntityLayer(otherEntityId)
+        if otherEntityLayer == "Ground" then
+            self._dropSFXPlayed = true
+            local now = os.clock()
+            local last = _G._featherDropSFXTime or 0
+            self._audio = self:GetComponent("AudioComponent")
+            if self._audio and self.featherDropSFX[1] and (now - last) > 0.3 then
+                _G._featherDropSFXTime = now
+                self._audio:PlayOneShot(self.featherDropSFX[math.random(#self.featherDropSFX)])
+            end
         end
     end,
 

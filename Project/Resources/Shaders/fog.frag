@@ -2,7 +2,8 @@
 
 in vec3 FragPos;
 
-out vec4 FragColor;
+layout (location = 0) out vec4 FragColor;
+layout (location = 1) out vec4 BloomEmission; // fog does not emit bloom
 
 // ============================================================================
 // Fog Uniforms (mapped 1:1 from FogVolumeComponent)
@@ -17,6 +18,7 @@ uniform float scrollSpeedX;
 uniform float scrollSpeedY;
 uniform float noiseScale;
 uniform float noiseStrength;
+uniform float warpStrength;   // Domain warp intensity (0 = off, 1+ = smoky swirls)
 
 // Height fade
 uniform bool  useHeightFade;
@@ -200,71 +202,92 @@ void main()
 
     float thickness = tExit - tEntry;
 
-    // Sample the volume at the midpoint of the ray path (in [0,1] space)
-    vec3 sampleLocal = localCamPos + (tEntry + thickness * 0.5) * localRayDir;
-    vec3 samplePos   = clamp(sampleLocal + 0.5, 0.0, 1.0);
+    // --- 3. Ray march through the volume ---
+    // Multiple samples along the ray accumulate density, creating visible internal
+    // structure (wisps, patches) that actually animate when noise is scrolled/warped.
+    const int MARCH_STEPS = 16;
+    float stepSize    = thickness / float(MARCH_STEPS);
+    float transmittance = 1.0;
 
-    // --- 3. Noise sampling for wispy / smoky look ---
-    vec3 noiseCoord = samplePos * noiseScale + vec3(
-        time * scrollSpeedX,
-        time * scrollSpeedY,
-        time * scrollSpeedX * 0.5
-    );
-
-    float noiseValue;
-    if (hasNoiseMap)
+    for (int i = 0; i < MARCH_STEPS; i++)
     {
-        // Sample provided noise texture on XZ plane
-        vec2 noiseUV = samplePos.xz * noiseScale + vec2(time * scrollSpeedX, time * scrollSpeedY);
-        noiseValue = texture(noiseMap, noiseUV).r;
-    }
-    else
-    {
-        // Procedural FBM
-        noiseValue = fbm(noiseCoord);
-    }
+        float t = tEntry + (float(i) + 0.5) * stepSize;
+        vec3 sampleLocal = localCamPos + t * localRayDir;
+        vec3 samplePos   = clamp(sampleLocal + 0.5, 0.0, 1.0);
 
-    // Beer-Lambert: accumulate density over path length through volume
-    float fogDensity = density * thickness * mix(1.0, noiseValue, noiseStrength);
+        // Noise coordinate with time scroll
+        vec3 noiseCoord = samplePos * noiseScale + vec3(
+            time * scrollSpeedX,
+            time * scrollSpeedY,
+            time * scrollSpeedX * 0.5
+        );
 
-    // --- 4. Height fade (sample Y: 0 = bottom, 1 = top) ---
-    if (useHeightFade)
-    {
-        float heightFactor = smoothstep(heightFadeEnd, heightFadeStart, samplePos.y);
-        fogDensity *= heightFactor;
-    }
-
-    // --- 5. Edge softness (calculated based on distance to shape surface) ---
-    if (edgeSoftness > 0.0)
-    {
-        float edgeDist = 0.0;
-        
-        if (fogShape == 0) // BOX
+        // Domain warping: distort the noise coordinate with a second FBM evaluation.
+        // Creates the swirling, organic motion of smoke.
+        if (warpStrength > 0.0)
         {
-            float edgeX = min(samplePos.x, 1.0 - samplePos.x);
-            float edgeY = min(samplePos.y, 1.0 - samplePos.y);
-            float edgeZ = min(samplePos.z, 1.0 - samplePos.z);
-            edgeDist = min(edgeX, min(edgeY, edgeZ));
-        } 
-        else if (fogShape == 1) // SPHERE
-        {
-            // sampleLocal is already between -0.5 and 0.5. Radius is 0.5.
-            edgeDist = 0.5 - length(sampleLocal);
-        } 
-        else if (fogShape == 2) // CYLINDER
-        {
-            float radialDist = 0.5 - length(sampleLocal.xz);
-            float verticalDist = 0.5 - abs(sampleLocal.y);
-            edgeDist = min(radialDist, verticalDist);
+            vec3 warp = vec3(
+                fbm(noiseCoord + vec3(1.7, 9.2, 3.4)),
+                fbm(noiseCoord + vec3(8.3, 2.8, 5.1)),
+                fbm(noiseCoord + vec3(4.5, 6.1, 1.9))
+            );
+            noiseCoord += warpStrength * warp;
         }
-        
-        float edgeFade = smoothstep(0.0, edgeSoftness * 0.5, edgeDist);
-        fogDensity *= edgeFade;
+
+        float noiseValue;
+        if (hasNoiseMap)
+        {
+            vec2 noiseUV = samplePos.xz * noiseScale + vec2(time * scrollSpeedX, time * scrollSpeedY);
+            noiseValue = texture(noiseMap, noiseUV).r;
+        }
+        else
+        {
+            noiseValue = fbm(noiseCoord);
+        }
+
+        // FBM returns ~[0.3, 0.7] - remap to [0, 1] so low-noise areas become truly
+        // transparent and high-noise areas become dense, creating visible wisps.
+        float shapedNoise = smoothstep(0.3, 0.7, noiseValue);
+        float stepDensity = density * stepSize * mix(1.0, shapedNoise, noiseStrength);
+
+        // Height fade
+        if (useHeightFade)
+        {
+            float heightFactor = smoothstep(heightFadeEnd, heightFadeStart, samplePos.y);
+            stepDensity *= heightFactor;
+        }
+
+        // Edge softness
+        if (edgeSoftness > 0.0)
+        {
+            float edgeDist = 0.0;
+            if (fogShape == 0) // BOX
+            {
+                float edgeX = min(samplePos.x, 1.0 - samplePos.x);
+                float edgeY = min(samplePos.y, 1.0 - samplePos.y);
+                float edgeZ = min(samplePos.z, 1.0 - samplePos.z);
+                edgeDist = min(edgeX, min(edgeY, edgeZ));
+            }
+            else if (fogShape == 1) // SPHERE
+            {
+                edgeDist = 0.5 - length(sampleLocal);
+            }
+            else if (fogShape == 2) // CYLINDER
+            {
+                float radialDist  = 0.5 - length(sampleLocal.xz);
+                float verticalDist = 0.5 - abs(sampleLocal.y);
+                edgeDist = min(radialDist, verticalDist);
+            }
+            float edgeFade = smoothstep(0.0, edgeSoftness * 0.5, edgeDist);
+            stepDensity *= edgeFade;
+        }
+
+        transmittance *= exp(-stepDensity);
+        if (transmittance < 0.01) break; // early exit once fully opaque
     }
 
-    // --- 6. Final output ---
-    float finalAlpha = 1.0 - exp(-fogDensity);
-    finalAlpha = clamp(finalAlpha * opacity, 0.0, opacity);
+    // --- 4. Final output ---
+    float finalAlpha = clamp((1.0 - transmittance) * opacity, 0.0, opacity);
 
     if (finalAlpha < 0.001)
     {
@@ -272,4 +295,5 @@ void main()
     }
 
     FragColor = vec4(fogColor, finalAlpha);
+    BloomEmission = vec4(0.0);
 }
