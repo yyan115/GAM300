@@ -1,0 +1,14 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "002c80ed4676fb72-00047a6bac014691",
+        "source": "../../Resources/Textures/M5/BossRoom/bridge_low_bridge_planks_Metallic.png",
+        "compiled": "../../Resources/Textures/M5/BossRoom/bridge_low_bridge_planks_Metallic.dds"
+    },
+    "TextureMetaData": {
+        "type": "metallic",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp"
+    }
+}
