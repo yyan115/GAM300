@@ -272,6 +272,7 @@ return Component {
             self.controller:StartExtension(dir, self.MaxLength, self.LinkMaxDistance)
             if _G.event_bus and _G.event_bus.publish then
                 _G.event_bus.publish("force_player_rotation_to_direction", {x = dir[1], z = dir[3]})
+                _G.event_bus.publish("chain.throw_chain", true)
             end
 
         elseif isExt and not isRet then
@@ -287,6 +288,26 @@ return Component {
                     dbg("[ChainBootstrap] Tap-release mid-extension: throwable hooked — staying locked, no retract")
                 else
                     self.controller:StartRetraction()
+
+                    local isEnemy = self.controller.endPointLocked
+                    local isWall = self.controller._raycastSnapped
+
+                    -- If chain is attached to an enemy, notify AI to trigger hooked/slam behaviour
+                    if isEnemy then
+                        if self._hookedEnemyEntityId then
+                            if _G.event_bus and _G.event_bus.publish then
+                                _G.event_bus.publish("chain.enemy_hooked", {
+                                    entityId = self._hookedEnemyEntityId,
+                                    duration = 2.0,
+                                })
+                            end
+                        end
+                    -- Only publish chain.retract_chain event if the chain is attached to a wall/nothing.
+                    else
+                        if _G.event_bus and _G.event_bus.publish then
+                            _G.event_bus.publish("chain.retract_chain", true)
+                        end
+                    end
                     dbg("[ChainBootstrap] Tap-release mid-extension but already attached -> StartRetraction")
                 end
             else
@@ -315,6 +336,29 @@ return Component {
                 -- This up event is the release of a retract press — don't re-fire.
                 dbg("[ChainBootstrap] chain.up: retract press released, skipping tap-fire")
             elseif isAttached then
+                -- Determine what we are attached to
+                local isEnemy = self.controller.endPointLocked
+                local isWall = self.controller._raycastSnapped
+
+                self.controller:StartRetraction()
+
+                -- If chain is attached to an enemy, notify AI to trigger hooked/slam behaviour
+                if isEnemy then
+                    if self._hookedEnemyEntityId then
+                        if _G.event_bus and _G.event_bus.publish then
+                            _G.event_bus.publish("chain.enemy_hooked", {
+                                entityId = self._hookedEnemyEntityId,
+                                duration = 2.0,
+                            })
+                        end
+                    end
+                -- Only publish chain.retract_chain event if the chain is attached to a wall/nothing.
+                else
+                    if _G.event_bus and _G.event_bus.publish then
+                        _G.event_bus.publish("chain.retract_chain", true)
+                    end
+                end
+
                 -- Chain hit something on the very first frame so chainLen is still near zero.
                 -- StartRetraction guards against len=0 so force-clear the lock directly and
                 -- publish endpoint_retracted so ChainEndpointController fires enemy_hooked.
@@ -337,6 +381,7 @@ return Component {
                 self._pendingTapFire = true
                 if _G.event_bus and _G.event_bus.publish then
                     _G.event_bus.publish("request_player_forward", true)
+                    _G.event_bus.publish("chain.throw_chain", true)
                 end
                 dbg("[ChainBootstrap] TAP -> requested player_forward_response")
             end
@@ -372,10 +417,34 @@ return Component {
                 self._hookedIsThrowable       = false
                 self._hookedThrowableEntityId = nil
                 self.controller:StartRetraction()
+                if _G.event_bus and _G.event_bus.publish then
+                    _G.event_bus.publish("chain.pull_chain", true)
+                end
                 print("[ChainBootstrap] Throwable TAP: THROW -> StartRetraction")
             else
                 -- Normal (enemy or no hook): retract.
+                -- Determine what we are attached to
+                local isEnemy = self.controller.endPointLocked
+                local isWall = self.controller._raycastSnapped
+
                 self.controller:StartRetraction()
+
+                -- If chain is attached to an enemy, notify AI to trigger hooked/slam behaviour
+                if isEnemy then
+                    if self._hookedEnemyEntityId then
+                        if _G.event_bus and _G.event_bus.publish then
+                            _G.event_bus.publish("chain.enemy_hooked", {
+                                entityId = self._hookedEnemyEntityId,
+                                duration = 2.0,
+                            })
+                        end
+                    end
+                -- Only publish chain.retract_chain event if the chain is attached to a wall/nothing.
+                else
+                    if _G.event_bus and _G.event_bus.publish then
+                        _G.event_bus.publish("chain.retract_chain", true)
+                    end
+                end
                 print("[ChainBootstrap] TAP on extended idle -> StartRetraction (no throwable)")
             end
         end
@@ -593,6 +662,7 @@ return Component {
                     if self.controller then
                         dbg("[ChainBootstrap] Endpoint hit entity '" .. tostring(payload.entityName) .. "' — locking endpoint")
                         self.controller.endPointLocked = true
+                        self.controller.isExtending = false
                         self.controller.hookedTag      = payload.rootTag or ""
 
                         -- NEW: track whether the hooked entity is a throwable
@@ -600,6 +670,9 @@ return Component {
                         self._hookedThrowableEntityId = self._hookedIsThrowable
                                                         and payload.rootEntityId
                                                         or nil
+                        
+                        -- Track the enemy ID exactly like you track the throwable ID
+                        self._hookedEnemyEntityId     = (not self._hookedIsThrowable and payload.rootTag == "Enemy") and payload.rootEntityId or nil
 
                         -- Snapshot lockedEndPoint at moment of hit (unchanged)
                         if self._endpointTransform then

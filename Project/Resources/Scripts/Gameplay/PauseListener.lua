@@ -26,13 +26,6 @@ return Component {
         local blackScreenUIEntity = Engine.GetEntityByName("BlackScreen")
         self._blackScreenComp = GetComponent(blackScreenUIEntity, "ActiveComponent")
 
-        -- Cache BGM and Ambience audio components for pause/unpause
-        local bgmEntity = Engine.GetEntityByName("BGM1")
-        self._bgmAudio = bgmEntity and GetComponent(bgmEntity, "AudioComponent")
-
-        local ambienceEntity = Engine.GetEntityByName("Ambience")
-        self._ambienceAudio = ambienceEntity and GetComponent(ambienceEntity, "AudioComponent")
-
         -- Cache pause menu button components for direct control
         -- This ensures buttons are enabled in the same callback that opens the menu
         self._pauseButtons = {}
@@ -95,9 +88,9 @@ return Component {
                 self._pauseComp.isActive = false
                 Time.SetPaused(false)
 
-                -- Resume BGM and Ambience
-                if self._bgmAudio then self._bgmAudio:UnPause() end
-                if self._ambienceAudio then self._ambienceAudio:UnPause() end
+                -- Unpause all game audio
+                Audio.SetBusPaused("BGM", false)
+                Audio.SetBusPaused("SFX", false)
             else
                 -- Pause game
                 self._pauseComp.isActive = true
@@ -111,9 +104,9 @@ return Component {
                     end
                 end
 
-                -- Pause BGM and Ambience (UI SFX will still work)
-                if self._bgmAudio then self._bgmAudio:Pause() end
-                if self._ambienceAudio then self._ambienceAudio:Pause() end
+                -- Pause all game audio (UI on "UI" bus still plays)
+                Audio.SetBusPaused("BGM", true)
+                Audio.SetBusPaused("SFX", true)
             end
         end
 

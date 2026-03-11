@@ -152,6 +152,7 @@ return Component {
             self._dropSFXPlayed = true
             local now = os.clock()
             local last = _G._featherDropSFXTime or 0
+            self._audio = self:GetComponent("AudioComponent")
             if self._audio and self.featherDropSFX[1] and (now - last) > 0.3 then
                 _G._featherDropSFXTime = now
                 self._audio:PlayOneShot(self.featherDropSFX[math.random(#self.featherDropSFX)])

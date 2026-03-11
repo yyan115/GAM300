@@ -264,6 +264,8 @@ return Component {
                 if handActiveComp then handActiveComp.isActive = true end
                 
                 _G.playerHasWeapon = true
+                local playerAnim = GetComponent(playerEnt, "AnimationComponent")
+                playerAnim:SetBool("IsArmed", true)
                 -- Don't clear playerNearInteractable here — the input buffer
                 -- still has the Attack press. Wait until the door sequence ends.
                 print("[DoorTrigger] Weapon successfully caught!")

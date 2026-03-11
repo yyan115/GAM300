@@ -572,12 +572,12 @@ return Component {
         dbg("transform y: ", self._transform.localPosition.y)
         self._controller = CharacterController.Create(self.entityId, self._collider, self._transform)
 
-        if self._animator then
-            dbg("[PlayerMovement] Animator found, playing IDLE clip")
-            self._animator:PlayClip(IDLE, true)
-        else
-            dbg("[PlayerMovement] ERROR: Animator is nil!")
-        end
+        -- if self._animator then
+        --     dbg("[PlayerMovement] Animator found, playing IDLE clip")
+        --     self._animator:PlayClip(IDLE, true)
+        -- else
+        --     dbg("[PlayerMovement] ERROR: Animator is nil!")
+        -- end
 
         self._isRunning  = false
         self._isJumping  = false

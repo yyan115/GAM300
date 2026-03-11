@@ -90,6 +90,8 @@ return Component {
         print("[ConfirmationMenuHandler] Returning to main menu")
         Time.SetPaused(false)  -- Reset pause state before loading scene
         Time.SetTimeScale(1.0)  -- Reset time scale to normal
+        Audio.SetBusPaused("BGM", false)  -- Unpause game buses before scene load
+        Audio.SetBusPaused("SFX", false)
         Scene.Load(self.mainMenuScene)
     end,
 

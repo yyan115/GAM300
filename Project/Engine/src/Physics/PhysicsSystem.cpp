@@ -723,6 +723,7 @@ void PhysicsSystem::CreatePhysicsBody(Entity e, ECSManager& ecsManager) {
     const int obstacleIdx = LayerManager::GetInstance().GetLayerIndex("Obstacle");
 
     if (col.layer == Layers::HURTBOX) { /*...*/ }
+    else if (col.layer == Layers::CHAIN_HITBOX) { /*...*/ }
     else if (rb.isTrigger) col.layer = Layers::SENSOR;
     else if (ecsLayerIndex == groundIdx) col.layer = Layers::NAV_GROUND;
     else if (ecsLayerIndex == obstacleIdx) col.layer = Layers::NAV_OBSTACLE;
