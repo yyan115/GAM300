@@ -12,42 +12,46 @@ SINGLE RESPONSIBILITY: Execute movement and physics. Nothing else.
 RESPONSIBILITIES:
     - Read movement axis and jump from InputInterpreter (never raw Input)
     - Execute CharacterController movement, dash physics, jump, and lunge
-    - Respond to combat_state_changed: lock/unlock movement (velocity carries naturally)
+    - Respond to combat_state_changed: lock/unlock movement
     - Respond to attack_performed: apply per-attack lunge impulse
-    - Respond to dash_performed: execute the dash (duration from ComboManager)
+    - Respond to dash_performed: execute the dash
     - Respond to chain events: apply movement constraints
     - Drive movement-specific animator parameters (IsRunning, IsJumping, etc.)
     - Manage respawn, damage stun, landing, cinematic freeze
+    - Apply squash & stretch scale effects on movement events
 
 NOT RESPONSIBLE FOR:
-    - Reading raw engine input directly (owned by InputInterpreter)
-    - Deciding which attack or combo to execute (owned by ComboManager)
+    - Reading raw engine input (owned by InputInterpreter)
+    - Deciding which attack/combo to execute (owned by ComboManager)
     - Publishing chain or combat events (owned by ComboManager)
 
 MOVEMENT LOCK RULES:
     _G.player_is_attacking && !_G.player_can_move → full movement lock
-    _G.player_is_attacking &&  _G.player_can_move → movement allowed (canMove state)
-    Momentum bleed: on attack entry, carry a fraction of running velocity into
-    the first frames of the attack so the transition feels grounded.
+    _G.player_is_attacking &&  _G.player_can_move → movement allowed
+    On attack entry velocity is NOT zeroed — decays at AttackDecay so
+    momentum carries naturally into the first frames of a combo.
 
 EVENTS CONSUMED:
-    camera_yaw                     → update camera-relative movement yaw
-    playerDead                     → trigger death state
-    playerHurtTriggered            → apply damage stun
-    player_knockback               → apply knockback impulse
-    respawnPlayer                  → respawn to checkpoint or origin
-    activatedCheckpoint            → remember last checkpoint entity
-    freeze_player                  → cinematic freeze with settle timer
-    request_player_forward         → reply with current facing direction
-    attack_performed               → execute per-attack lunge impulse
-    force_player_rotation_to_camera → snap rotation to camera forward
-    force_player_rotation_to_direction → snap rotation to arbitrary direction
-    combat_state_changed           → update movement lock (velocity handles carry-over)
-    dash_performed                 → begin dash (duration supplied by event)
-    chain.movement_constraint      → apply chain length / drag constraint
+    camera_yaw                          → camera-relative movement yaw
+    playerDead                          → trigger death state
+    playerHurtTriggered                 → apply damage stun
+    player_knockback                    → apply knockback impulse
+    respawnPlayer                       → respawn to checkpoint or origin
+    activatedCheckpoint                 → remember last checkpoint entity
+    freeze_player                       → cinematic freeze with settle timer
+    request_player_forward              → reply with current facing direction
+    attack_performed                    → execute per-attack lunge impulse
+    force_player_rotation_to_camera     → snap rotation to camera forward
+    force_player_rotation_to_direction  → snap rotation to arbitrary direction
+    combat_state_changed                → update movement lock
+    dash_performed                      → begin dash
+    chain.movement_constraint           → apply chain length / drag constraint
+
+-- TO ADD new events: subscribe in Awake under the appropriate section header,
+-- unsubscribe in OnDisable, and document the event name + payload above.
 
 AUTHOR: Soh Wei Jie
-VERSION: 2.0
+VERSION: 3.0
 ================================================================================
 --]]
 
@@ -59,17 +63,19 @@ local TransformMixin = require("extension.transform_mixin")
 
 local event_bus = _G.event_bus
 
--- Animation state indices
+-- Animation clip indices
 local IDLE = 0
 local RUN  = 1
 local JUMP = 2
 
--- Chain tension (updated from chain.movement_constraint event)
+-- Chain tension direction (updated from chain.movement_constraint each frame)
 local tensionRadialX = 0
 local tensionRadialZ = 0
+local tensionScale   = 1.0
 
--- =====================================================================
+-- ============================================================================
 -- Quaternion helpers
+-- ============================================================================
 
 local function directionToQuaternion(dx, dz)
     local angle
@@ -98,6 +104,10 @@ local function lerpQuaternion(w1, x1, y1, z1, w2, x2, y2, z2, t)
     return w/len, x/len, y/len, z/len
 end
 
+-- ============================================================================
+-- Audio helper
+-- ============================================================================
+
 local function playRandomSFX(audio, clips)
     local count = clips and #clips or 0
     if count == 0 or not audio then return end
@@ -108,173 +118,82 @@ local function playRandomSFX(audio, clips)
     audio:PlayOneShot(clips[idx])
 end
 
--- =====================================================================
+-- ============================================================================
 
 return Component {
     mixins = { TransformMixin },
 
+    -- ==========================================================================
+    -- INSPECTOR FIELDS
+    -- ==========================================================================
+    -- Grouped by system. Add new tunables in the relevant section.
+    -- Don't scatter magic numbers through Update — put them here.
+    -- TO ADD a new field: add it in the right section and initialise any
+    -- runtime state that depends on it in Start.
+    -- ==========================================================================
     fields = {
-        -- MOVEMENT
-        -- =====================================================================
 
-        -- Top running speed (world units per second).
-        -- Raise this to make the player feel faster overall.
-        -- Suggested range: 2.5 (slow/deliberate) – 6.0 (fast/arcade)
-        Speed = 4.0,
+        -- ── Ground movement ───────────────────────────────────────────────────
+        Speed        = 4.0,   -- Top running speed (world units/sec).
+        Acceleration = 22.0,  -- Rate velocity climbs to Speed when input held. High = snappy.
+        Deceleration = 16.0,  -- Rate velocity falls to zero when input released. High = firm stop.
+        TurnDecel    = 32.0,  -- Extra decel when input opposes velocity (180-turn pivot rate).
+        AttackDecay  = 6.0,   -- Velocity bleed during combo lock. Low = more momentum carry into hits.
+        -- TO ADD new ground feel: add field here.
 
-        -- =====================================================================
-        -- Momentum rates
-        -- These control how velocity changes, not raw speed.
+        -- ── Jump & air control ────────────────────────────────────────────────
+        JumpHeight           = 1.2,   -- Vertical impulse magnitude.
+        AirControlMultiplier = 0.3,   -- Scales both turn rate and accel in air. 0=ballistic, 1=full control.
+        -- TO ADD double-jump / wall-jump: add fields here, handle in the Jump section of Update.
 
-        -- How quickly velocity climbs toward Speed when input is held.
-        -- High = snappy start. Low = heavy, takes time to reach full speed.
-        -- Suggested range: 10 (tank) – 30 (responsive)
-        Acceleration = 22.0,
+        -- ── Dash ──────────────────────────────────────────────────────────────
+        DashSpeed              = 5.0,   -- Dash impulse speed — independent of Speed.
+        DashDuration           = 0.7,   -- Seconds dash lasts. Match to dash animation.
+        DashCooldown           = 2.5,   -- Seconds before a consumed use regenerates.
+        DashMaxUses            = 2,     -- Max consecutive dashes. Uses regenerate one at a time.
+        DashEarlyCancelRatio   = 0.5,   -- Fraction of dash elapsed before early-cancel fires (0=instant, 1=no cancel).
+        AirDashSpeedMultiplier = 1.3,   -- Speed multiplier for air dashes.
+        AirDashLift            = 1.5,   -- Upward velocity added during air dash. 0 = purely horizontal.
+        DashSteerSpeed         = 135.0, -- Degrees/sec the player can steer mid-dash. Forward only — no braking.
+        PostDashRecoveryTime   = 0.25,  -- Seconds after dash ends before full reverse steering is restored. 0 = no restriction.
+        -- TO ADD dash variants (dodge roll, air dive): add fields here.
 
-        -- How quickly velocity bleeds to zero when input is released.
-        -- High = stops fast. Low = slides to a halt.
-        -- Suggested range: 8 (slidey) – 20 (firm stop)
-        Deceleration = 16.0,
-
-        -- Extra deceleration rate when input direction opposes current velocity.
-        -- Controls how quickly the player pivots into a new direction.
-        -- High = sharp pivot. Low = wide drifty arc.
-        -- Suggested range: 15 (loose) – 50 (instant pivot)
-        TurnDecel = 32.0,
-
-        -- Velocity bleed rate while a combo lock is active (player is attacking).
-        -- Intentionally lower than Deceleration so momentum carries into hits.
-        -- High = stops dead on attack. Low = slides further into the hit.
-        -- Suggested range: 3 (long carry) – 12 (short carry)
-        AttackDecay = 6.0,
-
-        -- DASH
-        -- =====================================================================
-
-        -- Speed of the dash impulse (world units per second).
-        -- This is independent of Speed — tune it relative to how far you
-        -- want the player to travel during DashDuration.
-        -- Suggested range: 6.0 (short hop) – 15.0 (long burst)
-        DashSpeed = 5.0,
-
-        -- How long the dash lasts in seconds.
-        -- Match this to your dash animation length.
-        -- Suggested range: 0.15 (snappy) – 0.4 (long slide)
-        DashDuration = 0.7,
-
-        -- Seconds before a consumed dash use regenerates.
-        -- Suggested range: 0.8 (aggressive) – 2.0 (punishing)
-        DashCooldown = 2.5,
-
-        -- Maximum number of consecutive dashes available.
-        -- Each dash consumes one use. Uses regenerate one at a time,
-        -- each taking DashCooldown seconds after the previous use was spent.
-        -- Example: DashMaxUses=2, DashCooldown=1.2 → two quick dashes,
-        -- then first use returns after 1.2s, second after another 1.2s.
-        DashMaxUses = 2,
-
-        -- Fraction of the current dash that must elapse before a new dash
-        -- input is accepted and fires immediately (cutting the animation short).
-        -- Progress = (DashDuration - dashTimer) / DashDuration, checked each frame.
-        --   0.0 = next dash can start instantly (no wait)
-        --   0.9 = next dash fires at 90% through the current dash
-        --   1.0 = must wait for the full dash to finish (no early cancel)
-        -- Inputs received before the window opens are held, not dropped, so
-        -- pressing dash slightly early still chains at the exact threshold.
-        -- Suggested range: 0.7 (snappy chains) – 0.95 (tight window)
-        DashEarlyCancelRatio = 0.5,
-
-        -- Speed multiplier applied to DashSpeed when dashing in the air.
-        -- > 1.0 = air dash travels further than ground dash.
-        AirDashSpeedMultiplier = 1.3,
-
-        -- How quickly the player can steer the dash direction (degrees per second).
-        -- Input rotates the dash direction toward the stick at this rate.
-        -- 0 = no steering (locked direction). 180 = very responsive steering.
-        -- Suggested range: 90 (tight) – 270 (loose)
-        DashSteerSpeed = 135.0,
-
-        -- Upward velocity added during an air dash (gives a slight lift).
-        -- Set to 0 to make air dashes purely horizontal.
-        AirDashLift = 1.5,
-
-        -- JUMP
-        -- =====================================================================
-
-        -- Vertical impulse height. Engine interprets this as jump force.
-        -- Suggested range: 0.8 (low hop) – 2.5 (high jump)
-        JumpHeight = 1.2,
-
-        -- Seconds the landing animation plays before movement resumes.
-        -- Suggested range: 0.2 (snappy) – 0.8 (weighty)
-        LandingDuration = 0.4,
-
-        -- Fall distance (world units) above which the player rolls on landing
-        -- instead of playing the soft land animation.
-        -- Suggested range: 1.5 (rolls often) – 4.0 (only big drops)
-        RollHeightThreshold = 2.5,
-
-        -- How strongly the chain resists movement toward the endpoint when taut.
-        --   0.0 = chain has no effect on movement direction
-        --   1.0 = full resistance (cannot push through the chain at all)
-        -- Suggested range: 0.5 – 0.95
-        TensionScale = 0.85,
-
-        -- Seconds after a dash ends during which reverse steering is progressively
-        -- restored. At t=0 the player can barely pivot back; at t=PostDashRecoveryTime
-        -- full TurnDecel is available again.
-        -- 0 = no restriction. Suggested range: 0.15 – 0.4
-        PostDashRecoveryTime = 0.25,
-
-        -- Kickback speed applied in the OPPOSITE direction of a chain throw.
-        -- Gives physical weight to the chain launch.
-        -- 0 = no kickback. Suggested range: 1.5 – 4.0
-        ChainKickbackSpeed = 2.5,
-
-        -- Scales air control: applies to both the turn rate and the
-        -- speed-build rate when jumping from standstill.
-        --   0.0 = ballistic (no steering at all)
-        --   0.3 = nudge (default — noticeable but not arcade)
-        --   1.0 = full ground-level control
-        -- Suggested range: 0.1 – 0.5
-        AirControlMultiplier = 0.3,
-
-        -- How quickly the player can steer their velocity direction while airborne
-        -- (degrees per second). Mirrors DashSteerSpeed — input rotates the velocity
-        -- vector toward the stick at this rate, but only if the input has a forward
-        -- component (dot > 0) relative to the current velocity. Opposing input is
-        -- ignored so the player arcs rather than reversing mid-air. Speed magnitude
-        -- is always preserved, identical to how dash steering works.
-        -- 0   = no steering (ballistic arc)
-
-        -- COMBAT
-        -- =====================================================================
-
-        -- Fallback attack lunge speed (world units per second).
-        -- The real per-attack value comes from ComboManager's lunge table.
-        -- Only used if attack_performed carries no lunge data.
-        AttackLungeSpeed = 4.0,
-
-        -- Fallback attack lunge duration in seconds. Same fallback rule as above.
+        -- ── Combat / lunge ────────────────────────────────────────────────────
+        -- Fallback values — real values come from ComboManager's lunge table.
+        -- These only fire if attack_performed carries no lunge payload.
+        AttackLungeSpeed    = 4.0,
         AttackLungeDuration = 0.12,
+        ChainKickbackSpeed  = 2.5,   -- Kickback impulse on chain attack (opposite to throw direction). 0 = none.
+        -- TO ADD per-attack feel: edit lunge table in ComboManager, not here.
 
-        -- FEEL / TIMING
-        -- =====================================================================
+        -- ── Chain weapon ──────────────────────────────────────────────────────
+        TensionScale = 0.85,  -- Resistance to outward movement when chain is taut. 0=none, 1=full block.
+        -- TO ADD chain swing / pull-toward modes: add fields here.
 
-        -- Seconds the damage stun lasts before the player regains control.
-        DamageStunDuration = 0.5,
+        -- ── Landing ───────────────────────────────────────────────────────────
+        LandingDuration     = 0.4,   -- Seconds of recovery before movement restores.
+        RollHeightThreshold = 2.5,   -- Fall distance (world units) that triggers roll instead of soft land.
+        -- TO ADD landing SFX variation or ledge-grab: add fields here.
 
-        -- Seconds after a cinematic freeze event before movement fully locks.
-        -- Gives the character time to settle into position before cutting.
-        CinematicSettleTime = 0.8,
+        -- ── Squash & stretch ──────────────────────────────────────────────────
+        -- SquashStrength : how dramatic the effect is. Start here.
+        --                  0.0 = disabled   0.3 = subtle   1.0 = cartoony
+        --                  Scales all events — landing, dash, chain.
+        -- SquashDuration : seconds to hit peak squash. Match to impact frame.
+        -- StretchDuration: seconds to spring back to normal.
+        SquashStrength  = 0.5,
+        SquashDuration  = 0.07,
+        StretchDuration = 0.22,
 
-        -- Seconds between footstep SFX triggers while running.
-        -- Match this to your footstep animation cycle length.
-        -- Suggested range: 0.25 (fast run) – 0.5 (slow walk)
-        footstepInterval = 0.30,
+        -- ── Feel / timing ─────────────────────────────────────────────────────
+        DamageStunDuration  = 0.5,    -- Seconds of stun after being hit.
+        CinematicSettleTime = 0.8,    -- Seconds to settle before cinematic hard-freeze locks movement.
+        footstepInterval    = 0.30,   -- Seconds between footstep SFX triggers while running.
+        -- TO ADD new feel tuning: add field here.
 
-        -- AUDIO (populate with clip GUIDs in the editor)
-        -- =====================================================================
+        -- ── Audio ─────────────────────────────────────────────────────────────
+        -- Populate with clip GUIDs in the editor. Each accepts a list for random selection.
+        -- TO ADD new SFX: add a field here and call playRandomSFX in the relevant Update section.
         playerFootstepSFX = {},
         playerHurtSFX     = {},
         playerJumpSFX     = {},
@@ -283,17 +202,36 @@ return Component {
         playerDashSFX     = {},
     },
 
+    -- ==========================================================================
+    -- AWAKE
+    -- Event subscriptions and field-independent initial state.
+    -- Field-dependent state (e.g. LandingDuration) goes in Start, not here,
+    -- because fields aren't populated until after Awake.
+    -- ==========================================================================
     Awake = function(self)
-        self._currentRotW = 1
-        self._currentRotX = 0
-        self._currentRotY = 0
-        self._currentRotZ = 0
 
-        -- Camera yaw (drives camera-relative movement)
-        self._cameraYaw    = 180.0
-        self._cameraYawSub = nil
+        -- ── Rotation ──────────────────────────────────────────────────────────
+        self._currentRotW = 1; self._currentRotX = 0
+        self._currentRotY = 0; self._currentRotZ = 0
+        self._facingX     = 0; self._facingZ     = 1
 
-        -- Chain constraint state (from chain.movement_constraint event)
+        -- ── Camera ────────────────────────────────────────────────────────────
+        self._cameraYaw = 180.0
+
+        -- ── Persistent velocity ───────────────────────────────────────────────
+        -- Single source of truth for XZ movement. Never write to
+        -- CharacterController.Move without going through _velX/_velZ.
+        self._velX = 0
+        self._velZ = 0
+
+        -- ── Lunge ─────────────────────────────────────────────────────────────
+        self._lungeTimer = 0; self._lungeDirX = 0
+        self._lungeDirZ  = 0; self._lungeSpeed = 0
+
+        -- ── Knockback ─────────────────────────────────────────────────────────
+        self._kbPending = false; self._kbX = 0; self._kbZ = 0
+
+        -- ── Chain constraint ──────────────────────────────────────────────────
         self._chainConstraintRatio    = 0
         self._chainConstraintExceeded = false
         self._chainDrag               = false
@@ -301,267 +239,192 @@ return Component {
         self._chainDragTargetY        = 0
         self._chainDragTargetZ        = 0
 
-        -- =====================================================================
-        -- Movement lock from combat
+        -- ── Combat lock ───────────────────────────────────────────────────────
         self._playerCanMove = true
 
-        -- =====================================================================
-        -- Persistent velocity (momentum-based movement)
-        -- This is the single source of truth for how fast the player is moving.
-        -- Acceleration / deceleration / direction-change rates operate on this
-        -- each frame rather than writing speed directly to the CharacterController.
-        -- On attack entry the velocity is NOT zeroed — it decays at AttackDecay
-        -- so momentum carries naturally into the first frames of a combo.
-        self._velX = 0
-        self._velZ = 0
+        -- ── Cinematic freeze ──────────────────────────────────────────────────
+        self._frozenBycinematic = false
+        self._freezePending     = false
+        self._freezeSettleTimer = 0.0
 
-        -- =====================================================================
-        -- Lunge state (per-attack values from attack_performed event)
-        self._lungeTimer  = 0
-        self._lungeDirX   = 0
-        self._lungeDirZ   = 0
-        self._lungeSpeed  = self.AttackLungeSpeed
-
-        -- =====================================================================
-        -- Knockback
-        self._kbPending = false
-        self._kbX       = 0
-        self._kbZ       = 0
-
-        if event_bus and event_bus.subscribe then
-
-            -- Camera yaw for camera-relative movement
-            dbg("[PlayerMovement] Subscribing to camera_yaw")
-            self._cameraYawSub = event_bus.subscribe("camera_yaw", function(yaw)
-                if yaw then self._cameraYaw = yaw end
-            end)
-
-            -- Death
-            dbg("[PlayerMovement] Subscribing to playerDead")
-            self._playerDeadSub = event_bus.subscribe("playerDead", function(playerDead)
-                if playerDead then
-                    dbg("[PlayerMovement] Received playerDead")
-                    self._playerDeadPending = playerDead
-                    playRandomSFX(self._audio, self.playerDeadSFX)
-                end
-            end)
-
-            -- Damage stun
-            dbg("[PlayerMovement] Subscribing to playerHurtTriggered")
-            self._playerHurtTriggeredSub = event_bus.subscribe("playerHurtTriggered", function(hit)
-                if hit then
-                    self._isDamageStun = true
-                    if self._animator then self._animator:SetBool("IsJumping", false) end
-                    playRandomSFX(self._audio, self.playerHurtSFX)
-                end
-            end)
-
-            -- Knockback impulse
-            dbg("[PlayerMovement] Subscribing to player_knockback")
-            self._knockSub = event_bus.subscribe("player_knockback", function(p)
-                if not p then return end
-                self._kbX      = (p.x or 0) * (p.strength or 0)
-                self._kbZ      = (p.z or 0) * (p.strength or 0)
-                self._kbPending = true
-            end)
-
-            -- Respawn
-            dbg("[PlayerMovement] Subscribing to respawnPlayer")
-            self._respawnPlayerSub = event_bus.subscribe("respawnPlayer", function(respawn)
-                if respawn then self._respawnPlayer = true end
-            end)
-
-            -- Checkpoint
-            self._activatedCheckpointSub = event_bus.subscribe("activatedCheckpoint", function(entityId)
-                if entityId then self._activatedCheckpoint = entityId end
-            end)
-
-            -- Cinematic freeze (settle timer → hard freeze)
-            dbg("[PlayerMovement] Subscribing to freeze_player")
-            self._frozenBycinematic  = false
-            self._freezePending      = false
-            self._freezeSettleTimer  = 0.0
-            self._freezePlayerSub    = event_bus.subscribe("freeze_player", function(frozen)
-                if frozen then
-                    self._freezePending     = true
-                    self._freezeSettleTimer = self.CinematicSettleTime or 0.8
-                else
-                    self._frozenBycinematic = false
-                    self._freezePending     = false
-                end
-                dbg("[PlayerMovement] Frozen = " .. tostring(frozen))
-            end)
-
-            -- Forward direction request (chain weapon / other systems)
-            dbg("[PlayerMovement] Subscribing to request_player_forward")
-            self._requestPlayerForwardSub = event_bus.subscribe("request_player_forward", function(_)
-                if not self._facingX or not self._facingZ then return end
-                if event_bus and event_bus.publish then
-                    event_bus.publish("player_forward_response", {
-                        x = self._facingX,
-                        y = 0,
-                        z = self._facingZ,
-                    })
-                end
-            end)
-
-            -- =====================================================================
-            -- Attack lunge
-            -- ComboManager publishes lunge = { speed, duration } per state.
-            -- PlayerMovement executes the impulse; it does not decide the values.
-            self._attackLungeSub = event_bus.subscribe("attack_performed", function(data)
-                local cameraYaw = _G.CAMERA_YAW or self._cameraYaw or 180.0
-                local yr   = math.rad(cameraYaw)
-                local sinYaw = math.sin(yr)
-                local cosYaw = math.cos(yr)
-
-                -- Camera forward and right axes (world space)
-                local fwdX = -sinYaw
-                local fwdZ = -cosYaw
-                local rgtX =  cosYaw
-                local rgtZ = -sinYaw
-
-                -- Default lunge direction is camera forward.
-                -- If input is held, take only its sideways component relative to
-                -- the camera and offset the lunge by it. This produces a sidestep
-                -- lunge when strafing but never redirects the attack backwards.
-                -- A pure backwards input is ignored — lunge stays camera forward.
-                local dirX, dirZ = fwdX, fwdZ
-                local interp = _G.InputInterpreter
-                local axis   = interp and interp:GetMovementAxis()
-                local rawX   = axis and -axis.x or 0
-                local rawZ   = axis and  axis.y or 0
-                if rawX ~= 0 or rawZ ~= 0 then
-                    local wX = rawZ * (-sinYaw) - rawX * cosYaw
-                    local wZ = rawZ * (-cosYaw) + rawX * sinYaw
-                    local wLen = math.sqrt(wX * wX + wZ * wZ)
-                    if wLen > 0.001 then
-                        wX, wZ = wX / wLen, wZ / wLen
-                        -- Forward component of input relative to camera
-                        local fwdDot  = wX * fwdX + wZ * fwdZ
-                        -- Sideways component only — never let a backward input pull the lunge back
-                        local sideDot = wX * rgtX + wZ * rgtZ
-                        if fwdDot >= 0 then
-                            -- Input has a forward lean: blend input direction with camera forward
-                            dirX = fwdX + wX
-                            dirZ = fwdZ + wZ
-                        else
-                            -- Input is sideways or backward: offset by side component only
-                            dirX = fwdX + rgtX * sideDot
-                            dirZ = fwdZ + rgtZ * sideDot
-                        end
-                        local dLen = math.sqrt(dirX * dirX + dirZ * dirZ)
-                        if dLen > 0.001 then dirX = dirX / dLen; dirZ = dirZ / dLen end
-                    end
-                end
-
-                local isChainAttack = (data and data.state == "chain_attack")
-                if isChainAttack then
-                    -- Kickback: push opposite to throw direction
-                    self._lungeDirX = -dirX
-                    self._lungeDirZ = -dirZ
-                    self._lungeSpeed = self.ChainKickbackSpeed or 2.5
-                else
-                    self._lungeDirX = dirX
-                    self._lungeDirZ = dirZ
-                end
-
-                -- Use per-attack lunge data from ComboManager; fall back to inspector defaults.
-                local lunge = data and data.lunge
-                self._lungeTimer = (lunge and lunge.duration) or self.AttackLungeDuration or 0.12
-                self._lungeSpeed = (lunge and lunge.speed)    or self.AttackLungeSpeed    or 3.0
-
-                -- Snap rotation to face the lunge direction
-                local targetW, targetX, targetY, targetZ = directionToQuaternion(dirX, dirZ)
-                self._currentRotW = targetW
-                self._currentRotX = targetX
-                self._currentRotY = targetY
-                self._currentRotZ = targetZ
-                self._facingX     = dirX
-                self._facingZ     = dirZ
-                pcall(self.SetRotation, self, targetW, targetX, targetY, targetZ)
-            end)
-
-            -- =====================================================================
-            -- Combat state → movement lock
-            -- canMove from ComboManager tells us whether this state allows
-            -- movement. Velocity (_velX/_velZ) is NOT zeroed here — it
-            -- decays naturally at AttackDecay so momentum carries into hits.
-            self._combatStateSub = event_bus.subscribe("combat_state_changed", function(data)
-                if not data then return end
-                self._playerCanMove = data.canMove ~= false
-            end)
-
-            -- Snap rotation to camera forward (skill / cutscene trigger)
-            self._forceRotSub = event_bus.subscribe("force_player_rotation_to_camera", function()
-                local cameraYaw = _G.CAMERA_YAW or self._cameraYaw or 180.0
-                local yr   = math.rad(cameraYaw)
-                local fwdX = -math.sin(yr)
-                local fwdZ = -math.cos(yr)
-                local len  = math.sqrt(fwdX * fwdX + fwdZ * fwdZ)
-                if len > 0.001 then fwdX = fwdX / len; fwdZ = fwdZ / len end
-
-                local targetW, targetX, targetY, targetZ = directionToQuaternion(fwdX, fwdZ)
-                self._currentRotW = targetW
-                self._currentRotX = targetX
-                self._currentRotY = targetY
-                self._currentRotZ = targetZ
-                self._facingX     = fwdX
-                self._facingZ     = fwdZ
-                pcall(self.SetRotation, self, targetW, targetX, targetY, targetZ)
-            end)
-
-            -- Snap rotation to an arbitrary world direction
-            self._chainFiredRotSub = event_bus.subscribe("force_player_rotation_to_direction", function(payload)
-                if not payload then return end
-                local dx, dz = payload.x, payload.z
-                if not dx or not dz then return end
-                local len = math.sqrt(dx * dx + dz * dz)
-                if len < 0.001 then return end
-                dx, dz = dx / len, dz / len
-                local targetW, targetX, targetY, targetZ = directionToQuaternion(dx, dz)
-                self._currentRotW = targetW
-                self._currentRotX = targetX
-                self._currentRotY = targetY
-                self._currentRotZ = targetZ
-                self._facingX     = dx
-                self._facingZ     = dz
-                pcall(self.SetRotation, self, targetW, targetX, targetY, targetZ)
-            end)
-
-            -- =====================================================================
-            -- Dash
-            -- ComboManager signals that a dash should happen.
-            -- DashDuration is owned entirely by this script — ComboManager
-            -- has no opinion on how long the dash lasts.
-            self._dashRequested = false
-            self._dashPerformedSub = event_bus.subscribe("dash_performed", function()
-                self._dashRequested = true
-                print("[PlayerMovement] dash_performed received")
-            end)
-
-            -- =====================================================================
-            -- Chain movement constraint
-            self._chainConstraintSub = event_bus.subscribe("chain.movement_constraint", function(payload)
-                if not payload then return end
-                self._chainConstraintRatio    = payload.ratio    or 0
-                self._chainConstraintExceeded = payload.exceeded or false
-                self._chainDrag               = payload.drag     or false
-                self._chainEndX               = payload.endX
-                self._chainEndY               = payload.endY
-                self._chainEndZ               = payload.endZ
-                if self._chainDrag then
-                    self._chainDragTargetX = payload.targetX or 0
-                    self._chainDragTargetY = payload.targetY or 0
-                    self._chainDragTargetZ = payload.targetZ or 0
-                end
-            end)
-
-        else
-            dbg("[PlayerMovement] ERROR: event_bus not available!")
+        if not (event_bus and event_bus.subscribe) then
+            dbg("[PlayerMovement] ERROR: event_bus not available in Awake")
+            return
         end
+
+        -- ── Camera yaw ────────────────────────────────────────────────────────
+        self._cameraYawSub = event_bus.subscribe("camera_yaw", function(yaw)
+            if yaw then self._cameraYaw = yaw end
+        end)
+
+        -- ── Player state ──────────────────────────────────────────────────────
+        self._playerDeadSub = event_bus.subscribe("playerDead", function(playerDead)
+            if playerDead then
+                self._playerDeadPending = playerDead
+                playRandomSFX(self._audio, self.playerDeadSFX)
+            end
+        end)
+
+        self._playerHurtTriggeredSub = event_bus.subscribe("playerHurtTriggered", function(hit)
+            if hit then
+                self._isDamageStun = true
+                if self._animator then self._animator:SetBool("IsJumping", false) end
+                playRandomSFX(self._audio, self.playerHurtSFX)
+            end
+        end)
+
+        self._knockSub = event_bus.subscribe("player_knockback", function(p)
+            if not p then return end
+            self._kbX = (p.x or 0) * (p.strength or 0)
+            self._kbZ = (p.z or 0) * (p.strength or 0)
+            self._kbPending = true
+        end)
+
+        self._respawnPlayerSub = event_bus.subscribe("respawnPlayer", function(respawn)
+            if respawn then self._respawnPlayer = true end
+        end)
+
+        self._activatedCheckpointSub = event_bus.subscribe("activatedCheckpoint", function(entityId)
+            if entityId then self._activatedCheckpoint = entityId end
+        end)
+
+        self._freezePlayerSub = event_bus.subscribe("freeze_player", function(frozen)
+            if frozen then
+                self._freezePending     = true
+                self._freezeSettleTimer = self.CinematicSettleTime or 0.8
+            else
+                self._frozenBycinematic = false
+                self._freezePending     = false
+            end
+        end)
+
+        -- ── Rotation overrides ────────────────────────────────────────────────
+        self._requestPlayerForwardSub = event_bus.subscribe("request_player_forward", function(_)
+            if not self._facingX or not self._facingZ then return end
+            event_bus.publish("player_forward_response", {
+                x = self._facingX, y = 0, z = self._facingZ,
+            })
+        end)
+
+        self._forceRotSub = event_bus.subscribe("force_player_rotation_to_camera", function()
+            local yr   = math.rad(_G.CAMERA_YAW or self._cameraYaw or 180.0)
+            local fwdX = -math.sin(yr)
+            local fwdZ = -math.cos(yr)
+            local len  = math.sqrt(fwdX*fwdX + fwdZ*fwdZ)
+            if len > 0.001 then fwdX = fwdX/len; fwdZ = fwdZ/len end
+            local w, x, y, z = directionToQuaternion(fwdX, fwdZ)
+            self._currentRotW, self._currentRotX, self._currentRotY, self._currentRotZ = w, x, y, z
+            self._facingX = fwdX; self._facingZ = fwdZ
+            pcall(self.SetRotation, self, w, x, y, z)
+        end)
+
+        self._chainFiredRotSub = event_bus.subscribe("force_player_rotation_to_direction", function(payload)
+            if not payload then return end
+            local dx, dz = payload.x, payload.z
+            if not dx or not dz then return end
+            local len = math.sqrt(dx*dx + dz*dz)
+            if len < 0.001 then return end
+            dx, dz = dx/len, dz/len
+            local w, x, y, z = directionToQuaternion(dx, dz)
+            self._currentRotW, self._currentRotX, self._currentRotY, self._currentRotZ = w, x, y, z
+            self._facingX = dx; self._facingZ = dz
+            pcall(self.SetRotation, self, w, x, y, z)
+        end)
+
+        -- ── Combat: lunge + lock ──────────────────────────────────────────────
+        -- attack_performed carries { state, lunge={speed,duration} }.
+        -- Direction is computed from current input + camera yaw.
+        -- Chain attack inverts the direction (kickback).
+        self._attackLungeSub = event_bus.subscribe("attack_performed", function(data)
+            local yr     = math.rad(_G.CAMERA_YAW or self._cameraYaw or 180.0)
+            local sinYaw = math.sin(yr); local cosYaw = math.cos(yr)
+            local fwdX   = -sinYaw;     local fwdZ   = -cosYaw
+            local rgtX   =  cosYaw;     local rgtZ   = -sinYaw
+
+            -- Default: camera forward. Offset by sideways input; backward input ignored.
+            local dirX, dirZ = fwdX, fwdZ
+            local interp = _G.InputInterpreter
+            local axis   = interp and interp:GetMovementAxis()
+            local rawX   = axis and -axis.x or 0
+            local rawZ   = axis and  axis.y or 0
+            if rawX ~= 0 or rawZ ~= 0 then
+                local wX  = rawZ * (-sinYaw) - rawX * cosYaw
+                local wZ  = rawZ * (-cosYaw) + rawX * sinYaw
+                local wLen = math.sqrt(wX*wX + wZ*wZ)
+                if wLen > 0.001 then
+                    wX, wZ = wX/wLen, wZ/wLen
+                    local fwdDot  = wX*fwdX + wZ*fwdZ
+                    local sideDot = wX*rgtX + wZ*rgtZ
+                    if fwdDot >= 0 then
+                        dirX = fwdX + wX; dirZ = fwdZ + wZ
+                    else
+                        dirX = fwdX + rgtX*sideDot; dirZ = fwdZ + rgtZ*sideDot
+                    end
+                    local dLen = math.sqrt(dirX*dirX + dirZ*dirZ)
+                    if dLen > 0.001 then dirX = dirX/dLen; dirZ = dirZ/dLen end
+                end
+            end
+
+            if data and data.state == "chain_attack" then
+                -- Chain kickback: reverse impulse + squash
+                self._lungeDirX  = -dirX
+                self._lungeDirZ  = -dirZ
+                self._lungeSpeed = self.ChainKickbackSpeed or 2.5
+                self:_squashTrigger("horizontal", 0.5)
+            else
+                self._lungeDirX = dirX
+                self._lungeDirZ = dirZ
+            end
+
+            local lunge = data and data.lunge
+            self._lungeTimer = (lunge and lunge.duration) or self.AttackLungeDuration or 0.12
+            self._lungeSpeed = (lunge and lunge.speed)    or self.AttackLungeSpeed    or 3.0
+
+            -- Snap facing to lunge direction
+            local w, x, y, z = directionToQuaternion(dirX, dirZ)
+            self._currentRotW, self._currentRotX, self._currentRotY, self._currentRotZ = w, x, y, z
+            self._facingX = dirX; self._facingZ = dirZ
+            pcall(self.SetRotation, self, w, x, y, z)
+        end)
+
+        -- combat_state_changed: update movement lock. Velocity NOT zeroed here.
+        self._combatStateSub = event_bus.subscribe("combat_state_changed", function(data)
+            if not data then return end
+            self._playerCanMove = data.canMove ~= false
+        end)
+
+        -- ── Dash ──────────────────────────────────────────────────────────────
+        -- ComboManager signals intent. All dash physics is owned here.
+        self._dashRequested    = false
+        self._dashPerformedSub = event_bus.subscribe("dash_performed", function()
+            self._dashRequested = true
+        end)
+
+        -- ── Chain movement constraint ─────────────────────────────────────────
+        -- Payload: { ratio, exceeded, drag, endX/Y/Z, targetX/Y/Z }
+        self._chainConstraintSub = event_bus.subscribe("chain.movement_constraint", function(payload)
+            if not payload then return end
+            self._chainConstraintRatio    = payload.ratio    or 0
+            self._chainConstraintExceeded = payload.exceeded or false
+            self._chainDrag               = payload.drag     or false
+            self._chainEndX               = payload.endX
+            self._chainEndY               = payload.endY
+            self._chainEndZ               = payload.endZ
+            if self._chainDrag then
+                self._chainDragTargetX = payload.targetX or 0
+                self._chainDragTargetY = payload.targetY or 0
+                self._chainDragTargetZ = payload.targetZ or 0
+            end
+        end)
+
+        -- TO ADD new subscriptions: follow the pattern above.
+        -- Always add the handle key to the unsubscribe list in OnDisable.
     end,
 
+    -- ==========================================================================
+    -- START
+    -- Field-dependent runtime state. Fields are not populated during Awake.
+    -- ==========================================================================
     Start = function(self)
         self._collider  = self:GetComponent("ColliderComponent")
         self._animator  = self:GetComponent("AnimationComponent")
@@ -572,43 +435,72 @@ return Component {
         dbg("transform y: ", self._transform.localPosition.y)
         self._controller = CharacterController.Create(self.entityId, self._collider, self._transform)
 
-        if self._animator then
-            dbg("[PlayerMovement] Animator found, playing IDLE clip")
-            self._animator:PlayClip(IDLE, true)
-        else
-            dbg("[PlayerMovement] ERROR: Animator is nil!")
-        end
+        if self._animator then self._animator:PlayClip(IDLE, true) end
 
-        self._isRunning  = false
-        self._isJumping  = false
         self.rotationSpeed = 10.0
 
-        self._damageStunDuration = self.DamageStunDuration
-        self._isDamageStun       = false
-        self._landingDuration    = self.LandingDuration
+        -- ── State flags ───────────────────────────────────────────────────────
+        self._isRunning         = false
+        self._isJumping         = false
+        self._isLanding         = false
+        self._isRolling         = false
+        self._isDamageStun      = false
+        self._playerDead        = false
+        self._playerDeadPending = false
 
+        -- ── Timers ────────────────────────────────────────────────────────────
+        self._damageStunDuration = self.DamageStunDuration
+        self._landingDuration    = self.LandingDuration
+        self._footstepTimer      = 0
+        self._wasRunning         = false
+
+        -- ── Dash ──────────────────────────────────────────────────────────────
         self._isDashing          = false
         self._dashTimer          = 0
         self._postDashTimer      = 0
         self._dashDirX           = 0
         self._dashDirZ           = 0
         self._wasDashingInAir    = false
+        -- _dashUses: available uses (starts full). Resets on respawn.
+        -- _dashRegenTimer: counts down DashCooldown between regen ticks.
+        self._dashUses           = self.DashMaxUses
+        self._dashRegenTimer     = 0
         _G.player_is_dashing     = false
 
-        -- Dash charge system:
-        -- _dashUses        : current available uses (starts full)
-        -- _dashRegenTimer  : counts down DashCooldown for the next regen
-        --                    only ticks when _dashUses < DashMaxUses
-        self._dashUses       = self.DashMaxUses
-        self._dashRegenTimer = 0
+        -- ── Squash & stretch ──────────────────────────────────────────────────
+        -- _squashPhase: "squash" → peak → "stretch" → springs back → nil
+        -- Call _squashTrigger(mode, intensity) to start an effect.
+        self._squashPhase     = nil
+        self._squashTimer     = 0
+        self._squashIntensity = 1.0
+        self._squashMode      = "vertical"
 
-        self._footstepTimer = 0
-        self._wasRunning    = false
+        -- ── Air tracking ──────────────────────────────────────────────────────
+        -- Records highest Y this airborne period for fall distance calculation.
+        self._peakAirY = 0
 
+        -- ── Spawn position ────────────────────────────────────────────────────
         local pos = self._transform.worldPosition
         self._initialSpawnPoint = { x = pos.x, y = pos.y, z = pos.z }
     end,
 
+    -- ==========================================================================
+    -- SQUASH TRIGGER HELPER
+    -- Starts a squash/stretch effect. Call from any trigger site.
+    --   mode      : "vertical" | "horizontal" | "dashstart"
+    --   intensity : 0.0–1.0, scales effect magnitude
+    -- TO ADD a new mode: add an elseif in the squash update block in Update.
+    -- ==========================================================================
+    _squashTrigger = function(self, mode, intensity)
+        self._squashPhase     = "squash"
+        self._squashTimer     = 0
+        self._squashMode      = mode or "vertical"
+        self._squashIntensity = intensity or 1.0
+    end,
+
+    -- ==========================================================================
+    -- RESPAWN
+    -- ==========================================================================
     RespawnPlayer = function(self)
         local respawnPos = self._initialSpawnPoint
 
@@ -622,46 +514,71 @@ return Component {
         end
 
         CharacterController.SetPosition(self._controller, self._transform)
+
         self._respawnPlayer       = false
         self._playerDead          = false
         self._playerDeadPending   = false
-        self._animator:SetBool("IsDead", false)
         self._justRespawnedPlayer = true
-
-        -- Reset movement lock and momentum on respawn
-        self._playerCanMove  = true
-        self._velX, self._velZ = 0, 0
-
-        -- Reset dash charges on respawn
-        self._dashUses       = self.DashMaxUses
-        self._dashRegenTimer = 0
-
-        -- Reset chain constraint
+        self._playerCanMove       = true
+        self._velX                = 0
+        self._velZ                = 0
+        self._dashUses            = self.DashMaxUses
+        self._dashRegenTimer      = 0
         self._chainConstraintRatio    = 0
         self._chainConstraintExceeded = false
 
+        self._animator:SetBool("IsDead", false)
+
         if event_bus and event_bus.publish then
             event_bus.publish("playerRespawned", respawnPos)
-            dbg(string.format("[PlayerMovement] Respawned to %f %f %f",
-                respawnPos.x, respawnPos.y, respawnPos.z))
         end
     end,
 
+    -- ==========================================================================
+    -- UPDATE
+    -- Sections run in priority order. Higher-priority early-returns prevent
+    -- lower sections from running. Keep that ordering when adding new sections.
+    --
+    -- SECTION ORDER:
+    --   1. Global flags
+    --   2. Respawn
+    --   3. Guard checks (dead / no components)
+    --   4. Cinematic freeze
+    --   5. Knockback
+    --   6. Damage stun timer
+    --   7. Landing recovery timer
+    --   8. Damage stun early-return
+    --   9. Dash charge regen
+    --   10. Attack lunge impulse
+    --   11. Skill cast lock
+    --   12. Interactable lock
+    --   13. Combat movement lock
+    --   14. Chain constraint
+    --   15. Input
+    --   16. Squash & stretch
+    --   17. Peak air height tracking
+    --   18. Death
+    --   19. Dash
+    --   20. Jump
+    --   21. Velocity
+    --   22. Animation
+    --   23. Footsteps
+    --   24. Rotation
+    --   25. Position sync
+    -- ==========================================================================
     Update = function(self, dt)
-        -- Sync global state flags for other systems (e.g. FeatherSkillManager)
-        _G.player_is_jumping = self._isJumping  or false
-        _G.player_is_rolling = self._isRolling  or false
-        _G.player_is_landing = self._isLanding  or false
+
+        -- ── 1. Global flags ───────────────────────────────────────────────────
+        -- Written first so every other system sees current values this frame.
+        _G.player_is_jumping = self._isJumping    or false
+        _G.player_is_rolling = self._isRolling    or false
+        _G.player_is_landing = self._isLanding    or false
         _G.player_is_hurt    = self._isDamageStun or false
-        _G.player_is_dead    = self._playerDead or false
+        _G.player_is_dead    = self._playerDead   or false
         _G.player_is_frozen  = self._frozenBycinematic or self._freezePending or false
 
-        -- =====================================================================
-        -- Respawn
-        if self._respawnPlayer then
-            self:RespawnPlayer()
-            return
-        end
+        -- ── 2. Respawn ────────────────────────────────────────────────────────
+        if self._respawnPlayer then self:RespawnPlayer(); return end
 
         if self._justRespawnedPlayer then
             self._animator:Stop(self.entityId)
@@ -669,12 +586,12 @@ return Component {
             self._justRespawnedPlayer = false
         end
 
+        -- ── 3. Guard checks ───────────────────────────────────────────────────
         if not self._collider or not self._transform or not self._controller or self._playerDead then
             return
         end
 
-        -- =====================================================================
-        -- Cinematic freeze settle timer
+        -- ── 4. Cinematic freeze ───────────────────────────────────────────────
         if self._freezePending then
             self._freezeSettleTimer = self._freezeSettleTimer - dt
             if self._freezeSettleTimer <= 0 then
@@ -692,16 +609,15 @@ return Component {
             return
         end
 
-        -- =====================================================================
-        -- Knockback
+        -- ── 5. Knockback ──────────────────────────────────────────────────────
+        -- Single-frame impulse; cleared immediately after applying.
         if self._kbPending then
             self._kbPending = false
             CharacterController.Move(self._controller, self._kbX or 0, 0, self._kbZ or 0)
             self._kbX, self._kbZ = 0, 0
         end
 
-        -- =====================================================================
-        -- Damage stun timer
+        -- ── 6. Damage stun timer ──────────────────────────────────────────────
         if self._isDamageStun then
             self._damageStunDuration = self._damageStunDuration - dt
             if self._damageStunDuration <= 0 then
@@ -710,8 +626,7 @@ return Component {
             end
         end
 
-        -- =====================================================================
-        -- Landing recovery timer
+        -- ── 7. Landing recovery timer ─────────────────────────────────────────
         if self._isLanding then
             self._landingDuration = self._landingDuration - dt
             if self._landingDuration <= 0 then
@@ -722,12 +637,12 @@ return Component {
             end
         end
 
-        -- During damage stun: keep position in sync, skip all other logic.
-        -- Ground-only: if airborne, fall through so movement stays active.
+        -- ── 8. Damage stun early-return (grounded only) ───────────────────────
+        -- If airborne during stun, fall through so movement stays active.
         local isGroundedStun = CharacterController.IsGrounded(self._controller)
         if self._isDamageStun and isGroundedStun then
             self._animator:SetBool("IsGrounded", isGroundedStun)
-            self._animator:SetBool("IsRunning", self._isRunning)
+            self._animator:SetBool("IsRunning",  self._isRunning)
             local position = CharacterController.GetPosition(self._controller)
             if position then
                 self:SetPosition(position.x, position.y, position.z)
@@ -736,40 +651,26 @@ return Component {
             return
         end
 
-        -- =====================================================================
-        -- Dash charge regen
-        -- Only ticks when uses are depleted. Regenerates one use per
-        -- DashCooldown duration, then immediately starts timing the next.
+        -- ── 9. Dash charge regen ──────────────────────────────────────────────
+        -- Only ticks when uses are depleted. Regenerates one use per DashCooldown.
         if self._dashUses < self.DashMaxUses then
             self._dashRegenTimer = self._dashRegenTimer - dt
             if self._dashRegenTimer <= 0 then
-                self._dashUses = self._dashUses + 1
-                if self._dashUses < self.DashMaxUses then
-                    -- Still missing uses — start timing the next regen immediately
-                    self._dashRegenTimer = self.DashCooldown
-                else
-                    self._dashRegenTimer = 0
-                end
+                self._dashUses       = self._dashUses + 1
+                self._dashRegenTimer = (self._dashUses < self.DashMaxUses) and self.DashCooldown or 0
             end
         end
 
-        -- =====================================================================
-        -- Attack lunge impulse
-        -- Speed and duration are set by the attack_performed subscriber.
-        -- This block just applies the cached values each frame.
+        -- ── 10. Attack lunge impulse ──────────────────────────────────────────
+        -- Direction/speed cached by attack_performed subscriber. Applied each frame.
         if self._lungeTimer and self._lungeTimer > 0 then
             self._lungeTimer = self._lungeTimer - dt
             CharacterController.Move(self._controller,
-                self._lungeDirX * self._lungeSpeed,
-                0,
-                self._lungeDirZ * self._lungeSpeed)
+                self._lungeDirX * self._lungeSpeed, 0, self._lungeDirZ * self._lungeSpeed)
         end
 
-        -- =====================================================================
-        -- Skill cast lock (ground-only)
-        -- Airborne: fall through so movement stays active during aerial skills.
-        local isGroundedSkill = CharacterController.IsGrounded(self._controller)
-        if _G.player_is_casting_skill and isGroundedSkill then
+        -- ── 11. Skill cast lock (grounded only) ───────────────────────────────
+        if _G.player_is_casting_skill and CharacterController.IsGrounded(self._controller) then
             self._animator:SetBool("IsRunning", false)
             self._isRunning = false
             local position = CharacterController.GetPosition(self._controller)
@@ -780,32 +681,21 @@ return Component {
             return
         end
 
-        -- =====================================================================
-        -- Combat movement lock
-        -- While attacking (and this state doesn't allow movement), bleed the
-        -- persistent velocity using AttackDecay — much slower than Deceleration
-        -- so the player visibly carries momentum into the first hit, then stops.
-        --
-        -- self._playerCanMove is kept in sync via the combat_state_changed
-        -- subscriber (set by ComboManager before the event fires, so no lag).
-        -- Using the local copy rather than _G.player_can_move directly makes
-        -- the data flow explicit and removes a hidden global dependency.
-        -- IMPORTANT: The lock is ground-only. If the player becomes airborne
-        -- mid-combo (explicit jump or walking off a ledge), we bypass the lock
-        -- entirely so air control remains fully responsive. Without this, the
-        -- early return below blocks ALL movement for the entire airtime whenever
-        -- an attack was active at the moment of becoming airborne.
+        -- ── 12. Interactable lock ─────────────────────────────────────────────
+        if _G.playerNearInteractable then return end
+
+        -- ── 13. Combat movement lock (grounded only) ──────────────────────────
+        -- Bypassed while airborne so air control stays responsive mid-combo.
+        -- Velocity bleeds at AttackDecay (slow) so momentum carries into hits.
         local isGroundedForLock = CharacterController.IsGrounded(self._controller)
         if _G.player_is_attacking and not self._playerCanMove and isGroundedForLock then
             local decay = 1.0 - math.min(self.AttackDecay * dt, 1.0)
             self._velX = self._velX * decay
             self._velZ = self._velZ * decay
 
-            -- Only push the decayed velocity if no lunge is active this frame.
-            -- The lunge already called CharacterController.Move above; a second
-            -- call here would overwrite it and kill the impulse entirely.
+            -- Don't double-write if a lunge already called Move this frame.
             if not (self._lungeTimer and self._lungeTimer > 0) then
-                local velMag = math.sqrt(self._velX * self._velX + self._velZ * self._velZ)
+                local velMag = math.sqrt(self._velX*self._velX + self._velZ*self._velZ)
                 if velMag > 0.01 then
                     CharacterController.Move(self._controller, self._velX, 0, self._velZ)
                 else
@@ -823,10 +713,11 @@ return Component {
             return
         end
 
-        -- =====================================================================
-        -- Chain movement constraint
+        -- ── 14. Chain movement constraint ─────────────────────────────────────
+        -- Builds tensionRadialX/Z used later in section 21 (velocity).
         tensionRadialX = 0
         tensionRadialZ = 0
+        tensionScale   = 1.0
 
         if self._chainConstraintExceeded then
             self._chainConstraintRatio    = 0
@@ -838,21 +729,20 @@ return Component {
         elseif self._chainConstraintRatio and self._chainConstraintRatio > 0 then
             local pos = CharacterController.GetPosition(self._controller)
             if pos and self._chainEndX and self._chainEndZ then
-                local radX = pos.x - self._chainEndX
-                local radZ = pos.z - self._chainEndZ
-                local radLen = math.sqrt(radX * radX + radZ * radZ)
+                local radX   = pos.x - self._chainEndX
+                local radZ   = pos.z - self._chainEndZ
+                local radLen = math.sqrt(radX*radX + radZ*radZ)
                 if radLen > 1e-4 then
                     tensionRadialX = radX / radLen
                     tensionRadialZ = radZ / radLen
-                    tensionScale   = math.max(0.0, 1.0 - self._chainConstraintRatio^3 * (self.TensionScale or 0.85))
+                    tensionScale   = math.max(0.0,
+                        1.0 - self._chainConstraintRatio^3 * (self.TensionScale or 0.85))
                 end
             end
         end
 
-        -- =====================================================================
-        -- Read movement axis from InputInterpreter
-        -- PlayerMovement never touches _G.Input directly. InputInterpreter
-        -- is the single owner of raw input polling.
+        -- ── 15. Input ─────────────────────────────────────────────────────────
+        -- Always read through InputInterpreter. Never touch _G.Input directly.
         local axis
         if self._freezePending then
             axis = { x = 0, y = 0 }
@@ -864,29 +754,105 @@ return Component {
         local rawX = -axis.x
         local rawZ =  axis.y
 
-        -- =====================================================================
-        -- Camera-relative movement
+        -- Camera-relative movement: rotate input by camera yaw.
         local cameraYaw = _G.CAMERA_YAW or self._cameraYaw or 180.0
         local moveX, moveZ = 0, 0
 
         if rawX ~= 0 or rawZ ~= 0 then
             self._prevRawX = rawX
             self._prevRawZ = rawZ
-
             local yawRad = math.rad(cameraYaw)
             local sinYaw = math.sin(yawRad)
             local cosYaw = math.cos(yawRad)
-
             moveX = rawZ * (-sinYaw) - rawX * cosYaw
             moveZ = rawZ * (-cosYaw) + rawX * sinYaw
         end
 
-        local isMoving  = (moveX ~= 0 or moveZ ~= 0)
+        local isMoving   = (moveX ~= 0 or moveZ ~= 0)
         local isGrounded = CharacterController.IsGrounded(self._controller)
         local isJumping  = false
         self._animator:SetBool("IsGrounded", isGrounded)
 
-        -- Track peak Y while airborne so fall distance = peakY - landY
+        -- ── 16. Squash & stretch ──────────────────────────────────────────────
+        -- Runs each frame while _squashPhase is active.
+        -- Modes:
+        --   "vertical"  : landing — Y squashes down, XZ widens, Y springs past 1.0
+        --   "horizontal": dash end / chain recoil — Y pops up, XZ squashes in
+        --   "dashstart" : dash launch — Y stretches tall, XZ compresses briefly
+        -- Stretch phase is a two-step spring: peak → overshoot → 1.0
+        -- TO ADD a mode: add elseif branch here, call _squashTrigger at the event site.
+        if self._squashPhase and self._transform then
+            local scaleTable = self._transform.localScale
+            if scaleTable then
+                self._squashTimer = self._squashTimer + dt
+                local i  = (self.SquashStrength or 0.5) * (self._squashIntensity or 1.0)
+                local mode = self._squashMode or "vertical"
+                local sx, sy, sz = 1.0, 1.0, 1.0
+
+                -- All amplitudes derived from SquashStrength (0-1) * per-event weight.
+                -- Hardcoded ratios define the shape; only SquashStrength needs tuning.
+                --   vertical  : Y squashes DOWN, XZ widens, Y bounces slightly above 1.0
+                --   horizontal: Y pops UP, XZ squashes IN  (dash end / chain)
+                --   dashstart : Y stretches TALL, XZ squashes IN  (dash launch)
+                local yPeak, xzPeak, yOver
+                if mode == "vertical" then
+                    yPeak  = 1.0 - 0.30 * i   -- Y squashes down  (0.70 at full strength)
+                    xzPeak = 1.0 + 0.18 * i   -- XZ widens out    (1.18 at full strength)
+                    yOver  = 1.0 + 0.08 * i   -- Y bounces above  (1.08 at full strength)
+                elseif mode == "horizontal" then
+                    yPeak  = 1.0 + 0.08 * i   -- Y pops up        (1.08 at full strength)
+                    xzPeak = 1.0 - 0.10 * i   -- XZ squashes in   (0.90 at full strength)
+                    yOver  = 1.0
+                elseif mode == "dashstart" then
+                    yPeak  = 1.0 + 0.10 * i   -- Y stretches tall (1.10 at full strength)
+                    xzPeak = 1.0 - 0.07 * i   -- XZ squashes in   (0.93 at full strength)
+                    yOver  = 1.0
+                end
+
+                if self._squashPhase == "squash" then
+                    -- Lerp from (1,1,1) → (yPeak, xzPeak)
+                    local t = math.min(self._squashTimer / math.max(self.SquashDuration or 0.07, 1e-4), 1.0)
+                    sy = 1.0 + (yPeak  - 1.0) * t
+                    sx = 1.0 + (xzPeak - 1.0) * t
+                    sz = sx
+                    if t >= 1.0 then
+                        self._squashPhase = "stretch"
+                        self._squashTimer = 0
+                    end
+
+                elseif self._squashPhase == "stretch" then
+                    -- Two-step spring:
+                    --   First half  (t 0→0.5): peak → overshoot
+                    --   Second half (t 0.5→1): overshoot → 1.0
+                    -- XZ just lerps from xzPeak → 1.0 across the full duration.
+                    local t = math.min(self._squashTimer / math.max(self.StretchDuration or 0.22, 1e-4), 1.0)
+                    if t < 0.5 then
+                        local t2 = t * 2  -- 0→1 over first half
+                        sy = yPeak + (yOver  - yPeak)  * t2
+                        sx = xzPeak + (1.0   - xzPeak) * t2
+                    else
+                        local t2 = (t - 0.5) * 2  -- 0→1 over second half
+                        sy = yOver + (1.0 - yOver) * t2
+                        sx = 1.0
+                    end
+                    sz = sx
+                    if t >= 1.0 then
+                        sx, sy, sz        = 1.0, 1.0, 1.0
+                        self._squashPhase = nil
+                    end
+                end
+
+                pcall(function()
+                    scaleTable.x = sx
+                    scaleTable.y = sy
+                    scaleTable.z = sz
+                    self._transform.isDirty = true
+                end)
+            end
+        end
+
+        -- ── 17. Peak air height tracking ──────────────────────────────────────
+        -- Used on landing to compute fall distance for squash intensity + roll threshold.
         if not isGrounded then
             local airPos = CharacterController.GetPosition(self._controller)
             if airPos and airPos.y > (self._peakAirY or airPos.y) then
@@ -894,27 +860,19 @@ return Component {
             end
         end
 
-
-        -- =====================================================================
-        -- Death pending
+        -- ── 18. Death ─────────────────────────────────────────────────────────
         if self._playerDeadPending and isGrounded then
-            if self._animator then
-                self._animator:SetBool("IsDead", true)
-                dbg("[PlayerMovement] Player grounded, playing Death animation")
-            end
+            self._animator:SetBool("IsDead", true)
             self._playerDead        = true
             self._playerDeadPending = false
             return
         end
 
-        -- =====================================================================
-        -- Dash execution
-        -- ComboManager decides a dash happens; this block executes the physics.
+        -- ── 19. Dash ──────────────────────────────────────────────────────────
+        -- ComboManager fires dash_performed. All dash physics lives here.
         --
-        -- Early-cancel: while a dash is active a new input is held (not dropped).
-        -- It fires the moment progress >= DashEarlyCancelRatio, resetting the
-        -- timer and consuming a use. Inputs before the window stay buffered so
-        -- pressing dash a frame early still chains at the exact threshold.
+        -- Early-cancel: an input during an active dash is held (not dropped) and
+        -- fires the moment progress >= DashEarlyCancelRatio.
         local earlyCancel = self._isDashing and
             (self.DashDuration - self._dashTimer) / self.DashDuration
                 >= (self.DashEarlyCancelRatio or 0.9)
@@ -926,27 +884,20 @@ return Component {
             and not self._isLanding
             and not self._freezePending
         then
-            self._dashRequested  = false
-            self._isDashing      = true
-            self._dashTimer      = self.DashDuration
-            _G.player_is_dashing = true
+            -- Start dash
+            self._dashRequested   = false
+            self._isDashing       = true
+            self._dashTimer       = self.DashDuration
+            _G.player_is_dashing  = true
             self._wasDashingInAir = not isGrounded
+            self:_squashTrigger("dashstart", 0.7)
 
-            if earlyCancel then
-                print("[PlayerMovement] Dash early-cancelled and re-triggered")
-            else
-                print("[PlayerMovement] Dash started (duration=" .. tostring(self._dashTimer) .. ")")
-            end
-
-            -- Consume one use and immediately start the regen countdown.
-            -- Always reset the timer so each use begins its own cooldown right away,
-            -- regardless of whether a previous regen was already in progress.
             self._dashUses       = self._dashUses - 1
             self._dashRegenTimer = self.DashCooldown
 
-            -- Dash direction: prefer input, fall back to current facing
+            -- Direction: prefer current input, fall back to current facing.
             if isMoving then
-                local len = math.sqrt(moveX * moveX + moveZ * moveZ)
+                local len = math.sqrt(moveX*moveX + moveZ*moveZ)
                 self._dashDirX = moveX / len
                 self._dashDirZ = moveZ / len
             else
@@ -958,35 +909,23 @@ return Component {
                     self._dashDirX = math.sin(angle)
                     self._dashDirZ = math.cos(angle)
                 else
-                    self._dashDirX = 0
-                    self._dashDirZ = 1
+                    self._dashDirX = 0; self._dashDirZ = 1
                 end
             end
 
-            self._animator:SetBool("IsJumping", false)
-            self._isJumping = false
-            self._animator:SetBool("IsRunning", false)
-            self._isRunning = false
-            -- Only set IsDashing bool on a fresh dash — the animator state machine
-            -- needs it to transition in from idle/run. On an early-cancel the dash
-            -- state is already active, so only the trigger is needed to restart it.
-            if not earlyCancel then
-                self._animator:SetBool("IsDashing", true)
-            end
+            self._animator:SetBool("IsJumping", false); self._isJumping = false
+            self._animator:SetBool("IsRunning",  false); self._isRunning  = false
+            if not earlyCancel then self._animator:SetBool("IsDashing", true) end
             self._animator:SetTrigger("Dash")
-
             playRandomSFX(self._audio, self.playerDashSFX)
 
         elseif self._dashRequested and self._isDashing then
-            -- Inside the dash but before the early-cancel window — hold the
-            -- request so it fires the moment the threshold is crossed.
-            -- (do nothing: _dashRequested stays true)
+            -- Inside dash, before early-cancel window. Hold the request.
 
         elseif self._dashRequested then
-            -- All other blocking conditions (stun, landing, no uses) — discard.
-            print("[PlayerMovement] Dash discarded (uses=" .. self._dashUses
-                .. " stun=" .. tostring(self._isDamageStun)
-                .. " landing=" .. tostring(self._isLanding) .. ")")
+            -- Blocked (stun / landing / no uses). Discard.
+            print(string.format("[PlayerMovement] Dash discarded (uses=%d stun=%s landing=%s)",
+                self._dashUses, tostring(self._isDamageStun), tostring(self._isLanding)))
             self._dashRequested = false
         end
 
@@ -994,18 +933,15 @@ return Component {
             self._dashTimer = self._dashTimer - dt
 
             if self._dashTimer <= 0 then
-                -- Dash finished: carry dash velocity into normal movement so the
-                -- momentum system can arc it naturally. TurnDecel will bleed the
-                -- speed off in a smooth arc when the player steers the other way,
-                -- rather than snapping from zero. Clamp to Speed so it doesn't
-                -- overshoot normal top speed on exit.
-                self._isDashing          = false
-                _G.player_is_dashing     = false
-                self._wasDashingInAir    = false
+                -- Dash ended: carry speed into normal movement for a natural momentum arc.
+                self._isDashing       = false
+                _G.player_is_dashing  = false
+                self._wasDashingInAir = false
                 self._animator:SetBool("IsDashing", false)
-                self._velX = self._dashDirX * self.Speed
-                self._velZ = self._dashDirZ * self.Speed
-                self._postDashTimer      = self.PostDashRecoveryTime or 0
+                self._velX          = self._dashDirX * self.Speed
+                self._velZ          = self._dashDirZ * self.Speed
+                self._postDashTimer = self.PostDashRecoveryTime or 0
+                self:_squashTrigger("horizontal", 0.6)
 
                 if event_bus and event_bus.publish then
                     event_bus.publish("dash_ended", {
@@ -1015,27 +951,21 @@ return Component {
                         cooldown   = self.DashCooldown,
                     })
                 end
-                print("[PlayerMovement] Dash ended (uses remaining=" .. self._dashUses .. ")")
+
             else
-                -- Dash active: apply impulse and sync position.
-                -- Player retains directional influence — input steers the dash
-                -- direction at DashSteerSpeed (degrees/sec) but cannot reverse
-                -- or brake. The dash momentum stays dominant; input only rotates
-                -- the direction the dash is travelling.
+                -- Dash active: steer direction, apply impulse, sync position.
+                -- Input steers forward only — pushing back is ignored to prevent braking.
                 if isMoving then
-                    local inputLen = math.sqrt(moveX * moveX + moveZ * moveZ)
+                    local inputLen  = math.sqrt(moveX*moveX + moveZ*moveZ)
                     local inputDirX = moveX / inputLen
                     local inputDirZ = moveZ / inputLen
-
-                    -- Only steer if input has a forward component (dot > 0).
-                    -- This prevents the player from braking by pushing backward.
                     local dot = inputDirX * self._dashDirX + inputDirZ * self._dashDirZ
                     if dot > 0 then
                         local maxRotRad = math.rad(self.DashSteerSpeed or 180.0) * dt
-                        local t = math.min(maxRotRad, 1.0)
+                        local t   = math.min(maxRotRad, 1.0)
                         local newX = self._dashDirX + (inputDirX - self._dashDirX) * t
                         local newZ = self._dashDirZ + (inputDirZ - self._dashDirZ) * t
-                        local len  = math.sqrt(newX * newX + newZ * newZ)
+                        local len  = math.sqrt(newX*newX + newZ*newZ)
                         if len > 0.001 then
                             self._dashDirX = newX / len
                             self._dashDirZ = newZ / len
@@ -1055,10 +985,9 @@ return Component {
                 if not isGrounded then self._wasDashingInAir = true end
 
                 if self.SetRotation then
-                    local targetW, targetX, targetY, targetZ = directionToQuaternion(self._dashDirX, self._dashDirZ)
-                    self._currentRotW, self._currentRotX, self._currentRotY, self._currentRotZ =
-                        targetW, targetX, targetY, targetZ
-                    pcall(self.SetRotation, self, targetW, targetX, targetY, targetZ)
+                    local w, x, y, z = directionToQuaternion(self._dashDirX, self._dashDirZ)
+                    self._currentRotW, self._currentRotX, self._currentRotY, self._currentRotZ = w, x, y, z
+                    pcall(self.SetRotation, self, w, x, y, z)
                 end
 
                 local position = CharacterController.GetPosition(self._controller)
@@ -1067,14 +996,11 @@ return Component {
                     if event_bus and event_bus.publish then event_bus.publish("player_position", position) end
                 end
 
-                -- Dash still active: skip movement + animation this frame.
+                return  -- Skip movement + animation while dash is active.
             end
         end
 
-        if not self._isDashing then
-
-        -- =====================================================================
-        -- Jump
+        -- ── 20. Jump ──────────────────────────────────────────────────────────
         local interp = _G.InputInterpreter
         if not self._isLanding and not self._freezePending
             and interp and interp:IsJumpJustPressed() and isGrounded
@@ -1083,13 +1009,14 @@ return Component {
             isJumping = true
             self._animator:SetBool("IsJumping", true)
             playRandomSFX(self._audio, self.playerJumpSFX)
-            -- Reset peak height tracker at jump start
             local launchPos = CharacterController.GetPosition(self._controller)
-            self._peakAirY = launchPos and launchPos.y or 0
+            self._peakAirY  = launchPos and launchPos.y or 0
+            -- TO ADD double-jump: track jump count here, gate on _jumpCount, call Jump again.
         end
 
-        -- =====================================================================
-        -- Momentum-based velocity update
+        -- ── 21. Velocity ──────────────────────────────────────────────────────
+        -- All XZ movement is driven through _velX/_velZ.
+        -- C++ CharacterController owns vertical (gravity + jump).
         if not isJumping then
             if isMoving then
                 local targetX = moveX * self.Speed
@@ -1097,33 +1024,28 @@ return Component {
                 local dot = self._velX * targetX + self._velZ * targetZ
 
                 if not isGrounded then
-                    -- Air control: same acceleration/pivot as ground but scaled
-                    -- down by AirControlMultiplier.
-                    --   0.0 = ballistic (no steering)
-                    --   1.0 = full ground-level control
-                    local rate = (dot < 0) and self.TurnDecel or self.Acceleration
-                    rate = rate * (self.AirControlMultiplier or 0.3)
+                    -- Air control: same logic as ground, scaled by AirControlMultiplier.
+                    local rate = ((dot < 0) and self.TurnDecel or self.Acceleration)
+                        * (self.AirControlMultiplier or 0.3)
                     local t = math.min(rate * dt, 1.0)
                     self._velX = self._velX + (targetX - self._velX) * t
                     self._velZ = self._velZ + (targetZ - self._velZ) * t
+
                 else
-                    -- Grounded: normal accelerate or pivot.
-                    -- Post-dash: restrict reverse steering for PostDashRecoveryTime seconds.
+                    -- Grounded.
+                    -- Post-dash: restrict reverse steering. Dot against dashDir
+                    -- (not velocity, which may have already drifted).
                     if self._postDashTimer > 0 then
                         self._postDashTimer = self._postDashTimer - dt
-                        local recovery = 1.0 - math.max(0, self._postDashTimer / (self.PostDashRecoveryTime or 0.25))
-                        -- Check input against dash direction, not velocity (velocity may already be drifting)
-                        local dashInputDot = (moveX * self._dashDirX + moveZ * self._dashDirZ)
-                        if dashInputDot < 0 then
-                            local rate = self.TurnDecel * (0.1 + 0.9 * recovery)
-                            local t = math.min(rate * dt, 1.0)
-                            self._velX = self._velX + (targetX - self._velX) * t
-                            self._velZ = self._velZ + (targetZ - self._velZ) * t
-                        else
-                            local t = math.min(self.Acceleration * dt, 1.0)
-                            self._velX = self._velX + (targetX - self._velX) * t
-                            self._velZ = self._velZ + (targetZ - self._velZ) * t
-                        end
+                        local recovery = 1.0 - math.max(0,
+                            self._postDashTimer / (self.PostDashRecoveryTime or 0.25))
+                        local dashInputDot = moveX * self._dashDirX + moveZ * self._dashDirZ
+                        local rate = dashInputDot < 0
+                            and self.TurnDecel * (0.1 + 0.9 * recovery)
+                            or  self.Acceleration
+                        local t = math.min(rate * dt, 1.0)
+                        self._velX = self._velX + (targetX - self._velX) * t
+                        self._velZ = self._velZ + (targetZ - self._velZ) * t
                     else
                         local rate = (dot < 0) and self.TurnDecel or self.Acceleration
                         local t = math.min(rate * dt, 1.0)
@@ -1131,108 +1053,97 @@ return Component {
                         self._velZ = self._velZ + (targetZ - self._velZ) * t
                     end
                 end
+
             else
                 if isGrounded then
-                    -- Grounded: bleed to stop when stick is released.
+                    -- No input grounded: bleed to stop.
                     local decay = 1.0 - math.min(self.Deceleration * dt, 1.0)
-                    self._velX = self._velX * decay
-                    self._velZ = self._velZ * decay
-                    if math.sqrt(self._velX * self._velX + self._velZ * self._velZ) < 0.001 then
+                    self._velX  = self._velX * decay
+                    self._velZ  = self._velZ * decay
+                    if math.sqrt(self._velX*self._velX + self._velZ*self._velZ) < 0.001 then
                         self._velX, self._velZ = 0, 0
                     end
                 end
-                -- In air with no input: preserve momentum entirely.
-                -- C++ gravity handles the arc; Lua doesn't bleed XZ.
+                -- No input in air: preserve full momentum. C++ handles gravity arc.
             end
 
-            -- Apply chain tension: resist outward component, leave lateral/inward free
-            local mx, mz = self._velX, self._velZ
+            -- Chain tension: resist outward movement only. Lateral/inward is free.
+            local mx, mz     = self._velX, self._velZ
             local tensionDot = mx * tensionRadialX + mz * tensionRadialZ
             if tensionDot > 0 then
                 mx = mx - tensionRadialX * tensionDot * (1.0 - tensionScale)
                 mz = mz - tensionRadialZ * tensionDot * (1.0 - tensionScale)
             end
 
-            local velMag = math.sqrt(mx * mx + mz * mz)
+            local velMag = math.sqrt(mx*mx + mz*mz)
             if velMag > 0.001 then
                 CharacterController.Move(self._controller, mx, 0, mz)
             end
         end
 
-        -- =====================================================================
-        -- Animation
-        -- isEffectivelyMoving covers two cases:
-        --   • isMoving  : stick is held (normal run)
-        --   • velMag    : velocity is still high from a dash-exit burst or
-        --                 post-attack carry-over with no stick input.
-        -- Without the velMag check the character would slide visibly but
-        -- play no run animation during those coast-off periods.
-        local coastVelMag = math.sqrt(self._velX * self._velX + self._velZ * self._velZ)
+        -- ── 22. Animation ─────────────────────────────────────────────────────
+        -- isEffectivelyMoving covers coast-off after stick release (velocity still
+        -- high from dash exit or attack carry-over with no input).
+        local coastVelMag         = math.sqrt(self._velX*self._velX + self._velZ*self._velZ)
         local isEffectivelyMoving = isMoving or coastVelMag > 0.1
 
         if not isGrounded then
             if not self._isJumping then
-                -- Player became airborne without pressing Jump (e.g. walked off a ledge).
-                -- Previously only the internal flags were set; the animator was never told,
-                -- causing the run clip to keep playing mid-air and the jump/fall bool to
-                -- never flip. Now we mirror what the explicit jump-press path does.
+                -- Became airborne without jump press (walked off a ledge).
                 self._isJumping = true
                 self._isRunning = false
                 self._animator:SetBool("IsRunning", false)
                 self._animator:SetBool("IsJumping", true)
-                -- Reset peak height tracker on walk-off
                 local walkOffPos = CharacterController.GetPosition(self._controller)
-                self._peakAirY = walkOffPos and walkOffPos.y or 0
+                self._peakAirY   = walkOffPos and walkOffPos.y or 0
             end
         else
             if self._isJumping then
+                -- Landed.
                 self._isJumping = false
-                self._animator:SetBool("IsJumping", false)
                 self._isLanding = true
+                self._animator:SetBool("IsJumping", false)
                 playRandomSFX(self._audio, self.playerLandSFX)
 
-                -- Measure fall distance from peak height to landing position
                 local landPos  = CharacterController.GetPosition(self._controller)
                 local landY    = landPos and landPos.y or 0
                 local fallDist = (self._peakAirY or landY) - landY
+
+                -- Landing intensity: small hop = 0.3, big drop = 1.0
+                -- Tune SquashStrength to control overall scale; this just weights by height.
+                local intensity = math.max(0.3, math.min(1.0, fallDist / 3.0))
+                self:_squashTrigger("vertical", intensity)
+
                 local hardLand = fallDist >= (self.RollHeightThreshold or 2.5)
-                print(string.format("[Landing] peakY=%.2f landY=%.2f fallDist=%.2f threshold=%.2f roll=%s",
-                    self._peakAirY or 0, landY, fallDist, self.RollHeightThreshold or 2.5, tostring(hardLand)))
+                print(string.format("[Landing] fallDist=%.2f intensity=%.2f roll=%s",
+                    fallDist, intensity, tostring(hardLand)))
 
                 if hardLand then
-                    -- Fell far enough: roll landing
                     self._isRolling = true
                     self._animator:SetBool("IsRolling", true)
                     self._animator:SetBool("IsRunning", false)
                     self._isRunning = false
                 else
-                    -- Soft land
                     self._isRolling = false
                     self._animator:SetBool("IsRolling", false)
-                    if isEffectivelyMoving then
-                        self._animator:SetBool("IsRunning", true)
-                        self._isRunning = true
-                    else
-                        self._animator:SetBool("IsRunning", false)
-                        self._isRunning = false
-                    end
+                    self._animator:SetBool("IsRunning", isEffectivelyMoving)
+                    self._isRunning = isEffectivelyMoving
                 end
+
             elseif isEffectivelyMoving and not self._isRunning then
                 self._animator:SetBool("IsRunning", true)
                 self._isRunning = true
+
             elseif not isMoving and self._isRunning then
-                -- Only cut the run anim when velocity has actually bled off,
-                -- not the instant the stick is released.
-                local velMag = math.sqrt(self._velX * self._velX + self._velZ * self._velZ)
-                if velMag < 0.05 then
+                -- Cut run anim only once velocity has actually bled off.
+                if coastVelMag < 0.05 then
                     self._animator:SetBool("IsRunning", false)
                     self._isRunning = false
                 end
             end
         end
 
-        -- =====================================================================
-        -- Footsteps
+        -- ── 23. Footsteps ─────────────────────────────────────────────────────
         if self._isRunning and isGrounded and not self._isLanding then
             if not self._wasRunning then
                 playRandomSFX(self._audio, self.playerFootstepSFX)
@@ -1248,30 +1159,30 @@ return Component {
         end
         self._wasRunning = self._isRunning
 
-        -- =====================================================================
-        -- Rotation
-        -- Rotate toward input direction while input is held.
-        -- In air, rotation speed is scaled by AirControlMultiplier so the
-        -- character doesn't snap to a new direction faster than it can move there.
-        -- While coasting (no input but still moving), hold the last facing.
+        -- ── 24. Rotation ──────────────────────────────────────────────────────
+        -- Rotate toward input while input is held.
+        -- Air: scaled by AirControlMultiplier (rotation tracks movement capability).
+        -- Post-dash: reverse rotation restricted for PostDashRecoveryTime.
         if isMoving then
-            local mag = math.sqrt(moveX * moveX + moveZ * moveZ)
+            local mag = math.sqrt(moveX*moveX + moveZ*moveZ)
             self._facingX = moveX / mag
             self._facingZ = moveZ / mag
 
             local targetW, targetX, targetY, targetZ = directionToQuaternion(moveX, moveZ)
             local rotRate = self.rotationSpeed
+
             if not isGrounded then
                 rotRate = rotRate * (self.AirControlMultiplier or 0.1)
             elseif self._postDashTimer > 0 then
-                -- Post-dash: restrict rotation speed if input opposes the dash direction.
-                -- Use _dashDirX/Z (not _facingX/Z which is already updated to new input).
-                local dashDot = (moveX * self._dashDirX + moveZ * self._dashDirZ)
+                -- Only restrict if input opposes the dash direction.
+                local dashDot = moveX * self._dashDirX + moveZ * self._dashDirZ
                 if dashDot < 0 then
-                    local recovery = 1.0 - math.max(0, self._postDashTimer / (self.PostDashRecoveryTime or 0.25))
+                    local recovery = 1.0 - math.max(0,
+                        self._postDashTimer / (self.PostDashRecoveryTime or 0.25))
                     rotRate = rotRate * (0.1 + 0.9 * recovery)
                 end
             end
+
             local t = math.min(rotRate * dt, 1.0)
             local newW, newX, newY, newZ = lerpQuaternion(
                 self._currentRotW, self._currentRotX,
@@ -1283,10 +1194,9 @@ return Component {
             pcall(self.SetRotation, self, newW, newX, newY, newZ)
         end
 
-        end -- if not self._isDashing
-
-        -- =====================================================================
-        -- Position sync
+        -- ── 25. Position sync ─────────────────────────────────────────────────
+        -- Always the final write each frame. Keeps transform in sync with
+        -- the CharacterController's resolved position after physics.
         local position = CharacterController.GetPosition(self._controller)
         if position then
             self:SetPosition(position.x, position.y, position.z)
@@ -1294,24 +1204,25 @@ return Component {
         end
     end,
 
+    -- ==========================================================================
+    -- ON DISABLE
+    -- ==========================================================================
     OnDisable = function(self)
         if event_bus and event_bus.unsubscribe then
-            if self._cameraYawSub             then event_bus.unsubscribe(self._cameraYawSub)             end
-            if self._playerDeadSub            then event_bus.unsubscribe(self._playerDeadSub)            end
-            if self._playerHurtTriggeredSub   then event_bus.unsubscribe(self._playerHurtTriggeredSub)   end
-            if self._knockSub                 then event_bus.unsubscribe(self._knockSub)                 end
-            if self._respawnPlayerSub         then event_bus.unsubscribe(self._respawnPlayerSub)         end
-            if self._activatedCheckpointSub   then event_bus.unsubscribe(self._activatedCheckpointSub)  end
-            if self._freezePlayerSub          then event_bus.unsubscribe(self._freezePlayerSub)          end
-            if self._requestPlayerForwardSub  then event_bus.unsubscribe(self._requestPlayerForwardSub) end
-            if self._attackLungeSub           then event_bus.unsubscribe(self._attackLungeSub)           end
-            if self._combatStateSub           then event_bus.unsubscribe(self._combatStateSub)           end
-            if self._forceRotSub              then event_bus.unsubscribe(self._forceRotSub)              end
-            if self._chainFiredRotSub         then event_bus.unsubscribe(self._chainFiredRotSub)         end
-            if self._dashPerformedSub         then event_bus.unsubscribe(self._dashPerformedSub)         end
-            if self._chainConstraintSub       then event_bus.unsubscribe(self._chainConstraintSub)       end
+            -- Add new handle keys here whenever a subscription is added in Awake.
+            local subs = {
+                "_cameraYawSub", "_playerDeadSub", "_playerHurtTriggeredSub",
+                "_knockSub", "_respawnPlayerSub", "_activatedCheckpointSub",
+                "_freezePlayerSub", "_requestPlayerForwardSub", "_attackLungeSub",
+                "_combatStateSub", "_forceRotSub", "_chainFiredRotSub",
+                "_dashPerformedSub", "_chainConstraintSub",
+            }
+            for _, key in ipairs(subs) do
+                if self[key] then event_bus.unsubscribe(self[key]); self[key] = nil end
+            end
         end
 
+        -- Reset transient state so re-enable starts clean.
         self._frozenBycinematic       = false
         self._playerCanMove           = true
         self._velX                    = 0
@@ -1321,5 +1232,7 @@ return Component {
         self._chainConstraintRatio    = 0
         self._chainConstraintExceeded = false
         self._chainDrag               = false
+        self._squashPhase             = nil
+        _G.player_is_dashing          = false
     end,
 }
