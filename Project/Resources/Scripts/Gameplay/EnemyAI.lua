@@ -450,6 +450,9 @@ return Component {
 
         if self.health <= 0 and not self.dead then
             self.dead = true
+            if _G.event_bus and _G.event_bus.publish then
+                _G.event_bus.publish("enemy_died", { entityId = self.entityId })
+            end
         end
 
         if self.dead then
