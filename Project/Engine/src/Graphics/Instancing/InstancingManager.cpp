@@ -84,6 +84,7 @@ bool InstancingManager::IsInstanceable(const ModelRenderComponent& component) co
     if (component.HasAnimation()) return false;
     if (!component.model || !component.shader) return false;
     if (!component.model->mBoneInfoMap.empty()) return false;
+    if (component.depthOffset) return false;
 
     return true;
 }
