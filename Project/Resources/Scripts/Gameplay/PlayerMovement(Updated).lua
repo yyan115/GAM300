@@ -133,7 +133,7 @@ return Component {
     -- ==========================================================================
     fields = {
 
-        -- ── Ground movement ───────────────────────────────────────────────────
+        -- === Ground movement ===
         Speed        = 4.0,   -- Top running speed (world units/sec).
         Acceleration = 22.0,  -- Rate velocity climbs to Speed when input held. High = snappy.
         Deceleration = 16.0,  -- Rate velocity falls to zero when input released. High = firm stop.
@@ -141,12 +141,12 @@ return Component {
         AttackDecay  = 6.0,   -- Velocity bleed during combo lock. Low = more momentum carry into hits.
         -- TO ADD new ground feel: add field here.
 
-        -- ── Jump & air control ────────────────────────────────────────────────
+        -- === Jump & air control ===
         JumpHeight           = 1.2,   -- Vertical impulse magnitude.
         AirControlMultiplier = 0.3,   -- Scales both turn rate and accel in air. 0=ballistic, 1=full control.
         -- TO ADD double-jump / wall-jump: add fields here, handle in the Jump section of Update.
 
-        -- ── Dash ──────────────────────────────────────────────────────────────
+        -- === Dash ===
         DashSpeed              = 5.0,   -- Dash impulse speed — independent of Speed.
         DashDuration           = 0.7,   -- Seconds dash lasts. Match to dash animation.
         DashCooldown           = 2.5,   -- Seconds before a consumed use regenerates.
@@ -158,7 +158,7 @@ return Component {
         PostDashRecoveryTime   = 0.25,  -- Seconds after dash ends before full reverse steering is restored. 0 = no restriction.
         -- TO ADD dash variants (dodge roll, air dive): add fields here.
 
-        -- ── Combat / lunge ────────────────────────────────────────────────────
+        -- === Combat / lunge ===
         -- Fallback values — real values come from ComboManager's lunge table.
         -- These only fire if attack_performed carries no lunge payload.
         AttackLungeSpeed    = 4.0,
@@ -166,16 +166,16 @@ return Component {
         ChainKickbackSpeed  = 2.5,   -- Kickback impulse on chain attack (opposite to throw direction). 0 = none.
         -- TO ADD per-attack feel: edit lunge table in ComboManager, not here.
 
-        -- ── Chain weapon ──────────────────────────────────────────────────────
+        -- === Chain weapon ===
         TensionScale = 0.85,  -- Resistance to outward movement when chain is taut. 0=none, 1=full block.
         -- TO ADD chain swing / pull-toward modes: add fields here.
 
-        -- ── Landing ───────────────────────────────────────────────────────────
+        -- === Landing ===
         LandingDuration     = 0.4,   -- Seconds of recovery before movement restores.
         RollHeightThreshold = 2.5,   -- Fall distance (world units) that triggers roll instead of soft land.
         -- TO ADD landing SFX variation or ledge-grab: add fields here.
 
-        -- ── Squash & stretch ──────────────────────────────────────────────────
+        -- === Squash & stretch ===
         -- SquashStrength : how dramatic the effect is. Start here.
         --                  0.0 = disabled   0.3 = subtle   1.0 = cartoony
         --                  Scales all events — landing, dash, chain.
@@ -185,13 +185,13 @@ return Component {
         SquashDuration  = 0.07,
         StretchDuration = 0.22,
 
-        -- ── Feel / timing ─────────────────────────────────────────────────────
+        -- === Feel / timing ===
         DamageStunDuration  = 0.5,    -- Seconds of stun after being hit.
         CinematicSettleTime = 0.8,    -- Seconds to settle before cinematic hard-freeze locks movement.
         footstepInterval    = 0.30,   -- Seconds between footstep SFX triggers while running.
         -- TO ADD new feel tuning: add field here.
 
-        -- ── Audio ─────────────────────────────────────────────────────────────
+        -- === Audio ===
         -- Populate with clip GUIDs in the editor. Each accepts a list for random selection.
         -- TO ADD new SFX: add a field here and call playRandomSFX in the relevant Update section.
         playerFootstepSFX = {},
