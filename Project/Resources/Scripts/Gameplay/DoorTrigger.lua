@@ -184,10 +184,14 @@ return Component {
                 -- Hide tooltip and proceed with pickup
                 self:_setTooltipVisible(false)
                 self._tooltipShown = false
-                -- Keep interactable flag active during pickup so combat scripts
-                -- don't process the same Attack input as a swing
-                _G.playerNearInteractable = true
                 self.hasOpened = true
+
+                -- Tell ComboManager to disable attacks for the duration of the
+                -- pickup + door sequence so the Attack press isn't also processed
+                -- as a swing. ComboManager owns that gate; we just signal it.
+                if event_bus and event_bus.publish then
+                    event_bus.publish("set_attacks_enabled", false)
+                end
 
                 -- --- Start Weapon Fly ---
                 if self.weaponPickupEnt and self.weaponOnHandEnt then
@@ -342,7 +346,10 @@ return Component {
             self.delayTime = self.delayTime + dt
             if self.delayTime >= self.postOpenDelay then
                 self.isWaiting = false
-                -- Now safe to allow attacks — input buffer is long expired
+                -- Input buffer has long expired — safe to re-enable attacks now.
+                if event_bus and event_bus.publish then
+                    event_bus.publish("set_attacks_enabled", true)
+                end
                 _G.playerNearInteractable = false
             end
         end
@@ -365,7 +372,7 @@ return Component {
             spriteComp.alpha = visible and 1.0 or 0.0
         end
 
-        -- Set global flag so combat scripts know to skip attacks
+        -- Set global flag so other systems know the tooltip/interactable UI is active
         _G.playerNearInteractable = visible
     end,
 }
