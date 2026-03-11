@@ -395,7 +395,7 @@ public:
     /**
      * @brief Enable or disable the undo system
      */
-    void SetEnabled(bool enabled) { this->enabled = enabled; }
+    void SetEnabled(bool isEnabled) { enabled = isEnabled; }
 
     /**
      * @brief Check if undo system is enabled

@@ -134,7 +134,7 @@ bool GameSettingsManager::SaveSettings() {
     if (!fs::exists(parentDir)) {
         try {
             fs::create_directories(parentDir);
-        } catch (const std::exception& e) {
+        } catch (const std::exception&) {
             ENGINE_PRINT(EngineLogging::LogLevel::Error, "[GameSettings] Failed to create directory: ", parentDir.string());
             return false;
         }
