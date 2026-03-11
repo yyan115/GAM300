@@ -1,0 +1,14 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "004260df780590e5-000477c6800e6777",
+        "source": "../../Resources/Textures/M5/Alley1/Alley1_railing1_railing1_Height.png",
+        "compiled": "../../Resources/Textures/M5/Alley1/Alley1_railing1_railing1_Height.dds"
+    },
+    "TextureMetaData": {
+        "type": "height",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp"
+    }
+}

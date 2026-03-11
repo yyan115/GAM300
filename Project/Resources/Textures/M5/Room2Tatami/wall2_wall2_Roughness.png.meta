@@ -1,0 +1,14 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "004260df520b7aec-000477ba1400e587",
+        "source": "../../Resources/Textures/M5/Room2Tatami/wall2_wall2_Roughness.png",
+        "compiled": "../../Resources/Textures/M5/Room2Tatami/wall2_wall2_Roughness.dds"
+    },
+    "TextureMetaData": {
+        "type": "roughness",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp"
+    }
+}

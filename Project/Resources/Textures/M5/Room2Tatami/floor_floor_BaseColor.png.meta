@@ -1,0 +1,14 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "004260df5746422f-000477ba0400e571",
+        "source": "../../Resources/Textures/M5/Room2Tatami/floor_floor_BaseColor.png",
+        "compiled": "../../Resources/Textures/M5/Room2Tatami/floor_floor_BaseColor.dds"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp"
+    }
+}
