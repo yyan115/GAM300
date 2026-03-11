@@ -67,11 +67,9 @@ return Component {
         UseLOSAnchors = true,       -- when true: anchors auto-created wherever geometry breaks LOS
         LockOnAngleDeg = 45.0,      -- half-cone: LockOn targets outside this angle from player forward are ignored
 
-        -- =====================================================================
-        -- SPIN (aim-hold from retracted state)
+        -- === Spin ===
         -- Chain spins in a circle on the X axis (YZ plane) while aim is held.
         -- Released when tip points within SpinReleaseAngleTolerance of camera forward.
-        -- =====================================================================
         SpinRadius               = 0.75,  -- radius of the circular spin path (metres)
         SpinSpeed                = 25.0,  -- full speed in rad/s (~4 rotations/sec), multiplied by dt so framerate-independent
         SpinWindUpTime           = 0.4,   -- seconds to reach full speed from 0
@@ -79,8 +77,7 @@ return Component {
         SpinReleaseAngleTolerance= 20.0,  -- degrees: tip must point within this of camera forward to release
         SpinDirection            = 1,     -- 1 = forward→up→back→down, -1 = reverse. Tweak if spin looks wrong.
 
-        -- =====================================================================
-        -- AUDIO CHANNELS
+        -- === Audio channels ===
         -- ChainAudio resolves AudioComponents from link entities by name at
         -- runtime using Engine.FindAudioCompByName.
         --   Loop : throw / retract one-shots + flop loop
@@ -88,7 +85,6 @@ return Component {
         --          never cut off a still-playing throw/retract sound
         --   Aim  : aim-camera loop (2D, reserved — no asset yet)
         -- These are derived from LinkName automatically — no ID needed.
-        -- =====================================================================
         AudioVolume = 1.0,
 
         -- Spatial falloff — tune to match your world scale.
@@ -106,8 +102,7 @@ return Component {
         AudioPitchVariation  = 0.1,
         AudioVolumeVariation = 0.08,
 
-        -- =====================================================================
-        -- AUDIO CLIPS
+        -- === Audio clips ===
         -- Arrays: ChainAudio picks randomly on each trigger.
         -- Add more GUIDs at any time — no code changes needed.
         --
@@ -123,7 +118,6 @@ return Component {
         --   Aim      <- ChainAim1          (looping, helicopter spin overhead)
         --   Taut     <- ChainTaut1/2/3     (one-shot, chain snapping to tension)
         --   Lax      <- ChainLax1/2        (one-shot, tension releasing)
-        -- =====================================================================
         AudioClips_Throw    = {},
         AudioClips_Retract  = {},
         AudioClips_HitFlesh = {},
