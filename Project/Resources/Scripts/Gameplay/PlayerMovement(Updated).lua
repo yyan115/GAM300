@@ -161,6 +161,7 @@ return Component {
         VaultDetectRange     = 2.5,   -- Forward ray length (world units). How far ahead to probe.
         VaultMinApproachDist = 0.4,   -- Min distance to obstacle for vault to register. Prevents trigger while standing right at the base.
         VaultJumpHeight      = 2.0,   -- Fixed jump height used for all vault jumps. Tune this in the editor.
+        VaultEnemyRadius     = 8.0,   -- Max distance an enemy can be for vaulting to be allowed (world units).
 
         -- === Dash ===
         DashSpeed              = 5.0,   -- Dash impulse speed — independent of Speed.
@@ -409,9 +410,14 @@ return Component {
         end)
 
         -- combat_state_changed: update movement lock. Velocity NOT zeroed here.
+        -- When ComboManager leaves an attacking state (idle, dash), any lunge that
+        -- was mid-flight must be cancelled so it does not carry into the new state.
         self._combatStateSub = event_bus.subscribe("combat_state_changed", function(data)
             if not data then return end
             self._playerCanMove = data.canMove ~= false
+            if not _G.player_is_attacking then
+                self._lungeTimer = 0
+            end
         end)
 
         -- ── Dash ──────────────────────────────────────────────────────────────
@@ -438,6 +444,18 @@ return Component {
             end
         end)
 
+        -- ── Enemy proximity (vault gate) ──────────────────────────────────────
+        -- Each live enemy publishes its world position every frame.
+        -- We store the latest position per entityId so we can check the nearest
+        -- enemy distance in the vault detection block without polling or globals.
+        self._nearbyEnemyPositions = {}
+        self._enemyPosSub = event_bus.subscribe("enemy_position", function(payload)
+            if not payload or not payload.entityId then return end
+            self._nearbyEnemyPositions[payload.entityId] = {
+                x = payload.x, y = payload.y, z = payload.z
+            }
+        end)
+
         -- TO ADD new subscriptions: follow the pattern above.
         -- Always add the handle key to the unsubscribe list in OnDisable.
     end,
@@ -455,6 +473,14 @@ return Component {
 
         dbg("transform y: ", self._transform.localPosition.y)
         self._controller = CharacterController.Create(self.entityId, self._collider, self._transform)
+
+        -- ── Normal scale (squash & stretch baseline) ──────────────────────────
+        -- Captured once from the transform set in the editor so that squash and
+        -- stretch always springs back to the authored scale, not a hardcoded 1,1,1.
+        local _initScale   = self._transform and self._transform.localScale
+        self._normalScaleX = (_initScale and _initScale.x) or 1.0
+        self._normalScaleY = (_initScale and _initScale.y) or 1.0
+        self._normalScaleZ = (_initScale and _initScale.z) or 1.0
 
         --if self._animator then self._animator:PlayClip(IDLE, true) end
 
@@ -604,23 +630,6 @@ return Component {
     -- ==========================================================================
     Update = function(self, dt)
 
-        -- ── [KEYBOARD INPUT REFERENCE] ────────────────────────────────────────
-        -- Example of raw Keyboard bindings (PC only).
-        -- Prefer Input.IsActionPressed() for normal cross-platform game code.
-        --
-        -- local kHeld = Keyboard.IsKeyPressed(Keyboard.Key.K)
-        -- if kHeld and not self._kbWasHeld then
-        --     print("[KeyboardTest] K pressed")
-        --     print("[KeyboardTest] Space held:       ", Keyboard.IsKeyPressed(Keyboard.Key.Space))
-        --     print("[KeyboardTest] Left mouse held:  ", Keyboard.IsMouseButtonPressed(Keyboard.Mouse.Left))
-        --     print("[KeyboardTest] Right mouse held: ", Keyboard.IsMouseButtonPressed(Keyboard.Mouse.Right))
-        --     print("[KeyboardTest] Mouse pos:        ", Keyboard.GetMouseX(), Keyboard.GetMouseY())
-        -- elseif not kHeld and self._kbWasHeld then
-        --     print("[KeyboardTest] K released")
-        -- end
-        -- self._kbWasHeld = kHeld
-        -- ── [END KEYBOARD INPUT REFERENCE] ───────────────────────────────────
-
         -- ── 1. Global flags ───────────────────────────────────────────────────
         -- Written first so every other system sees current values this frame.
         _G.player_is_jumping = self._isJumping    or false
@@ -716,10 +725,17 @@ return Component {
 
         -- ── 10. Attack lunge impulse ──────────────────────────────────────────
         -- Direction/speed cached by attack_performed subscriber. Applied each frame.
+        -- Guarded by player_is_attacking so a lunge from a cancelled or
+        -- just-ended attack cannot bleed into a dash or idle state.
         if self._lungeTimer and self._lungeTimer > 0 then
-            self._lungeTimer = self._lungeTimer - dt
-            CharacterController.Move(self._controller,
-                self._lungeDirX * self._lungeSpeed, 0, self._lungeDirZ * self._lungeSpeed)
+            if _G.player_is_attacking then
+                self._lungeTimer = self._lungeTimer - dt
+                CharacterController.Move(self._controller,
+                    self._lungeDirX * self._lungeSpeed, 0, self._lungeDirZ * self._lungeSpeed)
+            else
+                -- Attack ended or was cancelled — discard remaining lunge immediately.
+                self._lungeTimer = 0
+            end
         end
 
         -- ── 11. Skill cast lock (grounded only) ───────────────────────────────
@@ -840,34 +856,40 @@ return Component {
                 self._squashTimer = self._squashTimer + dt
                 local i  = (self.SquashStrength or 0.5) * (self._squashIntensity or 1.0)
                 local mode = self._squashMode or "vertical"
-                local sx, sy, sz = 1.0, 1.0, 1.0
+                -- Rest scale comes from what was set on the transform in Awake/editor,
+                -- not a hardcoded 1,1,1, so the effect always springs back to the
+                -- authored scale regardless of the object's real proportions.
+                local nX = self._normalScaleX or 1.0
+                local nY = self._normalScaleY or 1.0
+                local nZ = self._normalScaleZ or 1.0
+                local sx, sy, sz = nX, nY, nZ
 
                 -- All amplitudes derived from SquashStrength (0-1) * per-event weight.
                 -- Hardcoded ratios define the shape; only SquashStrength needs tuning.
-                --   vertical  : Y squashes DOWN, XZ widens, Y bounces slightly above 1.0
+                --   vertical  : Y squashes DOWN, XZ widens, Y bounces slightly above normal
                 --   horizontal: Y pops UP, XZ squashes IN  (dash end / chain)
                 --   dashstart : Y stretches TALL, XZ squashes IN  (dash launch)
                 local yPeak, xzPeak, yOver
                 if mode == "vertical" then
-                    yPeak  = 1.0 - 0.30 * i   -- Y squashes down  (0.70 at full strength)
-                    xzPeak = 1.0 + 0.18 * i   -- XZ widens out    (1.18 at full strength)
-                    yOver  = 1.0 + 0.08 * i   -- Y bounces above  (1.08 at full strength)
+                    yPeak  = nY * (1.0 - 0.30 * i)   -- Y squashes down  (0.70 at full strength)
+                    xzPeak = nX * (1.0 + 0.18 * i)   -- XZ widens out    (1.18 at full strength)
+                    yOver  = nY * (1.0 + 0.08 * i)   -- Y bounces above  (1.08 at full strength)
                 elseif mode == "horizontal" then
-                    yPeak  = 1.0 + 0.08 * i   -- Y pops up        (1.08 at full strength)
-                    xzPeak = 1.0 - 0.10 * i   -- XZ squashes in   (0.90 at full strength)
-                    yOver  = 1.0
+                    yPeak  = nY * (1.0 + 0.08 * i)   -- Y pops up        (1.08 at full strength)
+                    xzPeak = nX * (1.0 - 0.10 * i)   -- XZ squashes in   (0.90 at full strength)
+                    yOver  = nY
                 elseif mode == "dashstart" then
-                    yPeak  = 1.0 + 0.10 * i   -- Y stretches tall (1.10 at full strength)
-                    xzPeak = 1.0 - 0.07 * i   -- XZ squashes in   (0.93 at full strength)
-                    yOver  = 1.0
+                    yPeak  = nY * (1.0 + 0.10 * i)   -- Y stretches tall (1.10 at full strength)
+                    xzPeak = nX * (1.0 - 0.07 * i)   -- XZ squashes in   (0.93 at full strength)
+                    yOver  = nY
                 end
 
                 if self._squashPhase == "squash" then
-                    -- Lerp from (1,1,1) → (yPeak, xzPeak)
+                    -- Lerp from normal scale → (yPeak, xzPeak)
                     local t = math.min(self._squashTimer / math.max(self.SquashDuration or 0.07, 1e-4), 1.0)
-                    sy = 1.0 + (yPeak  - 1.0) * t
-                    sx = 1.0 + (xzPeak - 1.0) * t
-                    sz = sx
+                    sy = nY + (yPeak  - nY) * t
+                    sx = nX + (xzPeak - nX) * t
+                    sz = nZ + (xzPeak - nX) * t   -- Z tracks X (uniform XZ)
                     if t >= 1.0 then
                         self._squashPhase = "stretch"
                         self._squashTimer = 0
@@ -876,21 +898,21 @@ return Component {
                 elseif self._squashPhase == "stretch" then
                     -- Two-step spring:
                     --   First half  (t 0→0.5): peak → overshoot
-                    --   Second half (t 0.5→1): overshoot → 1.0
-                    -- XZ just lerps from xzPeak → 1.0 across the full duration.
+                    --   Second half (t 0.5→1): overshoot → normal scale
+                    -- XZ just lerps from xzPeak → normal scale across the full duration.
                     local t = math.min(self._squashTimer / math.max(self.StretchDuration or 0.22, 1e-4), 1.0)
                     if t < 0.5 then
                         local t2 = t * 2  -- 0→1 over first half
-                        sy = yPeak + (yOver  - yPeak)  * t2
-                        sx = xzPeak + (1.0   - xzPeak) * t2
+                        sy = yPeak  + (yOver - yPeak)  * t2
+                        sx = xzPeak + (nX    - xzPeak) * t2
                     else
                         local t2 = (t - 0.5) * 2  -- 0→1 over second half
-                        sy = yOver + (1.0 - yOver) * t2
-                        sx = 1.0
+                        sy = yOver + (nY - yOver) * t2
+                        sx = nX
                     end
-                    sz = sx
+                    sz = nZ + (sx - nX)   -- Z tracks X offset (uniform XZ)
                     if t >= 1.0 then
-                        sx, sy, sz        = 1.0, 1.0, 1.0
+                        sx, sy, sz        = nX, nY, nZ
                         self._squashPhase = nil
                     end
                 end
@@ -1076,10 +1098,12 @@ return Component {
         end
 
         -- ── 20. Vault detection ───────────────────────────────────────────────
-        -- Runs every frame while grounded and moving forward.
-        -- Fires a min and max forward ray. If min hits and max misses, vault is ready.
-        -- _vaultReadyTimer holds the result alive briefly so a slightly late jump still catches it.
-        -- Result is stored in _vaultDetected / _vaultJumpHeight for the jump block.
+        -- Vaulting is only allowed when at least one enemy is within VaultEnemyRadius.
+        -- This prevents the mechanic from accidentally triggering during normal traversal
+        -- while keeping it fully available the moment a fight is nearby.
+        -- enemy_position events (published every frame by each live EnemyAI) keep
+        -- _nearbyEnemyPositions current; dead/despawned enemies stop publishing and
+        -- naturally fall out of range on the next proximity check.
 
         -- Tick the ready timer — keeps _vaultDetected alive even if the ray misses this frame
         if self._vaultReadyTimer > 0 then
@@ -1091,7 +1115,26 @@ return Component {
             self._vaultDetected = false
         end
 
-        if isGrounded and isMoving and not self._isDamageStun then
+        -- Check whether any known enemy is within VaultEnemyRadius.
+        local enemyNearby = false
+        local vaultRadiusSq = (self.VaultEnemyRadius or 8.0) ^ 2
+        local playerPos = CharacterController.GetPosition(self._controller)
+        if playerPos then
+            for _, epos in pairs(self._nearbyEnemyPositions) do
+                local ex = epos.x - playerPos.x
+                local ez = epos.z - playerPos.z
+                if ex*ex + ez*ez <= vaultRadiusSq then
+                    enemyNearby = true
+                    break
+                end
+            end
+        end
+
+        if not enemyNearby then
+            -- No enemies in range — discard any stale detection and skip probing.
+            self._vaultDetected   = false
+            self._vaultReadyTimer = 0
+        elseif isGrounded and isMoving and not self._isDamageStun then
             -- Low threshold so detection fires early as the player approaches.
             -- 0.15 * Speed means almost any forward-facing movement qualifies.
             local approachDot = self._velX * self._facingX + self._velZ * self._facingZ
@@ -1397,7 +1440,7 @@ return Component {
                 "_knockSub", "_respawnPlayerSub", "_activatedCheckpointSub",
                 "_freezePlayerSub", "_requestPlayerForwardSub", "_attackLungeSub",
                 "_combatStateSub", "_forceRotSub", "_chainFiredRotSub",
-                "_dashPerformedSub", "_chainConstraintSub",
+                "_dashPerformedSub", "_chainConstraintSub", "_enemyPosSub",
             }
             for _, key in ipairs(subs) do
                 if self[key] then event_bus.unsubscribe(self[key]); self[key] = nil end

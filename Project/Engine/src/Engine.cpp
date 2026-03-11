@@ -694,6 +694,7 @@ void Engine::Update() {
     //RunBrainInitSystem(ecs);
 
     //RunBrainUpdateSystem(ecs, static_cast<float>(TimeManager::GetDeltaTime()));
+    SceneManager::GetInstance().UpdateAsyncLoad();
 
 	// Only update the scene if the game should be running (not paused)
 	if (ShouldRunGameLogic())
