@@ -689,7 +689,8 @@ void Engine::Update() {
         g_inputManager->Update(static_cast<float>(TimeManager::GetUnscaledDeltaTime()));
     }
 
-    ECSManager& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
+    // Commented out as not used to fix warnings.
+    // ECSManager& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
 
     //RunBrainInitSystem(ecs);
 
