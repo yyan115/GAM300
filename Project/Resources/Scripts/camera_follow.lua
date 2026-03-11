@@ -406,11 +406,13 @@ return Component {
         local maxZoom    = self.maxZoom or 15.0
         local zoomFactor = clamp((radius - minZoom) / (maxZoom - minZoom), 0.0, 1.0)
 
-        -- Look-at pivot (slightly above player feet, scales with zoom)
+        -- Look-at pivot (slightly above player feet, scales with zoom).
+        -- heightOffset is applied here so the pivot rises with the camera,
+        -- keeping the pitch angle stable regardless of how high the offset is.
         local lookAtHeight = 0.5 + zoomFactor * 0.2
         local cameraTarget = {
             x = self._targetPos.x,
-            y = self._targetPos.y + lookAtHeight,
+            y = self._targetPos.y + lookAtHeight + (self.heightOffset or 1.0),
             z = self._targetPos.z,
         }
 
@@ -424,7 +426,7 @@ return Component {
         -- Ideal camera position (spherical offset from pivot)
         local horizRadius     = radius * math.cos(pitchRad)
         local desiredX = cameraTarget.x + horizRadius * math.sin(yawRad)
-        local desiredY = cameraTarget.y + radius * math.sin(pitchRad) + (self.heightOffset or 1.0)
+        local desiredY = cameraTarget.y + radius * math.sin(pitchRad)
         local desiredZ = cameraTarget.z + horizRadius * math.cos(yawRad)
 
         -- Hard Y cap: prevents the camera from rising above indoor ceilings even
