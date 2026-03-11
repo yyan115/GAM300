@@ -1,0 +1,14 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "00289b572fb834cf-000479977218a673",
+        "source": "../../Resources/Textures/M5/Alley1/Alley1_wall1_wall1_Metallic.png",
+        "compiled": "../../Resources/Textures/M5/Alley1/Alley1_wall1_wall1_Metallic.dds"
+    },
+    "TextureMetaData": {
+        "type": "metallic",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp"
+    }
+}

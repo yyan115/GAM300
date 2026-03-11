@@ -2,7 +2,7 @@
     "prefab_entities": [
         {
             "id": 0,
-            "guid": "0018145a35a5543a-0004796552061dbd",
+            "guid": "00289b5765805b1c-000479770c09228f",
             "components": {
                 "PrefabLinkComponent": {
                     "type": "PrefabLinkComponent",
@@ -188,8 +188,8 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "0018145a4535d898-0004796552061dbf",
-                                "0018145a6c95980c-0004796552061dc1"
+                                "00289b573e66cb08-000479770c092291",
+                                "00289b57078678f1-000479770c092293"
                             ]
                         }
                     ]
@@ -375,26 +375,27 @@
                             "entryFunction": "OnInit",
                             "autoInvokeEntry": true,
                             "instanceState": {
-                                "BossScale": 2.0,
-                                "_subscriptions": {},
-                                "Lifetime": 3.0,
-                                "Speed": 5.0,
+                                "__created_at": 1769419004.0,
                                 "_private": {},
                                 "__meta": {},
-                                "__created_at": 1769419004.0,
-                                "HitRadius": 0.5,
-                                "__field_list": {
-                                    "Damage": 1.0,
-                                    "Lifetime": 1.2,
-                                    "Speed": 10.0
-                                },
-                                "BossDamageMult": 2.0,
-                                "Damage": 1.0,
-                                "_transform_fetched": false,
-                                "LifeJitter": 0.25,
                                 "MaxRange": 10.0,
                                 "ArmDelay": 0.05,
-                                "BossHitRadiusMult": 1.25
+                                "BossDamageMult": 2.0,
+                                "BossScale": 2.0,
+                                "Speed": 5.0,
+                                "BossHitRadiusMult": 1.25,
+                                "Damage": 1.0,
+                                "Lifetime": 3.0,
+                                "_subscriptions": {},
+                                "__field_list": {
+                                    "Lifetime": 1.2,
+                                    "Speed": 10.0,
+                                    "Damage": 1.0
+                                },
+                                "LifeJitter": 0.25,
+                                "_transform_fetched": false,
+                                "WarningRadius": 1.2,
+                                "HitRadius": 0.5
                             }
                         }
                     ]
@@ -408,13 +409,13 @@
                         },
                         {
                             "type": "float",
-                            "data": 8
+                            "data": 5
                         }
                     ],
                     "bloomColor": {
                         "type": "glm::vec3",
                         "data": [
-                            1.0,
+                            0.27799224853515625,
                             0.0,
                             0.0
                         ]
@@ -424,7 +425,7 @@
         },
         {
             "id": 1,
-            "guid": "0018145a4535d898-0004796552061dbf",
+            "guid": "00289b573e66cb08-000479770c092291",
             "components": {
                 "NameComponent": {
                     "name": "goose_handle"
@@ -501,7 +502,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "0018145a35a5543a-0004796552061dbd"
+                        "00289b5765805b1c-000479770c09228f"
                     ]
                 },
                 "ActiveComponent": {
@@ -517,7 +518,7 @@
         },
         {
             "id": 2,
-            "guid": "0018145a6c95980c-0004796552061dc1",
+            "guid": "00289b57078678f1-000479770c092293",
             "components": {
                 "NameComponent": {
                     "name": "feather_blade"
@@ -594,7 +595,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "0018145a35a5543a-0004796552061dbd"
+                        "00289b5765805b1c-000479770c09228f"
                     ]
                 },
                 "ActiveComponent": {

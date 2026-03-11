@@ -1,9 +1,18 @@
 {
     "prefab_entities": [
         {
-            "id": 350,
-            "guid": "002de1877771aec7-000472834e00926b",
+            "id": 0,
+            "guid": "00289b5709559ca8-0004798348182777",
             "components": {
+                "PrefabLinkComponent": {
+                    "type": "PrefabLinkComponent",
+                    "data": [
+                        {
+                            "type": "std::string",
+                            "data": "../../Resources/Prefabs/NewRooms/Room2Library.prefab"
+                        }
+                    ]
+                },
                 "NameComponent": {
                     "name": "Room2Library"
                 },
@@ -82,16 +91,10 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "002de18722f04a10-000472834e00926d",
-                                "002de1876448a58f-000472834e00926f"
+                                "00289b570eb74484-0004798348182779",
+                                "00289b57376e4845-000479834818277b"
                             ]
                         }
-                    ]
-                },
-                "ParentComponent": {
-                    "type": "ParentComponent",
-                    "data": [
-                        "002f74130b102c59-000361c1e4000009"
                     ]
                 },
                 "ActiveComponent": {
@@ -106,8 +109,8 @@
             }
         },
         {
-            "id": 351,
-            "guid": "002de18722f04a10-000472834e00926d",
+            "id": 1,
+            "guid": "00289b570eb74484-0004798348182779",
             "components": {
                 "NameComponent": {
                     "name": "Room Light (1) (1) (1)"
@@ -184,7 +187,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "002de1877771aec7-000472834e00926b"
+                        "00289b5709559ca8-0004798348182777"
                     ]
                 },
                 "PointLightComponent": {
@@ -300,8 +303,8 @@
             }
         },
         {
-            "id": 352,
-            "guid": "002de1876448a58f-000472834e00926f",
+            "id": 2,
+            "guid": "00289b57376e4845-000479834818277b",
             "components": {
                 "NameComponent": {
                     "name": "Room2Library"
@@ -381,11 +384,11 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "002de18714661a2d-0004728334009059",
-                                "002de18721ae23d9-0004728334009063",
-                                "002de1876bdd7233-0004728336009097",
-                                "002de187065c6216-00047283380090b3",
-                                "002de187322ca2f1-000472833a0090d5"
+                                "00289b5771230eee-000479834818277d",
+                                "00289b573b0f7b40-000479834818277f",
+                                "00289b57014a5ffa-0004798348182787",
+                                "00289b576a7191a6-000479834818278d",
+                                "00289b5751dbf74d-0004798348182795"
                             ]
                         }
                     ]
@@ -393,7 +396,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "002de1877771aec7-000472834e00926b"
+                        "00289b5709559ca8-0004798348182777"
                     ]
                 },
                 "ActiveComponent": {
@@ -408,8 +411,8 @@
             }
         },
         {
-            "id": 353,
-            "guid": "002de18714661a2d-0004728334009059",
+            "id": 3,
+            "guid": "00289b5771230eee-000479834818277d",
             "components": {
                 "NameComponent": {
                     "name": "Room2Library_Floor"
@@ -583,7 +586,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "002de1876448a58f-000472834e00926f"
+                        "00289b57376e4845-000479834818277b"
                     ]
                 },
                 "RigidBodyComponent": {
@@ -757,8 +760,8 @@
             }
         },
         {
-            "id": 354,
-            "guid": "002de18721ae23d9-0004728334009063",
+            "id": 4,
+            "guid": "00289b573b0f7b40-000479834818277f",
             "components": {
                 "NameComponent": {
                     "name": "Room2Library_Stairs"
@@ -935,9 +938,9 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "002de18745f57c44-0004728bf400d135",
-                                "002de1875937b2ba-0004728df400d13b",
-                                "002de1872f4827dd-0004728bf400d139"
+                                "00289b5741b1691a-0004798348182781",
+                                "00289b573cf00348-0004798348182783",
+                                "00289b575c0fd9cd-0004798348182785"
                             ]
                         }
                     ]
@@ -945,7 +948,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "002de1876448a58f-000472834e00926f"
+                        "00289b57376e4845-000479834818277b"
                     ]
                 },
                 "ActiveComponent": {
@@ -960,8 +963,8 @@
             }
         },
         {
-            "id": 355,
-            "guid": "002de18745f57c44-0004728bf400d135",
+            "id": 5,
+            "guid": "00289b5741b1691a-0004798348182781",
             "components": {
                 "NameComponent": {
                     "name": "railing1 (1)"
@@ -1038,7 +1041,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "002de18721ae23d9-0004728334009063"
+                        "00289b573b0f7b40-000479834818277f"
                     ]
                 },
                 "RigidBodyComponent": {
@@ -1212,8 +1215,8 @@
             }
         },
         {
-            "id": 356,
-            "guid": "002de1875937b2ba-0004728df400d13b",
+            "id": 6,
+            "guid": "00289b573cf00348-0004798348182783",
             "components": {
                 "NameComponent": {
                     "name": "railing2 (1) (1)"
@@ -1290,7 +1293,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "002de18721ae23d9-0004728334009063"
+                        "00289b573b0f7b40-000479834818277f"
                     ]
                 },
                 "RigidBodyComponent": {
@@ -1464,8 +1467,8 @@
             }
         },
         {
-            "id": 357,
-            "guid": "002de1872f4827dd-0004728bf400d139",
+            "id": 7,
+            "guid": "00289b575c0fd9cd-0004798348182785",
             "components": {
                 "NameComponent": {
                     "name": "pPlane1 (1)"
@@ -1542,7 +1545,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "002de18721ae23d9-0004728334009063"
+                        "00289b573b0f7b40-000479834818277f"
                     ]
                 },
                 "RigidBodyComponent": {
@@ -1716,8 +1719,8 @@
             }
         },
         {
-            "id": 358,
-            "guid": "002de1876bdd7233-0004728336009097",
+            "id": 8,
+            "guid": "00289b57014a5ffa-0004798348182787",
             "components": {
                 "NameComponent": {
                     "name": "Room2Library_Wall1"
@@ -1894,8 +1897,8 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "004260df3f854c76-000477caaa157e73",
-                                "004260df076a4dd4-000477cb0216b8c9"
+                                "00289b573e020671-0004798348182789",
+                                "00289b5739b77d63-000479834818278b"
                             ]
                         }
                     ]
@@ -1903,7 +1906,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "002de1876448a58f-000472834e00926f"
+                        "00289b57376e4845-000479834818277b"
                     ]
                 },
                 "ActiveComponent": {
@@ -1918,8 +1921,8 @@
             }
         },
         {
-            "id": 359,
-            "guid": "004260df3f854c76-000477caaa157e73",
+            "id": 9,
+            "guid": "00289b573e020671-0004798348182789",
             "components": {
                 "NameComponent": {
                     "name": "Col1"
@@ -1996,7 +1999,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "002de1876bdd7233-0004728336009097"
+                        "00289b57014a5ffa-0004798348182787"
                     ]
                 },
                 "RigidBodyComponent": {
@@ -2170,8 +2173,8 @@
             }
         },
         {
-            "id": 360,
-            "guid": "004260df076a4dd4-000477cb0216b8c9",
+            "id": 10,
+            "guid": "00289b5739b77d63-000479834818278b",
             "components": {
                 "NameComponent": {
                     "name": "Col2"
@@ -2248,7 +2251,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "002de1876bdd7233-0004728336009097"
+                        "00289b57014a5ffa-0004798348182787"
                     ]
                 },
                 "RigidBodyComponent": {
@@ -2422,8 +2425,8 @@
             }
         },
         {
-            "id": 361,
-            "guid": "002de187065c6216-00047283380090b3",
+            "id": 11,
+            "guid": "00289b576a7191a6-000479834818278d",
             "components": {
                 "NameComponent": {
                     "name": "Room2Library_Wall2"
@@ -2600,9 +2603,9 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "004260df5df150fc-000477cbc219824b",
-                                "004260df536c85bf-000477cd6a1e5cc1",
-                                "004260df31a018a3-000477cd9c1e5cc3"
+                                "00289b5721dff02f-000479834818278f",
+                                "00289b57110cf309-0004798348182791",
+                                "00289b5765bf1d94-0004798348182793"
                             ]
                         }
                     ]
@@ -2610,7 +2613,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "002de1876448a58f-000472834e00926f"
+                        "00289b57376e4845-000479834818277b"
                     ]
                 },
                 "ActiveComponent": {
@@ -2625,8 +2628,8 @@
             }
         },
         {
-            "id": 362,
-            "guid": "004260df5df150fc-000477cbc219824b",
+            "id": 12,
+            "guid": "00289b5721dff02f-000479834818278f",
             "components": {
                 "NameComponent": {
                     "name": "Col1"
@@ -2703,7 +2706,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "002de187065c6216-00047283380090b3"
+                        "00289b576a7191a6-000479834818278d"
                     ]
                 },
                 "RigidBodyComponent": {
@@ -2877,8 +2880,8 @@
             }
         },
         {
-            "id": 363,
-            "guid": "004260df536c85bf-000477cd6a1e5cc1",
+            "id": 13,
+            "guid": "00289b57110cf309-0004798348182791",
             "components": {
                 "NameComponent": {
                     "name": "Col2"
@@ -2955,7 +2958,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "002de187065c6216-00047283380090b3"
+                        "00289b576a7191a6-000479834818278d"
                     ]
                 },
                 "RigidBodyComponent": {
@@ -3129,8 +3132,8 @@
             }
         },
         {
-            "id": 364,
-            "guid": "004260df31a018a3-000477cd9c1e5cc3",
+            "id": 14,
+            "guid": "00289b5765bf1d94-0004798348182793",
             "components": {
                 "NameComponent": {
                     "name": "Col3"
@@ -3207,7 +3210,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "002de187065c6216-00047283380090b3"
+                        "00289b576a7191a6-000479834818278d"
                     ]
                 },
                 "RigidBodyComponent": {
@@ -3381,8 +3384,8 @@
             }
         },
         {
-            "id": 365,
-            "guid": "002de187322ca2f1-000472833a0090d5",
+            "id": 15,
+            "guid": "00289b5751dbf74d-0004798348182795",
             "components": {
                 "NameComponent": {
                     "name": "Room2Library_Wall3"
@@ -3559,7 +3562,7 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "004260df6e93147e-000477cf1822fde1"
+                                "00289b572b80d87b-0004798348182797"
                             ]
                         }
                     ]
@@ -3567,7 +3570,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "002de1876448a58f-000472834e00926f"
+                        "00289b57376e4845-000479834818277b"
                     ]
                 },
                 "RigidBodyComponent": {
@@ -3649,8 +3652,8 @@
             }
         },
         {
-            "id": 366,
-            "guid": "004260df6e93147e-000477cf1822fde1",
+            "id": 16,
+            "guid": "00289b572b80d87b-0004798348182797",
             "components": {
                 "NameComponent": {
                     "name": "Col1"
@@ -3727,7 +3730,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "002de187322ca2f1-000472833a0090d5"
+                        "00289b5751dbf74d-0004798348182795"
                     ]
                 },
                 "RigidBodyComponent": {

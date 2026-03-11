@@ -1,0 +1,14 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "00289b57208a5b44-000479919c1876e9",
+        "source": "../../Resources/Textures/M5/Room3/Rm3_railing_Roughness.png",
+        "compiled": "../../Resources/Textures/M5/Room3/Rm3_railing_Roughness.dds"
+    },
+    "TextureMetaData": {
+        "type": "roughness",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp"
+    }
+}

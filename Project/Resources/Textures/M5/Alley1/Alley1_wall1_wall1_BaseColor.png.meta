@@ -1,0 +1,14 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "00289b570bd3f86d-000479977018a66f",
+        "source": "../../Resources/Textures/M5/Alley1/Alley1_wall1_wall1_BaseColor.png",
+        "compiled": "../../Resources/Textures/M5/Alley1/Alley1_wall1_wall1_BaseColor.dds"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp"
+    }
+}

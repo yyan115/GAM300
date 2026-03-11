@@ -1,0 +1,14 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "00289b577df40504-000479914a1876c1",
+        "source": "../../Resources/Textures/M5/BookStack2_Height.png",
+        "compiled": "../../Resources/Textures/M5/BookStack2_Height.dds"
+    },
+    "TextureMetaData": {
+        "type": "height",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp"
+    }
+}

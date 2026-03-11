@@ -1,0 +1,14 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "00289b5771b80d82-000479976418a65b",
+        "source": "../../Resources/Textures/M5/Alley1/Alley1_ceiling_ceiling_BaseColor.png",
+        "compiled": "../../Resources/Textures/M5/Alley1/Alley1_ceiling_ceiling_BaseColor.dds"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp"
+    }
+}

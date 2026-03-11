@@ -6,7 +6,7 @@
         "compiled": "../../Resources/Textures/M5/Alley1/Alley1_railing5_railing5_Height.dds"
     },
     "TextureMetaData": {
-        "type": "height",
+        "type": "diffuse",
         "flipUVs": false,
         "generateMipmaps": true,
         "textureWrapMode": "Clamp"

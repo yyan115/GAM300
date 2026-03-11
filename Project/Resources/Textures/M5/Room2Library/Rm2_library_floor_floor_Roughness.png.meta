@@ -6,7 +6,7 @@
         "compiled": "../../Resources/Textures/M5/Room2Library/Rm2_library_floor_floor_Roughness.dds"
     },
     "TextureMetaData": {
-        "type": "roughness",
+        "type": "diffuse",
         "flipUVs": false,
         "generateMipmaps": true,
         "textureWrapMode": "Clamp"

@@ -6,7 +6,7 @@
         "compiled": "../../Resources/Textures/M5/Room2Library/Rm2_library_wall2_wall2_Normal.dds"
     },
     "TextureMetaData": {
-        "type": "normal",
+        "type": "diffuse",
         "flipUVs": false,
         "generateMipmaps": true,
         "textureWrapMode": "Clamp"

@@ -1,0 +1,14 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "00289b5746cd70e6-0004799250187747",
+        "source": "../../Resources/Textures/M5/BookStack1_Roughness.png",
+        "compiled": "../../Resources/Textures/M5/BookStack1_Roughness.dds"
+    },
+    "TextureMetaData": {
+        "type": "roughness",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp"
+    }
+}
