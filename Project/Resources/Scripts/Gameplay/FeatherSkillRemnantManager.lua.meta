@@ -1,8 +1,8 @@
 {
     "AssetMetaData": {
         "version": 7,
-        "guid": "006d61b5bd2d79c7-000467ab3815bd8b",
-        "source": "../../Resources/Scripts/Gameplay/FeatherSkillRemnantManager.lua",
-        "compiled": "../../Resources/Scripts/Gameplay/FeatherSkillRemnantManager.lua"
+        "guid": "0069659ce3eac831-000479187600000f",
+        "source": "../../Resources/Scripts/GamePlay/FeatherSkillRemnantManager.lua",
+        "compiled": "../../Resources/Scripts/GamePlay/FeatherSkillRemnantManager.lua"
     }
 }

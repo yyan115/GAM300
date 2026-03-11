@@ -6,7 +6,7 @@
         "compiled": "../../Resources/Textures/M5/ScrrollBox_Mixed_AO.dds"
     },
     "TextureMetaData": {
-        "type": "ao",
+        "type": "diffuse",
         "flipUVs": false,
         "generateMipmaps": true,
         "textureWrapMode": "Clamp"

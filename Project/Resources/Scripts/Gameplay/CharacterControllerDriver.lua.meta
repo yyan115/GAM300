@@ -1,8 +1,8 @@
 {
     "AssetMetaData": {
         "version": 7,
-        "guid": "002e3c80abde90e1-0004102b42000009",
-        "source": "../../Resources/Scripts/Gameplay/CharacterControllerDriver.lua",
-        "compiled": "../../Resources/Scripts/Gameplay/CharacterControllerDriver.lua"
+        "guid": "0069659c94a9121c-0004791876000003",
+        "source": "../../Resources/Scripts/GamePlay/CharacterControllerDriver.lua",
+        "compiled": "../../Resources/Scripts/GamePlay/CharacterControllerDriver.lua"
     }
 }

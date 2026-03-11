@@ -1,8 +1,8 @@
 {
     "AssetMetaData": {
         "version": 7,
-        "guid": "00606fedf97806b7-0004745922000001",
-        "source": "../../Resources/Scripts/Gameplay/ThrowableController.lua",
-        "compiled": "../../Resources/Scripts/Gameplay/ThrowableController.lua"
+        "guid": "0069659cfcfffa69-0004791876000039",
+        "source": "../../Resources/Scripts/GamePlay/ThrowableController.lua",
+        "compiled": "../../Resources/Scripts/GamePlay/ThrowableController.lua"
     }
 }

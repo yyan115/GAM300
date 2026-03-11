@@ -1,0 +1,14 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "0000e174df0ea123-000479d99e000127",
+        "source": "../../Resources/Sprites/ParticleSprites/SmokeParticle.png",
+        "compiled": "../../Resources/Sprites/ParticleSprites/SmokeParticle.dds"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp"
+    }
+}

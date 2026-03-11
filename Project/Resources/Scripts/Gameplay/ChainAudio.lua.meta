@@ -2,7 +2,7 @@
     "AssetMetaData": {
         "version": 7,
         "guid": "00095623a7741fe5-00046c8184000001",
-        "source": "../../Resources/Scripts/Gameplay/ChainAudio.lua",
-        "compiled": "../../Resources/Scripts/Gameplay/ChainAudio.lua"
+        "source": "../../Resources/Scripts/GamePlay/ChainAudio.lua",
+        "compiled": "../../Resources/Scripts/GamePlay/ChainAudio.lua"
     }
 }

@@ -1,0 +1,14 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "0069659cd505d1e9-0004791af6000071",
+        "source": "../../Resources/Sprites/ParticleSprites/Flare.png",
+        "compiled": "../../Resources/Sprites/ParticleSprites/Flare.dds"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp"
+    }
+}

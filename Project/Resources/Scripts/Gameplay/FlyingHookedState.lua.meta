@@ -1,8 +1,8 @@
 {
     "AssetMetaData": {
         "version": 7,
-        "guid": "000a363fcd49c68c-0004404fd6000003",
-        "source": "../../Resources/Scripts/Gameplay/FlyingHookedState.lua",
-        "compiled": "../../Resources/Scripts/Gameplay/FlyingHookedState.lua"
+        "guid": "0069659c953b2c68-0004791876000017",
+        "source": "../../Resources/Scripts/GamePlay/FlyingHookedState.lua",
+        "compiled": "../../Resources/Scripts/GamePlay/FlyingHookedState.lua"
     }
 }

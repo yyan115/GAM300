@@ -1,8 +1,8 @@
 {
     "AssetMetaData": {
         "version": 7,
-        "guid": "0008c45a64f86ca0-000457a014000003",
-        "source": "../../Resources/Scripts/Gameplay/FlyingPatrolState.lua",
-        "compiled": "../../Resources/Scripts/Gameplay/FlyingPatrolState.lua"
+        "guid": "0069659cb04453c3-000479187600001d",
+        "source": "../../Resources/Scripts/GamePlay/FlyingPatrolState.lua",
+        "compiled": "../../Resources/Scripts/GamePlay/FlyingPatrolState.lua"
     }
 }

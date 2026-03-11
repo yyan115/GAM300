@@ -2,7 +2,7 @@
     "AssetMetaData": {
         "version": 7,
         "guid": "002e3c80da046d9c-0004102b42000007",
-        "source": "../../Resources/Scripts/Gameplay/ChainLinkTransformHandler.lua",
-        "compiled": "../../Resources/Scripts/Gameplay/ChainLinkTransformHandler.lua"
+        "source": "../../Resources/Scripts/GamePlay/ChainLinkTransformHandler.lua",
+        "compiled": "../../Resources/Scripts/GamePlay/ChainLinkTransformHandler.lua"
     }
 }

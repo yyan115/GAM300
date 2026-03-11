@@ -1,8 +1,8 @@
 {
     "AssetMetaData": {
         "version": 7,
-        "guid": "000a363fac3caa29-0004404fd6000001",
-        "source": "../../Resources/Scripts/Gameplay/FlyingChaseState.lua",
-        "compiled": "../../Resources/Scripts/Gameplay/FlyingChaseState.lua"
+        "guid": "0069659cf75904f3-0004791876000013",
+        "source": "../../Resources/Scripts/GamePlay/FlyingChaseState.lua",
+        "compiled": "../../Resources/Scripts/GamePlay/FlyingChaseState.lua"
     }
 }

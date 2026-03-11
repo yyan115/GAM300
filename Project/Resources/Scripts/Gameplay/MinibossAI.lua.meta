@@ -2,7 +2,7 @@
     "AssetMetaData": {
         "version": 7,
         "guid": "002e3c80c6c03c53-0004102b42000029",
-        "source": "../../Resources/Scripts/Gameplay/MinibossAI.lua",
-        "compiled": "../../Resources/Scripts/Gameplay/MinibossAI.lua"
+        "source": "../../Resources/Scripts/GamePlay/MinibossAI.lua",
+        "compiled": "../../Resources/Scripts/GamePlay/MinibossAI.lua"
     }
 }

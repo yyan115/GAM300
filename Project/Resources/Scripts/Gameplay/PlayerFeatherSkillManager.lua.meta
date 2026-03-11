@@ -2,7 +2,7 @@
     "AssetMetaData": {
         "version": 7,
         "guid": "005474118d99e829-00046714d0005169",
-        "source": "../../Resources/Scripts/Gameplay/PlayerFeatherSkillManager.lua",
-        "compiled": "../../Resources/Scripts/Gameplay/PlayerFeatherSkillManager.lua"
+        "source": "../../Resources/Scripts/GamePlay/PlayerFeatherSkillManager.lua",
+        "compiled": "../../Resources/Scripts/GamePlay/PlayerFeatherSkillManager.lua"
     }
 }

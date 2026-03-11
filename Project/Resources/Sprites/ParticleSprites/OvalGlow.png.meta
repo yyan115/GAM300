@@ -1,0 +1,14 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "0000e1749ea407b5-000479c928000119",
+        "source": "../../Resources/Sprites/ParticleSprites/OvalGlow.png",
+        "compiled": "../../Resources/Sprites/ParticleSprites/OvalGlow.dds"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp"
+    }
+}

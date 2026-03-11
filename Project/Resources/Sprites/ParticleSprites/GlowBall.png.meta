@@ -1,0 +1,14 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "0069659c861b45a4-000479195000006d",
+        "source": "../../Resources/Sprites/ParticleSprites/GlowBall.png",
+        "compiled": "../../Resources/Sprites/ParticleSprites/GlowBall.dds"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp"
+    }
+}

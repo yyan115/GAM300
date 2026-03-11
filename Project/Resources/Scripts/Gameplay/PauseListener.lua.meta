@@ -2,7 +2,7 @@
     "AssetMetaData": {
         "version": 7,
         "guid": "002cfbd73b79e17b-00040de646000001",
-        "source": "../../Resources/Scripts/Gameplay/PauseListener.lua",
-        "compiled": "../../Resources/Scripts/Gameplay/PauseListener.lua"
+        "source": "../../Resources/Scripts/GamePlay/PauseListener.lua",
+        "compiled": "../../Resources/Scripts/GamePlay/PauseListener.lua"
     }
 }

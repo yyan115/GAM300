@@ -1,8 +1,8 @@
 {
     "AssetMetaData": {
         "version": 7,
-        "guid": "00390ec87dfa1691-0004478ae80051e7",
-        "source": "../../Resources/Scripts/Gameplay/EnemyHurtFeather.lua",
-        "compiled": "../../Resources/Scripts/Gameplay/EnemyHurtFeather.lua"
+        "guid": "0069659cf5811138-0004791876000009",
+        "source": "../../Resources/Scripts/GamePlay/EnemyHurtFeather.lua",
+        "compiled": "../../Resources/Scripts/GamePlay/EnemyHurtFeather.lua"
     }
 }

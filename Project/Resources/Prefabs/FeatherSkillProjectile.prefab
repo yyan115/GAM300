@@ -2,7 +2,7 @@
     "prefab_entities": [
         {
             "id": 0,
-            "guid": "0042d14e0e6573b9-000476461e038553",
+            "guid": "00798acc2c9675b2-000478db120038ad",
             "components": {
                 "PrefabLinkComponent": {
                     "type": "PrefabLinkComponent",
@@ -319,7 +319,7 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "0042d14e6eb81542-000476461e038555"
+                                "00798acc0f85375f-000478db120038af"
                             ]
                         }
                     ]
@@ -603,22 +603,49 @@
                             "entryFunction": "OnInit",
                             "autoInvokeEntry": true,
                             "instanceState": {
+                                "Destroy": null,
+                                "DebugTransform": null,
+                                "Awake": null,
+                                "PlayerEntityName": "Player",
+                                "__meta": {},
+                                "ProjectileSpeed": 5.0,
+                                "SetPosition": null,
+                                "_subscriptions": {},
+                                "OnDisable": null,
+                                "Every": null,
+                                "Unsubscribe": null,
+                                "ProjectileDamage": 1.0,
+                                "GetPosition": null,
+                                "_private": {},
+                                "Start": null,
+                                "SetRotation": null,
+                                "Subscribe": null,
+                                "RigidbodyKinematicDuration": 0.7,
+                                "DisableSafe": null,
+                                "GetScale": null,
                                 "__field_list": {
                                     "PlayerEntityName": "Player",
                                     "FeatherRemnantPrefabPath": "Resources/Prefabs/FeatherSkillProjectileRemnant.prefab"
                                 },
-                                "_subscriptions": {},
-                                "ProjectileSpeed": 5.0,
+                                "After": null,
+                                "GetRotation": null,
+                                "UpdateSafe": null,
+                                "GetTransform": null,
+                                "SetScale": null,
+                                "_toRoot": null,
+                                "Update": null,
+                                "SerializeFields": null,
                                 "ColliderDisabledDuration": 0.7,
-                                "SpawnRemnantOffset": 1.0,
-                                "_private": {},
+                                "Move": null,
+                                "AwakeSafe": null,
                                 "FeatherRemnantPrefabPath": "Resources/Prefabs/FeatherSkillProjectileRemnant.prefab",
-                                "__meta": {},
+                                "OnTriggerEnter": null,
                                 "_transform_fetched": false,
+                                "_call_lifecycle": null,
+                                "DeserializeFields": null,
+                                "StartSafe": null,
                                 "__created_at": 1772633527.0,
-                                "RigidbodyKinematicDuration": 0.7,
-                                "ProjectileDamage": 1.0,
-                                "PlayerEntityName": "Player"
+                                "SpawnRemnantOffset": 1.0
                             }
                         }
                     ]
@@ -648,7 +675,7 @@
         },
         {
             "id": 1,
-            "guid": "0042d14e6eb81542-000476461e038555",
+            "guid": "00798acc0f85375f-000478db120038af",
             "components": {
                 "NameComponent": {
                     "name": "Feather"
@@ -725,7 +752,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "0042d14e0e6573b9-000476461e038553"
+                        "00798acc2c9675b2-000478db120038ad"
                     ]
                 },
                 "ActiveComponent": {

@@ -1,8 +1,8 @@
 {
     "AssetMetaData": {
         "version": 7,
-        "guid": "001d69ffbfd6c6c7-00043eccfa000001",
-        "source": "../../Resources/Scripts/Gameplay/AttackHitboxDeprecated.lua",
-        "compiled": "../../Resources/Scripts/Gameplay/AttackHitboxDeprecated.lua"
+        "guid": "0069659cad3deb04-0004791876000001",
+        "source": "../../Resources/Scripts/GamePlay/AttackHitboxDeprecated.lua",
+        "compiled": "../../Resources/Scripts/GamePlay/AttackHitboxDeprecated.lua"
     }
 }

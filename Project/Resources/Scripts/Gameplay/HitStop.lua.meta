@@ -2,7 +2,7 @@
     "AssetMetaData": {
         "version": 7,
         "guid": "006157e0ed02059b-000448544a000001",
-        "source": "../../Resources/Scripts/Gameplay/HitStop.lua",
-        "compiled": "../../Resources/Scripts/Gameplay/HitStop.lua"
+        "source": "../../Resources/Scripts/GamePlay/HitStop.lua",
+        "compiled": "../../Resources/Scripts/GamePlay/HitStop.lua"
     }
 }

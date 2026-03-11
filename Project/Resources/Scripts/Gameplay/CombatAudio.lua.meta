@@ -2,7 +2,7 @@
     "AssetMetaData": {
         "version": 7,
         "guid": "003e48c7f73c0bf1-000476545800cb69",
-        "source": "../../Resources/Scripts/Gameplay/CombatAudio.lua",
-        "compiled": "../../Resources/Scripts/Gameplay/CombatAudio.lua"
+        "source": "../../Resources/Scripts/GamePlay/CombatAudio.lua",
+        "compiled": "../../Resources/Scripts/GamePlay/CombatAudio.lua"
     }
 }

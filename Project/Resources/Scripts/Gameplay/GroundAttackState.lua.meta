@@ -1,8 +1,8 @@
 {
     "AssetMetaData": {
         "version": 7,
-        "guid": "002e3c80b5b8c56f-0004102b42000015",
-        "source": "../../Resources/Scripts/Gameplay/GroundAttackState.lua",
-        "compiled": "../../Resources/Scripts/Gameplay/GroundAttackState.lua"
+        "guid": "0069659cc7bc9189-000479187600001f",
+        "source": "../../Resources/Scripts/GamePlay/GroundAttackState.lua",
+        "compiled": "../../Resources/Scripts/GamePlay/GroundAttackState.lua"
     }
 }
