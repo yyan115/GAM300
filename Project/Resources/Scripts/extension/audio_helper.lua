@@ -1,0 +1,76 @@
+-- audio_helper.lua
+-- Shared audio utility helpers for random SFX playback with pitch/volume variation.
+-- Consolidates common patterns from CombatAudio.lua, ChainAudio.lua, and similar.
+
+local M = {}
+
+-- ---------------------------------------------------------------------------
+-- M.playRandomSFX(audio, clips, volume)
+-- ---------------------------------------------------------------------------
+-- Play a random clip from clips array, avoiding repeating the last index.
+-- Stores _lastIdx on the clips array itself as a lightweight state slot.
+-- Optional volume defaults to 1.0 if not specified.
+-- Returns nil if audio is nil or clips is empty/nil.
+--
+-- Usage:
+--   AudioHelper.playRandomSFX(self._audio, self.attackSFXClips)
+--   AudioHelper.playRandomSFX(self._audio, self.attackSFXClips, 0.8)
+--
+function M.playRandomSFX(audio, clips, volume)
+    if not audio or not clips or #clips == 0 then return end
+
+    volume = tonumber(volume) or 1.0
+    clips._lastIdx = clips._lastIdx or 0
+    local idx = math.random(1, #clips)
+    -- Retry once if we hit the last played index (and there's more than one clip)
+    if idx == clips._lastIdx and #clips > 1 then
+        idx = math.random(1, #clips)
+    end
+    clips._lastIdx = idx
+
+    local clip = clips[idx]
+    if not clip or clip == "" then return end
+
+    pcall(function()
+        audio:SetVolume(math.max(0.0, math.min(1.0, volume)))
+        audio:PlayOneShot(clip)
+    end)
+end
+
+-- ---------------------------------------------------------------------------
+-- M.playRandomSFXPitched(audio, clips, pitchVar, volume)
+-- ---------------------------------------------------------------------------
+-- Play a random clip with pitch variation applied.
+-- pitchVar defaults to 0.1 if not provided.
+-- Pitch is calculated as: 1.0 + (rand*2 - 1) * pitchVar, clamped to [0.5, 2.0]
+-- Optional volume defaults to 1.0 if not specified.
+--
+-- Usage:
+--   AudioHelper.playRandomSFXPitched(self._audio, self.attackSFXClips, 0.15)
+--   AudioHelper.playRandomSFXPitched(self._audio, self.attackSFXClips, 0.15, 0.8)
+--
+function M.playRandomSFXPitched(audio, clips, pitchVar, volume)
+    if not audio or not clips or #clips == 0 then return end
+
+    pitchVar = tonumber(pitchVar) or 0.1
+    volume = tonumber(volume) or 1.0
+    clips._lastIdx = clips._lastIdx or 0
+    local idx = math.random(1, #clips)
+    if idx == clips._lastIdx and #clips > 1 then
+        idx = math.random(1, #clips)
+    end
+    clips._lastIdx = idx
+
+    local clip = clips[idx]
+    if not clip or clip == "" then return end
+
+    pcall(function()
+        local pitch = 1.0 + (math.random() * 2 - 1) * pitchVar
+        pitch = math.max(0.5, math.min(2.0, pitch))
+        audio:SetPitch(pitch)
+        audio:SetVolume(math.max(0.0, math.min(1.0, volume)))
+        audio:PlayOneShot(clip)
+    end)
+end
+
+return M
