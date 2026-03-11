@@ -487,7 +487,11 @@ return Component {
         --     self:MoveCC(1.0, 0.0, dt) -- 1 unit/sec to +X
         -- end
 
-        if Input.IsActionJustPressed("Interact") then
+        -- if Input.IsActionJustPressed("Interact") then
+        --     self:ApplyHook(self.HookedDuration)
+        -- end
+
+        if Keyboard.IsKeyPressed(Keyboard.Key.F) then
             self:ApplyHook(self.HookedDuration)
         end
 
