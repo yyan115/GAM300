@@ -409,9 +409,14 @@ return Component {
         end)
 
         -- combat_state_changed: update movement lock. Velocity NOT zeroed here.
+        -- When ComboManager leaves an attacking state (idle, dash), any lunge that
+        -- was mid-flight must be cancelled so it does not carry into the new state.
         self._combatStateSub = event_bus.subscribe("combat_state_changed", function(data)
             if not data then return end
             self._playerCanMove = data.canMove ~= false
+            if not _G.player_is_attacking then
+                self._lungeTimer = 0
+            end
         end)
 
         -- ── Dash ──────────────────────────────────────────────────────────────
@@ -455,6 +460,14 @@ return Component {
 
         dbg("transform y: ", self._transform.localPosition.y)
         self._controller = CharacterController.Create(self.entityId, self._collider, self._transform)
+
+        -- ── Normal scale (squash & stretch baseline) ──────────────────────────
+        -- Captured once from the transform set in the editor so that squash and
+        -- stretch always springs back to the authored scale, not a hardcoded 1,1,1.
+        local _initScale   = self._transform and self._transform.localScale
+        self._normalScaleX = (_initScale and _initScale.x) or 1.0
+        self._normalScaleY = (_initScale and _initScale.y) or 1.0
+        self._normalScaleZ = (_initScale and _initScale.z) or 1.0
 
         --if self._animator then self._animator:PlayClip(IDLE, true) end
 
@@ -699,10 +712,17 @@ return Component {
 
         -- ── 10. Attack lunge impulse ──────────────────────────────────────────
         -- Direction/speed cached by attack_performed subscriber. Applied each frame.
+        -- Guarded by player_is_attacking so a lunge from a cancelled or
+        -- just-ended attack cannot bleed into a dash or idle state.
         if self._lungeTimer and self._lungeTimer > 0 then
-            self._lungeTimer = self._lungeTimer - dt
-            CharacterController.Move(self._controller,
-                self._lungeDirX * self._lungeSpeed, 0, self._lungeDirZ * self._lungeSpeed)
+            if _G.player_is_attacking then
+                self._lungeTimer = self._lungeTimer - dt
+                CharacterController.Move(self._controller,
+                    self._lungeDirX * self._lungeSpeed, 0, self._lungeDirZ * self._lungeSpeed)
+            else
+                -- Attack ended or was cancelled — discard remaining lunge immediately.
+                self._lungeTimer = 0
+            end
         end
 
         -- ── 11. Skill cast lock (grounded only) ───────────────────────────────
@@ -823,34 +843,40 @@ return Component {
                 self._squashTimer = self._squashTimer + dt
                 local i  = (self.SquashStrength or 0.5) * (self._squashIntensity or 1.0)
                 local mode = self._squashMode or "vertical"
-                local sx, sy, sz = 1.0, 1.0, 1.0
+                -- Rest scale comes from what was set on the transform in Awake/editor,
+                -- not a hardcoded 1,1,1, so the effect always springs back to the
+                -- authored scale regardless of the object's real proportions.
+                local nX = self._normalScaleX or 1.0
+                local nY = self._normalScaleY or 1.0
+                local nZ = self._normalScaleZ or 1.0
+                local sx, sy, sz = nX, nY, nZ
 
                 -- All amplitudes derived from SquashStrength (0-1) * per-event weight.
                 -- Hardcoded ratios define the shape; only SquashStrength needs tuning.
-                --   vertical  : Y squashes DOWN, XZ widens, Y bounces slightly above 1.0
+                --   vertical  : Y squashes DOWN, XZ widens, Y bounces slightly above normal
                 --   horizontal: Y pops UP, XZ squashes IN  (dash end / chain)
                 --   dashstart : Y stretches TALL, XZ squashes IN  (dash launch)
                 local yPeak, xzPeak, yOver
                 if mode == "vertical" then
-                    yPeak  = 1.0 - 0.30 * i   -- Y squashes down  (0.70 at full strength)
-                    xzPeak = 1.0 + 0.18 * i   -- XZ widens out    (1.18 at full strength)
-                    yOver  = 1.0 + 0.08 * i   -- Y bounces above  (1.08 at full strength)
+                    yPeak  = nY * (1.0 - 0.30 * i)   -- Y squashes down  (0.70 at full strength)
+                    xzPeak = nX * (1.0 + 0.18 * i)   -- XZ widens out    (1.18 at full strength)
+                    yOver  = nY * (1.0 + 0.08 * i)   -- Y bounces above  (1.08 at full strength)
                 elseif mode == "horizontal" then
-                    yPeak  = 1.0 + 0.08 * i   -- Y pops up        (1.08 at full strength)
-                    xzPeak = 1.0 - 0.10 * i   -- XZ squashes in   (0.90 at full strength)
-                    yOver  = 1.0
+                    yPeak  = nY * (1.0 + 0.08 * i)   -- Y pops up        (1.08 at full strength)
+                    xzPeak = nX * (1.0 - 0.10 * i)   -- XZ squashes in   (0.90 at full strength)
+                    yOver  = nY
                 elseif mode == "dashstart" then
-                    yPeak  = 1.0 + 0.10 * i   -- Y stretches tall (1.10 at full strength)
-                    xzPeak = 1.0 - 0.07 * i   -- XZ squashes in   (0.93 at full strength)
-                    yOver  = 1.0
+                    yPeak  = nY * (1.0 + 0.10 * i)   -- Y stretches tall (1.10 at full strength)
+                    xzPeak = nX * (1.0 - 0.07 * i)   -- XZ squashes in   (0.93 at full strength)
+                    yOver  = nY
                 end
 
                 if self._squashPhase == "squash" then
-                    -- Lerp from (1,1,1) → (yPeak, xzPeak)
+                    -- Lerp from normal scale → (yPeak, xzPeak)
                     local t = math.min(self._squashTimer / math.max(self.SquashDuration or 0.07, 1e-4), 1.0)
-                    sy = 1.0 + (yPeak  - 1.0) * t
-                    sx = 1.0 + (xzPeak - 1.0) * t
-                    sz = sx
+                    sy = nY + (yPeak  - nY) * t
+                    sx = nX + (xzPeak - nX) * t
+                    sz = nZ + (xzPeak - nX) * t   -- Z tracks X (uniform XZ)
                     if t >= 1.0 then
                         self._squashPhase = "stretch"
                         self._squashTimer = 0
@@ -859,21 +885,21 @@ return Component {
                 elseif self._squashPhase == "stretch" then
                     -- Two-step spring:
                     --   First half  (t 0→0.5): peak → overshoot
-                    --   Second half (t 0.5→1): overshoot → 1.0
-                    -- XZ just lerps from xzPeak → 1.0 across the full duration.
+                    --   Second half (t 0.5→1): overshoot → normal scale
+                    -- XZ just lerps from xzPeak → normal scale across the full duration.
                     local t = math.min(self._squashTimer / math.max(self.StretchDuration or 0.22, 1e-4), 1.0)
                     if t < 0.5 then
                         local t2 = t * 2  -- 0→1 over first half
-                        sy = yPeak + (yOver  - yPeak)  * t2
-                        sx = xzPeak + (1.0   - xzPeak) * t2
+                        sy = yPeak  + (yOver - yPeak)  * t2
+                        sx = xzPeak + (nX    - xzPeak) * t2
                     else
                         local t2 = (t - 0.5) * 2  -- 0→1 over second half
-                        sy = yOver + (1.0 - yOver) * t2
-                        sx = 1.0
+                        sy = yOver + (nY - yOver) * t2
+                        sx = nX
                     end
-                    sz = sx
+                    sz = nZ + (sx - nX)   -- Z tracks X offset (uniform XZ)
                     if t >= 1.0 then
-                        sx, sy, sz        = 1.0, 1.0, 1.0
+                        sx, sy, sz        = nX, nY, nZ
                         self._squashPhase = nil
                     end
                 end
