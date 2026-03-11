@@ -2042,7 +2042,7 @@
                                 "Update": null,
                                 "Unsubscribe": null,
                                 "_setPercentText": null,
-                                "targetScene": "\"Resources/Scenes/04_GameLevelMap.scene\"",
+                                "targetScene": "\"Resources/Scenes/04_Level.scene\"",
                                 "_call_lifecycle": null,
                                 "StartSafe": null,
                                 "anchorLeft": true,
@@ -2060,7 +2060,7 @@
                                     "anchorLeft": true,
                                     "barFillName": "LoadingBarFill",
                                     "loadingTextName": "PercentText",
-                                    "targetScene": "Resources/Scenes/04_GameLevel.scene",
+                                    "targetScene": "Resources/Scenes/04_Level.scene",
                                     "fullScaleX": 2.0
                                 },
                                 "__meta": {},

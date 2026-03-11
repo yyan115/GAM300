@@ -116,6 +116,9 @@ public class MainActivity extends AppCompatActivity implements SurfaceHolder.Cal
 
     @Override
     public boolean onKeyDown(int keyCode, KeyEvent event) {
+        if (keyCode == KeyEvent.KEYCODE_VOLUME_UP || keyCode == KeyEvent.KEYCODE_VOLUME_DOWN) {
+            return super.onKeyDown(keyCode, event);
+        }
         if (engineReady) {
             onKeyEvent(keyCode, 0); // 0 = KEY_DOWN
             Log.d(TAG, "Key down: " + keyCode);
@@ -126,6 +129,9 @@ public class MainActivity extends AppCompatActivity implements SurfaceHolder.Cal
 
     @Override
     public boolean onKeyUp(int keyCode, KeyEvent event) {
+        if (keyCode == KeyEvent.KEYCODE_VOLUME_UP || keyCode == KeyEvent.KEYCODE_VOLUME_DOWN) {
+            return super.onKeyUp(keyCode, event);
+        }
         if (engineReady) {
             onKeyEvent(keyCode, 1); // 1 = KEY_UP
             Log.d(TAG, "Key up: " + keyCode);
