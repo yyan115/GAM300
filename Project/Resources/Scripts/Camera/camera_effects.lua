@@ -26,6 +26,7 @@ EVENTS CONSUMED:
     fx_clear_all        {}    → cancel every active effect immediately
     fx_sequence         { name }  → run a named scripted sequence from SEQUENCES
     fx_sequence_cancel  {}        → abort the currently running sequence
+    dodge_success       { attackType, payload }  → chromatic spike + freeze-frame slow-mo
 
 EVENTS PUBLISHED:
     fx_time_scale_restored  {}  → fires when time scale returns to 1.0
@@ -110,6 +111,14 @@ return Component {
 
         -- === Time Scale ===
         TimeScaleRestoreSpeed = 4.0,   -- how fast time lerps back to 1.0 after a timed slow-mo
+
+        -- === Dodge Success ===
+        -- Chromatic spike + freeze-frame slow-mo that fire together on a confirmed dodge.
+        -- The time scale briefly dips then snaps back, giving a "bullet-time parry" feel.
+        DodgeChromaticIntensity = 0.90,  -- Chromatic aberration intensity at peak.
+        DodgeChromaticDuration  = 0.35,  -- Seconds the chromatic spike is held before fading.
+        DodgeTimeScale          = 0.15,  -- Time scale during the freeze-frame dip. Lower = more dramatic.
+        DodgeTimeScaleDuration  = 0.45,  -- Seconds the time dilation is held before restoring.
 
         -- === Defaults ===
         DefaultVignetteSmoothness = 0.4,
@@ -197,6 +206,23 @@ return Component {
             self._blurTarget      = 0;                              self._blurHeld      = false
             self._timeScaleTarget = 1.0;                            self._timeScaleHeld = false
             self._motionBlurTarget = 0
+        end)
+
+        -- === Dodge Success ===
+        -- Fires a chromatic spike and a freeze-frame time dip simultaneously.
+        -- Both durations are intentionally short — the effect should feel instant,
+        -- not linger. Tune DodgeTimeScale closer to 1.0 to soften the dip.
+        self._dodgeSuccessSub = event_bus.subscribe("dodge_success", function()
+            self._chromaticTarget   = self.DodgeChromaticIntensity or 0.75
+            self._chromaticDuration = self.DodgeChromaticDuration  or 0.35
+            self._chromaticTimer    = 0
+            self._chromaticHeld     = false
+
+            self._timeScaleTarget   = self.DodgeTimeScale          or 0.15
+            self._timeScaleDuration = self.DodgeTimeScaleDuration  or 0.12
+            self._timeScaleTimer    = 0
+            self._timeScaleHeld     = false
+            Time.SetTimeScale(self._timeScaleTarget)
         end)
 
         -- === Scripted Sequences ===
@@ -415,6 +441,7 @@ return Component {
                 "_motionBlurSub",
                 "_timeScaleSub", "_timeScaleClearSub",
                 "_clearAllSub",
+                "_dodgeSuccessSub",
                 "_sequenceSub", "_sequenceCancelSub",
             }
             for _, key in ipairs(subs) do

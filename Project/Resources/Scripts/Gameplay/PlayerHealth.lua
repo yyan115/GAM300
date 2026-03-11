@@ -77,13 +77,18 @@ return Component {
     mixins = { TransformMixin },
 
     fields = {
-        MaxHealth      = 30,
-        CurrentHealth  = 30,
-        IFrameDuration = 1.0,    -- Post-hit i-frame duration (seconds).
-        YDeathThreshold = -3.0,
+        -- === Health ===
+        MaxHealth     = 30,
+        CurrentHealth = 30,
+
+        -- === I-Frames ===
+        IFrameDuration = 1.0,   -- Post-hit invincibility window (seconds).
         -- Must match PlayerMovement's DashDuration so the i-frame window is accurate.
         -- TO CHANGE dash duration: update both this and DashDuration in PlayerMovement.
-        DashIFrameDuration = 0.7,
+        DashIFrameDuration = 0.7,   -- Invincibility window while dashing (seconds).
+
+        -- === World ===
+        YDeathThreshold = -3.0,   -- Y position below which the player is killed instantly.
     },
 
     Awake = function(self)
