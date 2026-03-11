@@ -11,9 +11,12 @@ return Component {
     mixins = { TransformMixin },
     
     fields = {
-
     },
     
+        -- local cleanAttackState = self.AttackState:gsub('"', '')
+
+
+
     SpawnGroundSlamVFX = function(self, x,y,z)
         print("Spawning Ground Slam VFX at: ", x,y,z)
         --Set VFX AT Slammed location
@@ -37,11 +40,12 @@ return Component {
             ModelRenderComponent.SetVisible(self.model, false) 
         end
 
+        self._trackedEnemyAnim = nil
         self._BeginSlamDownSub = event_bus.subscribe("SlammedDown", function(payload)
             if payload and payload.targetId then
                 --GET ENEMY ANIMATION, POSITION, MIGHT NEED TO BE ON UPDATE
                 local enemyId = payload.targetId
-                local pulledEnemyAnim = GetComponent(enemyId, "AnimationComponent")
+                self._trackedEnemyAnim = GetComponent(enemyId, "AnimationComponent")
 
                 self:SpawnGroundSlamVFX(payload.posX, payload.posY, payload.posZ)       --Land Position of enemy
             end
@@ -49,15 +53,25 @@ return Component {
     end,
     
     Update = function(self, dt)
+        if self._trackedEnemyAnim then
+            local currentAnim = self._trackedEnemyAnim:GetCurrentState()
+            if currentAnim == "Stand Up" then    --make this a field
+                if self.model then
+                    ModelRenderComponent.SetVisible(self.model, false)      -- or timer
+                end
+            end
+        end
     end,
 
     OnDisable = function(self)
-    -- if _G.event_bus and _G.event_bus.unsubscribe then
-    --     if self._chainAimSub then
-    --         pcall(function()
-    --             _G.event_bus.unsubscribe(self._chainAimSub)
-    --         end)
-    --         self._chainAimSub = nil
+        if _G.event_bus and _G.event_bus.unsubscribe then
+            if self._BeginSlamDownSub then
+                pcall(function()
+                    _G.event_bus.unsubscribe(self._BeginSlamDownSub)
+                end)
+                self._BeginSlamDownSub = nil
+            end
         end
-
+        self._trackedEnemyAnim = nil
+    end,
 }
