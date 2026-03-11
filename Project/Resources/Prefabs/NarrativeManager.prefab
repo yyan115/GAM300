@@ -1101,10 +1101,6 @@
                                         {
                                             "type": "std::string",
                                             "data": "0051f0b531aa70fd-00047372a4001e5b"
-                                        },
-                                        {
-                                            "type": "std::string",
-                                            "data": ""
                                         }
                                     ]
                                 },
@@ -1126,10 +1122,6 @@
                                         {
                                             "type": "std::string",
                                             "data": "0051f0b531aa70fd-00047372a4001e5b"
-                                        },
-                                        {
-                                            "type": "std::string",
-                                            "data": ""
                                         }
                                     ]
                                 },
@@ -1151,10 +1143,6 @@
                                         {
                                             "type": "std::string",
                                             "data": "0051f0b56373c6f9-0004737358001e5d"
-                                        },
-                                        {
-                                            "type": "std::string",
-                                            "data": ""
                                         }
                                     ]
                                 },
@@ -1176,10 +1164,6 @@
                                         {
                                             "type": "std::string",
                                             "data": "0051f0b56373c6f9-0004737358001e5d"
-                                        },
-                                        {
-                                            "type": "std::string",
-                                            "data": ""
                                         }
                                     ]
                                 },
@@ -1201,10 +1185,6 @@
                                         {
                                             "type": "std::string",
                                             "data": "0051f0b54389a713-00047374680073d7"
-                                        },
-                                        {
-                                            "type": "std::string",
-                                            "data": ""
                                         }
                                     ]
                                 },
@@ -1222,10 +1202,6 @@
                                         {
                                             "type": "float",
                                             "data": 3
-                                        },
-                                        {
-                                            "type": "std::string",
-                                            "data": ""
                                         },
                                         {
                                             "type": "std::string",
