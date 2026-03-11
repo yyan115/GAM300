@@ -22,6 +22,7 @@ prior written consent of DigiPen Institute of Technology is prohibited.
 #include "WindowManager.hpp"
 #include "Input/InputManager.h"
 #include "Input/AndroidInputManager.h"
+#include "Settings/GameSettings.hpp"
 
 AndroidPlatform::AndroidPlatform() 
     : window(nullptr)
@@ -423,37 +424,42 @@ void AndroidPlatform::HandleTouchEvent(int action, int pointerId, float x, float
 }
 
 void AndroidPlatform::HandleKeyEvent(int keyCode, int action) {
-    // Map Android key codes to engine keys
+    // Handle hardware volume buttons — adjust master volume by 10% per press.
+    // Only on KEY_DOWN (action == 0) to avoid double-firing on release.
+    if (action == 0) {
+        if (keyCode == 24 || keyCode == 25) {  // KEYCODE_VOLUME_UP / KEYCODE_VOLUME_DOWN
+            auto& settings = GameSettingsManager::GetInstance();
+            float current = settings.GetMasterVolume();
+            float next    = (keyCode == 24) ? current + 0.1f : current - 0.1f;
+            next = std::clamp(next, 0.0f, 1.0f);
+            settings.SetMasterVolume(next);
+            settings.SaveIfDirty();
+            __android_log_print(ANDROID_LOG_DEBUG, "GAM300", "Volume button: %s, master volume: %.2f",
+                keyCode == 24 ? "UP" : "DOWN", next);
+            return;
+        }
+    }
+
+    // Map other Android key codes to engine keys
     Input::Key engineKey = Input::Key::UNKNOWN;
-    
-    // Map common Android keys
+
     switch (keyCode) {
         case 4:   // KEYCODE_BACK
             engineKey = Input::Key::ESC;
-            break;
-        case 25:  // KEYCODE_VOLUME_DOWN  
-            engineKey = Input::Key::DOWN;
-            break;
-        case 24:  // KEYCODE_VOLUME_UP
-            engineKey = Input::Key::UP;
             break;
         case 62:  // KEYCODE_SPACE
             engineKey = Input::Key::SPACE;
             break;
         // Add more key mappings as needed
     }
-    
+
     if (engineKey != Input::Key::UNKNOWN) {
-        Input::KeyAction engineAction = (action == 0) ? Input::KeyAction::PRESS : Input::KeyAction::RELEASE;
-        
         // Update local state
         int keyIndex = static_cast<int>(engineKey);
         if (keyIndex >= 0 && keyIndex < 512) {
             keyStates[keyIndex] = (action == 0);
         }
-        
-        // Notify InputManager
-        
+
         __android_log_print(ANDROID_LOG_DEBUG, "GAM300", "Key event: keyCode=%d, action=%d, engineKey=%d", keyCode, action, static_cast<int>(engineKey));
     }
 }

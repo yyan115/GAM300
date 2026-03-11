@@ -63,6 +63,7 @@ return Component {
         chainAimTargetName      = "ChainAimPointLeftEnd",
         chainAimTransitionSpeed = 5.0,
         chainAimZoomDistance    = 0.8,
+        chainAimHeightOffset    = 1.5,
         chainAimSideOffset      = 0.3,
 
         -- === Chain Aim Assist ===
@@ -92,6 +93,11 @@ return Component {
         lockOnMouseThreshold  = 2.0,
         lockOnLOSHeight       = 1.0,
         lockOnLOSGrace        = 0.5,
+
+        -- === Motion Blur ===
+        MotionBlurEnabled   = true,   -- master toggle; set false to disable without removing the system
+        MotionBlurThreshold = 2.0,    -- camera speed (world units/sec) below which no blur is applied
+        MotionBlurMaxSpeed  = 14.0,   -- camera speed at which blur reaches full MotionBlurMaxIntensity
 
         -- === Rotation ===
         lockCameraRotation = false,
@@ -145,6 +151,11 @@ return Component {
 
         -- Respawn teleport flag
         self._teleportToPlayer = false
+
+        -- Motion blur
+        self._lastCamX = nil
+        self._lastCamY = nil
+        self._lastCamZ = nil
 
         -- Screen shake
         self._shakeTimer       = 0.0
@@ -411,10 +422,9 @@ return Component {
         end
 
         -- Ideal camera position (spherical offset from pivot)
-        local scaledHeight    = (self.heightOffset or 1.0) * (0.85 + zoomFactor * 0.15)
         local horizRadius     = radius * math.cos(pitchRad)
         local desiredX = cameraTarget.x + horizRadius * math.sin(yawRad)
-        local desiredY = cameraTarget.y + radius * math.sin(pitchRad) + scaledHeight
+        local desiredY = cameraTarget.y + radius * math.sin(pitchRad) + (self.heightOffset or 1.0)
         local desiredZ = cameraTarget.z + horizRadius * math.cos(yawRad)
 
         -- Hard Y cap: prevents the camera from rising above indoor ceilings even
@@ -472,6 +482,25 @@ return Component {
         end
 
         self:SetPosition(newX, newY, newZ)
+
+        -- ── Motion blur ──────────────────────────────────────────────────────
+        -- Measure how far the camera actually moved this frame; publish normalised
+        -- intensity so camera_effects can drive blur without knowing positions.
+        if self.MotionBlurEnabled and self._lastCamX then
+            local dx    = newX - self._lastCamX
+            local dy    = newY - self._lastCamY
+            local dz    = newZ - self._lastCamZ
+            local speed = math.sqrt(dx*dx + dy*dy + dz*dz) / (dt > 0 and dt or 0.016)
+            local lo    = self.MotionBlurThreshold or 2.0
+            local hi    = self.MotionBlurMaxSpeed  or 14.0
+            local intensity = math.max(0.0, math.min(1.0, (speed - lo) / (hi - lo)))
+            if event_bus and event_bus.publish then
+                event_bus.publish("fx_motion_blur", { intensity = intensity })
+            end
+        end
+        self._lastCamX = newX
+        self._lastCamY = newY
+        self._lastCamZ = newZ
 
         -- ── Screen shake (angular, applied to rotation) ──────────────────────
         if self._shakeTimer < self._shakeDuration then

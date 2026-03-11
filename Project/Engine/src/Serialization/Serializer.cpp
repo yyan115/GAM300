@@ -2820,6 +2820,9 @@ void Serializer::DeserializeModelComponent(ModelRenderComponent& modelComp, cons
             }
 
             modelComp.childBonesSaved = Serializer::GetBool(d, 5, false);
+            modelComp.depthOffset = Serializer::GetBool(d, 6, false);
+            modelComp.depthOffsetFactor = Serializer::GetFloat(d, 7, -1.0f);
+            modelComp.depthOffsetUnits = Serializer::GetFloat(d, 8, -1.0f);
 
             if (modelComp.model) {
                 modelComp.boneNameToEntityMap[modelComp.model->modelName] = root;
