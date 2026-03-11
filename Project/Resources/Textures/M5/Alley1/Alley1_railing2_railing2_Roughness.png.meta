@@ -1,0 +1,14 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "004260df20dcfe03-000477c68a0e70e7",
+        "source": "../../Resources/Textures/M5/Alley1/Alley1_railing2_railing2_Roughness.png",
+        "compiled": "../../Resources/Textures/M5/Alley1/Alley1_railing2_railing2_Roughness.dds"
+    },
+    "TextureMetaData": {
+        "type": "roughness",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp"
+    }
+}

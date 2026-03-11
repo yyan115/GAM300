@@ -1,0 +1,14 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "004260df49f0e9da-000477ba3c00e5a5",
+        "source": "../../Resources/Textures/M5/Room2Library/Rm2_library_wall1_wall1_Roughness.png",
+        "compiled": "../../Resources/Textures/M5/Room2Library/Rm2_library_wall1_wall1_Roughness.dds"
+    },
+    "TextureMetaData": {
+        "type": "roughness",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp"
+    }
+}
