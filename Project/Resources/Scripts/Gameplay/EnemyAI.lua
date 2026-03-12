@@ -178,6 +178,15 @@ return Component {
         SquashDuration  = 0.07,
         StretchDuration = 0.20,
 
+        -- === Aerial juggle ===
+        -- When the player lands a LIFT hit the enemy becomes airborne and is
+        -- held up by subsequent AIR hits. A SLAM hit drives them into the floor.
+        JuggleLiftVelY   = 8.0,   -- Upward velocity applied on lift_attack hit.
+        JuggleAirBoost   = 4.0,   -- Upward velocity boost per air-combo hit to maintain juggle height.
+        JuggleSlamVelY   = 20.0,  -- Downward velocity applied on air_slam hit.
+        JuggleGravity    = -18.0, -- Gravity while juggled (separate from world gravity).
+        JuggleGroundEps  = 0.05,  -- Distance to ground considered "landed".
+
         -- === Kinematic grounding ===
         UseKinematicGrounding = true,
         GroundRayUp   = 0.35,    -- Ray cast origin height above feet.
@@ -327,6 +336,11 @@ return Component {
         self._squashTimer     = 0
         self._squashIntensity = 1.0
         self._squashMode      = "vertical"
+
+        -- ── Aerial juggle state ──────────────────────────────────────────────
+        self._isJuggled   = false   -- true while enemy is airborne from a juggle
+        self._juggleVY    = 0       -- current vertical velocity
+        self._juggleGroundY = nil   -- cached ground Y to detect landing
 
         -- Capture authored scale once so the effect always springs back to the
         -- editor-set proportions rather than a hardcoded 1,1,1.
@@ -570,6 +584,49 @@ return Component {
                     scaleTable.z = sz
                     self._transform.isDirty = true
                 end)
+            end
+        end
+
+        -- ── Aerial juggle physics ────────────────────────────────────────────
+        -- Runs while the enemy is airborne from a player juggle combo.
+        -- Applies gravity each frame and detects landing.
+        if self._isJuggled then
+            local grav = tonumber(self.JuggleGravity) or -18.0
+            self._juggleVY = (self._juggleVY or 0) + grav * dtSec
+
+            local x, y, z = self:GetPosition()
+            if x ~= nil then
+                local newY = y + self._juggleVY * dtSec
+
+                -- Get ground Y
+                local groundY = self._juggleGroundY or 0
+                if Nav and Nav.GetGroundY then
+                    local g = Nav.GetGroundY(self.entityId)
+                    if g ~= nil then groundY = g end
+                end
+                self._juggleGroundY = groundY
+
+                local eps = tonumber(self.JuggleGroundEps) or 0.05
+                if newY <= groundY + eps then
+                    -- Landed
+                    newY = groundY
+                    self._isJuggled  = false
+                    print(string.format("[EnemyAI] Juggle LANDED at y=%.3f", newY))
+                    self._juggleVY   = 0
+                    self:_squashTrigger("vertical", 0.8)
+                    if self._animator then
+                        self._animator:SetBool("Hurt1", false)
+                        self._animator:SetBool("Hurt2", false)
+                        self._animator:SetBool("Hurt3", false)
+                    end
+                    -- Re-enter hurt so the FSM reacts to landing impact
+                    self.fsm:ForceChange("Hurt", self.states.Hurt)
+                end
+
+                self:SetPosition(x, newY, z)
+                if self._controller and CharacterController.SetPosition then
+                    pcall(function() CharacterController.SetPosition(self._controller, x, newY, z) end)
+                end
             end
         end
 
@@ -1437,6 +1494,44 @@ return Component {
         self._squashIntensity = intensity or 1.0
     end,
 
+    -- ==========================================================================
+    -- AERIAL JUGGLE HELPERS
+    -- Called from ApplyHit based on hitType: LIFT / AIR / SLAM
+    -- ==========================================================================
+    ApplyJuggleLift = function(self)
+        -- Cancel existing knockback so it doesn't fight the lift
+        self._kbT = 0
+        self._kbVX, self._kbVZ = 0, 0
+        -- Cache ground level so landing detection has a reference
+        local _, y, _ = self:GetPosition()
+        if Nav and Nav.GetGroundY then
+            local g = Nav.GetGroundY(self.entityId)
+            if g ~= nil then self._juggleGroundY = g else self._juggleGroundY = y end
+        else
+            self._juggleGroundY = y
+        end
+        self._juggleVY  = tonumber(self.JuggleLiftVelY) or 8.0
+        self._isJuggled = true
+        print(string.format("[EnemyAI] ApplyJuggleLift: juggleVY=%.2f", self._juggleVY or 0))
+    end,
+
+    ApplyJuggleAirHit = function(self)
+        if not self._isJuggled then return end
+        -- Boost upward so the enemy doesn't fall between air hits
+        local boost = tonumber(self.JuggleAirBoost) or 4.0
+        self._juggleVY = math.max(self._juggleVY or 0, boost)
+        print(string.format("[EnemyAI] ApplyJuggleAirHit: juggleVY=%.2f", self._juggleVY or 0))
+    end,
+
+    ApplyJuggleSlam = function(self)
+        -- Drive enemy straight down at slam speed
+        self._juggleVY  = -(tonumber(self.JuggleSlamVelY) or 20.0)
+        self._isJuggled = true   -- ensure physics block is active even if not previously juggled
+        print(string.format("[EnemyAI] ApplyJuggleSlam: juggleVY=%.2f", self._juggleVY or 0))
+        self._kbT = 0
+        self._kbVX, self._kbVZ = 0, 0
+    end,
+
     ApplyHit = function(self, dmg, hitType)
         if self.dead then return end
         if (self._hitLockTimer or 0) > 0 then return end
@@ -1452,6 +1547,17 @@ return Component {
         self.health = self.health - (dmg or 1)
         print(string.format("[EnemyAI] Remaining health: %d", self.health))
         self:ApplyKnockback(self.KnockbackStrength, self.KnockbackDuration)
+
+        -- Aerial juggle routing: lift launches the enemy up, air hits maintain
+        -- height, slam drives them to the floor.
+        if hitType == "LIFT" then
+            self:ApplyJuggleLift()
+        elseif hitType == "AIR" then
+            self:ApplyJuggleAirHit()
+        elseif hitType == "SLAM" then
+            self:ApplyJuggleSlam()
+        end
+        print(string.format("[EnemyAI] ApplyHit: hitType=%s | isJuggled=%s | juggleVY=%.2f | health=%d", tostring(hitType), tostring(self._isJuggled), self._juggleVY or 0, self.health))
 
         if self.health <= 0 then
             self.health = 0

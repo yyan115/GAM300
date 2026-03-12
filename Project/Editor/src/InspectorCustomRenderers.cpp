@@ -2362,6 +2362,104 @@ void RegisterInspectorCustomRenderers()
             ImGui::Unindent(10.0f);
         }
 
+        // --- DIRECTIONAL BLUR ---
+        if (ImGui::CollapsingHeader("Post-Processing: Directional Blur")) {
+            ImGui::Indent(10.0f);
+
+            // Enable checkbox
+            bool dirBlurEnabled = camera.dirBlurEnabled;
+            if (ImGui::Checkbox("Enable Directional Blur##PP", &dirBlurEnabled)) {
+                bool oldVal = camera.dirBlurEnabled;
+                camera.dirBlurEnabled = dirBlurEnabled;
+                if (UndoSystem::GetInstance().IsEnabled()) {
+                    bool newVal = dirBlurEnabled;
+                    UndoSystem::GetInstance().RecordLambdaChange(
+                        [entity, newVal]() { auto& ecs = ECSRegistry::GetInstance().GetActiveECSManager(); if (ecs.HasComponent<CameraComponent>(entity)) ecs.GetComponent<CameraComponent>(entity).dirBlurEnabled = newVal; },
+                        [entity, oldVal]() { auto& ecs = ECSRegistry::GetInstance().GetActiveECSManager(); if (ecs.HasComponent<CameraComponent>(entity)) ecs.GetComponent<CameraComponent>(entity).dirBlurEnabled = oldVal; },
+                        "Toggle Directional Blur");
+                }
+            }
+
+            if (camera.dirBlurEnabled) {
+                // Intensity
+                ImGui::Text("Intensity");
+                ImGui::SameLine(labelWidth);
+                ImGui::SetNextItemWidth(-1);
+                static std::unordered_map<Entity, float> startDirBlurIntensity;
+                if (!isEditingPP[entity]) startDirBlurIntensity[entity] = camera.dirBlurIntensity;
+                if (ImGui::SliderFloat("##DirBlurIntensity", &camera.dirBlurIntensity, 0.0f, 1.0f)) { isEditingPP[entity] = true; }
+                if (isEditingPP[entity] && !ImGui::IsItemActive()) {
+                    float oldVal = startDirBlurIntensity[entity]; float newVal = camera.dirBlurIntensity;
+                    if (oldVal != newVal && UndoSystem::GetInstance().IsEnabled()) {
+                        UndoSystem::GetInstance().RecordLambdaChange(
+                            [entity, newVal]() { auto& ecs = ECSRegistry::GetInstance().GetActiveECSManager(); if (ecs.HasComponent<CameraComponent>(entity)) ecs.GetComponent<CameraComponent>(entity).dirBlurIntensity = newVal; },
+                            [entity, oldVal]() { auto& ecs = ECSRegistry::GetInstance().GetActiveECSManager(); if (ecs.HasComponent<CameraComponent>(entity)) ecs.GetComponent<CameraComponent>(entity).dirBlurIntensity = oldVal; },
+                            "Change Dir Blur Intensity");
+                    }
+                    isEditingPP[entity] = false;
+                }
+
+                // Strength (pixel distance)
+                ImGui::Text("Strength");
+                ImGui::SameLine(labelWidth);
+                ImGui::SetNextItemWidth(-1);
+                static std::unordered_map<Entity, float> startDirBlurStrength;
+                if (!isEditingPP[entity]) startDirBlurStrength[entity] = camera.dirBlurStrength;
+                if (ImGui::DragFloat("##DirBlurStrength", &camera.dirBlurStrength, 0.1f, 0.1f, 50.0f)) { isEditingPP[entity] = true; }
+                if (isEditingPP[entity] && !ImGui::IsItemActive()) {
+                    float oldVal = startDirBlurStrength[entity]; float newVal = camera.dirBlurStrength;
+                    if (oldVal != newVal && UndoSystem::GetInstance().IsEnabled()) {
+                        UndoSystem::GetInstance().RecordLambdaChange(
+                            [entity, newVal]() { auto& ecs = ECSRegistry::GetInstance().GetActiveECSManager(); if (ecs.HasComponent<CameraComponent>(entity)) ecs.GetComponent<CameraComponent>(entity).dirBlurStrength = newVal; },
+                            [entity, oldVal]() { auto& ecs = ECSRegistry::GetInstance().GetActiveECSManager(); if (ecs.HasComponent<CameraComponent>(entity)) ecs.GetComponent<CameraComponent>(entity).dirBlurStrength = oldVal; },
+                            "Change Dir Blur Strength");
+                    }
+                    isEditingPP[entity] = false;
+                }
+
+                // Angle (degrees)
+                ImGui::Text("Angle");
+                ImGui::SameLine(labelWidth);
+                ImGui::SetNextItemWidth(-1);
+                static std::unordered_map<Entity, float> startDirBlurAngle;
+                if (!isEditingPP[entity]) startDirBlurAngle[entity] = camera.dirBlurAngle;
+                if (ImGui::SliderFloat("##DirBlurAngle", &camera.dirBlurAngle, 0.0f, 360.0f, "%.1f deg")) { isEditingPP[entity] = true; }
+                if (isEditingPP[entity] && !ImGui::IsItemActive()) {
+                    float oldVal = startDirBlurAngle[entity]; float newVal = camera.dirBlurAngle;
+                    if (oldVal != newVal && UndoSystem::GetInstance().IsEnabled()) {
+                        UndoSystem::GetInstance().RecordLambdaChange(
+                            [entity, newVal]() { auto& ecs = ECSRegistry::GetInstance().GetActiveECSManager(); if (ecs.HasComponent<CameraComponent>(entity)) ecs.GetComponent<CameraComponent>(entity).dirBlurAngle = newVal; },
+                            [entity, oldVal]() { auto& ecs = ECSRegistry::GetInstance().GetActiveECSManager(); if (ecs.HasComponent<CameraComponent>(entity)) ecs.GetComponent<CameraComponent>(entity).dirBlurAngle = oldVal; },
+                            "Change Dir Blur Angle");
+                    }
+                    isEditingPP[entity] = false;
+                }
+
+                // Samples (quality)
+                ImGui::Text("Samples");
+                ImGui::SameLine(labelWidth);
+                ImGui::SetNextItemWidth(-1);
+                static std::unordered_map<Entity, int> startDirBlurSamples;
+                if (!isEditingPP[entity]) startDirBlurSamples[entity] = camera.dirBlurSamples;
+                if (ImGui::InputInt("##DirBlurSamples", &camera.dirBlurSamples)) {
+                    camera.dirBlurSamples = std::max(2, std::min(camera.dirBlurSamples, 32));
+                    isEditingPP[entity] = true;
+                }
+                if (isEditingPP[entity] && !ImGui::IsItemActive()) {
+                    int oldVal = startDirBlurSamples[entity]; int newVal = camera.dirBlurSamples;
+                    if (oldVal != newVal && UndoSystem::GetInstance().IsEnabled()) {
+                        UndoSystem::GetInstance().RecordLambdaChange(
+                            [entity, newVal]() { auto& ecs = ECSRegistry::GetInstance().GetActiveECSManager(); if (ecs.HasComponent<CameraComponent>(entity)) ecs.GetComponent<CameraComponent>(entity).dirBlurSamples = newVal; },
+                            [entity, oldVal]() { auto& ecs = ECSRegistry::GetInstance().GetActiveECSManager(); if (ecs.HasComponent<CameraComponent>(entity)) ecs.GetComponent<CameraComponent>(entity).dirBlurSamples = oldVal; },
+                            "Change Dir Blur Samples");
+                    }
+                    isEditingPP[entity] = false;
+                }
+            }
+
+            ImGui::Unindent(10.0f);
+        }
+
         // --- BLOOM ---
         if (ImGui::CollapsingHeader("Post-Processing: Bloom")) {
             ImGui::Indent(10.0f);

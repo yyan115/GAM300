@@ -22,6 +22,7 @@ prior written consent of DigiPen Institute of Technology is prohibited.
 #include "Asset Manager/ResourceManager.hpp"
 #include "Graphics/PostProcessing/PostProcessingManager.hpp"
 #include "Graphics/PostProcessing/Blur/BlurEffect.hpp"
+#include "Graphics/PostProcessing/Blur/DirectionalBlurEffect.hpp"
 #include "Graphics/GraphicsManager.hpp"
 
 bool CameraSystem::Initialise()
@@ -154,6 +155,21 @@ void CameraSystem::Update()
 			ppManager.SetExcludedLayerMask(~camComp.blurLayerMask);
 		else
 			ppManager.SetExcludedLayerMask(0);
+
+		// Directional Blur
+		DirectionalBlurEffect* dirBlur = ppManager.GetDirectionalBlurEffect();
+		if (dirBlur) {
+			if (camComp.dirBlurEnabled) {
+				dirBlur->SetEnabled(true);
+				dirBlur->SetIntensity(camComp.dirBlurIntensity);
+				dirBlur->SetStrength(camComp.dirBlurStrength);
+				dirBlur->SetAngle(camComp.dirBlurAngle);
+				dirBlur->SetSamples(camComp.dirBlurSamples);
+			} else {
+				dirBlur->SetEnabled(false);
+				dirBlur->SetIntensity(0.0f);
+			}
+		}
 
 		// Bloom
 		BloomEffect* bloom = ppManager.GetBloomEffect();
