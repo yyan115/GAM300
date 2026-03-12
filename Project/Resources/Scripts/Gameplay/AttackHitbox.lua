@@ -56,6 +56,7 @@ return Component {
                     self._currentHitType = "COMBO"
                 print(string.format("[AttackHitbox] attack_performed: hitType=%s damage=%d active=%s", self._currentHitType, self._currentDamage, tostring(self._active)))
                 end
+                print(string.format("[AttackHitbox] HIT WINDOW OPEN: hitType=%s damage=%d", self._currentHitType, self._currentDamage))
                 if self._rb then self._rb:SetEnabled(true) end
             end)
 
