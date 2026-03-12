@@ -453,8 +453,16 @@ return Component {
         local dtSec = toDtSec(dt)
         self._meleeCdT = math.max(0, (self._meleeCdT or 0) - dtSec)
 
-        if Input.IsActionJustPressed("Interact") then
+        if Keyboard.IsDigitPressed(2) then
             self:ApplyHook(self.HookedDuration)
+        end
+
+        if Keyboard.IsDigitPressed(4) then
+            self:ApplyHit(10)
+        end
+
+        if Keyboard.IsDigitPressed(6) then
+            self:ApplyHit(10) -- Next Phase
         end
 
         -- Tick pending rain explosion "land" events
