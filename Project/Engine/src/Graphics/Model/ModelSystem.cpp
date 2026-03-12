@@ -47,8 +47,37 @@ bool ModelSystem::Initialise()
         if (modelComp.model) {
             ModelFactory::PopulateBoneNameToEntityMap(entity, modelComp.boneNameToEntityMap, *modelComp.model, true);
             modelComp.childBonesSaved = true;
+
+            // Force shader compilation / activation
+            modelComp.shader->Activate();
+
+            // Force textures to page into VRAM
+            if (modelComp.material) {
+                modelComp.material->ApplyToShader(*modelComp.shader);
+            }
+
+            for (auto& mesh : modelComp.model->meshes)
+            {
+                // This calls your setupMesh() and sets vaoSetup = true
+                // while the loading screen is still up!
+                mesh.Prewarm();
+
+                // THE DUMMY DRAW: Force the driver to execute the pipeline!
+                // We only draw 3 indices (1 triangle) to make it lightning fast.
+                mesh.vao.Bind();
+                glDrawElements(GL_TRIANGLES, 3, GL_UNSIGNED_INT, 0);
+                mesh.vao.Unbind();
+            }
         }
     }
+
+    // 2. Restore normal graphics state for gameplay
+    glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+    glDepthMask(GL_TRUE);
+    glEnable(GL_DEPTH_TEST);
+    glEnable(GL_CULL_FACE); // Or whatever your default is
+
+    ENGINE_PRINT("[ModelSystem] Dummy Draw Prewarm complete! Driver is fully warmed up.\n");
 
     ENGINE_PRINT("[ModelSystem] Initialized\n");
     return true;

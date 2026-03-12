@@ -397,8 +397,7 @@ void GraphicsManager::Render()
 		if (instancing.IsEnabled() &&
 			!modelItem->HasAnimation() &&
 			modelItem->model &&
-			modelItem->model->mBoneInfoMap.empty() &&
-			!modelItem->depthOffset)
+			modelItem->model->mBoneInfoMap.empty())
 		{
 			continue;  // Already rendered via instancing
 		}
@@ -548,22 +547,22 @@ void GraphicsManager::RenderModel(const ModelRenderComponent& item)
 	}
 
 
-	// Draw the model with entity material
-	if (item.depthOffset)
-	{
-		glEnable(GL_POLYGON_OFFSET_FILL);
-		glPolygonOffset(item.depthOffsetFactor, item.depthOffsetUnits);
-	}
+	//// Draw the model with entity material
+	//if (item.depthOffset)
+	//{
+	//	glEnable(GL_POLYGON_OFFSET_FILL);
+	//	glPolygonOffset(item.depthOffsetFactor, item.depthOffsetUnits);
+	//}
 
 	if (item.HasAnimation())
 		item.model->Draw(*item.shader, *currentCamera, item.material, item, item.animator);
 	else
 		item.model->Draw(*item.shader, *currentCamera, item.material, item);
 
-	if (item.depthOffset)
-	{
-		glDisable(GL_POLYGON_OFFSET_FILL);
-	}
+	//if (item.depthOffset)
+	//{
+	//	glDisable(GL_POLYGON_OFFSET_FILL);
+	//}
 
 	//std::cout << "rendered model\n";
 }

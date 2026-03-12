@@ -84,7 +84,7 @@ bool InstancingManager::IsInstanceable(const ModelRenderComponent& component) co
     if (component.HasAnimation()) return false;
     if (!component.model || !component.shader) return false;
     if (!component.model->mBoneInfoMap.empty()) return false;
-    if (component.depthOffset) return false;
+    //if (component.depthOffset) return false;
 
     return true;
 }
@@ -97,13 +97,30 @@ InstanceBatch& InstancingManager::GetOrCreateBatch(const BatchKey& key, std::sha
         return it->second;
     }
 
-    InstanceBatch batch;
-    batch.Initialize(model, material, shader);
+    // 1. Create the empty batch directly inside the map memory (Zero copies/moves!)
+    auto [insertIt, inserted] = m_batches.emplace(key, InstanceBatch());
+    //if (inserted) {
+    //    ENGINE_LOG_INFO("[Instancing] New batch created: model=" +
+    //        (model ? model->modelPath : "null") +
+    //        " material=" + material.get()->GetName() +
+    //        " total batches=" + std::to_string(m_batches.size()));
+    //}
 
-    auto [insertIt, inserted] = m_batches.emplace(key, std::move(batch));
-    return insertIt->second;
+    // 2. Grab a reference to the permanent batch
+    InstanceBatch& newBatch = insertIt->second;
+
+    // 3. Initialize and Prewarm the permanent batch
+    newBatch.Initialize(model, material, shader);
+    newBatch.Prewarm();
+
+    if (model) {
+        for (auto& mesh : model->meshes) {
+            mesh.Prewarm();  // Upload vertex data to GPU now, not mid-frame
+        }
+    }
+
+    return newBatch;
 }
-
 
 void InstancingManager::RenderBatches(const glm::mat4& view, const glm::mat4& projection, const glm::vec3& cameraPos) 
 {
@@ -115,7 +132,7 @@ void InstancingManager::RenderBatches(const glm::mat4& view, const glm::mat4& pr
     // Build sorted batch list (only non-empty batches)
     m_sortedBatches.clear();
     for (auto& [key, batch] : m_batches) {
-        // Render ALL non-empty batches, not just those >= minInstances
+        // Enforce the threshold! Small batches will be skipped here.
         if (!batch.IsEmpty())
         {
             m_sortedBatches.push_back(&batch);
@@ -143,6 +160,7 @@ void InstancingManager::RenderBatches(const glm::mat4& view, const glm::mat4& pr
     Shader* currentShader = nullptr;
     Material* currentMaterial = nullptr;
 
+    int batchIndex = 0;
     for (InstanceBatch* batch : m_sortedBatches) 
       {
         // Check if we need to switch shader
@@ -187,6 +205,7 @@ void InstancingManager::RenderBatches(const glm::mat4& view, const glm::mat4& pr
 
         // Render the batch
         batch->Render(view, projection, cameraPos);
+        ++batchIndex;
         m_stats.drawCalls += static_cast<int>(batch->GetModel()->meshes.size());
     }
 
@@ -211,4 +230,64 @@ void InstancingManager::RenderBatchesDepthOnly(const glm::mat4& lightSpaceMatrix
             batch.RenderDepthOnly(lightSpaceMatrix);
         }
     }
+}
+
+void InstancingManager::PrewarmScene(ECSManager& ecsManager)
+{
+    // Loop through every model in the scene, regardless of where the camera is
+    for (Entity entity : ecsManager.GetAllEntities())
+    {
+        if (ecsManager.HasComponent<ModelRenderComponent>(entity))
+        {
+            auto& component = ecsManager.GetComponent<ModelRenderComponent>(entity);
+
+            if (IsInstanceable(component))
+            {
+                BatchKey key{
+                    component.model.get(),
+                    component.material.get(),
+                    component.shader.get()
+                };
+
+                // This forces the batch to be created and Prewarmed() in memory
+                // while the loading screen is still up!
+                GetOrCreateBatch(key, component.model, component.material, component.shader);
+            }
+        }
+    }
+
+    glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
+    glDepthMask(GL_FALSE);
+
+    glm::mat4 dummyMatrix = glm::mat4(1.0f);
+    glm::vec3 dummyPos = glm::vec3(0.0f);
+
+    for (auto& [key, batch] : m_batches) {
+        // This forces the Instanced Shader to compile and the instanced VBO to map!
+        batch.Render(dummyMatrix, dummyMatrix, dummyPos);
+    }
+
+    glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+    glDepthMask(GL_TRUE);
+}
+
+bool InstancingManager::WasRenderedInstanced(const ModelRenderComponent& component) const
+{
+    // If instancing is off or it's an animated/invalid model, it definitely wasn't instanced
+    if (!m_enabled || !IsInstanceable(component)) return false;
+
+    BatchKey key{
+        component.model.get(),
+        component.material.get(),
+        component.shader.get()
+    };
+
+    auto it = m_batches.find(key);
+    if (it != m_batches.end())
+    {
+        // It was ONLY rendered if its batch met the threshold this frame!
+        return it->second.GetInstanceCount() >= static_cast<size_t>(m_minInstancesForBatching);
+    }
+
+    return false;
 }

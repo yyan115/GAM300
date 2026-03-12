@@ -89,6 +89,7 @@ public:
 	std::string CompileToMesh(const std::string& modelPath, std::vector<Mesh>& meshesToCompile, bool forAndroid = false);
 	bool LoadResource(const std::string& resourcePath, const std::string& assetPath = "") override;
 	bool ReloadResource(const std::string& resourcePath, const std::string& assetPath = "") override;
+    void PrewarmMeshes();
 	std::shared_ptr<AssetMeta> ExtendMetaFile(const std::string& assetPath, std::shared_ptr<AssetMeta> currentMetaData, bool forAndroid = false) override;
 	
     void Draw(Shader& shader, const Camera& camera, const ModelRenderComponent* modelComp = nullptr);
