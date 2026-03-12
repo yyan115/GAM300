@@ -68,6 +68,7 @@ _G.CHAIN_DEBUG = _G.CHAIN_DEBUG ~= nil and _G.CHAIN_DEBUG or false
 local function dbg(...) if _G.CHAIN_DEBUG then print(...) end end
 local Component      = require("extension.mono_helper")
 local TransformMixin = require("extension.transform_mixin")
+local AudioHelper    = require("extension.audio_helper")
 
 local event_bus = _G.event_bus
 
@@ -110,20 +111,6 @@ local function lerpQuaternion(w1, x1, y1, z1, w2, x2, y2, z2, t)
     local z = z1 + (z2 - z1) * t
     local len = math.sqrt(w*w + x*x + y*y + z*z + 0.0001)
     return w/len, x/len, y/len, z/len
-end
-
--- ============================================================================
--- Audio helper
--- ============================================================================
-
-local function playRandomSFX(audio, clips)
-    local count = clips and #clips or 0
-    if count == 0 or not audio then return end
-    if count == 1 then audio:PlayOneShot(clips[1]); return end
-    local idx
-    repeat idx = math.random(1, count) until idx ~= clips._lastIdx
-    clips._lastIdx = idx
-    audio:PlayOneShot(clips[idx])
 end
 
 -- ============================================================================
@@ -307,7 +294,7 @@ return Component {
         sub(self, "_playerDeadSub", "playerDead", function(playerDead)
             if playerDead then
                 self._playerDeadPending = playerDead
-                playRandomSFX(self._audio, self.playerDeadSFX)
+                AudioHelper.playRandomSFX(self._audio, self.playerDeadSFX)
             end
         end)
 
@@ -315,7 +302,8 @@ return Component {
             if hit then
                 self._isDamageStun = true
                 if self._animator then self._animator:SetBool("IsJumping", false) end
-                playRandomSFX(self._audio, self.playerHurtSFX)
+                AudioHelper.playRandomSFX(self._audio, self.playerHurtSFX)
+                -- Hit reaction: horizontal squash (pushed-sideways feel)
                 self:_squashTrigger("horizontal", 0.5)
             end
         end)
@@ -709,6 +697,30 @@ return Component {
     --   25. Position sync
     -- ==========================================================================
     Update = function(self, dt)
+
+        -- ── [KEYBOARD INPUT NUMBER TEST] ──────────────────────────────────────
+        -- Raw Keyboard bindings are PC only.
+        -- local oneHeld = Keyboard.IsDigitPressed(1)
+        -- if oneHeld and not self._digitWasHeld then
+        --     print("[KeyboardTest] 1 pressed")
+        --     for i = 0, 9 do
+        --         print("[KeyboardTest] Digit " .. i .. " held: ", Keyboard.IsDigitPressed(i))
+        --     end
+        --     print("[KeyboardTest] Num1 alias held:   ", Keyboard.IsKeyPressed(Keyboard.Key.Num1))
+        --     print("[KeyboardTest] One alias held:    ", Keyboard.IsKeyPressed(Keyboard.Key.One))
+        --     print("[KeyboardTest] Digit1 alias held: ", Keyboard.IsKeyPressed(Keyboard.Key.Digit1))
+        --     print("[KeyboardTest] Space held:        ", Keyboard.IsKeyPressed(Keyboard.Key.Space))
+        --     print("[KeyboardTest] Left mouse held:   ", Keyboard.IsMouseButtonPressed(Keyboard.Mouse.Left))
+        --     print("[KeyboardTest] Mouse pos:         ", Keyboard.GetMouseX(), Keyboard.GetMouseY())
+        -- elseif not oneHeld and self._digitWasHeld then
+        --     print("[KeyboardTest] 1 released")
+        -- end
+        -- self._digitWasHeld = oneHeld
+        -- ── [END KEYBOARD INPUT NUMBER TEST] ──────────────────────────────────
+
+        if Keyboard.IsDigitPressed(5) then
+            self:RespawnPlayer()
+        end
 
         -- ── 1. Global flags ───────────────────────────────────────────────────
         -- Written first so every other system sees current values this frame.
@@ -1106,7 +1118,7 @@ return Component {
             end
             if not earlyCancel then self._animator:SetBool("IsDashing", true) end
             self._animator:SetTrigger("Dash")
-            playRandomSFX(self._audio, self.playerDashSFX)
+            AudioHelper.playRandomSFX(self._audio, self.playerDashSFX)
 
         elseif self._dashRequested and self._isDashing then
             -- Inside dash, before early-cancel window. Hold the request.
@@ -1290,9 +1302,11 @@ return Component {
             CharacterController.Jump(self._controller, jumpH)
             isJumping = true
             self._animator:SetBool("IsJumping", true)
-            if not isLiftAttack then
-                playRandomSFX(self._audio, self.playerJumpSFX)
-            end
+            --put here for now, don't remove comment block
+            --if not isLiftAttack then
+            --    playRandomSFX(self._audio, self.playerJumpSFX)
+            --end
+            AudioHelper.playRandomSFX(self._audio, self.playerJumpSFX)
             local launchPos = CharacterController.GetPosition(self._controller)
             self._peakAirY  = launchPos and launchPos.y or 0
 
@@ -1497,7 +1511,7 @@ return Component {
                 self._airLiftCooldownTimer  = 0
                 self._postLiftAirLock       = 0
                 self._animator:SetBool("IsJumping", false)
-                playRandomSFX(self._audio, self.playerLandSFX)
+                AudioHelper.playRandomSFX(self._audio, self.playerLandSFX)
 
                 local landPos  = CharacterController.GetPosition(self._controller)
                 local landY    = landPos and landPos.y or 0
@@ -1538,12 +1552,12 @@ return Component {
         -- ── 23. Footsteps ─────────────────────────────────────────────────────
         if self._isRunning and isGrounded and not self._isLanding then
             if not self._wasRunning then
-                playRandomSFX(self._audio, self.playerFootstepSFX)
+                AudioHelper.playRandomSFX(self._audio, self.playerFootstepSFX, 0.5)
                 self._footstepTimer = 0
             end
             self._footstepTimer = self._footstepTimer + dt
             if self._footstepTimer >= (self.footstepInterval or 0.35) then
-                playRandomSFX(self._audio, self.playerFootstepSFX)
+                AudioHelper.playRandomSFX(self._audio, self.playerFootstepSFX, 0.5)
                 self._footstepTimer = 0
             end
         else

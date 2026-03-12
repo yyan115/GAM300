@@ -34,7 +34,7 @@
         "mouseButtons": ["RIGHT"]
       },
       "android": {
-        "entity": "(ANDROID)ChainAttackButton"
+        "entity": "ChainIcon"
       }
     },
 

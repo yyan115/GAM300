@@ -1,0 +1,14 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "00289b57612baf13-00047991b218771f",
+        "source": "../../Resources/Textures/M5/Room3/Rm3_wall4_Metallic.png",
+        "compiled": "../../Resources/Textures/M5/Room3/Rm3_wall4_Metallic.dds"
+    },
+    "TextureMetaData": {
+        "type": "metallic",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp"
+    }
+}

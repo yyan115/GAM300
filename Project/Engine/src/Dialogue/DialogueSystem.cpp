@@ -169,8 +169,8 @@ void DialogueSystem::Update(float dt) {
                 }
             }
 
-            // Check if Action/Trigger/ScrollNext can skip typing
-            auto scrollType = static_cast<DialogueScrollType>(entry.scrollTypeID);
+            // Commented out as not used to fix warnings.
+            // auto scrollType = static_cast<DialogueScrollType>(entry.scrollTypeID);
             if (dialogue.scrollNextRequested) {
                 if (textComp) TextUtils::SetText(*textComp, entry.text);
                 dialogue.scrollNextRequested = false;
@@ -341,7 +341,8 @@ void DialogueSystem::BeginEntry(DialogueComponent& dialogue) {
         textComp = &m_ecs->GetComponent<TextRenderComponent>(dialogue.textEntity);
     }
 
-    bool isFirstEntry = (dialogue.currentIndex == 0);
+    // Commented out as not used to fix warnings.
+    // bool isFirstEntry = (dialogue.currentIndex == 0);
 
     // Resolve and activate sprite entity for this entry
     Entity spriteEnt = 0;

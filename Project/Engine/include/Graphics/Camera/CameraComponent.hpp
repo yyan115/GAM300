@@ -75,12 +75,19 @@ public:
     std::string skyboxTexturePath;
     bool useSkybox = true;
 
-    // === Post-Processing: Blur ===
+    // === Post-Processing: Blur (Gaussian) ===
     bool blurEnabled = false;
     float blurIntensity = 0.5f;
     float blurRadius = 2.0f;
     int blurPasses = 2;
     uint32_t blurLayerMask = 0xFFFFFFFF; // checked=blurred, all by default
+
+    // === Post-Processing: Directional Blur ===
+    bool dirBlurEnabled = false;
+    float dirBlurIntensity = 0.5f;   // Blend: 0 (sharp) to 1 (fully blurred)
+    float dirBlurStrength = 5.0f;    // Pixel distance of blur spread
+    float dirBlurAngle = 0.0f;       // Direction in degrees (0=right, 90=up)
+    int dirBlurSamples = 8;          // Quality: samples per side (4-16)
 
     // === Post-Processing: Bloom ===
     bool bloomEnabled = false;

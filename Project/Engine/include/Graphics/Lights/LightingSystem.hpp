@@ -42,7 +42,7 @@ public:
 
     // Shadow settings
     bool shadowsEnabled = true;
-    int shadowMapResolution = 2048;
+    int shadowMapResolution = 1024;
     float shadowDistance = 25.0f;  // How far shadows extend from camera
     int pointShadowMapResolution = 512;
     float pointLightShadowFarPlane = 25.0f;

@@ -386,6 +386,10 @@ void SceneRenderer::EndGameRender()
     BlurEffect* blur = PostProcessingManager::GetInstance().GetBlurEffect();
     if (blur) blur->SetIntensity(0.0f);
 
+    // Prevent double directional blur: same issue as Gaussian blur.
+    DirectionalBlurEffect* dirBlur = PostProcessingManager::GetInstance().GetDirectionalBlurEffect();
+    if (dirBlur) dirBlur->SetIntensity(0.0f);
+
     // Prevent double bloom: same issue as blur — SceneInstance::Draw already applied
     // bloom in its first EndHDRRender pass. Save/restore since bloom intensity is persistent.
     BloomEffect* bloom = PostProcessingManager::GetInstance().GetBloomEffect();

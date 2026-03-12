@@ -648,6 +648,7 @@ void ScriptSystem::Initialise(ECSManager& ecsManager)
                 .addFunction("GetNormalizedTime", &LuaAnimationComponent::GetNormalizedTime)
                 .addFunction("GetClipDuration", &LuaAnimationComponent::GetClipDuration)
                 .addFunction("IsPlaying", &LuaAnimationComponent::IsPlaying)
+                .addFunction("ResetSM", &LuaAnimationComponent::ResetSM)
                 .endClass();
 
             // ---- Second pass: Components metadata table ----
@@ -767,7 +768,7 @@ void ScriptSystem::Initialise(ECSManager& ecsManager)
             {
                 // Create the proxy on the stack
                 LuaAnimationComponent proxy(static_cast<Entity>(entityId));
-                luabridge::push(L, proxy);
+                (void)luabridge::push(L, proxy);
                 return true;
             }
 

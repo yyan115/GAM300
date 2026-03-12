@@ -71,6 +71,7 @@ return Component {
     Update = function(self, dt)
         --self._rb:AddTorque(self._torqueX, self._torqueY, self._torqueZ)
         if not self._isTriggerDisabled then
+            --print(string.format("self._triggerDuration: %f", self._triggerDuration))
             self._triggerDuration = self._triggerDuration - dt
             if self._triggerDuration <= 0.0 then
                 self._rb.isTrigger = false

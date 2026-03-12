@@ -39,8 +39,8 @@ Entity ModelFactory::SpawnModelHierarchy(const Model& model, const std::string& 
 	}
 	modelRenderer.boneNameToEntityMap[model.modelName] = root;
 
-	// Check if model has bone info (indicates it's an animated model)
-	bool hasAnimations = !modelRenderer.model->mBoneInfoMap.empty();
+	// Commented out as not used to fix warnings.
+	// bool hasAnimations = !modelRenderer.model->mBoneInfoMap.empty();
 
 	SpawnModelNode(model.rootNode, INVALID_ENTITY, modelRenderer.boneNameToEntityMap, root); // Pass hasAnimations flag
 	ecs.AddComponent<ModelRenderComponent>(root, modelRenderer);

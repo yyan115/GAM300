@@ -1,0 +1,8 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "00213b7f8e800d29-00047bece0000001",
+        "source": "../../Resources/Shaders/directional_blur",
+        "compiled": "../../Resources/Shaders/directional_blur.shader"
+    }
+}

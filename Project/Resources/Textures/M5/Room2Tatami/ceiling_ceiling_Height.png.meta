@@ -1,0 +1,14 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "004260df18c503e3-000477ba0000e569",
+        "source": "../../Resources/Textures/M5/Room2Tatami/ceiling_ceiling_Height.png",
+        "compiled": "../../Resources/Textures/M5/Room2Tatami/ceiling_ceiling_Height.dds"
+    },
+    "TextureMetaData": {
+        "type": "height",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp"
+    }
+}

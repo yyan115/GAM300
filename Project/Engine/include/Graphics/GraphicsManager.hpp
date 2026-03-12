@@ -120,6 +120,10 @@ public:
     const Frustum& GetFrustum() const { return viewFrustum; }
     void ENGINE_API UpdateFrustum(); // Update frustum based on current camera and viewport
 
+    // Far plane distance (controls culling and rendering distance)
+    ENGINE_API void SetFarPlane(float f) { m_farPlane = f; }
+    float GetFarPlane() const { return m_farPlane; }
+
     // Per-light shadow culling: call before each point light shadow render
     void SetPointShadowCullData(const glm::vec3& lightPos, float farPlane) { m_shadowLightPos = lightPos; m_shadowFarPlane = farPlane; }
     void ClearPointShadowCullData() { m_shadowFarPlane = -1.0f; }
@@ -185,6 +189,7 @@ private:
     // FRUSTUM MEMBERS:
     Frustum viewFrustum;
     bool frustumCullingEnabled = true;
+    float m_farPlane = 50.0f;
     ViewportDimensions currentFrameViewport;
     ViewportDimensions GetCurrentViewport() const;
     CullingStats cullingStats;
