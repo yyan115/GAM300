@@ -190,12 +190,24 @@ return Component {
         -- TO ADD chain swing / pull-toward modes: add fields here.
 
         -- === Aerial combat ===
-        -- AirAttackLift : height passed to CharacterController.Jump on each aerial hit.
-        --                 Resets vertical velocity so gravity can't end a combo mid-string.
-        --                 Tune like JumpHeight — 0.8 is subtle, 1.5 gives generous hang time.
-        -- AirSlamSpeed  : downward velocity (units/sec) during slam descent.
-        AirAttackLift = 1.2,
-        AirSlamSpeed  = 22.0,
+        -- LiftAttackHeight  : jump height used exclusively for lift_attack launcher.
+        -- AirLiftTargetVelY : Y velocity the player is restored TO when falling mid-combo.
+        -- AirLiftCooldown   : seconds between lift applications.
+        -- PostLiftAirLock   : seconds after lift_attack fires during which horizontal
+        --                     air control is zeroed. Player is carried by jump arc.
+        --                     Makes lift feel committed and heavy, not floaty+steerable.
+        -- AirSlamInitialSpeed / Acceleration / MaxSpeed: slam descent curve.
+        -- SlamShakeIntensity / Duration / Frequency: camera_shake payload on slam land.
+        LiftAttackHeight    =  1.35,
+        AirLiftTargetVelY   =  2.0,
+        AirLiftCooldown     =  0.35,
+        PostLiftAirLock     =  0.30,
+        AirSlamInitialSpeed =  2.0,
+        AirSlamAcceleration = 80.0,
+        AirSlamMaxSpeed     = 50.0,
+        SlamShakeIntensity  =  0.6,
+        SlamShakeDuration   =  0.45,
+        SlamShakeFrequency  = 18.0,
         LandingDuration     = 0.4,   -- Seconds of recovery before movement restores.
         RollHeightThreshold = 2.5,   -- Fall distance (world units) that triggers roll instead of soft land.
         -- TO ADD landing SFX variation or ledge-grab: add fields here.
@@ -406,20 +418,40 @@ return Component {
                 self._lungeDirZ  = -dirZ
                 self._lungeSpeed = self.ChainKickbackSpeed or 2.5
                 self:_squashTrigger("horizontal", 0.5)
+            elseif data and data.state == "lift_attack" then
+                -- Flag section 21 to use LiftAttackHeight this frame.
+                -- Also zero horizontal input for PostLiftAirLock secs so the
+                -- player is carried by the jump arc — feels committed, not floaty.
+                self._liftAttackJump  = true
+                self._postLiftAirLock = self.PostLiftAirLock or 0.30
+                self._lungeDirX = dirX
+                self._lungeDirZ = dirZ
             elseif data and data.isSlam then
-                -- Slam entry: arm descent, kill XZ momentum so player dives straight down.
-                self._isAirSlam      = true
-                self._airLiftPending = false
-                self._velX           = 0
-                self._velZ           = 0
-                self._lungeTimer     = 0
+                self._isAirSlam  = true
+                self._slamVelY   = self.AirSlamInitialSpeed or 2.0
+                self._velX       = 0
+                self._velZ       = 0
+                self._lungeTimer = 0
                 self._animator:SetBool("IsSlamming", true)
             elseif data and data.isAerial then
-                -- Air time extension: only arm when already airborne.
-                -- lift_attack fires while grounded (it IS the launcher); the normal
-                -- jump check handles getting the player airborne that frame.
-                if not CharacterController.IsGrounded(self._controller) then
-                    self._airLiftPending = true
+                -- Air time extension: restore Y velocity to AirLiftTargetVelY only when
+                -- (a) already airborne, (b) currently falling (curVelY < 0),
+                -- (c) the lift cooldown has fully expired.
+                -- This means "stop falling briefly" — not "relaunch".
+                -- The cooldown prevents consecutive hits stacking velocity
+                -- before the previous lift has had time to decay under gravity.
+                if not CharacterController.IsGrounded(self._controller)
+                    and self._airLiftCooldownTimer <= 0
+                then
+                    local curVel  = CharacterController.GetVelocity(self._controller)
+                    local curVelY = curVel and curVel.y or 0
+                    if curVelY < 0 then
+                        local vx = curVel and curVel.x or self._velX
+                        local vz = curVel and curVel.z or self._velZ
+                        CharacterController.SetVelocity(self._controller,
+                            vx, self.AirLiftTargetVelY or 2.0, vz)
+                        self._airLiftCooldownTimer = self.AirLiftCooldown or 0.35
+                    end
                 end
                 self._lungeDirX = dirX
                 self._lungeDirZ = dirZ
@@ -441,14 +473,13 @@ return Component {
 
         -- combat_state_changed: update movement lock. Velocity NOT zeroed here.
         -- When ComboManager leaves an attacking state, lunge is cancelled.
-        -- _airLiftPending is NOT cleared here — it must survive until section 21
-        -- consumes it, even if the state machine returns to idle mid-air.
         sub(self, "_combatStateSub", "combat_state_changed", function(data)
             if not data then return end
             self._playerCanMove = data.canMove ~= false
             if not _G.player_is_attacking then
                 self._lungeTimer = 0
                 self._isAirSlam  = false
+                self._slamVelY   = 0
                 if self._animator then self._animator:SetBool("IsSlamming", false) end
             end
         end)
@@ -554,14 +585,17 @@ return Component {
         self._squashMode      = "vertical"
 
         -- ── Aerial combat ─────────────────────────────────────────────────────
-        -- _airLiftPending : set by attack_performed on any aerial hit; consumed
-        --                   in section 21 (Jump) to re-call CharacterController.Jump
-        --                   and reset vertical velocity, counteracting gravity.
-        -- _isAirSlam      : true while slam descent is active; PlayerMovement drives -Y.
-        -- _slamLanding    : one-frame flag so section 22 forces full-intensity hard landing.
-        self._airLiftPending = false
-        self._isAirSlam      = false
-        self._slamLanding    = false
+        -- Air lift is one-shot: SetVelocity is called once per hit, CC gravity
+        -- accumulates naturally, no per-frame tracking needed.
+        -- Slam is per-frame: _slamVelY accelerates each frame via SetVelocity.
+        -- _slamLanding is a one-frame flag for full-intensity landing squash.
+        self._liftAttackJump       = false
+        self._isAirSlam            = false
+        self._slamVelY             = 0
+        self._slamLanding          = false
+        self._lastGroundedY        = 0
+        self._airLiftCooldownTimer = 0
+        self._postLiftAirLock      = 0   -- zero XZ control for PostLiftAirLock secs after lift_attack fires
 
         -- ── Air tracking ──────────────────────────────────────────────────────
         -- Records highest Y this airborne period for fall distance calculation.
@@ -763,10 +797,16 @@ return Component {
             end
         end
 
-        -- ── 10. Attack lunge impulse ──────────────────────────────────────────
-        -- Direction/speed cached by attack_performed subscriber. Applied each frame.
-        -- Guarded by player_is_attacking so a lunge from a cancelled or
-        -- just-ended attack cannot bleed into a dash or idle state.
+        -- ── 10. Attack lunge impulse + air lift cooldown ──────────────────────
+        -- Lunge: direction/speed cached by attack_performed subscriber.
+        -- Air lift cooldown: ticks down each frame regardless of ground state so
+        -- it's always ready when the next aerial hit fires.
+        if self._airLiftCooldownTimer > 0 then
+            self._airLiftCooldownTimer = self._airLiftCooldownTimer - dt
+        end
+        if self._postLiftAirLock > 0 then
+            self._postLiftAirLock = self._postLiftAirLock - dt
+        end
         if self._lungeTimer and self._lungeTimer > 0 then
             if _G.player_is_attacking then
                 self._lungeTimer = self._lungeTimer - dt
@@ -966,12 +1006,22 @@ return Component {
             end
         end
 
-        -- ── 17. Peak air height tracking ──────────────────────────────────────
-        -- Used on landing to compute fall distance for squash intensity + roll threshold.
-        if not isGrounded then
+        -- ── 17. Peak air height tracking + air height for slam threshold ──────────
+        -- _lastGroundedY is updated every grounded frame so air height is always
+        -- measured from the most recent takeoff point.
+        -- _G.player_air_height is read by ComboManager to decide whether an airborne
+        -- attack should auto-slam instead of starting the aerial combo.
+        if isGrounded then
+            local gPos = CharacterController.GetPosition(self._controller)
+            if gPos then self._lastGroundedY = gPos.y end
+            _G.player_air_height = 0
+        else
             local airPos = CharacterController.GetPosition(self._controller)
-            if airPos and airPos.y > (self._peakAirY or airPos.y) then
-                self._peakAirY = airPos.y
+            if airPos then
+                if airPos.y > (self._peakAirY or airPos.y) then
+                    self._peakAirY = airPos.y
+                end
+                _G.player_air_height = math.max(0, airPos.y - (self._lastGroundedY or airPos.y))
             end
         end
 
@@ -1214,37 +1264,33 @@ return Component {
         -- ── 21. Jump ──────────────────────────────────────────────────────────
         local interp = _G.InputInterpreter
 
-        -- Air time extension: re-apply a fresh Jump on the frame an aerial hit lands.
-        -- CharacterController.Jump resets whatever downward velocity gravity has
-        -- accumulated, giving the player hang time without fighting gravity per-frame.
-        -- Consumed as a one-shot flag set by the attack_performed subscriber.
-        if self._airLiftPending then
-            self._airLiftPending = false
-            local grounded = CharacterController.IsGrounded(self._controller)
-            print(string.format("[AirLift] CONSUMED — IsGrounded=%s AirAttackLift=%s",
-                tostring(grounded), tostring(self.AirAttackLift)))
-            if not grounded then
-                local ok, err = pcall(function()
-                    CharacterController.Jump(self._controller, self.AirAttackLift or 1.2)
-                end)
-                print(string.format("[AirLift] Jump called — ok=%s err=%s", tostring(ok), tostring(err)))
-            else
-                print("[AirLift] SKIPPED — player is grounded, no lift applied")
-            end
-        end
+        -- Consume lift attack flag before the jump check so it wins the height selection.
+        -- _liftAttackJump is set by attack_performed when the state is lift_attack.
+        -- It fires on the same frame as IsJumpJustPressed, so we treat them as one event.
+        local isLiftAttack = self._liftAttackJump
+        self._liftAttackJump = false
 
         if not self._isLanding and not self._freezePending
-            and interp and interp:IsJumpJustPressed() and isGrounded
+            and (isLiftAttack or (interp and interp:IsJumpJustPressed())) and isGrounded
         then
-            local jumpH = (self._vaultDetected and self._vaultJumpHeight) or self.JumpHeight
+            local jumpH
+            if isLiftAttack then
+                jumpH = self.LiftAttackHeight or 6.0
+            elseif self._vaultDetected then
+                jumpH = self._vaultJumpHeight
+            else
+                jumpH = self.JumpHeight
+            end
             CharacterController.Jump(self._controller, jumpH)
             isJumping = true
             self._animator:SetBool("IsJumping", true)
-            playRandomSFX(self._audio, self.playerJumpSFX)
+            if not isLiftAttack then
+                playRandomSFX(self._audio, self.playerJumpSFX)
+            end
             local launchPos = CharacterController.GetPosition(self._controller)
             self._peakAirY  = launchPos and launchPos.y or 0
 
-            if self._vaultDetected then
+            if self._vaultDetected and not isLiftAttack then
                 -- Arm vault air control: starts full, tapers to normal as player reaches peak.
                 self._vaultJumpActive      = true
                 self._vaultLaunchY         = self._peakAirY
@@ -1266,17 +1312,22 @@ return Component {
         end
 
         -- ── 21. Velocity ──────────────────────────────────────────────────────
-        -- All XZ movement is driven through _velX/_velZ.
-        -- C++ CharacterController owns vertical (gravity + jump).
-        -- Slam descent takes full priority: ignores all XZ input, drives -Y directly.
+        -- Slam descent takes full priority. Uses SetVelocity (not Move) because
+        -- Move's Y is discarded in air by the CC — only XZ from Move is used airborne.
+        -- SetVelocity writes directly to the physics body, overriding CC gravity
+        -- accumulation and giving full manual control of the descent curve.
         if self._isAirSlam then
             if not isGrounded then
-                -- Slam active: drive straight down, bypass all XZ logic.
-                CharacterController.Move(self._controller, 0, -(self.AirSlamSpeed or 22.0) * dt, 0)
+                self._slamVelY = math.min(
+                    self._slamVelY + (self.AirSlamAcceleration or 80.0) * dt,
+                    self.AirSlamMaxSpeed or 50.0
+                )
+                -- Zero XZ so the player dives straight down.
+                -- SetVelocity overrides the full velocity vector each frame.
+                CharacterController.SetVelocity(self._controller, 0, -self._slamVelY, 0)
             else
-                -- Landed: hand off to section 22 with slam-landing flag so it
-                -- forces full-intensity squash and hard-landing animation.
                 self._isAirSlam   = false
+                self._slamVelY    = 0
                 self._slamLanding = true
                 self._animator:SetBool("IsSlamming", false)
                 self._animator:SetTrigger("SlamLanded")
@@ -1303,7 +1354,13 @@ return Component {
                         and (baseAir + (1.0 - baseAir) * self._vaultAirControlBlend)
                         or  baseAir
 
-                    -- Air control: same logic as ground, scaled by airControl.
+                    -- Lift attack air lock: zero horizontal control so the player
+                    -- is carried by the jump arc for PostLiftAirLock seconds.
+                    -- Feels heavy and committed — not steerable mid-launch.
+                    if self._postLiftAirLock > 0 then
+                        airControl = 0
+                    end
+
                     local rate = ((dot < 0) and self.TurnDecel or self.Acceleration) * airControl
                     local t = math.min(rate * dt, 1.0)
                     self._velX = self._velX + (targetX - self._velX) * t
@@ -1390,10 +1447,12 @@ return Component {
         else
             if self._isJumping and not self._vaultAscentLock then
                 -- Landed.
-                self._isJumping        = false
-                self._isLanding        = true
-                self._vaultJumpActive  = false
-                self._vaultAscentLock  = false
+                self._isJumping             = false
+                self._isLanding             = true
+                self._vaultJumpActive       = false
+                self._vaultAscentLock       = false
+                self._airLiftCooldownTimer  = 0
+                self._postLiftAirLock       = 0
                 self._animator:SetBool("IsJumping", false)
                 playRandomSFX(self._audio, self.playerLandSFX)
 
@@ -1403,10 +1462,27 @@ return Component {
 
                 local intensity, hardLand
                 if self._slamLanding then
-                    -- Slam landing always hits at full intensity with a hard land.
                     intensity         = 1.0
                     hardLand          = true
                     self._slamLanding = false
+
+                    -- Camera shake: payload order is intensity, duration, frequency
+                    if event_bus and event_bus.publish then
+                        event_bus.publish("camera_shake", {
+                            intensity = self.SlamShakeIntensity  or 0.6,
+                            duration  = self.SlamShakeDuration   or 0.45,
+                            frequency = self.SlamShakeFrequency  or 18.0,
+                        })
+                        -- Chromatic aberration on impact.
+                        -- TODO: confirm payload fields with your camera_effects handler.
+                        -- Replace the values below with whatever your system expects.
+                        event_bus.publish("camera_effects", {
+                            chromaticAberration = {
+                                intensity = 0.8,   -- 0–1 strength of the split
+                                duration  = 0.3,   -- seconds before fading back to 0
+                            },
+                        })
+                    end
                 else
                     -- Landing intensity: small hop = 0.3, big drop = 1.0
                     intensity = math.max(0.3, math.min(1.0, fallDist / 3.0))

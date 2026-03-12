@@ -67,6 +67,14 @@ return Component {
         -- state machine does not run. Chain weapon events and movement are
         -- unaffected. Toggle from any external system (cutscene, tutorial gate).
         AttacksEnabled      = true,
+        -- Minimum height above last grounded Y before aerial attacks are allowed.
+        -- Below this the player is too close to the ground for aerial combo to make sense.
+        MinAerialAttackHeight = 0.8,
+        -- Height above ground that auto-routes idle airborne attack to air_slam.
+        SlamHeightThreshold   = 5.0,
+        -- Minimum seconds between aerial attack state entries.
+        -- Blocks mash without punishing timed inputs — window is shorter than any animation.
+        AerialHitLockout      = 0.18,
         -- No SFX fields. Audio is owned by CombatAudio, which reacts to
         -- attack_performed events. ComboManager publishes; it does not play sounds.
     },
@@ -101,17 +109,17 @@ return Component {
             light_1 = {
                 id           = "light_1",
                 animParam    = 1,
-                clipDuration = 1.0,  -- natural clip length in seconds at speed 1.0
-                duration     = 1.0,
+                clipDuration = 1.4,
+                duration     = 1.4,
                 damage      = 10,
                 knockback   = 20.0,
                 canMove     = false,
-                comboWindow = 0.2,
-                lunge       = { speed = 3.0, duration = 0.10 },  -- quick jab
+                comboWindow = 0.25,
+                lunge       = { speed = 3.0, duration = 0.10 },
                 transitions = {
                     attack = "light_2",
                     chain  = "chain_attack",
-                    jump   = "lift_attack",   -- lift available on 1st attack
+                    jump   = "lift_attack",
                     dash   = "dash",
                 },
             },
@@ -119,13 +127,13 @@ return Component {
             light_2 = {
                 id           = "light_2",
                 animParam    = 2,
-                clipDuration = 1.0,  -- natural clip length in seconds at speed 1.0
-                duration     = 1.0,
+                clipDuration = 1.4,
+                duration     = 1.4,
                 damage      = 12,
                 knockback   = 20.0,
                 canMove     = false,
-                comboWindow = 0.2,
-                lunge       = { speed = 3.5, duration = 0.11 },  -- slightly more committed
+                comboWindow = 0.25,
+                lunge       = { speed = 3.5, duration = 0.11 },
                 transitions = {
                     attack = "light_3",
                     chain  = "chain_attack",
@@ -137,15 +145,15 @@ return Component {
             light_3 = {
                 id           = "light_3",
                 animParam    = 3,
-                clipDuration = 0.8,  -- natural clip length in seconds at speed 1.0
-                duration     = 0.8,
+                clipDuration = 1.2,
+                duration     = 1.2,
                 damage      = 20,
                 knockback   = 200.0,
                 canMove     = false,
                 comboWindow = nil,
-                lunge       = { speed = 5.0, duration = 0.18 },  -- finisher shove
+                lunge       = { speed = 5.0, duration = 0.18 },
                 transitions = {
-                    jump = "lift_attack",   -- lift available on 3rd attack
+                    jump = "lift_attack",
                     dash = "dash",
                 },
             },
@@ -200,8 +208,8 @@ return Component {
             heavy_release = {
                 id           = "heavy_release",
                 animParam    = 11,
-                clipDuration = 0.8,  -- natural clip length in seconds at speed 1.0
-                duration     = 0.8,
+                clipDuration = 1.2,
+                duration     = 1.2,
                 damage      = 30,
                 knockback   = 20.0,
                 canMove     = false,
@@ -282,13 +290,13 @@ return Component {
             lift_attack = {
                 id           = "lift_attack",
                 animParam    = 40,
-                clipDuration = 0.5,
-                duration     = 0.5,
+                clipDuration = 0.8,
+                duration     = 0.8,
                 damage       = 15,
                 knockback    = 80.0,
                 canMove      = true,
                 isAerial     = true,
-                comboWindow  = 0.4,
+                comboWindow  = 0.25,
                 lunge        = { speed = 3.0, duration = 0.12 },
                 transitions  = {
                     attack = "air_light_1",
@@ -300,13 +308,13 @@ return Component {
             air_light_1 = {
                 id           = "air_light_1",
                 animParam    = 41,
-                clipDuration = 0.55,
-                duration     = 0.55,
+                clipDuration = 0.85,
+                duration     = 0.85,
                 damage       = 12,
                 knockback    = 25.0,
                 canMove      = true,
                 isAerial     = true,
-                comboWindow  = 0.25,
+                comboWindow  = 0.2,
                 lunge        = { speed = 2.5, duration = 0.09 },
                 transitions  = {
                     attack = "air_light_2",
@@ -317,13 +325,13 @@ return Component {
             air_light_2 = {
                 id           = "air_light_2",
                 animParam    = 42,
-                clipDuration = 0.55,
-                duration     = 0.55,
+                clipDuration = 0.85,
+                duration     = 0.85,
                 damage       = 14,
                 knockback    = 30.0,
                 canMove      = true,
                 isAerial     = true,
-                comboWindow  = 0.25,
+                comboWindow  = 0.2,
                 lunge        = { speed = 2.5, duration = 0.09 },
                 transitions  = {
                     attack = "air_slam",
@@ -331,26 +339,22 @@ return Component {
                 },
             },
 
-            -- ── Air slam (aerial ender + standalone aerial attack) ────────────────
-            -- Reached from air_light_2 → attack, or directly from idle when airborne.
-            -- isSlam = true tells PlayerMovement to drive -Y instead of normal velocity.
-            -- canMove = false so XZ input is ignored during the dive; PlayerMovement
-            -- kills lateral velocity on slam entry.
+            -- ── Air slam ─────────────────────────────────────────────────────────
+            -- canMove = false + PlayerMovement zeroes XZ each frame via SetVelocity.
+            -- Long duration = full commitment. No dash cancel during active slam.
             air_slam = {
                 id           = "air_slam",
                 animParam    = 44,
-                clipDuration = 0.8,
-                duration     = 0.8,
+                clipDuration = 1.1,
+                duration     = 1.1,
                 damage       = 30,
                 knockback    = 180.0,
                 canMove      = false,
                 isAerial     = true,
-                isSlam       = true,    -- PlayerMovement reads this to arm slam descent
+                isSlam       = true,
                 comboWindow  = nil,
-                lunge        = nil,     -- no XZ lunge; PlayerMovement drives pure -Y
-                transitions  = {
-                    dash = "dash",
-                },
+                lunge        = nil,
+                transitions  = {},     -- no escape: slam is fully committed, no dash cancel
             },
         }
 
@@ -371,6 +375,8 @@ return Component {
         self._chainHoldPublished  = false
         self._chainAttackCooldown = 0
         self._chainPressBlocked   = false
+        self._lastAerialHitLanded = false
+        self._aerialLockoutTimer  = 0   -- blocks aerial attack input when > 0
     end,
 
     Start = function(self)
@@ -434,6 +440,21 @@ return Component {
             self._attacksEnabledSub = _G.event_bus.subscribe("set_attacks_enabled", function(enabled)
                 self.AttacksEnabled = (enabled ~= false)
                 print("[ComboManager] AttacksEnabled = " .. tostring(self.AttacksEnabled))
+            end)
+        end
+
+        -- ── Aerial hit confirmation ───────────────────────────────────────
+        -- AttackHitbox publishes "attack_hit_confirmed" each time the player
+        -- hitbox connects with an enemy during an active attack frame.
+        -- NOTE: match this event name to whatever AttackHitbox.lua publishes.
+        -- air_light_2 reads _lastAerialHitLanded to decide its next state:
+        --   true  → loop back to air_light_1 (hit confirms stay airborne)
+        --   false → route to air_slam (whiff punish / committed dive)
+        if _G.event_bus and _G.event_bus.subscribe then
+            self._attackHitSub = _G.event_bus.subscribe("attack_hit_confirmed", function()
+                if self._currentStateData and self._currentStateData.isAerial then
+                    self._lastAerialHitLanded = true
+                end
             end)
         end
 
@@ -527,6 +548,9 @@ return Component {
         local animSpeed = self._animator.speed or 1.0
         if self._chainAttackCooldown > 0 then
             self._chainAttackCooldown = self._chainAttackCooldown - dt
+        end
+        if self._aerialLockoutTimer > 0 then
+            self._aerialLockoutTimer = self._aerialLockoutTimer - dt
         end
         self._stateTimer = self._stateTimer + dt * animSpeed
         local state = self._currentStateData
@@ -641,12 +665,45 @@ return Component {
         local candidateData    = nil
 
         if input:HasBufferedAttack() then
-            -- Hold-start or tap
             if input:IsAttackHeld() then
                 candidateStateId = state.transitions.attack_hold
-            elseif state.id == "idle" and _G.player_is_jumping then
-                -- Standalone aerial slam: airborne with no active combo
-                candidateStateId = "air_slam"
+
+            elseif _G.player_is_jumping then
+                -- All aerial attack routing lives here.
+                local height    = _G.player_air_height or 0
+                local minHeight = self.MinAerialAttackHeight or 0.8
+
+                -- Height gate: player must be above MinAerialAttackHeight.
+                -- Too close to the ground → consume input silently, let them land.
+                if height < minHeight then
+                    input:ConsumeBufferedAttack()
+
+                -- Aerial lockout: blocks mash between hits without punishing timing.
+                elseif self._aerialLockoutTimer > 0 then
+                    -- Don't consume — let the buffer carry until lockout clears.
+                    -- The queued combo system will pick it up when the window opens.
+
+                elseif state.id == "idle" then
+                    -- No active combo. Height decides slam vs aerial start.
+                    local threshold = self.SlamHeightThreshold or 5.0
+                    if threshold > 0 and height >= threshold then
+                        candidateStateId = "air_slam"
+                    else
+                        candidateStateId = "air_light_1"
+                    end
+
+                elseif state.id == "air_light_2" then
+                    -- Hit confirmed → loop; missed → slam.
+                    if self._lastAerialHitLanded then
+                        candidateStateId = "air_light_1"
+                    else
+                        candidateStateId = "air_slam"
+                    end
+
+                else
+                    candidateStateId = state.transitions.attack
+                end
+
             else
                 candidateStateId = state.transitions.attack
             end
@@ -757,11 +814,18 @@ return Component {
         self._stateTimer       = 0
 
         -- ── Update global combat flags ────────────────────────────────────
-        -- PlayerMovement reads _G.player_is_attacking to know when to suppress
-        -- movement logic. _G.player_can_move refines that — even during an
-        -- attack the state may allow movement (e.g. a walking combo).
         _G.player_is_attacking = (stateId ~= "idle" and stateId ~= "dash")
         _G.player_can_move     = newState.canMove or false
+
+        -- Reset aerial hit flag and arm lockout on every aerial state entry.
+        if newState.isAerial then
+            self._lastAerialHitLanded = false
+            if newState.isSlam ~= true then
+                -- Lockout prevents input being registered again until this decays.
+                -- Slam is excluded — it's a commitment, not a repeatable attack.
+                self._aerialLockoutTimer = self.AerialHitLockout or 0.18
+            end
+        end
 
         -- Track combo chain sequence (for UI / scoring)
         if stateId ~= "idle" and stateId ~= "dash" then
