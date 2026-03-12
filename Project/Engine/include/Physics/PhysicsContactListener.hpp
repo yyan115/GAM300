@@ -22,6 +22,7 @@
 #include <mutex>
 #include <vector>
 #include "Logging.hpp"
+#include "Physics/CollisionLayers.hpp"
 
 // Collision event data structure
 struct CollisionEvent {
@@ -46,6 +47,7 @@ public:
     // Register callbacks for collision events
     void SetOnCollisionEnter(CollisionCallback callback) { onCollisionEnter = callback; }
     void SetOnCollisionExit(CollisionCallback callback) { onCollisionExit = callback; }
+    void SetRootResolver(std::function<int(int)> resolver) { rootResolver = std::move(resolver); }
 
     // Toggle logging
     void EnableLogging(bool enable) { enableLogging = enable; }
@@ -75,6 +77,22 @@ public:
             ENGINE_PRINT("[Collision] Validating contact between entities ",
                 GetEntityID(inBody1), " (", GetMotionTypeName(inBody1), ") and ",
                 GetEntityID(inBody2), " (", GetMotionTypeName(inBody2), ")\n");
+        }
+
+        const int entityA = GetEntityID(inBody1);
+        const int entityB = GetEntityID(inBody2);
+        if (entityA == -1 || entityB == -1) {
+            return JPH::ValidateResult::AcceptAllContactsForThisBodyPair;
+        }
+
+        const bool aIsSensor = inBody1.GetObjectLayer() == Layers::SENSOR;
+        const bool bIsSensor = inBody2.GetObjectLayer() == Layers::SENSOR;
+        if (rootResolver && (aIsSensor || bIsSensor)) {
+            const int rootA = rootResolver(entityA);
+            const int rootB = rootResolver(entityB);
+            if (rootA != -1 && rootA == rootB) {
+                return JPH::ValidateResult::RejectAllContactsForThisBodyPair;
+            }
         }
 
         return JPH::ValidateResult::AcceptAllContactsForThisBodyPair;
@@ -174,6 +192,7 @@ private:
 
     bool enableLogging;
     bool enableDetailedLogging;
+    std::function<int(int)> rootResolver;
 
     // Thread-safe event buffers for main-thread dispatch
     std::mutex m_eventMutex;

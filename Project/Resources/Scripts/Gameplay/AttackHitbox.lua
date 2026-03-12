@@ -54,8 +54,8 @@ return Component {
                     self._currentHitType = "AIR"
                 else
                     self._currentHitType = "COMBO"
-                print(string.format("[AttackHitbox] attack_performed: hitType=%s damage=%d active=%s", self._currentHitType, self._currentDamage, tostring(self._active)))
                 end
+                print(string.format("[AttackHitbox] attack_performed: hitType=%s damage=%d active=%s", self._currentHitType, self._currentDamage, tostring(self._active)))
                 if self._rb then self._rb:SetEnabled(true) end
             end)
 
@@ -99,10 +99,11 @@ return Component {
         if not self._active then return end
 
         local targetId = self:_toRoot(otherEntityId)
-
         print(string.format("[AttackHitbox] OnTriggerEnter: targetId=%s hitType=%s active=%s", tostring(targetId), tostring(self._currentHitType), tostring(self._active)))
 
         if self._playerEntityId and targetId == self._playerEntityId then return end
+        local targetTagComp = GetComponent(targetId, "TagComponent")
+        if not (targetTagComp and Tag and Tag.Compare and Tag.Compare(targetTagComp.tagIndex, "Enemy")) then return end
         if self._hitThisSwing[targetId] then return end
         self._hitThisSwing[targetId] = true
 
@@ -113,8 +114,6 @@ return Component {
                 hitType  = self._currentHitType or "COMBO",
             })
             print(string.format("[AttackHitbox] deal_damage_to_entity published: entity=%s hitType=%s dmg=%d", tostring(targetId), tostring(self._currentHitType), self._currentDamage))
-            --print("[AttackHitbox] Dealt " .. tostring(self._currentDamage)
-            --    .. " damage to entity " .. tostring(targetId))
         end
     end,
 }
