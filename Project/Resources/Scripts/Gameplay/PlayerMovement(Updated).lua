@@ -416,6 +416,7 @@ return Component {
                 -- Flag section 21 to use LiftAttackHeight this frame.
                 -- Also zero horizontal input for PostLiftAirLock secs so the
                 -- player is carried by the jump arc — feels committed, not floaty.
+                if self._animator then self._animator:SetBool("IsLifting", true) end
                 self._liftAttackJump  = true
                 self._postLiftAirLock = self.PostLiftAirLock or 0.30
                 self._lungeDirX = dirX
@@ -1516,6 +1517,7 @@ return Component {
                 self._vaultAscentLock       = false
                 self._airLiftCooldownTimer  = 0
                 self._postLiftAirLock       = 0
+                self._animator:SetBool("IsLifting", false)
                 self._animator:SetBool("IsJumping", false)
                 AudioHelper.playRandomSFX(self._audio, self.playerLandSFX)
 
