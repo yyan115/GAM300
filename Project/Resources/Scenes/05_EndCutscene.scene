@@ -701,7 +701,7 @@
                                         },
                                         {
                                             "type": "std::string",
-                                            "data": "Kusane does not raise his blade.\nHe reaches..."
+                                            "data": "Kusane does not raise her blade.\nShe reaches..."
                                         },
                                         {
                                             "type": "float",
@@ -758,7 +758,7 @@
                                         },
                                         {
                                             "type": "std::string",
-                                            "data": "From the darkness, he draws them forth-his stolen wings."
+                                            "data": "From the darkness, she draws them forth-her stolen wings."
                                         },
                                         {
                                             "type": "float",
@@ -872,7 +872,7 @@
                                         },
                                         {
                                             "type": "std::string",
-                                            "data": "Light answers him once more-"
+                                            "data": "Light answers her once more-"
                                         },
                                         {
                                             "type": "float",
@@ -1140,7 +1140,7 @@
                                         },
                                         {
                                             "type": "bool",
-                                            "data": false
+                                            "data": true
                                         },
                                         {
                                             "type": "std::string",
@@ -1169,11 +1169,11 @@
                                         },
                                         {
                                             "type": "float",
-                                            "data": 3
+                                            "data": 2
                                         },
                                         {
                                             "type": "float",
-                                            "data": 2
+                                            "data": 1
                                         },
                                         {
                                             "type": "float",
@@ -1476,7 +1476,7 @@
                                 },
                                 {
                                     "type": "float",
-                                    "data": 0.08
+                                    "data": 0.03
                                 },
                                 {
                                     "type": "float",
@@ -1537,7 +1537,7 @@
                         },
                         {
                             "type": "unsigned",
-                            "data": 40
+                            "data": 28
                         },
                         "00602042db559215-00036778be000001",
                         "00374a2171ad928d-000331fc8200006d",
@@ -1550,7 +1550,7 @@
                                 },
                                 {
                                     "type": "float",
-                                    "data": 156
+                                    "data": 143.5
                                 },
                                 {
                                     "type": "float",
