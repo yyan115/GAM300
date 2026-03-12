@@ -22,6 +22,7 @@ return Component {
         self._subscribed = false
         self._playerEntityId = nil
         self._rb = nil
+        self._currentHitType = "COMBO"
     end,
 
     Start = function(self)
@@ -44,6 +45,17 @@ return Component {
                 self._active = true
                 self._hitThisSwing = {}
                 self._currentDamage = (data and data.damage) or self.damage or 10
+                -- Determine hit type so EnemyAI can apply the right juggle response.
+                if data and data.isSlam then
+                    self._currentHitType = "SLAM"
+                elseif data and (data.state == "lift_attack") then
+                    self._currentHitType = "LIFT"
+                elseif data and data.isAerial then
+                    self._currentHitType = "AIR"
+                else
+                    self._currentHitType = "COMBO"
+                print(string.format("[AttackHitbox] attack_performed: hitType=%s damage=%d active=%s", self._currentHitType, self._currentDamage, tostring(self._active)))
+                end
                 if self._rb then self._rb:SetEnabled(true) end
             end)
 
@@ -88,7 +100,7 @@ return Component {
 
         local targetId = self:_toRoot(otherEntityId)
 
-        --print("[AttackHitbox] HIT targetId=", tostring(targetId), "from otherEntityId=", tostring(otherEntityId))
+        print(string.format("[AttackHitbox] OnTriggerEnter: targetId=%s hitType=%s active=%s", tostring(targetId), tostring(self._currentHitType), tostring(self._active)))
 
         if self._playerEntityId and targetId == self._playerEntityId then return end
         if self._hitThisSwing[targetId] then return end
@@ -98,8 +110,9 @@ return Component {
             event_bus.publish("deal_damage_to_entity", {
                 entityId = targetId,
                 damage   = self._currentDamage,
-                hitType  = "COMBO",
+                hitType  = self._currentHitType or "COMBO",
             })
+            print(string.format("[AttackHitbox] deal_damage_to_entity published: entity=%s hitType=%s dmg=%d", tostring(targetId), tostring(self._currentHitType), self._currentDamage))
             --print("[AttackHitbox] Dealt " .. tostring(self._currentDamage)
             --    .. " damage to entity " .. tostring(targetId))
         end
