@@ -29,6 +29,7 @@ private:
     bool IsTypewriterFinished(const VideoComponent& vc) const;
     void ApplyBlur(VideoComponent& vc, float dt);
     void SwapBoardImage(VideoComponent& vc, int boardIndex);
+    void PlayBoardSFX(VideoComponent& vc, int boardIndex);
     void SetBlackScreenAlpha(VideoComponent& vc, float alpha);
     void ClearText(VideoComponent& vc);
 
