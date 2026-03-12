@@ -168,7 +168,7 @@ void CharacterController::Update(float deltaTime)
         if (jump_Requested)
         {
             // Jump: preserve current XZ momentum, inject upward impulse only.
-            // Lua's XZ is ignored this frame — the running momentum in currentVel
+            // Lua's XZ is ignored this frame; the running momentum stays in currentVel.
             // carries forward naturally, so the jump doesn't kill your run speed.
             newVelocity = JPH::Vec3(currentVel.GetX(), mVelocity.GetY(), currentVel.GetZ());
             jump_Requested = false;
@@ -177,7 +177,7 @@ void CharacterController::Update(float deltaTime)
         {
             // Grounded: start from platform velocity so moving platforms work,
             // then replace XZ entirely with what Lua says this frame.
-            // Never add — Lua owns horizontal completely.
+            // Never add it; Lua owns horizontal movement completely.
             JPH::Vec3 groundVel = mCharacter->GetGroundVelocity();
             newVelocity = JPH::Vec3(
                 groundVel.GetX() + mVelocity.GetX(),
@@ -189,7 +189,7 @@ void CharacterController::Update(float deltaTime)
     else
     {
         // In air: Lua owns XZ exactly, C++ only accumulates vertical gravity.
-        // Never add Lua XZ on top of currentVel — that compounds speed every frame.
+        // Never add Lua XZ on top of currentVel; that compounds speed every frame.
         float verticalVel = currentVel.GetY() + gravity.GetY() * deltaTime;
         newVelocity = JPH::Vec3(mVelocity.GetX(), verticalVel, mVelocity.GetZ());
     }
@@ -211,7 +211,7 @@ void CharacterController::Update(float deltaTime)
         temp_allocator
     );
 
-    // Clear input — Lua sets this every frame it wants movement.
+    // Clear input; Lua sets this every frame it wants movement.
     // If Lua sends nothing next frame, character stops horizontally.
     mVelocity = JPH::Vec3::sZero();
 }

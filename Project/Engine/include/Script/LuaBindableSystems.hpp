@@ -206,6 +206,11 @@ namespace KeyboardWrappers {
         return platform->IsKeyPressed(static_cast<Input::Key>(keyCode));
     }
 
+    inline bool IsDigitPressed(int digit) {
+        if (digit < 0 || digit > 9) return false;
+        return IsKeyPressed(static_cast<int>(Input::Key::NUM_0) + digit);
+    }
+
     inline bool IsMouseButtonPressed(int button) {
         auto* platform = WindowManager::GetPlatform();
         if (!platform) return false;

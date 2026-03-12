@@ -617,6 +617,26 @@ return Component {
     -- ==========================================================================
     Update = function(self, dt)
 
+        -- ── [KEYBOARD INPUT NUMBER TEST] ──────────────────────────────────────
+        -- Raw Keyboard bindings are PC only.
+        -- local oneHeld = Keyboard.IsDigitPressed(1)
+        -- if oneHeld and not self._digitWasHeld then
+        --     print("[KeyboardTest] 1 pressed")
+        --     for i = 0, 9 do
+        --         print("[KeyboardTest] Digit " .. i .. " held: ", Keyboard.IsDigitPressed(i))
+        --     end
+        --     print("[KeyboardTest] Num1 alias held:   ", Keyboard.IsKeyPressed(Keyboard.Key.Num1))
+        --     print("[KeyboardTest] One alias held:    ", Keyboard.IsKeyPressed(Keyboard.Key.One))
+        --     print("[KeyboardTest] Digit1 alias held: ", Keyboard.IsKeyPressed(Keyboard.Key.Digit1))
+        --     print("[KeyboardTest] Space held:        ", Keyboard.IsKeyPressed(Keyboard.Key.Space))
+        --     print("[KeyboardTest] Left mouse held:   ", Keyboard.IsMouseButtonPressed(Keyboard.Mouse.Left))
+        --     print("[KeyboardTest] Mouse pos:         ", Keyboard.GetMouseX(), Keyboard.GetMouseY())
+        -- elseif not oneHeld and self._digitWasHeld then
+        --     print("[KeyboardTest] 1 released")
+        -- end
+        -- self._digitWasHeld = oneHeld
+        -- ── [END KEYBOARD INPUT NUMBER TEST] ──────────────────────────────────
+
         -- ── 1. Global flags ───────────────────────────────────────────────────
         -- Written first so every other system sees current values this frame.
         _G.player_is_jumping = self._isJumping    or false

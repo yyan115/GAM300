@@ -263,8 +263,9 @@ void Serializer::SerializeScene(const std::string& scenePath) {
 }
 
 rapidjson::Value Serializer::SerializeEntityGUID(Entity entity, rapidjson::Document::AllocatorType& alloc) {
-    auto& guidRegistry = EntityGUIDRegistry::GetInstance();
-    auto& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
+    // Commented out as not used to fix warnings.
+    // auto& guidRegistry = EntityGUIDRegistry::GetInstance();
+    // auto& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
     rapidjson::Value entObj(rapidjson::kObjectType);
 
     entObj = SerializeEntityGUID(entity, alloc, entObj);
@@ -274,7 +275,8 @@ rapidjson::Value Serializer::SerializeEntityGUID(Entity entity, rapidjson::Docum
 
 rapidjson::Value& Serializer::SerializeEntityGUID(Entity entity, rapidjson::Document::AllocatorType& alloc, rapidjson::Value& entObj) {
     auto& guidRegistry = EntityGUIDRegistry::GetInstance();
-    auto& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
+    // Commented out as not used to fix warnings.
+    // auto& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
 
     // add entity id (assumes entity is integer-like)
     {
@@ -301,7 +303,8 @@ rapidjson::Value& Serializer::SerializeEntityGUID(Entity entity, rapidjson::Docu
 void Serializer::SerializeEntityRecursively(Entity entity, rapidjson::Document::AllocatorType& alloc, rapidjson::Value& entitiesArr) {
     auto& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
 
-    Entity prefabReferenceEntity = static_cast<Entity>(-1);
+    // Commented out as not used to fix warnings.
+    // Entity prefabReferenceEntity = static_cast<Entity>(-1);
 
     // Check whether this entity is a prefab root.
     // If it is, then when we recursively serialize this entity and its children,
@@ -362,15 +365,16 @@ void Serializer::SerializeEntityRecursively(Entity entity, rapidjson::Document::
 }
 
 rapidjson::Value Serializer::SerializeEntity(Entity entity, rapidjson::Document::AllocatorType& alloc, Entity prefabReferenceEntity) {
-    auto& guidRegistry = EntityGUIDRegistry::GetInstance();
+    // Commented out as not used to fix warnings.
+    // auto& guidRegistry = EntityGUIDRegistry::GetInstance();
     auto& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
 
     rapidjson::Value entObj = SerializeEntityGUID(entity, alloc);
 
     rapidjson::Value compsObj(rapidjson::kObjectType);
 
-    // If this entity is part of a prefab instance, we should only serialize components that differ from the prefab defaults.
-    bool isPrefabInstance = prefabReferenceEntity != static_cast<Entity>(-1);
+    // Commented out as not used to fix warnings.
+    // bool isPrefabInstance = prefabReferenceEntity != static_cast<Entity>(-1);
 
     // For each component type, if entity has it, serialize and attach under its name
     if (ecs.HasComponent<PrefabLinkComponent>(entity)) {

@@ -548,7 +548,8 @@ void InspectorPanel::OnImGuiRender() {
 						ImGui::Separator();
 					}
 					else {
-						ECSManager& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
+						// Commented out as not used to fix warnings.
+						// ECSManager& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
 						ImGui::Text("Editing Prefab:");
 						ImGui::Separator();
 					}
@@ -806,7 +807,8 @@ void InspectorPanel::DrawTagComponentMulti(const std::vector<Entity>& entities) 
 
 		// Combo box for tag selection
 		ImGui::SetNextItemWidth(120.0f);
-		int selectedTag = mixedValues ? -1 : currentTag;
+		// Commented out as not used to fix warnings.
+		// int selectedTag = mixedValues ? -1 : currentTag;
 
 		// Create preview text
 		const char* previewText = mixedValues ? "— Mixed —" : tagItemPtrs[currentTag];
@@ -3439,7 +3441,7 @@ void InspectorPanel::DrawSharedComponentGeneric(const std::vector<Entity>& entit
 	ImGui::Spacing();
 
 	std::string headerLabel = displayName + " (Multi-Edit)";
-	bool isOpen = ImGui::CollapsingHeader(headerLabel.c_str(), ImGuiTreeNodeFlags_DefaultOpen);
+	[[maybe_unused]] bool isComponentOpen = ImGui::CollapsingHeader(headerLabel.c_str(), ImGuiTreeNodeFlags_DefaultOpen);
 
 	// Check for right-click on the collapsing header
 	if (ImGui::IsItemClicked(ImGuiMouseButton_Right)) {

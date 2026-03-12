@@ -174,8 +174,8 @@ void SceneInstance::Update(double dt)
 {
 	dt; //?
 
-	// Update logic for the test scene
-	ECSManager &mainECS = ECSRegistry::GetInstance().GetECSManager(scenePath);
+	// Commented out as not used to fix warnings.
+	// ECSManager &mainECS = ECSRegistry::GetInstance().GetECSManager(scenePath);
 
 	// TextRenderComponent& fpsTextComponent = mainECS.GetComponent<TextRenderComponent>(fpsText);
 	// fpsTextComponent.text = std::to_string(TimeManager::GetFps());

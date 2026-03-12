@@ -100,7 +100,7 @@ static void ApplyReflectedComponent(ECSManager& ecs,
 }
 
 // Central apply (resolveAssets = whether to resolve model/shader GUIDs)
-static void ApplyOne(ECSManager& ecs,
+[[maybe_unused]] static void ApplyOne(ECSManager& ecs,
     Entity e,
     const char* typeName,
     const rapidjson::Value& val,
