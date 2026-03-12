@@ -10,6 +10,7 @@
 #include "Asset Manager/AssetManager.hpp"
 #include "Asset Manager/ResourceManager.hpp"
 #include "ECS/ActiveComponent.hpp"
+#include "Graphics/Frustum/Frustum.hpp"
 
 bool FogSystem::Initialise(bool forceInit)
 {
@@ -96,7 +97,31 @@ void FogSystem::Update()
             fogComp.worldTransform = transform.worldMatrix;
         }
 
-        // Submit to renderer (fog always renders, no physics tick needed)
+        // Frustum cull: transform the unit cube AABB by world matrix and test against camera frustum
+        Camera* cam = gfxManager.GetCurrentCamera();
+        if (cam)
+        {
+            int vpWidth, vpHeight;
+            gfxManager.GetViewportSize(vpWidth, vpHeight);
+            if (vpWidth <= 0) vpWidth = 1;
+            if (vpHeight <= 0) vpHeight = 1;
+
+            glm::mat4 view = cam->GetViewMatrix();
+            glm::mat4 proj = glm::perspective(glm::radians(cam->Zoom),
+                static_cast<float>(vpWidth) / static_cast<float>(vpHeight), 0.1f, gfxManager.GetFarPlane());
+
+            Frustum frustum;
+            frustum.Update(proj * view);
+
+            // Fog geometry is a unit cube [-0.5, 0.5]; transform it to world space
+            AABB unitCube(glm::vec3(-0.5f), glm::vec3(0.5f));
+            AABB worldAABB = unitCube.Transform(fogComp.worldTransform.ConvertToGLM());
+
+            if (!frustum.IsBoxVisible(worldAABB))
+                continue;
+        }
+
+        // Submit to renderer
         auto renderItem = std::make_unique<FogVolumeComponent>(fogComp);
         gfxManager.Submit(std::move(renderItem));
     }

@@ -17,7 +17,7 @@ function AttackState:Enter(ai)
         and (ai.MeleeAttackCooldown or (ai.config.AttackCooldown or 1.0))
         or  (ai.config.AttackCooldown or 3.0)
 
-    ai._skipFirstCooldown = not ai._hasAttackedBefore
+    ai._skipFirstCooldown = true
 
     if ai.IsMelee and ai._skipFirstCooldown then
         ai.attackTimer = ai.FirstMeleeAttackHeadStart or 0.20
