@@ -368,7 +368,8 @@ void ScenePanel::Handle2DGizmo(float sceneWidth, float sceneHeight) {
     }
 
     // Handle mouse interaction
-    bool isHoveringGizmo = hoveredGizmo2DAxis != Gizmo2DAxis::None || activeGizmo2DAxis != Gizmo2DAxis::None;
+    // Commented out as not used to fix warnings.
+    // bool isHoveringGizmo = hoveredGizmo2DAxis != Gizmo2DAxis::None || activeGizmo2DAxis != Gizmo2DAxis::None;
 
     if (ImGui::IsMouseClicked(ImGuiMouseButton_Left) && hoveredGizmo2DAxis != Gizmo2DAxis::None) {
         activeGizmo2DAxis = hoveredGizmo2DAxis;
@@ -812,8 +813,8 @@ void ScenePanel::HandleCameraInput() {
     if (isRightMousePressed && !is2DMode) {
         // logarithmic scaling: movement feels consistent at any zoom level
         // Using log scale: speed = base * log2(distance + 1) for smoother feel at close range
-        float logDistance = std::log2(editorCamera.Distance + 1.0f);
-        float moveSpeed = std::max(0.005f, logDistance * 0.02f); // Floor prevents imperceptible movement
+        float moveLogDistance = std::log2(editorCamera.Distance + 1.0f);
+        float moveSpeed = std::max(0.005f, moveLogDistance * 0.02f); // Floor prevents imperceptible movement
 
         if (ImGui::IsKeyDown(ImGuiKey_W)) {
             editorCamera.Position += editorCamera.Front * moveSpeed;
@@ -850,8 +851,8 @@ void ScenePanel::HandleCameraInput() {
             nudgeSpeed = editorCamera.OrthoZoomLevel * 3.0f * io.DeltaTime;
         } else {
             // In 3D: logarithmic scaling for consistent feel at any zoom level
-            float logDistance = std::log2(editorCamera.Distance + 1.0f);
-            nudgeSpeed = std::max(0.002f, logDistance * 0.015f) * io.DeltaTime * 60.0f;
+            float nudgeLogDistance = std::log2(editorCamera.Distance + 1.0f);
+            nudgeSpeed = std::max(0.002f, nudgeLogDistance * 0.015f) * io.DeltaTime * 60.0f;
         }
 
         glm::vec3 movement(0.0f);
@@ -2035,7 +2036,8 @@ void ScenePanel::RenderModelPreview(float sceneWidth, float sceneHeight) {
 
 Entity ScenePanel::SpawnModelEntity(const glm::vec3& position) {
     try {
-        ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
+        // Commented out as not used to fix warnings.
+        // ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
 
         // Create entity with name from model file
         std::filesystem::path modelPath(previewModelPath);

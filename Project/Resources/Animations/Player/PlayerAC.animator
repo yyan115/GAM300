@@ -242,7 +242,7 @@
         },
         {
             "id": "ThrowChain",
-            "clipIndex": 16,
+            "clipIndex": 15,
             "loop": false,
             "speed": 2.499999761581421,
             "crossfadeDuration": 0.20000000298023224,
@@ -253,7 +253,7 @@
         },
         {
             "id": "AimThrow",
-            "clipIndex": 15,
+            "clipIndex": 14,
             "loop": false,
             "speed": 2.000000238418579,
             "crossfadeDuration": 0.20000000298023224,
@@ -264,7 +264,7 @@
         },
         {
             "id": "PullChain",
-            "clipIndex": 19,
+            "clipIndex": 18,
             "loop": false,
             "speed": 3.4999988079071045,
             "crossfadeDuration": 0.20000000298023224,
@@ -275,7 +275,7 @@
         },
         {
             "id": "SlamChain",
-            "clipIndex": 17,
+            "clipIndex": 16,
             "loop": false,
             "speed": 1.5000001192092896,
             "crossfadeDuration": 0.20000000298023224,
@@ -286,7 +286,7 @@
         },
         {
             "id": "RetractChain",
-            "clipIndex": 18,
+            "clipIndex": 17,
             "loop": false,
             "speed": 2.9999992847442627,
             "crossfadeDuration": 0.20000000298023224,
@@ -308,7 +308,7 @@
         },
         {
             "id": "IdleUnarmed",
-            "clipIndex": 14,
+            "clipIndex": 19,
             "loop": true,
             "speed": 1.0,
             "crossfadeDuration": 0.20000000298023224,
@@ -1879,11 +1879,11 @@
         "Resources/Animations/Player/KusaneV6@FeatherLaunchEnd.fbx",
         "Resources/Animations/Player/KusaneV6@DashRoll.fbx",
         "Resources/Animations/Player/KusaneV6@Standing.fbx",
-        "Resources/Animations/Player/KusaneV6@IdleUnarmed.fbx",
         "Resources/Animations/Player/KusaneV6@AimChain.fbx",
         "Resources/Animations/Player/KusaneV6@ThrowChain.fbx",
         "Resources/Animations/Player/KusaneV6@SlamChain.fbx",
         "Resources/Animations/Player/KusaneV6@RetractChain.fbx",
-        "Resources/Animations/Player/KusaneV6@PullChain.fbx"
+        "Resources/Animations/Player/KusaneV6@PullChain.fbx",
+        "Resources/Animations/Player/KusaneV6@IdleUnarmed.fbx"
     ]
 }

@@ -69,16 +69,22 @@ function M.init(self)
     self._lockonActive   = false
     self._lockonEntityId = nil
     self._lockonLOSLostTimer = 0.0
+    self._deadEnemies    = {}  -- track dead entity IDs to prevent re-locking
 
     if event_bus and event_bus.subscribe then
         self._lockonDeathSub = event_bus.subscribe("enemy_died", function(data)
-            if data and data.entityId and data.entityId == self._lockonEntityId then
-                M.breakLock(self)
+            if data and data.entityId then
+                self._deadEnemies[data.entityId] = true
+                if data.entityId == self._lockonEntityId then
+                    M.breakLock(self)
+                end
             end
         end)
 
         self._lockonDamageSub = event_bus.subscribe("deal_damage_to_entity", function(data)
             if not data or not data.entityId then return end
+            -- Don't lock on to already-dead enemies
+            if self._deadEnemies[data.entityId] then return end
             -- Don't activate during chain aim or cinematics
             if self._chainAiming or self._cinematicActive then return end
             -- Verify the hit entity is actually an enemy (not a wall/prop/ground)
@@ -212,6 +218,7 @@ function M.cleanup(self)
     self._lockonActive       = false
     self._lockonEntityId     = nil
     self._lockonLOSLostTimer = 0.0
+    self._deadEnemies        = {}
 end
 
 return M

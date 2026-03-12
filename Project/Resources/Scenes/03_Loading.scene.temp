@@ -181,6 +181,10 @@
                             "data": 1
                         },
                         {
+                            "type": "float",
+                            "data": 0.5
+                        },
+                        {
                             "type": "bool",
                             "data": false
                         },
@@ -219,6 +223,26 @@
                         {
                             "type": "float",
                             "data": 0.5
+                        },
+                        {
+                            "type": "bool",
+                            "data": false
+                        },
+                        {
+                            "type": "float",
+                            "data": 0.5
+                        },
+                        {
+                            "type": "float",
+                            "data": 1
+                        },
+                        {
+                            "type": "bool",
+                            "data": true
+                        },
+                        {
+                            "type": "float",
+                            "data": 1
                         }
                     ],
                     "target": {
@@ -257,6 +281,7 @@
                     "bloomEnabled": false,
                     "bloomThreshold": 1.0,
                     "bloomIntensity": 1.0,
+                    "bloomSpread": 0.5,
                     "vignetteEnabled": false,
                     "vignetteIntensity": 0.5,
                     "vignetteSmoothness": 0.5,
@@ -852,7 +877,7 @@
                             "data": 0
                         },
                         {
-                            "type": "float",
+                            "type": "int",
                             "data": 1
                         },
                         {
@@ -862,6 +887,10 @@
                         {
                             "type": "float",
                             "data": 0.5
+                        },
+                        {
+                            "type": "float",
+                            "data": 0.3
                         },
                         {
                             "type": "float",
@@ -1163,7 +1192,7 @@
                             "data": 0
                         },
                         {
-                            "type": "float",
+                            "type": "int",
                             "data": 1
                         },
                         {
@@ -1173,6 +1202,10 @@
                         {
                             "type": "float",
                             "data": 0.5
+                        },
+                        {
+                            "type": "float",
+                            "data": 0.3
                         },
                         {
                             "type": "float",
@@ -1221,7 +1254,7 @@
                             "data": [
                                 {
                                     "type": "float",
-                                    "data": 7.18799
+                                    "data": 20
                                 },
                                 {
                                     "type": "float",
@@ -1295,7 +1328,7 @@
                             "data": [
                                 {
                                     "type": "float",
-                                    "data": 967.188
+                                    "data": 980
                                 },
                                 {
                                     "type": "float",
@@ -1468,7 +1501,7 @@
                             "data": [
                                 {
                                     "type": "float",
-                                    "data": 0
+                                    "data": 68
                                 },
                                 {
                                     "type": "float",
@@ -1626,7 +1659,7 @@
                             "data": 0
                         },
                         {
-                            "type": "float",
+                            "type": "int",
                             "data": 1
                         },
                         {
@@ -1636,6 +1669,10 @@
                         {
                             "type": "float",
                             "data": 0.5
+                        },
+                        {
+                            "type": "float",
+                            "data": 0.3
                         },
                         {
                             "type": "float",

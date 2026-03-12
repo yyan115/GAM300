@@ -767,7 +767,7 @@ void ScriptSystem::Initialise(ECSManager& ecsManager)
             {
                 // Create the proxy on the stack
                 LuaAnimationComponent proxy(static_cast<Entity>(entityId));
-                luabridge::push(L, proxy);
+                (void)luabridge::push(L, proxy);
                 return true;
             }
 

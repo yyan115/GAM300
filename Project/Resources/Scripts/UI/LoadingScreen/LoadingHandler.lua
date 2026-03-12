@@ -5,7 +5,7 @@ return Component {
     fields = {
         barFillName = "LoadingBarFill",
         loadingTextName = "PercentText",
-        targetScene = "Resources/Scenes/04_GameLevelMap.scene",
+        targetScene = "Resources/Scenes/04_Level.scene",
         anchorLeft = true,
         fullScaleX = 2.0,
     },

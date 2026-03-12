@@ -2,6 +2,7 @@
 require("extension.engine_bootstrap")
 local Component      = require("extension.mono_helper")
 local TransformMixin = require("extension.transform_mixin")
+local AudioHelper    = require("extension.audio_helper")
 
 local StateMachine       = require("Gameplay.StateMachine")
 local GroundIdleState    = require("Gameplay.GroundIdleState")
@@ -65,14 +66,6 @@ local function eulerToQuat(pitch, yaw, roll)
         y = cosP * sinY * cosR + sinP * cosY * sinR,
         z = cosP * cosY * sinR - sinP * sinY * cosR
     }
-end
-
--- Play random SFX from array
-local function playRandomSFX(audio, clips)
-    local count = clips and #clips or 0
-    if count > 0 and audio then
-        audio:PlayOneShot(clips[math.random(1, count)])
-    end
 end
 
 local function isDynamic(self)
@@ -451,6 +444,9 @@ return Component {
 
         if self.health <= 0 and not self.dead then
             self.dead = true
+            if _G.event_bus and _G.event_bus.publish then
+                _G.event_bus.publish("enemy_died", { entityId = self.entityId })
+            end
         end
 
         if self.dead then
@@ -1286,23 +1282,23 @@ return Component {
     -- Play attack SFX (melee or ranged based on IsMelee flag)
     PlayAttackSFX = function(self)
         if self.IsMelee then
-            playRandomSFX(self._audio, self.enemyMeleeAttackSFX)
+            AudioHelper.playRandomSFX(self._audio, self.enemyMeleeAttackSFX)
         else
-            playRandomSFX(self._audio, self.enemyRangedAttackSFX)
+            AudioHelper.playRandomSFX(self._audio, self.enemyRangedAttackSFX)
         end
     end,
 
     -- Play alert SFX when first detecting player
     PlayAlertSFX = function(self)
-        playRandomSFX(self._audio, self.enemyAlertSFX)
+        AudioHelper.playRandomSFX(self._audio, self.enemyAlertSFX,0.4)
     end,
 
     -- Play hit SFX when attack lands on player (melee or ranged)
     PlayHitSFX = function(self)
         if self.IsMelee then
-            playRandomSFX(self._audio, self.enemyMeleeHitSFX)
+            AudioHelper.playRandomSFX(self._audio, self.enemyMeleeHitSFX)
         else
-            playRandomSFX(self._audio, self.enemyRangedHitSFX)
+            AudioHelper.playRandomSFX(self._audio, self.enemyRangedHitSFX)
         end
     end,
 
@@ -1354,7 +1350,7 @@ return Component {
         end
 
         -- Play ranged attack SFX when throwing knives
-        playRandomSFX(self._audio, self.enemyRangedAttackSFX)
+        AudioHelper.playRandomSFX(self._audio, self.enemyRangedAttackSFX)
 
         local ex, ey, ez = self:GetPosition()
         -- Safety check: if position is nil, skip spawning
@@ -1458,7 +1454,7 @@ return Component {
             -- Death collapse: vertical squash at half intensity — visible but not cartoony
             self:_squashTrigger("vertical", 0.5)
             -- Play death SFX
-            playRandomSFX(self._audio, self.enemyDeathSFX)
+            AudioHelper.playRandomSFX(self._audio, self.enemyDeathSFX)
             self.fsm:Change("Death", self.states.Death)
             return
         end
@@ -1477,7 +1473,7 @@ return Component {
             end
 
             -- Play hurt SFX (only if not dead)
-            playRandomSFX(self._audio, self.enemyHurtSFX)
+            AudioHelper.playRandomSFX(self._audio, self.enemyHurtSFX)
 
             if self.fsm.currentName == "Hooked" then
                 return
