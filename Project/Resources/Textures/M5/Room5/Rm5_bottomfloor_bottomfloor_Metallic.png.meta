@@ -1,0 +1,14 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "004598ffe7c0c6ec-00047c897802cce5",
+        "source": "../../Resources/Textures/M5/Room5/Rm5_bottomfloor_bottomfloor_Metallic.png",
+        "compiled": "../../Resources/Textures/M5/Room5/Rm5_bottomfloor_bottomfloor_Metallic.dds"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp"
+    }
+}

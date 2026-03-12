@@ -1,0 +1,14 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "004598fffbab6eb6-00047c976c02f295",
+        "source": "../../Resources/Textures/M5/Room6/Rm6_floor2_floor2_Metallic.png",
+        "compiled": "../../Resources/Textures/M5/Room6/Rm6_floor2_floor2_Metallic.dds"
+    },
+    "TextureMetaData": {
+        "type": "metallic",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp"
+    }
+}

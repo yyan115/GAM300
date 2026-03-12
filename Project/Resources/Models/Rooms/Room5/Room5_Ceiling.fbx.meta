@@ -1,0 +1,11 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "00269aea65bab802-00047c479000e7c3",
+        "source": "../../Resources/Models/Rooms/Room5/Room5_Ceiling.fbx",
+        "compiled": "../../Resources/Models/Rooms/Room5/Room5_Ceiling.mesh"
+    },
+    "ModelMetaData": {
+        "optimizeMeshes": true
+    }
+}

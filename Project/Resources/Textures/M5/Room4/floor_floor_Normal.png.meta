@@ -1,0 +1,14 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "002c80ed2cbd5da5-00047a9ca003c78f",
+        "source": "../../Resources/Textures/M5/Room4/floor_floor_Normal.png",
+        "compiled": "../../Resources/Textures/M5/Room4/floor_floor_Normal.dds"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp"
+    }
+}

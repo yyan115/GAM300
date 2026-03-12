@@ -6,7 +6,7 @@
         "compiled": "../../Resources/Textures/M5/BookStack2_Roughness.dds"
     },
     "TextureMetaData": {
-        "type": "roughness",
+        "type": "diffuse",
         "flipUVs": false,
         "generateMipmaps": true,
         "textureWrapMode": "Clamp"
