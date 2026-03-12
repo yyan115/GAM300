@@ -46,6 +46,8 @@ public:
 	// For sorting/comparison
 	size_t GetSortKey() const;
 
+	void Prewarm();
+
 private:
 	void CreateInstanceBuffer();
 	void UpdateInstanceBuffer();
