@@ -7,6 +7,7 @@
 #include "Asset Manager/AssetManager.hpp"
 #include "Asset Manager/ResourceManager.hpp"
 #include "Graphics/Lights/LightingSystem.hpp"
+#include "Scene/SceneManager.hpp"
 #include <algorithm>
 #include <Graphics/Model/ModelFactory.hpp>
 #include <Prefab/PrefabIO.hpp>
@@ -3766,6 +3767,7 @@ static void DeserializeSingleScript(ScriptData& sd, const std::string& instJson)
 void Serializer::DeserializeScriptComponent(Entity entity, const rapidjson::Value& scriptJSON) {
     // Ensure ECS manager exists
     ECSManager& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
+    const bool deferRuntimeCreation = SceneManager::GetInstance().IsLoading();
 
     // Add or get the engine-side ScriptComponentData for this entity
     if (!ecs.HasComponent<ScriptComponentData>(entity)) {
@@ -3856,8 +3858,9 @@ void Serializer::DeserializeScriptComponent(Entity entity, const rapidjson::Valu
                 instJson = scriptData["instanceStateRaw"].GetString();
             }
 
-            // Try to create runtime instance if Lua is available
-            if (!sd.scriptPath.empty() && Scripting::GetLuaState()) {
+            // Async scene loading keeps the current scene's Lua VM alive while the next scene is
+            // deserialized. Defer runtime creation until the new scene's ScriptSystem boots.
+            if (!deferRuntimeCreation && !sd.scriptPath.empty() && Scripting::GetLuaState()) {
                 DeserializeSingleScript(sd, instJson);
             }
             else if (!instJson.empty()) {
@@ -3913,8 +3916,9 @@ void Serializer::DeserializeScriptComponent(Entity entity, const rapidjson::Valu
             instJson = scriptJSON["instanceStateRaw"].GetString();
         }
 
-        // If scripting runtime is available, attempt to create instance and restore saved state (best-effort)
-        if (!sd.scriptPath.empty() && Scripting::GetLuaState()) {
+        // Async scene loading keeps the current scene's Lua VM alive while the next scene is
+        // deserialized. Defer runtime creation until the new scene's ScriptSystem boots.
+        if (!deferRuntimeCreation && !sd.scriptPath.empty() && Scripting::GetLuaState()) {
             DeserializeSingleScript(sd, instJson);
         }
         else if (!instJson.empty()) {

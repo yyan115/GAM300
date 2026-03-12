@@ -96,6 +96,14 @@ struct LuaAnimationComponent
         return "";
     }
 
+    float GetNormalizedTime() const
+    {
+        if (auto* comp = GetInternal()) {
+            return comp->GetNormalizedTime();
+        }
+        return 0.0f;
+    }
+
     bool IsPlaying() const
     {
         if (auto* comp = GetInternal()) {
@@ -107,11 +115,6 @@ struct LuaAnimationComponent
     float GetStateTime() const {
         auto* comp = GetInternal();
         return comp ? comp->GetStateTime() : 0.0f;
-    }
-
-    float GetNormalizedTime() const {
-        auto* comp = GetInternal();
-        return comp ? comp->GetNormalizedTime() : 0.0f;
     }
 
     float GetClipDuration(size_t clipIndex) const {

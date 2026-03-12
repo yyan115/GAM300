@@ -1,8 +1,8 @@
 {
     "AssetMetaData": {
         "version": 7,
-        "guid": "006b0bd8f4458cdc-00041a0a6000302d",
-        "source": "../../Resources/Scripts/GamePlay/PlayerCheckpointManager.lua",
-        "compiled": "../../Resources/Scripts/GamePlay/PlayerCheckpointManager.lua"
+        "guid": "0000de557486ff2c-00047c8f8e000001",
+        "source": "../../Resources/Scripts/Gameplay/PlayerCheckpointManager.lua",
+        "compiled": "../../Resources/Scripts/Gameplay/PlayerCheckpointManager.lua"
     }
 }

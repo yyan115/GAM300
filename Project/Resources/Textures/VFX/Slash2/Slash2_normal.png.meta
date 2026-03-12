@@ -1,0 +1,14 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "006230628f912670-00046c7ce800000d",
+        "source": "../../Resources/Textures/VFX/Slash2/Slash2_normal.png",
+        "compiled": "../../Resources/Textures/VFX/Slash2/Slash2_normal.dds"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp"
+    }
+}

@@ -115,6 +115,20 @@ function AttackState:Update(ai, dt)
                     z             = ez or 0,
                 })
             end
+
+            -- TRIGGER CLAW VFX HERE
+            if _G.event_bus then
+                local x, y, z = ai:GetPosition()
+                local qW, qX, qY, qZ = ai:GetRotation() -- Get the AI's current facing
+                
+                _G.event_bus.publish("onClawSlashTrigger", {
+                    pos = {x = x, y = y, z = z},
+                    rot = {w = qW, x = qX, y = qY, z = qZ},
+                    entityId = ai.entityId,
+                    variant = "NORMAL",
+                    claimed = false
+                })
+            end
         end
     else
         -- RANGED

@@ -1,0 +1,11 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "00623062cd20bb89-00046c7ce4000001",
+        "source": "../../Resources/Models/SlashVFX/WideSlashMesh.fbx",
+        "compiled": "../../Resources/Models/SlashVFX/WideSlashMesh.mesh"
+    },
+    "ModelMetaData": {
+        "optimizeMeshes": true
+    }
+}

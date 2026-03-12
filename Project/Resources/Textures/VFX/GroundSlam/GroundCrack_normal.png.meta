@@ -1,0 +1,14 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "00252803574b7926-00047680a8000007",
+        "source": "../../Resources/Textures/VFX/GroundSlam/GroundCrack_normal.png",
+        "compiled": "../../Resources/Textures/VFX/GroundSlam/GroundCrack_normal.dds"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp"
+    }
+}

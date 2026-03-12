@@ -33,13 +33,15 @@ return Component {
     mixins = { TransformMixin },
     
     fields = {
-        StartRot = 60,     --Adjust StartEndRot for Left-Right Orientation
-        EndRot = -200,    
-        RollOffset = 0,    --Adjust RollOffset for Top - Down Orientation 
-        OffsetHeight = 0, --Adjust OffsetHeight for dagger starting height
-        OffsetDistance = -0.2, --Adjust where VFX spawn based on player position
+        StartRot = 60,         -- Adjust Start Rotation
+        EndRot = -200,         -- Adjust End Rotation
+        RollOffset = 0,        -- Left/Right tilt
+        PitchOffset = 0,       -- Front/Back tilt
+        OffsetHeight = 0,      -- Adjust OffsetHeight for dagger starting height
+        OffsetDistance = -0.2, -- Adjust how far VFX spawn based on player position
+        SideOffset = 0,        -- Adjust VFX Spawn (+ve for Right, -ve for Left)
         Speed = 750,
-        Delay = 0.14,
+        SpawnTime = 0.14,      -- Threshold for triggering (Normalized Time)
         AttackState = "NA3",
     },
     
@@ -52,43 +54,45 @@ return Component {
             return
         end
 
+        -- Component Lookups
         self._playerTransform = GetComponent(playerEntityId, "Transform")
         self._daggerTransform = GetComponent(daggerEntityId, "Transform")
         self._transform = self:GetComponent("Transform")
         self._playerAnimation = GetComponent(playerEntityId, "AnimationComponent")
         self.model = self:GetComponent("ModelRenderComponent")
         
+        -- Runtime State
         self.active = false
-        self.delaying = false
-        self._wasAttacking = false
-        self._playerYawQuat = {w=1, x=0, y=0, z=0} -- Store as Quat to avoid Euler flipping
+        self._hasTriggered = false
+        self._playerYawQuat = {w=1, x=0, y=0, z=0}
 
-        if self.model then ModelRenderComponent.SetVisible(self.model, false) end
+        -- Initial Visibility
+        if self.model then 
+            ModelRenderComponent.SetVisible(self.model, false) 
+        end
     end,
     
     Update = function(self, dt)
         local currentState = self._playerAnimation:GetCurrentState()
         local cleanAttackState = self.AttackState:gsub('"', '')
         local isAttacking = currentState == cleanAttackState
-        if isAttacking and not self._wasAttacking then
-            self:TriggerSlash(self.StartRot, self.EndRot, self.Speed, self.Delay)
-        end
         
-        self._wasAttacking = isAttacking
-        -- Let an in-progress sweep finish even if the attack state ended early
-        if not isAttacking and not self.active and not self.delaying then return end
+        local normalizedTime = self._playerAnimation:GetNormalizedTime()
 
-        if self.delaying then
-            self.delayTimer = self.delayTimer + dt
-            if self.delayTimer >= self._currentDelay then
-                self.delaying = false
-                self.active = true
-                self.age = 0
-                if self.model then ModelRenderComponent.SetVisible(self.model, true) end                
+        if isAttacking then
+            if normalizedTime >= self.SpawnTime and not self._hasTriggered then
+                self:TriggerSlash(self.StartRot, self.EndRot, self.Speed)
+                self._hasTriggered = true
             end
-            return
+
+            if normalizedTime < self.SpawnTime * 0.5 then
+                self._hasTriggered = false
+            end
+        else
+            self._hasTriggered = false
         end
         
+        -- VFX Sweep Logic
         if self.active then
             self.age = self.age + dt
             local sweptAngle = self._currentSpeed * self.age
@@ -99,23 +103,21 @@ return Component {
                 return  
             end
             
-            -- 1. Calculate the LOCAL rotation of the slash (relative to a 0-facing player)
             local localYaw = self._currentStartRot + sweptAngle
-            local localSlashQuat = eulerToQuat(0, localYaw, self.RollOffset)
 
-            -- 2. Combine the stored Player Rotation with the Local Slash Rotation
-            -- This keeps the "up" vector of the slash relative to the player
-            local finalQuat = multiplyQuats(self._playerYawQuat, localSlashQuat)
+            local sweepQuat      = eulerToQuat(0, localYaw, 0)
+            local tiltQuat       = eulerToQuat(self.PitchOffset, 0, self.RollOffset)
+            local localSlashQuat = multiplyQuats(tiltQuat, sweepQuat)
+            local finalQuat      = multiplyQuats(self._playerYawQuat, localSlashQuat)
 
             self:SetRotation(finalQuat.w, finalQuat.x, finalQuat.y, finalQuat.z)
         end
     end,
 
-    TriggerSlash = function(self, startRot, endRot, speed, delay)
+    TriggerSlash = function(self, startRot, endRot, speed)
         self._currentStartRot = startRot or self.StartRot
         local targetEndRot = endRot or self.EndRot
         self._currentSpeed = speed or self.Speed
-        self._currentDelay = delay or self.Delay or 0.0
         self._arcLength = math.abs(targetEndRot - self._currentStartRot)
         
         if targetEndRot < self._currentStartRot then
@@ -124,28 +126,26 @@ return Component {
             self._currentSpeed = math.abs(self._currentSpeed)
         end
         
-        -- Capture the Player's orientation as a base
         local playerRot = self._playerTransform.localRotation
-        
-        -- Store the player's current orientation as the "Anchor"
-        -- We extract just the Y-axis to keep the slash level with the ground
         local playerYawRad = math.atan(2.0 * (playerRot.w * playerRot.y + playerRot.x * playerRot.z),
-                               1.0 - 2.0 * (playerRot.y * playerRot.y + playerRot.z * playerRot.z))        
-        -- This is our stable reference point
+                                    1.0 - 2.0 * (playerRot.y * playerRot.y + playerRot.z * playerRot.z))        
         self._playerYawQuat = eulerToQuat(0, math.deg(playerYawRad), 0)
         
-        -- Position logic
         local daggerPos = self._daggerTransform.worldPosition
-        self._transform.localPosition.x = daggerPos.x + (math.sin(playerYawRad) * self.OffsetDistance)           
+        local forward = self.OffsetDistance
+        local side = self.SideOffset or 0
+
+        local combinedOffsetX = (math.sin(playerYawRad) * forward) - (math.cos(playerYawRad) * side)
+        local combinedOffsetZ = (math.cos(playerYawRad) * forward) + (math.sin(playerYawRad) * side)
+
+        self._transform.localPosition.x = daggerPos.x + combinedOffsetX
         self._transform.localPosition.y = daggerPos.y + self.OffsetHeight
-        self._transform.localPosition.z = daggerPos.z + (math.cos(playerYawRad) * self.OffsetDistance)
+        self._transform.localPosition.z = daggerPos.z + combinedOffsetZ
         
-        self.delaying = self._currentDelay > 0
-        self.delayTimer = 0
-        self.active = not self.delaying
+        self.active = true
         self.age = 0
         
-        if self.active and self.model then
+        if self.model then
             ModelRenderComponent.SetVisible(self.model, true)
         end
     end,
