@@ -46,6 +46,8 @@ endif()
 # MSVC warning suppressions
 if(MSVC)
     add_compile_options(
+        /Zm200
+        /bigobj
         # C4251: 'class X needs dll-interface to be used by clients of class Y'
         # Source: Engine headers with exported classes containing STL members
         # Reason: Safe when all code is built together with same compiler/runtime.
