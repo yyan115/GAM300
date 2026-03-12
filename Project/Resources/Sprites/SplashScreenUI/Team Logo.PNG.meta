@@ -1,9 +1,9 @@
 {
     "AssetMetaData": {
         "version": 7,
-        "guid": "0038c4c3b91255ac-0004713c9e000003",
-        "source": "../../Resources/Sprites/SplashScreenUI/TeamLogo.png",
-        "compiled": "../../Resources/Sprites/SplashScreenUI/TeamLogo.dds"
+        "guid": "0057a382112bceb8-00047ce338001c47",
+        "source": "../../Resources/Sprites/SplashScreenUI/Team Logo.PNG",
+        "compiled": "../../Resources/Sprites/SplashScreenUI/Team Logo.dds"
     },
     "TextureMetaData": {
         "type": "diffuse",
