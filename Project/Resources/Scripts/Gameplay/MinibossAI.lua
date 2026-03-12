@@ -387,7 +387,7 @@ return Component {
         end
 
         -- === Freeze during cinematic ===
-        self._frozenBycinematic = false
+        self._frozenBycinematic = true
         self._freezeEnemySub = nil
         if _G.event_bus and _G.event_bus.subscribe then
             self._freezeEnemySub = _G.event_bus.subscribe("freeze_enemy", function(frozen)
@@ -489,7 +489,7 @@ return Component {
         end
 
         if self._frozenBycinematic then
-            print("[Miniboss] FROZEN by cinematic, skipping Update. lockReason=", tostring(self._lockReason), "lockT=", tostring(self._lockTimer))
+            --print("[Miniboss] FROZEN by cinematic, skipping Update. lockReason=", tostring(self._lockReason), "lockT=", tostring(self._lockTimer))
             return
         end
 
