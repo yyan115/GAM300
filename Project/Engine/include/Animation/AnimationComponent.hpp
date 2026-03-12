@@ -116,6 +116,9 @@ public:
     // Returns true once per loop completion, then resets
     bool HasLoopJustCompleted();
 
+    // Resets the State Machine to entry state and clears all pending state transitions.
+    void ResetSM(Entity entity);
+
 private:
     bool mLoopJustCompleted = false;
     std::vector<std::shared_ptr<Animation>> clips;

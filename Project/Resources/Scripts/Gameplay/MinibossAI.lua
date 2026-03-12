@@ -453,8 +453,16 @@ return Component {
         local dtSec = toDtSec(dt)
         self._meleeCdT = math.max(0, (self._meleeCdT or 0) - dtSec)
 
-        if Input.IsActionJustPressed("Interact") then
+        if Keyboard.IsDigitPressed(2) then
             self:ApplyHook(self.HookedDuration)
+        end
+
+        if Keyboard.IsDigitPressed(4) then
+            self:ApplyHit(10)
+        end
+
+        if Keyboard.IsDigitPressed(6) then
+            self:ForceNextPhase()
         end
 
         -- Tick pending rain explosion "land" events
@@ -1041,6 +1049,42 @@ return Component {
         end
     end,
 
+    ForceNextPhase = function(self)
+        if self.dead then return end
+        if self._inIntro then return end
+        if self._transforming then return end
+
+        local curPhase = self._phase or self:_ComputePhase()
+        local nextPhase = curPhase + 1
+
+        if nextPhase > 3 then
+            print("[Miniboss][Cheat] Already at final phase.")
+            return
+        end
+
+        local maxHp = self.MaxHealth or 1
+
+        -- Force HP to the target phase threshold so the internal phase logic matches.
+        -- Use a tiny epsilon below threshold so _ComputePhase() definitely returns nextPhase.
+        if nextPhase == 2 then
+            self.health = (maxHp * (self.Phase2HpPct or 0.66)) - 0.01
+        elseif nextPhase == 3 then
+            self.health = (maxHp * (self.Phase3HpPct or 0.33)) - 0.01
+        end
+
+        -- Optional cleanup so the transition is clean
+        self._hitLockTimer = 0
+        self._moveQueue = {}
+        self:_EndMove()
+
+        print(string.format(
+            "[Miniboss][Cheat] Forcing phase %d at hp=%.2f/%.2f",
+            nextPhase, self.health, maxHp
+        ))
+
+        self:StartBossPhaseTransition(nextPhase)
+    end,
+
     -------------------------------------------------
     -- Move selection
     -------------------------------------------------
@@ -1244,11 +1288,17 @@ return Component {
 
         -- phase 2: hooking forces boss down
         if self._phase == 2 and self._inAir then
+            self._hooked = true
             self._hookedDownRequested = true
-            -- Forcefully cancel BurstFire so it doesn't secretly run 
-            -- while the boss is falling and delay the FateSealed move!
+
+            -- Cancel current air attack immediately
             self:_EndMove()
+
+            -- Start falling RIGHT NOW
             self:BeginSlamDown("Pulldown")
+
+            print("[Miniboss][Hooked] Phase 2 air hook -> immediate slam")
+            return
         end
 
         if self._phase == 3 and not self._inAir then

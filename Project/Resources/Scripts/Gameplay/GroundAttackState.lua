@@ -13,7 +13,18 @@ function AttackState:Enter(ai)
     ai._animator:SetBool("PatrolEnabled", false)
     ai._animator:SetBool("ReadyToAttack", false)
 
-    ai.attackTimer = 0
+    local cd = ai.IsMelee
+        and (ai.MeleeAttackCooldown or (ai.config.AttackCooldown or 1.0))
+        or  (ai.config.AttackCooldown or 3.0)
+
+    ai._skipFirstCooldown = not ai._hasAttackedBefore
+
+    if ai.IsMelee and ai._skipFirstCooldown then
+        ai.attackTimer = ai.FirstMeleeAttackHeadStart or 0.20
+    else
+        ai.attackTimer = 0
+    end
+
     ai.meleeAnimTriggered = false
     ai.rangedAnimTriggered = false
 
@@ -62,7 +73,7 @@ function AttackState:Update(ai, dt)
         ai.attackTimer = (ai.attackTimer or 0) + dtSec
         local cd = ai.MeleeAttackCooldown or (ai.config.AttackCooldown or 1.0)
 
-        if not ai.meleeAnimTriggered and ai.attackTimer >= ai.MeleeAnimDelay then
+        if not ai.meleeAnimTriggered and (ai._skipFirstCooldown or ai.attackTimer >= ai.MeleeAnimDelay) then
             if d2 <= (meleeR * meleeR) then
                 ai._animator:SetBool("Melee", true)
                 ai.meleeAnimTriggered = true
@@ -87,6 +98,8 @@ function AttackState:Update(ai, dt)
 
         if ai.attackTimer >= cd then
             ai.attackTimer = 0
+            ai._hasAttackedBefore = true
+            ai._skipFirstCooldown = false
 
             print("Melee Attack!")
             if ai.PlayAttackSFX then ai:PlayAttackSFX() end
@@ -124,6 +137,12 @@ function AttackState:Update(ai, dt)
             local ok = ai:SpawnKnife()
             if ok then
                 ai.attackTimer = 0
+                ai.rangedAnimTriggered = false
+                ai._hasAttackedBefore = true
+                ai._readySettleT = 0
+                ai._readyLatched = false
+                ai._animator:SetBool("ReadyToAttack", false)
+                ai._animator:SetBool("Ranged", false)
             else
                 ai.attackTimer = (ai.config.AttackCooldown or 3.0)
             end
