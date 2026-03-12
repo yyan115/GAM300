@@ -174,26 +174,6 @@
                         },
                         {
                             "type": "float",
-                            "data": 0.5
-                        },
-                        {
-                            "type": "float",
-                            "data": 5
-                        },
-                        {
-                            "type": "float",
-                            "data": 0
-                        },
-                        {
-                            "type": "int",
-                            "data": 8
-                        },
-                        {
-                            "type": "bool",
-                            "data": false
-                        },
-                        {
-                            "type": "float",
                             "data": 1
                         },
                         {
@@ -298,11 +278,6 @@
                     "blurRadius": 2.0,
                     "blurPasses": 2,
                     "blurLayerMask": 4294966271,
-                    "dirBlurEnabled": false,
-                    "dirBlurIntensity": 0.5,
-                    "dirBlurStrength": 5.0,
-                    "dirBlurAngle": 0.0,
-                    "dirBlurSamples": 8,
                     "bloomEnabled": false,
                     "bloomThreshold": 1.0,
                     "bloomIntensity": 1.0,
@@ -1279,7 +1254,7 @@
                             "data": [
                                 {
                                     "type": "float",
-                                    "data": 25
+                                    "data": 20
                                 },
                                 {
                                     "type": "float",
@@ -1353,7 +1328,7 @@
                             "data": [
                                 {
                                     "type": "float",
-                                    "data": 985
+                                    "data": 980
                                 },
                                 {
                                     "type": "float",
@@ -1526,7 +1501,7 @@
                             "data": [
                                 {
                                     "type": "float",
-                                    "data": 0
+                                    "data": 68
                                 },
                                 {
                                     "type": "float",
@@ -1543,7 +1518,7 @@
                             "data": [
                                 {
                                     "type": "float",
-                                    "data": 0
+                                    "data": 77.5497
                                 },
                                 {
                                     "type": "float",
@@ -2067,7 +2042,7 @@
                                 "Update": null,
                                 "Unsubscribe": null,
                                 "_setPercentText": null,
-                                "targetScene": "\"Resources/Scenes/04_Level.scene\"",
+                                "targetScene": "\"Resources/Scenes/04_GameLevelMap.scene\"",
                                 "_call_lifecycle": null,
                                 "StartSafe": null,
                                 "anchorLeft": true,
@@ -2085,7 +2060,7 @@
                                     "anchorLeft": true,
                                     "barFillName": "LoadingBarFill",
                                     "loadingTextName": "PercentText",
-                                    "targetScene": "Resources/Scenes/04_Level.scene",
+                                    "targetScene": "Resources/Scenes/04_GameLevel.scene",
                                     "fullScaleX": 2.0
                                 },
                                 "__meta": {},
