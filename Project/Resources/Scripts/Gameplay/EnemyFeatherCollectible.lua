@@ -11,9 +11,11 @@ return Component {
         AttractionStrength = 60.0, 
         Drag = 5.0,                
         MaxSpeed = 40.0,           
+        PickupDetectionRadius = 1.0,
         CollectionRadius = 0.05,    
         TargetScale = 0.1,
         LiftHeight = 0.3,          
+        PlayerEntityName = "Player",
     },
 
     Start = function(self)
@@ -25,6 +27,7 @@ return Component {
         self._colliderEnabled = false
 
         self._parentFeatherEntity = Engine.GetParentEntity(self.entityId)
+        self._playerEntityId = Engine.GetEntityByName(self.PlayerEntityName)
         
         self._onTriggerStayed = false
         self._isCollecting = false
@@ -40,6 +43,32 @@ return Component {
                     self._collider.enabled = true
                 end
                 self._colliderEnabled = true
+            end
+        end
+
+        if self._colliderEnabled and not self._isCollecting then
+            local playerId = self._playerEntityId
+            if not playerId or playerId < 0 then
+                playerId = Engine.GetEntityByName(self.PlayerEntityName)
+                self._playerEntityId = playerId
+            end
+
+            if playerId and playerId >= 0 then
+                local parentTransform = GetComponent(self._parentFeatherEntity, "Transform")
+                local playerTransform = GetComponent(playerId, "Transform")
+
+                if parentTransform and playerTransform then
+                    local myPos = parentTransform.localPosition
+                    local playerPos = playerTransform.localPosition
+                    local dx = playerPos.x - myPos.x
+                    local dy = (playerPos.y + self.LiftHeight) - myPos.y
+                    local dz = playerPos.z - myPos.z
+                    local radius = self.PickupDetectionRadius or 1.0
+
+                    if (dx * dx + dy * dy + dz * dz) <= (radius * radius) then
+                        self:TryCollect(playerId)
+                    end
+                end
             end
         end
 
