@@ -174,6 +174,26 @@
                         },
                         {
                             "type": "float",
+                            "data": 0.5
+                        },
+                        {
+                            "type": "float",
+                            "data": 5
+                        },
+                        {
+                            "type": "float",
+                            "data": 0
+                        },
+                        {
+                            "type": "int",
+                            "data": 8
+                        },
+                        {
+                            "type": "bool",
+                            "data": false
+                        },
+                        {
+                            "type": "float",
                             "data": 1
                         },
                         {
@@ -278,6 +298,11 @@
                     "blurRadius": 2.0,
                     "blurPasses": 2,
                     "blurLayerMask": 4294966271,
+                    "dirBlurEnabled": false,
+                    "dirBlurIntensity": 0.5,
+                    "dirBlurStrength": 5.0,
+                    "dirBlurAngle": 0.0,
+                    "dirBlurSamples": 8,
                     "bloomEnabled": false,
                     "bloomThreshold": 1.0,
                     "bloomIntensity": 1.0,
@@ -1254,7 +1279,7 @@
                             "data": [
                                 {
                                     "type": "float",
-                                    "data": 20
+                                    "data": 25
                                 },
                                 {
                                     "type": "float",
@@ -1328,7 +1353,7 @@
                             "data": [
                                 {
                                     "type": "float",
-                                    "data": 980
+                                    "data": 985
                                 },
                                 {
                                     "type": "float",
@@ -1501,7 +1526,7 @@
                             "data": [
                                 {
                                     "type": "float",
-                                    "data": 65
+                                    "data": 0
                                 },
                                 {
                                     "type": "float",
@@ -1518,7 +1543,7 @@
                             "data": [
                                 {
                                     "type": "float",
-                                    "data": 77.5497
+                                    "data": 0
                                 },
                                 {
                                     "type": "float",
