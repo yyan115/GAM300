@@ -186,7 +186,7 @@ BEGIN_COMPONENT(CameraComponent, "CameraComponent")
     PROPERTY("cgBrightness", &CameraComponent::cgBrightness)
     PROPERTY("cgContrast", &CameraComponent::cgContrast)
     PROPERTY("cgSaturation", &CameraComponent::cgSaturation)
-    PROPERTY("cgTint", &CameraComponent::cgTint)
+    METHOD("cgTint", &CameraComponent::SetTint)
 
     PROPERTY("dirBlurEnabled",   &CameraComponent::dirBlurEnabled)
     PROPERTY("dirBlurIntensity", &CameraComponent::dirBlurIntensity)
