@@ -27,6 +27,7 @@ public:
 	Mesh(std::vector<Vertex>& vertices, std::vector<GLuint>& indices, std::vector<std::shared_ptr<Texture>>& textures, std::shared_ptr<Material> mat);
 
 	ENGINE_API ~Mesh();
+	void Prewarm(); // forces the setup to happen
 	void Draw(Shader& shader, const Camera& camera);
 	void DrawDepthOnly();
 
@@ -37,9 +38,9 @@ public:
 		material(other.material),
 		vao(),
 		ebo(indices),
-		vaoSetup(other.vaoSetup),
+		vaoSetup(false),
 		boundingBox(other.boundingBox) {
-		setupMesh();
+		//setupMesh();
 	}
 
 	Mesh& operator=(const Mesh& other) {
@@ -53,12 +54,12 @@ public:
 			indices = other.indices;
 			textures = other.textures;
 			material = other.material;
-			vaoSetup = other.vaoSetup;
+			vaoSetup = false;
 			boundingBox = other.boundingBox;
 
 			// Reconstruct EBO with new indices
 			ebo = EBO(indices);
-			setupMesh();
+			//setupMesh();
 		}
 		return *this;
 	}
@@ -105,8 +106,9 @@ public:
 	void DrawInstanced(Shader& shader, VBO& instanceVBO, GLsizei instanceCount);
 	void DrawInstancedDepthOnly(VBO& instanceVBO, GLsizei instanceCount);
 
-private:
 	VAO vao;
+
+private:
 	EBO ebo;
 	bool vaoSetup;
 	void setupMesh();

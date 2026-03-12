@@ -41,6 +41,15 @@ Mesh::~Mesh()
 	ebo.Delete();
 }
 
+void Mesh::Prewarm()
+{
+	// If it hasn't been sent to the GPU yet, do it now!
+	if (!vaoSetup) {
+		setupMesh();
+		vaoSetup = true;
+	}
+}
+
 void Mesh::DrawInstanced(Shader& shader, VBO& instanceVBO, GLsizei instanceCount)
 {
 	if (instanceCount == 0) {
@@ -249,7 +258,7 @@ void Mesh::SetupInstanceAttributes(VBO& instanceVBO)
 		(void*)bloomOffset);
 	glVertexAttribDivisor(14, 1);
 
-	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	//glBindBuffer(GL_ARRAY_BUFFER, 0);
 	vao.Unbind();
 
 	m_instanceVBOId = instanceVBO.ID;

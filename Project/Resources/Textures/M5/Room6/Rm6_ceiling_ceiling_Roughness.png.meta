@@ -1,0 +1,14 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "004598ffb8ee2283-00047c976202f285",
+        "source": "../../Resources/Textures/M5/Room6/Rm6_ceiling_ceiling_Roughness.png",
+        "compiled": "../../Resources/Textures/M5/Room6/Rm6_ceiling_ceiling_Roughness.dds"
+    },
+    "TextureMetaData": {
+        "type": "roughness",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp"
+    }
+}

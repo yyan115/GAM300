@@ -43,13 +43,27 @@ function M.apply(instance)
     
     -- Get Transform component (cached)
     function instance:GetTransform()
+        if self._transform_cache then
+            return self._transform_cache
+        end
+
+        local directTransform = rawget(self, "_transform")
+        if directTransform then
+            self._transform_cache = directTransform
+            self._transform_fetched = true
+            return self._transform_cache
+        end
+
         if self._transform_fetched then
             return self._transform_cache
         end
         
         if self.GetComponent then
-            self._transform_cache = self:GetComponent("Transform")
-            self._transform_fetched = true
+            local transform = self:GetComponent("Transform")
+            if transform then
+                self._transform_cache = transform
+                self._transform_fetched = true
+            end
         end
         
         return self._transform_cache

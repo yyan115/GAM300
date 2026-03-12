@@ -4,6 +4,7 @@
 #include <memory>
 #include <glm/glm.hpp>
 #include "InstanceBatch.hpp"
+#include "ECS/ECSManager.hpp"
 
 class Model;
 class Material;
@@ -78,6 +79,10 @@ public:
 	void SetFrustum(const Frustum* frustum) { m_frustum = frustum; }
 
 	const InstancingStats& GetStats() const { return m_stats; }
+
+	void PrewarmScene(ECSManager& ecsManager);
+
+	bool WasRenderedInstanced(const ModelRenderComponent& component) const;
 
 private:
 	InstancingManager() = default;

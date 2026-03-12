@@ -36,6 +36,7 @@
 #include <Multi-threading/SequentialSystemOrchestrator.hpp>
 #include <Multi-threading/ParallelSystemOrchestrator.hpp>
 #include "Engine.h"
+#include <Graphics/Instancing/InstancingManager.hpp>
 
 Entity fpsText;
 
@@ -150,6 +151,10 @@ void SceneInstance::Initialize()
 	{
 		systemOrchestrator = std::make_unique<ParallelSystemOrchestrator>();
 	}
+
+	// Prewarm AFTER models are loaded and components are populated
+	InstancingManager::GetInstance().PrewarmScene(ecsManager);
+	ENGINE_LOG_INFO("Instancing prewarmed");
 
 	ENGINE_PRINT("Scene Initialized\n");
 }

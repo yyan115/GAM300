@@ -1,1 +1,1 @@
-Resources/Scenes/03_Loading.scene
+../../Resources/Scenes/04_Level.scene

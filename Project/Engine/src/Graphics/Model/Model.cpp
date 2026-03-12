@@ -846,6 +846,10 @@ bool Model::LoadResource(const std::string& resourcePath, const std::string& ass
         }
 
         CalculateBoundingBox();
+
+        // Now that all meshes are loaded into RAM, push them to the GPU immediately!
+        PrewarmMeshes();
+
         return true;
     }
 
@@ -882,6 +886,13 @@ void Model::ReadModelNode(std::vector<unsigned char>& buffer, size_t& offset, Mo
 bool Model::ReloadResource(const std::string& resourcePath, const std::string& assetPath)
 {
     return LoadResource(resourcePath, assetPath);
+}
+
+void Model::PrewarmMeshes()
+{
+    for (Mesh& mesh : meshes) {
+        mesh.Prewarm();
+    }
 }
 
 std::shared_ptr<AssetMeta> Model::ExtendMetaFile(const std::string& assetPath, std::shared_ptr<AssetMeta> currentMetaData, bool forAndroid)

@@ -18,13 +18,42 @@
 #include <Multi-threading/ParallelSystemOrchestrator.hpp>
 
 #ifdef _WIN32
-#include <windows.h>
-#include <shobjidl.h>   // IFileSaveDialog
-//#include <commdlg.h>    // OPENFILENAME
-#pragma comment(lib, "ole32.lib")
-#pragma comment(lib, "shell32.lib")
+	#include <windows.h>
+	#include <shobjidl.h>   // IFileSaveDialog
+	//#include <commdlg.h>    // OPENFILENAME
+	#pragma comment(lib, "ole32.lib")
+	#pragma comment(lib, "shell32.lib")
 #endif
 #include <Asset Manager/AssetManager.hpp>
+
+namespace {
+std::string NormalizeScenePathForRuntime(const std::string& scenePath)
+{
+    std::string normalized;
+    normalized.reserve(scenePath.size());
+
+    for (char c : scenePath) {
+        if (c == '"' || c == '\'') {
+            continue;
+        }
+        normalized.push_back(c == '\\' ? '/' : c);
+    }
+
+#ifdef EDITOR
+    if (!normalized.empty()) {
+        std::filesystem::path pathObj(normalized);
+        if (!pathObj.is_absolute() && normalized.rfind("Resources/", 0) == 0) {
+            const std::string rootAssetDir = AssetManager::GetInstance().GetRootAssetDirectory();
+            if (!rootAssetDir.empty()) {
+                normalized = (std::filesystem::path(rootAssetDir) / normalized.substr(10)).generic_string();
+            }
+        }
+    }
+#endif
+
+    return normalized;
+}
+}
 
 SceneManager::~SceneManager() {
     //ExitScene();
@@ -37,17 +66,19 @@ SceneManager& SceneManager::GetInstance() {
 
 // Temporary function to load the test scene.
 void SceneManager::LoadTestScene() {
-    ECSRegistry::GetInstance().CreateECSManager("Resources/Scenes/FakeScene.scene");
-    currentScene = std::make_unique<SceneInstance>("Resources/Scenes/FakeScene.scene");
-    currentScenePath = "Resources/Scenes/FakeScene.scene";
-    currentSceneName = "FakeScene";
-    currentScene->Initialize();
+    const std::string testScenePath = NormalizeScenePathForRuntime("Resources/Scenes/FakeScene.scene");
+	ECSRegistry::GetInstance().CreateECSManager(testScenePath);
+	currentScene = std::make_unique<SceneInstance>(testScenePath);
+	currentScenePath = testScenePath;
+	currentSceneName = "FakeScene";
+	currentScene->Initialize();
 }
 
 // Load a new scene from the specified path.
 // The current scene is exited and cleaned up before loading the new scene.
 // Also sets the new scene as the active ECSManager in the ECSRegistry.
 void SceneManager::LoadScene(const std::string& scenePath, bool fromGameCode) {
+    const std::string resolvedScenePath = NormalizeScenePathForRuntime(scenePath);
 
     if (loadState != SceneLoadState::IDLE) {
         ENGINE_PRINT("[SceneManager] Cannot LoadScene while async load is in progress");
@@ -59,12 +90,12 @@ void SceneManager::LoadScene(const std::string& scenePath, bool fromGameCode) {
 
     if (!isDeferredExecution && currentScene &&
         (fromGameCode || !currentScene->updateSynchronized || !currentScene->drawSynchronized)) {
-        ENGINE_PRINT("[SceneManager] Deferring scene load to next frame: " + scenePath);
-        // If the update/draw calls are not synchronized yet, defer loading to the next frame so that the scheduler can finish its work.
-        // If calling from Lua/game code, defer loading to the next frame to allow the function call to be returned properly
-        // before shutting down the scripting system in currentScene->Exit().
+		ENGINE_PRINT("[SceneManager] Deferring scene load to next frame: " + resolvedScenePath);
+		// If the update/draw calls are not synchronized yet, defer loading to the next frame so that the scheduler can finish its work.
+		// If calling from Lua/game code, defer loading to the next frame to allow the function call to be returned properly
+		// before shutting down the scripting system in currentScene->Exit().
         loadSceneNextFrame = true;
-        sceneToLoadNextFrame = scenePath;
+        sceneToLoadNextFrame = resolvedScenePath;
         deferredSceneFromLua = fromGameCode;  // Remember if this was from game code
         return;
     }
@@ -87,31 +118,31 @@ void SceneManager::LoadScene(const std::string& scenePath, bool fromGameCode) {
     {
         currentScene->Exit();
 
-        ECSRegistry::GetInstance().GetECSManager(currentScenePath).ClearAllEntities();
-        ECSRegistry::GetInstance().RenameECSManager(currentScenePath, scenePath);
-    }
-    else {
-        ECSRegistry::GetInstance().CreateECSManager(scenePath);
-    }
+		ECSRegistry::GetInstance().GetECSManager(currentScenePath).ClearAllEntities();
+		ECSRegistry::GetInstance().RenameECSManager(currentScenePath, resolvedScenePath);
+	}
+	else {
+		ECSRegistry::GetInstance().CreateECSManager(resolvedScenePath);
+	}
 
-    // Create and initialize the new scene.
-    currentScene = std::make_unique<SceneInstance>(scenePath);
-    currentScenePath = scenePath;
-    std::filesystem::path p(currentScenePath);
-    currentSceneName = p.stem().generic_string();
+	// Create and initialize the new scene.
+	currentScene = std::make_unique<SceneInstance>(resolvedScenePath);
+	currentScenePath = resolvedScenePath;
+	std::filesystem::path p(currentScenePath);
+	currentSceneName = p.stem().generic_string();
 
     // MUST MAKE SURE JOLTPHYSICS IS INITIALIZED FIRST.
     currentScene->InitializeJoltPhysics();
 
-    // Deserialize the new scene data.
-    Serializer::DeserializeScene(scenePath);
-
-    // Initialize the new scene.
-    currentScene->Initialize();
+	// Deserialize the new scene data.
+	Serializer::DeserializeScene(resolvedScenePath);
+    
+	// Initialize the new scene.
+	currentScene->Initialize();
 
     // Save this as the last opened scene (for editor persistence)
 #ifdef EDITOR
-    SaveLastOpenedScenePath(scenePath);
+	SaveLastOpenedScenePath(resolvedScenePath);
 #endif
 #else
 #pragma region NEW
@@ -316,13 +347,7 @@ void SceneManager::ExitScene() {
 void SceneManager::LoadSceneAsync(const std::string& scenePath, bool fromGameCode) {
     if (loadState != SceneLoadState::IDLE) return;
 
-    // Strip ALL quote characters from path
-    asyncScenePath.clear();
-    for (char c : scenePath) {
-        if (c != '"' && c != '\'') {
-            asyncScenePath += c;
-        }
-    }
+    asyncScenePath = NormalizeScenePathForRuntime(scenePath);
 
     ENGINE_PRINT("[SceneManager] LoadSceneAsync raw: [" + scenePath + "]");
     ENGINE_PRINT("[SceneManager] LoadSceneAsync cleaned: [" + asyncScenePath + "]");
