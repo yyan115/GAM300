@@ -128,7 +128,7 @@ return Component {
 
         -- === Hit response ===
         HurtDuration      = 2.0,    -- Seconds spent in the Hurt state after taking a hit.
-        HitIFrame         = 0.2,    -- Invincibility window after a hit (seconds). Prevents hit-stacking.
+        HitIFrame         = 0.05,    -- Invincibility window after a hit (seconds). Prevents hit-stacking.
         KnockbackStrength = 5.0,    -- FALLBACK only. Per-attack knockback comes from ComboManager's
                                     -- attack_performed payload (light_1=20, lift=80, air_slam=180, etc).
                                     -- This value is used only when no knockback is in the hit payload
@@ -369,7 +369,7 @@ return Component {
                 end
 
                 local dmg      = payload.dmg or 1
-                local hitType  = payload.hitType or payload.src or "MELEE"
+                local hitType  = string.upper(payload.hitType or payload.src or "MELEE")
                 local knockback = payload.knockback  -- may be nil; ApplyHit will fall back to KnockbackStrength
                 self:ApplyHit(dmg, hitType, knockback)
             end)
@@ -399,7 +399,7 @@ return Component {
                 end
 
                 local damage    = payload.damage or 10
-                local hitType   = payload.hitType or "COMBO"
+                local hitType   = string.upper(payload.hitType or "COMBO")
                 local knockback = payload.knockback  -- may be nil; ApplyHit will fall back to KnockbackStrength
                 self:ApplyHit(damage, hitType, knockback)
             end)
@@ -1523,7 +1523,15 @@ return Component {
     -- [v2 FIX] _juggleY accumulator removed. CC owns Y entirely.
     --          SetJuggleMode disables stickToFloor; mJuggleVY drives ExtendedUpdate.
     -- ==========================================================================
+    -- TODO (Sven): ApplyJuggleLift is disabled — air lift hit detection is inconsistent.
+    -- The enemy does not reliably become airborne when the LIFT attack connects.
+    -- Root cause is suspected to be in how the AttackHitbox collider overlaps at
+    -- the moment of RigidBody enable. Needs engine-level investigation.
     ApplyJuggleLift = function(self)
+        -- Intentionally left empty until the lift system is revisited.
+        -- _isJuggled remains false, so all downstream juggle logic (AIR, SLAM,
+        -- the juggle physics block in Update) stays inert.
+
         -- Cancel existing knockback.
         self._kbT = 0
         self._kbVX, self._kbVZ = 0, 0
@@ -1556,7 +1564,10 @@ return Component {
     end,
 
     ApplyJuggleAirHit = function(self)
-        if not self._isJuggled then return end
+        if not self._isJuggled then
+            print(string.format("[EnemyAI] AIR hit BLOCKED: enemy is not airborne (isJuggled=false)"))
+            return
+        end
         self._kbT = 0
         self._kbVX, self._kbVZ = 0, 0
         -- Boost upward so the enemy doesn't fall between air hits.
@@ -1570,6 +1581,7 @@ return Component {
         -- Driving a grounded enemy underground then snapping back looked like a lift.
         -- Just apply strong downward knockback visually — no arc needed.
         if not self._isJuggled then
+            print(string.format("[EnemyAI] SLAM BLOCKED: enemy is not airborne — applying ground knockback instead"))
             self:ApplyKnockback(self.KnockbackStrength, self.KnockbackDuration)
             return
         end
@@ -1583,21 +1595,27 @@ return Component {
     end,
 
     ApplyHit = function(self, dmg, hitType, knockback)
-        if self.dead then return end
+        if self.dead then
+            print(string.format("[EnemyAI] ApplyHit BLOCKED [%s]: enemy is already dead", tostring(hitType)))
+            return
+        end
 
         -- Juggle hits (LIFT/AIR/SLAM) must never be gated by the I-frame.
         -- The combo chain depends on landing these rapidly in sequence.
         -- iFrame is only meant to prevent stacking on ground hits.
         local isJuggleHit = (hitType == "LIFT" or hitType == "AIR" or hitType == "SLAM")
 
-        if not isJuggleHit and (self._hitLockTimer or 0) > 0 then return end
+        if not isJuggleHit and (self._hitLockTimer or 0) > 0 then
+            print(string.format("[EnemyAI] ApplyHit BLOCKED [%s]: iFrame active (%.3fs remaining)", tostring(hitType), self._hitLockTimer or 0))
+            return
+        end
         if self._featherSkillBufferTimer <= 0 then
             self._hurtTriggeredByFeather = false
         end
 
         -- Juggle hits also must not set the iFrame, or the next hit in the chain gets blocked.
         if hitType ~= "FEATHER" and not isJuggleHit then
-            self._hitLockTimer = self.config.HitIFrame or 0.1
+            self._hitLockTimer = self.config.HitIFrame or 0.05
         end
 
         self.health = self.health - (dmg or 1)
@@ -1609,34 +1627,33 @@ return Component {
         --   SLAM → ForceChange("Hurt") fired on the same frame as the slam velocity
         --   was set, which under certain timing re-triggered ApplyJuggleLift on the
         --   Hurt state's next hit event, making the enemy appear to "lift" on slam.
-        if hitType == "LIFT" then
-            self:ApplyJuggleLift()
-            -- Still squash on hit for feel, but skip FSM hurt transition.
-            self:_squashTrigger("horizontal", 0.6)
-            AudioHelper.playRandomSFX(self._audio, self.enemyHurtSFX)
-            if self.health <= 0 then
-                self.health = 0
-                self:_squashTrigger("vertical", 0.5)
-                AudioHelper.playRandomSFX(self._audio, self.enemyDeathSFX)
-                if _G.event_bus and _G.event_bus.publish then
-                    _G.event_bus.publish("enemy_died", { entityId = self.entityId })
+        -- TODO : LIFT juggle is disabled — behaviour is inconsistent and needs
+        -- investigation. LIFT hits currently fall through to normal hurt/knockback.
+        -- if hitType == "LIFT" then
+        --     self:ApplyJuggleLift()
+        --     ...
+        -- end
+        if hitType == "AIR" then
+            if self:IsFlying() then
+                -- Flying enemy is airborne via hover, not the juggle system.
+                -- Skip juggle boost and fall through to the normal hurt FSM below.
+                print(string.format("[EnemyAI] AIR hit on flying enemy — treating as normal hit"))
+                self:ApplyKnockback(knockback or self.KnockbackStrength, self.KnockbackDuration)
+                -- intentional fall-through: no return here
+            else
+                self:ApplyJuggleAirHit()
+                self:_squashTrigger("horizontal", 0.4)
+                if self.health <= 0 then
+                    self.health = 0
+                    self:_squashTrigger("vertical", 0.5)
+                    AudioHelper.playRandomSFX(self._audio, self.enemyDeathSFX)
+                    if _G.event_bus and _G.event_bus.publish then
+                        _G.event_bus.publish("enemy_died", { entityId = self.entityId })
+                    end
+                    self.fsm:Change("Death", self.states.Death)
                 end
-                self.fsm:Change("Death", self.states.Death)
+                return
             end
-            return
-        elseif hitType == "AIR" then
-            self:ApplyJuggleAirHit()
-            self:_squashTrigger("horizontal", 0.4)
-            if self.health <= 0 then
-                self.health = 0
-                self:_squashTrigger("vertical", 0.5)
-                AudioHelper.playRandomSFX(self._audio, self.enemyDeathSFX)
-                if _G.event_bus and _G.event_bus.publish then
-                    _G.event_bus.publish("enemy_died", { entityId = self.entityId })
-                end
-                self.fsm:Change("Death", self.states.Death)
-            end
-            return
         elseif hitType == "SLAM" then
             self:ApplyJuggleSlam()
             -- No squash here — landing squash fires in the juggle block on touchdown.
