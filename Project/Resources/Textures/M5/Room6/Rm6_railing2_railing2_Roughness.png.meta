@@ -1,0 +1,14 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "004598ffae9f0f94-00047c985002f2d5",
+        "source": "../../Resources/Textures/M5/Room6/Rm6_railing2_railing2_Roughness.png",
+        "compiled": "../../Resources/Textures/M5/Room6/Rm6_railing2_railing2_Roughness.dds"
+    },
+    "TextureMetaData": {
+        "type": "roughness",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp"
+    }
+}

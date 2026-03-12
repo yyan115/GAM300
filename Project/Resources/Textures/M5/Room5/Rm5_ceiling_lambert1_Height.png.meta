@@ -6,7 +6,7 @@
         "compiled": "../../Resources/Textures/M5/Room5/Rm5_ceiling_lambert1_Height.dds"
     },
     "TextureMetaData": {
-        "type": "height",
+        "type": "diffuse",
         "flipUVs": false,
         "generateMipmaps": true,
         "textureWrapMode": "Clamp"

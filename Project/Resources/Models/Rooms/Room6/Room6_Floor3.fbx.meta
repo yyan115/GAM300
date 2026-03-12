@@ -1,9 +1,9 @@
 {
     "AssetMetaData": {
         "version": 7,
-        "guid": "00269aea16cbaaa9-00047c476400e77d",
-        "source": "../../Resources/Models/Rooms/Room5/Room6_Floor3.fbx",
-        "compiled": "../../Resources/Models/Rooms/Room5/Room6_Floor3.mesh"
+        "guid": "004598ffacc79335-00047c9ddc030c49",
+        "source": "../../Resources/Models/Rooms/Room6/Room6_Floor3.fbx",
+        "compiled": "../../Resources/Models/Rooms/Room6/Room6_Floor3.mesh"
     },
     "ModelMetaData": {
         "optimizeMeshes": true

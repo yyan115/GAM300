@@ -6,7 +6,7 @@
         "compiled": "../../Resources/Textures/M5/Room5/Rm5_wall3_wall3_Height.dds"
     },
     "TextureMetaData": {
-        "type": "height",
+        "type": "diffuse",
         "flipUVs": false,
         "generateMipmaps": true,
         "textureWrapMode": "Clamp"

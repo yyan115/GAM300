@@ -1,0 +1,14 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "004598ffbf9bb376-00047c977202f29d",
+        "source": "../../Resources/Textures/M5/Room6/Rm6_floor3_floor3_Height.png",
+        "compiled": "../../Resources/Textures/M5/Room6/Rm6_floor3_floor3_Height.dds"
+    },
+    "TextureMetaData": {
+        "type": "height",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp"
+    }
+}

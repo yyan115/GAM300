@@ -1,0 +1,14 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "004598ff82ea3b6c-00047c984c02f2cd",
+        "source": "../../Resources/Textures/M5/Room6/Rm6_railing2_railing2_BaseColor.png",
+        "compiled": "../../Resources/Textures/M5/Room6/Rm6_railing2_railing2_BaseColor.dds"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp"
+    }
+}

@@ -1,0 +1,11 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "004598ff88f852e7-00047cacb403ed4b",
+        "source": "../../Resources/Models/Rooms/BossRoom/BossRoom_Shrine.fbx",
+        "compiled": "../../Resources/Models/Rooms/BossRoom/BossRoom_Shrine.mesh"
+    },
+    "ModelMetaData": {
+        "optimizeMeshes": true
+    }
+}
