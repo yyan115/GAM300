@@ -260,6 +260,14 @@ return Component {
                 self._targetPos.z = payload.z or payload[3] or 0.0
                 self._teleportToPlayer = true
             end)
+
+            self._cameraShakeSub = event_bus.subscribe("camera_shake", function(p)
+                if not p then return end
+                self._shakeTimer     = 0.0
+                self._shakeDuration  = p.duration  or self.ShakeDuration  or 0.4
+                self._shakeIntensity = p.intensity or self.ShakeIntensity or 0.3
+                self._shakeFrequency = p.frequency or self.ShakeFrequency or 25.0
+            end)
         end
     end,
 
@@ -271,7 +279,7 @@ return Component {
             for _, sub in ipairs({
                 "_posSub", "_chainAimSub",
                 "_cinematicActiveSub", "_cinematicTargetSub",
-                "_playerRespawnedSub",
+                "_playerRespawnedSub", "_cameraShakeSub",
             }) do
                 if self[sub] then
                     event_bus.unsubscribe(self[sub])

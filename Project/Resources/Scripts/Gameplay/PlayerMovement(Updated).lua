@@ -186,7 +186,7 @@ return Component {
         -- TO ADD per-attack feel: edit lunge table in ComboManager, not here.
 
         -- === Chain weapon ===
-        TensionScale = 0.85,  -- Resistance to outward movement when chain is taut. 0=none, 1=full block.
+        TensionScale = 1.3,  -- Resistance to outward movement when chain is taut. 0=none, 1=full block.
         -- TO ADD chain swing / pull-toward modes: add fields here.
 
         -- === Aerial combat ===
@@ -206,10 +206,10 @@ return Component {
         AirSlamAcceleration = 80.0,
         AirSlamMaxSpeed     = 50.0,
         SlamShakeIntensity  =  0.6,
-        SlamShakeDuration   =  0.45,
-        SlamShakeFrequency  = 18.0,
+        SlamShakeDuration   =  0.7,
+        SlamShakeFrequency  = 25.0,
         LandingDuration     = 0.4,   -- Seconds of recovery before movement restores.
-        RollHeightThreshold = 2.5,   -- Fall distance (world units) that triggers roll instead of soft land.
+        RollHeightThreshold = 1.0,   -- Fall distance (world units) that triggers roll instead of soft land.
         -- TO ADD landing SFX variation or ledge-grab: add fields here.
 
         -- === Squash & stretch ===
@@ -218,8 +218,8 @@ return Component {
         --                  Scales all events — landing, dash, chain.
         -- SquashDuration : seconds to hit peak squash. Match to impact frame.
         -- StretchDuration: seconds to spring back to normal.
-        SquashStrength  = 0.5,
-        SquashDuration  = 0.07,
+        SquashStrength  = 0.9,
+        SquashDuration  = 0.15,
         StretchDuration = 0.22,
 
         -- === Feel / timing ===
@@ -428,11 +428,12 @@ return Component {
                 self._lungeDirZ = dirZ
             elseif data and data.isSlam then
                 self._isAirSlam  = true
+                self._isJumping  = true
                 self._slamVelY   = self.AirSlamInitialSpeed or 2.0
                 self._velX       = 0
                 self._velZ       = 0
                 self._lungeTimer = 0
-                self._animator:SetBool("IsSlamming", true)
+                if self._animator then self._animator:SetBool("IsSlamming", true) end
             elseif data and data.isAerial then
                 -- Air time extension: restore Y velocity to AirLiftTargetVelY only when
                 -- (a) already airborne, (b) currently falling (curVelY < 0),
@@ -441,7 +442,7 @@ return Component {
                 -- The cooldown prevents consecutive hits stacking velocity
                 -- before the previous lift has had time to decay under gravity.
                 if not CharacterController.IsGrounded(self._controller)
-                    and self._airLiftCooldownTimer <= 0
+                    and (self._airLiftCooldownTimer or 0) <= 0
                 then
                     local curVel  = CharacterController.GetVelocity(self._controller)
                     local curVelY = curVel and curVel.y or 0
@@ -478,9 +479,14 @@ return Component {
             self._playerCanMove = data.canMove ~= false
             if not _G.player_is_attacking then
                 self._lungeTimer = 0
-                self._isAirSlam  = false
-                self._slamVelY   = 0
-                if self._animator then self._animator:SetBool("IsSlamming", false) end
+                -- Do NOT cancel an active air slam here — the descent loop owns
+                -- its own termination once IsGrounded fires. Only clear if already
+                -- on the ground (e.g. combo cancelled before leaving the floor).
+                if not self._isAirSlam or CharacterController.IsGrounded(self._controller) then
+                    self._isAirSlam = false
+                    self._slamVelY  = 0
+                    if self._animator then self._animator:SetBool("IsSlamming", false) end
+                end
             end
         end)
 
@@ -1317,20 +1323,57 @@ return Component {
         -- SetVelocity writes directly to the physics body, overriding CC gravity
         -- accumulation and giving full manual control of the descent curve.
         if self._isAirSlam then
-            if not isGrounded then
+            local slamPos = CharacterController.GetPosition(self._controller)
+            -- Raycast straight down from feet. Ray length covers max distance
+            -- the player can travel in one frame at full slam speed (~50/60 = 0.84)
+            -- plus a small skin buffer so we never tunnel through thin floors.
+            -- Ray covers exactly one frame of travel plus a small skin buffer.
+            -- No fixed minimum — that was causing early hits while still airborne.
+            local rayLen  = (self._slamVelY * dt) + 0.15
+            local slamHit = false
+            local slamHitDist = 0
+            if slamPos and Physics and Physics.Raycast then
+                local ok, dist = pcall(function()
+                    return Physics.Raycast(slamPos.x, slamPos.y + 0.05, slamPos.z, 0, -1, 0, rayLen)
+                end)
+                slamHitDist = (ok and dist) or 0
+                slamHit = ok and dist and dist > 0
+            end
+            print(string.format("[SLAM] pos.y=%.3f | rayLen=%.3f | slamHit=%s | hitDist=%.3f | _slamVelY=%.2f",
+                slamPos and slamPos.y or -999, rayLen, tostring(slamHit), slamHitDist, self._slamVelY))
+
+            if not slamHit then
                 self._slamVelY = math.min(
                     self._slamVelY + (self.AirSlamAcceleration or 80.0) * dt,
                     self.AirSlamMaxSpeed or 50.0
                 )
-                -- Zero XZ so the player dives straight down.
-                -- SetVelocity overrides the full velocity vector each frame.
                 CharacterController.SetVelocity(self._controller, 0, -self._slamVelY, 0)
             else
-                self._isAirSlam   = false
-                self._slamVelY    = 0
-                self._slamLanding = true
-                self._animator:SetBool("IsSlamming", false)
-                self._animator:SetTrigger("SlamLanded")
+                -- Hit floor via raycast — fire everything immediately.
+                print(string.format("[SLAM] HIT FLOOR at pos.y=%.3f | firing effects", slamPos and slamPos.y or -999))
+                self._isAirSlam = false
+                self._isJumping = false
+                self._slamVelY  = 0
+                CharacterController.SetVelocity(self._controller, 0, 0, 0)
+                if self._animator then
+                    self._animator:SetBool("IsSlamming", false)
+                    self._animator:SetTrigger("SlamLanded")
+                end
+                self:_squashTrigger("vertical", 1.0)
+                print(string.format("[SLAM] event_bus=%s", tostring(event_bus ~= nil)))
+                if event_bus and event_bus.publish then
+                    event_bus.publish("camera_shake", {
+                        intensity = self.SlamShakeIntensity or 0.6,
+                        duration  = self.SlamShakeDuration  or 0.45,
+                        frequency = self.SlamShakeFrequency or 18.0,
+                    })
+                    print("[SLAM] camera_shake published")
+                    event_bus.publish("fx_chromatic", {
+                        intensity = 0.8,
+                        duration  = 0.3,
+                    })
+                    print("[SLAM] fx_chromatic published")
+                end
             end
         elseif not isJumping then
             if isMoving then
@@ -1461,35 +1504,9 @@ return Component {
                 local fallDist = (self._peakAirY or landY) - landY
 
                 local intensity, hardLand
-                if self._slamLanding then
-                    intensity         = 1.0
-                    hardLand          = true
-                    self._slamLanding = false
-
-                    -- Camera shake: payload order is intensity, duration, frequency
-                    if event_bus and event_bus.publish then
-                        event_bus.publish("camera_shake", {
-                            intensity = self.SlamShakeIntensity  or 0.6,
-                            duration  = self.SlamShakeDuration   or 0.45,
-                            frequency = self.SlamShakeFrequency  or 18.0,
-                        })
-                        -- Chromatic aberration on impact.
-                        -- TODO: confirm payload fields with your camera_effects handler.
-                        -- Replace the values below with whatever your system expects.
-                        event_bus.publish("camera_effects", {
-                            chromaticAberration = {
-                                intensity = 0.8,   -- 0–1 strength of the split
-                                duration  = 0.3,   -- seconds before fading back to 0
-                            },
-                        })
-                    end
-                else
-                    -- Landing intensity: small hop = 0.3, big drop = 1.0
-                    intensity = math.max(0.3, math.min(1.0, fallDist / 3.0))
-                    hardLand  = fallDist >= (self.RollHeightThreshold or 2.5)
-                    print(string.format("[Landing] fallDist=%.2f intensity=%.2f roll=%s",
-                        fallDist, intensity, tostring(hardLand)))
-                end
+                -- Landing intensity: small hop = 0.3, big drop = 1.0
+                intensity = math.max(0.3, math.min(1.0, fallDist / 3.0))
+                hardLand  = fallDist >= (self.RollHeightThreshold or 2.5)
 
                 self:_squashTrigger("vertical", intensity)
 
