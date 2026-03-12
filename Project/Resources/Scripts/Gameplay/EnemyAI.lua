@@ -129,8 +129,11 @@ return Component {
         -- === Hit response ===
         HurtDuration      = 2.0,    -- Seconds spent in the Hurt state after taking a hit.
         HitIFrame         = 0.2,    -- Invincibility window after a hit (seconds). Prevents hit-stacking.
-        KnockbackStrength = 12.0,   -- Speed of the knockback impulse (world units/sec).
-        KnockbackDuration = 0.5,    -- Seconds the knockback velocity is applied.
+        KnockbackStrength = 5.0,    -- FALLBACK only. Per-attack knockback comes from ComboManager's
+                                    -- attack_performed payload (light_1=20, lift=80, air_slam=180, etc).
+                                    -- This value is used only when no knockback is in the hit payload
+                                    -- (e.g. chain hits, debug hits via Keyboard.IsDigitPressed).
+        KnockbackDuration = 0.35,   -- Seconds the knockback velocity is applied.
 
         -- === Chain hook ===
         HookedDuration     = 4.0,     -- Seconds the enemy stays hooked before breaking free.
@@ -362,9 +365,10 @@ return Component {
                     return
                 end
 
-                local dmg = payload.dmg or 1
-                local hitType = payload.hitType or payload.src or "MELEE"
-                self:ApplyHit(dmg, hitType)
+                local dmg      = payload.dmg or 1
+                local hitType  = payload.hitType or payload.src or "MELEE"
+                local knockback = payload.knockback  -- may be nil; ApplyHit will fall back to KnockbackStrength
+                self:ApplyHit(dmg, hitType, knockback)
             end)
             
             self._frozenBycinematic = false
@@ -393,9 +397,10 @@ return Component {
                     return
                 end
 
-                local damage = payload.damage or 10
-                local hitType = payload.hitType or "COMBO"
-                self:ApplyHit(damage, hitType)
+                local damage    = payload.damage or 10
+                local hitType   = payload.hitType or "COMBO"
+                local knockback = payload.knockback  -- may be nil; ApplyHit will fall back to KnockbackStrength
+                self:ApplyHit(damage, hitType, knockback)
             end)
 
             self._chainEndpointHitSub = _G.event_bus.subscribe("chain.endpoint_hit_entity", function(payload)
@@ -461,9 +466,6 @@ return Component {
 
         if self.health <= 0 and not self.dead then
             self.dead = true
-            if _G.event_bus and _G.event_bus.publish then
-                _G.event_bus.publish("enemy_died", { entityId = self.entityId })
-            end
         end
 
         if self.dead then
@@ -507,18 +509,20 @@ return Component {
         --     self:MoveCC(1.0, 0.0, dt) -- 1 unit/sec to +X
         -- end
 
-        if Keyboard.IsDigitPressed(1) then
+        if Input.IsActionJustPressed("Interact") then
             self:ApplyHook(self.HookedDuration)
         end
 
+        if Keyboard.IsDigitPressed(1) then
+            self:ApplyHook(self.HookedDuration)
+        end
         if Keyboard.IsDigitPressed(3) then
             self:ApplyHit(10)
         end
-
         if Keyboard.IsDigitPressed(7) then
             self.IsPassive = not self.IsPassive
         end
-        
+
         local dtSec = toDtSec(dt)
         self._hitLockTimer = math.max(0, (self._hitLockTimer or 0) - dtSec)
         self._featherSkillBufferTimer = math.max(0, (self._featherSkillBufferTimer or 0) - dtSec)
@@ -630,6 +634,11 @@ return Component {
                         CharacterController.SetJuggleMode(self._controller, true, self._juggleVY)
                     end)
                 end
+                -- Write position NOW — CC sync block below will read _juggleY and agree
+                local x, _, z = self:GetPosition()
+                if x ~= nil then
+                    self:SetPosition(x, self._juggleY, z)
+                end
             end
         end
 
@@ -654,20 +663,17 @@ return Component {
             self._kbT = self._kbT - dtSec
             if self._kbT < 0 then self._kbT = 0 end
 
-            -- convert kb velocity (units/sec) -> displacement this frame
-            local mx = (self._kbVX or 0) * dtSec
-            local mz = (self._kbVZ or 0) * dtSec
-
-            -- clamp displacement so it never "teleports"
-            local maxStep = 0.20  -- tune (0.15 - 0.30)
-            if mx >  maxStep then mx =  maxStep end
-            if mx < -maxStep then mx = -maxStep end
-            if mz >  maxStep then mz =  maxStep end
-            if mz < -maxStep then mz = -maxStep end
-
             if self:IsFlying() then
-                -- Move transform XZ, then resync CC to that exact position
-                local x,y,z = self:GetPosition()
+                -- Flying: we drive the transform directly, so dt-scale here is correct.
+                local mx = (self._kbVX or 0) * dtSec
+                local mz = (self._kbVZ or 0) * dtSec
+                -- clamp per-frame displacement so it never teleports
+                local maxStep = 0.20
+                if mx >  maxStep then mx =  maxStep end
+                if mx < -maxStep then mx = -maxStep end
+                if mz >  maxStep then mz =  maxStep end
+                if mz < -maxStep then mz = -maxStep end
+                local x, y, z = self:GetPosition()
                 local nx, nz = x + mx, z + mz
                 self:SetPosition(nx, y, nz)
                 if self._controller and CharacterController.SetPosition then
@@ -676,7 +682,12 @@ return Component {
                     end)
                 end
             else
-                CharacterController.Move(self._controller, mx, 0, mz)
+                -- FIX: CC.Move stores mVelocity; CharacterController::Update then calls
+                -- ExtendedUpdate(deltaTime, ...) which multiplies velocity by dt internally.
+                -- Passing a dt-pre-scaled displacement here caused double-dt scaling,
+                -- making knockback, lift, and slam effectively invisible (force ≈ 1/60th
+                -- of intended). Pass raw velocity (units/sec) — no dt scaling in Lua.
+                CharacterController.Move(self._controller, self._kbVX or 0, 0, self._kbVZ or 0)
             end
         end
 
@@ -685,19 +696,18 @@ return Component {
             --CharacterController.UpdateAll(dtSec)
         end
 
-        -- Sync Transform from CC. During juggle: CC owns Y via SetJuggleMode so
-        -- we read CC position normally — it now reflects the juggle arc.
+        -- Sync Transform from CC.
+        -- During juggle: NEVER read Y from CC — CC still clamps to ground.
+        -- _juggleY was already written to transform inside the juggle block above.
         if self._controller then
             local pos = CharacterController.GetPosition(self._controller)
             if pos then
-                if not self:IsFlying() then
-                    if self._isJuggled then
-                        -- CC Y is driven by juggle mode — trust it directly
-                        self:SetPosition(pos.x, pos.y, pos.z)
-                    else
-                        local groundY = (Nav and Nav.GetGroundY) and Nav.GetGroundY(self.entityId) or pos.y
-                        self:SetPosition(pos.x, groundY, pos.z)
-                    end
+                if self._isJuggled then
+                    -- XZ from CC is fine; Y must come from our juggle accumulator
+                    self:SetPosition(pos.x, self._juggleY, pos.z)
+                elseif not self:IsFlying() then
+                    local groundY = (Nav and Nav.GetGroundY) and Nav.GetGroundY(self.entityId) or pos.y
+                    self:SetPosition(pos.x, groundY, pos.z)
                 else
                     local x, y, z = self:GetPosition()
                     if x ~= nil then self:SetPosition(pos.x, y, pos.z) end
@@ -1551,9 +1561,21 @@ return Component {
 
     ApplyJuggleAirHit = function(self)
         if not self._isJuggled then return end
+        -- FIX: cancel any active knockback. Each AIR hit was calling ApplyKnockback
+        -- (via ApplyHit) before reaching here, which set _kbVX/VZ/_kbT and caused
+        -- the enemy to slide XZ uncontrollably during the juggle.
+        self._kbT = 0
+        self._kbVX, self._kbVZ = 0, 0
         -- Boost upward so the enemy doesn't fall between air hits
         local boost = tonumber(self.JuggleAirBoost) or 4.0
         self._juggleVY = math.max(self._juggleVY or 0, boost)
+        -- Also zero CC's internal mVelocity XZ so no stale horizontal velocity
+        -- bleeds in through mJuggleMode's XZ passthrough this frame.
+        if self._controller then
+            pcall(function()
+                CharacterController.Move(self._controller, 0, 0, 0)
+            end)
+        end
         --print(string.format("[EnemyAI] ApplyJuggleAirHit: juggleVY=%.2f", self._juggleVY or 0))
     end,
 
@@ -1567,10 +1589,22 @@ return Component {
         self._isJuggled = true
         self._kbT       = 0
         self._kbVX, self._kbVZ = 0, 0
+        -- FIX: must enable juggle mode here, same as ApplyJuggleLift does.
+        -- Without this, CC's stickToFloor (-0.2/frame) actively resists the
+        -- downward slam velocity, making the slam do nothing visible.
+        if self._controller then
+            pcall(function()
+                CharacterController.SetJuggleMode(self._controller, true, self._juggleVY)
+            end)
+            -- Also zero CC mVelocity XZ so stale knockback doesn't ride the slam down.
+            pcall(function()
+                CharacterController.Move(self._controller, 0, 0, 0)
+            end)
+        end
         --print(string.format("[EnemyAI] ApplyJuggleSlam: juggleY=%.2f juggleVY=%.2f", self._juggleY, self._juggleVY))
     end,
 
-    ApplyHit = function(self, dmg, hitType)
+    ApplyHit = function(self, dmg, hitType, knockback)
         if self.dead then return end
         if (self._hitLockTimer or 0) > 0 then return end
         if self._featherSkillBufferTimer <= 0 then
@@ -1584,16 +1618,26 @@ return Component {
 
         self.health = self.health - (dmg or 1)
         print(string.format("[EnemyAI] Remaining health: %d", self.health))
-        self:ApplyKnockback(self.KnockbackStrength, self.KnockbackDuration)
 
         -- Aerial juggle routing: lift launches the enemy up, air hits maintain
         -- height, slam drives them to the floor.
+        -- FIX: ApplyKnockback must NOT be called for LIFT/AIR/SLAM. These hit
+        -- types are fully owned by the juggle system. Calling ApplyKnockback
+        -- first and then cancelling it inside the juggle functions created a
+        -- frame-ordering dependency: if OnTriggerEnter fires during the physics
+        -- step, mVelocity could be in an inconsistent state when CharacterController
+        -- ::Update runs, so the enemy never actually left the ground on LIFT hits.
         if hitType == "LIFT" then
             self:ApplyJuggleLift()
         elseif hitType == "AIR" then
             self:ApplyJuggleAirHit()
         elseif hitType == "SLAM" then
             self:ApplyJuggleSlam()
+        else
+            -- Only ground/combo hits get XZ knockback.
+            -- Use per-attack knockback from ComboManager payload if provided,
+            -- otherwise fall back to the KnockbackStrength field.
+            self:ApplyKnockback(knockback or self.KnockbackStrength, self.KnockbackDuration)
         end
         --print(string.format("[EnemyAI] ApplyHit: hitType=%s | isJuggled=%s | juggleVY=%.2f | health=%d", tostring(hitType), tostring(self._isJuggled), self._juggleVY or 0, self.health))
 
@@ -1602,6 +1646,9 @@ return Component {
             -- Death collapse: vertical squash at half intensity — visible but not cartoony
             self:_squashTrigger("vertical", 0.5)
             AudioHelper.playRandomSFX(self._audio, self.enemyDeathSFX)
+            if _G.event_bus and _G.event_bus.publish then
+                _G.event_bus.publish("enemy_died", { entityId = self.entityId })
+            end
             self.fsm:Change("Death", self.states.Death)
             return
         end

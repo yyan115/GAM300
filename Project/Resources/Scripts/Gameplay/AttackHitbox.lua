@@ -18,7 +18,8 @@ return Component {
     Awake = function(self)
         self._active = false
         self._hitThisSwing = {}
-        self._currentDamage = self.damage or 10
+        self._currentDamage    = self.damage or 10
+        self._currentKnockback = 0
         self._subscribed = false
         self._playerEntityId = nil
         self._rb = nil
@@ -44,7 +45,12 @@ return Component {
             self._subAttack = event_bus.subscribe("attack_performed", function(data)
                 self._active = true
                 self._hitThisSwing = {}
-                self._currentDamage = (data and data.damage) or self.damage or 10
+                self._currentDamage    = (data and data.damage)    or self.damage or 10
+                -- FIX: store knockback from ComboManager payload so OnTriggerEnter
+                -- can forward it to EnemyAI. Previously this was never stored, so
+                -- deal_damage_to_entity was always published without a knockback field,
+                -- causing EnemyAI to fall back to its flat KnockbackStrength every hit.
+                self._currentKnockback = (data and data.knockback) or 0
                 -- Determine hit type so EnemyAI can apply the right juggle response.
                 if data and data.isSlam then
                     self._currentHitType = "SLAM"
@@ -54,12 +60,10 @@ return Component {
                     self._currentHitType = "AIR"
                 else
                     self._currentHitType = "COMBO"
-                print(string.format("[AttackHitbox] attack_performed: hitType=%s damage=%d active=%s", self._currentHitType, self._currentDamage, tostring(self._active)))
                 end
-                print(string.format("[AttackHitbox] HIT WINDOW OPEN: hitType=%s damage=%d", self._currentHitType, self._currentDamage))
+                print(string.format("[AttackHitbox] HIT WINDOW OPEN: hitType=%s damage=%d knockback=%.1f", self._currentHitType, self._currentDamage, self._currentKnockback))
                 if self._rb then self._rb:SetEnabled(true) end
             end)
-
             -- Hit window closes: pull the body out on every state change — clears all contact state.
             -- This means attack→attack transitions also cycle the RB off, so OnTriggerEnter
             -- fires fresh for the next swing even if the enemy is already inside the collider.
@@ -109,11 +113,14 @@ return Component {
 
         if event_bus and event_bus.publish then
             event_bus.publish("deal_damage_to_entity", {
-                entityId = targetId,
-                damage   = self._currentDamage,
-                hitType  = self._currentHitType or "COMBO",
+                entityId  = targetId,
+                damage    = self._currentDamage,
+                hitType   = self._currentHitType or "COMBO",
+                -- FIX: forward knockback from ComboManager so EnemyAI uses the
+                -- per-attack value instead of its flat KnockbackStrength fallback.
+                knockback = self._currentKnockback or 0,
             })
-            print(string.format("[AttackHitbox] deal_damage_to_entity published: entity=%s hitType=%s dmg=%d", tostring(targetId), tostring(self._currentHitType), self._currentDamage))
+            print(string.format("[AttackHitbox] deal_damage_to_entity published: entity=%s hitType=%s dmg=%d knockback=%.1f", tostring(targetId), tostring(self._currentHitType), self._currentDamage, self._currentKnockback or 0))
             --print("[AttackHitbox] Dealt " .. tostring(self._currentDamage)
             --    .. " damage to entity " .. tostring(targetId))
         end
