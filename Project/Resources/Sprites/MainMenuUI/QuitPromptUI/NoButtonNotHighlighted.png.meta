@@ -1,0 +1,14 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "006a1317974f3b7d-00047ca88e000005",
+        "source": "../../Resources/Sprites/MainMenuUI/QuitPromptUI/NoButtonNotHighlighted.png",
+        "compiled": "../../Resources/Sprites/MainMenuUI/QuitPromptUI/NoButtonNotHighlighted.dds"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": true,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp"
+    }
+}
