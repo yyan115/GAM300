@@ -119,29 +119,9 @@ return Component {
             end
         end
 
-        -- Show/hide tooltip based on proximity to an unactivated checkpoint
-        if foundNearCheckpoint and not self._tooltipShown then
-            self._nearCheckpoint = foundNearCheckpoint
-            self:_setTooltipVisible(true)
-            self._tooltipShown = true
-        elseif not foundNearCheckpoint and self._tooltipShown then
-            self._nearCheckpoint = nil
-            self:_setTooltipVisible(false)
-            self._tooltipShown = false
-        end
-
-        -- Wait for attack button press to activate the checkpoint
-        if self._tooltipShown and self._nearCheckpoint then
-            if Input and Input.IsActionJustPressed
-                and Input.IsActionJustPressed("Attack") then
-
-                -- Hide tooltip and activate the checkpoint
-                self:_setTooltipVisible(false)
-                self._tooltipShown = false
-
-                self:_activateCheckpoint(self._nearCheckpoint)
-                self._nearCheckpoint = nil
-            end
+        -- Auto-activate on collision enter (player enters checkpoint radius)
+        if foundNearCheckpoint then
+            self:_activateCheckpoint(foundNearCheckpoint)
         end
 
         return false
