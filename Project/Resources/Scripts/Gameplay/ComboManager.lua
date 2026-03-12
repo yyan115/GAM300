@@ -348,7 +348,7 @@ return Component {
                 clipDuration = 1.1,
                 duration     = 1.1,
                 damage       = 30,
-                knockback    = 180.0,
+                knockback    = 10.0,
                 canMove      = false,
                 isAerial     = true,
                 isSlam       = true,
