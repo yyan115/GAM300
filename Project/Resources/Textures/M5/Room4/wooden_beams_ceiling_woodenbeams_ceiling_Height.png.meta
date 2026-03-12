@@ -6,7 +6,7 @@
         "compiled": "../../Resources/Textures/M5/Room4/wooden_beams_ceiling_woodenbeams_ceiling_Height.dds"
     },
     "TextureMetaData": {
-        "type": "height",
+        "type": "diffuse",
         "flipUVs": false,
         "generateMipmaps": true,
         "textureWrapMode": "Clamp"

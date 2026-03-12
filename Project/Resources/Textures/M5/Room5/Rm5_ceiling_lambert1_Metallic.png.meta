@@ -1,0 +1,14 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "004598ffb47de95d-00047c868a02c91f",
+        "source": "../../Resources/Textures/M5/Room5/Rm5_ceiling_lambert1_Metallic.png",
+        "compiled": "../../Resources/Textures/M5/Room5/Rm5_ceiling_lambert1_Metallic.dds"
+    },
+    "TextureMetaData": {
+        "type": "metallic",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp"
+    }
+}

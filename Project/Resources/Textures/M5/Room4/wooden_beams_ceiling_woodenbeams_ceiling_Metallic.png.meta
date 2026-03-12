@@ -6,7 +6,7 @@
         "compiled": "../../Resources/Textures/M5/Room4/wooden_beams_ceiling_woodenbeams_ceiling_Metallic.dds"
     },
     "TextureMetaData": {
-        "type": "metallic",
+        "type": "diffuse",
         "flipUVs": false,
         "generateMipmaps": true,
         "textureWrapMode": "Clamp"

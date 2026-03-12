@@ -6,7 +6,7 @@
         "compiled": "../../Resources/Textures/M5/Room4/wooden_beams_ceiling_woodenbeams_ceiling_Roughness.dds"
     },
     "TextureMetaData": {
-        "type": "roughness",
+        "type": "diffuse",
         "flipUVs": false,
         "generateMipmaps": true,
         "textureWrapMode": "Clamp"

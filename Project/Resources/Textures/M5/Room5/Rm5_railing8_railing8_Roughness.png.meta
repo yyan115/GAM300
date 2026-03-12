@@ -6,7 +6,7 @@
         "compiled": "../../Resources/Textures/M5/Room5/Rm5_railing8_railing8_Roughness.dds"
     },
     "TextureMetaData": {
-        "type": "roughness",
+        "type": "diffuse",
         "flipUVs": false,
         "generateMipmaps": true,
         "textureWrapMode": "Clamp"

@@ -1,0 +1,14 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "004598ffac19d121-00047c868e02ca37",
+        "source": "../../Resources/Textures/M5/Room5/Rm5_ceiling_lambert1_Roughness.png",
+        "compiled": "../../Resources/Textures/M5/Room5/Rm5_ceiling_lambert1_Roughness.dds"
+    },
+    "TextureMetaData": {
+        "type": "roughness",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp"
+    }
+}

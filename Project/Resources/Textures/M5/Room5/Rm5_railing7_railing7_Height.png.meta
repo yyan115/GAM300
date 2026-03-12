@@ -1,0 +1,14 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "004598ffc9928a7b-00047c860602bb25",
+        "source": "../../Resources/Textures/M5/Room5/Rm5_railing7_railing7_Height.png",
+        "compiled": "../../Resources/Textures/M5/Room5/Rm5_railing7_railing7_Height.dds"
+    },
+    "TextureMetaData": {
+        "type": "height",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp"
+    }
+}

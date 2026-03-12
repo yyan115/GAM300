@@ -6,7 +6,7 @@
         "compiled": "../../Resources/Textures/M5/Room5/Rm5_railing9_railing9_Metallic.dds"
     },
     "TextureMetaData": {
-        "type": "metallic",
+        "type": "diffuse",
         "flipUVs": false,
         "generateMipmaps": true,
         "textureWrapMode": "Clamp"

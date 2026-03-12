@@ -1,0 +1,14 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "004598ff91630daf-00047c868802c7d7",
+        "source": "../../Resources/Textures/M5/Room5/Rm5_ceiling_lambert1_BaseColor.png",
+        "compiled": "../../Resources/Textures/M5/Room5/Rm5_ceiling_lambert1_BaseColor.dds"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp"
+    }
+}

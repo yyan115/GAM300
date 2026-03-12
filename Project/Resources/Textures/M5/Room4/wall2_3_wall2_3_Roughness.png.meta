@@ -6,7 +6,7 @@
         "compiled": "../../Resources/Textures/M5/Room4/wall2_3_wall2_3_Roughness.dds"
     },
     "TextureMetaData": {
-        "type": "roughness",
+        "type": "diffuse",
         "flipUVs": false,
         "generateMipmaps": true,
         "textureWrapMode": "Clamp"
