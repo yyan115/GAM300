@@ -6,7 +6,7 @@
         "compiled": "../../Resources/Textures/M5/Player_Retexture_lambert6_Metallic.dds"
     },
     "TextureMetaData": {
-        "type": "diffuse",
+        "type": "metallic",
         "flipUVs": false,
         "generateMipmaps": true,
         "textureWrapMode": "Clamp"
