@@ -163,11 +163,16 @@ return Component {
     TryCollect = function(self, otherEntityId)
         if self._onTriggerStayed then return end
         if self._isCollecting then return end
-
+        local name = Engine.GetEntityName(otherEntityId)
+        print(string.format("Collided with entity entity %s", name))
+        
         local rootId = self:_toRoot(otherEntityId)
         local tagComp = GetComponent(rootId, "TagComponent")
+        local rootname = Engine.GetEntityName(rootId)
+        print(string.format("Checking tag component of entity %s", rootname))
         
         if tagComp and Tag.Compare(tagComp.tagIndex, "Player") then
+            print("Tag component == Player")
             -- [FIXED] Fetch the parent transform FRESH! Do not use the stale cached one from Start.
             local parentTransform = GetComponent(self._parentFeatherEntity, "Transform")
             if not parentTransform then return end
@@ -196,10 +201,12 @@ return Component {
 
     -- [FIXED] Route BOTH physics events into the collection logic!
     OnTriggerEnter = function(self, otherEntityId)
+        print("OnTriggerEnter")
         self:TryCollect(otherEntityId)
     end,
 
     OnTriggerStay = function(self, otherEntityId)
+        print("OnTriggerStay")
         self:TryCollect(otherEntityId)
     end,
 

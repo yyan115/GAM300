@@ -344,6 +344,7 @@ return Component {
         end
         self._respawnPlayer        = false
         self._playerDeathTriggered = false
+        self._animator:ResetSM()
     end,
 
     Update = function(self, dt)

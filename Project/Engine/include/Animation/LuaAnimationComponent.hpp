@@ -124,4 +124,11 @@ struct LuaAnimationComponent
         if (ticksPerSec <= 0.0f) ticksPerSec = 25.0f; // safe fallback
         return ticks / ticksPerSec;
     }
+
+    void ResetSM() {
+        auto* comp = GetInternal();
+        if (comp) {
+            comp->ResetSM(entityID);
+        }
+    }
 };

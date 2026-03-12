@@ -117,7 +117,7 @@ public:
 	}
 
 	// Editor support - enumerate all parameters
-	const std::unordered_map<std::string, AnimParam>& GetAllParams() const { return mParams; }
+	std::unordered_map<std::string, AnimParam>& GetAllParams() const { return mParams; }
 
 	// Check if parameter exists
 	bool HasParam(const std::string& name) const { return mParams.find(name) != mParams.end(); }
