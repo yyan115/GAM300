@@ -1,0 +1,14 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "006a1317a172f785-00047ca88e000001",
+        "source": "../../Resources/Sprites/MainMenuUI/QuitPromptUI/ModalPopup.png",
+        "compiled": "../../Resources/Sprites/MainMenuUI/QuitPromptUI/ModalPopup.dds"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp"
+    }
+}
