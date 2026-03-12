@@ -39,7 +39,7 @@ public:
     // Constructor
     MyContactListener(const std::unordered_map<JPH::BodyID, int>& idMap)
         : bodyToEntityMap(idMap)
-        , enableLogging(true)
+        , enableLogging(false)
         , enableDetailedLogging(false)
     {}
 
