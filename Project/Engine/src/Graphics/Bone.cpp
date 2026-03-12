@@ -1,8 +1,48 @@
 #include <pch.h>
 #include "Graphics/Bone.hpp"
 #include <Logging.hpp>
+#include <algorithm>
+#include <cmath>
 #define GLM_ENABLE_EXPERIMENTAL
 #include <glm/gtx/quaternion.hpp>
+
+namespace {
+constexpr float kMinKeyframeGap = 1.0e-6f;
+
+bool IsFiniteVec3(const glm::vec3& value)
+{
+    return std::isfinite(value.x) && std::isfinite(value.y) && std::isfinite(value.z);
+}
+
+bool IsFiniteQuat(const glm::quat& value)
+{
+    return std::isfinite(value.w) && std::isfinite(value.x) &&
+        std::isfinite(value.y) && std::isfinite(value.z);
+}
+
+glm::quat SafeNormalizeQuat(const glm::quat& value, const glm::quat& fallback = glm::quat(1.0f, 0.0f, 0.0f, 0.0f))
+{
+    if (!IsFiniteQuat(value)) {
+        return fallback;
+    }
+
+    const float lenSq = value.w * value.w + value.x * value.x + value.y * value.y + value.z * value.z;
+    if (!(lenSq > kMinKeyframeGap)) {
+        return fallback;
+    }
+
+    const glm::quat normalized = glm::normalize(value);
+    return IsFiniteQuat(normalized) ? normalized : fallback;
+}
+
+float ClampBlendFactor(float value)
+{
+    if (!std::isfinite(value)) {
+        return 0.0f;
+    }
+    return std::clamp(value, 0.0f, 1.0f);
+}
+}
 
 Bone::Bone(const std::string& name, int ID, const aiNodeAnim* channel)
     : mName(name),
@@ -141,11 +181,17 @@ int Bone::GetScaleIndex(float animationTime)
 /* Gets normalized value for Lerp & Slerp*/
 float Bone::GetScaleFactor(float lastTimeStamp, float nextTimeStamp, float animationTime)
 {
-	float scaleFactor = 0.0f;
+    if (!std::isfinite(lastTimeStamp) || !std::isfinite(nextTimeStamp) || !std::isfinite(animationTime)) {
+        return 0.0f;
+    }
+
 	float midWayLength = animationTime - lastTimeStamp;
 	float framesDiff = nextTimeStamp - lastTimeStamp;
-	scaleFactor = midWayLength / framesDiff;
-	return scaleFactor;
+    if (std::fabs(framesDiff) <= kMinKeyframeGap) {
+        return 0.0f;
+    }
+
+	return ClampBlendFactor(midWayLength / framesDiff);
 }
 
 /*figures out which position keys to interpolate b/w and performs the interpolation
@@ -160,6 +206,9 @@ glm::vec3 Bone::InterpolatePosition(float animationTime)
 
 	float scaleFactor = GetScaleFactor(mPositions[p0Index].timeStamp, mPositions[p1Index].timeStamp, animationTime);
 	glm::vec3 finalPosition = glm::mix(mPositions[p0Index].position, mPositions[p1Index].position, scaleFactor);
+    if (!IsFiniteVec3(finalPosition)) {
+        return mPositions[p0Index].position;
+    }
 
 	return finalPosition;
 }
@@ -176,9 +225,11 @@ glm::quat Bone::InterpolateRotation(float animationTime)
 	int r0Index = GetRotationIndex(animationTime);
 	int r1Index = r0Index + 1;
     float scaleFactor = GetScaleFactor(mRotations[r0Index].timeStamp, mRotations[r1Index].timeStamp, animationTime);
-	glm::quat finalRotation = glm::slerp(mRotations[r0Index].orientation, mRotations[r1Index].orientation, scaleFactor);
+    glm::quat startRotation = SafeNormalizeQuat(mRotations[r0Index].orientation);
+    glm::quat endRotation = SafeNormalizeQuat(mRotations[r1Index].orientation, startRotation);
+	glm::quat finalRotation = glm::slerp(startRotation, endRotation, scaleFactor);
 
-	finalRotation = glm::normalize(finalRotation);
+	finalRotation = SafeNormalizeQuat(finalRotation, startRotation);
 	
     return finalRotation;
 }
@@ -195,6 +246,9 @@ glm::vec3 Bone::InterpolateScaling(float animationTime)
 
 	float scaleFactor = GetScaleFactor(mScales[s0Index].timeStamp, mScales[s1Index].timeStamp, animationTime);
 	glm::vec3 finalScale = glm::mix(mScales[s0Index].scale, mScales[s1Index].scale, scaleFactor);
+    if (!IsFiniteVec3(finalScale)) {
+        return mScales[s0Index].scale;
+    }
 
 	return finalScale;
 }
