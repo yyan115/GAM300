@@ -7,7 +7,6 @@ return Component {
     
     fields = {
         Lifetime = 0.35,
-        BaseScale = 3.5,
         ForwardOffset = 0.5,
         HeightOffset = 0.0,
         AttackThreshold = 0.42 -- The normalized time to trigger the visual
@@ -34,9 +33,7 @@ return Component {
 
         self.active = true
         self.isWaitingForAnim = true -- Start in waiting mode
-        self.timer = 0
-        
-        -- We don't call ActivateSlash here anymore; we let Update handle the timing
+        self.timer = 0        
     end,
 
     ActivateSlash = function(self, data)
@@ -55,8 +52,6 @@ return Component {
 
         self:SetPosition(finalX, finalY, finalZ)
         self:SetRotation(rw, rx, ry, rz)
-        self:SetScale(self.BaseScale, self.BaseScale, self.BaseScale)
-
         if self.model then self.model.isVisible = true end
     end,
 
@@ -80,7 +75,7 @@ return Component {
                     self.isWaitingForAnim = false -- Stop waiting
                     self:ActivateSlash(self._pendingData)
                 else
-                    return -- Keep waiting, don't start lifetime timer yet
+                    return 
                 end
             end
         end
