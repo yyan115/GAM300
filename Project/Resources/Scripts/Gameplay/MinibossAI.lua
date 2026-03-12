@@ -387,7 +387,7 @@ return Component {
         end
 
         -- === Freeze during cinematic ===
-        self._frozenBycinematic = false
+        self._frozenBycinematic = true
         self._freezeEnemySub = nil
         if _G.event_bus and _G.event_bus.subscribe then
             self._freezeEnemySub = _G.event_bus.subscribe("freeze_enemy", function(frozen)
@@ -489,7 +489,7 @@ return Component {
         end
 
         if self._frozenBycinematic then
-            print("[Miniboss] FROZEN by cinematic, skipping Update. lockReason=", tostring(self._lockReason), "lockT=", tostring(self._lockTimer))
+            --print("[Miniboss] FROZEN by cinematic, skipping Update. lockReason=", tostring(self._lockReason), "lockT=", tostring(self._lockTimer))
             return
         end
 
@@ -568,7 +568,7 @@ return Component {
                     self._deathFadeTimer = (self._deathFadeTimer or 0) + dtSec
                     self._deathFadeSprite.alpha = math.min(self._deathFadeTimer / 1.0, 1.0)
                     if self._deathFadeSprite.alpha >= 1.0 then
-                        Scene.Load("Resources/Scenes/01_MainMenu.scene")
+                        Scene.Load("Resources/Scenes/05_EndCutscene.scene")
                     end
                 end
             end
