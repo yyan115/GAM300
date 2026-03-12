@@ -21,11 +21,6 @@
             "defaultValue": 0.0
         },
         {
-            "name": "IsDead",
-            "type": "Bool",
-            "defaultValue": 0.0
-        },
-        {
             "name": "IsGrounded",
             "type": "Bool",
             "defaultValue": 1.0
@@ -36,7 +31,7 @@
             "defaultValue": 0.0
         },
         {
-            "name": "IsJumping",
+            "name": "IsDead",
             "type": "Bool",
             "defaultValue": 0.0
         },
@@ -46,12 +41,17 @@
             "defaultValue": 0.0
         },
         {
-            "name": "Attack",
-            "type": "Trigger",
+            "name": "IsJumping",
+            "type": "Bool",
             "defaultValue": 0.0
         },
         {
             "name": "SlamChain",
+            "type": "Trigger",
+            "defaultValue": 0.0
+        },
+        {
+            "name": "Attack",
             "type": "Trigger",
             "defaultValue": 0.0
         },
@@ -63,6 +63,11 @@
         {
             "name": "IsDashing",
             "type": "Bool",
+            "defaultValue": 0.0
+        },
+        {
+            "name": "Dash",
+            "type": "Trigger",
             "defaultValue": 0.0
         },
         {
@@ -93,21 +98,25 @@
         {
             "name": "IsArmed",
             "type": "Bool",
+            "defaultValue": 1.0
+        },
+        {
+            "name": "IsRolling",
+            "type": "Bool",
+            "defaultValue": 0.0
+        },
+        {
+            "name": "IsAirAttacking",
+            "type": "Bool",
+            "defaultValue": 0.0
+        },
+        {
+            "name": "IsBackDashing",
+            "type": "Bool",
             "defaultValue": 0.0
         }
     ],
     "states": [
-        {
-            "id": "NA1",
-            "clipIndex": 1,
-            "loop": false,
-            "speed": 2.000000238418579,
-            "crossfadeDuration": 0.0,
-            "nodePosition": {
-                "x": 1059.2657470703125,
-                "y": -380.439208984375
-            }
-        },
         {
             "id": "Idle",
             "clipIndex": 0,
@@ -120,14 +129,14 @@
             }
         },
         {
-            "id": "FeatherLaunchEnd",
-            "clipIndex": 11,
+            "id": "NA1",
+            "clipIndex": 1,
             "loop": false,
-            "speed": 1.0,
-            "crossfadeDuration": 0.20000000298023224,
+            "speed": 2.000000238418579,
+            "crossfadeDuration": 0.0,
             "nodePosition": {
-                "x": 188.404052734375,
-                "y": -623.8199462890625
+                "x": 1059.2657470703125,
+                "y": -380.439208984375
             }
         },
         {
@@ -139,6 +148,17 @@
             "nodePosition": {
                 "x": 275.0,
                 "y": 147.0
+            }
+        },
+        {
+            "id": "FeatherLaunchEnd",
+            "clipIndex": 11,
+            "loop": false,
+            "speed": 1.0,
+            "crossfadeDuration": 0.20000000298023224,
+            "nodePosition": {
+                "x": 188.404052734375,
+                "y": -623.8199462890625
             }
         },
         {
@@ -242,7 +262,7 @@
         },
         {
             "id": "ThrowChain",
-            "clipIndex": 16,
+            "clipIndex": 15,
             "loop": false,
             "speed": 2.499999761581421,
             "crossfadeDuration": 0.20000000298023224,
@@ -253,7 +273,7 @@
         },
         {
             "id": "AimThrow",
-            "clipIndex": 15,
+            "clipIndex": 14,
             "loop": false,
             "speed": 2.000000238418579,
             "crossfadeDuration": 0.20000000298023224,
@@ -264,7 +284,7 @@
         },
         {
             "id": "PullChain",
-            "clipIndex": 19,
+            "clipIndex": 18,
             "loop": false,
             "speed": 3.4999988079071045,
             "crossfadeDuration": 0.20000000298023224,
@@ -275,7 +295,7 @@
         },
         {
             "id": "SlamChain",
-            "clipIndex": 17,
+            "clipIndex": 16,
             "loop": false,
             "speed": 1.5000001192092896,
             "crossfadeDuration": 0.20000000298023224,
@@ -286,7 +306,7 @@
         },
         {
             "id": "RetractChain",
-            "clipIndex": 18,
+            "clipIndex": 17,
             "loop": false,
             "speed": 2.9999992847442627,
             "crossfadeDuration": 0.20000000298023224,
@@ -302,13 +322,13 @@
             "speed": 2.9999992847442627,
             "crossfadeDuration": 0.20000000298023224,
             "nodePosition": {
-                "x": -173.8318634033203,
-                "y": 355.2630920410156
+                "x": -292.58203125,
+                "y": 217.76287841796875
             }
         },
         {
             "id": "IdleUnarmed",
-            "clipIndex": 14,
+            "clipIndex": 19,
             "loop": true,
             "speed": 1.0,
             "crossfadeDuration": 0.20000000298023224,
@@ -594,8 +614,8 @@
             "to": "Run",
             "anyState": false,
             "hasExitTime": true,
-            "exitTime": 0.7200000286102295,
-            "transitionDuration": 0.6800000071525574,
+            "exitTime": 0.28999999165534973,
+            "transitionDuration": 0.27000001072883606,
             "conditions": [
                 {
                     "paramName": "IsRunning",
@@ -1778,8 +1798,8 @@
             "to": "IdleUnarmed",
             "anyState": false,
             "hasExitTime": true,
-            "exitTime": 0.6700000166893005,
-            "transitionDuration": 0.6600000262260437,
+            "exitTime": 0.3400000035762787,
+            "transitionDuration": 0.33000001311302185,
             "conditions": [
                 {
                     "paramName": "IsRunning",
@@ -1862,6 +1882,26 @@
                     "threshold": 0.0
                 }
             ]
+        },
+        {
+            "from": "Jump",
+            "to": "NA1",
+            "anyState": false,
+            "hasExitTime": true,
+            "exitTime": 0.019999999552965164,
+            "transitionDuration": 0.05000000074505806,
+            "conditions": [
+                {
+                    "paramName": "Attack",
+                    "mode": "TriggerFired",
+                    "threshold": 0.0
+                },
+                {
+                    "paramName": "ComboStep",
+                    "mode": "Equals",
+                    "threshold": 1.0
+                }
+            ]
         }
     ],
     "clipPaths": [
@@ -1879,11 +1919,11 @@
         "Resources/Animations/Player/KusaneV6@FeatherLaunchEnd.fbx",
         "Resources/Animations/Player/KusaneV6@DashRoll.fbx",
         "Resources/Animations/Player/KusaneV6@Standing.fbx",
-        "Resources/Animations/Player/KusaneV6@IdleUnarmed.fbx",
         "Resources/Animations/Player/KusaneV6@AimChain.fbx",
         "Resources/Animations/Player/KusaneV6@ThrowChain.fbx",
         "Resources/Animations/Player/KusaneV6@SlamChain.fbx",
         "Resources/Animations/Player/KusaneV6@RetractChain.fbx",
-        "Resources/Animations/Player/KusaneV6@PullChain.fbx"
+        "Resources/Animations/Player/KusaneV6@PullChain.fbx",
+        "Resources/Animations/Player/KusaneV6@IdleUnarmed.fbx"
     ]
 }

@@ -1,0 +1,14 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "002c80ed14c490ff-00047a6b98014681",
+        "source": "../../Resources/Textures/M5/BossRoom/column_low_column_mat_Roughness.png",
+        "compiled": "../../Resources/Textures/M5/BossRoom/column_low_column_mat_Roughness.dds"
+    },
+    "TextureMetaData": {
+        "type": "roughness",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp"
+    }
+}

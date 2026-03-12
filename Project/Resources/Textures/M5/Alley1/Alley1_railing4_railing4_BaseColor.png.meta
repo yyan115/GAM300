@@ -1,0 +1,14 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "004260df14accfbf-000477c6900e76bb",
+        "source": "../../Resources/Textures/M5/Alley1/Alley1_railing4_railing4_BaseColor.png",
+        "compiled": "../../Resources/Textures/M5/Alley1/Alley1_railing4_railing4_BaseColor.dds"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp"
+    }
+}

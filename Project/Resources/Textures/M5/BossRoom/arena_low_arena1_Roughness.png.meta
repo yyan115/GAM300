@@ -1,0 +1,14 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "002c80ed3149873a-00047a6ba601468d",
+        "source": "../../Resources/Textures/M5/BossRoom/arena_low_arena1_Roughness.png",
+        "compiled": "../../Resources/Textures/M5/BossRoom/arena_low_arena1_Roughness.dds"
+    },
+    "TextureMetaData": {
+        "type": "roughness",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp"
+    }
+}

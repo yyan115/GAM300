@@ -107,12 +107,10 @@ public:
         if ((a == Layers::NAV_GROUND || a == Layers::NAV_OBSTACLE) && b == Layers::NON_MOVING) return false;
         if (a == Layers::NON_MOVING && (b == Layers::NAV_GROUND || b == Layers::NAV_OBSTACLE)) return false;
 
-        // OLD: Hurtbox collides with SENSOR — uncomment to restore:
-        // if (a == Layers::HURTBOX || b == Layers::HURTBOX) {
-        //     return (a == Layers::SENSOR || b == Layers::SENSOR);
-        // }
-        // NEW: Hurtbox does not collide with SENSOR — use CHAIN_HITBOX for chain detection
-        if (a == Layers::HURTBOX || b == Layers::HURTBOX) return false;
+        // Hurtbox: only collides with SENSOR (weapon triggers detect hurtboxes)
+        if (a == Layers::HURTBOX || b == Layers::HURTBOX) {
+            return (a == Layers::SENSOR || b == Layers::SENSOR);
+        }
 
         // Chain hitbox: only collides with SENSOR (chain endpoint trigger detects it; weapon attacks do NOT)
         if (a == Layers::CHAIN_HITBOX || b == Layers::CHAIN_HITBOX) {

@@ -229,10 +229,13 @@ void AnimationStateMachine::Reset(Entity entity)
 {
 	mCurrentState = mEntryState;
 	mStateTime = 0.0f;
-	//if (!mEntryState.empty())
-	//{
-	//	EnterState(mEntryState, entity);
-	//}
+	for (auto& [name, param] : mParam.GetAllParams()) {
+		param.consumed = true;
+	}
+	if (!mEntryState.empty())
+	{
+		EnterState(mEntryState, entity);
+	}
 }
 
 void AnimationStateMachine::Clear()

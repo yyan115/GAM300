@@ -101,6 +101,9 @@ return Component {
         openAngle = 115,
         overshootAngle = 10,
 
+        -- Delay (in seconds) before any animation/SFX plays after the player enters the trigger radius
+        triggerDelay = 3.0,
+
         pickupSFX = {},     -- table of AudioClips for pickup
         doorOpenSFX = {},   -- table of AudioClips for door
 
@@ -111,6 +114,9 @@ return Component {
 
         isWeaponFlying = false,
         weaponFlyTime = 0.0,
+
+        _triggerPending = false,
+        _triggerCountdown = 0.0,
     },
 
     meta = {
@@ -162,34 +168,24 @@ return Component {
         if self.initFailed then return end
 
         -------------------------------------------------
-        -- Player range detection (tooltip + attack to interact)
+        -- Player range detection (auto-trigger on collision enter)
         -------------------------------------------------
         if not self.hasOpened then
             local inRange = CheckPlayerInRange(self)
             self.isActivatable = inRange
 
-            -- Show tooltip when entering range, hide when leaving
-            if inRange and not self._tooltipShown then
-                self:_setTooltipVisible(true)
-                self._tooltipShown = true
-            elseif not inRange and self._tooltipShown then
-                self:_setTooltipVisible(false)
-                self._tooltipShown = false
-            end
-
-            -- Wait for attack button press while in range
-            if inRange and Input and Input.IsActionJustPressed
-                and Input.IsActionJustPressed("Attack") then
-
-                -- Hide tooltip and proceed with pickup
-                self:_setTooltipVisible(false)
-                self._tooltipShown = false
-                -- Keep interactable flag active during pickup so combat scripts
-                -- don't process the same Attack input as a swing
-                _G.playerNearInteractable = true
+            if inRange and not self._triggerPending then
                 self.hasOpened = true
+                self._triggerPending   = true
+                self._triggerCountdown = 0.0
 
-                -- --- Start Weapon Fly ---
+                -- Disable attacks and fire the cinematic immediately on enter
+                if event_bus and event_bus.publish then
+                    event_bus.publish("set_attacks_enabled", false)
+                    event_bus.publish("cinematic.trigger", true)
+                end
+
+                -- --- Start Weapon Fly immediately with the cinematic ---
                 if self.weaponPickupEnt and self.weaponOnHandEnt then
                     self.isWeaponFlying = true
                     self.weaponFlyTime = 0.0
@@ -207,6 +203,14 @@ return Component {
                         event_bus.publish("picked_up_weapon", true)
                     end
                 end
+            end
+        end
+
+        -- Tick the delay outside the hasOpened guard so the countdown keeps running
+        if self._triggerPending then
+            self._triggerCountdown = self._triggerCountdown + dt
+            if self._triggerCountdown >= self.triggerDelay then
+                self._triggerPending = false
 
                 -- --- Start door opening ---
                 self.isOpening = true
@@ -216,10 +220,6 @@ return Component {
                 local DoorTriggerSFX = self:GetComponent("AudioComponent")
                 if DoorTriggerSFX and self.doorOpenSFX[1] then
                     DoorTriggerSFX:PlayOneShot(self.doorOpenSFX[1])
-                end
-
-                if event_bus and event_bus.publish then
-                    event_bus.publish("cinematic.trigger", true)
                 end
             end
         end
@@ -262,12 +262,10 @@ return Component {
 
                 if pickupActiveComp then pickupActiveComp.isActive = false end
                 if handActiveComp then handActiveComp.isActive = true end
-                
+
                 _G.playerHasWeapon = true
                 local playerAnim = GetComponent(playerEnt, "AnimationComponent")
-                playerAnim:SetBool("IsArmed", true)
-                -- Don't clear playerNearInteractable here — the input buffer
-                -- still has the Attack press. Wait until the door sequence ends.
+                if playerAnim then playerAnim:SetBool("IsArmed", true) end
                 print("[DoorTrigger] Weapon successfully caught!")
             end
         end
@@ -342,7 +340,10 @@ return Component {
             self.delayTime = self.delayTime + dt
             if self.delayTime >= self.postOpenDelay then
                 self.isWaiting = false
-                -- Now safe to allow attacks — input buffer is long expired
+                -- Input buffer has long expired — safe to re-enable attacks now.
+                if event_bus and event_bus.publish then
+                    event_bus.publish("set_attacks_enabled", true)
+                end
                 _G.playerNearInteractable = false
             end
         end
@@ -365,7 +366,7 @@ return Component {
             spriteComp.alpha = visible and 1.0 or 0.0
         end
 
-        -- Set global flag so combat scripts know to skip attacks
+        -- Set global flag so other systems know the tooltip/interactable UI is active
         _G.playerNearInteractable = visible
     end,
 }

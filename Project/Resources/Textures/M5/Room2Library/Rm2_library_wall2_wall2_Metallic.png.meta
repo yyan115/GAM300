@@ -1,0 +1,14 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "004260df258d131a-000477ba3e00e5a9",
+        "source": "../../Resources/Textures/M5/Room2Library/Rm2_library_wall2_wall2_Metallic.png",
+        "compiled": "../../Resources/Textures/M5/Room2Library/Rm2_library_wall2_wall2_Metallic.dds"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp"
+    }
+}

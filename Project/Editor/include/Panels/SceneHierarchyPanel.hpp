@@ -104,7 +104,7 @@ private:
 
     // Search functionality
     void RebuildSearchCache();
-    bool EntityMatchesSearch(const std::string& name) const;
+    bool EntityMatchesSearch(const std::string& searchName) const;
     void CollectAncestors(Entity entity, std::unordered_set<Entity>& ancestors);
 
     char searchBuffer[256] = {};

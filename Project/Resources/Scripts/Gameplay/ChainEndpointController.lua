@@ -336,6 +336,21 @@ return Component {
             self:_dbg("[ChainEndpointController] OnTriggerEnter ignored — root='" .. rootName .. "' tag='" .. tostring(tag) .. "' not hookable")
             return
         end
+
+        -- For enemies, only accept hits from CHAIN_HITBOX layer (8) — ignore HURTBOX bone colliders
+        -- Throwables are not filtered since they don't use CHAIN_HITBOX
+        if tag == "Enemy" then
+            local layer = nil
+            pcall(function()
+                local rb = GetComponent(otherEntityId, "RigidBodyComponent")
+                if rb then layer = rb.layer end
+            end)
+            if layer ~= nil and layer ~= 8 then
+                dbg("[ChainEndpointController][TRIGGER] REJECTED — enemy but not CHAIN_HITBOX layer (layer=" .. tostring(layer) .. ")")
+                return
+            end
+        end
+
         dbg("[ChainEndpointController][TRIGGER] PASSED all guards — proceeding to hook")
 
         local snapImpactX = self._lastEndpointX or 0

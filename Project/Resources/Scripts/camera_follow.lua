@@ -63,6 +63,7 @@ return Component {
         chainAimTargetName      = "ChainAimPointLeftEnd",
         chainAimTransitionSpeed = 5.0,
         chainAimZoomDistance    = 0.8,
+        chainAimHeightOffset    = 1.5,
         chainAimSideOffset      = 0.3,
 
         -- === Chain Aim Assist ===
@@ -92,6 +93,11 @@ return Component {
         lockOnMouseThreshold  = 2.0,
         lockOnLOSHeight       = 1.0,
         lockOnLOSGrace        = 0.5,
+
+        -- === Motion Blur ===
+        MotionBlurEnabled   = true,   -- master toggle; set false to disable without removing the system
+        MotionBlurThreshold = 2.0,    -- camera speed (world units/sec) below which no blur is applied
+        MotionBlurMaxSpeed  = 14.0,   -- camera speed at which blur reaches full MotionBlurMaxIntensity
 
         -- === Rotation ===
         lockCameraRotation = false,
@@ -137,6 +143,9 @@ return Component {
         self._enemyTriggeredActionMode = false
         self._triggeringEnemyId        = nil
 
+        -- Dead enemy set (collision raycasts ignore these entities)
+        self._deadEnemies = {}
+
         -- Cinematic
         self._cinematicActive    = false
         self._cinematicTarget    = nil
@@ -145,6 +154,11 @@ return Component {
 
         -- Respawn teleport flag
         self._teleportToPlayer = false
+
+        -- Motion blur
+        self._lastCamX = nil
+        self._lastCamY = nil
+        self._lastCamZ = nil
 
         -- Screen shake
         self._shakeTimer       = 0.0
@@ -249,6 +263,20 @@ return Component {
                 self._targetPos.z = payload.z or payload[3] or 0.0
                 self._teleportToPlayer = true
             end)
+
+            self._cameraShakeSub = event_bus.subscribe("camera_shake", function(p)
+                if not p then return end
+                self._shakeTimer     = 0.0
+                self._shakeDuration  = p.duration  or self.ShakeDuration  or 0.4
+                self._shakeIntensity = p.intensity or self.ShakeIntensity or 0.3
+                self._shakeFrequency = p.frequency or self.ShakeFrequency or 25.0
+            end)
+
+            self._enemyDiedSub = event_bus.subscribe("enemy_died", function(p)
+                if p and p.entityId then
+                    self._deadEnemies[p.entityId] = true
+                end
+            end)
         end
     end,
 
@@ -260,7 +288,7 @@ return Component {
             for _, sub in ipairs({
                 "_posSub", "_chainAimSub",
                 "_cinematicActiveSub", "_cinematicTargetSub",
-                "_playerRespawnedSub",
+                "_playerRespawnedSub", "_cameraShakeSub",
             }) do
                 if self[sub] then
                     event_bus.unsubscribe(self[sub])
@@ -395,11 +423,13 @@ return Component {
         local maxZoom    = self.maxZoom or 15.0
         local zoomFactor = clamp((radius - minZoom) / (maxZoom - minZoom), 0.0, 1.0)
 
-        -- Look-at pivot (slightly above player feet, scales with zoom)
+        -- Look-at pivot (slightly above player feet, scales with zoom).
+        -- heightOffset is applied here so the pivot rises with the camera,
+        -- keeping the pitch angle stable regardless of how high the offset is.
         local lookAtHeight = 0.5 + zoomFactor * 0.2
         local cameraTarget = {
             x = self._targetPos.x,
-            y = self._targetPos.y + lookAtHeight,
+            y = self._targetPos.y + lookAtHeight + (self.heightOffset or 1.0),
             z = self._targetPos.z,
         }
 
@@ -411,10 +441,9 @@ return Component {
         end
 
         -- Ideal camera position (spherical offset from pivot)
-        local scaledHeight    = (self.heightOffset or 1.0) * (0.85 + zoomFactor * 0.15)
         local horizRadius     = radius * math.cos(pitchRad)
         local desiredX = cameraTarget.x + horizRadius * math.sin(yawRad)
-        local desiredY = cameraTarget.y + radius * math.sin(pitchRad) + scaledHeight
+        local desiredY = cameraTarget.y + radius * math.sin(pitchRad)
         local desiredZ = cameraTarget.z + horizRadius * math.cos(yawRad)
 
         -- Hard Y cap: prevents the camera from rising above indoor ceilings even
@@ -432,28 +461,38 @@ return Component {
         )
 
         -- ── Blend position with chain aim when active ─────────────────────
-        -- Lerp between orbit and chain-aim positions based on blend factor
-        -- so zoom-out and rotation change happen simultaneously on release.
         local blend = self._chainAimBlend
-        if chainActive and chainX then
-            desiredX = desiredX + (chainX - desiredX) * blend
-            desiredY = desiredY + (chainY - desiredY) * blend
-            desiredZ = desiredZ + (chainZ - desiredZ) * blend
-        end
+        local newX, newY, newZ
 
-        -- ── Smooth position follow ───────────────────────────────────────────
-        local cx, cy, cz
-        local px, py, pz = self:GetPosition()
-        if type(px) == "table" then
-            cx, cy, cz = px.x or 0.0, px.y or 0.0, px.z or 0.0
+        if self._chainAiming and chainActive and chainX then
+            -- Zero lerp: snap camera directly to chain aim position every frame.
+            newX, newY, newZ = chainX, chainY, chainZ
         else
-            cx, cy, cz = px or 0.0, py or 0.0, pz or 0.0
-        end
+            -- Lerp between orbit and chain-aim positions based on blend factor
+            -- so zoom-out and rotation change happen simultaneously on release.
+            if chainActive and chainX then
+                desiredX = desiredX + (chainX - desiredX) * blend
+                desiredY = desiredY + (chainY - desiredY) * blend
+                desiredZ = desiredZ + (chainZ - desiredZ) * blend
+            end
 
-        local lerpT = 1.0 - math.exp(-(self.followLerp or 10.0) * dt)
-        local newX  = cx + (desiredX - cx) * lerpT
-        local newY  = cy + (desiredY - cy) * lerpT
-        local newZ  = cz + (desiredZ - cz) * lerpT
+            -- ── Smooth position follow ───────────────────────────────────────
+            local cx, cy, cz
+            local px, py, pz = self:GetPosition()
+            if type(px) == "table" then
+                cx, cy, cz = px.x or 0.0, px.y or 0.0, px.z or 0.0
+            else
+                cx, cy, cz = px or 0.0, py or 0.0, pz or 0.0
+            end
+
+            local normalRate = self.followLerp or 10.0
+            local chainRate  = 120.0
+            local effectiveRate = normalRate + (chainRate - normalRate) * blend
+            local lerpT = 1.0 - math.exp(-effectiveRate * dt)
+            newX = cx + (desiredX - cx) * lerpT
+            newY = cy + (desiredY - cy) * lerpT
+            newZ = cz + (desiredZ - cz) * lerpT
+        end
 
         -- Export exact camera position and mathematically perfect forward vector!
         _G.CAMERA_POS_X = newX
@@ -472,6 +511,25 @@ return Component {
         end
 
         self:SetPosition(newX, newY, newZ)
+
+        -- ── Motion blur ──────────────────────────────────────────────────────
+        -- Measure how far the camera actually moved this frame; publish normalised
+        -- intensity so camera_effects can drive blur without knowing positions.
+        if self.MotionBlurEnabled and self._lastCamX then
+            local dx    = newX - self._lastCamX
+            local dy    = newY - self._lastCamY
+            local dz    = newZ - self._lastCamZ
+            local speed = math.sqrt(dx*dx + dy*dy + dz*dz) / (dt > 0 and dt or 0.016)
+            local lo    = self.MotionBlurThreshold or 2.0
+            local hi    = self.MotionBlurMaxSpeed  or 14.0
+            local intensity = math.max(0.0, math.min(1.0, (speed - lo) / (hi - lo)))
+            if event_bus and event_bus.publish then
+                event_bus.publish("fx_motion_blur", { intensity = intensity })
+            end
+        end
+        self._lastCamX = newX
+        self._lastCamY = newY
+        self._lastCamZ = newZ
 
         -- ── Screen shake (angular, applied to rotation) ──────────────────────
         if self._shakeTimer < self._shakeDuration then

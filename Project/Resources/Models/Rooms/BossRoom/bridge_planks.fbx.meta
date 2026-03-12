@@ -1,0 +1,11 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "002c80ed05ce81ac-00047a6bc40146af",
+        "source": "../../Resources/Models/Rooms/BossRoom/bridge_planks.fbx",
+        "compiled": "../../Resources/Models/Rooms/BossRoom/bridge_planks.mesh"
+    },
+    "ModelMetaData": {
+        "optimizeMeshes": true
+    }
+}

@@ -58,9 +58,10 @@ if(MSVC)
         #         Only a real issue when distributing DLLs to third parties.
         /wd4275
 
-        # Source: Warnings from third-party libraries (Lua, Jolt, RapidJSON, ImGuizmo, FileWatch, assimp).
+        # Source: Warnings from third-party libraries (Lua, Jolt, RapidJSON, ImGuizmo, FileWatch, assimp, xscheduler).
         # Reason: Ignore third-party library warnings.
         /wd4068   # C4068: 'unknown pragma'
+        /wd4100   # C4100: 'identifier': unreferenced formal parameter (xscheduler headers)
         /wd4244   # C4244: 'conversion from X to Y, possible loss of data'
         /wd4245   # C4245: 'conversion from int to unsigned, signed/unsigned mismatch'
         /wd4267   # C4267: 'conversion from size_t to int, possible loss of data'

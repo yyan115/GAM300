@@ -970,7 +970,8 @@ void RegisterInspectorCustomRenderers()
             ImGui::Text("Radius");
             ImGui::SameLine(labelWidth);
             ImGui::SetNextItemWidth(-1);
-            float oldRadius = collider.sphereRadius;
+            // Commented out as not used to fix warnings.
+            // float oldRadius = collider.sphereRadius;
 
             if (ImGui::IsItemActivated()) {
                 startSphereRadius[entity] = collider.sphereRadius;
@@ -1637,8 +1638,7 @@ void RegisterInspectorCustomRenderers()
             ImGuiID id = ImGui::GetID("##CutsceneName");
             if (!isEditing[id]) startName[id] = vc.cutsceneName;
             char nameBuf[256];
-            strncpy(nameBuf, vc.cutsceneName.c_str(), sizeof(nameBuf) - 1);
-            nameBuf[sizeof(nameBuf) - 1] = '\0';
+            std::snprintf(nameBuf, sizeof(nameBuf), "%s", vc.cutsceneName.c_str());
             if (ImGui::InputText("##CutsceneName", nameBuf, sizeof(nameBuf))) {
                 vc.cutsceneName = nameBuf;
             }
@@ -1830,8 +1830,7 @@ void RegisterInspectorCustomRenderers()
                     ImGuiID tid = ImGui::GetID("##BoardText");
                     if (!isEditingText[tid]) startText[tid] = board.text;
                     char textBuf[1024];
-                    strncpy(textBuf, board.text.c_str(), sizeof(textBuf) - 1);
-                    textBuf[sizeof(textBuf) - 1] = '\0';
+                    std::snprintf(textBuf, sizeof(textBuf), "%s", board.text.c_str());
                     if (ImGui::InputTextMultiline("##BoardText", textBuf, sizeof(textBuf),
                         ImVec2(-1, ImGui::GetTextLineHeight() * 3))) {
                         board.text = textBuf;
@@ -2358,6 +2357,104 @@ void RegisterInspectorCustomRenderers()
                     ImGui::EndCombo();
                 }
                 EditorComponents::PopComboColors();
+            }
+
+            ImGui::Unindent(10.0f);
+        }
+
+        // --- DIRECTIONAL BLUR ---
+        if (ImGui::CollapsingHeader("Post-Processing: Directional Blur")) {
+            ImGui::Indent(10.0f);
+
+            // Enable checkbox
+            bool dirBlurEnabled = camera.dirBlurEnabled;
+            if (ImGui::Checkbox("Enable Directional Blur##PP", &dirBlurEnabled)) {
+                bool oldVal = camera.dirBlurEnabled;
+                camera.dirBlurEnabled = dirBlurEnabled;
+                if (UndoSystem::GetInstance().IsEnabled()) {
+                    bool newVal = dirBlurEnabled;
+                    UndoSystem::GetInstance().RecordLambdaChange(
+                        [entity, newVal]() { auto& ecs = ECSRegistry::GetInstance().GetActiveECSManager(); if (ecs.HasComponent<CameraComponent>(entity)) ecs.GetComponent<CameraComponent>(entity).dirBlurEnabled = newVal; },
+                        [entity, oldVal]() { auto& ecs = ECSRegistry::GetInstance().GetActiveECSManager(); if (ecs.HasComponent<CameraComponent>(entity)) ecs.GetComponent<CameraComponent>(entity).dirBlurEnabled = oldVal; },
+                        "Toggle Directional Blur");
+                }
+            }
+
+            if (camera.dirBlurEnabled) {
+                // Intensity
+                ImGui::Text("Intensity");
+                ImGui::SameLine(labelWidth);
+                ImGui::SetNextItemWidth(-1);
+                static std::unordered_map<Entity, float> startDirBlurIntensity;
+                if (!isEditingPP[entity]) startDirBlurIntensity[entity] = camera.dirBlurIntensity;
+                if (ImGui::SliderFloat("##DirBlurIntensity", &camera.dirBlurIntensity, 0.0f, 1.0f)) { isEditingPP[entity] = true; }
+                if (isEditingPP[entity] && !ImGui::IsItemActive()) {
+                    float oldVal = startDirBlurIntensity[entity]; float newVal = camera.dirBlurIntensity;
+                    if (oldVal != newVal && UndoSystem::GetInstance().IsEnabled()) {
+                        UndoSystem::GetInstance().RecordLambdaChange(
+                            [entity, newVal]() { auto& ecs = ECSRegistry::GetInstance().GetActiveECSManager(); if (ecs.HasComponent<CameraComponent>(entity)) ecs.GetComponent<CameraComponent>(entity).dirBlurIntensity = newVal; },
+                            [entity, oldVal]() { auto& ecs = ECSRegistry::GetInstance().GetActiveECSManager(); if (ecs.HasComponent<CameraComponent>(entity)) ecs.GetComponent<CameraComponent>(entity).dirBlurIntensity = oldVal; },
+                            "Change Dir Blur Intensity");
+                    }
+                    isEditingPP[entity] = false;
+                }
+
+                // Strength (pixel distance)
+                ImGui::Text("Strength");
+                ImGui::SameLine(labelWidth);
+                ImGui::SetNextItemWidth(-1);
+                static std::unordered_map<Entity, float> startDirBlurStrength;
+                if (!isEditingPP[entity]) startDirBlurStrength[entity] = camera.dirBlurStrength;
+                if (ImGui::DragFloat("##DirBlurStrength", &camera.dirBlurStrength, 0.1f, 0.1f, 50.0f)) { isEditingPP[entity] = true; }
+                if (isEditingPP[entity] && !ImGui::IsItemActive()) {
+                    float oldVal = startDirBlurStrength[entity]; float newVal = camera.dirBlurStrength;
+                    if (oldVal != newVal && UndoSystem::GetInstance().IsEnabled()) {
+                        UndoSystem::GetInstance().RecordLambdaChange(
+                            [entity, newVal]() { auto& ecs = ECSRegistry::GetInstance().GetActiveECSManager(); if (ecs.HasComponent<CameraComponent>(entity)) ecs.GetComponent<CameraComponent>(entity).dirBlurStrength = newVal; },
+                            [entity, oldVal]() { auto& ecs = ECSRegistry::GetInstance().GetActiveECSManager(); if (ecs.HasComponent<CameraComponent>(entity)) ecs.GetComponent<CameraComponent>(entity).dirBlurStrength = oldVal; },
+                            "Change Dir Blur Strength");
+                    }
+                    isEditingPP[entity] = false;
+                }
+
+                // Angle (degrees)
+                ImGui::Text("Angle");
+                ImGui::SameLine(labelWidth);
+                ImGui::SetNextItemWidth(-1);
+                static std::unordered_map<Entity, float> startDirBlurAngle;
+                if (!isEditingPP[entity]) startDirBlurAngle[entity] = camera.dirBlurAngle;
+                if (ImGui::SliderFloat("##DirBlurAngle", &camera.dirBlurAngle, 0.0f, 360.0f, "%.1f deg")) { isEditingPP[entity] = true; }
+                if (isEditingPP[entity] && !ImGui::IsItemActive()) {
+                    float oldVal = startDirBlurAngle[entity]; float newVal = camera.dirBlurAngle;
+                    if (oldVal != newVal && UndoSystem::GetInstance().IsEnabled()) {
+                        UndoSystem::GetInstance().RecordLambdaChange(
+                            [entity, newVal]() { auto& ecs = ECSRegistry::GetInstance().GetActiveECSManager(); if (ecs.HasComponent<CameraComponent>(entity)) ecs.GetComponent<CameraComponent>(entity).dirBlurAngle = newVal; },
+                            [entity, oldVal]() { auto& ecs = ECSRegistry::GetInstance().GetActiveECSManager(); if (ecs.HasComponent<CameraComponent>(entity)) ecs.GetComponent<CameraComponent>(entity).dirBlurAngle = oldVal; },
+                            "Change Dir Blur Angle");
+                    }
+                    isEditingPP[entity] = false;
+                }
+
+                // Samples (quality)
+                ImGui::Text("Samples");
+                ImGui::SameLine(labelWidth);
+                ImGui::SetNextItemWidth(-1);
+                static std::unordered_map<Entity, int> startDirBlurSamples;
+                if (!isEditingPP[entity]) startDirBlurSamples[entity] = camera.dirBlurSamples;
+                if (ImGui::InputInt("##DirBlurSamples", &camera.dirBlurSamples)) {
+                    camera.dirBlurSamples = std::max(2, std::min(camera.dirBlurSamples, 32));
+                    isEditingPP[entity] = true;
+                }
+                if (isEditingPP[entity] && !ImGui::IsItemActive()) {
+                    int oldVal = startDirBlurSamples[entity]; int newVal = camera.dirBlurSamples;
+                    if (oldVal != newVal && UndoSystem::GetInstance().IsEnabled()) {
+                        UndoSystem::GetInstance().RecordLambdaChange(
+                            [entity, newVal]() { auto& ecs = ECSRegistry::GetInstance().GetActiveECSManager(); if (ecs.HasComponent<CameraComponent>(entity)) ecs.GetComponent<CameraComponent>(entity).dirBlurSamples = newVal; },
+                            [entity, oldVal]() { auto& ecs = ECSRegistry::GetInstance().GetActiveECSManager(); if (ecs.HasComponent<CameraComponent>(entity)) ecs.GetComponent<CameraComponent>(entity).dirBlurSamples = oldVal; },
+                            "Change Dir Blur Samples");
+                    }
+                    isEditingPP[entity] = false;
+                }
             }
 
             ImGui::Unindent(10.0f);
@@ -6351,7 +6448,9 @@ void RegisterInspectorCustomRenderers()
                         // This is critical for behavior where inspector edits persist
                         if (!scriptData.pendingInstanceState.empty())
                         {
-                            bool restored = Scripting::DeserializeJsonToInstance(previewInstance, scriptData.pendingInstanceState);
+                            // Commented out as not used to fix warnings.
+                            // bool restored = Scripting::DeserializeJsonToInstance(previewInstance, scriptData.pendingInstanceState);
+                            Scripting::DeserializeJsonToInstance(previewInstance, scriptData.pendingInstanceState);
                             /*if (restored)
                             {
                                 ENGINE_PRINT("Restored pendingInstanceState for ", scriptData.scriptPath.c_str());
@@ -6552,20 +6651,20 @@ void RegisterInspectorCustomRenderers()
                             if (trimmedComment.find("===") != std::string::npos) {
                                 // Header like "=== Section Name ===" - extract the text between ===
                                 isHeader = true;
-                                size_t start = trimmedComment.find_first_not_of("= \t");
-                                size_t end = trimmedComment.find_last_not_of("= \t");
-                                if (start != std::string::npos && end != std::string::npos && end >= start) {
-                                    headerText = trimmedComment.substr(start, end - start + 1);
+                                size_t headerStart = trimmedComment.find_first_not_of("= \t");
+                                size_t headerEnd = trimmedComment.find_last_not_of("= \t");
+                                if (headerStart != std::string::npos && headerEnd != std::string::npos && headerEnd >= headerStart) {
+                                    headerText = trimmedComment.substr(headerStart, headerEnd - headerStart + 1);
                                 } else {
                                     headerText = trimmedComment;
                                 }
                             } else if (trimmedComment.find("---") != std::string::npos) {
                                 // Header like "--- Section Name ---"
                                 isHeader = true;
-                                size_t start = trimmedComment.find_first_not_of("- \t");
-                                size_t end = trimmedComment.find_last_not_of("- \t");
-                                if (start != std::string::npos && end != std::string::npos && end >= start) {
-                                    headerText = trimmedComment.substr(start, end - start + 1);
+                                size_t headerStart = trimmedComment.find_first_not_of("- \t");
+                                size_t headerEnd = trimmedComment.find_last_not_of("- \t");
+                                if (headerStart != std::string::npos && headerEnd != std::string::npos && headerEnd >= headerStart) {
+                                    headerText = trimmedComment.substr(headerStart, headerEnd - headerStart + 1);
                                 } else {
                                     headerText = trimmedComment;
                                 }
@@ -7339,8 +7438,7 @@ void RegisterInspectorCustomRenderers()
                                         std::string elemStr = doc[i].IsString() ? doc[i].GetString() : "";
 
                                         char buf[256];
-                                        strncpy(buf, elemStr.c_str(), sizeof(buf) - 1);
-                                        buf[sizeof(buf) - 1] = '\0';
+                                        std::snprintf(buf, sizeof(buf), "%s", elemStr.c_str());
 
                                         ImGui::Text("[%zu]", i + 1);
                                         ImGui::SameLine();
@@ -7522,8 +7620,7 @@ void RegisterInspectorCustomRenderers()
                                             std::string elemStr = it->value.IsString() ? it->value.GetString() : "";
 
                                             char buf[256];
-                                            strncpy(buf, elemStr.c_str(), sizeof(buf) - 1);
-                                            buf[sizeof(buf) - 1] = '\0';
+                                            std::snprintf(buf, sizeof(buf), "%s", elemStr.c_str());
 
                                             ImGui::Text("[%zu]", i + 1);
                                             ImGui::SameLine();
@@ -9295,8 +9392,7 @@ void RegisterInspectorCustomRenderers()
             ImGuiID dnId = ImGui::GetID("##DialogueName");
             if (!isEditingDlgName[dnId]) startDlgName[dnId] = dialogue.dialogueName;
             char nameBuf[256];
-            strncpy(nameBuf, dialogue.dialogueName.c_str(), sizeof(nameBuf) - 1);
-            nameBuf[sizeof(nameBuf) - 1] = '\0';
+            std::snprintf(nameBuf, sizeof(nameBuf), "%s", dialogue.dialogueName.c_str());
             if (ImGui::InputText("##DialogueName", nameBuf, sizeof(nameBuf))) {
                 dialogue.dialogueName = nameBuf;
                 dialogue.registeredWithManager = false;
@@ -9420,8 +9516,7 @@ void RegisterInspectorCustomRenderers()
                     ImGuiID etid = ImGui::GetID("##EntryText");
                     if (!isEditingEntryText[etid]) startEntryText[etid] = entry.text;
                     char textBuf[1024];
-                    strncpy(textBuf, entry.text.c_str(), sizeof(textBuf) - 1);
-                    textBuf[sizeof(textBuf) - 1] = '\0';
+                    std::snprintf(textBuf, sizeof(textBuf), "%s", entry.text.c_str());
                     if (ImGui::InputTextMultiline("##EntryText", textBuf, sizeof(textBuf),
                         ImVec2(-1, ImGui::GetTextLineHeight() * 3))) {
                         entry.text = textBuf;

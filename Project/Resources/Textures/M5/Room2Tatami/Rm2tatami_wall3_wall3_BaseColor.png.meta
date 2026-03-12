@@ -1,0 +1,14 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "002c80ed3fa3a1d5-00047a6a1a013e95",
+        "source": "../../Resources/Textures/M5/Room2Tatami/Rm2tatami_wall3_wall3_BaseColor.png",
+        "compiled": "../../Resources/Textures/M5/Room2Tatami/Rm2tatami_wall3_wall3_BaseColor.dds"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp"
+    }
+}

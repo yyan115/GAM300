@@ -2,7 +2,7 @@
     "prefab_entities": [
         {
             "id": 0,
-            "guid": "00559e94dc19fa4f-00047777e00073b1",
+            "guid": "005009d96ce3c9ed-00047c00dc0054c7",
             "components": {
                 "PrefabLinkComponent": {
                     "type": "PrefabLinkComponent",
@@ -188,7 +188,7 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "00559e94b111baf3-00047777e00073b3"
+                                "005009d91fdb72f5-00047c00dc0054c9"
                             ]
                         }
                     ]
@@ -442,31 +442,31 @@
                             "autoInvokeEntry": true,
                             "instanceState": {
                                 "TriggerDuration": 0.3,
-                                "MinSpawnTorque": 2.0,
-                                "AliveDuration": 10.0,
-                                "MaxSpawnTorque": 10.0,
-                                "_private": {},
-                                "SpawnForceY": 0.1,
-                                "_dropSFXPlayed": false,
-                                "_triggerDuration": 0.3,
-                                "_transform_fetched": false,
-                                "_isTriggerDisabled": false,
                                 "__meta": {},
-                                "_subscriptions": {},
-                                "_aliveDuration": 10.0,
-                                "SpawnForce": 0.2,
+                                "AliveDuration": 10.0,
+                                "_transform_fetched": false,
                                 "__created_at": 1772507285.0,
-                                "featherDropSFX": [
-                                    "000a51720f30dab1-0004773232000001"
-                                ],
+                                "MaxSpawnTorque": 10.0,
+                                "SpawnForce": 0.2,
+                                "_private": {},
+                                "_isTriggerDisabled": false,
+                                "MinSpawnTorque": 2.0,
                                 "__field_list": {
+                                    "MinSpawnTorque": 2.0,
                                     "TriggerDuration": 0.3,
                                     "MaxSpawnTorque": 10.0,
                                     "SpawnForceY": 0.1,
                                     "SpawnForce": 0.2,
-                                    "AliveDuration": 10.0,
-                                    "MinSpawnTorque": 2.0
-                                }
+                                    "AliveDuration": 10.0
+                                },
+                                "SpawnForceY": 0.1,
+                                "_subscriptions": {},
+                                "_dropSFXPlayed": false,
+                                "_aliveDuration": 10.0,
+                                "_triggerDuration": 0.3,
+                                "featherDropSFX": [
+                                    "0078994fadbb08d9-00047bfe4c00000b"
+                                ]
                             }
                         }
                     ]
@@ -496,7 +496,7 @@
         },
         {
             "id": 1,
-            "guid": "00559e94b111baf3-00047777e00073b3",
+            "guid": "005009d91fdb72f5-00047c00dc0054c9",
             "components": {
                 "NameComponent": {
                     "name": "Feather"
@@ -573,7 +573,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "00559e94dc19fa4f-00047777e00073b1"
+                        "005009d96ce3c9ed-00047c00dc0054c7"
                     ]
                 },
                 "RigidBodyComponent": {

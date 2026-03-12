@@ -1,0 +1,14 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "002c80ed3dda8695-00047a6b9e014685",
+        "source": "../../Resources/Textures/M5/BossRoom/arena_low_arena1_BaseColor.png",
+        "compiled": "../../Resources/Textures/M5/BossRoom/arena_low_arena1_BaseColor.dds"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp"
+    }
+}

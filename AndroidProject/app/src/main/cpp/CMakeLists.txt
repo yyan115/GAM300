@@ -285,4 +285,7 @@ target_link_libraries(${CMAKE_PROJECT_NAME}
         EGL
 )
 
+# Android 15+ requires 16KB page size alignment
+target_link_options(${CMAKE_PROJECT_NAME} PRIVATE -Wl,-z,max-page-size=16384)
+
 # End of file

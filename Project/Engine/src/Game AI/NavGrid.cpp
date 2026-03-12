@@ -23,13 +23,13 @@ static const char* SafeName(ECSManager& ecs, Entity e)
     return "<noname>";
 }
 
-static bool IsHitLayer(ECSManager& ecs, Entity e, int layerIdx)
+[[maybe_unused]] static bool IsHitLayer(ECSManager& ecs, Entity e, int layerIdx)
 {
     if (!ecs.HasComponent<LayerComponent>(e)) return false;
     return ecs.GetComponent<LayerComponent>(e).layerIndex == layerIdx;
 }
 
-static bool IsGroundHit(PhysicsSystem& phys,
+[[maybe_unused]] static bool IsGroundHit(PhysicsSystem& phys,
     ECSManager& ecsManager,
     const JPH::BodyID& bodyId,
     int groundIdx)
@@ -50,7 +50,7 @@ static bool IsGroundHit(PhysicsSystem& phys,
 
 // Keeping this for your original debug prints if you still want it elsewhere.
 // (No longer used by Build after patch.)
-static bool IsObstacleHit(PhysicsSystem& phys,
+[[maybe_unused]] static bool IsObstacleHit(PhysicsSystem& phys,
     ECSManager& ecsManager,
     const JPH::BodyID& bodyId,
     int obstacleIdx)
@@ -74,7 +74,7 @@ static bool IsObstacleHit(PhysicsSystem& phys,
     return lc.layerIndex == obstacleIdx;
 }
 
-static ObstacleFootprint MakeBoxFootprint(const Transform& tr, const ColliderComponent& col, float inflate)
+[[maybe_unused]] static ObstacleFootprint MakeBoxFootprint(const Transform& tr, const ColliderComponent& col, float inflate)
 {
     // World center (offset scaled)
     const float cx = tr.localPosition.x + col.center.x * tr.localScale.x;

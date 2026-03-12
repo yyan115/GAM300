@@ -40,10 +40,35 @@
 #endif
 #include <Asset Manager/AssetManager.hpp>
 #include "Graphics/PostProcessing/PostProcessingManager.hpp"
+#include <cmath>
 
 namespace TEMP {
-	std::string windowTitle = "GAM300";
+	std::string windowTitle = "Kusane";
 }
+
+#if !defined(EDITOR) && !defined(ANDROID) && defined(NDEBUG)
+namespace {
+    void UpdateStandaloneWindowTitleWithFps() {
+        static double titleUpdateTimer = 0.0;
+        static int lastDisplayedFps = -1;
+
+        titleUpdateTimer += TimeManager::GetUnscaledDeltaTime();
+        if (titleUpdateTimer < 1.0) {
+            return;
+        }
+        titleUpdateTimer = 0.0;
+
+        const int fps = static_cast<int>(std::lround(TimeManager::GetFps()));
+        if (fps == lastDisplayedFps) {
+            return;
+        }
+        lastDisplayedFps = fps;
+
+        const std::string title = TEMP::windowTitle + " - " + std::to_string(fps) + " FPS";
+        WindowManager::SetWindowTitle(title.c_str());
+    }
+}
+#endif
 
 // Static member definition
 GameState Engine::currentGameState = GameState::EDIT_MODE;
@@ -683,17 +708,23 @@ bool Engine::InitializeAssets() {
 void Engine::Update() {
     TimeManager::UpdateDeltaTime();
 
+#if !defined(EDITOR) && !defined(ANDROID) && defined(NDEBUG)
+    UpdateStandaloneWindowTitleWithFps();
+#endif
+
     // Update input FIRST so systems have fresh input state this frame
     // This fixes the 1-frame input delay that caused buttons to require double-clicks
     if (g_inputManager) {
         g_inputManager->Update(static_cast<float>(TimeManager::GetUnscaledDeltaTime()));
     }
 
-    ECSManager& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
+    // Commented out as not used to fix warnings.
+    // ECSManager& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
 
     //RunBrainInitSystem(ecs);
 
     //RunBrainUpdateSystem(ecs, static_cast<float>(TimeManager::GetDeltaTime()));
+    SceneManager::GetInstance().UpdateAsyncLoad();
 
 	// Only update the scene if the game should be running (not paused)
 	if (ShouldRunGameLogic())

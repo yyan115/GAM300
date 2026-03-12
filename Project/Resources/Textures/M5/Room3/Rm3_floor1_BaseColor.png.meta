@@ -1,0 +1,14 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "00289b57441de6c4-000479918a1876cd",
+        "source": "../../Resources/Textures/M5/Room3/Rm3_floor1_BaseColor.png",
+        "compiled": "../../Resources/Textures/M5/Room3/Rm3_floor1_BaseColor.dds"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp"
+    }
+}
