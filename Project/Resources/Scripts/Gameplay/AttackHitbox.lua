@@ -213,6 +213,8 @@ return Component {
             tostring(targetId), tostring(self._currentHitType), tostring(self._active)))
 
         if self._playerEntityId and targetId == self._playerEntityId then return end
+        local targetTagComp = GetComponent(targetId, "TagComponent")
+        if not (targetTagComp and Tag and Tag.Compare and Tag.Compare(targetTagComp.tagIndex, "Enemy")) then return end
         if self._hitThisSwing[targetId] then return end
         self._hitThisSwing[targetId] = true
 
