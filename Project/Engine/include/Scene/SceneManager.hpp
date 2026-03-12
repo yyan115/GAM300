@@ -84,6 +84,7 @@ private:
 	rapidjson::Document     asyncDoc;
 	rapidjson::SizeType     asyncEntityIndex = 0;
 	rapidjson::SizeType     asyncEntityTotal = 0;
+	bool					asyncSwapPending = false;
 	int                     entitiesPerChunk = 1;
 	std::unique_ptr<IScene> pendingScene;  // IScene not SceneInstance, matching your currentScene type
 	int						asyncSystemInitStep = 0;
