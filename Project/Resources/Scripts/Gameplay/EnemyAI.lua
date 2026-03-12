@@ -1541,12 +1541,15 @@ return Component {
             pcall(function() self._rb.enabled = false end)
         end
 
-        -- Seed ground Y from transform (reliable, no navmesh variance).
-        local _, transformY, _ = self:GetPosition()
-        local groundY = transformY or 0
-
-        self._juggleGroundY = groundY
-        self._juggleY       = groundY
+        -- Only snapshot groundY when launching from the ground.
+        -- Re-lifting an already-airborne enemy must NOT overwrite _juggleGroundY
+        -- with the current mid-air Y, or the landing check triggers immediately.
+        if not self._isJuggled then
+            local _, transformY, _ = self:GetPosition()
+            self._juggleGroundY = transformY or 0
+            self._juggleY       = transformY or 0
+        end
+        -- If already juggled, _juggleGroundY stays at the true floor — only reset velocity.
         self._juggleVY      = tonumber(self.JuggleLiftVelY) or 8.0
         self._isJuggled     = true
         self._juggleAirTime = 0
@@ -1581,13 +1584,19 @@ return Component {
 
     ApplyHit = function(self, dmg, hitType, knockback)
         if self.dead then return end
-        if (self._hitLockTimer or 0) > 0 then return end
+
+        -- Juggle hits (LIFT/AIR/SLAM) must never be gated by the I-frame.
+        -- The combo chain depends on landing these rapidly in sequence.
+        -- iFrame is only meant to prevent stacking on ground hits.
+        local isJuggleHit = (hitType == "LIFT" or hitType == "AIR" or hitType == "SLAM")
+
+        if not isJuggleHit and (self._hitLockTimer or 0) > 0 then return end
         if self._featherSkillBufferTimer <= 0 then
             self._hurtTriggeredByFeather = false
         end
 
-        -- Feather hits shouldn't apply I-Frame.
-        if hitType ~= "FEATHER" then
+        -- Juggle hits also must not set the iFrame, or the next hit in the chain gets blocked.
+        if hitType ~= "FEATHER" and not isJuggleHit then
             self._hitLockTimer = self.config.HitIFrame or 0.1
         end
 
