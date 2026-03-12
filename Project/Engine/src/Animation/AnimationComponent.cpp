@@ -579,6 +579,14 @@ bool AnimationComponent::HasLoopJustCompleted()
     return false;
 }
 
+void AnimationComponent::ResetSM(Entity entity)
+{
+    if (stateMachine)
+    {
+        stateMachine->Reset(entity);
+    }
+}
+
 float AnimationComponent::GetClipDuration(size_t clipIndex) const {
     if (clips.size() <= 0 || clipIndex >= clips.size()) return 0.0f;
     return clips[clipIndex]->GetDuration();

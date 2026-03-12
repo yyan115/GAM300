@@ -637,6 +637,10 @@ return Component {
         -- self._digitWasHeld = oneHeld
         -- ── [END KEYBOARD INPUT NUMBER TEST] ──────────────────────────────────
 
+        if Keyboard.IsDigitPressed(5) then
+            self:RespawnPlayer()
+        end
+
         -- ── 1. Global flags ───────────────────────────────────────────────────
         -- Written first so every other system sees current values this frame.
         _G.player_is_jumping = self._isJumping    or false

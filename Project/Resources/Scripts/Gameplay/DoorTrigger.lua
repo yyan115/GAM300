@@ -162,28 +162,13 @@ return Component {
         if self.initFailed then return end
 
         -------------------------------------------------
-        -- Player range detection (tooltip + attack to interact)
+        -- Player range detection (auto-trigger on collision enter)
         -------------------------------------------------
         if not self.hasOpened then
             local inRange = CheckPlayerInRange(self)
             self.isActivatable = inRange
 
-            -- Show tooltip when entering range, hide when leaving
-            if inRange and not self._tooltipShown then
-                self:_setTooltipVisible(true)
-                self._tooltipShown = true
-            elseif not inRange and self._tooltipShown then
-                self:_setTooltipVisible(false)
-                self._tooltipShown = false
-            end
-
-            -- Wait for attack button press while in range
-            if inRange and Input and Input.IsActionJustPressed
-                and Input.IsActionJustPressed("Attack") then
-
-                -- Hide tooltip and proceed with pickup
-                self:_setTooltipVisible(false)
-                self._tooltipShown = false
+            if inRange then
                 self.hasOpened = true
 
                 -- Tell ComboManager to disable attacks for the duration of the
