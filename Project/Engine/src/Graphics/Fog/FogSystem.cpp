@@ -108,7 +108,7 @@ void FogSystem::Update()
 
             glm::mat4 view = cam->GetViewMatrix();
             glm::mat4 proj = glm::perspective(glm::radians(cam->Zoom),
-                static_cast<float>(vpWidth) / static_cast<float>(vpHeight), 0.1f, 100.0f);
+                static_cast<float>(vpWidth) / static_cast<float>(vpHeight), 0.1f, gfxManager.GetFarPlane());
 
             Frustum frustum;
             frustum.Update(proj * view);

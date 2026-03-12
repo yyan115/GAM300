@@ -230,7 +230,7 @@ void GraphicsManager::UpdateFrustum()
 			projection = glm::perspective(
 				glm::radians(currentCamera->Zoom),
 				aspectRatio,
-				0.1f, 100.0f
+				0.1f, m_farPlane
 			);
 		}
 
@@ -322,7 +322,7 @@ void GraphicsManager::Render()
 		glm::mat4 projection = glm::perspective(
 			glm::radians(currentCamera->Zoom),
 			aspectRatio,
-			0.1f, 100.0f
+			0.1f, m_farPlane
 		);
 
 		// Render all batched instances
@@ -376,7 +376,7 @@ void GraphicsManager::Render()
 				m_idCache.GetMaterialId(modelB->material.get()),
 				m_idCache.GetModelId(modelB->model.get()));
 
-			return false;
+			return keyA < keyB;
 		});
 
 	// Sort other items by their existing sorting logic (sprites, text, etc.)
@@ -628,7 +628,7 @@ void GraphicsManager::SetupMatrices(Shader& shader, const glm::mat4& modelMatrix
 			projection = glm::perspective(
 				glm::radians(currentCamera->Zoom),
 				aspectRatio,
-				0.1f, 100.0f
+				0.1f, m_farPlane
 			);
 		}
 
@@ -918,7 +918,7 @@ void GraphicsManager::RenderParticles(const ParticleComponent& item) {
 		glm::mat4 projection = glm::perspective(
 			glm::radians(currentCamera->Zoom),
 			aspectRatio,
-			0.1f, 100.0f
+			0.1f, m_farPlane
 		);
 		item.particleShader->setMat4("projection", projection);
 
@@ -1370,7 +1370,7 @@ void GraphicsManager::RenderSkybox()
 	glm::mat4 projection = glm::perspective(
 		glm::radians(currentCamera->Zoom),
 		aspectRatio,
-		0.1f, 100.0f
+		0.1f, m_farPlane
 	);
 
 	skyboxShader->setMat4("view", view);
@@ -1540,7 +1540,7 @@ void GraphicsManager::RenderFogVolume(const FogVolumeComponent& item)
 
 	// --- Camera matrices ---
 	const float nearP = 0.1f;
-	const float farP  = 100.0f;
+	const float farP  = m_farPlane;
 	if (currentCamera)
 	{
 		float aspectRatio = currentFrameViewport.aspectRatio;

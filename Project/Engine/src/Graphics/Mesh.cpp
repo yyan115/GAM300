@@ -295,7 +295,7 @@ void Mesh::Draw(Shader& shader, const Camera& camera)
 	GraphicsManager::GetInstance().GetViewportSize(vpWidth, vpHeight);
 	if (vpWidth <= 0) vpWidth = 1;
 	if (vpHeight <= 0) vpHeight = 1;
-	glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom), (float)vpWidth / (float)vpHeight, 0.1f, 100.0f);
+	glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom), (float)vpWidth / (float)vpHeight, 0.1f, GraphicsManager::GetInstance().GetFarPlane());
 	shader.setMat4("projection", projection);
 	shader.setVec3("cameraPos", camera.Position);
 
