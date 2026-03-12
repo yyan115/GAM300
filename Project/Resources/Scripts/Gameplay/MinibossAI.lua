@@ -1825,6 +1825,7 @@ return Component {
             if not m.didHit and m.t >= (m.hitAt or 0) then
                 m.didHit = true
 
+                print("Do u see this?")
                 -- CLAW VFX HERE
                 if _G.event_bus then
                     local x, y, z = self:GetPosition()
