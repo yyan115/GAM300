@@ -1,1 +1,1 @@
-../../Resources/Scenes/03_Loading.scene
+../../Resources/Scenes/01_MainMenu.scene
