@@ -13,6 +13,8 @@ local function PlayerTakeDmg(self, dmg, kbDirX, kbDirZ)
     self._animator:SetTrigger(HurtTrigger)
     self._hurtTriggered = true
 
+    if self.GodMode then return end
+
     self.CurrentHealth = self.CurrentHealth - dmg
     
     if self.CurrentHealth <= 0 then
@@ -91,6 +93,7 @@ return Component {
         -- === Health ===
         MaxHealth     = 30,
         CurrentHealth = 30,
+        GodMode       = false,
 
         -- === I-Frames ===
         IFrameDuration = 1.0,   -- Post-hit invincibility window (seconds).
@@ -358,6 +361,14 @@ return Component {
                 event_bus.publish("playerHurtTriggered", true)
                 self._hurtTriggered = false
             end
+        end
+
+        if Keyboard.IsDigitPressed(5) then
+            self:RespawnPlayer()
+        end
+
+        if Keyboard.IsDigitPressed(8) then
+            self.GodMode = not self.GodMode
         end
 
         -- Post-hit i-frame timer
