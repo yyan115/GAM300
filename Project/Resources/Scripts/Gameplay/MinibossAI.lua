@@ -1288,11 +1288,17 @@ return Component {
 
         -- phase 2: hooking forces boss down
         if self._phase == 2 and self._inAir then
+            self._hooked = true
             self._hookedDownRequested = true
-            -- Forcefully cancel BurstFire so it doesn't secretly run 
-            -- while the boss is falling and delay the FateSealed move!
+
+            -- Cancel current air attack immediately
             self:_EndMove()
+
+            -- Start falling RIGHT NOW
             self:BeginSlamDown("Pulldown")
+
+            print("[Miniboss][Hooked] Phase 2 air hook -> immediate slam")
+            return
         end
 
         if self._phase == 3 and not self._inAir then
