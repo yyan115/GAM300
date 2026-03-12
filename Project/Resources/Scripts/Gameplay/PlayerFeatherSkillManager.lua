@@ -96,7 +96,7 @@ return Component {
                     if audio and self.FeatherSkillStartSFX[1] then
                         audio:PlayOneShot(self.FeatherSkillStartSFX[1])
                     end
-                    
+
                     local featherSkillPrefab = Prefab.InstantiatePrefab(self.FeatherSkillPrefabPath)
 
                     if Engine.SetParentEntity then
@@ -108,12 +108,12 @@ return Component {
                         featherSkillPrefabTr.localPosition.x = 0
                         featherSkillPrefabTr.localPosition.y = self.SpawnHeightOffset
                         featherSkillPrefabTr.localPosition.z = self.SpawnForwardOffset
-                        
+
                         featherSkillPrefabTr.localRotation.w = 1.0
                         featherSkillPrefabTr.localRotation.x = 0
                         featherSkillPrefabTr.localRotation.y = 0
                         featherSkillPrefabTr.localRotation.z = 0
-                        
+
                         featherSkillPrefabTr.isDirty = true
                     end
                     self._featherSkillCooldown = self.FeatherSkillCooldown
