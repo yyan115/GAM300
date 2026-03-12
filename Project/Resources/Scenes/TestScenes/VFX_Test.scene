@@ -352,7 +352,7 @@
                                 },
                                 {
                                     "type": "float",
-                                    "data": 0
+                                    "data": -1.67471
                                 }
                             ]
                         },
@@ -536,7 +536,7 @@
                                 },
                                 {
                                     "type": "float",
-                                    "data": 0
+                                    "data": -1.67471
                                 }
                             ]
                         },
@@ -4878,7 +4878,7 @@
                                 },
                                 {
                                     "type": "float",
-                                    "data": -3.93843
+                                    "data": 0
                                 }
                             ]
                         },
@@ -33750,13 +33750,13 @@
         },
         {
             "PrefabPath": "../../Resources/Prefabs/VFXPrefabs/WeaponPickupVFX.prefab",
-            "id": 356,
+            "id": 334,
             "guid": "004c4ea6343cee4e-00047b51d000003b",
             "Name": "WeaponPickupVFX",
             "SiblingIndex": 13,
             "Children": [
                 {
-                    "id": 334,
+                    "id": 335,
                     "guid": "003a655ce9b81acc-00047b2a2e000009",
                     "Name": "WeaponPickupBaseGlow",
                     "SiblingIndex": 12,
@@ -33768,7 +33768,7 @@
                     }
                 },
                 {
-                    "id": 349,
+                    "id": 336,
                     "guid": "004c4ea671dce621-00047b4d7e00002d",
                     "Name": "WeaponPickupSparkles",
                     "SiblingIndex": 11,
@@ -33780,7 +33780,7 @@
                     }
                 },
                 {
-                    "id": 339,
+                    "id": 337,
                     "guid": "004c4ea66b504ba9-00047b485e000013",
                     "Name": "WeaponPickupGlowBalls",
                     "SiblingIndex": 10,
@@ -33792,7 +33792,7 @@
                     }
                 },
                 {
-                    "id": 335,
+                    "id": 338,
                     "guid": "0012c05e409d3336-00047b2ea0000007",
                     "Name": "WeaponPickupPillarGlow",
                     "SiblingIndex": 9,
@@ -33804,6 +33804,13 @@
                     }
                 }
             ]
+        },
+        {
+            "PrefabPath": "../../Resources/Prefabs/VFXPrefabs/GroundSlamDustVFX.prefab",
+            "id": 339,
+            "guid": "007fc422fa1ad33a-00047bb978000011",
+            "Name": "GroundSlamDustVFX",
+            "SiblingIndex": 14
         }
     ],
     "layers": [
