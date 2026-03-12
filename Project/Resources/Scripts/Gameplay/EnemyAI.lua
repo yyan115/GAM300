@@ -119,10 +119,11 @@ return Component {
         MeleeAnimDelay       = 1.2,   -- Seconds into the melee animation before the hit registers.
 
         -- === Melee combat ===
-        MeleeSpeed          = 0.9,   -- Movement speed while charging a melee attack (world units/sec).
-        MeleeRange          = 1.2,   -- Distance at which melee hit registers.
-        MeleeDamage         = 3,     -- Damage dealt per melee swing.
-        MeleeAttackCooldown = 5.0,   -- Seconds between melee swings.
+        MeleeSpeed          = 0.9,        -- Movement speed while charging a melee attack (world units/sec).
+        MeleeRange          = 1.2,        -- Distance at which melee hit registers.
+        MeleeDamage         = 3,          -- Damage dealt per melee swing.
+        MeleeAttackCooldown = 5.0,        -- Seconds between melee swings.
+        FirstMeleeAttackHeadStart = 0.80, -- Adjust the first hit to match the animation.
 
         -- === Hit response ===
         HurtDuration      = 2.0,    -- Seconds spent in the Hurt state after taking a hit.
@@ -489,8 +490,16 @@ return Component {
         --     self:MoveCC(1.0, 0.0, dt) -- 1 unit/sec to +X
         -- end
 
-        if Input.IsActionJustPressed("Interact") then
+        if Keyboard.IsDigitPressed(1) then
             self:ApplyHook(self.HookedDuration)
+        end
+
+        if Keyboard.IsDigitPressed(3) then
+            self:ApplyHit(10)
+        end
+
+        if Keyboard.IsDigitPressed(7) then
+            self.IsPassive = not self.IsPassive
         end
 
         local dtSec = toDtSec(dt)
