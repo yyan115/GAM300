@@ -1,0 +1,11 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "00269aea42eb11c2-00047c478600e79b",
+        "source": "../../Resources/Models/Rooms/Room5/Room5_Floor1.fbx",
+        "compiled": "../../Resources/Models/Rooms/Room5/Room5_Floor1.mesh"
+    },
+    "ModelMetaData": {
+        "optimizeMeshes": true
+    }
+}

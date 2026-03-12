@@ -132,26 +132,26 @@ size_t InstanceBatch::GetSortKey() const
 
 void InstanceBatch::UpdateInstanceBuffer()
 {
-    if (!m_bufferDirty || m_instances.empty()) 
-    {
-        return;
-    }
+    // Force a default capacity so we aren't allocating tiny memory chunks
+    if (m_bufferCapacity < 100) m_bufferCapacity = 100;
 
-    // If the VBO hasn't been created yet (ID 0), we MUST initialize it 
-    // with the full m_bufferCapacity, otherwise VBO::UpdateData will 
-    // create a tiny buffer that matches only the current frame's data size.
     if (m_instanceVBO.ID == 0)
     {
         m_instanceVBO.InitializeBuffer(m_bufferCapacity * sizeof(InstanceData), GL_DYNAMIC_DRAW);
     }
 
-    // Check if we need to grow the buffer
-    if (m_instances.size() > m_bufferCapacity) 
+    if (!m_bufferDirty || m_instances.empty())
+    {
+        return;
+    }
+
+    // Check if we need to grow the buffer (Buffer Orphaning)
+    if (m_instances.size() > m_bufferCapacity)
     {
         size_t newCapacity = m_bufferCapacity;
-        while (newCapacity < m_instances.size()) 
+        while (newCapacity < m_instances.size())
         {
-            newCapacity *= GROWTH_FACTOR;
+            newCapacity *= 2; // Assuming your GROWTH_FACTOR is 2
         }
         m_instanceVBO.InitializeBuffer(newCapacity * sizeof(InstanceData), GL_DYNAMIC_DRAW);
         m_bufferCapacity = newCapacity;
@@ -160,4 +160,11 @@ void InstanceBatch::UpdateInstanceBuffer()
     // Upload instance data
     m_instanceVBO.UpdateData(m_instances.data(), m_instances.size() * sizeof(InstanceData), 0);
     m_bufferDirty = false;
+}
+
+void InstanceBatch::Prewarm() {
+    if (m_instanceVBO.ID == 0) {
+        if (m_bufferCapacity < 100) m_bufferCapacity = 100;
+        m_instanceVBO.InitializeBuffer(m_bufferCapacity * sizeof(InstanceData), GL_DYNAMIC_DRAW);
+    }
 }

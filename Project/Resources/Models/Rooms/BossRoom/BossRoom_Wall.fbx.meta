@@ -1,0 +1,11 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "004598fffb419fa5-00047caa5e03e0cd",
+        "source": "../../Resources/Models/Rooms/BossRoom/BossRoom_Wall.fbx",
+        "compiled": "../../Resources/Models/Rooms/BossRoom/BossRoom_Wall.mesh"
+    },
+    "ModelMetaData": {
+        "optimizeMeshes": true
+    }
+}

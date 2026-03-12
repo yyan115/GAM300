@@ -11,9 +11,11 @@ return Component {
         AttractionStrength = 60.0, 
         Drag = 5.0,                
         MaxSpeed = 40.0,           
+        PickupDetectionRadius = 1.0,
         CollectionRadius = 0.05,    
         TargetScale = 0.1,
         LiftHeight = 0.3,          
+        PlayerEntityName = "Player",
     },
 
     Awake = function(self)
@@ -36,6 +38,7 @@ return Component {
         self._colliderEnabled = false
 
         self._parentFeatherEntity = Engine.GetParentEntity(self.entityId)
+        self._playerEntityId = Engine.GetEntityByName(self.PlayerEntityName)
         
         self._onTriggerStayed = false
         self._isCollecting = false
@@ -43,6 +46,9 @@ return Component {
     end,
 
     Update = function(self, dt)
+        if self._collected then return end
+        if not self._parentFeatherEntity or self._parentFeatherEntity < 0 then return end
+
         -- [FIXED] Stop setting it to true every frame once it's enabled
         if not self._colliderEnabled then
             self._initialInactiveDuration = self._initialInactiveDuration - dt
@@ -51,6 +57,35 @@ return Component {
                     self._collider.enabled = true
                 end
                 self._colliderEnabled = true
+            end
+        end
+
+        if self._colliderEnabled and not self._isCollecting then
+            local playerId = self._playerEntityId
+            if not playerId or playerId < 0 then
+                playerId = Engine.GetEntityByName(self.PlayerEntityName)
+                self._playerEntityId = playerId
+            end
+
+            if playerId and playerId >= 0 then
+                local parentTransform = GetComponent(self._parentFeatherEntity, "Transform")
+                local playerTransform = GetComponent(playerId, "Transform")
+
+                if parentTransform and playerTransform then
+                    local myPos = parentTransform.localPosition
+                    local playerPos = playerTransform.localPosition
+                    local dx = playerPos.x - myPos.x
+                    local dy = (playerPos.y + self.LiftHeight) - myPos.y
+                    local dz = playerPos.z - myPos.z
+                    local radius = self.PickupDetectionRadius or 1.0
+
+                    if (dx * dx + dy * dy + dz * dz) <= (radius * radius) then
+                        self:TryCollect(playerId)
+                        if self._isCollecting or self._collected then
+                            return
+                        end
+                    end
+                end
             end
         end
 
@@ -125,7 +160,7 @@ return Component {
             if (dist < self.CollectionRadius) or (dist <= moveDist) then
                 --print(string.format("[EnemyFeatherCollectible] Player collected feather - Entity %d", self.entityId))
                 self:OnCollected() 
-                myPos = { x = targetX, y = targetY, z = targetZ } -- Snap position visually
+                return
             else
                 -- Apply normal movement
                 myPos.x = myPos.x + self._velocity.x * dt
@@ -172,6 +207,8 @@ return Component {
 
     -- [NEW] Reusable collection logic
     TryCollect = function(self, otherEntityId)
+        if self._collected then return end
+        if not otherEntityId or otherEntityId < 0 then return end
         if self._onTriggerStayed then return end
         if self._isCollecting then return end
         local name = Engine.GetEntityName(otherEntityId)
@@ -224,6 +261,15 @@ return Component {
     OnCollected = function(self)
         if self._collected then return end
         self._collected = true
+        self._isCollecting = false
+
+        if self._collider then
+            self._collider.enabled = false
+        end
+
+        if self._rb then
+            self._rb.enabled = false
+        end
 
         Engine.DestroyEntity(self._parentFeatherEntity)
 

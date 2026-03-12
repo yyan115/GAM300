@@ -1,0 +1,14 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "0025280366202022-00047680a8000009",
+        "source": "../../Resources/Textures/VFX/GroundSlam/GroundCrack_occlusionRoughnessMetallic.png",
+        "compiled": "../../Resources/Textures/VFX/GroundSlam/GroundCrack_occlusionRoughnessMetallic.dds"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp"
+    }
+}

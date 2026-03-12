@@ -388,9 +388,9 @@
                                 "Lifetime": 3.0,
                                 "_subscriptions": {},
                                 "__field_list": {
-                                    "Lifetime": 1.2,
                                     "Speed": 10.0,
-                                    "Damage": 1.0
+                                    "Damage": 1.0,
+                                    "Lifetime": 1.2
                                 },
                                 "LifeJitter": 0.25,
                                 "_transform_fetched": false,

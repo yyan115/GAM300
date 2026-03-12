@@ -1800,6 +1800,53 @@ void RegisterInspectorCustomRenderers()
                     EditorComponents::EndDragDropTarget();
                 }
 
+                // --- SFX (drag-drop audio) ---
+                ImGui::Text("SFX");
+                if (ImGui::IsItemHovered()) ImGui::SetTooltip("Audio clip to play when this board becomes active (drag-drop from Asset Browser)");
+                ImGui::SameLine(labelWidth);
+                {
+                    std::string sfxDisplay = "None (Audio)";
+                    if (!board.sfxGuidStr.empty()) {
+                        GUID_128 sfxGuid = GUIDUtilities::ConvertStringToGUID128(board.sfxGuidStr);
+                        std::string sfxPath = AssetManager::GetInstance().GetAssetPathFromGUID(sfxGuid);
+                        if (!sfxPath.empty())
+                            sfxDisplay = sfxPath.substr(sfxPath.find_last_of("/\\") + 1);
+                        else
+                            sfxDisplay = board.sfxGuidStr;
+                    }
+                    EditorComponents::DrawDragDropButton(sfxDisplay.c_str(), ImGui::GetContentRegionAvail().x);
+                    if (ImGui::BeginDragDropTarget()) {
+                        if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("AUDIO_DRAG")) {
+                            std::string newGuidStr = GUIDUtilities::ConvertGUID128ToString(DraggedAudioGuid);
+                            std::string oldGuidStr = board.sfxGuidStr;
+                            board.sfxGuidStr = newGuidStr;
+                            if (UndoSystem::GetInstance().IsEnabled()) {
+                                size_t idx = i;
+                                UndoSystem::GetInstance().RecordLambdaChange(
+                                    [entity, idx, newGuidStr]() { auto& e = ECSRegistry::GetInstance().GetActiveECSManager(); if (e.HasComponent<VideoComponent>(entity)) { auto& b = e.GetComponent<VideoComponent>(entity).boards; if (idx < b.size()) b[idx].sfxGuidStr = newGuidStr; } },
+                                    [entity, idx, oldGuidStr]() { auto& e = ECSRegistry::GetInstance().GetActiveECSManager(); if (e.HasComponent<VideoComponent>(entity)) { auto& b = e.GetComponent<VideoComponent>(entity).boards; if (idx < b.size()) b[idx].sfxGuidStr = oldGuidStr; } },
+                                    "Assign Board SFX");
+                            }
+                        }
+                        ImGui::EndDragDropTarget();
+                    }
+                    if (!board.sfxGuidStr.empty()) {
+                        ImGui::SameLine();
+                        if (ImGui::SmallButton("X##ClearSFX")) {
+                            std::string oldGuidStr = board.sfxGuidStr;
+                            board.sfxGuidStr = "";
+                            if (UndoSystem::GetInstance().IsEnabled()) {
+                                size_t idx = i;
+                                UndoSystem::GetInstance().RecordLambdaChange(
+                                    [entity, idx]() { auto& e = ECSRegistry::GetInstance().GetActiveECSManager(); if (e.HasComponent<VideoComponent>(entity)) { auto& b = e.GetComponent<VideoComponent>(entity).boards; if (idx < b.size()) b[idx].sfxGuidStr = ""; } },
+                                    [entity, idx, oldGuidStr]() { auto& e = ECSRegistry::GetInstance().GetActiveECSManager(); if (e.HasComponent<VideoComponent>(entity)) { auto& b = e.GetComponent<VideoComponent>(entity).boards; if (idx < b.size()) b[idx].sfxGuidStr = oldGuidStr; } },
+                                    "Clear Board SFX");
+                            }
+                        }
+                        if (ImGui::IsItemHovered()) ImGui::SetTooltip("Clear SFX");
+                    }
+                }
+
                 // --- Duration + Fade Duration (same line) ---
                 ImGui::Text("Duration");
                 if (ImGui::IsItemHovered()) ImGui::SetTooltip("How long this board stays on screen before auto-advancing (seconds).\nAlso controls blur animation timing if Animate is checked.");
@@ -6027,6 +6074,10 @@ void RegisterInspectorCustomRenderers()
 
                     ImGui::Spacing();
                     ImGui::ProgressBar(progress, ImVec2(-1, 0), "");
+
+                    ImGui::Text("Normalized Time:");
+                    ImGui::SameLine();
+                    ImGui::TextColored(ImVec4(1, 1, 0, 1), "%.3f", animComp.GetNormalizedTime());
                 }
             }
         }

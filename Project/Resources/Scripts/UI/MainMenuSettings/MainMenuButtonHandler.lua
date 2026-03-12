@@ -87,11 +87,33 @@ return Component {
     -- Quit Button Function
     OnClickQuitButton = function(self)
         -- Play click SFX
-        self:_playClickSFX("ExitGame")
-        if Screen and Screen.RequestClose then
-            Screen.RequestClose()
-        else
-            print("[MainMenuButtonHandler] Warning: Screen.RequestClose missing")
+        -- self:_playClickSFX("ExitGame")
+        -- if Screen and Screen.RequestClose then
+        --     Screen.RequestClose()
+        -- else
+        --     print("[MainMenuButtonHandler] Warning: Screen.RequestClose missing")
+        -- end
+        
+        local QuitPromptEntity = Engine.GetEntityByName("QuitPromptUI")
+        local QuitPromptUI = GetComponent(QuitPromptEntity, "ActiveComponent")
+        QuitPromptUI.isActive = true
+
+
+        -- Disable buttons and hide text when settings menu is active
+        local targetButtons = {"PlayGame", "Credits", "ExitGame", "Settings"}
+        local targetTexts = {"PlayGameText", "SettingText", "CreditsText", "ExitGameText"}
+        for _, buttonName in ipairs(targetButtons) do
+            local entity = Engine.GetEntityByName(buttonName)
+            if entity then
+                local button = GetComponent(entity, "ButtonComponent")
+                if button then
+                    button.interactable = false
+                else
+                    print("[MainMenuButtonHandler] Warning: ButtonComponent missing on " .. buttonName)
+                end
+            else
+                print("[MainMenuButtonHandler] Warning: Button entity " .. buttonName .. " not found")
+            end
         end
     end,
 

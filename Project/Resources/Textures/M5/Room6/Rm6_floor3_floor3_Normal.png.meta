@@ -1,0 +1,14 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "004598fff9f98967-00047c977402f2a1",
+        "source": "../../Resources/Textures/M5/Room6/Rm6_floor3_floor3_Normal.png",
+        "compiled": "../../Resources/Textures/M5/Room6/Rm6_floor3_floor3_Normal.dds"
+    },
+    "TextureMetaData": {
+        "type": "normal",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp"
+    }
+}

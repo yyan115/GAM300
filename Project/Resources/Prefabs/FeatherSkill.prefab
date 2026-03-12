@@ -2,7 +2,7 @@
     "prefab_entities": [
         {
             "id": 0,
-            "guid": "0066d2df4201d619-00046a6c12124489",
+            "guid": "006a58714ea44eb1-00047c4ce8003885",
             "components": {
                 "PrefabLinkComponent": {
                     "type": "PrefabLinkComponent",
@@ -91,7 +91,7 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "0066d2df393190be-00046a6c1212448b"
+                                "006a58716236d6a2-00047c4ce8003887"
                             ]
                         }
                     ]
@@ -115,91 +115,68 @@
                             "entryFunction": "OnInit",
                             "autoInvokeEntry": true,
                             "instanceState": {
-                                "_windupTimer": 0.2,
-                                "CastingRotationSpeed": 0.0,
-                                "SpawnFeather": null,
-                                "AimVerticalOffset": 0.0,
-                                "GetScale": null,
-                                "_startSkill": false,
-                                "SkillLightInitialDiffuseR": 255.0,
-                                "MaxAliveDuration": 10.0,
-                                "LaunchRotationSpeed": 1080.0,
-                                "_subscriptions": {},
-                                "_call_lifecycle": null,
-                                "NumFeathersToSpawn": 10.0,
-                                "Unsubscribe": null,
-                                "_aliveDuration": 10.0,
-                                "Awake": null,
-                                "_castDelay": 3.0,
-                                "Every": null,
-                                "ProjectileSpeed": 25.0,
-                                "Destroy": null,
+                                "ConvergeDuration": 0.4,
                                 "SkillSizeFactor": 3.0,
-                                "SetRotation": null,
-                                "SerializeFields": null,
-                                "DisableSafe": null,
-                                "UpdateSafe": null,
-                                "FocalDistance": 30.0,
-                                "FeatherTargetRotationX": 70.0,
-                                "_state": 0.0,
-                                "SpawnDuration": 0.3,
-                                "__meta": {},
-                                "_spawnTimer": 0.0,
-                                "After": null,
-                                "Subscribe": null,
-                                "GetRotation": null,
-                                "DebugTransform": null,
-                                "_feathersSpawned": 0.0,
-                                "SetPosition": null,
                                 "_cameraYawSub": {
                                     "id": 17.0,
                                     "event": "camera_yaw"
                                 },
-                                "GetPosition": null,
-                                "Move": null,
-                                "SetScale": null,
-                                "_transform_fetched": false,
+                                "MaxAliveDuration": 10.0,
                                 "_cameraYaw": 180.0,
-                                "ConvergeDuration": 0.4,
-                                "SkillLightInitialDiffuseB": 107.0,
-                                "WindupPullbackDistance": 0.1,
-                                "SkillLightCastedDiffuseR": 255.0,
-                                "__field_list": {
-                                    "SkillLightInitialDiffuseR": 255.0,
-                                    "LaunchRotationSpeed": 1080.0,
-                                    "ConvergeDuration": 0.5,
-                                    "NumFeathersToSpawn": 10.0,
-                                    "WindupPullbackDistance": 0.6,
-                                    "SkillLightCastedDiffuseR": 255.0,
-                                    "SkillLightInitialDiffuseG": 170.0,
-                                    "SkillLightCastedDiffuseG": 0.0,
-                                    "ProjectileSpeed": 25.0,
-                                    "FeatherProjectilePrefabPath": "Resources/Prefabs/FeatherSkillProjectile.prefab",
-                                    "WindupDuration": 0.2,
-                                    "FeatherTargetRotationX": 70.0,
-                                    "CastDelay": 3.0,
-                                    "SkillLightInitialDiffuseB": 170.0,
-                                    "SpawnDuration": 1.0,
-                                    "SkillLightEntityName": "SkillLight",
-                                    "SkillLightCastedDiffuseB": 0.0,
-                                    "CastingRotationSpeed": 360.0
-                                },
-                                "WindupDuration": 0.1,
-                                "SkillLightCastedDiffuseG": 142.0,
-                                "SkillLightCastedDiffuseB": 0.0,
-                                "DeserializeFields": null,
-                                "AwakeSafe": null,
-                                "_private": {},
-                                "FeatherProjectilePrefabPath": "Resources/Prefabs/FeatherSkillProjectile.prefab",
-                                "StartSafe": null,
-                                "GetTransform": null,
-                                "SkillLightInitialDiffuseG": 183.0,
-                                "CastDelay": 0.5,
-                                "OnDisable": null,
+                                "_startSkill": false,
+                                "_feathersSpawned": 0.0,
+                                "_windupTimer": 0.2,
                                 "__created_at": 1772621361.0,
+                                "SkillLightCastedDiffuseR": 255.0,
+                                "SkillLightInitialDiffuseR": 255.0,
+                                "_aliveDuration": 10.0,
+                                "_private": {},
+                                "__meta": {},
+                                "SkillLightInitialDiffuseG": 183.0,
+                                "FocalDistance": 30.0,
+                                "_state": 0.0,
+                                "CastDelay": 0.5,
+                                "ProjectileSpeed": 25.0,
+                                "AimVerticalOffset": 0.0,
+                                "SkillLightCastedDiffuseG": 142.0,
                                 "SkillLightEntityName": "SkillLight",
-                                "Update": null,
-                                "Start": null
+                                "WindupDuration": 0.1,
+                                "_transform_fetched": false,
+                                "LaunchRotationSpeed": 1080.0,
+                                "_spawnTimer": 0.0,
+                                "SkillLightInitialDiffuseB": 107.0,
+                                "_subscriptions": {},
+                                "_castDelay": 3.0,
+                                "CastingRotationSpeed": 0.0,
+                                "FeatherTargetRotationX": 70.0,
+                                "WindupPullbackDistance": 0.1,
+                                "NumFeathersToSpawn": 10.0,
+                                "FeatherProjectilePrefabPath": "Resources/Prefabs/FeatherSkillProjectile.prefab",
+                                "__field_list": {
+                                    "ConvergeDuration": 0.5,
+                                    "SkillLightInitialDiffuseG": 170.0,
+                                    "WindupDuration": 0.2,
+                                    "SkillLightEntityName": "SkillLight",
+                                    "LaunchRotationSpeed": 1080.0,
+                                    "SkillLightInitialDiffuseB": 170.0,
+                                    "CastingRotationSpeed": 360.0,
+                                    "SkillLightCastedDiffuseR": 255.0,
+                                    "SkillLightInitialDiffuseR": 255.0,
+                                    "FeatherProjectilePrefabPath": "Resources/Prefabs/FeatherSkillProjectile.prefab",
+                                    "WindupPullbackDistance": 0.6,
+                                    "NumFeathersToSpawn": 10.0,
+                                    "SkillLightCastedDiffuseG": 0.0,
+                                    "SpawnDuration": 1.0,
+                                    "SkillLightCastedDiffuseB": 0.0,
+                                    "CastDelay": 3.0,
+                                    "ProjectileSpeed": 25.0,
+                                    "FeatherTargetRotationX": 70.0
+                                },
+                                "SpawnDuration": 0.3,
+                                "SkillLightCastedDiffuseB": 0.0,
+                                "FeatherSkillReleaseSFX": [
+                                    "0078994faedff0b5-00047bfe4c00000f"
+                                ]
                             }
                         }
                     ]
@@ -208,7 +185,7 @@
         },
         {
             "id": 1,
-            "guid": "0066d2df393190be-00046a6c1212448b",
+            "guid": "006a58716236d6a2-00047c4ce8003887",
             "components": {
                 "NameComponent": {
                     "name": "SkillLight"
@@ -285,7 +262,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "0066d2df4201d619-00046a6c12124489"
+                        "006a58714ea44eb1-00047c4ce8003885"
                     ]
                 },
                 "PointLightComponent": {

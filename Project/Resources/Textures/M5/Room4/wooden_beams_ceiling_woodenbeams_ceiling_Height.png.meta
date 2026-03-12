@@ -1,0 +1,14 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "002c80ed6cc9af1b-00047a9cb803c7b3",
+        "source": "../../Resources/Textures/M5/Room4/wooden_beams_ceiling_woodenbeams_ceiling_Height.png",
+        "compiled": "../../Resources/Textures/M5/Room4/wooden_beams_ceiling_woodenbeams_ceiling_Height.dds"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp"
+    }
+}

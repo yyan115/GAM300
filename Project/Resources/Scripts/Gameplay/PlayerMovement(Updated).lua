@@ -333,6 +333,12 @@ return Component {
             end
         end)
 
+        -- ── Chain aim state ───────────────────────────────────────────────────
+        self._chainAimActive = false
+        self._chainAimStateSub = event_bus.subscribe("chain.aim_camera", function(payload)
+            self._chainAimActive = payload and payload.active or false
+        end)
+
         -- ── Rotation overrides ────────────────────────────────────────────────
         sub(self, "_requestPlayerForwardSub", "request_player_forward", function(_)
             if not self._facingX or not self._facingZ then return end
@@ -1566,10 +1572,26 @@ return Component {
         self._wasRunning = self._isRunning
 
         -- ── 24. Rotation ──────────────────────────────────────────────────────
-        -- Rotate toward input while input is held.
-        -- Air: scaled by AirControlMultiplier (rotation tracks movement capability).
-        -- Post-dash: reverse rotation restricted for PostDashRecoveryTime.
-        if isMoving then
+        -- Chain aim: always face the camera's look direction regardless of input.
+        -- Normal: rotate toward input while input is held.
+        if self._chainAimActive then
+            local yr   = math.rad(_G.CAMERA_YAW or self._cameraYaw or 180.0)
+            local fwdX = -math.sin(yr)
+            local fwdZ = -math.cos(yr)
+            local t = math.min((self.rotationSpeed or 10.0) * dt, 1.0)
+            local targetW, targetX, targetY, targetZ = directionToQuaternion(fwdX, fwdZ)
+            local newW, newX, newY, newZ = lerpQuaternion(
+                self._currentRotW, self._currentRotX,
+                self._currentRotY, self._currentRotZ,
+                targetW, targetX, targetY, targetZ, t)
+            self._currentRotW, self._currentRotX, self._currentRotY, self._currentRotZ =
+                newW, newX, newY, newZ
+            self._facingX = fwdX; self._facingZ = fwdZ
+            pcall(self.SetRotation, self, newW, newX, newY, newZ)
+        elseif isMoving then
+            -- Rotate toward input while input is held.
+            -- Air: scaled by AirControlMultiplier (rotation tracks movement capability).
+            -- Post-dash: reverse rotation restricted for PostDashRecoveryTime.
             local mag = math.sqrt(moveX*moveX + moveZ*moveZ)
             self._facingX = moveX / mag
             self._facingZ = moveZ / mag
@@ -1628,6 +1650,7 @@ return Component {
                 "_freezePlayerSub", "_requestPlayerForwardSub", "_attackLungeSub",
                 "_combatStateSub", "_forceRotSub", "_chainFiredRotSub",
                 "_dashPerformedSub", "_chainConstraintSub", "_enemyPosSub",
+                "_chainAimStateSub",
             }
             for _, key in ipairs(subs) do
                 if self[key] then event_bus.unsubscribe(self[key]); self[key] = nil end

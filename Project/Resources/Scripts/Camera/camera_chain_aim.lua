@@ -50,15 +50,16 @@ end
 -- Returns: chainAimActive (bool), chainDesiredX, chainDesiredY, chainDesiredZ
 -- chainDesiredX/Y/Z are nil when chainAimActive is false.
 function M.updateChainAim(self, dt)
-    -- Smooth blend factor toward target (0 = orbit, 1 = chain aim)
-    local blendTarget = self._chainAiming and 1.0 or 0.0
-    local blendSpeed  = self.chainAimTransitionSpeed or 5.0
-    local blendT      = 1.0 - math.exp(-blendSpeed * dt)
-    self._chainAimBlend = self._chainAimBlend + (blendTarget - self._chainAimBlend) * blendT
-
-    -- Snap to exact 0/1 to avoid micro-lerp stall
-    if self._chainAimBlend < 0.001 then self._chainAimBlend = 0.0 end
-    if self._chainAimBlend > 0.999 then self._chainAimBlend = 1.0 end
+    -- Blend factor: snap to 1 immediately when aiming so there is zero lerp
+    -- on position, rotation, and CAMERA_YAW. Smooth out only on release.
+    if self._chainAiming then
+        self._chainAimBlend = 1.0
+    else
+        local blendSpeed = self.chainAimTransitionSpeed or 5.0
+        local blendT     = 1.0 - math.exp(-blendSpeed * dt)
+        self._chainAimBlend = self._chainAimBlend + (0.0 - self._chainAimBlend) * blendT
+        if self._chainAimBlend < 0.001 then self._chainAimBlend = 0.0 end
+    end
 
     local chainAimActive = self._chainAimBlend > 0.0
     if not chainAimActive then

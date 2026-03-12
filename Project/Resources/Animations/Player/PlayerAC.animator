@@ -1902,6 +1902,51 @@
                     "threshold": 1.0
                 }
             ]
+        },
+        {
+            "from": "NA1",
+            "to": "Dash",
+            "anyState": false,
+            "hasExitTime": true,
+            "exitTime": 0.20000000298023224,
+            "transitionDuration": 0.20000000298023224,
+            "conditions": [
+                {
+                    "paramName": "IsDashing",
+                    "mode": "Equals",
+                    "threshold": 1.0
+                }
+            ]
+        },
+        {
+            "from": "NA2",
+            "to": "Dash",
+            "anyState": false,
+            "hasExitTime": true,
+            "exitTime": 0.1899999976158142,
+            "transitionDuration": 0.20000000298023224,
+            "conditions": [
+                {
+                    "paramName": "IsDashing",
+                    "mode": "Equals",
+                    "threshold": 1.0
+                }
+            ]
+        },
+        {
+            "from": "NA3",
+            "to": "Dash",
+            "anyState": false,
+            "hasExitTime": true,
+            "exitTime": 0.20000000298023224,
+            "transitionDuration": 0.20000000298023224,
+            "conditions": [
+                {
+                    "paramName": "IsDashing",
+                    "mode": "Equals",
+                    "threshold": 1.0
+                }
+            ]
         }
     ],
     "clipPaths": [
