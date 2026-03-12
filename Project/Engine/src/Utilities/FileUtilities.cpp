@@ -77,7 +77,7 @@ std::string FileUtilities::SanitizeFileName(const std::string& name) {
         if (std::isalnum(c)) return false;
         // Keep safe, common symbols
         if (c == ' ' || c == '.' || c == '-' || c == '_') return false;
-        // Flag everything else (including extended ASCII like æ, è, and forbidden Windows chars < > : " / \ | ? *)
+        // Flag everything else (including extended ASCII replacement chars and forbidden Windows chars < > : " / \ | ? *)
         return true;
         };
 

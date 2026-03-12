@@ -2,6 +2,7 @@
 require("extension.engine_bootstrap")
 local Component      = require("extension.mono_helper")
 local TransformMixin = require("extension.transform_mixin")
+local AudioHelper    = require("extension.audio_helper")
 
 local StateMachine       = require("Gameplay.StateMachine")
 local GroundIdleState    = require("Gameplay.GroundIdleState")
@@ -67,14 +68,6 @@ local function eulerToQuat(pitch, yaw, roll)
     }
 end
 
--- Play random SFX from array
-local function playRandomSFX(audio, clips)
-    local count = clips and #clips or 0
-    if count > 0 and audio then
-        audio:PlayOneShot(clips[math.random(1, count)])
-    end
-end
-
 local function isDynamic(self)
     return self._rb and self._rb.motionID == 2
 end
@@ -107,96 +100,129 @@ return Component {
     mixins = { TransformMixin },
 
     fields = {
-        EnemyType = "Ground",
 
+        -- === Identity ===
+        EnemyType  = "Ground",   -- "Ground" or "Flying". Determines state profile and CC usage.
+        IsMelee    = false,      -- true = melee attacker; false = ranged (knife) attacker.
+        IsPassive  = false,      -- If true enemy never enters Chase/Attack on its own.
+        PlayerName = "Player",   -- Engine entity name of the player; used for transform lookup.
+
+        -- === Health ===
         MaxHealth = 5,
 
-        DetectionRange       = 4.0,
-        AttackRange          = 3.0,   -- actually allowed to shoot
-        AttackDisengageRange = 4.0,   -- exit attack state (slightly bigger)
-        AttackCooldown       = 3.0,
-        RangedAnimDelay      = 1.0,
-        MeleeAnimDelay       = 1.2,
-        IsMelee              = false,
-        IsPassive            = false,
-        MeleeSpeed           = 0.9,
-        MeleeRange           = 1.2,
-        MeleeDamage          = 3,
-        MeleeAttackCooldown  = 5.0,
+        -- === Detection & combat ranges ===
+        DetectionRange       = 4.0,   -- Distance at which enemy first notices the player.
+        AttackRange          = 3.0,   -- Distance at which ranged attack is allowed to fire.
+        AttackDisengageRange = 4.0,   -- Distance at which enemy exits the attack state. Must be >= AttackRange.
+        AttackCooldown       = 3.0,   -- Seconds between attack volleys.
+        RangedAnimDelay      = 1.0,   -- Seconds into the attack animation before the projectile fires.
+        MeleeAnimDelay       = 1.2,   -- Seconds into the melee animation before the hit registers.
 
-        HurtDuration      = 2.0,
-        HitIFrame         = 0.2,
-        HookedDuration    = 4.0,
-        KnockbackStrength = 12.0,
-        KnockbackDuration = 0.5,
+        -- === Melee combat ===
+        MeleeSpeed          = 0.9,        -- Movement speed while charging a melee attack (world units/sec).
+        MeleeRange          = 1.2,        -- Distance at which melee hit registers.
+        MeleeDamage         = 3,          -- Damage dealt per melee swing.
+        MeleeAttackCooldown = 5.0,        -- Seconds between melee swings.
+        FirstMeleeAttackHeadStart = 0.80, -- Adjust the first hit to match the animation.
 
-        FeatherSkillBufferDuration = 0.2,
+        -- === Hit response ===
+        HurtDuration      = 2.0,    -- Seconds spent in the Hurt state after taking a hit.
+        HitIFrame         = 0.2,    -- Invincibility window after a hit (seconds). Prevents hit-stacking.
+        KnockbackStrength = 12.0,   -- Speed of the knockback impulse (world units/sec).
+        KnockbackDuration = 0.5,    -- Seconds the knockback velocity is applied.
 
-        HookStopDistance    = 1.2,
-        HookStaggerTime     = 1.0,
-        HookStaggerSpeed    = 50.0,
-        HookStaggerMaxStep  = 25.0,
-        HookHardSpeed       = 1200.0,
-        HookHardMaxStep     = 600.0,
+        -- === Chain hook ===
+        HookedDuration     = 4.0,     -- Seconds the enemy stays hooked before breaking free.
+        HookStopDistance   = 1.2,     -- Pull stops when enemy is within this radius of the player.
+        HookStaggerTime    = 1.0,     -- Duration of the stagger phase during a hook pull.
+        HookStaggerSpeed   = 50.0,    -- Stagger pull speed (world units/sec).
+        HookStaggerMaxStep = 25.0,    -- Max step size per tick during stagger pull.
+        HookHardSpeed      = 1200.0,  -- Hard pull speed after stagger phase ends.
+        HookHardMaxStep    = 600.0,   -- Max step size per tick during hard pull.
+        HookedLandingDelay = 5.0,     -- Seconds before a slammed flying enemy can stand up.
 
-        EnablePatrol     = true,
-        PatrolSpeed      = 0.3,
-        PatrolDistance   = 3.0,
-        PatrolWait       = 1.5,
-        ChaseSpeed       = 0.6,
-        HoverHeight      = 2.0,
-        HoverSnapSpeed   = 8.0,
-        FlyingChaseSpeed = 0.8,
+        -- === Patrol & movement ===
+        EnablePatrol   = true,   -- If false, enemy stands idle instead of patrolling.
+        PatrolSpeed    = 0.3,    -- Movement speed while patrolling (world units/sec).
+        PatrolDistance = 3.0,    -- Max distance from spawn that patrol points are placed.
+        PatrolWait     = 1.5,    -- Seconds the enemy pauses at each patrol point.
+        ChaseSpeed     = 0.6,    -- Movement speed while chasing the player (world units/sec).
 
-        HoverBobAmp        = 0.02,
-        HoverBobFreq       = 0.9,
-        SlamDownSpeed      = 16.0,
-        HookedLandingDelay = 5.0,
-
-        PathRepathInterval = 10,
-        PathGoalMoveThreshold = 0.9,
-        PathWaypointRadius = 0.6,
-        PathStuckTime = 0.75,
-
-        PatrolPointA_X = 2.0,
+        -- Pre-placed patrol endpoints. Set in the editor for each enemy instance.
+        PatrolPointA_X =  2.0,
         PatrolPointA_Z = -1.1,
         PatrolPointB_X = -2.0,
         PatrolPointB_Z = -1.1,
 
+        -- === Pathfinding ===
+        PathRepathInterval    = 10,    -- Seconds between automatic path recalculations.
+        PathGoalMoveThreshold = 0.9,   -- World units the goal must move before forcing a repath.
+        PathWaypointRadius    = 0.6,   -- Distance to a waypoint considered "arrived" (world units).
+        PathStuckTime         = 0.75,  -- Seconds of zero movement before stuck recovery triggers.
+
+        -- === Flying ===
+        HoverHeight      = 2.0,    -- Target height above ground while hovering (world units).
+        HoverSnapSpeed   = 8.0,    -- Lerp speed snapping Y toward hover target. Higher = snappier.
+        FlyingChaseSpeed = 0.8,    -- XZ movement speed while flying toward player (world units/sec).
+        HoverBobAmp      = 0.02,   -- Amplitude of the idle hover bob (world units). 0 = no bob.
+        HoverBobFreq     = 0.9,    -- Frequency of the idle hover bob (Hz).
+        SlamDownSpeed    = 16.0,   -- Descent speed during the chain-hook slam-down (world units/sec).
+
+        -- === Squash & stretch ===
+        -- SquashStrength : how dramatic the effect is. Start here.
+        --                  0.0 = disabled   0.3 = subtle   1.0 = cartoony
+        --                  Scales all events — hit, death, slam landing.
+        -- SquashDuration : seconds to hit peak squash. Match to impact frame.
+        -- StretchDuration: seconds to spring back to normal.
+        SquashStrength  = 0.6,   -- 0.4 was too subtle to read at 0.6 hit intensity. Effective = SquashStrength * intensity.
+        SquashDuration  = 0.07,
+        StretchDuration = 0.20,
+
+        -- === Aerial juggle ===
+        -- When the player lands a LIFT hit the enemy becomes airborne and is
+        -- held up by subsequent AIR hits. A SLAM hit drives them into the floor.
+        JuggleLiftVelY   = 8.0,   -- Upward velocity applied on lift_attack hit.
+        JuggleAirBoost   = 4.0,   -- Upward velocity boost per air-combo hit to maintain juggle height.
+        JuggleSlamVelY   = 20.0,  -- Downward velocity applied on air_slam hit.
+        JuggleGravity    = -18.0, -- Gravity while juggled (separate from world gravity).
+        JuggleGroundEps  = 0.05,  -- Distance to ground considered "landed".
+
+        -- === Kinematic grounding ===
+        UseKinematicGrounding = true,
+        GroundRayUp   = 0.35,    -- Ray cast origin height above feet.
+        GroundRayLen  = 3.0,     -- Maximum downward ray length.
+        GroundEps     = 0.08,    -- Considered grounded when hit distance <= GroundRayUp + GroundEps.
+        GroundSnapMax = 0.35,    -- Maximum snap correction applied per step.
+        Gravity       = -9.81,
+        MaxFallSpeed  = -25.0,
+        WallRayUp     = 0.8,     -- Wall probe ray origin height above feet.
+        WallSkin      = 0.18,    -- Wall detection margin (world units).
+        WallOffset    = 0.08,    -- Separation buffer pushed away from wall surface.
+        MinStep       = 0.01,    -- Minimum movement step before the CC is called.
+
+        -- === Abilities / skills ===
+        FeatherSkillBufferDuration   = 0.2,   -- Window (seconds) after a feather hit during which further
+                                              -- feather hits don't re-trigger Hurt FSM state.
+        FeatherPrefabPath            = "Resources/Prefabs/Feather.prefab",
+        NumFeathersSpawnedPerHit     = 5,     -- Feather particles spawned per hit from the feather skill.
+
+        -- === Animation clips ===
+        -- Clip index integers assigned in the editor.
         ClipIdle   = 0,
         ClipAttack = 1,
         ClipHurt   = 2,
         ClipDeath  = 3,
 
-        PlayerName = "Player",
-
-        FeatherPrefabPath = "Resources/Prefabs/Feather.prefab",
-        NumFeathersSpawnedPerHit = 5,
-
-        -- === Kinematic grounding tuning ===
-        UseKinematicGrounding = true,
-
-        GroundRayUp    = 0.35,   -- cast origin is y + this
-        GroundRayLen   = 3.0,    -- max ray distance downward
-        GroundEps      = 0.08,   -- considered grounded if hit <= GroundRayUp + eps
-        GroundSnapMax  = 0.35,   -- max snap correction per step
-
-        Gravity        = -9.81,
-        MaxFallSpeed   = -25.0,
-
-        WallRayUp      = 0.8,
-        WallSkin       = 0.18,
-        WallOffset     = 0.08,
-        MinStep        = 0.01,
-
-        -- SFX clip arrays (populate in editor with audio GUIDs)
-        enemyHurtSFX = {},
-        enemyDeathSFX = {},
-        enemyAlertSFX = {},         -- Growl when first detecting player
-        enemyMeleeAttackSFX = {},   -- Scratch woosh for melee enemies
-        enemyMeleeHitSFX = {},      -- Scratch hit when melee lands on player
-        enemyRangedAttackSFX = {},  -- Throw woosh for ranged enemies
-        enemyRangedHitSFX = {},     -- Throw hit when ranged lands on player
+        -- === Audio ===
+        -- Populate with clip GUIDs in the editor. Each accepts a list for random selection.
+        -- TO ADD new SFX: add a field here and call playRandomSFX at the relevant site.
+        enemyHurtSFX         = {},
+        enemyDeathSFX        = {},
+        enemyAlertSFX        = {},         -- Growl when first detecting player.
+        enemyMeleeAttackSFX  = {},         -- Swing whoosh for melee enemies.
+        enemyMeleeHitSFX     = {},         -- Hit impact when melee lands on player.
+        enemyRangedAttackSFX = {},         -- Throw whoosh for ranged enemies.
+        enemyRangedHitSFX    = {},         -- Impact when ranged projectile lands on player.
     },
 
     Awake = function(self)
@@ -302,6 +328,26 @@ return Component {
             self.particles.isEmitting   = false
             self.particles.emissionRate = 0
         end
+
+        -- ── Squash & stretch ──────────────────────────────────────────────────
+        -- _squashPhase: "squash" → peak → "stretch" → springs back → nil
+        -- Call self:_squashTrigger(mode, intensity) to start an effect.
+        self._squashPhase     = nil
+        self._squashTimer     = 0
+        self._squashIntensity = 1.0
+        self._squashMode      = "vertical"
+
+        -- ── Aerial juggle state ──────────────────────────────────────────────
+        self._isJuggled   = false   -- true while enemy is airborne from a juggle
+        self._juggleVY    = 0       -- current vertical velocity
+        self._juggleGroundY = nil   -- cached ground Y to detect landing
+
+        -- Capture authored scale once so the effect always springs back to the
+        -- editor-set proportions rather than a hardcoded 1,1,1.
+        local _initScale      = self._transform and self._transform.localScale
+        self._normalScaleX    = (_initScale and _initScale.x) or 1.0
+        self._normalScaleY    = (_initScale and _initScale.y) or 1.0
+        self._normalScaleZ    = (_initScale and _initScale.z) or 1.0
 
         -- === Damage event subscription ===
         self._damageSub = nil
@@ -412,6 +458,9 @@ return Component {
 
         if self.health <= 0 and not self.dead then
             self.dead = true
+            if _G.event_bus and _G.event_bus.publish then
+                _G.event_bus.publish("enemy_died", { entityId = self.entityId })
+            end
         end
 
         if self.dead then
@@ -455,13 +504,131 @@ return Component {
         --     self:MoveCC(1.0, 0.0, dt) -- 1 unit/sec to +X
         -- end
 
-        if Input.IsActionJustPressed("Interact") then
+        if Keyboard.IsDigitPressed(1) then
             self:ApplyHook(self.HookedDuration)
+        end
+
+        if Keyboard.IsDigitPressed(3) then
+            self:ApplyHit(10)
+        end
+
+        if Keyboard.IsDigitPressed(7) then
+            self.IsPassive = not self.IsPassive
         end
 
         local dtSec = toDtSec(dt)
         self._hitLockTimer = math.max(0, (self._hitLockTimer or 0) - dtSec)
         self._featherSkillBufferTimer = math.max(0, (self._featherSkillBufferTimer or 0) - dtSec)
+
+        -- ── Squash & stretch ──────────────────────────────────────────────────
+        -- Modes:
+        --   "vertical"  : slam landing / death collapse — Y squashes down, XZ widens
+        --   "horizontal": hit reaction — Y pops up, XZ squashes in
+        if self._squashPhase and self._transform then
+            local scaleTable = self._transform.localScale
+            if scaleTable then
+                self._squashTimer = self._squashTimer + dtSec
+                local i    = (self.SquashStrength or 0.4) * (self._squashIntensity or 1.0)
+                local mode = self._squashMode or "vertical"
+
+                -- Rest scale: use the authored transform scale captured in Start,
+                -- not a hardcoded 1,1,1, so the effect springs back correctly for
+                -- enemies whose scale differs from the default.
+                local nX = self._normalScaleX or 1.0
+                local nY = self._normalScaleY or 1.0
+                local nZ = self._normalScaleZ or 1.0
+                local sx, sy, sz = nX, nY, nZ
+
+                local yPeak, xzPeak, yOver
+                if mode == "vertical" then
+                    yPeak  = nY * (1.0 - 0.30 * i)
+                    xzPeak = nX * (1.0 + 0.18 * i)
+                    yOver  = nY * (1.0 + 0.08 * i)
+                elseif mode == "horizontal" then
+                    yPeak  = nY * (1.0 + 0.08 * i)
+                    xzPeak = nX * (1.0 - 0.10 * i)
+                    yOver  = nY
+                end
+
+                if self._squashPhase == "squash" then
+                    local t = math.min(self._squashTimer / math.max(self.SquashDuration or 0.07, 1e-4), 1.0)
+                    sy = nY + (yPeak  - nY) * t
+                    sx = nX + (xzPeak - nX) * t
+                    sz = nZ + (xzPeak - nX) * t   -- Z tracks X offset (uniform XZ)
+                    if t >= 1.0 then
+                        self._squashPhase = "stretch"
+                        self._squashTimer = 0
+                    end
+
+                elseif self._squashPhase == "stretch" then
+                    local t = math.min(self._squashTimer / math.max(self.StretchDuration or 0.20, 1e-4), 1.0)
+                    if t < 0.5 then
+                        local t2 = t * 2
+                        sy = yPeak  + (yOver - yPeak)  * t2
+                        sx = xzPeak + (nX    - xzPeak) * t2
+                    else
+                        local t2 = (t - 0.5) * 2
+                        sy = yOver + (nY - yOver) * t2
+                        sx = nX
+                    end
+                    sz = nZ + (sx - nX)   -- Z tracks X offset (uniform XZ)
+                    if t >= 1.0 then
+                        sx, sy, sz        = nX, nY, nZ
+                        self._squashPhase = nil
+                    end
+                end
+
+                pcall(function()
+                    scaleTable.x = sx
+                    scaleTable.y = sy
+                    scaleTable.z = sz
+                    self._transform.isDirty = true
+                end)
+            end
+        end
+
+        -- ── Aerial juggle physics ────────────────────────────────────────────
+        -- Runs while the enemy is airborne from a player juggle combo.
+        -- Applies gravity each frame and detects landing.
+        if self._isJuggled then
+            local grav = tonumber(self.JuggleGravity) or -18.0
+            self._juggleVY = (self._juggleVY or 0) + grav * dtSec
+
+            local x, y, z = self:GetPosition()
+            if x ~= nil then
+                local newY = y + self._juggleVY * dtSec
+
+                -- Get ground Y
+                local groundY = self._juggleGroundY or 0
+                if Nav and Nav.GetGroundY then
+                    local g = Nav.GetGroundY(self.entityId)
+                    if g ~= nil then groundY = g end
+                end
+                self._juggleGroundY = groundY
+
+                local eps = tonumber(self.JuggleGroundEps) or 0.05
+                if newY <= groundY + eps then
+                    -- Landed
+                    newY = groundY
+                    self._isJuggled  = false
+                    print(string.format("[EnemyAI] Juggle LANDED at y=%.3f", newY))
+                    self._juggleVY   = 0
+                    self:_squashTrigger("vertical", 0.8)
+                    if self._animator then
+                        self._animator:SetBool("Hurt1", false)
+                        self._animator:SetBool("Hurt2", false)
+                        self._animator:SetBool("Hurt3", false)
+                    end
+                    -- Re-enter hurt so the FSM reacts to landing impact
+                    self.fsm:ForceChange("Hurt", self.states.Hurt)
+                end
+
+                self:SetPosition(x, newY, z)
+                if self._controller and CharacterController.SetPosition then
+                    pcall(function() CharacterController.SetPosition(self._controller, x, newY, z) end)
+                end
+            end
+        end
 
         if not self.fsm.current or not self.fsm.currentName then
             self.fsm:ForceChange("Idle", self.states.Idle)
@@ -1113,6 +1280,8 @@ return Component {
 
             self._slamActive = false
             self._slamVy = 0
+            -- Slam landing: vertical squash (crash impact)
+            self:_squashTrigger("vertical", 0.8)
             print("[EnemyAI] SLAMMED")
             self._animator:SetTrigger("Slammed")
             
@@ -1185,23 +1354,23 @@ return Component {
     -- Play attack SFX (melee or ranged based on IsMelee flag)
     PlayAttackSFX = function(self)
         if self.IsMelee then
-            playRandomSFX(self._audio, self.enemyMeleeAttackSFX)
+            AudioHelper.playRandomSFX(self._audio, self.enemyMeleeAttackSFX)
         else
-            playRandomSFX(self._audio, self.enemyRangedAttackSFX)
+            AudioHelper.playRandomSFX(self._audio, self.enemyRangedAttackSFX)
         end
     end,
 
     -- Play alert SFX when first detecting player
     PlayAlertSFX = function(self)
-        playRandomSFX(self._audio, self.enemyAlertSFX)
+        AudioHelper.playRandomSFX(self._audio, self.enemyAlertSFX,0.4)
     end,
 
     -- Play hit SFX when attack lands on player (melee or ranged)
     PlayHitSFX = function(self)
         if self.IsMelee then
-            playRandomSFX(self._audio, self.enemyMeleeHitSFX)
+            AudioHelper.playRandomSFX(self._audio, self.enemyMeleeHitSFX)
         else
-            playRandomSFX(self._audio, self.enemyRangedHitSFX)
+            AudioHelper.playRandomSFX(self._audio, self.enemyRangedHitSFX)
         end
     end,
 
@@ -1253,7 +1422,7 @@ return Component {
         end
 
         -- Play ranged attack SFX when throwing knives
-        playRandomSFX(self._audio, self.enemyRangedAttackSFX)
+        AudioHelper.playRandomSFX(self._audio, self.enemyRangedAttackSFX)
 
         local ex, ey, ez = self:GetPosition()
         -- Safety check: if position is nil, skip spawning
@@ -1322,6 +1491,58 @@ return Component {
         return true
     end,
 
+    -- ==========================================================================
+    -- SQUASH TRIGGER HELPER
+    -- Starts a squash/stretch effect. Call from any trigger site.
+    --   mode      : "vertical" | "horizontal"
+    --   intensity : 0.0–1.0, scales effect magnitude against SquashStrength
+    -- TO ADD a new mode: add an elseif branch in the squash update block in Update.
+    -- ==========================================================================
+    _squashTrigger = function(self, mode, intensity)
+        self._squashPhase     = "squash"
+        self._squashTimer     = 0
+        self._squashMode      = mode or "vertical"
+        self._squashIntensity = intensity or 1.0
+    end,
+
+    -- ==========================================================================
+    -- AERIAL JUGGLE HELPERS
+    -- Called from ApplyHit based on hitType: LIFT / AIR / SLAM
+    -- ==========================================================================
+    ApplyJuggleLift = function(self)
+        -- Cancel existing knockback so it doesn't fight the lift
+        self._kbT = 0
+        self._kbVX, self._kbVZ = 0, 0
+        -- Cache ground level so landing detection has a reference
+        local _, y, _ = self:GetPosition()
+        if Nav and Nav.GetGroundY then
+            local g = Nav.GetGroundY(self.entityId)
+            if g ~= nil then self._juggleGroundY = g else self._juggleGroundY = y end
+        else
+            self._juggleGroundY = y
+        end
+        self._juggleVY  = tonumber(self.JuggleLiftVelY) or 8.0
+        self._isJuggled = true
+        print(string.format("[EnemyAI] ApplyJuggleLift: juggleVY=%.2f", self._juggleVY or 0))
+    end,
+
+    ApplyJuggleAirHit = function(self)
+        if not self._isJuggled then return end
+        -- Boost upward so the enemy doesn't fall between air hits
+        local boost = tonumber(self.JuggleAirBoost) or 4.0
+        self._juggleVY = math.max(self._juggleVY or 0, boost)
+        print(string.format("[EnemyAI] ApplyJuggleAirHit: juggleVY=%.2f", self._juggleVY or 0))
+    end,
+
+    ApplyJuggleSlam = function(self)
+        -- Drive enemy straight down at slam speed
+        self._juggleVY  = -(tonumber(self.JuggleSlamVelY) or 20.0)
+        self._isJuggled = true   -- ensure physics block is active even if not previously juggled
+        print(string.format("[EnemyAI] ApplyJuggleSlam: juggleVY=%.2f", self._juggleVY or 0))
+        self._kbT = 0
+        self._kbVX, self._kbVZ = 0, 0
+    end,
+
     ApplyHit = function(self, dmg, hitType)
         if self.dead then return end
         if (self._hitLockTimer or 0) > 0 then return end
@@ -1338,13 +1559,29 @@ return Component {
         print(string.format("[EnemyAI] Remaining health: %d", self.health))
         self:ApplyKnockback(self.KnockbackStrength, self.KnockbackDuration)
 
+        -- Aerial juggle routing: lift launches the enemy up, air hits maintain
+        -- height, slam drives them to the floor.
+        if hitType == "LIFT" then
+            self:ApplyJuggleLift()
+        elseif hitType == "AIR" then
+            self:ApplyJuggleAirHit()
+        elseif hitType == "SLAM" then
+            self:ApplyJuggleSlam()
+        end
+        print(string.format("[EnemyAI] ApplyHit: hitType=%s | isJuggled=%s | juggleVY=%.2f | health=%d", tostring(hitType), tostring(self._isJuggled), self._juggleVY or 0, self.health))
+
         if self.health <= 0 then
             self.health = 0
+            -- Death collapse: vertical squash at half intensity — visible but not cartoony
+            self:_squashTrigger("vertical", 0.5)
             -- Play death SFX
-            playRandomSFX(self._audio, self.enemyDeathSFX)
+            AudioHelper.playRandomSFX(self._audio, self.enemyDeathSFX)
             self.fsm:Change("Death", self.states.Death)
             return
         end
+
+        -- Hit reaction: horizontal squash (pushed sideways)
+        self:_squashTrigger("horizontal", 0.6)
 
         if not self._hurtTriggeredByFeather then
             local myRandomValue = math.random(1, 3)
@@ -1357,7 +1594,7 @@ return Component {
             end
 
             -- Play hurt SFX (only if not dead)
-            playRandomSFX(self._audio, self.enemyHurtSFX)
+            AudioHelper.playRandomSFX(self._audio, self.enemyHurtSFX)
 
             if self.fsm.currentName == "Hooked" then
                 return

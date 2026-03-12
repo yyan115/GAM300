@@ -2,6 +2,7 @@
 require("extension.engine_bootstrap")
 local Component      = require("extension.mono_helper")
 local TransformMixin = require("extension.transform_mixin")
+local AudioHelper    = require("extension.audio_helper")
 
 local StateMachine = require("Gameplay.StateMachine")
 local ChooseState  = require("Gameplay.MinibossChooseState")
@@ -79,16 +80,6 @@ local function _lockPriority(reason)
     if reason == "HOOKED"          then return 80  end
     if reason == "HIT_STUN"        then return 10  end
     return 0
-end
-
--- Play random SFX from array
-local function playRandomSFX(audio, clips)
-    local count = clips and #clips or 0
-    
-    if count > 0 and audio then
-        print("[MinibossAI] playRandomSFX count =", count)
-        audio:PlayOneShot(clips[math.random(1, count)])
-    end
 end
 
 -------------------------------------------------
@@ -425,7 +416,7 @@ return Component {
                     return
                 end
                 -- Play melee hit SFX when slash hits player
-                playRandomSFX(self._audio, self.enemyMeleeHitSFX)
+                AudioHelper.playRandomSFX(self._audio, self.enemyMeleeHitSFX)
             end)
         end
 
@@ -434,6 +425,13 @@ return Component {
             if payload.rootName ~= self._entityName then return end
             print("[MinibossAI] chain.endpoint_hit_entity received")
             self._animator:SetTrigger("Hooked")
+        end)
+
+        self._chainEnemyHookedSub = _G.event_bus.subscribe("chain.enemy_hooked", function(payload)
+            if not payload then return end
+            if payload.entityId ~= self.entityId then return end
+            print("[MinibossAI] chain.enemy_hooked received — calling ApplyHook")
+            pcall(function() self:ApplyHook(payload.duration or self.HookedDuration) end)
         end)
 
         -- Seed prevY for grounded heuristic
@@ -455,8 +453,16 @@ return Component {
         local dtSec = toDtSec(dt)
         self._meleeCdT = math.max(0, (self._meleeCdT or 0) - dtSec)
 
-        if Input.IsActionJustPressed("Interact") then
+        if Keyboard.IsDigitPressed(2) then
             self:ApplyHook(self.HookedDuration)
+        end
+
+        if Keyboard.IsDigitPressed(4) then
+            self:ApplyHit(10)
+        end
+
+        if Keyboard.IsDigitPressed(6) then
+            self:ForceNextPhase()
         end
 
         -- Tick pending rain explosion "land" events
@@ -1023,7 +1029,7 @@ return Component {
 
         if self._animator then self._animator:SetTrigger("Taunt") end
         print("[Miniboss] StartBossPhaseTransition ->", newPhase, "duration=", tostring(self.PhaseTransformDuration))
-        playRandomSFX(self._audio, self.enemyTauntSFX)
+        AudioHelper.playRandomSFX(self._audio, self.enemyTauntSFX)
     end,
 
     FinishBossPhaseTransition = function(self)
@@ -1041,6 +1047,42 @@ return Component {
             self._animator:SetBool("Phase3", true)
             self:EnterPhase3_Air()
         end
+    end,
+
+    ForceNextPhase = function(self)
+        if self.dead then return end
+        if self._inIntro then return end
+        if self._transforming then return end
+
+        local curPhase = self._phase or self:_ComputePhase()
+        local nextPhase = curPhase + 1
+
+        if nextPhase > 3 then
+            print("[Miniboss][Cheat] Already at final phase.")
+            return
+        end
+
+        local maxHp = self.MaxHealth or 1
+
+        -- Force HP to the target phase threshold so the internal phase logic matches.
+        -- Use a tiny epsilon below threshold so _ComputePhase() definitely returns nextPhase.
+        if nextPhase == 2 then
+            self.health = (maxHp * (self.Phase2HpPct or 0.66)) - 0.01
+        elseif nextPhase == 3 then
+            self.health = (maxHp * (self.Phase3HpPct or 0.33)) - 0.01
+        end
+
+        -- Optional cleanup so the transition is clean
+        self._hitLockTimer = 0
+        self._moveQueue = {}
+        self:_EndMove()
+
+        print(string.format(
+            "[Miniboss][Cheat] Forcing phase %d at hp=%.2f/%.2f",
+            nextPhase, self.health, maxHp
+        ))
+
+        self:StartBossPhaseTransition(nextPhase)
     end,
 
     -------------------------------------------------
@@ -1218,7 +1260,7 @@ return Component {
         end
 
         -- Play hurt SFX
-        playRandomSFX(self._audio, self.enemyHurtSFX)
+        AudioHelper.playRandomSFX(self._audio, self.enemyHurtSFX)
 
         -- If we crossed a phase threshold, start NEW transition immediately
         local computed = self:_ComputePhase()
@@ -1246,11 +1288,17 @@ return Component {
 
         -- phase 2: hooking forces boss down
         if self._phase == 2 and self._inAir then
+            self._hooked = true
             self._hookedDownRequested = true
-            -- Forcefully cancel BurstFire so it doesn't secretly run 
-            -- while the boss is falling and delay the FateSealed move!
+
+            -- Cancel current air attack immediately
             self:_EndMove()
+
+            -- Start falling RIGHT NOW
             self:BeginSlamDown("Pulldown")
+
+            print("[Miniboss][Hooked] Phase 2 air hook -> immediate slam")
+            return
         end
 
         if self._phase == 3 and not self._inAir then
@@ -1283,7 +1331,7 @@ return Component {
         self.dead = true
 
         -- Play death SFX
-        playRandomSFX(self._audio, self.enemyDeathSFX)
+        AudioHelper.playRandomSFX(self._audio, self.enemyDeathSFX)
 
         -- hard-lock forever
         self._lockAction = true
@@ -1329,12 +1377,16 @@ return Component {
             if self._hookSub then pcall(function() _G.event_bus.unsubscribe(self._hookSub) end) end
             if self._meleeHitSub then pcall(function() _G.event_bus.unsubscribe(self._meleeHitSub) end) end
             if self._freezeEnemySub then pcall(function() _G.event_bus.unsubscribe(self._freezeEnemySub) end) end
+            if self._chainEndpointHitSub then pcall(function() _G.event_bus.unsubscribe(self._chainEndpointHitSub) end) end
+            if self._chainEnemyHookedSub then pcall(function() _G.event_bus.unsubscribe(self._chainEnemyHookedSub) end) end
         end
         self._damageSub = nil
         self._comboDamageSub = nil
         self._hookSub = nil
         self._meleeHitSub = nil
         self._freezeEnemySub = nil
+        self._chainEndpointHitSub = nil
+        self._chainEnemyHookedSub = nil
         self._frozenBycinematic = false
     end,
 
@@ -1353,12 +1405,16 @@ return Component {
             if self._hookSub then pcall(function() _G.event_bus.unsubscribe(self._hookSub) end) end
             if self._meleeHitSub then pcall(function() _G.event_bus.unsubscribe(self._meleeHitSub) end) end
             if self._freezeEnemySub then pcall(function() _G.event_bus.unsubscribe(self._freezeEnemySub) end) end
+            if self._chainEndpointHitSub then pcall(function() _G.event_bus.unsubscribe(self._chainEndpointHitSub) end) end
+            if self._chainEnemyHookedSub then pcall(function() _G.event_bus.unsubscribe(self._chainEnemyHookedSub) end) end
         end
         self._damageSub = nil
         self._comboDamageSub = nil
         self._hookSub = nil
         self._meleeHitSub = nil
         self._freezeEnemySub = nil
+        self._chainEndpointHitSub = nil
+        self._chainEnemyHookedSub = nil
     end,
 
     -------------------------------------------------
@@ -1716,7 +1772,7 @@ return Component {
 
     _DoShoutAOE = function(self)
         if self._animator then self._animator:SetTrigger("Taunt") end
-        playRandomSFX(self._audio, self.enemyTauntSFX)
+        AudioHelper.playRandomSFX(self._audio, self.enemyTauntSFX)
 
         if _G.event_bus and _G.event_bus.publish then
             local x,y,z = self:GetPosition()
@@ -1791,7 +1847,7 @@ return Component {
 
                 -- start shout anim now
                 if self._animator then self._animator:SetTrigger("Taunt") end
-                playRandomSFX(self._audio, self.enemyTauntSFX)
+                AudioHelper.playRandomSFX(self._audio, self.enemyTauntSFX)
             end
 
             if not m.didFire and m.t >= (m.fireAt or 0) then
@@ -1851,7 +1907,7 @@ return Component {
                         kbUp = 0.0,
                     })
                 end
-                playRandomSFX(self._audio, self.enemyMeleeAttackSFX)
+                AudioHelper.playRandomSFX(self._audio, self.enemyMeleeAttackSFX)
             end
 
             if m.t >= (m.hitAt + (m.postDelay or 0.4)) then
@@ -2506,7 +2562,7 @@ return Component {
 
                 print("[Miniboss] Phase 3 Step 1 SetTrigger(FeatherBomb)")
                 if self._animator then self._animator:SetTrigger("FeatherBomb") end
-                playRandomSFX(self._audio, self.enemyRangedAttackSFX)
+                AudioHelper.playRandomSFX(self._audio, self.enemyRangedAttackSFX)
 
                 return
             end
@@ -2624,7 +2680,7 @@ return Component {
     end,
 
     FateSealed = function(self, chargeTime)
-        playRandomSFX(self._audio, self.enemyMeleeAttackSFX)
+        AudioHelper.playRandomSFX(self._audio, self.enemyMeleeAttackSFX)
         self:_BeginMove("FateSealed", {
             chargeDur = chargeTime,
             dashDur = 0.4,

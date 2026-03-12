@@ -1,0 +1,14 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "00289b57498b6078-000479914a1876c3",
+        "source": "../../Resources/Textures/M5/BookStack2_Mixed_AO.png",
+        "compiled": "../../Resources/Textures/M5/BookStack2_Mixed_AO.dds"
+    },
+    "TextureMetaData": {
+        "type": "ao",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp"
+    }
+}

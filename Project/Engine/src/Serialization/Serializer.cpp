@@ -263,8 +263,9 @@ void Serializer::SerializeScene(const std::string& scenePath) {
 }
 
 rapidjson::Value Serializer::SerializeEntityGUID(Entity entity, rapidjson::Document::AllocatorType& alloc) {
-    auto& guidRegistry = EntityGUIDRegistry::GetInstance();
-    auto& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
+    // Commented out as not used to fix warnings.
+    // auto& guidRegistry = EntityGUIDRegistry::GetInstance();
+    // auto& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
     rapidjson::Value entObj(rapidjson::kObjectType);
 
     entObj = SerializeEntityGUID(entity, alloc, entObj);
@@ -274,7 +275,8 @@ rapidjson::Value Serializer::SerializeEntityGUID(Entity entity, rapidjson::Docum
 
 rapidjson::Value& Serializer::SerializeEntityGUID(Entity entity, rapidjson::Document::AllocatorType& alloc, rapidjson::Value& entObj) {
     auto& guidRegistry = EntityGUIDRegistry::GetInstance();
-    auto& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
+    // Commented out as not used to fix warnings.
+    // auto& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
 
     // add entity id (assumes entity is integer-like)
     {
@@ -301,7 +303,8 @@ rapidjson::Value& Serializer::SerializeEntityGUID(Entity entity, rapidjson::Docu
 void Serializer::SerializeEntityRecursively(Entity entity, rapidjson::Document::AllocatorType& alloc, rapidjson::Value& entitiesArr) {
     auto& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
 
-    Entity prefabReferenceEntity = static_cast<Entity>(-1);
+    // Commented out as not used to fix warnings.
+    // Entity prefabReferenceEntity = static_cast<Entity>(-1);
 
     // Check whether this entity is a prefab root.
     // If it is, then when we recursively serialize this entity and its children,
@@ -362,15 +365,16 @@ void Serializer::SerializeEntityRecursively(Entity entity, rapidjson::Document::
 }
 
 rapidjson::Value Serializer::SerializeEntity(Entity entity, rapidjson::Document::AllocatorType& alloc, Entity prefabReferenceEntity) {
-    auto& guidRegistry = EntityGUIDRegistry::GetInstance();
+    // Commented out as not used to fix warnings.
+    // auto& guidRegistry = EntityGUIDRegistry::GetInstance();
     auto& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
 
     rapidjson::Value entObj = SerializeEntityGUID(entity, alloc);
 
     rapidjson::Value compsObj(rapidjson::kObjectType);
 
-    // If this entity is part of a prefab instance, we should only serialize components that differ from the prefab defaults.
-    bool isPrefabInstance = prefabReferenceEntity != static_cast<Entity>(-1);
+    // Commented out as not used to fix warnings.
+    // bool isPrefabInstance = prefabReferenceEntity != static_cast<Entity>(-1);
 
     // For each component type, if entity has it, serialize and attach under its name
     if (ecs.HasComponent<PrefabLinkComponent>(entity)) {
@@ -639,6 +643,11 @@ rapidjson::Value Serializer::SerializeEntity(Entity entity, rapidjson::Document:
         v.AddMember("blurRadius", c.blurRadius, alloc);
         v.AddMember("blurPasses", c.blurPasses, alloc);
         v.AddMember("blurLayerMask", c.blurLayerMask, alloc);
+        v.AddMember("dirBlurEnabled", c.dirBlurEnabled, alloc);
+        v.AddMember("dirBlurIntensity", c.dirBlurIntensity, alloc);
+        v.AddMember("dirBlurStrength", c.dirBlurStrength, alloc);
+        v.AddMember("dirBlurAngle", c.dirBlurAngle, alloc);
+        v.AddMember("dirBlurSamples", c.dirBlurSamples, alloc);
         v.AddMember("bloomEnabled", c.bloomEnabled, alloc);
         v.AddMember("bloomThreshold", c.bloomThreshold, alloc);
         v.AddMember("bloomIntensity", c.bloomIntensity, alloc);
@@ -1017,6 +1026,11 @@ void Serializer::SerializePrefabInstanceDelta(ECSManager& sceneECS, Entity insta
             v.AddMember("blurRadius", c.blurRadius, a);
             v.AddMember("blurPasses", c.blurPasses, a);
             v.AddMember("blurLayerMask", c.blurLayerMask, a);
+            v.AddMember("dirBlurEnabled", c.dirBlurEnabled, a);
+            v.AddMember("dirBlurIntensity", c.dirBlurIntensity, a);
+            v.AddMember("dirBlurStrength", c.dirBlurStrength, a);
+            v.AddMember("dirBlurAngle", c.dirBlurAngle, a);
+            v.AddMember("dirBlurSamples", c.dirBlurSamples, a);
             v.AddMember("bloomEnabled", c.bloomEnabled, a);
             v.AddMember("bloomThreshold", c.bloomThreshold, a);
             v.AddMember("bloomIntensity", c.bloomIntensity, a);
@@ -2209,6 +2223,68 @@ void Serializer::DeserializeScene(const std::string& scenePath) {
     std::cout << "[CreateEntitiesFromJson] loaded entities from: " << scenePath << "\n";
 }
 
+void Serializer::DeserializeSceneMetadata(
+    const rapidjson::Document& doc,
+    ECSManager& ecs
+) {
+    // Tags
+    if (doc.HasMember("tags") && doc["tags"].IsArray()) {
+        const auto& tags = doc["tags"];
+        for (rapidjson::SizeType i = 0; i < tags.Size(); ++i) {
+            std::string tag = tags[i].GetString();
+            TagManager::GetInstance().AddTag(tag);
+        }
+    }
+
+    // Layers
+    if (doc.HasMember("layers") && doc["layers"].IsArray()) {
+        const auto& layers = doc["layers"];
+        for (rapidjson::SizeType i = 0; i < layers.Size(); ++i) {
+            const auto& layerObj = layers[i];
+            int index = layerObj["index"].GetInt();
+            std::string name = layerObj["name"].GetString();
+            LayerManager::GetInstance().SetLayerName(index, name);
+        }
+    }
+
+    // Sorting layers
+    if (doc.HasMember("sortingLayers") && doc["sortingLayers"].IsArray()) {
+        SortingLayerManager::GetInstance().Clear();
+        const auto& sortingLayersArr = doc["sortingLayers"];
+        for (rapidjson::SizeType i = 0; i < sortingLayersArr.Size(); ++i) {
+            const auto& layerObj = sortingLayersArr[i];
+            if (layerObj.IsObject() && layerObj.HasMember("name")) {
+                std::string name = layerObj["name"].GetString();
+                SortingLayerManager::GetInstance().AddLayer(name);
+            }
+        }
+    }
+
+    // Lighting
+    if (doc.HasMember("lightingSystem") &&
+        doc["lightingSystem"].IsObject() &&
+        ecs.lightingSystem) {
+        const auto& lo = doc["lightingSystem"];
+
+        if (lo.HasMember("ambientMode") && lo["ambientMode"].IsInt())
+            ecs.lightingSystem->ambientMode =
+            static_cast<LightingSystem::AmbientMode>(lo["ambientMode"].GetInt());
+
+        if (lo.HasMember("ambientSky") && lo["ambientSky"].IsArray() && lo["ambientSky"].Size() >= 3) {
+            const auto& a = lo["ambientSky"];
+            ecs.lightingSystem->ambientSky = { a[0].GetFloat(), a[1].GetFloat(), a[2].GetFloat() };
+        }
+        if (lo.HasMember("ambientEquator") && lo["ambientEquator"].IsArray() && lo["ambientEquator"].Size() >= 3) {
+            const auto& a = lo["ambientEquator"];
+            ecs.lightingSystem->ambientEquator = { a[0].GetFloat(), a[1].GetFloat(), a[2].GetFloat() };
+        }
+        if (lo.HasMember("ambientGround") && lo["ambientGround"].IsArray() && lo["ambientGround"].Size() >= 3) {
+            const auto& a = lo["ambientGround"];
+            ecs.lightingSystem->ambientGround = { a[0].GetFloat(), a[1].GetFloat(), a[2].GetFloat() };
+        }
+    }
+}
+
 void Serializer::ReloadScene(const std::string& tempScenePath, const std::string& currentScenePath) {
     ENGINE_LOG_INFO("[Serializer] Reloading temp scene: " + tempScenePath);
     using namespace std;
@@ -2758,6 +2834,9 @@ void Serializer::DeserializeModelComponent(ModelRenderComponent& modelComp, cons
             }
 
             modelComp.childBonesSaved = Serializer::GetBool(d, 5, false);
+            modelComp.depthOffset = Serializer::GetBool(d, 6, false);
+            modelComp.depthOffsetFactor = Serializer::GetFloat(d, 7, -1.0f);
+            modelComp.depthOffsetUnits = Serializer::GetFloat(d, 8, -1.0f);
 
             if (modelComp.model) {
                 modelComp.boneNameToEntityMap[modelComp.model->modelName] = root;
@@ -3561,6 +3640,16 @@ void Serializer::DeserializeCameraComponent(CameraComponent& cameraComp, const r
         cameraComp.blurPasses = cameraJSON["blurPasses"].GetInt();
     if (cameraJSON.HasMember("blurLayerMask") && cameraJSON["blurLayerMask"].IsUint())
         cameraComp.blurLayerMask = cameraJSON["blurLayerMask"].GetUint();
+    if (cameraJSON.HasMember("dirBlurEnabled") && cameraJSON["dirBlurEnabled"].IsBool())
+        cameraComp.dirBlurEnabled = cameraJSON["dirBlurEnabled"].GetBool();
+    if (cameraJSON.HasMember("dirBlurIntensity") && cameraJSON["dirBlurIntensity"].IsNumber())
+        cameraComp.dirBlurIntensity = cameraJSON["dirBlurIntensity"].GetFloat();
+    if (cameraJSON.HasMember("dirBlurStrength") && cameraJSON["dirBlurStrength"].IsNumber())
+        cameraComp.dirBlurStrength = cameraJSON["dirBlurStrength"].GetFloat();
+    if (cameraJSON.HasMember("dirBlurAngle") && cameraJSON["dirBlurAngle"].IsNumber())
+        cameraComp.dirBlurAngle = cameraJSON["dirBlurAngle"].GetFloat();
+    if (cameraJSON.HasMember("dirBlurSamples") && cameraJSON["dirBlurSamples"].IsInt())
+        cameraComp.dirBlurSamples = cameraJSON["dirBlurSamples"].GetInt();
     if (cameraJSON.HasMember("bloomEnabled") && cameraJSON["bloomEnabled"].IsBool())
         cameraComp.bloomEnabled = cameraJSON["bloomEnabled"].GetBool();
     if (cameraJSON.HasMember("bloomThreshold") && cameraJSON["bloomThreshold"].IsNumber())

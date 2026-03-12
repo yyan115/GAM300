@@ -176,6 +176,9 @@ float Model::CalculateAutoScale(const aiScene* scene) {
 
 std::string Model::CompileToResource(const std::string& assetPath, bool forAndroid)
 {
+    // Clear the processed textures cache so all textures get recompiled at least once.
+    m_ProcessedTextures.clear();
+
 	Assimp::Importer importer;
 
 //#ifdef __ANDROID__
@@ -523,9 +526,15 @@ void Model::LoadMaterialTexture(std::shared_ptr<Material> material, aiMaterial* 
             ENGINE_LOG_WARN("[Model] WARNING: Texture file does not exist: " + texturePath + "\n");
             continue;
 		}
+
+        // Only compile the texture if we haven't seen it yet!
+        if (m_ProcessedTextures.find(texturePath) == m_ProcessedTextures.end()) {
+            AssetManager::GetInstance().CompileTexture(texturePath, typeName, -1, flipUVs, true);
+            // Add it to the memory bank so we never compile it again for this FBX
+            m_ProcessedTextures.insert(texturePath);
+        }
         // Add a TextureInfo with no texture loaded to the material first.
         // The texture will be loaded when the model is rendered.
-        AssetManager::GetInstance().CompileTexture(texturePath, typeName, -1, flipUVs, true);
         std::unique_ptr<TextureInfo> textureInfo = std::make_unique<TextureInfo>(texturePath, nullptr);
         // Use explicit target type if provided, otherwise map from Assimp enum
         Material::TextureType matType = (targetType != Material::TextureType::NONE) ? targetType : static_cast<Material::TextureType>(type);
@@ -884,6 +893,10 @@ std::shared_ptr<AssetMeta> Model::ExtendMetaFile(const std::string& assetPath, s
     else {
         std::string assetPathAndroid = assetPath.substr(assetPath.find("Resources"));
         metaFilePath = (AssetManager::GetInstance().GetAndroidResourcesPath() / assetPathAndroid).generic_string() + ".meta";
+
+        // Apply the exact same sanitization used in GenerateBaseMetaFile
+        std::filesystem::path newPath = FileUtilities::SanitizePathForAndroid(std::filesystem::path(metaFilePath));
+        metaFilePath = newPath.generic_string();
     }
     std::ifstream ifs(metaFilePath);
     std::string jsonContent((std::istreambuf_iterator<char>(ifs)), std::istreambuf_iterator<char>());

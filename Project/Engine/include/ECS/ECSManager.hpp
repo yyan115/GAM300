@@ -42,7 +42,7 @@ public:
 
 	void ENGINE_API DestroyEntity(Entity entity);
 
-	void ENGINE_API ClearAllEntities();
+	void ENGINE_API ClearAllEntities(bool clearGUIDRegistry = true);
 
 	template <typename T>
 	void RegisterComponent() {

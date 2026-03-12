@@ -1,0 +1,14 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "0022c894ed27e53c-0004761d6a00e567",
+        "source": "../../Resources/Sprites/PlayerHUD/TheWeaponRoomTxt.png",
+        "compiled": "../../Resources/Sprites/PlayerHUD/TheWeaponRoomTxt.dds"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": true,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp"
+    }
+}

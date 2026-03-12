@@ -1,0 +1,11 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "004260df368f22bc-000477c530097d75",
+        "source": "../../Resources/Models/Rooms/Alley1/Alley1_Wall2.fbx",
+        "compiled": "../../Resources/Models/Rooms/Alley1/Alley1_Wall2.mesh"
+    },
+    "ModelMetaData": {
+        "optimizeMeshes": true
+    }
+}

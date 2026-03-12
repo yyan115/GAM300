@@ -14,6 +14,7 @@ public:
 	virtual void Draw() = 0;
 	virtual void Exit() = 0;
 	virtual void ShutDownPhysics() = 0;
+	virtual void initializeOrchestrator() {}
 
 	bool updateSynchronized = true;
 	bool drawSynchronized = true;

@@ -1,0 +1,14 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "006dfc96b345cd00-000474f3c0007229",
+        "source": "../../Resources/Sprites/PlayerHUD/CrosshairDefault.png",
+        "compiled": "../../Resources/Sprites/PlayerHUD/CrosshairDefault.dds"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp"
+    }
+}

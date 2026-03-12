@@ -190,6 +190,51 @@ namespace InputWrappers {
 }
 
 // ============================================================================
+// KEYBOARD INPUT WRAPPERS (RAW - PC/DESKTOP ONLY)
+// ============================================================================
+// WARNING: These wrappers bypass the unified input system and are PC/desktop
+// only — they will always return false on Android. Prefer using the unified
+// Input system (Input.IsActionPressed, Input.GetAxis, etc.) for any code
+// that needs to run on both platforms. Only use these when you have a good
+// reason, e.g. debug tools, editor-only features, or PC-exclusive shortcuts.
+#include "Platform/IPlatform.h"
+
+namespace KeyboardWrappers {
+    inline bool IsKeyPressed(int keyCode) {
+        auto* platform = WindowManager::GetPlatform();
+        if (!platform) return false;
+        return platform->IsKeyPressed(static_cast<Input::Key>(keyCode));
+    }
+
+    inline bool IsDigitPressed(int digit) {
+        if (digit < 0 || digit > 9) return false;
+        return IsKeyPressed(static_cast<int>(Input::Key::NUM_0) + digit);
+    }
+
+    inline bool IsMouseButtonPressed(int button) {
+        auto* platform = WindowManager::GetPlatform();
+        if (!platform) return false;
+        return platform->IsMouseButtonPressed(static_cast<Input::MouseButton>(button));
+    }
+
+    inline float GetMouseX() {
+        auto* platform = WindowManager::GetPlatform();
+        if (!platform) return 0.0f;
+        double x = 0.0, y = 0.0;
+        platform->GetMousePosition(&x, &y);
+        return static_cast<float>(x);
+    }
+
+    inline float GetMouseY() {
+        auto* platform = WindowManager::GetPlatform();
+        if (!platform) return 0.0f;
+        double x = 0.0, y = 0.0;
+        platform->GetMousePosition(&x, &y);
+        return static_cast<float>(y);
+    }
+}
+
+// ============================================================================
 // PHYSICS SYSTEM WRAPPERS
 // ============================================================================
 #include "Physics/PhysicsSystem.hpp"
@@ -589,6 +634,16 @@ namespace SceneWrappers {
     inline void LoadScene(const std::string& scenePath) {
         // Pass true for callingFromLua so editor stays in play mode during scene transitions
         SceneManager::GetInstance().LoadScene(scenePath, true);
+    }
+
+    inline void LoadSceneAsync(const std::string& scenePath) {
+        SceneManager::GetInstance().LoadSceneAsync(scenePath, true);
+    }
+    inline float GetLoadProgress() {
+        return SceneManager::GetInstance().GetLoadProgress();
+    }
+    inline bool IsLoading() {
+        return SceneManager::GetInstance().IsLoading();
     }
     
     inline std::string GetCurrentSceneName() {

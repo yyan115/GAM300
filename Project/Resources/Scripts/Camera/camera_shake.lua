@@ -13,8 +13,9 @@
 --   cameraShake:Shake()
 
 require("extension.engine_bootstrap")
-local Component = require("extension.mono_helper")
-local IM        = require("extension.inspector_meta")
+local Component  = require("extension.mono_helper")
+local IM         = require("extension.inspector_meta")
+local event_bus  = _G.event_bus
 
 return Component {
 
@@ -65,7 +66,7 @@ return Component {
     end,
 
     -- -------------------------------------------------------
-    OnDestroy = function(self)
+    OnDisable = function(self)
         if self._shakeSub then
             event_bus.unsubscribe(self._shakeSub)
             self._shakeSub = nil

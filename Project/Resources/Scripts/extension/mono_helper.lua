@@ -58,6 +58,10 @@ return function(spec)
     end
 
     inst.__meta = spec.meta or {}
+    -- Also expose meta as __editor so the C++ ScriptInspector can read editorHint metadata
+    if spec.meta then
+        inst.__editor = spec.meta
+    end
     inst._private = {}
     inst._subscriptions = {}
     inst.__created_at = os.time()

@@ -66,6 +66,15 @@ bool PostProcessingManager::Initialize()
     }
     ssaoEffect->SetEnabled(false);  // Default to off — CameraSystem enables when needed
 
+    // Initialize Directional Blur effect (applied after Gaussian blur)
+    directionalBlurEffect = std::make_unique<DirectionalBlurEffect>();
+    if (!directionalBlurEffect->Initialize())
+    {
+        ENGINE_PRINT(EngineLogging::LogLevel::Error, "[PostProcessingManager] Failed to initialize Directional Blur effect!\n");
+        // Non-fatal: directional blur is optional
+    }
+    directionalBlurEffect->SetEnabled(false);  // Default to off — CameraSystem enables when needed
+
     // Initialize Bloom effect (applied after blur, before HDR tonemapping)
     bloomEffect = std::make_unique<BloomEffect>();
     if (!bloomEffect->Initialize())
@@ -93,6 +102,12 @@ void PostProcessingManager::Shutdown()
     {
         blurEffect->Shutdown();
         blurEffect.reset();
+    }
+
+    if (directionalBlurEffect)
+    {
+        directionalBlurEffect->Shutdown();
+        directionalBlurEffect.reset();
     }
 
     if (bloomEffect)
@@ -125,7 +140,7 @@ void PostProcessingManager::Process(unsigned int inputTexture, unsigned int outp
         return;
     }
 
-    // Current pipeline: SSAO -> Blur -> Bloom -> HDR tone mapping -> Output
+    // Current pipeline: SSAO -> Blur -> Directional Blur -> Bloom -> HDR tone mapping -> Output
 
     unsigned int currentInput = inputTexture;
     unsigned int currentOutput = outputFBO;
@@ -144,6 +159,12 @@ void PostProcessingManager::Process(unsigned int inputTexture, unsigned int outp
     {
         blurEffect->Apply(currentInput, hdrFramebuffer, width, height);
         // hdrColorTexture now contains blurred image, currentInput still points to it
+    }
+
+    // Apply directional blur after Gaussian blur
+    if (directionalBlurEffect && directionalBlurEffect->IsEnabled() && directionalBlurEffect->GetIntensity() > 0.01f)
+    {
+        directionalBlurEffect->Apply(currentInput, hdrFramebuffer, width, height);
     }
 
     // Apply bloom using per-entity emission buffer (no threshold extraction)
@@ -240,7 +261,13 @@ unsigned int PostProcessingManager::CreateHDRFramebuffer(int width, int height)
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D, hdrBloomEmissionTexture, 0);
 
     // Default: draw to attachment 0 only (bloom MRT enabled on demand)
+    // glDrawBuffer is desktop OpenGL only; glDrawBuffers is the ES 3.0 equivalent
+#ifdef ANDROID
+    GLenum drawBufs[] = { GL_COLOR_ATTACHMENT0 };
+    glDrawBuffers(1, drawBufs);
+#else
     glDrawBuffer(GL_COLOR_ATTACHMENT0);
+#endif
 
     // Create depth texture (sampleable, so fog can read scene depth for soft intersections)
     glGenTextures(1, &hdrDepthTexture);
@@ -309,7 +336,12 @@ void PostProcessingManager::BeginHDRRender(int width, int height)
     glClear(GL_COLOR_BUFFER_BIT);
 
     // Restore single draw buffer (attachment 0 only) for normal rendering
+#ifdef ANDROID
+    GLenum drawBufs[] = { GL_COLOR_ATTACHMENT0 };
+    glDrawBuffers(1, drawBufs);
+#else
     glDrawBuffer(GL_COLOR_ATTACHMENT0);
+#endif
 }
 
 void PostProcessingManager::EndHDRRender(unsigned int outputFBO, int width, int height)
@@ -331,7 +363,12 @@ void PostProcessingManager::EnableBloomMRT()
 
 void PostProcessingManager::DisableBloomMRT()
 {
+#ifdef ANDROID
+    GLenum drawBufs[] = { GL_COLOR_ATTACHMENT0 };
+    glDrawBuffers(1, drawBufs);
+#else
     glDrawBuffer(GL_COLOR_ATTACHMENT0);
+#endif
 }
 
 void PostProcessingManager::RenderScreenQuad()
@@ -376,6 +413,15 @@ void PostProcessingManager::ResetRuntimeState()
     cgContrast_ = 1.0f;
     cgSaturation_ = 1.0f;
     cgTint_ = glm::vec3(1.0f);
+
+    // Reset directional blur
+    if (directionalBlurEffect) {
+        directionalBlurEffect->SetEnabled(false);
+        directionalBlurEffect->SetIntensity(0.0f);
+        directionalBlurEffect->SetStrength(5.0f);
+        directionalBlurEffect->SetAngle(0.0f);
+        directionalBlurEffect->SetSamples(8);
+    }
 
     // Reset chromatic aberration
     caEnabled_ = false;

@@ -165,13 +165,18 @@ function M:_playVaried(ac, clipGuid, blend, doppler, volMult)
 end
 
 function M:_resolveState(pub)
-    -- EndPointLocked must be checked BEFORE IsExtending.
+    -- IsRetracting must be checked BEFORE EndPointLocked.
+    -- StartRetraction() sets isRetracting=true but does NOT clear endPointLocked,
+    -- so both flags are true while pulling an enemy. Checking IsRetracting first
+    -- ensures the RETRACTING transition fires and the retract sound plays.
+    --
+    -- EndPointLocked must still be checked BEFORE IsExtending.
     -- When an entity hit occurs, Bootstrap sets endPointLocked=true but does
     -- not clear isExtending in the same frame, so IsExtending and EndPointLocked
     -- are both true simultaneously. Checking EndPointLocked first ensures the
     -- LOCKED transition fires and HitFlesh plays correctly.
-    if pub.EndPointLocked                          then return STATE.LOCKED
-    elseif pub.IsRetracting                        then return STATE.RETRACTING
+    if pub.IsRetracting                            then return STATE.RETRACTING
+    elseif pub.EndPointLocked                      then return STATE.LOCKED
     elseif pub.RaycastSnapped                      then return STATE.LOCKED
     elseif pub.IsExtending                         then return STATE.EXTENDING
     elseif pub.Flopping                            then return STATE.FLOPPING

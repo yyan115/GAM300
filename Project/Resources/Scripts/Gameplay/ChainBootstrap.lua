@@ -67,11 +67,9 @@ return Component {
         UseLOSAnchors = true,       -- when true: anchors auto-created wherever geometry breaks LOS
         LockOnAngleDeg = 45.0,      -- half-cone: LockOn targets outside this angle from player forward are ignored
 
-        -- =====================================================================
-        -- SPIN (aim-hold from retracted state)
+        -- === Spin ===
         -- Chain spins in a circle on the X axis (YZ plane) while aim is held.
         -- Released when tip points within SpinReleaseAngleTolerance of camera forward.
-        -- =====================================================================
         SpinRadius               = 0.75,  -- radius of the circular spin path (metres)
         SpinSpeed                = 25.0,  -- full speed in rad/s (~4 rotations/sec), multiplied by dt so framerate-independent
         SpinWindUpTime           = 0.4,   -- seconds to reach full speed from 0
@@ -79,8 +77,7 @@ return Component {
         SpinReleaseAngleTolerance= 20.0,  -- degrees: tip must point within this of camera forward to release
         SpinDirection            = 1,     -- 1 = forward→up→back→down, -1 = reverse. Tweak if spin looks wrong.
 
-        -- =====================================================================
-        -- AUDIO CHANNELS
+        -- === Audio channels ===
         -- ChainAudio resolves AudioComponents from link entities by name at
         -- runtime using Engine.FindAudioCompByName.
         --   Loop : throw / retract one-shots + flop loop
@@ -88,7 +85,6 @@ return Component {
         --          never cut off a still-playing throw/retract sound
         --   Aim  : aim-camera loop (2D, reserved — no asset yet)
         -- These are derived from LinkName automatically — no ID needed.
-        -- =====================================================================
         AudioVolume = 1.0,
 
         -- Spatial falloff — tune to match your world scale.
@@ -106,8 +102,7 @@ return Component {
         AudioPitchVariation  = 0.1,
         AudioVolumeVariation = 0.08,
 
-        -- =====================================================================
-        -- AUDIO CLIPS
+        -- === Audio clips ===
         -- Arrays: ChainAudio picks randomly on each trigger.
         -- Add more GUIDs at any time — no code changes needed.
         --
@@ -123,7 +118,6 @@ return Component {
         --   Aim      <- ChainAim1          (looping, helicopter spin overhead)
         --   Taut     <- ChainTaut1/2/3     (one-shot, chain snapping to tension)
         --   Lax      <- ChainLax1/2        (one-shot, tension releasing)
-        -- =====================================================================
         AudioClips_Throw    = {},
         AudioClips_Retract  = {},
         AudioClips_HitFlesh = {},
@@ -214,6 +208,10 @@ return Component {
         self._intentContinue     = false
         self._intentAimFire      = false
         self._intentAdjustLength = false
+        -- Track whether this press is a retract so chain.up doesn't re-fire
+        local len = self.controller and (self.controller.chainLen or 0) or 0
+        local isExt = self.controller and self.controller.isExtending or false
+        self._retractTriggeredThisPress = (len > 1e-4 or isExt)
     end,
 
     _on_chain_up = function(self, payload)
@@ -268,6 +266,7 @@ return Component {
             self.controller:StartExtension(dir, self.MaxLength, self.LinkMaxDistance)
             if _G.event_bus and _G.event_bus.publish then
                 _G.event_bus.publish("force_player_rotation_to_direction", {x = dir[1], z = dir[3]})
+                _G.event_bus.publish("chain.throw_chain", true)
             end
 
         elseif isExt and not isRet then
@@ -283,6 +282,26 @@ return Component {
                     dbg("[ChainBootstrap] Tap-release mid-extension: throwable hooked — staying locked, no retract")
                 else
                     self.controller:StartRetraction()
+
+                    local isEnemy = self.controller.endPointLocked
+                    local isWall = self.controller._raycastSnapped
+
+                    -- If chain is attached to an enemy, notify AI to trigger hooked/slam behaviour
+                    if isEnemy then
+                        if self._hookedEnemyEntityId then
+                            if _G.event_bus and _G.event_bus.publish then
+                                _G.event_bus.publish("chain.enemy_hooked", {
+                                    entityId = self._hookedEnemyEntityId,
+                                    duration = 2.0,
+                                })
+                            end
+                        end
+                    -- Only publish chain.retract_chain event if the chain is attached to a wall/nothing.
+                    else
+                        if _G.event_bus and _G.event_bus.publish then
+                            _G.event_bus.publish("chain.retract_chain", true)
+                        end
+                    end
                     dbg("[ChainBootstrap] Tap-release mid-extension but already attached -> StartRetraction")
                 end
             else
@@ -293,9 +312,47 @@ return Component {
                 dbg("[ChainBootstrap] Tap-release mid-extension -> Flop")
             end
 
+        elseif isRet and not isExt then
+            -- Chain is still retracting when button released — queue a fire
+            -- for when retraction completes, unless this press was itself a retract.
+            if not self._retractTriggeredThisPress then
+                self._pendingTapFire = true
+                self._pendingPlayerForward = nil
+                if _G.event_bus and _G.event_bus.publish then
+                    _G.event_bus.publish("request_player_forward", true)
+                end
+                dbg("[ChainBootstrap] chain.up during retraction — queued tap-fire for after retract")
+            end
+
         elseif not isExt and not isRet and len <= 1e-4 then
             local isAttached = self.controller.endPointLocked or self.controller._raycastSnapped
-            if isAttached then
+            if self._retractTriggeredThisPress then
+                -- This up event is the release of a retract press — don't re-fire.
+                dbg("[ChainBootstrap] chain.up: retract press released, skipping tap-fire")
+            elseif isAttached then
+                -- Determine what we are attached to
+                local isEnemy = self.controller.endPointLocked
+                local isWall = self.controller._raycastSnapped
+
+                self.controller:StartRetraction()
+
+                -- If chain is attached to an enemy, notify AI to trigger hooked/slam behaviour
+                if isEnemy then
+                    if self._hookedEnemyEntityId then
+                        if _G.event_bus and _G.event_bus.publish then
+                            _G.event_bus.publish("chain.enemy_hooked", {
+                                entityId = self._hookedEnemyEntityId,
+                                duration = 2.0,
+                            })
+                        end
+                    end
+                -- Only publish chain.retract_chain event if the chain is attached to a wall/nothing.
+                else
+                    if _G.event_bus and _G.event_bus.publish then
+                        _G.event_bus.publish("chain.retract_chain", true)
+                    end
+                end
+
                 -- Chain hit something on the very first frame so chainLen is still near zero.
                 -- StartRetraction guards against len=0 so force-clear the lock directly and
                 -- publish endpoint_retracted so ChainEndpointController fires enemy_hooked.
@@ -318,6 +375,7 @@ return Component {
                 self._pendingTapFire = true
                 if _G.event_bus and _G.event_bus.publish then
                     _G.event_bus.publish("request_player_forward", true)
+                    _G.event_bus.publish("chain.throw_chain", true)
                 end
                 dbg("[ChainBootstrap] TAP -> requested player_forward_response")
             end
@@ -353,18 +411,43 @@ return Component {
                 self._hookedIsThrowable       = false
                 self._hookedThrowableEntityId = nil
                 self.controller:StartRetraction()
+                if _G.event_bus and _G.event_bus.publish then
+                    _G.event_bus.publish("chain.pull_chain", true)
+                end
                 print("[ChainBootstrap] Throwable TAP: THROW -> StartRetraction")
             else
                 -- Normal (enemy or no hook): retract.
+                -- Determine what we are attached to
+                local isEnemy = self.controller.endPointLocked
+                local isWall = self.controller._raycastSnapped
+
                 self.controller:StartRetraction()
+
+                -- If chain is attached to an enemy, notify AI to trigger hooked/slam behaviour
+                if isEnemy then
+                    if self._hookedEnemyEntityId then
+                        if _G.event_bus and _G.event_bus.publish then
+                            _G.event_bus.publish("chain.enemy_hooked", {
+                                entityId = self._hookedEnemyEntityId,
+                                duration = 2.0,
+                            })
+                        end
+                    end
+                -- Only publish chain.retract_chain event if the chain is attached to a wall/nothing.
+                else
+                    if _G.event_bus and _G.event_bus.publish then
+                        _G.event_bus.publish("chain.retract_chain", true)
+                    end
+                end
                 print("[ChainBootstrap] TAP on extended idle -> StartRetraction (no throwable)")
             end
         end
 
-        self._chain_held         = false
-        self._intentContinue     = false
-        self._intentAimFire      = false
-        self._intentAdjustLength = false
+        self._chain_held                = false
+        self._intentContinue            = false
+        self._intentAimFire             = false
+        self._intentAdjustLength        = false
+        self._retractTriggeredThisPress = false
     end,
 
     _on_chain_hold = function(self, payload)
@@ -505,6 +588,8 @@ return Component {
 
         -- LockOn targets are queried live via Engine.GetEntitiesByTag at fire time.
 
+        self._lastPublishedExtended = false
+        self._retractTriggeredThisPress = false
         self._endpointTransform = nil
         if self.ChainEndpointName and self.ChainEndpointName ~= "" then
             self._endpointTransform = Engine.FindTransformByName(self.ChainEndpointName)
@@ -571,6 +656,7 @@ return Component {
                     if self.controller then
                         dbg("[ChainBootstrap] Endpoint hit entity '" .. tostring(payload.entityName) .. "' — locking endpoint")
                         self.controller.endPointLocked = true
+                        self.controller.isExtending = false
                         self.controller.hookedTag      = payload.rootTag or ""
 
                         -- NEW: track whether the hooked entity is a throwable
@@ -578,6 +664,9 @@ return Component {
                         self._hookedThrowableEntityId = self._hookedIsThrowable
                                                         and payload.rootEntityId
                                                         or nil
+                        
+                        -- Track the enemy ID exactly like you track the throwable ID
+                        self._hookedEnemyEntityId     = (not self._hookedIsThrowable and payload.rootTag == "Enemy") and payload.rootEntityId or nil
 
                         -- Snapshot lockedEndPoint at moment of hit (unchanged)
                         if self._endpointTransform then
@@ -943,6 +1032,18 @@ return Component {
         local positions, startPos, endPos = self.controller:Update(dt, settings)
         local activeN = self.controller.activeN
 
+        -- Publish chain extended state change so other scripts (ComboManager)
+        -- can react without relying on a global that may be one frame stale.
+        local nowExtended = (self.controller.chainLen or 0) > 1e-4 or self.controller.isExtending or false
+        if nowExtended ~= self._lastPublishedExtended then
+            self._lastPublishedExtended = nowExtended
+            print(string.format("[ChainBootstrap] chain.extended_changed -> isExtended=%s (chainLen=%.3f)",
+                tostring(nowExtended), self.controller.chainLen or 0))
+            if _G.event_bus and _G.event_bus.publish then
+                _G.event_bus.publish("chain.extended_changed", { isExtended = nowExtended })
+            end
+        end
+
         -- Ensure endpoint transform is cached before spin block needs it
         if not self._endpointTransform and self.ChainEndpointName and self.ChainEndpointName ~= "" then
             self._endpointTransform = Engine.FindTransformByName(self.ChainEndpointName)
@@ -1074,12 +1175,26 @@ return Component {
         end
         -- =====================================================================
 
-        -- Publish movement constraint — ChainController computed it, Bootstrap owns event_bus
-        if self.controller.constraintResult and _G.event_bus and _G.event_bus.publish then
+        -- Publish movement constraint — only when chain is taut (attached and idle).
+        -- Publishing during extension/retraction incorrectly locks player movement
+        -- even when well within the chain's range.
+        local chainIdle     = not self.controller.isExtending and not self.controller.isRetracting
+        local chainAttached = self.controller.endPointLocked or self.controller._raycastSnapped
+        if self.controller.constraintResult and chainIdle and chainAttached
+            and _G.event_bus and _G.event_bus.publish
+        then
             local cr = self.controller.constraintResult
             dbg(string.format("[ChainBootstrap][CONSTRAINT] publishing ratio=%.3f exceeded=%s drag=%s",
                 cr.ratio or 0, tostring(cr.exceeded), tostring(cr.drag)))
             _G.event_bus.publish("chain.movement_constraint", cr)
+        elseif (not chainAttached or not chainIdle) and _G.event_bus and _G.event_bus.publish then
+            -- Chain not taut — clear any stale constraint so PlayerMovement doesn't
+            -- keep applying a ratio from the last taut frame.
+            _G.event_bus.publish("chain.movement_constraint", {
+                ratio    = 0,
+                exceeded = false,
+                drag     = false,
+            })
         end
 
         -- Throwable tension: always published while throwable is hooked, including during retraction

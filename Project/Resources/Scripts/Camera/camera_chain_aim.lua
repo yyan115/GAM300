@@ -50,15 +50,16 @@ end
 -- Returns: chainAimActive (bool), chainDesiredX, chainDesiredY, chainDesiredZ
 -- chainDesiredX/Y/Z are nil when chainAimActive is false.
 function M.updateChainAim(self, dt)
-    -- Smooth blend factor toward target (0 = orbit, 1 = chain aim)
-    local blendTarget = self._chainAiming and 1.0 or 0.0
-    local blendSpeed  = self.chainAimTransitionSpeed or 5.0
-    local blendT      = 1.0 - math.exp(-blendSpeed * dt)
-    self._chainAimBlend = self._chainAimBlend + (blendTarget - self._chainAimBlend) * blendT
-
-    -- Snap to exact 0/1 to avoid micro-lerp stall
-    if self._chainAimBlend < 0.001 then self._chainAimBlend = 0.0 end
-    if self._chainAimBlend > 0.999 then self._chainAimBlend = 1.0 end
+    -- Blend factor: snap to 1 immediately when aiming so there is zero lerp
+    -- on position, rotation, and CAMERA_YAW. Smooth out only on release.
+    if self._chainAiming then
+        self._chainAimBlend = 1.0
+    else
+        local blendSpeed = self.chainAimTransitionSpeed or 5.0
+        local blendT     = 1.0 - math.exp(-blendSpeed * dt)
+        self._chainAimBlend = self._chainAimBlend + (0.0 - self._chainAimBlend) * blendT
+        if self._chainAimBlend < 0.001 then self._chainAimBlend = 0.0 end
+    end
 
     local chainAimActive = self._chainAimBlend > 0.0
     if not chainAimActive then
@@ -79,31 +80,24 @@ function M.updateChainAim(self, dt)
         self._chainAimInitialized = true
     end
 
-    -- Compute the zoomed-in camera position: same orbital direction as current
-    -- aim but at chainAimZoomDistance radius instead of followDistance.
-    local zoomDist  = self.chainAimZoomDistance or 1.5
+    -- Compute the chain-aim camera position starting from the player's world
+    -- position, then apply chainAimHeightOffset (up), chainAimSideOffset
+    -- (over-the-shoulder), and chainAimZoomDistance (behind the player).
+    local zoomDist     = self.chainAimZoomDistance or 0.8
+    local heightOffset = self.chainAimHeightOffset or 1.5
+    local sideOffset   = self.chainAimSideOffset   or 0.3
+
     -- _chainAimYaw is look-direction; add 180 to get orbit position-offset convention.
     local orbitYaw  = math.rad(self._chainAimYaw + 180.0)
     local aimPitchR = math.rad(self._chainAimPitch or 0.0)
 
-    local minZ = self.minZoom or 2.0
-    local maxZ = self.maxZoom or 15.0
-    local zf   = math.max(0.0, math.min(1.0, (zoomDist - minZ) / (maxZ - minZ)))
-    local lookAtH = 0.5 + zf * 0.7
-    local scaleH  = (self.heightOffset or 1.0) * (0.3 + zf * 0.7)
-
-    local pivX = self._targetPos.x
-    local pivY = self._targetPos.y + lookAtH
-    local pivZ = self._targetPos.z
-
     local hRadius = zoomDist * math.cos(aimPitchR)
-    local camX = pivX + hRadius * math.sin(orbitYaw)
-    local camY = pivY + zoomDist * math.sin(aimPitchR) + scaleH
-    local camZ = pivZ + hRadius * math.cos(orbitYaw)
+    local camX = self._targetPos.x + hRadius * math.sin(orbitYaw)
+    local camY = self._targetPos.y + heightOffset + zoomDist * math.sin(aimPitchR)
+    local camZ = self._targetPos.z + hRadius * math.cos(orbitYaw)
 
-    -- Over-the-shoulder: shift camera right relative to the look direction.
+    -- Over-the-shoulder: shift camera sideways relative to the look direction.
     -- Right vector in XZ = (cos(lookYaw), 0, -sin(lookYaw)).
-    local sideOffset = self.chainAimSideOffset or 0.3
     local lookYawRad = math.rad(self._chainAimYaw)
     camX = camX - math.cos(lookYawRad) * sideOffset
     camZ = camZ + math.sin(lookYawRad) * sideOffset

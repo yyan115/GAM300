@@ -148,86 +148,58 @@ CharacterController* CharacterController::CreateController(ColliderComponent& co
 }
 
 
-
-
-void CharacterController::Update(float deltaTime) {
+void CharacterController::Update(float deltaTime)
+{
     if (!mCharacter || !mPhysicsSystem)
         return;
 
-    //std::cout << "=== CharacterController Update ===" << std::endl;
-
-    JPH::Vec3 gravity = mPhysicsSystem->GetGravity();
-
-    // FIRST: Refresh contacts to get accurate ground state
     JPH::TempAllocatorImpl temp_allocator(10 * 1024 * 1024);
-    mCharacter->RefreshContacts(
-        mPhysicsSystem->GetDefaultBroadPhaseLayerFilter(mCharacterLayer),
-        mPhysicsSystem->GetDefaultLayerFilter(mCharacterLayer),
-        {},
-        {},
-        temp_allocator
-    );
 
-    // Get current state AFTER refreshing contacts
-    JPH::Vec3 currentVelocity = mCharacter->GetLinearVelocity();
+    const JPH::Vec3 gravity = mPhysicsSystem->GetGravity();
+    const JPH::Vec3 currentVel = mCharacter->GetLinearVelocity();
+
     JPH::CharacterVirtual::EGroundState groundState = mCharacter->GetGroundState();
+    const bool isOnGround = (groundState == JPH::CharacterVirtual::EGroundState::OnGround);
 
-    //std::cout << "[C++] Current Ground State: " << (int)groundState << std::endl;
-    //std::cout << "[C++] Current Position Y: " << mCharacter->GetPosition().GetY() << std::endl;
-    //std::cout << "[C++] Velocity BEFORE calculation: y=" << currentVelocity.GetY() << std::endl;
-
-    // Calculate new velocity based on ground state
     JPH::Vec3 newVelocity;
 
-    if (groundState == JPH::CharacterVirtual::EGroundState::OnGround) {
-
+    if (isOnGround)
+    {
         if (jump_Requested)
         {
-            newVelocity = currentVelocity;
-            newVelocity.SetY(mVelocity.GetY());
-
-            groundState = JPH::CharacterVirtual::EGroundState::InAir;
-
+            // Jump: preserve current XZ momentum, inject upward impulse only.
+            // Lua's XZ is ignored this frame; the running momentum stays in currentVel.
+            // carries forward naturally, so the jump doesn't kill your run speed.
+            newVelocity = JPH::Vec3(currentVel.GetX(), mVelocity.GetY(), currentVel.GetZ());
             jump_Requested = false;
         }
         else
         {
-
-            // On ground: Use ground velocity (platform movement) + horizontal input
-            // DON'T add gravity - we're supported by the ground!
-            newVelocity = mCharacter->GetGroundVelocity();
-
-            // Add any player horizontal movement to this
-            newVelocity += JPH::Vec3(mVelocity.GetX(), 0, mVelocity.GetZ());
-
-            // Reset vertical component when on ground
-            newVelocity.SetY(0);
-
-            //std::cout << "[C++] On ground - using ground velocity, no gravity" << std::endl;
+            // Grounded: start from platform velocity so moving platforms work,
+            // then replace XZ entirely with what Lua says this frame.
+            // Never add it; Lua owns horizontal movement completely.
+            JPH::Vec3 groundVel = mCharacter->GetGroundVelocity();
+            newVelocity = JPH::Vec3(
+                groundVel.GetX() + mVelocity.GetX(),
+                0.0f,
+                groundVel.GetZ() + mVelocity.GetZ()
+            );
         }
     }
-    else {
-        // In air: Apply gravity to current velocity
-        newVelocity = currentVelocity + gravity * deltaTime;
-
-        // Add player input (allows air control)
-        newVelocity += JPH::Vec3(mVelocity.GetX(), mVelocity.GetY(), mVelocity.GetZ()) * deltaTime;
-
-        //std::cout << "[C++] In air - applying gravity" << std::endl;
+    else
+    {
+        // In air: Lua owns XZ exactly, C++ only accumulates vertical gravity.
+        // Never add Lua XZ on top of currentVel; that compounds speed every frame.
+        float verticalVel = currentVel.GetY() + gravity.GetY() * deltaTime;
+        newVelocity = JPH::Vec3(mVelocity.GetX(), verticalVel, mVelocity.GetZ());
     }
 
-    //std::cout << "[C++] New velocity calculated: y=" << newVelocity.GetY() << std::endl;
-
-    // Set velocity BEFORE ExtendedUpdate
     mCharacter->SetLinearVelocity(newVelocity);
 
-    //std::cout << "[C++] Position BEFORE ExtendedUpdate: y=" << mCharacter->GetPosition().GetY() << std::endl;
-
-    // Configure update settings
     JPH::CharacterVirtual::ExtendedUpdateSettings updateSettings;
-    updateSettings.mStickToFloorStepDown = JPH::Vec3(0, -0.5f, 0);
+    updateSettings.mStickToFloorStepDown = JPH::Vec3(0, -0.2f, 0);  // was -0.5, too aggressive
     updateSettings.mWalkStairsStepUp = JPH::Vec3(0, 0.4f, 0);
-    // Perform the character update
+
     mCharacter->ExtendedUpdate(
         deltaTime,
         gravity,
@@ -239,23 +211,10 @@ void CharacterController::Update(float deltaTime) {
         temp_allocator
     );
 
-    //std::cout << "[C++] Position AFTER ExtendedUpdate: y=" << mCharacter->GetPosition().GetY() << std::endl;
-    //std::cout << "[C++] Velocity AFTER: y=" << mCharacter->GetLinearVelocity().GetY() << std::endl;
-    //std::cout << "[C++] Ground State AFTER: " << (int)mCharacter->GetGroundState() << std::endl;
-
-    // Debug ground contact info
-    if (mCharacter->GetGroundState() == JPH::CharacterVirtual::EGroundState::OnGround) {
-        JPH::Vec3 groundNormal = mCharacter->GetGroundNormal();
-        JPH::Vec3 groundVelocity = mCharacter->GetGroundVelocity();
-        JPH::BodyID groundBodyID = mCharacter->GetGroundBodyID();
-    }
-
-    //std::cout << "===================================" << std::endl;
-
-    // Clear player input velocity after applying it
+    // Clear input; Lua sets this every frame it wants movement.
+    // If Lua sends nothing next frame, character stops horizontally.
     mVelocity = JPH::Vec3::sZero();
 }
-
 
 void CharacterController::Move(float x, float y, float z)
 {

@@ -2,7 +2,7 @@
     "prefab_entities": [
         {
             "id": 0,
-            "guid": "0017e11c882794e0-000479d9ca0037f3",
+            "guid": "00289b5765805b1c-000479770c09228f",
             "components": {
                 "PrefabLinkComponent": {
                     "type": "PrefabLinkComponent",
@@ -23,7 +23,7 @@
                     "layerIndex": 0
                 },
                 "SiblingIndexComponent": {
-                    "siblingIndex": 24
+                    "siblingIndex": 68
                 },
                 "Transform": {
                     "type": "Transform",
@@ -50,15 +50,15 @@
                             "data": [
                                 {
                                     "type": "float",
-                                    "data": 1
+                                    "data": 2
                                 },
                                 {
                                     "type": "float",
-                                    "data": 1
+                                    "data": 2
                                 },
                                 {
                                     "type": "float",
-                                    "data": 1
+                                    "data": 2
                                 }
                             ]
                         },
@@ -67,11 +67,11 @@
                             "data": [
                                 {
                                     "type": "float",
-                                    "data": 1
+                                    "data": 0.707107
                                 },
                                 {
                                     "type": "float",
-                                    "data": 0
+                                    "data": 0.707107
                                 },
                                 {
                                     "type": "float",
@@ -88,9 +88,9 @@
                 "ModelRenderComponent": {
                     "type": "ModelRenderComponent",
                     "data": [
-                        "00272a0f684cb706-00036c6c0a000003",
+                        "0003e8c693657e67-000405cd1a000069",
                         "0060f444e1e8808c-000337e664000011",
-                        "00272a0f5fb5b4fd-00036c6c0a000005",
+                        "0003e8c6abbeb1fb-000405cd1a00006b",
                         {
                             "type": "Matrix4x4",
                             "data": [
@@ -188,8 +188,8 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "0017e11c9e619974-000479d9ca0037f5",
-                                "0017e11cbc861acc-000479d9ca0037f7"
+                                "00289b573e66cb08-000479770c092291",
+                                "00289b57078678f1-000479770c092293"
                             ]
                         }
                     ]
@@ -277,7 +277,7 @@
                         },
                         {
                             "type": "unsigned",
-                            "data": 49
+                            "data": 67
                         },
                         {
                             "type": "int",
@@ -288,7 +288,7 @@
                             "data": [
                                 {
                                     "type": "float",
-                                    "data": 0.005
+                                    "data": 0.015
                                 },
                                 {
                                     "type": "float",
@@ -296,7 +296,7 @@
                                 },
                                 {
                                     "type": "float",
-                                    "data": 0.07
+                                    "data": 0.1
                                 }
                             ]
                         },
@@ -319,23 +319,6 @@
                         {
                             "type": "float",
                             "data": 0.5
-                        },
-                        {
-                            "type": "Vector3D",
-                            "data": [
-                                {
-                                    "type": "float",
-                                    "data": 0.0049523
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0.000686171
-                                },
-                                {
-                                    "type": "float",
-                                    "data": -0.0107706
-                                }
-                            ]
                         },
                         {
                             "type": "Vector3D",
@@ -343,6 +326,23 @@
                                 {
                                     "type": "float",
                                     "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0.08
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0.00000681408
+                                }
+                            ]
+                        },
+                        {
+                            "type": "Vector3D",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 90
                                 },
                                 {
                                     "type": "float",
@@ -375,63 +375,57 @@
                             "entryFunction": "OnInit",
                             "autoInvokeEntry": true,
                             "instanceState": {
-                                "Subscribe": null,
-                                "Lifetime": 1.2,
-                                "Damage": 1.0,
-                                "Start": null,
-                                "Launch": null,
-                                "__meta": {},
-                                "_subscriptions": {},
-                                "DeserializeFields": null,
-                                "After": null,
-                                "StartSafe": null,
-                                "SetScale": null,
-                                "OnDisable": null,
-                                "MaxRange": 10.0,
-                                "Destroy": null,
-                                "DebugTransform": null,
-                                "_GetPlayerPos": null,
-                                "SerializeFields": null,
-                                "BossScale": 2.0,
-                                "HitRadius": 0.5,
-                                "BossDamageMult": 2.0,
-                                "GetScale": null,
-                                "SetRotation": null,
-                                "DisableSafe": null,
-                                "AwakeSafe": null,
-                                "UpdateSafe": null,
-                                "Speed": 5.0,
+                                "__created_at": 1769419004.0,
                                 "_private": {},
-                                "_call_lifecycle": null,
-                                "GetTransform": null,
-                                "Every": null,
-                                "_transform_fetched": false,
-                                "Unsubscribe": null,
-                                "Reset": null,
+                                "__meta": {},
+                                "MaxRange": 10.0,
                                 "ArmDelay": 0.05,
-                                "Update": null,
-                                "GetPosition": null,
+                                "BossDamageMult": 2.0,
+                                "BossScale": 2.0,
+                                "Speed": 5.0,
+                                "BossHitRadiusMult": 1.25,
+                                "Damage": 1.0,
+                                "Lifetime": 3.0,
+                                "_subscriptions": {},
                                 "__field_list": {
                                     "Speed": 10.0,
                                     "Damage": 1.0,
                                     "Lifetime": 1.2
                                 },
                                 "LifeJitter": 0.25,
-                                "_CheckHitPlayer": null,
-                                "SetPosition": null,
-                                "BossHitRadiusMult": 1.25,
-                                "Move": null,
-                                "GetRotation": null,
-                                "__created_at": 1769419004.0
+                                "_transform_fetched": false,
+                                "WarningRadius": 1.2,
+                                "HitRadius": 0.5
                             }
                         }
                     ]
+                },
+                "BloomComponent": {
+                    "type": "BloomComponent",
+                    "data": [
+                        {
+                            "type": "bool",
+                            "data": true
+                        },
+                        {
+                            "type": "float",
+                            "data": 5
+                        }
+                    ],
+                    "bloomColor": {
+                        "type": "glm::vec3",
+                        "data": [
+                            0.27799224853515625,
+                            0.0,
+                            0.0
+                        ]
+                    }
                 }
             }
         },
         {
             "id": 1,
-            "guid": "0017e11c9e619974-000479d9ca0037f5",
+            "guid": "00289b573e66cb08-000479770c092291",
             "components": {
                 "NameComponent": {
                     "name": "goose_handle"
@@ -508,7 +502,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "0017e11c882794e0-000479d9ca0037f3"
+                        "00289b5765805b1c-000479770c09228f"
                     ]
                 },
                 "ActiveComponent": {
@@ -524,7 +518,7 @@
         },
         {
             "id": 2,
-            "guid": "0017e11cbc861acc-000479d9ca0037f7",
+            "guid": "00289b57078678f1-000479770c092293",
             "components": {
                 "NameComponent": {
                     "name": "feather_blade"
@@ -601,7 +595,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "0017e11c882794e0-000479d9ca0037f3"
+                        "00289b5765805b1c-000479770c09228f"
                     ]
                 },
                 "ActiveComponent": {

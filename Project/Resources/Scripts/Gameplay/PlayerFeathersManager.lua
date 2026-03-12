@@ -11,6 +11,7 @@ return Component {
         FeathersCollectedTextName = "FeathersCollectedText",
         FeathersSpriteEntityName = "FeathersSprite",
         FeathersCollectionAnimationFrames = 25,
+        featherPickupSFX = {},
     },
 
     Awake = function(self)
@@ -38,6 +39,10 @@ return Component {
                         feathersSpriteAnimator.currentClipIndex = 0
                         feathersSpriteAnimator:Resume()
                     end
+
+                    if self._audio then
+                        self._audio:PlayOneShot(self.featherPickupSFX[1])
+                    end
                 end
             end)
 
@@ -63,6 +68,7 @@ return Component {
 
     Start = function(self)
         self._transform = self:GetComponent("Transform")
+        self._audio = self:GetComponent("AudioComponent")
 
         self._feathersCollectedTextEntity = Engine.GetEntityByName(self.FeathersCollectedTextName)
         if self._feathersCollectedTextEntity then

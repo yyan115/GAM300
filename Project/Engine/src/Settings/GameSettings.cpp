@@ -134,7 +134,7 @@ bool GameSettingsManager::SaveSettings() {
     if (!fs::exists(parentDir)) {
         try {
             fs::create_directories(parentDir);
-        } catch (const std::exception& e) {
+        } catch (const std::exception&) {
             ENGINE_PRINT(EngineLogging::LogLevel::Error, "[GameSettings] Failed to create directory: ", parentDir.string());
             return false;
         }
@@ -203,6 +203,7 @@ void GameSettingsManager::ApplySettings() {
     AudioManager::GetInstance().SetMasterVolume(m_settings.masterVolume);
     AudioManager::GetInstance().SetBusVolume("BGM", m_settings.bgmVolume);
     AudioManager::GetInstance().SetBusVolume("SFX", m_settings.sfxVolume);
+    AudioManager::GetInstance().SetBusVolume("UI", m_settings.sfxVolume);  // UI follows SFX volume
 
     // Apply graphics settings
     auto* hdrEffect = PostProcessingManager::GetInstance().GetHDREffect();
@@ -254,6 +255,7 @@ void GameSettingsManager::SetSFXVolume(float volume) {
         }
     }
     AudioManager::GetInstance().SetBusVolume("SFX", m_settings.sfxVolume);
+    AudioManager::GetInstance().SetBusVolume("UI", m_settings.sfxVolume);  // UI follows SFX volume
 }
 
 void GameSettingsManager::SetGamma(float gamma) {

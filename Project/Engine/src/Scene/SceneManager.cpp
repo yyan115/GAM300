@@ -12,6 +12,10 @@
 #include "Utilities/GUID.hpp"
 #include "Engine.h"
 #include "Sound/AudioManager.hpp"
+#include <Physics/PhysicsSystem.hpp>
+#include "Graphics/PostProcessing/PostProcessingManager.hpp"
+#include <Multi-threading/SequentialSystemOrchestrator.hpp>
+#include <Multi-threading/ParallelSystemOrchestrator.hpp>
 
 #ifdef _WIN32
 	#include <windows.h>
@@ -44,6 +48,11 @@ void SceneManager::LoadTestScene() {
 // The current scene is exited and cleaned up before loading the new scene.
 // Also sets the new scene as the active ECSManager in the ECSRegistry.
 void SceneManager::LoadScene(const std::string& scenePath, bool fromGameCode) {
+
+    if (loadState != SceneLoadState::IDLE) {
+        ENGINE_PRINT("[SceneManager] Cannot LoadScene while async load is in progress");
+        return;
+    }
     // Check if we need to defer the load (scene not synchronized or called from Lua/script)
     // Skip deferral check if we're already executing a deferred load
     bool isDeferredExecution = isExecutingDeferredLoad;
@@ -257,32 +266,46 @@ void SceneManager::LoadScene(const std::string& scenePath, bool fromGameCode) {
 #endif
 }
 
+
+
+
 void SceneManager::UpdateScene(double dt) {
-    if (loadSceneNextFrame && currentScene->updateSynchronized && currentScene->drawSynchronized) {
-		ENGINE_PRINT("[SceneManager] Loading deferred scene this frame: " + sceneToLoadNextFrame);
-        std::string pathToLoad = sceneToLoadNextFrame;
-        bool wasFromGameCode = deferredSceneFromLua;  // Save before clearing
-
-        // Clear deferred state
-        loadSceneNextFrame = false;
-        sceneToLoadNextFrame = "";
-        deferredSceneFromLua = false;
-
-        // Set flag to prevent re-deferral during this execution
-        isExecutingDeferredLoad = true;
-        LoadScene(pathToLoad, wasFromGameCode);
-        isExecutingDeferredLoad = false;
+    if (loadSceneNextFrame && currentScene && currentScene->updateSynchronized && currentScene->drawSynchronized) {
+        if (loadState != SceneLoadState::IDLE) {
+            ENGINE_PRINT("[SceneManager] Skipping deferred load - async load in progress");
+            loadSceneNextFrame = false;
+            sceneToLoadNextFrame = "";
+            deferredSceneFromLua = false;
+        }
+        else {
+            ENGINE_PRINT("[SceneManager] Loading deferred scene this frame: " + sceneToLoadNextFrame);
+            std::string pathToLoad = sceneToLoadNextFrame;
+            bool wasFromGameCode = deferredSceneFromLua;
+            loadSceneNextFrame = false;
+            sceneToLoadNextFrame = "";
+            deferredSceneFromLua = false;
+            isExecutingDeferredLoad = true;
+            LoadScene(pathToLoad, wasFromGameCode);
+            isExecutingDeferredLoad = false;
+        }
     }
-	if (currentScene) {
-		currentScene->Update(dt);
-	}
+    // Block Update only after loading screen is destroyed (step 16+)
+    if (loadState == SceneLoadState::INITIALIZING_SYSTEMS && asyncSystemInitStep >= 16) return;
+    if (loadState == SceneLoadState::COMPLETE) return;
+
+    if (currentScene) {
+        currentScene->Update(dt);
+    }
 }
 
 void SceneManager::DrawScene() {
-	if (currentScene) {
-		currentScene->Draw();
-		//std::cout << "drawn scene scenemanager\n";
-	}
+    // Block Draw only after loading screen is destroyed (step 16+)
+    if (loadState == SceneLoadState::INITIALIZING_SYSTEMS && asyncSystemInitStep >= 16) return;
+    if (loadState == SceneLoadState::COMPLETE) return;
+
+    if (currentScene) {
+        currentScene->Draw();
+    }
 }
 
 void SceneManager::ExitScene() {
@@ -293,6 +316,217 @@ void SceneManager::ExitScene() {
 		currentScenePath.clear();
 	}
 }
+
+
+void SceneManager::LoadSceneAsync(const std::string& scenePath, bool fromGameCode) {
+    if (loadState != SceneLoadState::IDLE) return;
+
+    // Strip ALL quote characters from path
+    asyncScenePath.clear();
+    for (char c : scenePath) {
+        if (c != '"' && c != '\'') {
+            asyncScenePath += c;
+        }
+    }
+
+    ENGINE_PRINT("[SceneManager] LoadSceneAsync raw: [" + scenePath + "]");
+    ENGINE_PRINT("[SceneManager] LoadSceneAsync cleaned: [" + asyncScenePath + "]");
+    loadState = SceneLoadState::UNLOADING_CURRENT;
+}
+
+float SceneManager::GetLoadProgress() const {
+    if (loadState == SceneLoadState::DESERIALIZING) {
+        if (asyncEntityTotal == 0) return 0.f;
+        return 0.7f * (static_cast<float>(asyncEntityIndex) / static_cast<float>(asyncEntityTotal));
+    }
+    if (loadState == SceneLoadState::INITIALIZING_SYSTEMS) {
+        return 0.7f + 0.3f * (static_cast<float>(asyncSystemInitStep) / 18.f);
+    }
+    if (loadState == SceneLoadState::COMPLETE || loadState == SceneLoadState::IDLE) {
+        return 1.f;
+    }
+    return 0.f;
+}
+
+bool SceneManager::IsLoading() const {
+    return loadState != SceneLoadState::IDLE;
+}
+
+void SceneManager::UpdateAsyncLoad() {
+    if (loadState != SceneLoadState::IDLE) {
+        ENGINE_PRINT("[AsyncLoad] Enter UpdateAsyncLoad, state=" + std::to_string((int)loadState));
+    }
+    switch (loadState) {
+    case SceneLoadState::UNLOADING_CURRENT: {
+        ECSRegistry::GetInstance().CreateECSManager(asyncScenePath);
+        loadState = SceneLoadState::PARSING_JSON;
+        break;
+    }
+    case SceneLoadState::PARSING_JSON: {
+        ENGINE_PRINT("[AsyncLoad] PARSING_JSON for: " + asyncScenePath);
+        IPlatform* platform = WindowManager::GetPlatform();
+        if (!platform || !platform->FileExists(asyncScenePath)) {
+            ENGINE_PRINT("[SceneManager] Async load failed - file not found: " + asyncScenePath);
+            loadState = SceneLoadState::IDLE;
+            break;
+        }
+
+        auto data = platform->ReadAsset(asyncScenePath);
+        rapidjson::MemoryStream ms(
+            reinterpret_cast<const char*>(data.data()), data.size());
+        asyncDoc.ParseStream(ms);
+
+        if (asyncDoc.HasParseError() || !asyncDoc.IsObject()) {
+            ENGINE_PRINT("[SceneManager] Async load failed - JSON parse error: " + asyncScenePath);
+            loadState = SceneLoadState::IDLE;
+            break;
+        }
+
+        asyncEntityIndex = 0;
+        asyncEntityTotal = 0;
+        if (asyncDoc.HasMember("entities") && asyncDoc["entities"].IsArray()) {
+            asyncEntityTotal = asyncDoc["entities"].Size();
+        }
+
+        pendingScene = std::make_unique<SceneInstance>(asyncScenePath);
+        ECSRegistry::GetInstance().SetActiveECSManager(asyncScenePath);
+        pendingScene->InitializeJoltPhysics();
+        ECSRegistry::GetInstance().SetActiveECSManager(currentScenePath);
+
+        loadState = SceneLoadState::DESERIALIZING;
+        break;
+    }
+    case SceneLoadState::DESERIALIZING: {
+        if (asyncEntityTotal == 0) {
+            loadState = SceneLoadState::INITIALIZING;
+            break;
+        }
+
+        if (!asyncDoc.IsObject() || !asyncDoc.HasMember("entities")) {
+            loadState = SceneLoadState::INITIALIZING;
+            break;
+        }
+
+        // Temporarily make the new scene's ECS active
+        ECSRegistry::GetInstance().SetActiveECSManager(asyncScenePath);
+
+        ECSManager& ecs = ECSRegistry::GetInstance().GetECSManager(asyncScenePath);
+        const auto& ents = asyncDoc["entities"];
+
+        rapidjson::SizeType end = std::min(
+            asyncEntityIndex + static_cast<rapidjson::SizeType>(entitiesPerChunk),
+            asyncEntityTotal);
+
+        for (; asyncEntityIndex < end; ++asyncEntityIndex) {
+            const auto& entObj = ents[asyncEntityIndex];
+            if (entObj.IsObject()) {
+                Serializer::DeserializeEntity(ecs, entObj);
+            }
+        }
+
+        // Restore loading screen as active
+        ECSRegistry::GetInstance().SetActiveECSManager(currentScenePath);
+
+        if (asyncEntityIndex >= asyncEntityTotal) {
+            // Swap active again for metadata
+            ECSRegistry::GetInstance().SetActiveECSManager(asyncScenePath);
+            Serializer::DeserializeSceneMetadata(asyncDoc, ecs);
+            asyncSystemInitStep = 0;
+            ECSRegistry::GetInstance().SetActiveECSManager(currentScenePath);
+            loadState = SceneLoadState::INITIALIZING_SYSTEMS;
+        }
+        break;
+    }
+    case SceneLoadState::INITIALIZING_SYSTEMS: {
+        ECSRegistry::GetInstance().SetActiveECSManager(asyncScenePath);
+
+        ECSManager& ecs = ECSRegistry::GetInstance().GetECSManager(asyncScenePath);
+
+        switch (asyncSystemInitStep) {
+        case 0: ecs.transformSystem->Initialise(); break;
+        case 1: ecs.cameraSystem->Initialise(); break;
+        case 2:
+        {
+            Entity activeCam = ecs.cameraSystem->GetActiveCameraEntity();
+            GraphicsManager& gfx = GraphicsManager::GetInstance();
+            if (activeCam != UINT32_MAX && ecs.cameraSystem->GetActiveCamera())
+                gfx.SetCamera(ecs.cameraSystem->GetActiveCamera());
+        }
+        ecs.modelSystem->Initialise();
+        break;
+        case 3: ecs.debugDrawSystem->Initialise(); break;
+        case 4: ecs.textSystem->Initialise(); break;
+        case 5: ecs.spriteSystem->Initialise(); break;
+        case 6: ecs.particleSystem->Initialise(); break;
+        case 7: ecs.animationSystem->Initialise(); break;
+        case 8: pendingScene->InitializePhysics(); break;
+        case 9: ecs.spriteAnimationSystem->Initialise(); break;
+        case 10: ecs.uiAnchorSystem->Initialise(ecs); break;
+        case 11: ecs.buttonSystem->Initialise(ecs); break;
+        case 12: ecs.sliderSystem->Initialise(ecs); break;
+        case 13: ecs.videoSystem->Initialise(ecs); break;
+        case 14: ecs.dialogueSystem->Initialise(ecs); break;
+        case 15: ecs.fogSystem->Initialise(); break;
+        case 16:
+            AudioManager::GetInstance().StopAll();
+            if (currentScene) {
+                ECSRegistry::GetInstance().SetActiveECSManager(currentScenePath);
+                currentScene->Exit();
+                currentScene.reset();
+                ECSRegistry::GetInstance().SetActiveECSManager(asyncScenePath);
+                ECSRegistry::GetInstance()
+                    .GetECSManager(currentScenePath).ClearAllEntities(false);
+                ECSRegistry::GetInstance()
+                    .DestroyECSManager(currentScenePath);
+            }
+            {
+                GraphicsManager& gfx = GraphicsManager::GetInstance();
+                gfx.Initialize(RunTimeVar::window.width, RunTimeVar::window.height);
+                PostProcessingManager::GetInstance().Initialize();
+                auto* hdr = PostProcessingManager::GetInstance().GetHDREffect();
+                if (hdr) {
+                    hdr->SetEnabled(true);
+                    hdr->SetExposure(1.f);
+                    hdr->SetGamma(2.2f);
+                    hdr->SetToneMappingMode(HDREffect::ToneMappingMode::REINHARD);
+                }
+            }
+            currentScene = std::move(pendingScene);
+            currentScenePath = asyncScenePath;
+            currentSceneName = std::filesystem::path(currentScenePath)
+                .stem().generic_string();
+            currentScene->initializeOrchestrator();
+            break;
+        case 17:
+        {
+            ECSManager& ecsRef = ECSRegistry::GetInstance().GetECSManager(currentScenePath);
+            ecsRef.scriptSystem->Shutdown();
+            ecsRef.scriptSystem->Initialise(ecsRef);
+        }
+        loadState = SceneLoadState::COMPLETE;
+        break;
+        }
+
+        // Restore loading screen as active for Update/Draw (only if still alive)
+        if (loadState == SceneLoadState::INITIALIZING_SYSTEMS && asyncSystemInitStep < 16) {
+            ECSRegistry::GetInstance().SetActiveECSManager(currentScenePath);
+        }
+
+        asyncSystemInitStep++;
+        break;  // THIS was missing — prevents fall-through to COMPLETE
+    }
+    case SceneLoadState::COMPLETE: {
+        ENGINE_PRINT("[AsyncLoad] COMPLETE");
+        asyncDoc = rapidjson::Document();
+        asyncScenePath.clear();
+        loadState = SceneLoadState::IDLE;
+        break;
+    }
+    default: break;
+    
+    }
+}
+
 
 void SceneManager::SaveScene() 
 {

@@ -83,6 +83,15 @@ void TransformSystem::Initialise() {
 
 	isInitialised = true;
 
+	// Clear isDirty after initialization so that systems running immediately after
+	// (e.g. PhysicsSystem::Initialise) use worldMatrix and not the local-only fallback.
+	// In editor play mode TransformSystem runs every frame clearing this automatically,
+	// but on a fresh game-build scene load it was left true, causing child entity physics
+	// bodies to spawn at their local position instead of their world position.
+	for (const auto& entity : entities) {
+		ecsManager.GetComponent<Transform>(entity).isDirty = false;
+	}
+
 	//for (const auto& entity : entities) {
 	//	auto& transform = ecsManager.GetComponent<Transform>(entity);
 	//	// Update model matrix

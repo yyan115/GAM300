@@ -318,9 +318,12 @@ void ECSManager::DestroyEntity(Entity entity) {
 	//ENGINE_PRINT("[ECSManager] Destroyed entity " , entity , ". Total active entities: " , entityManager->GetActiveEntityCount() , "\n");
 }
 
-void ECSManager::ClearAllEntities() {
+void ECSManager::ClearAllEntities(bool clearGUIDRegistry) {
 	// CRITICAL: Clear the GUID registry first to prevent duplicate entities during undo/redo
-	EntityGUIDRegistry::GetInstance().Clear();
+	//EntityGUIDRegistry::GetInstance().Clear();
+	if (clearGUIDRegistry) {
+		EntityGUIDRegistry::GetInstance().Clear();
+	}
 
 	entityManager->DestroyAllEntities();
 	componentManager->AllEntitiesDestroyed();

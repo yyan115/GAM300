@@ -1,0 +1,14 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "002c80ed570e2253-00047a6bbc0146a1",
+        "source": "../../Resources/Textures/M5/BossRoom/column_low_column_mat_Normal.png",
+        "compiled": "../../Resources/Textures/M5/BossRoom/column_low_column_mat_Normal.dds"
+    },
+    "TextureMetaData": {
+        "type": "normal",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp"
+    }
+}

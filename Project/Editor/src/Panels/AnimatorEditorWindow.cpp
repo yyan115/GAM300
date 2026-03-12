@@ -328,8 +328,7 @@ void AnimatorEditorWindow::DrawParameterList()
 
         // Editable name
         char nameBuf[128];
-        strncpy(nameBuf, param.name.c_str(), sizeof(nameBuf) - 1);
-        nameBuf[sizeof(nameBuf) - 1] = '\0';
+        std::snprintf(nameBuf, sizeof(nameBuf), "%s", param.name.c_str());
         ImGui::SetNextItemWidth(100);
         if (ImGui::InputText("##Name", nameBuf, sizeof(nameBuf), ImGuiInputTextFlags_EnterReturnsTrue)) {
             if (strlen(nameBuf) > 0 && strcmp(nameBuf, param.name.c_str()) != 0) {
@@ -440,8 +439,7 @@ void AnimatorEditorWindow::DrawNodeGraph()
                 m_SelectionType = SelectionType::State;
                 m_SelectedStateId = stateId;
                 m_IsRenaming = true;
-                strncpy(m_RenameBuffer, stateId.c_str(), sizeof(m_RenameBuffer) - 1);
-                m_RenameBuffer[sizeof(m_RenameBuffer) - 1] = '\0';
+                std::snprintf(m_RenameBuffer, sizeof(m_RenameBuffer), "%s", stateId.c_str());
                 clickedOnState = true;
             }
             if (rightClicked) {
@@ -960,8 +958,7 @@ void AnimatorEditorWindow::DrawStateInspector()
         ImGui::SameLine();
         if (ImGui::SmallButton(ICON_FA_PEN "##RenameBtn")) {
             m_IsRenaming = true;
-            strncpy(m_RenameBuffer, m_SelectedStateId.c_str(), sizeof(m_RenameBuffer) - 1);
-            m_RenameBuffer[sizeof(m_RenameBuffer) - 1] = '\0';
+            std::snprintf(m_RenameBuffer, sizeof(m_RenameBuffer), "%s", m_SelectedStateId.c_str());
         }
         if (ImGui::IsItemHovered()) {
             ImGui::SetTooltip("Rename state");
@@ -1402,8 +1399,7 @@ void AnimatorEditorWindow::HandleContextMenu()
                 m_SelectedStateId = m_ContextMenuStateId;
                 m_SelectionType = SelectionType::State;
                 m_IsRenaming = true;
-                strncpy(m_RenameBuffer, m_ContextMenuStateId.c_str(), sizeof(m_RenameBuffer) - 1);
-                m_RenameBuffer[sizeof(m_RenameBuffer) - 1] = '\0';
+                std::snprintf(m_RenameBuffer, sizeof(m_RenameBuffer), "%s", m_ContextMenuStateId.c_str());
             }
             if (ImGui::MenuItem(ICON_FA_COPY " Duplicate")) {
                 DuplicateSelectedState();
@@ -1434,8 +1430,7 @@ void AnimatorEditorWindow::HandleKeyboardShortcuts()
     if (ImGui::IsKeyPressed(ImGuiKey_F2)) {
         if (m_SelectionType == SelectionType::State && !m_SelectedStateId.empty()) {
             m_IsRenaming = true;
-            strncpy(m_RenameBuffer, m_SelectedStateId.c_str(), sizeof(m_RenameBuffer) - 1);
-            m_RenameBuffer[sizeof(m_RenameBuffer) - 1] = '\0';
+            std::snprintf(m_RenameBuffer, sizeof(m_RenameBuffer), "%s", m_SelectedStateId.c_str());
         }
     }
 
@@ -1520,7 +1515,7 @@ void AnimatorEditorWindow::RenameState(const std::string& oldName, const std::st
 
     // Check if new name already exists
     if (m_Controller->HasState(newName)) {
-        ENGINE_LOG_WARN("[AnimatorEditor] Cannot rename: state '{}' already exists", newName);
+        ENGINE_LOG_WARN(std::string("[AnimatorEditor] Cannot rename: state '") + newName + "' already exists");
         return;
     }
 
@@ -1586,14 +1581,14 @@ void AnimatorEditorWindow::DeleteSelectedTransition()
 // Parameter operations
 void AnimatorEditorWindow::AddParameter(AnimParamType type)
 {
-    std::string name = GenerateUniqueParamName();
-    m_Controller->AddParameter(name, type);
+    std::string parameterName = GenerateUniqueParamName();
+    m_Controller->AddParameter(parameterName, type);
     m_HasUnsavedChanges = true;
 }
 
-void AnimatorEditorWindow::DeleteParameter(const std::string& name)
+void AnimatorEditorWindow::DeleteParameter(const std::string& parameterName)
 {
-    m_Controller->RemoveParameter(name);
+    m_Controller->RemoveParameter(parameterName);
     m_HasUnsavedChanges = true;
 }
 
@@ -1694,7 +1689,7 @@ void AnimatorEditorWindow::SaveControllerAs()
         m_ControllerFilePath = chosenPath;
         if (m_Controller->SaveToFile(m_ControllerFilePath)) {
             m_HasUnsavedChanges = false;
-            ENGINE_LOG_INFO("[AnimatorEditor] Saved controller to: {}", m_ControllerFilePath);
+            ENGINE_LOG_INFO(std::string("[AnimatorEditor] Saved controller to: ") + m_ControllerFilePath);
 
             // Also update the AnimationComponent so changes persist when reopening
             if (m_AnimComponent) {
@@ -1827,21 +1822,21 @@ void AnimatorEditorWindow::ApplyToAnimationComponent()
 std::string AnimatorEditorWindow::GenerateUniqueStateName(const std::string& baseName)
 {
     auto& states = m_Controller->GetStates();
-    std::string name = baseName;
+    std::string uniqueStateName = baseName;
     int counter = 1;
 
-    while (states.find(name) != states.end()) {
-        name = baseName + " " + std::to_string(counter);
+    while (states.find(uniqueStateName) != states.end()) {
+        uniqueStateName = baseName + " " + std::to_string(counter);
         counter++;
     }
 
-    return name;
+    return uniqueStateName;
 }
 
 std::string AnimatorEditorWindow::GenerateUniqueParamName(const std::string& baseName)
 {
     auto& params = m_Controller->GetParameters();
-    std::string name = baseName;
+    std::string uniqueParamName = baseName;
     int counter = 1;
 
     auto exists = [&params](const std::string& n) {
@@ -1851,12 +1846,12 @@ std::string AnimatorEditorWindow::GenerateUniqueParamName(const std::string& bas
         return false;
     };
 
-    while (exists(name)) {
-        name = baseName + " " + std::to_string(counter);
+    while (exists(uniqueParamName)) {
+        uniqueParamName = baseName + " " + std::to_string(counter);
         counter++;
     }
 
-    return name;
+    return uniqueParamName;
 }
 
 bool AnimatorEditorWindow::IsPointInNode(const ImVec2& point, const ImVec2& nodePos, const ImVec2& nodeSize) const

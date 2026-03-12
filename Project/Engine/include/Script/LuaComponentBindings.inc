@@ -78,8 +78,11 @@ BEGIN_COMPONENT(AnimationComponent, "AnimationComponent")
     METHOD("GetBool", &AnimationComponent::GetBool)
     METHOD("GetInt", &AnimationComponent::GetInt)
     METHOD("GetFloat", &AnimationComponent::GetFloat)
+    METHOD("GetClipDuration", &AnimationComponent::GetClipDuration)
     METHOD("GetCurrentState", &AnimationComponent::GetCurrentState) 
-    METHOD("GetNormalizedTime", &AnimationComponent::GetNormalizedTime)
+    METHOD("GetStateTime", &AnimationComponent::GetStateTime)
+    METHOD("GetNormalizedTime", &AnimationComponent::GetNormalizedTime )
+    METHOD("ResetSM", &AnimationComponent::ResetSM)
 END_COMPONENT()
 
 // ============================================================================

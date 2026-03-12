@@ -1,0 +1,14 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "0040af80bf875d6b-0004696a1c001b23",
+        "source": "../../Resources/Sprites/LoadingUI/LoadingBG.png",
+        "compiled": "../../Resources/Sprites/LoadingUI/LoadingBG.dds"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp"
+    }
+}

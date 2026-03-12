@@ -591,8 +591,8 @@ void PhysicsSystem::PhysicsSyncBack(ECSManager& ecsManager) {
             JPH::Quat r;
             bi.GetPositionAndRotation(bodyId, p, r);
 
-            // WRITE to ECS Transform (so renderer/other systems can see it)
-            float offsetY = col.center.y * tr.localScale.y;     //in case meshes pivot start from the bottom instead of center
+            // Commented out as not used to fix warnings.
+            // float offsetY = col.center.y * tr.localScale.y;     //in case meshes pivot start from the bottom instead of center
 
             Vector3D scaledOffset = {
                 col.center.x * tr.worldScale.x,
@@ -723,6 +723,7 @@ void PhysicsSystem::CreatePhysicsBody(Entity e, ECSManager& ecsManager) {
     const int obstacleIdx = LayerManager::GetInstance().GetLayerIndex("Obstacle");
 
     if (col.layer == Layers::HURTBOX) { /*...*/ }
+    else if (col.layer == Layers::CHAIN_HITBOX) { /*...*/ }
     else if (rb.isTrigger) col.layer = Layers::SENSOR;
     else if (ecsLayerIndex == groundIdx) col.layer = Layers::NAV_GROUND;
     else if (ecsLayerIndex == obstacleIdx) col.layer = Layers::NAV_OBSTACLE;

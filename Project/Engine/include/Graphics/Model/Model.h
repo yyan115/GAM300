@@ -153,4 +153,7 @@ private:
 
     void LoadMaterialTexture(std::shared_ptr<Material> material, aiMaterial* mat, aiTextureType type, std::string typeName, Material::TextureType targetType = Material::TextureType::NONE);
     AABB modelBoundingBox;
+
+    // Whenever CompileToResource is called, store a set of processed textures to prevent duplicate texture compilation.
+    std::unordered_set<std::string> m_ProcessedTextures;
 };

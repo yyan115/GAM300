@@ -1,0 +1,2274 @@
+{
+    "name": "New Animator",
+    "entryState": "IdleUnarmed",
+    "entryNodePosition": {
+        "x": -200.0,
+        "y": -100.0
+    },
+    "anyStatePosition": {
+        "x": -200.0,
+        "y": 0.0
+    },
+    "parameters": [
+        {
+            "name": "Hurt",
+            "type": "Trigger",
+            "defaultValue": 0.0
+        },
+        {
+            "name": "IsRunning",
+            "type": "Bool",
+            "defaultValue": 0.0
+        },
+        {
+            "name": "IsGrounded",
+            "type": "Bool",
+            "defaultValue": 1.0
+        },
+        {
+            "name": "IsHeavyCharging",
+            "type": "Bool",
+            "defaultValue": 0.0
+        },
+        {
+            "name": "IsDead",
+            "type": "Bool",
+            "defaultValue": 0.0
+        },
+        {
+            "name": "IsAttacking",
+            "type": "Bool",
+            "defaultValue": 0.0
+        },
+        {
+            "name": "IsJumping",
+            "type": "Bool",
+            "defaultValue": 0.0
+        },
+        {
+            "name": "SlamChain",
+            "type": "Trigger",
+            "defaultValue": 0.0
+        },
+        {
+            "name": "Attack",
+            "type": "Trigger",
+            "defaultValue": 0.0
+        },
+        {
+            "name": "ComboStep",
+            "type": "Int",
+            "defaultValue": 0.0
+        },
+        {
+            "name": "IsDashing",
+            "type": "Bool",
+            "defaultValue": 0.0
+        },
+        {
+            "name": "Dash",
+            "type": "Trigger",
+            "defaultValue": 0.0
+        },
+        {
+            "name": "FeatherSkill",
+            "type": "Trigger",
+            "defaultValue": 0.0
+        },
+        {
+            "name": "IsAimingChain",
+            "type": "Bool",
+            "defaultValue": 0.0
+        },
+        {
+            "name": "ThrowChain",
+            "type": "Trigger",
+            "defaultValue": 0.0
+        },
+        {
+            "name": "PullChain",
+            "type": "Trigger",
+            "defaultValue": 0.0
+        },
+        {
+            "name": "RetractChain",
+            "type": "Trigger",
+            "defaultValue": 0.0
+        },
+        {
+            "name": "IsArmed",
+            "type": "Bool",
+            "defaultValue": 1.0
+        },
+        {
+            "name": "IsRolling",
+            "type": "Bool",
+            "defaultValue": 0.0
+        },
+        {
+            "name": "IsAirAttacking",
+            "type": "Bool",
+            "defaultValue": 0.0
+        },
+        {
+            "name": "IsBackDashing",
+            "type": "Bool",
+            "defaultValue": 0.0
+        },
+        {
+            "name": "IsRolling",
+            "type": "Bool",
+            "defaultValue": 0.0
+        },
+        {
+            "name": "DONTACTIVATE",
+            "type": "Trigger",
+            "defaultValue": 0.0
+        }
+    ],
+    "states": [
+        {
+<<<<<<< HEAD
+            "id": "NA1",
+            "clipIndex": 1,
+            "loop": false,
+            "speed": 2.000000238418579,
+            "crossfadeDuration": 0.0,
+            "nodePosition": {
+                "x": 1071.992919921875,
+                "y": -324.0755920410156
+            }
+        },
+        {
+=======
+>>>>>>> main
+            "id": "Idle",
+            "clipIndex": 0,
+            "loop": true,
+            "speed": 1.0,
+            "crossfadeDuration": 0.0,
+            "nodePosition": {
+                "x": 232.66665649414063,
+                "y": -215.33348083496094
+            }
+        },
+        {
+            "id": "NA1",
+            "clipIndex": 1,
+            "loop": false,
+            "speed": 2.000000238418579,
+            "crossfadeDuration": 0.0,
+            "nodePosition": {
+                "x": 1059.2657470703125,
+                "y": -380.439208984375
+            }
+        },
+        {
+            "id": "Hurt",
+            "clipIndex": 9,
+            "loop": false,
+            "speed": 1.0,
+            "crossfadeDuration": 0.0,
+            "nodePosition": {
+                "x": 275.0,
+                "y": 147.0
+            }
+        },
+        {
+            "id": "FeatherLaunchEnd",
+            "clipIndex": 11,
+            "loop": false,
+            "speed": 1.0,
+            "crossfadeDuration": 0.20000000298023224,
+            "nodePosition": {
+                "x": 188.404052734375,
+                "y": -623.8199462890625
+            }
+        },
+        {
+            "id": "Run",
+            "clipIndex": 4,
+            "loop": true,
+            "speed": 1.0,
+            "crossfadeDuration": 0.0,
+            "nodePosition": {
+                "x": 449.0,
+                "y": -130.0
+            }
+        },
+        {
+            "id": "Jump",
+            "clipIndex": 5,
+            "loop": false,
+            "speed": 0.7999999523162842,
+            "crossfadeDuration": 0.0,
+            "nodePosition": {
+                "x": 100.50003051757813,
+                "y": -2.4705705642700195
+            }
+        },
+        {
+            "id": "Death",
+            "clipIndex": 6,
+            "loop": false,
+            "speed": 1.0,
+            "crossfadeDuration": 0.0,
+            "nodePosition": {
+                "x": 450.529541015625,
+                "y": -2.4705915451049805
+            }
+        },
+        {
+            "id": "Land",
+            "clipIndex": 8,
+            "loop": false,
+            "speed": 1.0,
+            "crossfadeDuration": 0.0,
+            "nodePosition": {
+                "x": -15.5799560546875,
+                "y": 150.6720428466797
+            }
+        },
+        {
+            "id": "Roll",
+            "clipIndex": 7,
+            "loop": false,
+            "speed": 1.3000000715255737,
+            "crossfadeDuration": 0.0,
+            "nodePosition": {
+                "x": -155.5,
+                "y": 38.5
+            }
+        },
+        {
+            "id": "NA2",
+            "clipIndex": 2,
+            "loop": true,
+            "speed": 2.000000238418579,
+            "crossfadeDuration": 0.0,
+            "nodePosition": {
+                "x": 1248.0908203125,
+                "y": -324.5
+            }
+        },
+        {
+            "id": "NA3",
+            "clipIndex": 3,
+            "loop": true,
+            "speed": 2.000000238418579,
+            "crossfadeDuration": 0.0,
+            "nodePosition": {
+                "x": 1420.7274169921875,
+                "y": -326.1817321777344
+            }
+        },
+        {
+            "id": "Dash",
+            "clipIndex": 12,
+            "loop": false,
+            "speed": 1.8999998569488525,
+            "crossfadeDuration": 0.0,
+            "nodePosition": {
+                "x": -17.544811248779297,
+                "y": -216.97007751464844
+            }
+        },
+        {
+            "id": "FeatherLaunch",
+            "clipIndex": 10,
+            "loop": false,
+            "speed": 1.0,
+            "crossfadeDuration": 0.20000000298023224,
+            "nodePosition": {
+                "x": 385.9041748046875,
+                "y": -542.7482299804688
+            }
+        },
+        {
+            "id": "ThrowChain",
+            "clipIndex": 15,
+            "loop": false,
+            "speed": 2.499999761581421,
+            "crossfadeDuration": 0.20000000298023224,
+            "nodePosition": {
+                "x": 224.53451538085938,
+                "y": 252.49636840820313
+            }
+        },
+        {
+            "id": "AimThrow",
+            "clipIndex": 14,
+            "loop": false,
+            "speed": 2.000000238418579,
+            "crossfadeDuration": 0.20000000298023224,
+            "nodePosition": {
+                "x": 24.851280212402344,
+                "y": 252.80160522460938
+            }
+        },
+        {
+            "id": "PullChain",
+            "clipIndex": 18,
+            "loop": false,
+            "speed": 3.4999988079071045,
+            "crossfadeDuration": 0.20000000298023224,
+            "nodePosition": {
+                "x": 539.447021484375,
+                "y": 254.65863037109375
+            }
+        },
+        {
+            "id": "SlamChain",
+            "clipIndex": 16,
+            "loop": false,
+            "speed": 1.5000001192092896,
+            "crossfadeDuration": 0.20000000298023224,
+            "nodePosition": {
+                "x": 87.93179321289063,
+                "y": 356.98248291015625
+            }
+        },
+        {
+            "id": "RetractChain",
+            "clipIndex": 17,
+            "loop": false,
+            "speed": 2.9999992847442627,
+            "crossfadeDuration": 0.20000000298023224,
+            "nodePosition": {
+                "x": 404.5980529785156,
+                "y": 351.3544006347656
+            }
+        },
+        {
+            "id": "Standing",
+            "clipIndex": 13,
+            "loop": false,
+            "speed": 2.9999992847442627,
+            "crossfadeDuration": 0.20000000298023224,
+            "nodePosition": {
+                "x": -292.58203125,
+                "y": 217.76287841796875
+            }
+        },
+        {
+            "id": "IdleUnarmed",
+            "clipIndex": 19,
+            "loop": true,
+            "speed": 1.0,
+            "crossfadeDuration": 0.20000000298023224,
+            "nodePosition": {
+                "x": -22.03935432434082,
+                "y": -134.7531280517578
+            }
+        },
+        {
+            "id": "Lift",
+            "clipIndex": 18446744073709551615,
+            "loop": true,
+            "speed": 1.0,
+            "crossfadeDuration": 0.20000000298023224,
+            "nodePosition": {
+                "x": 1056.9166259765625,
+                "y": -122.63087463378906
+            }
+        },
+        {
+            "id": "Aerial1",
+            "clipIndex": 18446744073709551615,
+            "loop": true,
+            "speed": 1.0,
+            "crossfadeDuration": 0.20000000298023224,
+            "nodePosition": {
+                "x": 1059.2030029296875,
+                "y": -45.46285629272461
+            }
+        },
+        {
+            "id": "Aerial1 2",
+            "clipIndex": 18446744073709551615,
+            "loop": true,
+            "speed": 1.0,
+            "crossfadeDuration": 0.20000000298023224,
+            "nodePosition": {
+                "x": 1233.0361328125,
+                "y": -47.629512786865234
+            }
+        },
+        {
+            "id": "Slam",
+            "clipIndex": 18446744073709551615,
+            "loop": true,
+            "speed": 1.0,
+            "crossfadeDuration": 0.20000000298023224,
+            "nodePosition": {
+                "x": 1063.1632080078125,
+                "y": 48.14955139160156
+            }
+        },
+        {
+            "id": "Loopdash",
+            "clipIndex": 18446744073709551615,
+            "loop": true,
+            "speed": 1.0,
+            "crossfadeDuration": 0.20000000298023224,
+            "nodePosition": {
+                "x": -467.03759765625,
+                "y": -197.22396850585938
+            }
+        }
+    ],
+    "transitions": [
+        {
+            "from": "Hurt",
+            "to": "Idle",
+            "anyState": false,
+            "hasExitTime": true,
+            "exitTime": 0.6899999976158142,
+            "transitionDuration": 0.699999988079071,
+            "conditions": [
+                {
+                    "paramName": "IsRunning",
+                    "mode": "Equals",
+                    "threshold": 0.0
+                },
+                {
+                    "paramName": "IsJumping",
+                    "mode": "Equals",
+                    "threshold": 0.0
+                },
+                {
+                    "paramName": "IsGrounded",
+                    "mode": "Equals",
+                    "threshold": 1.0
+                }
+            ]
+        },
+        {
+            "from": "Idle",
+            "to": "Hurt",
+            "anyState": false,
+            "hasExitTime": true,
+            "exitTime": 0.029999999329447746,
+            "transitionDuration": 0.029999999329447746,
+            "conditions": [
+                {
+                    "paramName": "Hurt",
+                    "mode": "TriggerFired",
+                    "threshold": 0.0
+                }
+            ]
+        },
+        {
+            "from": "Idle",
+            "to": "Run",
+            "anyState": false,
+            "hasExitTime": false,
+            "exitTime": 0.029999999329447746,
+            "transitionDuration": 0.0,
+            "conditions": [
+                {
+                    "paramName": "IsRunning",
+                    "mode": "Equals",
+                    "threshold": 1.0
+                }
+            ]
+        },
+        {
+            "from": "Run",
+            "to": "Idle",
+            "anyState": false,
+            "hasExitTime": true,
+            "exitTime": 0.10000000149011612,
+            "transitionDuration": 0.10000000149011612,
+            "conditions": [
+                {
+                    "paramName": "IsRunning",
+                    "mode": "Equals",
+                    "threshold": 0.0
+                },
+                {
+                    "paramName": "IsArmed",
+                    "mode": "Equals",
+                    "threshold": 1.0
+                }
+            ]
+        },
+        {
+            "from": "Hurt",
+            "to": "Run",
+            "anyState": false,
+            "hasExitTime": true,
+            "exitTime": 0.6800000071525574,
+            "transitionDuration": 0.6899999976158142,
+            "conditions": [
+                {
+                    "paramName": "IsRunning",
+                    "mode": "Equals",
+                    "threshold": 1.0
+                },
+                {
+                    "paramName": "IsJumping",
+                    "mode": "Equals",
+                    "threshold": 0.0
+                },
+                {
+                    "paramName": "IsGrounded",
+                    "mode": "Equals",
+                    "threshold": 1.0
+                }
+            ]
+        },
+        {
+            "from": "Run",
+            "to": "Hurt",
+            "anyState": false,
+            "hasExitTime": false,
+            "exitTime": 0.09000000357627869,
+            "transitionDuration": 0.0,
+            "conditions": [
+                {
+                    "paramName": "Hurt",
+                    "mode": "TriggerFired",
+                    "threshold": 0.0
+                }
+            ]
+        },
+        {
+            "from": "Idle",
+            "to": "Jump",
+            "anyState": false,
+            "hasExitTime": false,
+            "exitTime": 0.10999999940395355,
+            "transitionDuration": 0.0,
+            "conditions": [
+                {
+                    "paramName": "IsJumping",
+                    "mode": "Equals",
+                    "threshold": 1.0
+                }
+            ]
+        },
+        {
+            "from": "Run",
+            "to": "Jump",
+            "anyState": false,
+            "hasExitTime": true,
+            "exitTime": 0.11999999731779099,
+            "transitionDuration": 0.07999999821186066,
+            "conditions": [
+                {
+                    "paramName": "IsJumping",
+                    "mode": "Equals",
+                    "threshold": 1.0
+                }
+            ]
+        },
+        {
+            "from": "Jump",
+            "to": "Hurt",
+            "anyState": false,
+            "hasExitTime": true,
+            "exitTime": 0.14000000059604645,
+            "transitionDuration": 0.10000000149011612,
+            "conditions": [
+                {
+                    "paramName": "Hurt",
+                    "mode": "TriggerFired",
+                    "threshold": 0.0
+                }
+            ]
+        },
+        {
+            "from": "Hurt",
+            "to": "Death",
+            "anyState": false,
+            "hasExitTime": false,
+            "exitTime": 1.0,
+            "transitionDuration": 0.0,
+            "conditions": [
+                {
+                    "paramName": "IsDead",
+                    "mode": "Equals",
+                    "threshold": 1.0
+                }
+            ]
+        },
+        {
+            "from": "Jump",
+            "to": "Death",
+            "anyState": false,
+            "hasExitTime": true,
+            "exitTime": 0.7099999785423279,
+            "transitionDuration": 0.6600000262260437,
+            "conditions": [
+                {
+                    "paramName": "IsDead",
+                    "mode": "Equals",
+                    "threshold": 1.0
+                }
+            ]
+        },
+        {
+            "from": "Run",
+            "to": "Death",
+            "anyState": false,
+            "hasExitTime": false,
+            "exitTime": 1.0,
+            "transitionDuration": 0.0,
+            "conditions": [
+                {
+                    "paramName": "IsDead",
+                    "mode": "Equals",
+                    "threshold": 1.0
+                }
+            ]
+        },
+        {
+            "from": "Idle",
+            "to": "Death",
+            "anyState": false,
+            "hasExitTime": false,
+            "exitTime": 1.0,
+            "transitionDuration": 0.0,
+            "conditions": [
+                {
+                    "paramName": "IsDead",
+                    "mode": "Equals",
+                    "threshold": 1.0
+                }
+            ]
+        },
+        {
+            "from": "Jump",
+            "to": "Land",
+            "anyState": false,
+            "hasExitTime": false,
+            "exitTime": 0.6600000262260437,
+            "transitionDuration": 0.0,
+            "conditions": [
+                {
+                    "paramName": "IsGrounded",
+                    "mode": "Equals",
+                    "threshold": 1.0
+                },
+                {
+                    "paramName": "IsJumping",
+                    "mode": "Equals",
+                    "threshold": 0.0
+                },
+                {
+                    "paramName": "IsRunning",
+                    "mode": "Equals",
+                    "threshold": 0.0
+                },
+                {
+                    "paramName": "IsRolling",
+                    "mode": "Equals",
+                    "threshold": 0.0
+                }
+            ]
+        },
+        {
+            "from": "Land",
+            "to": "Idle",
+            "anyState": false,
+            "hasExitTime": true,
+            "exitTime": 0.6399999856948853,
+            "transitionDuration": 0.6299999952316284,
+            "conditions": [
+                {
+                    "paramName": "IsRunning",
+                    "mode": "Equals",
+                    "threshold": 0.0
+                },
+                {
+                    "paramName": "IsGrounded",
+                    "mode": "Equals",
+                    "threshold": 1.0
+                },
+                {
+                    "paramName": "IsArmed",
+                    "mode": "Equals",
+                    "threshold": 1.0
+                }
+            ]
+        },
+        {
+            "from": "Land",
+            "to": "Run",
+            "anyState": false,
+            "hasExitTime": true,
+            "exitTime": 0.28999999165534973,
+            "transitionDuration": 0.27000001072883606,
+            "conditions": [
+                {
+                    "paramName": "IsRunning",
+                    "mode": "Equals",
+                    "threshold": 1.0
+                },
+                {
+                    "paramName": "IsGrounded",
+                    "mode": "Equals",
+                    "threshold": 1.0
+                }
+            ]
+        },
+        {
+            "from": "Land",
+            "to": "Death",
+            "anyState": false,
+            "hasExitTime": false,
+            "exitTime": 1.0,
+            "transitionDuration": 0.0,
+            "conditions": [
+                {
+                    "paramName": "IsDead",
+                    "mode": "Equals",
+                    "threshold": 1.0
+                }
+            ]
+        },
+        {
+            "from": "Hurt",
+            "to": "Land",
+            "anyState": false,
+            "hasExitTime": true,
+            "exitTime": 0.8100000023841858,
+            "transitionDuration": 0.8299999833106995,
+            "conditions": [
+                {
+                    "paramName": "IsGrounded",
+                    "mode": "Equals",
+                    "threshold": 1.0
+                },
+                {
+                    "paramName": "IsJumping",
+                    "mode": "Equals",
+                    "threshold": 0.0
+                },
+                {
+                    "paramName": "IsRunning",
+                    "mode": "Equals",
+                    "threshold": 0.0
+                }
+            ]
+        },
+        {
+            "from": "Jump",
+            "to": "Roll",
+            "anyState": false,
+            "hasExitTime": true,
+            "exitTime": 0.27000001072883606,
+            "transitionDuration": 0.27000001072883606,
+            "conditions": [
+                {
+                    "paramName": "IsGrounded",
+                    "mode": "Equals",
+                    "threshold": 1.0
+                },
+                {
+                    "paramName": "IsJumping",
+                    "mode": "Equals",
+                    "threshold": 0.0
+                },
+                {
+                    "paramName": "IsRunning",
+                    "mode": "Equals",
+                    "threshold": 1.0
+                },
+                {
+                    "paramName": "IsRolling",
+                    "mode": "Equals",
+                    "threshold": 1.0
+                }
+            ]
+        },
+        {
+            "from": "Roll",
+            "to": "Run",
+            "anyState": false,
+            "hasExitTime": true,
+            "exitTime": 0.5799999833106995,
+            "transitionDuration": 0.5799999833106995,
+            "conditions": [
+                {
+                    "paramName": "IsRunning",
+                    "mode": "Equals",
+                    "threshold": 1.0
+                }
+            ]
+        },
+        {
+            "from": "Hurt",
+            "to": "Roll",
+            "anyState": false,
+            "hasExitTime": true,
+            "exitTime": 0.800000011920929,
+            "transitionDuration": 0.800000011920929,
+            "conditions": [
+                {
+                    "paramName": "IsGrounded",
+                    "mode": "Equals",
+                    "threshold": 1.0
+                },
+                {
+                    "paramName": "IsJumping",
+                    "mode": "Equals",
+                    "threshold": 0.0
+                },
+                {
+                    "paramName": "IsRunning",
+                    "mode": "Equals",
+                    "threshold": 1.0
+                }
+            ]
+        },
+        {
+            "from": "Idle",
+            "to": "NA1",
+            "anyState": false,
+            "hasExitTime": false,
+            "exitTime": 1.0,
+            "transitionDuration": 0.0,
+            "conditions": [
+                {
+                    "paramName": "Attack",
+                    "mode": "TriggerFired",
+                    "threshold": 0.0
+                },
+                {
+                    "paramName": "ComboStep",
+                    "mode": "Equals",
+                    "threshold": 1.0
+                }
+            ]
+        },
+        {
+            "from": "NA1",
+            "to": "Idle",
+            "anyState": false,
+            "hasExitTime": false,
+            "exitTime": 1.0,
+            "transitionDuration": 1.0,
+            "conditions": [
+                {
+                    "paramName": "ComboStep",
+                    "mode": "Equals",
+                    "threshold": 0.0
+                }
+            ]
+        },
+        {
+            "from": "NA1",
+            "to": "NA2",
+            "anyState": false,
+            "hasExitTime": false,
+            "exitTime": 1.0,
+            "transitionDuration": 0.0,
+            "conditions": [
+                {
+                    "paramName": "Attack",
+                    "mode": "TriggerFired",
+                    "threshold": 0.0
+                },
+                {
+                    "paramName": "ComboStep",
+                    "mode": "Equals",
+                    "threshold": 2.0
+                }
+            ]
+        },
+        {
+            "from": "NA2",
+            "to": "Idle",
+            "anyState": false,
+            "hasExitTime": false,
+            "exitTime": 1.0,
+            "transitionDuration": 1.0,
+            "conditions": [
+                {
+                    "paramName": "ComboStep",
+                    "mode": "Equals",
+                    "threshold": 0.0
+                }
+            ]
+        },
+        {
+            "from": "NA2",
+            "to": "NA3",
+            "anyState": false,
+            "hasExitTime": false,
+            "exitTime": 1.0,
+            "transitionDuration": 0.0,
+            "conditions": [
+                {
+                    "paramName": "Attack",
+                    "mode": "TriggerFired",
+                    "threshold": 0.0
+                },
+                {
+                    "paramName": "ComboStep",
+                    "mode": "Equals",
+                    "threshold": 3.0
+                }
+            ]
+        },
+        {
+            "from": "NA3",
+            "to": "Idle",
+            "anyState": false,
+            "hasExitTime": false,
+            "exitTime": 1.0,
+            "transitionDuration": 1.0,
+            "conditions": [
+                {
+                    "paramName": "ComboStep",
+                    "mode": "Equals",
+                    "threshold": 0.0
+                }
+            ]
+        },
+        {
+            "from": "Run",
+            "to": "NA1",
+            "anyState": false,
+            "hasExitTime": false,
+            "exitTime": 1.0,
+            "transitionDuration": 0.0,
+            "conditions": [
+                {
+                    "paramName": "Attack",
+                    "mode": "TriggerFired",
+                    "threshold": 0.0
+                },
+                {
+                    "paramName": "ComboStep",
+                    "mode": "Equals",
+                    "threshold": 1.0
+                }
+            ]
+        },
+        {
+            "from": "Land",
+            "to": "NA1",
+            "anyState": false,
+            "hasExitTime": false,
+            "exitTime": 1.0,
+            "transitionDuration": 0.0,
+            "conditions": [
+                {
+                    "paramName": "Attack",
+                    "mode": "TriggerFired",
+                    "threshold": 0.0
+                },
+                {
+                    "paramName": "ComboStep",
+                    "mode": "Equals",
+                    "threshold": 1.0
+                }
+            ]
+        },
+        {
+            "from": "Roll",
+            "to": "Idle",
+            "anyState": false,
+            "hasExitTime": true,
+            "exitTime": 0.6800000071525574,
+            "transitionDuration": 0.5799999833106995,
+            "conditions": [
+                {
+                    "paramName": "IsRunning",
+                    "mode": "Equals",
+                    "threshold": 0.0
+                },
+                {
+                    "paramName": "IsArmed",
+                    "mode": "Equals",
+                    "threshold": 1.0
+                }
+            ]
+        },
+        {
+            "from": "Death",
+            "to": "Idle",
+            "anyState": false,
+            "hasExitTime": true,
+            "exitTime": 1.0,
+            "transitionDuration": 1.0,
+            "conditions": [
+                {
+                    "paramName": "IsDead",
+                    "mode": "Equals",
+                    "threshold": 0.0
+                }
+            ]
+        },
+        {
+            "from": "Idle",
+            "to": "Dash",
+            "anyState": false,
+            "hasExitTime": false,
+            "exitTime": 0.0,
+            "transitionDuration": 0.0,
+            "conditions": [
+                {
+                    "paramName": "IsDashing",
+                    "mode": "Equals",
+                    "threshold": 1.0
+                }
+            ]
+        },
+        {
+            "from": "Run",
+            "to": "Dash",
+            "anyState": false,
+            "hasExitTime": false,
+            "exitTime": 0.0,
+            "transitionDuration": 0.0,
+            "conditions": [
+                {
+                    "paramName": "IsDashing",
+                    "mode": "Equals",
+                    "threshold": 1.0
+                }
+            ]
+        },
+        {
+            "from": "Jump",
+            "to": "Dash",
+            "anyState": false,
+            "hasExitTime": false,
+            "exitTime": 0.0,
+            "transitionDuration": 0.0,
+            "conditions": [
+                {
+                    "paramName": "IsDashing",
+                    "mode": "Equals",
+                    "threshold": 1.0
+                }
+            ]
+        },
+        {
+            "from": "Dash",
+            "to": "Idle",
+            "anyState": false,
+            "hasExitTime": true,
+            "exitTime": 0.8500000238418579,
+            "transitionDuration": 0.20000000298023224,
+            "conditions": [
+                {
+                    "paramName": "IsDashing",
+                    "mode": "Equals",
+                    "threshold": 0.0
+                },
+                {
+                    "paramName": "IsGrounded",
+                    "mode": "Equals",
+                    "threshold": 1.0
+                },
+                {
+                    "paramName": "IsRunning",
+                    "mode": "Equals",
+                    "threshold": 0.0
+                },
+                {
+                    "paramName": "IsArmed",
+                    "mode": "Equals",
+                    "threshold": 1.0
+                }
+            ]
+        },
+        {
+            "from": "Dash",
+            "to": "Run",
+            "anyState": false,
+            "hasExitTime": true,
+            "exitTime": 0.8500000238418579,
+            "transitionDuration": 0.20000000298023224,
+            "conditions": [
+                {
+                    "paramName": "IsDashing",
+                    "mode": "Equals",
+                    "threshold": 0.0
+                },
+                {
+                    "paramName": "IsGrounded",
+                    "mode": "Equals",
+                    "threshold": 1.0
+                },
+                {
+                    "paramName": "IsRunning",
+                    "mode": "Equals",
+                    "threshold": 1.0
+                }
+            ]
+        },
+        {
+            "from": "FeatherLaunch",
+            "to": "FeatherLaunchEnd",
+            "anyState": false,
+            "hasExitTime": true,
+            "exitTime": 1.0,
+            "transitionDuration": 1.0,
+            "conditions": []
+        },
+        {
+            "from": "Idle",
+            "to": "FeatherLaunch",
+            "anyState": false,
+            "hasExitTime": true,
+            "exitTime": 0.029999999329447746,
+            "transitionDuration": 0.029999999329447746,
+            "conditions": [
+                {
+                    "paramName": "FeatherSkill",
+                    "mode": "TriggerFired",
+                    "threshold": 0.0
+                }
+            ]
+        },
+        {
+            "from": "Run",
+            "to": "FeatherLaunch",
+            "anyState": false,
+            "hasExitTime": true,
+            "exitTime": 0.019999999552965164,
+            "transitionDuration": 0.029999999329447746,
+            "conditions": [
+                {
+                    "paramName": "FeatherSkill",
+                    "mode": "TriggerFired",
+                    "threshold": 0.0
+                }
+            ]
+        },
+        {
+            "from": "Dash",
+            "to": "FeatherLaunch",
+            "anyState": false,
+            "hasExitTime": true,
+            "exitTime": 1.0,
+            "transitionDuration": 1.0,
+            "conditions": [
+                {
+                    "paramName": "FeatherSkill",
+                    "mode": "TriggerFired",
+                    "threshold": 0.0
+                }
+            ]
+        },
+        {
+            "from": "Roll",
+            "to": "FeatherLaunch",
+            "anyState": false,
+            "hasExitTime": true,
+            "exitTime": 0.30000001192092896,
+            "transitionDuration": 0.28999999165534973,
+            "conditions": [
+                {
+                    "paramName": "FeatherSkill",
+                    "mode": "TriggerFired",
+                    "threshold": 0.0
+                }
+            ]
+        },
+        {
+            "from": "Hurt",
+            "to": "FeatherLaunch",
+            "anyState": false,
+            "hasExitTime": true,
+            "exitTime": 0.800000011920929,
+            "transitionDuration": 0.800000011920929,
+            "conditions": [
+                {
+                    "paramName": "FeatherSkill",
+                    "mode": "TriggerFired",
+                    "threshold": 0.0
+                }
+            ]
+        },
+        {
+            "from": "Land",
+            "to": "FeatherLaunch",
+            "anyState": false,
+            "hasExitTime": true,
+            "exitTime": 1.0,
+            "transitionDuration": 1.0,
+            "conditions": [
+                {
+                    "paramName": "FeatherSkill",
+                    "mode": "TriggerFired",
+                    "threshold": 0.0
+                }
+            ]
+        },
+        {
+            "from": "FeatherLaunchEnd",
+            "to": "Dash",
+            "anyState": false,
+            "hasExitTime": true,
+            "exitTime": 0.30000001192092896,
+            "transitionDuration": 0.3100000023841858,
+            "conditions": [
+                {
+                    "paramName": "IsDashing",
+                    "mode": "Equals",
+                    "threshold": 1.0
+                }
+            ]
+        },
+        {
+            "from": "FeatherLaunchEnd",
+            "to": "Jump",
+            "anyState": false,
+            "hasExitTime": true,
+            "exitTime": 0.28999999165534973,
+            "transitionDuration": 0.30000001192092896,
+            "conditions": [
+                {
+                    "paramName": "IsJumping",
+                    "mode": "Equals",
+                    "threshold": 1.0
+                }
+            ]
+        },
+        {
+            "from": "FeatherLaunchEnd",
+            "to": "Hurt",
+            "anyState": false,
+            "hasExitTime": true,
+            "exitTime": 0.6899999976158142,
+            "transitionDuration": 0.7099999785423279,
+            "conditions": [
+                {
+                    "paramName": "Hurt",
+                    "mode": "TriggerFired",
+                    "threshold": 0.0
+                }
+            ]
+        },
+        {
+            "from": "FeatherLaunchEnd",
+            "to": "Death",
+            "anyState": false,
+            "hasExitTime": true,
+            "exitTime": 0.05000000074505806,
+            "transitionDuration": 0.05000000074505806,
+            "conditions": [
+                {
+                    "paramName": "IsDead",
+                    "mode": "Equals",
+                    "threshold": 1.0
+                }
+            ]
+        },
+        {
+            "from": "FeatherLaunch",
+            "to": "Death",
+            "anyState": false,
+            "hasExitTime": true,
+            "exitTime": 0.029999999329447746,
+            "transitionDuration": 0.029999999329447746,
+            "conditions": [
+                {
+                    "paramName": "IsDead",
+                    "mode": "Equals",
+                    "threshold": 1.0
+                }
+            ]
+        },
+        {
+            "from": "FeatherLaunchEnd",
+            "to": "Run",
+            "anyState": false,
+            "hasExitTime": true,
+            "exitTime": 0.28999999165534973,
+            "transitionDuration": 0.30000001192092896,
+            "conditions": [
+                {
+                    "paramName": "IsRunning",
+                    "mode": "Equals",
+                    "threshold": 1.0
+                }
+            ]
+        },
+        {
+            "from": "NA1",
+            "to": "FeatherLaunch",
+            "anyState": false,
+            "hasExitTime": true,
+            "exitTime": 0.800000011920929,
+            "transitionDuration": 0.800000011920929,
+            "conditions": [
+                {
+                    "paramName": "FeatherSkill",
+                    "mode": "TriggerFired",
+                    "threshold": 0.0
+                }
+            ]
+        },
+        {
+            "from": "NA2",
+            "to": "FeatherLaunch",
+            "anyState": false,
+            "hasExitTime": true,
+            "exitTime": 0.800000011920929,
+            "transitionDuration": 0.800000011920929,
+            "conditions": [
+                {
+                    "paramName": "FeatherSkill",
+                    "mode": "TriggerFired",
+                    "threshold": 0.0
+                }
+            ]
+        },
+        {
+            "from": "NA3",
+            "to": "FeatherLaunch",
+            "anyState": false,
+            "hasExitTime": true,
+            "exitTime": 0.800000011920929,
+            "transitionDuration": 0.800000011920929,
+            "conditions": [
+                {
+                    "paramName": "FeatherSkill",
+                    "mode": "TriggerFired",
+                    "threshold": 0.0
+                }
+            ]
+        },
+        {
+            "from": "FeatherLaunchEnd",
+            "to": "NA1",
+            "anyState": false,
+            "hasExitTime": true,
+            "exitTime": 0.30000001192092896,
+            "transitionDuration": 0.30000001192092896,
+            "conditions": [
+                {
+                    "paramName": "Attack",
+                    "mode": "TriggerFired",
+                    "threshold": 0.0
+                },
+                {
+                    "paramName": "ComboStep",
+                    "mode": "Equals",
+                    "threshold": 1.0
+                }
+            ]
+        },
+        {
+            "from": "FeatherLaunchEnd",
+            "to": "Idle",
+            "anyState": false,
+            "hasExitTime": true,
+            "exitTime": 1.0,
+            "transitionDuration": 1.0,
+            "conditions": [
+                {
+                    "paramName": "IsRunning",
+                    "mode": "Equals",
+                    "threshold": 0.0
+                },
+                {
+                    "paramName": "IsJumping",
+                    "mode": "Equals",
+                    "threshold": 0.0
+                },
+                {
+                    "paramName": "IsDead",
+                    "mode": "Equals",
+                    "threshold": 0.0
+                },
+                {
+                    "paramName": "IsHeavyCharging",
+                    "mode": "Equals",
+                    "threshold": 0.0
+                },
+                {
+                    "paramName": "IsDashing",
+                    "mode": "Equals",
+                    "threshold": 0.0
+                }
+            ]
+        },
+        {
+            "from": "AimThrow",
+            "to": "ThrowChain",
+            "anyState": false,
+            "hasExitTime": true,
+            "exitTime": 0.05000000074505806,
+            "transitionDuration": 0.05000000074505806,
+            "conditions": [
+                {
+                    "paramName": "ThrowChain",
+                    "mode": "TriggerFired",
+                    "threshold": 0.0
+                },
+                {
+                    "paramName": "IsAimingChain",
+                    "mode": "Equals",
+                    "threshold": 0.0
+                }
+            ]
+        },
+        {
+            "from": "ThrowChain",
+            "to": "SlamChain",
+            "anyState": false,
+            "hasExitTime": true,
+            "exitTime": 0.44999998807907104,
+            "transitionDuration": 0.44999998807907104,
+            "conditions": [
+                {
+                    "paramName": "SlamChain",
+                    "mode": "TriggerFired",
+                    "threshold": 0.0
+                }
+            ]
+        },
+        {
+            "from": "ThrowChain",
+            "to": "PullChain",
+            "anyState": false,
+            "hasExitTime": true,
+            "exitTime": 0.20000000298023224,
+            "transitionDuration": 0.20000000298023224,
+            "conditions": [
+                {
+                    "paramName": "PullChain",
+                    "mode": "TriggerFired",
+                    "threshold": 0.0
+                }
+            ]
+        },
+        {
+            "from": "ThrowChain",
+            "to": "Idle",
+            "anyState": false,
+            "hasExitTime": true,
+            "exitTime": 1.0,
+            "transitionDuration": 0.18000000715255737,
+            "conditions": []
+        },
+        {
+            "from": "Idle",
+            "to": "AimThrow",
+            "anyState": false,
+            "hasExitTime": true,
+            "exitTime": 0.029999999329447746,
+            "transitionDuration": 0.019999999552965164,
+            "conditions": [
+                {
+                    "paramName": "IsAimingChain",
+                    "mode": "Equals",
+                    "threshold": 1.0
+                }
+            ]
+        },
+        {
+            "from": "Jump",
+            "to": "AimThrow",
+            "anyState": false,
+            "hasExitTime": true,
+            "exitTime": 0.20000000298023224,
+            "transitionDuration": 0.20000000298023224,
+            "conditions": [
+                {
+                    "paramName": "IsAimingChain",
+                    "mode": "Equals",
+                    "threshold": 1.0
+                }
+            ]
+        },
+        {
+            "from": "Run",
+            "to": "AimThrow",
+            "anyState": false,
+            "hasExitTime": true,
+            "exitTime": 0.029999999329447746,
+            "transitionDuration": 0.029999999329447746,
+            "conditions": [
+                {
+                    "paramName": "IsAimingChain",
+                    "mode": "Equals",
+                    "threshold": 1.0
+                }
+            ]
+        },
+        {
+            "from": "AimThrow",
+            "to": "Death",
+            "anyState": false,
+            "hasExitTime": true,
+            "exitTime": 0.10000000149011612,
+            "transitionDuration": 0.10000000149011612,
+            "conditions": [
+                {
+                    "paramName": "IsDead",
+                    "mode": "Equals",
+                    "threshold": 1.0
+                }
+            ]
+        },
+        {
+            "from": "ThrowChain",
+            "to": "Death",
+            "anyState": false,
+            "hasExitTime": true,
+            "exitTime": 0.10000000149011612,
+            "transitionDuration": 0.10000000149011612,
+            "conditions": [
+                {
+                    "paramName": "IsDead",
+                    "mode": "Equals",
+                    "threshold": 1.0
+                }
+            ]
+        },
+        {
+            "from": "PullChain",
+            "to": "Death",
+            "anyState": false,
+            "hasExitTime": true,
+            "exitTime": 0.20000000298023224,
+            "transitionDuration": 0.20000000298023224,
+            "conditions": [
+                {
+                    "paramName": "IsDead",
+                    "mode": "Equals",
+                    "threshold": 1.0
+                }
+            ]
+        },
+        {
+            "from": "RetractChain",
+            "to": "Death",
+            "anyState": false,
+            "hasExitTime": true,
+            "exitTime": 0.1899999976158142,
+            "transitionDuration": 0.20000000298023224,
+            "conditions": [
+                {
+                    "paramName": "IsDead",
+                    "mode": "Equals",
+                    "threshold": 1.0
+                }
+            ]
+        },
+        {
+            "from": "RetractChain",
+            "to": "Idle",
+            "anyState": false,
+            "hasExitTime": true,
+            "exitTime": 0.8500000238418579,
+            "transitionDuration": 0.11999999731779099,
+            "conditions": []
+        },
+        {
+            "from": "PullChain",
+            "to": "Idle",
+            "anyState": false,
+            "hasExitTime": true,
+            "exitTime": 1.0,
+            "transitionDuration": 0.20000000298023224,
+            "conditions": []
+        },
+        {
+            "from": "Idle",
+            "to": "ThrowChain",
+            "anyState": false,
+            "hasExitTime": true,
+            "exitTime": 0.019999999552965164,
+            "transitionDuration": 0.029999999329447746,
+            "conditions": [
+                {
+                    "paramName": "ThrowChain",
+                    "mode": "TriggerFired",
+                    "threshold": 0.0
+                }
+            ]
+        },
+        {
+            "from": "Jump",
+            "to": "ThrowChain",
+            "anyState": false,
+            "hasExitTime": true,
+            "exitTime": 0.05000000074505806,
+            "transitionDuration": 0.05999999865889549,
+            "conditions": [
+                {
+                    "paramName": "ThrowChain",
+                    "mode": "TriggerFired",
+                    "threshold": 0.0
+                }
+            ]
+        },
+        {
+            "from": "Run",
+            "to": "ThrowChain",
+            "anyState": false,
+            "hasExitTime": true,
+            "exitTime": 0.029999999329447746,
+            "transitionDuration": 0.019999999552965164,
+            "conditions": [
+                {
+                    "paramName": "ThrowChain",
+                    "mode": "TriggerFired",
+                    "threshold": 0.0
+                }
+            ]
+        },
+        {
+            "from": "Idle",
+            "to": "PullChain",
+            "anyState": false,
+            "hasExitTime": true,
+            "exitTime": 0.03999999910593033,
+            "transitionDuration": 0.019999999552965164,
+            "conditions": [
+                {
+                    "paramName": "PullChain",
+                    "mode": "TriggerFired",
+                    "threshold": 0.0
+                }
+            ]
+        },
+        {
+            "from": "Run",
+            "to": "PullChain",
+            "anyState": false,
+            "hasExitTime": true,
+            "exitTime": 0.03999999910593033,
+            "transitionDuration": 0.03999999910593033,
+            "conditions": [
+                {
+                    "paramName": "PullChain",
+                    "mode": "TriggerFired",
+                    "threshold": 0.0
+                }
+            ]
+        },
+        {
+            "from": "Jump",
+            "to": "PullChain",
+            "anyState": false,
+            "hasExitTime": true,
+            "exitTime": 0.029999999329447746,
+            "transitionDuration": 0.05000000074505806,
+            "conditions": [
+                {
+                    "paramName": "PullChain",
+                    "mode": "TriggerFired",
+                    "threshold": 0.0
+                }
+            ]
+        },
+        {
+            "from": "Idle",
+            "to": "SlamChain",
+            "anyState": false,
+            "hasExitTime": true,
+            "exitTime": 0.009999999776482582,
+            "transitionDuration": 0.019999999552965164,
+            "conditions": [
+                {
+                    "paramName": "SlamChain",
+                    "mode": "TriggerFired",
+                    "threshold": 0.0
+                }
+            ]
+        },
+        {
+            "from": "Run",
+            "to": "SlamChain",
+            "anyState": false,
+            "hasExitTime": true,
+            "exitTime": 0.05000000074505806,
+            "transitionDuration": 0.05000000074505806,
+            "conditions": [
+                {
+                    "paramName": "SlamChain",
+                    "mode": "TriggerFired",
+                    "threshold": 0.0
+                }
+            ]
+        },
+        {
+            "from": "Jump",
+            "to": "SlamChain",
+            "anyState": false,
+            "hasExitTime": true,
+            "exitTime": 0.05999999865889549,
+            "transitionDuration": 0.07000000029802322,
+            "conditions": [
+                {
+                    "paramName": "SlamChain",
+                    "mode": "TriggerFired",
+                    "threshold": 0.0
+                }
+            ]
+        },
+        {
+            "from": "PullChain",
+            "to": "SlamChain",
+            "anyState": false,
+            "hasExitTime": true,
+            "exitTime": 0.029999999329447746,
+            "transitionDuration": 0.029999999329447746,
+            "conditions": [
+                {
+                    "paramName": "SlamChain",
+                    "mode": "TriggerFired",
+                    "threshold": 0.0
+                }
+            ]
+        },
+        {
+            "from": "SlamChain",
+            "to": "Death",
+            "anyState": false,
+            "hasExitTime": true,
+            "exitTime": 0.11999999731779099,
+            "transitionDuration": 0.05999999865889549,
+            "conditions": [
+                {
+                    "paramName": "IsDead",
+                    "mode": "Equals",
+                    "threshold": 1.0
+                }
+            ]
+        },
+        {
+            "from": "ThrowChain",
+            "to": "RetractChain",
+            "anyState": false,
+            "hasExitTime": true,
+            "exitTime": 0.20999999344348907,
+            "transitionDuration": 0.20000000298023224,
+            "conditions": [
+                {
+                    "paramName": "RetractChain",
+                    "mode": "TriggerFired",
+                    "threshold": 0.0
+                }
+            ]
+        },
+        {
+            "from": "Idle",
+            "to": "RetractChain",
+            "anyState": false,
+            "hasExitTime": true,
+            "exitTime": 0.05000000074505806,
+            "transitionDuration": 0.05000000074505806,
+            "conditions": [
+                {
+                    "paramName": "RetractChain",
+                    "mode": "TriggerFired",
+                    "threshold": 0.0
+                }
+            ]
+        },
+        {
+            "from": "Run",
+            "to": "RetractChain",
+            "anyState": false,
+            "hasExitTime": true,
+            "exitTime": 0.03999999910593033,
+            "transitionDuration": 0.009999999776482582,
+            "conditions": [
+                {
+                    "paramName": "RetractChain",
+                    "mode": "TriggerFired",
+                    "threshold": 0.0
+                }
+            ]
+        },
+        {
+            "from": "Standing",
+            "to": "Idle",
+            "anyState": false,
+            "hasExitTime": true,
+            "exitTime": 0.20999999344348907,
+            "transitionDuration": 0.20000000298023224,
+            "conditions": []
+        },
+        {
+            "from": "SlamChain",
+            "to": "Idle",
+            "anyState": false,
+            "hasExitTime": true,
+            "exitTime": 0.699999988079071,
+            "transitionDuration": 0.20000000298023224,
+            "conditions": []
+        },
+        {
+            "from": "IdleUnarmed",
+            "to": "Dash",
+            "anyState": false,
+            "hasExitTime": true,
+            "exitTime": 0.029999999329447746,
+            "transitionDuration": 0.029999999329447746,
+            "conditions": [
+                {
+                    "paramName": "IsDashing",
+                    "mode": "Equals",
+                    "threshold": 1.0
+                }
+            ]
+        },
+        {
+            "from": "Dash",
+            "to": "IdleUnarmed",
+            "anyState": false,
+            "hasExitTime": true,
+            "exitTime": 0.8500000238418579,
+            "transitionDuration": 0.20000000298023224,
+            "conditions": [
+                {
+                    "paramName": "IsDashing",
+                    "mode": "Equals",
+                    "threshold": 0.0
+                },
+                {
+                    "paramName": "IsGrounded",
+                    "mode": "Equals",
+                    "threshold": 1.0
+                },
+                {
+                    "paramName": "IsRunning",
+                    "mode": "Equals",
+                    "threshold": 0.0
+                },
+                {
+                    "paramName": "IsArmed",
+                    "mode": "Equals",
+                    "threshold": 0.0
+                }
+            ]
+        },
+        {
+            "from": "IdleUnarmed",
+            "to": "Jump",
+            "anyState": false,
+            "hasExitTime": true,
+            "exitTime": 0.029999999329447746,
+            "transitionDuration": 0.029999999329447746,
+            "conditions": [
+                {
+                    "paramName": "IsJumping",
+                    "mode": "Equals",
+                    "threshold": 1.0
+                }
+            ]
+        },
+        {
+            "from": "Roll",
+            "to": "IdleUnarmed",
+            "anyState": false,
+            "hasExitTime": true,
+            "exitTime": 0.6800000071525574,
+            "transitionDuration": 0.5799999833106995,
+            "conditions": [
+                {
+                    "paramName": "IsArmed",
+                    "mode": "Equals",
+                    "threshold": 0.0
+                },
+                {
+                    "paramName": "IsRunning",
+                    "mode": "Equals",
+                    "threshold": 0.0
+                }
+            ]
+        },
+        {
+            "from": "Land",
+            "to": "IdleUnarmed",
+            "anyState": false,
+            "hasExitTime": true,
+            "exitTime": 0.3400000035762787,
+            "transitionDuration": 0.33000001311302185,
+            "conditions": [
+                {
+                    "paramName": "IsRunning",
+                    "mode": "Equals",
+                    "threshold": 0.0
+                },
+                {
+                    "paramName": "IsGrounded",
+                    "mode": "Equals",
+                    "threshold": 1.0
+                },
+                {
+                    "paramName": "IsArmed",
+                    "mode": "Equals",
+                    "threshold": 0.0
+                }
+            ]
+        },
+        {
+            "from": "IdleUnarmed",
+            "to": "Run",
+            "anyState": false,
+            "hasExitTime": false,
+            "exitTime": 1.0,
+            "transitionDuration": 0.0,
+            "conditions": [
+                {
+                    "paramName": "IsRunning",
+                    "mode": "Equals",
+                    "threshold": 1.0
+                }
+            ]
+        },
+        {
+            "from": "Run",
+            "to": "IdleUnarmed",
+            "anyState": false,
+            "hasExitTime": true,
+            "exitTime": 0.10000000149011612,
+            "transitionDuration": 0.10000000149011612,
+            "conditions": [
+                {
+                    "paramName": "IsRunning",
+                    "mode": "Equals",
+                    "threshold": 0.0
+                },
+                {
+                    "paramName": "IsArmed",
+                    "mode": "Equals",
+                    "threshold": 0.0
+                }
+            ]
+        },
+        {
+            "from": "IdleUnarmed",
+            "to": "Idle",
+            "anyState": false,
+            "hasExitTime": true,
+            "exitTime": 0.05000000074505806,
+            "transitionDuration": 0.5,
+            "conditions": [
+                {
+                    "paramName": "IsArmed",
+                    "mode": "Equals",
+                    "threshold": 1.0
+                }
+            ]
+        },
+        {
+            "from": "Idle",
+            "to": "IdleUnarmed",
+            "anyState": false,
+            "hasExitTime": true,
+            "exitTime": 0.029999999329447746,
+            "transitionDuration": 0.019999999552965164,
+            "conditions": [
+                {
+                    "paramName": "IsArmed",
+                    "mode": "Equals",
+                    "threshold": 0.0
+                }
+            ]
+        },
+        {
+<<<<<<< HEAD
+            "from": "NA1",
+            "to": "Lift",
+            "anyState": false,
+            "hasExitTime": false,
+            "exitTime": 1.0,
+            "transitionDuration": 0.20000000298023224,
+            "conditions": [
+                {
+                    "paramName": "DONTACTIVATE",
+                    "mode": "TriggerFired",
+                    "threshold": 0.0
+                }
+            ]
+        },
+        {
+            "from": "NA3",
+            "to": "Lift",
+            "anyState": false,
+            "hasExitTime": false,
+            "exitTime": 1.0,
+            "transitionDuration": 0.20000000298023224,
+            "conditions": [
+                {
+                    "paramName": "DONTACTIVATE",
+                    "mode": "TriggerFired",
+                    "threshold": 0.0
+                }
+            ]
+        },
+        {
+            "from": "Aerial1",
+            "to": "Aerial1 2",
+            "anyState": false,
+            "hasExitTime": false,
+            "exitTime": 1.0,
+            "transitionDuration": 0.20000000298023224,
+            "conditions": [
+                {
+                    "paramName": "DONTACTIVATE",
+                    "mode": "TriggerFired",
+                    "threshold": 0.0
+                }
+            ]
+        },
+        {
+            "from": "Lift",
+            "to": "Aerial1",
+            "anyState": false,
+            "hasExitTime": false,
+            "exitTime": 1.0,
+            "transitionDuration": 0.20000000298023224,
+            "conditions": [
+                {
+                    "paramName": "DONTACTIVATE",
+                    "mode": "TriggerFired",
+                    "threshold": 0.0
+                }
+            ]
+        },
+        {
+            "from": "Jump",
+            "to": "Aerial1",
+            "anyState": false,
+            "hasExitTime": false,
+            "exitTime": 1.0,
+            "transitionDuration": 0.20000000298023224,
+            "conditions": [
+                {
+                    "paramName": "DONTACTIVATE",
+                    "mode": "TriggerFired",
+                    "threshold": 0.0
+                }
+            ]
+        },
+        {
+            "from": "Jump",
+            "to": "Run",
+            "anyState": false,
+            "hasExitTime": true,
+            "exitTime": 0.20999999344348907,
+            "transitionDuration": 0.20000000298023224,
+            "conditions": [
+                {
+                    "paramName": "IsGrounded",
+                    "mode": "Equals",
+                    "threshold": 1.0
+                },
+                {
+                    "paramName": "IsJumping",
+                    "mode": "Equals",
+                    "threshold": 0.0
+                },
+                {
+                    "paramName": "IsRunning",
+                    "mode": "Equals",
+                    "threshold": 1.0
+                },
+                {
+                    "paramName": "IsRolling",
+                    "mode": "Equals",
+                    "threshold": 0.0
+                }
+            ]
+        },
+        {
+            "from": "Dash",
+            "to": "Loopdash",
+            "anyState": false,
+            "hasExitTime": false,
+            "exitTime": 1.0,
+            "transitionDuration": 0.0,
+            "conditions": [
+                {
+                    "paramName": "Dash",
+                    "mode": "TriggerFired",
+                    "threshold": 0.0
+                }
+            ]
+        },
+        {
+            "from": "Loopdash",
+            "to": "Dash",
+            "anyState": false,
+            "hasExitTime": false,
+            "exitTime": 1.0,
+            "transitionDuration": 0.0,
+            "conditions": []
+        },
+        {
+            "from": "Jump",
+            "to": "Slam",
+            "anyState": false,
+            "hasExitTime": false,
+            "exitTime": 1.0,
+            "transitionDuration": 0.20000000298023224,
+            "conditions": [
+                {
+                    "paramName": "DONTACTIVATE",
+                    "mode": "TriggerFired",
+                    "threshold": 0.0
+                }
+            ]
+        },
+        {
+            "from": "Aerial1 2",
+            "to": "Slam",
+            "anyState": false,
+            "hasExitTime": false,
+            "exitTime": 1.0,
+            "transitionDuration": 0.20000000298023224,
+            "conditions": [
+                {
+                    "paramName": "DONTACTIVATE",
+                    "mode": "TriggerFired",
+                    "threshold": 0.0
+                }
+            ]
+        },
+        {
+            "from": "NA1",
+            "to": "Dash",
+            "anyState": false,
+            "hasExitTime": false,
+            "exitTime": 1.0,
+            "transitionDuration": 0.0,
+            "conditions": [
+                {
+                    "paramName": "IsDashing",
+                    "mode": "Equals",
+                    "threshold": 1.0
+                }
+            ]
+        },
+        {
+            "from": "NA2",
+            "to": "Dash",
+            "anyState": false,
+            "hasExitTime": false,
+            "exitTime": 1.0,
+            "transitionDuration": 0.0,
+            "conditions": [
+                {
+                    "paramName": "IsDashing",
+                    "mode": "Equals",
+                    "threshold": 1.0
+                }
+            ]
+        },
+        {
+            "from": "NA3",
+            "to": "Dash",
+            "anyState": false,
+            "hasExitTime": false,
+            "exitTime": 1.0,
+            "transitionDuration": 0.0,
+            "conditions": [
+                {
+                    "paramName": "IsDashing",
+                    "mode": "Equals",
+                    "threshold": 1.0
+                }
+            ]
+        },
+        {
+            "from": "Dash",
+            "to": "NA1",
+            "anyState": false,
+            "hasExitTime": false,
+            "exitTime": 1.0,
+            "transitionDuration": 0.20000000298023224,
+=======
+            "from": "Jump",
+            "to": "NA1",
+            "anyState": false,
+            "hasExitTime": true,
+            "exitTime": 0.019999999552965164,
+            "transitionDuration": 0.05000000074505806,
+>>>>>>> main
+            "conditions": [
+                {
+                    "paramName": "Attack",
+                    "mode": "TriggerFired",
+<<<<<<< HEAD
+                    "threshold": 1.0
+=======
+                    "threshold": 0.0
+>>>>>>> main
+                },
+                {
+                    "paramName": "ComboStep",
+                    "mode": "Equals",
+                    "threshold": 1.0
+                }
+            ]
+<<<<<<< HEAD
+        },
+        {
+            "from": "Aerial1",
+            "to": "Land",
+            "anyState": false,
+            "hasExitTime": false,
+            "exitTime": 1.0,
+            "transitionDuration": 0.20000000298023224,
+            "conditions": []
+        },
+        {
+            "from": "Aerial1",
+            "to": "Roll",
+            "anyState": false,
+            "hasExitTime": false,
+            "exitTime": 1.0,
+            "transitionDuration": 0.20000000298023224,
+            "conditions": []
+        },
+        {
+            "from": "Aerial1 2",
+            "to": "Land",
+            "anyState": false,
+            "hasExitTime": false,
+            "exitTime": 1.0,
+            "transitionDuration": 0.20000000298023224,
+            "conditions": []
+        },
+        {
+            "from": "Aerial1 2",
+            "to": "Roll",
+            "anyState": false,
+            "hasExitTime": false,
+            "exitTime": 1.0,
+            "transitionDuration": 0.20000000298023224,
+            "conditions": []
+=======
+>>>>>>> main
+        }
+    ],
+    "clipPaths": [
+        "Resources/Animations/Player/KusaneV6@Idle.fbx",
+        "Resources/Animations/Player/KusaneV6@Slash1.fbx",
+        "Resources/Animations/Player/KusaneV6@Slash2.fbx",
+        "Resources/Animations/Player/KusaneV6@Slash3.fbx",
+        "Resources/Animations/Player/KusaneV6@Run.fbx",
+        "Resources/Animations/Player/KusaneV6@Jump.fbx",
+        "Resources/Animations/Player/KusaneV6@Death.fbx",
+        "Resources/Animations/Player/KusaneV6@Roll.fbx",
+        "Resources/Animations/Player/KusaneV6@Land.fbx",
+        "Resources/Animations/Player/KusaneV6@Hurt.fbx",
+        "Resources/Animations/Player/KusaneV6@FeatherLaunch.fbx",
+        "Resources/Animations/Player/KusaneV6@FeatherLaunchEnd.fbx",
+        "Resources/Animations/Player/KusaneV6@DashRoll.fbx",
+        "Resources/Animations/Player/KusaneV6@Standing.fbx",
+        "Resources/Animations/Player/KusaneV6@AimChain.fbx",
+        "Resources/Animations/Player/KusaneV6@ThrowChain.fbx",
+        "Resources/Animations/Player/KusaneV6@SlamChain.fbx",
+        "Resources/Animations/Player/KusaneV6@RetractChain.fbx",
+        "Resources/Animations/Player/KusaneV6@PullChain.fbx",
+        "Resources/Animations/Player/KusaneV6@IdleUnarmed.fbx"
+    ]
+}

@@ -230,7 +230,7 @@ void GraphicsManager::UpdateFrustum()
 			projection = glm::perspective(
 				glm::radians(currentCamera->Zoom),
 				aspectRatio,
-				0.1f, 100.0f
+				0.1f, m_farPlane
 			);
 		}
 
@@ -322,7 +322,7 @@ void GraphicsManager::Render()
 		glm::mat4 projection = glm::perspective(
 			glm::radians(currentCamera->Zoom),
 			aspectRatio,
-			0.1f, 100.0f
+			0.1f, m_farPlane
 		);
 
 		// Render all batched instances
@@ -376,7 +376,7 @@ void GraphicsManager::Render()
 				m_idCache.GetMaterialId(modelB->material.get()),
 				m_idCache.GetModelId(modelB->model.get()));
 
-			return false;
+			return keyA < keyB;
 		});
 
 	// Sort other items by their existing sorting logic (sprites, text, etc.)
@@ -397,7 +397,8 @@ void GraphicsManager::Render()
 		if (instancing.IsEnabled() &&
 			!modelItem->HasAnimation() &&
 			modelItem->model &&
-			modelItem->model->mBoneInfoMap.empty()) 
+			modelItem->model->mBoneInfoMap.empty() &&
+			!modelItem->depthOffset)
 		{
 			continue;  // Already rendered via instancing
 		}
@@ -548,10 +549,21 @@ void GraphicsManager::RenderModel(const ModelRenderComponent& item)
 
 
 	// Draw the model with entity material
+	if (item.depthOffset)
+	{
+		glEnable(GL_POLYGON_OFFSET_FILL);
+		glPolygonOffset(item.depthOffsetFactor, item.depthOffsetUnits);
+	}
+
 	if (item.HasAnimation())
 		item.model->Draw(*item.shader, *currentCamera, item.material, item, item.animator);
 	else
 		item.model->Draw(*item.shader, *currentCamera, item.material, item);
+
+	if (item.depthOffset)
+	{
+		glDisable(GL_POLYGON_OFFSET_FILL);
+	}
 
 	//std::cout << "rendered model\n";
 }
@@ -616,7 +628,7 @@ void GraphicsManager::SetupMatrices(Shader& shader, const glm::mat4& modelMatrix
 			projection = glm::perspective(
 				glm::radians(currentCamera->Zoom),
 				aspectRatio,
-				0.1f, 100.0f
+				0.1f, m_farPlane
 			);
 		}
 
@@ -906,7 +918,7 @@ void GraphicsManager::RenderParticles(const ParticleComponent& item) {
 		glm::mat4 projection = glm::perspective(
 			glm::radians(currentCamera->Zoom),
 			aspectRatio,
-			0.1f, 100.0f
+			0.1f, m_farPlane
 		);
 		item.particleShader->setMat4("projection", projection);
 
@@ -1358,7 +1370,7 @@ void GraphicsManager::RenderSkybox()
 	glm::mat4 projection = glm::perspective(
 		glm::radians(currentCamera->Zoom),
 		aspectRatio,
-		0.1f, 100.0f
+		0.1f, m_farPlane
 	);
 
 	skyboxShader->setMat4("view", view);
@@ -1528,7 +1540,7 @@ void GraphicsManager::RenderFogVolume(const FogVolumeComponent& item)
 
 	// --- Camera matrices ---
 	const float nearP = 0.1f;
-	const float farP  = 100.0f;
+	const float farP  = m_farPlane;
 	if (currentCamera)
 	{
 		float aspectRatio = currentFrameViewport.aspectRatio;
@@ -1571,6 +1583,7 @@ void GraphicsManager::RenderFogVolume(const FogVolumeComponent& item)
 	item.fogShader->setFloat("scrollSpeedY", item.scrollSpeedY);
 	item.fogShader->setFloat("noiseScale", item.noiseScale);
 	item.fogShader->setFloat("noiseStrength", item.noiseStrength);
+	item.fogShader->setFloat("warpStrength", item.warpStrength);
 
 	// --- Height fade ---
 	item.fogShader->setBool("useHeightFade", item.useHeightFade);

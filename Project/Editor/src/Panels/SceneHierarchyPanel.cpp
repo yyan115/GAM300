@@ -434,7 +434,8 @@ void SceneHierarchyPanel::DrawEntityNode(const std::string& entityName, Entity e
 
     // Get item position for drop zone detection
     ImVec2 cursorPos = ImGui::GetCursorScreenPos();
-    float itemHeight = ImGui::GetTextLineHeightWithSpacing();
+    // Commented out as not used to fix warnings.
+    // float itemHeight = ImGui::GetTextLineHeightWithSpacing();
     float dropZoneHeight = 4.0f; // Height of the reorder drop zone
 
     // Check for active drag payload
@@ -591,9 +592,9 @@ void SceneHierarchyPanel::DrawEntityNode(const std::string& entityName, Entity e
             // Double-click to focus the entity in the scene view
             if (ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left)) {
                 try {
-                    ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
-                    if (ecsManager.HasComponent<Transform>(entityId)) {
-                        Transform& transform = ecsManager.GetComponent<Transform>(entityId);
+                    ECSManager& focusEcsManager = ECSRegistry::GetInstance().GetActiveECSManager();
+                    if (focusEcsManager.HasComponent<Transform>(entityId)) {
+                        Transform& transform = focusEcsManager.GetComponent<Transform>(entityId);
                         glm::vec3 entityPos(transform.worldMatrix.m.m03,
                                           transform.worldMatrix.m.m13,
                                           transform.worldMatrix.m.m23);
@@ -603,19 +604,19 @@ void SceneHierarchyPanel::DrawEntityNode(const std::string& entityName, Entity e
 
                         // Determine if entity is 2D or 3D
                         bool entityIs3D = true; // Default to 3D
-                        bool hasSprite = ecsManager.HasComponent<SpriteRenderComponent>(entityId);
-                        bool hasText = ecsManager.HasComponent<TextRenderComponent>(entityId);
-                        bool hasModel = ecsManager.HasComponent<ModelRenderComponent>(entityId);
+                        bool hasSprite = focusEcsManager.HasComponent<SpriteRenderComponent>(entityId);
+                        bool hasText = focusEcsManager.HasComponent<TextRenderComponent>(entityId);
+                        bool hasModel = focusEcsManager.HasComponent<ModelRenderComponent>(entityId);
 
                         if (hasModel) {
                             entityIs3D = true;
                         } else if (hasSprite) {
-                            auto& sprite = ecsManager.GetComponent<SpriteRenderComponent>(entityId);
+                            auto& sprite = focusEcsManager.GetComponent<SpriteRenderComponent>(entityId);
                             entityIs3D = sprite.is3D;
                             // Always use transform.worldMatrix for position - sprite.position is not kept updated
                             std::cout << "[SceneHierarchy] Entity has sprite, is3D=" << sprite.is3D << std::endl;
                         } else if (hasText) {
-                            auto& text = ecsManager.GetComponent<TextRenderComponent>(entityId);
+                            auto& text = focusEcsManager.GetComponent<TextRenderComponent>(entityId);
                             entityIs3D = text.is3D;
                             std::cout << "[SceneHierarchy] Entity has text component is3D=" << text.is3D << std::endl;
                         }
@@ -745,8 +746,8 @@ void SceneHierarchyPanel::DrawEntityNode(const std::string& entityName, Entity e
                         }
                     }
                 } else {
-                    std::string entityName = ecsManager.GetComponent<NameComponent>(entityId).name;
-                    SnapshotManager::GetInstance().TakeSnapshot("Delete Entity: " + entityName);
+                    std::string entityNameToDelete = ecsManager.GetComponent<NameComponent>(entityId).name;
+                    SnapshotManager::GetInstance().TakeSnapshot("Delete Entity: " + entityNameToDelete);
                     GUIManager::SetSelectedEntity(static_cast<Entity>(-1));
                     ecsManager.DestroyEntity(entityId);
                 }
@@ -1630,7 +1631,8 @@ void SceneHierarchyPanel::ReorderRootEntity(Entity draggedEntity, Entity targetS
     EnsureSiblingIndex(draggedEntity);
     EnsureSiblingIndex(targetSibling);
     
-    int targetIndex = ecsManager.GetComponent<SiblingIndexComponent>(targetSibling).siblingIndex;
+    // Commented out as not used to fix warnings.
+    // int targetIndex = ecsManager.GetComponent<SiblingIndexComponent>(targetSibling).siblingIndex;
     
     // Get sorted list of root entities
     std::vector<Entity> sortedRoots = GetSortedRootEntities();
@@ -1917,8 +1919,8 @@ void SceneHierarchyPanel::RebuildSearchCache() {
     // Find all matching entities
     for (Entity entity : allEntities) {
         if (!ecsManager.HasComponent<NameComponent>(entity)) continue;
-        const std::string& name = ecsManager.GetComponent<NameComponent>(entity).name;
-        if (EntityMatchesSearch(name)) {
+        const std::string& entityNameRef = ecsManager.GetComponent<NameComponent>(entity).name;
+        if (EntityMatchesSearch(entityNameRef)) {
             searchMatchedEntities.insert(entity);
             searchVisibleEntities.insert(entity);
             // Walk up ancestor chain to make the path visible
@@ -1927,9 +1929,9 @@ void SceneHierarchyPanel::RebuildSearchCache() {
     }
 }
 
-bool SceneHierarchyPanel::EntityMatchesSearch(const std::string& name) const {
+bool SceneHierarchyPanel::EntityMatchesSearch(const std::string& searchName) const {
     // Case-insensitive substring match
-    std::string nameLower = name;
+    std::string nameLower = searchName;
     std::transform(nameLower.begin(), nameLower.end(), nameLower.begin(),
                    [](unsigned char c) { return std::tolower(c); });
     return nameLower.find(searchQueryLower) != std::string::npos;

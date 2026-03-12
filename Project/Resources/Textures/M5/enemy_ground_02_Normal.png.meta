@@ -6,7 +6,7 @@
         "compiled": "../../Resources/Textures/M5/enemy_ground_02_Normal.dds"
     },
     "TextureMetaData": {
-        "type": "normal",
+        "type": "diffuse",
         "flipUVs": false,
         "generateMipmaps": true,
         "textureWrapMode": "Clamp"

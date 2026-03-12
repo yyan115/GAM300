@@ -1,0 +1,14 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "006dfc96ca000943-000474fd40028c25",
+        "source": "../../Resources/Sprites/PlayerHUD/HealthBarFillRed.png",
+        "compiled": "../../Resources/Sprites/PlayerHUD/HealthBarFillRed.dds"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp"
+    }
+}

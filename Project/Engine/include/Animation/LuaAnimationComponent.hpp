@@ -111,4 +111,27 @@ struct LuaAnimationComponent
         }
         return false;
     }
+
+    float GetStateTime() const {
+        auto* comp = GetInternal();
+        return comp ? comp->GetStateTime() : 0.0f;
+    }
+
+    float GetClipDuration(size_t clipIndex) const {
+        auto* comp = GetInternal();
+        if (!comp) return 0.0f;
+        const auto& clips = comp->GetClips();
+        if (clipIndex >= clips.size() || !clips[clipIndex]) return 0.0f;
+        float ticks = clips[clipIndex]->GetDuration();
+        float ticksPerSec = clips[clipIndex]->GetTicksPerSecond();
+        if (ticksPerSec <= 0.0f) ticksPerSec = 25.0f; // safe fallback
+        return ticks / ticksPerSec;
+    }
+
+    void ResetSM() {
+        auto* comp = GetInternal();
+        if (comp) {
+            comp->ResetSM(entityID);
+        }
+    }
 };

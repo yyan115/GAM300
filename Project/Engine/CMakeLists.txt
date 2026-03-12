@@ -88,6 +88,8 @@ target_compile_definitions(Engine PRIVATE ENGINE_EXPORTS)
 # Define ANDROID for Android builds (needed for #ifdef ANDROID in code)
 if(ANDROID)
     target_compile_definitions(Engine PUBLIC ANDROID)
+    # Android 15+ requires 16KB page size alignment
+    target_link_options(Engine PRIVATE -Wl,-z,max-page-size=16384)
 endif()
 
 # Define EDITOR for Editor builds (EditorDebug, EditorRelease)
@@ -97,12 +99,12 @@ target_compile_definitions(Engine PUBLIC
     $<$<OR:$<CONFIG:EditorDebug>,$<CONFIG:EditorRelease>>:EDITOR>
 )
 
-# Enable Tracy profiler for all builds except Release
-# Tracy compiles to no-ops when TRACY_ENABLE is not defined (zero overhead)
+# Enable Tracy profiler for Editor builds only (EditorDebug, EditorRelease)
+# Game builds (Debug, Release) must not include Tracy to avoid network firewall popups
 # TRACY_ON_DEMAND is baked into the Tracy DLL via vcpkg feature (see vcpkg.json)
 if(NOT ANDROID)
     target_compile_definitions(Engine PUBLIC
-        $<$<NOT:$<CONFIG:Release>>:TRACY_ENABLE>
+        $<$<OR:$<CONFIG:EditorDebug>,$<CONFIG:EditorRelease>>:TRACY_ENABLE>
     )
 endif()
 
@@ -279,7 +281,7 @@ else()
             spdlog::spdlog
             gli
             meshoptimizer::meshoptimizer
-            Tracy::TracyClient
+            $<$<OR:$<CONFIG:EditorDebug>,$<CONFIG:EditorRelease>>:Tracy::TracyClient>
     )
 
     # Platform-specific FMOD and system libraries

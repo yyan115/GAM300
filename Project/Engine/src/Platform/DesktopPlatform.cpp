@@ -347,6 +347,7 @@ void DesktopPlatform::MouseButtonCallback(GLFWwindow* window, int button, int ac
     (void)mods,window;
     Input::MouseButton engineButton = GLFWButtonToEngineButton(button);
     Input::KeyAction engineAction = GLFWActionToEngineAction(action);
+    (void)engineAction;
 
     if (engineButton != Input::MouseButton::UNKNOWN) {
     }

@@ -104,6 +104,8 @@ public:
     // Get current state name from state machine
     std::string GetCurrentState() const;
 
+    float GetClipDuration(size_t clipIndex) const;
+
     // Get normalized animation progress (0.0 to 1.0) for current clip
     float GetNormalizedTime() const;
 
@@ -113,6 +115,9 @@ public:
     // Check if a loop just completed (for looping animations with exit time)
     // Returns true once per loop completion, then resets
     bool HasLoopJustCompleted();
+
+    // Resets the State Machine to entry state and clears all pending state transitions.
+    void ResetSM(Entity entity);
 
 private:
     bool mLoopJustCompleted = false;

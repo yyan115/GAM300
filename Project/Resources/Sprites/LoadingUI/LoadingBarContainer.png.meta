@@ -1,0 +1,14 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "0040af80aaa8a047-0004696a72001b25",
+        "source": "../../Resources/Sprites/LoadingUI/LoadingBarContainer.png",
+        "compiled": "../../Resources/Sprites/LoadingUI/LoadingBarContainer.dds"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp"
+    }
+}
