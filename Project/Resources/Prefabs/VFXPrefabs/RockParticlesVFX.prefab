@@ -1,20 +1,11 @@
 {
     "prefab_entities": [
         {
-            "id": 339,
-            "guid": "007fc422fa1ad33a-00047bb978000011",
+            "id": 340,
+            "guid": "0028f1931a5c95f4-00047bfcd0000013",
             "components": {
-                "PrefabLinkComponent": {
-                    "type": "PrefabLinkComponent",
-                    "data": [
-                        {
-                            "type": "std::string",
-                            "data": "../../Resources/Prefabs/VFXPrefabs/GroundSlamDustVFX.prefab"
-                        }
-                    ]
-                },
                 "NameComponent": {
-                    "name": "GroundSlamDustVFX"
+                    "name": "RockParticlesVFX"
                 },
                 "TagComponent": {
                     "tagIndex": 0
@@ -23,7 +14,7 @@
                     "layerIndex": 0
                 },
                 "SiblingIndexComponent": {
-                    "siblingIndex": 14
+                    "siblingIndex": 15
                 },
                 "Transform": {
                     "type": "Transform",
@@ -92,7 +83,7 @@
                             "type": "bool",
                             "data": true
                         },
-                        "0000e174df0ea123-000479d99e000127",
+                        "0028f193702394f8-00047bfdba00001f",
                         {
                             "type": "Vector3D",
                             "data": [
@@ -112,61 +103,19 @@
                         },
                         {
                             "type": "float",
-                            "data": 2000
+                            "data": 200
                         },
                         {
                             "type": "int",
-                            "data": 8
+                            "data": 15
                         },
                         {
                             "type": "float",
-                            "data": 1.5
+                            "data": 2
                         },
                         {
                             "type": "float",
-                            "data": 1.87
-                        },
-                        {
-                            "type": "float",
-                            "data": 0
-                        },
-                        {
-                            "type": "Vector3D",
-                            "data": [
-                                {
-                                    "type": "float",
-                                    "data": 0.46332
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0.307218
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0.0465109
-                                }
-                            ]
-                        },
-                        {
-                            "type": "float",
-                            "data": 0.2
-                        },
-                        {
-                            "type": "Vector3D",
-                            "data": [
-                                {
-                                    "type": "float",
-                                    "data": 0.462745
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0.305882
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0.0470588
-                                }
-                            ]
+                            "data": 0.1
                         },
                         {
                             "type": "float",
@@ -177,7 +126,7 @@
                             "data": [
                                 {
                                     "type": "float",
-                                    "data": 0
+                                    "data": 1
                                 },
                                 {
                                     "type": "float",
@@ -185,13 +134,34 @@
                                 },
                                 {
                                     "type": "float",
-                                    "data": 0
+                                    "data": 1
                                 }
                             ]
                         },
                         {
                             "type": "float",
-                            "data": 2.5
+                            "data": 1
+                        },
+                        {
+                            "type": "Vector3D",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                }
+                            ]
+                        },
+                        {
+                            "type": "float",
+                            "data": 1
                         },
                         {
                             "type": "Vector3D",
@@ -202,7 +172,28 @@
                                 },
                                 {
                                     "type": "float",
+                                    "data": -5
+                                },
+                                {
+                                    "type": "float",
                                     "data": 0
+                                }
+                            ]
+                        },
+                        {
+                            "type": "float",
+                            "data": 1
+                        },
+                        {
+                            "type": "Vector3D",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 1.8
                                 },
                                 {
                                     "type": "float",

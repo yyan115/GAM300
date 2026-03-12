@@ -33811,6 +33811,13 @@
             "guid": "007fc422fa1ad33a-00047bb978000011",
             "Name": "GroundSlamDustVFX",
             "SiblingIndex": 14
+        },
+        {
+            "PrefabPath": "../../Resources/Prefabs/VFXPrefabs/RockParticlesVFX.prefab",
+            "id": 340,
+            "guid": "0028f1931a5c95f4-00047bfcd0000013",
+            "Name": "RockParticlesVFX",
+            "SiblingIndex": 15
         }
     ],
     "layers": [
