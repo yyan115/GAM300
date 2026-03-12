@@ -1,0 +1,14 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "00241f14c73fc908-00047d3e4a018427",
+        "source": "../../Resources/Textures/M5/ShojiScreen2_Height.png",
+        "compiled": "../../Resources/Textures/M5/ShojiScreen2_Height.dds"
+    },
+    "TextureMetaData": {
+        "type": "height",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp"
+    }
+}
