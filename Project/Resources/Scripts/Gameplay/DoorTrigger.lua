@@ -184,16 +184,8 @@ return Component {
                     event_bus.publish("set_attacks_enabled", false)
                     event_bus.publish("cinematic.trigger", true)
                 end
-            end
-        end
 
-        -- Tick the delay outside the hasOpened guard so the countdown keeps running
-        if self._triggerPending then
-            self._triggerCountdown = self._triggerCountdown + dt
-            if self._triggerCountdown >= self.triggerDelay then
-                self._triggerPending = false
-
-                -- --- Start Weapon Fly ---
+                -- --- Start Weapon Fly immediately with the cinematic ---
                 if self.weaponPickupEnt and self.weaponOnHandEnt then
                     self.isWeaponFlying = true
                     self.weaponFlyTime = 0.0
@@ -211,6 +203,14 @@ return Component {
                         event_bus.publish("picked_up_weapon", true)
                     end
                 end
+            end
+        end
+
+        -- Tick the delay outside the hasOpened guard so the countdown keeps running
+        if self._triggerPending then
+            self._triggerCountdown = self._triggerCountdown + dt
+            if self._triggerCountdown >= self.triggerDelay then
+                self._triggerPending = false
 
                 -- --- Start door opening ---
                 self.isOpening = true
@@ -262,12 +262,10 @@ return Component {
 
                 if pickupActiveComp then pickupActiveComp.isActive = false end
                 if handActiveComp then handActiveComp.isActive = true end
-                
+
                 _G.playerHasWeapon = true
                 local playerAnim = GetComponent(playerEnt, "AnimationComponent")
-                playerAnim:SetBool("IsArmed", true)
-                -- Don't clear playerNearInteractable here — the input buffer
-                -- still has the Attack press. Wait until the door sequence ends.
+                if playerAnim then playerAnim:SetBool("IsArmed", true) end
                 print("[DoorTrigger] Weapon successfully caught!")
             end
         end
