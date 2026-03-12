@@ -452,28 +452,38 @@ return Component {
         )
 
         -- ── Blend position with chain aim when active ─────────────────────
-        -- Lerp between orbit and chain-aim positions based on blend factor
-        -- so zoom-out and rotation change happen simultaneously on release.
         local blend = self._chainAimBlend
-        if chainActive and chainX then
-            desiredX = desiredX + (chainX - desiredX) * blend
-            desiredY = desiredY + (chainY - desiredY) * blend
-            desiredZ = desiredZ + (chainZ - desiredZ) * blend
-        end
+        local newX, newY, newZ
 
-        -- ── Smooth position follow ───────────────────────────────────────────
-        local cx, cy, cz
-        local px, py, pz = self:GetPosition()
-        if type(px) == "table" then
-            cx, cy, cz = px.x or 0.0, px.y or 0.0, px.z or 0.0
+        if self._chainAiming and chainActive and chainX then
+            -- Zero lerp: snap camera directly to chain aim position every frame.
+            newX, newY, newZ = chainX, chainY, chainZ
         else
-            cx, cy, cz = px or 0.0, py or 0.0, pz or 0.0
-        end
+            -- Lerp between orbit and chain-aim positions based on blend factor
+            -- so zoom-out and rotation change happen simultaneously on release.
+            if chainActive and chainX then
+                desiredX = desiredX + (chainX - desiredX) * blend
+                desiredY = desiredY + (chainY - desiredY) * blend
+                desiredZ = desiredZ + (chainZ - desiredZ) * blend
+            end
 
-        local lerpT = 1.0 - math.exp(-(self.followLerp or 10.0) * dt)
-        local newX  = cx + (desiredX - cx) * lerpT
-        local newY  = cy + (desiredY - cy) * lerpT
-        local newZ  = cz + (desiredZ - cz) * lerpT
+            -- ── Smooth position follow ───────────────────────────────────────
+            local cx, cy, cz
+            local px, py, pz = self:GetPosition()
+            if type(px) == "table" then
+                cx, cy, cz = px.x or 0.0, px.y or 0.0, px.z or 0.0
+            else
+                cx, cy, cz = px or 0.0, py or 0.0, pz or 0.0
+            end
+
+            local normalRate = self.followLerp or 10.0
+            local chainRate  = 120.0
+            local effectiveRate = normalRate + (chainRate - normalRate) * blend
+            local lerpT = 1.0 - math.exp(-effectiveRate * dt)
+            newX = cx + (desiredX - cx) * lerpT
+            newY = cy + (desiredY - cy) * lerpT
+            newZ = cz + (desiredZ - cz) * lerpT
+        end
 
         -- Export exact camera position and mathematically perfect forward vector!
         _G.CAMERA_POS_X = newX
