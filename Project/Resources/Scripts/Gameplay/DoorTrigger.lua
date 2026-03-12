@@ -101,6 +101,9 @@ return Component {
         openAngle = 115,
         overshootAngle = 10,
 
+        -- Delay (in seconds) before any animation/SFX plays after the player enters the trigger radius
+        triggerDelay = 3.0,
+
         pickupSFX = {},     -- table of AudioClips for pickup
         doorOpenSFX = {},   -- table of AudioClips for door
 
@@ -111,6 +114,9 @@ return Component {
 
         isWeaponFlying = false,
         weaponFlyTime = 0.0,
+
+        _triggerPending = false,
+        _triggerCountdown = 0.0,
     },
 
     meta = {
@@ -168,15 +174,24 @@ return Component {
             local inRange = CheckPlayerInRange(self)
             self.isActivatable = inRange
 
-            if inRange then
+            if inRange and not self._triggerPending then
                 self.hasOpened = true
+                self._triggerPending   = true
+                self._triggerCountdown = 0.0
 
-                -- Tell ComboManager to disable attacks for the duration of the
-                -- pickup + door sequence so the Attack press isn't also processed
-                -- as a swing. ComboManager owns that gate; we just signal it.
+                -- Disable attacks and fire the cinematic immediately on enter
                 if event_bus and event_bus.publish then
                     event_bus.publish("set_attacks_enabled", false)
+                    event_bus.publish("cinematic.trigger", true)
                 end
+            end
+        end
+
+        -- Tick the delay outside the hasOpened guard so the countdown keeps running
+        if self._triggerPending then
+            self._triggerCountdown = self._triggerCountdown + dt
+            if self._triggerCountdown >= self.triggerDelay then
+                self._triggerPending = false
 
                 -- --- Start Weapon Fly ---
                 if self.weaponPickupEnt and self.weaponOnHandEnt then
@@ -205,10 +220,6 @@ return Component {
                 local DoorTriggerSFX = self:GetComponent("AudioComponent")
                 if DoorTriggerSFX and self.doorOpenSFX[1] then
                     DoorTriggerSFX:PlayOneShot(self.doorOpenSFX[1])
-                end
-
-                if event_bus and event_bus.publish then
-                    event_bus.publish("cinematic.trigger", true)
                 end
             end
         end
