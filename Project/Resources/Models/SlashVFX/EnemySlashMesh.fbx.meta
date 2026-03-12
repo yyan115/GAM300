@@ -1,0 +1,11 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "002e160d69e4042a-000479cf6c000001",
+        "source": "../../Resources/Models/SlashVFX/EnemySlashMesh.fbx",
+        "compiled": "../../Resources/Models/SlashVFX/EnemySlashMesh.mesh"
+    },
+    "ModelMetaData": {
+        "optimizeMeshes": true
+    }
+}

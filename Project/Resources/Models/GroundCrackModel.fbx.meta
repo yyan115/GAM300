@@ -1,0 +1,11 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "0025280353443344-00047680a6000001",
+        "source": "../../Resources/Models/GroundCrackModel.fbx",
+        "compiled": "../../Resources/Models/GroundCrackModel.mesh"
+    },
+    "ModelMetaData": {
+        "optimizeMeshes": true
+    }
+}

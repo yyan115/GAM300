@@ -1788,6 +1788,7 @@ return Component {
     end,
 
     _DoMeleeAttack = function(self)
+
         -- longer windup + further range
         print("[Miniboss] _DoMeleeAttack: SetTrigger(Melee)")
         if self._animator then self._animator:SetTrigger("Melee") end
@@ -1879,6 +1880,20 @@ return Component {
 
             if not m.didHit and m.t >= (m.hitAt or 0) then
                 m.didHit = true
+
+                print("Do u see this?")
+                -- CLAW VFX HERE
+                if _G.event_bus then
+                    local x, y, z = self:GetPosition()
+                    local qW, qX, qY, qZ = self:GetRotation()
+                    
+                    _G.event_bus.publish("miniboss_vfx", {
+                        pos = {x = x, y = y, z = z},
+                        rot = {w = qW, x = qX, y = qY, z = qZ},
+                        entityId = self.entityId,
+                    })
+                end
+
 
                 if _G.event_bus and _G.event_bus.publish then
                     local ex, ey, ez = self:GetPosition()

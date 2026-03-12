@@ -1,0 +1,14 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "00623062d56f3c6a-00046c7ce8000009",
+        "source": "../../Resources/Textures/VFX/Slash1/Slash1_occlusionRoughnessMetallic.png",
+        "compiled": "../../Resources/Textures/VFX/Slash1/Slash1_occlusionRoughnessMetallic.dds"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp"
+    }
+}

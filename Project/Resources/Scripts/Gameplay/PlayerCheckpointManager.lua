@@ -1,140 +1,112 @@
 require("extension.engine_bootstrap")
 local Component = require("extension.mono_helper")
-local TransformMixin = require("extension.transform_mixin")
 
 local event_bus = _G.event_bus
-local Input = _G.Input
 
 return Component {
-    mixins = { TransformMixin },
-
     fields = {
-        CheckpointRadius = 0.50,
-
-        -- Tooltip entity name (sprite that appears when player is near a checkpoint)
-        tooltipEntity = "",
+        checkpointEntityName = "Checkpoint1",
+        tooltipEntityName    = "checkpointTooltip",
+        CheckpointRadius     = 50.0,
     },
-
-    meta = {
-        tooltipEntity = { editorHint = "entity" },
-    },
-
-    Awake = function(self)
-
-    end,
 
     Start = function(self)
-        self._transform = self:GetComponent("Transform")
-        self._checkpointEntities = Engine.GetEntitiesByTag("Checkpoint")
-
-        -- Tooltip sprite entity
+        self._activated = false
         self._tooltipShown = false
-        self._nearCheckpoint = nil        -- entity ID of checkpoint we are near (pending activation)
-        if self.tooltipEntity ~= "" then
-            self._tooltipEnt = Engine.GetEntityByName(self.tooltipEntity)
-        end
-    end,
 
-    -------------------------------------------------
-    -- Tooltip show/hide helper
-    -------------------------------------------------
-    _setTooltipVisible = function(self, visible)
-        if not self._tooltipEnt then return end
+        -- Find player
+        self._playerEnt = Engine.GetEntityByName("Player")
+        self._playerTr  = self._playerEnt and GetComponent(self._playerEnt, "Transform") or nil
 
-        local activeComp = GetComponent(self._tooltipEnt, "ActiveComponent")
-        if activeComp then
-            activeComp.isActive = visible
-        end
+        -- Find checkpoint
+        self._cpEnt = Engine.GetEntityByName(self.checkpointEntityName)
+        self._cpTr  = self._cpEnt and GetComponent(self._cpEnt, "Transform") or nil
 
-        local spriteComp = GetComponent(self._tooltipEnt, "SpriteRenderComponent")
-        if spriteComp then
-            spriteComp.isVisible = visible
-            spriteComp.alpha = visible and 1.0 or 0.0
-        end
-
-        -- Set global flag so combat scripts know to skip attacks
-        _G.playerNearInteractable = visible
-    end,
-
-    -------------------------------------------------
-    -- Activate a checkpoint (called when player presses attack near it)
-    -------------------------------------------------
-    _activateCheckpoint = function(self, entityId)
-        self._activatedCheckpoint = entityId
-        local checkpointChildren = Engine.GetChildrenEntities(entityId)
-
-        local respawnPointEnt = checkpointChildren[3]
-        local respawnPointTr = GetComponent(respawnPointEnt, "Transform")
-        local respawnPos = Engine.GetTransformWorldPosition(respawnPointTr)
-        self._respawnPos = respawnPos
-
-        self._lightEnt = checkpointChildren[2]
-        local lightComp = GetComponent(self._lightEnt, "SpotLightComponent")
-        lightComp.enabled = true
-
-        -- Play audio
-        local audio = GetComponent(entityId, "AudioComponent")
-        if audio then
-            audio:Play()
-        end
-
-        if event_bus and event_bus.publish then
-            event_bus.publish("activatedCheckpoint", respawnPointEnt)
-            event_bus.publish("playerHeal", 5)
-        end
-    end,
-
-    -------------------------------------------------
-    -- Check proximity and handle tooltip + interaction
-    -------------------------------------------------
-    CheckHitCheckpoint = function(self)
-        if not self._transform then return end
-        local p = self._transform.worldPosition
-        if not p then return false end
-
-        local foundNearCheckpoint = nil
-
-        for i, entityId in ipairs(self._checkpointEntities) do
-            local transform = GetComponent(entityId, "Transform")
-            local pos = transform.worldPosition
-
-            local dx, dy, dz = p.x - pos.x, p.y - pos.y, p.z - pos.z
-            local r = self.CheckpointRadius
-
-            if (dx*dx + dy*dy + dz*dz) <= (r*r) then
-                -- Player is near this checkpoint
-                -- Only consider it if it hasn't already been activated
-                if self._activatedCheckpoint ~= entityId then
-                    foundNearCheckpoint = entityId
-                end
-            else
-                -- Turn off lights for non-active checkpoints
-                local checkpointChildren = Engine.GetChildrenEntities(entityId)
-                local lightEnt = checkpointChildren[2]
-                local lightComp = GetComponent(lightEnt, "SpotLightComponent")
-
-                if lightEnt ~= self._lightEnt then
-                    lightComp.enabled = false
-                end
+        -- Find tooltip and cache sprite (same pattern as TutorialPrompts)
+        self._tooltipEnt    = Engine.GetEntityByName(self.tooltipEntityName)
+        self._tooltipSprite = nil
+        if self._tooltipEnt then
+            local ac = GetComponent(self._tooltipEnt, "ActiveComponent")
+            if ac then ac.isActive = true end
+            self._tooltipSprite = GetComponent(self._tooltipEnt, "SpriteRenderComponent")
+            if self._tooltipSprite then
+                self._tooltipSprite.alpha     = 0.0
+                self._tooltipSprite.isVisible = false
             end
+            if ac then ac.isActive = false end
         end
-
-        -- Auto-activate on collision enter (player enters checkpoint radius)
-        if foundNearCheckpoint then
-            self:_activateCheckpoint(foundNearCheckpoint)
-        end
-
-        return false
     end,
 
     Update = function(self, dt)
-        self:CheckHitCheckpoint()
+        if not self._playerTr or not self._cpTr then return end
+
+        local pp = self._playerTr.worldPosition
+        local cp = self._cpTr.worldPosition
+        if not pp or not cp then return end
+
+        local dx, dz = pp.x - cp.x, pp.z - cp.z
+        local dist = math.sqrt(dx*dx + dz*dz)
+        local isNear = dist <= self.CheckpointRadius
+
+        if isNear then
+            -- Show tooltip
+            if not self._tooltipShown and self._tooltipEnt then
+                local ac = GetComponent(self._tooltipEnt, "ActiveComponent")
+                if ac then ac.isActive = true end
+                if self._tooltipSprite then
+                    self._tooltipSprite.isVisible = true
+                    self._tooltipSprite.alpha = 1.0
+                end
+                self._tooltipShown = true
+            end
+
+            -- Auto-activate checkpoint (once)
+            if not self._activated then
+                self._activated = true
+                self:_activateCheckpoint()
+            end
+        else
+            -- Hide tooltip when player leaves radius
+            if self._tooltipShown and self._tooltipEnt then
+                local ac = GetComponent(self._tooltipEnt, "ActiveComponent")
+                if ac then ac.isActive = false end
+                if self._tooltipSprite then
+                    self._tooltipSprite.isVisible = false
+                    self._tooltipSprite.alpha = 0.0
+                end
+                self._tooltipShown = false
+            end
+        end
+    end,
+
+    _activateCheckpoint = function(self)
+        if not self._cpEnt then return end
+        local children = Engine.GetChildrenEntities(self._cpEnt)
+
+        if children[3] then
+            local tr = GetComponent(children[3], "Transform")
+            if tr then
+                self._respawnPos = tr.worldPosition
+            end
+            if event_bus and event_bus.publish then
+                event_bus.publish("activatedCheckpoint", children[3])
+                event_bus.publish("playerHeal", 5)
+            end
+        end
+
+        if children[2] then
+            local lc = GetComponent(children[2], "SpotLightComponent")
+            if lc then lc.enabled = true end
+        end
+
+        local audio = GetComponent(self._cpEnt, "AudioComponent")
+        if audio then audio:Play() end
     end,
 
     OnDisable = function(self)
-        -- Clean up tooltip if visible
-        if self._tooltipShown then
-            self:_setTooltipVisible(false)
+        if self._tooltipShown and self._tooltipEnt then
+            local ac = GetComponent(self._tooltipEnt, "ActiveComponent")
+            if ac then ac.isActive = false end
             self._tooltipShown = false
         end
     end,

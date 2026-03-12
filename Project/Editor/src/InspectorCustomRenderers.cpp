@@ -6027,6 +6027,10 @@ void RegisterInspectorCustomRenderers()
 
                     ImGui::Spacing();
                     ImGui::ProgressBar(progress, ImVec2(-1, 0), "");
+
+                    ImGui::Text("Normalized Time:");
+                    ImGui::SameLine();
+                    ImGui::TextColored(ImVec4(1, 1, 0, 1), "%.3f", animComp.GetNormalizedTime());
                 }
             }
         }
