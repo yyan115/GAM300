@@ -12,6 +12,9 @@ struct CutsceneBoard {
 	// --- Image ---
 	std::string imagePath;              // Drag-drop texture path
 
+	// --- Audio ---
+	std::string sfxGuidStr;             // GUID of SFX to play when this board becomes active (empty = none)
+
 	// --- Text ---
 	std::string text;                   // Dialogue text to display
 	float textSpeed = 50.0f;            // Typewriter chars/sec (0 = instant)

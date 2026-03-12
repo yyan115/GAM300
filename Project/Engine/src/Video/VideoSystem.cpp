@@ -9,6 +9,9 @@
 #include "Graphics/Camera/CameraComponent.hpp"
 #include "Graphics/PostProcessing/PostProcessingManager.hpp"
 #include "Asset Manager/ResourceManager.hpp"
+#include "Asset Manager/AssetManager.hpp"
+#include "Sound/AudioManager.hpp"
+#include "Sound/Audio.hpp"
 #include "Hierarchy/EntityGUIDRegistry.hpp"
 #include "Utilities/GUID.hpp"
 #include "Input/InputManager.h"
@@ -84,8 +87,9 @@ void VideoSystem::BeginCutscene(VideoComponent& vc)
         vc.savedCameraBlur = true;
     }
 
-    // Set initial board image
+    // Set initial board image and play SFX
     SwapBoardImage(vc, 0);
+    PlayBoardSFX(vc, 0);
 
     // If first board has no fade, skip directly to displaying
     if (vc.boards[0].fadeDuration <= 0.0f)
@@ -117,6 +121,7 @@ void VideoSystem::AdvanceToBoard(VideoComponent& vc, int boardIndex)
     if (nextBoard.continueText)
     {
         SwapBoardImage(vc, boardIndex);
+        PlayBoardSFX(vc, boardIndex);
 
         // Preserve typewriter state
         vc.previousBoardChars = vc.revealedChars;
@@ -163,6 +168,7 @@ void VideoSystem::AdvanceToBoard(VideoComponent& vc, int boardIndex)
     if (nextBoard.fadeDuration <= 0.0f || currentDisablesFadeOut)
     {
         SwapBoardImage(vc, boardIndex);
+        PlayBoardSFX(vc, boardIndex);
 
         vc.previousBoardChars = 0;
         vc.typewriterTimer = 0.0f;
@@ -392,6 +398,23 @@ void VideoSystem::ApplyBlur(VideoComponent& vc, float dt)
 }
 
 // ============================================================================
+// Audio
+// ============================================================================
+
+void VideoSystem::PlayBoardSFX(VideoComponent& vc, int boardIndex)
+{
+    if (boardIndex < 0 || boardIndex >= static_cast<int>(vc.boards.size())) return;
+    const std::string& guidStr = vc.boards[boardIndex].sfxGuidStr;
+    if (guidStr.empty()) return;
+
+    GUID_128 guid = GUIDUtilities::ConvertStringToGUID128(guidStr);
+    std::string assetPath = AssetManager::GetInstance().GetAssetPathFromGUID(guid);
+    auto clip = ResourceManager::GetInstance().GetResourceFromGUID<Audio>(guid, assetPath);
+    if (!clip) return;
+    AudioManager::GetInstance().PlayAudio(clip);
+}
+
+// ============================================================================
 // Image Swap & UI helpers
 // ============================================================================
 
@@ -592,8 +615,9 @@ void VideoSystem::Update(float dt)
 
             if (progress >= 1.0f)
             {
-                // Swap image at midpoint
+                // Swap image at midpoint and play SFX
                 SwapBoardImage(vc, nextBoard);
+                PlayBoardSFX(vc, nextBoard);
 
                 // Handle typewriter continuation
                 if (vc.boards[nextBoard].continueText)
