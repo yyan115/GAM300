@@ -35,6 +35,9 @@ return Component {
     end,
 
     Update = function(self, dt)
+        if self._collected then return end
+        if not self._parentFeatherEntity or self._parentFeatherEntity < 0 then return end
+
         -- [FIXED] Stop setting it to true every frame once it's enabled
         if not self._colliderEnabled then
             self._initialInactiveDuration = self._initialInactiveDuration - dt
@@ -67,6 +70,9 @@ return Component {
 
                     if (dx * dx + dy * dy + dz * dz) <= (radius * radius) then
                         self:TryCollect(playerId)
+                        if self._isCollecting or self._collected then
+                            return
+                        end
                     end
                 end
             end
@@ -142,8 +148,8 @@ return Component {
             local moveDist = currentSpeed * dt
             if (dist < self.CollectionRadius) or (dist <= moveDist) then
                 print(string.format("[EnemyFeatherCollectible] Player collected feather - Entity %d", self.entityId))
-                self:OnCollected() 
-                myPos = { x = targetX, y = targetY, z = targetZ } -- Snap position visually
+                self:OnCollected()
+                return
             else
                 -- Apply normal movement
                 myPos.x = myPos.x + self._velocity.x * dt
@@ -190,6 +196,8 @@ return Component {
 
     -- [NEW] Reusable collection logic
     TryCollect = function(self, otherEntityId)
+        if self._collected then return end
+        if not otherEntityId or otherEntityId < 0 then return end
         if self._onTriggerStayed then return end
         if self._isCollecting then return end
         local name = Engine.GetEntityName(otherEntityId)
@@ -242,6 +250,15 @@ return Component {
     OnCollected = function(self)
         if self._collected then return end
         self._collected = true
+        self._isCollecting = false
+
+        if self._collider then
+            self._collider.enabled = false
+        end
+
+        if self._rb then
+            self._rb.enabled = false
+        end
 
         Engine.DestroyEntity(self._parentFeatherEntity)
 

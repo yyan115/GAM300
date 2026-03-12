@@ -45,6 +45,26 @@ static void DeactivateSpriteEntity(Entity spriteEntity, ECSManager* ecs) {
     }
 }
 
+static void ResolveDialogueTextEntity(DialogueComponent& dialogue) {
+    if (dialogue.textEntity != 0 || dialogue.textEntityGuidStr.empty()) return;
+
+    GUID_128 guid = GUIDUtilities::ConvertStringToGUID128(dialogue.textEntityGuidStr);
+    dialogue.textEntity = EntityGUIDRegistry::GetInstance().GetEntityByGUID(guid);
+}
+
+static void EnsureDialogueRegistered(NarrativeDialogueManager& manager, Entity entity, DialogueComponent& dialogue) {
+    if (dialogue.dialogueName.empty()) {
+        dialogue.registeredWithManager = false;
+        return;
+    }
+
+    if (manager.GetDialogueEntity(dialogue.dialogueName) != entity) {
+        manager.RegisterDialogue(dialogue.dialogueName, entity);
+    }
+
+    dialogue.registeredWithManager = (manager.GetDialogueEntity(dialogue.dialogueName) == entity);
+}
+
 void DialogueSystem::Initialise(ECSManager& ecsManager) {
     m_ecs = &ecsManager;
     auto& manager = NarrativeDialogueManager::GetInstance();
@@ -54,15 +74,8 @@ void DialogueSystem::Initialise(ECSManager& ecsManager) {
     for (auto entity : entities) {
         if (!m_ecs->HasComponent<DialogueComponent>(entity)) continue;
         auto& dialogue = m_ecs->GetComponent<DialogueComponent>(entity);
-        if (!dialogue.dialogueName.empty()) {
-            manager.RegisterDialogue(dialogue.dialogueName, entity);
-            dialogue.registeredWithManager = true;
-        }
-        // Also resolve text entity GUID early
-        if (dialogue.textEntity == 0 && !dialogue.textEntityGuidStr.empty()) {
-            GUID_128 guid = GUIDUtilities::ConvertStringToGUID128(dialogue.textEntityGuidStr);
-            dialogue.textEntity = EntityGUIDRegistry::GetInstance().GetEntityByGUID(guid);
-        }
+        EnsureDialogueRegistered(manager, entity, dialogue);
+        ResolveDialogueTextEntity(dialogue);
     }
 }
 
@@ -76,17 +89,10 @@ void DialogueSystem::Update(float dt) {
 
         auto& dialogue = m_ecs->GetComponent<DialogueComponent>(entity);
 
-        // Register with manager if not yet done
-        if (!dialogue.registeredWithManager && !dialogue.dialogueName.empty()) {
-            manager.RegisterDialogue(dialogue.dialogueName, entity);
-            dialogue.registeredWithManager = true;
-        }
-
-        // Resolve text entity from GUID if needed
-        if (dialogue.textEntity == 0 && !dialogue.textEntityGuidStr.empty()) {
-            GUID_128 guid = GUIDUtilities::ConvertStringToGUID128(dialogue.textEntityGuidStr);
-            dialogue.textEntity = EntityGUIDRegistry::GetInstance().GetEntityByGUID(guid);
-        }
+        // Keep the component and global manager in sync. Async scene loading can clear the
+        // singleton manager after this component was already marked as registered.
+        EnsureDialogueRegistered(manager, entity, dialogue);
+        ResolveDialogueTextEntity(dialogue);
 
         // Auto-start on first frame if enabled
         if (dialogue.autoStart && dialogue.phase == DialogueComponent::Phase::Inactive && !dialogue.autoStartFired) {
