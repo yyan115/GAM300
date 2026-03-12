@@ -643,6 +643,11 @@ rapidjson::Value Serializer::SerializeEntity(Entity entity, rapidjson::Document:
         v.AddMember("blurRadius", c.blurRadius, alloc);
         v.AddMember("blurPasses", c.blurPasses, alloc);
         v.AddMember("blurLayerMask", c.blurLayerMask, alloc);
+        v.AddMember("dirBlurEnabled", c.dirBlurEnabled, alloc);
+        v.AddMember("dirBlurIntensity", c.dirBlurIntensity, alloc);
+        v.AddMember("dirBlurStrength", c.dirBlurStrength, alloc);
+        v.AddMember("dirBlurAngle", c.dirBlurAngle, alloc);
+        v.AddMember("dirBlurSamples", c.dirBlurSamples, alloc);
         v.AddMember("bloomEnabled", c.bloomEnabled, alloc);
         v.AddMember("bloomThreshold", c.bloomThreshold, alloc);
         v.AddMember("bloomIntensity", c.bloomIntensity, alloc);
@@ -1021,6 +1026,11 @@ void Serializer::SerializePrefabInstanceDelta(ECSManager& sceneECS, Entity insta
             v.AddMember("blurRadius", c.blurRadius, a);
             v.AddMember("blurPasses", c.blurPasses, a);
             v.AddMember("blurLayerMask", c.blurLayerMask, a);
+            v.AddMember("dirBlurEnabled", c.dirBlurEnabled, a);
+            v.AddMember("dirBlurIntensity", c.dirBlurIntensity, a);
+            v.AddMember("dirBlurStrength", c.dirBlurStrength, a);
+            v.AddMember("dirBlurAngle", c.dirBlurAngle, a);
+            v.AddMember("dirBlurSamples", c.dirBlurSamples, a);
             v.AddMember("bloomEnabled", c.bloomEnabled, a);
             v.AddMember("bloomThreshold", c.bloomThreshold, a);
             v.AddMember("bloomIntensity", c.bloomIntensity, a);
@@ -3630,6 +3640,16 @@ void Serializer::DeserializeCameraComponent(CameraComponent& cameraComp, const r
         cameraComp.blurPasses = cameraJSON["blurPasses"].GetInt();
     if (cameraJSON.HasMember("blurLayerMask") && cameraJSON["blurLayerMask"].IsUint())
         cameraComp.blurLayerMask = cameraJSON["blurLayerMask"].GetUint();
+    if (cameraJSON.HasMember("dirBlurEnabled") && cameraJSON["dirBlurEnabled"].IsBool())
+        cameraComp.dirBlurEnabled = cameraJSON["dirBlurEnabled"].GetBool();
+    if (cameraJSON.HasMember("dirBlurIntensity") && cameraJSON["dirBlurIntensity"].IsNumber())
+        cameraComp.dirBlurIntensity = cameraJSON["dirBlurIntensity"].GetFloat();
+    if (cameraJSON.HasMember("dirBlurStrength") && cameraJSON["dirBlurStrength"].IsNumber())
+        cameraComp.dirBlurStrength = cameraJSON["dirBlurStrength"].GetFloat();
+    if (cameraJSON.HasMember("dirBlurAngle") && cameraJSON["dirBlurAngle"].IsNumber())
+        cameraComp.dirBlurAngle = cameraJSON["dirBlurAngle"].GetFloat();
+    if (cameraJSON.HasMember("dirBlurSamples") && cameraJSON["dirBlurSamples"].IsInt())
+        cameraComp.dirBlurSamples = cameraJSON["dirBlurSamples"].GetInt();
     if (cameraJSON.HasMember("bloomEnabled") && cameraJSON["bloomEnabled"].IsBool())
         cameraComp.bloomEnabled = cameraJSON["bloomEnabled"].GetBool();
     if (cameraJSON.HasMember("bloomThreshold") && cameraJSON["bloomThreshold"].IsNumber())

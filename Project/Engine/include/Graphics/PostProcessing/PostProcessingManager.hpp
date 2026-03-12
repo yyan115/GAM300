@@ -3,6 +3,7 @@
 #include "PostProcessEffect.hpp"
 #include "HDR/HDREffect.hpp"
 #include "Blur/BlurEffect.hpp"
+#include "Blur/DirectionalBlurEffect.hpp"
 #include "Bloom/BloomEffect.hpp"
 #include "SSAO/SSAOEffect.hpp"
 #include <memory>
@@ -39,6 +40,7 @@ public:
     BlurEffect* GetBlurEffect() { return blurEffect.get(); }
     BloomEffect* GetBloomEffect() { return bloomEffect.get(); }
     SSAOEffect* GetSSAOEffect() { return ssaoEffect.get(); }
+    DirectionalBlurEffect* GetDirectionalBlurEffect() { return directionalBlurEffect.get(); }
 
     // Set camera matrices for SSAO (call before EndHDRRender)
     void SetProjectionMatrix(const glm::mat4& proj) { currentProjection = proj; }
@@ -104,6 +106,7 @@ private:
     // Effects (in order of application)
     std::unique_ptr<SSAOEffect> ssaoEffect;
     std::unique_ptr<BlurEffect> blurEffect;
+    std::unique_ptr<DirectionalBlurEffect> directionalBlurEffect;
     std::unique_ptr<BloomEffect> bloomEffect;
     std::unique_ptr<HDREffect> hdrEffect;
 
