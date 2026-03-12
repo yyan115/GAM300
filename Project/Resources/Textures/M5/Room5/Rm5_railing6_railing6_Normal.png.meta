@@ -1,0 +1,14 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "00269aea0d6ddda4-00047c48d200e8b3",
+        "source": "../../Resources/Textures/M5/Room5/Rm5_railing6_railing6_Normal.png",
+        "compiled": "../../Resources/Textures/M5/Room5/Rm5_railing6_railing6_Normal.dds"
+    },
+    "TextureMetaData": {
+        "type": "normal",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp"
+    }
+}
