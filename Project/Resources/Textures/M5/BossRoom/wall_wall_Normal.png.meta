@@ -1,0 +1,14 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "0057a38228b1be10-00047cf224007763",
+        "source": "../../Resources/Textures/M5/BossRoom/wall_wall_Normal.png",
+        "compiled": "../../Resources/Textures/M5/BossRoom/wall_wall_Normal.dds"
+    },
+    "TextureMetaData": {
+        "type": "normal",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp"
+    }
+}
