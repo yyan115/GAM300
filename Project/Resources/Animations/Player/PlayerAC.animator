@@ -66,6 +66,11 @@
             "defaultValue": 0.0
         },
         {
+            "name": "Dash",
+            "type": "Trigger",
+            "defaultValue": 0.0
+        },
+        {
             "name": "FeatherSkill",
             "type": "Trigger",
             "defaultValue": 0.0
@@ -92,6 +97,21 @@
         },
         {
             "name": "IsArmed",
+            "type": "Bool",
+            "defaultValue": 1.0
+        },
+        {
+            "name": "IsRolling",
+            "type": "Bool",
+            "defaultValue": 0.0
+        },
+        {
+            "name": "IsAirAttacking",
+            "type": "Bool",
+            "defaultValue": 0.0
+        },
+        {
+            "name": "IsBackDashing",
             "type": "Bool",
             "defaultValue": 0.0
         }
@@ -594,8 +614,8 @@
             "to": "Run",
             "anyState": false,
             "hasExitTime": true,
-            "exitTime": 0.7200000286102295,
-            "transitionDuration": 0.6800000071525574,
+            "exitTime": 0.28999999165534973,
+            "transitionDuration": 0.27000001072883606,
             "conditions": [
                 {
                     "paramName": "IsRunning",
@@ -1778,8 +1798,8 @@
             "to": "IdleUnarmed",
             "anyState": false,
             "hasExitTime": true,
-            "exitTime": 0.6700000166893005,
-            "transitionDuration": 0.6600000262260437,
+            "exitTime": 0.3400000035762787,
+            "transitionDuration": 0.33000001311302185,
             "conditions": [
                 {
                     "paramName": "IsRunning",
@@ -1860,6 +1880,26 @@
                     "paramName": "IsArmed",
                     "mode": "Equals",
                     "threshold": 0.0
+                }
+            ]
+        },
+        {
+            "from": "Jump",
+            "to": "NA1",
+            "anyState": false,
+            "hasExitTime": true,
+            "exitTime": 0.019999999552965164,
+            "transitionDuration": 0.05000000074505806,
+            "conditions": [
+                {
+                    "paramName": "Attack",
+                    "mode": "TriggerFired",
+                    "threshold": 0.0
+                },
+                {
+                    "paramName": "ComboStep",
+                    "mode": "Equals",
+                    "threshold": 1.0
                 }
             ]
         }
