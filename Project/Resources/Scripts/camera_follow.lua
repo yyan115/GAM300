@@ -143,6 +143,9 @@ return Component {
         self._enemyTriggeredActionMode = false
         self._triggeringEnemyId        = nil
 
+        -- Dead enemy set (collision raycasts ignore these entities)
+        self._deadEnemies = {}
+
         -- Cinematic
         self._cinematicActive    = false
         self._cinematicTarget    = nil
@@ -267,6 +270,12 @@ return Component {
                 self._shakeDuration  = p.duration  or self.ShakeDuration  or 0.4
                 self._shakeIntensity = p.intensity or self.ShakeIntensity or 0.3
                 self._shakeFrequency = p.frequency or self.ShakeFrequency or 25.0
+            end)
+
+            self._enemyDiedSub = event_bus.subscribe("enemy_died", function(p)
+                if p and p.entityId then
+                    self._deadEnemies[p.entityId] = true
+                end
             end)
         end
     end,
