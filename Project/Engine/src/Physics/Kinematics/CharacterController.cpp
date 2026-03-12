@@ -157,27 +157,27 @@ void CharacterController::Update(float deltaTime)
 
     const JPH::Vec3 gravity = mPhysicsSystem->GetGravity();
     const JPH::Vec3 currentVel = mCharacter->GetLinearVelocity();
-
     JPH::CharacterVirtual::EGroundState groundState = mCharacter->GetGroundState();
     const bool isOnGround = (groundState == JPH::CharacterVirtual::EGroundState::OnGround);
 
     JPH::Vec3 newVelocity;
 
-    if (isOnGround)
+    // When active, Lua owns Y completely. No gravity accumulation, no stick-to-
+    // floor. XZ still follows Lua input via mVelocity as normal.
+    if (mJuggleMode)
+    {
+        newVelocity = JPH::Vec3(mVelocity.GetX(), mJuggleVY, mVelocity.GetZ());
+        mJuggleVY = 0.0f; // consumed — Lua must set it again next frame
+    }
+    else if (isOnGround)
     {
         if (jump_Requested)
         {
-            // Jump: preserve current XZ momentum, inject upward impulse only.
-            // Lua's XZ is ignored this frame; the running momentum stays in currentVel.
-            // carries forward naturally, so the jump doesn't kill your run speed.
             newVelocity = JPH::Vec3(currentVel.GetX(), mVelocity.GetY(), currentVel.GetZ());
             jump_Requested = false;
         }
         else
         {
-            // Grounded: start from platform velocity so moving platforms work,
-            // then replace XZ entirely with what Lua says this frame.
-            // Never add it; Lua owns horizontal movement completely.
             JPH::Vec3 groundVel = mCharacter->GetGroundVelocity();
             newVelocity = JPH::Vec3(
                 groundVel.GetX() + mVelocity.GetX(),
@@ -188,8 +188,6 @@ void CharacterController::Update(float deltaTime)
     }
     else
     {
-        // In air: Lua owns XZ exactly, C++ only accumulates vertical gravity.
-        // Never add Lua XZ on top of currentVel; that compounds speed every frame.
         float verticalVel = currentVel.GetY() + gravity.GetY() * deltaTime;
         newVelocity = JPH::Vec3(mVelocity.GetX(), verticalVel, mVelocity.GetZ());
     }
@@ -197,7 +195,9 @@ void CharacterController::Update(float deltaTime)
     mCharacter->SetLinearVelocity(newVelocity);
 
     JPH::CharacterVirtual::ExtendedUpdateSettings updateSettings;
-    updateSettings.mStickToFloorStepDown = JPH::Vec3(0, -0.2f, 0);  // was -0.5, too aggressive
+    updateSettings.mStickToFloorStepDown = mJuggleMode
+        ? JPH::Vec3::sZero()            // disabled - Lua drives Y
+        : JPH::Vec3(0, -0.2f, 0);       // normal grounding
     updateSettings.mWalkStairsStepUp = JPH::Vec3(0, 0.4f, 0);
 
     mCharacter->ExtendedUpdate(
@@ -211,9 +211,14 @@ void CharacterController::Update(float deltaTime)
         temp_allocator
     );
 
-    // Clear input; Lua sets this every frame it wants movement.
-    // If Lua sends nothing next frame, character stops horizontally.
     mVelocity = JPH::Vec3::sZero();
+}
+
+
+void CharacterController::SetJuggleMode(bool enabled, float yVelocity)
+{
+    mJuggleMode = enabled;
+    mJuggleVY = yVelocity;
 }
 
 void CharacterController::Move(float x, float y, float z)

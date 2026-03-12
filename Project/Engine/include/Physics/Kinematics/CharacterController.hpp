@@ -60,9 +60,10 @@ public:
     //void SetMass(float mass);               // Character mass
     //float GetMass() const;
 
-
-
-
+    // Juggle mode: when true, CC gravity and stickToFloor are fully disabled.
+    // Lua drives Y position manually via SetJuggleVelocity() each frame.
+    void SetJuggleMode(bool enabled, float yVelocity = 0.0f);
+    bool IsJuggling() const { return mJuggleMode; }
 
 
 private:
@@ -75,5 +76,8 @@ private:
 
     float collider_offsetY;
     bool jump_Requested = false;
+
+    bool  mJuggleMode = false;
+    float mJuggleVY = 0.0f;   // Y velocity set by Lua this frame (world units/sec)
 
 };

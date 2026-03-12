@@ -511,6 +511,19 @@ namespace CharacterControllerWrappers {
         if (ecsManager.characterControllerSystem)
             ecsManager.characterControllerSystem->Shutdown();
     }
+
+    inline void SetJuggleMode(CharacterController* controller, bool enabled, float yVelocity)
+    {
+        if (controller)
+            controller->SetJuggleMode(enabled, yVelocity);
+    }
+
+    inline bool IsJuggling(CharacterController* controller)
+    {
+        if (controller)
+            return controller->IsJuggling();
+        return false;
+    }
 }
 
 // ============================================================================
