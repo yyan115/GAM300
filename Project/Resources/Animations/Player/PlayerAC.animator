@@ -282,8 +282,8 @@
             "speed": 2.9999992847442627,
             "crossfadeDuration": 0.20000000298023224,
             "nodePosition": {
-                "x": 1050.49365234375,
-                "y": -69.9642562866211
+                "x": 1098.1859130859375,
+                "y": 123.88188171386719
             }
         },
         {
@@ -2197,7 +2197,7 @@
             "to": "Roll",
             "anyState": false,
             "hasExitTime": true,
-            "exitTime": 0.75,
+            "exitTime": 0.0,
             "transitionDuration": 0.0,
             "conditions": [
                 {
@@ -2344,6 +2344,11 @@
                     "paramName": "IsGrounded",
                     "mode": "Equals",
                     "threshold": 1.0
+                },
+                {
+                    "paramName": "IsRunning",
+                    "mode": "Equals",
+                    "threshold": 0.0
                 }
             ]
         },
@@ -2361,17 +2366,12 @@
                     "threshold": 0.0
                 },
                 {
-                    "paramName": "IsRolling",
-                    "mode": "Equals",
-                    "threshold": 1.0
-                },
-                {
                     "paramName": "IsGrounded",
                     "mode": "Equals",
                     "threshold": 1.0
                 },
                 {
-                    "paramName": "IsRunning",
+                    "paramName": "IsRolling",
                     "mode": "Equals",
                     "threshold": 1.0
                 }
