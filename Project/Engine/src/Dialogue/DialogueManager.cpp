@@ -42,7 +42,7 @@ Entity NarrativeDialogueManager::GetDialogueEntity(const std::string& name) cons
     if (it != m_dialogues.end()) {
         return it->second.entity;
     }
-    return 0;
+    return INVALID_ENTITY;
 }
 
 void NarrativeDialogueManager::StartDialogue(const std::string& name) {
@@ -50,22 +50,24 @@ void NarrativeDialogueManager::StartDialogue(const std::string& name) {
 
     auto it = m_dialogues.find(name);
     if (it == m_dialogues.end()) {
-        // Lazy registration: scan all entities for unregistered DialogueComponents
-        for (auto& [existingName, record] : m_dialogues) { /* already registered */ }
-        // The dialogue might not be registered yet (script Start() ran before system Update)
-        // Scan all entities with DialogueComponent and register them now
+        // The dialogue might not be registered yet (or the global manager may have been
+        // cleared during an async scene transition). Re-scan active dialogue entities and
+        // rebuild any missing registrations on demand.
         auto activeEntities = m_ecs->GetActiveEntities();
         for (Entity e : activeEntities) {
             if (!m_ecs->HasComponent<DialogueComponent>(e)) continue;
             auto& d = m_ecs->GetComponent<DialogueComponent>(e);
-            if (!d.dialogueName.empty() && !d.registeredWithManager) {
+            if (d.dialogueName.empty()) continue;
+
+            if (GetDialogueEntity(d.dialogueName) != e) {
                 m_dialogues[d.dialogueName] = { e };
-                d.registeredWithManager = true;
-                // Also resolve text entity GUID
-                if (d.textEntity == 0 && !d.textEntityGuidStr.empty()) {
-                    GUID_128 guid = GUIDUtilities::ConvertStringToGUID128(d.textEntityGuidStr);
-                    d.textEntity = EntityGUIDRegistry::GetInstance().GetEntityByGUID(guid);
-                }
+            }
+            d.registeredWithManager = (GetDialogueEntity(d.dialogueName) == e);
+
+            // Also resolve text entity GUID
+            if (d.textEntity == 0 && !d.textEntityGuidStr.empty()) {
+                GUID_128 guid = GUIDUtilities::ConvertStringToGUID128(d.textEntityGuidStr);
+                d.textEntity = EntityGUIDRegistry::GetInstance().GetEntityByGUID(guid);
             }
         }
         // Retry lookup

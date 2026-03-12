@@ -37,7 +37,7 @@ private:
     NarrativeDialogueManager& operator=(const NarrativeDialogueManager&) = delete;
 
     struct DialogueRecord {
-        Entity entity = 0;
+        Entity entity = INVALID_ENTITY;
     };
 
     std::unordered_map<std::string, DialogueRecord> m_dialogues;

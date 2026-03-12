@@ -502,6 +502,11 @@ void SceneManager::UpdateAsyncLoad() {
             ECSManager& ecsRef = ECSRegistry::GetInstance().GetECSManager(currentScenePath);
             ecsRef.scriptSystem->Shutdown();
             ecsRef.scriptSystem->Initialise(ecsRef);
+            // Dialogue init ran before the loading scene was destroyed, and the loading scene
+            // clears the global NarrativeDialogueManager during Exit(). Rebuild it now that the
+            // new scene fully owns the runtime state.
+            ecsRef.dialogueSystem->Shutdown();
+            ecsRef.dialogueSystem->Initialise(ecsRef);
         }
         loadState = SceneLoadState::COMPLETE;
         break;
