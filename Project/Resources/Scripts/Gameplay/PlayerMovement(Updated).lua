@@ -195,7 +195,7 @@ return Component {
         SlamShakeIntensity  =  0.6,
         SlamShakeDuration   =  0.7,
         SlamShakeFrequency  = 25.0,
-        LandingDuration     = 0.4,   -- Seconds of recovery before movement restores.
+        LandingDuration     = 0.65,   -- Seconds of recovery before movement restores.
         RollHeightThreshold = 1.0,   -- Fall distance (world units) that triggers roll instead of soft land.
         -- TO ADD landing SFX variation or ledge-grab: add fields here.
 
@@ -553,6 +553,8 @@ return Component {
         self._isJumping         = false
         self._isLanding         = false
         self._isRolling         = false
+        self._rollDirX          = 0
+        self._rollDirZ          = 0
         self._isDamageStun      = false
         self._playerDead        = false
         self._playerDeadPending = false
@@ -1058,7 +1060,38 @@ return Component {
             return
         end
 
-        -- ── 19. Dash ──────────────────────────────────────────────────────────
+        -- ── 19. Roll movement ─────────────────────────────────────────────────
+        -- While rolling, push the player forward in the stored roll direction.
+        -- Input can steer forward only (same rules as dash steering — no braking).
+        if self._isRolling and isGrounded then
+            if isMoving then
+                local inputLen  = math.sqrt(moveX*moveX + moveZ*moveZ)
+                local inputDirX = moveX / inputLen
+                local inputDirZ = moveZ / inputLen
+                local dot = inputDirX * self._rollDirX + inputDirZ * self._rollDirZ
+                if dot > 0 then
+                    local maxRotRad = math.rad(self.DashSteerSpeed or 180.0) * dt
+                    local t   = math.min(maxRotRad, 1.0)
+                    local newX = self._rollDirX + (inputDirX - self._rollDirX) * t
+                    local newZ = self._rollDirZ + (inputDirZ - self._rollDirZ) * t
+                    local len  = math.sqrt(newX*newX + newZ*newZ)
+                    if len > 0.001 then
+                        self._rollDirX = newX / len
+                        self._rollDirZ = newZ / len
+                    end
+                end
+            end
+            CharacterController.Move(self._controller,
+                self._rollDirX * self.Speed, 0, self._rollDirZ * self.Speed)
+            local position = CharacterController.GetPosition(self._controller)
+            if position then
+                self:SetPosition(position.x, position.y, position.z)
+                if event_bus and event_bus.publish then event_bus.publish("player_position", position) end
+            end
+            return  -- Skip normal movement while rolling.
+        end
+
+        -- ── 20. Dash ──────────────────────────────────────────────────────────
         -- ComboManager fires dash_performed. All dash physics lives here.
         --
         -- Early-cancel: an input during an active dash is held (not dropped) and
@@ -1528,15 +1561,17 @@ return Component {
                 local intensity, hardLand
                 -- Landing intensity: small hop = 0.3, big drop = 1.0
                 intensity = math.max(0.3, math.min(1.0, fallDist / 3.0))
-                hardLand  = fallDist >= (self.RollHeightThreshold or 2.5)
+                hardLand  = fallDist >= (self.RollHeightThreshold or 2.5) or isMoving
 
                 self:_squashTrigger("vertical", intensity)
 
                 if hardLand then
-                    self._isRolling = true
+                    self._isRolling  = true
+                    self._rollDirX   = self._facingX or 0
+                    self._rollDirZ   = self._facingZ or 0
                     self._animator:SetBool("IsRolling", true)
                     self._animator:SetBool("IsRunning", false)
-                    self._isRunning = false
+                    self._isRunning  = false
                 else
                     self._isRolling = false
                     self._animator:SetBool("IsRolling", false)
