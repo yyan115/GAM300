@@ -26235,7 +26235,7 @@
                                 },
                                 {
                                     "type": "float",
-                                    "data": 505
+                                    "data": 540
                                 },
                                 {
                                     "type": "float",
@@ -26309,7 +26309,7 @@
                                 },
                                 {
                                     "type": "float",
-                                    "data": 505
+                                    "data": 540
                                 },
                                 {
                                     "type": "float",
@@ -26478,11 +26478,11 @@
                             "data": [
                                 {
                                     "type": "float",
-                                    "data": 1252.99
+                                    "data": 1170
                                 },
                                 {
                                     "type": "float",
-                                    "data": 325
+                                    "data": 450
                                 },
                                 {
                                     "type": "float",
@@ -26495,7 +26495,7 @@
                             "data": [
                                 {
                                     "type": "float",
-                                    "data": 480
+                                    "data": 300
                                 },
                                 {
                                     "type": "float",
@@ -26537,7 +26537,7 @@
                             "type": "bool",
                             "data": true
                         },
-                        "006a13179510128f-00047ca88e000009",
+                        "007c7b811bd2e089-00047d15be00b1f5",
                         "00374a216e66dbbc-000331fc80000069",
                         {
                             "type": "Vector3D",
@@ -26682,36 +26682,26 @@
                             "entryFunction": "OnInit",
                             "autoInvokeEntry": true,
                             "instanceState": {
-                                "__created_at": 1773331362.0,
-                                "After": null,
-                                "SerializeFields": null,
-                                "__meta": {},
-                                "spriteGUIDs": [
-                                    "006a13179510128f-00047ca88e000009",
-                                    "006a1317b5f0f001-00047ca88e000007"
+                                "SFX": [
+                                    "0037d81b0c6c0a46-000400f740000005",
+                                    "0037d81b07b695ee-000400f740000007"
                                 ],
-                                "_updateHoverState": null,
-                                "AwakeSafe": null,
-                                "ButtonType": "Yes",
-                                "StartSafe": null,
-                                "Subscribe": null,
-                                "Destroy": null,
+                                "__meta": {},
+                                "_private": {},
+                                "ExitGame": null,
                                 "_subscriptions": {},
-                                "DeserializeFields": null,
-                                "DisableSafe": null,
-                                "Update": null,
-                                "UpdateSafe": null,
+                                "ButtonType": "Yes",
+                                "__created_at": 1773331362.0,
                                 "__field_list": {
                                     "ButtonType": "Yes",
-                                    "spriteGUIDs": {},
-                                    "SFX": {}
+                                    "SFX": {},
+                                    "spriteGUIDs": {}
                                 },
-                                "SFX": {},
-                                "_call_lifecycle": null,
-                                "Every": null,
-                                "_private": {},
-                                "Unsubscribe": null,
-                                "Start": null
+                                "ClosePrompt": null,
+                                "spriteGUIDs": [
+                                    "007c7b811bd2e089-00047d15be00b1f5",
+                                    "007c7b810cab88f7-00047d15de00b1fb"
+                                ]
                             }
                         }
                     ]
@@ -26781,11 +26771,11 @@
                             "data": [
                                 {
                                     "type": "float",
-                                    "data": 754.428
+                                    "data": 830
                                 },
                                 {
                                     "type": "float",
-                                    "data": 325
+                                    "data": 450
                                 },
                                 {
                                     "type": "float",
@@ -26798,7 +26788,7 @@
                             "data": [
                                 {
                                     "type": "float",
-                                    "data": 480
+                                    "data": 300
                                 },
                                 {
                                     "type": "float",
@@ -26840,7 +26830,7 @@
                             "type": "bool",
                             "data": true
                         },
-                        "006a1317974f3b7d-00047ca88e000005",
+                        "007c7b815635396f-00047d170800b201",
                         "00374a216e66dbbc-000331fc80000069",
                         {
                             "type": "Vector3D",
@@ -26985,21 +26975,41 @@
                             "entryFunction": "OnInit",
                             "autoInvokeEntry": true,
                             "instanceState": {
-                                "__meta": {},
-                                "__field_list": {
-                                    "spriteGUIDs": {},
-                                    "ButtonType": "Yes",
-                                    "SFX": {}
-                                },
-                                "spriteGUIDs": [
-                                    "006a1317974f3b7d-00047ca88e000005",
-                                    "006a1317a69d56fe-00047ca88e000003"
+                                "SFX": [
+                                    "0037d81b0c6c0a46-000400f740000005",
+                                    "0037d81b07b695ee-000400f740000007"
                                 ],
-                                "ButtonType": "\"\"",
+                                "_call_lifecycle": null,
+                                "__meta": {},
+                                "Subscribe": null,
                                 "_private": {},
-                                "__created_at": 1773331017.0,
+                                "ExitGame": null,
+                                "AwakeSafe": null,
+                                "Unsubscribe": null,
+                                "Update": null,
                                 "_subscriptions": {},
-                                "SFX": {}
+                                "Start": null,
+                                "ButtonType": "\"\"",
+                                "Destroy": null,
+                                "__created_at": 1773331017.0,
+                                "__field_list": {
+                                    "ButtonType": "Yes",
+                                    "SFX": {},
+                                    "spriteGUIDs": {}
+                                },
+                                "StartSafe": null,
+                                "After": null,
+                                "DeserializeFields": null,
+                                "Every": null,
+                                "SerializeFields": null,
+                                "_updateHoverState": null,
+                                "DisableSafe": null,
+                                "ClosePrompt": null,
+                                "UpdateSafe": null,
+                                "spriteGUIDs": [
+                                    "007c7b815635396f-00047d170800b201",
+                                    "007c7b817820b87f-00047d16ec00b1fd"
+                                ]
                             }
                         }
                     ]

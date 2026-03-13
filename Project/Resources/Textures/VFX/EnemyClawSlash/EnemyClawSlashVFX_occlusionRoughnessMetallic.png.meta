@@ -6,7 +6,7 @@
         "compiled": "../../Resources/Textures/VFX/EnemyClawSlash/EnemyClawSlashVFX_occlusionRoughnessMetallic.dds"
     },
     "TextureMetaData": {
-        "type": "diffuse",
+        "type": "ao",
         "flipUVs": false,
         "generateMipmaps": true,
         "textureWrapMode": "Clamp"

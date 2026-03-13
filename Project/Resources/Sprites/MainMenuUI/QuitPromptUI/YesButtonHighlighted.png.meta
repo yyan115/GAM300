@@ -1,0 +1,14 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "007c7b810cab88f7-00047d15de00b1fb",
+        "source": "../../Resources/Sprites/MainMenuUI/QuitPromptUI/YesButtonHighlighted.png",
+        "compiled": "../../Resources/Sprites/MainMenuUI/QuitPromptUI/YesButtonHighlighted.dds"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": true,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp"
+    }
+}
