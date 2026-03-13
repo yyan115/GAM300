@@ -249,8 +249,8 @@
             "speed": 2.000000238418579,
             "crossfadeDuration": 0.0,
             "nodePosition": {
-                "x": 1410.0,
-                "y": -388.5
+                "x": 1431.0,
+                "y": -382.5
             }
         },
         {
@@ -381,8 +381,8 @@
             "speed": 3.4999988079071045,
             "crossfadeDuration": 0.20000000298023224,
             "nodePosition": {
-                "x": 1057.2392578125,
-                "y": -254.26980590820313
+                "x": 1056.2392578125,
+                "y": -264.2698059082031
             }
         },
         {
@@ -748,7 +748,7 @@
             "from": "Jump",
             "to": "Roll",
             "anyState": false,
-            "hasExitTime": false,
+            "hasExitTime": true,
             "exitTime": 0.0,
             "transitionDuration": 0.0,
             "conditions": [
@@ -763,7 +763,7 @@
                     "threshold": 0.0
                 },
                 {
-                    "paramName": "IsRolling",
+                    "paramName": "IsRunning",
                     "mode": "Equals",
                     "threshold": 1.0
                 }
@@ -2051,9 +2051,9 @@
             "from": "Jump",
             "to": "Run",
             "anyState": false,
-            "hasExitTime": false,
-            "exitTime": 0.009999999776482582,
-            "transitionDuration": 0.0,
+            "hasExitTime": true,
+            "exitTime": 0.25,
+            "transitionDuration": 0.25999999046325684,
             "conditions": [
                 {
                     "paramName": "IsGrounded",
@@ -2369,6 +2369,21 @@
                     "paramName": "IsSlamming",
                     "mode": "Equals",
                     "threshold": 0.0
+                }
+            ]
+        },
+        {
+            "from": "Air Lift",
+            "to": "Idle",
+            "anyState": false,
+            "hasExitTime": true,
+            "exitTime": 0.0,
+            "transitionDuration": 0.10000000149011612,
+            "conditions": [
+                {
+                    "paramName": "IsGrounded",
+                    "mode": "Equals",
+                    "threshold": 1.0
                 }
             ]
         }
