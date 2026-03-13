@@ -458,6 +458,17 @@ return Component {
             end)
         end
 
+        if _G.event_bus and _G.event_bus.subscribe then
+            self._slamLandedSub = _G.event_bus.subscribe("slam_landed", function()
+                -- Slam has hit the ground — PlayerMovement owns the landing from here.
+                -- Force ComboManager to idle immediately so player_is_attacking clears
+                -- and section 13 in PlayerMovement stops blocking movement/animation.
+                if self._currentStateId == "air_slam" then
+                    self:_transitionTo("idle")
+                end
+            end)
+        end
+
         print("[ComboManager] Initialized successfully")
     end,
 
@@ -535,22 +546,6 @@ return Component {
         if _G.player_is_dashing then
             if self._queuedCombo then
                 print("[ComboManager] DASH ACTIVE: clearing queued combo '" .. tostring(self._queuedCombo.stateId) .. "'")
-                self._queuedCombo = nil
-            end
-            return
-        end
-
-        -- ══════════════════════════════════════════════════════════════════
-        -- SLAM BUFFER LOCK
-        -- While slam buffer is active the player is locked out. Discard all
-        -- buffered inputs so nothing fires the instant control returns.
-        -- ══════════════════════════════════════════════════════════════════
-        if _G.player_is_slam_buffering then
-            if input:HasBufferedAttack() then input:ConsumeBufferedAttack() end
-            if input:HasBufferedChain()  then input:ConsumeBufferedChain()  end
-            if input:HasBufferedDash()   then input:ConsumeBufferedDash()   end
-            if self._queuedCombo then
-                print("[ComboManager] SLAM BUFFER: clearing queued combo '" .. tostring(self._queuedCombo.stateId) .. "'")
                 self._queuedCombo = nil
             end
             return
