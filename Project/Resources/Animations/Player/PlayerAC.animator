@@ -749,8 +749,8 @@
             "to": "Roll",
             "anyState": false,
             "hasExitTime": true,
-            "exitTime": 0.27000001072883606,
-            "transitionDuration": 0.27000001072883606,
+            "exitTime": 0.0,
+            "transitionDuration": 0.0,
             "conditions": [
                 {
                     "paramName": "IsGrounded",
@@ -764,11 +764,6 @@
                 },
                 {
                     "paramName": "IsRunning",
-                    "mode": "Equals",
-                    "threshold": 1.0
-                },
-                {
-                    "paramName": "IsRolling",
                     "mode": "Equals",
                     "threshold": 1.0
                 }
