@@ -181,6 +181,18 @@ BEGIN_COMPONENT(CameraComponent, "CameraComponent")
     // Post-Processing: Chromatic Aberration
     PROPERTY("chromaticAberrationEnabled", &CameraComponent::chromaticAberrationEnabled)
     PROPERTY("chromaticAberrationIntensity", &CameraComponent::chromaticAberrationIntensity)
+
+    PROPERTY("colorGradingEnabled", &CameraComponent::colorGradingEnabled)
+    PROPERTY("cgBrightness", &CameraComponent::cgBrightness)
+    PROPERTY("cgContrast", &CameraComponent::cgContrast)
+    PROPERTY("cgSaturation", &CameraComponent::cgSaturation)
+    METHOD("cgTint", &CameraComponent::SetTint)
+
+    PROPERTY("dirBlurEnabled",   &CameraComponent::dirBlurEnabled)
+    PROPERTY("dirBlurIntensity", &CameraComponent::dirBlurIntensity)
+    PROPERTY("dirBlurStrength",  &CameraComponent::dirBlurStrength)
+    PROPERTY("dirBlurAngle",     &CameraComponent::dirBlurAngle)
+    PROPERTY("dirBlurSamples",   &CameraComponent::dirBlurSamples)
 END_COMPONENT()
 
 // ============================================================================

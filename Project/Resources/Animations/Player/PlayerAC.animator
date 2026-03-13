@@ -16,6 +16,11 @@
             "defaultValue": 0.0
         },
         {
+            "name": "Dashed",
+            "type": "Trigger",
+            "defaultValue": 0.0
+        },
+        {
             "name": "IsRunning",
             "type": "Bool",
             "defaultValue": 0.0
@@ -66,11 +71,6 @@
             "defaultValue": 0.0
         },
         {
-            "name": "Dash",
-            "type": "Trigger",
-            "defaultValue": 0.0
-        },
-        {
             "name": "FeatherSkill",
             "type": "Trigger",
             "defaultValue": 0.0
@@ -96,14 +96,14 @@
             "defaultValue": 0.0
         },
         {
+            "name": "IsLifting",
+            "type": "Bool",
+            "defaultValue": 0.0
+        },
+        {
             "name": "IsArmed",
             "type": "Bool",
             "defaultValue": 1.0
-        },
-        {
-            "name": "IsRolling",
-            "type": "Bool",
-            "defaultValue": 0.0
         },
         {
             "name": "IsAirAttacking",
@@ -113,6 +113,21 @@
         {
             "name": "IsBackDashing",
             "type": "Bool",
+            "defaultValue": 0.0
+        },
+        {
+            "name": "IsRolling",
+            "type": "Bool",
+            "defaultValue": 0.0
+        },
+        {
+            "name": "IsSlamming",
+            "type": "Bool",
+            "defaultValue": 0.0
+        },
+        {
+            "name": "SlamLanded",
+            "type": "Trigger",
             "defaultValue": 0.0
         }
     ],
@@ -135,8 +150,8 @@
             "speed": 2.000000238418579,
             "crossfadeDuration": 0.0,
             "nodePosition": {
-                "x": 1059.2657470703125,
-                "y": -380.439208984375
+                "x": 1052.023193359375,
+                "y": -384.7625427246094
             }
         },
         {
@@ -179,8 +194,8 @@
             "speed": 0.7999999523162842,
             "crossfadeDuration": 0.0,
             "nodePosition": {
-                "x": 100.50003051757813,
-                "y": -2.4705705642700195
+                "x": 204.7963409423828,
+                "y": 548.5023193359375
             }
         },
         {
@@ -234,8 +249,8 @@
             "speed": 2.000000238418579,
             "crossfadeDuration": 0.0,
             "nodePosition": {
-                "x": 1410.0,
-                "y": -388.5
+                "x": 1431.0,
+                "y": -382.5
             }
         },
         {
@@ -269,6 +284,17 @@
             "nodePosition": {
                 "x": 224.53451538085938,
                 "y": 252.49636840820313
+            }
+        },
+        {
+            "id": "Air Slam",
+            "clipIndex": 21,
+            "loop": false,
+            "speed": 2.9999992847442627,
+            "crossfadeDuration": 0.20000000298023224,
+            "nodePosition": {
+                "x": 1082.1866455078125,
+                "y": 64.58775329589844
             }
         },
         {
@@ -335,6 +361,50 @@
             "nodePosition": {
                 "x": -22.03935432434082,
                 "y": -134.7531280517578
+            }
+        },
+        {
+            "id": "New State",
+            "clipIndex": 18446744073709551615,
+            "loop": true,
+            "speed": 1.0,
+            "crossfadeDuration": 0.20000000298023224,
+            "nodePosition": {
+                "x": -472.9563293457031,
+                "y": -193.758544921875
+            }
+        },
+        {
+            "id": "Air Lift",
+            "clipIndex": 20,
+            "loop": false,
+            "speed": 3.4999988079071045,
+            "crossfadeDuration": 0.20000000298023224,
+            "nodePosition": {
+                "x": 1056.2392578125,
+                "y": -264.2698059082031
+            }
+        },
+        {
+            "id": "AE1",
+            "clipIndex": 1,
+            "loop": false,
+            "speed": 2.000000238418579,
+            "crossfadeDuration": 0.20000000298023224,
+            "nodePosition": {
+                "x": 1056.2880859375,
+                "y": -175.53965759277344
+            }
+        },
+        {
+            "id": "AE2",
+            "clipIndex": 2,
+            "loop": false,
+            "speed": 2.000000238418579,
+            "crossfadeDuration": 0.20000000298023224,
+            "nodePosition": {
+                "x": 1234.224853515625,
+                "y": -183.793701171875
             }
         }
     ],
@@ -581,6 +651,11 @@
                     "paramName": "IsRunning",
                     "mode": "Equals",
                     "threshold": 0.0
+                },
+                {
+                    "paramName": "IsRolling",
+                    "mode": "Equals",
+                    "threshold": 0.0
                 }
             ]
         },
@@ -674,8 +749,8 @@
             "to": "Roll",
             "anyState": false,
             "hasExitTime": true,
-            "exitTime": 0.27000001072883606,
-            "transitionDuration": 0.27000001072883606,
+            "exitTime": 0.0,
+            "transitionDuration": 0.0,
             "conditions": [
                 {
                     "paramName": "IsGrounded",
@@ -1947,6 +2022,370 @@
                     "threshold": 1.0
                 }
             ]
+        },
+        {
+            "from": "Dash",
+            "to": "New State",
+            "anyState": false,
+            "hasExitTime": true,
+            "exitTime": 0.0,
+            "transitionDuration": 0.0,
+            "conditions": [
+                {
+                    "paramName": "Dashed",
+                    "mode": "TriggerFired",
+                    "threshold": 0.0
+                }
+            ]
+        },
+        {
+            "from": "New State",
+            "to": "Dash",
+            "anyState": false,
+            "hasExitTime": true,
+            "exitTime": 0.0,
+            "transitionDuration": 0.0,
+            "conditions": []
+        },
+        {
+            "from": "Jump",
+            "to": "Run",
+            "anyState": false,
+            "hasExitTime": true,
+            "exitTime": 0.25,
+            "transitionDuration": 0.25999999046325684,
+            "conditions": [
+                {
+                    "paramName": "IsGrounded",
+                    "mode": "Equals",
+                    "threshold": 1.0
+                },
+                {
+                    "paramName": "IsRunning",
+                    "mode": "Equals",
+                    "threshold": 1.0
+                },
+                {
+                    "paramName": "IsRolling",
+                    "mode": "Equals",
+                    "threshold": 0.0
+                }
+            ]
+        },
+        {
+            "from": "NA1",
+            "to": "Air Lift",
+            "anyState": false,
+            "hasExitTime": false,
+            "exitTime": 1.0,
+            "transitionDuration": 0.0,
+            "conditions": [
+                {
+                    "paramName": "IsLifting",
+                    "mode": "Equals",
+                    "threshold": 1.0
+                }
+            ]
+        },
+        {
+            "from": "NA3",
+            "to": "Air Lift",
+            "anyState": false,
+            "hasExitTime": false,
+            "exitTime": 1.0,
+            "transitionDuration": 0.0,
+            "conditions": [
+                {
+                    "paramName": "IsLifting",
+                    "mode": "Equals",
+                    "threshold": 1.0
+                }
+            ]
+        },
+        {
+            "from": "AE1",
+            "to": "AE2",
+            "anyState": false,
+            "hasExitTime": true,
+            "exitTime": 0.0,
+            "transitionDuration": 0.0,
+            "conditions": [
+                {
+                    "paramName": "IsGrounded",
+                    "mode": "Equals",
+                    "threshold": 0.0
+                },
+                {
+                    "paramName": "IsJumping",
+                    "mode": "Equals",
+                    "threshold": 1.0
+                },
+                {
+                    "paramName": "ComboStep",
+                    "mode": "Equals",
+                    "threshold": 42.0
+                }
+            ]
+        },
+        {
+            "from": "Air Lift",
+            "to": "AE1",
+            "anyState": false,
+            "hasExitTime": true,
+            "exitTime": 0.18000000715255737,
+            "transitionDuration": 0.4099999964237213,
+            "conditions": [
+                {
+                    "paramName": "IsGrounded",
+                    "mode": "Equals",
+                    "threshold": 0.0
+                },
+                {
+                    "paramName": "IsJumping",
+                    "mode": "Equals",
+                    "threshold": 1.0
+                },
+                {
+                    "paramName": "ComboStep",
+                    "mode": "Equals",
+                    "threshold": 41.0
+                }
+            ]
+        },
+        {
+            "from": "AE2",
+            "to": "Air Slam",
+            "anyState": false,
+            "hasExitTime": true,
+            "exitTime": 0.0,
+            "transitionDuration": 0.0,
+            "conditions": [
+                {
+                    "paramName": "IsSlamming",
+                    "mode": "Equals",
+                    "threshold": 1.0
+                }
+            ]
+        },
+        {
+            "from": "Jump",
+            "to": "Air Slam",
+            "anyState": false,
+            "hasExitTime": true,
+            "exitTime": 0.0,
+            "transitionDuration": 0.20999999344348907,
+            "conditions": [
+                {
+                    "paramName": "IsSlamming",
+                    "mode": "Equals",
+                    "threshold": 1.0
+                }
+            ]
+        },
+        {
+            "from": "AE1",
+            "to": "Land",
+            "anyState": false,
+            "hasExitTime": false,
+            "exitTime": 1.0,
+            "transitionDuration": 0.0,
+            "conditions": [
+                {
+                    "paramName": "IsJumping",
+                    "mode": "Equals",
+                    "threshold": 0.0
+                },
+                {
+                    "paramName": "IsGrounded",
+                    "mode": "Equals",
+                    "threshold": 1.0
+                },
+                {
+                    "paramName": "IsRolling",
+                    "mode": "Equals",
+                    "threshold": 0.0
+                },
+                {
+                    "paramName": "IsRunning",
+                    "mode": "Equals",
+                    "threshold": 0.0
+                }
+            ]
+        },
+        {
+            "from": "AE1",
+            "to": "Roll",
+            "anyState": false,
+            "hasExitTime": false,
+            "exitTime": 1.0,
+            "transitionDuration": 0.0,
+            "conditions": [
+                {
+                    "paramName": "IsGrounded",
+                    "mode": "Equals",
+                    "threshold": 1.0
+                },
+                {
+                    "paramName": "IsJumping",
+                    "mode": "Equals",
+                    "threshold": 0.0
+                },
+                {
+                    "paramName": "IsRolling",
+                    "mode": "Equals",
+                    "threshold": 1.0
+                }
+            ]
+        },
+        {
+            "from": "AE2",
+            "to": "Roll",
+            "anyState": false,
+            "hasExitTime": false,
+            "exitTime": 1.0,
+            "transitionDuration": 0.0,
+            "conditions": [
+                {
+                    "paramName": "IsGrounded",
+                    "mode": "Equals",
+                    "threshold": 1.0
+                },
+                {
+                    "paramName": "IsJumping",
+                    "mode": "Equals",
+                    "threshold": 0.0
+                },
+                {
+                    "paramName": "IsRolling",
+                    "mode": "Equals",
+                    "threshold": 1.0
+                }
+            ]
+        },
+        {
+            "from": "AE2",
+            "to": "Land",
+            "anyState": false,
+            "hasExitTime": false,
+            "exitTime": 1.0,
+            "transitionDuration": 0.0,
+            "conditions": [
+                {
+                    "paramName": "IsGrounded",
+                    "mode": "Equals",
+                    "threshold": 1.0
+                },
+                {
+                    "paramName": "IsJumping",
+                    "mode": "Equals",
+                    "threshold": 0.0
+                },
+                {
+                    "paramName": "IsRolling",
+                    "mode": "Equals",
+                    "threshold": 0.0
+                }
+            ]
+        },
+        {
+            "from": "Jump",
+            "to": "AE1",
+            "anyState": false,
+            "hasExitTime": false,
+            "exitTime": 1.0,
+            "transitionDuration": 0.0,
+            "conditions": [
+                {
+                    "paramName": "ComboStep",
+                    "mode": "Equals",
+                    "threshold": 41.0
+                }
+            ]
+        },
+        {
+            "from": "Air Lift",
+            "to": "Land",
+            "anyState": false,
+            "hasExitTime": true,
+            "exitTime": 0.0,
+            "transitionDuration": 0.0,
+            "conditions": [
+                {
+                    "paramName": "IsLifting",
+                    "mode": "Equals",
+                    "threshold": 0.0
+                },
+                {
+                    "paramName": "IsGrounded",
+                    "mode": "Equals",
+                    "threshold": 1.0
+                },
+                {
+                    "paramName": "IsRunning",
+                    "mode": "Equals",
+                    "threshold": 0.0
+                },
+                {
+                    "paramName": "IsRolling",
+                    "mode": "Equals",
+                    "threshold": 0.0
+                }
+            ]
+        },
+        {
+            "from": "Air Lift",
+            "to": "Roll",
+            "anyState": false,
+            "hasExitTime": true,
+            "exitTime": 0.0,
+            "transitionDuration": 0.0,
+            "conditions": [
+                {
+                    "paramName": "IsLifting",
+                    "mode": "Equals",
+                    "threshold": 0.0
+                },
+                {
+                    "paramName": "IsGrounded",
+                    "mode": "Equals",
+                    "threshold": 1.0
+                },
+                {
+                    "paramName": "IsRolling",
+                    "mode": "Equals",
+                    "threshold": 1.0
+                }
+            ]
+        },
+        {
+            "from": "Air Slam",
+            "to": "Idle",
+            "anyState": false,
+            "hasExitTime": false,
+            "exitTime": 1.0,
+            "transitionDuration": 0.6499999761581421,
+            "conditions": [
+                {
+                    "paramName": "IsSlamming",
+                    "mode": "Equals",
+                    "threshold": 0.0
+                }
+            ]
+        },
+        {
+            "from": "Air Lift",
+            "to": "Idle",
+            "anyState": false,
+            "hasExitTime": true,
+            "exitTime": 0.0,
+            "transitionDuration": 0.10000000149011612,
+            "conditions": [
+                {
+                    "paramName": "IsGrounded",
+                    "mode": "Equals",
+                    "threshold": 1.0
+                }
+            ]
         }
     ],
     "clipPaths": [
@@ -1969,6 +2408,8 @@
         "Resources/Animations/Player/KusaneV6@SlamChain.fbx",
         "Resources/Animations/Player/KusaneV6@RetractChain.fbx",
         "Resources/Animations/Player/KusaneV6@PullChain.fbx",
-        "Resources/Animations/Player/KusaneV6@IdleUnarmed.fbx"
+        "Resources/Animations/Player/KusaneV6@IdleUnarmed.fbx",
+        "Resources/Animations/Player/KusaneV6@AirLift.fbx",
+        "Resources/Animations/Player/KusaneV6@AirSlam.fbx"
     ]
 }

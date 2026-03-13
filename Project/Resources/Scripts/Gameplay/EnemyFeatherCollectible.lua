@@ -18,6 +18,17 @@ return Component {
         PlayerEntityName = "Player",
     },
 
+    Awake = function(self)
+        self._isCollecting    = false
+        self._collected       = false
+        self._onTriggerStayed = false
+        self._colliderEnabled = false
+        self._velocity        = { x=0, y=0, z=0 }
+        self._playerTransform = nil
+        self._startDistance   = nil
+        self._startScale      = nil
+    end,
+
     Start = function(self)
         self._transform = self:GetComponent("Transform")
         self._rb = self:GetComponent("RigidBodyComponent")
@@ -147,8 +158,8 @@ return Component {
             -- [Tunneling & Collection Check]
             local moveDist = currentSpeed * dt
             if (dist < self.CollectionRadius) or (dist <= moveDist) then
-                print(string.format("[EnemyFeatherCollectible] Player collected feather - Entity %d", self.entityId))
-                self:OnCollected()
+                --print(string.format("[EnemyFeatherCollectible] Player collected feather - Entity %d", self.entityId))
+                self:OnCollected() 
                 return
             else
                 -- Apply normal movement
@@ -201,15 +212,15 @@ return Component {
         if self._onTriggerStayed then return end
         if self._isCollecting then return end
         local name = Engine.GetEntityName(otherEntityId)
-        print(string.format("Collided with entity entity %s", name))
+        --print(string.format("Collided with entity entity %s", name))
         
         local rootId = self:_toRoot(otherEntityId)
         local tagComp = GetComponent(rootId, "TagComponent")
         local rootname = Engine.GetEntityName(rootId)
-        print(string.format("Checking tag component of entity %s", rootname))
+        --print(string.format("Checking tag component of entity %s", rootname))
         
         if tagComp and Tag.Compare(tagComp.tagIndex, "Player") then
-            print("Tag component == Player")
+            --print("Tag component == Player")
             -- [FIXED] Fetch the parent transform FRESH! Do not use the stale cached one from Start.
             local parentTransform = GetComponent(self._parentFeatherEntity, "Transform")
             if not parentTransform then return end
@@ -232,18 +243,18 @@ return Component {
 
             self._onTriggerStayed = true
 
-            print(string.format("[EnemyFeatherCollectible] Player collecting feather - Entity %d", self.entityId))
+            --print(string.format("[EnemyFeatherCollectible] Player collecting feather - Entity %d", self.entityId))
         end
     end,
 
     -- [FIXED] Route BOTH physics events into the collection logic!
     OnTriggerEnter = function(self, otherEntityId)
-        print("OnTriggerEnter")
+        --print("OnTriggerEnter")
         self:TryCollect(otherEntityId)
     end,
 
     OnTriggerStay = function(self, otherEntityId)
-        print("OnTriggerStay")
+        --print("OnTriggerStay")
         self:TryCollect(otherEntityId)
     end,
 
@@ -269,5 +280,14 @@ return Component {
         if event_bus and event_bus.publish then
             event_bus.publish("featherCollected", true)
         end
+    end,
+
+    OnDisable = function(self)
+        self._isCollecting    = false
+        self._collected       = false
+        self._onTriggerStayed = false
+        self._colliderEnabled = false
+        self._velocity        = { x=0, y=0, z=0 }
+        self._playerTransform = nil
     end,
 }

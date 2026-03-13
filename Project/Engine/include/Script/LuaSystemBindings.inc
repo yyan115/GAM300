@@ -367,6 +367,8 @@ BEGIN_SYSTEM("CharacterController")
     FUNCTION("DisableCollision", CharacterControllerWrappers::DisableCollision)
     FUNCTION("UpdateAll", CharacterControllerWrappers::UpdateAll)
     FUNCTION("ClearAll", CharacterControllerWrappers::ClearAll)
+    FUNCTION("SetJuggleMode", CharacterControllerWrappers::SetJuggleMode)
+    FUNCTION("IsJuggling", CharacterControllerWrappers::IsJuggling)
 END_SYSTEM()
 
 BEGIN_SYSTEM("PhysicsSystem")
