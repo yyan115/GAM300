@@ -100,6 +100,7 @@ return Component {
         -- Must match PlayerMovement's DashDuration so the i-frame window is accurate.
         -- TO CHANGE dash duration: update both this and DashDuration in PlayerMovement.
         DashIFrameDuration = 0.7,   -- Invincibility window while dashing (seconds).
+        SlamIFrameDuration = 0.8,   -- Invincibility window after slam lands (covers buffer + brief recovery).
 
         -- === Hit knockback ===
         HitKnockbackStrength = 3.0,   -- Initial velocity (world units/sec) injected into player movement on hit.
@@ -121,6 +122,9 @@ return Component {
         -- Dash i-frame state (separate from post-hit i-frame)
         self._isDashIFrame     = false
         self._dashIFrameTimer  = 0
+        -- Slam i-frame state (active from slam ground collision through buffer)
+        self._isSlamIFrame     = false
+        self._slamIFrameTimer  = 0
 
         if event_bus and event_bus.subscribe then
 
@@ -149,13 +153,21 @@ return Component {
                 self._dashIFrameTimer = self.DashIFrameDuration or 0.7
             end)
 
+            -- ── Slam i-frame ──────────────────────────────────────────────────
+            -- Opens when slam hits the ground (buffer start) and lasts through
+            -- the full buffer plus a short grace window after control returns.
+            self._slamLandedSub = event_bus.subscribe("slam_landed", function()
+                self._isSlamIFrame    = true
+                self._slamIFrameTimer = self.SlamIFrameDuration or 0.8
+            end)
+
             -- ── Damage subscriptions ──────────────────────────────────────────
             -- Every handler checks dodge first, then post-hit i-frame, then deals damage.
 
             self._knifeHitPlayerDmgSub = event_bus.subscribe("knifeHitPlayerDmg", function(payload)
                 if not payload then return end
                 if checkDodge(self, "knife", { dmg = payload }) then return end
-                if self._isIFrame then return end
+                if self._isIFrame or self._isSlamIFrame then return end
                 -- Payload may be a plain damage number (legacy) or a table with x/z attacker position.
                 -- TO DO: update the knife publisher (KnifePool) to send a table with x/z so
                 --        directional knockback fires here the same way as meleeHitPlayerDmg.
@@ -178,7 +190,7 @@ return Component {
             self._meleeHitPlayerDmgSub = event_bus.subscribe("meleeHitPlayerDmg", function(payload)
                 if not payload then return end
                 if checkDodge(self, "melee", payload) then return end
-                if self._isIFrame then return end
+                if self._isIFrame or self._isSlamIFrame then return end
                 local dmg = type(payload) == "table" and payload.dmg or payload
                 if dmg then
                     -- Derive knockback direction away from attacker if payload carries attacker XZ.
@@ -201,7 +213,7 @@ return Component {
             self._minibossSlashSub = event_bus.subscribe("miniboss_slash", function(payload)
                 if not payload then return end
                 if checkDodge(self, "miniboss_slash", payload) then return end
-                if self._isIFrame then return end
+                if self._isIFrame or self._isSlamIFrame then return end
 
                 local px, py, pz = self:GetPosition()
                 if not px then return end
@@ -234,7 +246,7 @@ return Component {
             self._bossShoutAoeSub = event_bus.subscribe("boss_shout_aoe", function(payload)
                 if not payload then return end
                 if checkDodge(self, "boss_shout_aoe", payload) then return end
-                if self._isIFrame then return end
+                if self._isIFrame or self._isSlamIFrame then return end
 
                 local px, py, pz = self:GetPosition()
                 if not px then return end
@@ -266,7 +278,7 @@ return Component {
                 if not payload then return end
                 if self.CurrentHealth <= 0 then return end
                 if checkDodge(self, "boss_rain_explosives", payload) then return end
-                if self._isIFrame then return end
+                if self._isIFrame or self._isSlamIFrame then return end
 
                 local px, py, pz = self:GetPosition()
                 if not px then return end
@@ -287,7 +299,7 @@ return Component {
             self._bossDiveImpactSub = event_bus.subscribe("boss_dive_impact", function(payload)
                 if not payload then return end
                 if checkDodge(self, "boss_dive_impact", payload) then return end
-                if self._isIFrame then return end
+                if self._isIFrame or self._isSlamIFrame then return end
 
                 local px, py, pz = self:GetPosition()
                 if not px then return end
@@ -388,6 +400,14 @@ return Component {
             end
         end
 
+        -- Slam i-frame timer
+        if self._isSlamIFrame then
+            self._slamIFrameTimer = self._slamIFrameTimer - dt
+            if self._slamIFrameTimer <= 0 then
+                self._isSlamIFrame = false
+            end
+        end
+
         -- Fall out of map → death
         if self._transform then
             local y = self._transform.worldPosition.y
@@ -406,7 +426,7 @@ return Component {
         if event_bus and event_bus.unsubscribe then
             local subs = {
                 "_knifeIncomingSub", "_meleeIncomingSub",
-                "_dashExecutedSub", "_knifeHitPlayerDmgSub", "_meleeHitPlayerDmgSub",
+                "_dashExecutedSub", "_slamLandedSub", "_knifeHitPlayerDmgSub", "_meleeHitPlayerDmgSub",
                 "_minibossSlashSub", "_bossShoutAoeSub", "_bossRainExplosivesSub",
                 "_bossDiveImpactSub", "_playerHealSub", "_respawnPlayerSub",
             }
@@ -415,6 +435,7 @@ return Component {
             end
         end
         self._isDashIFrame = false
+        self._isSlamIFrame = false
         self._isIFrame     = false
     end,
 }

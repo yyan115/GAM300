@@ -197,6 +197,9 @@ return Component {
         SlamShakeFrequency  = 25.0,
         LandingDuration     = 0.65,   -- Seconds of recovery before movement restores.
         RollHeightThreshold = 1.0,   -- Fall distance (world units) that triggers roll instead of soft land.
+        SlamBufferDuration  = 0.2,   -- Seconds player is locked after slam hits ground before control returns.
+        SlamSlowMoScale     = 0.15,  -- Time scale during slam hit-stop (0=frozen, 1=normal).
+        SlamSlowMoDuration  = 0.18,  -- Seconds the slow-mo lasts before snapping back.
         -- TO ADD landing SFX variation or ledge-grab: add fields here.
 
         -- === Squash & stretch ===
@@ -595,6 +598,9 @@ return Component {
         self._liftAttackJump       = false
         self._isAirSlam            = false
         self._slamVelY             = 0
+        self._slamBuffering        = false
+        self._slamBufferTimer      = 0
+        _G.player_is_slam_buffering = false
         self._slamLanding          = false
         self._lastGroundedY        = 0
         self._airLiftCooldownTimer = 0
@@ -864,7 +870,8 @@ return Component {
         -- Bypassed while airborne so air control stays responsive mid-combo.
         -- Velocity bleeds at AttackDecay (slow) so momentum carries into hits.
         local isGroundedForLock = CharacterController.IsGrounded(self._controller)
-        if _G.player_is_attacking and not self._playerCanMove and isGroundedForLock then
+        if _G.player_is_attacking and not self._playerCanMove and isGroundedForLock
+            and not self._slamBuffering then
             local decay = 1.0 - math.min(self.AttackDecay * dt, 1.0)
             self._velX = self._velX * decay
             self._velZ = self._velZ * decay
@@ -1328,7 +1335,7 @@ return Component {
         local isLiftAttack = self._liftAttackJump
         self._liftAttackJump = false
 
-        if not self._isLanding and not self._freezePending
+        if not self._isLanding and not self._freezePending and not self._slamBuffering
             and (isLiftAttack or (interp and interp:IsJumpJustPressed())) and isGrounded
         then
             local jumpH
@@ -1403,32 +1410,74 @@ return Component {
                 )
                 CharacterController.SetVelocity(self._controller, 0, -self._slamVelY, 0)
             else
-                -- Hit floor via raycast — fire everything immediately.
+                -- Hit floor via raycast — fire VFX immediately, then start buffer lock.
                 print(string.format("[SLAM] HIT FLOOR at pos.y=%.3f | firing effects", slamPos and slamPos.y or -999))
-                self._isAirSlam = false
-                self._isJumping = false
-                self._slamVelY  = 0
+                self._isAirSlam       = false
+                self._isJumping       = false
+                self._slamVelY        = 0
+                self._slamBuffering   = true
+                self._slamBufferTimer = self.SlamBufferDuration or 0.6
+                _G.player_is_slam_buffering = true
                 CharacterController.SetVelocity(self._controller, 0, 0, 0)
-                if self._animator then
-                    self._animator:SetBool("IsSlamming", false)
-                    self._animator:SetTrigger("SlamLanded")
-                end
+                -- IsSlamming stays TRUE — animation holds until buffer ends.
                 self:_squashTrigger("vertical", 1.0)
-                print(string.format("[SLAM] event_bus=%s", tostring(event_bus ~= nil)))
                 if event_bus and event_bus.publish then
                     event_bus.publish("camera_shake", {
                         intensity = self.SlamShakeIntensity or 0.6,
                         duration  = self.SlamShakeDuration  or 0.45,
                         frequency = self.SlamShakeFrequency or 18.0,
                     })
-                    print("[SLAM] camera_shake published")
                     event_bus.publish("fx_chromatic", {
                         intensity = 0.8,
                         duration  = 0.3,
                     })
-                    print("[SLAM] fx_chromatic published")
+                    -- Slow-mo hit-stop on slam collision.
+                    event_bus.publish("fx_time_scale", {
+                        scale    = self.SlamSlowMoScale    or 0.15,
+                        duration = self.SlamSlowMoDuration or 0.18,
+                    })
                 end
             end
+        elseif self._slamBuffering then
+            -- Buffer: player locked, IsSlamming held, no movement input processed.
+            -- Zero velocity each frame so the player doesn't slide.
+            CharacterController.SetVelocity(self._controller, 0, 0, 0)
+            self._slamBufferTimer = self._slamBufferTimer - dt
+            if self._slamBufferTimer <= 0 then
+                -- Buffer expired — release animation and restore control.
+                self._slamBuffering         = false
+                self._isJumping             = false
+                self._isLanding             = true
+                self._velX                  = 0
+                self._velZ                  = 0
+                CharacterController.SetVelocity(self._controller, 0, 0, 0)
+                _G.player_is_slam_buffering = false
+                -- Consume any jump/attack input that built up during the buffer
+                -- so the player returns to neutral instead of firing a queued action.
+                local interp2 = _G.InputInterpreter
+                if interp2 then
+                    if interp2.ConsumeBufferedJump  then interp2:ConsumeBufferedJump()  end
+                    if interp2.ConsumeBufferedAttack then interp2:ConsumeBufferedAttack() end
+                    if interp2.ConsumeBufferedDash   then interp2:ConsumeBufferedDash()  end
+                end
+                if self._animator then
+                    self._animator:SetBool("IsJumping",  false)
+                    self._animator:SetBool("IsSlamming", false)
+                    self._animator:SetTrigger("SlamLanded")
+                end
+                if event_bus and event_bus.publish then
+                    event_bus.publish("slam_landed", {})
+                end
+            end
+            local position = CharacterController.GetPosition(self._controller)
+            if position then
+                self:SetPosition(position.x, position.y, position.z)
+                if event_bus and event_bus.publish then event_bus.publish("player_position", position) end
+            end
+            if self._slamBuffering then
+                return  -- Still buffering — block all movement and animation code.
+            end
+            return  -- Expiry frame: return cleanly. Next frame runs with _isLanding=true and clean state.
         elseif not isJumping then
             if isMoving then
                 local targetX = moveX * self.Speed
@@ -1708,5 +1757,6 @@ return Component {
         self._squashPhase             = nil
         self._vaultAscentLock         = false
         _G.player_is_dashing          = false
+        _G.player_is_slam_buffering   = false
     end,
 }

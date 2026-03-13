@@ -541,6 +541,22 @@ return Component {
         end
 
         -- ══════════════════════════════════════════════════════════════════
+        -- SLAM BUFFER LOCK
+        -- While slam buffer is active the player is locked out. Discard all
+        -- buffered inputs so nothing fires the instant control returns.
+        -- ══════════════════════════════════════════════════════════════════
+        if _G.player_is_slam_buffering then
+            if input:HasBufferedAttack() then input:ConsumeBufferedAttack() end
+            if input:HasBufferedChain()  then input:ConsumeBufferedChain()  end
+            if input:HasBufferedDash()   then input:ConsumeBufferedDash()   end
+            if self._queuedCombo then
+                print("[ComboManager] SLAM BUFFER: clearing queued combo '" .. tostring(self._queuedCombo.stateId) .. "'")
+                self._queuedCombo = nil
+            end
+            return
+        end
+
+        -- ══════════════════════════════════════════════════════════════════
         -- ADVANCE STATE TIMER
         -- Scaled by animation playback speed so the combo window and
         -- auto-transition fire at the correct moment even when boosted.

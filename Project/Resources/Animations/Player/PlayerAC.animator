@@ -282,8 +282,8 @@
             "speed": 2.9999992847442627,
             "crossfadeDuration": 0.20000000298023224,
             "nodePosition": {
-                "x": 1098.1859130859375,
-                "y": 123.88188171386719
+                "x": 1071.5198974609375,
+                "y": -44.74553680419922
             }
         },
         {
@@ -2379,76 +2379,6 @@
                     "paramName": "SlamLanded",
                     "mode": "TriggerFired",
                     "threshold": 0.0
-                }
-            ]
-        },
-        {
-            "from": "Air Slam",
-            "to": "NA1",
-            "anyState": false,
-            "hasExitTime": false,
-            "exitTime": 1.0,
-            "transitionDuration": 0.0,
-            "conditions": [
-                {
-                    "paramName": "SlamLanded",
-                    "mode": "TriggerFired",
-                    "threshold": 0.0
-                },
-                {
-                    "paramName": "ComboStep",
-                    "mode": "Equals",
-                    "threshold": 1.0
-                },
-                {
-                    "paramName": "Attack",
-                    "mode": "TriggerFired",
-                    "threshold": 0.0
-                }
-            ]
-        },
-        {
-            "from": "Air Slam",
-            "to": "Run",
-            "anyState": false,
-            "hasExitTime": false,
-            "exitTime": 1.0,
-            "transitionDuration": 0.0,
-            "conditions": [
-                {
-                    "paramName": "IsRunning",
-                    "mode": "Equals",
-                    "threshold": 1.0
-                }
-            ]
-        },
-        {
-            "from": "Air Slam",
-            "to": "Dash",
-            "anyState": false,
-            "hasExitTime": false,
-            "exitTime": 1.0,
-            "transitionDuration": 0.0,
-            "conditions": [
-                {
-                    "paramName": "IsDashing",
-                    "mode": "Equals",
-                    "threshold": 1.0
-                }
-            ]
-        },
-        {
-            "from": "Air Slam",
-            "to": "Jump",
-            "anyState": false,
-            "hasExitTime": false,
-            "exitTime": 1.0,
-            "transitionDuration": 0.0,
-            "conditions": [
-                {
-                    "paramName": "IsJumping",
-                    "mode": "Equals",
-                    "threshold": 1.0
                 }
             ]
         }
