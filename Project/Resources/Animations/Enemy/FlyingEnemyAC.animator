@@ -21,17 +21,17 @@
             "defaultValue": 0.0
         },
         {
-            "name": "Melee",
-            "type": "Bool",
-            "defaultValue": 0.0
-        },
-        {
             "name": "PlayerInDetectionRange",
             "type": "Bool",
             "defaultValue": 0.0
         },
         {
             "name": "Hurt1",
+            "type": "Bool",
+            "defaultValue": 0.0
+        },
+        {
+            "name": "Melee",
             "type": "Bool",
             "defaultValue": 0.0
         },
@@ -46,12 +46,12 @@
             "defaultValue": 0.0
         },
         {
-            "name": "Passive",
+            "name": "Hurt2",
             "type": "Bool",
             "defaultValue": 0.0
         },
         {
-            "name": "Hurt2",
+            "name": "Passive",
             "type": "Bool",
             "defaultValue": 0.0
         },
@@ -110,7 +110,7 @@
         },
         {
             "id": "Idle",
-            "clipIndex": 12,
+            "clipIndex": 11,
             "loop": true,
             "speed": 1.0,
             "crossfadeDuration": 0.0,
@@ -132,7 +132,7 @@
         },
         {
             "id": "Death",
-            "clipIndex": 8,
+            "clipIndex": 7,
             "loop": false,
             "speed": 1.0,
             "crossfadeDuration": 0.0,
@@ -165,7 +165,7 @@
         },
         {
             "id": "Ranged Attack",
-            "clipIndex": 7,
+            "clipIndex": 6,
             "loop": true,
             "speed": 1.7000001668930054,
             "crossfadeDuration": 0.0,
@@ -209,7 +209,7 @@
         },
         {
             "id": "Flying Patrol",
-            "clipIndex": 12,
+            "clipIndex": 11,
             "loop": true,
             "speed": 1.0,
             "crossfadeDuration": 0.20000000298023224,
@@ -219,19 +219,8 @@
             }
         },
         {
-            "id": "Flying Chase",
-            "clipIndex": 6,
-            "loop": true,
-            "speed": 1.0,
-            "crossfadeDuration": 0.20000000298023224,
-            "nodePosition": {
-                "x": 64.9876708984375,
-                "y": -580.2098999023438
-            }
-        },
-        {
             "id": "Stand Up",
-            "clipIndex": 11,
+            "clipIndex": 10,
             "loop": false,
             "speed": 1.0,
             "crossfadeDuration": 0.20000000298023224,
@@ -241,8 +230,19 @@
             }
         },
         {
+            "id": "Flying Chase",
+            "clipIndex": 11,
+            "loop": true,
+            "speed": 1.0,
+            "crossfadeDuration": 0.20000000298023224,
+            "nodePosition": {
+                "x": 64.9876708984375,
+                "y": -580.2098999023438
+            }
+        },
+        {
             "id": "Falling",
-            "clipIndex": 9,
+            "clipIndex": 8,
             "loop": true,
             "speed": 2.0,
             "crossfadeDuration": 0.20000000298023224,
@@ -253,7 +253,7 @@
         },
         {
             "id": "Fall Impact",
-            "clipIndex": 10,
+            "clipIndex": 9,
             "loop": false,
             "speed": 1.0,
             "crossfadeDuration": 0.20000000298023224,
@@ -1489,7 +1489,6 @@
         "Resources/Animations/Enemy/Flying/KarasuFlying@Hurt1.fbx",
         "Resources/Animations/Enemy/Flying/KarasuFlying@Hurt2.fbx",
         "Resources/Animations/Enemy/Flying/KarasuFlying@Hurt3.fbx",
-        "Resources/Animations/Enemy/Flying/KarasuFlying@FlyPatrol.fbx",
         "Resources/Animations/Enemy/Flying/KarasuFlying@FeatherAttack.fbx",
         "Resources/Animations/Enemy/Flying/KarasuFlying@Death.fbx",
         "Resources/Animations/Enemy/Flying/KarasuFlying@Falling.fbx",

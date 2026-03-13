@@ -1,0 +1,14 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "00155f4e9e0e06d2-00047d6048013867",
+        "source": "../../Resources/Textures/M5/BossRoom/ceiling_bottom_low_Normal.png",
+        "compiled": "../../Resources/Textures/M5/BossRoom/ceiling_bottom_low_Normal.dds"
+    },
+    "TextureMetaData": {
+        "type": "normal",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp"
+    }
+}

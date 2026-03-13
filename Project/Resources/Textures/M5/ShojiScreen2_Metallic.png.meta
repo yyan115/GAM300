@@ -1,0 +1,14 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "00241f14d93e3d36-00047d3e4a018429",
+        "source": "../../Resources/Textures/M5/ShojiScreen2_Metallic.png",
+        "compiled": "../../Resources/Textures/M5/ShojiScreen2_Metallic.dds"
+    },
+    "TextureMetaData": {
+        "type": "metallic",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp"
+    }
+}

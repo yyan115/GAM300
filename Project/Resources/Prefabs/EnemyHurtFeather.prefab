@@ -2,7 +2,7 @@
     "prefab_entities": [
         {
             "id": 0,
-            "guid": "005009d96ce3c9ed-00047c00dc0054c7",
+            "guid": "005edbd9297e0a7c-00047d3450021481",
             "components": {
                 "PrefabLinkComponent": {
                     "type": "PrefabLinkComponent",
@@ -188,7 +188,7 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "005009d91fdb72f5-00047c00dc0054c9"
+                                "005edbd92e0445e3-00047d3450021483"
                             ]
                         }
                     ]
@@ -441,32 +441,59 @@
                             "entryFunction": "OnInit",
                             "autoInvokeEntry": true,
                             "instanceState": {
-                                "TriggerDuration": 0.3,
-                                "__meta": {},
-                                "AliveDuration": 10.0,
-                                "_transform_fetched": false,
-                                "__created_at": 1772507285.0,
-                                "MaxSpawnTorque": 10.0,
-                                "SpawnForce": 0.2,
-                                "_private": {},
-                                "_isTriggerDisabled": false,
+                                "_call_lifecycle": null,
                                 "MinSpawnTorque": 2.0,
+                                "_private": {},
+                                "MaxSpawnTorque": 10.0,
                                 "__field_list": {
-                                    "MinSpawnTorque": 2.0,
                                     "TriggerDuration": 0.3,
-                                    "MaxSpawnTorque": 10.0,
-                                    "SpawnForceY": 0.1,
                                     "SpawnForce": 0.2,
-                                    "AliveDuration": 10.0
+                                    "SpawnForceY": 0.1,
+                                    "MaxSpawnTorque": 10.0,
+                                    "AliveDuration": 10.0,
+                                    "MinSpawnTorque": 2.0
                                 },
-                                "SpawnForceY": 0.1,
+                                "__created_at": 1772507285.0,
                                 "_subscriptions": {},
-                                "_dropSFXPlayed": false,
-                                "_aliveDuration": 10.0,
-                                "_triggerDuration": 0.3,
+                                "__meta": {},
+                                "SpawnForce": 0.2,
+                                "SetPosition": null,
+                                "GetRandomTorque": null,
+                                "OnDisable": null,
+                                "AwakeSafe": null,
                                 "featherDropSFX": [
                                     "0078994fadbb08d9-00047bfe4c00000b"
-                                ]
+                                ],
+                                "AliveDuration": 10.0,
+                                "SerializeFields": null,
+                                "_dropSFXPlayed": false,
+                                "After": null,
+                                "Move": null,
+                                "OnCollisionEnter": null,
+                                "TriggerDuration": 0.3,
+                                "_aliveDuration": 10.0,
+                                "Every": null,
+                                "_isTriggerDisabled": false,
+                                "_transform_fetched": false,
+                                "_triggerDuration": 0.3,
+                                "Destroy": null,
+                                "DeserializeFields": null,
+                                "DisableSafe": null,
+                                "GetRotation": null,
+                                "SetRotation": null,
+                                "StartSafe": null,
+                                "GetTransform": null,
+                                "Subscribe": null,
+                                "GetScale": null,
+                                "Awake": null,
+                                "Start": null,
+                                "UpdateSafe": null,
+                                "Update": null,
+                                "GetPosition": null,
+                                "DebugTransform": null,
+                                "SetScale": null,
+                                "Unsubscribe": null,
+                                "SpawnForceY": 0.1
                             }
                         }
                     ]
@@ -496,7 +523,7 @@
         },
         {
             "id": 1,
-            "guid": "005009d91fdb72f5-00047c00dc0054c9",
+            "guid": "005edbd92e0445e3-00047d3450021483",
             "components": {
                 "NameComponent": {
                     "name": "Feather"
@@ -573,7 +600,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "005009d96ce3c9ed-00047c00dc0054c7"
+                        "005edbd9297e0a7c-00047d3450021481"
                     ]
                 },
                 "RigidBodyComponent": {
@@ -753,7 +780,61 @@
                             "preserveKeys": [],
                             "entryFunction": "OnInit",
                             "autoInvokeEntry": true,
-                            "instanceState": {}
+                            "instanceState": {
+                                "_call_lifecycle": null,
+                                "Update": null,
+                                "_toRoot": null,
+                                "_private": {},
+                                "Destroy": null,
+                                "__field_list": {
+                                    "CollectionRadius": 0.05,
+                                    "AttractionStrength": 60.0,
+                                    "TargetScale": 0.1,
+                                    "PickupDetectionRadius": 1.0,
+                                    "InitialInactiveDuration": 0.5,
+                                    "PlayerEntityName": "Player",
+                                    "LiftHeight": 0.3,
+                                    "MaxSpeed": 40.0,
+                                    "Drag": 5.0
+                                },
+                                "__created_at": 1773346599.0,
+                                "OnCollected": null,
+                                "__meta": {},
+                                "StartSafe": null,
+                                "SetPosition": null,
+                                "TryCollect": null,
+                                "InitialInactiveDuration": 0.5,
+                                "AwakeSafe": null,
+                                "OnTriggerStay": null,
+                                "SerializeFields": null,
+                                "After": null,
+                                "Move": null,
+                                "GetPosition": null,
+                                "DeserializeFields": null,
+                                "DisableSafe": null,
+                                "Every": null,
+                                "Drag": 5.0,
+                                "_transform_fetched": false,
+                                "Unsubscribe": null,
+                                "PickupDetectionRadius": 1.0,
+                                "GetRotation": null,
+                                "LiftHeight": 0.3,
+                                "CollectionRadius": 0.05,
+                                "SetRotation": null,
+                                "TargetScale": 0.1,
+                                "_subscriptions": {},
+                                "Subscribe": null,
+                                "GetScale": null,
+                                "AttractionStrength": 60.0,
+                                "Start": null,
+                                "UpdateSafe": null,
+                                "MaxSpeed": 40.0,
+                                "PlayerEntityName": "Player",
+                                "DebugTransform": null,
+                                "OnTriggerEnter": null,
+                                "GetTransform": null,
+                                "SetScale": null
+                            }
                         }
                     ]
                 }
