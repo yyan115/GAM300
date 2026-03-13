@@ -27,6 +27,7 @@ return Component {
     Start = function(self)
         self._narrativeDuration = 0.0
         self._narrativeDurationOver = true
+        self._hasTriggered = false -- prevents trigger from firing again
     end,
 
     -------------------------------------------------
@@ -36,15 +37,21 @@ return Component {
     Update = function(self, dt)
         if not self._narrativeDurationOver then
             self._narrativeDuration = self._narrativeDuration + dt
+
             if self._narrativeDuration >= self.NarrativeDuration then
                 if event_bus and event_bus.publish then
                     event_bus.publish("freeze_enemy", false)
                     event_bus.publish("set_attacks_enabled", true)
                 end
+
                 self._narrativeDurationOver = true
             end
         end
     end,
+
+    -------------------------------------------------
+    -- Helper: climb to root entity
+    -------------------------------------------------
 
     _toRoot = function(self, entityId)
         local targetId = entityId
@@ -58,20 +65,30 @@ return Component {
         return targetId
     end,
 
+    -------------------------------------------------
+    -- Trigger
+    -------------------------------------------------
+
     OnTriggerEnter = function(self, otherEntityId)
+
+        -- Already triggered once → ignore
+        if self._hasTriggered then return end
+
         local rootId = self:_toRoot(otherEntityId)
         local tagComp = GetComponent(rootId, "TagComponent")
-        local rootname = Engine.GetEntityName(rootId)
 
         if tagComp and Tag.Compare(tagComp.tagIndex, "Player") then
-            -- Disable attacks and fire the cinematic immediately on enter
+
             if event_bus and event_bus.publish then
                 event_bus.publish("set_attacks_enabled", false)
                 event_bus.publish("cinematic.trigger", true)
                 event_bus.publish("cinematic.stayDuration", self.NarrativeDuration - self.PanDuration + 1.0)
                 event_bus.publish("cinematic.transitionDuration", self.PanDuration)
-                self._narrativeDurationOver = false
             end
+
+            self._narrativeDuration = 0.0
+            self._narrativeDurationOver = false
+            self._hasTriggered = true -- mark as used
         end
     end
 }
