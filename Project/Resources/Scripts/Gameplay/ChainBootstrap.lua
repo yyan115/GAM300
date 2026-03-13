@@ -113,7 +113,8 @@ return Component {
         --   HitWall  <- ChainHitWall1, ChainHitWall2, ChainHitWall3
         --
         -- Awaiting new assets:
-        --   Flop     <- ChainFlop1/2/3     (looping, chain swinging loose)
+        --   FlopSlow <- ChainFlopSlow1..6  (loop, chain barely moving)
+        --   FlopFast <- ChainFlopFast1..6  (loop, chain swinging hard)
         --   WallRub  <- ChainWallRub1/2    (looping, chain scraping geometry)
         --   Aim      <- ChainAim1          (looping, helicopter spin overhead)
         --   Taut     <- ChainTaut1/2/3     (one-shot, chain snapping to tension)
@@ -122,16 +123,30 @@ return Component {
         AudioClips_Retract  = {},
         AudioClips_HitFlesh = {},
         AudioClips_HitWall  = {},
-        AudioClips_Flop     = {},
+        AudioClips_Flop     = {},   -- looping, chain swinging loose (single set)
         AudioClips_WallRub  = {},
         AudioClips_Aim      = {},
         AudioClips_Taut     = {},
-        AudioClips_Lax      = {},
+        AudioClips_LaxSlow  = {},   -- lax one-shot set: chain moving little
+        AudioClips_LaxFast  = {},   -- lax one-shot set: chain moving a lot
+
+        -- Speed threshold (world units/sec) for picking LaxSlow vs LaxFast on lax trigger.
+        AudioLaxSpeedThreshold = 3.0,
+
+        -- Speed threshold (world units/sec) for flop slow vs fast set per link.
+        AudioFlopSpeedThreshold = 3.0,
+
+        -- Maximum number of links that can play flop audio simultaneously.
+        -- Fastest-moving links are chosen each frame up to this limit.
+        AudioMaxActiveLinks = 3,
+
+        -- Lax volume multiplier on top of AudioVolume. 2.0 = double.
+        AudioLaxVolumeMultiplier = 2.0,
 
         -- HitFlesh plays louder than the global AudioVolume since enemy impact
         -- needs to cut through other sounds clearly.
-        -- 1.0 = same as global volume, 1.5 = 50% louder.
-        AudioHitFleshVolumeMultiplier = 1.5,
+        -- 1.0 = same as global volume, 2.5 = 150% louder.
+        AudioHitFleshVolumeMultiplier = 2.5,
     },
 
     _unpack_pos = function(self, a, b, c)
@@ -572,7 +587,8 @@ return Component {
                 wallRub  = self.AudioClips_WallRub,
                 aim      = self.AudioClips_Aim,
                 taut     = self.AudioClips_Taut,
-                lax      = self.AudioClips_Lax,
+                laxSlow  = self.AudioClips_LaxSlow,
+                laxFast  = self.AudioClips_LaxFast,
             },
             {
                 volume             = self.AudioVolume,
@@ -582,6 +598,10 @@ return Component {
                 pitchVariation     = self.AudioPitchVariation,
                 volVariation       = self.AudioVolumeVariation,
                 hitFleshVolMult    = self.AudioHitFleshVolumeMultiplier,
+                laxSpeedThreshold  = self.AudioLaxSpeedThreshold,
+                flopSpeedThreshold = self.AudioFlopSpeedThreshold,
+                maxActiveLinks     = self.AudioMaxActiveLinks,
+                laxVolMult         = self.AudioLaxVolumeMultiplier,
             }
         )
         self.audioHandler:Start()

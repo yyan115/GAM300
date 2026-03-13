@@ -112,7 +112,7 @@ return Component {
                 clipDuration = 1.4,
                 duration     = 1.4,
                 damage      = 10,
-                knockback   = 20.0,
+                knockback   = 1.5,
                 canMove     = false,
                 comboWindow = 0.25,
                 lunge       = { speed = 3.0, duration = 0.10 },
@@ -130,7 +130,7 @@ return Component {
                 clipDuration = 1.4,
                 duration     = 1.4,
                 damage      = 12,
-                knockback   = 20.0,
+                knockback   = 1.5,
                 canMove     = false,
                 comboWindow = 0.25,
                 lunge       = { speed = 3.5, duration = 0.11 },
@@ -148,7 +148,7 @@ return Component {
                 clipDuration = 1.2,
                 duration     = 1.2,
                 damage      = 20,
-                knockback   = 200.0,
+                knockback   = 4.0,
                 canMove     = false,
                 comboWindow = nil,
                 lunge       = { speed = 5.0, duration = 0.18 },
@@ -211,7 +211,7 @@ return Component {
                 clipDuration = 1.2,
                 duration     = 1.2,
                 damage      = 30,
-                knockback   = 20.0,
+                knockback   = 3.0,
                 canMove     = false,
                 comboWindow = nil,
                 lunge       = { speed = 6.0, duration = 0.22 },  -- heavy shove
@@ -293,7 +293,7 @@ return Component {
                 clipDuration = 0.8,
                 duration     = 0.8,
                 damage       = 15,
-                knockback    = 80.0,
+                knockback    = 5.0,
                 canMove      = true,
                 isAerial     = true,
                 comboWindow  = 0.25,
@@ -311,7 +311,7 @@ return Component {
                 clipDuration = 0.85,
                 duration     = 0.85,
                 damage       = 12,
-                knockback    = 25.0,
+                knockback    = 1.0,
                 canMove      = true,
                 isAerial     = true,
                 comboWindow  = 0.2,
@@ -328,7 +328,7 @@ return Component {
                 clipDuration = 0.85,
                 duration     = 0.85,
                 damage       = 14,
-                knockback    = 30.0,
+                knockback    = 1.0,
                 canMove      = true,
                 isAerial     = true,
                 comboWindow  = 0.2,
@@ -348,7 +348,7 @@ return Component {
                 clipDuration = 1.1,
                 duration     = 1.1,
                 damage       = 30,
-                knockback    = 180.0,
+                knockback    = 8.0,
                 canMove      = false,
                 isAerial     = true,
                 isSlam       = true,
@@ -454,6 +454,17 @@ return Component {
             self._attackHitSub = _G.event_bus.subscribe("attack_hit_confirmed", function()
                 if self._currentStateData and self._currentStateData.isAerial then
                     self._lastAerialHitLanded = true
+                end
+            end)
+        end
+
+        if _G.event_bus and _G.event_bus.subscribe then
+            self._slamLandedSub = _G.event_bus.subscribe("slam_landed", function()
+                -- Slam has hit the ground — PlayerMovement owns the landing from here.
+                -- Force ComboManager to idle immediately so player_is_attacking clears
+                -- and section 13 in PlayerMovement stops blocking movement/animation.
+                if self._currentStateId == "air_slam" then
+                    self:_transitionTo("idle")
                 end
             end)
         end

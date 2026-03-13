@@ -2,7 +2,6 @@
 require("extension.engine_bootstrap")
 local Component      = require("extension.mono_helper")
 local TransformMixin = require("extension.transform_mixin")
-local AudioHelper    = require("extension.audio_helper")
 
 local StateMachine       = require("Gameplay.StateMachine")
 local GroundIdleState    = require("Gameplay.GroundIdleState")
@@ -19,7 +18,8 @@ local FlyingChaseState  = require("Gameplay.FlyingChaseState")
 local FlyingAttackState = require("Gameplay.FlyingAttackState")
 local FlyingHookedState = require("Gameplay.FlyingHookedState")
 
-local KnifePool = require("Gameplay.KnifePool")
+local KnifePool     = require("Gameplay.KnifePool")
+local AudioHelper   = require("extension.audio_helper")
 local Input = _G.Input
 local Time  = _G.Time
 local Physics = _G.Physics
@@ -67,6 +67,8 @@ local function eulerToQuat(pitch, yaw, roll)
         z = cosP * cosY * sinR - sinP * sinY * cosR
     }
 end
+
+-- Play random SFX from array
 
 local function isDynamic(self)
     return self._rb and self._rb.motionID == 2
@@ -119,17 +121,19 @@ return Component {
         MeleeAnimDelay       = 1.2,   -- Seconds into the melee animation before the hit registers.
 
         -- === Melee combat ===
-        MeleeSpeed          = 0.9,        -- Movement speed while charging a melee attack (world units/sec).
-        MeleeRange          = 1.2,        -- Distance at which melee hit registers.
-        MeleeDamage         = 3,          -- Damage dealt per melee swing.
-        MeleeAttackCooldown = 5.0,        -- Seconds between melee swings.
-        FirstMeleeAttackHeadStart = 0.80, -- Adjust the first hit to match the animation.
+        MeleeSpeed          = 0.9,   -- Movement speed while charging a melee attack (world units/sec).
+        MeleeRange          = 1.2,   -- Distance at which melee hit registers.
+        MeleeDamage         = 3,     -- Damage dealt per melee swing.
+        MeleeAttackCooldown = 5.0,   -- Seconds between melee swings.
 
         -- === Hit response ===
         HurtDuration      = 2.0,    -- Seconds spent in the Hurt state after taking a hit.
-        HitIFrame         = 0.2,    -- Invincibility window after a hit (seconds). Prevents hit-stacking.
-        KnockbackStrength = 12.0,   -- Speed of the knockback impulse (world units/sec).
-        KnockbackDuration = 0.5,    -- Seconds the knockback velocity is applied.
+        HitIFrame         = 0.05,    -- Invincibility window after a hit (seconds). Prevents hit-stacking.
+        KnockbackStrength = 5.0,    -- FALLBACK only. Per-attack knockback comes from ComboManager's
+                                    -- attack_performed payload (light_1=20, lift=80, air_slam=180, etc).
+                                    -- This value is used only when no knockback is in the hit payload
+                                    -- (e.g. chain hits, debug hits via Keyboard.IsDigitPressed).
+        KnockbackDuration = 0.35,   -- Seconds the knockback velocity is applied.
 
         -- === Chain hook ===
         HookedDuration     = 4.0,     -- Seconds the enemy stays hooked before breaking free.
@@ -338,9 +342,13 @@ return Component {
         self._squashMode      = "vertical"
 
         -- ── Aerial juggle state ──────────────────────────────────────────────
-        self._isJuggled   = false   -- true while enemy is airborne from a juggle
-        self._juggleVY    = 0       -- current vertical velocity
+        -- [v2 FIX] _juggleY removed. CC owns Y entirely in juggle mode.
+        -- _juggleVY is fed to CC each frame via SetJuggleMode; gravity is
+        -- accumulated here in Lua and passed down every Update tick.
+        self._isJuggled     = false -- true while enemy is airborne from a juggle
+        self._juggleVY      = 0     -- current vertical velocity (fed to CC each frame)
         self._juggleGroundY = nil   -- cached ground Y to detect landing
+        self._juggleAirTime = 0     -- seconds airborne; gates the landing check
 
         -- Capture authored scale once so the effect always springs back to the
         -- editor-set proportions rather than a hardcoded 1,1,1.
@@ -360,9 +368,10 @@ return Component {
                     return
                 end
 
-                local dmg = payload.dmg or 1
-                local hitType = payload.hitType or payload.src or "MELEE"
-                self:ApplyHit(dmg, hitType)
+                local dmg      = payload.dmg or 1
+                local hitType  = string.upper(payload.hitType or payload.src or "MELEE")
+                local knockback = payload.knockback  -- may be nil; ApplyHit will fall back to KnockbackStrength
+                self:ApplyHit(dmg, hitType, knockback)
             end)
             
             self._frozenBycinematic = false
@@ -385,14 +394,14 @@ return Component {
 
             self._comboDamageSub = _G.event_bus.subscribe("deal_damage_to_entity", function(payload)
                 if not payload then return end
-
                 if payload.entityId ~= self.entityId then
                     return
                 end
 
-                local damage = payload.damage or 10
-                local hitType = payload.hitType or "COMBO"
-                self:ApplyHit(damage, hitType)
+                local damage    = payload.damage or 10
+                local hitType   = string.upper(payload.hitType or "COMBO")
+                local knockback = payload.knockback  -- may be nil; ApplyHit will fall back to KnockbackStrength
+                self:ApplyHit(damage, hitType, knockback)
             end)
 
             self._chainEndpointHitSub = _G.event_bus.subscribe("chain.endpoint_hit_entity", function(payload)
@@ -432,13 +441,6 @@ return Component {
         self._patrolWaitT = self.config.PatrolWait
         self._isPatrolWait = false
 
-        -- print(string.format("[EnemyAI] spawn=(%.2f,%.2f,%.2f) A=(%.2f,%.2f) B=(%.2f,%.2f)",
-        -- self._spawnX, self._spawnY, self._spawnZ,
-        -- self._patrolA.x, self._patrolA.z,
-        -- self._patrolB.x, self._patrolB.z))
-        -- print(string.format("[EnemyAI][Start] A=(%.2f,%.2f) B=(%.2f,%.2f)",
-        -- self._patrolA.x, self._patrolA.z, self._patrolB.x, self._patrolB.z))
-
         self:BuildStateProfile()
         self.fsm:Change("Idle", self.states.Idle)
 
@@ -458,9 +460,6 @@ return Component {
 
         if self.health <= 0 and not self.dead then
             self.dead = true
-            if _G.event_bus and _G.event_bus.publish then
-                _G.event_bus.publish("enemy_died", { entityId = self.entityId })
-            end
         end
 
         if self.dead then
@@ -486,32 +485,16 @@ return Component {
 
         self._motionID = self._rb and self._rb.motionID or nil
 
-        -- DEBUG print less spammy
-        -- self._dbgT = (self._dbgT or 0) + dt
-        -- if self._dbgT > 1.0 then
-        --     self._dbgT = 0
-        --     print("[EnemyRB] motionID=", tostring(self._motionID),
-        --         "gravityFactor=", tostring(self._rb and self._rb.gravityFactor))
-        -- end
-
-        -- DEBUG (disabled for unified input - no debug keys mapped)
-        -- if Input.IsActionJustPressed("DebugHit") then self:ApplyHit(1) end
-        -- if Input.IsActionJustPressed("DebugHook") then self:ApplyHook(4.0) end
-
-        -- -- TEMP DEBUG: press K to force a small move step
-        -- if Input.GetKeyDown(Input.Key.K) then
-        --     print("[EnemyAI] DEBUG forced move step")
-        --     self:MoveCC(1.0, 0.0, dt) -- 1 unit/sec to +X
-        -- end
+        if Input.IsActionJustPressed("Interact") then
+            self:ApplyHook(self.HookedDuration)
+        end
 
         if Keyboard.IsDigitPressed(1) then
             self:ApplyHook(self.HookedDuration)
         end
-
         if Keyboard.IsDigitPressed(3) then
             self:ApplyHit(10)
         end
-
         if Keyboard.IsDigitPressed(7) then
             self.IsPassive = not self.IsPassive
         end
@@ -587,45 +570,78 @@ return Component {
             end
         end
 
-        -- ── Aerial juggle physics ────────────────────────────────────────────
-        -- Runs while the enemy is airborne from a player juggle combo.
-        -- Applies gravity each frame and detects landing.
+        -- ── Aerial juggle physics [v5] ───────────────────────────────────────
+        -- CC destroyed on lift start, recreated on landing.
+        -- KEY FIXES:
+        --   1. Position written BEFORE gravity is subtracted (move-then-integrate).
+        --      Enemy always moves UP on frame 1 — gravity can't kill the arc early.
+        --   2. Landing check gated behind: (a) minimum airtime 0.1s AND
+        --      (b) past the arc peak (_juggleVY < 0, i.e. falling).
+        --      Both conditions together make spurious first-frame landings impossible.
         if self._isJuggled then
+            local juggleDt = (Time and Time.GetUnscaledDeltaTime and Time.GetUnscaledDeltaTime()) or dtSec
+            juggleDt = toDtSec(juggleDt)
+
+            -- Accumulate airtime for the minimum-airtime gate.
+            self._juggleAirTime = (self._juggleAirTime or 0) + juggleDt
+
+            -- Move FIRST (semi-implicit Euler: x += v*dt, then v += a*dt).
+            -- On frame 1 _juggleVY is the full positive lift velocity, so enemy
+            -- always moves upward before gravity gets a chance to reduce velocity.
+            self._juggleY = (self._juggleY or 0) + (self._juggleVY or 0) * juggleDt
+
+            -- Integrate gravity for next frame.
             local grav = tonumber(self.JuggleGravity) or -18.0
-            self._juggleVY = (self._juggleVY or 0) + grav * dtSec
+            self._juggleVY = (self._juggleVY or 0) + grav * juggleDt
 
-            local x, y, z = self:GetPosition()
+            -- Frozen ground reference (set once in ApplyJuggleLift, never updated mid-arc).
+            local groundY = self._juggleGroundY or 0
+
+            local x, _, z = self:GetPosition()
             if x ~= nil then
-                local newY = y + self._juggleVY * dtSec
+                local minAirTime = 0.1
+                local isFalling  = (self._juggleVY or 0) < 0
+                if self._juggleAirTime >= minAirTime and isFalling
+                    and self._juggleY <= groundY + (tonumber(self.JuggleGroundEps) or 0.05) then
 
-                -- Get ground Y
-                local groundY = self._juggleGroundY or 0
-                if Nav and Nav.GetGroundY then
-                    local g = Nav.GetGroundY(self.entityId)
-                    if g ~= nil then groundY = g end
-                end
-                self._juggleGroundY = groundY
+                    -- Confirmed landing.
+                    self._juggleY       = groundY
+                    self._juggleVY      = 0
+                    self._isJuggled     = false
+                    self._juggleAirTime = 0
+                    self:SetPosition(x, self._juggleY, z)
 
-                local eps = tonumber(self.JuggleGroundEps) or 0.05
-                if newY <= groundY + eps then
-                    -- Landed
-                    newY = groundY
-                    self._isJuggled  = false
-                    print(string.format("[EnemyAI] Juggle LANDED at y=%.3f", newY))
-                    self._juggleVY   = 0
+                    -- Re-enable RigidBody before recreating CC (disabled in ApplyJuggleLift).
+                    if self._rb then
+                        pcall(function() self._rb.enabled = true end)
+                        pcall(function() self._rb.linearVel = { x=0, y=0, z=0 } end)
+                        pcall(function() self._rb.impulseApplied = { x=0, y=0, z=0 } end)
+                    end
+
+                    -- Recreate CC.
+                    if self._collider and self._transform and CharacterController and CharacterController.Create then
+                        local ok, ctrl = pcall(function()
+                            return CharacterController.Create(self.entityId, self._collider, self._transform)
+                        end)
+                        if ok and ctrl then
+                            self._controller = ctrl
+                            pcall(function()
+                                CharacterController.SetPosition(self._controller, self._transform)
+                            end)
+                        else
+                            print("[EnemyAI] Juggle land: CC recreate failed")
+                        end
+                    end
                     self:_squashTrigger("vertical", 0.8)
                     if self._animator then
                         self._animator:SetBool("Hurt1", false)
                         self._animator:SetBool("Hurt2", false)
                         self._animator:SetBool("Hurt3", false)
                     end
-                    -- Re-enter hurt so the FSM reacts to landing impact
                     self.fsm:ForceChange("Hurt", self.states.Hurt)
-                end
-
-                self:SetPosition(x, newY, z)
-                if self._controller and CharacterController.SetPosition then
-                    pcall(function() CharacterController.SetPosition(self._controller, x, newY, z) end)
+                else
+                    -- Airborne: raw SetPosition.
+                    self:SetPosition(x, self._juggleY, z)
                 end
             end
         end
@@ -651,20 +667,17 @@ return Component {
             self._kbT = self._kbT - dtSec
             if self._kbT < 0 then self._kbT = 0 end
 
-            -- convert kb velocity (units/sec) -> displacement this frame
-            local mx = (self._kbVX or 0) * dtSec
-            local mz = (self._kbVZ or 0) * dtSec
-
-            -- clamp displacement so it never "teleports"
-            local maxStep = 0.20  -- tune (0.15 - 0.30)
-            if mx >  maxStep then mx =  maxStep end
-            if mx < -maxStep then mx = -maxStep end
-            if mz >  maxStep then mz =  maxStep end
-            if mz < -maxStep then mz = -maxStep end
-
             if self:IsFlying() then
-                -- Move transform XZ, then resync CC to that exact position
-                local x,y,z = self:GetPosition()
+                -- Flying: we drive the transform directly, so dt-scale here is correct.
+                local mx = (self._kbVX or 0) * dtSec
+                local mz = (self._kbVZ or 0) * dtSec
+                -- clamp per-frame displacement so it never teleports
+                local maxStep = 0.20
+                if mx >  maxStep then mx =  maxStep end
+                if mx < -maxStep then mx = -maxStep end
+                if mz >  maxStep then mz =  maxStep end
+                if mz < -maxStep then mz = -maxStep end
+                local x, y, z = self:GetPosition()
                 local nx, nz = x + mx, z + mz
                 self:SetPosition(nx, y, nz)
                 if self._controller and CharacterController.SetPosition then
@@ -673,7 +686,12 @@ return Component {
                     end)
                 end
             else
-                CharacterController.Move(self._controller, mx, 0, mz)
+                -- FIX: CC.Move stores mVelocity; CharacterController::Update then calls
+                -- ExtendedUpdate(deltaTime, ...) which multiplies velocity by dt internally.
+                -- Passing a dt-pre-scaled displacement here caused double-dt scaling,
+                -- making knockback, lift, and slam effectively invisible (force ≈ 1/60th
+                -- of intended). Pass raw velocity (units/sec) — no dt scaling in Lua.
+                CharacterController.Move(self._controller, self._kbVX or 0, 0, self._kbVZ or 0)
             end
         end
 
@@ -682,20 +700,21 @@ return Component {
             --CharacterController.UpdateAll(dtSec)
         end
 
-        -- Sync Transform from CharacterController every frame (ground enemies),
-        -- and clamp Y to ground so they don't float.
+        -- ── Sync Transform from CC [v3] ──────────────────────────────────────
+        -- During juggle CC is nil (destroyed in ApplyJuggleLift, recreated on
+        -- landing). Position is already written above by the juggle block.
         if self._controller then
             local pos = CharacterController.GetPosition(self._controller)
             if pos then
-                if not self:IsFlying() then
+                if self._isJuggled then
+                    -- Should not reach here (CC is nil while juggling) but safe fallback.
+                    self:SetPosition(pos.x, self._juggleY or pos.y, pos.z)
+                elseif not self:IsFlying() then
                     local groundY = (Nav and Nav.GetGroundY) and Nav.GetGroundY(self.entityId) or pos.y
                     self:SetPosition(pos.x, groundY, pos.z)
                 else
-                    -- flying: ALWAYS sync XZ only, never touch Y here
                     local x, y, z = self:GetPosition()
-                    if x ~= nil then
-                        self:SetPosition(pos.x, y, pos.z)
-                    end
+                    if x ~= nil then self:SetPosition(pos.x, y, pos.z) end
                 end
             end
         end
@@ -774,6 +793,18 @@ return Component {
             return
         end
 
+        -- During juggle: CC is nil (v3). Drive XZ via SetPosition directly.
+        if self._isJuggled then
+            local x, _, z = self:GetPosition()
+            if x ~= nil then
+                local mx = (vx or 0) * (dt or 0)
+                local mz = (vz or 0) * (dt or 0)
+                -- Y comes from _juggleY, not current transform Y (which lags one frame).
+                self:SetPosition(x + mx, self._juggleY or _, z + mz)
+            end
+            return
+        end
+
         if not self._controller then
             self._dbgNoCCT = (self._dbgNoCCT or 0) + (dt or 0)
             if self._dbgNoCCT > 1.0 then
@@ -807,6 +838,9 @@ return Component {
 
     StopCC = function(self)
         if not self._controller then return end
+        -- During juggle: skipping CC.Move prevents the CC's internal gravity from
+        -- snapping the enemy back to the floor on the same frame juggle sets Y.
+        if self._isJuggled then return end
         local pos = CharacterController.GetPosition(self._controller)
         --print(string.format("[EnemyAI] Before StopCC Position: %f %f %f", pos.x, pos.y, pos.z))
         -- Sending 0s is a safe "do nothing" step.
@@ -936,11 +970,6 @@ return Component {
         local arriveR = self.PathWaypointRadius or 0.6
         local arriveR2 = arriveR * arriveR
 
-        -- print(string.format("[Nav] following idx=%d / %d target=(%.2f, %.2f, %.2f)",
-        --     self._pathIndex or 1, #self._path,
-        --     node.x, node.y or 0, node.z
-        -- ))
-
         -- Advance waypoint if close enough
         if d2 <= arriveR2 then
             --print("[FollowPath] REACHED WAYPOINT ", idx)
@@ -972,10 +1001,6 @@ return Component {
         end
 
         local d = math.sqrt(d2)
-        -- if d <= 1e-6 then
-        --     self:StopCC()
-        --     return false
-        -- end
 
         local dirX, dirZ = dx / d, dz / d
         self:MoveCC(dirX * (speed or 0), dirZ * (speed or 0))
@@ -1311,7 +1336,7 @@ return Component {
     FaceDirection = function(self, dx, dz)
         --print(string.format("[FaceDirection] dx=%f, dz=%f", dx, dz))
         local q = { yawQuatFromDir(dx, dz) }
-        -- If direction is too small, DO NOT change rotation (prevents “flip/lie down”)
+        -- If direction is too small, DO NOT change rotation (prevents "flip/lie down")
         if #q == 0 then
             return
         end
@@ -1362,7 +1387,7 @@ return Component {
 
     -- Play alert SFX when first detecting player
     PlayAlertSFX = function(self)
-        AudioHelper.playRandomSFX(self._audio, self.enemyAlertSFX,0.4)
+        AudioHelper.playRandomSFX(self._audio, self.enemyAlertSFX, 0.4)
     end,
 
     -- Play hit SFX when attack lands on player (melee or ranged)
@@ -1479,12 +1504,10 @@ return Component {
         local ok3 = knives[3]:Launch(spawnX, spawnY, spawnZ, t2x, t2y, t2z, token, "R")
 
         if not (ok1 and ok2 and ok3) then
-            -- If anything failed, free all three so we never “lose” a side knife.
+            -- If anything failed, free all three so we never "lose" a side knife.
             for i=1,3 do
                 if knives[i] then knives[i]:Reset() end
             end
-            -- print(string.format("[EnemyAI] SpawnKnife FAIL tok=%s ok=(%s,%s,%s)",
-            --     token, tostring(ok1), tostring(ok2), tostring(ok3)))
             return false
         end
 
@@ -1508,74 +1531,165 @@ return Component {
     -- ==========================================================================
     -- AERIAL JUGGLE HELPERS
     -- Called from ApplyHit based on hitType: LIFT / AIR / SLAM
+    -- [v2 FIX] _juggleY accumulator removed. CC owns Y entirely.
+    --          SetJuggleMode disables stickToFloor; mJuggleVY drives ExtendedUpdate.
     -- ==========================================================================
+    -- TODO (Sven): ApplyJuggleLift is disabled — air lift hit detection is inconsistent.
+    -- The enemy does not reliably become airborne when the LIFT attack connects.
+    -- Root cause is suspected to be in how the AttackHitbox collider overlaps at
+    -- the moment of RigidBody enable. Needs engine-level investigation.
     ApplyJuggleLift = function(self)
-        -- Cancel existing knockback so it doesn't fight the lift
+        -- Intentionally left empty until the lift system is revisited.
+        -- _isJuggled remains false, so all downstream juggle logic (AIR, SLAM,
+        -- the juggle physics block in Update) stays inert.
+
+        -- Cancel existing knockback.
         self._kbT = 0
         self._kbVX, self._kbVZ = 0, 0
-        -- Cache ground level so landing detection has a reference
-        local _, y, _ = self:GetPosition()
-        if Nav and Nav.GetGroundY then
-            local g = Nav.GetGroundY(self.entityId)
-            if g ~= nil then self._juggleGroundY = g else self._juggleGroundY = y end
-        else
-            self._juggleGroundY = y
+
+        -- Destroy CC so Jolt CharacterVirtual stops grounding the capsule.
+        if self._controller then
+            pcall(function() CharacterController.DestroyByEntity(self.entityId) end)
+            self._controller = nil
         end
-        self._juggleVY  = tonumber(self.JuggleLiftVelY) or 8.0
-        self._isJuggled = true
-        print(string.format("[EnemyAI] ApplyJuggleLift: juggleVY=%.2f", self._juggleVY or 0))
+
+        -- Disable RigidBody so Jolt stops writing its own position back to the
+        -- transform every physics step. This is the main reason SetPosition was
+        -- being overwritten — CC gone but RB still ticking.
+        if self._rb then
+            pcall(function() self._rb.enabled = false end)
+        end
+
+        -- Only snapshot groundY when launching from the ground.
+        -- Re-lifting an already-airborne enemy must NOT overwrite _juggleGroundY
+        -- with the current mid-air Y, or the landing check triggers immediately.
+        if not self._isJuggled then
+            local _, transformY, _ = self:GetPosition()
+            self._juggleGroundY = transformY or 0
+            self._juggleY       = transformY or 0
+        end
+        -- If already juggled, _juggleGroundY stays at the true floor — only reset velocity.
+        self._juggleVY      = tonumber(self.JuggleLiftVelY) or 8.0
+        self._isJuggled     = true
+        self._juggleAirTime = 0
     end,
 
     ApplyJuggleAirHit = function(self)
-        if not self._isJuggled then return end
-        -- Boost upward so the enemy doesn't fall between air hits
+        if not self._isJuggled then
+            print(string.format("[EnemyAI] AIR hit BLOCKED: enemy is not airborne (isJuggled=false)"))
+            return
+        end
+        self._kbT = 0
+        self._kbVX, self._kbVZ = 0, 0
+        -- Boost upward so the enemy doesn't fall between air hits.
         local boost = tonumber(self.JuggleAirBoost) or 4.0
         self._juggleVY = math.max(self._juggleVY or 0, boost)
-        print(string.format("[EnemyAI] ApplyJuggleAirHit: juggleVY=%.2f", self._juggleVY or 0))
+        -- CC is nil during juggle (v3), no Move call needed.
     end,
 
     ApplyJuggleSlam = function(self)
-        -- Drive enemy straight down at slam speed
-        self._juggleVY  = -(tonumber(self.JuggleSlamVelY) or 20.0)
-        self._isJuggled = true   -- ensure physics block is active even if not previously juggled
-        print(string.format("[EnemyAI] ApplyJuggleSlam: juggleVY=%.2f", self._juggleVY or 0))
-        self._kbT = 0
+        -- SLAM on a non-juggled (grounded) enemy: don't activate the juggle system.
+        -- Driving a grounded enemy underground then snapping back looked like a lift.
+        -- Just apply strong downward knockback visually — no arc needed.
+        if not self._isJuggled then
+            print(string.format("[EnemyAI] SLAM BLOCKED: enemy is not airborne — applying ground knockback instead"))
+            self:ApplyKnockback(self.KnockbackStrength, self.KnockbackDuration)
+            return
+        end
+
+        -- Enemy is airborne: drive them down fast.
+        self._juggleVY      = -(tonumber(self.JuggleSlamVelY) or 20.0)
+        self._kbT           = 0
         self._kbVX, self._kbVZ = 0, 0
+        -- Keep _juggleGroundY from the original lift — don't touch it.
+        -- Keep _juggleAirTime running — don't reset it.
     end,
 
-    ApplyHit = function(self, dmg, hitType)
-        if self.dead then return end
-        if (self._hitLockTimer or 0) > 0 then return end
+    ApplyHit = function(self, dmg, hitType, knockback)
+        if self.dead then
+            print(string.format("[EnemyAI] ApplyHit BLOCKED [%s]: enemy is already dead", tostring(hitType)))
+            return
+        end
+
+        -- Juggle hits (LIFT/AIR/SLAM) must never be gated by the I-frame.
+        -- The combo chain depends on landing these rapidly in sequence.
+        -- iFrame is only meant to prevent stacking on ground hits.
+        local isJuggleHit = (hitType == "LIFT" or hitType == "AIR" or hitType == "SLAM")
+
+        if not isJuggleHit and (self._hitLockTimer or 0) > 0 then
+            print(string.format("[EnemyAI] ApplyHit BLOCKED [%s]: iFrame active (%.3fs remaining)", tostring(hitType), self._hitLockTimer or 0))
+            return
+        end
         if self._featherSkillBufferTimer <= 0 then
             self._hurtTriggeredByFeather = false
         end
 
-        -- Feather hits shouldn't apply I-Frame.
-        if hitType ~= "FEATHER" then
-            self._hitLockTimer = self.config.HitIFrame or 0.1
+        -- Juggle hits also must not set the iFrame, or the next hit in the chain gets blocked.
+        if hitType ~= "FEATHER" and not isJuggleHit then
+            self._hitLockTimer = self.config.HitIFrame or 0.05
         end
 
         self.health = self.health - (dmg or 1)
         print(string.format("[EnemyAI] Remaining health: %d", self.health))
-        self:ApplyKnockback(self.KnockbackStrength, self.KnockbackDuration)
 
-        -- Aerial juggle routing: lift launches the enemy up, air hits maintain
-        -- height, slam drives them to the floor.
-        if hitType == "LIFT" then
-            self:ApplyJuggleLift()
-        elseif hitType == "AIR" then
-            self:ApplyJuggleAirHit()
+        -- Juggle hit types: LIFT/AIR/SLAM are fully owned by the juggle system.
+        -- They MUST return after their juggle call — the hurt FSM block below
+        -- must NOT run for these types. Running it caused:
+        --   SLAM → ForceChange("Hurt") fired on the same frame as the slam velocity
+        --   was set, which under certain timing re-triggered ApplyJuggleLift on the
+        --   Hurt state's next hit event, making the enemy appear to "lift" on slam.
+        -- TODO : LIFT juggle is disabled — behaviour is inconsistent and needs
+        -- investigation. LIFT hits currently fall through to normal hurt/knockback.
+        -- if hitType == "LIFT" then
+        --     self:ApplyJuggleLift()
+        --     ...
+        -- end
+        if hitType == "AIR" then
+            if self:IsFlying() then
+                -- Flying enemy is airborne via hover, not the juggle system.
+                -- Skip juggle boost and fall through to the normal hurt FSM below.
+                print(string.format("[EnemyAI] AIR hit on flying enemy — treating as normal hit"))
+                self:ApplyKnockback(knockback or self.KnockbackStrength, self.KnockbackDuration)
+                -- intentional fall-through: no return here
+            else
+                self:ApplyJuggleAirHit()
+                self:_squashTrigger("horizontal", 0.4)
+                if self.health <= 0 then
+                    self.health = 0
+                    self:_squashTrigger("vertical", 0.5)
+                    AudioHelper.playRandomSFX(self._audio, self.enemyDeathSFX)
+                    if _G.event_bus and _G.event_bus.publish then
+                        _G.event_bus.publish("enemy_died", { entityId = self.entityId })
+                    end
+                    self.fsm:Change("Death", self.states.Death)
+                end
+                return
+            end
         elseif hitType == "SLAM" then
             self:ApplyJuggleSlam()
+            -- No squash here — landing squash fires in the juggle block on touchdown.
+            if self.health <= 0 then
+                self.health = 0
+                self:_squashTrigger("vertical", 0.5)
+                AudioHelper.playRandomSFX(self._audio, self.enemyDeathSFX)
+                if _G.event_bus and _G.event_bus.publish then
+                    _G.event_bus.publish("enemy_died", { entityId = self.entityId })
+                end
+                self.fsm:Change("Death", self.states.Death)
+            end
+            return
+        else
+            -- Ground/combo hits: XZ knockback only.
+            self:ApplyKnockback(knockback or self.KnockbackStrength, self.KnockbackDuration)
         end
-        print(string.format("[EnemyAI] ApplyHit: hitType=%s | isJuggled=%s | juggleVY=%.2f | health=%d", tostring(hitType), tostring(self._isJuggled), self._juggleVY or 0, self.health))
 
         if self.health <= 0 then
             self.health = 0
-            -- Death collapse: vertical squash at half intensity — visible but not cartoony
             self:_squashTrigger("vertical", 0.5)
-            -- Play death SFX
             AudioHelper.playRandomSFX(self._audio, self.enemyDeathSFX)
+            if _G.event_bus and _G.event_bus.publish then
+                _G.event_bus.publish("enemy_died", { entityId = self.entityId })
+            end
             self.fsm:Change("Death", self.states.Death)
             return
         end
@@ -1599,7 +1713,6 @@ return Component {
             if self.fsm.currentName == "Hooked" then
                 return
             end
-            --self._animator:SetBool("Hurt", false)
             self.fsm:ForceChange("Hurt", self.states.Hurt)
         end
 
@@ -1775,7 +1888,7 @@ return Component {
             pcall(function() self._rb.impulseApplied = { x=0, y=0, z=0 } end)
         end
 
-        -- Reset facing cache (avoid “lying down” from stale quat)
+        -- Reset facing cache (avoid "lying down" from stale quat)
         self._lastFacingRot = nil
 
         -- If you use any subscriptions elsewhere, ensure they're removed

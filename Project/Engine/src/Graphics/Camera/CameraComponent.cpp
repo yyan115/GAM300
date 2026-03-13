@@ -59,3 +59,9 @@ REFL_REGISTER_START(CameraComponent)
 	REFL_REGISTER_PROPERTY(envReflectionIntensity)
 REFL_REGISTER_END
 #pragma endregion
+
+void CameraComponent::SetTint(float r, float g, float b)
+{
+	cgTint={ r,g,b };
+	return;
+}

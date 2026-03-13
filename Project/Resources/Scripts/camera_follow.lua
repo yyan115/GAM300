@@ -96,8 +96,8 @@ return Component {
 
         -- === Motion Blur ===
         MotionBlurEnabled   = true,   -- master toggle; set false to disable without removing the system
-        MotionBlurThreshold = 2.0,    -- camera speed (world units/sec) below which no blur is applied
-        MotionBlurMaxSpeed  = 14.0,   -- camera speed at which blur reaches full MotionBlurMaxIntensity
+        MotionBlurThreshold = 3.0,    -- camera speed (world units/sec) below which no blur is applied
+        MotionBlurMaxSpeed  = 22.0,   -- camera speed at which blur reaches full MotionBlurMaxIntensity
 
         -- === Rotation ===
         lockCameraRotation = false,
@@ -314,6 +314,11 @@ return Component {
                 self._targetPos.x, self._targetPos.y, self._targetPos.z))
             self:SetPosition(self._targetPos.x, self._targetPos.y, self._targetPos.z)
             self._teleportToPlayer = false
+            -- FIX: clear last-position so the next frame doesn't measure an
+            -- enormous teleport delta and fire a spurious full-intensity blur spike.
+            self._lastCamX = nil
+            self._lastCamY = nil
+            self._lastCamZ = nil
             return
         end
 
@@ -514,7 +519,7 @@ return Component {
 
         -- ── Motion blur ──────────────────────────────────────────────────────
         -- Measure how far the camera actually moved this frame; publish normalised
-        -- intensity so camera_effects can drive blur without knowing positions.
+        -- intensity and screen-space angle so camera_effects can drive dirBlur correctly.
         if self.MotionBlurEnabled and self._lastCamX then
             local dx    = newX - self._lastCamX
             local dy    = newY - self._lastCamY
@@ -523,8 +528,33 @@ return Component {
             local lo    = self.MotionBlurThreshold or 2.0
             local hi    = self.MotionBlurMaxSpeed  or 14.0
             local intensity = math.max(0.0, math.min(1.0, (speed - lo) / (hi - lo)))
+
+            -- FIX: project the world-space delta onto the camera's screen plane to
+            -- derive the actual blur angle. Without this, dirBlurAngle was always 0
+            -- (blur permanently pointing right regardless of movement direction).
+            -- Uses _G.CAMERA_FWD_* which is normalised and written just above.
+            local cfX = _G.CAMERA_FWD_X or 0
+            local cfY = _G.CAMERA_FWD_Y or 0
+            local cfZ = _G.CAMERA_FWD_Z or 0
+            -- Screen-right = forward × worldUp(0,1,0) = (-fwdZ, 0, fwdX)
+            local rX, rZ = -cfZ, cfX
+            local rLen = math.sqrt(rX*rX + rZ*rZ)
+            local angle = 0
+            if rLen > 0.001 then
+                rX, rZ = rX / rLen, rZ / rLen
+                -- Screen-up = right × forward
+                local uX =  -rZ * cfY
+                local uY =   rZ * cfX - rX * cfZ
+                local uZ =   rX * cfY
+                local sX = dx * rX + dz * rZ            -- dot(delta, screen-right)
+                local sY = dx * uX + dy * uY + dz * uZ  -- dot(delta, screen-up)
+                if math.abs(sX) > 0.0001 or math.abs(sY) > 0.0001 then
+                    angle = math.deg(math.atan2 and math.atan2(sY, sX) or math.atan(sY, sX))
+                end
+            end
+
             if event_bus and event_bus.publish then
-                event_bus.publish("fx_motion_blur", { intensity = intensity })
+                event_bus.publish("fx_motion_blur", { intensity = intensity, angle = angle })
             end
         end
         self._lastCamX = newX
