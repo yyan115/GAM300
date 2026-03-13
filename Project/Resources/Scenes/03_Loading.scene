@@ -761,11 +761,11 @@
                             "data": [
                                 {
                                     "type": "float",
-                                    "data": 1920
+                                    "data": 1950
                                 },
                                 {
                                     "type": "float",
-                                    "data": 1080
+                                    "data": 1100
                                 },
                                 {
                                     "type": "float",
