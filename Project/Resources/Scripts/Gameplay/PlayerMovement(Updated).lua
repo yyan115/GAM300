@@ -1584,34 +1584,43 @@ return Component {
                 self._vaultAscentLock       = false
                 self._airLiftCooldownTimer  = 0
                 self._postLiftAirLock       = 0
-                self._animator:SetBool("IsLifting", false)
-                self._animator:SetBool("IsJumping", false)
-                AudioHelper.playRandomSFX(self._audio, self.playerLandSFX)
 
                 local landPos  = CharacterController.GetPosition(self._controller)
                 local landY    = landPos and landPos.y or 0
                 local fallDist = (self._peakAirY or landY) - landY
 
-                local intensity, hardLand
+                local intensity
                 -- Landing intensity: small hop = 0.3, big drop = 1.0
                 intensity = math.max(0.3, math.min(1.0, fallDist / 3.0))
-                hardLand  = fallDist >= (self.RollHeightThreshold or 2.5) or isMoving
 
-                self:_squashTrigger("vertical", intensity)
-
-                if hardLand then
+                -- Set destination state BEFORE clearing IsJumping so the animator
+                -- sees the correct target condition when IsJumping flips to false.
+                self._animator:SetBool("IsLifting", false)
+                if fallDist >= (self.RollHeightThreshold or 2.5) or isMoving then
+                    -- High fall OR pressing movement keys while landing -> roll
                     self._isRolling  = true
                     self._rollDirX   = self._facingX or 0
                     self._rollDirZ   = self._facingZ or 0
                     self._animator:SetBool("IsRolling", true)
                     self._animator:SetBool("IsRunning", false)
                     self._isRunning  = false
-                else
+                elseif isEffectivelyMoving then
+                    -- Coasting (no keys but still has velocity) -> run directly
                     self._isRolling = false
                     self._animator:SetBool("IsRolling", false)
-                    self._animator:SetBool("IsRunning", isEffectivelyMoving)
-                    self._isRunning = isEffectivelyMoving
+                    self._animator:SetBool("IsRunning", true)
+                    self._isRunning = true
+                else
+                    -- Stationary landing
+                    self._isRolling = false
+                    self._animator:SetBool("IsRolling", false)
+                    self._animator:SetBool("IsRunning", false)
+                    self._isRunning = false
                 end
+                self._animator:SetBool("IsJumping", false)
+
+                self:_squashTrigger("vertical", intensity)
+                AudioHelper.playRandomSFX(self._audio, self.playerLandSFX)
 
             elseif isEffectivelyMoving and not self._isRunning then
                 self._animator:SetBool("IsRunning", true)

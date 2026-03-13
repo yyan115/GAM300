@@ -16,12 +16,12 @@
             "defaultValue": 0.0
         },
         {
-            "name": "IsRunning",
-            "type": "Bool",
+            "name": "Dashed",
+            "type": "Trigger",
             "defaultValue": 0.0
         },
         {
-            "name": "IsDead",
+            "name": "IsRunning",
             "type": "Bool",
             "defaultValue": 0.0
         },
@@ -36,7 +36,7 @@
             "defaultValue": 0.0
         },
         {
-            "name": "IsJumping",
+            "name": "IsDead",
             "type": "Bool",
             "defaultValue": 0.0
         },
@@ -46,12 +46,17 @@
             "defaultValue": 0.0
         },
         {
-            "name": "Attack",
-            "type": "Trigger",
+            "name": "IsJumping",
+            "type": "Bool",
             "defaultValue": 0.0
         },
         {
             "name": "SlamChain",
+            "type": "Trigger",
+            "defaultValue": 0.0
+        },
+        {
+            "name": "Attack",
             "type": "Trigger",
             "defaultValue": 0.0
         },
@@ -67,11 +72,6 @@
         },
         {
             "name": "FeatherSkill",
-            "type": "Trigger",
-            "defaultValue": 0.0
-        },
-        {
-            "name": "Dashed",
             "type": "Trigger",
             "defaultValue": 0.0
         },
@@ -93,6 +93,11 @@
         {
             "name": "RetractChain",
             "type": "Trigger",
+            "defaultValue": 0.0
+        },
+        {
+            "name": "IsLifting",
+            "type": "Bool",
             "defaultValue": 0.0
         },
         {
@@ -121,28 +126,12 @@
             "defaultValue": 0.0
         },
         {
-            "name": "IsLifting",
-            "type": "Bool",
-            "defaultValue": 0.0
-        },
-        {
             "name": "SlamLanded",
             "type": "Trigger",
             "defaultValue": 0.0
         }
     ],
     "states": [
-        {
-            "id": "NA1",
-            "clipIndex": 1,
-            "loop": false,
-            "speed": 2.000000238418579,
-            "crossfadeDuration": 0.0,
-            "nodePosition": {
-                "x": 1052.023193359375,
-                "y": -384.7625427246094
-            }
-        },
         {
             "id": "Idle",
             "clipIndex": 0,
@@ -155,14 +144,14 @@
             }
         },
         {
-            "id": "FeatherLaunchEnd",
-            "clipIndex": 11,
+            "id": "NA1",
+            "clipIndex": 1,
             "loop": false,
-            "speed": 1.0,
-            "crossfadeDuration": 0.20000000298023224,
+            "speed": 2.000000238418579,
+            "crossfadeDuration": 0.0,
             "nodePosition": {
-                "x": 188.404052734375,
-                "y": -623.8199462890625
+                "x": 1052.023193359375,
+                "y": -384.7625427246094
             }
         },
         {
@@ -174,6 +163,17 @@
             "nodePosition": {
                 "x": 275.0,
                 "y": 147.0
+            }
+        },
+        {
+            "id": "FeatherLaunchEnd",
+            "clipIndex": 11,
+            "loop": false,
+            "speed": 1.0,
+            "crossfadeDuration": 0.20000000298023224,
+            "nodePosition": {
+                "x": 188.404052734375,
+                "y": -623.8199462890625
             }
         },
         {
@@ -276,17 +276,6 @@
             }
         },
         {
-            "id": "Air Slam",
-            "clipIndex": 21,
-            "loop": false,
-            "speed": 2.9999992847442627,
-            "crossfadeDuration": 0.20000000298023224,
-            "nodePosition": {
-                "x": 1082.1866455078125,
-                "y": 64.58775329589844
-            }
-        },
-        {
             "id": "ThrowChain",
             "clipIndex": 15,
             "loop": false,
@@ -295,6 +284,17 @@
             "nodePosition": {
                 "x": 224.53451538085938,
                 "y": 252.49636840820313
+            }
+        },
+        {
+            "id": "Air Slam",
+            "clipIndex": 21,
+            "loop": false,
+            "speed": 2.9999992847442627,
+            "crossfadeDuration": 0.20000000298023224,
+            "nodePosition": {
+                "x": 1082.1866455078125,
+                "y": 64.58775329589844
             }
         },
         {
@@ -748,7 +748,7 @@
             "from": "Jump",
             "to": "Roll",
             "anyState": false,
-            "hasExitTime": true,
+            "hasExitTime": false,
             "exitTime": 0.0,
             "transitionDuration": 0.0,
             "conditions": [
@@ -763,7 +763,7 @@
                     "threshold": 0.0
                 },
                 {
-                    "paramName": "IsRunning",
+                    "paramName": "IsRolling",
                     "mode": "Equals",
                     "threshold": 1.0
                 }
@@ -2051,9 +2051,9 @@
             "from": "Jump",
             "to": "Run",
             "anyState": false,
-            "hasExitTime": true,
-            "exitTime": 0.25,
-            "transitionDuration": 0.25999999046325684,
+            "hasExitTime": false,
+            "exitTime": 0.009999999776482582,
+            "transitionDuration": 0.0,
             "conditions": [
                 {
                     "paramName": "IsGrounded",
