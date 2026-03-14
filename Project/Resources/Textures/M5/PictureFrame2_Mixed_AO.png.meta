@@ -1,0 +1,14 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "005ef447ffa90c65-00048204a001a833",
+        "source": "../../Resources/Textures/M5/PictureFrame2_Mixed_AO.png",
+        "compiled": "../../Resources/Textures/M5/PictureFrame2_Mixed_AO.dds"
+    },
+    "TextureMetaData": {
+        "type": "ao",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp"
+    }
+}

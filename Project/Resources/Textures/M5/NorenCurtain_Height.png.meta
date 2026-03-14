@@ -1,0 +1,14 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "005ef447be55c525-000481fb24017a99",
+        "source": "../../Resources/Textures/M5/NorenCurtain_Height.png",
+        "compiled": "../../Resources/Textures/M5/NorenCurtain_Height.dds"
+    },
+    "TextureMetaData": {
+        "type": "height",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp"
+    }
+}
