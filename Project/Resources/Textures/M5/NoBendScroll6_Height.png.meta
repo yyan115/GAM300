@@ -1,0 +1,14 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "0006f5c813a541f9-0004826114001e53",
+        "source": "../../Resources/Textures/M5/NoBendScroll6_Height.png",
+        "compiled": "../../Resources/Textures/M5/NoBendScroll6_Height.dds"
+    },
+    "TextureMetaData": {
+        "type": "height",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp"
+    }
+}
