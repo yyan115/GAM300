@@ -206,6 +206,7 @@ return Component {
         P3_FeatherTargetYOffset = 0.25,   -- aim slightly above ground
 
         P3_DiveCommitRadius = 0.20,       -- how close in XZ before slamming down
+        P3_DivePreDelay = 1.00,           -- how long to wait before the dive smash
         P3_DivePostDelay = 0.50,          -- how long to wait after the dive smash
         P3_FateAfterHookDelay = 2.00,     -- wait after interrupt before casting Fate Sealed
 
@@ -305,6 +306,7 @@ return Component {
         self._meleeCdT = 0
 
         self._p3_dive_postdelay = self.P3_DivePostDelay
+        self._p3_dive_predelay = self.P3_DivePreDelay
 
         self._pendingRainExplosions = {}  -- { {t=seconds, payload=table}, ... }
     end,
@@ -2522,7 +2524,23 @@ return Component {
         -- Approach offset target instead of exact player position
         local dx, dz = d.gx - x, d.gz - z
         local r = self.P3_DiveCommitRadius or 0.20
+
+        -- reached dive position
         if (dx*dx + dz*dz) <= (r*r) then
+
+            -- start predelay timer if first arrival
+            if not self._p3_dive_predelay then
+                self._p3_dive_predelay = self.P3_DivePreDelay or 0.5
+            end
+
+            -- wait in air above player
+            if self._p3_dive_predelay > 0 then
+                self._p3_dive_predelay = self._p3_dive_predelay - dtSec
+                return false
+            end
+
+            -- commit dive
+            self._p3_dive_predelay = nil
             self:BeginSlamDown("DiveSmash")
             return false
         end
@@ -2543,6 +2561,7 @@ return Component {
             self._phase3Dive = nil
             self._slamActive = false
             self._phase3DiveStarted = false
+            self._p3_dive_predelay = nil
 
             local tx,ty,tz = self:_GetAirWaypoint(5)
             local arrived = self:_MoveToXZ_Air(tx,tz,dtSec)
