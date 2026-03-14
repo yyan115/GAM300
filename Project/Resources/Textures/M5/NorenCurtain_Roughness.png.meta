@@ -1,0 +1,14 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "005ef447b1a006c3-000481fb22017a93",
+        "source": "../../Resources/Textures/M5/NorenCurtain_Roughness.png",
+        "compiled": "../../Resources/Textures/M5/NorenCurtain_Roughness.dds"
+    },
+    "TextureMetaData": {
+        "type": "roughness",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp"
+    }
+}

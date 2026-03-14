@@ -1,0 +1,14 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "005ef447c8939fde-000481fb26017a9b",
+        "source": "../../Resources/Textures/M5/NorenCurtain_Base_color.png",
+        "compiled": "../../Resources/Textures/M5/NorenCurtain_Base_color.dds"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp"
+    }
+}
