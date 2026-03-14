@@ -1,7 +1,7 @@
 require("extension.engine_bootstrap")
 local Component = require("extension.mono_helper")
 local TransformMixin = require("extension.transform_mixin")
-
+local AudioHelper = require("extension.audio_helper")
 local event_bus = _G.event_bus
 
 return Component {
@@ -41,7 +41,7 @@ return Component {
                     end
 
                     if self._audio then
-                        self._audio:PlayOneShot(self.featherPickupSFX[1])
+                        AudioHelper.PlayRandomSFX(self._audio, self.featherPickupSFX)
                     end
                 end
             end)

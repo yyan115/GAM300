@@ -5,7 +5,7 @@
 local M = {}
 
 -- ---------------------------------------------------------------------------
--- M.playRandomSFX(audio, clips, volume)
+-- M.PlayRandomSFX(audio, clips, volume)
 -- ---------------------------------------------------------------------------
 -- Play a random clip from clips array, avoiding repeating the last index.
 -- Stores _lastIdx on the clips array itself as a lightweight state slot.
@@ -13,10 +13,10 @@ local M = {}
 -- Returns nil if audio is nil or clips is empty/nil.
 --
 -- Usage:
---   AudioHelper.playRandomSFX(self._audio, self.attackSFXClips)
---   AudioHelper.playRandomSFX(self._audio, self.attackSFXClips, 0.8)
+--   AudioHelper.PlayRandomSFX(self._audio, self.attackSFXClips)
+--   AudioHelper.PlayRandomSFX(self._audio, self.attackSFXClips, 0.8)
 --
-function M.playRandomSFX(audio, clips, volume)
+function M.PlayRandomSFX(audio, clips, volume)
     if not audio or not clips or #clips == 0 then return end
 
     volume = tonumber(volume) or 1.0
@@ -38,7 +38,7 @@ function M.playRandomSFX(audio, clips, volume)
 end
 
 -- ---------------------------------------------------------------------------
--- M.playRandomSFXPitched(audio, clips, pitchVar, volume)
+-- M.Play   RandomSFXPitched(audio, clips, pitchVar, volume)
 -- ---------------------------------------------------------------------------
 -- Play a random clip with pitch variation applied.
 -- pitchVar defaults to 0.1 if not provided.
@@ -46,10 +46,10 @@ end
 -- Optional volume defaults to 1.0 if not specified.
 --
 -- Usage:
---   AudioHelper.playRandomSFXPitched(self._audio, self.attackSFXClips, 0.15)
---   AudioHelper.playRandomSFXPitched(self._audio, self.attackSFXClips, 0.15, 0.8)
+--   AudioHelper.PlayRandomSFXPitched(self._audio, self.attackSFXClips, 0.15)
+--   AudioHelper.PlayRandomSFXPitched(self._audio, self.attackSFXClips, 0.15, 0.8)
 --
-function M.playRandomSFXPitched(audio, clips, pitchVar, volume)
+function M.PlayRandomSFXPitched(audio, clips, pitchVar, volume)
     if not audio or not clips or #clips == 0 then return end
 
     pitchVar = tonumber(pitchVar) or 0.1

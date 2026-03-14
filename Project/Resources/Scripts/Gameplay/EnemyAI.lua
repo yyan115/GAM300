@@ -227,6 +227,10 @@ return Component {
         enemyMeleeHitSFX     = {},         -- Hit impact when melee lands on player.
         enemyRangedAttackSFX = {},         -- Throw whoosh for ranged enemies.
         enemyRangedHitSFX    = {},         -- Impact when ranged projectile lands on player.
+        enemyFootstepSFX          = {},    -- Step sounds while moving on ground.
+        enemyGroundSlamSFX        = {},    -- Impact when enemy hits the ground (juggle land / hook slam).
+        PatrolFootstepInterval    = 0.5,   -- Seconds between footstep sounds during patrol (WalkPatrol anim).
+        ChaseFootstepInterval     = 0.35,  -- Seconds between footstep sounds during chase (Chase anim).
     },
 
     Awake = function(self)
@@ -272,8 +276,7 @@ return Component {
         self._acc = 0
         self._vy = 0
 
-        self._prevX = nil
-        self._prevZ = nil
+        self._alertSFXCooldown = 0
     end,
 
     Start = function(self)
@@ -502,6 +505,7 @@ return Component {
         local dtSec = toDtSec(dt)
         self._hitLockTimer = math.max(0, (self._hitLockTimer or 0) - dtSec)
         self._featherSkillBufferTimer = math.max(0, (self._featherSkillBufferTimer or 0) - dtSec)
+        self._alertSFXCooldown = math.max(0, (self._alertSFXCooldown or 0) - dtSec)
 
         -- ── Squash & stretch ──────────────────────────────────────────────────
         -- Modes:
@@ -1309,6 +1313,7 @@ return Component {
             self:_squashTrigger("vertical", 0.8)
             print("[EnemyAI] SLAMMED")
             self._animator:SetTrigger("Slammed")
+            AudioHelper.PlayRandomSFX(self._audio, self.enemyGroundSlamSFX)
             
         --Publish VFX EVENT (GroundSlamVFX)
             if _G.event_bus and _G.event_bus.publish then
@@ -1379,23 +1384,29 @@ return Component {
     -- Play attack SFX (melee or ranged based on IsMelee flag)
     PlayAttackSFX = function(self)
         if self.IsMelee then
-            AudioHelper.playRandomSFX(self._audio, self.enemyMeleeAttackSFX)
+            AudioHelper.PlayRandomSFX(self._audio, self.enemyMeleeAttackSFX)
         else
-            AudioHelper.playRandomSFX(self._audio, self.enemyRangedAttackSFX)
+            AudioHelper.PlayRandomSFX(self._audio, self.enemyRangedAttackSFX)
         end
     end,
 
-    -- Play alert SFX when first detecting player
+    -- Play alert SFX when first detecting player (30-second cooldown)
     PlayAlertSFX = function(self)
-        AudioHelper.playRandomSFX(self._audio, self.enemyAlertSFX, 0.4)
+        if (self._alertSFXCooldown or 0) > 0 then return end
+        self._alertSFXCooldown = 30
+        AudioHelper.PlayRandomSFX(self._audio, self.enemyAlertSFX, 0.4)
+    end,
+
+    PlayFootstepSFX = function(self)
+        AudioHelper.PlayRandomSFX(self._audio, self.enemyFootstepSFX, 0.6)
     end,
 
     -- Play hit SFX when attack lands on player (melee or ranged)
     PlayHitSFX = function(self)
         if self.IsMelee then
-            AudioHelper.playRandomSFX(self._audio, self.enemyMeleeHitSFX)
+            AudioHelper.PlayRandomSFX(self._audio, self.enemyMeleeHitSFX)
         else
-            AudioHelper.playRandomSFX(self._audio, self.enemyRangedHitSFX)
+            AudioHelper.PlayRandomSFX(self._audio, self.enemyRangedHitSFX)
         end
     end,
 
@@ -1447,7 +1458,7 @@ return Component {
         end
 
         -- Play ranged attack SFX when throwing knives
-        AudioHelper.playRandomSFX(self._audio, self.enemyRangedAttackSFX)
+        AudioHelper.PlayRandomSFX(self._audio, self.enemyRangedAttackSFX)
 
         local ex, ey, ez = self:GetPosition()
         -- Safety check: if position is nil, skip spawning
@@ -1657,7 +1668,7 @@ return Component {
                 if self.health <= 0 then
                     self.health = 0
                     self:_squashTrigger("vertical", 0.5)
-                    AudioHelper.playRandomSFX(self._audio, self.enemyDeathSFX)
+                    AudioHelper.PlayRandomSFX(self._audio, self.enemyDeathSFX)
                     if _G.event_bus and _G.event_bus.publish then
                         _G.event_bus.publish("enemy_died", { entityId = self.entityId })
                     end
@@ -1671,7 +1682,7 @@ return Component {
             if self.health <= 0 then
                 self.health = 0
                 self:_squashTrigger("vertical", 0.5)
-                AudioHelper.playRandomSFX(self._audio, self.enemyDeathSFX)
+                AudioHelper.PlayRandomSFX(self._audio, self.enemyDeathSFX)
                 if _G.event_bus and _G.event_bus.publish then
                     _G.event_bus.publish("enemy_died", { entityId = self.entityId })
                 end
@@ -1686,7 +1697,7 @@ return Component {
         if self.health <= 0 then
             self.health = 0
             self:_squashTrigger("vertical", 0.5)
-            AudioHelper.playRandomSFX(self._audio, self.enemyDeathSFX)
+            AudioHelper.PlayRandomSFX(self._audio, self.enemyDeathSFX)
             if _G.event_bus and _G.event_bus.publish then
                 _G.event_bus.publish("enemy_died", { entityId = self.entityId })
             end
@@ -1708,7 +1719,7 @@ return Component {
             end
 
             -- Play hurt SFX (only if not dead)
-            AudioHelper.playRandomSFX(self._audio, self.enemyHurtSFX)
+            AudioHelper.PlayRandomSFX(self._audio, self.enemyHurtSFX)
 
             if self.fsm.currentName == "Hooked" then
                 return

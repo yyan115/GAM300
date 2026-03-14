@@ -7,6 +7,7 @@ function ChaseState:Enter(ai)
     ai._animator:SetBool("PatrolEnabled", true)
     ai._animator:SetBool("PlayerInDetectionRange", true)
     ai._pathRepathT = (ai.PathRepathInterval or 0.45)
+    ai._footstepTimer = 0
 
     -- Play alert SFX once when first detecting player (entering chase)
     ai:PlayAlertSFX()
@@ -25,7 +26,6 @@ function ChaseState:Update(ai, dt)
     -- Too far -> Patrol
     if d2 > (diseng * diseng) then
         ai:StopCC()
-        ai._alertSFXPlayed = false
         ai.fsm:Change("Patrol", ai.states.Patrol)
         return
     end
@@ -33,10 +33,9 @@ function ChaseState:Update(ai, dt)
     if ai.IsMelee then
         if d2 < (meleeR * meleeR) then
             ai:StopCC()
-            if not ai.IsPassive then 
+            if not ai.IsPassive then
                 ai.fsm:Change("Attack", ai.states.Attack)
             else
-                ai._alertSFXPlayed = false
                 ai.fsm:Change("Idle", ai.states.Idle)
             end
             return
@@ -44,10 +43,9 @@ function ChaseState:Update(ai, dt)
     else
         if d2 <= (attackR * attackR) then
             ai:StopCC()
-            if not ai.IsPassive then 
+            if not ai.IsPassive then
                 ai.fsm:Change("Attack", ai.states.Attack)
             else
-                ai._alertSFXPlayed = false
                 ai.fsm:Change("Idle", ai.states.Idle)
             end
             return
@@ -85,8 +83,15 @@ function ChaseState:Update(ai, dt)
     -- If we "arrived" but still not in attack range (can happen if path ends early), do a soft fallback
     if arrived then
         ai:StopCC()
+        ai._footstepTimer = 0
         -- optional: face player for aiming
         ai:FacePlayer()
+    else
+        ai._footstepTimer = (ai._footstepTimer or 0) + dtSec
+        if ai._footstepTimer >= (ai.ChaseFootstepInterval or 0.35) then
+            ai._footstepTimer = 0
+            ai:PlayFootstepSFX()
+        end
     end
 end
 

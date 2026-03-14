@@ -1,15 +1,15 @@
 {
     "prefab_entities": [
         {
-            "id": 1536,
-            "guid": "004d131e714bf0c2-00047bfc04020cc1",
+            "id": 0,
+            "guid": "000fc0b7ed0f5a14-000482cd2400acb5",
             "components": {
                 "PrefabLinkComponent": {
                     "type": "PrefabLinkComponent",
                     "data": [
                         {
                             "type": "std::string",
-                            "data": "../../Resources/Prefabs/FinalFlyingEnemy.prefab"
+                            "data": "../../Resources/Prefabs/V2FinalFlyingEnemy.prefab"
                         }
                     ]
                 },
@@ -188,12 +188,82 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "004d131e681b9471-00047bfc04020cc3",
-                                "004d131e6fbb82ae-00047bfc04020cdb",
-                                "004d131e17e9501b-00047bfc04020d99",
-                                "004d131e38f1702a-00047bfc04020d9b",
-                                "004d131e6b61007b-00047bfc04020d9d"
+                                "000fc0b7b3fd66c6-000482cd2400acb7",
+                                "000fc0b794791ce8-000482cd2400accf",
+                                "000fc0b7da4dc08f-000482cd2400ad8d",
+                                "000fc0b7b66fab0b-000482cd2400ad8f",
+                                "000fc0b7a7d4dcec-000482cd2400ad91"
                             ]
+                        }
+                    ]
+                },
+                "AudioComponent": {
+                    "type": "AudioComponent",
+                    "data": [
+                        {
+                            "type": "bool",
+                            "data": true
+                        },
+                        "0000000000000000-0000000000000000",
+                        {
+                            "type": "bool",
+                            "data": false
+                        },
+                        {
+                            "type": "bool",
+                            "data": false
+                        },
+                        {
+                            "type": "bool",
+                            "data": false
+                        },
+                        {
+                            "type": "bool",
+                            "data": false
+                        },
+                        {
+                            "type": "int",
+                            "data": 128
+                        },
+                        {
+                            "type": "float",
+                            "data": 1
+                        },
+                        {
+                            "type": "float",
+                            "data": 1
+                        },
+                        {
+                            "type": "float",
+                            "data": 0
+                        },
+                        {
+                            "type": "float",
+                            "data": 1
+                        },
+                        {
+                            "type": "bool",
+                            "data": true
+                        },
+                        {
+                            "type": "float",
+                            "data": 1
+                        },
+                        {
+                            "type": "float",
+                            "data": 1
+                        },
+                        {
+                            "type": "float",
+                            "data": 5
+                        },
+                        {
+                            "type": "float",
+                            "data": 10
+                        },
+                        {
+                            "type": "std::string",
+                            "data": "SFX"
                         }
                     ]
                 },
@@ -377,7 +447,7 @@
                         },
                         {
                             "type": "int",
-                            "data": 14
+                            "data": 12
                         },
                         {
                             "type": "std::vector<std::string>",
@@ -396,10 +466,6 @@
                                 },
                                 {
                                     "type": "std::string",
-                                    "data": "Resources/Animations/Enemy/Flying/KarasuFlying@IdleRangedGround.fbx"
-                                },
-                                {
-                                    "type": "std::string",
                                     "data": "Resources/Animations/Enemy/Flying/KarasuFlying@Hurt1.fbx"
                                 },
                                 {
@@ -409,10 +475,6 @@
                                 {
                                     "type": "std::string",
                                     "data": "Resources/Animations/Enemy/Flying/KarasuFlying@Hurt3.fbx"
-                                },
-                                {
-                                    "type": "std::string",
-                                    "data": "Resources/Animations/Enemy/Flying/KarasuFlying@FlyPatrol.fbx"
                                 },
                                 {
                                     "type": "std::string",
@@ -454,9 +516,7 @@
                                 "0021c38444377bf9-00046c18b8001b55",
                                 "0021c38434a32115-00046c0bb2001b31",
                                 "0021c3842a9d65b1-00046c18b4001b51",
-                                "0021c38470b101d2-00046c18a2001b39",
-                                "006bd5bb69f77e3d-00046ab568000005",
-                                "0021c3844c50e2ce-00046c05ee001b2d"
+                                "0021c38470b101d2-00046c18a2001b39"
                             ]
                         },
                         {
@@ -715,11 +775,7 @@
                                 "KnockbackStrength": 12.0,
                                 "AttackCooldown": 1.45,
                                 "BuildStateProfile": null,
-                                "enemyDeathSFX": [
-                                    "00612e33b44b692b-0004202e36000001",
-                                    "00612e33fe0848fe-0004202e36000003",
-                                    "00612e33fe9002ea-0004202e36000005"
-                                ],
+                                "SetPath": null,
                                 "HookStaggerTime": 1.0,
                                 "HookStaggerSpeed": 50.0,
                                 "MeleeSpeed": 0.9,
@@ -744,7 +800,19 @@
                                 "ClipIdle": 0.0,
                                 "IsMelee": false,
                                 "SetPosition": null,
-                                "SetPath": null
+                                "enemyDeathSFX": [
+                                    "0078994fecd9fbf6-00047bfe4c000001",
+                                    "0078994fb11b9c0e-00047bfe4c000003",
+                                    "0078994f9a21411d-00047bfe4c000005",
+                                    "0078994ffb52bcfd-00047bfe4c000007",
+                                    "0078994fecfd6d67-00047bfe4c000009"
+                                ],
+                                "enemyGroundSlamSFX": [
+                                    "0017237d57a08b0a-0004822e8600001d",
+                                    "0017237d79490a5c-0004822e8600001f",
+                                    "0017237d5101cb60-0004822e86000021",
+                                    "0017237d0bea1336-0004822e86000023"
+                                ]
                             }
                         }
                     ]
@@ -752,8 +820,8 @@
             }
         },
         {
-            "id": 1537,
-            "guid": "004d131e681b9471-00047bfc04020cc3",
+            "id": 1,
+            "guid": "000fc0b7b3fd66c6-000482cd2400acb7",
             "components": {
                 "NameComponent": {
                     "name": "Enemy_G"
@@ -833,17 +901,17 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "004d131e1e23a07e-00047bfc04020cc5",
-                                "004d131e1a78c65b-00047bfc04020cc7",
-                                "004d131e6e31b30e-00047bfc04020cc9",
-                                "004d131e53563650-00047bfc04020ccb",
-                                "004d131e6b8e5596-00047bfc04020ccd",
-                                "004d131e7f5b088f-00047bfc04020ccf",
-                                "004d131e384d6155-00047bfc04020cd1",
-                                "004d131e4774b314-00047bfc04020cd3",
-                                "004d131e37688240-00047bfc04020cd5",
-                                "004d131e6e5fbc82-00047bfc04020cd7",
-                                "004d131e274c740b-00047bfc04020cd9"
+                                "000fc0b7926ce2d2-000482cd2400acb9",
+                                "000fc0b7e22cde75-000482cd2400acbb",
+                                "000fc0b7bccda6ad-000482cd2400acbd",
+                                "000fc0b7fa5a524d-000482cd2400acbf",
+                                "000fc0b7c0a2e1c1-000482cd2400acc1",
+                                "000fc0b7bffcbbb0-000482cd2400acc3",
+                                "000fc0b7a9db9131-000482cd2400acc5",
+                                "000fc0b7a66d0c9c-000482cd2400acc7",
+                                "000fc0b787ce336e-000482cd2400acc9",
+                                "000fc0b78db1dfb1-000482cd2400accb",
+                                "000fc0b78b207227-000482cd2400accd"
                             ]
                         }
                     ]
@@ -851,7 +919,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004d131e714bf0c2-00047bfc04020cc1"
+                        "000fc0b7ed0f5a14-000482cd2400acb5"
                     ]
                 },
                 "ActiveComponent": {
@@ -866,8 +934,8 @@
             }
         },
         {
-            "id": 1538,
-            "guid": "004d131e1e23a07e-00047bfc04020cc5",
+            "id": 2,
+            "guid": "000fc0b7926ce2d2-000482cd2400acb9",
             "components": {
                 "NameComponent": {
                     "name": "Eye"
@@ -944,7 +1012,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004d131e681b9471-00047bfc04020cc3"
+                        "000fc0b7b3fd66c6-000482cd2400acb7"
                     ]
                 },
                 "ActiveComponent": {
@@ -959,8 +1027,8 @@
             }
         },
         {
-            "id": 1539,
-            "guid": "004d131e1a78c65b-00047bfc04020cc7",
+            "id": 3,
+            "guid": "000fc0b7e22cde75-000482cd2400acbb",
             "components": {
                 "NameComponent": {
                     "name": "Head"
@@ -1037,7 +1105,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004d131e681b9471-00047bfc04020cc3"
+                        "000fc0b7b3fd66c6-000482cd2400acb7"
                     ]
                 },
                 "ActiveComponent": {
@@ -1052,8 +1120,8 @@
             }
         },
         {
-            "id": 1540,
-            "guid": "004d131e6e31b30e-00047bfc04020cc9",
+            "id": 4,
+            "guid": "000fc0b7bccda6ad-000482cd2400acbd",
             "components": {
                 "NameComponent": {
                     "name": "Shirt"
@@ -1130,7 +1198,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004d131e681b9471-00047bfc04020cc3"
+                        "000fc0b7b3fd66c6-000482cd2400acb7"
                     ]
                 },
                 "ActiveComponent": {
@@ -1145,8 +1213,8 @@
             }
         },
         {
-            "id": 1541,
-            "guid": "004d131e53563650-00047bfc04020ccb",
+            "id": 5,
+            "guid": "000fc0b7fa5a524d-000482cd2400acbf",
             "components": {
                 "NameComponent": {
                     "name": "Pants"
@@ -1223,7 +1291,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004d131e681b9471-00047bfc04020cc3"
+                        "000fc0b7b3fd66c6-000482cd2400acb7"
                     ]
                 },
                 "ActiveComponent": {
@@ -1238,8 +1306,8 @@
             }
         },
         {
-            "id": 1542,
-            "guid": "004d131e6b8e5596-00047bfc04020ccd",
+            "id": 6,
+            "guid": "000fc0b7c0a2e1c1-000482cd2400acc1",
             "components": {
                 "NameComponent": {
                     "name": "Outer"
@@ -1316,7 +1384,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004d131e681b9471-00047bfc04020cc3"
+                        "000fc0b7b3fd66c6-000482cd2400acb7"
                     ]
                 },
                 "ActiveComponent": {
@@ -1331,8 +1399,8 @@
             }
         },
         {
-            "id": 1543,
-            "guid": "004d131e7f5b088f-00047bfc04020ccf",
+            "id": 7,
+            "guid": "000fc0b7bffcbbb0-000482cd2400acc3",
             "components": {
                 "NameComponent": {
                     "name": "Body"
@@ -1409,7 +1477,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004d131e681b9471-00047bfc04020cc3"
+                        "000fc0b7b3fd66c6-000482cd2400acb7"
                     ]
                 },
                 "ActiveComponent": {
@@ -1424,8 +1492,8 @@
             }
         },
         {
-            "id": 1544,
-            "guid": "004d131e384d6155-00047bfc04020cd1",
+            "id": 8,
+            "guid": "000fc0b7a9db9131-000482cd2400acc5",
             "components": {
                 "NameComponent": {
                     "name": "Beak"
@@ -1502,7 +1570,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004d131e681b9471-00047bfc04020cc3"
+                        "000fc0b7b3fd66c6-000482cd2400acb7"
                     ]
                 },
                 "ActiveComponent": {
@@ -1517,8 +1585,8 @@
             }
         },
         {
-            "id": 1545,
-            "guid": "004d131e4774b314-00047bfc04020cd3",
+            "id": 9,
+            "guid": "000fc0b7a66d0c9c-000482cd2400acc7",
             "components": {
                 "NameComponent": {
                     "name": "Wings"
@@ -1595,7 +1663,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004d131e681b9471-00047bfc04020cc3"
+                        "000fc0b7b3fd66c6-000482cd2400acb7"
                     ]
                 },
                 "ActiveComponent": {
@@ -1610,8 +1678,8 @@
             }
         },
         {
-            "id": 1546,
-            "guid": "004d131e37688240-00047bfc04020cd5",
+            "id": 10,
+            "guid": "000fc0b787ce336e-000482cd2400acc9",
             "components": {
                 "NameComponent": {
                     "name": "Ribbon"
@@ -1688,7 +1756,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004d131e681b9471-00047bfc04020cc3"
+                        "000fc0b7b3fd66c6-000482cd2400acb7"
                     ]
                 },
                 "ActiveComponent": {
@@ -1703,8 +1771,8 @@
             }
         },
         {
-            "id": 1547,
-            "guid": "004d131e6e5fbc82-00047bfc04020cd7",
+            "id": 11,
+            "guid": "000fc0b78db1dfb1-000482cd2400accb",
             "components": {
                 "NameComponent": {
                     "name": "Obi"
@@ -1781,7 +1849,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004d131e681b9471-00047bfc04020cc3"
+                        "000fc0b7b3fd66c6-000482cd2400acb7"
                     ]
                 },
                 "ActiveComponent": {
@@ -1796,8 +1864,8 @@
             }
         },
         {
-            "id": 1548,
-            "guid": "004d131e274c740b-00047bfc04020cd9",
+            "id": 12,
+            "guid": "000fc0b78b207227-000482cd2400accd",
             "components": {
                 "NameComponent": {
                     "name": "Armour"
@@ -1874,7 +1942,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004d131e681b9471-00047bfc04020cc3"
+                        "000fc0b7b3fd66c6-000482cd2400acb7"
                     ]
                 },
                 "ActiveComponent": {
@@ -1889,8 +1957,8 @@
             }
         },
         {
-            "id": 1549,
-            "guid": "004d131e6fbb82ae-00047bfc04020cdb",
+            "id": 13,
+            "guid": "000fc0b794791ce8-000482cd2400accf",
             "components": {
                 "NameComponent": {
                     "name": "Enemy_new_Reference"
@@ -1970,7 +2038,7 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "004d131e55dc2085-00047bfc04020cdd"
+                                "000fc0b7b4618ce7-000482cd2400acd1"
                             ]
                         }
                     ]
@@ -1978,7 +2046,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004d131e714bf0c2-00047bfc04020cc1"
+                        "000fc0b7ed0f5a14-000482cd2400acb5"
                     ]
                 },
                 "ActiveComponent": {
@@ -1993,8 +2061,8 @@
             }
         },
         {
-            "id": 1550,
-            "guid": "004d131e55dc2085-00047bfc04020cdd",
+            "id": 14,
+            "guid": "000fc0b7b4618ce7-000482cd2400acd1",
             "components": {
                 "NameComponent": {
                     "name": "Enemy_new_Hips"
@@ -2074,9 +2142,9 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "004d131e4c614f08-00047bfc04020cdf",
-                                "004d131e169433ad-00047bfc04020cfd",
-                                "004d131e75e3574a-00047bfc04020d1b"
+                                "000fc0b7b11946db-000482cd2400acd3",
+                                "000fc0b7f058ebac-000482cd2400acf1",
+                                "000fc0b78135d340-000482cd2400ad0f"
                             ]
                         }
                     ]
@@ -2084,7 +2152,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004d131e6fbb82ae-00047bfc04020cdb"
+                        "000fc0b794791ce8-000482cd2400accf"
                     ]
                 },
                 "RigidBodyComponent": {
@@ -2258,8 +2326,8 @@
             }
         },
         {
-            "id": 1551,
-            "guid": "004d131e4c614f08-00047bfc04020cdf",
+            "id": 15,
+            "guid": "000fc0b7b11946db-000482cd2400acd3",
             "components": {
                 "NameComponent": {
                     "name": "Enemy_new_LeftUpLeg"
@@ -2339,7 +2407,7 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "004d131e7b84b722-00047bfc04020ce1"
+                                "000fc0b7a78ecd87-000482cd2400acd5"
                             ]
                         }
                     ]
@@ -2347,7 +2415,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004d131e55dc2085-00047bfc04020cdd"
+                        "000fc0b7b4618ce7-000482cd2400acd1"
                     ]
                 },
                 "ActiveComponent": {
@@ -2362,8 +2430,8 @@
             }
         },
         {
-            "id": 1552,
-            "guid": "004d131e7b84b722-00047bfc04020ce1",
+            "id": 16,
+            "guid": "000fc0b7a78ecd87-000482cd2400acd5",
             "components": {
                 "NameComponent": {
                     "name": "Enemy_new_LeftLeg"
@@ -2443,7 +2511,7 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "004d131e7b337cad-00047bfc04020ce3"
+                                "000fc0b7da028608-000482cd2400acd7"
                             ]
                         }
                     ]
@@ -2451,7 +2519,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004d131e4c614f08-00047bfc04020cdf"
+                        "000fc0b7b11946db-000482cd2400acd3"
                     ]
                 },
                 "RigidBodyComponent": {
@@ -2625,8 +2693,8 @@
             }
         },
         {
-            "id": 1553,
-            "guid": "004d131e7b337cad-00047bfc04020ce3",
+            "id": 17,
+            "guid": "000fc0b7da028608-000482cd2400acd7",
             "components": {
                 "NameComponent": {
                     "name": "Enemy_new_LeftFoot"
@@ -2706,10 +2774,10 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "004d131e5ed7239c-00047bfc04020ce5",
-                                "004d131e512de377-00047bfc04020ceb",
-                                "004d131e5e7b2b7a-00047bfc04020cf1",
-                                "004d131e5bca481b-00047bfc04020cf7"
+                                "000fc0b7f9c7d819-000482cd2400acd9",
+                                "000fc0b7b776813c-000482cd2400acdf",
+                                "000fc0b7ba1900d7-000482cd2400ace5",
+                                "000fc0b7f0c2f24a-000482cd2400aceb"
                             ]
                         }
                     ]
@@ -2717,7 +2785,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004d131e7b84b722-00047bfc04020ce1"
+                        "000fc0b7a78ecd87-000482cd2400acd5"
                     ]
                 },
                 "ActiveComponent": {
@@ -2732,8 +2800,8 @@
             }
         },
         {
-            "id": 1554,
-            "guid": "004d131e5ed7239c-00047bfc04020ce5",
+            "id": 18,
+            "guid": "000fc0b7f9c7d819-000482cd2400acd9",
             "components": {
                 "NameComponent": {
                     "name": "LefttToe01_01"
@@ -2813,7 +2881,7 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "004d131e159b5423-00047bfc04020ce7"
+                                "000fc0b7ec8513ba-000482cd2400acdb"
                             ]
                         }
                     ]
@@ -2821,7 +2889,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004d131e7b337cad-00047bfc04020ce3"
+                        "000fc0b7da028608-000482cd2400acd7"
                     ]
                 },
                 "ActiveComponent": {
@@ -2836,8 +2904,8 @@
             }
         },
         {
-            "id": 1555,
-            "guid": "004d131e159b5423-00047bfc04020ce7",
+            "id": 19,
+            "guid": "000fc0b7ec8513ba-000482cd2400acdb",
             "components": {
                 "NameComponent": {
                     "name": "LefttToe01_02"
@@ -2917,7 +2985,7 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "004d131e1aa7ea56-00047bfc04020ce9"
+                                "000fc0b7d28efff3-000482cd2400acdd"
                             ]
                         }
                     ]
@@ -2925,7 +2993,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004d131e5ed7239c-00047bfc04020ce5"
+                        "000fc0b7f9c7d819-000482cd2400acd9"
                     ]
                 },
                 "ActiveComponent": {
@@ -2940,8 +3008,8 @@
             }
         },
         {
-            "id": 1556,
-            "guid": "004d131e1aa7ea56-00047bfc04020ce9",
+            "id": 20,
+            "guid": "000fc0b7d28efff3-000482cd2400acdd",
             "components": {
                 "NameComponent": {
                     "name": "LefttToe01_03"
@@ -3018,7 +3086,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004d131e159b5423-00047bfc04020ce7"
+                        "000fc0b7ec8513ba-000482cd2400acdb"
                     ]
                 },
                 "ActiveComponent": {
@@ -3033,8 +3101,8 @@
             }
         },
         {
-            "id": 1557,
-            "guid": "004d131e512de377-00047bfc04020ceb",
+            "id": 21,
+            "guid": "000fc0b7b776813c-000482cd2400acdf",
             "components": {
                 "NameComponent": {
                     "name": "LefttToe2_01"
@@ -3114,7 +3182,7 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "004d131e2a95a182-00047bfc04020ced"
+                                "000fc0b7f637da9a-000482cd2400ace1"
                             ]
                         }
                     ]
@@ -3122,7 +3190,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004d131e7b337cad-00047bfc04020ce3"
+                        "000fc0b7da028608-000482cd2400acd7"
                     ]
                 },
                 "ActiveComponent": {
@@ -3137,8 +3205,8 @@
             }
         },
         {
-            "id": 1558,
-            "guid": "004d131e2a95a182-00047bfc04020ced",
+            "id": 22,
+            "guid": "000fc0b7f637da9a-000482cd2400ace1",
             "components": {
                 "NameComponent": {
                     "name": "LefttToe2_02"
@@ -3218,7 +3286,7 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "004d131e19f22a0a-00047bfc04020cef"
+                                "000fc0b7d2ed5665-000482cd2400ace3"
                             ]
                         }
                     ]
@@ -3226,7 +3294,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004d131e512de377-00047bfc04020ceb"
+                        "000fc0b7b776813c-000482cd2400acdf"
                     ]
                 },
                 "ActiveComponent": {
@@ -3241,8 +3309,8 @@
             }
         },
         {
-            "id": 1559,
-            "guid": "004d131e19f22a0a-00047bfc04020cef",
+            "id": 23,
+            "guid": "000fc0b7d2ed5665-000482cd2400ace3",
             "components": {
                 "NameComponent": {
                     "name": "LefttToe2_03"
@@ -3319,7 +3387,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004d131e2a95a182-00047bfc04020ced"
+                        "000fc0b7f637da9a-000482cd2400ace1"
                     ]
                 },
                 "ActiveComponent": {
@@ -3334,8 +3402,8 @@
             }
         },
         {
-            "id": 1560,
-            "guid": "004d131e5e7b2b7a-00047bfc04020cf1",
+            "id": 24,
+            "guid": "000fc0b7ba1900d7-000482cd2400ace5",
             "components": {
                 "NameComponent": {
                     "name": "LefttToe3_01"
@@ -3415,7 +3483,7 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "004d131e5df22f61-00047bfc04020cf3"
+                                "000fc0b7be09f378-000482cd2400ace7"
                             ]
                         }
                     ]
@@ -3423,7 +3491,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004d131e7b337cad-00047bfc04020ce3"
+                        "000fc0b7da028608-000482cd2400acd7"
                     ]
                 },
                 "ActiveComponent": {
@@ -3438,8 +3506,8 @@
             }
         },
         {
-            "id": 1561,
-            "guid": "004d131e5df22f61-00047bfc04020cf3",
+            "id": 25,
+            "guid": "000fc0b7be09f378-000482cd2400ace7",
             "components": {
                 "NameComponent": {
                     "name": "LefttToe3_02"
@@ -3519,7 +3587,7 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "004d131e0105383f-00047bfc04020cf5"
+                                "000fc0b7efc57d96-000482cd2400ace9"
                             ]
                         }
                     ]
@@ -3527,7 +3595,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004d131e5e7b2b7a-00047bfc04020cf1"
+                        "000fc0b7ba1900d7-000482cd2400ace5"
                     ]
                 },
                 "ActiveComponent": {
@@ -3542,8 +3610,8 @@
             }
         },
         {
-            "id": 1562,
-            "guid": "004d131e0105383f-00047bfc04020cf5",
+            "id": 26,
+            "guid": "000fc0b7efc57d96-000482cd2400ace9",
             "components": {
                 "NameComponent": {
                     "name": "LefttToe3_03"
@@ -3620,7 +3688,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004d131e5df22f61-00047bfc04020cf3"
+                        "000fc0b7be09f378-000482cd2400ace7"
                     ]
                 },
                 "ActiveComponent": {
@@ -3635,8 +3703,8 @@
             }
         },
         {
-            "id": 1563,
-            "guid": "004d131e5bca481b-00047bfc04020cf7",
+            "id": 27,
+            "guid": "000fc0b7f0c2f24a-000482cd2400aceb",
             "components": {
                 "NameComponent": {
                     "name": "LefttToe4_01"
@@ -3716,7 +3784,7 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "004d131e0c59dc0a-00047bfc04020cf9"
+                                "000fc0b79df2f70c-000482cd2400aced"
                             ]
                         }
                     ]
@@ -3724,7 +3792,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004d131e7b337cad-00047bfc04020ce3"
+                        "000fc0b7da028608-000482cd2400acd7"
                     ]
                 },
                 "ActiveComponent": {
@@ -3739,8 +3807,8 @@
             }
         },
         {
-            "id": 1564,
-            "guid": "004d131e0c59dc0a-00047bfc04020cf9",
+            "id": 28,
+            "guid": "000fc0b79df2f70c-000482cd2400aced",
             "components": {
                 "NameComponent": {
                     "name": "LefttToe4_02"
@@ -3820,7 +3888,7 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "004d131e50c94c57-00047bfc04020cfb"
+                                "000fc0b78afcf4c7-000482cd2400acef"
                             ]
                         }
                     ]
@@ -3828,7 +3896,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004d131e5bca481b-00047bfc04020cf7"
+                        "000fc0b7f0c2f24a-000482cd2400aceb"
                     ]
                 },
                 "ActiveComponent": {
@@ -3843,8 +3911,8 @@
             }
         },
         {
-            "id": 1565,
-            "guid": "004d131e50c94c57-00047bfc04020cfb",
+            "id": 29,
+            "guid": "000fc0b78afcf4c7-000482cd2400acef",
             "components": {
                 "NameComponent": {
                     "name": "LefttToe4_03"
@@ -3921,7 +3989,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004d131e0c59dc0a-00047bfc04020cf9"
+                        "000fc0b79df2f70c-000482cd2400aced"
                     ]
                 },
                 "ActiveComponent": {
@@ -3936,8 +4004,8 @@
             }
         },
         {
-            "id": 1566,
-            "guid": "004d131e169433ad-00047bfc04020cfd",
+            "id": 30,
+            "guid": "000fc0b7f058ebac-000482cd2400acf1",
             "components": {
                 "NameComponent": {
                     "name": "Enemy_new_RightUpLeg"
@@ -4017,7 +4085,7 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "004d131e6b576c37-00047bfc04020cff"
+                                "000fc0b78a4ddbab-000482cd2400acf3"
                             ]
                         }
                     ]
@@ -4025,7 +4093,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004d131e55dc2085-00047bfc04020cdd"
+                        "000fc0b7b4618ce7-000482cd2400acd1"
                     ]
                 },
                 "ActiveComponent": {
@@ -4040,8 +4108,8 @@
             }
         },
         {
-            "id": 1567,
-            "guid": "004d131e6b576c37-00047bfc04020cff",
+            "id": 31,
+            "guid": "000fc0b78a4ddbab-000482cd2400acf3",
             "components": {
                 "NameComponent": {
                     "name": "Enemy_new_RightLeg"
@@ -4121,7 +4189,7 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "004d131e669dcfff-00047bfc04020d01"
+                                "000fc0b7fe8d5607-000482cd2400acf5"
                             ]
                         }
                     ]
@@ -4129,7 +4197,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004d131e169433ad-00047bfc04020cfd"
+                        "000fc0b7f058ebac-000482cd2400acf1"
                     ]
                 },
                 "RigidBodyComponent": {
@@ -4303,8 +4371,8 @@
             }
         },
         {
-            "id": 1568,
-            "guid": "004d131e669dcfff-00047bfc04020d01",
+            "id": 32,
+            "guid": "000fc0b7fe8d5607-000482cd2400acf5",
             "components": {
                 "NameComponent": {
                     "name": "Enemy_new_RightFoot"
@@ -4384,10 +4452,10 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "004d131e10c1af04-00047bfc04020d03",
-                                "004d131e621a8ae1-00047bfc04020d09",
-                                "004d131e2d2b645d-00047bfc04020d0f",
-                                "004d131e6dc699ed-00047bfc04020d15"
+                                "000fc0b790abd512-000482cd2400acf7",
+                                "000fc0b78c3c2d36-000482cd2400acfd",
+                                "000fc0b7b806d19a-000482cd2400ad03",
+                                "000fc0b786b96856-000482cd2400ad09"
                             ]
                         }
                     ]
@@ -4395,7 +4463,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004d131e6b576c37-00047bfc04020cff"
+                        "000fc0b78a4ddbab-000482cd2400acf3"
                     ]
                 },
                 "ActiveComponent": {
@@ -4410,8 +4478,8 @@
             }
         },
         {
-            "id": 1569,
-            "guid": "004d131e10c1af04-00047bfc04020d03",
+            "id": 33,
+            "guid": "000fc0b790abd512-000482cd2400acf7",
             "components": {
                 "NameComponent": {
                     "name": "RightToe01_01"
@@ -4491,7 +4559,7 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "004d131e0d126ee5-00047bfc04020d05"
+                                "000fc0b7f31ac45d-000482cd2400acf9"
                             ]
                         }
                     ]
@@ -4499,7 +4567,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004d131e669dcfff-00047bfc04020d01"
+                        "000fc0b7fe8d5607-000482cd2400acf5"
                     ]
                 },
                 "ActiveComponent": {
@@ -4514,8 +4582,8 @@
             }
         },
         {
-            "id": 1570,
-            "guid": "004d131e0d126ee5-00047bfc04020d05",
+            "id": 34,
+            "guid": "000fc0b7f31ac45d-000482cd2400acf9",
             "components": {
                 "NameComponent": {
                     "name": "RightToe01_02"
@@ -4595,7 +4663,7 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "004d131e6faa8105-00047bfc04020d07"
+                                "000fc0b7d6914a39-000482cd2400acfb"
                             ]
                         }
                     ]
@@ -4603,7 +4671,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004d131e10c1af04-00047bfc04020d03"
+                        "000fc0b790abd512-000482cd2400acf7"
                     ]
                 },
                 "ActiveComponent": {
@@ -4618,8 +4686,8 @@
             }
         },
         {
-            "id": 1571,
-            "guid": "004d131e6faa8105-00047bfc04020d07",
+            "id": 35,
+            "guid": "000fc0b7d6914a39-000482cd2400acfb",
             "components": {
                 "NameComponent": {
                     "name": "RightToe01_03"
@@ -4696,7 +4764,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004d131e0d126ee5-00047bfc04020d05"
+                        "000fc0b7f31ac45d-000482cd2400acf9"
                     ]
                 },
                 "ActiveComponent": {
@@ -4711,8 +4779,8 @@
             }
         },
         {
-            "id": 1572,
-            "guid": "004d131e621a8ae1-00047bfc04020d09",
+            "id": 36,
+            "guid": "000fc0b78c3c2d36-000482cd2400acfd",
             "components": {
                 "NameComponent": {
                     "name": "RightToe02_01"
@@ -4792,7 +4860,7 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "004d131e26d6373c-00047bfc04020d0b"
+                                "000fc0b7c18dc5e0-000482cd2400acff"
                             ]
                         }
                     ]
@@ -4800,7 +4868,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004d131e669dcfff-00047bfc04020d01"
+                        "000fc0b7fe8d5607-000482cd2400acf5"
                     ]
                 },
                 "ActiveComponent": {
@@ -4815,8 +4883,8 @@
             }
         },
         {
-            "id": 1573,
-            "guid": "004d131e26d6373c-00047bfc04020d0b",
+            "id": 37,
+            "guid": "000fc0b7c18dc5e0-000482cd2400acff",
             "components": {
                 "NameComponent": {
                     "name": "RightToe02_02"
@@ -4872,7 +4940,7 @@
                             "data": [
                                 {
                                     "type": "float",
-                                    "data": 0.99997
+                                    "data": 0.999971
                                 },
                                 {
                                     "type": "float",
@@ -4896,7 +4964,7 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "004d131e341ce309-00047bfc04020d0d"
+                                "000fc0b7b7cf138c-000482cd2400ad01"
                             ]
                         }
                     ]
@@ -4904,7 +4972,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004d131e621a8ae1-00047bfc04020d09"
+                        "000fc0b78c3c2d36-000482cd2400acfd"
                     ]
                 },
                 "ActiveComponent": {
@@ -4919,8 +4987,8 @@
             }
         },
         {
-            "id": 1574,
-            "guid": "004d131e341ce309-00047bfc04020d0d",
+            "id": 38,
+            "guid": "000fc0b7b7cf138c-000482cd2400ad01",
             "components": {
                 "NameComponent": {
                     "name": "RightToe02_03"
@@ -4997,7 +5065,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004d131e26d6373c-00047bfc04020d0b"
+                        "000fc0b7c18dc5e0-000482cd2400acff"
                     ]
                 },
                 "ActiveComponent": {
@@ -5012,8 +5080,8 @@
             }
         },
         {
-            "id": 1575,
-            "guid": "004d131e2d2b645d-00047bfc04020d0f",
+            "id": 39,
+            "guid": "000fc0b7b806d19a-000482cd2400ad03",
             "components": {
                 "NameComponent": {
                     "name": "RightToe03_01"
@@ -5093,7 +5161,7 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "004d131e10c92e05-00047bfc04020d11"
+                                "000fc0b7e205c867-000482cd2400ad05"
                             ]
                         }
                     ]
@@ -5101,7 +5169,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004d131e669dcfff-00047bfc04020d01"
+                        "000fc0b7fe8d5607-000482cd2400acf5"
                     ]
                 },
                 "ActiveComponent": {
@@ -5116,8 +5184,8 @@
             }
         },
         {
-            "id": 1576,
-            "guid": "004d131e10c92e05-00047bfc04020d11",
+            "id": 40,
+            "guid": "000fc0b7e205c867-000482cd2400ad05",
             "components": {
                 "NameComponent": {
                     "name": "RightToe03_02"
@@ -5197,7 +5265,7 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "004d131e366d3cf4-00047bfc04020d13"
+                                "000fc0b7d524df5a-000482cd2400ad07"
                             ]
                         }
                     ]
@@ -5205,7 +5273,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004d131e2d2b645d-00047bfc04020d0f"
+                        "000fc0b7b806d19a-000482cd2400ad03"
                     ]
                 },
                 "ActiveComponent": {
@@ -5220,8 +5288,8 @@
             }
         },
         {
-            "id": 1577,
-            "guid": "004d131e366d3cf4-00047bfc04020d13",
+            "id": 41,
+            "guid": "000fc0b7d524df5a-000482cd2400ad07",
             "components": {
                 "NameComponent": {
                     "name": "RightToe03_03"
@@ -5298,7 +5366,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004d131e10c92e05-00047bfc04020d11"
+                        "000fc0b7e205c867-000482cd2400ad05"
                     ]
                 },
                 "ActiveComponent": {
@@ -5313,8 +5381,8 @@
             }
         },
         {
-            "id": 1578,
-            "guid": "004d131e6dc699ed-00047bfc04020d15",
+            "id": 42,
+            "guid": "000fc0b786b96856-000482cd2400ad09",
             "components": {
                 "NameComponent": {
                     "name": "RightToe04_01"
@@ -5394,7 +5462,7 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "004d131e6ee373b7-00047bfc04020d17"
+                                "000fc0b7fd866f48-000482cd2400ad0b"
                             ]
                         }
                     ]
@@ -5402,7 +5470,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004d131e669dcfff-00047bfc04020d01"
+                        "000fc0b7fe8d5607-000482cd2400acf5"
                     ]
                 },
                 "ActiveComponent": {
@@ -5417,8 +5485,8 @@
             }
         },
         {
-            "id": 1579,
-            "guid": "004d131e6ee373b7-00047bfc04020d17",
+            "id": 43,
+            "guid": "000fc0b7fd866f48-000482cd2400ad0b",
             "components": {
                 "NameComponent": {
                     "name": "RightToe04_02"
@@ -5498,7 +5566,7 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "004d131e2e708bb6-00047bfc04020d19"
+                                "000fc0b7a74cd112-000482cd2400ad0d"
                             ]
                         }
                     ]
@@ -5506,7 +5574,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004d131e6dc699ed-00047bfc04020d15"
+                        "000fc0b786b96856-000482cd2400ad09"
                     ]
                 },
                 "ActiveComponent": {
@@ -5521,8 +5589,8 @@
             }
         },
         {
-            "id": 1580,
-            "guid": "004d131e2e708bb6-00047bfc04020d19",
+            "id": 44,
+            "guid": "000fc0b7a74cd112-000482cd2400ad0d",
             "components": {
                 "NameComponent": {
                     "name": "RightToe04_03"
@@ -5599,7 +5667,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004d131e6ee373b7-00047bfc04020d17"
+                        "000fc0b7fd866f48-000482cd2400ad0b"
                     ]
                 },
                 "ActiveComponent": {
@@ -5614,8 +5682,8 @@
             }
         },
         {
-            "id": 1581,
-            "guid": "004d131e75e3574a-00047bfc04020d1b",
+            "id": 45,
+            "guid": "000fc0b78135d340-000482cd2400ad0f",
             "components": {
                 "NameComponent": {
                     "name": "Enemy_new_Spine"
@@ -5695,7 +5763,7 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "004d131e06d68347-00047bfc04020d1d"
+                                "000fc0b7c0bb8322-000482cd2400ad11"
                             ]
                         }
                     ]
@@ -5703,7 +5771,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004d131e55dc2085-00047bfc04020cdd"
+                        "000fc0b7b4618ce7-000482cd2400acd1"
                     ]
                 },
                 "RigidBodyComponent": {
@@ -5877,8 +5945,8 @@
             }
         },
         {
-            "id": 1582,
-            "guid": "004d131e06d68347-00047bfc04020d1d",
+            "id": 46,
+            "guid": "000fc0b7c0bb8322-000482cd2400ad11",
             "components": {
                 "NameComponent": {
                     "name": "Enemy_new_Spine1"
@@ -5958,7 +6026,7 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "004d131e67b5042b-00047bfc04020d1f"
+                                "000fc0b7b8e0d8d1-000482cd2400ad13"
                             ]
                         }
                     ]
@@ -5966,7 +6034,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004d131e75e3574a-00047bfc04020d1b"
+                        "000fc0b78135d340-000482cd2400ad0f"
                     ]
                 },
                 "ActiveComponent": {
@@ -5981,8 +6049,8 @@
             }
         },
         {
-            "id": 1583,
-            "guid": "004d131e67b5042b-00047bfc04020d1f",
+            "id": 47,
+            "guid": "000fc0b7b8e0d8d1-000482cd2400ad13",
             "components": {
                 "NameComponent": {
                     "name": "Enemy_new_Spine2"
@@ -6062,11 +6130,11 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "004d131e798ec5d7-00047bfc04020d21",
-                                "004d131e56c0228d-00047bfc04020d51",
-                                "004d131e033b29f7-00047bfc04020d81",
-                                "004d131e6b4db0eb-00047bfc04020d85",
-                                "004d131e702603b0-00047bfc04020d8f"
+                                "000fc0b7e8e30bb7-000482cd2400ad15",
+                                "000fc0b79fb2624f-000482cd2400ad45",
+                                "000fc0b7e7243311-000482cd2400ad75",
+                                "000fc0b78013f3f2-000482cd2400ad79",
+                                "000fc0b7b576f3cc-000482cd2400ad83"
                             ]
                         }
                     ]
@@ -6074,7 +6142,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004d131e06d68347-00047bfc04020d1d"
+                        "000fc0b7c0bb8322-000482cd2400ad11"
                     ]
                 },
                 "ActiveComponent": {
@@ -6089,8 +6157,8 @@
             }
         },
         {
-            "id": 1584,
-            "guid": "004d131e798ec5d7-00047bfc04020d21",
+            "id": 48,
+            "guid": "000fc0b7e8e30bb7-000482cd2400ad15",
             "components": {
                 "NameComponent": {
                     "name": "Enemy_new_LeftShoulder"
@@ -6170,7 +6238,7 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "004d131e34db1c2c-00047bfc04020d23"
+                                "000fc0b7876c9dd3-000482cd2400ad17"
                             ]
                         }
                     ]
@@ -6178,7 +6246,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004d131e67b5042b-00047bfc04020d1f"
+                        "000fc0b7b8e0d8d1-000482cd2400ad13"
                     ]
                 },
                 "ActiveComponent": {
@@ -6193,8 +6261,8 @@
             }
         },
         {
-            "id": 1585,
-            "guid": "004d131e34db1c2c-00047bfc04020d23",
+            "id": 49,
+            "guid": "000fc0b7876c9dd3-000482cd2400ad17",
             "components": {
                 "NameComponent": {
                     "name": "Enemy_new_LeftArm"
@@ -6274,7 +6342,7 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "004d131e3a575cd8-00047bfc04020d25"
+                                "000fc0b7de47f19a-000482cd2400ad19"
                             ]
                         }
                     ]
@@ -6282,7 +6350,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004d131e798ec5d7-00047bfc04020d21"
+                        "000fc0b7e8e30bb7-000482cd2400ad15"
                     ]
                 },
                 "RigidBodyComponent": {
@@ -6456,8 +6524,8 @@
             }
         },
         {
-            "id": 1586,
-            "guid": "004d131e3a575cd8-00047bfc04020d25",
+            "id": 50,
+            "guid": "000fc0b7de47f19a-000482cd2400ad19",
             "components": {
                 "NameComponent": {
                     "name": "Enemy_new_LeftForeArm"
@@ -6537,7 +6605,7 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "004d131e3cd67aed-00047bfc04020d27"
+                                "000fc0b7fc411a72-000482cd2400ad1b"
                             ]
                         }
                     ]
@@ -6545,7 +6613,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004d131e34db1c2c-00047bfc04020d23"
+                        "000fc0b7876c9dd3-000482cd2400ad17"
                     ]
                 },
                 "RigidBodyComponent": {
@@ -6719,8 +6787,8 @@
             }
         },
         {
-            "id": 1587,
-            "guid": "004d131e3cd67aed-00047bfc04020d27",
+            "id": 51,
+            "guid": "000fc0b7fc411a72-000482cd2400ad1b",
             "components": {
                 "NameComponent": {
                     "name": "Enemy_new_LeftHand1"
@@ -6800,11 +6868,11 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "004d131e3b5d5371-00047bfc04020d29",
-                                "004d131e6c3c3808-00047bfc04020d31",
-                                "004d131e579ebb8c-00047bfc04020d39",
-                                "004d131e6e77b9b0-00047bfc04020d41",
-                                "004d131e0186303e-00047bfc04020d49"
+                                "000fc0b7dd2d9234-000482cd2400ad1d",
+                                "000fc0b7e3ad9afa-000482cd2400ad25",
+                                "000fc0b796bbdded-000482cd2400ad2d",
+                                "000fc0b7fd0ecfac-000482cd2400ad35",
+                                "000fc0b7ae1bc986-000482cd2400ad3d"
                             ]
                         }
                     ]
@@ -6812,7 +6880,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004d131e3a575cd8-00047bfc04020d25"
+                        "000fc0b7de47f19a-000482cd2400ad19"
                     ]
                 },
                 "ActiveComponent": {
@@ -6827,8 +6895,8 @@
             }
         },
         {
-            "id": 1588,
-            "guid": "004d131e3b5d5371-00047bfc04020d29",
+            "id": 52,
+            "guid": "000fc0b7dd2d9234-000482cd2400ad1d",
             "components": {
                 "NameComponent": {
                     "name": "LeftHand_Thumb2"
@@ -6908,7 +6976,7 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "004d131e7f81b5de-00047bfc04020d2b"
+                                "000fc0b7f937c979-000482cd2400ad1f"
                             ]
                         }
                     ]
@@ -6916,7 +6984,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004d131e3cd67aed-00047bfc04020d27"
+                        "000fc0b7fc411a72-000482cd2400ad1b"
                     ]
                 },
                 "ActiveComponent": {
@@ -6931,8 +6999,8 @@
             }
         },
         {
-            "id": 1589,
-            "guid": "004d131e7f81b5de-00047bfc04020d2b",
+            "id": 53,
+            "guid": "000fc0b7f937c979-000482cd2400ad1f",
             "components": {
                 "NameComponent": {
                     "name": "LeftHand_Thumb3"
@@ -7012,7 +7080,7 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "004d131e72a76dee-00047bfc04020d2d"
+                                "000fc0b7cf23cac0-000482cd2400ad21"
                             ]
                         }
                     ]
@@ -7020,7 +7088,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004d131e3b5d5371-00047bfc04020d29"
+                        "000fc0b7dd2d9234-000482cd2400ad1d"
                     ]
                 },
                 "ActiveComponent": {
@@ -7035,8 +7103,8 @@
             }
         },
         {
-            "id": 1590,
-            "guid": "004d131e72a76dee-00047bfc04020d2d",
+            "id": 54,
+            "guid": "000fc0b7cf23cac0-000482cd2400ad21",
             "components": {
                 "NameComponent": {
                     "name": "LeftHand_Thumb4"
@@ -7116,7 +7184,7 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "004d131e053efb3f-00047bfc04020d2f"
+                                "000fc0b7c9328075-000482cd2400ad23"
                             ]
                         }
                     ]
@@ -7124,7 +7192,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004d131e7f81b5de-00047bfc04020d2b"
+                        "000fc0b7f937c979-000482cd2400ad1f"
                     ]
                 },
                 "ActiveComponent": {
@@ -7139,8 +7207,8 @@
             }
         },
         {
-            "id": 1591,
-            "guid": "004d131e053efb3f-00047bfc04020d2f",
+            "id": 55,
+            "guid": "000fc0b7c9328075-000482cd2400ad23",
             "components": {
                 "NameComponent": {
                     "name": "LeftHand_Thumb5"
@@ -7217,7 +7285,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004d131e72a76dee-00047bfc04020d2d"
+                        "000fc0b7cf23cac0-000482cd2400ad21"
                     ]
                 },
                 "ActiveComponent": {
@@ -7232,8 +7300,8 @@
             }
         },
         {
-            "id": 1592,
-            "guid": "004d131e6c3c3808-00047bfc04020d31",
+            "id": 56,
+            "guid": "000fc0b7e3ad9afa-000482cd2400ad25",
             "components": {
                 "NameComponent": {
                     "name": "LeftHand_Index1"
@@ -7313,7 +7381,7 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "004d131e611dc7a9-00047bfc04020d33"
+                                "000fc0b7de6072f2-000482cd2400ad27"
                             ]
                         }
                     ]
@@ -7321,7 +7389,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004d131e3cd67aed-00047bfc04020d27"
+                        "000fc0b7fc411a72-000482cd2400ad1b"
                     ]
                 },
                 "ActiveComponent": {
@@ -7336,8 +7404,8 @@
             }
         },
         {
-            "id": 1593,
-            "guid": "004d131e611dc7a9-00047bfc04020d33",
+            "id": 57,
+            "guid": "000fc0b7de6072f2-000482cd2400ad27",
             "components": {
                 "NameComponent": {
                     "name": "LeftHand_Index2"
@@ -7417,7 +7485,7 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "004d131e3825cbf1-00047bfc04020d35"
+                                "000fc0b7c417d67b-000482cd2400ad29"
                             ]
                         }
                     ]
@@ -7425,7 +7493,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004d131e6c3c3808-00047bfc04020d31"
+                        "000fc0b7e3ad9afa-000482cd2400ad25"
                     ]
                 },
                 "ActiveComponent": {
@@ -7440,8 +7508,8 @@
             }
         },
         {
-            "id": 1594,
-            "guid": "004d131e3825cbf1-00047bfc04020d35",
+            "id": 58,
+            "guid": "000fc0b7c417d67b-000482cd2400ad29",
             "components": {
                 "NameComponent": {
                     "name": "LeftHand_Index3"
@@ -7521,7 +7589,7 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "004d131e174ac04f-00047bfc04020d37"
+                                "000fc0b7d200fdba-000482cd2400ad2b"
                             ]
                         }
                     ]
@@ -7529,7 +7597,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004d131e611dc7a9-00047bfc04020d33"
+                        "000fc0b7de6072f2-000482cd2400ad27"
                     ]
                 },
                 "ActiveComponent": {
@@ -7544,8 +7612,8 @@
             }
         },
         {
-            "id": 1595,
-            "guid": "004d131e174ac04f-00047bfc04020d37",
+            "id": 59,
+            "guid": "000fc0b7d200fdba-000482cd2400ad2b",
             "components": {
                 "NameComponent": {
                     "name": "LeftHand_Index4"
@@ -7622,7 +7690,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004d131e3825cbf1-00047bfc04020d35"
+                        "000fc0b7c417d67b-000482cd2400ad29"
                     ]
                 },
                 "ActiveComponent": {
@@ -7637,8 +7705,8 @@
             }
         },
         {
-            "id": 1596,
-            "guid": "004d131e579ebb8c-00047bfc04020d39",
+            "id": 60,
+            "guid": "000fc0b796bbdded-000482cd2400ad2d",
             "components": {
                 "NameComponent": {
                     "name": "LeftHand_Middle1"
@@ -7718,7 +7786,7 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "004d131e14554f29-00047bfc04020d3b"
+                                "000fc0b7a0c80f50-000482cd2400ad2f"
                             ]
                         }
                     ]
@@ -7726,7 +7794,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004d131e3cd67aed-00047bfc04020d27"
+                        "000fc0b7fc411a72-000482cd2400ad1b"
                     ]
                 },
                 "ActiveComponent": {
@@ -7741,8 +7809,8 @@
             }
         },
         {
-            "id": 1597,
-            "guid": "004d131e14554f29-00047bfc04020d3b",
+            "id": 61,
+            "guid": "000fc0b7a0c80f50-000482cd2400ad2f",
             "components": {
                 "NameComponent": {
                     "name": "LeftHand_Middle2"
@@ -7822,7 +7890,7 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "004d131e3049c3ef-00047bfc04020d3d"
+                                "000fc0b7896e92f5-000482cd2400ad31"
                             ]
                         }
                     ]
@@ -7830,7 +7898,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004d131e579ebb8c-00047bfc04020d39"
+                        "000fc0b796bbdded-000482cd2400ad2d"
                     ]
                 },
                 "ActiveComponent": {
@@ -7845,8 +7913,8 @@
             }
         },
         {
-            "id": 1598,
-            "guid": "004d131e3049c3ef-00047bfc04020d3d",
+            "id": 62,
+            "guid": "000fc0b7896e92f5-000482cd2400ad31",
             "components": {
                 "NameComponent": {
                     "name": "LeftHand_Middle3"
@@ -7926,7 +7994,7 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "004d131e01dc286a-00047bfc04020d3f"
+                                "000fc0b7ca5c105f-000482cd2400ad33"
                             ]
                         }
                     ]
@@ -7934,7 +8002,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004d131e14554f29-00047bfc04020d3b"
+                        "000fc0b7a0c80f50-000482cd2400ad2f"
                     ]
                 },
                 "ActiveComponent": {
@@ -7949,8 +8017,8 @@
             }
         },
         {
-            "id": 1599,
-            "guid": "004d131e01dc286a-00047bfc04020d3f",
+            "id": 63,
+            "guid": "000fc0b7ca5c105f-000482cd2400ad33",
             "components": {
                 "NameComponent": {
                     "name": "LeftHand_Middle4"
@@ -8027,7 +8095,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004d131e3049c3ef-00047bfc04020d3d"
+                        "000fc0b7896e92f5-000482cd2400ad31"
                     ]
                 },
                 "ActiveComponent": {
@@ -8042,8 +8110,8 @@
             }
         },
         {
-            "id": 1600,
-            "guid": "004d131e6e77b9b0-00047bfc04020d41",
+            "id": 64,
+            "guid": "000fc0b7fd0ecfac-000482cd2400ad35",
             "components": {
                 "NameComponent": {
                     "name": "LeftHand_Ring1"
@@ -8123,7 +8191,7 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "004d131e1bc25f8c-00047bfc04020d43"
+                                "000fc0b79eec5797-000482cd2400ad37"
                             ]
                         }
                     ]
@@ -8131,7 +8199,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004d131e3cd67aed-00047bfc04020d27"
+                        "000fc0b7fc411a72-000482cd2400ad1b"
                     ]
                 },
                 "ActiveComponent": {
@@ -8146,8 +8214,8 @@
             }
         },
         {
-            "id": 1601,
-            "guid": "004d131e1bc25f8c-00047bfc04020d43",
+            "id": 65,
+            "guid": "000fc0b79eec5797-000482cd2400ad37",
             "components": {
                 "NameComponent": {
                     "name": "LeftHand_Ring2"
@@ -8227,7 +8295,7 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "004d131e421d7e69-00047bfc04020d45"
+                                "000fc0b7b76a61b2-000482cd2400ad39"
                             ]
                         }
                     ]
@@ -8235,7 +8303,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004d131e6e77b9b0-00047bfc04020d41"
+                        "000fc0b7fd0ecfac-000482cd2400ad35"
                     ]
                 },
                 "ActiveComponent": {
@@ -8250,8 +8318,8 @@
             }
         },
         {
-            "id": 1602,
-            "guid": "004d131e421d7e69-00047bfc04020d45",
+            "id": 66,
+            "guid": "000fc0b7b76a61b2-000482cd2400ad39",
             "components": {
                 "NameComponent": {
                     "name": "LeftHand_Ring3"
@@ -8331,7 +8399,7 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "004d131e79f12c73-00047bfc04020d47"
+                                "000fc0b7b897ba7c-000482cd2400ad3b"
                             ]
                         }
                     ]
@@ -8339,7 +8407,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004d131e1bc25f8c-00047bfc04020d43"
+                        "000fc0b79eec5797-000482cd2400ad37"
                     ]
                 },
                 "ActiveComponent": {
@@ -8354,8 +8422,8 @@
             }
         },
         {
-            "id": 1603,
-            "guid": "004d131e79f12c73-00047bfc04020d47",
+            "id": 67,
+            "guid": "000fc0b7b897ba7c-000482cd2400ad3b",
             "components": {
                 "NameComponent": {
                     "name": "LeftHand_Ring4"
@@ -8432,7 +8500,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004d131e421d7e69-00047bfc04020d45"
+                        "000fc0b7b76a61b2-000482cd2400ad39"
                     ]
                 },
                 "ActiveComponent": {
@@ -8447,8 +8515,8 @@
             }
         },
         {
-            "id": 1604,
-            "guid": "004d131e0186303e-00047bfc04020d49",
+            "id": 68,
+            "guid": "000fc0b7ae1bc986-000482cd2400ad3d",
             "components": {
                 "NameComponent": {
                     "name": "LeftHand_Pinky1"
@@ -8528,7 +8596,7 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "004d131e73f62b47-00047bfc04020d4b"
+                                "000fc0b7aa2f864c-000482cd2400ad3f"
                             ]
                         }
                     ]
@@ -8536,7 +8604,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004d131e3cd67aed-00047bfc04020d27"
+                        "000fc0b7fc411a72-000482cd2400ad1b"
                     ]
                 },
                 "ActiveComponent": {
@@ -8551,8 +8619,8 @@
             }
         },
         {
-            "id": 1605,
-            "guid": "004d131e73f62b47-00047bfc04020d4b",
+            "id": 69,
+            "guid": "000fc0b7aa2f864c-000482cd2400ad3f",
             "components": {
                 "NameComponent": {
                     "name": "LeftHand_Pinky2"
@@ -8632,7 +8700,7 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "004d131e0bd5776c-00047bfc04020d4d"
+                                "000fc0b7e02d2a85-000482cd2400ad41"
                             ]
                         }
                     ]
@@ -8640,7 +8708,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004d131e0186303e-00047bfc04020d49"
+                        "000fc0b7ae1bc986-000482cd2400ad3d"
                     ]
                 },
                 "ActiveComponent": {
@@ -8655,8 +8723,8 @@
             }
         },
         {
-            "id": 1606,
-            "guid": "004d131e0bd5776c-00047bfc04020d4d",
+            "id": 70,
+            "guid": "000fc0b7e02d2a85-000482cd2400ad41",
             "components": {
                 "NameComponent": {
                     "name": "LeftHand_Pinky3"
@@ -8736,7 +8804,7 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "004d131e6bfdb34b-00047bfc04020d4f"
+                                "000fc0b7e437c477-000482cd2400ad43"
                             ]
                         }
                     ]
@@ -8744,7 +8812,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004d131e73f62b47-00047bfc04020d4b"
+                        "000fc0b7aa2f864c-000482cd2400ad3f"
                     ]
                 },
                 "ActiveComponent": {
@@ -8759,8 +8827,8 @@
             }
         },
         {
-            "id": 1607,
-            "guid": "004d131e6bfdb34b-00047bfc04020d4f",
+            "id": 71,
+            "guid": "000fc0b7e437c477-000482cd2400ad43",
             "components": {
                 "NameComponent": {
                     "name": "LeftHand_Pinky4"
@@ -8837,7 +8905,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004d131e0bd5776c-00047bfc04020d4d"
+                        "000fc0b7e02d2a85-000482cd2400ad41"
                     ]
                 },
                 "ActiveComponent": {
@@ -8852,8 +8920,8 @@
             }
         },
         {
-            "id": 1608,
-            "guid": "004d131e56c0228d-00047bfc04020d51",
+            "id": 72,
+            "guid": "000fc0b79fb2624f-000482cd2400ad45",
             "components": {
                 "NameComponent": {
                     "name": "Enemy_new_RightShoulder"
@@ -8933,7 +9001,7 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "004d131e327a1d9d-00047bfc04020d53"
+                                "000fc0b7a51f8fbf-000482cd2400ad47"
                             ]
                         }
                     ]
@@ -8941,7 +9009,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004d131e67b5042b-00047bfc04020d1f"
+                        "000fc0b7b8e0d8d1-000482cd2400ad13"
                     ]
                 },
                 "ActiveComponent": {
@@ -8956,8 +9024,8 @@
             }
         },
         {
-            "id": 1609,
-            "guid": "004d131e327a1d9d-00047bfc04020d53",
+            "id": 73,
+            "guid": "000fc0b7a51f8fbf-000482cd2400ad47",
             "components": {
                 "NameComponent": {
                     "name": "Enemy_new_RightArm"
@@ -9037,7 +9105,7 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "004d131e430bd8c3-00047bfc04020d55"
+                                "000fc0b7db71e1fc-000482cd2400ad49"
                             ]
                         }
                     ]
@@ -9045,7 +9113,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004d131e56c0228d-00047bfc04020d51"
+                        "000fc0b79fb2624f-000482cd2400ad45"
                     ]
                 },
                 "RigidBodyComponent": {
@@ -9219,8 +9287,8 @@
             }
         },
         {
-            "id": 1610,
-            "guid": "004d131e430bd8c3-00047bfc04020d55",
+            "id": 74,
+            "guid": "000fc0b7db71e1fc-000482cd2400ad49",
             "components": {
                 "NameComponent": {
                     "name": "Enemy_new_RightForeArm"
@@ -9300,7 +9368,7 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "004d131e04dddf73-00047bfc04020d57"
+                                "000fc0b7823cad4d-000482cd2400ad4b"
                             ]
                         }
                     ]
@@ -9308,7 +9376,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004d131e327a1d9d-00047bfc04020d53"
+                        "000fc0b7a51f8fbf-000482cd2400ad47"
                     ]
                 },
                 "RigidBodyComponent": {
@@ -9482,8 +9550,8 @@
             }
         },
         {
-            "id": 1611,
-            "guid": "004d131e04dddf73-00047bfc04020d57",
+            "id": 75,
+            "guid": "000fc0b7823cad4d-000482cd2400ad4b",
             "components": {
                 "NameComponent": {
                     "name": "Enemy_new_RightHand1"
@@ -9563,11 +9631,11 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "004d131e3a401907-00047bfc04020d59",
-                                "004d131e55f4dbe1-00047bfc04020d61",
-                                "004d131e242b7054-00047bfc04020d69",
-                                "004d131e47a843a6-00047bfc04020d71",
-                                "004d131e224b7b4a-00047bfc04020d79"
+                                "000fc0b7ac0904f5-000482cd2400ad4d",
+                                "000fc0b79ee2aabd-000482cd2400ad55",
+                                "000fc0b7ad424a93-000482cd2400ad5d",
+                                "000fc0b7da2046e0-000482cd2400ad65",
+                                "000fc0b7c0d59a76-000482cd2400ad6d"
                             ]
                         }
                     ]
@@ -9575,7 +9643,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004d131e430bd8c3-00047bfc04020d55"
+                        "000fc0b7db71e1fc-000482cd2400ad49"
                     ]
                 },
                 "ActiveComponent": {
@@ -9590,8 +9658,8 @@
             }
         },
         {
-            "id": 1612,
-            "guid": "004d131e3a401907-00047bfc04020d59",
+            "id": 76,
+            "guid": "000fc0b7ac0904f5-000482cd2400ad4d",
             "components": {
                 "NameComponent": {
                     "name": "RightHand_Thumb2"
@@ -9671,7 +9739,7 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "004d131e5ef3e49d-00047bfc04020d5b"
+                                "000fc0b7b44fb4bd-000482cd2400ad4f"
                             ]
                         }
                     ]
@@ -9679,7 +9747,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004d131e04dddf73-00047bfc04020d57"
+                        "000fc0b7823cad4d-000482cd2400ad4b"
                     ]
                 },
                 "ActiveComponent": {
@@ -9694,8 +9762,8 @@
             }
         },
         {
-            "id": 1613,
-            "guid": "004d131e5ef3e49d-00047bfc04020d5b",
+            "id": 77,
+            "guid": "000fc0b7b44fb4bd-000482cd2400ad4f",
             "components": {
                 "NameComponent": {
                     "name": "RightHand_Thumb3"
@@ -9775,7 +9843,7 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "004d131e7fe83185-00047bfc04020d5d"
+                                "000fc0b7abb96c7a-000482cd2400ad51"
                             ]
                         }
                     ]
@@ -9783,7 +9851,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004d131e3a401907-00047bfc04020d59"
+                        "000fc0b7ac0904f5-000482cd2400ad4d"
                     ]
                 },
                 "ActiveComponent": {
@@ -9798,8 +9866,8 @@
             }
         },
         {
-            "id": 1614,
-            "guid": "004d131e7fe83185-00047bfc04020d5d",
+            "id": 78,
+            "guid": "000fc0b7abb96c7a-000482cd2400ad51",
             "components": {
                 "NameComponent": {
                     "name": "RightHand_Thumb4"
@@ -9879,7 +9947,7 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "004d131e4d061d3f-00047bfc04020d5f"
+                                "000fc0b7e3362db5-000482cd2400ad53"
                             ]
                         }
                     ]
@@ -9887,7 +9955,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004d131e5ef3e49d-00047bfc04020d5b"
+                        "000fc0b7b44fb4bd-000482cd2400ad4f"
                     ]
                 },
                 "ActiveComponent": {
@@ -9902,8 +9970,8 @@
             }
         },
         {
-            "id": 1615,
-            "guid": "004d131e4d061d3f-00047bfc04020d5f",
+            "id": 79,
+            "guid": "000fc0b7e3362db5-000482cd2400ad53",
             "components": {
                 "NameComponent": {
                     "name": "RightHand_Thumb5"
@@ -9980,7 +10048,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004d131e7fe83185-00047bfc04020d5d"
+                        "000fc0b7abb96c7a-000482cd2400ad51"
                     ]
                 },
                 "ActiveComponent": {
@@ -9995,8 +10063,8 @@
             }
         },
         {
-            "id": 1616,
-            "guid": "004d131e55f4dbe1-00047bfc04020d61",
+            "id": 80,
+            "guid": "000fc0b79ee2aabd-000482cd2400ad55",
             "components": {
                 "NameComponent": {
                     "name": "RightHand_Index1"
@@ -10076,7 +10144,7 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "004d131e2c65add0-00047bfc04020d63"
+                                "000fc0b7c9d244b4-000482cd2400ad57"
                             ]
                         }
                     ]
@@ -10084,7 +10152,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004d131e04dddf73-00047bfc04020d57"
+                        "000fc0b7823cad4d-000482cd2400ad4b"
                     ]
                 },
                 "ActiveComponent": {
@@ -10099,8 +10167,8 @@
             }
         },
         {
-            "id": 1617,
-            "guid": "004d131e2c65add0-00047bfc04020d63",
+            "id": 81,
+            "guid": "000fc0b7c9d244b4-000482cd2400ad57",
             "components": {
                 "NameComponent": {
                     "name": "RightHand_Index2"
@@ -10180,7 +10248,7 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "004d131e0df23689-00047bfc04020d65"
+                                "000fc0b79e728de1-000482cd2400ad59"
                             ]
                         }
                     ]
@@ -10188,7 +10256,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004d131e55f4dbe1-00047bfc04020d61"
+                        "000fc0b79ee2aabd-000482cd2400ad55"
                     ]
                 },
                 "ActiveComponent": {
@@ -10203,8 +10271,8 @@
             }
         },
         {
-            "id": 1618,
-            "guid": "004d131e0df23689-00047bfc04020d65",
+            "id": 82,
+            "guid": "000fc0b79e728de1-000482cd2400ad59",
             "components": {
                 "NameComponent": {
                     "name": "RightHand_Index3"
@@ -10284,7 +10352,7 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "004d131e13a72225-00047bfc04020d67"
+                                "000fc0b7e82f028a-000482cd2400ad5b"
                             ]
                         }
                     ]
@@ -10292,7 +10360,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004d131e2c65add0-00047bfc04020d63"
+                        "000fc0b7c9d244b4-000482cd2400ad57"
                     ]
                 },
                 "ActiveComponent": {
@@ -10307,8 +10375,8 @@
             }
         },
         {
-            "id": 1619,
-            "guid": "004d131e13a72225-00047bfc04020d67",
+            "id": 83,
+            "guid": "000fc0b7e82f028a-000482cd2400ad5b",
             "components": {
                 "NameComponent": {
                     "name": "RightHand_Index4"
@@ -10385,7 +10453,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004d131e0df23689-00047bfc04020d65"
+                        "000fc0b79e728de1-000482cd2400ad59"
                     ]
                 },
                 "ActiveComponent": {
@@ -10400,8 +10468,8 @@
             }
         },
         {
-            "id": 1620,
-            "guid": "004d131e242b7054-00047bfc04020d69",
+            "id": 84,
+            "guid": "000fc0b7ad424a93-000482cd2400ad5d",
             "components": {
                 "NameComponent": {
                     "name": "RightHand_Middle1"
@@ -10481,7 +10549,7 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "004d131e03b81f63-00047bfc04020d6b"
+                                "000fc0b7b2a28264-000482cd2400ad5f"
                             ]
                         }
                     ]
@@ -10489,7 +10557,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004d131e04dddf73-00047bfc04020d57"
+                        "000fc0b7823cad4d-000482cd2400ad4b"
                     ]
                 },
                 "ActiveComponent": {
@@ -10504,8 +10572,8 @@
             }
         },
         {
-            "id": 1621,
-            "guid": "004d131e03b81f63-00047bfc04020d6b",
+            "id": 85,
+            "guid": "000fc0b7b2a28264-000482cd2400ad5f",
             "components": {
                 "NameComponent": {
                     "name": "RightHand_Middle2"
@@ -10585,7 +10653,7 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "004d131e2ebf3bf6-00047bfc04020d6d"
+                                "000fc0b7eb51ad7c-000482cd2400ad61"
                             ]
                         }
                     ]
@@ -10593,7 +10661,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004d131e242b7054-00047bfc04020d69"
+                        "000fc0b7ad424a93-000482cd2400ad5d"
                     ]
                 },
                 "ActiveComponent": {
@@ -10608,8 +10676,8 @@
             }
         },
         {
-            "id": 1622,
-            "guid": "004d131e2ebf3bf6-00047bfc04020d6d",
+            "id": 86,
+            "guid": "000fc0b7eb51ad7c-000482cd2400ad61",
             "components": {
                 "NameComponent": {
                     "name": "RightHand_Middle3"
@@ -10689,7 +10757,7 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "004d131e02dcaf02-00047bfc04020d6f"
+                                "000fc0b7f2238f01-000482cd2400ad63"
                             ]
                         }
                     ]
@@ -10697,7 +10765,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004d131e03b81f63-00047bfc04020d6b"
+                        "000fc0b7b2a28264-000482cd2400ad5f"
                     ]
                 },
                 "ActiveComponent": {
@@ -10712,8 +10780,8 @@
             }
         },
         {
-            "id": 1623,
-            "guid": "004d131e02dcaf02-00047bfc04020d6f",
+            "id": 87,
+            "guid": "000fc0b7f2238f01-000482cd2400ad63",
             "components": {
                 "NameComponent": {
                     "name": "RightHand_Middle4"
@@ -10790,7 +10858,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004d131e2ebf3bf6-00047bfc04020d6d"
+                        "000fc0b7eb51ad7c-000482cd2400ad61"
                     ]
                 },
                 "ActiveComponent": {
@@ -10805,8 +10873,8 @@
             }
         },
         {
-            "id": 1624,
-            "guid": "004d131e47a843a6-00047bfc04020d71",
+            "id": 88,
+            "guid": "000fc0b7da2046e0-000482cd2400ad65",
             "components": {
                 "NameComponent": {
                     "name": "RightHand_Ring1"
@@ -10886,7 +10954,7 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "004d131e5df158c2-00047bfc04020d73"
+                                "000fc0b78310d6a0-000482cd2400ad67"
                             ]
                         }
                     ]
@@ -10894,7 +10962,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004d131e04dddf73-00047bfc04020d57"
+                        "000fc0b7823cad4d-000482cd2400ad4b"
                     ]
                 },
                 "ActiveComponent": {
@@ -10909,8 +10977,8 @@
             }
         },
         {
-            "id": 1625,
-            "guid": "004d131e5df158c2-00047bfc04020d73",
+            "id": 89,
+            "guid": "000fc0b78310d6a0-000482cd2400ad67",
             "components": {
                 "NameComponent": {
                     "name": "RightHand_Ring2"
@@ -10990,7 +11058,7 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "004d131e2bc69aad-00047bfc04020d75"
+                                "000fc0b7d32ee291-000482cd2400ad69"
                             ]
                         }
                     ]
@@ -10998,7 +11066,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004d131e47a843a6-00047bfc04020d71"
+                        "000fc0b7da2046e0-000482cd2400ad65"
                     ]
                 },
                 "ActiveComponent": {
@@ -11013,8 +11081,8 @@
             }
         },
         {
-            "id": 1626,
-            "guid": "004d131e2bc69aad-00047bfc04020d75",
+            "id": 90,
+            "guid": "000fc0b7d32ee291-000482cd2400ad69",
             "components": {
                 "NameComponent": {
                     "name": "RightHand_Ring3"
@@ -11094,7 +11162,7 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "004d131e6963214e-00047bfc04020d77"
+                                "000fc0b7f3424b9b-000482cd2400ad6b"
                             ]
                         }
                     ]
@@ -11102,7 +11170,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004d131e5df158c2-00047bfc04020d73"
+                        "000fc0b78310d6a0-000482cd2400ad67"
                     ]
                 },
                 "ActiveComponent": {
@@ -11117,8 +11185,8 @@
             }
         },
         {
-            "id": 1627,
-            "guid": "004d131e6963214e-00047bfc04020d77",
+            "id": 91,
+            "guid": "000fc0b7f3424b9b-000482cd2400ad6b",
             "components": {
                 "NameComponent": {
                     "name": "RightHand_Ring4"
@@ -11195,7 +11263,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004d131e2bc69aad-00047bfc04020d75"
+                        "000fc0b7d32ee291-000482cd2400ad69"
                     ]
                 },
                 "ActiveComponent": {
@@ -11210,8 +11278,8 @@
             }
         },
         {
-            "id": 1628,
-            "guid": "004d131e224b7b4a-00047bfc04020d79",
+            "id": 92,
+            "guid": "000fc0b7c0d59a76-000482cd2400ad6d",
             "components": {
                 "NameComponent": {
                     "name": "RightHand_Pinky1"
@@ -11291,7 +11359,7 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "004d131e409b2964-00047bfc04020d7b"
+                                "000fc0b79fc0cc7c-000482cd2400ad6f"
                             ]
                         }
                     ]
@@ -11299,7 +11367,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004d131e04dddf73-00047bfc04020d57"
+                        "000fc0b7823cad4d-000482cd2400ad4b"
                     ]
                 },
                 "ActiveComponent": {
@@ -11314,8 +11382,8 @@
             }
         },
         {
-            "id": 1629,
-            "guid": "004d131e409b2964-00047bfc04020d7b",
+            "id": 93,
+            "guid": "000fc0b79fc0cc7c-000482cd2400ad6f",
             "components": {
                 "NameComponent": {
                     "name": "RightHand_Pinky2"
@@ -11395,7 +11463,7 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "004d131e7c8ff4c7-00047bfc04020d7d"
+                                "000fc0b7d445eacb-000482cd2400ad71"
                             ]
                         }
                     ]
@@ -11403,7 +11471,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004d131e224b7b4a-00047bfc04020d79"
+                        "000fc0b7c0d59a76-000482cd2400ad6d"
                     ]
                 },
                 "ActiveComponent": {
@@ -11418,8 +11486,8 @@
             }
         },
         {
-            "id": 1630,
-            "guid": "004d131e7c8ff4c7-00047bfc04020d7d",
+            "id": 94,
+            "guid": "000fc0b7d445eacb-000482cd2400ad71",
             "components": {
                 "NameComponent": {
                     "name": "RightHand_Pinky3"
@@ -11499,7 +11567,7 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "004d131e601bc28b-00047bfc04020d7f"
+                                "000fc0b7ce9bbf52-000482cd2400ad73"
                             ]
                         }
                     ]
@@ -11507,7 +11575,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004d131e409b2964-00047bfc04020d7b"
+                        "000fc0b79fc0cc7c-000482cd2400ad6f"
                     ]
                 },
                 "ActiveComponent": {
@@ -11522,8 +11590,8 @@
             }
         },
         {
-            "id": 1631,
-            "guid": "004d131e601bc28b-00047bfc04020d7f",
+            "id": 95,
+            "guid": "000fc0b7ce9bbf52-000482cd2400ad73",
             "components": {
                 "NameComponent": {
                     "name": "RightHand_Pinky4"
@@ -11600,7 +11668,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004d131e7c8ff4c7-00047bfc04020d7d"
+                        "000fc0b7d445eacb-000482cd2400ad71"
                     ]
                 },
                 "ActiveComponent": {
@@ -11615,8 +11683,8 @@
             }
         },
         {
-            "id": 1632,
-            "guid": "004d131e033b29f7-00047bfc04020d81",
+            "id": 96,
+            "guid": "000fc0b7e7243311-000482cd2400ad75",
             "components": {
                 "NameComponent": {
                     "name": "Enemy_new_Neck"
@@ -11696,7 +11764,7 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "004d131e03b44a68-00047bfc04020d83"
+                                "000fc0b7c1189e7a-000482cd2400ad77"
                             ]
                         }
                     ]
@@ -11704,7 +11772,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004d131e67b5042b-00047bfc04020d1f"
+                        "000fc0b7b8e0d8d1-000482cd2400ad13"
                     ]
                 },
                 "ActiveComponent": {
@@ -11719,8 +11787,8 @@
             }
         },
         {
-            "id": 1633,
-            "guid": "004d131e03b44a68-00047bfc04020d83",
+            "id": 97,
+            "guid": "000fc0b7c1189e7a-000482cd2400ad77",
             "components": {
                 "NameComponent": {
                     "name": "Enemy_new_Head"
@@ -11797,7 +11865,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004d131e033b29f7-00047bfc04020d81"
+                        "000fc0b7e7243311-000482cd2400ad75"
                     ]
                 },
                 "ActiveComponent": {
@@ -11812,8 +11880,8 @@
             }
         },
         {
-            "id": 1634,
-            "guid": "004d131e6b4db0eb-00047bfc04020d85",
+            "id": 98,
+            "guid": "000fc0b78013f3f2-000482cd2400ad79",
             "components": {
                 "NameComponent": {
                     "name": "LWing_01"
@@ -11893,7 +11961,7 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "004d131e02c5e87d-00047bfc04020d87"
+                                "000fc0b79f1f67e0-000482cd2400ad7b"
                             ]
                         }
                     ]
@@ -11901,7 +11969,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004d131e67b5042b-00047bfc04020d1f"
+                        "000fc0b7b8e0d8d1-000482cd2400ad13"
                     ]
                 },
                 "ActiveComponent": {
@@ -11916,8 +11984,8 @@
             }
         },
         {
-            "id": 1635,
-            "guid": "004d131e02c5e87d-00047bfc04020d87",
+            "id": 99,
+            "guid": "000fc0b79f1f67e0-000482cd2400ad7b",
             "components": {
                 "NameComponent": {
                     "name": "LWing_02"
@@ -11997,7 +12065,7 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "004d131e1ed87321-00047bfc04020d89"
+                                "000fc0b7aed6bb76-000482cd2400ad7d"
                             ]
                         }
                     ]
@@ -12005,7 +12073,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004d131e6b4db0eb-00047bfc04020d85"
+                        "000fc0b78013f3f2-000482cd2400ad79"
                     ]
                 },
                 "ActiveComponent": {
@@ -12020,8 +12088,8 @@
             }
         },
         {
-            "id": 1636,
-            "guid": "004d131e1ed87321-00047bfc04020d89",
+            "id": 100,
+            "guid": "000fc0b7aed6bb76-000482cd2400ad7d",
             "components": {
                 "NameComponent": {
                     "name": "LWing_03"
@@ -12101,7 +12169,7 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "004d131e4de843f6-00047bfc04020d8b"
+                                "000fc0b7da102ee5-000482cd2400ad7f"
                             ]
                         }
                     ]
@@ -12109,7 +12177,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004d131e02c5e87d-00047bfc04020d87"
+                        "000fc0b79f1f67e0-000482cd2400ad7b"
                     ]
                 },
                 "ActiveComponent": {
@@ -12124,8 +12192,8 @@
             }
         },
         {
-            "id": 1637,
-            "guid": "004d131e4de843f6-00047bfc04020d8b",
+            "id": 101,
+            "guid": "000fc0b7da102ee5-000482cd2400ad7f",
             "components": {
                 "NameComponent": {
                     "name": "LWing_04"
@@ -12205,7 +12273,7 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "004d131e73a02311-00047bfc04020d8d"
+                                "000fc0b79ce1e8a7-000482cd2400ad81"
                             ]
                         }
                     ]
@@ -12213,7 +12281,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004d131e1ed87321-00047bfc04020d89"
+                        "000fc0b7aed6bb76-000482cd2400ad7d"
                     ]
                 },
                 "ActiveComponent": {
@@ -12228,8 +12296,8 @@
             }
         },
         {
-            "id": 1638,
-            "guid": "004d131e73a02311-00047bfc04020d8d",
+            "id": 102,
+            "guid": "000fc0b79ce1e8a7-000482cd2400ad81",
             "components": {
                 "NameComponent": {
                     "name": "LWing_05"
@@ -12306,7 +12374,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004d131e4de843f6-00047bfc04020d8b"
+                        "000fc0b7da102ee5-000482cd2400ad7f"
                     ]
                 },
                 "ActiveComponent": {
@@ -12321,8 +12389,8 @@
             }
         },
         {
-            "id": 1639,
-            "guid": "004d131e702603b0-00047bfc04020d8f",
+            "id": 103,
+            "guid": "000fc0b7b576f3cc-000482cd2400ad83",
             "components": {
                 "NameComponent": {
                     "name": "RWing_01"
@@ -12402,7 +12470,7 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "004d131e3b6cb617-00047bfc04020d91"
+                                "000fc0b79ba7ee06-000482cd2400ad85"
                             ]
                         }
                     ]
@@ -12410,7 +12478,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004d131e67b5042b-00047bfc04020d1f"
+                        "000fc0b7b8e0d8d1-000482cd2400ad13"
                     ]
                 },
                 "ActiveComponent": {
@@ -12425,8 +12493,8 @@
             }
         },
         {
-            "id": 1640,
-            "guid": "004d131e3b6cb617-00047bfc04020d91",
+            "id": 104,
+            "guid": "000fc0b79ba7ee06-000482cd2400ad85",
             "components": {
                 "NameComponent": {
                     "name": "RWing_02"
@@ -12506,7 +12574,7 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "004d131e7a5334f0-00047bfc04020d93"
+                                "000fc0b7c647539a-000482cd2400ad87"
                             ]
                         }
                     ]
@@ -12514,7 +12582,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004d131e702603b0-00047bfc04020d8f"
+                        "000fc0b7b576f3cc-000482cd2400ad83"
                     ]
                 },
                 "ActiveComponent": {
@@ -12529,8 +12597,8 @@
             }
         },
         {
-            "id": 1641,
-            "guid": "004d131e7a5334f0-00047bfc04020d93",
+            "id": 105,
+            "guid": "000fc0b7c647539a-000482cd2400ad87",
             "components": {
                 "NameComponent": {
                     "name": "RWing_03"
@@ -12610,7 +12678,7 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "004d131e7b12e76e-00047bfc04020d95"
+                                "000fc0b7836bfeb9-000482cd2400ad89"
                             ]
                         }
                     ]
@@ -12618,7 +12686,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004d131e3b6cb617-00047bfc04020d91"
+                        "000fc0b79ba7ee06-000482cd2400ad85"
                     ]
                 },
                 "ActiveComponent": {
@@ -12633,8 +12701,8 @@
             }
         },
         {
-            "id": 1642,
-            "guid": "004d131e7b12e76e-00047bfc04020d95",
+            "id": 106,
+            "guid": "000fc0b7836bfeb9-000482cd2400ad89",
             "components": {
                 "NameComponent": {
                     "name": "RWing_04"
@@ -12714,7 +12782,7 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "004d131e7751523d-00047bfc04020d97"
+                                "000fc0b79c52e8a7-000482cd2400ad8b"
                             ]
                         }
                     ]
@@ -12722,7 +12790,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004d131e7a5334f0-00047bfc04020d93"
+                        "000fc0b7c647539a-000482cd2400ad87"
                     ]
                 },
                 "ActiveComponent": {
@@ -12737,8 +12805,8 @@
             }
         },
         {
-            "id": 1643,
-            "guid": "004d131e7751523d-00047bfc04020d97",
+            "id": 107,
+            "guid": "000fc0b79c52e8a7-000482cd2400ad8b",
             "components": {
                 "NameComponent": {
                     "name": "RWing_05"
@@ -12815,7 +12883,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004d131e7b12e76e-00047bfc04020d95"
+                        "000fc0b7836bfeb9-000482cd2400ad89"
                     ]
                 },
                 "ActiveComponent": {
@@ -12830,8 +12898,8 @@
             }
         },
         {
-            "id": 1644,
-            "guid": "004d131e17e9501b-00047bfc04020d99",
+            "id": 108,
+            "guid": "000fc0b7da4dc08f-000482cd2400ad8d",
             "components": {
                 "NameComponent": {
                     "name": "Enemy_new_Ctrl_Reference"
@@ -12908,7 +12976,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004d131e714bf0c2-00047bfc04020cc1"
+                        "000fc0b7ed0f5a14-000482cd2400acb5"
                     ]
                 },
                 "ActiveComponent": {
@@ -12923,8 +12991,8 @@
             }
         },
         {
-            "id": 1645,
-            "guid": "004d131e38f1702a-00047bfc04020d9b",
+            "id": 109,
+            "guid": "000fc0b7b66fab0b-000482cd2400ad8f",
             "components": {
                 "NameComponent": {
                     "name": "Enemy_World_Ctrl"
@@ -13001,7 +13069,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004d131e714bf0c2-00047bfc04020cc1"
+                        "000fc0b7ed0f5a14-000482cd2400acb5"
                     ]
                 },
                 "ActiveComponent": {
@@ -13016,8 +13084,8 @@
             }
         },
         {
-            "id": 1646,
-            "guid": "004d131e6b61007b-00047bfc04020d9d",
+            "id": 110,
+            "guid": "000fc0b7a7d4dcec-000482cd2400ad91",
             "components": {
                 "NameComponent": {
                     "name": "LockOnTarget"
@@ -13094,7 +13162,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004d131e714bf0c2-00047bfc04020cc1"
+                        "000fc0b7ed0f5a14-000482cd2400acb5"
                     ]
                 },
                 "ActiveComponent": {
@@ -13115,42 +13183,7 @@
                             "preserveKeys": [],
                             "entryFunction": "OnInit",
                             "autoInvokeEntry": true,
-                            "instanceState": {
-                                "SweepRadius": 0.3,
-                                "PartEntityNames": [
-                                    "Enemy_new_LeftLeg",
-                                    "Enemy_new_RightLeg",
-                                    "Enemy_new_LeftArm",
-                                    "Enemy_new_LeftForeArm",
-                                    "Enemy_new_RightArm",
-                                    "Enemy_new_RightForeArm",
-                                    "Enemy_new_Spine"
-                                ],
-                                "Update": null,
-                                "__created_at": 1772805479.0,
-                                "Unsubscribe": null,
-                                "SerializeFields": null,
-                                "UpdateSafe": null,
-                                "Destroy": null,
-                                "_call_lifecycle": null,
-                                "AwakeSafe": null,
-                                "_subscriptions": {},
-                                "DisableSafe": null,
-                                "Every": null,
-                                "DeserializeFields": null,
-                                "GetClosestPart": null,
-                                "StartSafe": null,
-                                "Subscribe": null,
-                                "After": null,
-                                "OnDisable": null,
-                                "__field_list": {
-                                    "PartEntityNames": {},
-                                    "SweepRadius": 0.3
-                                },
-                                "__meta": {},
-                                "Start": null,
-                                "_private": {}
-                            }
+                            "instanceState": {}
                         }
                     ]
                 }
