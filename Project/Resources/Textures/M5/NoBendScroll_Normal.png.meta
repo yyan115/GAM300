@@ -1,0 +1,14 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "005ef447e1fd256d-000481eed6010191",
+        "source": "../../Resources/Textures/M5/NoBendScroll_Normal.png",
+        "compiled": "../../Resources/Textures/M5/NoBendScroll_Normal.dds"
+    },
+    "TextureMetaData": {
+        "type": "normal",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp"
+    }
+}
