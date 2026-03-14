@@ -1,0 +1,14 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "0011f2c392362c7e-000480ffd4000f39",
+        "source": "../../Resources/Textures/M5/WeaponHolder_standardSurface1_Roughness.png",
+        "compiled": "../../Resources/Textures/M5/WeaponHolder_standardSurface1_Roughness.dds"
+    },
+    "TextureMetaData": {
+        "type": "roughness",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp"
+    }
+}

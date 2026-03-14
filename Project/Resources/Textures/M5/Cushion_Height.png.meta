@@ -1,0 +1,14 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "0011f2c39944b2a9-000480ffd6000f3d",
+        "source": "../../Resources/Textures/M5/Cushion_Height.png",
+        "compiled": "../../Resources/Textures/M5/Cushion_Height.dds"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp"
+    }
+}

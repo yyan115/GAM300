@@ -1,0 +1,14 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "0011f2c3a3a83d9e-000481419c02422b",
+        "source": "../../Resources/Textures/M5/BossRoom/BossCloth1_Roughness.png",
+        "compiled": "../../Resources/Textures/M5/BossRoom/BossCloth1_Roughness.dds"
+    },
+    "TextureMetaData": {
+        "type": "roughness",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp"
+    }
+}

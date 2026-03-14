@@ -1,0 +1,11 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "0011f2c3ef146fe7-000481354c023267",
+        "source": "../../Resources/Models/Rooms/BossRoom/ceiling_bottom_low.fbx",
+        "compiled": "../../Resources/Models/Rooms/BossRoom/ceiling_bottom_low.mesh"
+    },
+    "ModelMetaData": {
+        "optimizeMeshes": true
+    }
+}

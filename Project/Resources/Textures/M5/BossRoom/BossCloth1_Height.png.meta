@@ -1,0 +1,14 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "0011f2c3fd5f9bdf-000481419e024231",
+        "source": "../../Resources/Textures/M5/BossRoom/BossCloth1_Height.png",
+        "compiled": "../../Resources/Textures/M5/BossRoom/BossCloth1_Height.dds"
+    },
+    "TextureMetaData": {
+        "type": "height",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp"
+    }
+}

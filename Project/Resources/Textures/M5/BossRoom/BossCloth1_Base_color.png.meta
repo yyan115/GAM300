@@ -1,0 +1,14 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "0011f2c3a6886985-00048141a0024233",
+        "source": "../../Resources/Textures/M5/BossRoom/BossCloth1_Base_color.png",
+        "compiled": "../../Resources/Textures/M5/BossRoom/BossCloth1_Base_color.dds"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp"
+    }
+}
