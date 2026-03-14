@@ -26,6 +26,7 @@
 #include <Panels/ScenePanel.hpp>
 #include <ECS/ActiveComponent.hpp>
 #include <Scene/SceneManager.hpp>
+#include "Scripting.h"
 
 bool PrefabEditor::isInPrefabEditorMode = false;
 //bool PrefabEditor::hasUnsavedChanges = false;
@@ -160,6 +161,12 @@ void PrefabEditor::StartEditingPrefab(const std::string& _prefabPath)
  //           ecs.GetComponent<ActiveComponent>(e).isActive = false;
  //       }
 	//}
+
+    // Reload scripts so the inspector can create preview instances for script components.
+    // ClearAllEntities() above invalidates the module cache; without this, CreateInstanceFromFile
+    // fails and no script fields are shown until the user presses the hot reload button manually.
+    Scripting::RequestReloadNow();
+    if (Scripting::GetLuaState()) Scripting::Tick(0.0f);
 }
 
 void PrefabEditor::StopEditingPrefab() {
@@ -265,7 +272,7 @@ void PrefabEditor::LoadPrefabSandbox()
     //    prefabPath,
     //    sandboxEntity,
     //    /*keepExistingPosition=*/false,
-    //    /*resolveAssets=*/false);   // <— key change
+    //    /*resolveAssets=*/false);   // < key change
 }
 
 #if PREFABEDITOR_ENABLE_PROPAGATION

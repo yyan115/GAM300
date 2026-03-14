@@ -232,6 +232,25 @@ int NarrativeDialogueManager::GetCurrentIndex(const std::string& name) const {
     return dialogue.currentIndex;
 }
 
+float NarrativeDialogueManager::GetCurrentEntryAutoTime(const std::string& name) const {
+    if (!m_ecs) return -1.0f;
+
+    auto it = m_dialogues.find(name);
+    if (it == m_dialogues.end()) return -1.0f;
+
+    Entity entity = it->second.entity;
+    if (!m_ecs->HasComponent<DialogueComponent>(entity)) return -1.0f;
+
+    const auto& dialogue = m_ecs->GetComponent<DialogueComponent>(entity);
+    int idx = dialogue.currentIndex;
+    if (idx < 0 || idx >= static_cast<int>(dialogue.entries.size())) return -1.0f;
+
+    const auto& entry = dialogue.entries[idx];
+    if (entry.scrollTypeID != static_cast<int>(DialogueScrollType::Time)) return -1.0f;
+
+    return entry.autoTime;
+}
+
 void NarrativeDialogueManager::OnTriggerEnter(Entity triggerEntity, Entity otherEntity) {
     if (!m_ecs) return;
 

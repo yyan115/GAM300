@@ -469,11 +469,6 @@ void GraphicsManager::Render()
 
 	// Per-frame render stats plots
 	{
-		PROFILE_SCOPED("GM::PlotStats");
-		PROFILE_PLOT("DrawCalls",        (double)m_sortingStats.drawCalls);
-		PROFILE_PLOT("ShaderSwitches",   (double)m_sortingStats.shaderSwitches);
-		PROFILE_PLOT("MaterialSwitches", (double)m_sortingStats.materialSwitches);
-
 		const auto& instStats = InstancingManager::GetInstance().GetStats();
 		PROFILE_PLOT("InstancedObjects", (double)instStats.instancedObjects);
 		PROFILE_PLOT("InstancingBatches",(double)instStats.batchCount);

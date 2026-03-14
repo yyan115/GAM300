@@ -16,6 +16,8 @@ public:
     bool IsDialogueActive(const std::string& name) const;
     bool IsAnyDialogueActive() const;
     int GetCurrentIndex(const std::string& name) const;
+    // Returns autoTime of the current entry if it is Time-scroll mode, -1.0 otherwise
+    float GetCurrentEntryAutoTime(const std::string& name) const;
 
     // Called by trigger system when a trigger is entered
     void OnTriggerEnter(Entity triggerEntity, Entity otherEntity);

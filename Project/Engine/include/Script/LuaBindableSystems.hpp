@@ -1576,4 +1576,7 @@ namespace DialogueManagerWrappers {
     inline int GetCurrentIndex(const std::string& name) {
         return NarrativeDialogueManager::GetInstance().GetCurrentIndex(name);
     }
+    inline float GetCurrentEntryAutoTime(const std::string& name) {
+        return NarrativeDialogueManager::GetInstance().GetCurrentEntryAutoTime(name);
+    }
 }

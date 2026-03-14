@@ -13,6 +13,7 @@ return Component {
         self._lastIndex = -1
         self._entryTimer = 0
         self._isHidden = false
+        self._currentDisplayTime = self.entryDisplayTime
 
         local monologueEnt = Engine.GetEntityByName("Monologue")
         if monologueEnt then
@@ -46,6 +47,11 @@ return Component {
             self._isHidden = false
 
             if currentIndex >= 0 then
+                -- Resolve display duration from dialogue entry (Time mode) or fallback
+                local autoTime = DialogueManager.GetCurrentEntryAutoTime(self.dialogueName)  
+                self._currentDisplayTime = (autoTime > 0) and autoTime or self.entryDisplayTime
+                print("Current Dialogue Index:", currentIndex, "AutoTime:", autoTime, "Set display time to:", self._currentDisplayTime)
+
                 -- Play VO for this entry
                 local guidIndex = currentIndex + 1  -- Lua is 1-indexed
                 local guid = self.NarrativeSFX[guidIndex]
@@ -62,7 +68,7 @@ return Component {
         -- Disable visuals after display time
         if currentIndex >= 0 and not self._isHidden then
             self._entryTimer = self._entryTimer + dt
-            if self._entryTimer >= self.entryDisplayTime then
+            if self._entryTimer >= self._currentDisplayTime then
                 self._isHidden = true
                 self:_setVisualsActive(false)
             end

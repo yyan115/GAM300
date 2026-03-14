@@ -486,6 +486,7 @@ BEGIN_SYSTEM("DialogueManager")
     FUNCTION("IsDialogueActive", &DialogueManagerWrappers::IsDialogueActive)
     FUNCTION("IsAnyDialogueActive", &DialogueManagerWrappers::IsAnyDialogueActive)
     FUNCTION("GetCurrentIndex", &DialogueManagerWrappers::GetCurrentIndex)
+    FUNCTION("GetCurrentEntryAutoTime", &DialogueManagerWrappers::GetCurrentEntryAutoTime)
 END_SYSTEM()
 
 // ============================================================================
