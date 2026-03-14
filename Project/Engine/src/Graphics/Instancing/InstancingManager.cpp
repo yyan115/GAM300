@@ -122,9 +122,11 @@ InstanceBatch& InstancingManager::GetOrCreateBatch(const BatchKey& key, std::sha
     return newBatch;
 }
 
-void InstancingManager::RenderBatches(const glm::mat4& view, const glm::mat4& projection, const glm::vec3& cameraPos) 
+void InstancingManager::RenderBatches(const glm::mat4& view, const glm::mat4& projection, const glm::vec3& cameraPos)
 {
-    if (!m_enabled) 
+    PROFILE_FUNCTION();
+
+    if (!m_enabled)
     {
         return;
     }

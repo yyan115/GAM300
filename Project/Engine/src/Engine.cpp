@@ -706,7 +706,12 @@ bool Engine::InitializeAssets() {
 }
 
 void Engine::Update() {
-    TimeManager::UpdateDeltaTime();
+    PROFILE_FUNCTION();
+
+    {
+        PROFILE_SCOPED("Engine::DeltaTime");
+        TimeManager::UpdateDeltaTime();
+    }
 
 #if !defined(EDITOR) && !defined(ANDROID) && defined(NDEBUG)
     UpdateStandaloneWindowTitleWithFps();
@@ -715,6 +720,7 @@ void Engine::Update() {
     // Update input FIRST so systems have fresh input state this frame
     // This fixes the 1-frame input delay that caused buttons to require double-clicks
     if (g_inputManager) {
+        PROFILE_SCOPED("Engine::InputUpdate");
         g_inputManager->Update(static_cast<float>(TimeManager::GetUnscaledDeltaTime()));
     }
 
@@ -724,11 +730,15 @@ void Engine::Update() {
     //RunBrainInitSystem(ecs);
 
     //RunBrainUpdateSystem(ecs, static_cast<float>(TimeManager::GetDeltaTime()));
-    SceneManager::GetInstance().UpdateAsyncLoad();
+    {
+        PROFILE_SCOPED("Engine::AsyncLoad");
+        SceneManager::GetInstance().UpdateAsyncLoad();
+    }
 
 	// Only update the scene if the game should be running (not paused)
 	if (ShouldRunGameLogic())
     {
+        PROFILE_SCOPED("Engine::UpdateScene");
         SceneManager::GetInstance().UpdateScene(TimeManager::GetDeltaTime()); // REPLACE WITH DT LATER
 	}
 }

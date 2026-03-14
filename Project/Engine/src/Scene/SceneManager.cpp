@@ -373,23 +373,31 @@ bool SceneManager::IsLoading() const {
 }
 
 void SceneManager::UpdateAsyncLoad() {
+    PROFILE_FUNCTION();
+
     if (asyncSwapPending) {
+        PROFILE_SCOPED("AsyncLoad::SceneSwap");
         asyncSwapPending = false;
 
         ECSRegistry::GetInstance().SetActiveECSManager(asyncScenePath);
 
-        AudioManager::GetInstance().StopAll();
-        if (currentScene) {
-            ECSRegistry::GetInstance().SetActiveECSManager(currentScenePath);
-            currentScene->Exit();
-            currentScene.reset();
-            ECSRegistry::GetInstance().SetActiveECSManager(asyncScenePath);
-            ECSRegistry::GetInstance()
-                .GetECSManager(currentScenePath).ClearAllEntities(false);
-            ECSRegistry::GetInstance()
-                .DestroyECSManager(currentScenePath);
-        }
         {
+            PROFILE_SCOPED("AsyncLoad::ExitOldScene");
+            AudioManager::GetInstance().StopAll();
+            if (currentScene) {
+                ECSRegistry::GetInstance().SetActiveECSManager(currentScenePath);
+                currentScene->Exit();
+                currentScene.reset();
+                ECSRegistry::GetInstance().SetActiveECSManager(asyncScenePath);
+                ECSRegistry::GetInstance()
+                    .GetECSManager(currentScenePath).ClearAllEntities(false);
+                ECSRegistry::GetInstance()
+                    .DestroyECSManager(currentScenePath);
+            }
+        }
+
+        {
+            PROFILE_SCOPED("AsyncLoad::ReinitGraphics");
             GraphicsManager& gfx = GraphicsManager::GetInstance();
             gfx.Initialize(RunTimeVar::window.width, RunTimeVar::window.height);
             PostProcessingManager::GetInstance().Initialize();
@@ -401,13 +409,19 @@ void SceneManager::UpdateAsyncLoad() {
                 hdr->SetToneMappingMode(HDREffect::ToneMappingMode::REINHARD);
             }
         }
+
         currentScene = std::move(pendingScene);
         currentScenePath = asyncScenePath;
         currentSceneName = std::filesystem::path(currentScenePath)
             .stem().generic_string();
-        currentScene->initializeOrchestrator();
 
         {
+            PROFILE_SCOPED("AsyncLoad::InitOrchestrator");
+            currentScene->initializeOrchestrator();
+        }
+
+        {
+            PROFILE_SCOPED("AsyncLoad::InitScripts");
             ECSManager& ecsRef = ECSRegistry::GetInstance().GetECSManager(currentScenePath);
             ecsRef.scriptSystem->Shutdown();
             ecsRef.scriptSystem->Initialise(ecsRef);
@@ -426,11 +440,13 @@ void SceneManager::UpdateAsyncLoad() {
     }
     switch (loadState) {
     case SceneLoadState::UNLOADING_CURRENT: {
+        PROFILE_SCOPED("AsyncLoad::CreateECSManager");
         ECSRegistry::GetInstance().CreateECSManager(asyncScenePath);
         loadState = SceneLoadState::PARSING_JSON;
         break;
     }
     case SceneLoadState::PARSING_JSON: {
+        PROFILE_SCOPED("AsyncLoad::ParseJSON");
         ENGINE_PRINT("[AsyncLoad] PARSING_JSON for: " + asyncScenePath);
         IPlatform* platform = WindowManager::GetPlatform();
         if (!platform || !platform->FileExists(asyncScenePath)) {
@@ -458,13 +474,17 @@ void SceneManager::UpdateAsyncLoad() {
 
         pendingScene = std::make_unique<SceneInstance>(asyncScenePath);
         ECSRegistry::GetInstance().SetActiveECSManager(asyncScenePath);
-        pendingScene->InitializeJoltPhysics();
+        {
+            PROFILE_SCOPED("AsyncLoad::InitJoltPhysics");
+            pendingScene->InitializeJoltPhysics();
+        }
         ECSRegistry::GetInstance().SetActiveECSManager(currentScenePath);
 
         loadState = SceneLoadState::DESERIALIZING;
         break;
     }
     case SceneLoadState::DESERIALIZING: {
+        PROFILE_SCOPED("AsyncLoad::DeserializeChunk");
         if (asyncEntityTotal == 0) {
             loadState = SceneLoadState::INITIALIZING;
             break;
@@ -510,36 +530,34 @@ void SceneManager::UpdateAsyncLoad() {
 
         ECSManager& ecs = ECSRegistry::GetInstance().GetECSManager(asyncScenePath);
 
+        PROFILE_SCOPED("AsyncLoad::InitSystem");
+
         switch (asyncSystemInitStep) {
-        case 0: ecs.transformSystem->Initialise(); break;
-        case 1: ecs.cameraSystem->Initialise(); break;
-        case 2:
-        {
+        case 0: { PROFILE_SCOPED("SysInit::Transform");      ecs.transformSystem->Initialise();      break; }
+        case 1: { PROFILE_SCOPED("SysInit::Camera");         ecs.cameraSystem->Initialise();         break; }
+        case 2: {
+            PROFILE_SCOPED("SysInit::Model");
             Entity activeCam = ecs.cameraSystem->GetActiveCameraEntity();
             GraphicsManager& gfx = GraphicsManager::GetInstance();
             if (activeCam != UINT32_MAX && ecs.cameraSystem->GetActiveCamera())
                 gfx.SetCamera(ecs.cameraSystem->GetActiveCamera());
-        }
-        ecs.modelSystem->Initialise();
-        break;
-        case 3: ecs.debugDrawSystem->Initialise(); break;
-        case 4: ecs.textSystem->Initialise(); break;
-        case 5: ecs.spriteSystem->Initialise(); break;
-        case 6: ecs.particleSystem->Initialise(); break;
-        case 7: ecs.animationSystem->Initialise(); break;
-        case 8: pendingScene->InitializePhysics(); break;
-        case 9: ecs.spriteAnimationSystem->Initialise(); break;
-        case 10: ecs.uiAnchorSystem->Initialise(ecs); break;
-        case 11: ecs.buttonSystem->Initialise(ecs); break;
-        case 12: ecs.sliderSystem->Initialise(ecs); break;
-        case 13: ecs.videoSystem->Initialise(ecs); break;
-        case 14: ecs.dialogueSystem->Initialise(ecs); break;
-        case 15: ecs.fogSystem->Initialise(); break;
-        case 16:
-        
-            asyncSwapPending = true;
+            ecs.modelSystem->Initialise();
             break;
-        
+        }
+        case 3:  { PROFILE_SCOPED("SysInit::DebugDraw");      ecs.debugDrawSystem->Initialise();      break; }
+        case 4:  { PROFILE_SCOPED("SysInit::Text");            ecs.textSystem->Initialise();           break; }
+        case 5:  { PROFILE_SCOPED("SysInit::Sprite");          ecs.spriteSystem->Initialise();         break; }
+        case 6:  { PROFILE_SCOPED("SysInit::Particle");        ecs.particleSystem->Initialise();       break; }
+        case 7:  { PROFILE_SCOPED("SysInit::Animation");       ecs.animationSystem->Initialise();      break; }
+        case 8:  { PROFILE_SCOPED("SysInit::Physics");         pendingScene->InitializePhysics();      break; }
+        case 9:  { PROFILE_SCOPED("SysInit::SpriteAnimation"); ecs.spriteAnimationSystem->Initialise(); break; }
+        case 10: { PROFILE_SCOPED("SysInit::UIAnchor");        ecs.uiAnchorSystem->Initialise(ecs);   break; }
+        case 11: { PROFILE_SCOPED("SysInit::Button");          ecs.buttonSystem->Initialise(ecs);     break; }
+        case 12: { PROFILE_SCOPED("SysInit::Slider");          ecs.sliderSystem->Initialise(ecs);     break; }
+        case 13: { PROFILE_SCOPED("SysInit::Video");           ecs.videoSystem->Initialise(ecs);      break; }
+        case 14: { PROFILE_SCOPED("SysInit::Dialogue");        ecs.dialogueSystem->Initialise(ecs);   break; }
+        case 15: { PROFILE_SCOPED("SysInit::Fog");             ecs.fogSystem->Initialise();            break; }
+        case 16: { PROFILE_SCOPED("SysInit::SwapPending");     asyncSwapPending = true;                break; }
         break;
 
         }

@@ -242,10 +242,15 @@ void GraphicsManager::UpdateFrustum()
 void GraphicsManager::Render()
 {
 	PROFILE_FUNCTION();
-	PROFILE_GPU_ZONE("Render");
+	{
+		PROFILE_SCOPED("GM::GPUZoneScope");
+		PROFILE_GPU_ZONE("Render");
 
-	if (auto* platform = WindowManager::GetPlatform()) {
-		platform->MakeContextCurrent();
+	{
+		PROFILE_SCOPED("GM::MakeContextCurrent");
+		if (auto* platform = WindowManager::GetPlatform()) {
+			platform->MakeContextCurrent();
+		}
 	}
 
 	if (!currentCamera)
@@ -261,40 +266,59 @@ void GraphicsManager::Render()
 
 	currentFrameViewport = GetCurrentViewport();
 
-	ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
-	if (ecsManager.lightingSystem)
+	ECSManager* ecsManagerPtr = nullptr;
 	{
-		ecsManager.lightingSystem->RenderShadowMaps();
+		PROFILE_SCOPED("GM::GetECSManager");
+		ecsManagerPtr = &ECSRegistry::GetInstance().GetActiveECSManager();
+	}
+	ECSManager& ecsManager = *ecsManagerPtr;
+
+	{
+		PROFILE_SCOPED("GM::ShadowMaps");
+		if (ecsManager.lightingSystem)
+		{
+			ecsManager.lightingSystem->RenderShadowMaps();
+		}
 	}
 
 	// Render skybox first (before other objects)
-	RenderSkybox();
+	{
+		PROFILE_SCOPED("GM::Skybox");
+		RenderSkybox();
+	}
 
 	// Separate models from other render items, moving excluded items to deferred queue
 	std::vector<IRenderComponent*> modelItems;
 	std::vector<IRenderComponent*> otherItems;
 
-	for (auto& item : renderQueue)
 	{
-		if (item->excludeFromPostProcess)
+		PROFILE_SCOPED("GM::QueueSeparation");
+		for (auto& item : renderQueue)
 		{
-			deferredQueue.push_back(std::move(item));
-			continue;
-		}
-		if (dynamic_cast<ModelRenderComponent*>(item.get()))
-		{
-			modelItems.push_back(item.get());
-		}
-		else
-		{
-			otherItems.push_back(item.get());
+			if (item->excludeFromPostProcess)
+			{
+				deferredQueue.push_back(std::move(item));
+				continue;
+			}
+			if (dynamic_cast<ModelRenderComponent*>(item.get()))
+			{
+				modelItems.push_back(item.get());
+			}
+			else
+			{
+				otherItems.push_back(item.get());
+			}
 		}
 	}
 	// Enable MRT so bloom-capable shaders can write to the bloom emission texture
-	PostProcessingManager::GetInstance().EnableBloomMRT();
+	{
+		PROFILE_SCOPED("GM::EnableBloomMRT");
+		PostProcessingManager::GetInstance().EnableBloomMRT();
+	}
 
 	// Bind skybox texture for environment reflections (high texture unit to avoid conflicts)
 	{
+		PROFILE_SCOPED("GM::EnvReflectionBind");
 		ECSManager& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
 		Entity activeCam = ecs.cameraSystem ? ecs.cameraSystem->GetActiveCameraEntity() : UINT32_MAX;
 		bool hasEnv = false;
@@ -314,22 +338,24 @@ void GraphicsManager::Render()
 
 	InstancingManager& instancing = InstancingManager::GetInstance();
 
-	if (instancing.IsEnabled())
 	{
-		// Get view/projection matrices
-		glm::mat4 view = currentCamera->GetViewMatrix();
-		float aspectRatio = currentFrameViewport.aspectRatio;
-		glm::mat4 projection = glm::perspective(
-			glm::radians(currentCamera->Zoom),
-			aspectRatio,
-			0.1f, m_farPlane
-		);
+		PROFILE_SCOPED("GM::InstancingRender");
+		if (instancing.IsEnabled())
+		{
+			// Get view/projection matrices
+			glm::mat4 view = currentCamera->GetViewMatrix();
+			float aspectRatio = currentFrameViewport.aspectRatio;
+			glm::mat4 projection = glm::perspective(
+				glm::radians(currentCamera->Zoom),
+				aspectRatio,
+				0.1f, m_farPlane
+			);
 
-		// Render all batched instances
-		instancing.RenderBatches(view, projection, currentCamera->Position);
+			// Render all batched instances
+			instancing.RenderBatches(view, projection, currentCamera->Position);
 
-		// End instancing frame
-		instancing.EndFrame();
+			// End instancing frame
+			instancing.EndFrame();
 
 		//// Print stats every 300 frames
 		//static int frameCount = 0;
@@ -350,84 +376,109 @@ void GraphicsManager::Render()
 		//const auto& instStats = instancing.GetStats();
 		//// log stats
 		//std::cout << "Instanced: " << instStats.instancedObjects << ", Batches: " << instStats.batchCount << std::endl;
+		}
 	}
 
-	// Sort models by state (shader -> material -> mesh)
-	std::sort(modelItems.begin(), modelItems.end(),
-		[this](IRenderComponent* a, IRenderComponent* b) {
-			auto* modelA = static_cast<ModelRenderComponent*>(a);
-			auto* modelB = static_cast<ModelRenderComponent*>(b);
+	{
+		PROFILE_SCOPED("GM::ModelSort");
+		std::sort(modelItems.begin(), modelItems.end(),
+			[this](IRenderComponent* a, IRenderComponent* b) {
+				auto* modelA = static_cast<ModelRenderComponent*>(a);
+				auto* modelB = static_cast<ModelRenderComponent*>(b);
 
-			// Build sort keys
-			RenderLayer::Type layerA = modelA->material && modelA->material->GetOpacity() < 1.0f
-				? RenderLayer::Type::LAYER_TRANSPARENT
-				: RenderLayer::Type::LAYER_OPAQUE;
-			RenderLayer::Type layerB = modelB->material && modelB->material->GetOpacity() < 1.0f
-				? RenderLayer::Type::LAYER_TRANSPARENT
-				: RenderLayer::Type::LAYER_OPAQUE;
+				// Build sort keys
+				RenderLayer::Type layerA = modelA->material && modelA->material->GetOpacity() < 1.0f
+					? RenderLayer::Type::LAYER_TRANSPARENT
+					: RenderLayer::Type::LAYER_OPAQUE;
+				RenderLayer::Type layerB = modelB->material && modelB->material->GetOpacity() < 1.0f
+					? RenderLayer::Type::LAYER_TRANSPARENT
+					: RenderLayer::Type::LAYER_OPAQUE;
 
-			RenderSortKey keyA(layerA,
-				m_idCache.GetShaderId(modelA->shader.get()),
-				m_idCache.GetMaterialId(modelA->material.get()),
-				m_idCache.GetModelId(modelA->model.get()));
+				RenderSortKey keyA(layerA,
+					m_idCache.GetShaderId(modelA->shader.get()),
+					m_idCache.GetMaterialId(modelA->material.get()),
+					m_idCache.GetModelId(modelA->model.get()));
 
-			RenderSortKey keyB(layerB,
-				m_idCache.GetShaderId(modelB->shader.get()),
-				m_idCache.GetMaterialId(modelB->material.get()),
-				m_idCache.GetModelId(modelB->model.get()));
+				RenderSortKey keyB(layerB,
+					m_idCache.GetShaderId(modelB->shader.get()),
+					m_idCache.GetMaterialId(modelB->material.get()),
+					m_idCache.GetModelId(modelB->model.get()));
 
-			return keyA < keyB;
-		});
+				return keyA < keyB;
+			});
 
-	// Sort other items by their existing sorting logic (sprites, text, etc.)
-	std::sort(otherItems.begin(), otherItems.end(),
-		[](IRenderComponent* a, IRenderComponent* b) {
-			// Keep your existing 2D sorting logic here
-			return a->renderOrder < b->renderOrder;
-		});
+		// Sort other items by their existing sorting logic (sprites, text, etc.)
+		std::sort(otherItems.begin(), otherItems.end(),
+			[](IRenderComponent* a, IRenderComponent* b) {
+				// Keep your existing 2D sorting logic here
+				return a->renderOrder < b->renderOrder;
+			});
+	}
 
 	// =========================================================================
 	// Render models with state tracking
 	// =========================================================================
-	for (IRenderComponent* item : modelItems) 
 	{
-		ModelRenderComponent* modelItem = static_cast<ModelRenderComponent*>(item);
-		// Skip if it was handled by instancing
-	   // (InstancingManager sets a flag or we check IsInstanceable)
-		if (instancing.IsEnabled() &&
-			!modelItem->HasAnimation() &&
-			modelItem->model &&
-			modelItem->model->mBoneInfoMap.empty())
+		PROFILE_SCOPED("GM::ModelRenderLoop");
+		for (IRenderComponent* item : modelItems)
 		{
-			continue;  // Already rendered via instancing
+			ModelRenderComponent* modelItem = static_cast<ModelRenderComponent*>(item);
+			// Skip if it was handled by instancing
+		   // (InstancingManager sets a flag or we check IsInstanceable)
+			if (instancing.IsEnabled() &&
+				!modelItem->HasAnimation() &&
+				modelItem->model &&
+				modelItem->model->mBoneInfoMap.empty())
+			{
+				continue;  // Already rendered via instancing
+			}
+			RenderModelOptimized(*modelItem);  // New optimized render method
 		}
-		RenderModelOptimized(*modelItem);  // New optimized render method
 	}
 
 	// =========================================================================
 	// Render other items (sprites, text, particles, debug)
 	// =========================================================================
-	for (IRenderComponent* item : otherItems) {
-		// ... your existing rendering logic for sprites, text, etc. ...
-		if (auto* textItem = dynamic_cast<TextRenderComponent*>(item)) {
-			RenderText(*textItem);
-		}
-		else if (auto* spriteItem = dynamic_cast<SpriteRenderComponent*>(item)) {
-			RenderSprite(*spriteItem);
-		}
-		else if (auto* debugItem = dynamic_cast<DebugDrawComponent*>(item)) {
-			RenderDebugDraw(*debugItem);
-		}
-		else if (auto* particleItem = dynamic_cast<ParticleComponent*>(item)) {
-			RenderParticles(*particleItem);
-		}
-		else if (auto* fogItem = dynamic_cast<FogVolumeComponent*>(item)) {
-			RenderFogVolume(*fogItem);
+	{
+		PROFILE_SCOPED("GM::OtherItemsRender");
+		for (IRenderComponent* item : otherItems) {
+			// ... your existing rendering logic for sprites, text, etc. ...
+			if (auto* textItem = dynamic_cast<TextRenderComponent*>(item)) {
+				RenderText(*textItem);
+			}
+			else if (auto* spriteItem = dynamic_cast<SpriteRenderComponent*>(item)) {
+				RenderSprite(*spriteItem);
+			}
+			else if (auto* debugItem = dynamic_cast<DebugDrawComponent*>(item)) {
+				RenderDebugDraw(*debugItem);
+			}
+			else if (auto* particleItem = dynamic_cast<ParticleComponent*>(item)) {
+				RenderParticles(*particleItem);
+			}
+			else if (auto* fogItem = dynamic_cast<FogVolumeComponent*>(item)) {
+				RenderFogVolume(*fogItem);
+			}
 		}
 	}
 
 	// Disable bloom MRT — done writing bloom emission
-	PostProcessingManager::GetInstance().DisableBloomMRT();
+	{
+		PROFILE_SCOPED("GM::DisableBloomMRT");
+		PostProcessingManager::GetInstance().DisableBloomMRT();
+	}
+
+	// Per-frame render stats plots
+	{
+		PROFILE_SCOPED("GM::PlotStats");
+		PROFILE_PLOT("DrawCalls",        (double)m_sortingStats.drawCalls);
+		PROFILE_PLOT("ShaderSwitches",   (double)m_sortingStats.shaderSwitches);
+		PROFILE_PLOT("MaterialSwitches", (double)m_sortingStats.materialSwitches);
+
+		const auto& instStats = InstancingManager::GetInstance().GetStats();
+		PROFILE_PLOT("InstancedObjects", (double)instStats.instancedObjects);
+		PROFILE_PLOT("InstancingBatches",(double)instStats.batchCount);
+		PROFILE_PLOT("CulledObjects",    (double)instStats.culledObjects);
+	}
 
 	// Debug output (optional - remove in release)
 	/*static int frameCount = 0;
@@ -438,6 +489,7 @@ void GraphicsManager::Render()
 			<< " ShaderSwitch: " << m_sortingStats.shaderSwitches
 			<< " MatSwitch: " << m_sortingStats.materialSwitches << "\n";
 	}*/
+	} // end GM::GPUZoneScope
 }
 
 void GraphicsManager::RenderDeferred()
@@ -1445,6 +1497,7 @@ void GraphicsManager::RenderModelOptimized(const ModelRenderComponent& item)
 
 	// Switch shader only if different
 	if (shader != m_currentShader) {
+		PROFILE_SCOPED("GM::ShaderSwitch+Lighting");
 		shader->Activate();
 		m_currentShader = shader;
 		m_sortingStats.shaderSwitches++;
@@ -1484,6 +1537,7 @@ void GraphicsManager::RenderModelOptimized(const ModelRenderComponent& item)
 
 	// Switch material only if different
 	if (material != m_currentMaterial) {
+		PROFILE_SCOPED("GM::MaterialBind");
 		if (material) {
 			material->ApplyToShader(*shader);
 		}
@@ -1492,24 +1546,27 @@ void GraphicsManager::RenderModelOptimized(const ModelRenderComponent& item)
 	}
 
 	// Draw the model
-	if (item.depthOffset)
 	{
-		glEnable(GL_POLYGON_OFFSET_FILL);
-		glPolygonOffset(item.depthOffsetFactor, item.depthOffsetUnits);
-	}
+		PROFILE_SCOPED("GM::ModelDraw");
+		if (item.depthOffset)
+		{
+			glEnable(GL_POLYGON_OFFSET_FILL);
+			glPolygonOffset(item.depthOffsetFactor, item.depthOffsetUnits);
+		}
 
-	if (item.HasAnimation())
-	{
-		item.model->Draw(*shader, *currentCamera, item.material, item, item.animator);
-	}
-	else
-	{
-		item.model->Draw(*shader, *currentCamera, item.material, item);
-	}
+		if (item.HasAnimation())
+		{
+			item.model->Draw(*shader, *currentCamera, item.material, item, item.animator);
+		}
+		else
+		{
+			item.model->Draw(*shader, *currentCamera, item.material, item);
+		}
 
-	if (item.depthOffset)
-	{
-		glDisable(GL_POLYGON_OFFSET_FILL);
+		if (item.depthOffset)
+		{
+			glDisable(GL_POLYGON_OFFSET_FILL);
+		}
 	}
 
 	m_sortingStats.drawCalls++;

@@ -134,6 +134,8 @@ void PostProcessingManager::Shutdown()
 
 void PostProcessingManager::Process(unsigned int inputTexture, unsigned int outputFBO, int width, int height)
 {
+    PROFILE_FUNCTION();
+
     if (!initialized)
     {
         ENGINE_PRINT(EngineLogging::LogLevel::Error, "[PostProcessingManager] Not initialized!\n");
@@ -148,6 +150,7 @@ void PostProcessingManager::Process(unsigned int inputTexture, unsigned int outp
     // Apply SSAO (generates half-res AO texture, consumed by HDR pass)
     if (ssaoEffect && ssaoEffect->IsEnabled())
     {
+        PROFILE_SCOPED("PostProcess::SSAO");
         ssaoEffect->SetDepthTexture(hdrDepthTexture);
         ssaoEffect->SetProjectionMatrix(currentProjection);
         ssaoEffect->SetInvProjectionMatrix(currentInvProjection);
@@ -157,6 +160,7 @@ void PostProcessingManager::Process(unsigned int inputTexture, unsigned int outp
     // Apply blur before tonemapping (modifies HDR framebuffer in-place)
     if (blurEffect && blurEffect->IsEnabled() && blurEffect->GetIntensity() > 0.01f)
     {
+        PROFILE_SCOPED("PostProcess::Blur");
         blurEffect->Apply(currentInput, hdrFramebuffer, width, height);
         // hdrColorTexture now contains blurred image, currentInput still points to it
     }
@@ -164,12 +168,14 @@ void PostProcessingManager::Process(unsigned int inputTexture, unsigned int outp
     // Apply directional blur after Gaussian blur
     if (directionalBlurEffect && directionalBlurEffect->IsEnabled() && directionalBlurEffect->GetIntensity() > 0.01f)
     {
+        PROFILE_SCOPED("PostProcess::DirectionalBlur");
         directionalBlurEffect->Apply(currentInput, hdrFramebuffer, width, height);
     }
 
     // Apply bloom using per-entity emission buffer (no threshold extraction)
     if (bloomEffect && bloomEffect->IsEnabled() && bloomEffect->GetIntensity() > 0.01f)
     {
+        PROFILE_SCOPED("PostProcess::Bloom");
         bloomEffect->SetBloomEmissionTexture(hdrBloomEmissionTexture);
         bloomEffect->Apply(currentInput, hdrFramebuffer, width, height);
     }
@@ -177,6 +183,7 @@ void PostProcessingManager::Process(unsigned int inputTexture, unsigned int outp
     // Apply HDR effect (shader will bypass tonemapping if disabled)
     if (hdrEffect)
     {
+        PROFILE_SCOPED("PostProcess::HDR");
         // Pass vignette/color grading settings to HDR effect
         hdrEffect->SetVignetteEnabled(vignetteEnabled);
         hdrEffect->SetVignetteIntensity(vignetteIntensity_);

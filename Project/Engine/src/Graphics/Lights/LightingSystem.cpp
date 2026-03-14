@@ -59,6 +59,8 @@ void LightingSystem::Shutdown()
 
 void LightingSystem::RenderShadowMaps()
 {
+    PROFILE_FUNCTION();
+
     if (!shadowsEnabled || !shadowRenderCallback)
     {
         return;
@@ -67,6 +69,7 @@ void LightingSystem::RenderShadowMaps()
     // Render directional shadow
     if (directionalLightData.hasDirectionalLight)
     {
+        PROFILE_SCOPED("Shadow::Directional");
         Camera* camera = GraphicsManager::GetInstance().GetCurrentCamera();
         glm::vec3 sceneCenter = camera ? camera->Position : glm::vec3(0.0f);
 
@@ -108,6 +111,7 @@ void LightingSystem::RenderShadowMaps()
             float lightRange = pointLightData.range[i];
             if (pointShadowMaps[shadowIndex].NeedsUpdate(lightPos, lightRange))
             {
+                PROFILE_SCOPED("Shadow::PointLight");
                 GraphicsManager::GetInstance().SetPointShadowCullData(lightPos, lightRange);
                 pointShadowMaps[shadowIndex].Render(lightPos, lightRange, shadowRenderCallback);
                 GraphicsManager::GetInstance().ClearPointShadowCullData();
