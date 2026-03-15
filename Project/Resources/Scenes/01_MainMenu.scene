@@ -9013,20 +9013,36 @@
                             "entryFunction": "OnInit",
                             "autoInvokeEntry": true,
                             "instanceState": {
-                                "endY": 2700.0,
-                                "fadeDuration": 1.0,
-                                "_private": {},
-                                "scrollSpeed": 100.0,
-                                "__meta": {},
+                                "AwakeSafe": null,
                                 "__created_at": 1772626301.0,
-                                "__field_list": {
-                                    "startY": -2150.0,
-                                    "endY": 3500.0,
-                                    "scrollSpeed": 100.0,
-                                    "fadeDuration": 1.0
-                                },
+                                "_closeCreditsUI": null,
+                                "_resetCredits": null,
+                                "endY": 2700.0,
+                                "Start": null,
+                                "Destroy": null,
+                                "fadeDuration": 1.0,
+                                "StartSafe": null,
+                                "_subscriptions": {},
+                                "Update": null,
+                                "scrollSpeed": 100.0,
                                 "startY": -1550.0,
-                                "_subscriptions": {}
+                                "Unsubscribe": null,
+                                "_call_lifecycle": null,
+                                "__meta": {},
+                                "DeserializeFields": null,
+                                "Every": null,
+                                "UpdateSafe": null,
+                                "DisableSafe": null,
+                                "Subscribe": null,
+                                "__field_list": {
+                                    "endY": 3500.0,
+                                    "fadeDuration": 1.0,
+                                    "scrollSpeed": 100.0,
+                                    "startY": -2150.0
+                                },
+                                "_private": {},
+                                "SerializeFields": null,
+                                "After": null
                             }
                         }
                     ]
@@ -26663,6 +26679,76 @@
                         "004790c748313326-00047cb8e40001bb"
                     ]
                 },
+                "AudioComponent": {
+                    "type": "AudioComponent",
+                    "data": [
+                        {
+                            "type": "bool",
+                            "data": true
+                        },
+                        "0037d81b07b695ee-000400f740000007",
+                        {
+                            "type": "bool",
+                            "data": false
+                        },
+                        {
+                            "type": "bool",
+                            "data": false
+                        },
+                        {
+                            "type": "bool",
+                            "data": false
+                        },
+                        {
+                            "type": "bool",
+                            "data": false
+                        },
+                        {
+                            "type": "int",
+                            "data": 128
+                        },
+                        {
+                            "type": "float",
+                            "data": 1
+                        },
+                        {
+                            "type": "float",
+                            "data": 1
+                        },
+                        {
+                            "type": "float",
+                            "data": 0
+                        },
+                        {
+                            "type": "float",
+                            "data": 1
+                        },
+                        {
+                            "type": "bool",
+                            "data": false
+                        },
+                        {
+                            "type": "float",
+                            "data": 0
+                        },
+                        {
+                            "type": "float",
+                            "data": 1
+                        },
+                        {
+                            "type": "float",
+                            "data": 1
+                        },
+                        {
+                            "type": "float",
+                            "data": 100
+                        },
+                        {
+                            "type": "std::string",
+                            "data": "SFX"
+                        }
+                    ]
+                },
                 "ActiveComponent": {
                     "type": "ActiveComponent",
                     "data": [
@@ -26954,6 +27040,76 @@
                     "type": "ParentComponent",
                     "data": [
                         "004790c748313326-00047cb8e40001bb"
+                    ]
+                },
+                "AudioComponent": {
+                    "type": "AudioComponent",
+                    "data": [
+                        {
+                            "type": "bool",
+                            "data": true
+                        },
+                        "0037d81b07b695ee-000400f740000007",
+                        {
+                            "type": "bool",
+                            "data": false
+                        },
+                        {
+                            "type": "bool",
+                            "data": false
+                        },
+                        {
+                            "type": "bool",
+                            "data": false
+                        },
+                        {
+                            "type": "bool",
+                            "data": false
+                        },
+                        {
+                            "type": "int",
+                            "data": 128
+                        },
+                        {
+                            "type": "float",
+                            "data": 1
+                        },
+                        {
+                            "type": "float",
+                            "data": 1
+                        },
+                        {
+                            "type": "float",
+                            "data": 0
+                        },
+                        {
+                            "type": "float",
+                            "data": 1
+                        },
+                        {
+                            "type": "bool",
+                            "data": false
+                        },
+                        {
+                            "type": "float",
+                            "data": 0
+                        },
+                        {
+                            "type": "float",
+                            "data": 1
+                        },
+                        {
+                            "type": "float",
+                            "data": 1
+                        },
+                        {
+                            "type": "float",
+                            "data": 100
+                        },
+                        {
+                            "type": "std::string",
+                            "data": "SFX"
+                        }
                     ]
                 },
                 "ActiveComponent": {

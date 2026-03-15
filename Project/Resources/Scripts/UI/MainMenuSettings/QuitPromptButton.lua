@@ -94,6 +94,10 @@ return Component {
     end,
 
     ClosePrompt = function(self)
+            -- Play Click SFX
+            if self._audio and self.SFX and self.SFX[2] then
+                self._audio:PlayOneShot(self.SFX[2])
+            end
 
             local YesEntity = Engine.GetEntityByName("YesButton")
             local YesButton = GetComponent(YesEntity, "ButtonComponent")
@@ -124,6 +128,11 @@ return Component {
         end,
 
     ExitGame = function(self)
+        -- Play Click SFX
+        if self._audio and self.SFX and self.SFX[2] then
+            self._audio:PlayOneShot(self.SFX[2])
+        end
+
         self._ScreenRequestClose = true
         if self._ScreenRequestClose == true then
             Screen.RequestClose()

@@ -87,13 +87,8 @@ return Component {
     -- Quit Button Function
     OnClickQuitButton = function(self)
         -- Play click SFX
-        -- self:_playClickSFX("ExitGame")
-        -- if Screen and Screen.RequestClose then
-        --     Screen.RequestClose()
-        -- else
-        --     print("[MainMenuButtonHandler] Warning: Screen.RequestClose missing")
-        -- end
-        
+        self:_playClickSFX("ExitGame")
+
         local QuitPromptEntity = Engine.GetEntityByName("QuitPromptUI")
         local QuitPromptUI = GetComponent(QuitPromptEntity, "ActiveComponent")
         QuitPromptUI.isActive = true
@@ -178,23 +173,12 @@ return Component {
 
         -- Disable main menu buttons and hide text when credits is active
         local targetButtons = {"PlayGame", "Credits", "ExitGame", "Settings"}
-        local targetTexts = {"PlayGameText", "SettingText", "CreditsText", "ExitGameText"}
         for _, buttonName in ipairs(targetButtons) do
             local entity = Engine.GetEntityByName(buttonName)
             if entity then
                 local button = GetComponent(entity, "ButtonComponent")
                 if button then
                     button.interactable = false
-                end
-            end
-        end
-        -- Hide button text to prevent z-order issues with CreditsUI overlay
-        for _, textName in ipairs(targetTexts) do
-            local textEntity = Engine.GetEntityByName(textName)
-            if textEntity then
-                local textActive = GetComponent(textEntity, "ActiveComponent")
-                if textActive then
-                    textActive.isActive = false
                 end
             end
         end

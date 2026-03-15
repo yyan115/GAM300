@@ -3,8 +3,9 @@ local Component = require("extension.mono_helper")
 
 return Component {
     fields = {
-        scrollSpeed = 100,           -- Pixels per second
-        startY = -2150,              -- Starting Y position
+        scrollSpeed = 100,           -- Pixels per second (normal)
+        fastScrollSpeed = 400,       -- Pixels per second when screen is held
+        startY = -1550,              -- Starting Y position
         endY = 3500,                 -- Target Y position (when scrolling ends)
         fadeDuration = 1.0,          -- Duration for fade out
     },
@@ -29,6 +30,12 @@ return Component {
         if self._creditsTextEntity then
             self._creditsTextTransform = GetComponent(self._creditsTextEntity, "Transform")
             print("[CreditsHandler] CreditsText Transform: " .. tostring(self._creditsTextTransform))
+            -- Cache the initial position for reset
+            if self._creditsTextTransform then
+                local pos = self._creditsTextTransform.localPosition
+                self._creditsTextInitX = pos.x
+                self._creditsTextInitY = pos.y
+            end
         end
 
         if self._creditsBGEntity then
@@ -54,6 +61,18 @@ return Component {
                 self._isScrolling = true
                 self._isFading = false
                 print("[CreditsHandler] _isScrolling set to: " .. tostring(self._isScrolling))
+
+                -- Hide main menu button highlight sprites while credits is open
+                local mainButtons = {"PlayGame", "Credits", "ExitGame", "Settings"}
+                for _, name in ipairs(mainButtons) do
+                    local ent = Engine.GetEntityByName(name)
+                    if ent then
+                        local button = GetComponent(ent, "ButtonComponent")
+                        if button then
+                            button.interactable = false
+                        end
+                    end
+                end
             end
 
             self._wasActive = isActive
@@ -62,7 +81,8 @@ return Component {
         -- Handle scrolling
         if self._isScrolling and self._creditsTextTransform then
             local pos = self._creditsTextTransform.localPosition
-            local newY = pos.y + (self.scrollSpeed * dt)
+            local speed = Input.IsPointerPressed() and self.fastScrollSpeed or self.scrollSpeed
+            local newY = pos.y + (speed * dt)
 
             -- Check if we've reached the end position
             if newY >= self.endY then
@@ -99,7 +119,8 @@ return Component {
         -- Reset text position to start
         if self._creditsTextTransform then
             local pos = self._creditsTextTransform.localPosition
-            pos.y = self.startY
+            pos.x = self._creditsTextInitX
+            pos.y = self._creditsTextInitY
             self._creditsTextTransform.isDirty = true
         end
 
@@ -116,6 +137,17 @@ return Component {
         -- Disable CreditsUI
         if self._creditsUIActive then
             self._creditsUIActive.isActive = false
+        end
+
+        -- Reset visual state for next open
+        if self._creditsBGSprite then
+            self._creditsBGSprite.alpha = 1.0
+        end
+        if self._creditsTextTransform then
+            local pos = self._creditsTextTransform.localPosition
+            pos.x = self._creditsTextInitX
+            pos.y = self._creditsTextInitY
+            self._creditsTextTransform.isDirty = true
         end
 
         -- Re-enable main menu buttons
@@ -142,8 +174,18 @@ return Component {
             end
         end
 
-        -- Reset state
+        -- Disable close button
+        local closeButtonEntity = Engine.GetEntityByName("CloseCreditsButton")
+        if closeButtonEntity then
+            local closeButton = GetComponent(closeButtonEntity, "ButtonComponent")
+            if closeButton then
+                closeButton.interactable = false
+            end
+        end
+
+        -- Reset all state so rising edge detection works on next open
         self._isScrolling = false
         self._isFading = false
+        self._wasActive = false
     end,
 }
