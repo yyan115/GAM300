@@ -680,7 +680,8 @@
                                 "_subscriptions": {},
                                 "Every": null,
                                 "Unsubscribe": null,
-                                "Subscribe": null
+                                "Subscribe": null,
+                                "bgmFadeInDuration": 4.0
                             }
                         }
                     ]
