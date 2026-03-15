@@ -9,6 +9,7 @@ return Component {
         ButtonSFX = {},
         -- Sprite GUIDs: [1] = normal, [2] = hover
         ContinueSpriteGUIDs = {},
+        ControlsSpriteGUIDs = {},
         SettingSpriteGUIDs = {},
         MainMenuSpriteGUIDs = {},
     },
@@ -21,6 +22,7 @@ return Component {
         self._buttonData = {}
         local buttonMapping = {
             { base = "ContinueButton", spriteGUIDs = self.ContinueSpriteGUIDs },
+            { base = "ControlsButton", spriteGUIDs = self.ControlsSpriteGUIDs },
             { base = "SettingsButton", spriteGUIDs = self.SettingSpriteGUIDs },
             { base = "MainMenuButton", spriteGUIDs = self.MainMenuSpriteGUIDs },
         }
@@ -118,6 +120,26 @@ return Component {
         end
     end,
 
+    OnClickControlsButton = function(self)
+        local btn = Engine.GetEntityByName("ControlsButton")
+        if btn then
+            local audiocomp = GetComponent(btn, "AudioComponent")
+            if audiocomp then audiocomp:Play() end
+        end
+
+        local PauseUIEntity = Engine.GetEntityByName("PauseMenuUI")
+        local ControlsUIEntity = Engine.GetEntityByName("ControlsUI")
+
+        if PauseUIEntity then
+            local comp = GetComponent(PauseUIEntity, "ActiveComponent")
+            if comp then comp.isActive = false end
+        end
+        if ControlsUIEntity then
+            local comp = GetComponent(ControlsUIEntity, "ActiveComponent")
+            if comp then comp.isActive = true end
+        end
+    end,
+    
     OnClickSettingButton = function(self)
         local btn = Engine.GetEntityByName("SettingsButton")
         if btn then

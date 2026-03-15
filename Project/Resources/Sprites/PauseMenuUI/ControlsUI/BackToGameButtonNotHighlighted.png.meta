@@ -1,0 +1,14 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "00446a1709aef9ae-0004840e9202a989",
+        "source": "../../Resources/Sprites/PauseMenuUI/ControlsUI/BackToGameButtonNotHighlighted.png",
+        "compiled": "../../Resources/Sprites/PauseMenuUI/ControlsUI/BackToGameButtonNotHighlighted.dds"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": true,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp"
+    }
+}
