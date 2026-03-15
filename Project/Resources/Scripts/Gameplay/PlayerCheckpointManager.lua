@@ -14,6 +14,10 @@ return Component {
         self._activated = false
         self._tooltipShown = false
 
+        -- [TEMP FIX] Strip all double quotes from entity names
+        self.checkpointEntityName = self.checkpointEntityName:gsub('"', '')
+        self.tooltipEntityName = self.tooltipEntityName:gsub('"', '')
+
         -- Find player
         self._playerEnt = Engine.GetEntityByName("Player")
         self._playerTr  = self._playerEnt and GetComponent(self._playerEnt, "Transform") or nil
