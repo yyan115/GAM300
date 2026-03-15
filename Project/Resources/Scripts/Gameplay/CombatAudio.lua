@@ -10,51 +10,36 @@ PURPOSE:
 SINGLE RESPONSIBILITY: Play combat SFX. Nothing else.
 
 EVENTS CONSUMED:
-    attack_performed { state } → play per-state attack SFX
+    attack_performed     { state } → play swing SFX (skipped if a hit occurred this frame)
+    deal_damage_to_entity         → play SlashHitSFX (suppresses swing SFX same frame)
+    knifeHitPlayerDmg             → play EnemyRangedHitSFX
 
 FIELDS (populate clip arrays in editor with audio GUIDs):
-    SlashSFX        — light_1, light_2, light_3 swings
-    HeavySlashSFX   — heavy_release swing
-    ChainStrikeSFX  — chain_attack impact
+    SlashSFX           — light_1, light_2, light_3 swings (plays on miss)
+    HeavySlashSFX      — heavy_release swing
+    ChainStrikeSFX     — chain_attack impact
+    SlashHitSFX        — flesh impact when player weapon hits enemy
+    EnemyRangedHitSFX  — impact when enemy knife hits player
 
 AUTHOR: Soh Wei Jie
-VERSION: 1.1
+VERSION: 1.2
 ================================================================================
 --]]
 
 require("extension.engine_bootstrap")
-local Component = require("extension.mono_helper")
-
--- ── Local helpers (plain functions, no Component binding issues) ──────────────
-
-local function pickRandom(clips)
-    if not clips or #clips == 0 then return nil end
-    return clips[math.random(1, #clips)]
-end
-
-local function playForState(audio, clipsMap, state, baseVolume, pitchVar, volVar)
-    if not audio then return end
-    local clips = clipsMap[state]
-    if not clips or #clips == 0 then return end
-    local clip = pickRandom(clips)
-    if not clip or clip == "" then return end
-    pcall(function()
-        local pitch = 1.0 + (math.random() * 2 - 1) * pitchVar
-        local vol   = baseVolume + (math.random() * 2 - 1) * volVar
-        audio:SetPitch(math.max(0.5, pitch))
-        audio:SetVolume(math.max(0.0, math.min(1.0, vol)))
-        audio:PlayOneShot(clip)
-    end)
-end
+local Component     = require("extension.mono_helper")
+local AudioHelper   = require("extension.audio_helper")
 
 -- ─────────────────────────────────────────────────────────────────────────────
 
 return Component {
 
     fields = {
-        SlashSFX       = {},
-        HeavySlashSFX  = {},
-        ChainStrikeSFX = {},
+        SlashSFX           = {},
+        HeavySlashSFX      = {},
+        ChainStrikeSFX     = {},
+        SlashHitSFX        = {},
+        EnemyRangedHitSFX  = {},
 
         PitchVariation  = 0.08,
         VolumeVariation = 0.06,
@@ -62,28 +47,36 @@ return Component {
     },
 
     Awake = function(self)
-        self._audio    = nil
-        self._clipsMap = nil   -- built in Start once inspector fields are resolved
+        self._audio         = nil
+        self._clipsMap      = nil   -- built in Start once inspector fields are resolved
+        self._hitThisFrame  = false -- set by deal_damage_to_entity to suppress swing SFX
 
         if _G.event_bus and _G.event_bus.subscribe then
+            -- Subscribe deal_damage BEFORE attack_performed so the flag is set first
+            -- when both events are published in the same frame (melee hit case).
+            self._hitSub = _G.event_bus.subscribe("deal_damage_to_entity", function(data)
+                self._hitThisFrame = true
+                AudioHelper.PlayRandomSFXPitched(self._audio, self.SlashHitSFX, self.PitchVariation, self.BaseVolume)
+            end)
+
             self._attackSub = _G.event_bus.subscribe("attack_performed", function(data)
                 if not data or not data.state then return end
                 if not self._audio or not self._clipsMap then return end
-                playForState(
-                    self._audio,
-                    self._clipsMap,
-                    data.state,
-                    self.BaseVolume,
-                    self.PitchVariation,
-                    self.VolumeVariation
-                )
+                if self._hitThisFrame then
+                    self._hitThisFrame = false
+                    return  -- hit sound already playing; skip swing SFX
+                end
+                AudioHelper.PlayRandomSFXPitched(self._audio, self._clipsMap[data.state], self.PitchVariation, self.BaseVolume)
+            end)
+
+            self._rangedHitSub = _G.event_bus.subscribe("knifeHitPlayerDmg", function(data)
+                AudioHelper.PlayRandomSFXPitched(self._audio, self.EnemyRangedHitSFX, self.PitchVariation, self.BaseVolume)
             end)
         end
     end,
 
     Start = function(self)
         -- Try the entity this component sits on first, fall back to Player entity.
-        self._audio = self:GetComponent("AudioComponent")
         if not self._audio then
             local playerEntityId = Engine.GetEntityByName("Player")
             if playerEntityId then
@@ -107,7 +100,9 @@ return Component {
 
     OnDisable = function(self)
         if _G.event_bus and _G.event_bus.unsubscribe then
-            if self._attackSub then _G.event_bus.unsubscribe(self._attackSub) end
+            if self._hitSub      then _G.event_bus.unsubscribe(self._hitSub)      end
+            if self._attackSub   then _G.event_bus.unsubscribe(self._attackSub)   end
+            if self._rangedHitSub then _G.event_bus.unsubscribe(self._rangedHitSub) end
         end
     end,
 }

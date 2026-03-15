@@ -16,8 +16,10 @@ return Component {
     mixins = { TransformMixin },
 
     fields = {
-        NarrativeDuration = 25.0,
-        PanDuration = 5.0,
+        NarrativeDuration   = 25.0,
+        PanDuration         = 5.0,
+        BGMFadeDuration     = 2.0,   -- seconds to fade in/out
+        BGMNarrativeVolume  = 0.1,   -- target bus volume during narrative
     },
 
     -------------------------------------------------
@@ -28,6 +30,11 @@ return Component {
         self._narrativeDuration = 0.0
         self._narrativeDurationOver = true
         self._hasTriggered = false -- prevents trigger from firing again
+
+        self._bgmFadeActive = false
+        self._bgmFadeTimer  = 0.0
+        self._bgmFadeFrom   = 1.0
+        self._bgmFadeTo     = 1.0
     end,
 
     -------------------------------------------------
@@ -35,6 +42,17 @@ return Component {
     -------------------------------------------------
 
     Update = function(self, dt)
+        -- BGM bus fade
+        if self._bgmFadeActive then
+            self._bgmFadeTimer = self._bgmFadeTimer + dt
+            local t = math.min(self._bgmFadeTimer / (self.BGMFadeDuration or 2.0), 1.0)
+            local vol = self._bgmFadeFrom + (self._bgmFadeTo - self._bgmFadeFrom) * t
+            Audio.SetBusVolume("BGM", vol)
+            if t >= 1.0 then
+                self._bgmFadeActive = false
+            end
+        end
+
         if not self._narrativeDurationOver then
             self._narrativeDuration = self._narrativeDuration + dt
 
@@ -44,6 +62,11 @@ return Component {
                     event_bus.publish("set_attacks_enabled", true)
                 end
 
+                -- Fade BGM back to normal
+                self._bgmFadeFrom   = Audio.GetBusVolume("BGM")
+                self._bgmFadeTo     = 1.0
+                self._bgmFadeTimer  = 0.0
+                self._bgmFadeActive = true
                 self._narrativeDurationOver = true
             end
         end
@@ -89,6 +112,12 @@ return Component {
             self._narrativeDuration = 0.0
             self._narrativeDurationOver = false
             self._hasTriggered = true -- mark as used
+
+            -- Fade BGM down to narrative volume
+            self._bgmFadeFrom   = Audio.GetBusVolume("BGM")
+            self._bgmFadeTo     = self.BGMNarrativeVolume or 0.1
+            self._bgmFadeTimer  = 0.0
+            self._bgmFadeActive = true
         end
     end
 }
