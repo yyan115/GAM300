@@ -49,6 +49,7 @@ return Component {
         collisionLerpIn              = 20.0,
         collisionLerpOut             = 5.0,
         maxCameraHeightAbovePlayer   = 4.0,
+        collisionIgnoreScripts       = {"EnemyAI", "FlyingEnemyLogic"},
 
         -- === Action Mode ===
         actionModeEnabled      = false,
