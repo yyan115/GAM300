@@ -1,0 +1,14 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "00132a97af74e122-000483de9e021c81",
+        "source": "../../Resources/Textures/M5/sword_low_sword_Normal.png",
+        "compiled": "../../Resources/Textures/M5/sword_low_sword_Normal.dds"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp"
+    }
+}

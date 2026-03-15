@@ -1,0 +1,14 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "00132a9799fc8a8d-000483de96021c71",
+        "source": "../../Resources/Textures/M5/WoodenBarrier_Height.png",
+        "compiled": "../../Resources/Textures/M5/WoodenBarrier_Height.dds"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp"
+    }
+}

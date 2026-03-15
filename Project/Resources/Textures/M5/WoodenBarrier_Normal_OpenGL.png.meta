@@ -1,0 +1,14 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "00132a97d0032e07-000483de98021c77",
+        "source": "../../Resources/Textures/M5/WoodenBarrier_Normal_OpenGL.png",
+        "compiled": "../../Resources/Textures/M5/WoodenBarrier_Normal_OpenGL.dds"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp"
+    }
+}

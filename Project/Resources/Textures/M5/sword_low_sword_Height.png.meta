@@ -1,0 +1,14 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "00132a97d72f89e8-000483de9c021c7d",
+        "source": "../../Resources/Textures/M5/sword_low_sword_Height.png",
+        "compiled": "../../Resources/Textures/M5/sword_low_sword_Height.dds"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp"
+    }
+}

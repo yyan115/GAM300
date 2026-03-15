@@ -1,0 +1,11 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "00132a979687304e-000483deb6021c87",
+        "source": "../../Resources/Models/Environment/sword_low.fbx",
+        "compiled": "../../Resources/Models/Environment/sword_low.mesh"
+    },
+    "ModelMetaData": {
+        "optimizeMeshes": true
+    }
+}

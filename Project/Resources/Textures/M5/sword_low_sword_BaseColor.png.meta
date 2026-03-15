@@ -1,0 +1,14 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "00132a97d584f15f-000483de9a021c7b",
+        "source": "../../Resources/Textures/M5/sword_low_sword_BaseColor.png",
+        "compiled": "../../Resources/Textures/M5/sword_low_sword_BaseColor.dds"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp"
+    }
+}
