@@ -16,7 +16,8 @@
         "SkipButton",
         "Checkpoint",
         "LockOn",
-        "Throwable"
+        "Throwable",
+        "Vfx"
     ],
     "layers": [
         {
