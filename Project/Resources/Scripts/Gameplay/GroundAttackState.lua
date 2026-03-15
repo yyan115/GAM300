@@ -87,6 +87,21 @@ function AttackState:Update(ai, dt)
                         z             = ez or 0,
                     })
                 end
+
+            -- TRIGGER CLAW VFX HERE
+            if _G.event_bus then
+                local x, y, z = ai:GetPosition()
+                local qW, qX, qY, qZ = ai:GetRotation() -- Get the AI's current facing
+                
+                _G.event_bus.publish("onClawSlashTrigger", {
+                    pos = {x = x, y = y, z = z},
+                    rot = {w = qW, x = qX, y = qY, z = qZ},
+                    entityId = ai.entityId,
+                    variant = "NORMAL",
+                    claimed = false
+                })
+            end
+
             elseif d2 > (diseng * diseng) then
                 ai.fsm:Change("Patrol", ai.states.Patrol)
                 return
@@ -101,7 +116,6 @@ function AttackState:Update(ai, dt)
             ai._hasAttackedBefore = true
             ai._skipFirstCooldown = false
 
-            print("Melee Attack!")
             if ai.PlayAttackSFX then ai:PlayAttackSFX() end
             if ai.PlayHitSFX then ai:PlayHitSFX() end
 
@@ -113,20 +127,6 @@ function AttackState:Update(ai, dt)
                     enemyEntityId = ai.entityId,
                     x             = ex or 0,   -- attacker XZ for knockback direction in PlayerHealth
                     z             = ez or 0,
-                })
-            end
-
-            -- TRIGGER CLAW VFX HERE
-            if _G.event_bus then
-                local x, y, z = ai:GetPosition()
-                local qW, qX, qY, qZ = ai:GetRotation() -- Get the AI's current facing
-                
-                _G.event_bus.publish("onClawSlashTrigger", {
-                    pos = {x = x, y = y, z = z},
-                    rot = {w = qW, x = qX, y = qY, z = qZ},
-                    entityId = ai.entityId,
-                    variant = "NORMAL",
-                    claimed = false
                 })
             end
         end
