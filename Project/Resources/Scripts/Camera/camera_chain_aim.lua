@@ -190,7 +190,8 @@ function M.updateAimAssist(self, dt, camX, camY, camZ)
         if entities then
             for i = 1, #entities do
                 local entityId = entities[i]
-                if not (Engine.IsEntityActive and not Engine.IsEntityActive(entityId)) then
+                local isDead = self._deadEnemies and self._deadEnemies[entityId]
+                if not isDead and not (Engine.IsEntityActive and not Engine.IsEntityActive(entityId)) then
                     local ex, ey, ez = Engine.GetEntityPosition(entityId)
                     if ex then
                         -- Use camera position as origin for angular calculation
