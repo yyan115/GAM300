@@ -324,8 +324,16 @@ return Component {
 
         if self.collider then self.collider.enabled = false end
 
-        -- Play ranged attack SFX from knife position (3D audio)
+        -- Play ranged attack SFX from knife position (3D audio).
+        -- AudioSystem updates audioComp.Position from worldPosition each frame, but
+        -- TransformSystem hasn't propagated our new localPosition to worldPosition yet.
+        -- Fix: manually set Position to the spawn coords before PlayOneShot fires.
         if sfxGuid and self._audio then
+            local pos = self._audio.Position
+            pos.x = spawnX
+            pos.y = spawnY
+            pos.z = spawnZ
+            self._audio.Position = pos
             self._audio:PlayOneShot(sfxGuid)
         end
 
