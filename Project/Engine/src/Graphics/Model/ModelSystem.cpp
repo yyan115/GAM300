@@ -21,6 +21,11 @@
 
 bool ModelSystem::Initialise() 
 {
+    // DISABLE COLOR AND DEPTH WRITES BEFORE DUMMY DRAWING!
+    // This stops exploding vertices from rendering to the editor viewport.
+    glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
+    glDepthMask(GL_FALSE);
+
     ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
     for (const auto& entity : entities) {
         auto& modelComp = ecsManager.GetComponent<ModelRenderComponent>(entity);
@@ -71,7 +76,7 @@ bool ModelSystem::Initialise()
         }
     }
 
-    // 2. Restore normal graphics state for gameplay
+    // Restore normal graphics state for gameplay
     glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
     glDepthMask(GL_TRUE);
     glEnable(GL_DEPTH_TEST);
