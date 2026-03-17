@@ -17,7 +17,8 @@
         "Checkpoint",
         "LockOn",
         "Throwable",
-        "Vfx"
+        "Vfx",
+        "NoCameraCollision"
     ],
     "layers": [
         {
