@@ -50,6 +50,7 @@ return Component {
         collisionLerpOut             = 5.0,
         maxCameraHeightAbovePlayer   = 4.0,
         collisionIgnoreScripts       = {"EnemyAI", "FlyingEnemyLogic"},
+        collisionIgnoreTags          = {"NoCameraCollision"},
 
         -- === Action Mode ===
         actionModeEnabled      = false,
