@@ -30,6 +30,68 @@
 #include "Platform/IPlatform.h"
 
 #include "Logging.hpp"
+
+#ifdef EDITOR
+// Box-filter a pixel buffer down to the next mip level (2x downsample).
+static std::vector<uint8_t> BoxFilterMip(const uint8_t* src, int srcW, int srcH, int channels) {
+	int dstW = std::max(1, srcW / 2);
+	int dstH = std::max(1, srcH / 2);
+	std::vector<uint8_t> dst(dstW * dstH * channels);
+	for (int y = 0; y < dstH; ++y) {
+		for (int x = 0; x < dstW; ++x) {
+			int x0 = x * 2, y0 = y * 2;
+			int x1 = std::min(x0 + 1, srcW - 1);
+			int y1 = std::min(y0 + 1, srcH - 1);
+			for (int c = 0; c < channels; ++c) {
+				int sum = (int)src[(y0 * srcW + x0) * channels + c]
+					+ (int)src[(y0 * srcW + x1) * channels + c]
+					+ (int)src[(y1 * srcW + x0) * channels + c]
+					+ (int)src[(y1 * srcW + x1) * channels + c];
+				dst[(y * dstW + x) * channels + c] = (uint8_t)(sum >> 2);
+			}
+		}
+	}
+	return dst;
+}
+
+// Compress a single raw pixel buffer to block format and copy into a gli mip level.
+static bool CompressAndStoreMip(
+	const uint8_t* pixels, int w, int h, int channels,
+	CMP_FORMAT srcFmt, CMP_FORMAT dstFmt,
+	const CMP_CompressOptions& options,
+	gli::texture2d& tex, int mipLevel)
+{
+	CMP_Texture mipSrc = {};
+	mipSrc.dwSize = sizeof(mipSrc);
+	mipSrc.dwWidth = (CMP_DWORD)w;
+	mipSrc.dwHeight = (CMP_DWORD)h;
+	mipSrc.dwPitch = 0;
+	mipSrc.format = srcFmt;
+	mipSrc.dwDataSize = (CMP_DWORD)(w * h * channels);
+	mipSrc.pData = const_cast<CMP_BYTE*>(pixels);
+
+	CMP_Texture mipDst = {};
+	mipDst.dwSize = sizeof(mipDst);
+	mipDst.dwWidth = (CMP_DWORD)w;
+	mipDst.dwHeight = (CMP_DWORD)h;
+	mipDst.dwPitch = 0;
+	mipDst.format = dstFmt;
+	mipDst.dwDataSize = CMP_CalculateBufferSize(&mipDst);
+	mipDst.pData = (CMP_BYTE*)malloc(mipDst.dwDataSize);
+
+	CMP_ERROR status = CMP_ConvertTexture(&mipSrc, &mipDst, &options, nullptr);
+	if (status != CMP_OK) {
+		free(mipDst.pData);
+		return false;
+	}
+
+	// GLI and Compressonator must agree on block-aligned sizes.
+	std::size_t gliSize = tex.size(mipLevel);
+	std::memcpy(tex.data(0, 0, mipLevel), mipDst.pData, std::min((std::size_t)mipDst.dwDataSize, gliSize));
+	free(mipDst.pData);
+	return true;
+}
+#endif
 Texture::Texture() : ID(0), unit(-1), target(GL_TEXTURE_2D) {
 	metaData = std::make_shared<TextureMeta>();
 }
@@ -98,127 +160,92 @@ std::string Texture::CompileToResource(const std::string& assetPath, bool forAnd
 	std::string outPath{};
 
 #ifdef EDITOR
-	// Compile the texture first.
-	CMP_Texture srcTexture;
-	srcTexture.dwSize = sizeof(srcTexture);
-	srcTexture.dwWidth = widthImg;
-	srcTexture.dwHeight = heightImg;
-	srcTexture.dwPitch = 0;
-	if (needsAlpha) {
-		// force 4 channels
-		// ensure you actually loaded with 4 channels from stbi_load(..., 4)
-		srcTexture.format = CMP_FORMAT_RGBA_8888;
-		srcTexture.dwDataSize = widthImg * heightImg * 4;
+	// Number of channels actually present in the loaded pixel data.
+	int srcChannels = needsAlpha ? 4 : 3;
+	CMP_FORMAT srcCmpFmt = needsAlpha ? CMP_FORMAT_RGBA_8888 : CMP_FORMAT_RGB_888;
+
+	// Choose the best output block format.
+	//   PC  : BC5 for normal maps, BC3 for textures with real alpha, BC1 for everything else.
+	//         BC1 is half the size of BC3 (8 vs 16 bytes per 4x4 block) and perfectly fine
+	//         for opaque diffuse / roughness / metallic / AO / height maps.
+	//   Android: ETC2_RGBA when alpha present, ETC2_RGB otherwise.
+	CMP_FORMAT dstCmpFmt;
+	gli::format gliFormat;
+	if (forAndroid) {
+		dstCmpFmt = needsAlpha ? CMP_FORMAT_ETC2_RGBA : CMP_FORMAT_ETC2_RGB;
+		gliFormat = needsAlpha ? gli::FORMAT_RGBA_ETC2_UNORM_BLOCK16 : gli::FORMAT_RGB_ETC2_UNORM_BLOCK8;
+	}
+	else if (metaData->type == "normal") {
+		dstCmpFmt = CMP_FORMAT_BC5;
+		gliFormat = gli::FORMAT_RG_ATI2N_UNORM_BLOCK16;
+	}
+	else if (numColCh > 3) {
+		// Source file genuinely has an alpha channel — keep it.
+		dstCmpFmt = CMP_FORMAT_BC3;
+		gliFormat = gli::FORMAT_RGBA_DXT5_UNORM_BLOCK16;
 	}
 	else {
-		// prefer 3 channels to speed up ETC2 RGB
-		// load with stbi_load(..., 3) or convert from 4 to 3
-		srcTexture.format = CMP_FORMAT_RGB_888;
-		srcTexture.dwDataSize = widthImg * heightImg * 3;
+		// Opaque texture — BC1 uses half the GPU memory of BC3.
+		dstCmpFmt = CMP_FORMAT_BC1;
+		gliFormat = gli::FORMAT_RGB_DXT1_UNORM_BLOCK8;
 	}
-	srcTexture.pData = bytes;
 
-	CMP_Texture dstTexture;
-	dstTexture.dwSize = sizeof(dstTexture);
-	dstTexture.dwWidth = widthImg;
-	dstTexture.dwHeight = heightImg;
-	dstTexture.dwPitch = 0;
-	dstTexture.format = forAndroid
-		? (needsAlpha ? CMP_FORMAT_ETC2_RGBA : CMP_FORMAT_ETC2_RGB)
-		: (metaData->type != "normal" ? CMP_FORMAT_BC3 : CMP_FORMAT_BC5);
+	// Full mip chain: floor(log2(max_dim)) + 1 levels.
+	int mipCount = 1 + (int)std::floor(std::log2((float)std::max(widthImg, heightImg)));
 
-	dstTexture.dwDataSize = CMP_CalculateBufferSize(&dstTexture);
-	dstTexture.pData = (CMP_BYTE*)malloc(dstTexture.dwDataSize);
+	gli::extent2d extent(widthImg, heightImg);
+	gli::texture2d tex(gliFormat, extent, (gli::texture2d::size_type)mipCount);
 
-	// Set compression options.
 	CMP_CompressOptions options = { 0 };
 	options.dwSize = sizeof(options);
 
-	// Compress the texture.
-	ENGINE_PRINT("[Texture] Compressing texture: ", assetPath, "\n");
-	CMP_ERROR cmp_status;
-	cmp_status = CMP_ConvertTexture(&srcTexture, &dstTexture, &options, nullptr);
-	if (cmp_status != CMP_OK) {
-		ENGINE_PRINT(EngineLogging::LogLevel::Error, "[TEXTURE]: Failed to compress texture.\n");
+	ENGINE_PRINT("[Texture] Compressing texture (", mipCount, " mip levels): ", assetPath, "\n");
+
+	// Compress mip 0 directly from the stbi-loaded pixels.
+	if (!CompressAndStoreMip(bytes, widthImg, heightImg, srcChannels, srcCmpFmt, dstCmpFmt, options, tex, 0)) {
+		ENGINE_PRINT(EngineLogging::LogLevel::Error, "[TEXTURE]: Failed to compress mip 0 for: ", assetPath, "\n");
+		stbi_image_free(bytes);
+		return {};
 	}
 
-	// Save the compresed texture to a DDS file.
-	gli::format fmt = gli::FORMAT_UNDEFINED;
-	if (!forAndroid) {
-		fmt = metaData->type != "normal" ? gli::FORMAT_RGBA_DXT5_UNORM_BLOCK16
-			: gli::FORMAT_RG_ATI2N_UNORM_BLOCK16;
-	}
-	else {
-		fmt = needsAlpha ? gli::FORMAT_RGBA_ETC2_UNORM_BLOCK16
-			: gli::FORMAT_RGB_ETC2_UNORM_BLOCK8;
-	}
-
-	gli::extent2d extent(dstTexture.dwWidth, dstTexture.dwHeight);
-
-	gli::texture2d tex(fmt, extent, 1); // 1 mip-map level
-	if (dstTexture.pData != nullptr && dstTexture.dwDataSize > 0)
-	{
-		std::memcpy(tex.data(), dstTexture.pData, dstTexture.dwDataSize);
-	}
-	else
-	{
-		ENGINE_PRINT(EngineLogging::LogLevel::Error, "[TEXTURE]: dstTexture.pData is null or dwDataSize is zero. Skipping memcpy.\n");
+	// Generate and compress the remaining mip levels by successive 2x box-filtering.
+	std::vector<uint8_t> prevPixels(bytes, bytes + (std::size_t)(widthImg * heightImg * srcChannels));
+	int mipW = widthImg, mipH = heightImg;
+	for (int mip = 1; mip < mipCount; ++mip) {
+		std::vector<uint8_t> mipPixels = BoxFilterMip(prevPixels.data(), mipW, mipH, srcChannels);
+		mipW = std::max(1, mipW / 2);
+		mipH = std::max(1, mipH / 2);
+		if (!CompressAndStoreMip(mipPixels.data(), mipW, mipH, srcChannels, srcCmpFmt, dstCmpFmt, options, tex, mip)) {
+			ENGINE_PRINT(EngineLogging::LogLevel::Warn, "[TEXTURE]: Failed to compress mip ", mip, " - stopping mip chain early.\n");
+			break;
+		}
+		prevPixels = std::move(mipPixels);
 	}
 
-	// Save the texture to a DDS file.
+	stbi_image_free(bytes);
+
+	// Save the texture to a DDS (PC) or KTX (Android) file.
 	std::filesystem::path p(assetPath);
 
 	if (!forAndroid) {
 		outPath = (p.parent_path() / p.stem()).generic_string() + ".dds";
 		if (!gli::save(tex, outPath)) {
 			ENGINE_PRINT(EngineLogging::LogLevel::Error, "[TEXTURE] FATAL: gli::save failed to write to ", outPath, "\n");
-			outPath = ""; // Invalidate return to signal failure
+			outPath = "";
 		}
 		else {
 			ENGINE_PRINT(EngineLogging::LogLevel::Info, "[TEXTURE] Successfully compiled and saved: ", outPath, "\n");
 		}
-
-		//// Save to the root project directory as well.
-		//p = (FileUtilities::GetSolutionRootDir() / outPath);
-		//gli::save(tex, p.generic_string());
 	}
 	else {
 		std::string assetPathAndroid = (p.parent_path() / p.stem()).generic_string();
 		assetPathAndroid = assetPathAndroid.substr(assetPathAndroid.find("Resources"));
 		outPath = (AssetManager::GetInstance().GetAndroidResourcesPath() / assetPathAndroid).generic_string() + "_android.ktx";
-		// Ensure parent directories exist
 		std::filesystem::path newPath = FileUtilities::SanitizePathForAndroid(std::filesystem::path(outPath));
 		outPath = newPath.generic_string();
 		std::filesystem::create_directories(newPath.parent_path());
 		gli::save(tex, outPath);
-		
-		// TEST CONVERT BACK TO PNG SEE IF IT'S CORRECT.
-		//CMP_Texture dstTexture2;
-		//dstTexture2.dwSize = sizeof(dstTexture2);
-		//dstTexture2.dwWidth = dstTexture.dwWidth;
-		//dstTexture2.dwHeight = dstTexture.dwHeight;
-		//dstTexture2.dwPitch = 0;
-		//dstTexture2.format = srcTexture.format;
-		//dstTexture2.dwDataSize = dstTexture2.dwWidth * dstTexture2.dwHeight * 4;
-		//dstTexture2.pData = (CMP_BYTE*)malloc(dstTexture2.dwDataSize);
-
-		//// Decompress ETC2 - RGBA8
-		//CMP_ERROR status = CMP_ConvertTexture(&dstTexture, &dstTexture2, &options, nullptr);
-		//if (status != CMP_OK) {
-		//	printf("Decompression failed: %d\n", status);
-		//}
-
-		//// Save as PNG (RGBA8 expected)
-		//stbi_write_png((AssetManager::GetInstance().GetAndroidResourcesPath() / p.parent_path() / p.stem()).generic_string().c_str(),
-		//	dstTexture2.dwWidth, dstTexture2.dwHeight,
-		//	4,                // num channels
-		//	dstTexture2.pData,
-		//	dstTexture2.dwWidth * 4);    // stride in bytes
 	}
-
-	// Free original image data.
-	stbi_image_free(bytes);
-	free(dstTexture.pData);
 #endif
 
 	return outPath;
@@ -288,16 +315,20 @@ bool Texture::LoadResource(const std::string& resourcePath, const std::string& a
 	}
 
 	glBindTexture(target, ID);
-	glCompressedTexImage2D(
-		target,
-		0,
-		format.Internal,
-		static_cast<GLsizei>(texture.extent().x),
-		static_cast<GLsizei>(texture.extent().y),
-		0,
-		static_cast<GLsizei>(texture.size()),
-		texture.data()
-	);
+
+	// Upload every mip level that was baked into the DDS/KTX at compile time.
+	for (std::size_t level = 0; level < texture.levels(); ++level) {
+		glCompressedTexImage2D(
+			target,
+			static_cast<GLint>(level),
+			format.Internal,
+			static_cast<GLsizei>(texture.extent(level).x),
+			static_cast<GLsizei>(texture.extent(level).y),
+			0,
+			static_cast<GLsizei>(texture.size(level)),
+			texture.data(0, 0, level)
+		);
+	}
 
 	// Set texture wrapping mode.
 	switch (metaData->textureWrapMode) {
@@ -316,19 +347,19 @@ bool Texture::LoadResource(const std::string& resourcePath, const std::string& a
 		}
 	}
 
-#ifndef ANDROID
-	// Generates MipMaps
-	if (metaData->generateMipmaps) {
-		glGenerateMipmap(GL_TEXTURE_2D);
+	// Use the mip chain that was baked into the file at compile time.
+	// glGenerateMipmap() on a block-compressed texture is undefined in the OpenGL spec
+	// and silently fails on most drivers, so we never call it here.
+	if (metaData->generateMipmaps && texture.levels() > 1) {
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_BASE_LEVEL, 0);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, static_cast<GLint>(texture.levels() - 1));
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	}
 	else {
 		glTexParameteri(target, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		glTexParameteri(target, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	}
-#else
-	glTexParameteri(target, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-#endif
 
 	// Unbinds the OpenGL Texture object so that it can't accidentally be modified
 	glBindTexture(target, 0);
@@ -342,8 +373,8 @@ bool Texture::LoadResource(const std::string& resourcePath, const std::string& a
 		srcTexture.dwWidth = texture.extent().x;
 		srcTexture.dwHeight = texture.extent().y;
 		srcTexture.format = CMP_FORMAT_BC5;
-		srcTexture.dwDataSize = static_cast<CMP_DWORD>(texture.size());
-		srcTexture.pData = reinterpret_cast<CMP_BYTE*>(texture.data());
+		srcTexture.dwDataSize = static_cast<CMP_DWORD>(texture.size(0)); // mip 0 only
+		srcTexture.pData = reinterpret_cast<CMP_BYTE*>(texture.data(0, 0, 0));
 
 		CMP_Texture dstTexture = {};
 		dstTexture.dwSize = sizeof(CMP_Texture);
