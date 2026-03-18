@@ -15,6 +15,8 @@
 #include "ECS/TagComponent.hpp"
 #include "ECS/TagManager.hpp"
 #include "Graphics/Camera/Camera.hpp"
+#include "Graphics/Camera/CameraComponent.hpp"
+#include "Graphics/Camera/CameraSystem.hpp"
 
 #ifdef ANDROID
 #include <android/log.h>
@@ -234,8 +236,17 @@ void ModelSystem::Update()
                     glm::vec3 camPos = cam->Position;
                     float dist = glm::length(entityPos - camPos);
 
-                    constexpr float fadeNear = 3.0f;
-                    constexpr float fadeFar  = 5.0f;
+                    float fadeNear = 3.0f;
+                    float fadeFar  = 5.0f;
+
+                    // Use active camera component's fade settings if available
+                    Entity activeCamEntity = ecsManager.cameraSystem ? ecsManager.cameraSystem->GetActiveCameraEntity() : UINT32_MAX;
+                    if (activeCamEntity != UINT32_MAX && ecsManager.HasComponent<CameraComponent>(activeCamEntity)) {
+                        auto& camComp = ecsManager.GetComponent<CameraComponent>(activeCamEntity);
+                        fadeNear = camComp.fadeNear;
+                        fadeFar  = camComp.fadeFar;
+                    }
+
                     constexpr float fadeMin  = 0.0f;
 
                     float t = 0.0f;

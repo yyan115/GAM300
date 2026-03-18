@@ -2896,6 +2896,47 @@ void RegisterInspectorCustomRenderers()
             ImGui::Unindent(10.0f);
         }
 
+        // ==================== Distance-Based Fading ====================
+        if (ImGui::CollapsingHeader("Distance Fading##PP", ImGuiTreeNodeFlags_DefaultOpen)) {
+            ImGui::Indent(10.0f);
+
+            static std::unordered_map<Entity, float> startFadeNear, startFadeFar;
+
+            ImGui::Text("Fade Near");
+            ImGui::SameLine(labelWidth);
+            ImGui::SetNextItemWidth(-1);
+            if (!isEditingPP[entity]) startFadeNear[entity] = camera.fadeNear;
+            if (ImGui::DragFloat("##FadeNear", &camera.fadeNear, 0.1f, 0.0f, 1000.0f)) { isEditingPP[entity] = true; }
+            if (isEditingPP[entity] && !ImGui::IsItemActive()) {
+                float oldVal = startFadeNear[entity]; float newVal = camera.fadeNear;
+                if (oldVal != newVal && UndoSystem::GetInstance().IsEnabled()) {
+                    UndoSystem::GetInstance().RecordLambdaChange(
+                        [entity, newVal]() { auto& ecs = ECSRegistry::GetInstance().GetActiveECSManager(); if (ecs.HasComponent<CameraComponent>(entity)) ecs.GetComponent<CameraComponent>(entity).fadeNear = newVal; },
+                        [entity, oldVal]() { auto& ecs = ECSRegistry::GetInstance().GetActiveECSManager(); if (ecs.HasComponent<CameraComponent>(entity)) ecs.GetComponent<CameraComponent>(entity).fadeNear = oldVal; },
+                        "Change Fade Near");
+                }
+                isEditingPP[entity] = false;
+            }
+
+            ImGui::Text("Fade Far");
+            ImGui::SameLine(labelWidth);
+            ImGui::SetNextItemWidth(-1);
+            if (!isEditingPP[entity]) startFadeFar[entity] = camera.fadeFar;
+            if (ImGui::DragFloat("##FadeFar", &camera.fadeFar, 0.1f, 0.0f, 1000.0f)) { isEditingPP[entity] = true; }
+            if (isEditingPP[entity] && !ImGui::IsItemActive()) {
+                float oldVal = startFadeFar[entity]; float newVal = camera.fadeFar;
+                if (oldVal != newVal && UndoSystem::GetInstance().IsEnabled()) {
+                    UndoSystem::GetInstance().RecordLambdaChange(
+                        [entity, newVal]() { auto& ecs = ECSRegistry::GetInstance().GetActiveECSManager(); if (ecs.HasComponent<CameraComponent>(entity)) ecs.GetComponent<CameraComponent>(entity).fadeFar = newVal; },
+                        [entity, oldVal]() { auto& ecs = ECSRegistry::GetInstance().GetActiveECSManager(); if (ecs.HasComponent<CameraComponent>(entity)) ecs.GetComponent<CameraComponent>(entity).fadeFar = oldVal; },
+                        "Change Fade Far");
+                }
+                isEditingPP[entity] = false;
+            }
+
+            ImGui::Unindent(10.0f);
+        }
+
         return false;
     });
 
@@ -3330,7 +3371,8 @@ void RegisterInspectorCustomRenderers()
         "colorGradingEnabled", "cgBrightness", "cgContrast", "cgSaturation",
         "chromaticAberrationEnabled", "chromaticAberrationIntensity", "chromaticAberrationPadding",
         "ssaoEnabled", "ssaoRadius", "ssaoIntensity",
-        "envReflectionEnabled", "envReflectionIntensity"
+        "envReflectionEnabled", "envReflectionIntensity",
+        "fadeNear", "fadeFar"
     }) {
         ReflectionRenderer::RegisterFieldRenderer("CameraComponent", field,
             [](const char*, void*, Entity, ECSManager&) { return true; });
