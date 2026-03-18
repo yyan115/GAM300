@@ -9,6 +9,7 @@
         "type": "diffuse",
         "flipUVs": false,
         "generateMipmaps": true,
-        "textureWrapMode": "Repeat"
+        "textureWrapMode": "Repeat",
+        "maxSize": 2048
     }
 }

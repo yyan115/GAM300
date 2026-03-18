@@ -160,6 +160,22 @@ std::string Texture::CompileToResource(const std::string& assetPath, bool forAnd
 	std::string outPath{};
 
 #ifdef EDITOR
+	// Downscale to maxSize if either dimension exceeds it.
+	// Uses successive 2x box-filtering (same as mip generation) so quality is consistent.
+	if (metaData->maxSize > 0 && (widthImg > metaData->maxSize || heightImg > metaData->maxSize)) {
+		int srcChannels = needsAlpha ? 4 : 3;
+		std::vector<uint8_t> pixels(bytes, bytes + (std::size_t)(widthImg * heightImg * srcChannels));
+		while (widthImg > metaData->maxSize || heightImg > metaData->maxSize) {
+			pixels = BoxFilterMip(pixels.data(), widthImg, heightImg, srcChannels);
+			widthImg = std::max(1, widthImg / 2);
+			heightImg = std::max(1, heightImg / 2);
+		}
+		stbi_image_free(bytes);
+		bytes = (unsigned char*)malloc(pixels.size());
+		std::memcpy(bytes, pixels.data(), pixels.size());
+		ENGINE_PRINT("[TEXTURE]: Downscaled to maxSize ", metaData->maxSize, ": ", widthImg, "x", heightImg, "\n");
+	}
+
 	// Number of channels actually present in the loaded pixel data.
 	int srcChannels = needsAlpha ? 4 : 3;
 	CMP_FORMAT srcCmpFmt = needsAlpha ? CMP_FORMAT_RGBA_8888 : CMP_FORMAT_RGB_888;
@@ -433,6 +449,8 @@ std::shared_ptr<AssetMeta> Texture::ExtendMetaFile(const std::string& assetPath,
 	textureMetaData.AddMember("generateMipmaps", rapidjson::Value().SetBool(metaData->generateMipmaps), allocator);
 	// Add texture wrap mode
 	textureMetaData.AddMember("textureWrapMode", rapidjson::Value().SetString(metaData->textureWrapModeStr.c_str(), allocator), allocator);
+	// Add max size
+	textureMetaData.AddMember("maxSize", rapidjson::Value().SetInt(metaData->maxSize), allocator);
 
 	doc.AddMember("TextureMetaData", textureMetaData, allocator);
 
@@ -446,7 +464,7 @@ std::shared_ptr<AssetMeta> Texture::ExtendMetaFile(const std::string& assetPath,
 
 	std::shared_ptr<TextureMeta> newMetaData = std::make_shared<TextureMeta>();
 	newMetaData->PopulateAssetMeta(currentMetaData->guid, currentMetaData->sourceFilePath, currentMetaData->compiledFilePath, currentMetaData->version);
-	newMetaData->PopulateTextureMeta(metaData->type, metaData->flipUVs, metaData->generateMipmaps, metaData->textureWrapMode);
+	newMetaData->PopulateTextureMeta(metaData->type, metaData->flipUVs, metaData->generateMipmaps, metaData->textureWrapMode, metaData->maxSize);
 	return newMetaData;
 }
 

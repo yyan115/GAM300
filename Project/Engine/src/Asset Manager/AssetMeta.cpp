@@ -69,13 +69,14 @@ void AssetMeta::PopulateAssetMetaFromFile(const std::string& metaFilePath)
 	//lastCompileTime = MetaFilesManager::GetLastCompileTimeFromMetaFile(metaFilePath);
 }
 
-void TextureMeta::PopulateTextureMeta(const std::string& _type, bool _flipUVs, bool _generateMipmaps, const TextureWrapMode& _textureWrapMode)
+void TextureMeta::PopulateTextureMeta(const std::string& _type, bool _flipUVs, bool _generateMipmaps, const TextureWrapMode& _textureWrapMode, int _maxSize)
 {
 	type = _type;
 	flipUVs = _flipUVs;
 	generateMipmaps = _generateMipmaps;
 	textureWrapMode = _textureWrapMode;
 	textureWrapModeStr = textureWrapModes[static_cast<int>(_textureWrapMode)];
+	maxSize = _maxSize;
 }
 
 void TextureMeta::PopulateAssetMetaFromFile(const std::string& metaFilePath) {
@@ -115,6 +116,9 @@ void TextureMeta::PopulateAssetMetaFromFile(const std::string& metaFilePath) {
 				break;
 			}
 		}
+	}
+	if (assetMetaData.HasMember("maxSize")) {
+		maxSize = assetMetaData["maxSize"].GetInt();
 	}
 }
 
