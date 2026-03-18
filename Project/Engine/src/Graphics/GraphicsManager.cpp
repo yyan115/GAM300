@@ -386,7 +386,6 @@ void GraphicsManager::Render()
 				auto* modelA = static_cast<ModelRenderComponent*>(a);
 				auto* modelB = static_cast<ModelRenderComponent*>(b);
 
-				// Build sort keys
 				RenderLayer::Type layerA = modelA->material && modelA->material->GetOpacity() < 1.0f
 					? RenderLayer::Type::LAYER_TRANSPARENT
 					: RenderLayer::Type::LAYER_OPAQUE;
@@ -394,17 +393,41 @@ void GraphicsManager::Render()
 					? RenderLayer::Type::LAYER_TRANSPARENT
 					: RenderLayer::Type::LAYER_OPAQUE;
 
-				RenderSortKey keyA(layerA,
-					m_idCache.GetShaderId(modelA->shader.get()),
-					m_idCache.GetMaterialId(modelA->material.get()),
-					m_idCache.GetModelId(modelA->model.get()));
+				// Layer is always primary (opaque before transparent)
+				if (layerA != layerB)
+					return layerA < layerB;
 
-				RenderSortKey keyB(layerB,
-					m_idCache.GetShaderId(modelB->shader.get()),
-					m_idCache.GetMaterialId(modelB->material.get()),
-					m_idCache.GetModelId(modelB->model.get()));
+				// Compute squared distances from camera
+				glm::vec3 camPos = currentCamera ? currentCamera->Position : glm::vec3(0.0f);
+				Vector3D posA = Matrix4x4::ExtractTranslation(modelA->transform);
+				Vector3D posB = Matrix4x4::ExtractTranslation(modelB->transform);
+				float dxA = posA.x - camPos.x, dyA = posA.y - camPos.y, dzA = posA.z - camPos.z;
+				float dxB = posB.x - camPos.x, dyB = posB.y - camPos.y, dzB = posB.z - camPos.z;
+				float distSqA = dxA * dxA + dyA * dyA + dzA * dzA;
+				float distSqB = dxB * dxB + dyB * dyB + dzB * dzB;
 
-				return keyA < keyB;
+				if (layerA == RenderLayer::Type::LAYER_OPAQUE) {
+					// Front-to-back: group into ~5-unit buckets so objects at similar
+					// depths still batch by state (reduces shader/material switches).
+					int bucketA = static_cast<int>(distSqA / 25.0f);
+					int bucketB = static_cast<int>(distSqB / 25.0f);
+					if (bucketA != bucketB)
+						return bucketA < bucketB;
+					// Same depth bucket — sort by state to minimise GPU state switches
+					RenderSortKey keyA(layerA,
+						m_idCache.GetShaderId(modelA->shader.get()),
+						m_idCache.GetMaterialId(modelA->material.get()),
+						m_idCache.GetModelId(modelA->model.get()));
+					RenderSortKey keyB(layerB,
+						m_idCache.GetShaderId(modelB->shader.get()),
+						m_idCache.GetMaterialId(modelB->material.get()),
+						m_idCache.GetModelId(modelB->model.get()));
+					return keyA < keyB;
+				}
+				else {
+					// Back-to-front for transparency: correct alpha blending
+					return distSqA > distSqB;
+				}
 			});
 
 		// Sort other items by their existing sorting logic (sprites, text, etc.)
