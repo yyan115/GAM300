@@ -4216,6 +4216,7 @@ void RegisterInspectorCustomRenderers()
         if (ImGui::DragFloat("##MinDistance", &reverbZone.MinDistance, 0.1f, 0.0f, reverbZone.MaxDistance, "%.2f"))
         {
             reverbZone.MinDistance = std::max(0.0f, reverbZone.MinDistance);
+            reverbZone.MarkDirty();
         }
 
         // Max Distance (editable drag)
@@ -4225,6 +4226,7 @@ void RegisterInspectorCustomRenderers()
         if (ImGui::DragFloat("##MaxDistance", &reverbZone.MaxDistance, 0.1f, reverbZone.MinDistance, 10000.0f, "%.2f"))
         {
             reverbZone.MaxDistance = std::max(reverbZone.MinDistance, reverbZone.MaxDistance);
+            reverbZone.MarkDirty();
         }
 
         ImGui::Separator();
@@ -4259,62 +4261,110 @@ void RegisterInspectorCustomRenderers()
             ImGui::Text("Decay Time (s)");
             ImGui::SameLine(labelWidth);
             ImGui::SetNextItemWidth(-1);
-            ImGui::DragFloat("##DecayTime", &reverbZone.decayTime, 0.01f, 0.1f, 20.0f, "%.2f");
+            if (ImGui::DragFloat("##DecayTime", &reverbZone.decayTime, 0.01f, 0.1f, 20.0f, "%.2f"))
+            {
+                reverbZone.reverbPresetIndex = static_cast<int>(AudioReverbZoneComponent::ReverbPreset::Custom);
+                reverbZone.MarkDirty();
+            }
 
             ImGui::Text("Early Delay (s)");
             ImGui::SameLine(labelWidth);
             ImGui::SetNextItemWidth(-1);
-            ImGui::DragFloat("##EarlyDelay", &reverbZone.earlyDelay, 0.001f, 0.0f, 0.3f, "%.3f");
+            if (ImGui::DragFloat("##EarlyDelay", &reverbZone.earlyDelay, 0.001f, 0.0f, 0.3f, "%.3f"))
+            {
+                reverbZone.reverbPresetIndex = static_cast<int>(AudioReverbZoneComponent::ReverbPreset::Custom);
+                reverbZone.MarkDirty();
+            }
 
             ImGui::Text("Late Delay (s)");
             ImGui::SameLine(labelWidth);
             ImGui::SetNextItemWidth(-1);
-            ImGui::DragFloat("##LateDelay", &reverbZone.lateDelay, 0.001f, 0.0f, 0.1f, "%.3f");
+            if (ImGui::DragFloat("##LateDelay", &reverbZone.lateDelay, 0.001f, 0.0f, 0.1f, "%.3f"))
+            {
+                reverbZone.reverbPresetIndex = static_cast<int>(AudioReverbZoneComponent::ReverbPreset::Custom);
+                reverbZone.MarkDirty();
+            }
 
             ImGui::Text("HF Reference (Hz)");
             ImGui::SameLine(labelWidth);
             ImGui::SetNextItemWidth(-1);
-            ImGui::DragFloat("##HFReference", &reverbZone.hfReference, 10.0f, 20.0f, 20000.0f, "%.0f");
+            if (ImGui::DragFloat("##HFReference", &reverbZone.hfReference, 10.0f, 20.0f, 20000.0f, "%.0f"))
+            {
+                reverbZone.reverbPresetIndex = static_cast<int>(AudioReverbZoneComponent::ReverbPreset::Custom);
+                reverbZone.MarkDirty();
+            }
 
             ImGui::Text("HF Decay Ratio");
             ImGui::SameLine(labelWidth);
             ImGui::SetNextItemWidth(-1);
-            ImGui::DragFloat("##HFDecayRatio", &reverbZone.hfDecayRatio, 0.01f, 0.1f, 2.0f, "%.2f");
+            if (ImGui::DragFloat("##HFDecayRatio", &reverbZone.hfDecayRatio, 0.01f, 0.1f, 2.0f, "%.2f"))
+            {
+                reverbZone.reverbPresetIndex = static_cast<int>(AudioReverbZoneComponent::ReverbPreset::Custom);
+                reverbZone.MarkDirty();
+            }
 
             ImGui::Text("Diffusion (%)");
             ImGui::SameLine(labelWidth);
             ImGui::SetNextItemWidth(-1);
-            ImGui::DragFloat("##Diffusion", &reverbZone.diffusion, 1.0f, 0.0f, 100.0f, "%.0f");
+            if (ImGui::DragFloat("##Diffusion", &reverbZone.diffusion, 1.0f, 0.0f, 100.0f, "%.0f"))
+            {
+                reverbZone.reverbPresetIndex = static_cast<int>(AudioReverbZoneComponent::ReverbPreset::Custom);
+                reverbZone.MarkDirty();
+            }
 
             ImGui::Text("Density (%)");
             ImGui::SameLine(labelWidth);
             ImGui::SetNextItemWidth(-1);
-            ImGui::DragFloat("##Density", &reverbZone.density, 1.0f, 0.0f, 100.0f, "%.0f");
+            if (ImGui::DragFloat("##Density", &reverbZone.density, 1.0f, 0.0f, 100.0f, "%.0f"))
+            {
+                reverbZone.reverbPresetIndex = static_cast<int>(AudioReverbZoneComponent::ReverbPreset::Custom);
+                reverbZone.MarkDirty();
+            }
 
             ImGui::Text("Low Shelf Freq (Hz)");
             ImGui::SameLine(labelWidth);
             ImGui::SetNextItemWidth(-1);
-            ImGui::DragFloat("##LowShelfFreq", &reverbZone.lowShelfFrequency, 10.0f, 20.0f, 1000.0f, "%.0f");
+            if (ImGui::DragFloat("##LowShelfFreq", &reverbZone.lowShelfFrequency, 10.0f, 20.0f, 1000.0f, "%.0f"))
+            {
+                reverbZone.reverbPresetIndex = static_cast<int>(AudioReverbZoneComponent::ReverbPreset::Custom);
+                reverbZone.MarkDirty();
+            }
 
             ImGui::Text("Low Shelf Gain (dB)");
             ImGui::SameLine(labelWidth);
             ImGui::SetNextItemWidth(-1);
-            ImGui::DragFloat("##LowShelfGain", &reverbZone.lowShelfGain, 0.1f, -36.0f, 12.0f, "%.1f");
+            if (ImGui::DragFloat("##LowShelfGain", &reverbZone.lowShelfGain, 0.1f, -36.0f, 12.0f, "%.1f"))
+            {
+                reverbZone.reverbPresetIndex = static_cast<int>(AudioReverbZoneComponent::ReverbPreset::Custom);
+                reverbZone.MarkDirty();
+            }
 
             ImGui::Text("High Cut (Hz)");
             ImGui::SameLine(labelWidth);
             ImGui::SetNextItemWidth(-1);
-            ImGui::DragFloat("##HighCut", &reverbZone.highCut, 10.0f, 20.0f, 20000.0f, "%.0f");
+            if (ImGui::DragFloat("##HighCut", &reverbZone.highCut, 10.0f, 20.0f, 20000.0f, "%.0f"))
+            {
+                reverbZone.reverbPresetIndex = static_cast<int>(AudioReverbZoneComponent::ReverbPreset::Custom);
+                reverbZone.MarkDirty();
+            }
 
             ImGui::Text("Early/Late Mix (%)");
             ImGui::SameLine(labelWidth);
             ImGui::SetNextItemWidth(-1);
-            ImGui::DragFloat("##EarlyLateMix", &reverbZone.earlyLateMix, 1.0f, 0.0f, 100.0f, "%.0f");
+            if (ImGui::DragFloat("##EarlyLateMix", &reverbZone.earlyLateMix, 1.0f, 0.0f, 100.0f, "%.0f"))
+            {
+                reverbZone.reverbPresetIndex = static_cast<int>(AudioReverbZoneComponent::ReverbPreset::Custom);
+                reverbZone.MarkDirty();
+            }
 
             ImGui::Text("Wet Level (dB)");
             ImGui::SameLine(labelWidth);
             ImGui::SetNextItemWidth(-1);
-            ImGui::DragFloat("##WetLevel", &reverbZone.wetLevel, 0.1f, -80.0f, 20.0f, "%.1f");
+            if (ImGui::DragFloat("##WetLevel", &reverbZone.wetLevel, 0.1f, -80.0f, 20.0f, "%.1f"))
+            {
+                reverbZone.reverbPresetIndex = static_cast<int>(AudioReverbZoneComponent::ReverbPreset::Custom);
+                reverbZone.MarkDirty();
+            }
 
             ImGui::Unindent();
         }

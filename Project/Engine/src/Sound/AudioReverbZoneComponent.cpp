@@ -528,6 +528,10 @@ void AudioReverbZoneComponent::UpdateReverbZone() {
     needsUpdate = false;
 }
 
+void AudioReverbZoneComponent::MarkDirty() {
+    needsUpdate = true;
+}
+
 void AudioReverbZoneComponent::UpdateComponent() {
     if (!enabled) {
         if (reverbHandle) {
