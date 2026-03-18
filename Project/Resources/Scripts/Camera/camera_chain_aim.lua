@@ -18,16 +18,12 @@ local function shortestDelta(from, to)
     return d
 end
 
--- Returns true if there is an unobstructed line from the player to the enemy.
--- Casts from player center-mass toward the enemy; if geometry is hit before
--- reaching the enemy the line-of-sight is blocked.
-local function hasLineOfSight(self, ex, ey, ez)
+-- Returns true if there is an unobstructed line from the given origin to the enemy.
+-- ox/oy/oz should be the camera position, which is outside the player's physics
+-- capsule. Starting inside the capsule causes Physics.Raycast to return -1 (no hit)
+-- making every enemy appear visible regardless of walls.
+local function hasLineOfSight(ox, oy, oz, ex, ey, ez)
     if not (Physics and Physics.Raycast) then return true end
-
-    -- Ray origin: player position raised to center-mass
-    local ox = self._targetPos.x
-    local oy = self._targetPos.y + (self.chainAimAssistHeightOffset or 1.0)
-    local oz = self._targetPos.z
 
     local dx = ex - ox
     local dy = ey - oy
@@ -37,10 +33,10 @@ local function hasLineOfSight(self, ex, ey, ez)
 
     local ndx, ndy, ndz = dx / dist, dy / dist, dz / dist
 
-    -- Physics.Raycast returns hit distance (>= 0) or -1 if no hit.
-    -- If something is hit closer than the enemy (with 0.3 tolerance), LOS is blocked.
+    -- hitDist > 0 means geometry was hit. If it's closer than the enemy
+    -- (with 0.3 m tolerance for the enemy's own collider) the LOS is blocked.
     local hitDist = Physics.Raycast(ox, oy, oz, ndx, ndy, ndz, dist)
-    if hitDist >= 0 and hitDist < dist - 0.3 then
+    if hitDist and hitDist > 0 and hitDist < dist - 0.3 then
         return false
     end
     return true
@@ -108,32 +104,47 @@ function M.updateChainAim(self, dt)
         M.updateAimAssist(self, dt, camX, camY, camZ)
     end
 
-    -- Publish forward basis for chain-throw direction while actively aiming.
+    -- Publish forward basis and crosshair world target for chain-throw direction.
     -- When aim assist has a locked target, fire from player toward that enemy
     -- so the chain travels toward the actual enemy rather than along raw camera angles.
     if self._chainAiming then
-        local fx, fy, fz
-        if self._assistTargetX and self._targetPos then
-            local dx = self._assistTargetX - self._targetPos.x
-            local dy = self._assistTargetY - self._targetPos.y
-            local dz = self._assistTargetZ - self._targetPos.z
-            local len = math.sqrt(dx*dx + dy*dy + dz*dz)
-            if len > 0.001 then
-                fx, fy, fz = dx/len, dy/len, dz/len
+        -- Camera forward direction (always from camera look angles).
+        local aimYaw   = self._chainAimYaw   or self._yaw
+        local aimPitch = self._chainAimPitch or self._pitch
+        local yr = math.rad(aimYaw)
+        local pr = math.rad(aimPitch)
+        local fx = math.sin(yr) * math.cos(pr)
+        local fy = -math.sin(pr)
+        local fz = math.cos(yr) * math.cos(pr)
+
+        -- World target: if aim assist has a locked enemy, use its position
+        -- directly. Otherwise raycast from camera to find the crosshair hit.
+        -- ChainBootstrap computes the actual fire direction from the chain's
+        -- start position (hand bone) toward this world target.
+        local wx, wy, wz
+        if self._assistTargetX then
+            wx = self._assistTargetX
+            wy = self._assistTargetY
+            wz = self._assistTargetZ
+        else
+            local crosshairMaxDist = 100.0
+            local eyeHeight = self.chainAimAssistHeightOffset or 1.0
+            local hitDist = crosshairMaxDist
+            if Physics and Physics.Raycast then
+                local d = Physics.Raycast(camX, camY, camZ, fx, fy, fz, crosshairMaxDist)
+                if d and d > 0 then hitDist = d end
             end
+            local eyeX = self._targetPos and self._targetPos.x or camX
+            local eyeY = (self._targetPos and self._targetPos.y or camY) + eyeHeight
+            local eyeZ = self._targetPos and self._targetPos.z or camZ
+            wx = eyeX + fx * hitDist
+            wy = eyeY + fy * hitDist
+            wz = eyeZ + fz * hitDist
         end
-        if not fx then
-            -- No assist target — use camera look angles
-            local aimYaw   = self._chainAimYaw   or self._yaw
-            local aimPitch = self._chainAimPitch or self._pitch
-            local yr = math.rad(aimYaw)
-            local pr = math.rad(aimPitch)
-            fx = math.sin(yr) * math.cos(pr)
-            fy = -math.sin(pr)
-            fz = math.cos(yr) * math.cos(pr)
-        end
+
         if event_bus and event_bus.publish then
             event_bus.publish("ChainAim_basis", { forward = { x = fx, y = fy, z = fz } })
+            event_bus.publish("ChainAim_worldTarget", { x = wx, y = wy, z = wz })
         end
     end
 
@@ -201,7 +212,7 @@ function M.updateAimAssist(self, dt, camX, camY, camZ)
                         local dz = ez - camZ
                         local distSq = dx*dx + dy*dy + dz*dz
                         if distSq <= assistRange * assistRange
-                        and hasLineOfSight(self, ex, ey + heightOffset, ez) then
+                        and hasLineOfSight(camX, camY, camZ, ex, ey + heightOffset, ez) then
                             local len3d = math.sqrt(dx*dx + dy*dy + dz*dz)
                             if len3d > 0.01 then
                                 local targetYaw   = math.deg(atan2(dx, dz))

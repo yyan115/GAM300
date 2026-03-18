@@ -275,8 +275,8 @@ return Component {
             -- points at camera forward within SpinReleaseAngleTolerance.
             self._pendingSpinRelease = true
             dbg("[ChainBootstrap] SpinRelease pending — waiting for correct angle window")
-            -- Held from retracted: fire with camera forward on release.
-            local dir = self._cameraForward
+            -- Held from retracted: fire toward crosshair world point on release.
+            local dir = self:_directionToAimPoint()
             dbg(string.format("[ChainBootstrap] AimFire release -> StartExtension (%.3f,%.3f,%.3f)", dir[1],dir[2],dir[3]))
             self.controller:StartExtension(dir, self.MaxLength, self.LinkMaxDistance)
             if _G.event_bus and _G.event_bus.publish then
@@ -632,6 +632,12 @@ return Component {
                 end
             end)
 
+            self._cameraWorldTargetSub = _G.event_bus.subscribe("ChainAim_worldTarget", function(payload)
+                if payload then
+                    self._cameraAimWorldPoint = { x = payload.x, y = payload.y, z = payload.z }
+                end
+            end)
+
             self._chainSubDown = _G.event_bus.subscribe("chain.down", function(payload) if not payload then return end pcall(function() self:_on_chain_down(payload) end) end)
             self._chainSubUp   = _G.event_bus.subscribe("chain.up",   function(payload) if not payload then return end pcall(function() self:_on_chain_up(payload)   end) end)
             self._chainSubHold = _G.event_bus.subscribe("chain.hold", function(payload) if not payload then return end pcall(function() self:_on_chain_hold(payload) end) end)
@@ -739,6 +745,27 @@ return Component {
                 end)
             end)
         end
+    end,
+
+    -- Returns a normalised fire direction from the chain hand toward the crosshair
+    -- world target published by camera_chain_aim. The world target is raycasted from
+    -- player eye level (not camera position) so there is no camera-offset parallax.
+    -- Falls back to raw camera forward if no world target is available yet.
+    _directionToAimPoint = function(self)
+        local wp = self._cameraAimWorldPoint
+        if wp then
+            local sp = self.controller and self.controller.startPos
+            if sp then
+                local dx = wp.x - sp[1]
+                local dy = wp.y - sp[2]
+                local dz = wp.z - sp[3]
+                local len = math.sqrt(dx*dx + dy*dy + dz*dz)
+                if len > 0.001 then
+                    return {dx/len, dy/len, dz/len}
+                end
+            end
+        end
+        return self._cameraForward
     end,
 
     -- Returns a normalised direction {x,y,z} toward the closest LockOn target within
@@ -1187,7 +1214,7 @@ return Component {
 
                 if math.abs(a) <= extendedTol then
                     dbg(string.format("[ChainBootstrap] SpinRelease fired at normAngle=%.3f tolRad=%.3f", a, extendedTol))
-                    local cf = self._cameraForward
+                    local cf = self:_directionToAimPoint()
                     self:_resetSpin()
                     self.controller:StartExtension(cf, self.MaxLength, self.LinkMaxDistance)
                 end
@@ -1409,7 +1436,7 @@ return Component {
 
     StartExtension = function(self)
         if self.controller then
-            local dir = self._cameraForward
+            local dir = self:_directionToAimPoint()
             self.controller:StartExtension(dir, self.MaxLength, self.LinkMaxDistance)
             if _G.event_bus and _G.event_bus.publish then
                 _G.event_bus.publish("force_player_rotation_to_direction", {x = dir[1], z = dir[3]})
