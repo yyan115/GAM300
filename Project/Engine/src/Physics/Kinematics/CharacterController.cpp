@@ -42,11 +42,11 @@ bool CharacterController::Initialise(ColliderComponent& collider, Transform& tra
 
     // SHAPE TYPE HAS TO BE A CAPSULE
     collider.shapeType = ColliderShapeType::Capsule;
-    collider.layer = Layers::CHARACTER;
+    //collider.layer = Layers::CHARACTER;
 
-    collider.capsuleRadius = 0.25f;
-    collider.capsuleHalfHeight = 0.4f;
-    collider.center.y = collider.capsuleHalfHeight + collider.capsuleRadius;
+    //collider.capsuleRadius = 0.25f;
+    //collider.capsuleHalfHeight = 0.4f;
+    //collider.center.y = collider.capsuleHalfHeight + collider.capsuleRadius;
     // Calculate offset - this represents how much the capsule center is above the feet
     collider_offsetY = collider.center.y * transform.localScale.y;
 
@@ -167,7 +167,7 @@ void CharacterController::Update(float deltaTime)
     if (mJuggleMode)
     {
         newVelocity = JPH::Vec3(mVelocity.GetX(), mJuggleVY, mVelocity.GetZ());
-        mJuggleVY = 0.0f; // consumed — Lua must set it again next frame
+        mJuggleVY = 0.0f; // consumed ï¿½ Lua must set it again next frame
     }
     else if (isOnGround)
     {
