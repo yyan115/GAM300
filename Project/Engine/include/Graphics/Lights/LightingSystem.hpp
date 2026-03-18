@@ -18,7 +18,7 @@ public:
     static const int MAX_POINT_LIGHT_SHADOWS = 4;
 #else
     const int MAX_VISIBLE_POINT_LIGHTS = 16;
-    static const int MAX_POINT_LIGHT_SHADOWS = 8;
+    static const int MAX_POINT_LIGHT_SHADOWS = 4;
 #endif
 
     

@@ -3,7 +3,7 @@
 // ============================================================================
 // Point Light Shadow Uniforms
 // ============================================================================
-#define MAX_POINT_LIGHT_SHADOWS 8
+#define MAX_POINT_LIGHT_SHADOWS 4
 uniform samplerCube pointShadowMaps[MAX_POINT_LIGHT_SHADOWS];
 uniform float pointShadowFarPlane;
 
@@ -250,11 +250,7 @@ float calculatePointShadow(int shadowIndex, vec3 fragPos, vec3 lightPos)
     if (shadowIndex == 0)      closestDepth = texture(pointShadowMaps[0], fragToLight).r;
     else if (shadowIndex == 1) closestDepth = texture(pointShadowMaps[1], fragToLight).r;
     else if (shadowIndex == 2) closestDepth = texture(pointShadowMaps[2], fragToLight).r;
-    else if (shadowIndex == 3) closestDepth = texture(pointShadowMaps[3], fragToLight).r;
-    else if (shadowIndex == 4) closestDepth = texture(pointShadowMaps[4], fragToLight).r;
-    else if (shadowIndex == 5) closestDepth = texture(pointShadowMaps[5], fragToLight).r;
-    else if (shadowIndex == 6) closestDepth = texture(pointShadowMaps[6], fragToLight).r;
-    else                       closestDepth = texture(pointShadowMaps[7], fragToLight).r;
+    else                       closestDepth = texture(pointShadowMaps[3], fragToLight).r;
 
     closestDepth *= pointShadowFarPlane;
 
