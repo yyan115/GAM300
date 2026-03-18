@@ -1,6 +1,6 @@
 #include "pch.h"
 #include "Graphics/SceneRenderer.hpp"
-#include "Graphics/Camera/Camera.h"
+#include "Graphics/Camera/Camera.hpp"
 #include "Graphics/Camera/CameraComponent.hpp"
 #include "Engine.h"
 #include "ECS/ECSRegistry.hpp"

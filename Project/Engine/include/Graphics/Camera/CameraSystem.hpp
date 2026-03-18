@@ -12,7 +12,7 @@ prior written consent of DigiPen Institute of Technology is prohibited.
 /* End Header **************************************************************************/
 #pragma once
 #include "ECS/System.hpp"
-#include "Camera.h"
+#include "Camera.hpp"
 #include <memory>
 
 class CameraSystem : public System {

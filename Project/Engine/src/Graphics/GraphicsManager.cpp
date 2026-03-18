@@ -420,6 +420,7 @@ void GraphicsManager::Render()
 	// =========================================================================
 	{
 		PROFILE_SCOPED("GM::ModelRenderLoop");
+		bool blendingOn = false;
 		for (IRenderComponent* item : modelItems)
 		{
 			ModelRenderComponent* modelItem = static_cast<ModelRenderComponent*>(item);
@@ -432,7 +433,33 @@ void GraphicsManager::Render()
 			{
 				continue;  // Already rendered via instancing
 			}
+
+			// Enable alpha blending for transparent models, disable for opaque
+			bool needsBlend = modelItem->distanceFadeOpacity < 1.0f;
+			if (!needsBlend) {
+				if (modelItem->material) {
+					needsBlend = modelItem->material->GetOpacity() < 1.0f;
+				} else if (modelItem->model && !modelItem->model->meshes.empty()
+					&& modelItem->model->meshes[0].material) {
+					needsBlend = modelItem->model->meshes[0].material->GetOpacity() < 1.0f;
+				}
+			}
+			if (needsBlend && !blendingOn) {
+				glEnable(GL_BLEND);
+				glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+				glDepthMask(GL_FALSE);
+				blendingOn = true;
+			} else if (!needsBlend && blendingOn) {
+				glDisable(GL_BLEND);
+				glDepthMask(GL_TRUE);
+				blendingOn = false;
+			}
+
 			RenderModelOptimized(*modelItem);  // New optimized render method
+		}
+		if (blendingOn) {
+			glDisable(GL_BLEND);
+			glDepthMask(GL_TRUE);
 		}
 	}
 
@@ -1538,6 +1565,12 @@ void GraphicsManager::RenderModelOptimized(const ModelRenderComponent& item)
 		}
 		m_currentMaterial = material;
 		m_sortingStats.materialSwitches++;
+	}
+
+	// Apply per-entity distance fade (overrides material opacity)
+	if (item.distanceFadeOpacity < 1.0f) {
+		float matOpacity = material ? material->GetOpacity() : 1.0f;
+		shader->setFloat("material.opacity", matOpacity * item.distanceFadeOpacity);
 	}
 
 	// Draw the model

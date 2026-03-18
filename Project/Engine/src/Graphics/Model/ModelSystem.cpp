@@ -12,6 +12,9 @@
 #include "ECS/LayerComponent.hpp"
 #include "Graphics/PostProcessing/PostProcessingManager.hpp"
 #include "Graphics/BloomComponent.hpp"
+#include "ECS/TagComponent.hpp"
+#include "ECS/TagManager.hpp"
+#include "Graphics/Camera/Camera.hpp"
 
 #ifdef ANDROID
 #include <android/log.h>
@@ -208,6 +211,41 @@ void ModelSystem::Update()
             int layerIdx = GetEffectiveLayerIndex(entity, ecsManager);
             if (exMask & (1u << layerIdx))
                 modelRenderItem->excludeFromPostProcess = true;
+        }
+
+        // Distance-based camera fade: only fade entities with specific tags
+        if (!isRenderingForEditor) {
+            Camera* cam = gfxManager.GetCurrentCamera();
+            if (cam) {
+                bool shouldFade = false;
+                if (ecsManager.HasComponent<TagComponent>(entity)) {
+                    static int tagEnemy    = TagManager::GetInstance().GetTagIndex("Enemy");
+                    static int tagNPC      = TagManager::GetInstance().GetTagIndex("NPC");
+                    static int tagCollect  = TagManager::GetInstance().GetTagIndex("Collectible");
+                    static int tagNoCamCol = TagManager::GetInstance().GetTagIndex("NoCameraCollision");
+
+                    int tagIdx = ecsManager.GetComponent<TagComponent>(entity).tagIndex;
+                    shouldFade = (tagIdx == tagEnemy || tagIdx == tagNPC ||
+                                  tagIdx == tagCollect || tagIdx == tagNoCamCol);
+                }
+
+                if (shouldFade) {
+                    glm::vec3 entityPos = glm::vec3(glmWorldMatrix[3]);
+                    glm::vec3 camPos = cam->Position;
+                    float dist = glm::length(entityPos - camPos);
+
+                    constexpr float fadeNear = 3.0f;
+                    constexpr float fadeFar  = 5.0f;
+                    constexpr float fadeMin  = 0.0f;
+
+                    float t = 0.0f;
+                    if (fadeFar > fadeNear) {
+                        t = (dist - fadeNear) / (fadeFar - fadeNear);
+                        t = glm::clamp(t, 0.0f, 1.0f);
+                    }
+                    modelRenderItem->distanceFadeOpacity = fadeMin + t * (1.0f - fadeMin);
+                }
+            }
         }
 
         gfxManager.Submit(std::move(modelRenderItem));

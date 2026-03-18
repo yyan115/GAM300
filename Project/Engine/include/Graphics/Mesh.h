@@ -2,7 +2,7 @@
 
 #include "VAO.h"
 #include "EBO.h"
-#include "Camera/Camera.h"
+#include "Camera/Camera.hpp"
 #include "Texture.h"
 #include "Material.hpp"
 #include "Engine.h"

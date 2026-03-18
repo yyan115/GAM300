@@ -1,7 +1,7 @@
 #pragma once
 #include "ECS/System.hpp"
 #include "Graphics/ShaderClass.h"
-#include "Graphics/Camera/Camera.h"
+#include "Graphics/Camera/Camera.hpp"
 #include "Graphics/VAO.h"
 #include "Graphics/VBO.h"
 #include "Graphics/EBO.h"

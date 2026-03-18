@@ -456,6 +456,9 @@ BEGIN_SYSTEM("Engine")
 
     FUNCTION("FindAudioCompByName", &Lua_FindAudioCompByName)
     FUNCTION("FindAudioCompByID", &Lua_FindAudioCompByID)
+
+    FUNCTION("SetModelOpacity", &MaterialWrappers::SetModelOpacity)
+    FUNCTION("GetModelOpacity", &MaterialWrappers::GetModelOpacity)
 END_SYSTEM()
 
 

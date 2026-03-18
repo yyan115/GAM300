@@ -3,7 +3,7 @@
 #include <vector>
 #include "ECS/System.hpp"
 #include "Model.h"
-#include "Graphics/Camera/Camera.h"
+#include "Graphics/Camera/Camera.hpp"
 #include "Graphics/ShaderClass.h"
 
 class ModelSystem : public System {
