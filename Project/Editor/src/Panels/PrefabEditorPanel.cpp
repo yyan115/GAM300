@@ -85,6 +85,10 @@ void PrefabEditor::StartEditingPrefab(const std::string& _prefabPath)
     if (!IsInPrefabEditorMode()) {
         SceneManager::GetInstance().SaveTempScene();
     }
+    else {
+        // If we were previously editing another prefab, save the previous prefab changes first.
+        PrefabEditor::SaveEditedPrefab();
+    }
 
     // Clear all entities in the current scene.
     ecs.ClearAllEntities();
