@@ -9203,6 +9203,10 @@ void RegisterInspectorCustomRenderers()
         static std::unordered_map<Entity, float>    startEdgeSoftness;
         static std::unordered_map<Entity, bool>     isEditingEdgeSoftness;
         static std::unordered_map<Entity, bool>     startUseHeightFade;
+        static std::unordered_map<Entity, float>    startColorTextureIntensity;
+        static std::unordered_map<Entity, bool>     isEditingColorTextureIntensity;
+        static std::unordered_map<Entity, float>    startColorTextureScale;
+        static std::unordered_map<Entity, bool>     isEditingColorTextureScale;
 
         // Initialize tracking state
         if (isEditingFogColor.find(entity)       == isEditingFogColor.end())       isEditingFogColor[entity]       = false;
@@ -9216,7 +9220,9 @@ void RegisterInspectorCustomRenderers()
         if (isEditingWarpStrength.find(entity)   == isEditingWarpStrength.end())   isEditingWarpStrength[entity]   = false;
         if (isEditingHeightFadeStart.find(entity)== isEditingHeightFadeStart.end())isEditingHeightFadeStart[entity]= false;
         if (isEditingHeightFadeEnd.find(entity)  == isEditingHeightFadeEnd.end())  isEditingHeightFadeEnd[entity]  = false;
-        if (isEditingEdgeSoftness.find(entity)   == isEditingEdgeSoftness.end())   isEditingEdgeSoftness[entity]   = false;
+        if (isEditingEdgeSoftness.find(entity)          == isEditingEdgeSoftness.end())          isEditingEdgeSoftness[entity]          = false;
+        if (isEditingColorTextureIntensity.find(entity) == isEditingColorTextureIntensity.end()) isEditingColorTextureIntensity[entity] = false;
+        if (isEditingColorTextureScale.find(entity)     == isEditingColorTextureScale.end())     isEditingColorTextureScale[entity]     = false;
 
         // --- Shape ---
         ImGui::Text("Shape");
@@ -9487,6 +9493,127 @@ void RegisterInspectorCustomRenderers()
             }
         }
 
+        ImGui::Separator();
+        ImGui::Text("Textures");
+
+        // --- Noise Texture ---
+        ImGui::Text("Noise Texture");
+        ImGui::SameLine(labelWidth);
+        ImGui::PushID("FogNoiseTexture");
+        {
+            std::string noisePath = AssetManager::GetInstance().GetAssetPathFromGUID(fog.noiseTextureGUID);
+            std::string noiseDisplay = noisePath.empty() ? "None (Texture)" : noisePath.substr(noisePath.find_last_of("/\\") + 1);
+            float btnWidth = ImGui::GetContentRegionAvail().x;
+            EditorComponents::DrawDragDropButton(noiseDisplay.c_str(), btnWidth);
+            if (EditorComponents::BeginDragDropTarget())
+            {
+                ImGui::SetTooltip("Drop noise texture here");
+                if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("TEXTURE_PAYLOAD"))
+                {
+                    SnapshotManager::GetInstance().TakeSnapshot("Assign Fog Noise Texture");
+                    const char* texturePath = (const char*)payload->Data;
+                    std::string pathStr(texturePath, payload->DataSize);
+                    pathStr.erase(std::find(pathStr.begin(), pathStr.end(), '\0'), pathStr.end());
+                    fog.noiseTextureGUID = AssetManager::GetInstance().GetGUID128FromAssetMeta(pathStr);
+                    fog.noiseTexturePath = AssetManager::GetInstance().GetAssetPathFromGUID(fog.noiseTextureGUID);
+                    fog.noiseTexture = ResourceManager::GetInstance().GetResourceFromGUID<Texture>(fog.noiseTextureGUID, fog.noiseTexturePath);
+                    EditorComponents::EndDragDropTarget();
+                }
+                else EditorComponents::EndDragDropTarget();
+            }
+        }
+        ImGui::PopID();
+
+        // --- Noise Texture Mapping Axis ---
+        ImGui::Text("  Mapping Axis");
+        ImGui::SameLine(labelWidth);
+        ImGui::SetNextItemWidth(-1);
+        {
+            const char* axisNames[] = { "XZ (Top-Down)", "XY (Front)", "YZ (Side)" };
+            int axisIndex = fog.noiseTextureMappingAxis;
+            int oldAxisIndex = axisIndex;
+            EditorComponents::PushComboColors();
+            if (ImGui::Combo("##FogNoiseMappingAxis", &axisIndex, axisNames, 3))
+            {
+                fog.noiseTextureMappingAxis = axisIndex;
+                if (oldAxisIndex != axisIndex && UndoSystem::GetInstance().IsEnabled())
+                {
+                    int newVal = axisIndex, oldVal = oldAxisIndex;
+                    UndoSystem::GetInstance().RecordLambdaChange(
+                        [entity, newVal]() { ECSManager& e = ECSRegistry::GetInstance().GetActiveECSManager(); if (e.HasComponent<FogVolumeComponent>(entity)) e.GetComponent<FogVolumeComponent>(entity).noiseTextureMappingAxis = newVal; },
+                        [entity, oldVal]() { ECSManager& e = ECSRegistry::GetInstance().GetActiveECSManager(); if (e.HasComponent<FogVolumeComponent>(entity)) e.GetComponent<FogVolumeComponent>(entity).noiseTextureMappingAxis = oldVal; },
+                        "Change Fog Noise Mapping Axis");
+                }
+            }
+            EditorComponents::PopComboColors();
+        }
+
+        // --- Color Texture ---
+        ImGui::Text("Color Texture");
+        ImGui::SameLine(labelWidth);
+        ImGui::PushID("FogColorTexture");
+        {
+            std::string colorPath = AssetManager::GetInstance().GetAssetPathFromGUID(fog.colorTextureGUID);
+            std::string colorDisplay = colorPath.empty() ? "None (Texture)" : colorPath.substr(colorPath.find_last_of("/\\") + 1);
+            float btnWidth = ImGui::GetContentRegionAvail().x;
+            EditorComponents::DrawDragDropButton(colorDisplay.c_str(), btnWidth);
+            if (EditorComponents::BeginDragDropTarget())
+            {
+                ImGui::SetTooltip("Drop color texture here");
+                if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("TEXTURE_PAYLOAD"))
+                {
+                    SnapshotManager::GetInstance().TakeSnapshot("Assign Fog Color Texture");
+                    const char* texturePath = (const char*)payload->Data;
+                    std::string pathStr(texturePath, payload->DataSize);
+                    pathStr.erase(std::find(pathStr.begin(), pathStr.end(), '\0'), pathStr.end());
+                    fog.colorTextureGUID = AssetManager::GetInstance().GetGUID128FromAssetMeta(pathStr);
+                    fog.colorTexturePath = AssetManager::GetInstance().GetAssetPathFromGUID(fog.colorTextureGUID);
+                    fog.colorTexture = ResourceManager::GetInstance().GetResourceFromGUID<Texture>(fog.colorTextureGUID, fog.colorTexturePath);
+                    EditorComponents::EndDragDropTarget();
+                }
+                else EditorComponents::EndDragDropTarget();
+            }
+        }
+        ImGui::PopID();
+
+        // --- Color Texture Intensity ---
+        ImGui::Text("  Color Intensity");
+        ImGui::SameLine(labelWidth);
+        ImGui::SetNextItemWidth(-1);
+        if (!isEditingColorTextureIntensity[entity]) startColorTextureIntensity[entity] = fog.colorTextureIntensity;
+        if (ImGui::IsItemActivated()) { startColorTextureIntensity[entity] = fog.colorTextureIntensity; isEditingColorTextureIntensity[entity] = true; }
+        if (ImGui::DragFloat("##FogColorTexIntensity", &fog.colorTextureIntensity, 0.01f, 0.0f, 1.0f))
+            isEditingColorTextureIntensity[entity] = true;
+        if (isEditingColorTextureIntensity[entity] && !ImGui::IsItemActive())
+        {
+            float oldVal = startColorTextureIntensity[entity]; float newVal = fog.colorTextureIntensity;
+            if (oldVal != newVal && UndoSystem::GetInstance().IsEnabled())
+                UndoSystem::GetInstance().RecordLambdaChange(
+                    [entity, newVal]() { ECSManager& e = ECSRegistry::GetInstance().GetActiveECSManager(); if (e.HasComponent<FogVolumeComponent>(entity)) e.GetComponent<FogVolumeComponent>(entity).colorTextureIntensity = newVal; },
+                    [entity, oldVal]() { ECSManager& e = ECSRegistry::GetInstance().GetActiveECSManager(); if (e.HasComponent<FogVolumeComponent>(entity)) e.GetComponent<FogVolumeComponent>(entity).colorTextureIntensity = oldVal; },
+                    "Change Fog Color Texture Intensity");
+            isEditingColorTextureIntensity[entity] = false;
+        }
+
+        // --- Color Texture Scale ---
+        ImGui::Text("  Color Scale");
+        ImGui::SameLine(labelWidth);
+        ImGui::SetNextItemWidth(-1);
+        if (!isEditingColorTextureScale[entity]) startColorTextureScale[entity] = fog.colorTextureScale;
+        if (ImGui::IsItemActivated()) { startColorTextureScale[entity] = fog.colorTextureScale; isEditingColorTextureScale[entity] = true; }
+        if (ImGui::DragFloat("##FogColorTexScale", &fog.colorTextureScale, 0.01f, 0.1f, 10.0f))
+            isEditingColorTextureScale[entity] = true;
+        if (isEditingColorTextureScale[entity] && !ImGui::IsItemActive())
+        {
+            float oldVal = startColorTextureScale[entity]; float newVal = fog.colorTextureScale;
+            if (oldVal != newVal && UndoSystem::GetInstance().IsEnabled())
+                UndoSystem::GetInstance().RecordLambdaChange(
+                    [entity, newVal]() { ECSManager& e = ECSRegistry::GetInstance().GetActiveECSManager(); if (e.HasComponent<FogVolumeComponent>(entity)) e.GetComponent<FogVolumeComponent>(entity).colorTextureScale = newVal; },
+                    [entity, oldVal]() { ECSManager& e = ECSRegistry::GetInstance().GetActiveECSManager(); if (e.HasComponent<FogVolumeComponent>(entity)) e.GetComponent<FogVolumeComponent>(entity).colorTextureScale = oldVal; },
+                    "Change Fog Color Texture Scale");
+            isEditingColorTextureScale[entity] = false;
+        }
+
         return true; // Skip default reflection rendering
     });
 
@@ -9505,14 +9632,20 @@ void RegisterInspectorCustomRenderers()
     ReflectionRenderer::RegisterFieldRenderer("FogVolumeComponent", "heightFadeStart",  [](const char*, void*, Entity, ECSManager&) { return true; });
     ReflectionRenderer::RegisterFieldRenderer("FogVolumeComponent", "heightFadeEnd",    [](const char*, void*, Entity, ECSManager&) { return true; });
     ReflectionRenderer::RegisterFieldRenderer("FogVolumeComponent", "edgeSoftness",     [](const char*, void*, Entity, ECSManager&) { return true; });
-    ReflectionRenderer::RegisterFieldRenderer("FogVolumeComponent", "noiseTextureGUID", [](const char*, void*, Entity, ECSManager&) { return true; });
-    ReflectionRenderer::RegisterFieldRenderer("FogVolumeComponent", "fogShader",        [](const char*, void*, Entity, ECSManager&) { return true; });
-    ReflectionRenderer::RegisterFieldRenderer("FogVolumeComponent", "noiseTexture",     [](const char*, void*, Entity, ECSManager&) { return true; });
-    ReflectionRenderer::RegisterFieldRenderer("FogVolumeComponent", "noiseTexturePath", [](const char*, void*, Entity, ECSManager&) { return true; });
-    ReflectionRenderer::RegisterFieldRenderer("FogVolumeComponent", "fogVAO",           [](const char*, void*, Entity, ECSManager&) { return true; });
-    ReflectionRenderer::RegisterFieldRenderer("FogVolumeComponent", "fogVBO",           [](const char*, void*, Entity, ECSManager&) { return true; });
-    ReflectionRenderer::RegisterFieldRenderer("FogVolumeComponent", "fogEBO",           [](const char*, void*, Entity, ECSManager&) { return true; });
-    ReflectionRenderer::RegisterFieldRenderer("FogVolumeComponent", "worldTransform",   [](const char*, void*, Entity, ECSManager&) { return true; });
+    ReflectionRenderer::RegisterFieldRenderer("FogVolumeComponent", "noiseTextureGUID",             [](const char*, void*, Entity, ECSManager&) { return true; });
+    ReflectionRenderer::RegisterFieldRenderer("FogVolumeComponent", "noiseTextureMappingAxis",     [](const char*, void*, Entity, ECSManager&) { return true; });
+    ReflectionRenderer::RegisterFieldRenderer("FogVolumeComponent", "colorTextureGUID",        [](const char*, void*, Entity, ECSManager&) { return true; });
+    ReflectionRenderer::RegisterFieldRenderer("FogVolumeComponent", "colorTextureIntensity",   [](const char*, void*, Entity, ECSManager&) { return true; });
+    ReflectionRenderer::RegisterFieldRenderer("FogVolumeComponent", "colorTextureScale",       [](const char*, void*, Entity, ECSManager&) { return true; });
+    ReflectionRenderer::RegisterFieldRenderer("FogVolumeComponent", "fogShader",               [](const char*, void*, Entity, ECSManager&) { return true; });
+    ReflectionRenderer::RegisterFieldRenderer("FogVolumeComponent", "noiseTexture",            [](const char*, void*, Entity, ECSManager&) { return true; });
+    ReflectionRenderer::RegisterFieldRenderer("FogVolumeComponent", "noiseTexturePath",        [](const char*, void*, Entity, ECSManager&) { return true; });
+    ReflectionRenderer::RegisterFieldRenderer("FogVolumeComponent", "colorTexture",            [](const char*, void*, Entity, ECSManager&) { return true; });
+    ReflectionRenderer::RegisterFieldRenderer("FogVolumeComponent", "colorTexturePath",        [](const char*, void*, Entity, ECSManager&) { return true; });
+    ReflectionRenderer::RegisterFieldRenderer("FogVolumeComponent", "fogVAO",                  [](const char*, void*, Entity, ECSManager&) { return true; });
+    ReflectionRenderer::RegisterFieldRenderer("FogVolumeComponent", "fogVBO",                  [](const char*, void*, Entity, ECSManager&) { return true; });
+    ReflectionRenderer::RegisterFieldRenderer("FogVolumeComponent", "fogEBO",                  [](const char*, void*, Entity, ECSManager&) { return true; });
+    ReflectionRenderer::RegisterFieldRenderer("FogVolumeComponent", "worldTransform",          [](const char*, void*, Entity, ECSManager&) { return true; });
 
     // ==================== SPRITE ANIMATION COMPONENT ====================
     // Register the sprite animation inspector (defined in SpriteAnimationInspector.cpp)

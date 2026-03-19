@@ -30,6 +30,13 @@ uniform float edgeSoftness;
 
 uniform sampler2D noiseMap;
 uniform bool hasNoiseMap;
+uniform int  noiseTextureMappingAxis;  // 0=XZ (top-down), 1=XY (front), 2=YZ (side)
+
+// Optional color/material texture — tints fog with designer-authored image
+uniform sampler2D colorMap;
+uniform bool      hasColorMap;
+uniform float     colorTextureIntensity;
+uniform float     colorTextureScale;
 
 uniform vec3 cameraPos;
 uniform mat4 modelInverse;
@@ -188,7 +195,14 @@ void main()
         float noiseValue;
         if (hasNoiseMap)
         {
-            vec2 noiseUV = samplePos.xz * noiseScale + vec2(time * scrollSpeedX, time * scrollSpeedY);
+            vec2 baseUV;
+            if (noiseTextureMappingAxis == 1)       // XY — front-facing (good for rising smoke)
+                baseUV = samplePos.xy;
+            else if (noiseTextureMappingAxis == 2)  // YZ — side-facing
+                baseUV = samplePos.yz;
+            else                                    // XZ — top-down (default)
+                baseUV = samplePos.xz;
+            vec2 noiseUV = baseUV * noiseScale + vec2(time * scrollSpeedX, time * scrollSpeedY);
             noiseValue = texture(noiseMap, noiseUV).r;
         }
         else
@@ -240,5 +254,16 @@ void main()
         discard;
     }
 
-    FragColor = vec4(fogColor, finalAlpha);
+    // Color texture: sample at ray midpoint in local XZ space, tint fogColor
+    vec3 finalColor = fogColor;
+    if (hasColorMap)
+    {
+        float tMid = (tEntry + tExit) * 0.5;
+        vec3  midLocal = localCamPos + tMid * localRayDir;
+        vec2  colorUV  = (clamp(midLocal.xz + 0.5, 0.0, 1.0)) * colorTextureScale;
+        vec3  texTint  = texture(colorMap, colorUV).rgb;
+        finalColor = fogColor * mix(vec3(1.0), texTint, colorTextureIntensity);
+    }
+
+    FragColor = vec4(finalColor, finalAlpha);
 }

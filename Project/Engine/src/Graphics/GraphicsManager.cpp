@@ -1703,11 +1703,24 @@ void GraphicsManager::RenderFogVolume(const FogVolumeComponent& item)
 	// --- Noise texture ---
 	bool hasNoiseMap = (item.noiseTexture != nullptr);
 	item.fogShader->setBool("hasNoiseMap", hasNoiseMap);
+	item.fogShader->setInt("noiseTextureMappingAxis", item.noiseTextureMappingAxis);
 	if (hasNoiseMap)
 	{
 		glActiveTexture(GL_TEXTURE0);
 		item.noiseTexture->Bind(0);
 		item.fogShader->setInt("noiseMap", 0);
+	}
+
+	// --- Color/material texture ---
+	bool hasColorMap = (item.colorTexture != nullptr);
+	item.fogShader->setBool("hasColorMap", hasColorMap);
+	item.fogShader->setFloat("colorTextureIntensity", item.colorTextureIntensity);
+	item.fogShader->setFloat("colorTextureScale", item.colorTextureScale);
+	if (hasColorMap)
+	{
+		glActiveTexture(GL_TEXTURE2);
+		item.colorTexture->Bind(2);
+		item.fogShader->setInt("colorMap", 2);
 	}
 
 	// --- Draw ---
@@ -1716,9 +1729,14 @@ void GraphicsManager::RenderFogVolume(const FogVolumeComponent& item)
 	item.fogVAO->Unbind();
 
 	// --- Restore state ---
+	if (hasColorMap) {
+		item.colorTexture->Unbind(2);
+	}
 	if (hasNoiseMap) {
 		item.noiseTexture->Unbind(0);
 	}
+	glActiveTexture(GL_TEXTURE2);
+	glBindTexture(GL_TEXTURE_2D, 0);
 	glActiveTexture(GL_TEXTURE1);
 	glBindTexture(GL_TEXTURE_2D, 0);
 	glActiveTexture(GL_TEXTURE0);
