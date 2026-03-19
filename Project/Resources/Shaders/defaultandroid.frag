@@ -112,6 +112,19 @@ uniform vec2 shadowMapTexelSize;
 out vec4 FragColor;
 uniform vec3 cameraPos;
 
+// Distance-based dithered fade (0 = invisible, 1 = fully visible)
+uniform float u_distanceFadeOpacity;
+
+// 4x4 Bayer ordered-dither matrix
+float getBayerThreshold(ivec2 screenPos) {
+    float bayer[16];
+    bayer[0]  =  0.0/16.0; bayer[1]  =  8.0/16.0; bayer[2]  =  2.0/16.0; bayer[3]  = 10.0/16.0;
+    bayer[4]  = 12.0/16.0; bayer[5]  =  4.0/16.0; bayer[6]  = 14.0/16.0; bayer[7]  =  6.0/16.0;
+    bayer[8]  =  3.0/16.0; bayer[9]  = 11.0/16.0; bayer[10] =  1.0/16.0; bayer[11] =  9.0/16.0;
+    bayer[12] = 15.0/16.0; bayer[13] =  7.0/16.0; bayer[14] = 13.0/16.0; bayer[15] =  5.0/16.0;
+    return bayer[(screenPos.y & 3) * 4 + (screenPos.x & 3)];
+}
+
 // ============================================================================
 // Helper functions for materials
 // ============================================================================
@@ -372,6 +385,12 @@ void main()
     // Apply directional shadow to overall result
     result *= (1.0 - dirShadow * 0.7);
     
+    // Distance-based dithered fade
+    if (u_distanceFadeOpacity < 1.0) {
+        float threshold = getBayerThreshold(ivec2(gl_FragCoord.xy));
+        if (u_distanceFadeOpacity <= threshold) discard;
+    }
+
     float finalAlpha = material.opacity;
     if (hasOpacityMap) {
         finalAlpha *= texture(opacityMap, TexCoords).r;

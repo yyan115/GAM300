@@ -460,15 +460,14 @@ void GraphicsManager::Render()
 				continue;  // Already rendered via instancing
 			}
 
-			// Enable alpha blending for transparent models, disable for opaque
-			bool needsBlend = modelItem->distanceFadeOpacity < 1.0f;
-			if (!needsBlend) {
-				if (modelItem->material) {
-					needsBlend = modelItem->material->GetOpacity() < 1.0f;
-				} else if (modelItem->model && !modelItem->model->meshes.empty()
-					&& modelItem->model->meshes[0].material) {
-					needsBlend = modelItem->model->meshes[0].material->GetOpacity() < 1.0f;
-				}
+			// Enable alpha blending only for material opacity < 1 (e.g. semi-transparent floor).
+			// Distance fade uses dithered discard in the shader — no blending needed for it.
+			bool needsBlend = false;
+			if (modelItem->material) {
+				needsBlend = modelItem->material->GetOpacity() < 1.0f;
+			} else if (modelItem->model && !modelItem->model->meshes.empty()
+				&& modelItem->model->meshes[0].material) {
+				needsBlend = modelItem->model->meshes[0].material->GetOpacity() < 1.0f;
 			}
 			if (needsBlend && !blendingOn) {
 				glEnable(GL_BLEND);
@@ -1593,11 +1592,8 @@ void GraphicsManager::RenderModelOptimized(const ModelRenderComponent& item)
 		m_sortingStats.materialSwitches++;
 	}
 
-	// Apply per-entity distance fade (overrides material opacity)
-	if (item.distanceFadeOpacity < 1.0f) {
-		float matOpacity = material ? material->GetOpacity() : 1.0f;
-		shader->setFloat("material.opacity", matOpacity * item.distanceFadeOpacity);
-	}
+	// Pass fade opacity to shader — dithered discard handles the effect in the fragment shader
+	shader->setFloat("u_distanceFadeOpacity", item.distanceFadeOpacity);
 
 	// Draw the model
 	{
