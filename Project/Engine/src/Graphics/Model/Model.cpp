@@ -918,6 +918,11 @@ std::shared_ptr<AssetMeta> Model::ExtendMetaFile(const std::string& assetPath, s
 
     auto& allocator = doc.GetAllocator();
 
+    // Remove existing ModelMetaData if it exists to avoid double members
+    if (doc.HasMember("ModelMetaData")) {
+        doc.RemoveMember("ModelMetaData");
+    }
+
     rapidjson::Value modelMetaData(rapidjson::kObjectType);
 
     modelMetaData.AddMember("optimizeMeshes", rapidjson::Value().SetBool(metaData->optimizeMeshes), allocator);

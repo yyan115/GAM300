@@ -439,6 +439,11 @@ std::shared_ptr<AssetMeta> Texture::ExtendMetaFile(const std::string& assetPath,
 
 	auto& allocator = doc.GetAllocator();
 
+	// Remove existing TextureMetaData if it exists to avoid double members
+	if (doc.HasMember("TextureMetaData")) {
+		doc.RemoveMember("TextureMetaData");
+	}
+
 	rapidjson::Value textureMetaData(rapidjson::kObjectType);
 
 	// Add type
