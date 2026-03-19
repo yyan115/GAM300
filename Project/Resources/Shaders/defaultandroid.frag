@@ -32,12 +32,14 @@ uniform sampler2D diffuseMap;
 uniform sampler2D specularMap;
 uniform sampler2D normalMap;
 uniform sampler2D emissiveMap;
+uniform sampler2D opacityMap;
 
 // Texture availability flags (separate from struct for ES compatibility)
 uniform bool hasDiffuseMap;
 uniform bool hasSpecularMap;
 uniform bool hasNormalMap;
 uniform bool hasEmissiveMap;
+uniform bool hasOpacityMap;
 
 in vec2 TexCoords;
 in vec3 FragPos;
@@ -370,5 +372,9 @@ void main()
     // Apply directional shadow to overall result
     result *= (1.0 - dirShadow * 0.7);
     
-    FragColor = vec4(result, material.opacity);
+    float finalAlpha = material.opacity;
+    if (hasOpacityMap) {
+        finalAlpha *= texture(opacityMap, TexCoords).r;
+    }
+    FragColor = vec4(result, finalAlpha);
 }

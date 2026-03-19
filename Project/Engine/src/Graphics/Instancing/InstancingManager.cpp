@@ -86,6 +86,10 @@ bool InstancingManager::IsInstanceable(const ModelRenderComponent& component) co
     if (!component.model->mBoneInfoMap.empty()) return false;
     //if (component.depthOffset) return false;
 
+    // Transparent and fading objects need per-instance opacity — cannot be instanced
+    if (component.distanceFadeOpacity < 1.0f) return false;
+    if (component.material && component.material->GetOpacity() < 1.0f) return false;
+
     return true;
 }
 

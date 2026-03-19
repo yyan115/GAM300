@@ -31,6 +31,7 @@ struct Material {
     sampler2D roughnessMap;
     sampler2D aoMap;
     sampler2D heightMap;
+    sampler2D opacityMap;
 
     bool hasDiffuseMap;
     bool hasSpecularMap;
@@ -40,6 +41,7 @@ struct Material {
     bool hasRoughnessMap;
     bool hasAOMap;
     bool hasHeightMap;
+    bool hasOpacityMap;
 
     vec2 uTiling;
     vec2 uOffset;
@@ -406,7 +408,11 @@ void main()
         result = mix(result, envColor, reflectStrength * envReflectionIntensity);
     }
 
-    FragColor = vec4(result, material.opacity);
+    float finalAlpha = material.opacity;
+    if (material.hasOpacityMap) {
+        finalAlpha *= texture(material.opacityMap, tiledUV).r;
+    }
+    FragColor = vec4(result, finalAlpha);
 
     // Per-entity bloom emission — written only to MRT attachment 1
     // Modulate by fragment brightness so shadowed areas don't glow

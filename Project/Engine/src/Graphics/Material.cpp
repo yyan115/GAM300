@@ -162,6 +162,7 @@ void Material::BindTextures(Shader& shader) const
 	bool hasAO = HasTexture(TextureType::AMBIENT_OCCLUSION);
 	bool hasMetallic = HasTexture(TextureType::METALLIC);
 	bool hasRoughness = HasTexture(TextureType::ROUGHNESS);
+	bool hasOpacity = HasTexture(TextureType::OPACITY);
 
 #if defined(ANDROID) || defined(__ANDROID__)
 	// Android shader has samplers outside of Material struct (OpenGL ES compatibility)
@@ -180,6 +181,7 @@ void Material::BindTextures(Shader& shader) const
 	shader.setBool("hasAOMap", hasAO);
 	shader.setBool("hasMetallicMap", hasMetallic);
 	shader.setBool("hasRoughnessMap", hasRoughness);
+	shader.setBool("hasOpacityMap", hasOpacity);
 #else
 	shader.setBool("material.hasDiffuseMap", hasDiffuse);
 	shader.setBool("material.hasSpecularMap", hasSpecular);
@@ -189,6 +191,7 @@ void Material::BindTextures(Shader& shader) const
 	shader.setBool("material.hasAOMap", hasAO);
 	shader.setBool("material.hasMetallicMap", hasMetallic);
 	shader.setBool("material.hasRoughnessMap", hasRoughness);
+	shader.setBool("material.hasOpacityMap", hasOpacity);
 #endif
 
 	// Bind each texture type
@@ -286,6 +289,7 @@ std::string Material::TextureTypeToString(TextureType type) const
 		case TextureType::SPECULAR: return "specularMap";
 		case TextureType::NORMAL: return "normalMap";
 		case TextureType::HEIGHT: return "heightMap";
+		case TextureType::OPACITY: return "opacityMap";
 		case TextureType::AMBIENT_OCCLUSION: return "aoMap";
 		case TextureType::METALLIC: return "metallicMap";
 		case TextureType::ROUGHNESS: return "roughnessMap";

@@ -447,9 +447,12 @@ void GraphicsManager::Render()
 		for (IRenderComponent* item : modelItems)
 		{
 			ModelRenderComponent* modelItem = static_cast<ModelRenderComponent*>(item);
-			// Skip if it was handled by instancing
-		   // (InstancingManager sets a flag or we check IsInstanceable)
-			if (instancing.IsEnabled() &&
+			// Skip if it was handled by instancing — but only for fully opaque, non-fading objects.
+			// Transparent and fading objects must go through the individual render path for correct blending.
+			bool isTransparent = (modelItem->distanceFadeOpacity < 1.0f) ||
+				(modelItem->material && modelItem->material->GetOpacity() < 1.0f);
+			if (!isTransparent &&
+				instancing.IsEnabled() &&
 				!modelItem->HasAnimation() &&
 				modelItem->model &&
 				modelItem->model->mBoneInfoMap.empty())

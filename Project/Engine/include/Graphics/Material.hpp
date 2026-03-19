@@ -23,6 +23,7 @@ public:
 		EMISSIVE = 4,
 		HEIGHT = 5,
 		NORMAL = 6,
+		OPACITY = 7,
 		METALLIC = 15,
 		ROUGHNESS = 16,
 	};
