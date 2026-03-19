@@ -136,12 +136,15 @@ void TransformSystem::Update() {
 	// 1. Collect Roots
 	// We only iterate the top-level entities. The recursion handles the rest.
 	std::vector<Entity> rootEntities;
-	rootEntities.reserve(entities.size() / 4); // Heuristic reservation
+	{
+		PROFILE_SCOPED("TS::CollectRoots");
+		rootEntities.reserve(entities.size() / 4); // Heuristic reservation
 
-	for (const auto& entity : entities) {
-		// If no parent, it's a root
-		if (!ecsManager.HasComponent<ParentComponent>(entity)) {
-			rootEntities.push_back(entity);
+		for (const auto& entity : entities) {
+			// If no parent, it's a root
+			if (!ecsManager.HasComponent<ParentComponent>(entity)) {
+				rootEntities.push_back(entity);
+			}
 		}
 	}
 
@@ -167,9 +170,12 @@ void TransformSystem::Update() {
 	*/
 
 	// SEQUENTIAL FALLBACK (Still much faster than your original code):
-	for (const auto& root : rootEntities) {
-		// Pass nullptr for parent matrix, false for parentChanged (unless root is dirty)
-		UpdateTransformRecursive(ecsManager, root, nullptr, false);
+	{
+		PROFILE_SCOPED("TS::RecursiveUpdate");
+		for (const auto& root : rootEntities) {
+			// Pass nullptr for parent matrix, false for parentChanged (unless root is dirty)
+			UpdateTransformRecursive(ecsManager, root, nullptr, false);
+		}
 	}
 
 	//// Update entities' transform starting from root entities, in a depth-first manner.
