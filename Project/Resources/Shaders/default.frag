@@ -115,19 +115,8 @@ layout(location = 0) out vec4 FragColor;
 layout(location = 1) out vec4 BloomEmission;
 uniform vec3 cameraPos;
 
-// Distance-based dithered fade (0 = invisible, 1 = fully visible)
+// Distance-based fade opacity (0 = invisible, 1 = fully visible)
 uniform float u_distanceFadeOpacity;
-
-// 4x4 Bayer ordered-dither matrix — returns threshold in [0,1)
-float getBayerThreshold(ivec2 screenPos) {
-    const float bayer[16] = float[16](
-         0.0/16.0,  8.0/16.0,  2.0/16.0, 10.0/16.0,
-        12.0/16.0,  4.0/16.0, 14.0/16.0,  6.0/16.0,
-         3.0/16.0, 11.0/16.0,  1.0/16.0,  9.0/16.0,
-        15.0/16.0,  7.0/16.0, 13.0/16.0,  5.0/16.0
-    );
-    return bayer[(screenPos.y & 3) * 4 + (screenPos.x & 3)];
-}
 
 // Per-entity bloom emission
 uniform float bloomIntensity;
@@ -422,14 +411,7 @@ void main()
         result = mix(result, envColor, reflectStrength * envReflectionIntensity);
     }
 
-    // Distance-based dithered fade: discard pixels based on a Bayer pattern.
-    // This gives a "see-through" dissolve without requiring alpha sorting.
-    if (u_distanceFadeOpacity < 1.0) {
-        float threshold = getBayerThreshold(ivec2(gl_FragCoord.xy));
-        if (u_distanceFadeOpacity <= threshold) discard;
-    }
-
-    float finalAlpha = material.opacity;
+    float finalAlpha = material.opacity * u_distanceFadeOpacity;
     if (material.hasOpacityMap) {
         finalAlpha *= texture(material.opacityMap, tiledUV).r;
     }
