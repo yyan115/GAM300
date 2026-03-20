@@ -5154,6 +5154,39 @@ void RegisterInspectorCustomRenderers()
             isEditingIntensity[entity] = false;
         }
 
+        // Range
+        ImGui::Text("Range");
+        ImGui::SameLine(labelWidth);
+        ImGui::SetNextItemWidth(-1);
+        if (!isEditingRange[entity]) startRange[entity] = light.range;
+        if (ImGui::IsItemActivated()) { startRange[entity] = light.range; isEditingRange[entity] = true; }
+        if (ImGui::DragFloat("##Range", &light.range, 0.5f, 0.0f, 500.0f)) {
+            isEditingRange[entity] = true;
+        }
+        if (ImGui::IsItemHovered()) ImGui::SetTooltip("Max distance the light reaches. 0 = unlimited (use attenuation only).");
+        if (isEditingRange[entity] && !ImGui::IsItemActive()) {
+            float oldVal = startRange[entity];
+            float newVal = light.range;
+            if (oldVal != newVal && UndoSystem::GetInstance().IsEnabled()) {
+                UndoSystem::GetInstance().RecordLambdaChange(
+                    [entity, newVal]() {
+                        ECSManager& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
+                        if (ecs.HasComponent<PointLightComponent>(entity)) {
+                            ecs.GetComponent<PointLightComponent>(entity).range = newVal;
+                        }
+                    },
+                    [entity, oldVal]() {
+                        ECSManager& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
+                        if (ecs.HasComponent<PointLightComponent>(entity)) {
+                            ecs.GetComponent<PointLightComponent>(entity).range = oldVal;
+                        }
+                    },
+                    "Change Point Light Range"
+                );
+            }
+            isEditingRange[entity] = false;
+        }
+
         ImGui::Separator();
         ImGui::Text("Attenuation");
 
@@ -5384,38 +5417,6 @@ void RegisterInspectorCustomRenderers()
                     "Toggle Point Light Shadows"
                 );
             }
-        }
-
-        // Shadow Range
-        ImGui::Text("Shadow Range");
-        ImGui::SameLine(labelWidth);
-        ImGui::SetNextItemWidth(-1);
-        if (!isEditingRange[entity]) startRange[entity] = light.range;
-        if (ImGui::IsItemActivated()) { startRange[entity] = light.range; isEditingRange[entity] = true; }
-        if (ImGui::DragFloat("##ShadowRange", &light.range, 0.5f, 0.1f, 500.0f)) {
-            isEditingRange[entity] = true;
-        }
-        if (isEditingRange[entity] && !ImGui::IsItemActive()) {
-            float oldVal = startRange[entity];
-            float newVal = light.range;
-            if (oldVal != newVal && UndoSystem::GetInstance().IsEnabled()) {
-                UndoSystem::GetInstance().RecordLambdaChange(
-                    [entity, newVal]() {
-                        ECSManager& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
-                        if (ecs.HasComponent<PointLightComponent>(entity)) {
-                            ecs.GetComponent<PointLightComponent>(entity).range = newVal;
-                        }
-                    },
-                    [entity, oldVal]() {
-                        ECSManager& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
-                        if (ecs.HasComponent<PointLightComponent>(entity)) {
-                            ecs.GetComponent<PointLightComponent>(entity).range = oldVal;
-                        }
-                    },
-                    "Change Point Light Shadow Range"
-                );
-            }
-            isEditingRange[entity] = false;
         }
 
         return true; // Return true to skip default field rendering

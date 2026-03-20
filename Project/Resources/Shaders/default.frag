@@ -78,6 +78,7 @@ struct PointLight {
     float linear;
     float quadratic;
     float intensity;
+    float range;
     int shadowIndex;
 };
 #define NR_POINT_LIGHTS 32
@@ -296,6 +297,13 @@ vec3 calculatePointLight(PointLight light, vec3 normal, vec3 fragPos, vec3 viewD
 
     float distance = length(light.position - fragPos);
     float attenuation = 1.0 / (light.constant + light.linear * distance + light.quadratic * (distance * distance));
+
+    // Range cutoff: smoothly fade to zero at the range boundary (range=0 means unlimited)
+    if (light.range > 0.0) {
+        float nd = distance / light.range;
+        float rangeAtten = max(0.0, 1.0 - nd * nd);
+        attenuation *= rangeAtten * rangeAtten;
+    }
 
     float shadow = calculatePointShadow(light.shadowIndex, fragPos, light.position);
 
