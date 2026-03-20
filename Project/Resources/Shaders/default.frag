@@ -259,7 +259,9 @@ float calculatePointShadow(int shadowIndex, vec3 fragPos, vec3 lightPos)
 
     closestDepth *= pointShadowFarPlane;
 
-    float bias = 0.15;
+    // Scale bias with distance: small bias close to light, larger further away.
+    // Prevents the fixed-bias dark halo when a light is near a surface.
+    float bias = max(0.005, currentDepth * 0.02);
     float shadow = currentDepth - bias > closestDepth ? 1.0 : 0.0;
 
     return shadow;
@@ -392,8 +394,6 @@ void main()
     } else {
         result += material.emissive;
     }
-
-    result *= (1.0 - dirShadow * 0.7);
 
     // Environment reflections (skybox equirectangular map)
     if (hasEnvMap) {
