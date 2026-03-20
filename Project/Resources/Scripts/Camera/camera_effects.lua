@@ -96,8 +96,8 @@ return Component {
 
     fields = {
         -- === Vignette ===
-        BaselineVignetteIntensity  = 0.25,   -- always-on base intensity; events push above this
-        BaselineVignetteSmoothness = 0.5,
+        BaselineVignetteIntensity  = 0.65,   -- always-on base intensity; events push above this
+        BaselineVignetteSmoothness = 0.35,
         VignetteFadeSpeed          = 6.0,    -- lerp speed back to baseline
 
         -- === Chromatic Aberration ===
@@ -119,12 +119,12 @@ return Component {
 
         -- === Color Grading ===
         -- Baseline values always applied; fx_color_grading events push above/below these.
-        BaselineCgBrightness = 0.0,    -- additive brightness offset. 0 = neutral.
-        BaselineCgContrast   = 1.0,    -- contrast multiplier. 1 = neutral.
-        BaselineCgSaturation = 1.0,    -- saturation multiplier. 1 = neutral, 0 = greyscale.
-        BaselineCgTintR      = 1.0,    -- tint red channel. 1 = neutral.
-        BaselineCgTintG      = 1.0,    -- tint green channel. 1 = neutral.
-        BaselineCgTintB      = 1.0,    -- tint blue channel. 1 = neutral.
+        BaselineCgBrightness = -0.05,  -- additive brightness offset. 0 = neutral.
+        BaselineCgContrast   = 1.3,    -- contrast multiplier. 1 = neutral.
+        BaselineCgSaturation = 0.85,   -- saturation multiplier. 1 = neutral, 0 = greyscale.
+        BaselineCgTintR      = 1.1,    -- tint red channel. warm amber push.
+        BaselineCgTintG      = 0.92,   -- tint green channel. slightly warm.
+        BaselineCgTintB      = 0.75,   -- tint blue channel. reduce blue for warm look.
         ColorGradingFadeSpeed = 5.0,   -- lerp speed back to baseline after a timed event.
 
         -- === Time Scale ===
