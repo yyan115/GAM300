@@ -93,6 +93,78 @@ bool ModelSystem::Initialise()
     return true;
 }
 
+bool ModelSystem::InitialiseStep(int batchSize)
+{
+    if (m_initIndex == 0) {
+        m_initQueue.assign(entities.begin(), entities.end());
+    }
+
+    glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
+    glDepthMask(GL_FALSE);
+
+    ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
+    int processed = 0;
+    while (m_initIndex < m_initQueue.size() && processed < batchSize) {
+        Entity entity = m_initQueue[m_initIndex++];
+        ++processed;
+
+        auto& modelComp = ecsManager.GetComponent<ModelRenderComponent>(entity);
+        ENGINE_LOG_DEBUG("Loading model");
+        std::string modelPath = AssetManager::GetInstance().GetAssetPathFromGUID(modelComp.modelGUID);
+        if (!modelPath.empty())
+            modelComp.model = ResourceManager::GetInstance().GetResourceFromGUID<Model>(modelComp.modelGUID, modelPath);
+#ifndef ANDROID
+        std::string shaderPath = AssetManager::GetInstance().GetAssetPathFromGUID(modelComp.shaderGUID);
+        if (!shaderPath.empty())
+            modelComp.shader = ResourceManager::GetInstance().GetResourceFromGUID<Shader>(modelComp.shaderGUID, shaderPath);
+#else
+        ENGINE_LOG_DEBUG("Loading shader");
+        std::string shaderPath = ResourceManager::GetPlatformShaderPath("default");
+        if (!shaderPath.empty())
+            modelComp.shader = ResourceManager::GetInstance().GetResource<Shader>(shaderPath);
+#endif
+        ENGINE_LOG_DEBUG("Loading material");
+        std::string materialPath = AssetManager::GetInstance().GetAssetPathFromGUID(modelComp.materialGUID);
+        if (!materialPath.empty())
+            modelComp.material = ResourceManager::GetInstance().GetResourceFromGUID<Material>(modelComp.materialGUID, materialPath);
+
+        if (modelComp.model) {
+            ModelFactory::PopulateBoneNameToEntityMap(entity, modelComp.boneNameToEntityMap, *modelComp.model, true);
+            modelComp.childBonesSaved = true;
+
+            modelComp.shader->Activate();
+
+            if (modelComp.material)
+                modelComp.material->ApplyToShader(*modelComp.shader);
+
+            for (auto& mesh : modelComp.model->meshes) {
+                mesh.Prewarm();
+                mesh.vao.Bind();
+                glDrawElements(GL_TRIANGLES, 3, GL_UNSIGNED_INT, 0);
+                mesh.vao.Unbind();
+            }
+        }
+    }
+
+    bool done = (m_initIndex >= m_initQueue.size());
+
+    if (done) {
+        glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+        glDepthMask(GL_TRUE);
+        glEnable(GL_DEPTH_TEST);
+        glEnable(GL_CULL_FACE);
+        ENGINE_PRINT("[ModelSystem] Dummy Draw Prewarm complete! Driver is fully warmed up.\n");
+        ENGINE_PRINT("[ModelSystem] Initialized\n");
+        m_initQueue.clear();
+        m_initIndex = 0;
+    } else {
+        glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+        glDepthMask(GL_TRUE);
+    }
+
+    return done;
+}
+
 void ModelSystem::Update()
 {
     PROFILE_FUNCTION(); // Will automatically show as "Model" in profiler UI

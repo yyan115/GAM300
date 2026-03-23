@@ -12,6 +12,7 @@ public:
     ~ModelSystem() = default;
 
     bool Initialise();
+    bool InitialiseStep(int batchSize);
     void Update();
     void Shutdown();
 
@@ -38,4 +39,7 @@ public:
 
 private:
     CullingStats cullingStats;
+
+    std::vector<Entity> m_initQueue;
+    size_t m_initIndex = 0;
 };

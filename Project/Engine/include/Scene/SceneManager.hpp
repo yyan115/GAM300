@@ -85,7 +85,8 @@ private:
 	rapidjson::SizeType     asyncEntityIndex = 0;
 	rapidjson::SizeType     asyncEntityTotal = 0;
 	bool					asyncSwapPending = false;
-	int                     entitiesPerChunk = 1;
+	int                     entitiesPerChunk = 50;  // entities deserialized per frame
+	int                     modelsPerInitStep = 5;  // models initialized per frame (ModelSystem)
 	std::unique_ptr<IScene> pendingScene;  // IScene not SceneInstance, matching your currentScene type
 	int						asyncSystemInitStep = 0;
 };

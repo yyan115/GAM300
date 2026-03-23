@@ -541,7 +541,9 @@ void SceneManager::UpdateAsyncLoad() {
             GraphicsManager& gfx = GraphicsManager::GetInstance();
             if (activeCam != UINT32_MAX && ecs.cameraSystem->GetActiveCamera())
                 gfx.SetCamera(ecs.cameraSystem->GetActiveCamera());
-            ecs.modelSystem->Initialise();
+            bool modelsDone = ecs.modelSystem->InitialiseStep(modelsPerInitStep);
+            if (!modelsDone)
+                asyncSystemInitStep--;  // stay on step 2 next frame; the ++ below brings it back to 2
             break;
         }
         case 3:  { PROFILE_SCOPED("SysInit::DebugDraw");      ecs.debugDrawSystem->Initialise();      break; }
