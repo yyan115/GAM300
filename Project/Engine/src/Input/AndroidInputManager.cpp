@@ -85,33 +85,25 @@ glm::vec2 AndroidInputManager::GetAxis(const std::string& axisName) {
         return glm::vec2(0.0f);
     }
 
-    // Look axis: return drag delta from non-UI touches (for camera rotation)
+    // Look axis: return the committed drag delta (accumulated last frame, snapshotted in Update).
+    // We do NOT require m_isDragging here so that the final frame after finger-lift is
+    // also delivered (OnTouchUp clears m_isDragging before Update snapshots the delta).
     if (axisName == "Look") {
-        // Return the delta from the drag touch (touch not on any UI entity)
-        if (m_isDragging && m_dragTouchId != -1) {
-            auto it = m_activeTouches.find(m_dragTouchId);
-            if (it != m_activeTouches.end()) {
-                // Return pixel delta - Lua script handles sensitivity
-                // Normalize by viewport for consistent behavior across resolutions
-                float viewportWidth = static_cast<float>(WindowManager::GetViewportWidth());
-                float viewportHeight = static_cast<float>(WindowManager::GetViewportHeight());
+        if (m_committedDragDelta.x != 0.0f || m_committedDragDelta.y != 0.0f) {
+            float viewportWidth  = static_cast<float>(WindowManager::GetViewportWidth());
+            float viewportHeight = static_cast<float>(WindowManager::GetViewportHeight());
+            if (viewportWidth  <= 0) viewportWidth  = 1920.0f;
+            if (viewportHeight <= 0) viewportHeight = 1080.0f;
 
-                if (viewportWidth <= 0) viewportWidth = 1920.0f;
-                if (viewportHeight <= 0) viewportHeight = 1080.0f;
+            float normDeltaX = m_committedDragDelta.x / viewportWidth;
+            float normDeltaY = m_committedDragDelta.y / viewportHeight;
 
-                // Normalize delta to 0-1 range (relative to viewport)
-                float normDeltaX = m_dragDelta.x / viewportWidth;
-                float normDeltaY = m_dragDelta.y / viewportHeight;
-
-                // Debug log periodically
-                static int lookLogCount = 0;
-                if ((normDeltaX != 0 || normDeltaY != 0) && ++lookLogCount % 30 == 1) {
-                    LOGI("[AndroidInput] GetAxis(Look) = (%.4f, %.4f) dragDelta=(%.1f,%.1f)",
-                         normDeltaX, normDeltaY, m_dragDelta.x, m_dragDelta.y);
-                }
-
-                return glm::vec2(normDeltaX, normDeltaY);
+            static int lookLogCount = 0;
+            if (++lookLogCount % 30 == 1) {
+                LOGI("[AndroidInput] GetAxis(Look) = (%.4f, %.4f) committed=(%.1f,%.1f)",
+                     normDeltaX, normDeltaY, m_committedDragDelta.x, m_committedDragDelta.y);
             }
+            return glm::vec2(normDeltaX, normDeltaY);
         }
         return glm::vec2(0.0f);
     }
@@ -256,7 +248,10 @@ void AndroidInputManager::Update(float deltaTime) {
     // Clear ended touches from last frame
     m_endedTouches.clear();
 
-    // Reset drag delta (will be set in OnTouchMove if dragging)
+    // Commit whatever OnTouchMove accumulated since last frame, then reset for next frame.
+    // Touch events on Android fire before Update() runs, so reading m_dragDelta directly
+    // after the reset would always return 0. GetAxis("Look") reads m_committedDragDelta.
+    m_committedDragDelta = m_dragDelta;
     m_dragDelta = glm::vec2(0.0f);
 
     // Update entity transforms (look up from ECS)
@@ -549,9 +544,10 @@ void AndroidInputManager::OnTouchMove(int pointerId, float x, float y) {
         }
     }
 
-    // Update drag delta if this is the drag touch
+    // Update drag delta if this is the drag touch (accumulate — Android delivers
+    // multiple move events per rendered frame; overwriting would discard most of them)
     if (pointerId == m_dragTouchId) {
-        m_dragDelta = it->second.delta;
+        m_dragDelta += it->second.delta;
     }
 }
 
