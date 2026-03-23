@@ -84,7 +84,8 @@ void EnvironmentPanel::OnImGuiRender() {
     ImGui::Text("Intensity");
     ImGui::SameLine(labelW);
     ImGui::SetNextItemWidth(-1);
-    ImGui::SliderFloat("##AmbientIntensity", &lightingSystem->ambientIntensity, 0.0f, 4.0f);
+    ImGui::DragFloat("##AmbientIntensity", &lightingSystem->ambientIntensity, 0.05f, 0.0f, 0.0f, "%.3f");
+    if (ImGui::IsItemHovered()) ImGui::SetTooltip("Drag to set intensity. No upper limit.");
 
     UpdateFocusState();
     ImGui::End();
