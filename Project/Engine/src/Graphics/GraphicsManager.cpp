@@ -1542,6 +1542,16 @@ void GraphicsManager::RenderSceneForShadows(Shader& depthShader)
 		modelItem->model->DrawDepthOnly();
 	}
 
+	// Also render instanced batches — they bypass the renderQueue so they'd otherwise
+	// cast no shadows. The depth shader is already active and has light matrices set.
+	if (InstancingManager::GetInstance().IsEnabled())
+	{
+		depthShader.setBool("useInstancing", true);
+		depthShader.setBool("isAnimated", false);
+		InstancingManager::GetInstance().RenderBatchesDepthOnly(glm::mat4(1.0f));
+		depthShader.setBool("useInstancing", false);
+	}
+
 	// Debug
 	static bool once = false;
 	if (!once) {
