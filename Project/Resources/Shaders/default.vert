@@ -33,12 +33,20 @@ out vec4 FragPosLightSpace;
 flat out vec4 vBloomData;
 
 // ============================================================================
+// Camera UBO (binding = 0) — uploaded once per frame
+// ============================================================================
+layout(std140) uniform CameraBlock {
+    mat4 view;
+    mat4 projection;
+    vec3 cameraPos;
+    float _pad;
+};
+
+// ============================================================================
 // Uniforms
 // ============================================================================
 // Transform matrices (used when NOT instancing)
 uniform mat4 model;
-uniform mat4 view;
-uniform mat4 projection;
 uniform mat4 lightSpaceMatrix;
 
 // Instancing toggle

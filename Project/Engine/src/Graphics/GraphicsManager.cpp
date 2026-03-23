@@ -94,6 +94,8 @@ bool GraphicsManager::Initialize(int window_width, int window_height)
 		);
 	}
 
+	InitCameraUBO();
+
 	ENGINE_PRINT("[GraphicsManager] Initialized - Face culling enabled\n");
 	return true;
 }
@@ -107,6 +109,11 @@ void GraphicsManager::Shutdown()
 	mainECS.spriteSystem->Shutdown();
 	mainECS.particleSystem->Shutdown();
 	mainECS.cameraSystem->Shutdown();
+
+	if (m_cameraUBO != 0) {
+		glDeleteBuffers(1, &m_cameraUBO);
+		m_cameraUBO = 0;
+	}
 
 	if (skyboxVAO != 0) {
 		glDeleteVertexArrays(1, &skyboxVAO);
@@ -265,12 +272,17 @@ void GraphicsManager::Render()
 		PROFILE_SCOPED("GM::GPUZoneScope");
 		PROFILE_GPU_ZONE("Render");
 
+	// Context is only ever lost on Android (EGL surface destroyed/recreated).
+	// On PC the GLFW context stays current for the lifetime of the window, so
+	// calling glfwMakeContextCurrent every frame just wastes ~126µs in driver overhead.
+#ifdef ANDROID
 	{
 		PROFILE_SCOPED("GM::MakeContextCurrent");
 		if (auto* platform = WindowManager::GetPlatform()) {
 			platform->MakeContextCurrent();
 		}
 	}
+#endif
 
 	if (!currentCamera)
 	{
@@ -284,6 +296,17 @@ void GraphicsManager::Render()
 	}
 
 	currentFrameViewport = GetCurrentViewport();
+
+	// Compute view/projection once for the whole frame and upload to Camera UBO.
+	// All shaders that declare CameraBlock automatically receive these values.
+	glm::mat4 frameView = currentCamera->GetViewMatrix();
+	glm::mat4 frameProjection = glm::perspective(
+		glm::radians(currentCamera->Zoom),
+		currentFrameViewport.aspectRatio,
+		0.1f, m_farPlane
+	);
+	if (m_cameraUBO != 0)
+		UploadCameraUBO(frameView, frameProjection, currentCamera->Position);
 
 	ECSManager* ecsManagerPtr = nullptr;
 	{
@@ -356,14 +379,6 @@ void GraphicsManager::Render()
 	}
 
 	InstancingManager& instancing = InstancingManager::GetInstance();
-
-	// Compute view/projection once — shared by depth prepass and main pass
-	glm::mat4 frameView = currentCamera->GetViewMatrix();
-	glm::mat4 frameProjection = glm::perspective(
-		glm::radians(currentCamera->Zoom),
-		currentFrameViewport.aspectRatio,
-		0.1f, m_farPlane
-	);
 
 	// =========================================================================
 	// DEPTH PREPASS — write depth for all opaque geometry before color passes.
@@ -1324,6 +1339,26 @@ glm::mat4 GraphicsManager::CreateTransformMatrix(const glm::vec3& pos, const glm
 	return modelMatrix.ConvertToGLM();
 }
 
+void GraphicsManager::InitCameraUBO()
+{
+	glGenBuffers(1, &m_cameraUBO);
+	glBindBuffer(GL_UNIFORM_BUFFER, m_cameraUBO);
+	glBufferData(GL_UNIFORM_BUFFER, sizeof(CameraUBOData), nullptr, GL_DYNAMIC_DRAW);
+	glBindBufferBase(GL_UNIFORM_BUFFER, 0, m_cameraUBO);
+	glBindBuffer(GL_UNIFORM_BUFFER, 0);
+}
+
+void GraphicsManager::UploadCameraUBO(const glm::mat4& view, const glm::mat4& projection, const glm::vec3& camPos)
+{
+	CameraUBOData data;
+	data.view = view;
+	data.projection = projection;
+	data.cameraPos = camPos;
+	glBindBuffer(GL_UNIFORM_BUFFER, m_cameraUBO);
+	glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(CameraUBOData), &data);
+	glBindBuffer(GL_UNIFORM_BUFFER, 0);
+}
+
 void GraphicsManager::InitializeSkybox()
 {
 	float skyboxVertices[] = {
@@ -1445,10 +1480,8 @@ void GraphicsManager::RunDepthPrepass(const glm::mat4& view, const glm::mat4& pr
 		if (animated && modelItem->animator)
 		{
 			const auto& transforms = modelItem->mFinalBoneMatrices;
-			for (size_t i = 0; i < transforms.size(); ++i)
-			{
-				m_depthPrepassShader->setMat4("finalBonesMatrices[" + std::to_string(i) + "]", transforms[i]);
-			}
+			if (!transforms.empty())
+				m_depthPrepassShader->setMat4Array("finalBonesMatrices[0]", transforms.data(), static_cast<GLsizei>(transforms.size()));
 		}
 
 		modelItem->model->DrawDepthOnly();
@@ -1501,10 +1534,8 @@ void GraphicsManager::RenderSceneForShadows(Shader& depthShader)
 		if (modelItem->HasAnimation() && modelItem->animator)
 		{
 			const auto& transforms = modelItem->mFinalBoneMatrices;
-			for (size_t i = 0; i < transforms.size(); ++i)
-			{
-				depthShader.setMat4("finalBonesMatrices[" + std::to_string(i) + "]", transforms[i]);
-			}
+			if (!transforms.empty())
+				depthShader.setMat4Array("finalBonesMatrices[0]", transforms.data(), static_cast<GLsizei>(transforms.size()));
 		}
 
 		// Draw model geometry only (no materials)

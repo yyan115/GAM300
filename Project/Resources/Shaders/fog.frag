@@ -39,8 +39,13 @@ uniform bool      hasColorMap;
 uniform float     colorTextureIntensity;
 uniform float     colorTextureScale;
 
-// Camera
-uniform vec3 cameraPos;
+// Camera UBO (binding = 0)
+layout(std140) uniform CameraBlock {
+    mat4 view;
+    mat4 projection;
+    vec3 cameraPos;
+    float _pad;
+};
 
 // World-to-local transform for ray-box intersection
 uniform mat4 modelInverse;

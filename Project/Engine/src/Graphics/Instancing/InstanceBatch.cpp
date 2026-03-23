@@ -74,7 +74,27 @@ void InstanceBatch::AddInstance(const glm::mat4& modelMatrix, const glm::vec3& b
 {
     InstanceData data;
     data.modelMatrix = modelMatrix;
-    data.normalMatrix = glm::mat4(glm::transpose(glm::inverse(glm::mat3(modelMatrix))));
+
+    // Normal matrix = transpose(inverse(mat3(model))).
+    // glm::inverse is expensive (determinant + adjugate). For the common case of
+    // uniform scale we can skip the inverse: the normal matrix is just the rotation
+    // matrix, which is the upper-left 3x3 of the model matrix divided by the scale.
+    // Non-uniform scale falls back to the full inverse.
+    const glm::mat3 m3(modelMatrix);
+    float sx2 = glm::dot(m3[0], m3[0]);
+    float sy2 = glm::dot(m3[1], m3[1]);
+    float sz2 = glm::dot(m3[2], m3[2]);
+    if (glm::abs(sx2 - sy2) < 1e-4f && glm::abs(sx2 - sz2) < 1e-4f && sx2 > 1e-8f)
+    {
+        // Uniform scale: normal matrix = rotation matrix (normalised columns)
+        float invScale = 1.0f / glm::sqrt(sx2);
+        data.normalMatrix = glm::mat4(m3 * invScale);
+    }
+    else
+    {
+        data.normalMatrix = glm::mat4(glm::transpose(glm::inverse(m3)));
+    }
+
     data.bloomData = glm::vec4(bloomColor, bloomIntensity);
 
     m_instances.push_back(data);

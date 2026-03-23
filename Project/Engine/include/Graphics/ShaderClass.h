@@ -39,6 +39,10 @@ public:
     void setMat3(const std::string& name, const glm::mat3& mat);
     void setMat4(const std::string& name, const glm::mat4& mat);
 
+    // Upload an array of matrices in a single GL call — use this for bone matrices
+    // instead of calling setMat4 in a loop (avoids 100 hash lookups + 100 GL calls).
+    void setMat4Array(const std::string& firstName, const glm::mat4* matrices, GLsizei count);
+
     //void clearUniformCache();
 
 private:

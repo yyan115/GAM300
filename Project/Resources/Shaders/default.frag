@@ -114,7 +114,14 @@ uniform bool shadowsEnabled;
 
 layout(location = 0) out vec4 FragColor;
 layout(location = 1) out vec4 BloomEmission;
-uniform vec3 cameraPos;
+
+// Camera UBO (binding = 0)
+layout(std140) uniform CameraBlock {
+    mat4 view;
+    mat4 projection;
+    vec3 cameraPos;
+    float _pad;
+};
 
 // Distance-based fade opacity (0 = invisible, 1 = fully visible)
 uniform float u_distanceFadeOpacity;

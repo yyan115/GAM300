@@ -976,9 +976,8 @@ void Model::Draw(Shader& shader, const Camera& camera, const ModelRenderComponen
         constexpr size_t MAX_BONES = 100;
         const auto& t = modelComp->mFinalBoneMatrices;
         const size_t n = std::min(t.size(), MAX_BONES);
-        // Upload as you already do (or via one glUniformMatrix4fv with [0])
-        for (size_t i = 0; i < n; ++i)
-            shader.setMat4("finalBonesMatrices[" + std::to_string(i) + "]", t[i]);
+        if (n > 0)
+            shader.setMat4Array("finalBonesMatrices[0]", t.data(), static_cast<GLsizei>(n));
     }
 
 	for (size_t i = 0; i < meshes.size(); ++i)
@@ -1024,9 +1023,8 @@ void Model::Draw(Shader& shader, const Camera& camera, std::shared_ptr<Material>
         constexpr size_t MAX_BONES = 100;
         const auto& t = modelComp.mFinalBoneMatrices;
         const size_t n = std::min(t.size(), MAX_BONES);
-        // Upload as you already do (or via one glUniformMatrix4fv with [0])
-        for (size_t i = 0; i < n; ++i)
-            shader.setMat4("finalBonesMatrices[" + std::to_string(i) + "]", t[i]);
+        if (n > 0)
+            shader.setMat4Array("finalBonesMatrices[0]", t.data(), static_cast<GLsizei>(n));
     }
 
 	for (size_t i = 0; i < meshes.size(); ++i)
@@ -1069,9 +1067,8 @@ void Model::Draw(Shader& shader, const Camera& camera, std::shared_ptr<Material>
         constexpr size_t MAX_BONES = 100;
         const auto& t = modelComp.mFinalBoneMatrices;
         const size_t n = std::min(t.size(), MAX_BONES);
-        // Upload as you already do (or via one glUniformMatrix4fv with [0])
-        for (size_t i = 0; i < n; ++i)
-            shader.setMat4("finalBonesMatrices[" + std::to_string(i) + "]", t[i]);
+        if (n > 0)
+            shader.setMat4Array("finalBonesMatrices[0]", t.data(), static_cast<GLsizei>(n));
     }
 
     for (size_t i = 0; i < meshes.size(); ++i)
