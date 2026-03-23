@@ -1,4 +1,7 @@
 #pragma once
+#include <atomic>
+#include <future>
+#include <mutex>
 #include <unordered_map>
 #include <string>
 #include <memory>
@@ -170,13 +173,14 @@ public:
 		bool isCompiling = false;
 		bool finishedCompiling = false;
 		std::future<std::vector<std::string>> assetCompilationFuture;
-		int numCompiledAssets = 0;
+		std::atomic<int> numCompiledAssets{0};
 	} androidCompilationStatus;
 
 	int ENGINE_API GetAssetMetaMapSize();
 
 private:
 	std::unordered_map<GUID_128, std::shared_ptr<AssetMeta>> assetMetaMap;
+	std::mutex assetMetaMutex;
 	std::list<std::pair<AssetManager::Event, std::filesystem::path>> assetEventQueue;
 	std::pair<AssetManager::Event, std::filesystem::path> previousEvent;
 	std::chrono::steady_clock::time_point previousEventTime;
