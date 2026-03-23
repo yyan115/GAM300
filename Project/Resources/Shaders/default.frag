@@ -331,7 +331,7 @@ vec3 calculateDirectionLight(DirectionLight light, vec3 N, vec3 V, float shadow,
     vec3 kS = F;
     vec3 kD = (vec3(1.0) - kS) * (1.0 - metallic);
 
-    vec3 Lo = (kD * albedo / PI + specular) * light.diffuse * NdotL;
+    vec3 Lo = (kD * albedo + specular) * light.diffuse * NdotL;
 
     return (1.0 - shadow) * Lo * light.intensity;
 }
@@ -368,7 +368,7 @@ vec3 calculatePointLight(PointLight light, vec3 N, vec3 V, vec3 fragPos, vec3 al
     vec3 kS = F;
     vec3 kD = (vec3(1.0) - kS) * (1.0 - metallic);
 
-    vec3 Lo = (kD * albedo / PI + specular) * light.diffuse * NdotL * attenuation;
+    vec3 Lo = (kD * albedo + specular) * light.diffuse * NdotL * attenuation;
 
     return (1.0 - shadow) * Lo * light.intensity;
 }
@@ -400,7 +400,7 @@ vec3 calculateSpotlight(Spotlight light, vec3 N, vec3 V, vec3 fragPos, vec3 albe
     vec3 kS = F;
     vec3 kD = (vec3(1.0) - kS) * (1.0 - metallic);
 
-    vec3 Lo = (kD * albedo / PI + specular) * light.diffuse * NdotL * attenuation * spotFactor;
+    vec3 Lo = (kD * albedo + specular) * light.diffuse * NdotL * attenuation * spotFactor;
 
     return Lo * light.intensity;
 }
