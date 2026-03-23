@@ -13,10 +13,6 @@ function AttackState:Enter(ai)
     ai._animator:SetBool("PatrolEnabled", false)
     ai._animator:SetBool("ReadyToAttack", false)
 
-    local cd = ai.IsMelee
-        and (ai.MeleeAttackCooldown or (ai.config.AttackCooldown or 1.0))
-        or  (ai.config.AttackCooldown or 3.0)
-
     ai._skipFirstCooldown = true
 
     if ai.IsMelee and ai._skipFirstCooldown then
@@ -25,11 +21,18 @@ function AttackState:Enter(ai)
         ai.attackTimer = 0
     end
 
-    ai.meleeAnimTriggered = false
+    ai.meleeAnimTriggered  = false
     ai.rangedAnimTriggered = false
 
     ai._readySettleT = 0
     ai._readyLatched = false
+
+    ai._attackCommitted   = false
+    ai._attackCommitTimer = 0
+
+    -- Recovery phase: enemy waits here after a swing before re-evaluating range
+    ai._attackRecovering  = false
+    ai._attackRecoveryT   = 0
 end
 
 function AttackState:Update(ai, dt)
@@ -41,19 +44,52 @@ function AttackState:Update(ai, dt)
     ai:FacePlayer()
     stopCC(ai)
 
+    -- ── Recovery phase ───────────────────────────────────────────────────────
+    -- After each swing the enemy waits for MeleeRecoveryDuration seconds
+    -- (defaults to MeleeAttackCooldown if not set) before it may chase or
+    -- attack again. This prevents instant state-exit the frame after a swing.
+    if ai._attackRecovering then
+        ai._attackRecoveryT = ai._attackRecoveryT + dtSec
+        local recoveryDur = ai.MeleeRecoveryDuration
+            or ai.MeleeAttackCooldown
+            or (ai.config.AttackCooldown or 1.0)
+
+        if ai._attackRecoveryT >= recoveryDur then
+            -- Recovery done — now decide: chase or attack again
+            ai._attackRecovering = false
+            ai._attackRecoveryT  = 0
+
+            local _, meleeR, diseng = ai:GetRanges()
+            local d2 = ai:GetPlayerDistanceSq()
+
+            if d2 > (diseng * diseng) then
+                ai.fsm:Change("Patrol", ai.states.Patrol)
+            else
+                ai.fsm:Change("Chase", ai.states.Chase)
+            end
+        end
+        -- While recovering: stand still, face player, do nothing else
+        return
+    end
+
+    -- ── Commit timer ─────────────────────────────────────────────────────────
+    if ai._attackCommitted then
+        ai._attackCommitTimer = ai._attackCommitTimer + dtSec
+    end
+
     local attackR, meleeR, diseng = ai:GetRanges()
     local d2 = ai:GetPlayerDistanceSq()
 
-    -- If target moved away, leave attack and also clear ready
+    -- Only allow state exit if not committed AND anim hasn't triggered yet
     if ai.IsMelee then
-        if d2 > (meleeR * meleeR) then
+        if (not ai._attackCommitted) and (not ai.meleeAnimTriggered) and d2 > (meleeR * meleeR) then
             ai._animator:SetBool("ReadyToAttack", false)
             ai._readyLatched = false
             ai.fsm:Change("Chase", ai.states.Chase)
             return
         end
     else
-        if d2 > (attackR * attackR) then
+        if (not ai._attackCommitted) and (not ai.rangedAnimTriggered) and d2 > (attackR * attackR) then
             ai._animator:SetBool("ReadyToAttack", false)
             ai._readyLatched = false
             ai.fsm:Change("Chase", ai.states.Chase)
@@ -61,6 +97,7 @@ function AttackState:Update(ai, dt)
         end
     end
 
+    -- ── Ready-to-attack settle ────────────────────────────────────────────────
     local settleDelay = ai.ReadyToAttackDelay or 0.15
     ai._readySettleT = (ai._readySettleT or 0) + dtSec
 
@@ -69,38 +106,45 @@ function AttackState:Update(ai, dt)
         ai._animator:SetBool("ReadyToAttack", true)
     end
 
+    -- ── Melee ─────────────────────────────────────────────────────────────────
     if ai.IsMelee then
         ai.attackTimer = (ai.attackTimer or 0) + dtSec
         local cd = ai.MeleeAttackCooldown or (ai.config.AttackCooldown or 1.0)
 
         if not ai.meleeAnimTriggered and (ai._skipFirstCooldown or ai.attackTimer >= ai.MeleeAnimDelay) then
+
+            -- Commit immediately, before re-checking range
+            if not ai._attackCommitted then
+                ai._attackCommitted   = true
+                ai._attackCommitTimer = 0
+            end
+
             if d2 <= (meleeR * meleeR) then
                 ai._animator:SetBool("Melee", true)
                 ai.meleeAnimTriggered = true
+
                 if _G.event_bus and _G.event_bus.publish then
                     local ex, _, ez = ai:GetPosition()
                     _G.event_bus.publish("melee_incoming", {
                         dmg           = (ai.MeleeDamage or 1),
                         src           = "GroundEnemy",
                         enemyEntityId = ai.entityId,
-                        x             = ex or 0,   -- attacker XZ for dodge/knockback direction
+                        x             = ex or 0,
                         z             = ez or 0,
                     })
                 end
 
-            -- TRIGGER CLAW VFX HERE
-            if _G.event_bus then
-                local x, y, z = ai:GetPosition()
-                local qW, qX, qY, qZ = ai:GetRotation() -- Get the AI's current facing
-                
-                _G.event_bus.publish("onClawSlashTrigger", {
-                    pos = {x = x, y = y, z = z},
-                    rot = {w = qW, x = qX, y = qY, z = qZ},
-                    entityId = ai.entityId,
-                    variant = "NORMAL",
-                    claimed = false
-                })
-            end
+                if _G.event_bus then
+                    local x, y, z = ai:GetPosition()
+                    local qW, qX, qY, qZ = ai:GetRotation()
+                    _G.event_bus.publish("onClawSlashTrigger", {
+                        pos      = { x = x,  y = y,  z = z  },
+                        rot      = { w = qW, x = qX, y = qY, z = qZ },
+                        entityId = ai.entityId,
+                        variant  = "NORMAL",
+                        claimed  = false,
+                    })
+                end
 
             elseif d2 > (diseng * diseng) then
                 ai.fsm:Change("Patrol", ai.states.Patrol)
@@ -111,33 +155,59 @@ function AttackState:Update(ai, dt)
             end
         end
 
+        -- Cooldown elapsed = damage window + begin recovery
         if ai.attackTimer >= cd then
             ai.attackTimer = 0
             ai._hasAttackedBefore = true
             ai._skipFirstCooldown = false
 
-            if ai.PlayAttackSFX then ai:PlayAttackSFX() end
-            if ai.PlayHitSFX then ai:PlayHitSFX() end
+            -- Only deal damage if player is still in melee range
+            local d2check = ai:GetPlayerDistanceSq()
+            local _, meleeRcheck, _ = ai:GetRanges()
+            if d2check <= (meleeRcheck * meleeRcheck) then
+                if ai.PlayAttackSFX then ai:PlayAttackSFX() end
+                if ai.PlayHitSFX    then ai:PlayHitSFX()    end
 
-            if _G.event_bus and _G.event_bus.publish then
-                local ex, _, ez = ai:GetPosition()
-                _G.event_bus.publish("meleeHitPlayerDmg", {
-                    dmg           = (ai.MeleeDamage or 1),
-                    src           = "GroundEnemy",
-                    enemyEntityId = ai.entityId,
-                    x             = ex or 0,   -- attacker XZ for knockback direction in PlayerHealth
-                    z             = ez or 0,
-                })
+                if _G.event_bus and _G.event_bus.publish then
+                    local ex, _, ez = ai:GetPosition()
+                    _G.event_bus.publish("meleeHitPlayerDmg", {
+                        dmg           = (ai.MeleeDamage or 1),
+                        src           = "GroundEnemy",
+                        enemyEntityId = ai.entityId,
+                        x             = ex or 0,
+                        z             = ez or 0,
+                    })
+                end
             end
+
+            -- Reset swing state and enter recovery
+            ai.meleeAnimTriggered = false
+            ai._attackCommitted   = false
+            ai._attackCommitTimer = 0
+            ai._animator:SetBool("Melee", false)
+            ai._animator:SetBool("ReadyToAttack", false)
+            ai._readyLatched      = false
+            ai._readySettleT      = 0
+
+            ai._attackRecovering  = true
+            ai._attackRecoveryT   = 0
         end
+
+    -- ── Ranged ───────────────────────────────────────────────────────────────
     else
-        -- RANGED
         ai.attackTimer = (ai.attackTimer or 0) + dtSec
 
         if not ai.rangedAnimTriggered and ai.attackTimer >= ai.RangedAnimDelay then
+
+            if not ai._attackCommitted then
+                ai._attackCommitted   = true
+                ai._attackCommitTimer = 0
+            end
+
             if d2 <= (attackR * attackR) then
                 ai._animator:SetBool("Ranged", true)
                 ai.rangedAnimTriggered = true
+
             elseif d2 > (diseng * diseng) then
                 ai.fsm:Change("Patrol", ai.states.Patrol)
                 return
@@ -150,13 +220,17 @@ function AttackState:Update(ai, dt)
         if ai.attackTimer >= (ai.config.AttackCooldown or 3.0) then
             local ok = ai:SpawnKnife()
             if ok then
-                ai.attackTimer = 0
+                ai.attackTimer         = 0
                 ai.rangedAnimTriggered = false
-                ai._hasAttackedBefore = true
-                ai._readySettleT = 0
-                ai._readyLatched = false
+                ai._hasAttackedBefore  = true
+                ai._readySettleT       = 0
+                ai._readyLatched       = false
                 ai._animator:SetBool("ReadyToAttack", false)
                 ai._animator:SetBool("Ranged", false)
+
+                if ai._attackCommitted and ai._attackCommitTimer >= (ai.RangedAttackDuration or 0.6) then
+                    ai._attackCommitted = false
+                end
             else
                 ai.attackTimer = (ai.config.AttackCooldown or 3.0)
             end
@@ -170,10 +244,14 @@ function AttackState:Exit(ai)
     ai._animator:SetBool("Melee", false)
     ai._animator:SetBool("ReadyToAttack", false)
 
-    ai.meleeAnimTriggered = false
+    ai.meleeAnimTriggered  = false
     ai.rangedAnimTriggered = false
-    ai._readySettleT = 0
-    ai._readyLatched = false
+    ai._readySettleT       = 0
+    ai._readyLatched       = false
+    ai._attackCommitted    = false
+    ai._attackCommitTimer  = 0
+    ai._attackRecovering   = false
+    ai._attackRecoveryT    = 0
 
     stopCC(ai)
 end

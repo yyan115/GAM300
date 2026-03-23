@@ -4,11 +4,10 @@ local Component = require("extension.mono_helper")
 
 return Component {
     fields = {
-        barFillName = "LoadingBarFill",
+        barFillName     = "LoadingBarFill",
         loadingTextName = "PercentText",
-        targetScene = "Resources/Scenes/04_Level.scene",
-        anchorLeft = true,
-        maxWidth = 1580
+        targetScene     = "Resources/Scenes/04_Level.scene",
+        fullScaleX      = 1580.0   -- absolute target X scale at 100%
     },
 
     _progress = 0,
@@ -21,26 +20,24 @@ return Component {
 
     Start = function(self)
         self._progress = 0
-        self._started = false
+        self._started  = false
 
         -- Cache bar
-        self._barEntity = Engine.GetEntityByName(self.barFillName)
+        self._barEntity    = Engine.GetEntityByName(self.barFillName)
+        self._barContainer = Engine.GetEntityByName("LoadingBarContainer")
+        self._barContainerTransform = GetComponent(self._barContainer, "Transform")
 
         if self._barEntity then
             self._barTransform = GetComponent(self._barEntity, "Transform")
 
             if self._barTransform then
+                -- Save the center position, ignore whatever the authored scale was
                 self._barBasePosX = self._barTransform.localPosition.x
 
-                -- Start empty
-                self._barTransform.localScale.x = 0
-
-                if self.anchorLeft then
-                    self._barTransform.localPosition.x =
-                        self._barBasePosX - (self.maxWidth * 0.5)
-                end
-
-                self._barTransform.isDirty = true
+                -- Initialize to 0%
+                self._barTransform.localScale.x    = 0.0
+                self._barTransform.localPosition.x = self._barBasePosX
+                self._barTransform.isDirty         = true
             end
         end
 
@@ -64,21 +61,16 @@ return Component {
 
         if p < 0 then p = 0 elseif p > 1 then p = 1 end
 
-        local newWidth = self.maxWidth * p
+        -- fullScaleX is the absolute X scale at 100% — no multiplier on top
+        local newScaleX = (self.fullScaleX or 1580.0) * p
 
-        -- apply scale
-        self._barTransform.localScale.x = newWidth
-
-        -- offset so it fills left -> right
-        if self.anchorLeft then
-            local offset = (self.maxWidth - newWidth) * 0.5
-            self._barTransform.localPosition.x = self._barBasePosX - offset
-        end
-
-        self._barTransform.isDirty = true
+        self._barTransform.localScale.x    = newScaleX
+        self._barTransform.localPosition.x = self._barBasePosX
+        self._barTransform.isDirty         = true
     end,
 
     Update = function(self, dt)
+        -- Kick off async load on the first Update frame
         if not self._started then
             print("[Loading] Starting LoadAsync")
             Scene.LoadAsync(self.targetScene)
@@ -86,8 +78,12 @@ return Component {
             return
         end
 
-        self._progress = Scene.GetLoadProgress()
+        -- Read real progress from the engine
+        local progress = Scene.GetLoadProgress()
 
+        self._progress = progress
+
+        -- Update bar + text
         self:_applyBarProgress(self._progress)
 
         local percentInt = math.floor(self._progress * 100 + 0.5)
