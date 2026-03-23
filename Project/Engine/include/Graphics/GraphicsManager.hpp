@@ -124,6 +124,10 @@ public:
     ENGINE_API void SetFarPlane(float f) { m_farPlane = f; }
     float GetFarPlane() const { return m_farPlane; }
 
+    // Depth prepass toggle (enabled by default on PC, disabled on Android)
+    void SetDepthPrepassEnabled(bool enabled) { m_depthPrepassEnabled = enabled; }
+    bool IsDepthPrepassEnabled() const { return m_depthPrepassEnabled; }
+
     // Per-light shadow culling: call before each point light shadow render
     void SetPointShadowCullData(const glm::vec3& lightPos, float farPlane) { m_shadowLightPos = lightPos; m_shadowFarPlane = farPlane; }
     void ClearPointShadowCullData() { m_shadowFarPlane = -1.0f; }
@@ -209,6 +213,11 @@ private:
     std::mutex renderQueueMutex;
 
     void RenderSceneForShadows(Shader& depthShader);
+
+    // Depth prepass
+    std::shared_ptr<Shader> m_depthPrepassShader;
+    bool m_depthPrepassEnabled = true;
+    void RunDepthPrepass(const glm::mat4& view, const glm::mat4& projection);
 
     // Current point light shadow data for per-light culling
     // Set before each point shadow render, -1 farPlane means directional (no sphere cull)
