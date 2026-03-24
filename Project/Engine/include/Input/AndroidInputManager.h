@@ -157,7 +157,8 @@ private:
 
     // Unhandled touch for camera drag
     int m_dragTouchId = -1;
-    glm::vec2 m_dragDelta;
+    glm::vec2 m_dragDelta;           // accumulates during the frame (written by OnTouchMove)
+    glm::vec2 m_committedDragDelta;  // snapshotted at start of Update; read by GetAxis("Look")
     bool m_isDragging = false;
 
     // Action state tracking

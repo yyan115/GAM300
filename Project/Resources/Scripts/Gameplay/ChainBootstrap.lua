@@ -938,8 +938,10 @@ return Component {
     end,
 
     Update = function(self, dt)
-        if not self.controller then return end
+        PROFILE_SCOPED("ChainBootstrap::Update")
+        if not self.controller then PROFILE_SCOPED_END() return end
 
+        PROFILE_SCOPED("CB::PendingTapFire")
         if self._pendingTapFire then
             if self._pendingPlayerForward then
                 local pf = self._pendingPlayerForward
@@ -962,8 +964,10 @@ return Component {
                 self._pendingPlayerForward = nil
             end
         end
+        PROFILE_SCOPED_END()
 
         -- Continuous hold logic -----------------------------------------------
+        PROFILE_SCOPED("CB::HoldLogic")
         if self._chain_pressing and self._chain_held then
             local len        = (self.controller.chainLen or 0)
             local isExt      = self.controller.isExtending or false
@@ -1035,8 +1039,10 @@ return Component {
                 self._spinCurrentSpeed = self:_tickSpin(dt)
             end
         end
+        PROFILE_SCOPED_END() -- CB::HoldLogic
         ----------------------------------------------------------------------
 
+        PROFILE_SCOPED("CB::PlayerTransform")
         self.playerTransform = Engine.FindTransformByName(self.PlayerName)
         if self.playerTransform then
             local sx, sy, sz = self:_read_world_pos(self.playerTransform)
@@ -1044,7 +1050,9 @@ return Component {
         else
             dbg("Cannot find the bloody player, WHY. YOU NAMED WRONG IS IT OR ENGINE FAILING AGAIN.")
         end
+        PROFILE_SCOPED_END()
 
+        PROFILE_SCOPED("CB::ControllerUpdate")
         local settings = {
             ChainSpeed = self.ChainSpeed,
             MaxLength = self.MaxLength,
@@ -1077,6 +1085,7 @@ return Component {
         }
 
         local positions, startPos, endPos = self.controller:Update(dt, settings)
+        PROFILE_SCOPED_END() -- CB::ControllerUpdate
         local activeN = self.controller.activeN
 
         -- Publish chain extended state change so other scripts (ComboManager)
@@ -1101,6 +1110,7 @@ return Component {
         -- While spinning (held or pending release), blend Verlet positions with
         -- scripted circular positions and check the release angle window.
         -- =====================================================================
+        PROFILE_SCOPED("CB::SpinOverride")
         local spinHeld    = self._intentAimFire and self._chain_pressing and self._chain_held
         local spinPending = self._pendingSpinRelease
 
@@ -1220,11 +1230,13 @@ return Component {
                 end
             end
         end
+        PROFILE_SCOPED_END() -- CB::SpinOverride
         -- =====================================================================
 
         -- Publish movement constraint — only when chain is taut (attached and idle).
         -- Publishing during extension/retraction incorrectly locks player movement
         -- even when well within the chain's range.
+        PROFILE_SCOPED("CB::Constraints")
         local chainIdle     = not self.controller.isExtending and not self.controller.isRetracting
         local chainAttached = self.controller.endPointLocked or self.controller._raycastSnapped
         if self.controller.constraintResult and chainIdle and chainAttached
@@ -1248,19 +1260,27 @@ return Component {
         if self.controller.throwableTension and _G.event_bus and _G.event_bus.publish then
             _G.event_bus.publish("chain.throwable_tension", self.controller.throwableTension)
         end
+        PROFILE_SCOPED_END() -- CB::Constraints
 
+        PROFILE_SCOPED("CB::ApplyPositions")
         self.linkHandler:ApplyPositions(positions, activeN)
+        PROFILE_SCOPED_END()
 
+        PROFILE_SCOPED("CB::ApplyRotations")
         local maxStep = (self.RotationMaxStepRadians or (self.RotationMaxStep and math.rad(self.RotationMaxStep))) or math.rad(60)
         self.linkHandler:ApplyRotations(positions, startPos, endPos, maxStep, true, activeN)
+        PROFILE_SCOPED_END()
 
         -- === Audio ===
+        PROFILE_SCOPED("CB::AudioUpdate")
         if self.audioHandler then
             pcall(function()
                 self.audioHandler:Update(dt, self.controller:GetPublicState(), positions, activeN)
             end)
         end
+        PROFILE_SCOPED_END()
 
+        PROFILE_SCOPED("CB::EndpointUpdate")
         local public = self.controller:GetPublicState()
         self.m_CurrentLength = public.ChainLength
         self.m_IsExtending = public.IsExtending
@@ -1409,6 +1429,8 @@ return Component {
                 end -- if not spinActive
             end
         end
+        PROFILE_SCOPED_END() -- CB::EndpointUpdate
+        PROFILE_SCOPED_END() -- ChainBootstrap::Update
     end,
 
     OnDisable = function(self)

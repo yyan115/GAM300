@@ -222,20 +222,41 @@ void InstancingManager::RenderBatches(const glm::mat4& view, const glm::mat4& pr
     }
 }
 
-void InstancingManager::RenderBatchesDepthOnly(const glm::mat4& lightSpaceMatrix) 
+void InstancingManager::RenderBatchesDepthOnly(const glm::mat4& lightSpaceMatrix)
 {
-    if (!m_enabled) 
+    if (!m_enabled)
     {
         return;
     }
 
-    for (auto& [key, batch] : m_batches) 
+    for (auto& [key, batch] : m_batches)
     {
-        if (batch.GetInstanceCount() >= static_cast<size_t>(m_minInstancesForBatching)) 
+        if (batch.GetInstanceCount() >= static_cast<size_t>(m_minInstancesForBatching))
         {
             batch.RenderDepthOnly(lightSpaceMatrix);
         }
     }
+}
+
+void InstancingManager::RenderBatchesDepthPrepass(const glm::mat4& view, const glm::mat4& projection, Shader& depthShader)
+{
+    if (!m_enabled) return;
+
+    depthShader.Activate();
+    depthShader.setMat4("view", view);
+    depthShader.setMat4("projection", projection);
+    depthShader.setBool("useInstancing", true);
+    depthShader.setBool("isAnimated", false);   // instanced batches are never animated
+    depthShader.setBool("hasDiffuseMap", false); // alpha-cutout handled conservatively
+
+    for (auto& [key, batch] : m_batches)
+    {
+        if (batch.IsEmpty()) continue;
+        // RenderDepthOnly uses whatever shader is currently bound — that's our prepass shader
+        batch.RenderDepthOnly(glm::mat4(1.0f));
+    }
+
+    depthShader.setBool("useInstancing", false);
 }
 
 void InstancingManager::PrewarmScene(ECSManager& ecsManager)

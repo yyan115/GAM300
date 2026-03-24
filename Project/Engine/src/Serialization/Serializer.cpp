@@ -221,6 +221,8 @@ void Serializer::SerializeScene(const std::string& scenePath) {
         ambientGroundArr.PushBack(ecs.lightingSystem->ambientGround.z, alloc);
         lightingObj.AddMember("ambientGround", ambientGroundArr, alloc);
 
+        lightingObj.AddMember("ambientIntensity", ecs.lightingSystem->ambientIntensity, alloc);
+
         doc.AddMember("lightingSystem", lightingObj, alloc);
     }
 
@@ -1930,9 +1932,33 @@ void Serializer::ApplyPrefabOverridesRecursive(ECSManager& ecs, Entity& currentE
 
                 // --- LOGIC & UI ---
                 else if (typeName == "ScriptComponent") {
-                    // Note: Serialization key is "ScriptComponent", but data struct is ScriptComponentData
-                    // Your deserializer likely handles the internal add/get
+                    // Merge override into current scripts instead of clear-and-replace.
+                    // This preserves scripts newly added to the prefab that have no entry in the saved override.
+                    if (!ecs.HasComponent<ScriptComponentData>(currentEntity)) {
+                        ecs.AddComponent<ScriptComponentData>(currentEntity, ScriptComponentData{});
+                    }
+                    auto& scriptComp = ecs.GetComponent<ScriptComponentData>(currentEntity);
+
+                    // Snapshot scripts that came from the freshly-instantiated prefab
+                    std::vector<ScriptData> prefabScripts = scriptComp.scripts;
+
+                    // Apply the override (clears and rebuilds from saved override data)
                     Serializer::DeserializeScriptComponent(currentEntity, data);
+
+                    // Re-add any prefab scripts that are NOT covered by the override.
+                    // These are scripts newly added to the prefab since the override was last saved.
+                    for (auto& prefabScript : prefabScripts) {
+                        bool foundInOverride = false;
+                        for (const auto& overrideScript : scriptComp.scripts) {
+                            if (overrideScript.scriptPath == prefabScript.scriptPath) {
+                                foundInOverride = true;
+                                break;
+                            }
+                        }
+                        if (!foundInOverride) {
+                            scriptComp.scripts.push_back(std::move(prefabScript));
+                        }
+                    }
                 }
                 else if (typeName == "BrainComponent") {
                     if (!ecs.HasComponent<BrainComponent>(currentEntity)) ecs.AddComponent<BrainComponent>(currentEntity, BrainComponent{});
@@ -2219,6 +2245,9 @@ void Serializer::DeserializeScene(const std::string& scenePath) {
             ecs.lightingSystem->ambientGround.y = arr[1].GetFloat();
             ecs.lightingSystem->ambientGround.z = arr[2].GetFloat();
         }
+
+        if (lightingObj.HasMember("ambientIntensity") && lightingObj["ambientIntensity"].IsFloat())
+            ecs.lightingSystem->ambientIntensity = lightingObj["ambientIntensity"].GetFloat();
     }
 
     std::cout << "[CreateEntitiesFromJson] loaded entities from: " << scenePath << "\n";
@@ -2283,6 +2312,9 @@ void Serializer::DeserializeSceneMetadata(
             const auto& a = lo["ambientGround"];
             ecs.lightingSystem->ambientGround = { a[0].GetFloat(), a[1].GetFloat(), a[2].GetFloat() };
         }
+
+        if (lo.HasMember("ambientIntensity") && lo["ambientIntensity"].IsFloat())
+            ecs.lightingSystem->ambientIntensity = lo["ambientIntensity"].GetFloat();
     }
 }
 

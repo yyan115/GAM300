@@ -357,6 +357,19 @@ bool Shader::SetupShader(const std::string& path) {
 	}
 #endif
 
+	// Auto-bind known UBO blocks to predefined binding points.
+	// CameraBlock (binding=0): view, projection, cameraPos — uploaded once per frame.
+	{
+		static const struct { const char* name; GLuint binding; } kBlocks[] = {
+			{ "CameraBlock", 0 },
+		};
+		for (auto& b : kBlocks) {
+			GLuint idx = glGetUniformBlockIndex(ID, b.name);
+			if (idx != GL_INVALID_INDEX)
+				glUniformBlockBinding(ID, idx, b.binding);
+		}
+	}
+
 	return true;
 }
 
@@ -521,6 +534,18 @@ bool Shader::LoadResource(const std::string& resourcePath, const std::string& as
 			else return true;
 #endif
 			return LoadResource(resourcePath);
+		}
+
+		// Bind known UBO blocks for the binary-loaded program.
+		{
+			static const struct { const char* name; GLuint binding; } kBlocks[] = {
+				{ "CameraBlock", 0 },
+			};
+			for (auto& b : kBlocks) {
+				GLuint idx = glGetUniformBlockIndex(ID, b.name);
+				if (idx != GL_INVALID_INDEX)
+					glUniformBlockBinding(ID, idx, b.binding);
+			}
 		}
 
 		return true;
@@ -697,6 +722,17 @@ void Shader::setMat4(const std::string& name, const glm::mat4& mat)
 	GLint location = getUniformLocation(name);
 	if (location != -1) {
 		glUniformMatrix4fv(location, 1, GL_FALSE, &mat[0][0]);
+	}
+}
+
+void Shader::setMat4Array(const std::string& firstName, const glm::mat4* matrices, GLsizei count)
+{
+	if (count <= 0) return;
+	// Look up the base element once — GL treats array uniforms as contiguous
+	// locations, so uploading from [0] with count>1 fills the entire array.
+	GLint location = getUniformLocation(firstName);
+	if (location != -1) {
+		glUniformMatrix4fv(location, count, GL_FALSE, glm::value_ptr(matrices[0]));
 	}
 }
 

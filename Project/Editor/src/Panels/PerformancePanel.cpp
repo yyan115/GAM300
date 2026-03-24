@@ -3,6 +3,8 @@
 #include "TimeManager.hpp"
 #include "EditorComponents.hpp"
 #include <IconsFontAwesome6.h>
+#include "Graphics/GraphicsManager.hpp"
+#include "Graphics/Instancing/InstancingManager.hpp"
 
 #ifdef _WIN32
 #include <Windows.h>
@@ -117,6 +119,53 @@ void PerformancePanel::OnImGuiRender() {
         ImGui::Text("Frame Time:");
         ImGui::SameLine();
         ImGui::TextColored(frameTimeColor, "%.3f ms", frameTime);
+
+        ImGui::Separator();
+
+        // ---- FPS History graph ----
+        m_fpsHistory[m_fpsHistoryOffset] = (float)currentFps;
+        m_fpsHistoryOffset = (m_fpsHistoryOffset + 1) % FPS_HISTORY_SIZE;
+
+        char overlay[32];
+        snprintf(overlay, sizeof(overlay), "%.1f FPS", currentFps);
+        ImGui::PlotLines("##fps", m_fpsHistory, FPS_HISTORY_SIZE, m_fpsHistoryOffset,
+                         overlay, 0.0f, 200.0f, ImVec2(0, 60));
+
+        ImGui::Separator();
+
+        // ---- Rendering Stats ----
+        ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.2f, 0.8f, 1.0f, 1.0f));
+        ImGui::Text("=== Rendering Stats ===");
+        ImGui::PopStyleColor();
+
+        auto& gfx = GraphicsManager::GetInstance();
+        const auto& instStats = InstancingManager::GetInstance().GetStats();
+        const auto& sortStats = gfx.GetSortingStats();
+
+        // Depth prepass toggle
+        bool prepassEnabled = gfx.IsDepthPrepassEnabled();
+        if (ImGui::Checkbox("Depth Prepass", &prepassEnabled))
+            gfx.SetDepthPrepassEnabled(prepassEnabled);
+        if (ImGui::IsItemHovered())
+            ImGui::SetTooltip("Toggle the depth prepass on/off to compare performance.\n"
+                              "When ON, all opaque geometry is rendered to the depth\n"
+                              "buffer first so the main pass skips hidden pixels.");
+
+        // Instancing
+        ImGui::Spacing();
+        ImGui::Text("Draw Calls:      %d", instStats.drawCalls + sortStats.drawCalls);
+        ImGui::Text("Instanced:       %d  (%d batches)", instStats.instancedObjects, instStats.batchCount);
+        ImGui::Text("Non-Instanced:   %d", instStats.nonInstancedObjects);
+        ImGui::Text("Culled:          %d", instStats.culledObjects);
+        if (instStats.instancedObjects > 0)
+        {
+            ImGui::Text("Batch Efficiency:%.0f%%", instStats.GetBatchEfficiency());
+        }
+
+        // State switches
+        ImGui::Spacing();
+        ImGui::Text("Shader Switches: %d", sortStats.shaderSwitches);
+        ImGui::Text("Material Switches:%d", sortStats.materialSwitches);
 
         ImGui::Separator();
 

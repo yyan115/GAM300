@@ -11,8 +11,13 @@ layout (location = 5) in float aInstanceRotation;
 out vec2 TexCoord;
 out vec4 ParticleColor;
 
-uniform mat4 view;
-uniform mat4 projection;
+layout(std140) uniform CameraBlock {
+    mat4 view;
+    mat4 projection;
+    vec3 cameraPos;
+    float _pad;
+};
+
 uniform vec3 cameraRight;
 uniform vec3 cameraUp;
 

@@ -513,6 +513,8 @@ std::vector<std::string> AssetManager::CompileAllAssetsForAndroid() {
 	androidCompilationStatus.numCompiledAssets = 0;
 	androidCompilationStatus.isCompiling = true;
 	std::vector<std::string> remainingPaths{};
+	std::vector<std::shared_ptr<AssetMeta>> textureTasks{};
+
 	for (const auto& pair : assetMetaMap) {
 		std::filesystem::path p(pair.second->compiledFilePath);
 		std::string assetPath{};
@@ -534,9 +536,39 @@ std::vector<std::string> AssetManager::CompileAllAssetsForAndroid() {
 			CompileUpdatedMaterial(assetPath, material, true, true);
 		}
 		else {
-			CompileAsset(pair.second, true, true);
-			++androidCompilationStatus.numCompiledAssets;
+			std::filesystem::path srcPath(pair.second->sourceFilePath);
+			if (textureExtensions.count(srcPath.extension().generic_string())) {
+				textureTasks.push_back(pair.second);
+			}
+			else {
+				CompileAsset(pair.second, true, true);
+				++androidCompilationStatus.numCompiledAssets;
+			}
 		}
+	}
+
+	// Compile textures in parallel — each texture is independent (different files).
+	// Mutex inside CompileTextureToResource guards the shared assetMetaMap writes.
+	// Divide into batches, one per hardware thread.
+	{
+		const unsigned int numThreads = std::max(1u, std::thread::hardware_concurrency());
+		const size_t total = textureTasks.size();
+		const size_t batchSize = std::max((size_t)1, (total + numThreads - 1) / numThreads);
+
+		std::vector<std::future<void>> futures;
+		futures.reserve(numThreads);
+
+		for (size_t i = 0; i < total; i += batchSize) {
+			size_t end = std::min(i + batchSize, total);
+			futures.push_back(std::async(std::launch::async, [this, &textureTasks, i, end]() {
+				for (size_t j = i; j < end; ++j) {
+					CompileAsset(textureTasks[j], true, true);
+					++androidCompilationStatus.numCompiledAssets;
+				}
+			}));
+		}
+
+		for (auto& f : futures) f.get();
 	}
 
 	// Copy scenes to Android resources.
@@ -736,7 +768,12 @@ std::string AssetManager::GetAssetPathFromAssetName(const std::string& assetName
 
 bool AssetManager::CompileTextureToResource(GUID_128 guid, const char* filePath, const char* texType, GLint slot, bool flipUVs, bool forceCompile, bool forAndroid) {
 	// If the asset is not already loaded, load and store it using the GUID.
-	if (forceCompile || assetMetaMap.find(guid) == assetMetaMap.end()) {
+	bool shouldCompile;
+	{
+		std::lock_guard<std::mutex> lock(assetMetaMutex);
+		shouldCompile = forceCompile || assetMetaMap.find(guid) == assetMetaMap.end();
+	}
+	if (shouldCompile) {
 		Texture texture{};
 		texture.metaData->type = texType;
 		texture.metaData->flipUVs = flipUVs;
@@ -753,11 +790,18 @@ bool AssetManager::CompileTextureToResource(GUID_128 guid, const char* filePath,
 			assetMeta = texture.GenerateBaseMetaFile(guid, filePath, compiledPath);
 		}
 		else {
-			assetMeta = assetMetaMap.find(guid)->second;
-			assetMeta = texture.GenerateBaseMetaFile(guid, filePath, assetMeta->compiledFilePath, compiledPath, true);
+			std::shared_ptr<AssetMeta> existingMeta;
+			{
+				std::lock_guard<std::mutex> lock(assetMetaMutex);
+				existingMeta = assetMetaMap.find(guid)->second;
+			}
+			assetMeta = texture.GenerateBaseMetaFile(guid, filePath, existingMeta->compiledFilePath, compiledPath, true);
 		}
 		assetMeta = texture.ExtendMetaFile(filePath, assetMeta, forAndroid);
-		assetMetaMap[guid] = assetMeta;
+		{
+			std::lock_guard<std::mutex> lock(assetMetaMutex);
+			assetMetaMap[guid] = assetMeta;
+		}
 		ENGINE_PRINT("[AssetManager] Compiled asset: ", filePath, " to ", compiledPath, "\n\n");
 
 		if (!forAndroid) {
@@ -775,7 +819,12 @@ bool AssetManager::CompileTextureToResource(GUID_128 guid, const char* filePath,
 
 bool AssetManager::CompileTextureToResource(GUID_128 guid, const char* filePath, std::shared_ptr<TextureMeta> textureMeta, bool forceCompile, bool forAndroid) {
 	// If the asset is not already loaded, load and store it using the GUID.
-	if (forceCompile || assetMetaMap.find(guid) == assetMetaMap.end()) {
+	bool shouldCompile;
+	{
+		std::lock_guard<std::mutex> lock(assetMetaMutex);
+		shouldCompile = forceCompile || assetMetaMap.find(guid) == assetMetaMap.end();
+	}
+	if (shouldCompile) {
 		Texture texture{ textureMeta };
 		std::string compiledPath = texture.CompileToResource(filePath, forAndroid);
 		if (compiledPath.empty()) {
@@ -788,11 +837,18 @@ bool AssetManager::CompileTextureToResource(GUID_128 guid, const char* filePath,
 			assetMeta = texture.GenerateBaseMetaFile(guid, filePath, compiledPath);
 		}
 		else {
-			assetMeta = assetMetaMap.find(guid)->second;
-			assetMeta = texture.GenerateBaseMetaFile(guid, filePath, assetMeta->compiledFilePath, compiledPath, true);
+			std::shared_ptr<AssetMeta> existingMeta;
+			{
+				std::lock_guard<std::mutex> lock(assetMetaMutex);
+				existingMeta = assetMetaMap.find(guid)->second;
+			}
+			assetMeta = texture.GenerateBaseMetaFile(guid, filePath, existingMeta->compiledFilePath, compiledPath, true);
 		}
 		assetMeta = texture.ExtendMetaFile(filePath, assetMeta, forAndroid);
-		assetMetaMap[guid] = assetMeta;
+		{
+			std::lock_guard<std::mutex> lock(assetMetaMutex);
+			assetMetaMap[guid] = assetMeta;
+		}
 		ENGINE_PRINT("[AssetManager] Compiled asset: ", filePath, " to ", compiledPath, "\n\n");
 
 		if (!forAndroid) {

@@ -20,6 +20,10 @@ extern "C" {
 #include "lualib.h"
 }
 
+#ifdef TRACY_ENABLE
+#include "tracy/TracyLua.hpp"
+#endif
+
 namespace Scripting {
     namespace {
         static ScriptingRuntime* g_runtime_for_cfuncs = nullptr;
@@ -633,6 +637,25 @@ namespace Scripting {
     }
 
     void ScriptingRuntime::register_core_bindings(lua_State* L) {
+#ifdef TRACY_ENABLE
+        // Tracy Lua profiling — exposes global `tracy` table with
+        // ZoneBegin/ZoneBeginN/ZoneEnd/ZoneText/ZoneName/Message.
+        tracy::LuaRegister(L);
+
+        // Mirror the C++ profiling macro names as Lua globals so scripts use
+        // the same naming convention as engine C++ code:
+        //   PROFILE_FUNCTION()        -- zone named by Lua source location
+        //   PROFILE_SCOPED("name")    -- named zone (equivalent to ZoneScopedN)
+        //   PROFILE_SCOPED_END()      -- end the current zone
+        const char* profile_macro_aliases =
+            "PROFILE_FUNCTION     = tracy.ZoneBegin\n"
+            "PROFILE_SCOPED       = tracy.ZoneBeginN\n"
+            "PROFILE_SCOPED_END   = tracy.ZoneEnd\n";
+        if (luaL_dostring(L, profile_macro_aliases) != LUA_OK) {
+            lua_pop(L, 1);
+        }
+#endif
+
         // existing log binding
         lua_pushcfunction(L, l_cpp_log);
         lua_setglobal(L, "cpp_log");

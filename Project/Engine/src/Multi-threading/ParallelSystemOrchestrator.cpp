@@ -19,8 +19,8 @@ void ParallelSystemOrchestrator::Update() {
     // Clear/Pre-warm cache for the parallel threads to read safely
     {
         PROFILE_SCOPED("HierarchyCache::PreWarm");
-        mainECS.ClearActiveHierarchyCache();
-        mainECS.PreWarmActiveHierarchyCache();
+        { PROFILE_SCOPED("HC::Clear"); mainECS.ClearActiveHierarchyCache(); }
+        { PROFILE_SCOPED("HC::Warm");  mainECS.PreWarmActiveHierarchyCache(); }
     }
 
     bool gamePaused = TimeManager::IsPaused();
@@ -58,10 +58,10 @@ void ParallelSystemOrchestrator::Update() {
         }
         });
 
-    // Wait for Simulation to finish before updating Transforms
+    // Wait for Simulation to finish before updating Transforms.
     {
         PROFILE_SCOPED("SimulationJoin");
-        frameChannel.join();
+        { PROFILE_SCOPED("SJ::WaitForJobs"); frameChannel.join(); }
     }
 
     // -------------------------------------------------------------------------
@@ -80,8 +80,8 @@ void ParallelSystemOrchestrator::Update() {
     // Refresh cache again if transforms changed hierarchy active states (rare but possible)
     {
         PROFILE_SCOPED("HierarchyCache::Refresh");
-        mainECS.ClearActiveHierarchyCache();
-        mainECS.PreWarmActiveHierarchyCache();
+        { PROFILE_SCOPED("HC::Clear"); mainECS.ClearActiveHierarchyCache(); }
+        { PROFILE_SCOPED("HC::Warm");  mainECS.PreWarmActiveHierarchyCache(); }
     }
 
     // -------------------------------------------------------------------------
