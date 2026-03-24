@@ -3,7 +3,13 @@ project("gam300android")
 
 # Path to the main engine project (relative to this CMakeLists.txt)
 set(ENGINE_PROJECT_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../../../../../Project")
-set(ENGINE_BUILD_DIR "${ENGINE_PROJECT_DIR}/Build/android-debug")
+
+# Use the build type passed in by Android Studio (Debug or Release)
+if(NOT CMAKE_BUILD_TYPE)
+    set(CMAKE_BUILD_TYPE Release)
+endif()
+string(TOLOWER "${CMAKE_BUILD_TYPE}" _build_type_lower)
+set(ENGINE_BUILD_DIR "${ENGINE_PROJECT_DIR}/Build/android-${_build_type_lower}")
 
 # Correct jniLibs path for Android Studio (arm64 only here; keep same layout as before)
 set(JNILIB_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../jniLibs/arm64-v8a)
@@ -24,7 +30,7 @@ if(NOT EXISTS ${ENGINE_BUILD_DIR}/CMakeCache.txt)
             -DCMAKE_TOOLCHAIN_FILE=${ANDROID_NDK}/build/cmake/android.toolchain.cmake
             -DANDROID_ABI=arm64-v8a
             -DANDROID_PLATFORM=android-33
-            -DCMAKE_BUILD_TYPE=Release
+            -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
             -DCMAKE_ANDROID_STL_TYPE=c++_shared
             RESULT_VARIABLE CONFIG_RESULT
             OUTPUT_VARIABLE CONFIG_OUTPUT

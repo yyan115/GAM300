@@ -1726,14 +1726,14 @@ void AssetBrowserPanel::ConfirmRename() {
                         AssetManager::GetInstance().CompileAsset(assetMeta, true);
                     }
 
-                    //// Also rename the .meta file if it exists
-                    //std::filesystem::path oldMetaPath = oldPath;
-                    //oldMetaPath += ".meta";
-                    //if (std::filesystem::exists(oldMetaPath)) {
-                    //    std::filesystem::path newMetaPath = newPath;
-                    //    newMetaPath += ".meta";
-                    //    std::filesystem::rename(oldMetaPath, newMetaPath);
-                    //}
+                    // Also rename the .meta file if it exists
+                    std::filesystem::path oldMetaPath = oldPath;
+                    oldMetaPath += ".meta";
+                    if (std::filesystem::exists(oldMetaPath)) {
+                        std::filesystem::path newMetaPath = newPath;
+                        newMetaPath += ".meta";
+                        std::filesystem::rename(oldMetaPath, newMetaPath);
+                    }
                     ENGINE_PRINT("[AssetBrowserPanel] Renamed: ", oldPath, " -> ", newPath, "\n");
                 }
             }

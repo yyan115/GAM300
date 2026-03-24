@@ -1076,11 +1076,11 @@
                             "data": [
                                 {
                                     "type": "float",
-                                    "data": 1588.01
+                                    "data": 1580
                                 },
                                 {
                                     "type": "float",
-                                    "data": 18.8693
+                                    "data": 20
                                 },
                                 {
                                     "type": "float",
@@ -1279,7 +1279,7 @@
                             "data": [
                                 {
                                     "type": "float",
-                                    "data": 20
+                                    "data": 0
                                 },
                                 {
                                     "type": "float",
@@ -1353,7 +1353,7 @@
                             "data": [
                                 {
                                     "type": "float",
-                                    "data": 980
+                                    "data": 960
                                 },
                                 {
                                     "type": "float",
@@ -1526,7 +1526,7 @@
                             "data": [
                                 {
                                     "type": "float",
-                                    "data": -1.03443
+                                    "data": 0
                                 },
                                 {
                                     "type": "float",
@@ -1543,7 +1543,7 @@
                             "data": [
                                 {
                                     "type": "float",
-                                    "data": 77.5497
+                                    "data": 100
                                 },
                                 {
                                     "type": "float",
@@ -2064,38 +2064,38 @@
                             "entryFunction": "OnInit",
                             "autoInvokeEntry": true,
                             "instanceState": {
-                                "Update": null,
-                                "Unsubscribe": null,
-                                "_setPercentText": null,
-                                "targetScene": "\"Resources/Scenes/04_Level.scene\"",
-                                "_call_lifecycle": null,
-                                "StartSafe": null,
-                                "anchorLeft": true,
-                                "AwakeSafe": null,
-                                "Every": null,
-                                "UpdateSafe": null,
-                                "Destroy": null,
-                                "DeserializeFields": null,
-                                "After": null,
-                                "loadingTextName": "PercentText",
                                 "DisableSafe": null,
+                                "loadingTextName": "PercentText",
+                                "Update": null,
+                                "Destroy": null,
+                                "Unsubscribe": null,
                                 "_private": {},
-                                "__created_at": 1772746505.0,
-                                "__field_list": {
-                                    "anchorLeft": true,
-                                    "barFillName": "LoadingBarFill",
-                                    "loadingTextName": "PercentText",
-                                    "targetScene": "Resources/Scenes/04_Level.scene",
-                                    "fullScaleX": 2.0
-                                },
-                                "__meta": {},
+                                "After": null,
                                 "barFillName": "LoadingBarFill",
-                                "SerializeFields": null,
-                                "_applyBarProgress": null,
-                                "_subscriptions": {},
-                                "fullScaleX": 2.0,
+                                "_call_lifecycle": null,
                                 "Start": null,
-                                "Subscribe": null
+                                "Subscribe": null,
+                                "DeserializeFields": null,
+                                "fullScaleX": 1630.0,
+                                "_applyBarProgress": null,
+                                "targetScene": "\"Resources/Scenes/04_Level.scene\"",
+                                "_setPercentText": null,
+                                "SerializeFields": null,
+                                "StartSafe": null,
+                                "UpdateSafe": null,
+                                "AwakeSafe": null,
+                                "anchorLeft": true,
+                                "Every": null,
+                                "__created_at": 1772746505.0,
+                                "__meta": {},
+                                "__field_list": {
+                                    "fullScaleX": 2.0,
+                                    "targetScene": "Resources/Scenes/04_Level.scene",
+                                    "loadingTextName": "PercentText",
+                                    "barFillName": "LoadingBarFill",
+                                    "anchorLeft": true
+                                },
+                                "_subscriptions": {}
                             }
                         }
                     ]
@@ -2146,7 +2146,7 @@
         },
         {
             "index": 10,
-            "name": "IgnoreBlur"
+            "name": "test"
         }
     ],
     "lightingSystem": {
@@ -2165,6 +2165,7 @@
             0.30000001192092896,
             0.30000001192092896,
             0.30000001192092896
-        ]
+        ],
+        "ambientIntensity": 0.30000001192092896
     }
 }

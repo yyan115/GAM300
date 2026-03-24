@@ -347,7 +347,7 @@ return Component {
         self._vignetteTimer         = 0
         self._vignetteHeld          = false
 
-        self._camera.vignetteEnabled    = true
+        self._camera.vignetteEnabled    = false
         self._camera.vignetteIntensity  = self._vignetteCurrent
         self._camera.vignetteSmoothness = self._vignetteSmoothCurrent
 
@@ -553,7 +553,7 @@ return Component {
             self._camera.cgBrightness = self._cgBrightnessCurrent
             self._camera.cgContrast   = self._cgContrastCurrent
             self._camera.cgSaturation = self._cgSaturationCurrent
-            self._camera:cgTint(self._cgTintCurrentR, self._cgTintCurrentG, self._cgTintCurrentB)
+            --self._camera:cgTint(self._cgTintCurrentR, self._cgTintCurrentG, self._cgTintCurrentB)
         end
 
         -- === Time Scale =======================================================
