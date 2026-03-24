@@ -47,6 +47,7 @@ layout(std140) uniform CameraBlock {
 // ============================================================================
 // Transform matrices (used when NOT instancing)
 uniform mat4 model;
+uniform mat3 normalMatrixCPU;
 uniform mat4 lightSpaceMatrix;
 
 // Instancing toggle
@@ -87,8 +88,7 @@ void main()
         vBloomData = aInstanceBloomData;
     } else {
         modelMatrix = model;
-        // Calculate normal matrix from model matrix
-        normalMatrix = mat3(transpose(inverse(modelMatrix)));
+        normalMatrix = normalMatrixCPU;
 
         // Non-instanced: fragment shader will use uniforms instead
         vBloomData = vec4(0.0);
