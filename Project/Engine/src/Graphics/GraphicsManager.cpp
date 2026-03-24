@@ -731,7 +731,7 @@ void GraphicsManager::SetupMatrices(Shader& shader, const glm::mat4& modelMatrix
 	if (includeNormalMatrix)
 	{
 		glm::mat3 normalMatrix = glm::mat3(glm::transpose(glm::inverse(modelMatrix)));
-		shader.setMat3("normalMatrix", normalMatrix);
+		shader.setMat3("normalMatrixCPU", normalMatrix);
 	}
 
 	if (currentCamera)
@@ -1722,7 +1722,7 @@ void GraphicsManager::RenderModelOptimized(const ModelRenderComponent& item)
 		// Same shader - just update model matrix
 		shader->setMat4("model", modelMatrix);
 		glm::mat3 normalMatrix = glm::mat3(glm::transpose(glm::inverse(modelMatrix)));
-		shader->setMat3("normalMatrix", normalMatrix);
+		shader->setMat3("normalMatrixCPU", normalMatrix);
 	}
 
 	// Per-entity bloom emission (must set per-model to avoid stale values)
