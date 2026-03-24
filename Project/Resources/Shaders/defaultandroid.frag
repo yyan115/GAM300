@@ -229,7 +229,9 @@ float GeometrySmith(vec3 N, vec3 V, vec3 L, float roughness) {
 }
 
 vec3 FresnelSchlick(float cosTheta, vec3 F0) {
-    return F0 + (1.0 - F0) * pow(clamp(1.0 - cosTheta, 0.0, 1.0), 5.0);
+    float x = clamp(1.0 - cosTheta, 0.0, 1.0);
+    float x2 = x * x;
+    return F0 + (1.0 - F0) * x2 * x2 * x;
 }
 
 // ============================================================================
@@ -382,11 +384,11 @@ vec3 calculateSpotlight(Spotlight light, vec3 N, vec3 V, vec3 fragPos, vec3 albe
 
 void main()
 {
-    if (hasDiffuseMap && texture(diffuseMap, TexCoords).a < 0.5) {
+    vec2 tiledUV = (TexCoords * material.uTiling) + material.uOffset;
+
+    if (hasDiffuseMap && texture(diffuseMap, tiledUV).a < 0.5) {
         discard;
     }
-
-    vec2 tiledUV = (TexCoords * material.uTiling) + material.uOffset;
 
     vec3 norm     = getNormalFromMap(tiledUV);
     vec3 viewDir  = normalize(cameraPos - FragPos);
