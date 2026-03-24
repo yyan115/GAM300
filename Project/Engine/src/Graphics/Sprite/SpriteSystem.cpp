@@ -177,12 +177,16 @@ void SpriteSystem::Update()
                 }
             }
 
-            // Tag items on excluded layers for deferred rendering
-            uint32_t exMask = PostProcessingManager::GetInstance().GetExcludedLayerMask();
-            if (exMask != 0) {
-                int layerIdx = GetEffectiveLayerIndex(entity, ecsManager);
-                if (exMask & (1u << layerIdx))
-                    spriteRenderItem->excludeFromPostProcess = true;
+            // 2D UI sprites always skip post-processing — they must not be tonemapped
+            if (!spriteComponent.is3D) {
+                spriteRenderItem->excludeFromPostProcess = true;
+            } else {
+                uint32_t exMask = PostProcessingManager::GetInstance().GetExcludedLayerMask();
+                if (exMask != 0) {
+                    int layerIdx = GetEffectiveLayerIndex(entity, ecsManager);
+                    if (exMask & (1u << layerIdx))
+                        spriteRenderItem->excludeFromPostProcess = true;
+                }
             }
 
             gfxManager.Submit(std::move(spriteRenderItem));
