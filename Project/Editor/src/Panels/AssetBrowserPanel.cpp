@@ -313,8 +313,10 @@ void AssetBrowserPanel::OnImGuiRender() {
 
     // Check if refresh is needed (from file watcher)
     if (refreshPending.exchange(false)) {
-        // std::cout << "[AssetBrowserPanel] Refreshing assets due to file changes." << std::endl;
         RefreshAssets();
+        if (IsSearchActive()) {
+            RefreshSearchResults();
+        }
     }
 
     // Sync directory tree if needed (Unity behavior)
@@ -492,9 +494,20 @@ void AssetBrowserPanel::RenderToolbar() {
 
     if (ImGui::InputTextWithHint("##Search", ICON_FA_MAGNIFYING_GLASS " Search assets...", searchBuffer, sizeof(searchBuffer))) {
         searchQuery = searchBuffer;
+        RefreshSearchResults();
     }
 
     ImGui::PopStyleColor(3);
+
+    // Clear search button
+    if (!searchQuery.empty()) {
+        ImGui::SameLine();
+        if (ImGui::SmallButton(ICON_FA_XMARK)) {
+            searchQuery.clear();
+            activeSearchQuery.clear();
+            searchResults.clear();
+        }
+    }
 
     ImGui::SameLine();
     ImGui::SetNextItemWidth(120.0f);
@@ -610,7 +623,11 @@ void AssetBrowserPanel::RenderAssetGrid()
     ImGui::PushID(this); // unique ID space for this panel
 
     // Header
-    ImGui::Text("Assets in: %s", GetRelativePath(currentDirectory).c_str());
+    if (IsSearchActive()) {
+        ImGui::Text(ICON_FA_MAGNIFYING_GLASS " Results for \"%s\"", searchQuery.c_str());
+    } else {
+        ImGui::Text("Assets in: %s", GetRelativePath(currentDirectory).c_str());
+    }
     ImGui::Separator();
 
     // ----------------------- GRID -----------------------
@@ -628,16 +645,20 @@ void AssetBrowserPanel::RenderAssetGrid()
     bool anyItemClickedInGrid = false; // on click (on the same frame only)
     ImGuiIO& io = ImGui::GetIO();
 
+    const bool searching = IsSearchActive();
+    auto& assetsToDisplay = searching ? searchResults : currentAssets;
+
     int index = 0;
-    for (const auto& asset : currentAssets)
+    for (const auto& asset : assetsToDisplay)
     {
         if (!PassesFilter(asset)) continue;
 
         ImGui::BeginGroup();
         ImGui::PushID(asset.filePath.c_str());
 
-        // unified hitbox = thumbnail + label
-        ImGui::InvisibleButton("cell", ImVec2(thumb, thumb + LABELHEIGHT));
+        // unified hitbox = thumbnail + label (extra height for path text in search mode)
+        float cellHeight = thumb + LABELHEIGHT + (searching ? LABELHEIGHT : 0.0f);
+        ImGui::InvisibleButton("cell", ImVec2(thumb, cellHeight));
         const bool hovered = ImGui::IsItemHovered();
         const bool clicked = ImGui::IsItemClicked() || ImGui::IsItemClicked(ImGuiMouseButton_Right);
         const bool released = ImGui::IsItemHovered() && ImGui::IsMouseReleased(ImGuiMouseButton_Left);
@@ -923,7 +944,16 @@ void AssetBrowserPanel::RenderAssetGrid()
             ImGui::SetKeyboardFocusHere(-1); // Focus the input
         } else {
             ImGui::TextWrapped("%s", asset.fileName.c_str());
+            // In search mode, show the relative folder path below the filename
+            if (searching) {
+                std::string relPath = GetRelativePath(std::filesystem::path(asset.filePath).parent_path().generic_string());
+                ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.5f, 0.5f, 0.5f, 1.0f));
+                ImGui::TextWrapped("%s", relPath.c_str());
+                ImGui::PopStyleColor();
+            }
         }
+
+        ImGui::PopTextWrapPos();
 
         if (!asset.isDirectory) {
             // Begin drag drop code for PREFABS
@@ -1049,7 +1079,7 @@ void AssetBrowserPanel::RenderAssetGrid()
     // Context menu for selected assets
     if (ImGui::BeginPopup("AssetContextMenu")) {
         AssetInfo* contextAsset = nullptr;
-        for (auto& a : currentAssets) {
+        for (auto& a : assetsToDisplay) {
             if (IsAssetSelected(a.guid)) { contextAsset = &a; break; }
         }
         if (contextAsset) ShowAssetContextMenu(*contextAsset);
@@ -1226,17 +1256,79 @@ void AssetBrowserPanel::RefreshAssets() {
     UpdateBreadcrumbs();
 }
 
+bool AssetBrowserPanel::IsSearchActive() const {
+    return !searchQuery.empty();
+}
+
+void AssetBrowserPanel::CollectAssetsRecursive(const std::string& directory, std::vector<AssetInfo>& outResults) {
+    try {
+        for (const auto& entry : std::filesystem::directory_iterator(directory)) {
+            std::string filePath = entry.path().generic_string();
+            bool isDir = entry.is_directory();
+
+            if (isDir) {
+                // Skip Shaders folder
+                if (entry.path().filename().string() == "Shaders") continue;
+                // Recurse into subdirectories
+                CollectAssetsRecursive(filePath, outResults);
+                continue;
+            }
+
+            // Skip meta files
+            if (entry.path().extension() == ".meta") continue;
+
+            std::string extension = entry.path().extension().string();
+            if (!IsValidAssetFile(extension)) continue;
+
+            GUID_128 guid{ 0, 0 };
+            if (MetaFilesManager::MetaFileExists(filePath) && MetaFilesManager::MetaFileUpdated(filePath)) {
+                guid = MetaFilesManager::GetGUID128FromAssetFile(filePath);
+            } else {
+                std::hash<std::string> hasher;
+                size_t hash = hasher(filePath);
+                guid.high = static_cast<uint64_t>(hash);
+                guid.low = static_cast<uint64_t>(hash >> 32);
+                FallbackGuidToPath[guid.high] = filePath;
+            }
+
+            outResults.emplace_back(filePath, guid, false);
+        }
+    }
+    catch (const std::exception& e) {
+        ENGINE_PRINT(EngineLogging::LogLevel::Error, "[AssetBrowserPanel] Error in recursive search: ", e.what(), "\n");
+    }
+}
+
+void AssetBrowserPanel::RefreshSearchResults() {
+    searchResults.clear();
+    activeSearchQuery = searchQuery;
+
+    if (searchQuery.empty()) return;
+
+    CollectAssetsRecursive(rootAssetDirectory, searchResults);
+
+    // Sort alphabetically by filename
+    std::sort(searchResults.begin(), searchResults.end(), [](const AssetInfo& a, const AssetInfo& b) {
+        return a.fileName < b.fileName;
+    });
+}
+
 void AssetBrowserPanel::NavigateToDirectory(const std::string& directory) {
     std::string normalizedPath = std::filesystem::path(directory).generic_string();
 
     if (std::filesystem::exists(normalizedPath) && std::filesystem::is_directory(normalizedPath)) {
+        // Clear search when navigating to a directory (Unity behavior)
+        searchQuery.clear();
+        activeSearchQuery.clear();
+        searchResults.clear();
+
         // Only refresh and update if directory actually changed
         if (currentDirectory != normalizedPath) {
             currentDirectory = normalizedPath;
             selectedAssets.clear();
             lastSelectedAsset = GUID_128{ 0, 0 };
             RefreshAssets(); // Only refresh when directory changes
-            
+
             // Sync directory tree (Unity behavior)
             EnsureDirectoryExpanded(normalizedPath);
             needsTreeSync = true;
@@ -1362,6 +1454,14 @@ void AssetBrowserPanel::ShowAssetContextMenu(const AssetInfo& asset) {
     }
 
     ImGui::Separator();
+
+    // Show in Folder: navigate to asset's parent directory (useful in search mode)
+    if (IsSearchActive()) {
+        if (ImGui::MenuItem(ICON_FA_FOLDER " Show in Folder")) {
+            std::string parentDir = std::filesystem::path(asset.filePath).parent_path().generic_string();
+            NavigateToDirectory(parentDir);
+        }
+    }
 
     if (ImGui::MenuItem(ICON_FA_EYE " Reveal in Explorer")) {
         RevealInExplorer(asset);

@@ -68,8 +68,10 @@ private:
     std::string rootAssetDirectory{};
     std::vector<std::string> pathBreadcrumbs{};
     std::string searchQuery{};
+    std::string activeSearchQuery{};  // The query that searchResults was built from
     AssetType selectedAssetType{};
     std::vector<AssetInfo> currentAssets{};
+    std::vector<AssetInfo> searchResults{};  // Recursive search results across all directories
     std::unordered_set<GUID_128> selectedAssets{};
     GUID_128 lastSelectedAsset{};
     bool isOpeningScene = false;
@@ -105,10 +107,13 @@ private:
 
     // Asset management
     void RefreshAssets();
+    void RefreshSearchResults();
+    void CollectAssetsRecursive(const std::string& directory, std::vector<AssetInfo>& outResults);
     void NavigateToDirectory(const std::string& directory);
     void UpdateBreadcrumbs();
     bool PassesFilter(const AssetInfo& asset) const;
     AssetType GetAssetTypeFromExtension(const std::string& extension) const;
+    bool IsSearchActive() const;
 
     // Hot-reloading methods
     void InitializeFileWatcher();
