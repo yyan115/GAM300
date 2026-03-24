@@ -731,7 +731,7 @@ void GraphicsManager::SetupMatrices(Shader& shader, const glm::mat4& modelMatrix
 	if (includeNormalMatrix)
 	{
 		glm::mat3 normalMatrix = glm::mat3(glm::transpose(glm::inverse(modelMatrix)));
-		shader.setMat3("normalMatrix", normalMatrix);
+		shader.setMat3("normalMatrixCPU", normalMatrix);
 	}
 
 	if (currentCamera)
@@ -1542,6 +1542,16 @@ void GraphicsManager::RenderSceneForShadows(Shader& depthShader)
 		modelItem->model->DrawDepthOnly();
 	}
 
+	// Also render instanced batches — they bypass the renderQueue so they'd otherwise
+	// cast no shadows. The depth shader is already active and has light matrices set.
+	if (InstancingManager::GetInstance().IsEnabled())
+	{
+		depthShader.setBool("useInstancing", true);
+		depthShader.setBool("isAnimated", false);
+		InstancingManager::GetInstance().RenderBatchesDepthOnly(glm::mat4(1.0f));
+		depthShader.setBool("useInstancing", false);
+	}
+
 	// Debug
 	static bool once = false;
 	if (!once) {
@@ -1712,7 +1722,7 @@ void GraphicsManager::RenderModelOptimized(const ModelRenderComponent& item)
 		// Same shader - just update model matrix
 		shader->setMat4("model", modelMatrix);
 		glm::mat3 normalMatrix = glm::mat3(glm::transpose(glm::inverse(modelMatrix)));
-		shader->setMat3("normalMatrix", normalMatrix);
+		shader->setMat3("normalMatrixCPU", normalMatrix);
 	}
 
 	// Per-entity bloom emission (must set per-model to avoid stale values)

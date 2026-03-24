@@ -7,6 +7,12 @@ local Input = _G.Input
 -- Animation States
 local HurtTrigger = "Hurt"
 
+local function TriggerPlayerDeath(self)
+    self.CurrentHealth = 0
+    self._animator:SetBool("IsDead", true)
+    event_bus.publish("playerDead", true)
+end
+
 local function PlayerTakeDmg(self, dmg, kbDirX, kbDirZ)
     if self.CurrentHealth <= 0 then return end
     
@@ -18,9 +24,7 @@ local function PlayerTakeDmg(self, dmg, kbDirX, kbDirZ)
     self.CurrentHealth = self.CurrentHealth - dmg
     
     if self.CurrentHealth <= 0 then
-        self.CurrentHealth = 0
-        self._animator:SetBool("IsDead", true)
-        event_bus.publish("playerDead", true)
+        TriggerPlayerDeath(self)
     end
 
     if event_bus and event_bus.publish then
@@ -332,6 +336,14 @@ return Component {
                 if respawn then self._respawnPlayer = true end
             end)
 
+            self._triggerPlayerDeathSub = event_bus.subscribe("triggerPlayerDeath", function(trigger)
+                if trigger then 
+                    TriggerPlayerDeath(self)
+                    event_bus.publish("playerMaxhealth", self.MaxHealth)
+                    event_bus.publish("playerCurrentHealth", self.CurrentHealth)
+                end
+            end)
+
             -- TO ADD new attack type: subscribe here, call checkDodge first,
             -- then _isIFrame check, then PlayerTakeDmg. Follow the pattern above.
 
@@ -412,9 +424,7 @@ return Component {
         if self._transform then
             local y = self._transform.worldPosition.y
             if y <= self._yDeathThreshold and not self._playerDeathTriggered then
-                self.CurrentHealth = 0
-                self._animator:SetBool("IsDead", true)
-                event_bus.publish("playerDead", true)
+                TriggerPlayerDeath(self)
                 event_bus.publish("playerMaxhealth", self.MaxHealth)
                 event_bus.publish("playerCurrentHealth", self.CurrentHealth)
                 self._playerDeathTriggered = true
