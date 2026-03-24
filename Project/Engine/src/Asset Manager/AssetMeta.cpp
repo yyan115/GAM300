@@ -94,8 +94,9 @@ void TextureMeta::PopulateAssetMetaFromFile(const std::string& metaFilePath) {
 		rapidjson::MemoryStream ms(reinterpret_cast<const char*>(metaFileData.data()), metaFileData.size());
 		doc.ParseStream(ms);
 	}
-	if (doc.HasParseError()) {
-		ENGINE_LOG_DEBUG("[AssetMeta]: Rapidjson parse error: " + metaFilePath);
+	if (doc.HasParseError() || !doc.IsObject() || !doc.HasMember("TextureMetaData")) {
+		ENGINE_LOG_WARN("[AssetMeta]: Rapidjson parse error: " + metaFilePath);
+		return;
 	}
 
 	const auto& assetMetaData = doc["TextureMetaData"];

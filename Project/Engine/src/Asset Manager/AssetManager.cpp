@@ -129,6 +129,14 @@ std::shared_ptr<AssetMeta> AssetManager::AddAssetMetaToMap(const std::string& as
 }
 
 bool AssetManager::CompileAsset(const std::string& filePathStr, bool forceCompile, bool forAndroid) {
+	// Fix: Load existing metadata if available to prevent resetting to defaults during re-compilation (e.g. from file watcher events)
+	if (MetaFilesManager::MetaFileExists(filePathStr)) {
+		auto assetMeta = AddAssetMetaToMap(filePathStr);
+		if (assetMeta) {
+			return CompileAsset(assetMeta, forceCompile, forAndroid);
+		}
+	}
+
 	std::filesystem::path filePathObj(filePathStr);
 	std::string extension = filePathObj.extension().string();
 	if (textureExtensions.find(extension) != textureExtensions.end()) {
