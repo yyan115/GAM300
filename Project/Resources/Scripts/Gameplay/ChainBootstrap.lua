@@ -692,7 +692,7 @@ return Component {
                                                         or nil
                         
                         -- Track the enemy ID exactly like you track the throwable ID
-                        self._hookedEnemyEntityId     = (not self._hookedIsThrowable and payload.rootTag == "Enemy") and payload.rootEntityId or nil
+                        self._hookedEnemyEntityId     = (not self._hookedIsThrowable and (payload.rootTag == "Enemy" or payload.rootTag == "Boss")) and payload.rootEntityId or nil
 
                         -- Snapshot lockedEndPoint at moment of hit (unchanged)
                         if self._endpointTransform then
