@@ -90,7 +90,7 @@ void main()
         }
         else if (toneMappingMode == 1)
         {
-            mapped = ExposureToneMapping(mapped, 1.0);
+            mapped = ExposureToneMapping(hdrColor, exposure);
         }
         else if (toneMappingMode == 2)
         {

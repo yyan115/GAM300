@@ -330,16 +330,16 @@ return Component {
         self:_dbg("[ChainEndpointController] OnTriggerEnter entity='" .. otherName .. "' root='" .. rootName .. "' tag='" .. tostring(tag) .. "'")
         dbg(string.format("[ChainEndpointController][TRIGGER] tag check — entity='%s' root='%s' tag='%s'", otherName, rootName, tostring(tag)))
 
-        local isHookable = (tag == "Enemy") or (tag == "Throwable")
+        local isHookable = (tag == "Enemy") or (tag == "Boss") or (tag == "Throwable")
         if not isHookable then
-            dbg("[ChainEndpointController][TRIGGER] REJECTED — tag='" .. tostring(tag) .. "' not hookable")
-            self:_dbg("[ChainEndpointController] OnTriggerEnter ignored — root='" .. rootName .. "' tag='" .. tostring(tag) .. "' not hookable")
+            dbg("[ChainEndpointController][TRIGGER] REJECTED -- tag='" .. tostring(tag) .. "' not hookable")
+            self:_dbg("[ChainEndpointController] OnTriggerEnter ignored -- root='" .. rootName .. "' tag='" .. tostring(tag) .. "' not hookable")
             return
         end
 
-        -- For enemies, only accept hits from CHAIN_HITBOX layer (8) — ignore HURTBOX bone colliders
+        -- For enemies/bosses, only accept hits from CHAIN_HITBOX layer (8) -- ignore HURTBOX bone colliders
         -- Throwables are not filtered since they don't use CHAIN_HITBOX
-        if tag == "Enemy" then
+        if tag == "Enemy" or tag == "Boss" then
             local layer = nil
             pcall(function()
                 local rb = GetComponent(otherEntityId, "RigidBodyComponent")
@@ -358,7 +358,7 @@ return Component {
         local snapImpactZ = self._lastEndpointZ or 0
         local snapPartId  = nil
 
-        if tag == "Enemy" then
+        if tag == "Enemy" or tag == "Boss" then
             -- Snap to specific bone entity by name, searched within this enemy's hierarchy
             local ok, spineId = pcall(function() return Engine.FindChildByName(rootId, "Enemy_new_Spine") end)
             if ok and spineId and spineId ~= -1 then
@@ -403,7 +403,7 @@ return Component {
             if ok then tag = t end
         end
 
-        local isHookable = (tag == "Enemy") or (tag == "Throwable")
+        local isHookable = (tag == "Enemy") or (tag == "Boss") or (tag == "Throwable")
         if not isHookable then return end
 
         dbg("[ChainEndpointController] Sweep hit confirmed — hooking entity='" .. otherName .. "' root='" .. rootName .. "'")
