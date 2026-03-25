@@ -17,12 +17,20 @@ return Component {
     SpawnGroundDustVFX = function(self, x,y,z)
         --Set VFX AT Slammed location
         self._transform.localPosition.x = x
-        self._transform.localPosition.y = y
-        self._transform.localPosition.z = z 
-        self._transform.isDirty = true
+        self._rockTransform.localPosition.x = x
 
-        if self._dustParticle then
+        self._transform.localPosition.y = y
+        self._rockTransform.localPosition.y = y
+
+        self._transform.localPosition.z = z
+        self._rockTransform.localPosition.z = z 
+
+        self._transform.isDirty = true
+        self._rockTransform.isDirty = true
+
+        if self._dustParticle and self._rockParticle then
             self._dustParticle.isEmitting = true
+            self._rockParticle.isEmitting = true
             self._emitTimer = self._dustParticle.particleLifetime
         end
     end,
@@ -32,6 +40,12 @@ return Component {
 
         self._transform = self:GetComponent("Transform")    
         self._dustParticle = self:GetComponent("ParticleComponent")
+
+        local rockEntity = Engine.GetEntityByName("RockParticlesVFX")
+        self._rockParticle = GetComponent(rockEntity,"ParticleComponent")
+        self._rockTransform = GetComponent(rockEntity, "Transform")
+
+        self._rockParticle.isEmitting = false
         self._dustParticle.isEmitting = false
 
 
@@ -47,6 +61,7 @@ return Component {
             self._emitTimer = self._emitTimer - dt
             if self._emitTimer <= 0 then
                 self._dustParticle.isEmitting = false
+                self._rockParticle.isEmitting = false
                 self._emitTimer = nil
             end
         end
