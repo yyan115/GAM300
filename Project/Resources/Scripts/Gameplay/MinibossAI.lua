@@ -1495,7 +1495,7 @@ return Component {
             ex, ey, ez = self:GetPosition()
         end
         if not ex then return nil end
-        return ex, (ey or 0) + 1.0, ez
+        return ex, (ey or 0) + 1.8, ez
     end,
 
     _DirToPlayerXZ = function(self)

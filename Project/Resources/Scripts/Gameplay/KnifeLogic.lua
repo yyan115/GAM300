@@ -275,7 +275,15 @@ return Component {
         self.dirZ = dz / dist
 
         local yaw = math.deg(atan2(self.dirX, self.dirZ))
-        local q = eulerToQuat(90, yaw, 0)
+
+        -- horizontal length for vertical aiming
+        local flatLen = math.sqrt(self.dirX * self.dirX + self.dirZ * self.dirZ)
+
+        -- how much to tilt up/down toward the target
+        local aimPitch = -math.deg(atan2(self.dirY, flatLen))
+
+        -- keep the old 90-degree model correction, then add vertical aim
+        local q = eulerToQuat(90 + aimPitch, yaw, 0)
         self:SetRotation(q.w, q.x, q.y, q.z)
 
         self.active = true
