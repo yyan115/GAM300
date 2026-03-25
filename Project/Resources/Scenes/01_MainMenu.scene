@@ -9014,36 +9014,37 @@
                             "entryFunction": "OnInit",
                             "autoInvokeEntry": true,
                             "instanceState": {
+                                "After": null,
+                                "Unsubscribe": null,
+                                "UpdateSafe": null,
+                                "scrollSpeed": 100.0,
+                                "Subscribe": null,
+                                "Update": null,
                                 "AwakeSafe": null,
+                                "_subscriptions": {},
+                                "Destroy": null,
+                                "_call_lifecycle": null,
+                                "DeserializeFields": null,
+                                "SerializeFields": null,
+                                "DisableSafe": null,
+                                "__meta": {},
+                                "StartSafe": null,
+                                "endY": 2900.0,
                                 "__created_at": 1772626301.0,
+                                "fastScrollSpeed": 400.0,
+                                "fadeDuration": 1.0,
+                                "startY": -1550.0,
+                                "Every": null,
+                                "_private": {},
+                                "Start": null,
                                 "_closeCreditsUI": null,
                                 "_resetCredits": null,
-                                "endY": 2700.0,
-                                "Start": null,
-                                "Destroy": null,
-                                "fadeDuration": 1.0,
-                                "StartSafe": null,
-                                "_subscriptions": {},
-                                "Update": null,
-                                "scrollSpeed": 100.0,
-                                "startY": -1550.0,
-                                "Unsubscribe": null,
-                                "_call_lifecycle": null,
-                                "__meta": {},
-                                "DeserializeFields": null,
-                                "Every": null,
-                                "UpdateSafe": null,
-                                "DisableSafe": null,
-                                "Subscribe": null,
                                 "__field_list": {
-                                    "endY": 3500.0,
                                     "fadeDuration": 1.0,
-                                    "scrollSpeed": 100.0,
-                                    "startY": -2150.0
-                                },
-                                "_private": {},
-                                "SerializeFields": null,
-                                "After": null
+                                    "startY": -2150.0,
+                                    "endY": 3500.0,
+                                    "scrollSpeed": 100.0
+                                }
                             }
                         }
                     ]
@@ -9311,11 +9312,11 @@
                             "data": [
                                 {
                                     "type": "float",
-                                    "data": 1100
+                                    "data": 1015
                                 },
                                 {
                                     "type": "float",
-                                    "data": 3062
+                                    "data": 3398
                                 },
                                 {
                                     "type": "float",
@@ -11887,7 +11888,7 @@
                             "data": [
                                 {
                                     "type": "float",
-                                    "data": 1
+                                    "data": 0.997564
                                 },
                                 {
                                     "type": "float",
@@ -11895,7 +11896,7 @@
                                 },
                                 {
                                     "type": "float",
-                                    "data": 0
+                                    "data": -0.0697565
                                 },
                                 {
                                     "type": "float",
@@ -27275,6 +27276,7 @@
             0.30000001192092896,
             0.30000001192092896,
             0.30000001192092896
-        ]
+        ],
+        "ambientIntensity": 0.30000001192092896
     }
 }

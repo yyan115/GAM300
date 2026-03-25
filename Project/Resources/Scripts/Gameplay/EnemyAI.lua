@@ -1939,32 +1939,56 @@ return Component {
     end,
 
     Despawn = function(self)
+        print("[EnemyAI] Despawn called for entity =", tostring(self.entityId))
         if self._despawned then return end
         self._despawned = true
-
-        -- stop AI update first
+        --self._softDespawned = true
         self._freezeAI = true
+        self.dead = true
 
-        -- cleanup controller + event subs
-        if self.OnDestroy then pcall(function() self:OnDestroy() end) end
+        -- stop movement
+        pcall(function() self:StopCC() end)
+        pcall(function() self:ClearPath() end)
 
-        -- hide visuals + disable physics (pool-like safety)
+        -- full cleanup
+        if self._controller then
+            pcall(function() CharacterController.DestroyByEntity(self.entityId) end)
+            self._controller = nil
+        end
+
+        if _G.event_bus and _G.event_bus.unsubscribe then
+            if self._damageSub then pcall(function() _G.event_bus.unsubscribe(self._damageSub) end) self._damageSub = nil end
+            if self._comboDamageSub then pcall(function() _G.event_bus.unsubscribe(self._comboDamageSub) end) self._comboDamageSub = nil end
+            if self._freezeEnemySub then pcall(function() _G.event_bus.unsubscribe(self._freezeEnemySub) end) self._freezeEnemySub = nil end
+            if self._respawnPlayerSub then pcall(function() _G.event_bus.unsubscribe(self._respawnPlayerSub) end) self._respawnPlayerSub = nil end
+            if self._playerDeadSub then pcall(function() _G.event_bus.unsubscribe(self._playerDeadSub) end) self._playerDeadSub = nil end
+            if self._chainEndpointHitSub then pcall(function() _G.event_bus.unsubscribe(self._chainEndpointHitSub) end) self._chainEndpointHitSub = nil end
+            if self._chainHookSub then pcall(function() _G.event_bus.unsubscribe(self._chainHookSub) end) self._chainHookSub = nil end
+        end
+
+        if self._rb then
+            pcall(function() self._rb.linearVel = { x=0, y=0, z=0 } end)
+            pcall(function() self._rb.impulseApplied = { x=0, y=0, z=0 } end)
+            pcall(function() self._rb.enabled = false end)
+        end
+
+        local col = self:GetComponent("ColliderComponent")
+        if col then pcall(function() col.enabled = false end) end
+
         local model = self:GetComponent("ModelRenderComponent")
         if model then pcall(function() ModelRenderComponent.SetVisible(model, false) end) end
 
-        local col = self:GetComponent("ColliderComponent")
-        if col then col.enabled = false end
+        local active = self:GetComponent("ActiveComponent")
+        if active then pcall(function() active.isActive = false end) end
 
-        local rb = self:GetComponent("RigidBodyComponent")
-        if rb then rb.enabled = false end
-
-        -- ACTUAL removal (if entity was created as a duplicate/prefab instance)
+        -- actual entity destruction
         if _G.Engine and _G.Engine.DestroyEntityDup then
-            pcall(function()
-                _G.Engine.DestroyEntityDup(self.entityId)
+            local ok, err = pcall(function()
+                _G.Engine.DestroyEntity(self.entityId)
             end)
+            print("[EnemyAI] DestroyEntityDup ok =", tostring(ok), " err =", tostring(err), " entity =", tostring(self.entityId))
         else
-            print("[EnemyAI] Despawn: Engine.DestroyEntityDup not available")
+            print("[EnemyAI] WARNING: DestroyEntityDup not available, falling back to soft despawn")
         end
     end,
 

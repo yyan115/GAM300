@@ -63,6 +63,25 @@ bool GraphicsManager::Initialize(int window_width, int window_height)
 	// Initialize skybox
 	InitializeSkybox();
 
+	// Load depth prepass shader (PC only — Android uses OpenGL ES which doesn't support #version 430)
+#ifdef ANDROID
+	m_depthPrepassEnabled = false;
+#else
+	{
+		std::string prepassPath = ResourceManager::GetPlatformShaderPath("depth_prepass");
+		m_depthPrepassShader = ResourceManager::GetInstance().GetResource<Shader>(prepassPath);
+		if (!m_depthPrepassShader)
+		{
+			ENGINE_PRINT(EngineLogging::LogLevel::Warn, "[GraphicsManager] depth_prepass shader not found — depth prepass disabled\n");
+			m_depthPrepassEnabled = false;
+		}
+		else
+		{
+			ENGINE_PRINT("[GraphicsManager] Depth prepass shader loaded\n");
+		}
+	}
+#endif
+
 	ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
 	if (ecsManager.lightingSystem)
 	{
@@ -74,6 +93,8 @@ bool GraphicsManager::Initialize(int window_width, int window_height)
 			}
 		);
 	}
+
+	InitCameraUBO();
 
 	ENGINE_PRINT("[GraphicsManager] Initialized - Face culling enabled\n");
 	return true;
@@ -88,6 +109,11 @@ void GraphicsManager::Shutdown()
 	mainECS.spriteSystem->Shutdown();
 	mainECS.particleSystem->Shutdown();
 	mainECS.cameraSystem->Shutdown();
+
+	if (m_cameraUBO != 0) {
+		glDeleteBuffers(1, &m_cameraUBO);
+		m_cameraUBO = 0;
+	}
 
 	if (skyboxVAO != 0) {
 		glDeleteVertexArrays(1, &skyboxVAO);
@@ -246,12 +272,17 @@ void GraphicsManager::Render()
 		PROFILE_SCOPED("GM::GPUZoneScope");
 		PROFILE_GPU_ZONE("Render");
 
+	// Context is only ever lost on Android (EGL surface destroyed/recreated).
+	// On PC the GLFW context stays current for the lifetime of the window, so
+	// calling glfwMakeContextCurrent every frame just wastes ~126µs in driver overhead.
+#ifdef ANDROID
 	{
 		PROFILE_SCOPED("GM::MakeContextCurrent");
 		if (auto* platform = WindowManager::GetPlatform()) {
 			platform->MakeContextCurrent();
 		}
 	}
+#endif
 
 	if (!currentCamera)
 	{
@@ -265,6 +296,17 @@ void GraphicsManager::Render()
 	}
 
 	currentFrameViewport = GetCurrentViewport();
+
+	// Compute view/projection once for the whole frame and upload to Camera UBO.
+	// All shaders that declare CameraBlock automatically receive these values.
+	glm::mat4 frameView = currentCamera->GetViewMatrix();
+	glm::mat4 frameProjection = glm::perspective(
+		glm::radians(currentCamera->Zoom),
+		currentFrameViewport.aspectRatio,
+		0.1f, m_farPlane
+	);
+	if (m_cameraUBO != 0)
+		UploadCameraUBO(frameView, frameProjection, currentCamera->Position);
 
 	ECSManager* ecsManagerPtr = nullptr;
 	{
@@ -338,21 +380,27 @@ void GraphicsManager::Render()
 
 	InstancingManager& instancing = InstancingManager::GetInstance();
 
+	// =========================================================================
+	// DEPTH PREPASS — write depth for all opaque geometry before color passes.
+	// This ensures the expensive main fragment shaders only run on visible pixels.
+	// Skipped in 2D mode (ortho, no overdraw problem) and on Android (GLES).
+	// =========================================================================
+	if (m_depthPrepassEnabled && m_depthPrepassShader && Is3DMode())
+	{
+		PROFILE_SCOPED("GM::DepthPrepass");
+		PROFILE_GPU_ZONE("DepthPrepass");
+		RunDepthPrepass(frameView, frameProjection);
+		// Main color pass: depth already written — test equal, skip re-write
+		glDepthFunc(GL_LEQUAL);
+		glDepthMask(GL_FALSE);
+	}
+
 	{
 		PROFILE_SCOPED("GM::InstancingRender");
 		if (instancing.IsEnabled())
 		{
-			// Get view/projection matrices
-			glm::mat4 view = currentCamera->GetViewMatrix();
-			float aspectRatio = currentFrameViewport.aspectRatio;
-			glm::mat4 projection = glm::perspective(
-				glm::radians(currentCamera->Zoom),
-				aspectRatio,
-				0.1f, m_farPlane
-			);
-
 			// Render all batched instances
-			instancing.RenderBatches(view, projection, currentCamera->Position);
+			instancing.RenderBatches(frameView, frameProjection, currentCamera->Position);
 
 			// End instancing frame
 			instancing.EndFrame();
@@ -512,6 +560,14 @@ void GraphicsManager::Render()
 				RenderFogVolume(*fogItem);
 			}
 		}
+	}
+
+	// Restore depth state changed by the prepass (transparents may have already
+	// called glDepthMask(GL_TRUE), but calling it again is cheap and safe).
+	if (m_depthPrepassEnabled && m_depthPrepassShader && Is3DMode())
+	{
+		glDepthFunc(GL_LESS);
+		glDepthMask(GL_TRUE);
 	}
 
 	// Disable bloom MRT — done writing bloom emission
@@ -675,7 +731,7 @@ void GraphicsManager::SetupMatrices(Shader& shader, const glm::mat4& modelMatrix
 	if (includeNormalMatrix)
 	{
 		glm::mat3 normalMatrix = glm::mat3(glm::transpose(glm::inverse(modelMatrix)));
-		shader.setMat3("normalMatrix", normalMatrix);
+		shader.setMat3("normalMatrixCPU", normalMatrix);
 	}
 
 	if (currentCamera)
@@ -1283,6 +1339,26 @@ glm::mat4 GraphicsManager::CreateTransformMatrix(const glm::vec3& pos, const glm
 	return modelMatrix.ConvertToGLM();
 }
 
+void GraphicsManager::InitCameraUBO()
+{
+	glGenBuffers(1, &m_cameraUBO);
+	glBindBuffer(GL_UNIFORM_BUFFER, m_cameraUBO);
+	glBufferData(GL_UNIFORM_BUFFER, sizeof(CameraUBOData), nullptr, GL_DYNAMIC_DRAW);
+	glBindBufferBase(GL_UNIFORM_BUFFER, 0, m_cameraUBO);
+	glBindBuffer(GL_UNIFORM_BUFFER, 0);
+}
+
+void GraphicsManager::UploadCameraUBO(const glm::mat4& view, const glm::mat4& projection, const glm::vec3& camPos)
+{
+	CameraUBOData data;
+	data.view = view;
+	data.projection = projection;
+	data.cameraPos = camPos;
+	glBindBuffer(GL_UNIFORM_BUFFER, m_cameraUBO);
+	glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(CameraUBOData), &data);
+	glBindBuffer(GL_UNIFORM_BUFFER, 0);
+}
+
 void GraphicsManager::InitializeSkybox()
 {
 	float skyboxVertices[] = {
@@ -1349,6 +1425,72 @@ void GraphicsManager::InitializeSkybox()
 	std::cout << "[GraphicsManager] Skybox initialized - VAO: " << skyboxVAO << ", VBO: " << skyboxVBO << std::endl;
 }
 
+void GraphicsManager::RunDepthPrepass(const glm::mat4& view, const glm::mat4& projection)
+{
+	if (!m_depthPrepassShader || !currentCamera) return;
+
+	// Write depth only — no colour output needed
+	glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
+	glDepthMask(GL_TRUE);
+	glDepthFunc(GL_LESS);
+
+	m_depthPrepassShader->Activate();
+	m_depthPrepassShader->setMat4("view", view);
+	m_depthPrepassShader->setMat4("projection", projection);
+	m_depthPrepassShader->setBool("isAnimated", false);
+	m_depthPrepassShader->setBool("hasDiffuseMap", false);
+
+	// --- Pass 1: instanced opaque batches ---
+	InstancingManager::GetInstance().RenderBatchesDepthPrepass(view, projection, *m_depthPrepassShader);
+
+	// --- Pass 2: non-instanced opaque objects (e.g. animated meshes) ---
+	// These were excluded from instancing by IsInstanceable(), so we handle them here.
+	m_depthPrepassShader->setBool("useInstancing", false);
+
+	for (const auto& renderItem : renderQueue)
+	{
+		const ModelRenderComponent* modelItem = dynamic_cast<const ModelRenderComponent*>(renderItem.get());
+		if (!modelItem || !modelItem->isVisible || !modelItem->model) continue;
+
+		// Skip transparent / fading objects — they need correct alpha blending, not prepass depth
+		bool isTransparent = (modelItem->distanceFadeOpacity < 1.0f) ||
+			(modelItem->material && modelItem->material->GetOpacity() < 1.0f);
+		if (isTransparent) continue;
+
+		// Skip objects that instancing already handled
+		bool handledByInstancing = InstancingManager::GetInstance().IsEnabled() &&
+			!modelItem->HasAnimation() &&
+			modelItem->model->mBoneInfoMap.empty();
+		if (handledByInstancing) continue;
+
+		glm::mat4 modelMatrix = modelItem->transform.ConvertToGLM();
+
+		// Frustum cull (same tolerance as main pass)
+		if (frustumCullingEnabled)
+		{
+			AABB worldBBox = modelItem->model->GetBoundingBox().Transform(modelMatrix);
+			if (!viewFrustum.IsBoxVisible(worldBBox, 0.5f)) continue;
+		}
+
+		m_depthPrepassShader->setMat4("model", modelMatrix);
+
+		// Handle skeletal animation
+		bool animated = modelItem->HasAnimation();
+		m_depthPrepassShader->setBool("isAnimated", animated);
+		if (animated && modelItem->animator)
+		{
+			const auto& transforms = modelItem->mFinalBoneMatrices;
+			if (!transforms.empty())
+				m_depthPrepassShader->setMat4Array("finalBonesMatrices[0]", transforms.data(), static_cast<GLsizei>(transforms.size()));
+		}
+
+		modelItem->model->DrawDepthOnly();
+	}
+
+	// Re-enable colour writes for the main colour pass
+	glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+}
+
 void GraphicsManager::RenderSceneForShadows(Shader& depthShader)
 {
 	static int frameCount = 0;
@@ -1392,14 +1534,22 @@ void GraphicsManager::RenderSceneForShadows(Shader& depthShader)
 		if (modelItem->HasAnimation() && modelItem->animator)
 		{
 			const auto& transforms = modelItem->mFinalBoneMatrices;
-			for (size_t i = 0; i < transforms.size(); ++i)
-			{
-				depthShader.setMat4("finalBonesMatrices[" + std::to_string(i) + "]", transforms[i]);
-			}
+			if (!transforms.empty())
+				depthShader.setMat4Array("finalBonesMatrices[0]", transforms.data(), static_cast<GLsizei>(transforms.size()));
 		}
 
 		// Draw model geometry only (no materials)
 		modelItem->model->DrawDepthOnly();
+	}
+
+	// Also render instanced batches — they bypass the renderQueue so they'd otherwise
+	// cast no shadows. The depth shader is already active and has light matrices set.
+	if (InstancingManager::GetInstance().IsEnabled())
+	{
+		depthShader.setBool("useInstancing", true);
+		depthShader.setBool("isAnimated", false);
+		InstancingManager::GetInstance().RenderBatchesDepthOnly(glm::mat4(1.0f));
+		depthShader.setBool("useInstancing", false);
 	}
 
 	// Debug
@@ -1572,7 +1722,7 @@ void GraphicsManager::RenderModelOptimized(const ModelRenderComponent& item)
 		// Same shader - just update model matrix
 		shader->setMat4("model", modelMatrix);
 		glm::mat3 normalMatrix = glm::mat3(glm::transpose(glm::inverse(modelMatrix)));
-		shader->setMat3("normalMatrix", normalMatrix);
+		shader->setMat3("normalMatrixCPU", normalMatrix);
 	}
 
 	// Per-entity bloom emission (must set per-model to avoid stale values)
@@ -1703,11 +1853,24 @@ void GraphicsManager::RenderFogVolume(const FogVolumeComponent& item)
 	// --- Noise texture ---
 	bool hasNoiseMap = (item.noiseTexture != nullptr);
 	item.fogShader->setBool("hasNoiseMap", hasNoiseMap);
+	item.fogShader->setInt("noiseTextureMappingAxis", item.noiseTextureMappingAxis);
 	if (hasNoiseMap)
 	{
 		glActiveTexture(GL_TEXTURE0);
 		item.noiseTexture->Bind(0);
 		item.fogShader->setInt("noiseMap", 0);
+	}
+
+	// --- Color/material texture ---
+	bool hasColorMap = (item.colorTexture != nullptr);
+	item.fogShader->setBool("hasColorMap", hasColorMap);
+	item.fogShader->setFloat("colorTextureIntensity", item.colorTextureIntensity);
+	item.fogShader->setFloat("colorTextureScale", item.colorTextureScale);
+	if (hasColorMap)
+	{
+		glActiveTexture(GL_TEXTURE2);
+		item.colorTexture->Bind(2);
+		item.fogShader->setInt("colorMap", 2);
 	}
 
 	// --- Draw ---
@@ -1716,9 +1879,14 @@ void GraphicsManager::RenderFogVolume(const FogVolumeComponent& item)
 	item.fogVAO->Unbind();
 
 	// --- Restore state ---
+	if (hasColorMap) {
+		item.colorTexture->Unbind(2);
+	}
 	if (hasNoiseMap) {
 		item.noiseTexture->Unbind(0);
 	}
+	glActiveTexture(GL_TEXTURE2);
+	glBindTexture(GL_TEXTURE_2D, 0);
 	glActiveTexture(GL_TEXTURE1);
 	glBindTexture(GL_TEXTURE_2D, 0);
 	glActiveTexture(GL_TEXTURE0);

@@ -41,10 +41,18 @@ public:
 	float edgeSoftness = 0.3f;
 
 	GUID_128 noiseTextureGUID{};
+	int noiseTextureMappingAxis = 0;  // 0=XZ (top-down), 1=XY (front), 2=YZ (side)
+
+	// Color/material texture — tints the fog with a designer-authored image
+	GUID_128 colorTextureGUID{};
+	float colorTextureIntensity = 1.0f;  // 0 = fogColor only, 1 = fully tinted
+	float colorTextureScale = 1.0f;      // UV tiling scale
 
 	std::shared_ptr<Shader> fogShader;
 	std::shared_ptr<Texture> noiseTexture;
 	std::string noiseTexturePath;   // For inspector display
+	std::shared_ptr<Texture> colorTexture;
+	std::string colorTexturePath;   // For inspector display
 
 	VAO* fogVAO = nullptr;
 	VBO* fogVBO = nullptr;

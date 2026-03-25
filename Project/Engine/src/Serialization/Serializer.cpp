@@ -221,6 +221,8 @@ void Serializer::SerializeScene(const std::string& scenePath) {
         ambientGroundArr.PushBack(ecs.lightingSystem->ambientGround.z, alloc);
         lightingObj.AddMember("ambientGround", ambientGroundArr, alloc);
 
+        lightingObj.AddMember("ambientIntensity", ecs.lightingSystem->ambientIntensity, alloc);
+
         doc.AddMember("lightingSystem", lightingObj, alloc);
     }
 
@@ -2243,6 +2245,9 @@ void Serializer::DeserializeScene(const std::string& scenePath) {
             ecs.lightingSystem->ambientGround.y = arr[1].GetFloat();
             ecs.lightingSystem->ambientGround.z = arr[2].GetFloat();
         }
+
+        if (lightingObj.HasMember("ambientIntensity") && lightingObj["ambientIntensity"].IsFloat())
+            ecs.lightingSystem->ambientIntensity = lightingObj["ambientIntensity"].GetFloat();
     }
 
     std::cout << "[CreateEntitiesFromJson] loaded entities from: " << scenePath << "\n";
@@ -2307,6 +2312,9 @@ void Serializer::DeserializeSceneMetadata(
             const auto& a = lo["ambientGround"];
             ecs.lightingSystem->ambientGround = { a[0].GetFloat(), a[1].GetFloat(), a[2].GetFloat() };
         }
+
+        if (lo.HasMember("ambientIntensity") && lo["ambientIntensity"].IsFloat())
+            ecs.lightingSystem->ambientIntensity = lo["ambientIntensity"].GetFloat();
     }
 }
 

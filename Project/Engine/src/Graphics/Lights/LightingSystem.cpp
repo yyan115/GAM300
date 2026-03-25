@@ -171,6 +171,7 @@ void LightingSystem::ApplyLighting(Shader& shader)
         shader.setFloat(base + ".linear", pointLightData.linear[i]);
         shader.setFloat(base + ".quadratic", pointLightData.quadratic[i]);
         shader.setFloat(base + ".intensity", pointLightData.intensity[i]);
+        shader.setFloat(base + ".range", pointLightData.range[i]);
     }
 
     // Set active spot lights

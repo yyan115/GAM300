@@ -284,9 +284,9 @@
                     "backgroundColor": {
                         "type": "glm::vec3",
                         "data": [
-                            0.19200000166893005,
-                            0.3009999990463257,
-                            0.4749999940395355
+                            0.0,
+                            0.0,
+                            0.0
                         ]
                     },
                     "clearFlags": 0,
@@ -636,7 +636,7 @@
                                         },
                                         {
                                             "type": "float",
-                                            "data": 1
+                                            "data": 0
                                         },
                                         {
                                             "type": "float",
@@ -660,7 +660,7 @@
                                         },
                                         {
                                             "type": "bool",
-                                            "data": false
+                                            "data": true
                                         },
                                         {
                                             "type": "std::string",
@@ -693,11 +693,11 @@
                                         },
                                         {
                                             "type": "float",
-                                            "data": 0.5
+                                            "data": 0
                                         },
                                         {
                                             "type": "float",
-                                            "data": 0.5
+                                            "data": 0
                                         },
                                         {
                                             "type": "float",
@@ -717,7 +717,7 @@
                                         },
                                         {
                                             "type": "bool",
-                                            "data": false
+                                            "data": true
                                         },
                                         {
                                             "type": "std::string",
@@ -750,11 +750,11 @@
                                         },
                                         {
                                             "type": "float",
-                                            "data": 0.5
+                                            "data": 0
                                         },
                                         {
                                             "type": "float",
-                                            "data": 0.5
+                                            "data": 0
                                         },
                                         {
                                             "type": "float",
@@ -774,7 +774,7 @@
                                         },
                                         {
                                             "type": "bool",
-                                            "data": false
+                                            "data": true
                                         },
                                         {
                                             "type": "std::string",
@@ -807,11 +807,11 @@
                                         },
                                         {
                                             "type": "float",
-                                            "data": 0.5
+                                            "data": 0
                                         },
                                         {
                                             "type": "float",
-                                            "data": 0.5
+                                            "data": 0
                                         },
                                         {
                                             "type": "float",
@@ -831,7 +831,7 @@
                                         },
                                         {
                                             "type": "bool",
-                                            "data": false
+                                            "data": true
                                         },
                                         {
                                             "type": "std::string",
@@ -864,7 +864,7 @@
                                         },
                                         {
                                             "type": "float",
-                                            "data": 0.5
+                                            "data": 0
                                         },
                                         {
                                             "type": "float",
@@ -888,7 +888,7 @@
                                         },
                                         {
                                             "type": "bool",
-                                            "data": false
+                                            "data": true
                                         },
                                         {
                                             "type": "std::string",
@@ -921,7 +921,7 @@
                                         },
                                         {
                                             "type": "float",
-                                            "data": 0.5
+                                            "data": 0
                                         },
                                         {
                                             "type": "float",
@@ -945,7 +945,7 @@
                                         },
                                         {
                                             "type": "bool",
-                                            "data": false
+                                            "data": true
                                         },
                                         {
                                             "type": "std::string",
@@ -978,7 +978,7 @@
                                         },
                                         {
                                             "type": "float",
-                                            "data": 0.5
+                                            "data": 0
                                         },
                                         {
                                             "type": "float",
@@ -1035,7 +1035,7 @@
                                         },
                                         {
                                             "type": "float",
-                                            "data": 0.5
+                                            "data": 0
                                         },
                                         {
                                             "type": "float",
@@ -1059,7 +1059,7 @@
                                         },
                                         {
                                             "type": "bool",
-                                            "data": false
+                                            "data": true
                                         },
                                         {
                                             "type": "std::string",
@@ -1092,11 +1092,11 @@
                                         },
                                         {
                                             "type": "float",
-                                            "data": 0.5
+                                            "data": 0
                                         },
                                         {
                                             "type": "float",
-                                            "data": 1
+                                            "data": 0.5
                                         },
                                         {
                                             "type": "float",
@@ -1104,7 +1104,7 @@
                                         },
                                         {
                                             "type": "float",
-                                            "data": 4
+                                            "data": 2
                                         },
                                         {
                                             "type": "float",
@@ -1116,7 +1116,7 @@
                                         },
                                         {
                                             "type": "bool",
-                                            "data": false
+                                            "data": true
                                         },
                                         {
                                             "type": "std::string",
@@ -1149,15 +1149,15 @@
                                         },
                                         {
                                             "type": "float",
-                                            "data": 0.5
+                                            "data": 0
                                         },
                                         {
                                             "type": "float",
-                                            "data": 1
+                                            "data": 0
                                         },
                                         {
                                             "type": "float",
-                                            "data": 2
+                                            "data": 0
                                         },
                                         {
                                             "type": "float",
@@ -1320,7 +1320,7 @@
                                         },
                                         {
                                             "type": "float",
-                                            "data": 0.5
+                                            "data": 0
                                         },
                                         {
                                             "type": "float",
@@ -1344,7 +1344,7 @@
                                         },
                                         {
                                             "type": "bool",
-                                            "data": false
+                                            "data": true
                                         },
                                         {
                                             "type": "std::string",
@@ -1377,7 +1377,7 @@
                                         },
                                         {
                                             "type": "float",
-                                            "data": 0.5
+                                            "data": 0
                                         },
                                         {
                                             "type": "float",
@@ -1434,7 +1434,7 @@
                                         },
                                         {
                                             "type": "float",
-                                            "data": 0.5
+                                            "data": 0
                                         },
                                         {
                                             "type": "float",
@@ -1458,7 +1458,7 @@
                                         },
                                         {
                                             "type": "bool",
-                                            "data": false
+                                            "data": true
                                         },
                                         {
                                             "type": "std::string",
@@ -1491,7 +1491,7 @@
                                         },
                                         {
                                             "type": "float",
-                                            "data": 0.5
+                                            "data": 0
                                         },
                                         {
                                             "type": "float",
@@ -1515,7 +1515,7 @@
                                         },
                                         {
                                             "type": "bool",
-                                            "data": false
+                                            "data": true
                                         },
                                         {
                                             "type": "std::string",
@@ -1548,7 +1548,7 @@
                                         },
                                         {
                                             "type": "float",
-                                            "data": 0.5
+                                            "data": 0
                                         },
                                         {
                                             "type": "float",
@@ -1605,7 +1605,7 @@
                                         },
                                         {
                                             "type": "float",
-                                            "data": 0.5
+                                            "data": 0
                                         },
                                         {
                                             "type": "float",
@@ -1662,7 +1662,7 @@
                                         },
                                         {
                                             "type": "float",
-                                            "data": 0.5
+                                            "data": 0
                                         },
                                         {
                                             "type": "float",
@@ -1719,7 +1719,7 @@
                                         },
                                         {
                                             "type": "float",
-                                            "data": 2
+                                            "data": 0.5
                                         },
                                         {
                                             "type": "float",

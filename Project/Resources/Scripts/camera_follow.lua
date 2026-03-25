@@ -103,6 +103,7 @@ return Component {
 
         -- === Rotation ===
         lockCameraRotation = false,
+        androidFollowLerpSpeed = 20.0,  -- orbit catch-up on touch; tune up if still sluggish, down if snappy
 
         -- === Enemy Detection ===
         enableEnemyDetection = true,
@@ -310,6 +311,8 @@ return Component {
         if not (self.GetPosition and self.SetPosition and self.SetRotation) then return end
         if not self._hasTarget then return end
 
+        local isAndroid = Platform and Platform.IsAndroid and Platform.IsAndroid()
+
         -- Teleport to respawn point without lerp
         if self._teleportToPlayer then
             print(string.format("[CameraFollow] Teleporting to %.2f %.2f %.2f",
@@ -361,7 +364,6 @@ return Component {
 
         -- ── Input (mouse look + scroll zoom) ────────────────────────────────
         if not self._cinematicActive then
-            local isAndroid = Platform and Platform.IsAndroid and Platform.IsAndroid()
             if not self._loggedPlatform then
                 print("[CameraFollow] isAndroid=" .. tostring(isAndroid))
                 self._loggedPlatform = true
@@ -492,7 +494,8 @@ return Component {
                 cx, cy, cz = px or 0.0, py or 0.0, pz or 0.0
             end
 
-            local normalRate = self.followLerp or 10.0
+            local normalRate = (isAndroid and (self.androidFollowLerpSpeed or 20.0))
+                or self.followLerp or 10.0
             local chainRate  = 120.0
             local effectiveRate = normalRate + (chainRate - normalRate) * blend
             local lerpT = 1.0 - math.exp(-effectiveRate * dt)

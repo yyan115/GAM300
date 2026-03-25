@@ -106,7 +106,7 @@ std::string Texture::CompileToResource(const std::string& assetPath, bool forAnd
 	// Stores the width, height, and the number of color channels of the image
 	int widthImg, heightImg, numColCh;
 	// Flips the image so it appears right side up
-	stbi_set_flip_vertically_on_load(metaData->flipUVs);
+	stbi_set_flip_vertically_on_load_thread(metaData->flipUVs);
 	// Reads the image from a file and stores it in bytes
 	unsigned char* bytes = nullptr;
 
@@ -438,6 +438,11 @@ std::shared_ptr<AssetMeta> Texture::ExtendMetaFile(const std::string& assetPath,
 	ifs.close();
 
 	auto& allocator = doc.GetAllocator();
+
+	// Remove existing TextureMetaData if it exists to avoid double members
+	if (doc.HasMember("TextureMetaData")) {
+		doc.RemoveMember("TextureMetaData");
+	}
 
 	rapidjson::Value textureMetaData(rapidjson::kObjectType);
 

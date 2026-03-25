@@ -174,6 +174,24 @@ return Component {
         ShoutPostDelay = 2.15,
         ShoutCooldown = 999, -- checkpoint only (or set if you want it to recur)
 
+        ShoutShakeIntensity       = 0.85,
+        ShoutShakeDuration        = 0.55,
+        ShoutShakeFrequency       = 24.0,
+        ShoutFxChromaticIntensity = 4.45,
+        ShoutFxChromaticDuration  = 0.55,
+        ShoutFxBlurIntensity      = 0.35,
+        ShoutFxBlurRadius         = 2.5,
+        ShoutFxBlurDuration       = 0.25,
+
+        PhaseShakeIntensity       = 0.85,
+        PhaseShakeDuration        = 2.55,
+        PhaseShakeFrequency       = 48.0,
+        PhaseFxChromaticIntensity = 2.75,
+        PhaseFxChromaticDuration  = 0.80,
+        PhaseFxBlurIntensity      = 2.55,
+        PhaseFxBlurRadius         = 3.5,
+        PhaseFxBlurDuration       = 1.25,
+
         -- Air movement
         AirHeight = 1.0,
         AirMoveSpeed = 9.0,
@@ -1032,6 +1050,9 @@ return Component {
         if self._animator then self._animator:SetTrigger("Taunt") end
         print("[Miniboss] StartBossPhaseTransition ->", newPhase, "duration=", tostring(self.PhaseTransformDuration))
         AudioHelper.PlayRandomSFX(self._audio, self.enemyTauntSFX)
+
+        self:_TriggerBossPhaseShake()
+        self:_TriggerBossPhaseFx()
     end,
 
     FinishBossPhaseTransition = function(self)
@@ -1474,7 +1495,7 @@ return Component {
             ex, ey, ez = self:GetPosition()
         end
         if not ex then return nil end
-        return ex, (ey or 0) + 1.0, ez
+        return ex, (ey or 0) + 1.8, ez
     end,
 
     _DirToPlayerXZ = function(self)
@@ -1776,6 +1797,8 @@ return Component {
         if self._animator then self._animator:SetTrigger("Taunt") end
         AudioHelper.PlayRandomSFX(self._audio, self.enemyTauntSFX)
 
+        self:_TriggerBossShoutShake()
+
         if _G.event_bus and _G.event_bus.publish then
             local x,y,z = self:GetPosition()
             print("[MinibossAI] Casting boss_shout_aoe")
@@ -1785,6 +1808,56 @@ return Component {
                 radius = self.ShoutRadius or 4.0,
                 dmg = self.ShoutDamage or 2,
                 kb = self.ShoutKnockback or 240.0,
+            })
+        end
+    end,
+
+    _TriggerBossShoutShake = function(self)
+        if _G.event_bus and _G.event_bus.publish then
+            _G.event_bus.publish("camera_shake", {
+                intensity = self.ShoutShakeIntensity or 0.85,
+                duration  = self.ShoutShakeDuration or 0.55,
+                frequency = self.ShoutShakeFrequency or 24.0,
+            })
+        end
+    end,
+
+    _TriggerBossShoutFx = function(self)
+        if _G.event_bus and _G.event_bus.publish then
+            _G.event_bus.publish("fx_chromatic", {
+                intensity = self.ShoutFXChromaticIntensity or 4.45,
+                duration  = self.ShoutFXChromaticDuration or 0.55,
+            })
+
+            _G.event_bus.publish("fx_blur", {
+                intensity = self.ShoutFXBlurIntensity or 0.35,
+                radius    = self.ShoutFXBlurRadius or 2.5,
+                duration  = self.ShoutFXBlurDuration or 0.25,
+            })
+        end
+    end,
+
+    _TriggerBossPhaseShake = function(self)
+        if _G.event_bus and _G.event_bus.publish then
+            _G.event_bus.publish("camera_shake", {
+                intensity = self.PhaseShakeIntensity or 0.85,
+                duration  = self.PhaseShakeDuration or 2.55,
+                frequency = self.PhaseShakeFrequency or 48.0,
+            })
+        end
+    end,
+
+    _TriggerBossPhaseFx = function(self)
+        if _G.event_bus and _G.event_bus.publish then
+            _G.event_bus.publish("fx_chromatic", {
+                intensity = self.PhaseFXChromaticIntensity or 2.75,
+                duration  = self.PhaseFXChromaticDuration or 2.55,
+            })
+
+            _G.event_bus.publish("fx_blur", {
+                intensity = self.PhaseFXBlurIntensity or 0.55,
+                radius    = self.PhaseFXBlurRadius or 3.5,
+                duration  = self.PhaseFXBlurDuration or 1.25,
             })
         end
     end,
@@ -1854,6 +1927,10 @@ return Component {
 
             if not m.didFire and m.t >= (m.fireAt or 0) then
                 m.didFire = true
+
+                self:_TriggerBossShoutShake()
+                self:_TriggerBossShoutFx()
+
                 if _G.event_bus and _G.event_bus.publish then
                     local x,y,z = self:GetPosition()
                     print("[MinibossAI] ShoutAOE HIT (queued + delayed)")

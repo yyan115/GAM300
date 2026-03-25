@@ -34,14 +34,15 @@ function DeathState:Update(ai, dt)
     ai._deathLifetime = tonumber(ai._deathLifetime) or (tonumber(ai.deathLifetime) or 8.0)
 
     if ai._deathTimer >= ai._deathLifetime then
-        if not ai._despawned then
-            ai._despawned = true
+        if not ai._despawned and not ai._softDespawned then
             print("[DeathState] Despawn trigger entity=", tostring(ai.entityId))
 
-            if ai.SoftDespawn then
+            if ai.Despawn then
+                ai:Despawn()
+            elseif ai.SoftDespawn then
                 ai:SoftDespawn()
             elseif ai.OnDestroy then
-                ai:OnDestroy() -- cleanup only
+                ai:OnDestroy()
             end
         end
     end

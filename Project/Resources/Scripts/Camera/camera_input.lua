@@ -25,7 +25,7 @@ function M.updateMouseLook(self, dt)
     local isAndroid      = Platform and Platform.IsAndroid and Platform.IsAndroid()
     local baseSensitivity = self.mouseSensitivity or 0.15
     -- Android touch coords are normalized (0-1); needs much higher sensitivity than pixel deltas
-    local sensitivity    = isAndroid and 800.0 or baseSensitivity
+    local sensitivity    = isAndroid and 550.0 or baseSensitivity
 
     local xoffset = lookAxis.x * sensitivity
     local yoffset = lookAxis.y * sensitivity

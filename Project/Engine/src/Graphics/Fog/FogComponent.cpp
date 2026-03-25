@@ -25,5 +25,9 @@ REFL_REGISTER_START(FogVolumeComponent)
 	REFL_REGISTER_PROPERTY(edgeSoftness)
 	REFL_REGISTER_PROPERTY(noiseTextureGUID)
 	REFL_REGISTER_PROPERTY(warpStrength)
+	REFL_REGISTER_PROPERTY(colorTextureGUID)
+	REFL_REGISTER_PROPERTY(colorTextureIntensity)
+	REFL_REGISTER_PROPERTY(colorTextureScale)
+	REFL_REGISTER_PROPERTY(noiseTextureMappingAxis)
 REFL_REGISTER_END;
 #pragma endregion

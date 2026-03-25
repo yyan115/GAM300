@@ -21,6 +21,10 @@ private:
     void LaunchTracyProfiler();
     bool IsTracyProfilerRunning() const;
 
+    static constexpr int FPS_HISTORY_SIZE = 120;
+    float m_fpsHistory[FPS_HISTORY_SIZE] = {};
+    int   m_fpsHistoryOffset = 0;
+
 #ifdef _WIN32
     HANDLE tracyProcessHandle = nullptr;
 #else

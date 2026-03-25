@@ -151,6 +151,11 @@ jobs:
   android-build:
     runs-on: ubuntu-latest
 
+    strategy:
+      fail-fast: false
+      matrix:
+        build_type: [Debug, Release]
+
     steps:
     - name: Checkout Repository
       uses: actions/checkout@v4
@@ -160,8 +165,8 @@ jobs:
     - name: Cache Jolt Physics (FetchContent)
       uses: actions/cache@v4
       with:
-        path: Project/Build/android-ci/_deps
-        key: android-deps-${{ hashFiles('Project/ImportDependencies.cmake') }}
+        path: Project/Build/android-ci-${{ matrix.build_type }}/_deps
+        key: android-deps-${{ matrix.build_type }}-${{ hashFiles('Project/ImportDependencies.cmake') }}
 
     - name: Install NDK and Ninja
       run: |
@@ -175,40 +180,37 @@ jobs:
 
     - name: Configure CMake for Android
       run: |
-        cmake -S Project -B Project/Build/android-ci \
+        cmake -S Project -B Project/Build/android-ci-${{ matrix.build_type }} \
           -G Ninja \
           -DCMAKE_TOOLCHAIN_FILE=$ANDROID_HOME/ndk/29.0.14033849/build/cmake/android.toolchain.cmake \
           -DANDROID_ABI=arm64-v8a \
           -DANDROID_PLATFORM=android-33 \
-          -DCMAKE_BUILD_TYPE=Release \
+          -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} \
           -DCMAKE_ANDROID_STL_TYPE=c++_shared
 
     - name: Build
       id: android-build
       run: |
-        cmake --build Project/Build/android-ci --parallel 2>&1 | tee build-android.log
+        cmake --build Project/Build/android-ci-${{ matrix.build_type }} --parallel 2>&1 | tee build-android-${{ matrix.build_type }}.log
         if [ ${PIPESTATUS[0]} -ne 0 ]; then exit 1; fi
 
     - name: Extract errors
       if: always()
       run: |
-        echo "${{ steps.android-build.outcome }}" > build-result.txt
-        # Extract GCC/Clang error lines (file:line:col: error: message)
-        grep -E ": error:" build-android.log > build-errors.txt 2>/dev/null || true
-        # Also grab linker errors
-        grep -Ei "undefined reference to|ld: error:" build-android.log >> build-errors.txt 2>/dev/null || true
-        # Deduplicate
-        sort -u build-errors.txt -o build-errors.txt 2>/dev/null || true
+        echo "${{ steps.android-build.outcome }}" > build-result-${{ matrix.build_type }}.txt
+        grep -E ": error:" build-android-${{ matrix.build_type }}.log > build-errors-${{ matrix.build_type }}.txt 2>/dev/null || true
+        grep -Ei "undefined reference to|ld: error:" build-android-${{ matrix.build_type }}.log >> build-errors-${{ matrix.build_type }}.txt 2>/dev/null || true
+        sort -u build-errors-${{ matrix.build_type }}.txt -o build-errors-${{ matrix.build_type }}.txt 2>/dev/null || true
 
     - name: Upload build log
       if: always()
       uses: actions/upload-artifact@v4
       with:
-        name: build-log-android
+        name: build-log-android-${{ matrix.build_type }}
         path: |
-          build-android.log
-          build-result.txt
-          build-errors.txt
+          build-android-${{ matrix.build_type }}.log
+          build-result-${{ matrix.build_type }}.txt
+          build-errors-${{ matrix.build_type }}.txt
         retention-days: 7
         if-no-files-found: ignore
 
@@ -319,17 +321,23 @@ jobs:
 
           HAS_FAILURES=false
 
-          for config in debug release editor-debug editor-release android; do
+          for config in debug release editor-debug editor-release android-Debug android-Release; do
             dir="logs/build-log-$config"
-            result_file="$dir/build-result.txt"
-            errors_file="$dir/build-errors.txt"
+            result_file="$dir/build-result-${config#android-}.txt"
+            errors_file="$dir/build-errors-${config#android-}.txt"
+            # For non-android configs the result/errors files have no suffix
+            if [[ "$config" != android-* ]]; then
+              result_file="$dir/build-result.txt"
+              errors_file="$dir/build-errors.txt"
+            fi
 
             case $config in
               debug)          display="Debug" ;;
               release)        display="Release" ;;
               editor-debug)   display="Editor Debug" ;;
               editor-release) display="Editor Release" ;;
-              android)        display="Android (arm64)" ;;
+              android-Debug)   display="Android Debug (arm64)" ;;
+              android-Release) display="Android Release (arm64)" ;;
             esac
 
             if [ ! -f "$result_file" ]; then
@@ -365,10 +373,14 @@ jobs:
 
           if [ "$HAS_FAILURES" = true ]; then
             echo "---" >> $GITHUB_STEP_SUMMARY
-            for config in debug release editor-debug editor-release android; do
+            for config in debug release editor-debug editor-release android-Debug android-Release; do
               dir="logs/build-log-$config"
-              result_file="$dir/build-result.txt"
-              errors_file="$dir/build-errors.txt"
+              result_file="$dir/build-result-${config#android-}.txt"
+              errors_file="$dir/build-errors-${config#android-}.txt"
+              if [[ "$config" != android-* ]]; then
+                result_file="$dir/build-result.txt"
+                errors_file="$dir/build-errors.txt"
+              fi
 
               [ -f "$result_file" ] || continue
               result=$(cat "$result_file" | tr -d '[:space:]')
@@ -379,7 +391,8 @@ jobs:
                 release)        display="Release" ;;
                 editor-debug)   display="Editor Debug" ;;
                 editor-release) display="Editor Release" ;;
-                android)        display="Android (arm64)" ;;
+                android-Debug)   display="Android Debug (arm64)" ;;
+                android-Release) display="Android Release (arm64)" ;;
               esac
 
               echo "" >> $GITHUB_STEP_SUMMARY

@@ -81,27 +81,22 @@ void main()
 
     // Apply exposure adjustment
     vec3 mapped = hdrColor * exposure;
-    
-    // Only apply tone mapping if enabled AND we have HDR content
-    float maxComponent = max(max(mapped.r, mapped.g), mapped.b);
 
-    if (enableTonemapping && maxComponent > 1.0)
+    if (enableTonemapping)
     {
-        // Apply tone mapping only to bright areas
         if (toneMappingMode == 0)
         {
             mapped = ReinhardToneMapping(mapped);
         }
         else if (toneMappingMode == 1)
         {
-            mapped = ExposureToneMapping(mapped, 1.0);
+            mapped = ExposureToneMapping(hdrColor, exposure);
         }
         else if (toneMappingMode == 2)
         {
             mapped = ACESFilm(mapped);
         }
     }
-    // else: values pass through unchanged (will clip at 1.0 in output framebuffer)
 
     // Vignette: blend toward vignetteColor at edges
     if (vignetteEnabled)
