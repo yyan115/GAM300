@@ -60,14 +60,9 @@ return Component {
 
 
     OnDisable = function(self)
-        -- if _G.event_bus and _G.event_bus.unsubscribe then
-        --     if self._BeginSlamDownSub then
-        --         pcall(function()
-        --             _G.event_bus.unsubscribe(self._BeginSlamDownSub)
-        --         end)
-        --         self._BeginSlamDownSub = nil
-        --     end
-        -- end
-        -- self._trackedEnemyAnim = nil
+        if self._sparkParticle then
+            self._sparkParticle.isEmitting = false
+        end
+        self._chainThrown = false
     end,
 }
