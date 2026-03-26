@@ -177,8 +177,8 @@ void SpriteSystem::Update()
                 }
             }
 
-            // 2D UI sprites always skip post-processing — they must not be tonemapped
-            if (!spriteComponent.is3D) {
+            // 2D UI sprites & if not include post process always skip post-processing — they must not be tonemapped
+            if (!spriteComponent.is3D && !spriteComponent.includePostProcess) {
                 spriteRenderItem->excludeFromPostProcess = true;
             } else {
                 uint32_t exMask = PostProcessingManager::GetInstance().GetExcludedLayerMask();

@@ -3003,6 +3003,9 @@ void Serializer::DeserializeSpriteComponent(SpriteRenderComponent& spriteComp, c
                     if (d.Size() > static_cast<rapidjson::SizeType>(startIdx + 17)) {
                         spriteComp.fillBackground = Serializer::GetFloat(d, startIdx + 17, 0.3f);
                     }
+                    if (d.Size() > static_cast<rapidjson::SizeType>(startIdx + 18)) {
+                        spriteComp.includePostProcess = Serializer::GetBool(d, startIdx + 18, false);
+                    }
                 }
                 else {
                     // Old format - this is saved3DPosition
