@@ -1,0 +1,15 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "003f1e49691fa977-00049ee77e000075",
+        "source": "../../Resources/Textures/M6/BookShelf2_Base_color.png",
+        "compiled": "../../Resources/Textures/M6/BookShelf2_Base_color.dds"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}
