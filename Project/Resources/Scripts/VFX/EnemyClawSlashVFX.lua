@@ -73,7 +73,7 @@ return Component {
         if self.model then self.model.isVisible = false end
     end,
 
-    ActivateSlash = function(self, data)
+    ActivateSlash = function(self)
     -- Query live position/rotation at the moment of impact
         local pos            = self._enemyTransform.localPosition
         local rot            = self._enemyTransform.localRotation
