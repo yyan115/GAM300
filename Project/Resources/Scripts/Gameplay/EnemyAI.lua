@@ -313,6 +313,7 @@ return Component {
             end)
             if ok then
                 self._controller = ctrl
+                pcall(function() CharacterController.SetImmovable(self.entityId, true) end)
             else
                 print("[EnemyAI] CharacterController.Create failed")
                 self._controller = nil
@@ -629,6 +630,7 @@ return Component {
                         end)
                         if ok and ctrl then
                             self._controller = ctrl
+                            pcall(function() CharacterController.SetImmovable(self.entityId, true) end)
                             pcall(function()
                                 CharacterController.SetPosition(self._controller, self._transform)
                             end)
@@ -1243,6 +1245,7 @@ return Component {
             end)
             if ok then
                 self._controller = ctrl
+                pcall(function() CharacterController.SetImmovable(self.entityId, true) end)
                 if CharacterController.SetPosition then
                     pcall(function() CharacterController.SetPosition(self._controller, x, y, z) end)
                 end

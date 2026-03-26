@@ -57,13 +57,18 @@ public:
     //void SetRotation(float yaw);            // Set facing direction (degrees)
     //void GetRotation();            // Add to current rotation
 
-    //void SetMass(float mass);               // Character mass
-    //float GetMass() const;
+    void SetMass(float mass);               // Character mass
+    float GetMass() const;
 
     // Juggle mode: when true, CC gravity and stickToFloor are fully disabled.
     // Lua drives Y position manually via SetJuggleVelocity() each frame.
     void SetJuggleMode(bool enabled, float yVelocity = 0.0f);
     bool IsJuggling() const { return mJuggleMode; }
+
+    // Immovable: when true, this character won't be pushed by other characters.
+    // Other characters will still collide with and slide around this one.
+    void SetImmovable(bool immovable) { mImmovable = immovable; }
+    bool IsImmovable() const { return mImmovable; }
 
 
 private:
@@ -79,5 +84,6 @@ private:
 
     bool  mJuggleMode = false;
     float mJuggleVY = 0.0f;   // Y velocity set by Lua this frame (world units/sec)
+    bool  mImmovable = false;
 
 };

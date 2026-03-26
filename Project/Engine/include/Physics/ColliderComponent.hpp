@@ -24,6 +24,7 @@ struct ColliderComponent {
 	float capsuleHalfHeight = 0.5f;                        // For Capsule
 	float cylinderRadius = 0.5f;                           // For Cylinder
 	float cylinderHalfHeight = 0.5f;                       // For Cylinder
+	float mass = 70.0f;                                    // Mass for CharacterController
 
 	// Metadata for Inspector editing (non-serialized, reconstructed at runtime)
 	JPH::ObjectLayer layer = 0;
