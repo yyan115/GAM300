@@ -69,7 +69,7 @@ bool CharacterController::Initialise(ColliderComponent& collider, Transform& tra
     // Create character settings
     JPH::Ref<JPH::CharacterVirtualSettings> settings = new JPH::CharacterVirtualSettings();
     settings->mShape = capsule;
-    settings->mMass = 70.0f;
+    settings->mMass = collider.mass > 0.0f ? collider.mass : 70.0f;
     settings->mMaxStrength = 100.0f;
 
     // ADD THESE CRITICAL SETTINGS:
@@ -311,4 +311,17 @@ Vector3D CharacterController::GetGravity() const
 void CharacterController::SetGravity(Vector3D gravity)
 {
     mPhysicsSystem->SetGravity(ToJoltVec3(gravity));
+}
+
+void CharacterController::SetMass(float mass)
+{
+    if (mCharacter)
+        mCharacter->SetMass(mass);
+}
+
+float CharacterController::GetMass() const
+{
+    if (mCharacter)
+        return mCharacter->GetMass();
+    return 0.0f;
 }

@@ -322,10 +322,9 @@ return Component {
             if respawn then self._respawnPlayer = true end
         end)
 
-        sub(self, "_activatedCheckpointSub", "activatedCheckpoint", function(entityId)
-            if entityId then self._activatedCheckpoint = entityId end
+        sub(self, "_activatedCheckpointSub", "activatedCheckpoint", function(data)
+            if data and data.child then self._activatedCheckpoint = data.child end
         end)
-
         sub(self, "_freezePlayerSub", "freeze_player", function(frozen)
             if frozen then
                 self._freezePending     = true

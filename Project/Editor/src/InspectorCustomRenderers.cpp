@@ -1187,6 +1187,48 @@ void RegisterInspectorCustomRenderers()
             collider.version++;
         }
 
+        // Mass (used by CharacterController)
+        ImGui::Text("Mass");
+        ImGui::SameLine(labelWidth);
+        ImGui::SetNextItemWidth(-1);
+
+        static std::unordered_map<Entity, float> startMass;
+        static std::unordered_map<Entity, bool> isEditingMass;
+
+        if (ImGui::IsItemActivated()) {
+            startMass[entity] = collider.mass;
+            isEditingMass[entity] = true;
+        }
+
+        if (ImGui::DragFloat("##Mass", &collider.mass, 1.0f, 0.01f, FLT_MAX, "%.1f")) {
+            isEditingMass[entity] = true;
+        }
+
+        if (isEditingMass[entity] && !ImGui::IsItemActive()) {
+            float oldVal = startMass[entity];
+            float newVal = collider.mass;
+            if (oldVal != newVal && UndoSystem::GetInstance().IsEnabled()) {
+                UndoSystem::GetInstance().RecordLambdaChange(
+                    [entity, newVal]() {
+                        ECSManager& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
+                        if (ecs.HasComponent<ColliderComponent>(entity)) {
+                            ecs.GetComponent<ColliderComponent>(entity).mass = newVal;
+                            ecs.GetComponent<ColliderComponent>(entity).version++;
+                        }
+                    },
+                    [entity, oldVal]() {
+                        ECSManager& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
+                        if (ecs.HasComponent<ColliderComponent>(entity)) {
+                            ecs.GetComponent<ColliderComponent>(entity).mass = oldVal;
+                            ecs.GetComponent<ColliderComponent>(entity).version++;
+                        }
+                    },
+                    "Edit Collider Mass"
+                );
+            }
+            isEditingMass[entity] = false;
+        }
+
         return shapeChanged || shapeParamsChanged;
     });
 

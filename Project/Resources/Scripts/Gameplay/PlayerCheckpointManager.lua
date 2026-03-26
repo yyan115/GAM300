@@ -93,7 +93,7 @@ return Component {
                 self._respawnPos = tr.worldPosition
             end
             if event_bus and event_bus.publish then
-                event_bus.publish("activatedCheckpoint", children[4])
+                event_bus.publish("activatedCheckpoint", {child = children[4], parent = self._cpEnt})
                 event_bus.publish("playerHeal", 5)
             end
         end
