@@ -27,6 +27,7 @@ REFL_REGISTER_START(SpriteRenderComponent)
 	REFL_REGISTER_PROPERTY(fillValue)
 	REFL_REGISTER_PROPERTY(fillGlow)
 	REFL_REGISTER_PROPERTY(fillBackground)
+	REFL_REGISTER_PROPERTY(includePostProcess)
 REFL_REGISTER_END
 #pragma endregion
 

@@ -528,23 +528,27 @@
                         },
                         {
                             "type": "int",
-                            "data": 1
+                            "data": 0
                         },
                         {
                             "type": "float",
-                            "data": 1
+                            "data": 0
                         },
                         {
                             "type": "float",
-                            "data": 0.5
+                            "data": 0
                         },
                         {
                             "type": "float",
-                            "data": 0.3
+                            "data": 0
                         },
                         {
                             "type": "float",
-                            "data": 0.3
+                            "data": 0
+                        },
+                        {
+                            "type": "bool",
+                            "data": true
                         }
                     ]
                 },
@@ -742,23 +746,27 @@
                         },
                         {
                             "type": "int",
-                            "data": 1
+                            "data": 0
                         },
                         {
                             "type": "float",
-                            "data": 1
+                            "data": 0
                         },
                         {
                             "type": "float",
-                            "data": 0.5
+                            "data": 0
                         },
                         {
                             "type": "float",
-                            "data": 0.3
+                            "data": 0
                         },
                         {
                             "type": "float",
-                            "data": 0.3
+                            "data": 0
+                        },
+                        {
+                            "type": "bool",
+                            "data": true
                         }
                     ]
                 },
@@ -931,7 +939,7 @@
                         },
                         {
                             "type": "int",
-                            "data": 10
+                            "data": 0
                         },
                         {
                             "type": "Vector3D",
@@ -956,23 +964,27 @@
                         },
                         {
                             "type": "int",
-                            "data": 1
+                            "data": 0
                         },
                         {
                             "type": "float",
-                            "data": 1
+                            "data": 0
                         },
                         {
                             "type": "float",
-                            "data": 0.5
+                            "data": 0
                         },
                         {
                             "type": "float",
-                            "data": 0.3
+                            "data": 0
                         },
                         {
                             "type": "float",
-                            "data": 0.3
+                            "data": 0
+                        },
+                        {
+                            "type": "bool",
+                            "data": false
                         }
                     ]
                 },
@@ -1273,19 +1285,23 @@
                         },
                         {
                             "type": "float",
-                            "data": 1
+                            "data": 0
                         },
                         {
                             "type": "float",
-                            "data": 1
+                            "data": 0
                         },
                         {
                             "type": "float",
-                            "data": 0.5
+                            "data": 0
                         },
                         {
                             "type": "float",
-                            "data": 0.3
+                            "data": 0
+                        },
+                        {
+                            "type": "bool",
+                            "data": true
                         }
                     ]
                 },

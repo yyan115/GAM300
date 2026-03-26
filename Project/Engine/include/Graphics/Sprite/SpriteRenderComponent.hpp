@@ -29,6 +29,7 @@ public:
     bool enableBillboard = true;
     int sortingLayer = 0; // Sorting layer (higher = drawn on top)
     int sortingOrder = 0; // Order within the sorting layer (higher = drawn on top)
+    bool includePostProcess = false; // If true, sprite will be affected by post-processing effects; otherwise, it will be rendered after post-processing
 
     // Saved 3D position for mode switching
     Vector3D saved3DPosition = Vector3D{ 0.0f, 0.0f, 0.0f };
