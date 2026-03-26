@@ -98,26 +98,10 @@ function M.updateChainAim(self, dt)
     camX = camX - math.cos(lookYawRad) * sideOffset
     camZ = camZ + math.sin(lookYawRad) * sideOffset
 
-    -- Tick down the manual-aim cooldown so aim assist stays off while the
-    -- player is actively moving the camera.
-    if self._chainAimManualTimer and self._chainAimManualTimer > 0 then
-        self._chainAimManualTimer = self._chainAimManualTimer - dt
-    end
-
     -- Soft aim assist: gently pull _chainAimYaw/_chainAimPitch toward the
     -- nearest enemy within the configured angular window.
-    -- Skip when the player is manually aiming so it doesn't fight their input.
-    local manuallyAiming = self._chainAimManualTimer and self._chainAimManualTimer > 0
-    if self._chainAiming and self._chainAimYaw and not manuallyAiming then
+    if self._chainAiming and self._chainAimYaw then
         M.updateAimAssist(self, dt, camX, camY, camZ)
-    elseif manuallyAiming then
-        -- Clear stale assist target so the chain fires where the player is
-        -- actually looking, not at the last auto-aimed enemy.
-        self._assistTargetX = nil
-        self._assistTargetY = nil
-        self._assistTargetZ = nil
-        self._assistPrevTargetYaw   = nil
-        self._assistPrevTargetPitch = nil
     end
 
     -- Publish forward basis and crosshair world target for chain-throw direction.
