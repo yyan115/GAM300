@@ -6,7 +6,7 @@ return Component {
     mixins = { TransformMixin },
     
     fields = {
-        Lifetime      = 0.35,
+        Lifetime      = 0.25,
         BaseScale     = 2.0,
         ForwardOffset = 0.5,
         HeightOffset  = 0.0,
@@ -63,30 +63,44 @@ return Component {
         self:SetRotation(qw, qx, qy, qz)
 
         self.timer = 0
+        self.slashTriggered = true
         if self.model then self.model.isVisible = true end
     end,
 
     Update = function(self, dt)
-        if not self.active then return end
+        if not self.active or not self._enemyAnim then return end
         local dtSec = dt or 0
-
-        -- Wait for the correct animation state
-        local currentState = self._enemyAnim:GetCurrentState()
-        if currentState ~= "Melee Attack" then return end
-
-        -- Trigger VFX at the strike frame
-        if not self.slashTriggered and self._enemyAnim:GetNormalizedTime() >= self.TriggerNormalizedTime then
-            self.slashTriggered = true
-            self:ActivateSlash(self.pendingData)
-        end
-
-        -- Lifetime countdown after slash appears
-        if self.slashTriggered then
+        local anim = self._enemyAnim
+        local currentState = anim:GetCurrentState()
+        local normalizedTime = anim:GetNormalizedTime()
+        -- STAGE 1: WAITING FOR THE ATTACK TO HIT THE TRIGGER FRAME
+        if not self.slashTriggered then
+            if currentState == "Melee Attack" then
+                if normalizedTime >= self.TriggerNormalizedTime then
+                    self:ActivateSlash()
+                end
+            end
+        -- STAGE 2: VFX IS VISIBLE, HANDLING LIFETIME AND INTERRUPTS
+        else
+            -- interrupted (Hurt/Death) or the animation finished early.
+            if currentState ~= "Melee Attack" then
+                self:Deactivate()
+                return 
+            end
+            -- Standard lifetime countdown
             self.timer = self.timer + dtSec
             if self.timer >= self.Lifetime then
-                self.active = false
-                if self.model then self.model.isVisible = false end
+                self:Deactivate()
             end
+        end
+    end,
+
+    -- Helper function to clean up and hide
+    Deactivate = function(self)
+        self.active = false
+        self.slashTriggered = false
+        if self.model then 
+            self.model.isVisible = false 
         end
     end,
 
@@ -94,5 +108,12 @@ return Component {
         if _G.event_bus and self._slashSub then
             _G.event_bus.unsubscribe(self._slashSub)
         end
+        -- Reset state
+        self.active         = false
+        self.slashTriggered = false
+        self.timer          = 0
+        self.pendingData    = nil
+
+        if self.model then self.model.isVisible = false end
     end
 }
