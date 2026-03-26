@@ -219,6 +219,7 @@ return Component {
         ArenaRadius  = 12.0,
         ArenaLeashBuffer = 0.6,
         ReturnToArenaSpeedMultiplier = 1.15,
+        PlayerArenaExtraRadius = 0.75,
 
         P2_BurstRounds = 3,
         P2_BurstGap = 1.25, -- small pause between bursts
@@ -840,7 +841,17 @@ return Component {
     _IsPlayerInsideArena = function(self)
         local px, py, pz = self:GetPlayerPosForAI()
         if not px then return false end
-        return self:_IsInsideArenaXZ(px, pz)
+
+        local cx = self.ArenaCenterX or 0.0
+        local cz = self.ArenaCenterZ or 0.0
+
+        local baseR = (self.ArenaRadius or 12.0) - (self.ArenaLeashBuffer or 0.6)
+        local extra = self.PlayerArenaExtraRadius or 0.75
+        local r = baseR + extra
+
+        local dx = px - cx
+        local dz = pz - cz
+        return (dx*dx + dz*dz) <= (r*r)
     end,
 
     _ReturnToArenaCenter = function(self, dtSec)
