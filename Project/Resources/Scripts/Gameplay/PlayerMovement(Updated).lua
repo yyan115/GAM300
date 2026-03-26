@@ -196,7 +196,7 @@ return Component {
         SlamShakeDuration   =  0.7,
         SlamShakeFrequency  = 25.0,
         LandingDuration     = 0.65,   -- Seconds of recovery before movement restores.
-        RollHeightThreshold = 1.0,   -- Fall distance (world units) that triggers roll instead of soft land.
+        RollHeightThreshold = 2.0,   -- Fall distance (world units) that triggers roll instead of soft land.
         SlamSlowMoScale     = 0.15,  -- Time scale during slam hit-stop (0=frozen, 1=normal).
         SlamSlowMoDuration  = 0.18,  -- Seconds the slow-mo lasts before snapping back.
         SlamHoverDuration   = 0.1,   -- Seconds player freezes in air before slam descent begins.
@@ -1045,8 +1045,12 @@ return Component {
         -- _G.player_air_height is read by ComboManager to decide whether an airborne
         -- attack should auto-slam instead of starting the aerial combo.
         if isGrounded then
-            local gPos = CharacterController.GetPosition(self._controller)
-            if gPos then self._lastGroundedY = gPos.y end
+            -- Don't overwrite _lastGroundedY on the landing frame (while _isJumping
+            -- is still true) — the fall distance calculation needs the takeoff Y.
+            if not self._isJumping then
+                local gPos = CharacterController.GetPosition(self._controller)
+                if gPos then self._lastGroundedY = gPos.y end
+            end
             _G.player_air_height = 0
         else
             local airPos = CharacterController.GetPosition(self._controller)
@@ -1586,7 +1590,9 @@ return Component {
 
                 local landPos  = CharacterController.GetPosition(self._controller)
                 local landY    = landPos and landPos.y or 0
-                local fallDist = (self._peakAirY or landY) - landY
+                -- Use launch height (last grounded Y), not peak air Y, so a normal
+                -- jump on flat ground gives fallDist ~0 instead of the full jump arc.
+                local fallDist = (self._lastGroundedY or landY) - landY
 
                 local intensity
                 -- Landing intensity: small hop = 0.3, big drop = 1.0
@@ -1595,8 +1601,8 @@ return Component {
                 -- Set destination state BEFORE clearing IsJumping so the animator
                 -- sees the correct target condition when IsJumping flips to false.
                 self._animator:SetBool("IsLifting", false)
-                if fallDist >= (self.RollHeightThreshold or 2.5) or isMoving then
-                    -- High fall OR pressing movement keys while landing -> roll
+                if fallDist >= (self.RollHeightThreshold or 2.5) then
+                    -- High fall -> roll
                     self._isRolling  = true
                     self._rollDirX   = self._facingX or 0
                     self._rollDirZ   = self._facingZ or 0
