@@ -135,7 +135,7 @@ return Component {
         HitIFrame      = 0.2,
         HookedDuration = 4.0,
 
-        -- “Transformation” (phase transition) lock
+        -- "Transformation" (phase transition) lock
         PhaseTransformDuration = 3.2,
 
         PlayerName = "Player",
@@ -144,7 +144,7 @@ return Component {
         Gravity      = -9.81,
         MaxFallSpeed = -25.0,
 
-        -- Optional: small “stick to ground” behaviour
+        -- small "stick to ground" behaviour
         GroundStickVel = -0.2,
 
         IntroDuration = 5.0,
@@ -213,6 +213,12 @@ return Component {
         GridStep = 4.0,
         GridCenterX = 0.0,
         GridCenterZ = 0.0,
+
+        ArenaCenterX = 0.0,
+        ArenaCenterZ = 0.0,
+        ArenaRadius  = 12.0,
+        ArenaLeashBuffer = 0.6,
+        ReturnToArenaSpeedMultiplier = 1.15,
 
         P2_BurstRounds = 3,
         P2_BurstGap = 1.25, -- small pause between bursts
@@ -284,11 +290,12 @@ return Component {
         self._knifeVolleyId = 0
 
         -- action lock system (blocks Choose/Execute/etc)
-        self._inIntro    = false
-        self._introDone  = false
-        self._lockAction = false
-        self._lockReason = nil
-        self._lockTimer  = 0
+        self._inIntro      = false
+        self._introDone    = false
+        self._lockAction   = false
+        self._lockReason   = nil
+        self._lockTimer    = 0
+        self._combatActive = false
 
         -- phase tracking
         self._phase = 1                 -- current phase id
@@ -454,6 +461,26 @@ return Component {
             pcall(function() self:ApplyHook(payload.duration or self.HookedDuration) end)
         end)
 
+        -- === Player death subscription ===
+        self._playerDead = false
+        self._playerDeadSub = nil
+        self._respawnPlayerSub = nil
+
+        if _G.event_bus and _G.event_bus.subscribe then
+            self._playerDeadSub = _G.event_bus.subscribe("playerDead", function(dead)
+                self._playerDead = dead == true
+                if self._playerDead then
+                    self:ResetBossToIdle()
+                end
+            end)
+
+            self._respawnPlayerSub = _G.event_bus.subscribe("respawnPlayer", function(respawn)
+                if respawn then
+                    self._playerDead = false
+                end
+            end)
+        end
+
         -- Seed prevY for grounded heuristic
         local _, y, _ = self:GetPosition()
         self._prevY = y
@@ -472,6 +499,10 @@ return Component {
     Update = function(self, dt)
         local dtSec = toDtSec(dt)
         self._meleeCdT = math.max(0, (self._meleeCdT or 0) - dtSec)
+
+        if not self._frozenBycinematic and not self.dead then
+            self:_ForceBackInsideArena(dtSec)
+        end
 
         if Keyboard.IsDigitPressed(2) then
             self:ApplyHook(self.HookedDuration)
@@ -520,6 +551,37 @@ return Component {
         self._hitLockTimer = math.max(0, (self._hitLockTimer or 0) - dtSec)
         for k, v in pairs(self._moveCooldowns) do
             self._moveCooldowns[k] = math.max(0, v - dtSec)
+        end
+
+        -- Re-engage / disengage logic after intro has already happened once
+        if self._introDone and not self.dead then
+            local px, py, pz = self:GetPlayerPosForAI()
+            local ex, ez = self:GetEnemyPosXZ()
+            if not ex or not ez then
+                self._combatActive = false
+                self:_EndMove()
+                self._moveQueue = {}
+                self:_ReturnToArenaCenter(dtSec)
+                return
+            end
+
+            -- if player missing, dead, or outside arena -> disengage and return center
+            if self._playerDead or (not px) or (not self:_IsPlayerInsideArena()) then
+                self._combatActive = false
+            else
+                local dx, dz = px - ex, pz - ez
+                local r = self.AggroRange or 15.0
+                if (dx*dx + dz*dz) <= (r*r) then
+                    self._combatActive = true
+                end
+            end
+
+            if not self._combatActive then
+                self:_EndMove()
+                self._moveQueue = {}
+                self:_ReturnToArenaCenter(dtSec)
+                return
+            end
         end
 
         -- 3) Phase change detection (NEW system only)
@@ -726,6 +788,72 @@ return Component {
         return false
     end,
 
+    _IsInsideArenaXZ = function(self, x, z)
+        local cx = self.ArenaCenterX or 0.0
+        local cz = self.ArenaCenterZ or 0.0
+        local r  = (self.ArenaRadius or 12.0) - (self.ArenaLeashBuffer or 0.6)
+
+        local dx = x - cx
+        local dz = z - cz
+        return (dx*dx + dz*dz) <= (r*r)
+    end,
+
+    _ClampToArenaXZ = function(self, x, z)
+        local cx = self.ArenaCenterX or 0.0
+        local cz = self.ArenaCenterZ or 0.0
+        local r  = (self.ArenaRadius or 12.0) - (self.ArenaLeashBuffer or 0.6)
+
+        local dx = x - cx
+        local dz = z - cz
+        local d2 = dx*dx + dz*dz
+        if d2 <= r*r then
+            return x, z
+        end
+
+        local d = math.sqrt(d2)
+        if d < 1e-6 then
+            return cx, cz
+        end
+
+        local nx = dx / d
+        local nz = dz / d
+        return cx + nx * r, cz + nz * r
+    end,
+
+    _ForceBackInsideArena = function(self, dtSec)
+        local x, y, z = self:GetPosition()
+        if not x then return end
+        if self:_IsInsideArenaXZ(x, z) then return end
+
+        local tx, tz = self:_ClampToArenaXZ(x, z)
+
+        if self._phase == 2 or self._phase == 3 or self._inAir then
+            self:_MoveToXZ_Air(tx, tz, dtSec)
+        else
+            local oldSpeed = self.MoveSpeed
+            self.MoveSpeed = (self.MoveSpeed or self.Speed or 6.0) * (self.ReturnToArenaSpeedMultiplier or 1.15)
+            self:_MoveToXZ_Ground(tx, tz, dtSec)
+            self.MoveSpeed = oldSpeed
+        end
+    end,
+
+    _IsPlayerInsideArena = function(self)
+        local px, py, pz = self:GetPlayerPosForAI()
+        if not px then return false end
+        return self:_IsInsideArenaXZ(px, pz)
+    end,
+
+    _ReturnToArenaCenter = function(self, dtSec)
+        local tx = self.ArenaCenterX or 0.0
+        local tz = self.ArenaCenterZ or 0.0
+
+        if self._phase == 2 or self._phase == 3 or self._inAir then
+            return self:_MoveToXZ_Air(tx, tz, dtSec)
+        else
+            return self:_MoveToXZ_Ground(tx, tz, dtSec)
+        end
+    end,
+
     _EnterAirMode = function(self)
         self._inAir = true
         self._animator:SetBool("Flying", true)
@@ -831,6 +959,20 @@ return Component {
         end
     end,
 
+    _FaceXZ = function(self, tx, tz)
+        local x, y, z = self:GetPosition()
+        if x == nil then return end
+
+        local dx = tx - x
+        local dz = tz - z
+        local d2 = dx*dx + dz*dz
+        if d2 < 1e-6 then return end
+
+        local yaw = math.deg(atan2(dx, dz))
+        local q = eulerToQuat(0, yaw, 0)
+        self:SetRotation(q.w, q.x, q.y, q.z)
+    end,
+
     GetEnemyPosXZ = function(self)
         if self._controller then
             local pos = CharacterController.GetPosition(self._controller)
@@ -908,6 +1050,43 @@ return Component {
                 self:_EnterGroundMode()
             end
         end
+    end,
+
+    _MoveToXZ_Ground = function(self, tx, tz, dtSec)
+        if dtSec <= 0 then return false end
+        if not self._controller then return true end
+
+        local pos = CharacterController.GetPosition(self._controller)
+        if not pos then return true end
+
+        local x, y, z = pos.x, pos.y, pos.z
+        local dx, dz = tx - x, tz - z
+
+        local r = self.ArenaReturnStopDistance or 0.25
+        local d2 = dx*dx + dz*dz
+        if d2 <= r*r then
+            pcall(function() self:StopCC() end)
+            self:FacePlayer()
+            return true
+        end
+
+        local d = math.sqrt(d2)
+        if d < 1e-6 then
+            pcall(function() self:StopCC() end)
+            return true
+        end
+
+        local spd = self.MoveSpeed or 6.0
+        local step = math.min(spd * dtSec, d)
+
+        local mx = (dx / d) * step
+        local mz = (dz / d) * step
+
+        self:_FaceXZ(tx, tz)
+        pcall(function()
+            CharacterController.Move(self._controller, mx, 0, mz)
+        end)
+        return false
     end,
 
     _MoveToXZ_Air = function(self, tx, tz, dtSec)
@@ -1402,6 +1581,8 @@ return Component {
             if self._freezeEnemySub then pcall(function() _G.event_bus.unsubscribe(self._freezeEnemySub) end) end
             if self._chainEndpointHitSub then pcall(function() _G.event_bus.unsubscribe(self._chainEndpointHitSub) end) end
             if self._chainEnemyHookedSub then pcall(function() _G.event_bus.unsubscribe(self._chainEnemyHookedSub) end) end
+            if self._playerDeadSub then pcall(function() _G.event_bus.unsubscribe(self._playerDeadSub) end) self._playerDeadSub = nil end
+            if self._respawnPlayerSub then pcall(function() _G.event_bus.unsubscribe(self._respawnPlayerSub) end) self._respawnPlayerSub = nil end
         end
         self._damageSub = nil
         self._comboDamageSub = nil
@@ -1430,6 +1611,8 @@ return Component {
             if self._freezeEnemySub then pcall(function() _G.event_bus.unsubscribe(self._freezeEnemySub) end) end
             if self._chainEndpointHitSub then pcall(function() _G.event_bus.unsubscribe(self._chainEndpointHitSub) end) end
             if self._chainEnemyHookedSub then pcall(function() _G.event_bus.unsubscribe(self._chainEnemyHookedSub) end) end
+            if self._playerDeadSub then pcall(function() _G.event_bus.unsubscribe(self._playerDeadSub) end) self._playerDeadSub = nil end
+            if self._respawnPlayerSub then pcall(function() _G.event_bus.unsubscribe(self._respawnPlayerSub) end) self._respawnPlayerSub = nil end
         end
         self._damageSub = nil
         self._comboDamageSub = nil
@@ -1798,6 +1981,7 @@ return Component {
         AudioHelper.PlayRandomSFX(self._audio, self.enemyTauntSFX)
 
         self:_TriggerBossShoutShake()
+        self:_TriggerBossShoutFx()
 
         if _G.event_bus and _G.event_bus.publish then
             local x,y,z = self:GetPosition()
@@ -1825,14 +2009,14 @@ return Component {
     _TriggerBossShoutFx = function(self)
         if _G.event_bus and _G.event_bus.publish then
             _G.event_bus.publish("fx_chromatic", {
-                intensity = self.ShoutFXChromaticIntensity or 4.45,
-                duration  = self.ShoutFXChromaticDuration or 0.55,
+                intensity = self.ShoutFxChromaticIntensity or 4.45,
+                duration  = self.ShoutFxChromaticDuration or 0.55,
             })
 
             _G.event_bus.publish("fx_blur", {
-                intensity = self.ShoutFXBlurIntensity or 0.35,
-                radius    = self.ShoutFXBlurRadius or 2.5,
-                duration  = self.ShoutFXBlurDuration or 0.25,
+                intensity = self.ShoutFxBlurIntensity or 0.35,
+                radius    = self.ShoutFxBlurRadius or 2.5,
+                duration  = self.ShoutFxBlurDuration or 0.25,
             })
         end
     end,
@@ -1850,14 +2034,14 @@ return Component {
     _TriggerBossPhaseFx = function(self)
         if _G.event_bus and _G.event_bus.publish then
             _G.event_bus.publish("fx_chromatic", {
-                intensity = self.PhaseFXChromaticIntensity or 2.75,
-                duration  = self.PhaseFXChromaticDuration or 2.55,
+                intensity = self.PhaseFxChromaticIntensity or 2.75,
+                duration  = self.PhaseFxChromaticDuration or 2.55,
             })
 
             _G.event_bus.publish("fx_blur", {
-                intensity = self.PhaseFXBlurIntensity or 0.55,
-                radius    = self.PhaseFXBlurRadius or 3.5,
-                duration  = self.PhaseFXBlurDuration or 1.25,
+                intensity = self.PhaseFxBlurIntensity or 0.55,
+                radius    = self.PhaseFxBlurRadius or 3.5,
+                duration  = self.PhaseFxBlurDuration or 1.25,
             })
         end
     end,
@@ -2741,6 +2925,57 @@ return Component {
                 self._immuneChain = true
             end
             return
+        end
+    end,
+
+    ResetBossToIdle = function(self)
+        print("[MinibossAI] ResetBossToIdle")
+
+        self._move = nil
+        self._moveFinished = true
+        self.currentMove = nil
+        self.currentMoveDef = nil
+        self._moveQueue = {}
+
+        self:UnlockActions()
+        self._transforming = false
+        self._pendingPhase = nil
+        self._immuneDamage = false
+        self._immuneChain = false
+
+        self._phase2BurstRoundsDone = 0
+        self._phase2BurstGapT = 0
+        self._phase2Numpad = nil
+        self._phase3Dive = nil
+        self._phase3DiveStarted = false
+        self._slamActive = false
+        self._diveSlamLanded = false
+        self._p3_dive_predelay = nil
+
+        self._moveCooldowns = {}
+        self._meleeCdT = 0
+
+        -- no cutscene replay, but boss must re-aggro later
+        self._introDone = true
+        self._inIntro = false
+        self._combatActive = false
+
+        if self.StopCC then
+            pcall(function() self:StopCC() end)
+        end
+        if self._rb then
+            pcall(function() self._rb.linearVel = { x=0, y=0, z=0 } end)
+            pcall(function() self._rb.impulseApplied = { x=0, y=0, z=0 } end)
+        end
+
+        if self._animator then
+            pcall(function() self._animator:SetBool("PlayerInDetectionRange", false) end)
+            pcall(function() self._animator:SetBool("PlayerInAttackRange", false) end)
+            pcall(function() self._animator:SetBool("ReadyToAttack", false) end)
+            pcall(function() self._animator:ResetTrigger("Melee") end)
+            pcall(function() self._animator:ResetTrigger("Ranged") end)
+            pcall(function() self._animator:ResetTrigger("Taunt") end)
+            pcall(function() self._animator:ResetTrigger("Hooked") end)
         end
     end,
 
