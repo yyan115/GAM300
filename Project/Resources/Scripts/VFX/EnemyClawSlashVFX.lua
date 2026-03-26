@@ -30,20 +30,17 @@ local function multiplyQuat(q1, q2)
 end
 
 
-
-
 return Component {
     mixins = { TransformMixin },
     
     fields = {
-        Lifetime                = 10, --0.25,
-        BaseScale               = 2.0,
-        ForwardOffset           = 0.67,
+        Lifetime                = 5, --FAILSAFE,
+        ForwardOffset           = 0.8,
         HeightOffset            = 1.0,
         TriggerNormalizedTime   = 0.45, -- tune this to match strike frame
         StartRotation           = -40,
         EndRotation             = -110,
-        RotationSpeed           = 800
+        RotationSpeed           = 1000
     },
 
     Start = function(self)
@@ -116,7 +113,7 @@ return Component {
                 self:ActivateSlash()
             end
         else
-            -- 1. INCREMENTAL ROTATION LOGIC
+            -- HANDLE ROTATION
             if not self.rotationEnded then
                 -- Calculate how much we want to turn this frame
                 local amountToTurn = self.RotationSpeed * dtSec
@@ -128,7 +125,7 @@ return Component {
                     self.rotationEnded = true
                 end
 
-                -- Apply the rotation (Using -amountToTurn to "decrement")
+                -- Apply the rotation
                 local qW, qX, qY, qZ  = self:GetRotation()
                 local currentRot = { w = qW, x = qX, y = qY, z = qZ }
 
@@ -137,11 +134,12 @@ return Component {
                 
                 self:SetRotation(finalQuat.w, finalQuat.x, finalQuat.y, finalQuat.z)
                 
-                -- Update our tracker
                 self.totalDegreesTurned = self.totalDegreesTurned + amountToTurn
+            else    --Rotation Ended
+                self:Deactivate()   
             end
 
-            -- 2. LIFETIME LOGIC
+            -- 2. LIFETIME LOGIC, FAILSAFE, THIS SHOULDNT HAPPEN THOUGH (Rotation should end first)
             self.timer = self.timer + dtSec
             if self.timer >= self.Lifetime then
                 self:Deactivate()
