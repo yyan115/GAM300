@@ -2,7 +2,7 @@
     "prefab_entities": [
         {
             "id": 0,
-            "guid": "005edbd9297e0a7c-00047d3450021481",
+            "guid": "00730d17fd3b446a-0004a0978c00dd9b",
             "components": {
                 "PrefabLinkComponent": {
                     "type": "PrefabLinkComponent",
@@ -188,7 +188,7 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "005edbd92e0445e3-00047d3450021483"
+                                "00730d17fa374def-0004a0978c00dd9d"
                             ]
                         }
                     ]
@@ -523,7 +523,7 @@
         },
         {
             "id": 1,
-            "guid": "005edbd92e0445e3-00047d3450021483",
+            "guid": "00730d17fa374def-0004a0978c00dd9d",
             "components": {
                 "NameComponent": {
                     "name": "Feather"
@@ -600,7 +600,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "005edbd9297e0a7c-00047d3450021481"
+                        "00730d17fd3b446a-0004a0978c00dd9b"
                     ]
                 },
                 "RigidBodyComponent": {
@@ -833,7 +833,8 @@
                                 "DebugTransform": null,
                                 "OnTriggerEnter": null,
                                 "GetTransform": null,
-                                "SetScale": null
+                                "SetScale": null,
+                                "TrappedPickupDetectionRadius": 20.0
                             }
                         }
                     ]

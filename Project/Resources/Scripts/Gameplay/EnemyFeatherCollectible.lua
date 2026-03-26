@@ -12,6 +12,7 @@ return Component {
         Drag = 5.0,                
         MaxSpeed = 40.0,           
         PickupDetectionRadius = 1.0,
+        TrappedPickupDetectionRadius = 5.0, -- Pickup detection range when the feather is "trapped" inside a collider (prop, wall etc)
         CollectionRadius = 0.05,    
         TargetScale = 0.1,
         LiftHeight = 0.3,          
@@ -77,12 +78,56 @@ return Component {
                     local dx = playerPos.x - myPos.x
                     local dy = (playerPos.y + self.LiftHeight) - myPos.y
                     local dz = playerPos.z - myPos.z
-                    local radius = self.PickupDetectionRadius or 1.0
+                    local distSq = dx * dx + dy * dy + dz * dz
 
-                    if (dx * dx + dy * dy + dz * dz) <= (radius * radius) then
+                    -- Normal pickup detection
+                    local radius = self.PickupDetectionRadius or 1.0
+                    if distSq <= (radius * radius) then
                         self:TryCollect(playerId)
                         if self._isCollecting or self._collected then
                             return
+                        end
+                    end
+
+                    -- Trapped fallback pickup detection
+                    radius = self.TrappedPickupDetectionRadius
+                    if distSq <= (radius * radius) then
+                        local distance = math.sqrt(distSq)
+
+                        -- Normalize the direction vector
+                        local dirX = dx / distance
+                        local dirY = dy / distance
+                        local dirZ = dz / distance
+                        local dirToPlayer = { x = dirX, y = dirY, z = dirZ }
+
+                        -- Raycast from feather to the player
+                        local res1, res2 = Physics.RaycastGetEntity(myPos.x, myPos.y, myPos.z, dirX, dirY, dirZ, self.TrappedPickupDetectionRadius)
+                        local hitDist, hitEntityId = -1.0, -1
+
+                        -- Get the raycast hit distance and hit entity id
+                        if type(res1) == "table" or type(res1) == "userdata" then
+                            -- If it's a struct, it uses .distance. If it's a tuple, it uses [1]
+                            hitDist = res1.distance or res1[1] or -1.0
+                            hitEntityId = res1.entityId or res1[2] or -1
+                        else
+                            -- If it successfully unpacked into two separate variables
+                            hitDist = res1 or -1.0
+                            hitEntityId = res2 or -1
+                        end
+
+                        -- If the ray hit something before it reaches the player
+                        if hitEntityId >= 0 then
+                            -- And if the other root entity isn't the player or enemy
+                            local rootId = self:_toRoot(otherEntityId)
+                            local tagComp = GetComponent(rootId, "TagComponent")
+                            if tagComp and (Tag.Compare(tagComp.tagIndex, "Enemy") or Tag.Compare(tagComp.tagIndex, "Player")) then
+                                -- It means the feather is trapped in some geometry OR fallen off the map.
+                                -- Trigger the auto collection.
+                                self:TryCollect(playerId)
+                                if self._isCollecting or self._collected then
+                                    return
+                                end
+                            end
                         end
                     end
                 end
