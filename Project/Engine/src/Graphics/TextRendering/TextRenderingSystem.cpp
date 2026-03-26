@@ -119,12 +119,16 @@ void TextRenderingSystem::Update()
                 }
             }
 
-            // Tag items on excluded layers for deferred rendering
-            uint32_t exMask = PostProcessingManager::GetInstance().GetExcludedLayerMask();
-            if (exMask != 0) {
-                int layerIdx = GetEffectiveLayerIndex(entity, ecsManager);
-                if (exMask & (1u << layerIdx))
-                    textRenderItem->excludeFromPostProcess = true;
+            // 2D UI text always skips post-processing — must not be tonemapped
+            if (!textComponent.is3D) {
+                textRenderItem->excludeFromPostProcess = true;
+            } else {
+                uint32_t exMask = PostProcessingManager::GetInstance().GetExcludedLayerMask();
+                if (exMask != 0) {
+                    int layerIdx = GetEffectiveLayerIndex(entity, ecsManager);
+                    if (exMask & (1u << layerIdx))
+                        textRenderItem->excludeFromPostProcess = true;
+                }
             }
 
             gfxManager.Submit(std::move(textRenderItem));
