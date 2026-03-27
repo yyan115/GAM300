@@ -103,6 +103,7 @@ void EditorState::Play() {
         }
 
         ecs.animationSystem->Initialise();
+        ecs.spriteAnimationSystem->Initialise();
         SceneManager::GetInstance().InitializeScenePhysics();
 
     } else if (currentState == State::PAUSED) {
