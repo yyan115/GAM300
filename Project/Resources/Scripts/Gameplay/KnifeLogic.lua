@@ -34,6 +34,26 @@ local function eulerToQuat(pitch, yaw, roll)
     }
 end
 
+local function quatAxisAngle(ax, ay, az, deg)
+    local rad = math.rad(deg) * 0.5
+    local s = math.sin(rad)
+    return {
+        w = math.cos(rad),
+        x = ax * s,
+        y = ay * s,
+        z = az * s
+    }
+end
+
+local function quatMul(a, b)
+    return {
+        w = a.w*b.w - a.x*b.x - a.y*b.y - a.z*b.z,
+        x = a.w*b.x + a.x*b.w + a.y*b.z - a.z*b.y,
+        y = a.w*b.y - a.x*b.z + a.y*b.w + a.z*b.x,
+        z = a.w*b.z + a.x*b.y - a.y*b.x + a.z*b.w
+    }
+end
+
 -- Convert dt to seconds (handles engines that pass ms), clamp to avoid huge leaps
 local function toDtSec(dt)
     local dtSec = dt or 0
@@ -276,15 +296,24 @@ return Component {
 
         local yaw = math.deg(atan2(self.dirX, self.dirZ))
 
-        -- horizontal length for vertical aiming
-        local flatLen = math.sqrt(self.dirX * self.dirX + self.dirZ * self.dirZ)
+        if slot and tostring(slot):sub(1, 3) == "P3F" then
+            -- Feather Bomb only:
+            -- 1) face outward toward destination
+            -- 2) tilt 45 degrees downward
+            -- 3) apply model flip needed for this knife mesh
+            local qYaw  = quatAxisAngle(0, 1, 0, yaw)
+            local qTilt = quatAxisAngle(1, 0, 0, -45)
+            local qFlip = quatAxisAngle(0, 0, 1, 180)
 
-        -- how much to tilt up/down toward the target
-        local aimPitch = -math.deg(atan2(self.dirY, flatLen))
-
-        -- keep the old 90-degree model correction, then add vertical aim
-        local q = eulerToQuat(90 + aimPitch, yaw, 0)
-        self:SetRotation(q.w, q.x, q.y, q.z)
+            local q = quatMul(qYaw, quatMul(qTilt, qFlip))
+            self:SetRotation(q.w, q.x, q.y, q.z)
+        else
+            -- original behavior for all other knives
+            local flatLen = math.sqrt(self.dirX * self.dirX + self.dirZ * self.dirZ)
+            local aimPitch = -math.deg(atan2(self.dirY, flatLen))
+            local q = eulerToQuat(90 + aimPitch, yaw, 0)
+            self:SetRotation(q.w, q.x, q.y, q.z)
+        end
 
         self.active = true
         self.age = 0
