@@ -78,14 +78,14 @@
     ],
     "states": [
         {
-            "id": "Hooked",
-            "clipIndex": 6,
+            "id": "Hurt1",
+            "clipIndex": 4,
             "loop": false,
-            "speed": 1.0,
+            "speed": 2.499999761581421,
             "crossfadeDuration": 0.0,
             "nodePosition": {
-                "x": 428.5,
-                "y": 75.0
+                "x": 279.0,
+                "y": -25.5
             }
         },
         {
@@ -100,14 +100,14 @@
             }
         },
         {
-            "id": "Hurt1",
-            "clipIndex": 4,
+            "id": "Hooked",
+            "clipIndex": 6,
             "loop": false,
-            "speed": 2.499999761581421,
+            "speed": 1.0,
             "crossfadeDuration": 0.0,
             "nodePosition": {
-                "x": 279.0,
-                "y": -25.5
+                "x": 428.5,
+                "y": 75.0
             }
         },
         {
@@ -122,17 +122,6 @@
             }
         },
         {
-            "id": "Melee Attack",
-            "clipIndex": 1,
-            "loop": true,
-            "speed": 1.2000000476837158,
-            "crossfadeDuration": 0.0,
-            "nodePosition": {
-                "x": 438.5,
-                "y": -546.0
-            }
-        },
-        {
             "id": "Hurt3",
             "clipIndex": 6,
             "loop": false,
@@ -141,6 +130,17 @@
             "nodePosition": {
                 "x": 645.9998168945313,
                 "y": -123.99993896484375
+            }
+        },
+        {
+            "id": "Melee Attack",
+            "clipIndex": 1,
+            "loop": true,
+            "speed": 1.2000000476837158,
+            "crossfadeDuration": 0.0,
+            "nodePosition": {
+                "x": 438.5,
+                "y": -546.0
             }
         },
         {
@@ -565,6 +565,11 @@
                     "paramName": "Hurt3",
                     "mode": "Equals",
                     "threshold": 0.0
+                },
+                {
+                    "paramName": "Melee",
+                    "mode": "Equals",
+                    "threshold": 1.0
                 }
             ]
         },
@@ -630,6 +635,11 @@
                     "paramName": "Hurt2",
                     "mode": "Equals",
                     "threshold": 0.0
+                },
+                {
+                    "paramName": "Melee",
+                    "mode": "Equals",
+                    "threshold": 1.0
                 }
             ]
         },
@@ -660,6 +670,11 @@
                     "paramName": "Hurt1",
                     "mode": "Equals",
                     "threshold": 0.0
+                },
+                {
+                    "paramName": "Melee",
+                    "mode": "Equals",
+                    "threshold": 1.0
                 }
             ]
         },

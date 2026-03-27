@@ -301,9 +301,9 @@ return Component {
             print("[PlayerMovement] ERROR: Animator is nil!")
         end
 
-        self._animator:SetBool("PatrolEnabled", EnablePatrol)
-        self._animator:SetBool("Passive", IsPassive)
-        self._animator:SetBool("Melee", IsMelee)
+        self._animator:SetBool("PatrolEnabled", self.EnablePatrol)
+        self._animator:SetBool("Passive", self.IsPassive)
+        self._animator:SetBool("Melee", self.IsMelee)
         self._animator:SetBool("Flying", self:IsFlying())
 
         if not self:IsFlying() then
@@ -348,6 +348,8 @@ return Component {
         self._isKnockedUp = false
         self._knockupVY = 0
         self._knockupGravity = -4.5
+        self._knockupRecoverT = 0
+        self._knockupJustLanded = false
 
         -- Capture authored scale once so the effect always springs back to the
         -- editor-set proportions rather than a hardcoded 1,1,1.
@@ -680,28 +682,45 @@ return Component {
 
                 self:_squashTrigger("vertical", 0.7)
 
-                if self._animator then
-                    self._animator:SetBool("Hurt1", false)
-                    self._animator:SetBool("Hurt2", false)
-                    self._animator:SetBool("Hurt3", false)
-                end
-
                 self:ClearPath()
+                self:StopCC()
+
+                -- IMPORTANT: clear stale attack intent again on landing
+                self:_ResetCombatAnimatorParams()
+
+                -- landing hurt
+                self:_PlayRandomHurtAnim()
+
+                -- hold briefly on landing
+                self._knockupRecoverT = 0.35
+                self._knockupJustLanded = true
+
+                -- keep logic in Hurt during landing recovery
                 self.fsm:ForceChange("Hurt", self.states.Hurt)
             else
                 self:SetPosition(x, self._knockupY, z)
             end
         end
 
-        if self._isKnockedUp then
-            -- hard override: no AI, no chase, no attacks while airborne
+        if self._knockupRecoverT and self._knockupRecoverT > 0 then
+            self._knockupRecoverT = math.max(0, self._knockupRecoverT - dtSec)
             self:ClearPath()
+            self:StopCC()
+
+            if self._knockupRecoverT <= 0 then
+                self:_ResetCombatAnimatorParams()
+                self:ClearPath()
+                self:StopCC()
+                self.fsm:ForceChange("Idle", self.states.Idle)
+                self._knockupJustLanded = false
+            end
+        elseif self._isKnockedUp then
+            self:ClearPath()
+            self:StopCC()
         else
             if not self.fsm.current or not self.fsm.currentName then
                 self.fsm:ForceChange("Idle", self.states.Idle)
             end
-
-            -- FSM drives behaviour (may call MoveCC)
             self.fsm:Update(dtSec)
         end
 
@@ -834,6 +853,50 @@ return Component {
             pcall(function() self._rb.linearVel = { x=0, y=0, z=0 } end)
             pcall(function() self._rb.impulseApplied = { x=0, y=0, z=0 } end)
         end
+    end,
+
+    _PlayRandomHurtAnim = function(self)
+        if not self._animator then return end
+
+        -- clear first so we never stack stale bools
+        self._animator:SetBool("Hurt1", false)
+        self._animator:SetBool("Hurt2", false)
+        self._animator:SetBool("Hurt3", false)
+
+        local r = math.random(1, 3)
+        if r == 1 then
+            self._animator:SetBool("Hurt1", true)
+        elseif r == 2 then
+            self._animator:SetBool("Hurt2", true)
+        else
+            self._animator:SetBool("Hurt3", true)
+        end
+    end,
+
+    _ClearHurtAnims = function(self)
+        if not self._animator then return end
+        self._animator:SetBool("Hurt1", false)
+        self._animator:SetBool("Hurt2", false)
+        self._animator:SetBool("Hurt3", false)
+    end,
+
+    _ResetCombatAnimatorParams = function(self)
+        if not self._animator then return end
+
+        -- generic combat bools
+        self._animator:SetBool("PlayerInAttackRange", false)
+        self._animator:SetBool("PlayerInDetectionRange", false)
+        self._animator:SetBool("ReadyToAttack", false)
+
+        -- clear hurt bools too; we will re-apply the one we want explicitly
+        self._animator:SetBool("Hurt1", false)
+        self._animator:SetBool("Hurt2", false)
+        self._animator:SetBool("Hurt3", false)
+
+        -- if your animator supports triggers, clear the common ones used by ground enemies
+        pcall(function() self._animator:ResetTrigger("Melee") end)
+        pcall(function() self._animator:ResetTrigger("Ranged") end)
+        pcall(function() self._animator:ResetTrigger("Hooked") end)
     end,
 
     GetRanges = function(self)
@@ -1718,13 +1781,28 @@ return Component {
         if self._isJuggled then return end
         if self._isKnockedUp then return end
 
-        -- cancel old knockback so it does not resume later
+        -- cancel existing knockback
         self._kbT = 0
         self._kbVX, self._kbVZ = 0, 0
 
-        -- stop any ground/path logic immediately
+        -- clear path / stop ground movement
         self:ClearPath()
         self:StopCC()
+
+        -- IMPORTANT: hard reset combat intent before going airborne
+        self:_ResetCombatAnimatorParams()
+
+        -- reset any simple attack timers/flags that may resume later
+        self.attackTimer = 0
+        self._skipFirstCooldown = false
+        self._hasAttackedBefore = false
+
+        -- freeze FSM behaviour while airborne / landing
+        self._knockupRecoverT = 0
+        self._knockupJustLanded = false
+
+        -- put FSM in a neutral logic state immediately
+        self.fsm:ForceChange("Idle", self.states.Idle)
 
         self:RemoveCharacterController()
 
@@ -1741,20 +1819,7 @@ return Component {
         self._knockupY = y or 0
         self._knockupGroundY = y or 0
 
-        if self._animator then
-            self._animator:SetBool("PlayerInAttackRange", false)
-            self._animator:SetBool("PlayerInDetectionRange", false)
-            self._animator:SetBool("ReadyToAttack", false)
-
-            local myRandomValue = math.random(1, 3)
-            if myRandomValue == 1 then
-                self._animator:SetBool("Hurt1", true)
-            elseif myRandomValue == 2 then
-                self._animator:SetBool("Hurt2", true)
-            else
-                self._animator:SetBool("Hurt3", true)
-            end
-        end
+        self:_PlayRandomHurtAnim()
     end,
 
     ApplyHit = function(self, dmg, hitType, knockback)
