@@ -118,9 +118,9 @@ return Component {
                         -- If the ray hit something before it reaches the player
                         if hitEntityId >= 0 then
                             -- And if the other root entity isn't the player or enemy
-                            local rootId = self:_toRoot(otherEntityId)
+                            local rootId = self:_toRoot(hitEntityId)
                             local tagComp = GetComponent(rootId, "TagComponent")
-                            if tagComp and (Tag.Compare(tagComp.tagIndex, "Enemy") or Tag.Compare(tagComp.tagIndex, "Player")) then
+                            if tagComp and not (Tag.Compare(tagComp.tagIndex, "Enemy") or Tag.Compare(tagComp.tagIndex, "Player")) then
                                 -- It means the feather is trapped in some geometry OR fallen off the map.
                                 -- Trigger the auto collection.
                                 self:TryCollect(playerId)

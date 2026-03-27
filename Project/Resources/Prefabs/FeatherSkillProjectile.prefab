@@ -2,7 +2,7 @@
     "prefab_entities": [
         {
             "id": 0,
-            "guid": "0042d14e0e6573b9-000476461e038553",
+            "guid": "005012a9e1799227-0004a37db0022b57",
             "components": {
                 "PrefabLinkComponent": {
                     "type": "PrefabLinkComponent",
@@ -319,7 +319,7 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "0042d14e6eb81542-000476461e038555"
+                                "005012a9d594d304-0004a37db0022b59"
                             ]
                         }
                     ]
@@ -609,16 +609,16 @@
                                 },
                                 "_subscriptions": {},
                                 "ProjectileSpeed": 5.0,
-                                "ColliderDisabledDuration": 0.7,
+                                "PlayerEntityName": "Player",
                                 "SpawnRemnantOffset": 1.0,
                                 "_private": {},
                                 "FeatherRemnantPrefabPath": "Resources/Prefabs/FeatherSkillProjectileRemnant.prefab",
                                 "__meta": {},
                                 "_transform_fetched": false,
                                 "__created_at": 1772633527.0,
-                                "RigidbodyKinematicDuration": 0.7,
+                                "ColliderDisabledDuration": 0.2,
                                 "ProjectileDamage": 1.0,
-                                "PlayerEntityName": "Player"
+                                "RigidbodyKinematicDuration": 0.2
                             }
                         }
                     ]
@@ -648,7 +648,7 @@
         },
         {
             "id": 1,
-            "guid": "0042d14e6eb81542-000476461e038555",
+            "guid": "005012a9d594d304-0004a37db0022b59",
             "components": {
                 "NameComponent": {
                     "name": "Feather"
@@ -725,7 +725,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "0042d14e0e6573b9-000476461e038553"
+                        "005012a9e1799227-0004a37db0022b57"
                     ]
                 },
                 "ActiveComponent": {

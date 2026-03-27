@@ -67,6 +67,7 @@ return Component {
         RigidbodyKinematicDuration = 1.0,
         PlayerEntityName = "Player",
         FeatherRemnantPrefabPath = "Resources/Prefabs/FeatherSkillProjectileRemnant.prefab",
+        FeatherSkillExplosionPrefabPath = "Resources/Prefabs/FeatherSkillExplosion.prefab",
         SpawnRemnantOffset = -1.0,
 
         ProjectileDamage = 5.0,
@@ -92,65 +93,65 @@ return Component {
         end
     end,
 
+    HandleCollision = function(self)
+        if self._collisionHandled then return end
+        self._collisionHandled = true
+
+        -- Spawn the feather remnant
+        local featherRemnantPrefab = Prefab.InstantiatePrefab(self.FeatherRemnantPrefabPath)
+        local parentId = Engine.GetParentEntity(self.entityId)
+        local fwdX, fwdY, fwdZ = 0, 0, -1 
+        
+        if parentId and parentId >= 0 then
+            local parentTr = GetComponent(parentId, "Transform")
+            if parentTr then
+                local pw, px, py, pz = parentTr.localRotation.w, parentTr.localRotation.x, parentTr.localRotation.y, parentTr.localRotation.z
+                -- Use the same forward calculation as the predictive part
+                fwdX = (2 * (px * pz + pw * py))
+                fwdY = (2 * (py * pz - pw * px))
+                fwdZ = (1 - 2 * (px * px + py * py))
+            end
+        end
+
+        local wPos, wRot = getWorldTransform(self.entityId)
+        local impactPos = self._raycastHitPos or wPos 
+
+        -- Set the feather remnant transform
+        local featherRemnantPrefabTr = GetComponent(featherRemnantPrefab, "Transform")            
+        if featherRemnantPrefabTr then
+            -- Spawn it slightly behind the impact point so it looks stuck in the wall
+            featherRemnantPrefabTr.localPosition.x = impactPos.x - (fwdX * self.SpawnRemnantOffset)
+            featherRemnantPrefabTr.localPosition.y = impactPos.y - (fwdY * self.SpawnRemnantOffset)
+            featherRemnantPrefabTr.localPosition.z = impactPos.z - (fwdZ * self.SpawnRemnantOffset)
+            
+            featherRemnantPrefabTr.localRotation.w = wRot.w
+            featherRemnantPrefabTr.localRotation.x = wRot.x
+            featherRemnantPrefabTr.localRotation.y = wRot.y
+            featherRemnantPrefabTr.localRotation.z = wRot.z
+
+            featherRemnantPrefabTr.isDirty = true
+        end
+
+        -- Spawn the feather skill explosion
+        local featherExplosionPrefab = Prefab.InstantiatePrefab(self.FeatherSkillExplosionPrefabPath)
+
+        -- Set the feather skill explosion transform
+        local featherExplosionTr = GetComponent(featherExplosionPrefab, "Transform")            
+        if featherExplosionTr then
+            featherExplosionTr.localPosition.x = impactPos.x
+            featherExplosionTr.localPosition.y = impactPos.y
+            featherExplosionTr.localPosition.z = impactPos.z
+            featherExplosionTr.isDirty = true
+        end
+
+        if Engine.DestroyEntity then
+            Engine.DestroyEntity(self.entityId)
+        end
+    end,
+
     Update = function(self, dt)
-        -- ==========================================
-        -- DEFERRED COLLISION HANDLING
-        -- ==========================================
-        if self._hasCollided then
-            print("[FeatherSkillProjectileManager] Instantiating FeatherRemnant prefab")
-            local featherRemnantPrefab = Prefab.InstantiatePrefab(self.FeatherRemnantPrefabPath)
-            print("[FeatherSkillProjectileManager] Instantiated FeatherRemnant prefab")
-
-            local parentId = Engine.GetParentEntity(self.entityId)
-            local fwdX, fwdY, fwdZ = 0, 0, -1 
-            
-            if parentId and parentId >= 0 then
-                local parentTr = GetComponent(parentId, "Transform")
-                if parentTr then
-                    local pw, px, py, pz = parentTr.localRotation.w, parentTr.localRotation.x, parentTr.localRotation.y, parentTr.localRotation.z
-                    
-                    fwdX = -(2 * (px * pz + pw * py))
-                    fwdY = -(2 * (py * pz - pw * px))
-                    fwdZ = -(1 - 2 * (px * px + py * py))
-                end
-            end
-
-            local wPos, wRot = getWorldTransform(self.entityId)
-            local impactPos = self._raycastHitPos or wPos 
-            print(string.format("[FeatherSkillProjectile] Impact point: %f %f %f", impactPos.x, impactPos.y, impactPos.z))
-
-            local featherRemnantPrefabTr = GetComponent(featherRemnantPrefab, "Transform")
-            
-            if featherRemnantPrefabTr then
-                featherRemnantPrefabTr.localPosition.x = impactPos.x + (fwdX * self.SpawnRemnantOffset)
-                featherRemnantPrefabTr.localPosition.y = impactPos.y + (fwdY * self.SpawnRemnantOffset)
-                featherRemnantPrefabTr.localPosition.z = impactPos.z + (fwdZ * self.SpawnRemnantOffset)
-                
-                featherRemnantPrefabTr.localRotation.w = wRot.w
-                featherRemnantPrefabTr.localRotation.x = wRot.x
-                featherRemnantPrefabTr.localRotation.y = wRot.y
-                featherRemnantPrefabTr.localRotation.z = wRot.z
-
-                featherRemnantPrefabTr.isDirty = true
-            end
-
-            if self._hitRootEntityId then
-                local rootEntityTag = Engine.GetEntityTag(self._hitRootEntityId)
-                if rootEntityTag and Tag and Tag.CompareNames and (Tag.CompareNames(rootEntityTag, "Enemy") or Tag.CompareNames(rootEntityTag, "Boss")) then
-                    if event_bus and event_bus.publish then 
-                        event_bus.publish("deal_damage_to_entity", {
-                            entityId = self._hitRootEntityId,
-                            damage   = self.ProjectileDamage,
-                            hitType   = "FEATHER",
-                        }) 
-                    end
-                end
-            end
-
-            if Engine.DestroyEntity then
-                Engine.DestroyEntity(self.entityId)
-            end
-            
+        if self._hasCollided or self._collisionHandled then
+            self:HandleCollision()
             return
         end
 
@@ -175,36 +176,28 @@ return Component {
             local wPos, _ = getWorldTransform(self.entityId)
             local moveStep = self.ProjectileSpeed * dt
 
-            -- [FIX 1] Pull the raycast origin 0.5 meters BEHIND the feather! 
-            -- This guarantees the raycast will not start "inside" the wall if the framerate drops.
-            --local startOffset = -0.5 
-            local rayOriginX = wPos.x
-            local rayOriginY = wPos.y
-            local rayOriginZ = wPos.z
+            -- [FIX] Pull the raycast origin 1.0 meters BEHIND the feather! 
+            -- This guarantees the raycast will not start "inside" the wall if the framerate drops
+            -- or if the projectile is already slightly clipping.
+            local startOffset = 1.0 
+            local rayOriginX = wPos.x - (fwdX * startOffset)
+            local rayOriginY = wPos.y - (fwdY * startOffset)
+            local rayOriginZ = wPos.z - (fwdZ * startOffset)
 
-            -- [FIX 2] Make the raycast longer to cover the pull-back offset + movement
-            local raycastDist = moveStep
+            -- [FIX] Make the raycast longer to cover the pull-back offset + movement
+            local raycastDist = startOffset + moveStep + 0.1 -- Small buffer
 
             local res1, res2 = Physics.RaycastGetEntity(rayOriginX, rayOriginY, rayOriginZ, fwdX, fwdY, fwdZ, raycastDist)
             local hitDist, hitEntityId = -1.0, -1
-
-            -- print(string.format("[FeatherSkillProjectile] Ray origin: %f %f %f", rayOriginX, rayOriginY, rayOriginZ))
-            -- print(string.format("[FeatherSkillProjectile] Ray forward: %f %f %f", fwdX, fwdY, fwdZ))
-            -- print(string.format("[FeatherSkillProjectile] Raycast dist: %f", raycastDist))
             
             if type(res1) == "table" or type(res1) == "userdata" then
-                -- If it's a struct, it uses .distance. If it's a tuple, it uses [1]
                 hitDist = res1.distance or res1[1] or -1.0
                 hitEntityId = res1.entityId or res1[2] or -1
             else
-                -- If it successfully unpacked into two separate variables
                 hitDist = res1 or -1.0
                 hitEntityId = res2 or -1
             end
 
-            -- Print the safely extracted variables! (This prevents the string.format nil crash)
-            --print(string.format("[FeatherSkillProjectile] Raycasthit dist: %f Raycasthit entity: %d", hitDist, hitEntityId))
-            
             if hitDist >= 0.0 then
                 local isValidHit = true
                 local otherRootId = nil
@@ -226,14 +219,15 @@ return Component {
                     self._hasCollided = true
                     self._hitRootEntityId = otherRootId 
                     
-                    -- Add the distance properly to calculate exact impact point from our new backward offset
                     self._raycastHitPos = {
                         x = rayOriginX + (fwdX * hitDist),
                         y = rayOriginY + (fwdY * hitDist),
                         z = rayOriginZ + (fwdZ * hitDist)
                     }
 
-                    --print(string.format("[FeatherSkillProjectile] RaycasthitPos: %f %f %f", self._raycastHitPos.x, self._raycastHitPos.y, self._raycastHitPos.z))
+                    -- [FIX] Handle collision IMMEDIATELY to prevent clipping through during the "extra frame"
+                    self:HandleCollision()
+                    return
                 end
             end
         end
@@ -276,7 +270,7 @@ return Component {
     end,
 
     OnTriggerEnter = function(self, otherEntityId)
-        if self._hasCollided then return end
+        if self._hasCollided or self._collisionHandled then return end
 
         local otherEntityRb = GetComponent(otherEntityId, "RigidBodyComponent")
         if otherEntityRb and otherEntityRb.isTrigger then return end
@@ -289,5 +283,7 @@ return Component {
 
         self._hasCollided = true
         self._hitRootEntityId = otherRootEntityId
+        
+        self:HandleCollision()
     end,
 }
