@@ -524,6 +524,17 @@ return Component {
         -- Block all combo input near interactable (tooltip active)
         if _G.playerNearInteractable then return end
 
+        -- Before weapon pickup, only dash is available; skip all combat logic
+        if not _G.playerHasWeapon then
+            if input:HasBufferedDash() and not _G.player_is_dashing then
+                input:ConsumeBufferedDash()
+                if event_bus then
+                    event_bus.publish("dash_performed", {})
+                end
+            end
+            return
+        end
+
         -- When attacks are disabled, drain stale buffers, force idle if mid-combo,
         -- and skip the state machine entirely. Chain weapon events (published above)
         -- and player movement are unaffected.
