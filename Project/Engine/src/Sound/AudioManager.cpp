@@ -265,9 +265,9 @@ ChannelHandle AudioManager::PlayAudioAtPosition(std::shared_ptr<Audio> audioAsse
 
     FMOD_Channel_SetUserData(channel, reinterpret_cast<void*>(static_cast<uintptr_t>(chId)));
 
-    ENGINE_PRINT(EngineLogging::LogLevel::Info, 
-        "[AudioManager] Playing 3D audio at (", position.x, ",", position.y, ",", position.z, 
-        ") with spatial blend:", attenuation, "\n");
+    // ENGINE_PRINT(EngineLogging::LogLevel::Info, 
+    //     "[AudioManager] Playing 3D audio at (", position.x, ",", position.y, ",", position.z, 
+    //     ") with spatial blend:", attenuation, "\n");
 
     return chId;
 }

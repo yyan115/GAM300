@@ -67,11 +67,11 @@
                             "data": [
                                 {
                                     "type": "float",
-                                    "data": -3.19995e-8
+                                    "data": -3.19995e-08
                                 },
                                 {
                                     "type": "float",
-                                    "data": -0.00000210232
+                                    "data": -2.10232e-06
                                 },
                                 {
                                     "type": "float",
@@ -156,9 +156,6 @@
                                 "OnDisable": null,
                                 "NumFeathersToSpawn": 10.0,
                                 "WindupDuration": 0.05,
-                                "FeatherSkillReleaseSFX": [
-                                    "0078994faedff0b5-00047bfe4c00000f"
-                                ],
                                 "SkillSizeFactor": 3.0,
                                 "SkillLightCastedDiffuseB": 0.0,
                                 "_call_lifecycle": null,

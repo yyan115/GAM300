@@ -113,7 +113,6 @@ return Component {
         SkillLightCastedDiffuseG = 0,
         SkillLightCastedDiffuseB = 0,
 
-        FeatherSkillReleaseSFX = {},
     },
 
     Awake = function(self)
@@ -128,12 +127,6 @@ return Component {
 
     Start = function(self)
         local transform = self:GetComponent("Transform")
-        local playerEntity = Engine.GetEntityByName("Player")
-        if playerEntity then
-            self._playeraudio = GetComponent(playerEntity, "AudioComponent")
-            print("[FeatherSkillManager] Cached player audio component: " .. tostring(self._playeraudio))
-        end
-
         if not transform then return end
         
         self._lockedCamX     = _G.CAMERA_POS_X or 0.0
@@ -388,11 +381,8 @@ return Component {
             if self._windupTimer <= 0.0 then
                 self._state = 3
 
-                if self._playeraudio and self.FeatherSkillReleaseSFX and self.FeatherSkillReleaseSFX[1] then
-                    print("[FeatherSkillManager] Playing feather blast release SFX: " .. tostring(self.FeatherSkillReleaseSFX[1]))
-                    self._playeraudio:PlayOneShot(self.FeatherSkillReleaseSFX[1])
-                else
-                    print("[FeatherSkillManager] ERROR: _playeraudio=" .. tostring(self._playeraudio) .. " FeatherSkillReleaseSFX[1]=" .. tostring(self.FeatherSkillReleaseSFX and self.FeatherSkillReleaseSFX[1]))
+                if event_bus and event_bus.publish then
+                    event_bus.publish("feather_skill_release", {})
                 end
             end
 

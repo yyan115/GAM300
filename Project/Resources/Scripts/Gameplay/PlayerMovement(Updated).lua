@@ -54,6 +54,10 @@ EVENTS PUBLISHED:
     player_position                     → world position each frame
     playerRespawned                     → respawn complete; carries spawn position
     vault_jump                          → confirmed vault jump executed
+    player_jumped                       → consumed by PlayerAudio for jump SFX
+    player_landed                       → consumed by PlayerAudio for land SFX
+    player_dashed                       → consumed by PlayerAudio for dash SFX
+    player_footstep                     → consumed by PlayerAudio for footstep SFX
 
 -- TO ADD new events: subscribe in Awake under the appropriate section header,
 -- unsubscribe in OnDisable, and document the event name + payload above.
@@ -68,7 +72,6 @@ _G.CHAIN_DEBUG = _G.CHAIN_DEBUG ~= nil and _G.CHAIN_DEBUG or false
 local function dbg(...) if _G.CHAIN_DEBUG then print(...) end end
 local Component      = require("extension.mono_helper")
 local TransformMixin = require("extension.transform_mixin")
-local AudioHelper    = require("extension.audio_helper")
 
 local event_bus = _G.event_bus
 
@@ -218,15 +221,6 @@ return Component {
         footstepInterval    = 0.30,   -- Seconds between footstep SFX triggers while running.
         -- TO ADD new feel tuning: add field here.
 
-        -- === Audio ===
-        -- Populate with clip GUIDs in the editor. Each accepts a list for random selection.
-        -- TO ADD new SFX: add a field here and call PlayRandomSFX in the relevant Update section.
-        playerFootstepSFX = {},
-        playerHurtSFX     = {},
-        playerJumpSFX     = {},
-        playerLandSFX     = {},
-        playerDeadSFX     = {},
-        playerDashSFX     = {},
     },
 
     -- ==========================================================================
@@ -297,7 +291,6 @@ return Component {
         sub(self, "_playerDeadSub", "playerDead", function(playerDead)
             if playerDead then
                 self._playerDeadPending = playerDead
-                AudioHelper.PlayRandomSFX(self._audio, self.playerDeadSFX)
             end
         end)
 
@@ -305,7 +298,6 @@ return Component {
             if hit then
                 self._isDamageStun = true
                 if self._animator then self._animator:SetBool("IsJumping", false) end
-                AudioHelper.PlayRandomSFX(self._audio, self.playerHurtSFX)
                 -- Hit reaction: horizontal squash (pushed-sideways feel)
                 self:_squashTrigger("horizontal", 0.5)
             end
@@ -534,7 +526,6 @@ return Component {
         self._collider  = self:GetComponent("ColliderComponent")
         self._animator  = self:GetComponent("AnimationComponent")
         self._transform = self:GetComponent("Transform")
-        self._audio     = self:GetComponent("AudioComponent")
         self._rigidbody = self:GetComponent("RigidBodyComponent")
 
         dbg("transform y: ", self._transform.localPosition.y)
@@ -1168,7 +1159,7 @@ return Component {
             end
             if not earlyCancel then self._animator:SetBool("IsDashing", true) end
             self._animator:SetTrigger("Dash")
-            AudioHelper.PlayRandomSFX(self._audio, self.playerDashSFX)
+            if event_bus and event_bus.publish then event_bus.publish("player_dashed", {}) end
 
         elseif self._dashRequested and self._isDashing then
             -- Inside dash, before early-cancel window. Hold the request.
@@ -1352,11 +1343,7 @@ return Component {
             CharacterController.Jump(self._controller, jumpH)
             isJumping = true
             self._animator:SetBool("IsJumping", true)
-            --put here for now, don't remove comment block
-            --if not isLiftAttack then
-            --    PlayRandomSFX(self._audio, self.playerJumpSFX)
-            --end
-            AudioHelper.PlayRandomSFX(self._audio, self.playerJumpSFX)
+            if event_bus and event_bus.publish then event_bus.publish("player_jumped", {}) end
             local launchPos = CharacterController.GetPosition(self._controller)
             self._peakAirY  = launchPos and launchPos.y or 0
 
@@ -1625,7 +1612,7 @@ return Component {
                 self._animator:SetBool("IsJumping", false)
 
                 self:_squashTrigger("vertical", intensity)
-                AudioHelper.PlayRandomSFX(self._audio, self.playerLandSFX)
+                if event_bus and event_bus.publish then event_bus.publish("player_landed", {}) end
 
             elseif isEffectivelyMoving and not self._isRunning then
                 self._animator:SetBool("IsRunning", true)
@@ -1643,12 +1630,12 @@ return Component {
         -- ── 23. Footsteps ─────────────────────────────────────────────────────
         if self._isRunning and isGrounded and not self._isLanding then
             if not self._wasRunning then
-                AudioHelper.PlayRandomSFX(self._audio, self.playerFootstepSFX, 0.5)
+                if event_bus and event_bus.publish then event_bus.publish("player_footstep", {}) end
                 self._footstepTimer = 0
             end
             self._footstepTimer = self._footstepTimer + dt
             if self._footstepTimer >= (self.footstepInterval or 0.35) then
-                AudioHelper.PlayRandomSFX(self._audio, self.playerFootstepSFX, 0.5)
+                if event_bus and event_bus.publish then event_bus.publish("player_footstep", {}) end
                 self._footstepTimer = 0
             end
         else

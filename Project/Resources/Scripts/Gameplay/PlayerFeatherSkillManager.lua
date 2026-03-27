@@ -34,7 +34,6 @@ return Component {
         SpawnHeightOffset = 0.6,   
         SpawnForwardOffset = 0.2, 
 
-        FeatherSkillStartSFX = {},
     },
 
     Awake = function(self)
@@ -92,9 +91,8 @@ return Component {
                         animator:SetTrigger("FeatherSkill")
                     end
 
-                    local audio = self:GetComponent("AudioComponent")
-                    if audio and self.FeatherSkillStartSFX[1] then
-                        audio:PlayOneShot(self.FeatherSkillStartSFX[1])
+                    if event_bus and event_bus.publish then
+                        event_bus.publish("feather_skill_start", {})
                     end
 
                     local featherSkillPrefab = Prefab.InstantiatePrefab(self.FeatherSkillPrefabPath)
