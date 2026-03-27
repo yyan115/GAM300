@@ -62,6 +62,7 @@ return Component {
         WallClamp = true,
         WallClampInterval = 10,
         WallClampRadius = 0,
+        ColliderInterval = 5,       -- Enable BoxCollider+Rigidbody every Nth link (0 = feature disabled)
         ChainSlackDistance = 1.0,   -- extra metres player can move past chainLen before chain flops
         DragTag = "HeavyEnemy",     -- entity tag that drags the player instead of flopping
         UseLOSAnchors = true,       -- when true: anchors auto-created wherever geometry breaks LOS
@@ -514,6 +515,11 @@ return Component {
 
         self.linkHandler = LinkHandlerModule.New(self)
         self.linkHandler:InitTransforms(self._runtime.childTransforms)
+        
+        -- Collider enable/disable is handled by ChainLinkCollider scripts on each
+        -- link entity via the chain.collider_state bus message published each frame.
+        self._lastColliderActiveN    = nil
+        self._lastColliderShouldLive = nil
 
         local params = {
             NumberOfLinks = self.NumberOfLinks,
@@ -1087,6 +1093,28 @@ return Component {
         local positions, startPos, endPos = self.controller:Update(dt, settings)
         PROFILE_SCOPED_END() -- CB::ControllerUpdate
         local activeN = self.controller.activeN
+
+        -- Sync kinematic collider states only when activeN or the live-gate changes.
+        -- shouldLive is true only when the chain is idle and extended (attached or flopping):
+        --   OFF while extending  — Verlet is moving links fast, no point colliding
+        --   OFF while retracting — same reason, and links are heading back to start
+        --   OFF when retracted   — chain is at rest with activeN=0
+        --   ON  when attached/flopping/snapped+idle — chain is stable, collisions meaningful
+        local ctrl = self.controller
+        local shouldLive = (not ctrl.isExtending) and (not ctrl.isRetracting)
+                        and ((ctrl.chainLen or 0) > 1e-4)
+                        and (ctrl.endPointLocked or ctrl._raycastSnapped or ctrl._flopping)
+        if activeN ~= self._lastColliderActiveN or shouldLive ~= self._lastColliderShouldLive then
+            if _G.event_bus and _G.event_bus.publish then
+                _G.event_bus.publish("chain.collider_state", {
+                    activeN          = activeN,
+                    shouldLive       = shouldLive,
+                    colliderInterval = tonumber(self.ColliderInterval) or 5,
+                })
+            end
+            self._lastColliderActiveN    = activeN
+            self._lastColliderShouldLive = shouldLive
+        end
 
         -- Publish chain extended state change so other scripts (ComboManager)
         -- can react without relying on a global that may be one frame stale.

@@ -8,6 +8,7 @@
         "Player",
         "GameController",
         "Enemy",
+        "Boss",
         "NPC",
         "Collectible",
         "DialogueText",
@@ -18,7 +19,8 @@
         "LockOn",
         "Throwable",
         "Vfx",
-        "NoCameraCollision"
+        "NoCameraCollision",
+        "Chain"
     ],
     "layers": [
         {

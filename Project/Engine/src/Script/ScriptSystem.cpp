@@ -386,6 +386,17 @@ static void Lua_CreateEntityDup(const std::string& source_name, const std::strin
                 ecs.AddComponent<ColliderComponent>(newEntity, sourceCollider);
             }
 
+            // Copy ScriptComponent
+            if (ecs.HasComponent<ScriptComponentData>(sourceEntity)) {
+                ScriptComponentData sourceScript = ecs.GetComponent<ScriptComponentData>(sourceEntity);
+                // Reset runtime state — new entity needs fresh Lua instances
+                for (auto& script : sourceScript.scripts) {
+                    script.instanceCreated = false;
+                    script.instanceId = -1;
+                }
+                ecs.AddComponent<ScriptComponentData>(newEntity, sourceScript);
+            }
+
             ENGINE_PRINT(EngineLogging::LogLevel::Debug, "[ScriptSystem] Successfully created duplicate '" + newName + "'");
         }
         catch (const std::exception& e) {
