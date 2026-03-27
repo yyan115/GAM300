@@ -1447,6 +1447,9 @@ return Component {
             return
         end
 
+        -- Interrupt current attack/cast so delayed hitboxes/projectiles do not fire
+        self:_CancelCurrentAttackMove("HURT")
+
         -- 1) Always queue a short “hurt reaction window”
         self:EnqueueMoveFront("HurtReact", { duration = self.HurtReactDuration or 0.35 })
 
@@ -2088,6 +2091,31 @@ return Component {
         self._moveFinished = true
         self.currentMove = nil
         self.currentMoveDef = nil
+    end,
+
+    _CancelCurrentAttackMove = function(self, reason)
+        if self._moveFinished or not self._move then return end
+
+        local kind = self._move.kind
+        if not kind then return end
+
+        -- Only cancel actual attack/cast moves, not passive hurt react
+        local cancelKinds = {
+            BossMelee       = true,
+            P1RangedCharged = true,
+            ShoutAOE        = true,
+            Basic           = true,
+            BurstFire       = true,
+            AntiDodge       = true,
+            FateSealed      = true,
+            DeathLotus      = true,
+        }
+
+        if cancelKinds[kind] then
+            self._move.cancelled = true
+            self._move.cancelReason = reason or "INTERRUPTED"
+            self:_EndMove()
+        end
     end,
 
     TickMove = function(self, dtSec)
