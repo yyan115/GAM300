@@ -899,6 +899,35 @@ return Component {
         pcall(function() self._animator:ResetTrigger("Hooked") end)
     end,
 
+    CancelPendingAttack = function(self, reason)
+        self._attackCancelled = true
+        self._attackCancelReason = reason or "INTERRUPTED"
+        self._attackToken = (self._attackToken or 0) + 1
+
+        -- also clear obvious combat intent so animation/state doesn't keep arming
+        self.attackTimer = 0
+        self:_ResetCombatAnimatorParams()
+        self:StopCC()
+    end,
+
+    BeginAttackWindow = function(self)
+        self._attackCancelled = false
+        self._attackCancelReason = nil
+        self._attackToken = (self._attackToken or 0) + 1
+        return self._attackToken
+    end,
+
+    IsAttackWindowValid = function(self, token)
+        if self.dead then return false end
+        if self._isKnockedUp then return false end
+        if self._knockupRecoverT and self._knockupRecoverT > 0 then return false end
+        if self._attackCancelled then return false end
+        if token ~= nil and token ~= self._attackToken then return false end
+        if self.fsm.currentName == "Hurt" then return false end
+        if self.fsm.currentName == "Hooked" then return false end
+        return true
+    end,
+
     GetRanges = function(self)
         local attackR = (self.config and self.config.AttackRange) or self.AttackRange or 3.0
         local meleeR = (self.config and self.config.MeleeRange) or self.MeleeRange or 1.2
@@ -1781,6 +1810,8 @@ return Component {
         if self._isJuggled then return end
         if self._isKnockedUp then return end
 
+        self:CancelPendingAttack("HOOKED")
+
         -- cancel existing knockback
         self._kbT = 0
         self._kbVX, self._kbVZ = 0, 0
@@ -1929,6 +1960,9 @@ return Component {
             return
         end
 
+        -- interrupt any delayed melee/ranged attack that has not fired yet
+        self:CancelPendingAttack("HURT")
+
         -- Hit reaction: horizontal squash (pushed sideways)
         self:_squashTrigger("horizontal", 0.6)
 
@@ -1999,6 +2033,8 @@ return Component {
         if duration and duration > 0 then
             self.config.HookedDuration = duration
         end
+
+        self:CancelPendingAttack("HOOKED")
 
         if self:IsFlying() then
             -- start slam instead of instant convert

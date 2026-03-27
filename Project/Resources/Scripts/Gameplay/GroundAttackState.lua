@@ -1,3 +1,4 @@
+-- Resources/Scripts/GamePlay/GroundAttackState.lua
 local AttackState = {}
 
 local function stopCC(ai)
@@ -6,7 +7,48 @@ local function stopCC(ai)
     end
 end
 
+local function interruptOut(ai)
+    stopCC(ai)
+
+    ai._animator:SetBool("ReadyToAttack", false)
+    ai._animator:SetBool("Melee", false)
+    ai._animator:SetBool("Ranged", false)
+
+    ai.meleeAnimTriggered  = false
+    ai.rangedAnimTriggered = false
+    ai._attackCommitted    = false
+    ai._attackCommitTimer  = 0
+    ai._attackRecovering   = false
+    ai._attackRecoveryT    = 0
+    ai._readyLatched       = false
+    ai._readySettleT       = 0
+
+    local attackR, meleeR, diseng = ai:GetRanges()
+    local d2 = ai:GetPlayerDistanceSq()
+
+    if d2 > (diseng * diseng) then
+        ai.fsm:Change("Patrol", ai.states.Patrol)
+        return
+    end
+
+    if ai.IsMelee then
+        if d2 > (meleeR * meleeR) then
+            ai.fsm:Change("Chase", ai.states.Chase)
+            return
+        end
+    else
+        if d2 > (attackR * attackR) then
+            ai.fsm:Change("Chase", ai.states.Chase)
+            return
+        end
+    end
+
+    ai.fsm:Change("Hurt", ai.states.Hurt)
+end
+
 function AttackState:Enter(ai)
+    ai._currentAttackToken = ai:BeginAttackWindow()
+
     ai._animator:SetBool("PlayerInAttackRange", true)
     ai._animator:SetBool("PlayerInDetectionRange", false)
     ai._animator:SetBool("PatrolEnabled", false)
@@ -45,6 +87,12 @@ function AttackState:Update(ai, dt)
 
     ai:FacePlayer()
     stopCC(ai)
+
+    -- interrupted by hurt / hook / knockup / invalid token
+    if not ai:IsAttackWindowValid(ai._currentAttackToken) then
+        interruptOut(ai)
+        return
+    end
 
     -- Recovery phase
     if ai._attackRecovering then
@@ -115,6 +163,12 @@ function AttackState:Update(ai, dt)
         local cd = ai.MeleeAttackCooldown or (ai.config.AttackCooldown or 1.0)
 
         if not ai.meleeAnimTriggered and (ai._skipFirstCooldown or ai.attackTimer >= ai.MeleeAnimDelay) then
+            -- interrupted during windup? do not proceed
+            if not ai:IsAttackWindowValid(ai._currentAttackToken) then
+                interruptOut(ai)
+                return
+            end
+
             if not ai._attackCommitted then
                 ai._attackCommitted   = true
                 ai._attackCommitTimer = 0
@@ -157,6 +211,12 @@ function AttackState:Update(ai, dt)
         end
 
         if ai.attackTimer >= cd then
+            -- final guard before actual damage lands
+            if not ai:IsAttackWindowValid(ai._currentAttackToken) then
+                interruptOut(ai)
+                return
+            end
+
             ai.attackTimer = 0
             ai._hasAttackedBefore = true
             ai._skipFirstCooldown = false
@@ -196,6 +256,12 @@ function AttackState:Update(ai, dt)
         ai.attackTimer = (ai.attackTimer or 0) + dtSec
 
         if not ai.rangedAnimTriggered and ai.attackTimer >= ai.RangedAnimDelay then
+            -- interrupted during windup? do not proceed
+            if not ai:IsAttackWindowValid(ai._currentAttackToken) then
+                interruptOut(ai)
+                return
+            end
+
             if not ai._attackCommitted then
                 ai._attackCommitted   = true
                 ai._attackCommitTimer = 0
@@ -217,6 +283,12 @@ function AttackState:Update(ai, dt)
         end
 
         if ai.attackTimer >= (ai.config.AttackCooldown or 3.0) then
+            -- final guard before projectile actually spawns
+            if not ai:IsAttackWindowValid(ai._currentAttackToken) then
+                interruptOut(ai)
+                return
+            end
+
             local ok = ai:SpawnKnife()
             if ok then
                 ai.attackTimer         = 0
@@ -226,10 +298,8 @@ function AttackState:Update(ai, dt)
                 ai._readyLatched       = false
                 ai._animator:SetBool("ReadyToAttack", false)
                 ai._animator:SetBool("Ranged", false)
-
-                if ai._attackCommitted and ai._attackCommitTimer >= (ai.RangedAttackDuration or 0.6) then
-                    ai._attackCommitted = false
-                end
+                ai._attackCommitted    = false
+                ai._attackCommitTimer  = 0
             else
                 ai.attackTimer = (ai.config.AttackCooldown or 3.0)
             end
@@ -239,6 +309,7 @@ end
 
 function AttackState:Exit(ai)
     stopCC(ai)
+    ai:CancelPendingAttack("EXIT_ATTACK")
 
     ai._animator:SetBool("PlayerInAttackRange", false)
     ai._animator:SetBool("ReadyToAttack", false)
