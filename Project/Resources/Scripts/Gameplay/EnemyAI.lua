@@ -291,8 +291,7 @@ return Component {
         self._featherEntities = {}
 
         if self._controller then
-            pcall(function() CharacterController.DestroyByEntity(self.entityId) end)
-            self._controller = nil
+            self:RemoveCharacterController()
         end
 
         if self._animator then
@@ -307,17 +306,8 @@ return Component {
         self._animator:SetBool("Melee", IsMelee)
         self._animator:SetBool("Flying", self:IsFlying())
 
-        if (not self:IsFlying()) and (not self._controller) and self._collider and self._transform then
-            local ok, ctrl = pcall(function()
-                return CharacterController.Create(self.entityId, self._collider, self._transform)
-            end)
-            if ok then
-                self._controller = ctrl
-                pcall(function() CharacterController.SetImmovable(self.entityId, true) end)
-            else
-                print("[EnemyAI] CharacterController.Create failed")
-                self._controller = nil
-            end
+        if not self:IsFlying() then
+            self:CreateCharacterController()
         end
 
         if self._rb then
@@ -353,6 +343,11 @@ return Component {
         self._juggleVY      = 0     -- current vertical velocity (fed to CC each frame)
         self._juggleGroundY = nil   -- cached ground Y to detect landing
         self._juggleAirTime = 0     -- seconds airborne; gates the landing check
+
+        -- Knockup system (separate from juggle)
+        self._isKnockedUp = false
+        self._knockupVY = 0
+        self._knockupGravity = -4.5
 
         -- Capture authored scale once so the effect always springs back to the
         -- editor-set proportions rather than a hardcoded 1,1,1.
@@ -478,7 +473,11 @@ return Component {
         -- When player respawns, teleport the enemy back to its initial position.
         if self._playerRespawned and self._initialPos then
             self:SetPosition(self._initialPos.x, self._initialPos.y + 1.0, self._initialPos.z)
-            CharacterController.SetPosition(self._controller, self._transform)
+            if self._controller and CharacterController.SetPosition then
+                pcall(function()
+                    CharacterController.SetPosition(self._controller, self._transform)
+                end)
+            end
             print(string.format("[EnemyAI] Teleported enemy %d to %f %f %f", self.entityId, self._initialPos.x, self._initialPos.y, self._initialPos.z))
             self.fsm:ForceChange("Idle", self.states.Idle)
 
@@ -501,6 +500,10 @@ return Component {
         end
         if Keyboard.IsDigitPressed(7) then
             self.IsPassive = not self.IsPassive
+        end
+
+        if Keyboard.IsDigitPressed(9) and not self:IsFlying() then
+            self:ApplyHit(1, "KNOCKUP", 0)
         end
 
         local dtSec = toDtSec(dt)
@@ -625,16 +628,8 @@ return Component {
 
                     -- Recreate CC.
                     if self._collider and self._transform and CharacterController and CharacterController.Create then
-                        local ok, ctrl = pcall(function()
-                            return CharacterController.Create(self.entityId, self._collider, self._transform)
-                        end)
-                        if ok and ctrl then
-                            self._controller = ctrl
-                            pcall(function() CharacterController.SetImmovable(self.entityId, true) end)
-                            pcall(function()
-                                CharacterController.SetPosition(self._controller, self._transform)
-                            end)
-                        else
+                        local ctrl = self:CreateCharacterController()
+                        if not ctrl then
                             print("[EnemyAI] Juggle land: CC recreate failed")
                         end
                     end
@@ -652,12 +647,63 @@ return Component {
             end
         end
 
-        if not self.fsm.current or not self.fsm.currentName then
-            self.fsm:ForceChange("Idle", self.states.Idle)
+        -- ── Knockup physics ─────────────────────────────
+        if self._isKnockedUp then
+            local dtSec = toDtSec(dt)
+
+            -- Move first
+            self._knockupY = self._knockupY + self._knockupVY * dtSec
+
+            -- Apply gravity
+            self._knockupVY = self._knockupVY + self._knockupGravity * dtSec
+
+            local x, _, z = self:GetPosition()
+
+            -- Landing check
+            if self._knockupY <= self._knockupGroundY then
+                self._knockupY = self._knockupGroundY
+                self._knockupVY = 0
+                self._isKnockedUp = false
+
+                self:SetPosition(x, self._knockupY, z)
+
+                if self._rb then
+                    pcall(function() self._rb.enabled = true end)
+                    pcall(function() self._rb.linearVel = { x=0, y=0, z=0 } end)
+                    pcall(function() self._rb.impulseApplied = { x=0, y=0, z=0 } end)
+                end
+
+                local ctrl = self:CreateCharacterController()
+                if not ctrl then
+                    print("[EnemyAI] Knockup land: CC recreate failed")
+                end
+
+                self:_squashTrigger("vertical", 0.7)
+
+                if self._animator then
+                    self._animator:SetBool("Hurt1", false)
+                    self._animator:SetBool("Hurt2", false)
+                    self._animator:SetBool("Hurt3", false)
+                end
+
+                self:ClearPath()
+                self.fsm:ForceChange("Hurt", self.states.Hurt)
+            else
+                self:SetPosition(x, self._knockupY, z)
+            end
         end
 
-        -- FSM drives behaviour (may call MoveCC)
-        self.fsm:Update(dtSec)
+        if self._isKnockedUp then
+            -- hard override: no AI, no chase, no attacks while airborne
+            self:ClearPath()
+        else
+            if not self.fsm.current or not self.fsm.currentName then
+                self.fsm:ForceChange("Idle", self.states.Idle)
+            end
+
+            -- FSM drives behaviour (may call MoveCC)
+            self.fsm:Update(dtSec)
+        end
 
         -- flying hook slam-down sequence
         if self:IsFlying() and self._slamActive then
@@ -735,6 +781,61 @@ return Component {
         end
     end,
 
+    SetCharacterControllerEnabled = function(self, enabled)
+        if enabled then
+            self:CreateCharacterController()
+        else
+            self:RemoveCharacterController()
+        end
+    end,
+
+    CreateCharacterController = function(self)
+        if self._controller then return self._controller end
+        if not self._collider or not self._transform then return nil end
+
+        local ok, ctrl = pcall(function()
+            return CharacterController.Create(self.entityId, self._collider, self._transform)
+        end)
+
+        if ok and ctrl then
+            self._controller = ctrl
+
+            pcall(function()
+                CharacterController.SetImmovable(self.entityId, true)
+            end)
+
+            -- IMPORTANT: sync using explicit coordinates, not transform object
+            local x, y, z = self:GetPosition()
+            if x ~= nil and CharacterController.SetPosition then
+                pcall(function()
+                    CharacterController.SetPosition(self._controller, x, y, z)
+                end)
+            end
+
+            return ctrl
+        end
+
+        print("[EnemyAI] CreateCharacterController FAILED")
+        self._controller = nil
+        return nil
+    end,
+
+    RemoveCharacterController = function(self)
+        if not self._controller then return end
+
+        pcall(function()
+            CharacterController.DestroyByEntity(self.entityId)
+        end)
+
+        self._controller = nil
+
+        -- Optional safety: kill any movement residue
+        if self._rb then
+            pcall(function() self._rb.linearVel = { x=0, y=0, z=0 } end)
+            pcall(function() self._rb.impulseApplied = { x=0, y=0, z=0 } end)
+        end
+    end,
+
     GetRanges = function(self)
         local attackR = (self.config and self.config.AttackRange) or self.AttackRange or 3.0
         local meleeR = (self.config and self.config.MeleeRange) or self.MeleeRange or 1.2
@@ -779,6 +880,7 @@ return Component {
     end,
 
     MoveCC = function(self, vx, vz, dt)
+        if self._isKnockedUp then return end
         if self:IsFlying() then
             local x,y,z = self:GetPosition()
             if x == nil then return end
@@ -1226,8 +1328,7 @@ return Component {
 
         -- destroy any leftover controller ptr (should be nil for flying, but safe)
         if self._controller then
-            pcall(function() CharacterController.DestroyByEntity(self.entityId) end)
-            self._controller = nil
+            self:RemoveCharacterController()
         end
 
         -- snap to ground (authoritative)
@@ -1240,17 +1341,9 @@ return Component {
 
         -- CREATE CC NOW (ground enemies need it)
         if self._collider and self._transform and CharacterController and CharacterController.Create then
-            local ok, ctrl = pcall(function()
-                return CharacterController.Create(self.entityId, self._collider, self._transform)
-            end)
-            if ok then
-                self._controller = ctrl
-                pcall(function() CharacterController.SetImmovable(self.entityId, true) end)
-                if CharacterController.SetPosition then
-                    pcall(function() CharacterController.SetPosition(self._controller, x, y, z) end)
-                end
-            else
-                self._controller = nil
+            self:SetPosition(x, y, z)
+            local ctrl = self:CreateCharacterController()
+            if not ctrl then
                 print("[EnemyAI] ConvertToGroundEnemy: CharacterController.Create failed")
             end
         end
@@ -1556,6 +1649,7 @@ return Component {
         -- Intentionally left empty until the lift system is revisited.
         -- _isJuggled remains false, so all downstream juggle logic (AIR, SLAM,
         -- the juggle physics block in Update) stays inert.
+        if self._isKnockedUp then return end
 
         -- Cancel existing knockback.
         self._kbT = 0
@@ -1563,8 +1657,7 @@ return Component {
 
         -- Destroy CC so Jolt CharacterVirtual stops grounding the capsule.
         if self._controller then
-            pcall(function() CharacterController.DestroyByEntity(self.entityId) end)
-            self._controller = nil
+            self:RemoveCharacterController()
         end
 
         -- Disable RigidBody so Jolt stops writing its own position back to the
@@ -1617,6 +1710,51 @@ return Component {
         self._kbVX, self._kbVZ = 0, 0
         -- Keep _juggleGroundY from the original lift — don't touch it.
         -- Keep _juggleAirTime running — don't reset it.
+    end,
+
+    ApplyKnockup = function(self, forceY)
+        if self.dead then return end
+        if self:IsFlying() then return end
+        if self._isJuggled then return end
+        if self._isKnockedUp then return end
+
+        -- cancel old knockback so it does not resume later
+        self._kbT = 0
+        self._kbVX, self._kbVZ = 0, 0
+
+        -- stop any ground/path logic immediately
+        self:ClearPath()
+        self:StopCC()
+
+        self:RemoveCharacterController()
+
+        if self._rb then
+            pcall(function() self._rb.enabled = false end)
+            pcall(function() self._rb.linearVel = { x=0, y=0, z=0 } end)
+            pcall(function() self._rb.impulseApplied = { x=0, y=0, z=0 } end)
+        end
+
+        self._isKnockedUp = true
+        self._knockupVY = forceY or 3.0
+
+        local _, y, _ = self:GetPosition()
+        self._knockupY = y or 0
+        self._knockupGroundY = y or 0
+
+        if self._animator then
+            self._animator:SetBool("PlayerInAttackRange", false)
+            self._animator:SetBool("PlayerInDetectionRange", false)
+            self._animator:SetBool("ReadyToAttack", false)
+
+            local myRandomValue = math.random(1, 3)
+            if myRandomValue == 1 then
+                self._animator:SetBool("Hurt1", true)
+            elseif myRandomValue == 2 then
+                self._animator:SetBool("Hurt2", true)
+            else
+                self._animator:SetBool("Hurt3", true)
+            end
+        end
     end,
 
     ApplyHit = function(self, dmg, hitType, knockback)
@@ -1692,6 +1830,24 @@ return Component {
                 self.fsm:Change("Death", self.states.Death)
             end
             return
+        elseif hitType == "KNOCKUP" then
+            if self:IsFlying() then
+                return
+            end
+
+            if self.health <= 0 then
+                self.health = 0
+                self:_squashTrigger("vertical", 0.5)
+                AudioHelper.PlayRandomSFX(self._audio, self.enemyDeathSFX)
+                if _G.event_bus and _G.event_bus.publish then
+                    _G.event_bus.publish("enemy_died", { entityId = self.entityId })
+                end
+                self.fsm:Change("Death", self.states.Death)
+                return
+            end
+
+            self:ApplyKnockup(3.0)
+            return
         else
             -- Ground/combo hits: XZ knockback only.
             self:ApplyKnockback(knockback or self.KnockbackStrength, self.KnockbackDuration)
@@ -1738,6 +1894,7 @@ return Component {
 
     ApplyKnockback = function(self, strength, duration)
         if self.dead then return end
+        if self._isKnockedUp then return end
 
         -- Get player position from existing cached transform
         local tr = self._playerTr
@@ -1773,6 +1930,7 @@ return Component {
 
     ApplyHook = function(self, duration)
         if self.dead then return end
+        if self._isKnockedUp then return end
         if duration and duration > 0 then
             self.config.HookedDuration = duration
         end
@@ -1881,20 +2039,7 @@ return Component {
         -- Clear pathing state so we don't resume stale movement
         pcall(function() self:ClearPath() end)
 
-        -- Best-effort: destroy controller if the API exists.
-        -- (Different engines name this differently; we probe safely.)
-        if self._controller then
-            pcall(function()
-                if CharacterController.DestroyByEntity then
-                    CharacterController.DestroyByEntity(self.entityId)
-                elseif CharacterController.Remove then
-                    CharacterController.Remove(self._controller)
-                elseif CharacterController.Release then
-                    CharacterController.Release(self._controller)
-                end
-            end)
-        end
-        self._controller = nil
+        self:RemoveCharacterController()
 
         -- Kill RB velocity (prevents kinematic leftovers)
         if self._rb then
@@ -1954,10 +2099,7 @@ return Component {
         pcall(function() self:ClearPath() end)
 
         -- full cleanup
-        if self._controller then
-            pcall(function() CharacterController.DestroyByEntity(self.entityId) end)
-            self._controller = nil
-        end
+        self:RemoveCharacterController()
 
         if _G.event_bus and _G.event_bus.unsubscribe then
             if self._damageSub then pcall(function() _G.event_bus.unsubscribe(self._damageSub) end) self._damageSub = nil end
@@ -2005,13 +2147,7 @@ return Component {
         self._freezeAI = true
         self.dead = true
 
-        -- Kill controller safely (prevents pointer crash later)
-        if self._controller then
-            pcall(function()
-                CharacterController.DestroyByEntity(self.entityId)
-            end)
-            self._controller = nil
-        end
+        self:RemoveCharacterController()
 
         -- Unsubscribe events (reuse your existing cleanup if you want)
         if _G.event_bus and _G.event_bus.unsubscribe then
@@ -2043,12 +2179,7 @@ return Component {
     OnDestroy = function(self)
         -- Prevent "0xDDDDDDDD" shape pointer crashes on subsequent plays:
         -- Lua must stop calling Update/GetPosition on an old controller pointer.
-        if self._controller then
-            pcall(function()
-                CharacterController.DestroyByEntity(self.entityId)
-            end)
-            self._controller = nil
-        end
+        self:RemoveCharacterController()
         if _G.event_bus and _G.event_bus.unsubscribe then
             if self._damageSub then
                 pcall(function()
