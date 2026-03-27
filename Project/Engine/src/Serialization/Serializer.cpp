@@ -3003,6 +3003,9 @@ void Serializer::DeserializeSpriteComponent(SpriteRenderComponent& spriteComp, c
                     if (d.Size() > static_cast<rapidjson::SizeType>(startIdx + 17)) {
                         spriteComp.fillBackground = Serializer::GetFloat(d, startIdx + 17, 0.3f);
                     }
+                    if (d.Size() > static_cast<rapidjson::SizeType>(startIdx + 18)) {
+                        spriteComp.includePostProcess = Serializer::GetBool(d, startIdx + 18, false);
+                    }
                 }
                 else {
                     // Old format - this is saved3DPosition
@@ -3487,8 +3490,16 @@ void Serializer::DeserializeColliderComponent(ColliderComponent& colliderComp, c
         colliderComp.capsuleHalfHeight = Serializer::GetFloat(d, 7);
         colliderComp.cylinderRadius = Serializer::GetFloat(d, 8);
         colliderComp.cylinderHalfHeight = Serializer::GetFloat(d, 9);
-        colliderComp.center = Serializer::GetVector3D(d, 10);
-        if (d.Size() > 11) colliderComp.shapeRotation = Serializer::GetVector3D(d, 11);
+        if (d.Size() > 12) {
+            // New format: mass at index 10, center at 11, shapeRotation at 12
+            colliderComp.mass = Serializer::GetFloat(d, 10);
+            colliderComp.center = Serializer::GetVector3D(d, 11);
+            colliderComp.shapeRotation = Serializer::GetVector3D(d, 12);
+        } else {
+            // Old format: no mass field, center at 10, shapeRotation at 11
+            colliderComp.center = Serializer::GetVector3D(d, 10);
+            if (d.Size() > 11) colliderComp.shapeRotation = Serializer::GetVector3D(d, 11);
+        }
     }
 }
 

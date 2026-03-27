@@ -524,6 +524,26 @@ namespace CharacterControllerWrappers {
             return controller->IsJuggling();
         return false;
     }
+
+    inline void SetMass(CharacterController* controller, float mass)
+    {
+        if (controller)
+            controller->SetMass(mass);
+    }
+
+    inline float GetMass(CharacterController* controller)
+    {
+        if (controller)
+            return controller->GetMass();
+        return 0.0f;
+    }
+
+    inline void SetImmovable(Entity id, bool immovable)
+    {
+        auto& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
+        if (ecsManager.characterControllerSystem)
+            ecsManager.characterControllerSystem->SetImmovable(id, immovable);
+    }
 }
 
 // ============================================================================

@@ -54,6 +54,12 @@ function M.updateMouseLook(self, dt)
                 self.minPitch or -80.0,
                 self.maxPitch or 80.0
             )
+
+            -- Flag that the player is manually aiming so aim assist backs off
+            local mag = math.sqrt(xoffset * xoffset + yoffset * yoffset)
+            if mag > (self.chainAimManualThreshold or 0.3) then
+                self._chainAimManualTimer = self.chainAimManualCooldown or 0.4
+            end
         end
 
         -- Track normal (non-action) pitch for smooth transitions
