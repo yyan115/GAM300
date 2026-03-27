@@ -1987,7 +1987,7 @@ return Component {
         -- actual entity destruction
         if _G.Engine and _G.Engine.DestroyEntityDup then
             local ok, err = pcall(function()
-                _G.Engine.DestroyEntity(self.entityId)
+                _G.Engine.DestroyEntityDup(self.entityId)
             end)
             print("[EnemyAI] DestroyEntityDup ok =", tostring(ok), " err =", tostring(err), " entity =", tostring(self.entityId))
         else
