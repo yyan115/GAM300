@@ -19,6 +19,7 @@ EVENTS CONSUMED:
     featherCollected     → play featherPickupSFX
     feather_skill_start  → play featherSkillStartSFX
     feather_skill_release→ play featherSkillReleaseSFX
+    playerHeal           → play playerHealSFX
 
 FIELDS (populate clip arrays in editor with audio GUIDs):
     playerFootstepSFX    — footstep sounds while running
@@ -30,6 +31,7 @@ FIELDS (populate clip arrays in editor with audio GUIDs):
     featherPickupSFX     — sounds when a feather is collected
     featherSkillStartSFX — sounds when feather skill is activated
     featherSkillReleaseSFX — sounds when feather skill releases
+    playerHealSFX        — sounds when player heals at a checkpoint
 ================================================================================
 --]]
 
@@ -51,6 +53,7 @@ return Component {
         featherPickupSFX     = {},
         featherSkillStartSFX = {},
         featherSkillReleaseSFX = {},
+        playerHealSFX        = {},
 
         FootstepVolume  = 0.5,
     },
@@ -106,6 +109,13 @@ return Component {
         self._featherSkillReleaseSub = _G.event_bus.subscribe("feather_skill_release", function(_)
             AudioHelper.PlayRandomSFX(self._audio, self.featherSkillReleaseSFX)
         end)
+
+        -- ── Checkpoint heal ───────────────────────────────────────────────────
+        self._healSub = _G.event_bus.subscribe("playerHeal", function(data)
+            if data then
+                AudioHelper.PlayRandomSFX(self._audio, self.playerHealSFX)
+            end
+        end)
     end,
 
     Start = function(self)
@@ -124,6 +134,7 @@ return Component {
                 "_deadSub", "_hurtSub", "_jumpedSub",
                 "_landedSub", "_dashedSub", "_footstepSub",
                 "_featherPickupSub", "_featherSkillStartSub", "_featherSkillReleaseSub",
+                "_healSub",
             }
             for _, key in ipairs(subs) do
                 if self[key] then _G.event_bus.unsubscribe(self[key]); self[key] = nil end
