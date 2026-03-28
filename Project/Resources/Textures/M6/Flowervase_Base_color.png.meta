@@ -1,0 +1,15 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "006f9d9d30b29c62-0004a364880081f5",
+        "source": "../../Resources/Textures/M6/Flowervase_Base_color.png",
+        "compiled": "../../Resources/Textures/M6/Flowervase_Base_color.dds"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

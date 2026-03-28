@@ -1,0 +1,11 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "006f9d9d1bd05e52-0004a364420081e3",
+        "source": "../../Resources/Models/Environment/ScrollVase2.fbx",
+        "compiled": "../../Resources/Models/Environment/ScrollVase2.mesh"
+    },
+    "ModelMetaData": {
+        "optimizeMeshes": true
+    }
+}

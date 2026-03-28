@@ -1,0 +1,15 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "006f9d9d0611332b-0004a36ef000b27d",
+        "source": "../../Resources/Textures/M6/Incense_LowPoly_standardSurface1_Height.png",
+        "compiled": "../../Resources/Textures/M6/Incense_LowPoly_standardSurface1_Height.dds"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

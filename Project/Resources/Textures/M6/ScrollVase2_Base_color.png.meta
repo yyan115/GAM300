@@ -1,0 +1,15 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "006f9d9d74ec29ef-0004a364800081e9",
+        "source": "../../Resources/Textures/M6/ScrollVase2_Base_color.png",
+        "compiled": "../../Resources/Textures/M6/ScrollVase2_Base_color.dds"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

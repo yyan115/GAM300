@@ -1,0 +1,15 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "006f9d9d10826706-0004a3776200b283",
+        "source": "../../Resources/Textures/M6/Door_lambert2_Normal.png",
+        "compiled": "../../Resources/Textures/M6/Door_lambert2_Normal.dds"
+    },
+    "TextureMetaData": {
+        "type": "normal",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

@@ -1,0 +1,15 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "006f9d9d047f647c-0004a3775e00b281",
+        "source": "../../Resources/Textures/M6/Door_lambert2_BaseColor.png",
+        "compiled": "../../Resources/Textures/M6/Door_lambert2_BaseColor.dds"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}
