@@ -78,7 +78,7 @@ return Component {
             elseif t == "meleeAttack" then
                 AudioHelper.PlayRandomSFX(audio, self.enemyMeleeAttackSFX)
             elseif t == "rangedAttack" then
-                AudioHelper.PlayRandomSFX(audio, self.enemyRangedAttackSFX)
+                AudioHelper.PlayRandomSFXPitched(audio, self.enemyRangedAttackSFX,0.7)
             elseif t == "meleeHit" then
                 AudioHelper.PlayRandomSFX(audio, self.enemyMeleeHitSFX)
             elseif t == "rangedHit" then

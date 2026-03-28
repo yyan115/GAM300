@@ -2,7 +2,6 @@
 require("extension.engine_bootstrap")
 local Component      = require("extension.mono_helper")
 local TransformMixin = require("extension.transform_mixin")
-local AudioHelper    = require("extension.audio_helper")
 
 local StateMachine = require("Gameplay.StateMachine")
 local ChooseState  = require("Gameplay.MinibossChooseState")
@@ -247,14 +246,6 @@ return Component {
 
         HurtReactDuration = 0.35,   -- how long we "reserve" time for hurt anim to play
 
-        -- SFX clip arrays (populate in editor with audio GUIDs)
-        enemyHurtSFX = {},          -- EnemyHurt
-        enemyDeathSFX = {},         -- Dying
-        enemyMeleeAttackSFX = {},   -- EnemyScratchWoosh
-        enemyMeleeHitSFX = {},      -- EnemyScratchHit
-        enemyRangedAttackSFX = {},  -- EnemyThrowWoosh
-        enemyRangedHitSFX = {},     -- EnemyThrowHit
-        enemyTauntSFX = {},         -- EnemyGrowlAlert
     },
 
     Awake = function(self)
@@ -343,7 +334,6 @@ return Component {
         self._transform = self:GetComponent("Transform")
         self._rb        = self:GetComponent("RigidBodyComponent")
         self._animator  = self:GetComponent("AnimationComponent")
-        self._audio     = self:GetComponent("AudioComponent")
         self._entityName = Engine.GetEntityName(self.entityId)
 
         -- (Re)create controller safely
@@ -445,7 +435,7 @@ return Component {
                     return
                 end
                 -- Play melee hit SFX when slash hits player
-                AudioHelper.PlayRandomSFX(self._audio, self.enemyMeleeHitSFX)
+                self:_publishSFX("meleeHit")
             end)
         end
 
@@ -995,6 +985,12 @@ return Component {
         return x, z
     end,
 
+    _publishSFX = function(self, sfxType)
+        if _G.event_bus and _G.event_bus.publish then
+            _G.event_bus.publish("miniboss_sfx", { entityId = self.entityId, sfxType = sfxType })
+        end
+    end,
+
     GetPlayerPosForAI = function(self)
         local tr = self._playerTr
         if not tr then
@@ -1241,7 +1237,7 @@ return Component {
 
         if self._animator then self._animator:SetTrigger("Taunt") end
         print("[Miniboss] StartBossPhaseTransition ->", newPhase, "duration=", tostring(self.PhaseTransformDuration))
-        AudioHelper.PlayRandomSFX(self._audio, self.enemyTauntSFX)
+        self:_publishSFX("taunt")
 
         self:_TriggerBossPhaseShake()
         self:_TriggerBossPhaseFx()
@@ -1478,7 +1474,7 @@ return Component {
         end
 
         -- Play hurt SFX
-        AudioHelper.PlayRandomSFX(self._audio, self.enemyHurtSFX)
+        self:_publishSFX("hurt")
 
         -- If we crossed a phase threshold, start NEW transition immediately
         local computed = self:_ComputePhase()
@@ -1549,7 +1545,7 @@ return Component {
         self.dead = true
 
         -- Play death SFX
-        AudioHelper.PlayRandomSFX(self._audio, self.enemyDeathSFX)
+        self:_publishSFX("death")
 
         -- hard-lock forever
         self._lockAction = true
@@ -1743,14 +1739,7 @@ return Component {
             end)
         end
 
-        -- Pick a random ranged attack SFX for the knife to play from its position
-        local sfxClip = nil
-        local clips = self.enemyRangedAttackSFX
-        if clips and #clips > 0 then
-            sfxClip = clips[math.random(1, #clips)]
-        end
-
-        local ok = knife:Launch(sx, sy, sz, tx, ty, tz, token, tag, sfxClip, "BOSS")
+        local ok = knife:Launch(sx, sy, sz, tx, ty, tz, token, tag, "BOSS")
         if not ok then
             print(string.format("[Miniboss][Knife] Launch FAILED tag=%s token=%s", tostring(tag), tostring(token)))
         end
@@ -1998,7 +1987,7 @@ return Component {
 
     _DoShoutAOE = function(self)
         if self._animator then self._animator:SetTrigger("Taunt") end
-        AudioHelper.PlayRandomSFX(self._audio, self.enemyTauntSFX)
+        self:_publishSFX("taunt")
 
         self:_TriggerBossShoutShake()
         self:_TriggerBossShoutFx()
@@ -2151,7 +2140,7 @@ return Component {
 
                 -- start shout anim now
                 if self._animator then self._animator:SetTrigger("Taunt") end
-                AudioHelper.PlayRandomSFX(self._audio, self.enemyTauntSFX)
+                self:_publishSFX("taunt")
             end
 
             if not m.didFire and m.t >= (m.fireAt or 0) then
@@ -2215,7 +2204,7 @@ return Component {
                         kbUp = 0.0,
                     })
                 end
-                AudioHelper.PlayRandomSFX(self._audio, self.enemyMeleeAttackSFX)
+                self:_publishSFX("meleeAttack")
             end
 
             if m.t >= (m.hitAt + (m.postDelay or 0.4)) then
@@ -2887,7 +2876,7 @@ return Component {
 
                 print("[Miniboss] Phase 3 Step 1 SetTrigger(FeatherBomb)")
                 if self._animator then self._animator:SetTrigger("FeatherBomb") end
-                AudioHelper.PlayRandomSFX(self._audio, self.enemyRangedAttackSFX)
+                self:_publishSFX("rangedAttack")
 
                 return
             end
@@ -3056,7 +3045,7 @@ return Component {
     end,
 
     FateSealed = function(self, chargeTime)
-        AudioHelper.PlayRandomSFX(self._audio, self.enemyMeleeAttackSFX)
+        self:_publishSFX("meleeAttack")
         self:_BeginMove("FateSealed", {
             chargeDur = chargeTime,
             dashDur = 0.4,

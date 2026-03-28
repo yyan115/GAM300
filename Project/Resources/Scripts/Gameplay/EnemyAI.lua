@@ -1610,8 +1610,6 @@ return Component {
             return false
         end
 
-        -- Play ranged attack SFX when throwing knives
-        self:_publishSFX("rangedAttack")
 
         local ex, ey, ez = self:GetPosition()
         -- Safety check: if position is nil, skip spawning
