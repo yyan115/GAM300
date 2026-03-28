@@ -16,7 +16,7 @@ return Component {
         endColorZ   = 0,
         endAlpha    = 0.1,
         -- === Healing VFX Duration ===
-        healingVFXDuration = 2.5,   -- seconds before emitters turn off
+        healingVFXDuration = 1.2,   -- seconds before emitters turn off
     },
 
     Start = function(self)
