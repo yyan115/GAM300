@@ -10,7 +10,7 @@ function ChaseState:Enter(ai)
     ai._footstepTimer = 0
 
     -- Play alert SFX once when first detecting player (entering chase)
-    ai:PlayAlertSFX()
+    ai:_publishSFX("alert")
 end
 
 function ChaseState:Update(ai, dt)
@@ -90,7 +90,7 @@ function ChaseState:Update(ai, dt)
         ai._footstepTimer = (ai._footstepTimer or 0) + dtSec
         if ai._footstepTimer >= (ai.ChaseFootstepInterval or 0.35) then
             ai._footstepTimer = 0
-            ai:PlayFootstepSFX()
+            ai:_publishSFX("footstep")
         end
     end
 end

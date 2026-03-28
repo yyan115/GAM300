@@ -142,6 +142,7 @@ return Component {
         Time.SetPaused(false)
 
         if event_bus and event_bus.publish then
+            event_bus.publish("game_paused", false)
             event_bus.publish("uiButtonPressed", true)
         end
     end,

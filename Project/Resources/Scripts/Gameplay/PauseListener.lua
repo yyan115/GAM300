@@ -91,6 +91,10 @@ return Component {
                 -- Unpause all game audio
                 Audio.SetBusPaused("BGM", false)
                 Audio.SetBusPaused("SFX", false)
+
+                if event_bus and event_bus.publish then
+                    event_bus.publish("game_paused", false)
+                end
             else
                 -- Pause game
                 self._pauseComp.isActive = true
@@ -107,6 +111,10 @@ return Component {
                 -- Pause all game audio (UI on "UI" bus still plays)
                 Audio.SetBusPaused("BGM", true)
                 Audio.SetBusPaused("SFX", true)
+
+                if event_bus and event_bus.publish then
+                    event_bus.publish("game_paused", true)
+                end
             end
             end  -- if not onSubPage
         end

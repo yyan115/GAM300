@@ -195,7 +195,7 @@ function PatrolState:Update(ai, dt)
         ai._footstepTimer = (ai._footstepTimer or 0) + dtSec
         if ai._footstepTimer >= (ai.PatrolFootstepInterval or 0.5) then
             ai._footstepTimer = 0
-            ai:PlayFootstepSFX()
+            ai:_publishSFX("footstep")
         end
     else
         ai._footstepTimer = 0

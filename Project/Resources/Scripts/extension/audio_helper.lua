@@ -20,11 +20,16 @@ function M.PlayRandomSFX(audio, clips, volume)
     if not audio or not clips or #clips == 0 then return end
 
     volume = tonumber(volume) or 1.0
-    clips._lastIdx = clips._lastIdx or 0
-    local idx = math.random(1, #clips)
-    -- Retry once if we hit the last played index (and there's more than one clip)
-    if idx == clips._lastIdx and #clips > 1 then
-        idx = math.random(1, #clips)
+    local n    = #clips
+    local last = clips._lastIdx
+    local idx
+    if n == 1 then
+        idx = 1
+    elseif not last then
+        idx = math.random(1, n)
+    else
+        idx = math.random(1, n - 1)
+        if idx >= last then idx = idx + 1 end
     end
     clips._lastIdx = idx
 
@@ -54,10 +59,16 @@ function M.PlayRandomSFXPitched(audio, clips, pitchVar, volume)
 
     pitchVar = tonumber(pitchVar) or 0.1
     volume = tonumber(volume) or 1.0
-    clips._lastIdx = clips._lastIdx or 0
-    local idx = math.random(1, #clips)
-    if idx == clips._lastIdx and #clips > 1 then
-        idx = math.random(1, #clips)
+    local n    = #clips
+    local last = clips._lastIdx
+    local idx
+    if n == 1 then
+        idx = 1
+    elseif not last then
+        idx = math.random(1, n)
+    else
+        idx = math.random(1, n - 1)
+        if idx >= last then idx = idx + 1 end
     end
     clips._lastIdx = idx
 

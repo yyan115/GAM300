@@ -243,7 +243,7 @@ return Component {
         -- end
     end,
 
-    Launch = function(self, spawnX, spawnY, spawnZ, targetX, targetY, targetZ, token, slot, sfxGuid, variant)
+    Launch = function(self, spawnX, spawnY, spawnZ, targetX, targetY, targetZ, token, slot, variant)
         -- already flying -> can't relaunch
         if self.active then
             -- debug
@@ -364,14 +364,16 @@ return Component {
         -- Play ranged attack SFX from knife position (3D audio).
         -- AudioSystem updates audioComp.Position from worldPosition each frame, but
         -- TransformSystem hasn't propagated our new localPosition to worldPosition yet.
-        -- Fix: manually set Position to the spawn coords before PlayOneShot fires.
-        if sfxGuid and self._audio then
+        -- Fix: manually set Position to the spawn coords before the event fires.
+        if self._audio then
             local pos = self._audio.Position
             pos.x = spawnX
             pos.y = spawnY
             pos.z = spawnZ
             self._audio.Position = pos
-            self._audio:PlayOneShot(sfxGuid)
+            if _G.event_bus and _G.event_bus.publish then
+                _G.event_bus.publish("enemy_sfx", { entityId = self.entityId, sfxType = "rangedAttack" })
+            end
         end
 
         return true

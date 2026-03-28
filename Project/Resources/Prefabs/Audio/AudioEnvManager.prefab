@@ -1,0 +1,229 @@
+{
+    "prefab_entities": [
+        {
+            "id": 0,
+            "guid": "0007cac2ae643bb9-0004a5ef58002ee3",
+            "components": {
+                "PrefabLinkComponent": {
+                    "type": "PrefabLinkComponent",
+                    "data": [
+                        {
+                            "type": "std::string",
+                            "data": "../../Resources/Prefabs/Audio/AudioEnvManager.prefab"
+                        }
+                    ]
+                },
+                "NameComponent": {
+                    "name": "AudioEnvManager"
+                },
+                "TagComponent": {
+                    "tagIndex": 0
+                },
+                "LayerComponent": {
+                    "layerIndex": 0
+                },
+                "SiblingIndexComponent": {
+                    "siblingIndex": 50001
+                },
+                "Transform": {
+                    "type": "Transform",
+                    "data": [
+                        {
+                            "type": "Vector3D",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                }
+                            ]
+                        },
+                        {
+                            "type": "Vector3D",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                }
+                            ]
+                        },
+                        {
+                            "type": "Quaternion",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                }
+                            ]
+                        }
+                    ]
+                },
+                "AudioComponent": {
+                    "type": "AudioComponent",
+                    "data": [
+                        {
+                            "type": "bool",
+                            "data": true
+                        },
+                        "0000000000000000-0000000000000000",
+                        {
+                            "type": "bool",
+                            "data": false
+                        },
+                        {
+                            "type": "bool",
+                            "data": false
+                        },
+                        {
+                            "type": "bool",
+                            "data": false
+                        },
+                        {
+                            "type": "bool",
+                            "data": false
+                        },
+                        {
+                            "type": "int",
+                            "data": 128
+                        },
+                        {
+                            "type": "float",
+                            "data": 1
+                        },
+                        {
+                            "type": "float",
+                            "data": 1
+                        },
+                        {
+                            "type": "float",
+                            "data": 0
+                        },
+                        {
+                            "type": "float",
+                            "data": 1
+                        },
+                        {
+                            "type": "bool",
+                            "data": false
+                        },
+                        {
+                            "type": "float",
+                            "data": 0
+                        },
+                        {
+                            "type": "float",
+                            "data": 1
+                        },
+                        {
+                            "type": "float",
+                            "data": 1
+                        },
+                        {
+                            "type": "float",
+                            "data": 100
+                        },
+                        {
+                            "type": "std::string",
+                            "data": "SFX"
+                        }
+                    ]
+                },
+                "ActiveComponent": {
+                    "type": "ActiveComponent",
+                    "data": [
+                        {
+                            "type": "bool",
+                            "data": true
+                        }
+                    ]
+                },
+                "ScriptComponent": {
+                    "scripts": [
+                        {
+                            "scriptGuidStr": "005b949a5379ebb1-0004a5e1c0000001",
+                            "scriptPath": "../../Resources/Scripts/Gameplay/EnvironmentAudio.lua",
+                            "enabled": true,
+                            "preserveKeys": [],
+                            "entryFunction": "OnInit",
+                            "autoInvokeEntry": true,
+                            "instanceState": {
+                                "Unsubscribe": null,
+                                "_subscriptions": {},
+                                "Awake": null,
+                                "OnDisable": null,
+                                "_pickupSub": {
+                                    "event": "env_weapon_caught",
+                                    "id": 2.0
+                                },
+                                "AwakeSafe": null,
+                                "UpdateSafe": null,
+                                "_call_lifecycle": null,
+                                "DeserializeFields": null,
+                                "_pickupAuraSub": {
+                                    "event": "picked_up_weapon",
+                                    "id": 1.0
+                                },
+                                "Every": null,
+                                "pickupAuraSFX": [
+                                    "00272304a13d268d-0004a4106a00002d"
+                                ],
+                                "__created_at": 1774680402.0,
+                                "SerializeFields": null,
+                                "DisableSafe": null,
+                                "StartSafe": null,
+                                "_private": {},
+                                "pickupSFX": [
+                                    "002723049e223752-0004a4106a00002f"
+                                ],
+                                "__field_list": {
+                                    "pickupAuraSFX": {},
+                                    "pickupSFX": {},
+                                    "doorOpenSFX": {}
+                                },
+                                "_doorSub": {
+                                    "event": "env_door_opened",
+                                    "id": 3.0
+                                },
+                                "Start": null,
+                                "After": null,
+                                "Subscribe": null,
+                                "__meta": {},
+                                "doorOpenSFX": [
+                                    "001521729a1c6852-0004276d680062ad"
+                                ],
+                                "Destroy": null
+                            }
+                        }
+                    ]
+                }
+            }
+        }
+    ]
+}
