@@ -5,7 +5,7 @@ function FlyingChase:Enter(ai)
     ai._animator:SetBool("Flying", true)
     ai._animator:SetBool("PatrolEnabled", true)
     ai._animator:SetBool("PlayerInDetectionRange", true)
-    if ai.PlayAlertSFX then ai:PlayAlertSFX() end
+    ai:_publishSFX("alert")
 end
 
 function FlyingChase:Update(ai, dt)

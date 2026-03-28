@@ -224,8 +224,8 @@ function AttackState:Update(ai, dt)
             local d2check = ai:GetPlayerDistanceSq()
             local _, meleeRcheck, _ = ai:GetRanges()
             if d2check <= (meleeRcheck * meleeRcheck) then
-                if ai.PlayAttackSFX then ai:PlayAttackSFX() end
-                if ai.PlayHitSFX    then ai:PlayHitSFX()    end
+                ai:_publishSFX(ai.IsMelee and "meleeAttack" or "rangedAttack")
+                ai:_publishSFX(ai.IsMelee and "meleeHit"    or "rangedHit")
 
                 if _G.event_bus and _G.event_bus.publish then
                     local ex, _, ez = ai:GetPosition()
