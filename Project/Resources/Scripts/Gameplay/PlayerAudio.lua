@@ -15,14 +15,15 @@ EVENTS CONSUMED:
     player_jumped        → play playerJumpSFX
     player_landed        → play playerLandSFX
     player_dashed        → play playerDashSFX
-    player_footstep      → play playerFootstepSFX at FootstepVolume
+    player_footstep      → play staircaseFootstepSFX if near a Staircase-tagged entity, else playerFootstepSFX
     featherCollected     → play featherPickupSFX
     feather_skill_start  → play featherSkillStartSFX
     feather_skill_release→ play featherSkillReleaseSFX
     playerHeal           → play playerHealSFX
 
 FIELDS (populate clip arrays in editor with audio GUIDs):
-    playerFootstepSFX    — footstep sounds while running
+    playerFootstepSFX    — footstep sounds while running on regular surfaces
+    staircaseFootstepSFX — footstep sounds while running on Staircase-tagged surfaces
     playerHurtSFX        — impact sounds when player is hit
     playerJumpSFX        — sounds on jump
     playerLandSFX        — sounds on landing
@@ -45,6 +46,7 @@ return Component {
 
     fields = {
         playerFootstepSFX    = {},
+        staircaseFootstepSFX = {},
         playerHurtSFX        = {},
         playerJumpSFX        = {},
         playerLandSFX        = {},
@@ -55,8 +57,43 @@ return Component {
         featherSkillReleaseSFX = {},
         playerHealSFX        = {},
 
-        FootstepVolume  = 0.5,
+        FootstepVolume       = 0.5,
     },
+
+    -- Raycast downward from the player and walk up the hierarchy checking for
+    -- a "Staircase" tag. Returns true when any ancestor of the hit entity is
+    -- tagged Staircase (handles prefab hierarchies where the tagged entity is
+    -- the parent, not the direct collider owner).
+    _isOnStaircase = function(self)
+        if not (self._playerTr and Physics and Physics.RaycastGetEntity) then return false end
+        local pp = self._playerTr.worldPosition
+        if not pp then return false end
+
+        local ok, r1, r2 = pcall(Physics.RaycastGetEntity,
+            pp.x, pp.y + 0.1, pp.z,   -- origin just above feet
+            0, -1, 0,                   -- straight down
+            2.0)                        -- 2 m below feet
+        if not ok then return false end
+
+        local hitId = r2 or -1
+        if type(r1) == "table" or type(r1) == "userdata" then
+            hitId = (r1.entityId or r1[2]) or -1
+        end
+        if hitId < 0 then return false end
+
+        -- Walk up to 6 levels of hierarchy checking for Staircase tag
+        local id = hitId
+        for _ = 1, 6 do
+            local tagComp = GetComponent(id, "TagComponent")
+            if tagComp and Tag.Compare(tagComp.tagIndex, "Staircase") then
+                return true
+            end
+            local parentId = Engine.GetParentEntity(id)
+            if not parentId or parentId < 0 then break end
+            id = parentId
+        end
+        return false
+    end,
 
     Awake = function(self)
         self._audio = nil
@@ -92,7 +129,11 @@ return Component {
         end)
 
         self._footstepSub = _G.event_bus.subscribe("player_footstep", function(_)
-            AudioHelper.PlayRandomSFX(self._audio, self.playerFootstepSFX, self.FootstepVolume)
+            local clips = self.playerFootstepSFX
+            if #self.staircaseFootstepSFX > 0 and self:_isOnStaircase() then
+                clips = self.staircaseFootstepSFX
+            end
+            AudioHelper.PlayRandomSFX(self._audio, clips, self.FootstepVolume)
         end)
 
         -- ── Feather skill ─────────────────────────────────────────────────────
@@ -121,7 +162,8 @@ return Component {
     Start = function(self)
         local playerEntityId = Engine.GetEntityByName("Player")
         if playerEntityId then
-            self._audio = GetComponent(playerEntityId, "AudioComponent")
+            self._audio    = GetComponent(playerEntityId, "AudioComponent")
+            self._playerTr = GetComponent(playerEntityId, "Transform")
         end
         if not self._audio then
             print("[PlayerAudio] WARNING: no AudioComponent found on Player entity")
