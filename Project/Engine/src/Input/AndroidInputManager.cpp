@@ -35,10 +35,6 @@ bool AndroidInputManager::IsActionPressed(const std::string& action) {
            m_previousActions.count(action) == 0;
 }
 
-bool AndroidInputManager::IsActionHeld(const std::string& action) {
-    return m_currentActions.count(action) > 0;
-}
-
 bool AndroidInputManager::IsActionJustPressed(const std::string& action) {
     return m_currentActions.count(action) > 0 &&
            m_previousActions.count(action) == 0;

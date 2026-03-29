@@ -31,7 +31,6 @@ public:
 
     // InputManager interface implementation
     bool IsActionPressed(const std::string& action) override;
-    bool IsActionHeld(const std::string& action) override;
     bool IsActionJustPressed(const std::string& action) override;
     bool IsActionJustReleased(const std::string& action) override;
     glm::vec2 GetActionTouchPosition(const std::string& action) override;
