@@ -53,6 +53,9 @@ public:
 
     static void SetWindowTitle(const char* title);
 
+    static void SetVSync(bool enabled);
+    static void SetFullscreen(bool enabled);
+    static bool IsFullscreen();
     static void ToggleFullscreen();
     static void MinimizeWindow();
 

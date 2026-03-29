@@ -61,6 +61,9 @@ public:
     int GetWindowWidth() override;
     int GetWindowHeight() override;
     void SetWindowTitle(const char* title) override;
+    void SetVSync(bool enabled) override;
+    void SetFullscreen(bool enabled) override;
+    bool IsFullscreen() const override { return isFullscreen; }
     void ToggleFullscreen() override;
     void MinimizeWindow() override;
     bool IsWindowMinimized() override;

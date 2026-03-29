@@ -911,6 +911,103 @@ namespace GameSettingsWrappers {
         GameSettingsManager::GetInstance().SetExposure(exposure);
     }
 
+    inline void SetToneMappingMode(int mode) {
+        GameSettingsManager::GetInstance().SetToneMappingMode(mode);
+    }
+
+    inline void SetVSync(bool enabled) {
+        GameSettingsManager::GetInstance().SetVSync(enabled);
+    }
+
+    inline void SetFullscreen(bool enabled) {
+        GameSettingsManager::GetInstance().SetFullscreen(enabled);
+    }
+
+    // Bloom
+    inline void SetBloomEnabled(bool enabled) {
+        GameSettingsManager::GetInstance().SetBloomEnabled(enabled);
+    }
+
+    inline void SetBloomThreshold(float threshold) {
+        GameSettingsManager::GetInstance().SetBloomThreshold(threshold);
+    }
+
+    inline void SetBloomIntensity(float intensity) {
+        GameSettingsManager::GetInstance().SetBloomIntensity(intensity);
+    }
+
+    inline void SetBloomScatter(float scatter) {
+        GameSettingsManager::GetInstance().SetBloomScatter(scatter);
+    }
+
+    // Vignette
+    inline void SetVignetteEnabled(bool enabled) {
+        GameSettingsManager::GetInstance().SetVignetteEnabled(enabled);
+    }
+
+    inline void SetVignetteIntensity(float intensity) {
+        GameSettingsManager::GetInstance().SetVignetteIntensity(intensity);
+    }
+
+    inline void SetVignetteSmoothness(float smoothness) {
+        GameSettingsManager::GetInstance().SetVignetteSmoothness(smoothness);
+    }
+
+    inline void SetVignetteColor(float r, float g, float b) {
+        GameSettingsManager::GetInstance().SetVignetteColor(r, g, b);
+    }
+
+    // Color Grading
+    inline void SetColorGradingEnabled(bool enabled) {
+        GameSettingsManager::GetInstance().SetColorGradingEnabled(enabled);
+    }
+
+    inline void SetCGBrightness(float brightness) {
+        GameSettingsManager::GetInstance().SetCGBrightness(brightness);
+    }
+
+    inline void SetCGContrast(float contrast) {
+        GameSettingsManager::GetInstance().SetCGContrast(contrast);
+    }
+
+    inline void SetCGSaturation(float saturation) {
+        GameSettingsManager::GetInstance().SetCGSaturation(saturation);
+    }
+
+    inline void SetCGTint(float r, float g, float b) {
+        GameSettingsManager::GetInstance().SetCGTint(r, g, b);
+    }
+
+    // Chromatic Aberration
+    inline void SetCAEnabled(bool enabled) {
+        GameSettingsManager::GetInstance().SetCAEnabled(enabled);
+    }
+
+    inline void SetCAIntensity(float intensity) {
+        GameSettingsManager::GetInstance().SetCAIntensity(intensity);
+    }
+
+    inline void SetCAPadding(float padding) {
+        GameSettingsManager::GetInstance().SetCAPadding(padding);
+    }
+
+    // SSAO
+    inline void SetSSAOEnabled(bool enabled) {
+        GameSettingsManager::GetInstance().SetSSAOEnabled(enabled);
+    }
+
+    inline void SetSSAORadius(float radius) {
+        GameSettingsManager::GetInstance().SetSSAORadius(radius);
+    }
+
+    inline void SetSSAOBias(float bias) {
+        GameSettingsManager::GetInstance().SetSSAOBias(bias);
+    }
+
+    inline void SetSSAOIntensity(float intensity) {
+        GameSettingsManager::GetInstance().SetSSAOIntensity(intensity);
+    }
+
     // Graphics getters
     inline float GetGamma() {
         return GameSettingsManager::GetInstance().GetGamma();
@@ -920,25 +1017,123 @@ namespace GameSettingsWrappers {
         return GameSettingsManager::GetInstance().GetExposure();
     }
 
+    inline int GetToneMappingMode() {
+        return GameSettingsManager::GetInstance().GetToneMappingMode();
+    }
+
+    inline bool GetVSync() {
+        return GameSettingsManager::GetInstance().GetVSync();
+    }
+
+    inline bool GetFullscreen() {
+        return GameSettingsManager::GetInstance().GetFullscreen();
+    }
+
+    inline bool GetBloomEnabled() {
+        return GameSettingsManager::GetInstance().GetSettings().bloomEnabled;
+    }
+
+    inline float GetBloomThreshold() {
+        return GameSettingsManager::GetInstance().GetSettings().bloomThreshold;
+    }
+
+    inline float GetBloomIntensity() {
+        return GameSettingsManager::GetInstance().GetSettings().bloomIntensity;
+    }
+
+    inline float GetBloomScatter() {
+        return GameSettingsManager::GetInstance().GetSettings().bloomScatter;
+    }
+
+    inline bool GetVignetteEnabled() {
+        return GameSettingsManager::GetInstance().GetSettings().vignetteEnabled;
+    }
+
+    inline float GetVignetteIntensity() {
+        return GameSettingsManager::GetInstance().GetSettings().vignetteIntensity;
+    }
+
+    inline float GetVignetteSmoothness() {
+        return GameSettingsManager::GetInstance().GetSettings().vignetteSmoothness;
+    }
+
+    inline void GetVignetteColor(lua_State* L) {
+        const auto& c = GameSettingsManager::GetInstance().GetSettings().vignetteColor;
+        lua_pushnumber(L, c[0]);
+        lua_pushnumber(L, c[1]);
+        lua_pushnumber(L, c[2]);
+    }
+
+    inline bool GetColorGradingEnabled() {
+        return GameSettingsManager::GetInstance().GetSettings().colorGradingEnabled;
+    }
+
+    inline float GetCGBrightness() {
+        return GameSettingsManager::GetInstance().GetSettings().cgBrightness;
+    }
+
+    inline float GetCGContrast() {
+        return GameSettingsManager::GetInstance().GetSettings().cgContrast;
+    }
+
+    inline float GetCGSaturation() {
+        return GameSettingsManager::GetInstance().GetSettings().cgSaturation;
+    }
+
+    inline void GetCGTint(lua_State* L) {
+        const auto& c = GameSettingsManager::GetInstance().GetSettings().cgTint;
+        lua_pushnumber(L, c[0]);
+        lua_pushnumber(L, c[1]);
+        lua_pushnumber(L, c[2]);
+    }
+
+    inline bool GetCAEnabled() {
+        return GameSettingsManager::GetInstance().GetSettings().caEnabled;
+    }
+
+    inline float GetCAIntensity() {
+        return GameSettingsManager::GetInstance().GetSettings().caIntensity;
+    }
+
+    inline float GetCAPadding() {
+        return GameSettingsManager::GetInstance().GetSettings().caPadding;
+    }
+
+    inline bool GetSSAOEnabled() {
+        return GameSettingsManager::GetInstance().GetSettings().ssaoEnabled;
+    }
+
+    inline float GetSSAORadius() {
+        return GameSettingsManager::GetInstance().GetSettings().ssaoRadius;
+    }
+
+    inline float GetSSAOBias() {
+        return GameSettingsManager::GetInstance().GetSettings().ssaoBias;
+    }
+
+    inline float GetSSAOIntensity() {
+        return GameSettingsManager::GetInstance().GetSettings().ssaoIntensity;
+    }
+
     // Default value getters (for UI reset functionality)
     inline float GetDefaultMasterVolume() {
-        return GameSettingsManager::GetDefaultMasterVolume();
+        return GameSettingsManager::GetInstance().GetDefaultMasterVolume();
     }
 
     inline float GetDefaultBGMVolume() {
-        return GameSettingsManager::GetDefaultBGMVolume();
+        return GameSettingsManager::GetInstance().GetDefaultBGMVolume();
     }
 
     inline float GetDefaultSFXVolume() {
-        return GameSettingsManager::GetDefaultSFXVolume();
+        return GameSettingsManager::GetInstance().GetDefaultSFXVolume();
     }
 
     inline float GetDefaultGamma() {
-        return GameSettingsManager::GetDefaultGamma();
+        return GameSettingsManager::GetInstance().GetDefaultGamma();
     }
 
     inline float GetDefaultExposure() {
-        return GameSettingsManager::GetDefaultExposure();
+        return GameSettingsManager::GetInstance().GetDefaultExposure();
     }
 }
 

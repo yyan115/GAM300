@@ -101,6 +101,17 @@ void AndroidPlatform::SetWindowTitle(const char* title) {
     // No-op on Android - titles are handled by the Android system
 }
 
+void AndroidPlatform::SetVSync(bool enabled) {
+    // Android usually enforces VSync at the OS level
+    // This is a no-op stub for platform compatibility
+    (void)enabled;
+}
+
+void AndroidPlatform::SetFullscreen(bool enabled) {
+    // Android apps are typically fullscreen by default
+    (void)enabled;
+}
+
 void AndroidPlatform::ToggleFullscreen() {
     // Android apps are typically fullscreen by default
     // This could be implemented to toggle immersive mode

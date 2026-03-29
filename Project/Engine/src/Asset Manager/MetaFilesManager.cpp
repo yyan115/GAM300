@@ -294,6 +294,11 @@ std::string MetaFilesManager::GetResourceNameFromAssetFile(const std::string& as
 	}
 	if (doc.HasParseError()) {
 		ENGINE_LOG_DEBUG("[MetaFilesManager]: Rapidjson parse error: " + metaFilePath);
+		return "";
+	}
+	if (!doc.IsObject()) {
+		ENGINE_LOG_DEBUG("[MetaFilesManager]: Rapidjson Assertion failed: IsObject(): : " + metaFilePath);
+		return "";
 	}
 
 	const auto& assetMetaData = doc["AssetMetaData"];
