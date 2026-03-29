@@ -6,6 +6,7 @@
 #include "ECS/NameComponent.hpp"
 #include "Transform/TransformComponent.hpp"
 #include "Graphics/GraphicsManager.hpp"
+#include "TimeManager.hpp"
 #include <WindowManager.hpp>
 #include <rapidjson/document.h>
 #include <rapidjson/error/en.h>
@@ -30,7 +31,8 @@ AndroidInputManager::AndroidInputManager() {
 // ========== IInputSystem Interface Implementation ==========
 
 bool AndroidInputManager::IsActionPressed(const std::string& action) {
-    return m_currentActions.count(action) > 0;
+    return m_currentActions.count(action) > 0 &&
+           m_previousActions.count(action) == 0;
 }
 
 bool AndroidInputManager::IsActionJustPressed(const std::string& action) {
@@ -130,9 +132,16 @@ bool AndroidInputManager::IsPointerPressed() {
 }
 
 bool AndroidInputManager::IsPointerJustPressed() {
-    // Check if any non-handled touch just began
+    // Check if any non-handled touch just began (normal tap)
     for (const auto& [id, touch] : m_activeTouches) {
         if (!touch.isHandled && touch.phase == TouchPhase::Began) {
+            return true;
+        }
+    }
+    // Also catch quick taps: Down+Up both arrived this frame before Update ran.
+    // beganConsumed==false means the touch never lived through a full Update cycle (true quick tap).
+    for (const auto& tp : m_endedTouches) {
+        if (!tp.isHandled && !tp.beganConsumed) {
             return true;
         }
     }
@@ -140,10 +149,16 @@ bool AndroidInputManager::IsPointerJustPressed() {
 }
 
 glm::vec2 AndroidInputManager::GetPointerPosition() {
-    // Return position of first non-handled touch
+    // Return position of first non-handled active touch
     for (const auto& [id, touch] : m_activeTouches) {
         if (!touch.isHandled) {
             return touch.position;
+        }
+    }
+    // Quick-tap fallback: Down+Up both arrived this frame — return the ended touch position
+    for (const auto& tp : m_endedTouches) {
+        if (!tp.isHandled && !tp.beganConsumed) {
+            return tp.position;
         }
     }
     return glm::vec2(0.0f);
@@ -241,12 +256,26 @@ InputManager::Touch AndroidInputManager::GetTouchById(int touchId) {
 void AndroidInputManager::Update(float deltaTime) {
     m_currentTime += deltaTime;
 
+    // Clear ended touches from last frame
+    m_endedTouches.clear();
+
+    // Drain touch events from the UI thread (swap under lock, process outside lock)
+    {
+        std::lock_guard<std::mutex> lock(m_touchEventMutex);
+        m_touchEventQueueSwap.swap(m_touchEventQueue);
+    }
+    for (const auto& ev : m_touchEventQueueSwap) {
+        switch (ev.type) {
+            case TouchEvent::Type::Down: ProcessTouchDown(ev.pointerId, ev.x, ev.y); break;
+            case TouchEvent::Type::Move: ProcessTouchMove(ev.pointerId, ev.x, ev.y); break;
+            case TouchEvent::Type::Up:   ProcessTouchUp(ev.pointerId, ev.x, ev.y);   break;
+        }
+    }
+    m_touchEventQueueSwap.clear();
+
     // Save previous state
     m_previousActions = m_currentActions;
     m_currentActions.clear();
-
-    // Clear ended touches from last frame
-    m_endedTouches.clear();
 
     // Commit whatever OnTouchMove accumulated since last frame, then reset for next frame.
     // Touch events on Android fire before Update() runs, so reading m_dragDelta directly
@@ -285,6 +314,12 @@ void AndroidInputManager::Update(float deltaTime) {
             m_currentActions.insert(entityAction.actionName);
         }
     }
+
+    // Merge pending actions (quick taps where OnTouchDown+OnTouchUp both fired before this Update)
+    for (const auto& action : m_pendingActions) {
+        m_currentActions.insert(action);
+    }
+    m_pendingActions.clear();
 
     // Detect gestures
     DetectGestures(deltaTime);
@@ -424,9 +459,26 @@ void AndroidInputManager::RenderOverlay(int screenWidth, int screenHeight) {
     // Entity-based system doesn't need to render overlays
 }
 
-// ========== Touch Event Handlers ==========
+// ========== Touch Event Handlers (UI thread — enqueue only, no state mutation) ==========
 
 void AndroidInputManager::OnTouchDown(int pointerId, float x, float y) {
+    std::lock_guard<std::mutex> lock(m_touchEventMutex);
+    m_touchEventQueue.push_back({TouchEvent::Type::Down, pointerId, x, y});
+}
+
+void AndroidInputManager::OnTouchMove(int pointerId, float x, float y) {
+    std::lock_guard<std::mutex> lock(m_touchEventMutex);
+    m_touchEventQueue.push_back({TouchEvent::Type::Move, pointerId, x, y});
+}
+
+void AndroidInputManager::OnTouchUp(int pointerId, float x, float y) {
+    std::lock_guard<std::mutex> lock(m_touchEventMutex);
+    m_touchEventQueue.push_back({TouchEvent::Type::Up, pointerId, x, y});
+}
+
+// ========== Touch Event Processors (game thread — called from Update drain) ==========
+
+void AndroidInputManager::ProcessTouchDown(int pointerId, float x, float y) {
     // x, y are NORMALIZED (0-1) from AndroidPlatform::HandleTouchEvent
     // Convert to viewport pixel coords for consistency with desktop (ButtonSystem expects pixels)
     float viewportWidth = static_cast<float>(WindowManager::GetViewportWidth());
@@ -462,8 +514,14 @@ void AndroidInputManager::OnTouchDown(int pointerId, float x, float y) {
     LOGI("[AndroidInput] TouchDown id=%d norm=(%.3f,%.3f) pixel=(%.1f,%.1f) game=(%.1f,%.1f) viewport=(%.0f,%.0f) gameRes=(%d,%d)",
          pointerId, x, y, pixelPos.x, pixelPos.y, gameX, gameY, viewportWidth, viewportHeight, gameResWidth, gameResHeight);
 
+    // When the game is paused, only process the Pause entity action so UI buttons
+    // (ButtonSystem) can receive touches instead of game buttons consuming them.
+    bool gamePaused = TimeManager::IsPaused();
+
     // Check if touch hits any entity action
     for (auto& entityAction : m_entityActions) {
+        if (gamePaused && entityAction.actionName != "Pause") continue;
+
         if (!entityAction.entityFound) {
             LOGI("[AndroidInput]   Skipping '%s' - entity not found", entityAction.entityName.c_str());
             continue;
@@ -497,10 +555,10 @@ void AndroidInputManager::OnTouchDown(int pointerId, float x, float y) {
         }
 
         if (hit) {
-
             entityAction.isPressed = true;
             entityAction.activeTouchId = pointerId;
             entityAction.touchPositionRelative = gamePos - entityAction.entityCenter;
+            m_pendingActions.insert(entityAction.actionName);  // Buffer for quick taps
 
             touch.isHandled = true;
             touch.entityName = entityAction.entityName;
@@ -524,7 +582,7 @@ void AndroidInputManager::OnTouchDown(int pointerId, float x, float y) {
     m_activeTouches[pointerId] = touch;
 }
 
-void AndroidInputManager::OnTouchMove(int pointerId, float x, float y) {
+void AndroidInputManager::ProcessTouchMove(int pointerId, float x, float y) {
     auto it = m_activeTouches.find(pointerId);
     if (it == m_activeTouches.end()) return;
 
@@ -566,7 +624,7 @@ void AndroidInputManager::OnTouchMove(int pointerId, float x, float y) {
     }
 }
 
-void AndroidInputManager::OnTouchUp(int pointerId, float x, float y) {
+void AndroidInputManager::ProcessTouchUp(int pointerId, float x, float y) {
     auto it = m_activeTouches.find(pointerId);
     if (it == m_activeTouches.end()) return;
 
