@@ -19,6 +19,49 @@ return Component {
         self._audio = self:GetComponent("AudioComponent")
         self._pageWasActive = false
 
+        -- Detect platform
+        local isAndroid = Platform and Platform.IsAndroid and Platform.IsAndroid()
+
+        -- On Android: hide Controls button and shift Settings + MainMenu up into its slot
+        if isAndroid then
+            local controlsEnt  = Engine.GetEntityByName("ControlsButton")
+            local settingsEnt  = Engine.GetEntityByName("SettingsButton")
+            local mainMenuEnt  = Engine.GetEntityByName("MainMenuButton")
+
+            local controlsTransform = controlsEnt  and GetComponent(controlsEnt,  "Transform")
+            local settingsTransform = settingsEnt  and GetComponent(settingsEnt,  "Transform")
+            local mainMenuTransform = mainMenuEnt  and GetComponent(mainMenuEnt,  "Transform")
+
+            if controlsTransform and settingsTransform and mainMenuTransform then
+                local controlsY = controlsTransform.localPosition.y
+                local settingsY  = settingsTransform.localPosition.y
+
+                -- Shift Settings up to where Controls was
+                local sPos = settingsTransform.localPosition
+                if type(sPos) == "userdata" then
+                    sPos.y = controlsY
+                else
+                    settingsTransform.localPosition = { x = sPos.x, y = controlsY, z = sPos.z }
+                end
+                settingsTransform.isDirty = true
+
+                -- Shift MainMenu up to where Settings was
+                local mPos = mainMenuTransform.localPosition
+                if type(mPos) == "userdata" then
+                    mPos.y = settingsY
+                else
+                    mainMenuTransform.localPosition = { x = mPos.x, y = settingsY, z = mPos.z }
+                end
+                mainMenuTransform.isDirty = true
+            end
+
+            -- Hide Controls button
+            if controlsEnt then
+                local activeComp = GetComponent(controlsEnt, "ActiveComponent")
+                if activeComp then activeComp.isActive = false end
+            end
+        end
+
         -- Setup button data with sprite swapping support
         self._buttonData = {}
         local buttonMapping = {
@@ -29,32 +72,37 @@ return Component {
         }
 
         for index, config in ipairs(buttonMapping) do
-            local baseEnt = Engine.GetEntityByName(config.base)
-
-            if baseEnt then
-                local transform = GetComponent(baseEnt, "Transform")
-                local sprite = GetComponent(baseEnt, "SpriteRenderComponent")
-
-                -- Guard against missing components
-                if transform and sprite then
-                    local pos = transform.localPosition
-                    local scale = transform.localScale
-
-                    self._buttonData[index] = {
-                        name = config.base,
-                        sprite = sprite,
-                        spriteGUIDs = config.spriteGUIDs,
-                        minX = pos.x - (scale.x / 2),
-                        maxX = pos.x + (scale.x / 2),
-                        minY = pos.y - (scale.y / 2),
-                        maxY = pos.y + (scale.y / 2),
-                        wasHovered = false
-                    }
-                else
-                    print("[PauseMenuButtonHandler] Warning: Missing Transform or Sprite on " .. config.base)
-                end
+            -- Skip Controls button on Android
+            if isAndroid and config.base == "ControlsButton" then
+                -- do nothing
             else
-                print("[PauseMenuButtonHandler] Warning: Missing entity " .. config.base)
+                local baseEnt = Engine.GetEntityByName(config.base)
+
+                if baseEnt then
+                    local transform = GetComponent(baseEnt, "Transform")
+                    local sprite = GetComponent(baseEnt, "SpriteRenderComponent")
+
+                    -- Guard against missing components
+                    if transform and sprite then
+                        local pos = transform.localPosition
+                        local scale = transform.localScale
+
+                        self._buttonData[index] = {
+                            name = config.base,
+                            sprite = sprite,
+                            spriteGUIDs = config.spriteGUIDs,
+                            minX = pos.x - (scale.x / 2),
+                            maxX = pos.x + (scale.x / 2),
+                            minY = pos.y - (scale.y / 2),
+                            maxY = pos.y + (scale.y / 2),
+                            wasHovered = false
+                        }
+                    else
+                        print("[PauseMenuButtonHandler] Warning: Missing Transform or Sprite on " .. config.base)
+                    end
+                else
+                    print("[PauseMenuButtonHandler] Warning: Missing entity " .. config.base)
+                end
             end
         end
     end,
