@@ -79,7 +79,22 @@ float fbm(vec3 p)
     float amplitude = 0.5;
     float frequency = 1.0;
 
-    for (int i = 0; i < 4; i++)
+    for (int i = 0; i < 3; i++)
+    {
+        value += amplitude * valueNoise(p * frequency);
+        amplitude *= 0.5;
+        frequency *= 2.0;
+    }
+    return value;
+}
+
+float fbmWarp(vec3 p)
+{
+    float value = 0.0;
+    float amplitude = 0.5;
+    float frequency = 1.0;
+
+    for (int i = 0; i < 2; i++)
     {
         value += amplitude * valueNoise(p * frequency);
         amplitude *= 0.5;
@@ -192,9 +207,9 @@ void main()
         if (warpStrength > 0.0)
         {
             vec3 warp = vec3(
-                fbm(noiseCoord + vec3(1.7, 9.2, 3.4)),
-                fbm(noiseCoord + vec3(8.3, 2.8, 5.1)),
-                fbm(noiseCoord + vec3(4.5, 6.1, 1.9))
+                fbmWarp(noiseCoord + vec3(1.7, 9.2, 3.4)),
+                fbmWarp(noiseCoord + vec3(8.3, 2.8, 5.1)),
+                fbmWarp(noiseCoord + vec3(4.5, 6.1, 1.9))
             );
             noiseCoord += warpStrength * warp;
         }

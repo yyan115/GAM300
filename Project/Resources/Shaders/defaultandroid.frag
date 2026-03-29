@@ -156,10 +156,13 @@ float getMaterialMetallic(vec2 uv) {
 }
 
 float getMaterialRoughness(vec2 uv) {
+    float r;
     if (hasRoughnessMap) {
-        return texture(roughnessMap, uv).r;
+        r = texture(roughnessMap, uv).r;
+    } else {
+        r = material.roughness;
     }
-    return material.roughness;
+    return max(r, 0.1); // clamp to avoid extreme NDF values / NaN in GGX
 }
 
 float getMaterialAO(vec2 uv) {
@@ -278,16 +281,34 @@ float calculatePointShadow(int shadowIndex, vec3 fragPos, vec3 lightPos)
     vec3 fragToLight = fragPos - lightPos;
     float currentDepth = length(fragToLight);
 
-    float closestDepth;
-    if (shadowIndex == 0)      closestDepth = texture(pointShadowMaps[0], fragToLight).r;
-    else if (shadowIndex == 1) closestDepth = texture(pointShadowMaps[1], fragToLight).r;
-    else if (shadowIndex == 2) closestDepth = texture(pointShadowMaps[2], fragToLight).r;
-    else                       closestDepth = texture(pointShadowMaps[3], fragToLight).r;
+    // Distance-based PCF: kernel grows with distance → contact = hard, far = soft.
+    // 8 samples on mobile for performance.
+    float distNorm   = currentDepth / pointShadowFarPlane;
+    float diskRadius = mix(0.01, 0.12, distNorm);
 
-    closestDepth *= pointShadowFarPlane;
+    // 8 axis-aligned offset directions
+    vec3 sampleOffsets[8];
+    sampleOffsets[0] = vec3( 1, 1, 0); sampleOffsets[1] = vec3(-1, 1, 0);
+    sampleOffsets[2] = vec3( 1,-1, 0); sampleOffsets[3] = vec3(-1,-1, 0);
+    sampleOffsets[4] = vec3( 1, 0, 1); sampleOffsets[5] = vec3(-1, 0, 1);
+    sampleOffsets[6] = vec3( 0, 1,-1); sampleOffsets[7] = vec3( 0,-1,-1);
 
     float bias = max(0.005, currentDepth * 0.02);
-    return currentDepth - bias > closestDepth ? 1.0 : 0.0;
+    float shadow = 0.0;
+
+    for (int i = 0; i < 8; ++i)
+    {
+        vec3 sampleDir = fragToLight + normalize(sampleOffsets[i]) * diskRadius;
+        float closestDepth;
+        if (shadowIndex == 0)      closestDepth = texture(pointShadowMaps[0], sampleDir).r;
+        else if (shadowIndex == 1) closestDepth = texture(pointShadowMaps[1], sampleDir).r;
+        else if (shadowIndex == 2) closestDepth = texture(pointShadowMaps[2], sampleDir).r;
+        else                       closestDepth = texture(pointShadowMaps[3], sampleDir).r;
+        closestDepth *= pointShadowFarPlane;
+        shadow += currentDepth - bias > closestDepth ? 1.0 : 0.0;
+    }
+
+    return shadow / 8.0;
 }
 
 // ============================================================================

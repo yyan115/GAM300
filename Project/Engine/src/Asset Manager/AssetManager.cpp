@@ -221,7 +221,7 @@ bool AssetManager::CompileAsset(std::shared_ptr<AssetMeta> assetMeta, bool force
 		return false;
 	}
 }
-
+  
 bool AssetManager::CompileTexture(const std::string& filePath, const std::string& texType, GLint slot, bool flipUVs, bool forceCompile, bool forAndroid) {
 	GUID_128 guid{};
 	if (!MetaFilesManager::MetaFileExists(filePath) || !MetaFilesManager::MetaFileUpdated(filePath)) {

@@ -2214,40 +2214,43 @@ void Serializer::DeserializeScene(const std::string& scenePath) {
     }
 
     // Deserialize LightingSystem properties (scene-level lighting settings)
-    if (doc.HasMember("lightingSystem") && doc["lightingSystem"].IsObject() && ecs.lightingSystem) {
-        const auto& lightingObj = doc["lightingSystem"];
+    if (ecs.lightingSystem) {
+        ecs.lightingSystem->ResetDefaults();
+        if (doc.HasMember("lightingSystem") && doc["lightingSystem"].IsObject()) {
+            const auto& lightingObj = doc["lightingSystem"];
 
-        // Ambient mode
-        if (lightingObj.HasMember("ambientMode") && lightingObj["ambientMode"].IsInt()) {
-            ecs.lightingSystem->ambientMode = static_cast<LightingSystem::AmbientMode>(lightingObj["ambientMode"].GetInt());
+            // Ambient mode
+            if (lightingObj.HasMember("ambientMode") && lightingObj["ambientMode"].IsInt()) {
+                ecs.lightingSystem->ambientMode = static_cast<LightingSystem::AmbientMode>(lightingObj["ambientMode"].GetInt());
+            }
+
+            // Ambient sky color
+            if (lightingObj.HasMember("ambientSky") && lightingObj["ambientSky"].IsArray() && lightingObj["ambientSky"].Size() >= 3) {
+                const auto& arr = lightingObj["ambientSky"];
+                ecs.lightingSystem->ambientSky.x = arr[0].GetFloat();
+                ecs.lightingSystem->ambientSky.y = arr[1].GetFloat();
+                ecs.lightingSystem->ambientSky.z = arr[2].GetFloat();
+            }
+
+            // Ambient equator color
+            if (lightingObj.HasMember("ambientEquator") && lightingObj["ambientEquator"].IsArray() && lightingObj["ambientEquator"].Size() >= 3) {
+                const auto& arr = lightingObj["ambientEquator"];
+                ecs.lightingSystem->ambientEquator.x = arr[0].GetFloat();
+                ecs.lightingSystem->ambientEquator.y = arr[1].GetFloat();
+                ecs.lightingSystem->ambientEquator.z = arr[2].GetFloat();
+            }
+
+            // Ambient ground color
+            if (lightingObj.HasMember("ambientGround") && lightingObj["ambientGround"].IsArray() && lightingObj["ambientGround"].Size() >= 3) {
+                const auto& arr = lightingObj["ambientGround"];
+                ecs.lightingSystem->ambientGround.x = arr[0].GetFloat();
+                ecs.lightingSystem->ambientGround.y = arr[1].GetFloat();
+                ecs.lightingSystem->ambientGround.z = arr[2].GetFloat();
+            }
+
+            if (lightingObj.HasMember("ambientIntensity") && lightingObj["ambientIntensity"].IsFloat())
+                ecs.lightingSystem->ambientIntensity = lightingObj["ambientIntensity"].GetFloat();
         }
-
-        // Ambient sky color
-        if (lightingObj.HasMember("ambientSky") && lightingObj["ambientSky"].IsArray() && lightingObj["ambientSky"].Size() >= 3) {
-            const auto& arr = lightingObj["ambientSky"];
-            ecs.lightingSystem->ambientSky.x = arr[0].GetFloat();
-            ecs.lightingSystem->ambientSky.y = arr[1].GetFloat();
-            ecs.lightingSystem->ambientSky.z = arr[2].GetFloat();
-        }
-
-        // Ambient equator color
-        if (lightingObj.HasMember("ambientEquator") && lightingObj["ambientEquator"].IsArray() && lightingObj["ambientEquator"].Size() >= 3) {
-            const auto& arr = lightingObj["ambientEquator"];
-            ecs.lightingSystem->ambientEquator.x = arr[0].GetFloat();
-            ecs.lightingSystem->ambientEquator.y = arr[1].GetFloat();
-            ecs.lightingSystem->ambientEquator.z = arr[2].GetFloat();
-        }
-
-        // Ambient ground color
-        if (lightingObj.HasMember("ambientGround") && lightingObj["ambientGround"].IsArray() && lightingObj["ambientGround"].Size() >= 3) {
-            const auto& arr = lightingObj["ambientGround"];
-            ecs.lightingSystem->ambientGround.x = arr[0].GetFloat();
-            ecs.lightingSystem->ambientGround.y = arr[1].GetFloat();
-            ecs.lightingSystem->ambientGround.z = arr[2].GetFloat();
-        }
-
-        if (lightingObj.HasMember("ambientIntensity") && lightingObj["ambientIntensity"].IsFloat())
-            ecs.lightingSystem->ambientIntensity = lightingObj["ambientIntensity"].GetFloat();
     }
 
     std::cout << "[CreateEntitiesFromJson] loaded entities from: " << scenePath << "\n";
