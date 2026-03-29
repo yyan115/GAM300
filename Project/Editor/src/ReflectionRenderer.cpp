@@ -139,10 +139,8 @@ FieldModificationResult ReflectionRenderer::RenderComponentWithFieldTracking(voi
         }
     }
 
-    if (result.wasModified && PrefabEditor::IsInPrefabEditorMode()) {
-        std::cout << "[ReflectionRenderer] Modified prefab component, saving prefab changes..." << std::endl;
-        PrefabEditor::SaveEditedPrefab();
-    }
+    // Prefab saves are manual from the hierarchy toolbar to avoid noisy autosave
+    // when merely expanding/inspecting component UIs.
 
     return result;
 }
