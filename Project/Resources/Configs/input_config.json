@@ -68,9 +68,9 @@
       "desktop": {
         "keys": ["SHIFT"]
       },
-      "android": {
-        "gesture": { "type": "double_tap", "maxInterval": 0.3 }
-      }
+        "android": {
+          "entity": "(ANDROID)DashButton"
+        }
     },
 
     "Pause": {
