@@ -5,6 +5,7 @@
 #include <unordered_set>
 #include <vector>
 #include <string>
+#include <mutex>
 #include <glm/glm.hpp>
 
 /**
@@ -79,6 +80,14 @@ public:
 
 private:
     // ========== Internal Types ==========
+
+    /** @brief Raw touch event, queued by the UI thread and drained by the game thread */
+    struct TouchEvent {
+        enum class Type { Down, Move, Up };
+        Type type;
+        int pointerId;
+        float x, y;
+    };
 
     /**
      * @brief Action bound to an entity (button/joystick)
@@ -165,6 +174,12 @@ private:
     // Action state tracking
     std::unordered_set<std::string> m_currentActions;
     std::unordered_set<std::string> m_previousActions;
+    std::unordered_set<std::string> m_pendingActions;  // Buffered from OnTouchDown for quick taps
+
+    // Thread-safe touch event queue (UI thread writes, game thread drains in Update)
+    std::mutex m_touchEventMutex;
+    std::vector<TouchEvent> m_touchEventQueue;
+    std::vector<TouchEvent> m_touchEventQueueSwap;  // double-buffer, only accessed by game thread
 
     // Gesture tracking
     float m_lastTapTime = 0.0f;
@@ -205,4 +220,11 @@ private:
      * @brief Get current time in seconds (for gesture timing)
      */
     float GetCurrentTime();
+
+    /** @brief Called on game thread to actually process a touch-down event */
+    void ProcessTouchDown(int pointerId, float x, float y);
+    /** @brief Called on game thread to actually process a touch-move event */
+    void ProcessTouchMove(int pointerId, float x, float y);
+    /** @brief Called on game thread to actually process a touch-up event */
+    void ProcessTouchUp(int pointerId, float x, float y);
 };

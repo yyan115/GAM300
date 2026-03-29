@@ -194,15 +194,15 @@
                         },
                         {
                             "type": "float",
-                            "data": 1
+                            "data": 1.2
                         },
                         {
                             "type": "float",
-                            "data": 1
+                            "data": 3.5
                         },
                         {
                             "type": "float",
-                            "data": 0.5
+                            "data": 0.6
                         },
                         {
                             "type": "bool",
@@ -218,7 +218,7 @@
                         },
                         {
                             "type": "bool",
-                            "data": false
+                            "data": true
                         },
                         {
                             "type": "float",
@@ -226,7 +226,7 @@
                         },
                         {
                             "type": "float",
-                            "data": 1
+                            "data": 1.05
                         },
                         {
                             "type": "float",
@@ -304,9 +304,9 @@
                     "dirBlurAngle": 0.0,
                     "dirBlurSamples": 8,
                     "bloomEnabled": true,
-                    "bloomThreshold": 1.0,
-                    "bloomIntensity": 1.0,
-                    "bloomSpread": 0.5,
+                    "bloomThreshold": 1.2000000476837158,
+                    "bloomIntensity": 3.5,
+                    "bloomSpread": 0.6000000238418579,
                     "vignetteEnabled": false,
                     "vignetteIntensity": 0.5,
                     "vignetteSmoothness": 0.5,
@@ -318,9 +318,9 @@
                             0.0
                         ]
                     },
-                    "colorGradingEnabled": false,
+                    "colorGradingEnabled": true,
                     "cgBrightness": 0.0,
-                    "cgContrast": 1.0,
+                    "cgContrast": 1.0499999523162842,
                     "cgSaturation": 1.0,
                     "cgTint": {
                         "type": "glm::vec3",
@@ -1088,7 +1088,7 @@
                     "data": [
                         {
                             "type": "bool",
-                            "data": true
+                            "data": false
                         },
                         "00328d6a4e55cb37-0003611882000089",
                         "00374a216e66dbbc-000331fc80000069",
@@ -27334,7 +27334,7 @@
                         },
                         {
                             "type": "float",
-                            "data": 1.7
+                            "data": 3.5
                         },
                         {
                             "type": "bool",
@@ -33236,7 +33236,7 @@
                         },
                         {
                             "type": "float",
-                            "data": 2.3
+                            "data": 1
                         },
                         {
                             "type": "bool",
@@ -33261,11 +33261,7 @@
                         },
                         {
                             "type": "float",
-                            "data": 0.999848
-                        },
-                        {
-                            "type": "float",
-                            "data": 1.25
+                            "data": 0.996195
                         },
                         {
                             "type": "float",
@@ -33273,7 +33269,11 @@
                         },
                         {
                             "type": "float",
-                            "data": 0.07
+                            "data": 0.4
+                        },
+                        {
+                            "type": "float",
+                            "data": 0
                         },
                         {
                             "type": "Vector3D",
@@ -33297,15 +33297,15 @@
                             "data": [
                                 {
                                     "type": "float",
-                                    "data": 0.610039
+                                    "data": 0.85098
                                 },
                                 {
                                     "type": "float",
-                                    "data": 0.610039
+                                    "data": 0.772549
                                 },
                                 {
                                     "type": "float",
-                                    "data": 0.610039
+                                    "data": 0.627451
                                 }
                             ]
                         },
@@ -33555,7 +33555,7 @@
                             "data": [
                                 {
                                     "type": "float",
-                                    "data": -0.00000286102
+                                    "data": -0.00000476837
                                 },
                                 {
                                     "type": "float",
@@ -33563,7 +33563,7 @@
                                 },
                                 {
                                     "type": "float",
-                                    "data": 0
+                                    "data": -0.00000190735
                                 }
                             ]
                         },
@@ -33593,15 +33593,15 @@
                                 },
                                 {
                                     "type": "float",
-                                    "data": 0
+                                    "data": 2.65195e-8
                                 },
                                 {
                                     "type": "float",
-                                    "data": 0
+                                    "data": -2.98032e-8
                                 },
                                 {
                                     "type": "float",
-                                    "data": 0
+                                    "data": -1.46232e-7
                                 }
                             ]
                         }
@@ -33728,15 +33728,15 @@
                         },
                         {
                             "type": "float",
-                            "data": 5
+                            "data": 10
                         }
                     ],
                     "bloomColor": {
                         "type": "glm::vec3",
                         "data": [
-                            0.96138995885849,
-                            0.7273520231246948,
-                            0.4342958629131317
+                            0.843137264251709,
+                            0.6039215922355652,
+                            0.239215686917305
                         ]
                     }
                 }
@@ -35856,7 +35856,7 @@
                             "data": [
                                 {
                                     "type": "float",
-                                    "data": 0
+                                    "data": 0.45
                                 },
                                 {
                                     "type": "float",
@@ -35864,7 +35864,7 @@
                                 },
                                 {
                                     "type": "float",
-                                    "data": -2.3
+                                    "data": -1.9
                                 }
                             ]
                         },
@@ -35936,7 +35936,7 @@
                         },
                         {
                             "type": "float",
-                            "data": 0.9
+                            "data": 0.5
                         },
                         {
                             "type": "bool",
@@ -35959,15 +35959,15 @@
                             "data": [
                                 {
                                     "type": "float",
-                                    "data": 0.03861
+                                    "data": 0
                                 },
                                 {
                                     "type": "float",
-                                    "data": 0.03861
+                                    "data": 0
                                 },
                                 {
                                     "type": "float",
-                                    "data": 0.03861
+                                    "data": 0
                                 }
                             ]
                         },
@@ -35976,15 +35976,15 @@
                             "data": [
                                 {
                                     "type": "float",
-                                    "data": 0.145098
+                                    "data": 0.196911
                                 },
                                 {
                                     "type": "float",
-                                    "data": 0.145098
+                                    "data": 0.196911
                                 },
                                 {
                                     "type": "float",
-                                    "data": 0.145098
+                                    "data": 0.196911
                                 }
                             ]
                         },
@@ -36011,7 +36011,7 @@
                         },
                         {
                             "type": "float",
-                            "data": 3.5
+                            "data": 0
                         }
                     ]
                 },
@@ -36456,20 +36456,20 @@
     "lightingSystem": {
         "ambientMode": 0,
         "ambientSky": [
-            0.7019608020782471,
-            0.7019608020782471,
-            0.7019608020782471
+            0.37451738119125366,
+            0.37451738119125366,
+            0.37451738119125366
         ],
         "ambientEquator": [
-            0.4211764931678772,
-            0.4211764931678772,
-            0.4211764931678772
+            0.22471043467521667,
+            0.22471043467521667,
+            0.22471043467521667
         ],
         "ambientGround": [
-            0.2105882465839386,
-            0.2105882465839386,
-            0.2105882465839386
+            0.11235521733760834,
+            0.11235521733760834,
+            0.11235521733760834
         ],
-        "ambientIntensity": 0.10000000149011612
+        "ambientIntensity": 0.30000001192092896
     }
 }
