@@ -196,8 +196,10 @@ void SceneHierarchyPanel::OnImGuiRender() {
             RebuildSearchCache();
         }
 
-		std::string sceneDisplayName;
-        if (!PrefabEditor::IsInPrefabEditorMode()) {
+        const bool inPrefabMode = PrefabEditor::IsInPrefabEditorMode();
+
+        std::string sceneDisplayName;
+        if (!inPrefabMode) {
             std::string sceneName = SceneManager::GetInstance().GetSceneName();
             sceneDisplayName = std::string(ICON_FA_EARTH_AMERICAS) + " " + sceneName;
 
@@ -209,16 +211,51 @@ void SceneHierarchyPanel::OnImGuiRender() {
         else {
             bool goBack = false;
             if (ImGui::Button(ICON_FA_ARROW_LEFT)) {
-                // TODO: Handle your back button logic here
                 PrefabEditor::StopEditingPrefab();
                 goBack = true;
+            }
+            if (ImGui::IsItemHovered()) {
+                ImGui::SetTooltip("Back to Scene");
             }
 
             ImGui::SameLine();
 
             if (!goBack) {
-			    std::string prefabName = ecsManager.GetComponent<NameComponent>(PrefabEditor::GetSandboxEntity()).name;
+                const Entity sandboxRoot = PrefabEditor::GetSandboxEntity();
+                std::string prefabName = "Prefab";
+                if (sandboxRoot != static_cast<Entity>(-1) && ecsManager.HasComponent<NameComponent>(sandboxRoot)) {
+                    prefabName = ecsManager.GetComponent<NameComponent>(sandboxRoot).name;
+                }
                 sceneDisplayName = std::string(ICON_FA_CUBE) + " Prefab: " + prefabName;
+
+                const float actionBtnWidth = 30.0f;
+                const float actionBtnsWidth = actionBtnWidth * 2.0f + ImGui::GetStyle().ItemSpacing.x;
+                ImGui::SameLine(ImGui::GetWindowWidth() - actionBtnsWidth - 12.0f);
+
+                if (ImGui::Button(ICON_FA_FLOPPY_DISK, ImVec2(actionBtnWidth, 0))) {
+                    PrefabEditor::SaveEditedPrefab();
+                }
+                if (ImGui::IsItemHovered()) {
+                    ImGui::SetTooltip("Save Prefab");
+                }
+
+                const bool previewLightEnabled = PrefabEditor::IsPreviewLightEnabled();
+                ImGui::SameLine();
+                if (!previewLightEnabled) {
+                    ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.6f, 0.6f, 0.6f, 1.0f));
+                }
+                if (ImGui::Button(ICON_FA_LIGHTBULB, ImVec2(actionBtnWidth, 0))) {
+                    PrefabEditor::SetPreviewLightEnabled(!previewLightEnabled);
+                }
+                if (!previewLightEnabled) {
+                    ImGui::PopStyleColor();
+                }
+                if (ImGui::IsItemHovered()) {
+                    ImGui::SetTooltip(previewLightEnabled ? "Disable Preview Light" : "Enable Preview Light");
+                }
+            }
+            else {
+                sceneDisplayName = std::string(ICON_FA_CUBE) + " Prefab";
             }
             // Add visual separation: MUCH darker background for scene header (like Unity)
             ImGui::PushStyleColor(ImGuiCol_Header, EditorComponents::PANEL_BG_SCENE_HEADER);
@@ -313,19 +350,31 @@ void SceneHierarchyPanel::OnImGuiRender() {
         //ImGui::Separator();
 
         // Context menu for creating new objects
-        if (ImGui::BeginPopupContextWindow()) {
-            if (ImGui::MenuItem("Create Empty")) {
-                Entity newEntity = CreateEmptyEntity();
-                GUIManager::SetSelectedEntity(newEntity);
-            }
-            if (ImGui::MenuItem("Create Cube")) {
-                Entity newEntity = CreateCubeEntity();
-                GUIManager::SetSelectedEntity(newEntity);
-            }
-            ImGui::Separator();
-            if (ImGui::MenuItem("Create Camera")) {
-                Entity newEntity = CreateCameraEntity();
-                GUIManager::SetSelectedEntity(newEntity);
+        if (!ImGui::IsAnyItemHovered() && ImGui::BeginPopupContextWindow()) {
+            if (PrefabEditor::IsInPrefabEditorMode()) {
+                // In prefab mode all new entities must be children of the sandbox root.
+                Entity sandboxRoot = PrefabEditor::GetSandboxEntity();
+                if (ImGui::MenuItem("Create Child Entity")) {
+                    Entity newChild = CreateEmptyEntity("Empty Entity");
+                    if (newChild != static_cast<Entity>(-1) && sandboxRoot != static_cast<Entity>(-1)) {
+                        ReparentEntity(newChild, sandboxRoot);
+                        GUIManager::SetSelectedEntity(newChild);
+                    }
+                }
+            } else {
+                if (ImGui::MenuItem("Create Empty")) {
+                    Entity newEntity = CreateEmptyEntity();
+                    GUIManager::SetSelectedEntity(newEntity);
+                }
+                if (ImGui::MenuItem("Create Cube")) {
+                    Entity newEntity = CreateCubeEntity();
+                    GUIManager::SetSelectedEntity(newEntity);
+                }
+                ImGui::Separator();
+                if (ImGui::MenuItem("Create Camera")) {
+                    Entity newEntity = CreateCameraEntity();
+                    GUIManager::SetSelectedEntity(newEntity);
+                }
             }
             ImGui::EndPopup();
         }
@@ -352,7 +401,15 @@ void SceneHierarchyPanel::OnImGuiRender() {
             if (ImGui::BeginDragDropTarget()) {
                 if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("HIERARCHY_ENTITY")) {
                     Entity dragged = *(Entity*)payload->Data;
-                    UnparentEntity(dragged);
+                    if (PrefabEditor::IsInPrefabEditorMode()) {
+                        const Entity sandboxRoot = PrefabEditor::GetSandboxEntity();
+                        if (sandboxRoot != static_cast<Entity>(-1) && dragged != sandboxRoot) {
+                            ReparentEntity(dragged, sandboxRoot);
+                        }
+                    }
+                    else {
+                        UnparentEntity(dragged);
+                    }
                 }
                 ImGui::EndDragDropTarget();
             }
@@ -575,15 +632,18 @@ void SceneHierarchyPanel::DrawEntityNode(const std::string& entityName, Entity e
             if (io.KeyShift && lastClickedEntity != static_cast<Entity>(-1)) {
                 // Shift+Click: range selection
                 SelectRange(lastClickedEntity, entityId);
-            } else if (io.KeyCtrl) {
+            }
+            else if (io.KeyCtrl) {
                 // Ctrl+Click: toggle selection
                 if (GUIManager::IsEntitySelected(entityId)) {
                     GUIManager::RemoveSelectedEntity(entityId);
-                } else {
+                }
+                else {
                     GUIManager::AddSelectedEntity(entityId);
                 }
                 lastClickedEntity = entityId;
-            } else {
+            }
+            else {
                 // Single click: select only this entity
                 GUIManager::SetSelectedEntity(entityId);
                 lastClickedEntity = entityId;
@@ -691,8 +751,12 @@ void SceneHierarchyPanel::DrawEntityNode(const std::string& entityName, Entity e
 
     if (ImGui::BeginPopupContextItem())
     {
+        ECSManager& popupEcsManager = ECSRegistry::GetInstance().GetActiveECSManager();
         const std::vector<Entity>& selectedEntities = GUIManager::GetSelectedEntities();
         bool isMultiSelect = selectedEntities.size() > 1;
+        const bool inPrefabMode = PrefabEditor::IsInPrefabEditorMode();
+        const Entity sandboxRoot = PrefabEditor::GetSandboxEntity();
+        const bool isSandboxRoot = inPrefabMode && (entityId == sandboxRoot);
 
         // Copy menu item
         if (ImGui::MenuItem("Copy", "Ctrl+C")) {
@@ -725,11 +789,39 @@ void SceneHierarchyPanel::DrawEntityNode(const std::string& entityName, Entity e
                 GUIManager::SetSelectedEntities(duplicated);
             }
         }
+        if (ImGui::MenuItem("Create Child Entity", nullptr, false, !isMultiSelect)) {
+            Entity newChild = CreateEmptyEntity("Empty Entity");
+            if (newChild != static_cast<Entity>(-1)) {
+                ReparentEntity(newChild, entityId);
+                GUIManager::SetSelectedEntity(newChild);
+            }
+        }
+
+        bool canRemoveParent = !isMultiSelect && popupEcsManager.HasComponent<ParentComponent>(entityId);
+        if (canRemoveParent && inPrefabMode) {
+            const GUID_128 parentGuid = popupEcsManager.GetComponent<ParentComponent>(entityId).parent;
+            const Entity currentParent = EntityGUIDRegistry::GetInstance().GetEntityByGUID(parentGuid);
+            if (currentParent == sandboxRoot) {
+                canRemoveParent = false;
+            }
+        }
+
+        if (ImGui::MenuItem("Remove Parent", nullptr, false, canRemoveParent)) {
+            if (inPrefabMode && sandboxRoot != static_cast<Entity>(-1)) {
+                ReparentEntity(entityId, sandboxRoot);
+            }
+            else {
+                UnparentEntity(entityId);
+            }
+            GUIManager::SetSelectedEntity(entityId);
+        }
+
         if (ImGui::MenuItem("Rename", "F2", false, !isMultiSelect)) {
             renamingEntity = entityId;
             startRenaming  = true;
         }
-        if (ImGui::MenuItem("Delete", "Del")) {
+        const bool canDeleteEntity = !(inPrefabMode && isSandboxRoot);
+        if (ImGui::MenuItem("Delete", "Del", false, canDeleteEntity)) {
             try {
                 ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
 
@@ -741,6 +833,9 @@ void SceneHierarchyPanel::DrawEntityNode(const std::string& entityName, Entity e
                     GUIManager::ClearSelectedEntities();
 
                     for (Entity entity : entitiesToDelete) {
+                        if (inPrefabMode && entity == sandboxRoot) {
+                            continue;
+                        }
                         if (ecsManager.TryGetComponent<NameComponent>(entity).has_value()) {
                             ecsManager.DestroyEntity(entity);
                         }
