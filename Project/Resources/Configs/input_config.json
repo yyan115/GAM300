@@ -3,7 +3,8 @@
     "description": "Unified input configuration - define actions/axes once, bind per platform",
     "validKeys": "A-Z, 0-9, SPACE, SHIFT, CTRL, ALT, TAB, ESC, ENTER, BACKSPACE, UP, DOWN, LEFT, RIGHT, F1-F12",
     "validMouseButtons": "LEFT, RIGHT, MIDDLE",
-    "android_note": "Android bindings reference entity names - engine looks up their transforms for hit detection"
+    "android_note": "Android bindings reference entity names - engine looks up their transforms for hit detection",
+    "android_hitShape": "Optional. 'circle' uses radius hit test (min(w,h)/2); omit for default rect"
   },
 
   "actions": {
@@ -24,7 +25,8 @@
         "mouseButtons": ["LEFT"]
       },
       "android": {
-        "entity": "AttackIcon"
+        "entity": "AttackIcon",
+        "hitShape": "circle"
       }
     },
 
@@ -34,7 +36,8 @@
         "mouseButtons": ["RIGHT"]
       },
       "android": {
-        "entity": "ChainIcon"
+        "entity": "ChainIcon",
+        "hitShape": "circle"
       }
     },
 
@@ -44,7 +47,8 @@
         "keys": ["Z"]
       },
       "android": {
-        "entity": "SkillIcon"
+        "entity": "SkillIcon",
+        "hitShape": "circle"
       }
     },
 
@@ -54,7 +58,8 @@
         "keys": ["F"]
       },
       "android": {
-        "entity": "(ANDROID)InteractButton"
+        "entity": "(ANDROID)InteractButton",
+        "hitShape": "circle"
       }
     },
 
@@ -74,7 +79,8 @@
         "keys": ["ESC"]
       },
       "android": {
-        "entity": "(ANDROID)PauseButton"
+        "entity": "(ANDROID)PauseButton",
+        "hitShape": "circle"
       }
     },
 
