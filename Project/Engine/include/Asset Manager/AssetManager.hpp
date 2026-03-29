@@ -277,7 +277,7 @@ private:
 		metaPtr = asset->ExtendMetaFile(filePath, metaPtr, forAndroid);
 		assetMetaMap[guid] = metaPtr;
 
-		ENGINE_PRINT("[AssetManager] Compiled asset: ", filePath, " to ", compiledPath, "\n\n");
+		//ENGINE_PRINT("[AssetManager] Compiled asset: ", filePath, " to ", compiledPath, "\n\n");
 
 		// HOT-RELOAD (typed)
 		if (!forAndroid) {

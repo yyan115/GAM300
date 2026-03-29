@@ -1,0 +1,11 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "006f9d9d16bc311b-0004a3b1fa046ac5",
+        "source": "../../Resources/Models/Environment/WallTop.fbx",
+        "compiled": "../../Resources/Models/Environment/WallTop.mesh"
+    },
+    "ModelMetaData": {
+        "optimizeMeshes": true
+    }
+}

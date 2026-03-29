@@ -155,7 +155,7 @@ std::string Texture::CompileToResource(const std::string& assetPath, bool forAnd
 		ENGINE_PRINT(EngineLogging::LogLevel::Error, "[TEXTURE]: File exists check: ", std::filesystem::exists(assetPath), "\n");
 		return std::string{}; // Return empty string to indicate failure
 	}
-	ENGINE_PRINT("[TEXTURE]: Successfully loaded image: " , assetPath , " (" , widthImg , "x" , heightImg , ", " , numColCh , " channels)\n");
+	//ENGINE_PRINT("[TEXTURE]: Successfully loaded image: " , assetPath , " (" , widthImg , "x" , heightImg , ", " , numColCh , " channels)\n");
 
 	std::string outPath{};
 
@@ -173,7 +173,7 @@ std::string Texture::CompileToResource(const std::string& assetPath, bool forAnd
 		stbi_image_free(bytes);
 		bytes = (unsigned char*)malloc(pixels.size());
 		std::memcpy(bytes, pixels.data(), pixels.size());
-		ENGINE_PRINT("[TEXTURE]: Downscaled to maxSize ", metaData->maxSize, ": ", widthImg, "x", heightImg, "\n");
+		//ENGINE_PRINT("[TEXTURE]: Downscaled to maxSize ", metaData->maxSize, ": ", widthImg, "x", heightImg, "\n");
 	}
 
 	// Number of channels actually present in the loaded pixel data.
@@ -215,7 +215,7 @@ std::string Texture::CompileToResource(const std::string& assetPath, bool forAnd
 	CMP_CompressOptions options = { 0 };
 	options.dwSize = sizeof(options);
 
-	ENGINE_PRINT("[Texture] Compressing texture (", mipCount, " mip levels): ", assetPath, "\n");
+	//ENGINE_PRINT("[Texture] Compressing texture (", mipCount, " mip levels): ", assetPath, "\n");
 
 	// Compress mip 0 directly from the stbi-loaded pixels.
 	if (!CompressAndStoreMip(bytes, widthImg, heightImg, srcChannels, srcCmpFmt, dstCmpFmt, options, tex, 0)) {
@@ -250,7 +250,7 @@ std::string Texture::CompileToResource(const std::string& assetPath, bool forAnd
 			outPath = "";
 		}
 		else {
-			ENGINE_PRINT(EngineLogging::LogLevel::Info, "[TEXTURE] Successfully compiled and saved: ", outPath, "\n");
+			//ENGINE_PRINT(EngineLogging::LogLevel::Info, "[TEXTURE] Successfully compiled and saved: ", outPath, "\n");
 		}
 	}
 	else {

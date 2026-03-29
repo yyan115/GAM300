@@ -1,103 +1,68 @@
 require("extension.engine_bootstrap")
 local Component = require("extension.mono_helper")
-local TransformMixin = require("extension.transform_mixin")
 
 local event_bus = _G.event_bus
 
 return Component {
-    mixins = { TransformMixin },
-
     fields = {
-        followDelay = 0.5,        -- Delay before HealthBarFill starts following (seconds)
-        followSpeed = 2.0,        -- Speed of the smooth follow (higher = faster)
-        healthBarFillName = "HealthBarFill"  -- Name of the entity to follow
+        followDelay = 0.5,       -- Seconds before ghost bar starts following
+        followSpeed = 2.0,       -- Lerp speed of ghost bar (higher = faster)
+        healthBarFillName = "HealthBarFill",  -- Name of the ghost/delayed bar entity
     },
 
     Awake = function(self)
         if event_bus and event_bus.subscribe then
-            print("[PlayerHealthBar] Subscribing to playerMaxhealth")
             self._playerMaxHealthSub = event_bus.subscribe("playerMaxhealth", function(maxHealth)
-                if maxHealth then
-                    self._maxHealth = maxHealth
-                end
+                if maxHealth then self._maxHealth = maxHealth end
             end)
-            print("[PlayerHealthBar] Subscription token: " .. tostring(self._playerMaxHealthSub))
-
-            print("[PlayerHealthBar] Subscribing to playerCurrentHealth")
             self._playerCurrentHealthSub = event_bus.subscribe("playerCurrentHealth", function(currentHealth)
-                if currentHealth then
-                    self._currentHealth = currentHealth
-                end
+                if currentHealth then self._currentHealth = currentHealth end
             end)
-            print("[PlayerHealthBar] Subscription token: " .. tostring(self._playerCurrentHealthSub))
         else
             print("[PlayerHealthBar] ERROR: event_bus not available!")
         end
     end,
 
     Start = function(self)
-        self._transform = self:GetComponent("Transform")
-        self._maxHealthScale = self._transform.localScale.x
+        -- This entity is the immediate health bar fill
+        self._sprite = self:GetComponent("SpriteRenderComponent")
 
-        -- Get the HealthBarFill entity
-        self._healthBarFillEntity = Engine.GetEntityByName(self.healthBarFillName)
-        if self._healthBarFillEntity then
-            self._healthBarFillTransform = GetComponent(self._healthBarFillEntity, "Transform")
-            if self._healthBarFillTransform then
-                -- Initialize the fill bar to match current health
-                self._currentFillScale = self._healthBarFillTransform.localScale.x
-            end
+        -- Ghost bar entity (delayed, lerps behind)
+        local ghostEnt = Engine.GetEntityByName(self.healthBarFillName)
+        if ghostEnt then
+            self._ghostSprite = GetComponent(ghostEnt, "SpriteRenderComponent")
         else
-            print("[PlayerHealthBar] WARNING: Could not find entity: " .. self.healthBarFillName)
+            print("[PlayerHealthBar] WARNING: Could not find ghost bar: " .. self.healthBarFillName)
         end
 
         self._delayTimer = 0.0
-        self._previousHealthPercentage = 1.0
+        self._ghostFill  = 1.0
+        self._previousHealthPct = 1.0
     end,
 
     Update = function(self, dt)
-        if not self._transform then
-            return
-        end
-
         local maxHealth = self._maxHealth or 10
-        local currentHealth = self._currentHealth or 10
-        local healthPercentage = currentHealth / maxHealth
-        if currentHealth == 0 then
-            healthPercentage = 0.0
+        local currentHealth = self._currentHealth or maxHealth
+        local pct = math.max(0.0, math.min(1.0, currentHealth / maxHealth))
+
+        -- Immediate bar: just set fillValue directly
+        if self._sprite then
+            self._sprite.fillValue = pct
         end
 
-        -- Update HealthBarFillFollow (this entity) immediately
-        self._transform.localScale.x = healthPercentage * self._maxHealthScale
-        self._transform.localPosition.x = -(1.0 - healthPercentage) * 0.5
-        self._transform.isDirty = true
-
-        -- Update HealthBarFill with delay and smooth follow
-        if self._healthBarFillTransform then
-            -- Check if health changed (decreased)
-            if healthPercentage < self._previousHealthPercentage then
-                self._delayTimer = 0.0  -- Reset delay timer on health decrease
+        -- Ghost bar: wait for delay, then lerp toward current health
+        if self._ghostSprite then
+            if pct < self._previousHealthPct then
+                self._delayTimer = 0.0  -- Reset delay when health drops
             end
+            self._previousHealthPct = pct
 
-            self._previousHealthPercentage = healthPercentage
-
-            -- Only update fill bar after delay
             if self._delayTimer >= self.followDelay then
-                -- Smoothly interpolate toward target scale
-                local targetScale = healthPercentage * self._maxHealthScale
-                self._currentFillScale = self._currentFillScale or targetScale
-
-                -- Lerp toward target
-                self._currentFillScale = self._currentFillScale + (targetScale - self._currentFillScale) * (self.followSpeed * dt)
-
-                -- Clamp to prevent overshooting
-                if math.abs(self._currentFillScale - targetScale) < 0.001 then
-                    self._currentFillScale = targetScale
+                self._ghostFill = self._ghostFill + (pct - self._ghostFill) * (self.followSpeed * dt)
+                if math.abs(self._ghostFill - pct) < 0.001 then
+                    self._ghostFill = pct
                 end
-
-                self._healthBarFillTransform.localScale.x = self._currentFillScale
-                self._healthBarFillTransform.localPosition.x = -(self._maxHealthScale - self._currentFillScale) * 0.5
-                self._healthBarFillTransform.isDirty = true
+                self._ghostSprite.fillValue = self._ghostFill
             else
                 self._delayTimer = self._delayTimer + dt
             end
@@ -105,6 +70,9 @@ return Component {
     end,
 
     OnDisable = function(self)
-
+        if event_bus and event_bus.unsubscribe then
+            if self._playerMaxHealthSub then event_bus.unsubscribe(self._playerMaxHealthSub) end
+            if self._playerCurrentHealthSub then event_bus.unsubscribe(self._playerCurrentHealthSub) end
+        end
     end,
 }

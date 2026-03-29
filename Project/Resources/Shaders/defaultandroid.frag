@@ -318,11 +318,22 @@ vec3 calculateDirectionLight(DirectionLight light, vec3 N, vec3 V, float shadow,
 
 vec3 calculatePointLight(PointLight light, vec3 N, vec3 V, vec3 fragPos, vec3 albedo, float metallic, float roughness)
 {
+    float dist = length(light.position - fragPos);
+
+    // Early-out: fragment is outside this light's range — skip all expensive PBR + shadow work
+    if (light.range > 0.0 && dist > light.range) {
+        return vec3(0.0);
+    }
+
     vec3 L = normalize(light.position - fragPos);
-    vec3 H = normalize(V + L);
     float NdotL = max(dot(N, L), 0.0);
 
-    float dist        = length(light.position - fragPos);
+    // Early-out: back-facing surface — no contribution
+    if (NdotL <= 0.0) {
+        return vec3(0.0);
+    }
+
+    vec3 H = normalize(V + L);
     float attenuation = 1.0 / (light.constant + light.linear * dist + light.quadratic * (dist * dist));
 
     if (light.range > 0.0) {

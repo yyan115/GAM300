@@ -1,7 +1,7 @@
 {
     "prefab_entities": [
         {
-            "id": 78,
+            "id": 72,
             "guid": "0067fa6dd6937355-00047931ec00034d",
             "components": {
                 "PrefabLinkComponent": {
@@ -120,7 +120,7 @@
             }
         },
         {
-            "id": 79,
+            "id": 73,
             "guid": "0067fa6def0d2935-00047931ec00034f",
             "components": {
                 "NameComponent": {
@@ -314,7 +314,7 @@
             }
         },
         {
-            "id": 80,
+            "id": 74,
             "guid": "0067fa6da7599f92-00047931ec000351",
             "components": {
                 "NameComponent": {
@@ -424,7 +424,7 @@
             }
         },
         {
-            "id": 81,
+            "id": 75,
             "guid": "0067fa6dfc895f0f-00047931ec000353",
             "components": {
                 "NameComponent": {
@@ -726,6 +726,10 @@
                             "data": 0.5
                         },
                         {
+                            "type": "float",
+                            "data": 70
+                        },
+                        {
                             "type": "Vector3D",
                             "data": [
                                 {
@@ -773,7 +777,7 @@
             }
         },
         {
-            "id": 82,
+            "id": 76,
             "guid": "0067fa6da763cb9b-00047931ec000355",
             "components": {
                 "NameComponent": {
@@ -1075,6 +1079,10 @@
                             "data": 0.5
                         },
                         {
+                            "type": "float",
+                            "data": 70
+                        },
+                        {
                             "type": "Vector3D",
                             "data": [
                                 {
@@ -1122,7 +1130,7 @@
             }
         },
         {
-            "id": 83,
+            "id": 77,
             "guid": "0067fa6db29b4d1c-00047931ec000357",
             "components": {
                 "NameComponent": {
@@ -1325,7 +1333,7 @@
             }
         },
         {
-            "id": 84,
+            "id": 78,
             "guid": "0067fa6dcb7336c2-00047931ec000359",
             "components": {
                 "NameComponent": {
@@ -1530,6 +1538,10 @@
                             "data": 0.5
                         },
                         {
+                            "type": "float",
+                            "data": 70
+                        },
+                        {
                             "type": "Vector3D",
                             "data": [
                                 {
@@ -1577,7 +1589,7 @@
             }
         },
         {
-            "id": 85,
+            "id": 79,
             "guid": "0067fa6d84d537b7-00047931ec00035b",
             "components": {
                 "NameComponent": {
@@ -1782,6 +1794,10 @@
                             "data": 0.5
                         },
                         {
+                            "type": "float",
+                            "data": 70
+                        },
+                        {
                             "type": "Vector3D",
                             "data": [
                                 {
@@ -1829,14 +1845,14 @@
             }
         },
         {
-            "id": 86,
+            "id": 80,
             "guid": "0067fa6dc493ff1e-00047931ec00035d",
             "components": {
                 "NameComponent": {
                     "name": "pPlane1"
                 },
                 "TagComponent": {
-                    "tagIndex": 0
+                    "tagIndex": 20
                 },
                 "LayerComponent": {
                     "layerIndex": 7
@@ -2034,6 +2050,10 @@
                             "data": 0.5
                         },
                         {
+                            "type": "float",
+                            "data": 70
+                        },
+                        {
                             "type": "Vector3D",
                             "data": [
                                 {
@@ -2081,7 +2101,7 @@
             }
         },
         {
-            "id": 87,
+            "id": 81,
             "guid": "0067fa6daa84b09e-00047931ec00035f",
             "components": {
                 "NameComponent": {
@@ -2394,6 +2414,10 @@
                             "data": 0.5
                         },
                         {
+                            "type": "float",
+                            "data": 70
+                        },
+                        {
                             "type": "Vector3D",
                             "data": [
                                 {
@@ -2441,7 +2465,7 @@
             }
         },
         {
-            "id": 88,
+            "id": 82,
             "guid": "003f1e4944483e3b-00049eea4e000185",
             "components": {
                 "NameComponent": {
@@ -2545,7 +2569,7 @@
             }
         },
         {
-            "id": 89,
+            "id": 83,
             "guid": "003f1e49778cae07-00049eea4e000187",
             "components": {
                 "NameComponent": {
@@ -2649,7 +2673,7 @@
             }
         },
         {
-            "id": 90,
+            "id": 84,
             "guid": "003f1e49065d4cde-00049eea4e000189",
             "components": {
                 "NameComponent": {
@@ -2753,7 +2777,7 @@
             }
         },
         {
-            "id": 91,
+            "id": 85,
             "guid": "003f1e490b3cfe90-00049eea4e00018b",
             "components": {
                 "NameComponent": {
@@ -2857,7 +2881,7 @@
             }
         },
         {
-            "id": 92,
+            "id": 86,
             "guid": "003f1e490b482f55-00049eea4e00018d",
             "components": {
                 "NameComponent": {
@@ -2961,7 +2985,7 @@
             }
         },
         {
-            "id": 93,
+            "id": 87,
             "guid": "003f1e4970e09c1a-00049eea4e00018f",
             "components": {
                 "NameComponent": {
@@ -3071,7 +3095,7 @@
             }
         },
         {
-            "id": 94,
+            "id": 88,
             "guid": "003f1e49336defaa-00049eea4e000191",
             "components": {
                 "NameComponent": {
@@ -3164,7 +3188,7 @@
             }
         },
         {
-            "id": 95,
+            "id": 89,
             "guid": "003f1e4975b39374-00049eea4e000193",
             "components": {
                 "NameComponent": {
@@ -3257,7 +3281,7 @@
             }
         },
         {
-            "id": 96,
+            "id": 90,
             "guid": "003f1e4913b1a098-00049eea4e000195",
             "components": {
                 "NameComponent": {
@@ -3350,7 +3374,7 @@
             }
         },
         {
-            "id": 97,
+            "id": 91,
             "guid": "003f1e491253dbce-00049eea4e000197",
             "components": {
                 "NameComponent": {
@@ -3443,7 +3467,7 @@
             }
         },
         {
-            "id": 98,
+            "id": 92,
             "guid": "003f1e4900dc0e60-00049eea4e000199",
             "components": {
                 "NameComponent": {
@@ -3536,7 +3560,7 @@
             }
         },
         {
-            "id": 99,
+            "id": 93,
             "guid": "003f1e4926a75d97-00049eea4e00019b",
             "components": {
                 "NameComponent": {
@@ -3629,7 +3653,7 @@
             }
         },
         {
-            "id": 100,
+            "id": 94,
             "guid": "003f1e492283a7aa-00049eea4e00019d",
             "components": {
                 "NameComponent": {
@@ -3722,7 +3746,7 @@
             }
         },
         {
-            "id": 101,
+            "id": 95,
             "guid": "0067fa6ddcdceeae-00047931ec00037b",
             "components": {
                 "NameComponent": {
@@ -4035,6 +4059,10 @@
                             "data": 0.5
                         },
                         {
+                            "type": "float",
+                            "data": 70
+                        },
+                        {
                             "type": "Vector3D",
                             "data": [
                                 {
@@ -4082,7 +4110,7 @@
             }
         },
         {
-            "id": 102,
+            "id": 96,
             "guid": "003f1e49417659f0-00049eea4e0001a1",
             "components": {
                 "NameComponent": {
@@ -4186,7 +4214,7 @@
             }
         },
         {
-            "id": 103,
+            "id": 97,
             "guid": "003f1e4916f8416c-00049eea4e0001a3",
             "components": {
                 "NameComponent": {
@@ -4290,7 +4318,7 @@
             }
         },
         {
-            "id": 104,
+            "id": 98,
             "guid": "003f1e497e224786-00049eea4e0001a5",
             "components": {
                 "NameComponent": {
@@ -4394,7 +4422,7 @@
             }
         },
         {
-            "id": 105,
+            "id": 99,
             "guid": "003f1e4974d374b5-00049eea4e0001a7",
             "components": {
                 "NameComponent": {
@@ -4504,7 +4532,7 @@
             }
         },
         {
-            "id": 106,
+            "id": 100,
             "guid": "003f1e4925e65770-00049eea4e0001a9",
             "components": {
                 "NameComponent": {
@@ -4597,7 +4625,7 @@
             }
         },
         {
-            "id": 107,
+            "id": 101,
             "guid": "003f1e49684bdde4-00049eea4e0001ab",
             "components": {
                 "NameComponent": {
@@ -4690,7 +4718,7 @@
             }
         },
         {
-            "id": 108,
+            "id": 102,
             "guid": "003f1e49525d91bd-00049eea4e0001ad",
             "components": {
                 "NameComponent": {
@@ -4783,7 +4811,7 @@
             }
         },
         {
-            "id": 109,
+            "id": 103,
             "guid": "003f1e4900f9e022-00049eea4e0001af",
             "components": {
                 "NameComponent": {
@@ -4876,7 +4904,7 @@
             }
         },
         {
-            "id": 110,
+            "id": 104,
             "guid": "003f1e4968e5d4d9-00049eea4e0001b1",
             "components": {
                 "NameComponent": {
@@ -4969,7 +4997,7 @@
             }
         },
         {
-            "id": 111,
+            "id": 105,
             "guid": "003f1e491a4ed165-00049eea4e0001b3",
             "components": {
                 "NameComponent": {
@@ -5062,7 +5090,7 @@
             }
         },
         {
-            "id": 112,
+            "id": 106,
             "guid": "003f1e49145bb141-00049eea4e0001b5",
             "components": {
                 "NameComponent": {
@@ -5155,7 +5183,7 @@
             }
         },
         {
-            "id": 113,
+            "id": 107,
             "guid": "0067fa6dd7f8c378-00047931ec000393",
             "components": {
                 "NameComponent": {
@@ -5457,6 +5485,10 @@
                             "data": 0.5
                         },
                         {
+                            "type": "float",
+                            "data": 70
+                        },
+                        {
                             "type": "Vector3D",
                             "data": [
                                 {
@@ -5504,7 +5536,7 @@
             }
         },
         {
-            "id": 114,
+            "id": 108,
             "guid": "0067fa6db4831e72-00047931ec000395",
             "components": {
                 "NameComponent": {
@@ -5806,6 +5838,10 @@
                             "data": 0.5
                         },
                         {
+                            "type": "float",
+                            "data": 70
+                        },
+                        {
                             "type": "Vector3D",
                             "data": [
                                 {
@@ -5853,7 +5889,7 @@
             }
         },
         {
-            "id": 115,
+            "id": 109,
             "guid": "006aa537f1466e7b-000499e02201b539",
             "components": {
                 "NameComponent": {
@@ -6047,7 +6083,7 @@
             }
         },
         {
-            "id": 116,
+            "id": 110,
             "guid": "0011f2c3f8ad5803-000481114600b5cb",
             "components": {
                 "NameComponent": {
@@ -6237,7 +6273,7 @@
             }
         },
         {
-            "id": 117,
+            "id": 111,
             "guid": "0011f2c3e159075c-000481114600b5cd",
             "components": {
                 "NameComponent": {
@@ -6427,7 +6463,7 @@
             }
         },
         {
-            "id": 118,
+            "id": 112,
             "guid": "0011f2c389c9ef8c-00048110b8009791",
             "components": {
                 "NameComponent": {
@@ -6617,7 +6653,7 @@
             }
         },
         {
-            "id": 119,
+            "id": 113,
             "guid": "0011f2c3a735ac7a-0004810f20009775",
             "components": {
                 "NameComponent": {

@@ -12,11 +12,9 @@ function BattlecryState:Enter(ai)
 
     -- Play taunt SFX (force full volume: temporarily disable 3D rolloff
     -- so the dramatic battlecry is always clearly audible at aggro range)
-    local count = ai.enemyTauntSFX and #ai.enemyTauntSFX or 0
-    if count > 0 and ai._audio then
-        ai._audio.SpatialBlend = 0          -- play as 2D (bypasses distance rolloff)
-        ai._audio:PlayOneShot(ai.enemyTauntSFX[math.random(1, count)])
-    end
+    local _bossAudio = GetComponent(ai.entityId, "AudioComponent")
+    if _bossAudio then _bossAudio.SpatialBlend = 0 end  -- play as 2D (bypasses distance rolloff)
+    ai:_publishSFX("taunt")
 
     print("[Miniboss] Intro START (battlecry)")
 end
@@ -36,7 +34,8 @@ function BattlecryState:Update(ai, dt)
 
         print("[Miniboss] Intro END -> Combat (new system)")
 
-        if ai._audio then ai._audio.SpatialBlend = 1 end
+        local _bossAudio = GetComponent(ai.entityId, "AudioComponent")
+        if _bossAudio then _bossAudio.SpatialBlend = 1 end
     end
 end
 

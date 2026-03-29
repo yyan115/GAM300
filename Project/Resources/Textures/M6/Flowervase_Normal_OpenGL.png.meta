@@ -1,0 +1,15 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "006f9d9d28f0ff9f-0004a3648c0081f9",
+        "source": "../../Resources/Textures/M6/Flowervase_Normal_OpenGL.png",
+        "compiled": "../../Resources/Textures/M6/Flowervase_Normal_OpenGL.dds"
+    },
+    "TextureMetaData": {
+        "type": "normal",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

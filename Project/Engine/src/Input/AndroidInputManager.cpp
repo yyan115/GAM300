@@ -350,6 +350,10 @@ bool AndroidInputManager::LoadConfig(const std::string& path) {
                 entityAction.actionName = actionName;
                 entityAction.entityName = androidBinding["entity"].GetString();
 
+                if (androidBinding.HasMember("hitShape") && androidBinding["hitShape"].IsString()) {
+                    entityAction.circleHitbox = std::string(androidBinding["hitShape"].GetString()) == "circle";
+                }
+
                 m_entityActions.push_back(entityAction);
                 LOGI("[AndroidInputManager] Loaded entity action: %s -> %s",
                      actionName.c_str(), entityAction.entityName.c_str());
@@ -470,18 +474,29 @@ void AndroidInputManager::OnTouchDown(int pointerId, float x, float y) {
         }
 
         // Check if touch is inside entity bounds
-        float halfWidth = entityAction.entitySize.x / 2.0f;
-        float halfHeight = entityAction.entitySize.y / 2.0f;
-        float minX = entityAction.entityCenter.x - halfWidth;
-        float maxX = entityAction.entityCenter.x + halfWidth;
-        float minY = entityAction.entityCenter.y - halfHeight;
-        float maxY = entityAction.entityCenter.y + halfHeight;
+        bool hit = false;
+        if (entityAction.circleHitbox) {
+            float radius = std::min(entityAction.entitySize.x, entityAction.entitySize.y) / 2.0f;
+            float dx = gamePos.x - entityAction.entityCenter.x;
+            float dy = gamePos.y - entityAction.entityCenter.y;
+            hit = (dx * dx + dy * dy) <= (radius * radius);
+            LOGI("[AndroidInput]   Checking '%s' (circle r=%.1f): center=(%.1f,%.1f) touch=(%.1f,%.1f)",
+                 entityAction.entityName.c_str(), radius,
+                 entityAction.entityCenter.x, entityAction.entityCenter.y, gamePos.x, gamePos.y);
+        } else {
+            float halfWidth  = entityAction.entitySize.x / 2.0f;
+            float halfHeight = entityAction.entitySize.y / 2.0f;
+            float minX = entityAction.entityCenter.x - halfWidth;
+            float maxX = entityAction.entityCenter.x + halfWidth;
+            float minY = entityAction.entityCenter.y - halfHeight;
+            float maxY = entityAction.entityCenter.y + halfHeight;
+            hit = gamePos.x >= minX && gamePos.x <= maxX &&
+                  gamePos.y >= minY && gamePos.y <= maxY;
+            LOGI("[AndroidInput]   Checking '%s' (rect): bounds=(%.1f,%.1f)-(%.1f,%.1f) touch=(%.1f,%.1f)",
+                 entityAction.entityName.c_str(), minX, minY, maxX, maxY, gamePos.x, gamePos.y);
+        }
 
-        LOGI("[AndroidInput]   Checking '%s': bounds=(%.1f,%.1f)-(%.1f,%.1f) touch=(%.1f,%.1f)",
-             entityAction.entityName.c_str(), minX, minY, maxX, maxY, gamePos.x, gamePos.y);
-
-        if (gamePos.x >= minX && gamePos.x <= maxX &&
-            gamePos.y >= minY && gamePos.y <= maxY) {
+        if (hit) {
 
             entityAction.isPressed = true;
             entityAction.activeTouchId = pointerId;
@@ -641,7 +656,14 @@ void AndroidInputManager::UpdateEntityTransforms() {
 bool AndroidInputManager::IsTouchInsideEntity(const EntityAction& entity, glm::vec2 touchPos) {
     if (!entity.entityFound) return false;
 
-    float halfWidth = entity.entitySize.x / 2.0f;
+    if (entity.circleHitbox) {
+        float radius = std::min(entity.entitySize.x, entity.entitySize.y) / 2.0f;
+        float dx = touchPos.x - entity.entityCenter.x;
+        float dy = touchPos.y - entity.entityCenter.y;
+        return (dx * dx + dy * dy) <= (radius * radius);
+    }
+
+    float halfWidth  = entity.entitySize.x / 2.0f;
     float halfHeight = entity.entitySize.y / 2.0f;
     float minX = entity.entityCenter.x - halfWidth;
     float maxX = entity.entityCenter.x + halfWidth;

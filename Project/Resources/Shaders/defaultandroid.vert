@@ -36,7 +36,7 @@ layout(std140) uniform CameraBlock {
 
 uniform mat4 model;
 uniform mat4 lightSpaceMatrix;
-uniform mat3 normalMatrix;  // Pass this from CPU instead of computing inverse()
+uniform mat3 normalMatrixCPU;  // Pass this from CPU instead of computing inverse()
 
 uniform bool useInstancing;
 
@@ -71,7 +71,7 @@ void main()
     else
     {
         modelMatrix = model;
-        nrmMatrix = normalMatrix;
+        nrmMatrix = normalMatrixCPU;
     }
 
     // Start in object space

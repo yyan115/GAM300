@@ -1,0 +1,15 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "006b8ee8884c511d-0004a764f4005ff9",
+        "source": "../../Resources/Sprites/CommonUI/ResetBtn.png",
+        "compiled": "../../Resources/Sprites/CommonUI/ResetBtn.dds"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": true,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

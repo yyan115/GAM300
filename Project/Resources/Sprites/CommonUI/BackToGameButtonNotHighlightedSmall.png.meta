@@ -1,0 +1,15 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "006b8ee88c4a7888-0004a764f4005ffd",
+        "source": "../../Resources/Sprites/CommonUI/BackToGameButtonNotHighlightedSmall.png",
+        "compiled": "../../Resources/Sprites/CommonUI/BackToGameButtonNotHighlightedSmall.dds"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": true,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

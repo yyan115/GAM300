@@ -89,6 +89,7 @@ private:
 
         // Cached entity data (updated each frame)
         bool entityFound = false;
+        bool circleHitbox = false;   // If true, use circle hit test (radius = min(w,h)/2)
         glm::vec2 entityCenter;      // Screen position (normalized 0-1)
         glm::vec2 entitySize;        // Size (normalized)
 
