@@ -62,7 +62,7 @@ std::string Audio::CompileToResource(const std::string& assetPathParam, bool for
         }
     }
 
-    ENGINE_PRINT("[Audio] Successfully compiled audio resource: ", assetPathParam, " to ", outPath, "\n");
+    //ENGINE_PRINT("[Audio] Successfully compiled audio resource: ", assetPathParam, " to ", outPath, "\n");
     return outPath;
 }
 

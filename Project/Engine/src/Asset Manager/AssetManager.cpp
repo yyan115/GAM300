@@ -28,7 +28,7 @@ void AssetManager::RunEventQueue() {
 				break;
 			}
 			std::this_thread::sleep_for(std::chrono::milliseconds(100));
-			std::cout << "[AssetManager] Running event queue... Asset ADDED: " << currentEvent.second.generic_string() << ". Compiling asset..." << std::endl;
+			//std::cout << "[AssetManager] Running event queue... Asset ADDED: " << currentEvent.second.generic_string() << ". Compiling asset..." << std::endl;
 			CompileAsset(currentEvent.second.generic_string(), true);
 			break;
 		}
@@ -37,19 +37,19 @@ void AssetManager::RunEventQueue() {
 				break;
 			}
 			std::this_thread::sleep_for(std::chrono::milliseconds(100));
-			std::cout << "[AssetManager] Running event queue... Asset MODIFIED: " << currentEvent.second.generic_string() << ". Re-compiling asset..." << std::endl;
+			//std::cout << "[AssetManager] Running event queue... Asset MODIFIED: " << currentEvent.second.generic_string() << ". Re-compiling asset..." << std::endl;
 			CompileAsset(currentEvent.second.generic_string(), true);
 			break;
 		}
 		case Event::removed: {
 			std::this_thread::sleep_for(std::chrono::milliseconds(100));
-			std::cout << "[AssetManager] Running event queue... Asset REMOVED: " << currentEvent.second.generic_string() << ". Checking for any add event for the same asset ahead..." << std::endl;
+			//std::cout << "[AssetManager] Running event queue... Asset REMOVED: " << currentEvent.second.generic_string() << ". Checking for any add event for the same asset ahead..." << std::endl;
 			bool unloadAsset = true;
 			for (const auto& nextEvent : assetEventQueue) {
 				// If the next event is adding back the same asset (e.g. replacement of assets).
 				if (nextEvent.second == currentEvent.second && nextEvent.first == Event::added) {
 					// Don't unload the current asset as it will be replaced next.
-					std::cout << "[AssetManager] Running event queue... FOUND A SUBSEQUENT ADD EVENT: " << nextEvent.second.generic_string() << ". Asset won't be unloaded." << std::endl;
+					//std::cout << "[AssetManager] Running event queue... FOUND A SUBSEQUENT ADD EVENT: " << nextEvent.second.generic_string() << ". Asset won't be unloaded." << std::endl;
 					unloadAsset = false;
 					break;
 				}
@@ -61,11 +61,11 @@ void AssetManager::RunEventQueue() {
 			break;
 		}
 		case Event::renamed_old:
-			std::cout << "[AssetManager] Running event queue... Asset RENAMED (OLD): " << currentEvent.second.generic_string() << ". Unloading asset..." << std::endl;
+			//std::cout << "[AssetManager] Running event queue... Asset RENAMED (OLD): " << currentEvent.second.generic_string() << ". Unloading asset..." << std::endl;
 			UnloadAsset(currentEvent.second.generic_string());
 			break;
 		case Event::renamed_new:
-			std::cout << "[AssetManager] Running event queue... Asset RENAMED (NEW): " << currentEvent.second.generic_string() << ". Compiling asset..." << std::endl;
+			//std::cout << "[AssetManager] Running event queue... Asset RENAMED (NEW): " << currentEvent.second.generic_string() << ". Compiling asset..." << std::endl;
 			CompileAsset(currentEvent.second.generic_string(), true);
 			break;
 		default:
@@ -98,7 +98,7 @@ int AssetManager::GetAssetMetaMapSize() {
 }
 
 std::shared_ptr<AssetMeta> AssetManager::AddAssetMetaToMap(const std::string& assetPath) {
-	ENGINE_LOG_INFO("AddAssetMetaToMap");
+	//ENGINE_LOG_INFO("AddAssetMetaToMap");
 	std::filesystem::path p(assetPath);
 	std::string extension = p.extension().string();
 	std::string metaFilePath = assetPath + ".meta";
@@ -340,7 +340,7 @@ void AssetManager::UnloadAsset(const std::string& assetPath) {
 		}
 
 		assetMetaMap.erase(it);
-		std::cout << "[AssetManager] Unloaded asset: " << assetPath << std::endl << std::endl;
+		//std::cout << "[AssetManager] Unloaded asset: " << assetPath << std::endl << std::endl;
 	}
 }
 
@@ -439,7 +439,7 @@ bool AssetManager::HandleMetaFileDeletion(const std::string& metaFilePath) {
 			GUID_128 guid = pair.first;
 
 			if (ResourceManager::GetInstance().UnloadResource(guid, resourcePath)) {
-				std::cout << "[AssetManager] Successfully deleted resource file and its associated meta file: " << resourcePath << ", " << metaFilePath << std::endl;
+				//std::cout << "[AssetManager] Successfully deleted resource file and its associated meta file: " << resourcePath << ", " << metaFilePath << std::endl;
 				return true;
 			}
 			else {
@@ -464,7 +464,7 @@ bool AssetManager::HandleResourceFileDeletion(const std::string& resourcePath) {
 			GUID_128 guid = pair.first;
 
 			if (ResourceManager::GetInstance().UnloadResource(guid, resourcePath)) {
-				std::cout << "[AssetManager] Successfully deleted resource file: " << resourcePath << std::endl;
+				//std::cout << "[AssetManager] Successfully deleted resource file: " << resourcePath << std::endl;
 				return true;
 			}
 			else {
@@ -509,7 +509,7 @@ std::string AssetManager::GetAssetPathFromGUID(const GUID_128 guid) {
 
 std::vector<std::string> AssetManager::CompileAllAssetsForAndroid() {
 	// THIS RUNS ON A SEPARATE THREAD.
-	std::cout << "[AssetManager] Starting compile all assets for Android..." << std::endl;
+	//std::cout << "[AssetManager] Starting compile all assets for Android..." << std::endl;
 	androidCompilationStatus.numCompiledAssets = 0;
 	androidCompilationStatus.isCompiling = true;
 	std::vector<std::string> remainingPaths{};
@@ -581,7 +581,7 @@ std::vector<std::string> AssetManager::CompileAllAssetsForAndroid() {
 				std::filesystem::path newPath = FileUtilities::SanitizePathForAndroid(std::filesystem::path(path));
 				path = newPath.generic_string();
 				if (FileUtilities::CopyFile(p.path().generic_string(), (AssetManager::GetInstance().GetAndroidResourcesPath() / path).generic_string())) {
-					ENGINE_LOG_INFO("Copied scene file to Android Resources: " + p.path().generic_string());
+					//ENGINE_LOG_INFO("Copied scene file to Android Resources: " + p.path().generic_string());
 				}
 			}
 		}
@@ -596,7 +596,7 @@ std::vector<std::string> AssetManager::CompileAllAssetsForAndroid() {
 				std::filesystem::path newPath = FileUtilities::SanitizePathForAndroid(std::filesystem::path(path));
 				path = newPath.generic_string();
 				if (FileUtilities::CopyFile(p.path().generic_string(), (AssetManager::GetInstance().GetAndroidResourcesPath() / path).generic_string())) {
-					ENGINE_LOG_INFO("Copied config file to Android Resources: " + p.path().generic_string());
+					//ENGINE_LOG_INFO("Copied config file to Android Resources: " + p.path().generic_string());
 				}
 			}
 		}
@@ -611,7 +611,7 @@ std::vector<std::string> AssetManager::CompileAllAssetsForAndroid() {
 				std::filesystem::path newPath = FileUtilities::SanitizePathForAndroid(std::filesystem::path(path));
 				path = newPath.generic_string();
 				if (FileUtilities::CopyFile(p.path().generic_string(), (AssetManager::GetInstance().GetAndroidResourcesPath() / path).generic_string())) {
-					ENGINE_LOG_INFO("Copied prefab file to Android Resources: " + p.path().generic_string());
+					//ENGINE_LOG_INFO("Copied prefab file to Android Resources: " + p.path().generic_string());
 				}
 			}
 		}
@@ -627,7 +627,7 @@ std::vector<std::string> AssetManager::CompileAllAssetsForAndroid() {
 				std::filesystem::path newPath = FileUtilities::SanitizePathForAndroid(std::filesystem::path(path));
 				path = newPath.generic_string();
 				if (FileUtilities::CopyFile(p.path().generic_string(), (AssetManager::GetInstance().GetAndroidResourcesPath() / path).generic_string())) {
-					ENGINE_LOG_INFO("Copied animation file to Android Resources: " + p.path().generic_string());
+					//ENGINE_LOG_INFO("Copied animation file to Android Resources: " + p.path().generic_string());
 				}
 			}
 		}
@@ -694,15 +694,15 @@ std::vector<std::string> AssetManager::CompileAllAssetsForAndroid() {
 		}
 	}
 
-	ENGINE_PRINT("[AssetManager] Asset manifest written to {}", manifestFileP.generic_string());
-	ENGINE_PRINT("[AssetManager] Finished compiling assets except Shaders and Meshes for Android. Android Resources folder is in GAM300/AndroidProject/app/src/main/assets/Resources");
+	//ENGINE_PRINT("[AssetManager] Asset manifest written to {}", manifestFileP.generic_string());
+	//ENGINE_PRINT("[AssetManager] Finished compiling assets except Shaders and Meshes for Android. Android Resources folder is in GAM300/AndroidProject/app/src/main/assets/Resources");
 	androidCompilationStatus.finishedCompiling = true;
 	return remainingPaths;
 }
 
 std::vector<std::string> AssetManager::CompileAllAssetsForDesktop() {
 	// THIS RUNS ON A SEPARATE THREAD.
-	std::cout << "[AssetManager] Starting compile all assets for Desktop..." << std::endl;
+	//std::cout << "[AssetManager] Starting compile all assets for Desktop..." << std::endl;
 	std::vector<std::string> remainingPaths{};
 	for (const auto& pair : assetMetaMap) {
 		std::filesystem::path p(pair.second->compiledFilePath);
@@ -729,13 +729,13 @@ std::vector<std::string> AssetManager::CompileAllAssetsForDesktop() {
 	//	for (auto p : std::filesystem::recursive_directory_iterator(rootAssetFolder + "/Scenes")) {
 	//		if (std::filesystem::is_regular_file(p)) {
 	//			if (FileUtilities::CopyFile(p.path().generic_string(), (FileUtilities::GetSolutionRootDir() / p.path()).generic_string())) {
-	//				ENGINE_LOG_INFO("Copied scene file to Project/Resources: " + p.path().generic_string());
+	//				//ENGINE_LOG_INFO("Copied scene file to Project/Resources: " + p.path().generic_string());
 	//			}
 	//		}
 	//	}
 	//}
 
-	std::cout << "[AssetManager] Finished compiling assets except Shaders and Meshes for Desktop." << std::endl << std::endl;
+	//std::cout << "[AssetManager] Finished compiling assets except Shaders and Meshes for Desktop." << std::endl << std::endl;
 	return remainingPaths;
 }
 
@@ -802,7 +802,7 @@ bool AssetManager::CompileTextureToResource(GUID_128 guid, const char* filePath,
 			std::lock_guard<std::mutex> lock(assetMetaMutex);
 			assetMetaMap[guid] = assetMeta;
 		}
-		ENGINE_PRINT("[AssetManager] Compiled asset: ", filePath, " to ", compiledPath, "\n\n");
+		//ENGINE_PRINT("[AssetManager] Compiled asset: ", filePath, " to ", compiledPath, "\n\n");
 
 		if (!forAndroid) {
 			// If the resource is already loaded, hot-reload the resource.
@@ -849,7 +849,7 @@ bool AssetManager::CompileTextureToResource(GUID_128 guid, const char* filePath,
 			std::lock_guard<std::mutex> lock(assetMetaMutex);
 			assetMetaMap[guid] = assetMeta;
 		}
-		ENGINE_PRINT("[AssetManager] Compiled asset: ", filePath, " to ", compiledPath, "\n\n");
+		//ENGINE_PRINT("[AssetManager] Compiled asset: ", filePath, " to ", compiledPath, "\n\n");
 
 		if (!forAndroid) {
 			// If the resource is already loaded, hot-reload the resource.
@@ -883,7 +883,7 @@ bool AssetManager::CompileUpdatedMaterialToResource(GUID_128 guid, const std::st
 			assetMeta = material->GenerateBaseMetaFile(guid, filePath, assetMeta->compiledFilePath, compiledPath, true);
 		}
 		assetMetaMap[guid] = assetMeta;
-		ENGINE_PRINT("[AssetManager] Compiled updated material: ", filePath, " to ", compiledPath, "\n\n");
+		//ENGINE_PRINT("[AssetManager] Compiled updated material: ", filePath, " to ", compiledPath, "\n\n");
 
 		// If the resource is already loaded, hot-reload the resource.
 		if (ResourceManager::GetInstance().IsResourceLoaded(guid)) {
