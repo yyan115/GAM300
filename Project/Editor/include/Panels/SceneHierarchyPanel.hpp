@@ -104,8 +104,20 @@ private:
 
     // Search functionality
     void RebuildSearchCache();
-    bool EntityMatchesSearch(const std::string& searchName) const;
+    bool EntityMatchesSearch(Entity entity, ECSManager& ecsManager) const;
+    bool MatchesComponentSearch(Entity entity, ECSManager& ecsManager) const;
     void CollectAncestors(Entity entity, std::unordered_set<Entity>& ancestors);
+
+    void FocusEntityInScene(Entity entityId, const std::string& entityName);
+
+    enum class SearchFilter {
+        Name,
+        LuaScript,
+        Component,
+        Tag,
+        Layer
+    };
+    SearchFilter searchFilter = SearchFilter::Name;
 
     char searchBuffer[256] = {};
     std::string searchQuery;
