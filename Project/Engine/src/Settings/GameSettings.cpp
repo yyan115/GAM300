@@ -27,7 +27,7 @@ void GameSettingsManager::Initialize() {
     m_defaults.masterVolume = 1.0f;
     m_defaults.bgmVolume = 1.0f;
     m_defaults.sfxVolume = 1.0f;
-    m_defaults.gamma = 1.0f;
+    m_defaults.gamma = 2.2f;
     m_defaults.exposure = 1.0f;
     m_defaults.toneMappingMode = 2;
     m_defaults.vsync = true;
