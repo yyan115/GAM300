@@ -548,9 +548,22 @@ void InspectorPanel::OnImGuiRender() {
 						ImGui::Separator();
 					}
 					else {
-						// Commented out as not used to fix warnings.
-						// ECSManager& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
 						ImGui::Text("Editing Prefab:");
+						ImGui::SameLine(ImGui::GetWindowWidth() - 42);
+						if (ImGui::Button(inspectorLocked ? ICON_FA_LOCK : ICON_FA_UNLOCK, ImVec2(30, 0))) {
+							inspectorLocked = !inspectorLocked;
+							if (inspectorLocked) {
+								lockedEntity = GUIManager::GetSelectedEntity();
+								lockedAsset = { 0, 0 };
+							}
+							else {
+								lockedEntity = static_cast<Entity>(-1);
+								lockedAsset = { 0, 0 };
+							}
+						}
+						if (ImGui::IsItemHovered()) {
+							ImGui::SetTooltip(inspectorLocked ? "Unlock Inspector" : "Lock Inspector");
+						}
 						ImGui::Separator();
 					}
 
