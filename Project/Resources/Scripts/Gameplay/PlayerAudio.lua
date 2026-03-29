@@ -98,6 +98,24 @@ return Component {
     Awake = function(self)
         self._audio = nil
 
+        -- Guard against double-Awake (hot-reload / stop-play cycle): unsubscribe
+        -- any stale tokens before re-subscribing so we never get two listeners.
+        if _G.event_bus and _G.event_bus.unsubscribe then
+            local stale = {
+                "_deadSub", "_hurtSub", "_jumpedSub", "_landedSub", "_dashedSub",
+                "_footstepSub", "_featherPickupSub", "_featherSkillStartSub",
+                "_featherSkillReleaseSub", "_healSub",
+            }
+            for _, key in ipairs(stale) do
+                if self[key] then _G.event_bus.unsubscribe(self[key]); self[key] = nil end
+            end
+        end
+
+        -- Enable AudioHelper debug output for dash clips only.
+        if self.playerFootstepSFX then
+            self.playerFootstepSFX._debug = true
+        end
+
         if not (_G.event_bus and _G.event_bus.subscribe) then
             print("[PlayerAudio] WARNING: event_bus not available in Awake")
             return

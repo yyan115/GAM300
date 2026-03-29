@@ -1,6 +1,7 @@
 require("extension.engine_bootstrap")
 local Component = require("extension.mono_helper")
 local TransformMixin = require("extension.transform_mixin")
+local AudioHelper = require("extension.audio_helper")
 local event_bus = _G.event_bus
 
 local function eulerToQuat(pitch, yaw, roll)
@@ -156,7 +157,7 @@ return Component {
             self._audio = self:GetComponent("AudioComponent")
             if self._audio and self.featherDropSFX[1] and (now - last) > 0.3 then
                 _G._featherDropSFXTime = now
-                self._audio:PlayOneShot(self.featherDropSFX[math.random(#self.featherDropSFX)])
+                AudioHelper.PlayRandomSFX(self._audio, self.featherDropSFX)
             end
         end
     end,
