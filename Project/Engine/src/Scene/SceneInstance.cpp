@@ -37,6 +37,7 @@
 #include <Multi-threading/ParallelSystemOrchestrator.hpp>
 #include "Engine.h"
 #include <Graphics/Instancing/InstancingManager.hpp>
+#include <Settings/GameSettings.hpp>
 
 Entity fpsText;
 
@@ -76,18 +77,14 @@ void SceneInstance::Initialize()
 	{
 		ENGINE_PRINT(EngineLogging::LogLevel::Error, "[Engine] Failed to initialize Post-Processing!\n");
 	}
-	ENGINE_PRINT("[Engine] Post-processing initialized with HDR\n");
+	ENGINE_PRINT("[Engine] Post-processing initialized\n");
 
-	// Configure HDR settings
-	auto* hdrEffect = PostProcessingManager::GetInstance().GetHDREffect();
-	if (hdrEffect)
-	{
-		hdrEffect->SetEnabled(true);
-		hdrEffect->SetExposure(1.f);
-		hdrEffect->SetGamma(2.2f);
-		hdrEffect->SetToneMappingMode(HDREffect::ToneMappingMode::REINHARD);
-		ENGINE_PRINT("[SceneInstance] HDR initialized and enabled\n");
-	}
+	// Reset runtime state (vignette, blur, etc.) so it doesn't leak from previous scene
+	PostProcessingManager::GetInstance().ResetRuntimeState();
+
+	// Configure HDR settings from GameSettings
+	GameSettingsManager::GetInstance().ApplySettings();
+	ENGINE_PRINT("[SceneInstance] HDR and post-processing applied from GameSettings\n");
 
 	// CreateHDRTestScene(ecsManager); // Commented out - only use for HDR testing
 	

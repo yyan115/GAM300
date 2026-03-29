@@ -31,6 +31,7 @@ public:
     bool Initialise();
     void Update();
     void Shutdown();
+    void ResetDefaults();
 
     void ApplyLighting(Shader& shader);
 

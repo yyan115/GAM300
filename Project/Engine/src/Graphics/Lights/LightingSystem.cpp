@@ -57,6 +57,15 @@ void LightingSystem::Shutdown()
     std::cout << "[LightingSystem] Shutdown" << std::endl;
 }
 
+void LightingSystem::ResetDefaults()
+{
+    ambientMode = AmbientMode::Color;
+    ambientSky = glm::vec3(0.05f, 0.05f, 0.05f);
+    ambientEquator = glm::vec3(0.03f, 0.03f, 0.03f);
+    ambientGround = glm::vec3(0.01f, 0.01f, 0.01f);
+    ambientIntensity = 1.0f;
+}
+
 void LightingSystem::RenderShadowMaps()
 {
     PROFILE_FUNCTION();
@@ -307,13 +316,18 @@ void LightingSystem::CollectLightData()
             {
                 directionalLightData.hasDirectionalLight = true;
 
-                glm::vec3 direction(0.2f, -1.0f, -0.3f);
+                glm::vec3 baseDirection = light.direction.ConvertToGLM();
+                glm::vec3 direction = baseDirection;
                 if (ecsManager.HasComponent<Transform>(entity))
                 {
                     auto& transform = ecsManager.GetComponent<Transform>(entity);
                     glm::mat4 worldMat = transform.worldMatrix.ConvertToGLM();
                     glm::mat3 rotationMatrix = glm::mat3(worldMat);
-                    direction = glm::normalize(rotationMatrix * direction);
+                    direction = glm::normalize(rotationMatrix * baseDirection);
+                }
+                else
+                {
+                    direction = glm::normalize(baseDirection);
                 }
 
                 directionalLightData.direction = direction;
