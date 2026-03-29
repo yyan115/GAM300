@@ -136,6 +136,18 @@ void DesktopPlatform::SetWindowTitle(const char* title) {
     }
 }
 
+void DesktopPlatform::SetVSync(bool enabled) {
+    if (window) {
+        glfwSwapInterval(enabled ? 1 : 0);
+    }
+}
+
+void DesktopPlatform::SetFullscreen(bool enabled) {
+    if (!window) return;
+    if (isFullscreen == enabled) return;
+    ToggleFullscreen();
+}
+
 void DesktopPlatform::ToggleFullscreen() {
     if (!window) return;
 

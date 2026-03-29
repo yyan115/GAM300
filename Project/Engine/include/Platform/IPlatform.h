@@ -22,6 +22,9 @@ public:
     virtual int GetWindowWidth() = 0;
     virtual int GetWindowHeight() = 0;
     virtual void SetWindowTitle(const char* title) = 0;
+    virtual void SetVSync(bool enabled) = 0;
+    virtual void SetFullscreen(bool enabled) = 0;
+    virtual bool IsFullscreen() const = 0;
     virtual void ToggleFullscreen() = 0;
     virtual void MinimizeWindow() = 0;
     virtual bool IsWindowMinimized() = 0;

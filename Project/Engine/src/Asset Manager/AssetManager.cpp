@@ -101,19 +101,30 @@ std::shared_ptr<AssetMeta> AssetManager::AddAssetMetaToMap(const std::string& as
 	ENGINE_LOG_INFO("AddAssetMetaToMap");
 	std::filesystem::path p(assetPath);
 	std::string extension = p.extension().string();
-	std::string metaFilePath = assetPath + ".meta";
+
+	std::filesystem::path metaFilePath(assetPath);
+	if (AssetManager::GetInstance().GetShaderExtensions().find(extension) != AssetManager::GetInstance().GetShaderExtensions().end() ||
+		ResourceManager::GetInstance().IsExtensionShader(extension)) {
+		metaFilePath = (metaFilePath.parent_path() / metaFilePath.stem()).generic_string() + ".meta";
+		//rootMetaFilePath = (rootMetaFilePath.parent_path() / rootMetaFilePath.stem()).generic_string() + ".meta";
+	}
+	else {
+		metaFilePath = std::filesystem::path(assetPath + ".meta");
+		//rootMetaFilePath = std::filesystem::path(rootMetaFilePath.generic_string() + ".meta");
+	}
+
 	std::shared_ptr<AssetMeta> assetMeta;
 	if (textureExtensions.find(extension) != textureExtensions.end()) {
 		assetMeta = std::make_shared<TextureMeta>();
-		assetMeta->PopulateAssetMetaFromFile(metaFilePath);
+		assetMeta->PopulateAssetMetaFromFile(metaFilePath.generic_string());
 	}
 	else if (modelExtensions.find(extension) != modelExtensions.end()) {
 		assetMeta = std::make_shared<ModelMeta>();
-		assetMeta->PopulateAssetMetaFromFile(metaFilePath);
+		assetMeta->PopulateAssetMetaFromFile(metaFilePath.generic_string());
 	}
 	else {
 		assetMeta = std::make_shared<AssetMeta>();
-		assetMeta->PopulateAssetMetaFromFile(metaFilePath);
+		assetMeta->PopulateAssetMetaFromFile(metaFilePath.generic_string());
 	}
 
 //#ifndef ANDROID
@@ -129,16 +140,22 @@ std::shared_ptr<AssetMeta> AssetManager::AddAssetMetaToMap(const std::string& as
 }
 
 bool AssetManager::CompileAsset(const std::string& filePathStr, bool forceCompile, bool forAndroid) {
+	bool isShader = false;
+	std::filesystem::path filePath(filePathStr);
+	std::string extension = filePath.extension().string();
+	if (AssetManager::GetInstance().GetShaderExtensions().find(extension) != AssetManager::GetInstance().GetShaderExtensions().end() ||
+		ResourceManager::GetInstance().IsExtensionShader(extension)) {
+		isShader = true;
+	}
+
 	// Fix: Load existing metadata if available to prevent resetting to defaults during re-compilation (e.g. from file watcher events)
-	if (MetaFilesManager::MetaFileExists(filePathStr)) {
+	if (!isShader && MetaFilesManager::MetaFileExists(filePathStr)) {
 		auto assetMeta = AddAssetMetaToMap(filePathStr);
 		if (assetMeta) {
 			return CompileAsset(assetMeta, forceCompile, forAndroid);
 		}
 	}
 
-	std::filesystem::path filePathObj(filePathStr);
-	std::string extension = filePathObj.extension().string();
 	if (textureExtensions.find(extension) != textureExtensions.end()) {
 		return CompileTexture(filePathStr, "diffuse", -1, false, forceCompile, forAndroid);
 	}

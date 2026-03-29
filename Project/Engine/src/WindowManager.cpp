@@ -90,7 +90,7 @@ bool WindowManager::Initialize(GLint _width, GLint _height, const char* _title) 
 void WindowManager::ToggleFullscreen() {
     if (platform) {
         platform->ToggleFullscreen();
-        RunTimeVar::window.isFullscreen = !RunTimeVar::window.isFullscreen; // Toggle fullscreen state
+        RunTimeVar::window.isFullscreen = platform->IsFullscreen(); // Toggle fullscreen state
     }
 }
 
@@ -213,6 +213,27 @@ void WindowManager::SetWindowTitle(const char* _title) {
     if (platform) {
         platform->SetWindowTitle(_title);
     }
+}
+
+void WindowManager::SetVSync(bool enabled) {
+    if (platform) {
+        platform->SetVSync(enabled);
+        RunTimeVar::window.vsync = enabled;
+    }
+}
+
+void WindowManager::SetFullscreen(bool enabled) {
+    if (platform) {
+        platform->SetFullscreen(enabled);
+        RunTimeVar::window.isFullscreen = enabled;
+    }
+}
+
+bool WindowManager::IsFullscreen() {
+    if (platform) {
+        return platform->IsFullscreen();
+    }
+    return RunTimeVar::window.isFullscreen;
 }
 
 void WindowManager::window_focus_callback(PlatformWindow window, int focused) {

@@ -118,5 +118,7 @@ void main()
     }
 
     mapped = clamp(mapped, 0.0, 1.0);
+    // Apply gamma correction
+    mapped = pow(mapped, vec3(1.0 / gamma));
     FragColor = vec4(mapped, 1.0);
 }

@@ -108,6 +108,48 @@ return Component {
         if self._settingType == "gamma" then
             self._minValue = 1.0
             self._maxValue = 3.0
+        elseif self._settingType == "exposure" then
+            self._minValue = 0.1
+            self._maxValue = 5.0
+        elseif self._settingType == "bloomthreshold" then
+            self._minValue = 0.0
+            self._maxValue = 5.0
+        elseif self._settingType == "bloomintensity" then
+            self._minValue = 0.0
+            self._maxValue = 5.0
+        elseif self._settingType == "bloomscatter" then
+            self._minValue = 0.0
+            self._maxValue = 1.0
+        elseif self._settingType == "vignetteintensity" then
+            self._minValue = 0.0
+            self._maxValue = 1.0
+        elseif self._settingType == "vignettesmoothness" then
+            self._minValue = 0.0
+            self._maxValue = 1.0
+        elseif self._settingType == "cgbrightness" then
+            self._minValue = -1.0
+            self._maxValue = 1.0
+        elseif self._settingType == "cgcontrast" then
+            self._minValue = 0.0
+            self._maxValue = 2.0
+        elseif self._settingType == "cgsaturation" then
+            self._minValue = 0.0
+            self._maxValue = 2.0
+        elseif self._settingType == "caintensity" then
+            self._minValue = 0.0
+            self._maxValue = 1.0
+        elseif self._settingType == "capadding" then
+            self._minValue = 0.0
+            self._maxValue = 1.0
+        elseif self._settingType == "ssaoradius" then
+            self._minValue = 0.1
+            self._maxValue = 2.0
+        elseif self._settingType == "ssaobias" then
+            self._minValue = 0.001
+            self._maxValue = 0.1
+        elseif self._settingType == "ssaointensity" then
+            self._minValue = 0.0
+            self._maxValue = 5.0
         else
             self._minValue = 0.0
             self._maxValue = 1.0
@@ -227,6 +269,34 @@ return Component {
             return GameSettings.GetSFXVolume()
         elseif self._settingType == "gamma" then
             return GameSettings.GetGamma()
+        elseif self._settingType == "exposure" then
+            return GameSettings.GetExposure()
+        elseif self._settingType == "bloomthreshold" then
+            return GameSettings.GetBloomThreshold()
+        elseif self._settingType == "bloomintensity" then
+            return GameSettings.GetBloomIntensity()
+        elseif self._settingType == "bloomscatter" then
+            return GameSettings.GetBloomScatter()
+        elseif self._settingType == "vignetteintensity" then
+            return GameSettings.GetVignetteIntensity()
+        elseif self._settingType == "vignettesmoothness" then
+            return GameSettings.GetVignetteSmoothness()
+        elseif self._settingType == "cgbrightness" then
+            return GameSettings.GetCGBrightness()
+        elseif self._settingType == "cgcontrast" then
+            return GameSettings.GetCGContrast()
+        elseif self._settingType == "cgsaturation" then
+            return GameSettings.GetCGSaturation()
+        elseif self._settingType == "caintensity" then
+            return GameSettings.GetCAIntensity()
+        elseif self._settingType == "capadding" then
+            return GameSettings.GetCAPadding()
+        elseif self._settingType == "ssaoradius" then
+            return GameSettings.GetSSAORadius()
+        elseif self._settingType == "ssaobias" then
+            return GameSettings.GetSSAOBias()
+        elseif self._settingType == "ssaointensity" then
+            return GameSettings.GetSSAOIntensity()
         end
         return 1.0
     end,
@@ -241,6 +311,34 @@ return Component {
             GameSettings.SetSFXVolume(value)
         elseif self._settingType == "gamma" then
             GameSettings.SetGamma(value)
+        elseif self._settingType == "exposure" then
+            GameSettings.SetExposure(value)
+        elseif self._settingType == "bloomthreshold" then
+            GameSettings.SetBloomThreshold(value)
+        elseif self._settingType == "bloomintensity" then
+            GameSettings.SetBloomIntensity(value)
+        elseif self._settingType == "bloomscatter" then
+            GameSettings.SetBloomScatter(value)
+        elseif self._settingType == "vignetteintensity" then
+            GameSettings.SetVignetteIntensity(value)
+        elseif self._settingType == "vignettesmoothness" then
+            GameSettings.SetVignetteSmoothness(value)
+        elseif self._settingType == "cgbrightness" then
+            GameSettings.SetCGBrightness(value)
+        elseif self._settingType == "cgcontrast" then
+            GameSettings.SetCGContrast(value)
+        elseif self._settingType == "cgsaturation" then
+            GameSettings.SetCGSaturation(value)
+        elseif self._settingType == "caintensity" then
+            GameSettings.SetCAIntensity(value)
+        elseif self._settingType == "capadding" then
+            GameSettings.SetCAPadding(value)
+        elseif self._settingType == "ssaoradius" then
+            GameSettings.SetSSAORadius(value)
+        elseif self._settingType == "ssaobias" then
+            GameSettings.SetSSAOBias(value)
+        elseif self._settingType == "ssaointensity" then
+            GameSettings.SetSSAOIntensity(value)
         end
     end,
 
