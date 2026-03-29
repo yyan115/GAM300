@@ -193,6 +193,9 @@ BEGIN_COMPONENT(CameraComponent, "CameraComponent")
     PROPERTY("dirBlurStrength",  &CameraComponent::dirBlurStrength)
     PROPERTY("dirBlurAngle",     &CameraComponent::dirBlurAngle)
     PROPERTY("dirBlurSamples",   &CameraComponent::dirBlurSamples)
+    // Distance-Based Fading
+    PROPERTY("fadeNear", &CameraComponent::fadeNear)
+    PROPERTY("fadeFar",  &CameraComponent::fadeFar)
 END_COMPONENT()
 
 // ============================================================================
