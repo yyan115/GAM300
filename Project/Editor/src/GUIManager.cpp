@@ -440,6 +440,8 @@ void GUIManager::RenderMenuBar() {
 		}
 		AssetManager::GetInstance().androidCompilationStatus.finishedCompiling = false;
 		AssetManager::GetInstance().androidCompilationStatus.isCompiling = false;
+		ENGINE_LOG_INFO("[GUIManager] Android assets compiled successfully!");
+		ShowNotification("Android assets compiled successfully!", 3.0f);
 	}
 	else if (AssetManager::GetInstance().androidCompilationStatus.isCompiling)
 	{
