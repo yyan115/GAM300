@@ -158,6 +158,11 @@ return Component {
         -- Respawn teleport flag
         self._teleportToPlayer = false
 
+        -- Distance-based fade: cache CameraComponent and base values
+        self._camComp       = self:GetComponent("CameraComponent")
+        self._baseFadeNear  = self._camComp and self._camComp.fadeNear or 3.0
+        self._baseFadeFar   = self._camComp and self._camComp.fadeFar  or 5.0
+
         -- Motion blur
         self._lastCamX = nil
         self._lastCamY = nil
@@ -468,6 +473,17 @@ return Component {
             self, cameraTarget.x, cameraTarget.y, cameraTarget.z,
             desiredX, desiredY, desiredZ, dt
         )
+
+        -- ── Scale fade distances based on post-collision camera distance ─
+        if self._camComp and radius > 0.01 then
+            local dx = desiredX - cameraTarget.x
+            local dy = desiredY - cameraTarget.y
+            local dz = desiredZ - cameraTarget.z
+            local actualDist = math.sqrt(dx*dx + dy*dy + dz*dz)
+            local ratio = actualDist / radius
+            self._camComp.fadeNear = self._baseFadeNear * ratio
+            self._camComp.fadeFar  = self._baseFadeFar  * ratio
+        end
 
         -- ── Blend position with chain aim when active ─────────────────────
         local blend = self._chainAimBlend
