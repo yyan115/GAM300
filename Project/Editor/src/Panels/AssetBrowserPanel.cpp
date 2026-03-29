@@ -742,7 +742,7 @@ void AssetBrowserPanel::RenderAssetGrid()
                 ImGui::EndDragDropSource();
             }
             else if (isPrefab && hovered && ImGui::IsMouseDragging(ImGuiMouseButton_Left)) {
-                if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_SourceAllowNullID)) {
+                if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_SourceAllowNullID | ImGuiDragDropFlags_SourceNoPreviewTooltip)) {
                     const std::string absPath = std::filesystem::absolute(asset.filePath).generic_string();
 
                     // Set the prefab path as a relative path from the current working directory
@@ -960,7 +960,7 @@ void AssetBrowserPanel::RenderAssetGrid()
             std::string lowerExtPref = asset.extension;
             std::transform(lowerExtPref.begin(), lowerExtPref.end(), lowerExtPref.begin(), ::tolower);
             if (lowerExtPref == ".prefab" && ImGui::IsItemHovered() && ImGui::IsMouseDragging(ImGuiMouseButton_Left)) {
-                if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_SourceAllowNullID)) {
+                if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_SourceAllowNullID | ImGuiDragDropFlags_SourceNoPreviewTooltip)) {
                     const std::string absPath = std::filesystem::absolute(asset.filePath).generic_string();
                     ImGui::SetDragDropPayload("PREFAB_PATH", absPath.c_str(),
                         static_cast<int>(absPath.size()) + 1);
@@ -972,7 +972,7 @@ void AssetBrowserPanel::RenderAssetGrid()
 
         // Selection / activation - mouse release selects, but not during drag operations
         bool shouldSelect = false;
-        if (released) {
+        if (released && ImGui::GetDragDropPayload() == nullptr) {
             // Check if mouse moved significantly during the click-drag-release cycle
             ImVec2 dragDelta = ImGui::GetMouseDragDelta(ImGuiMouseButton_Left);
             float dragDistance = sqrtf(dragDelta.x * dragDelta.x + dragDelta.y * dragDelta.y);

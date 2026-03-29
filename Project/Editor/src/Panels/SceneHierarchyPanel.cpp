@@ -330,35 +330,46 @@ void SceneHierarchyPanel::OnImGuiRender() {
             ImGui::EndPopup();
         }
 
-        // Handle unparenting of an entity
+        // Handle unparenting of an entity and spawning prefabs at root
         // Take up all remaining space in the window
         ImVec2 avail = ImGui::GetContentRegionAvail();
         if (avail.y > 0) {
             ImGui::InvisibleButton("HierarchyBackground", avail);
+        }
 
-            ImGuiWindow* win = ImGui::GetCurrentWindow();
-            const ImRect visible = win->InnerRect; // absolute screen coords of the visible region
+        // Use the window's inner rect as a custom drop target.
+        // This ensures the background is a valid drop target even if the tree fills the window.
+        ImGuiWindow* win = ImGui::GetCurrentWindow();
+        const ImRect visible = win->InnerRect;
 
-            const ImGuiPayload* active = ImGui::GetDragDropPayload();
-            const bool entityDragActive = (active && (active->IsDataType("HIERARCHY_ENTITY") || (active->IsDataType("PREFAB_PATH"))));
+        const ImGuiPayload* active = ImGui::GetDragDropPayload();
+        const bool entityDragActive = (active && (active->IsDataType("HIERARCHY_ENTITY") || (active->IsDataType("PREFAB_PATH"))));
 
-            // Foreground visual (never occluded by items)
-            if (entityDragActive)
-            {
-                ImDrawList* fdl = ImGui::GetForegroundDrawList(win->Viewport);
-                fdl->AddRectFilled(visible.Min, visible.Max, IM_COL32(100, 150, 255, 25), 6.0f);
-                fdl->AddRect(visible.Min, visible.Max, IM_COL32(100, 150, 255, 200), 6.0f, 0, 3.0f);
-            }
-            if (ImGui::BeginDragDropTarget()) {
-                if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("HIERARCHY_ENTITY")) {
+        // Foreground visual (never occluded by items)
+        if (entityDragActive)
+        {
+            ImDrawList* fdl = ImGui::GetForegroundDrawList(win->Viewport);
+            fdl->AddRectFilled(visible.Min, visible.Max, IM_COL32(100, 150, 255, 25), 6.0f);
+            fdl->AddRect(visible.Min, visible.Max, IM_COL32(100, 150, 255, 200), 6.0f, 0, 3.0f);
+        }
+
+        // Use BeginDragDropTargetCustom for the background area to ensure it works even if window is full
+        if (ImGui::BeginDragDropTargetCustom(visible, ImGui::GetID("##HierarchyBgDrop"))) {
+            if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("HIERARCHY_ENTITY", ImGuiDragDropFlags_AcceptBeforeDelivery)) {
+                ImGui::SetTooltip("Drop to unparent entity");
+                
+                if (payload->IsDelivery()) {
                     Entity dragged = *(Entity*)payload->Data;
                     UnparentEntity(dragged);
                 }
-                ImGui::EndDragDropTarget();
             }
 
-            if (ImGui::BeginDragDropTarget()) {
-                if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("PREFAB_PATH")) {
+            if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("PREFAB_PATH", ImGuiDragDropFlags_AcceptBeforeDelivery)) {
+                const char* pathCStr = static_cast<const char*>(payload->Data);
+                std::string prefabName = std::filesystem::path(pathCStr).stem().string();
+                ImGui::SetTooltip("Drop to spawn prefab at root: %s", prefabName.c_str());
+
+                if (payload->IsDelivery()) {
                     const char* prefabPath = static_cast<const char*>(payload->Data);
                     const Entity entity = InstantiatePrefabFromFile(prefabPath);
                     if (entity == INVALID_ENTITY) {
@@ -377,10 +388,9 @@ void SceneHierarchyPanel::OnImGuiRender() {
                     // Select the dragged prefab.
                     GUIManager::SetSelectedEntity(entity);
                 }
-                ImGui::EndDragDropTarget();
             }
+            ImGui::EndDragDropTarget();
         }
-
     }
     UpdateFocusState();  // Track focus for keyboard shortcut handling
     ImGui::End();
@@ -682,9 +692,30 @@ void SceneHierarchyPanel::DrawEntityNode(const std::string& entityName, Entity e
 
     // Drop target on the item itself (for reparenting - making it a child)
     if (ImGui::BeginDragDropTarget()) {
-        if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("HIERARCHY_ENTITY")) {
+        if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("HIERARCHY_ENTITY", ImGuiDragDropFlags_AcceptBeforeDelivery)) {
             Entity dragged = *(Entity*)payload->Data;
-            ReparentEntity(dragged, entityId);
+            if (dragged != entityId) {
+                ImGui::SetTooltip("Drop to parent under: %s", entityName.c_str());
+
+                if (payload->IsDelivery()) {
+                    ReparentEntity(dragged, entityId);
+                }
+            }
+        }
+
+        if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("PREFAB_PATH", ImGuiDragDropFlags_AcceptBeforeDelivery)) {
+            const char* pathCStr = static_cast<const char*>(payload->Data);
+            std::string prefabName = std::filesystem::path(pathCStr).stem().string();
+            ImGui::SetTooltip("Drop to spawn prefab under: %s", entityName.c_str());
+
+            if (payload->IsDelivery()) {
+                const char* prefabPath = static_cast<const char*>(payload->Data);
+                const Entity entity = InstantiatePrefabFromFile(prefabPath);
+                if (entity != INVALID_ENTITY) {
+                    ReparentEntity(entity, entityId);
+                    GUIManager::SetSelectedEntity(entity);
+                }
+            }
         }
         ImGui::EndDragDropTarget();
     }
