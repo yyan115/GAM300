@@ -296,20 +296,37 @@ float calculatePointShadow(int shadowIndex, vec3 fragPos, vec3 lightPos)
     vec3 fragToLight = fragPos - lightPos;
     float currentDepth = length(fragToLight);
 
-    float closestDepth;
-    if (shadowIndex == 0)      closestDepth = texture(pointShadowMaps[0], fragToLight).r;
-    else if (shadowIndex == 1) closestDepth = texture(pointShadowMaps[1], fragToLight).r;
-    else if (shadowIndex == 2) closestDepth = texture(pointShadowMaps[2], fragToLight).r;
-    else                       closestDepth = texture(pointShadowMaps[3], fragToLight).r;
+    // Distance-based PCF: kernel radius scales with distance from the light.
+    // Contact shadows (small distance) → tiny radius → hard edge.
+    // Distant shadows → large radius → soft penumbra.
+    float distNorm  = currentDepth / pointShadowFarPlane;
+    float diskRadius = mix(0.01, 0.15, distNorm);
 
-    closestDepth *= pointShadowFarPlane;
+    // 20 fixed offset directions distributed around a sphere
+    const vec3 sampleOffsets[20] = vec3[20](
+        vec3( 1, 1, 1), vec3( 1,-1, 1), vec3(-1,-1, 1), vec3(-1, 1, 1),
+        vec3( 1, 1,-1), vec3( 1,-1,-1), vec3(-1,-1,-1), vec3(-1, 1,-1),
+        vec3( 1, 1, 0), vec3( 1,-1, 0), vec3(-1,-1, 0), vec3(-1, 1, 0),
+        vec3( 1, 0, 1), vec3(-1, 0, 1), vec3( 1, 0,-1), vec3(-1, 0,-1),
+        vec3( 0, 1, 1), vec3( 0,-1, 1), vec3( 0,-1,-1), vec3( 0, 1,-1)
+    );
 
-    // Scale bias with distance: small bias close to light, larger further away.
-    // Prevents the fixed-bias dark halo when a light is near a surface.
     float bias = max(0.005, currentDepth * 0.02);
-    float shadow = currentDepth - bias > closestDepth ? 1.0 : 0.0;
+    float shadow = 0.0;
 
-    return shadow;
+    for (int i = 0; i < 20; ++i)
+    {
+        vec3 sampleDir = fragToLight + normalize(sampleOffsets[i]) * diskRadius;
+        float closestDepth;
+        if (shadowIndex == 0)      closestDepth = texture(pointShadowMaps[0], sampleDir).r;
+        else if (shadowIndex == 1) closestDepth = texture(pointShadowMaps[1], sampleDir).r;
+        else if (shadowIndex == 2) closestDepth = texture(pointShadowMaps[2], sampleDir).r;
+        else                       closestDepth = texture(pointShadowMaps[3], sampleDir).r;
+        closestDepth *= pointShadowFarPlane;
+        shadow += currentDepth - bias > closestDepth ? 1.0 : 0.0;
+    }
+
+    return shadow / 20.0;
 }
 
 // ============================================================================
