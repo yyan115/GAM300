@@ -156,10 +156,13 @@ float getMaterialMetallic(vec2 uv) {
 }
 
 float getMaterialRoughness(vec2 uv) {
+    float r;
     if (hasRoughnessMap) {
-        return texture(roughnessMap, uv).r;
+        r = texture(roughnessMap, uv).r;
+    } else {
+        r = material.roughness;
     }
-    return material.roughness;
+    return max(r, 0.1); // clamp to avoid extreme NDF values / NaN in GGX
 }
 
 float getMaterialAO(vec2 uv) {

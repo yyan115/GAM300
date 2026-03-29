@@ -165,10 +165,13 @@ float getMaterialMetallic(vec2 _TexCoords) {
 }
 
 float getMaterialRoughness(vec2 _TexCoords) {
+    float r;
     if (material.hasRoughnessMap) {
-        return texture(material.roughnessMap, _TexCoords).r;
+        r = texture(material.roughnessMap, _TexCoords).r;
+    } else {
+        r = material.roughness;
     }
-    return material.roughness;
+    return max(r, 0.1); // clamp to avoid extreme NDF values / NaN in GGX
 }
 
 float getMaterialAO(vec2 _TexCoords) {
