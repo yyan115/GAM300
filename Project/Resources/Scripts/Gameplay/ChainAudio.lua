@@ -92,6 +92,11 @@ end
 -- ---------------------------------------------------------------------------
 function M:Start()
     if not (_G.event_bus and _G.event_bus.subscribe) then return end
+    -- Guard against double-Start (hot-reload / stop-play cycle)
+    if self._subAim and _G.event_bus.unsubscribe then
+        pcall(function() _G.event_bus.unsubscribe(self._subAim) end)
+        self._subAim = nil
+    end
     self._subAim = _G.event_bus.subscribe("chain.aim_camera", function(payload)
         if not payload then return end
         pcall(function() self:_onAim(payload.active == true) end)

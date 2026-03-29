@@ -57,6 +57,18 @@ return Component {
         self._bgmFadeFrom   = 1.0
         self._bgmFadeTo     = 1.0
 
+        -- Guard against double-Awake (hot-reload / stop-play cycle)
+        if _G.event_bus and _G.event_bus.unsubscribe then
+            local stale = {
+                "_pickupAuraSub", "_pickupSub", "_doorSub", "_gamePausedSub",
+                "_narrativeStartedSub", "_narrativeEndedSub",
+                "_bossKilledSub", "_playerDeadSub", "_respawnPlayerSub",
+            }
+            for _, key in ipairs(stale) do
+                if self[key] then _G.event_bus.unsubscribe(self[key]); self[key] = nil end
+            end
+        end
+
         if not (_G.event_bus and _G.event_bus.subscribe) then
             print("[EnvironmentAudio] WARNING: event_bus not available in Awake")
             return

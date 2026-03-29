@@ -51,6 +51,13 @@ return Component {
         self._clipsMap      = nil   -- built in Start once inspector fields are resolved
         self._hitThisFrame  = false -- set by deal_damage_to_entity to suppress swing SFX
 
+        -- Guard against double-Awake (hot-reload / stop-play cycle)
+        if _G.event_bus and _G.event_bus.unsubscribe then
+            if self._hitSub       then _G.event_bus.unsubscribe(self._hitSub);       self._hitSub = nil end
+            if self._attackSub    then _G.event_bus.unsubscribe(self._attackSub);    self._attackSub = nil end
+            if self._rangedHitSub then _G.event_bus.unsubscribe(self._rangedHitSub); self._rangedHitSub = nil end
+        end
+
         if _G.event_bus and _G.event_bus.subscribe then
             -- Subscribe deal_damage BEFORE attack_performed so the flag is set first
             -- when both events are published in the same frame (melee hit case).

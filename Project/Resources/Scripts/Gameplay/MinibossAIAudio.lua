@@ -53,6 +53,11 @@ return Component {
     },
 
     Awake = function(self)
+        -- Guard against double-Awake (hot-reload / stop-play cycle)
+        if _G.event_bus and _G.event_bus.unsubscribe and self._sfxSub then
+            _G.event_bus.unsubscribe(self._sfxSub); self._sfxSub = nil
+        end
+
         if not (_G.event_bus and _G.event_bus.subscribe) then
             print("[MinibossAIAudio] WARNING: event_bus not available in Awake")
             return
