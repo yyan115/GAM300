@@ -47,6 +47,7 @@
 #include "UndoableWidgets.hpp"
 #include <algorithm>
 #include <cctype>
+#include <string_view>
 #include <Panels/PrefabEditorPanel.hpp>
 #include <Prefab/PrefabLinkComponent.hpp>
 
@@ -64,6 +65,21 @@ namespace {
     };
 
     static EntityClipboard g_EntityClipboard;
+
+    // needleLower must already be lowercase.
+    static bool ContainsCaseInsensitive(std::string_view haystack, std::string_view needleLower) {
+        if (needleLower.empty()) {
+            return true;
+        }
+
+        auto it = std::search(haystack.begin(), haystack.end(),
+            needleLower.begin(), needleLower.end(),
+            [](char a, char b) {
+                return static_cast<char>(std::tolower(static_cast<unsigned char>(a))) == b;
+            });
+
+        return it != haystack.end();
+    }
 }
 
 SceneHierarchyPanel::SceneHierarchyPanel()
@@ -165,18 +181,99 @@ void SceneHierarchyPanel::OnImGuiRender() {
         {
             float buttonWidth = ImGui::GetFrameHeight(); // square buttons
             float spacing = ImGui::GetStyle().ItemSpacing.x;
-            float searchWidth = ImGui::GetContentRegionAvail().x - (buttonWidth * 2 + spacing * 2);
 
-            ImGui::SetNextItemWidth(searchWidth);
+            static const char* kSearchFilters[] = {
+                "Name",
+                "Lua Script",
+                "Component",
+                "Tag",
+                "Layer"
+            };
+
+            static const char* kSearchFilterShort[] = {
+                "Name",
+                "Lua",
+                "Comp",
+                "Tag",
+                "Layer"
+            };
+
+            const bool hasSearchText = searchBuffer[0] != '\0';
+            float filterWidth = std::clamp(
+                ImGui::CalcTextSize(kSearchFilterShort[static_cast<int>(searchFilter)]).x + buttonWidth + 14.0f,
+                72.0f,
+                104.0f);
+
+            const float rightControlsWidth = buttonWidth * 2.0f + spacing;
+            float searchGroupWidth = ImGui::GetContentRegionAvail().x - rightControlsWidth - spacing;
+            if (searchGroupWidth < 180.0f) {
+                searchGroupWidth = 180.0f;
+            }
+
+            float inputWidth = searchGroupWidth - filterWidth - spacing;
+            if (hasSearchText) {
+                inputWidth -= (buttonWidth + spacing);
+            }
+            if (inputWidth < 70.0f) {
+                inputWidth = 70.0f;
+            }
+
+            ImGui::SetNextItemWidth(inputWidth);
             if (ImGui::InputTextWithHint("##HierarchySearch", ICON_FA_MAGNIFYING_GLASS " Search entities...",
                                          searchBuffer, sizeof(searchBuffer))) {
                 searchQuery = searchBuffer;
+                if (searchQuery.empty()) {
+                    searchFilter = SearchFilter::Name;
+                }
                 searchDirty = true;
+            }
+
+            if (hasSearchText) {
+                ImGui::SameLine();
+                if (ImGui::Button(ICON_FA_XMARK "##HierarchySearchClear", ImVec2(buttonWidth, 0))) {
+                    searchBuffer[0] = '\0';
+                    searchQuery.clear();
+                    searchQueryLower.clear();
+                    searchFilter = SearchFilter::Name;
+                    searchDirty = true;
+                }
+                if (ImGui::IsItemHovered()) {
+                    ImGui::SetTooltip("Clear search");
+                }
+            }
+
+            ImGui::SameLine();
+            std::string filterIndicatorLabel =
+                std::string(ICON_FA_FILTER) + " " + kSearchFilterShort[static_cast<int>(searchFilter)] + "##HierarchySearchFilter";
+            if (ImGui::Button(filterIndicatorLabel.c_str(), ImVec2(filterWidth, 0))) {
+                ImGui::OpenPopup("##HierarchySearchFilterPopup");
+            }
+            if (ImGui::IsItemHovered()) {
+                ImGui::SetTooltip("Search filter: %s", kSearchFilters[static_cast<int>(searchFilter)]);
+            }
+
+            if (ImGui::BeginPopup("##HierarchySearchFilterPopup")) {
+                for (int i = 0; i < IM_ARRAYSIZE(kSearchFilters); ++i) {
+                    const bool isSelected = (searchFilter == static_cast<SearchFilter>(i));
+                    if (ImGui::Selectable(kSearchFilters[i], isSelected)) {
+                        searchFilter = static_cast<SearchFilter>(i);
+                        searchDirty = true;
+                    }
+                }
+                ImGui::EndPopup();
             }
 
             ImGui::SameLine();
             if (ImGui::Button(ICON_FA_COMPRESS, ImVec2(buttonWidth, 0))) {
                 collapseExpandAction = CollapseExpandAction::CollapseAll;
+
+                // Also clear cached open-state storage so deep descendants collapse.
+                if (ImGuiStorage* treeStorage = ImGui::GetStateStorage()) {
+                    treeStorage->Clear();
+                }
+
+                expandedEntities.clear();
+                searchForceExpandedNodes.clear();
             }
             if (ImGui::IsItemHovered()) ImGui::SetTooltip("Collapse All");
 
@@ -481,8 +578,10 @@ void SceneHierarchyPanel::DrawEntityNode(const std::string& entityName, Entity e
     if (!renamingEntity)
         assert(!entityName.empty() && "Entity name cannot be empty");
 
+    const bool collapseAllActive = (collapseExpandAction == CollapseExpandAction::CollapseAll);
+
     // Check if this entity should be auto-expanded (has a selected descendant)
-    bool forceOpen = expandedEntities.count(entityId) > 0;
+    bool forceOpen = expandedEntities.count(entityId) > 0 && !collapseAllActive;
 
     ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_SpanAvailWidth;
     if (!hasChildren) flags |= ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen;
@@ -589,14 +688,14 @@ void SceneHierarchyPanel::DrawEntityNode(const std::string& entityName, Entity e
         }
 
         // Auto-expand ancestor nodes during search (and track them for restore)
-        if (!searchQuery.empty() && hasChildren &&
+        if (!collapseAllActive && !searchQuery.empty() && hasChildren &&
             searchVisibleEntities.count(entityId) && !searchMatchedEntities.count(entityId)) {
             ImGui::SetNextItemOpen(true, ImGuiCond_Always);
             searchForceExpandedNodes.insert(entityId);
         }
 
         // Collapse nodes that were force-expanded by search when search is cleared
-        if (searchQuery.empty() && hasChildren && searchForceExpandedNodes.count(entityId)) {
+        if (!collapseAllActive && searchQuery.empty() && hasChildren && searchForceExpandedNodes.count(entityId)) {
             ImGui::SetNextItemOpen(false, ImGuiCond_Always);
         }
 
@@ -2044,9 +2143,7 @@ void SceneHierarchyPanel::RebuildSearchCache() {
 
     // Find all matching entities
     for (Entity entity : allEntities) {
-        if (!ecsManager.HasComponent<NameComponent>(entity)) continue;
-        const std::string& entityNameRef = ecsManager.GetComponent<NameComponent>(entity).name;
-        if (EntityMatchesSearch(entityNameRef)) {
+        if (EntityMatchesSearch(entity, ecsManager)) {
             searchMatchedEntities.insert(entity);
             searchVisibleEntities.insert(entity);
             // Walk up ancestor chain to make the path visible
@@ -2055,12 +2152,89 @@ void SceneHierarchyPanel::RebuildSearchCache() {
     }
 }
 
-bool SceneHierarchyPanel::EntityMatchesSearch(const std::string& searchName) const {
-    // Case-insensitive substring match
-    std::string nameLower = searchName;
-    std::transform(nameLower.begin(), nameLower.end(), nameLower.begin(),
-                   [](unsigned char c) { return std::tolower(c); });
-    return nameLower.find(searchQueryLower) != std::string::npos;
+bool SceneHierarchyPanel::EntityMatchesSearch(Entity entity, ECSManager& ecsManager) const {
+    auto containsSearch = [this](const std::string& value) {
+        return ContainsCaseInsensitive(value, searchQueryLower);
+    };
+
+    switch (searchFilter) {
+    case SearchFilter::Name:
+        if (!ecsManager.HasComponent<NameComponent>(entity)) return false;
+        return containsSearch(ecsManager.GetComponent<NameComponent>(entity).name);
+
+    case SearchFilter::LuaScript:
+        if (!ecsManager.HasComponent<ScriptComponentData>(entity)) return false;
+        for (const auto& scriptData : ecsManager.GetComponent<ScriptComponentData>(entity).scripts) {
+            if (containsSearch(scriptData.scriptPath) || containsSearch(scriptData.entryFunction)) {
+                return true;
+            }
+        }
+        return false;
+
+    case SearchFilter::Component:
+        return MatchesComponentSearch(entity, ecsManager);
+
+    case SearchFilter::Tag:
+        if (!ecsManager.HasComponent<TagComponent>(entity)) return false;
+        return containsSearch(ecsManager.GetComponent<TagComponent>(entity).GetTagName());
+
+    case SearchFilter::Layer:
+        if (!ecsManager.HasComponent<LayerComponent>(entity)) return false;
+        return containsSearch(ecsManager.GetComponent<LayerComponent>(entity).GetLayerName());
+    }
+
+    return false;
+}
+
+bool SceneHierarchyPanel::MatchesComponentSearch(Entity entity, ECSManager& ecsManager) const {
+    auto componentNameMatches = [this](std::string_view componentNameLower) {
+        return componentNameLower.find(searchQueryLower) != std::string_view::npos;
+    };
+
+    if (componentNameMatches("namecomponent") && ecsManager.HasComponent<NameComponent>(entity)) return true;
+    if (componentNameMatches("transform") && ecsManager.HasComponent<Transform>(entity)) return true;
+    if (componentNameMatches("activecomponent") && ecsManager.HasComponent<ActiveComponent>(entity)) return true;
+    if (componentNameMatches("parentcomponent") && ecsManager.HasComponent<ParentComponent>(entity)) return true;
+    if (componentNameMatches("childrencomponent") && ecsManager.HasComponent<ChildrenComponent>(entity)) return true;
+    if (componentNameMatches("siblingindexcomponent") && ecsManager.HasComponent<SiblingIndexComponent>(entity)) return true;
+    if (componentNameMatches("prefablinkcomponent") && ecsManager.HasComponent<PrefabLinkComponent>(entity)) return true;
+
+    if (componentNameMatches("modelrendercomponent") && ecsManager.HasComponent<ModelRenderComponent>(entity)) return true;
+    if (componentNameMatches("spriterendercomponent") && ecsManager.HasComponent<SpriteRenderComponent>(entity)) return true;
+    if (componentNameMatches("textrendercomponent") && ecsManager.HasComponent<TextRenderComponent>(entity)) return true;
+    if (componentNameMatches("cameracomponent") && ecsManager.HasComponent<CameraComponent>(entity)) return true;
+    if (componentNameMatches("lightcomponent") && ecsManager.HasComponent<LightComponent>(entity)) return true;
+    if (componentNameMatches("directionallightcomponent") && ecsManager.HasComponent<DirectionalLightComponent>(entity)) return true;
+    if (componentNameMatches("pointlightcomponent") && ecsManager.HasComponent<PointLightComponent>(entity)) return true;
+    if (componentNameMatches("spotlightcomponent") && ecsManager.HasComponent<SpotLightComponent>(entity)) return true;
+    if (componentNameMatches("animationcomponent") && ecsManager.HasComponent<AnimationComponent>(entity)) return true;
+    if (componentNameMatches("spriteanimationcomponent") && ecsManager.HasComponent<SpriteAnimationComponent>(entity)) return true;
+    if (componentNameMatches("particlecomponent") && ecsManager.HasComponent<ParticleComponent>(entity)) return true;
+    if (componentNameMatches("debugdrawcomponent") && ecsManager.HasComponent<DebugDrawComponent>(entity)) return true;
+
+    if (componentNameMatches("audiocomponent") && ecsManager.HasComponent<AudioComponent>(entity)) return true;
+    if (componentNameMatches("audiolistenercomponent") && ecsManager.HasComponent<AudioListenerComponent>(entity)) return true;
+    if (componentNameMatches("audioreverbzonecomponent") && ecsManager.HasComponent<AudioReverbZoneComponent>(entity)) return true;
+
+    if (componentNameMatches("collidercomponent") && ecsManager.HasComponent<ColliderComponent>(entity)) return true;
+    if (componentNameMatches("rigidbodycomponent") && ecsManager.HasComponent<RigidBodyComponent>(entity)) return true;
+
+    if (componentNameMatches("tagcomponent") && ecsManager.HasComponent<TagComponent>(entity)) return true;
+    if (componentNameMatches("layercomponent") && ecsManager.HasComponent<LayerComponent>(entity)) return true;
+
+    if (componentNameMatches("buttoncomponent") && ecsManager.HasComponent<ButtonComponent>(entity)) return true;
+    if (componentNameMatches("slidercomponent") && ecsManager.HasComponent<SliderComponent>(entity)) return true;
+    if (componentNameMatches("uianchorcomponent") && ecsManager.HasComponent<UIAnchorComponent>(entity)) return true;
+
+    if (ecsManager.HasComponent<ScriptComponentData>(entity) &&
+        (componentNameMatches("scriptcomponentdata") || componentNameMatches("lua script") || componentNameMatches("script"))) {
+        return true;
+    }
+
+    if (componentNameMatches("braincomponent") && ecsManager.HasComponent<BrainComponent>(entity)) return true;
+    if (componentNameMatches("videocomponent") && ecsManager.HasComponent<VideoComponent>(entity)) return true;
+
+    return false;
 }
 
 void SceneHierarchyPanel::CollectAncestors(Entity entity, std::unordered_set<Entity>& ancestors) {
