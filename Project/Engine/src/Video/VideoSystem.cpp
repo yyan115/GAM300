@@ -74,6 +74,9 @@ void VideoSystem::BeginCutscene(VideoComponent& vc)
     vc.boardElapsedTime = 0.0f;
     vc.lastComputedBlur = 0.0f;
 
+    // Ensure no stale board SFX keeps playing when cutscene restarts/loops.
+    StopBoardSFX(vc);
+
     // Save camera's original blur settings so we can restore after cutscene
     auto cameraSystem = m_ecs->GetSystem<CameraSystem>();
     Entity camEntity = cameraSystem ? cameraSystem->GetActiveCameraEntity() : UINT32_MAX;
@@ -218,6 +221,8 @@ void VideoSystem::AdvanceToBoard(VideoComponent& vc, int boardIndex)
 
 void VideoSystem::BeginEndingFade(VideoComponent& vc)
 {
+    StopBoardSFX(vc);
+
     // Check if the current board has fade-out disabled
     if (vc.currentBoardIndex >= 0 && vc.currentBoardIndex < static_cast<int>(vc.boards.size())
         && vc.boards[vc.currentBoardIndex].disableFadeOut)
@@ -232,6 +237,8 @@ void VideoSystem::BeginEndingFade(VideoComponent& vc)
 
 void VideoSystem::FinishCutscene(VideoComponent& vc)
 {
+    StopBoardSFX(vc);
+
     vc.cutsceneEnded = true;
     vc.phase = VideoComponent::Phase::Finished;
     ClearText(vc);
@@ -404,6 +411,10 @@ void VideoSystem::ApplyBlur(VideoComponent& vc, float dt)
 void VideoSystem::PlayBoardSFX(VideoComponent& vc, int boardIndex)
 {
     if (boardIndex < 0 || boardIndex >= static_cast<int>(vc.boards.size())) return;
+
+    // Board changed: stop previous board's SFX before starting the new one.
+    StopBoardSFX(vc);
+
     const std::string& guidStr = vc.boards[boardIndex].sfxGuidStr;
     if (guidStr.empty()) return;
 
@@ -411,7 +422,15 @@ void VideoSystem::PlayBoardSFX(VideoComponent& vc, int boardIndex)
     std::string assetPath = AssetManager::GetInstance().GetAssetPathFromGUID(guid);
     auto clip = ResourceManager::GetInstance().GetResourceFromGUID<Audio>(guid, assetPath);
     if (!clip) return;
-    AudioManager::GetInstance().PlayAudio(clip);
+    vc.activeBoardSfxChannel = AudioManager::GetInstance().PlayAudio(clip);
+}
+
+void VideoSystem::StopBoardSFX(VideoComponent& vc)
+{
+    if (vc.activeBoardSfxChannel == 0) return;
+
+    AudioManager::GetInstance().Stop(vc.activeBoardSfxChannel);
+    vc.activeBoardSfxChannel = 0;
 }
 
 // ============================================================================

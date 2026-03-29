@@ -30,6 +30,7 @@ private:
     void ApplyBlur(VideoComponent& vc, float dt);
     void SwapBoardImage(VideoComponent& vc, int boardIndex);
     void PlayBoardSFX(VideoComponent& vc, int boardIndex);
+    void StopBoardSFX(VideoComponent& vc);
     void SetBlackScreenAlpha(VideoComponent& vc, float alpha);
     void ClearText(VideoComponent& vc);
 
