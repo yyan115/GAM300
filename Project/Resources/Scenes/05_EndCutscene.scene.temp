@@ -545,6 +545,10 @@
                         {
                             "type": "float",
                             "data": 0.3
+                        },
+                        {
+                            "type": "bool",
+                            "data": false
                         }
                     ]
                 },
@@ -656,7 +660,7 @@
                                         },
                                         {
                                             "type": "float",
-                                            "data": 4
+                                            "data": 5
                                         },
                                         {
                                             "type": "float",
@@ -688,7 +692,7 @@
                                         },
                                         {
                                             "type": "std::string",
-                                            "data": ""
+                                            "data": "00272304a85787d1-0004a4106a000031"
                                         }
                                     ]
                                 },
@@ -713,7 +717,7 @@
                                         },
                                         {
                                             "type": "float",
-                                            "data": 4
+                                            "data": 6
                                         },
                                         {
                                             "type": "float",
@@ -745,7 +749,7 @@
                                         },
                                         {
                                             "type": "std::string",
-                                            "data": ""
+                                            "data": "00272304b5497ce1-0004a4106a000033"
                                         }
                                     ]
                                 },
@@ -770,7 +774,7 @@
                                         },
                                         {
                                             "type": "float",
-                                            "data": 4
+                                            "data": 7
                                         },
                                         {
                                             "type": "float",
@@ -802,7 +806,7 @@
                                         },
                                         {
                                             "type": "std::string",
-                                            "data": ""
+                                            "data": "00272304b7586431-0004a4106a000035"
                                         }
                                     ]
                                 },
@@ -827,7 +831,7 @@
                                         },
                                         {
                                             "type": "float",
-                                            "data": 4
+                                            "data": 7
                                         },
                                         {
                                             "type": "float",
@@ -859,7 +863,7 @@
                                         },
                                         {
                                             "type": "std::string",
-                                            "data": ""
+                                            "data": "00272304eedb517a-0004a4106a000037"
                                         }
                                     ]
                                 },
@@ -916,7 +920,7 @@
                                         },
                                         {
                                             "type": "std::string",
-                                            "data": ""
+                                            "data": "00272304e06c79f9-0004a4106a000039"
                                         }
                                     ]
                                 },
@@ -986,7 +990,7 @@
                                         },
                                         {
                                             "type": "std::string",
-                                            "data": "When the light fades, the wings return."
+                                            "data": "When the light fades, the wings return to her."
                                         },
                                         {
                                             "type": "float",
@@ -998,7 +1002,7 @@
                                         },
                                         {
                                             "type": "float",
-                                            "data": 4
+                                            "data": 5
                                         },
                                         {
                                             "type": "float",
@@ -1030,7 +1034,7 @@
                                         },
                                         {
                                             "type": "std::string",
-                                            "data": ""
+                                            "data": "0027230492a7f8ea-0004a4106a00003b"
                                         }
                                     ]
                                 },
@@ -1055,7 +1059,7 @@
                                         },
                                         {
                                             "type": "float",
-                                            "data": 4
+                                            "data": 5
                                         },
                                         {
                                             "type": "float",
@@ -1087,7 +1091,7 @@
                                         },
                                         {
                                             "type": "std::string",
-                                            "data": ""
+                                            "data": "002723048b1b8f39-0004a4106a00003d"
                                         }
                                     ]
                                 },
@@ -1112,7 +1116,7 @@
                                         },
                                         {
                                             "type": "float",
-                                            "data": 4
+                                            "data": 5
                                         },
                                         {
                                             "type": "float",
@@ -1144,7 +1148,7 @@
                                         },
                                         {
                                             "type": "std::string",
-                                            "data": ""
+                                            "data": "00272304fd254a41-0004a4106a00003f"
                                         }
                                     ]
                                 },
@@ -1423,6 +1427,10 @@
                         {
                             "type": "float",
                             "data": 0.3
+                        },
+                        {
+                            "type": "bool",
+                            "data": false
                         }
                     ]
                 },
@@ -1965,6 +1973,10 @@
                         {
                             "type": "float",
                             "data": 0.3
+                        },
+                        {
+                            "type": "bool",
+                            "data": false
                         }
                     ]
                 },
@@ -2579,6 +2591,10 @@
                         {
                             "type": "float",
                             "data": 0.3
+                        },
+                        {
+                            "type": "bool",
+                            "data": false
                         }
                     ]
                 },
@@ -2813,6 +2829,7 @@
             0.30000001192092896,
             0.30000001192092896,
             0.30000001192092896
-        ]
+        ],
+        "ambientIntensity": 1.0
     }
 }
