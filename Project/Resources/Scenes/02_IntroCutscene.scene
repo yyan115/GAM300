@@ -545,6 +545,10 @@
                         {
                             "type": "float",
                             "data": 0.3
+                        },
+                        {
+                            "type": "bool",
+                            "data": false
                         }
                     ]
                 },
@@ -632,7 +636,7 @@
                                         },
                                         {
                                             "type": "float",
-                                            "data": 4
+                                            "data": 10
                                         },
                                         {
                                             "type": "float",
@@ -664,7 +668,7 @@
                                         },
                                         {
                                             "type": "std::string",
-                                            "data": ""
+                                            "data": "00272304e24bdd37-0004a4106a000001"
                                         }
                                     ]
                                 },
@@ -689,7 +693,7 @@
                                         },
                                         {
                                             "type": "float",
-                                            "data": 4
+                                            "data": 10
                                         },
                                         {
                                             "type": "float",
@@ -721,7 +725,7 @@
                                         },
                                         {
                                             "type": "std::string",
-                                            "data": "00782c6fa9f80929-00047cc924000005"
+                                            "data": "00272304b600fec3-0004a4106a000003"
                                         }
                                     ]
                                 },
@@ -746,7 +750,7 @@
                                         },
                                         {
                                             "type": "float",
-                                            "data": 4
+                                            "data": 9
                                         },
                                         {
                                             "type": "float",
@@ -778,7 +782,7 @@
                                         },
                                         {
                                             "type": "std::string",
-                                            "data": ""
+                                            "data": "00272304b32ce3a0-0004a4106a000005"
                                         }
                                     ]
                                 },
@@ -803,7 +807,7 @@
                                         },
                                         {
                                             "type": "float",
-                                            "data": 4
+                                            "data": 11
                                         },
                                         {
                                             "type": "float",
@@ -835,7 +839,7 @@
                                         },
                                         {
                                             "type": "std::string",
-                                            "data": ""
+                                            "data": "00272304fb805878-0004a4106a000007"
                                         }
                                     ]
                                 },
@@ -860,7 +864,7 @@
                                         },
                                         {
                                             "type": "float",
-                                            "data": 4
+                                            "data": 3
                                         },
                                         {
                                             "type": "float",
@@ -892,7 +896,7 @@
                                         },
                                         {
                                             "type": "std::string",
-                                            "data": ""
+                                            "data": "0027230484918fc7-0004a4106a000009"
                                         }
                                     ]
                                 },
@@ -917,7 +921,7 @@
                                         },
                                         {
                                             "type": "float",
-                                            "data": 4
+                                            "data": 5
                                         },
                                         {
                                             "type": "float",
@@ -949,7 +953,7 @@
                                         },
                                         {
                                             "type": "std::string",
-                                            "data": "00782c6fff89ae76-00047cc924000007"
+                                            "data": "00272304f3c5721d-0004a4106a00000b"
                                         }
                                     ]
                                 },
@@ -974,7 +978,7 @@
                                         },
                                         {
                                             "type": "float",
-                                            "data": 4
+                                            "data": 8
                                         },
                                         {
                                             "type": "float",
@@ -1006,7 +1010,7 @@
                                         },
                                         {
                                             "type": "std::string",
-                                            "data": ""
+                                            "data": "00272304c4b2b45c-0004a4106a00000d"
                                         }
                                     ]
                                 },
@@ -1031,7 +1035,7 @@
                                         },
                                         {
                                             "type": "float",
-                                            "data": 4
+                                            "data": 17
                                         },
                                         {
                                             "type": "float",
@@ -1063,7 +1067,7 @@
                                         },
                                         {
                                             "type": "std::string",
-                                            "data": "00782c6fb7a035c8-00047cc924000009"
+                                            "data": "00272304e9887336-0004a4106a00000f"
                                         }
                                     ]
                                 },
@@ -1088,7 +1092,7 @@
                                         },
                                         {
                                             "type": "float",
-                                            "data": 4
+                                            "data": 7
                                         },
                                         {
                                             "type": "float",
@@ -1120,7 +1124,7 @@
                                         },
                                         {
                                             "type": "std::string",
-                                            "data": ""
+                                            "data": "00272304cc4f8c08-0004a4106a000011"
                                         }
                                     ]
                                 },
@@ -1145,7 +1149,7 @@
                                         },
                                         {
                                             "type": "float",
-                                            "data": 3
+                                            "data": 4
                                         },
                                         {
                                             "type": "float",
@@ -1177,7 +1181,7 @@
                                         },
                                         {
                                             "type": "std::string",
-                                            "data": ""
+                                            "data": "00272304e2a2035f-0004a4106a000013"
                                         }
                                     ]
                                 },
@@ -1259,7 +1263,7 @@
                                         },
                                         {
                                             "type": "float",
-                                            "data": 4
+                                            "data": 11
                                         },
                                         {
                                             "type": "float",
@@ -1291,7 +1295,7 @@
                                         },
                                         {
                                             "type": "std::string",
-                                            "data": ""
+                                            "data": "00272304ee12df07-0004a4106a000015"
                                         }
                                     ]
                                 },
@@ -1373,7 +1377,7 @@
                                         },
                                         {
                                             "type": "float",
-                                            "data": 4
+                                            "data": 6
                                         },
                                         {
                                             "type": "float",
@@ -1405,7 +1409,7 @@
                                         },
                                         {
                                             "type": "std::string",
-                                            "data": ""
+                                            "data": "002723048691ccc5-0004a4106a000017"
                                         }
                                     ]
                                 },
@@ -1462,7 +1466,7 @@
                                         },
                                         {
                                             "type": "std::string",
-                                            "data": ""
+                                            "data": "00272304b20be223-0004a4106a000019"
                                         }
                                     ]
                                 },
@@ -1487,7 +1491,7 @@
                                         },
                                         {
                                             "type": "float",
-                                            "data": 4
+                                            "data": 6
                                         },
                                         {
                                             "type": "float",
@@ -1519,7 +1523,7 @@
                                         },
                                         {
                                             "type": "std::string",
-                                            "data": "00782c6f8d48a7cf-00047cc924000001"
+                                            "data": "00272304e7bb39dd-0004a4106a00001b"
                                         }
                                     ]
                                 },
@@ -1544,7 +1548,7 @@
                                         },
                                         {
                                             "type": "float",
-                                            "data": 4
+                                            "data": 9
                                         },
                                         {
                                             "type": "float",
@@ -1576,7 +1580,7 @@
                                         },
                                         {
                                             "type": "std::string",
-                                            "data": ""
+                                            "data": "0027230499b9c732-0004a4106a00001d"
                                         }
                                     ]
                                 },
@@ -1658,7 +1662,7 @@
                                         },
                                         {
                                             "type": "float",
-                                            "data": 4
+                                            "data": 8
                                         },
                                         {
                                             "type": "float",
@@ -1690,7 +1694,7 @@
                                         },
                                         {
                                             "type": "std::string",
-                                            "data": ""
+                                            "data": "00272304e3a6e123-0004a4106a00001f"
                                         }
                                     ]
                                 },
@@ -1747,7 +1751,7 @@
                                         },
                                         {
                                             "type": "std::string",
-                                            "data": ""
+                                            "data": "0019bfdadfd46a97-0004a931f0001013"
                                         }
                                     ]
                                 }
@@ -1969,6 +1973,10 @@
                         {
                             "type": "float",
                             "data": 0.3
+                        },
+                        {
+                            "type": "bool",
+                            "data": false
                         }
                     ]
                 },
@@ -2511,6 +2519,10 @@
                         {
                             "type": "float",
                             "data": 0.3
+                        },
+                        {
+                            "type": "bool",
+                            "data": false
                         }
                     ]
                 },
@@ -3125,6 +3137,10 @@
                         {
                             "type": "float",
                             "data": 0.3
+                        },
+                        {
+                            "type": "bool",
+                            "data": false
                         }
                     ]
                 },
@@ -3359,6 +3375,7 @@
             0.30000001192092896,
             0.30000001192092896,
             0.30000001192092896
-        ]
+        ],
+        "ambientIntensity": 0.30000001192092896
     }
 }
