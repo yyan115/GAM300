@@ -112,9 +112,9 @@ return Component {
         end
 
         -- Enable AudioHelper debug output for dash clips only.
-        if self.playerFootstepSFX then
-            self.playerFootstepSFX._debug = true
-        end
+        -- if self.playerFootstepSFX then
+        --     self.playerFootstepSFX._debug = true
+        -- end
 
         if not (_G.event_bus and _G.event_bus.subscribe) then
             print("[PlayerAudio] WARNING: event_bus not available in Awake")

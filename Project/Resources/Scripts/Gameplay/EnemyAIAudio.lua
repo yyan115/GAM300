@@ -67,9 +67,9 @@ return Component {
             return
         end
 
-        if self.enemyRangedAttackSFX then
-            self.enemyRangedAttackSFX._debug = true
-        end
+        -- if self.enemyRangedAttackSFX then
+        --     self.enemyRangedAttackSFX._debug = true
+        -- end
 
         self._sfxSub = _G.event_bus.subscribe("enemy_sfx", function(data)
             if not data then return end

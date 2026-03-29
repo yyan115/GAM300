@@ -105,7 +105,12 @@ public:
 	 * @brief Set the currently selected asset.
 	 * @param assetGuid The asset GUID to select.
 	 */
-	static void SetSelectedAsset(const GUID_128& assetGuid) { selectedAsset = assetGuid; if (assetGuid != GUID_128{ 0, 0 }) selectedEntities.clear(); }
+	static void SetSelectedAsset(const GUID_128& assetGuid) {
+		selectedAsset = assetGuid;
+		if (assetGuid.high || assetGuid.low) {
+			selectedEntities.clear();
+		}
+	}
 
 	static bool IsSelectionOutlineEnabled() { return showSelectionOutline; }
 
@@ -139,6 +144,7 @@ private:
 	static void HandleKeyboardShortcuts();
 	static void ShowNotification(const std::string& message, float duration = 2.0f);
 	static void RenderNotification();
+	static void RenderHelpWindow();
 
 	static std::unique_ptr<PanelManager> panelManager;
 	static bool dockspaceInitialized;
@@ -148,6 +154,7 @@ private:
 	static std::string notificationMessage;
 	static float notificationTimer;
 	static bool showSelectionOutline;
+	static bool showHelpWindow;
 
 	struct GameBuildStatus {
 		bool isBuilding = false;

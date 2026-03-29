@@ -49,6 +49,7 @@ GUID_128 GUIManager::selectedAsset = GUID_128{0, 0};
 std::string GUIManager::notificationMessage = "";
 float GUIManager::notificationTimer = 0.0f;
 bool GUIManager::showSelectionOutline = true;
+bool GUIManager::showHelpWindow = false;
 GUIManager::GameBuildStatus GUIManager::gameBuildStatus;
 
 // Function definitions
@@ -139,6 +140,7 @@ void GUIManager::Render() {
 
 	// Render notification overlay
 	RenderNotification();
+	RenderHelpWindow();
 
 	// Render ImGui on top of the scene
 	ImGui::Render();
@@ -422,8 +424,8 @@ void GUIManager::RenderMenuBar() {
 		}
 
 		if (ImGui::BeginMenu("Help")) {
-			if (ImGui::MenuItem(ICON_FA_CIRCLE_INFO " About")) {
-				// TODO: About dialog
+			if (ImGui::MenuItem(ICON_FA_CIRCLE_INFO " Help / About", "F1")) {
+				showHelpWindow = true;
 			}
 			ImGui::EndMenu();
 		}
@@ -650,6 +652,11 @@ void GUIManager::HandleKeyboardShortcuts() {
 
 	SnapshotManager& snapshotMgr = SnapshotManager::GetInstance();
 
+	// Help: F1
+	if (ImGui::IsKeyPressed(ImGuiKey_F1, false)) {
+		showHelpWindow = !showHelpWindow;
+	}
+
 	// Undo: Ctrl+Z
 	if (io.KeyCtrl && !io.KeyShift && ImGui::IsKeyPressed(ImGuiKey_Z, false)) {
 		if (snapshotMgr.CanUndo()) {
@@ -736,6 +743,92 @@ void GUIManager::HandleKeyboardShortcuts() {
 void GUIManager::ShowNotification(const std::string& message, float duration) {
 	notificationMessage = message;
 	notificationTimer = duration;
+}
+
+void GUIManager::RenderHelpWindow() {
+	if (!showHelpWindow) {
+		return;
+	}
+
+	ImGui::SetNextWindowSize(ImVec2(760.0f, 560.0f), ImGuiCond_FirstUseEver);
+	if (!ImGui::Begin("Help & About", &showHelpWindow)) {
+		ImGui::End();
+		return;
+	}
+
+	ImGui::TextUnformatted("GAM300 Editor");
+	ImGui::TextDisabled("Engine Engine - Internal Editor");
+	ImGui::Separator();
+
+	std::string activeSceneName = SceneManager::GetInstance().GetSceneName();
+	ImGui::Text("Current Scene: %s", activeSceneName.empty() ? "(unnamed)" : activeSceneName.c_str());
+	ImGui::Text("Selected Entities: %zu", selectedEntities.size());
+
+	if (ImGui::BeginTabBar("##HelpTabs")) {
+		if (ImGui::BeginTabItem("Overview")) {
+			ImGui::TextWrapped("This editor lets you build scenes with panel-based workflows. Start from Scene Hierarchy to create/select entities, then edit components in Inspector.");
+			ImGui::Spacing();
+			ImGui::BulletText("Scene Hierarchy: create, organize, parent/unparent entities");
+			ImGui::BulletText("Inspector: edit components and values");
+			ImGui::BulletText("Scene Panel: navigate and frame selected objects");
+			ImGui::BulletText("Asset Browser: drag assets/prefabs into scene and hierarchy");
+			ImGui::EndTabItem();
+		}
+
+		if (ImGui::BeginTabItem("Shortcuts")) {
+			if (ImGui::BeginTable("##HelpShortcuts", 2, ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg | ImGuiTableFlags_SizingStretchProp)) {
+				ImGui::TableSetupColumn("Action", ImGuiTableColumnFlags_WidthStretch, 0.7f);
+				ImGui::TableSetupColumn("Shortcut", ImGuiTableColumnFlags_WidthStretch, 0.3f);
+				ImGui::TableHeadersRow();
+
+				auto row = [](const char* action, const char* key) {
+					ImGui::TableNextRow();
+					ImGui::TableSetColumnIndex(0);
+					ImGui::TextUnformatted(action);
+					ImGui::TableSetColumnIndex(1);
+					ImGui::TextUnformatted(key);
+				};
+
+				row("Help / About", "F1");
+				row("Save Scene", "Ctrl+S");
+				row("Load Scene", "Ctrl+O");
+				row("Undo", "Ctrl+Z");
+				row("Redo", "Ctrl+Y");
+				row("Copy Selected Entity", "Ctrl+C");
+				row("Paste Entity", "Ctrl+V");
+				row("Duplicate Entity", "Ctrl+D");
+				row("Delete Entity", "Del");
+				row("Rename Entity", "F2");
+				row("Frame Selected", "F");
+
+				ImGui::EndTable();
+			}
+
+			ImGui::TextDisabled("Entity shortcuts apply when Scene Hierarchy or Scene panel is focused.");
+			ImGui::EndTabItem();
+		}
+
+		if (ImGui::BeginTabItem("Hierarchy Tips")) {
+			ImGui::BulletText("Right-click empty hierarchy area opens create/context menu");
+			ImGui::BulletText("Right-click entity row selects and highlights that entity");
+			ImGui::BulletText("Drag entity rows to reorder or reparent");
+			ImGui::BulletText("Use collapse/expand controls in hierarchy header");
+			ImGui::BulletText("Use search filters (Name/Lua/Comp/Tag/Layer) for targeted lookups");
+			ImGui::EndTabItem();
+		}
+
+		if (ImGui::BeginTabItem("Troubleshooting")) {
+			ImGui::BulletText("If layout looks broken: View > Reset Layout");
+			ImGui::BulletText("If scene changes are missing: use File > Save Scene");
+			ImGui::BulletText("If a panel disappeared: Window menu to reopen it");
+			ImGui::BulletText("If controls stop reacting in play mode: check cursor lock state");
+			ImGui::EndTabItem();
+		}
+
+		ImGui::EndTabBar();
+	}
+
+	ImGui::End();
 }
 
 void GUIManager::RenderNotification() {
