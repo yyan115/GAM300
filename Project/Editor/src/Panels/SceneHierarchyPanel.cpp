@@ -444,43 +444,81 @@ void SceneHierarchyPanel::OnImGuiRender() {
         // Reset collapse/expand action after tree is fully drawn
         collapseExpandAction = CollapseExpandAction::None;
 
-        //ImGui::Separator();
+        auto drawHierarchyBackgroundContextMenu = [&]() {
+            const bool popupInPrefabMode = PrefabEditor::IsInPrefabEditorMode();
+            const Entity sandboxRoot = PrefabEditor::GetSandboxEntity();
+            const bool canCreateInPrefab = !popupInPrefabMode || sandboxRoot != static_cast<Entity>(-1);
 
-        // Context menu for creating new objects
-        if (!ImGui::IsAnyItemHovered() && ImGui::BeginPopupContextWindow()) {
-            if (PrefabEditor::IsInPrefabEditorMode()) {
-                // In prefab mode all new entities must be children of the sandbox root.
-                Entity sandboxRoot = PrefabEditor::GetSandboxEntity();
-                if (ImGui::MenuItem("Create Child Entity")) {
-                    Entity newChild = CreateEmptyEntity("Empty Entity");
-                    if (newChild != static_cast<Entity>(-1) && sandboxRoot != static_cast<Entity>(-1)) {
-                        ReparentEntity(newChild, sandboxRoot);
-                        GUIManager::SetSelectedEntity(newChild);
-                    }
+            auto createAndSelect = [&](Entity createdEntity) {
+                if (createdEntity == static_cast<Entity>(-1)) {
+                    return;
                 }
-            } else {
-                if (ImGui::MenuItem("Create Empty")) {
-                    Entity newEntity = CreateEmptyEntity();
-                    GUIManager::SetSelectedEntity(newEntity);
+
+                if (popupInPrefabMode && sandboxRoot != static_cast<Entity>(-1) && createdEntity != sandboxRoot) {
+                    ReparentEntity(createdEntity, sandboxRoot);
                 }
-                if (ImGui::MenuItem("Create Cube")) {
-                    Entity newEntity = CreateCubeEntity();
-                    GUIManager::SetSelectedEntity(newEntity);
+                GUIManager::SetSelectedEntity(createdEntity);
+            };
+
+            if (ImGui::BeginMenu("Create")) {
+                if (ImGui::MenuItem("Empty Entity", nullptr, false, canCreateInPrefab)) {
+                    createAndSelect(CreateEmptyEntity("Empty Entity"));
                 }
-                ImGui::Separator();
-                if (ImGui::MenuItem("Create Camera")) {
-                    Entity newEntity = CreateCameraEntity();
-                    GUIManager::SetSelectedEntity(newEntity);
+                if (ImGui::MenuItem("Cube", nullptr, false, !popupInPrefabMode)) {
+                    createAndSelect(CreateCubeEntity());
                 }
+                if (ImGui::MenuItem("Camera", nullptr, false, !popupInPrefabMode)) {
+                    createAndSelect(CreateCameraEntity());
+                }
+                ImGui::EndMenu();
             }
-            ImGui::EndPopup();
-        }
+
+            if (ImGui::MenuItem("Paste", "Ctrl+V", false, g_EntityClipboard.hasData)) {
+                PasteEntities();
+            }
+
+            ImGui::Separator();
+
+            if (ImGui::MenuItem("Collapse All")) {
+                collapseExpandAction = CollapseExpandAction::CollapseAll;
+                if (ImGuiStorage* treeStorage = ImGui::GetStateStorage()) {
+                    treeStorage->Clear();
+                }
+                expandedEntities.clear();
+                searchForceExpandedNodes.clear();
+            }
+
+            if (ImGui::MenuItem("Expand All")) {
+                collapseExpandAction = CollapseExpandAction::ExpandAll;
+            }
+
+            if (popupInPrefabMode && ImGui::MenuItem("Save Prefab")) {
+                PrefabEditor::SaveEditedPrefab();
+            }
+
+            if (ImGui::MenuItem("Clear Selection", nullptr, false, !GUIManager::GetSelectedEntities().empty())) {
+                GUIManager::ClearSelectedEntities();
+            }
+        };
 
         // Handle unparenting of an entity and spawning prefabs at root
         // Take up all remaining space in the window
         ImVec2 avail = ImGui::GetContentRegionAvail();
         if (avail.y > 0) {
             ImGui::InvisibleButton("HierarchyBackground", avail);
+
+            // Right-clicking true empty panel area opens hierarchy background context menu.
+            if (ImGui::BeginPopupContextItem("##HierarchyBackgroundContext", ImGuiPopupFlags_MouseButtonRight)) {
+                drawHierarchyBackgroundContextMenu();
+                ImGui::EndPopup();
+            }
+        }
+        else {
+            // Fallback: if list completely fills panel, still allow background context via window-level popup.
+            if (ImGui::BeginPopupContextWindow("##HierarchyWindowContextFallback", ImGuiPopupFlags_MouseButtonRight | ImGuiPopupFlags_NoOpenOverItems)) {
+                drawHierarchyBackgroundContextMenu();
+                ImGui::EndPopup();
+            }
         }
 
         // Use the window's inner rect as a custom drop target.
@@ -828,6 +866,13 @@ void SceneHierarchyPanel::DrawEntityNode(const std::string& entityName, Entity e
                     std::cerr << "[SceneHierarchy] Error focusing entity: " << e.what() << std::endl;
                 }
             }
+        }
+
+        // Right-click should target/select the clicked entity so the row highlights
+        // and context actions apply to the expected item.
+        if (ImGui::IsItemClicked(ImGuiMouseButton_Right) && !GUIManager::IsEntitySelected(entityId)) {
+            GUIManager::SetSelectedEntity(entityId);
+            lastClickedEntity = entityId;
         }
     }
 
