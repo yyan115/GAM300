@@ -27,6 +27,7 @@
 #include <ImGuizmo.h>
 #include "EditorState.hpp"
 #include "Prefab/PrefabIO.hpp"
+#include "Panels/PrefabEditorPanel.hpp"
 #include "GUIManager.hpp"
 #include <cstring>
 #include <cmath>
@@ -1203,6 +1204,8 @@ void ScenePanel::OnImGuiRender()
         int sceneViewHeight = (int)viewportPanelSize.y;
         if (sceneViewWidth < 100) sceneViewWidth = 100;
         if (sceneViewHeight < 100) sceneViewHeight = 100;
+
+        PrefabEditor::SyncPreviewLightToSceneCamera(editorCamera.Position, editorCamera.Front, editorCamera.Up);
 
         // Always render the scene with our editor camera to the framebuffer
         RenderSceneWithEditorCamera(sceneViewWidth, sceneViewHeight);

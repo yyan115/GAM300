@@ -1,6 +1,7 @@
 #pragma once
 #include "EditorPanel.hpp"
 #include <string>
+#include <glm/vec3.hpp>
 #include <ECS/ECSRegistry.hpp>
 #include <ECS/ECSManager.hpp>
 
@@ -21,6 +22,11 @@ public:
     static void StartEditingPrefab(const std::string& _prefabPath);
     static void StopEditingPrefab();
     static void SaveEditedPrefab();
+    static void SetPreviewLightEnabled(bool enabled);
+    static bool IsPreviewLightEnabled() { return previewLightEnabled; }
+    static void SyncPreviewLightToSceneCamera(const glm::vec3& cameraPosition,
+                                              const glm::vec3& cameraForward,
+                                              const glm::vec3& cameraUp);
 
 private:
     // Loads prefab into the sandbox ECS (isolated from the live scene)
@@ -31,6 +37,8 @@ private:
     // --- sandbox "Prefab Mode" state ---
     ECSManager sandboxECS{};                   // isolated world just for editing
     static Entity sandboxEntity;
+    static Entity prefabPreviewLight;          // temporary point light for visibility in prefab editing
+    static bool previewLightEnabled;
 
     static std::string prefabPath;
     static bool isInPrefabEditorMode;
