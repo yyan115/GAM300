@@ -415,6 +415,19 @@ std::string Shader::CompileToResource(const std::string& path, bool forAndroid) 
 	p = shaderPath;
 	std::filesystem::create_directories(p.parent_path());
 	std::ofstream shaderFile(shaderPath, std::ios::binary);
+#ifndef ANDROID
+	// If the install directory is read-only (e.g. Program Files), fall back to LocalAppData
+	if (!shaderFile.is_open()) {
+		const char* localAppData = getenv("LOCALAPPDATA");
+		if (localAppData) {
+			p = std::filesystem::path(localAppData) / "DigiPen" / "Kusane" / "ShaderCache" / std::filesystem::path(shaderPath).filename();
+			std::filesystem::create_directories(p.parent_path());
+			shaderFile.open(p, std::ios::binary);
+			if (shaderFile.is_open())
+				shaderPath = p.generic_string();
+		}
+	}
+#endif
 	if (shaderFile.is_open()) {
 		// Write the binary format to the file.
 		shaderFile.write(reinterpret_cast<const char*>(&binaryFormat), sizeof(binaryFormat));
@@ -438,9 +451,10 @@ std::string Shader::CompileToResource(const std::string& path, bool forAndroid) 
 				std::string androidFragPath = (AssetManager::GetInstance().GetAndroidResourcesPath() / fragPath).generic_string();
 				std::filesystem::path newFragPath = FileUtilities::SanitizePathForAndroid(std::filesystem::path(androidFragPath));
 				androidFragPath = newFragPath.generic_string();
-				std::filesystem::copy_file(path + ".vert", androidVertPath,
+				std::string sourceBasePath = (p.parent_path() / p.stem()).generic_string();
+				std::filesystem::copy_file(sourceBasePath + ".vert", androidVertPath,
 					std::filesystem::copy_options::overwrite_existing);
-				std::filesystem::copy_file(path + ".frag", androidFragPath,
+				std::filesystem::copy_file(sourceBasePath + ".frag", androidFragPath,
 					std::filesystem::copy_options::overwrite_existing);
 			}
 			catch (const std::filesystem::filesystem_error& e) {
@@ -522,10 +536,12 @@ bool Shader::LoadResource(const std::string& resourcePath, const std::string& as
 		if (status == GL_FALSE) {
 			ENGINE_PRINT(EngineLogging::LogLevel::Error, "[SHADER]: Failed to load shader program from binary. Recompiling shader...\n");
 #ifndef ANDROID
-			if (CompileToResource(assetPath).empty()) {
+			std::string newCachePath = CompileToResource(assetPath);
+			if (newCachePath.empty()) {
 				ENGINE_PRINT(EngineLogging::LogLevel::Error, "[SHADER]: Recompilation failed. Aborting load.\n");
 				return false;
 			}
+			return LoadResource(newCachePath, assetPath);
 #else
 			if (!SetupShader(assetPath)) {
 				ENGINE_LOG_INFO("[SHADER]: Android shader setup failed. Aborting load.");
@@ -533,7 +549,6 @@ bool Shader::LoadResource(const std::string& resourcePath, const std::string& as
 			}
 			else return true;
 #endif
-			return LoadResource(resourcePath);
 		}
 
 		// Bind known UBO blocks for the binary-loaded program.

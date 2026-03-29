@@ -337,44 +337,42 @@ void GUIManager::RenderMenuBar() {
 					});
 			}
 			ImGui::EndDisabled();
-			ImGui::BeginDisabled(gameBuildStatus.isBuilding);
-			if (ImGui::MenuItem(ICON_FA_BOX_ARCHIVE " Build Installer")) {
-				gameBuildStatus.isBuilding = true;
-				gameBuildStatus.step.store(1);
-				gameBuildStatus.future = std::async(std::launch::async, [] {
-					// Write a batch file that sets up the VS environment via vcvarsall
-					// before running cmake — needed when editor is launched outside of VS
-					std::filesystem::create_directories(INSTALLER_OUTPUT_DIR);
-					std::string batPath = std::string(INSTALLER_OUTPUT_DIR) + "\\build_installer.bat";
-					{
-						std::ofstream bat(batPath);
-						bat << "@echo off\r\n";
-						bat << "for /f \"usebackq tokens=*\" %%i in (`\"C:\\Program Files (x86)\\Microsoft Visual Studio\\Installer\\vswhere.exe\" -latest -property installationPath`) do (\r\n";
-						bat << "  call \"%%i\\VC\\Auxiliary\\Build\\vcvarsall.bat\" x64\r\n";
-						bat << ")\r\n";
-						bat << "cd /d \"" PROJECT_SOURCE_DIR "\"\r\n";
-						bat << "cmake --preset release\r\n";
-						bat << "if errorlevel 1 exit /b 1\r\n";
-						bat << "cmake --build \"" INTERMEDIATE_RELEASE_DIR "\"\r\n";
-						bat << "if errorlevel 1 exit /b 1\r\n";
-						bat << "cd /d \"" INTERMEDIATE_RELEASE_DIR "\"\r\n";
-						bat << "cpack -C Release -B \"" INSTALLER_OUTPUT_DIR "\"\r\n";
-					}
-
-					gameBuildStatus.step.store(1);
-					// Step tracking: we can't know exactly which step the bat is on,
-					// so advance steps on a timer as a visual hint
-					std::thread([]{
-						std::this_thread::sleep_for(std::chrono::seconds(5));
-						if (gameBuildStatus.isBuilding) gameBuildStatus.step.store(2);
-						std::this_thread::sleep_for(std::chrono::seconds(10));
-						if (gameBuildStatus.isBuilding) gameBuildStatus.step.store(3);
-					}).detach();
-
-					return system(("\"" + batPath + "\"").c_str());
-				});
-			}
-			ImGui::EndDisabled();
+			// ImGui::BeginDisabled(gameBuildStatus.isBuilding);
+			// if (ImGui::MenuItem(ICON_FA_BOX_ARCHIVE " Build Installer")) {
+			// 	gameBuildStatus.isBuilding = true;
+			// 	gameBuildStatus.step.store(1);
+			// 	gameBuildStatus.future = std::async(std::launch::async, [] {
+			// 		// Write a batch file that sets up the VS environment via vcvarsall
+			// 		// before running cmake — needed when editor is launched outside of VS
+			// 		std::filesystem::create_directories(INSTALLER_OUTPUT_DIR);
+			// 		std::string batPath = std::string(INSTALLER_OUTPUT_DIR) + "\\build_installer.bat";
+			// 		{
+			// 			std::ofstream bat(batPath);
+			// 			bat << "@echo off\r\n";
+			// 			bat << "for /f \"usebackq tokens=*\" %%i in (`\"C:\\Program Files (x86)\\Microsoft Visual Studio\\Installer\\vswhere.exe\" -latest -property installationPath`) do (\r\n";
+			// 			bat << "  call \"%%i\\VC\\Auxiliary\\Build\\vcvarsall.bat\" x64\r\n";
+			// 			bat << ")\r\n";
+			// 			bat << "cd /d \"" PROJECT_SOURCE_DIR "\"\r\n";
+			// 			bat << "cmake --preset release\r\n";
+			// 			bat << "if errorlevel 1 exit /b 1\r\n";
+			// 			bat << "cmake --build \"" INTERMEDIATE_RELEASE_DIR "\"\r\n";
+			// 			bat << "if errorlevel 1 exit /b 1\r\n";
+			// 			bat << "cd /d \"" INTERMEDIATE_RELEASE_DIR "\"\r\n";
+			// 			bat << "cpack -C Release -B \"" INSTALLER_OUTPUT_DIR "\"\r\n";
+			// 		}
+			// 		gameBuildStatus.step.store(1);
+			// 		// Step tracking: we can't know exactly which step the bat is on,
+			// 		// so advance steps on a timer as a visual hint
+			// 		std::thread([]{
+			// 			std::this_thread::sleep_for(std::chrono::seconds(5));
+			// 			if (gameBuildStatus.isBuilding) gameBuildStatus.step.store(2);
+			// 			std::this_thread::sleep_for(std::chrono::seconds(10));
+			// 			if (gameBuildStatus.isBuilding) gameBuildStatus.step.store(3);
+			// 		}).detach();
+			// 		return system(("\"" + batPath + "\"").c_str());
+			// 	});
+			// }
+			// ImGui::EndDisabled();
 			ImGui::Separator();
 			if (ImGui::MenuItem(ICON_FA_RIGHT_FROM_BRACKET " Exit", "Alt+F4")) {
 				// TODO: Exit application
@@ -445,10 +443,13 @@ void GUIManager::RenderMenuBar() {
 	}
 	else if (AssetManager::GetInstance().androidCompilationStatus.isCompiling)
 	{
-		ImGui::Begin("Compiling assets for Android...");
+		ImVec2 center = ImVec2(ImGui::GetIO().DisplaySize.x * 0.5f, ImGui::GetIO().DisplaySize.y * 0.5f);
+		ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
+		ImGui::SetNextWindowSize(ImVec2(360, 80), ImGuiCond_Appearing);
+		ImGui::Begin("Compiling assets for Android...", nullptr, ImGuiWindowFlags_NoCollapse);
 		float fraction = (float)AssetManager::GetInstance().androidCompilationStatus.numCompiledAssets / (float)AssetManager::GetInstance().GetAssetMetaMapSize();
 		std::string overlay = std::to_string((int)(fraction * 100)) + "%";
-		ImGui::ProgressBar(fraction, ImVec2(300, 0), overlay.c_str());
+		ImGui::ProgressBar(fraction, ImVec2(-1, 0), overlay.c_str());
 		ImGui::End();
 	}
 
