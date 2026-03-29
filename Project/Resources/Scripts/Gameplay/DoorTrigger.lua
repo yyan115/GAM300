@@ -89,7 +89,8 @@ return Component {
         weaponOnHand = "LowPolyFeatherChain",
 
         -- Tooltip entity name (sprite that appears when player is near)
-        tooltipEntity = "",
+        tooltipEntity        = "",
+        tooltipEntityAndroid = "",
 
         -- Weapon Fly Timing and Offsets
         weaponFlyDuration = 0.5,
@@ -141,8 +142,10 @@ return Component {
 
         -- Tooltip sprite entity (shown when player is near, hidden after interaction)
         self._tooltipShown = false
-        if self.tooltipEntity ~= "" then
-            self._tooltipEnt = Engine.GetEntityByName(self.tooltipEntity)
+        local isAndroid = Platform and Platform.IsAndroid and Platform.IsAndroid()
+        local tooltipName = (isAndroid and self.tooltipEntityAndroid ~= "" and self.tooltipEntityAndroid) or self.tooltipEntity
+        if tooltipName ~= "" then
+            self._tooltipEnt = Engine.GetEntityByName(tooltipName)
         end
 
         if not self.leftTransform or not self.rightTransform then

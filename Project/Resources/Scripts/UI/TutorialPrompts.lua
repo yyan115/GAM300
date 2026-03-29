@@ -5,8 +5,10 @@ local event_bus = _G.event_bus
 
 return Component {
     fields = {
-        moveSpriteEntityName = "MovementControlsSprite",
-        dashSpriteEntityName = "DashControlsSprite",
+        moveSpriteEntityName        = "MovementControlsSprite",
+        dashSpriteEntityName        = "DashControlsSprite",
+        moveSpriteEntityNameAndroid = "MovementControlsSpriteAndroid",
+        dashSpriteEntityNameAndroid = "DashControlsSpriteAndroid",
 
         fadeDuration         = 0.5,
         startDelay           = 1.0,
@@ -33,7 +35,11 @@ return Component {
         end
         ]]
 
-        local moveEnt = Engine.GetEntityByName(self.moveSpriteEntityName)
+        local isAndroid = Platform and Platform.IsAndroid and Platform.IsAndroid()
+        local moveEntName = (isAndroid and self.moveSpriteEntityNameAndroid) or self.moveSpriteEntityName
+        local dashEntName = (isAndroid and self.dashSpriteEntityNameAndroid) or self.dashSpriteEntityName
+
+        local moveEnt = Engine.GetEntityByName(moveEntName)
         if moveEnt then
             self._moveEnt = moveEnt
             local activeComp = GetComponent(moveEnt, "ActiveComponent")
@@ -45,7 +51,7 @@ return Component {
             end
         end
 
-        local dashEnt = Engine.GetEntityByName(self.dashSpriteEntityName)
+        local dashEnt = Engine.GetEntityByName(dashEntName)
         if dashEnt then
             self._dashEnt = dashEnt
             local activeComp = GetComponent(dashEnt, "ActiveComponent")
