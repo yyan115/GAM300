@@ -144,18 +144,17 @@ function M.updateChainAim(self, dt)
             wz = self._assistTargetZ
         else
             local crosshairMaxDist = 100.0
-            local eyeHeight = self.chainAimAssistHeightOffset or 1.0
             local hitDist = crosshairMaxDist
             if Physics and Physics.Raycast then
                 local d = Physics.Raycast(camX, camY, camZ, fx, fy, fz, crosshairMaxDist)
                 if d and d > 0 then hitDist = d end
             end
-            local eyeX = self._targetPos and self._targetPos.x or camX
-            local eyeY = (self._targetPos and self._targetPos.y or camY) + eyeHeight
-            local eyeZ = self._targetPos and self._targetPos.z or camZ
-            wx = eyeX + fx * hitDist
-            wy = eyeY + fy * hitDist
-            wz = eyeZ + fz * hitDist
+            -- Use camera position as origin so the world target matches exactly
+            -- where the crosshair is pointing. Previously this used the player's
+            -- eye position with the camera's hit distance, causing parallax error.
+            wx = camX + fx * hitDist
+            wy = camY + fy * hitDist
+            wz = camZ + fz * hitDist
         end
 
         if event_bus and event_bus.publish then

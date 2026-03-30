@@ -277,8 +277,9 @@ return Component {
             dbg("[ChainBootstrap] SpinRelease pending — waiting for correct angle window")
             -- Held from retracted: fire toward crosshair world point on release.
             local dir = self:_directionToAimPoint()
+            local wt  = self._cameraAimWorldPoint  -- pass world target for per-frame tracking
             dbg(string.format("[ChainBootstrap] AimFire release -> StartExtension (%.3f,%.3f,%.3f)", dir[1],dir[2],dir[3]))
-            self.controller:StartExtension(dir, self.MaxLength, self.LinkMaxDistance)
+            self.controller:StartExtension(dir, self.MaxLength, self.LinkMaxDistance, wt)
             if _G.event_bus and _G.event_bus.publish then
                 _G.event_bus.publish("force_player_rotation_to_direction", {x = dir[1], z = dir[3]})
                 _G.event_bus.publish("chain.throw_chain", true)
@@ -748,8 +749,8 @@ return Component {
     end,
 
     -- Returns a normalised fire direction from the chain hand toward the crosshair
-    -- world target published by camera_chain_aim. The world target is raycasted from
-    -- player eye level (not camera position) so there is no camera-offset parallax.
+    -- world target published by camera_chain_aim. The world target is the camera
+    -- raycast hit point (where the crosshair actually points in the world).
     -- Falls back to raw camera forward if no world target is available yet.
     _directionToAimPoint = function(self)
         local wp = self._cameraAimWorldPoint
@@ -1225,8 +1226,9 @@ return Component {
                 if math.abs(a) <= extendedTol then
                     dbg(string.format("[ChainBootstrap] SpinRelease fired at normAngle=%.3f tolRad=%.3f", a, extendedTol))
                     local cf = self:_directionToAimPoint()
+                    local wt = self._cameraAimWorldPoint
                     self:_resetSpin()
-                    self.controller:StartExtension(cf, self.MaxLength, self.LinkMaxDistance)
+                    self.controller:StartExtension(cf, self.MaxLength, self.LinkMaxDistance, wt)
                 end
             end
         end

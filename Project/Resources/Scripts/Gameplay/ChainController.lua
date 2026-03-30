@@ -33,6 +33,7 @@ function M.New(params)
     self._justEnteredFlopFromExt  = false
     self._justEnteredRaycastSnap  = false
     self.losAnchors       = {}
+    self.worldTarget      = nil   -- {x,y,z} aim point; when set, lastForward is recomputed each frame
     self.VerletState = VerletAdapter.Init{positions=self.positions, prev=self.prev, invMass=self.invMass}
     return self
 end
@@ -40,7 +41,7 @@ end
 function M:SetStartPos(x,y,z) self.startPos = {x or 0,y or 0,z or 0} end
 function M:SetEndPos(x,y,z)   self.endPos   = {x or 0,y or 0,z or 0} end
 
-function M:StartExtension(forward, maxLength, linkMaxDistance)
+function M:StartExtension(forward, maxLength, linkMaxDistance, worldTarget)
     self.isExtending, self.isRetracting = true, false
     self.extensionTime, self.chainLen   = 0, 0
     self._lockedChainLen, self._raycastSnapped, self._flopping = 0, false, false
@@ -50,6 +51,7 @@ function M:StartExtension(forward, maxLength, linkMaxDistance)
     self.lockedEndPoint = {0,0,0}
     self.hookedTag      = ""
     self.losAnchors     = {}
+    self.worldTarget    = worldTarget  -- {x,y,z} or nil
     local maxLen  = tonumber(maxLength)       or tonumber(self.params.MaxLength)       or 0
     local linkMax = tonumber(linkMaxDistance) or tonumber(self.params.LinkMaxDistance) or 0
     if linkMax > 0 and maxLen > 0 then
@@ -63,7 +65,7 @@ function M:StartExtension(forward, maxLength, linkMaxDistance)
     end
 end
 
-function M:StopExtension() self.isExtending = false end
+function M:StopExtension() self.isExtending = false; self.worldTarget = nil end
 
 function M:StartRetraction()
     if (self.chainLen or 0) <= 0 then return end
@@ -74,6 +76,7 @@ function M:StartRetraction()
     self.hookedTag       = ""
     self.losAnchors      = {}
     self._lockedChainLen = self.chainLen
+    self.worldTarget     = nil
 end
 
 function M:ContinueExtension(forward, maxLength, linkMaxDistance)
@@ -482,6 +485,20 @@ function M:Update(dt, settings)
         self._groundY = (hitDist and hitDist>0) and (sy-hitDist+(settings.GroundClampOffset or 0.1)) or nil
     else
         self._groundY = nil
+    end
+
+    -- Recompute lastForward toward world target each frame so the chain
+    -- tracks the crosshair hit point even as the hand bone moves (e.g. player
+    -- rotation during the throw animation).
+    if self.worldTarget and self.isExtending then
+        local wt = self.worldTarget
+        local dx = wt.x - sx
+        local dy = wt.y - sy
+        local dz = wt.z - sz
+        local len = vec_len(dx, dy, dz)
+        if len > 0.001 then
+            self.lastForward = {dx/len, dy/len, dz/len}
+        end
     end
 
     -- 3) Determine end position
