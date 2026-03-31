@@ -87,7 +87,7 @@ return Component {
             if axis and (math.abs(axis.x) > 0.1 or math.abs(axis.y) > 0.1) then
                 moved = true
             end
-            if Keyboard.IsKeyPressed(Keyboard.Key.Space) then
+            if Keyboard.IsKeyHeld(Keyboard.Key.Space) then
                 moved = true
             end
             if moved then

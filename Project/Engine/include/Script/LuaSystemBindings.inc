@@ -27,8 +27,12 @@
 //   local x, y = Keyboard.GetMouseX(), Keyboard.GetMouseY()
 
 BEGIN_SYSTEM("Keyboard")
+    // "pressed" — true only on the frame the key first goes down (one-shot)
     FUNCTION("IsKeyPressed", KeyboardWrappers::IsKeyPressed)
     FUNCTION("IsDigitPressed", KeyboardWrappers::IsDigitPressed)
+    // "held" — true every frame the key is physically down
+    FUNCTION("IsKeyHeld", KeyboardWrappers::IsKeyHeld)
+    FUNCTION("IsDigitHeld", KeyboardWrappers::IsDigitHeld)
     FUNCTION("IsMouseButtonPressed", KeyboardWrappers::IsMouseButtonPressed)
     FUNCTION("GetMouseX", KeyboardWrappers::GetMouseX)
     FUNCTION("GetMouseY", KeyboardWrappers::GetMouseY)
