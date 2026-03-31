@@ -3,8 +3,10 @@ local FlyingChase = {}
 
 function FlyingChase:Enter(ai)
     ai._animator:SetBool("Flying", true)
-    ai._animator:SetBool("PatrolEnabled", true)
+    ai._animator:SetBool("PatrolEnabled", false)
     ai._animator:SetBool("PlayerInDetectionRange", true)
+    ai._animator:SetBool("PlayerInAttackRange", false)
+    ai._animator:SetBool("ReadyToAttack", false)
     ai:_publishSFX("alert")
 end
 
@@ -12,8 +14,7 @@ function FlyingChase:Update(ai, dt)
     ai:MaintainHover(dt)
 
     local detR = ai.DetectionRange or 4.0
-    if not ai:IsPlayerInRange(detR) then
-        -- go back to patrol if enabled, else idle
+    if not ai:IsPlayerInRange(detR) and not ai.aggressive then
         if ai.EnablePatrol then
             ai.fsm:Change("Patrol", ai.states.Patrol)
         else

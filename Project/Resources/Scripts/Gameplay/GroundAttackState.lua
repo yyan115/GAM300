@@ -27,7 +27,11 @@ local function interruptOut(ai)
     local d2 = ai:GetPlayerDistanceSq()
 
     if d2 > (diseng * diseng) then
-        ai.fsm:Change("Patrol", ai.states.Patrol)
+        if ai.aggressive then
+            ai.fsm:Change("Chase", ai.states.Chase)
+        else
+            ai.fsm:Change("Patrol", ai.states.Patrol)
+        end
         return
     end
 
@@ -109,8 +113,12 @@ function AttackState:Update(ai, dt)
             local d2 = ai:GetPlayerDistanceSq()
 
             if ai.IsMelee then
-                if d2 > (meleeR * meleeR) then
-                    ai.fsm:Change("Chase", ai.states.Chase)
+                if d2 > (diseng * diseng) then
+                    if ai.aggressive then
+                        ai.fsm:Change("Chase", ai.states.Chase)
+                    else
+                        ai.fsm:Change("Patrol", ai.states.Patrol)
+                    end
                     return
                 end
             else
@@ -131,12 +139,15 @@ function AttackState:Update(ai, dt)
     local attackR, meleeR, diseng = ai:GetRanges()
     local d2 = ai:GetPlayerDistanceSq()
 
-    -- Only allow state exit if not committed AND anim hasn't triggered yet
     if ai.IsMelee then
-        if (not ai._attackCommitted) and (not ai.meleeAnimTriggered) and d2 > (meleeR * meleeR) then
+        if (not ai._attackCommitted) and (not ai.meleeAnimTriggered) and d2 > (diseng * diseng) then
             ai._animator:SetBool("ReadyToAttack", false)
             ai._readyLatched = false
-            ai.fsm:Change("Chase", ai.states.Chase)
+            if ai.aggressive then
+                ai.fsm:Change("Chase", ai.states.Chase)
+            else
+                ai.fsm:Change("Patrol", ai.states.Patrol)
+            end
             return
         end
     else
@@ -202,7 +213,11 @@ function AttackState:Update(ai, dt)
                     })
                 end
             elseif d2 > (diseng * diseng) then
-                ai.fsm:Change("Patrol", ai.states.Patrol)
+                if ai.aggressive then
+                    ai.fsm:Change("Chase", ai.states.Chase)
+                else
+                    ai.fsm:Change("Patrol", ai.states.Patrol)
+                end
                 return
             else
                 ai.fsm:Change("Chase", ai.states.Chase)
@@ -273,7 +288,11 @@ function AttackState:Update(ai, dt)
                 ai.rangedAnimTriggered = true
 
             elseif d2 > (diseng * diseng) then
-                ai.fsm:Change("Patrol", ai.states.Patrol)
+                if ai.aggressive then
+                    ai.fsm:Change("Chase", ai.states.Chase)
+                else
+                    ai.fsm:Change("Patrol", ai.states.Patrol)
+                end
                 return
             else
                 ai.fsm:Change("Chase", ai.states.Chase)
@@ -308,7 +327,9 @@ end
 
 function AttackState:Exit(ai)
     stopCC(ai)
-    ai:CancelPendingAttack("EXIT_ATTACK")
+    ai._currentAttackToken = nil
+    ai._attackCancelled = false
+    ai._attackCancelReason = nil
 
     ai._animator:SetBool("PlayerInAttackRange", false)
     ai._animator:SetBool("ReadyToAttack", false)
