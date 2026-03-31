@@ -5682,7 +5682,7 @@
                     "data": [
                         {
                             "type": "bool",
-                            "data": false
+                            "data": true
                         }
                     ]
                 }
@@ -5777,7 +5777,7 @@
                         },
                         {
                             "type": "unsigned",
-                            "data": 40
+                            "data": 36
                         },
                         "00602042db559215-00036778be000001",
                         "00374a2171ad928d-000331fc8200006d",
@@ -5929,7 +5929,7 @@
                     "data": [
                         {
                             "type": "bool",
-                            "data": false
+                            "data": true
                         }
                     ]
                 }
@@ -6745,11 +6745,11 @@
                             "data": [
                                 {
                                     "type": "float",
-                                    "data": 1050
+                                    "data": 800
                                 },
                                 {
                                     "type": "float",
-                                    "data": 164.985
+                                    "data": 235
                                 },
                                 {
                                     "type": "float",
@@ -6762,7 +6762,7 @@
                             "data": [
                                 {
                                     "type": "float",
-                                    "data": 500
+                                    "data": 680
                                 },
                                 {
                                     "type": "float",
@@ -6939,7 +6939,7 @@
                     "data": [
                         {
                             "type": "bool",
-                            "data": false
+                            "data": true
                         }
                     ]
                 }
@@ -8817,7 +8817,7 @@
                                 },
                                 {
                                     "type": "float",
-                                    "data": 164.985
+                                    "data": 235
                                 },
                                 {
                                     "type": "float",
@@ -9077,7 +9077,7 @@
                     "data": [
                         {
                             "type": "bool",
-                            "data": false
+                            "data": true
                         }
                     ]
                 },
@@ -36650,7 +36650,7 @@
         },
         {
             "PrefabPath": "../../Resources/Prefabs/Lantern.prefab",
-            "id": 239,
+            "id": 235,
             "guid": "001dc74ce32d0fdd-0004a9e658022423",
             "Name": "Lantern",
             "SiblingIndex": 50000,
@@ -36748,7 +36748,7 @@
             ],
             "Children": [
                 {
-                    "id": 240,
+                    "id": 236,
                     "guid": "001dc74c9d271972-0004a9e658022425",
                     "Name": "Light (1) (2)",
                     "SiblingIndex": 50001,
@@ -36760,7 +36760,7 @@
                     }
                 },
                 {
-                    "id": 241,
+                    "id": 237,
                     "guid": "001dc74cb0da1503-0004a9e658022427",
                     "Name": "column_low (4) (1)",
                     "SiblingIndex": 50001,
@@ -36772,7 +36772,7 @@
                     }
                 },
                 {
-                    "id": 242,
+                    "id": 238,
                     "guid": "001dc74cea6237eb-0004a9e658022429",
                     "Name": "Light (1) (1) (1)",
                     "SiblingIndex": 50001,

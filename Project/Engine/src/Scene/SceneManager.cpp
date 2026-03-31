@@ -25,6 +25,7 @@
 	#pragma comment(lib, "shell32.lib")
 #endif
 #include <Asset Manager/AssetManager.hpp>
+#include <Settings/GameSettings.hpp>
 
 namespace {
 std::string NormalizeScenePathForRuntime(const std::string& scenePath)
@@ -400,14 +401,24 @@ void SceneManager::UpdateAsyncLoad() {
             PROFILE_SCOPED("AsyncLoad::ReinitGraphics");
             GraphicsManager& gfx = GraphicsManager::GetInstance();
             gfx.Initialize(RunTimeVar::window.width, RunTimeVar::window.height);
-            PostProcessingManager::GetInstance().Initialize();
-            auto* hdr = PostProcessingManager::GetInstance().GetHDREffect();
-            if (hdr) {
-                hdr->SetEnabled(true);
-                hdr->SetExposure(1.f);
-                hdr->SetGamma(2.2f);
-                hdr->SetToneMappingMode(HDREffect::ToneMappingMode::REINHARD);
+
+            // Re-set the camera for the new scene immediately so LightingSystem 
+            // can collect data in the next Update()
+            ECSManager& ecs = ECSRegistry::GetInstance().GetECSManager(asyncScenePath);
+            if (ecs.cameraSystem) {
+                Entity activeCam = ecs.cameraSystem->GetActiveCameraEntity();
+                if (activeCam != UINT32_MAX && ecs.cameraSystem->GetActiveCamera()) {
+                    gfx.SetCamera(ecs.cameraSystem->GetActiveCamera());
+                    gfx.UpdateFrustum();
+                }
             }
+
+            PostProcessingManager::GetInstance().Initialize();
+            // Reset runtime state (vignette, blur, etc.) so it doesn't leak from previous scene
+            PostProcessingManager::GetInstance().ResetRuntimeState();
+
+            // Configure HDR settings from GameSettings
+            GameSettingsManager::GetInstance().ApplySettings();
         }
 
         currentScene = std::move(pendingScene);
