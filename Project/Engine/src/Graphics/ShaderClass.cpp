@@ -389,6 +389,10 @@ std::string Shader::CompileToResource(const std::string& path, bool forAndroid) 
 
 	binarySupported = true;
 	std::filesystem::path p(path);
+	// Save the source base path before p gets reassigned later.
+	// This is needed to copy .vert/.frag source files for Android fallback.
+	std::string sourceBasePath = (p.parent_path() / p.stem()).generic_string();
+
 	if (!SetupShader(path)) {
 		ENGINE_PRINT(EngineLogging::LogLevel::Error, "[SHADER]: Shader compilation failed. Aborting resource compilation.\n");
 		return std::string{};
@@ -451,7 +455,7 @@ std::string Shader::CompileToResource(const std::string& path, bool forAndroid) 
 				std::string androidFragPath = (AssetManager::GetInstance().GetAndroidResourcesPath() / fragPath).generic_string();
 				std::filesystem::path newFragPath = FileUtilities::SanitizePathForAndroid(std::filesystem::path(androidFragPath));
 				androidFragPath = newFragPath.generic_string();
-				std::string sourceBasePath = (p.parent_path() / p.stem()).generic_string();
+				// sourceBasePath was saved before p was reassigned to the android shader path
 				std::filesystem::copy_file(sourceBasePath + ".vert", androidVertPath,
 					std::filesystem::copy_options::overwrite_existing);
 				std::filesystem::copy_file(sourceBasePath + ".frag", androidFragPath,
