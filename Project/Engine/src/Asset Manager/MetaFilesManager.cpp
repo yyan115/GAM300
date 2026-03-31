@@ -283,6 +283,17 @@ std::string MetaFilesManager::GetResourceNameFromAssetFile(const std::string& as
 	}
 	if (!platform->FileExists(metaFilePath)) {
 		ENGINE_LOG_DEBUG("[MetaFilesManager]: Meta file not found: " + metaFilePath);
+#ifdef ANDROID
+		// On Android, shader .meta files may not be packaged in the APK.
+		// Fall back to the .shader binary path which IS included.
+		if (assetPath.find("Shaders/") != std::string::npos) {
+			std::string shaderBinaryPath = assetPath + ".shader";
+			if (platform->FileExists(shaderBinaryPath)) {
+				ENGINE_LOG_DEBUG("[MetaFilesManager]: Using shader binary fallback: " + shaderBinaryPath);
+				return shaderBinaryPath;
+			}
+		}
+#endif
 		return "";
 	}
 
@@ -307,6 +318,13 @@ std::string MetaFilesManager::GetResourceNameFromAssetFile(const std::string& as
 	if (assetMetaData.HasMember("android_compiled")) {
 		std::string androidResourcePath = assetMetaData["android_compiled"].GetString();
 		return androidResourcePath;
+	}
+	// Fall back to .shader binary if android_compiled field is missing
+	{
+		std::string shaderBinaryPath = assetPath + ".shader";
+		if (platform->FileExists(shaderBinaryPath)) {
+			return shaderBinaryPath;
+		}
 	}
 #else
 	if (assetMetaData.HasMember("compiled")) {
