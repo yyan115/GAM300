@@ -35,7 +35,8 @@ local AudioHelper   = require("extension.audio_helper")
 return Component {
 
     fields = {
-        SlashSFX           = {},
+        SlashSFX           = {},   -- light_1 and light_2 swings
+        SlashSFX3          = {},   -- light_3 swing (3rd attack) - falls back to SlashSFX if empty
         HeavySlashSFX      = {},
         ChainStrikeSFX     = {},
         SlashHitSFX        = {},
@@ -96,10 +97,12 @@ return Component {
 
         -- Build the state → clip array map from inspector fields.
         -- To add audio for a new combo state, add one line here.
+        -- light_3 uses SlashSFX3 if populated, else falls back to SlashSFX.
+        local light3Clips = (self.SlashSFX3 and #self.SlashSFX3 > 0) and self.SlashSFX3 or self.SlashSFX
         self._clipsMap = {
             light_1       = self.SlashSFX,
             light_2       = self.SlashSFX,
-            light_3       = self.SlashSFX,
+            light_3       = light3Clips,
             heavy_release = self.HeavySlashSFX,
             chain_attack  = self.ChainStrikeSFX,
         }

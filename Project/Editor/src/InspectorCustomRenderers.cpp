@@ -74,6 +74,7 @@ prior written consent of DigiPen Institute of Technology is prohibited.
 #include "ScriptInspector.h"
 #include "Panels/TagsLayersPanel.hpp"
 #include "Panels/PanelManager.hpp"
+#include "Panels/PrefabEditorPanel.hpp"
 #include "GUIManager.hpp"
 #include "Hierarchy/EntityGUIDRegistry.hpp"
 extern "C" {
@@ -6347,17 +6348,21 @@ void RegisterInspectorCustomRenderers()
 
         // Track state transitions to detect when we need to invalidate cached instances
         static EditorState::State lastEditorState = EditorState::GetInstance().GetState();
+        static bool lastPrefabEditorMode = PrefabEditor::IsInPrefabEditorMode();
         EditorState::State currentEditorState = EditorState::GetInstance().GetState();
-        // Commented out to fix warning C4189 - unused variable
-        // bool isInPlayMode = (currentEditorState == EditorState::State::PLAY_MODE ||
-        //                     currentEditorState == EditorState::State::PAUSED);
+        bool currentPrefabEditorMode = PrefabEditor::IsInPrefabEditorMode();
 
         // Clear all cached preview instances when transitioning between modes
         // This is necessary because scene deserialization creates new instances with new registry refs
-        if (lastEditorState != currentEditorState)
+        // Also clear when entering/exiting prefab editor mode since entities are cleared and recreated
+        bool stateChanged = (lastEditorState != currentEditorState) || 
+                           (lastPrefabEditorMode != currentPrefabEditorMode);
+        if (stateChanged)
         {
             // Save the current state of all preview instances to preserve edited values
             // This happens for ALL transitions to ensure values persist across multiple play/stop cycles
+            // Note: When transitioning prefab modes, old entities don't exist anymore so the HasComponent
+            // check will skip them naturally.
             for (auto& [key, instanceRef] : editorPreviewInstances)
             {
                 if (Scripting::IsValidInstance(instanceRef))
@@ -6381,9 +6386,6 @@ void RegisterInspectorCustomRenderers()
                                 if (!currentState.empty())
                                 {
                                     scriptCompToSave.scripts[scriptIdx].pendingInstanceState = currentState;
-                                    ENGINE_PRINT("Preserved instance state for entity ", parsedEntity, " script ", scriptIdx,
-                                               " (transition: ", static_cast<int>(lastEditorState), " -> ",
-                                               static_cast<int>(currentEditorState), ")");
                                 }
                             }
                         }
@@ -6403,6 +6405,7 @@ void RegisterInspectorCustomRenderers()
             editorPreviewScriptPaths.clear();
         }
         lastEditorState = currentEditorState;
+        lastPrefabEditorMode = currentPrefabEditorMode;
 
         // Render each script in the vector
         int scriptIndexToRemove = -1;
