@@ -163,24 +163,3 @@ if(NOT CMAKE_BUILD_TYPE MATCHES "Editor")
     endif()
 endif()
 
-# ==============================================================================
-# Install rules — used by CPack to build the installer (Windows Release only)
-# ==============================================================================
-if(WIN32 AND NOT CMAKE_BUILD_TYPE MATCHES "Editor")
-    install(TARGETS Game DESTINATION .)
-    install(DIRECTORY ${CMAKE_SOURCE_DIR}/Resources DESTINATION .
-        PATTERN "*.png"  EXCLUDE
-        PATTERN "*.PNG"  EXCLUDE
-        PATTERN "*.fbx"  EXCLUDE
-        PATTERN "*.FBX"  EXCLUDE
-        PATTERN "*.obj"  EXCLUDE
-        PATTERN "*.meta" EXCLUDE
-    )
-    install(FILES ${CMAKE_SOURCE_DIR}/Libraries/FMOD/core/lib/x64/fmod.dll DESTINATION .)
-    install(DIRECTORY ${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/bin/
-        DESTINATION . FILES_MATCHING PATTERN "*.dll"
-    )
-    if(EXISTS "${CMAKE_SOURCE_DIR}/Installer/VC_redist.x64.exe")
-        install(FILES ${CMAKE_SOURCE_DIR}/Installer/VC_redist.x64.exe DESTINATION .)
-    endif()
-endif()
