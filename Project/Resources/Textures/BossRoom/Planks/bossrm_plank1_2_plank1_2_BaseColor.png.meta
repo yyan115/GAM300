@@ -1,0 +1,15 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "00768077259329a8-0004b0b7d600103b",
+        "source": "../../Resources/Textures/BossRoom/Planks/bossrm_plank1_2_plank1_2_BaseColor.png",
+        "compiled": "../../Resources/Textures/BossRoom/Planks/bossrm_plank1_2_plank1_2_BaseColor.dds"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

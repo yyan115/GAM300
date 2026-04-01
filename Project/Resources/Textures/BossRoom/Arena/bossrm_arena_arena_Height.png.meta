@@ -1,0 +1,15 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "00768077212b065b-0004b0b7b800100b",
+        "source": "../../Resources/Textures/BossRoom/Arena/bossrm_arena_arena_Height.png",
+        "compiled": "../../Resources/Textures/BossRoom/Arena/bossrm_arena_arena_Height.dds"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

@@ -1,0 +1,15 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "007680775527ebb0-0004b0b7b6001009",
+        "source": "../../Resources/Textures/BossRoom/Arena/bossrm_arena_arena_BaseColor.png",
+        "compiled": "../../Resources/Textures/BossRoom/Arena/bossrm_arena_arena_BaseColor.dds"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

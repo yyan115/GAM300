@@ -1,0 +1,15 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "00768077529758d3-0004b0b7ce001031",
+        "source": "../../Resources/Textures/BossRoom/Floor/bossrm_floor_floor_BaseColor.png",
+        "compiled": "../../Resources/Textures/BossRoom/Floor/bossrm_floor_floor_BaseColor.dds"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}
