@@ -654,6 +654,16 @@ namespace Scripting {
         if (luaL_dostring(L, profile_macro_aliases) != LUA_OK) {
             lua_pop(L, 1);
         }
+#else
+        // No-op fallbacks so Lua scripts using PROFILE_SCOPED don't crash in
+        // release / game builds where Tracy is disabled.
+        const char* profile_noop =
+            "PROFILE_FUNCTION     = function() end\n"
+            "PROFILE_SCOPED       = function() end\n"
+            "PROFILE_SCOPED_END   = function() end\n";
+        if (luaL_dostring(L, profile_noop) != LUA_OK) {
+            lua_pop(L, 1);
+        }
 #endif
 
         // existing log binding
