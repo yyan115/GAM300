@@ -1135,6 +1135,10 @@ bool ScriptSystem::EnsureInstanceForEntity(Entity e, ECSManager& ecsManager)
         {
             scPtr->Awake();
             scPtr->Start();
+
+            if (script.autoInvokeEntry && !script.entryFunction.empty()) {
+                Scripting::CallInstanceFunction(script.instanceId, script.entryFunction);
+            }
         }
     }
 
