@@ -107,7 +107,7 @@ void PrefabEditor::StartEditingPrefab(const std::string& _prefabPath)
     ecs.ClearAllEntities();
 
     // Instantiate the prefab to edit.
-    Entity prefab = InstantiatePrefabFromFile(_prefabPath);
+    Entity prefab = InstantiatePrefabFromFile(_prefabPath, false, true);
     GUIManager::SetSelectedEntity(prefab);
 
     //if (sandboxEntity != static_cast<Entity>(-1)) {
@@ -373,7 +373,7 @@ void PrefabEditor::LoadPrefabSandbox()
     sandboxECS.~ECSManager();
     new (&sandboxECS) ECSManager();
 
-    sandboxEntity = InstantiatePrefabFromFile(prefabPath);
+    sandboxEntity = InstantiatePrefabFromFile(prefabPath, false, true);
 
     //if (!sandboxECS.HasComponent<NameComponent>(sandboxEntity))
     //    sandboxECS.AddComponent<NameComponent>(sandboxEntity, NameComponent{});
