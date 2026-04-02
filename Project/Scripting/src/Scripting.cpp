@@ -22,6 +22,8 @@ extern "C" {
 #include <memory>
 #include <filesystem>
 #include <fstream>
+#include <algorithm>
+#include <cctype>
 using namespace Scripting;
 
 namespace {
@@ -201,6 +203,52 @@ namespace {
             }
         }
         return luaL_loadfile(L, path.c_str());
+    }
+
+    static std::string NormalizeScriptPathForCompare(std::string path)
+    {
+        std::replace(path.begin(), path.end(), '\\', '/');
+        std::transform(path.begin(), path.end(), path.begin(),
+            [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
+        return path;
+    }
+
+    static bool IsInstanceRefValidOnState(lua_State* L, int instanceRef)
+    {
+        if (!L) return false;
+        if (instanceRef == LUA_NOREF || instanceRef == LUA_REFNIL) return false;
+
+        int base = lua_gettop(L);
+        lua_rawgeti(L, LUA_REGISTRYINDEX, instanceRef);
+        bool isValid = lua_istable(L, -1);
+        lua_settop(L, base);
+        return isValid;
+    }
+
+    static bool IsInstanceRefForScriptOnState(lua_State* L, int instanceRef, const std::string& expectedScriptPath)
+    {
+        if (!L) return false;
+        if (instanceRef == LUA_NOREF || instanceRef == LUA_REFNIL) return false;
+
+        int base = lua_gettop(L);
+        lua_rawgeti(L, LUA_REGISTRYINDEX, instanceRef);
+        if (!lua_istable(L, -1)) {
+            lua_settop(L, base);
+            return false;
+        }
+
+        lua_getfield(L, -1, "__engine_script_path");
+        bool isMatch = false;
+        if (lua_isstring(L, -1)) {
+            size_t len = 0;
+            const char* rawPath = lua_tolstring(L, -1, &len);
+            const std::string actualPath = rawPath ? std::string(rawPath, len) : std::string();
+            isMatch = (NormalizeScriptPathForCompare(actualPath) ==
+                       NormalizeScriptPathForCompare(expectedScriptPath));
+        }
+
+        lua_settop(L, base);
+        return isMatch;
     }
 
 } // anonymous
@@ -402,6 +450,17 @@ int Scripting::CreateInstanceFromFile(const std::string& scriptPath) {
         lua_remove(L, -2);
     }
     int ref = luaL_ref(L, LUA_REGISTRYINDEX); // pops table
+
+    // Tag the instance with its script path so callers can reject stale/mismatched refs
+    // after Lua VM reloads or registry slot reuse.
+    lua_rawgeti(L, LUA_REGISTRYINDEX, ref);
+    if (lua_istable(L, -1)) {
+        const std::string normalizedScriptPath = NormalizeScriptPathForCompare(scriptPath);
+        lua_pushlstring(L, normalizedScriptPath.c_str(), normalizedScriptPath.size());
+        lua_setfield(L, -2, "__engine_script_path");
+    }
+    lua_pop(L, 1);
+
     return ref;
 }
 
@@ -457,7 +516,24 @@ void Scripting::DestroyInstance(int instanceRef) {
 }
 
 bool Scripting::IsValidInstance(int instanceRef) {
-    return instanceRef != LUA_NOREF;
+    if (!g_runtime) return false;
+    if (instanceRef == LUA_NOREF || instanceRef == LUA_REFNIL) return false;
+
+    std::lock_guard<std::mutex> lock(g_luaStateMutex);
+    lua_State* L = g_runtime->GetLuaState();
+    return IsInstanceRefValidOnState(L, instanceRef);
+}
+
+bool Scripting::IsValidInstanceForScript(int instanceRef, const std::string& expectedScriptPath) {
+    if (expectedScriptPath.empty()) {
+        return IsValidInstance(instanceRef);
+    }
+    if (!g_runtime) return false;
+    if (instanceRef == LUA_NOREF || instanceRef == LUA_REFNIL) return false;
+
+    std::lock_guard<std::mutex> lock(g_luaStateMutex);
+    lua_State* L = g_runtime->GetLuaState();
+    return IsInstanceRefForScriptOnState(L, instanceRef, expectedScriptPath);
 }
 
 bool Scripting::CallInstanceFunction(int instanceRef, const std::string& funcName) {

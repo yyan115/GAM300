@@ -734,7 +734,7 @@ rapidjson::Value Serializer::SerializeEntity(Entity entity, rapidjson::Document:
             bool savedInstanceState = false;
             if (sd.instanceCreated && sd.instanceId >= 0 && Scripting::GetLuaState()) {
                 try {
-                    if (Scripting::IsValidInstance(sd.instanceId)) {
+                    if (Scripting::IsValidInstanceForScript(sd.instanceId, sd.scriptPath)) {
                         std::string instJson = Scripting::SerializeInstanceToJson(sd.instanceId);
                         if (!instJson.empty()) {
                             rapidjson::Document tmp;
@@ -1113,7 +1113,7 @@ void Serializer::SerializePrefabInstanceDelta(ECSManager& sceneECS, Entity insta
                 bool savedInstanceState = false;
                 if (sd.instanceCreated && sd.instanceId >= 0 && Scripting::GetLuaState()) {
                     try {
-                        if (Scripting::IsValidInstance(sd.instanceId)) {
+                        if (Scripting::IsValidInstanceForScript(sd.instanceId, sd.scriptPath)) {
                             std::string instJson = Scripting::SerializeInstanceToJson(sd.instanceId);
                             if (!instJson.empty()) {
                                 rapidjson::Document tmp;
@@ -1979,31 +1979,101 @@ void Serializer::ApplyPrefabOverridesRecursive(ECSManager& ecs, Entity& currentE
                     // In both cases, if the prefab has a non-empty, non-zero array for the same field,
                     // the prefab's value wins.
 
+                    // Helper: supports both GUID formats used by the project.
+                    auto isZeroGuidString = [](const char* s) -> bool {
+                        return std::strcmp(s, "00000000-0000-0000-0000-000000000000") == 0 ||
+                               std::strcmp(s, "0000000000000000-0000000000000000") == 0;
+                    };
+
+                    auto isGuidString = [&](const char* s) -> bool {
+                        if (!s) return false;
+                        const size_t len = std::strlen(s);
+                        if (len == 36) {
+                            return s[8] == '-' && s[13] == '-' && s[18] == '-' && s[23] == '-';
+                        }
+                        if (len == 33) {
+                            return s[16] == '-';
+                        }
+                        return false;
+                    };
+
                     // Helper: returns true if every string element is the zero GUID placeholder.
-                    auto isAllZeroGuids = [](const rapidjson::Value& arr) -> bool {
+                    auto isAllZeroGuids = [&](const rapidjson::Value& arr) -> bool {
                         if (!arr.IsArray() || arr.Empty()) return true;
                         for (const auto& elem : arr.GetArray()) {
                             if (!elem.IsString()) return false;
-                            const char* s = elem.GetString();
-                            if (std::strcmp(s, "00000000-0000-0000-0000-000000000000") != 0 &&
-                                std::strcmp(s, "0000000000000000-0000000000000000") != 0)
-                                return false;
+                            if (!isZeroGuidString(elem.GetString())) return false;
                         }
                         return true;
                     };
 
-                    // Helper: returns true if the array has at least one non-zero GUID element.
-                    auto hasRealGuid = [](const rapidjson::Value& arr) -> bool {
-                        if (!arr.IsArray()) return false;
-                        for (const auto& elem : arr.GetArray()) {
-                            if (elem.IsString()) {
-                                const char* s = elem.GetString();
-                                if (std::strcmp(s, "00000000-0000-0000-0000-000000000000") != 0 &&
-                                    std::strcmp(s, "0000000000000000-0000000000000000") != 0)
-                                    return true;
+                    auto isGuidArrayLikeObject = [&](const rapidjson::Value& obj) -> bool {
+                        if (!obj.IsObject()) return false;
+                        for (auto m = obj.MemberBegin(); m != obj.MemberEnd(); ++m) {
+                            const rapidjson::Value& name = m->name;
+                            const rapidjson::Value& val = m->value;
+                            if (!name.IsString() || !val.IsString()) return false;
+                            const char* key = name.GetString();
+                            if (!key || *key == '\0') return false;
+                            for (const char* c = key; *c; ++c) {
+                                if (*c < '0' || *c > '9') return false;
                             }
+                            if (!isGuidString(val.GetString())) return false;
                         }
+                        return true;
+                    };
+
+                    auto isAllZeroGuidObject = [&](const rapidjson::Value& obj) -> bool {
+                        if (!obj.IsObject() || obj.ObjectEmpty()) return true;
+                        for (auto m = obj.MemberBegin(); m != obj.MemberEnd(); ++m) {
+                            if (!m->value.IsString()) return false;
+                            if (!isZeroGuidString(m->value.GetString())) return false;
+                        }
+                        return true;
+                    };
+
+                    auto isPrefabGuidCandidate = [&](const rapidjson::Value& v) -> bool {
+                        if (v.IsArray()) return true;
+                        if (v.IsString() && isGuidString(v.GetString())) return true;
+                        if (isGuidArrayLikeObject(v)) return true;
                         return false;
+                    };
+
+                    // Helper: field trackers (`__field_list` and `fields.__field_list`) encode
+                    // touched fields. If a field list exists but does not contain this key, treat
+                    // the field as untouched so prefab updates can flow through.
+                    auto isUntouchedByFieldList = [](const rapidjson::Value& docObj, const char* key) -> bool {
+                        auto evaluateHolder = [&](const rapidjson::Value& holder, bool& sawFieldList, bool& explicitTouch) {
+                            if (!holder.IsObject() || !holder.HasMember("__field_list")) return;
+                            const rapidjson::Value& fl = holder["__field_list"];
+                            if (!fl.IsObject()) return;
+
+                            sawFieldList = true;
+                            if (!fl.HasMember(key)) return;
+
+                            const rapidjson::Value& marker = fl[key];
+                            if (marker.IsObject() && marker.ObjectEmpty()) {
+                                // Explicitly marked as unset/default.
+                                return;
+                            }
+
+                            // Any non-empty marker means this field was explicitly touched.
+                            explicitTouch = true;
+                        };
+
+                        if (!docObj.IsObject()) return false;
+
+                        bool sawFieldList = false;
+                        bool explicitTouch = false;
+
+                        evaluateHolder(docObj, sawFieldList, explicitTouch);
+                        if (docObj.HasMember("fields")) {
+                            evaluateHolder(docObj["fields"], sawFieldList, explicitTouch);
+                        }
+
+                        if (explicitTouch) return false;
+                        if (!sawFieldList) return false;
+                        return true;
                     };
 
                     for (auto& overrideScript : scriptComp.scripts) {
@@ -2028,13 +2098,25 @@ void Serializer::ApplyPrefabOverridesRecursive(ECSManager& ecs, Entity& currentE
                         for (auto it = prefabDoc.MemberBegin(); it != prefabDoc.MemberEnd(); ++it) {
                             const char* key = it->name.GetString();
                             const rapidjson::Value& prefabVal = it->value;
-                            if (!prefabVal.IsArray() || !hasRealGuid(prefabVal)) continue;
-                            if (!overrideDoc.HasMember(key)) continue;
+                            if (!isPrefabGuidCandidate(prefabVal)) continue;
+                            if (!overrideDoc.HasMember(key)) {
+                                // New prefab-side GUID field: add it so instances inherit it.
+                                rapidjson::Value keyCopy;
+                                keyCopy.SetString(key, overrideDoc.GetAllocator());
+                                rapidjson::Value valCopy;
+                                valCopy.CopyFrom(prefabVal, overrideDoc.GetAllocator());
+                                overrideDoc.AddMember(keyCopy, valCopy, overrideDoc.GetAllocator());
+                                modified = true;
+                                continue;
+                            }
                             const rapidjson::Value& overrideVal = overrideDoc[key];
 
                             bool overrideIsDefault =
                                 (overrideVal.IsObject() && overrideVal.ObjectEmpty()) ||
-                                (overrideVal.IsArray() && isAllZeroGuids(overrideVal));
+                                (overrideVal.IsArray() && isAllZeroGuids(overrideVal)) ||
+                                (overrideVal.IsString() && isZeroGuidString(overrideVal.GetString())) ||
+                                (isGuidArrayLikeObject(overrideVal) && isAllZeroGuidObject(overrideVal)) ||
+                                isUntouchedByFieldList(overrideDoc, key);
 
                             if (overrideIsDefault) {
                                 rapidjson::Value copy;
@@ -3803,7 +3885,7 @@ void Serializer::DeserializeCameraComponent(CameraComponent& cameraComp, const r
 static void DeserializeSingleScript(ScriptData& sd, const std::string& instJson) {
     try {
         int instId = Scripting::CreateInstanceFromFile(sd.scriptPath);
-        if (Scripting::IsValidInstance(instId)) {
+        if (Scripting::IsValidInstanceForScript(instId, sd.scriptPath)) {
             sd.instanceId = instId;
             sd.instanceCreated = true;
 

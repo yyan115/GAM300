@@ -6357,15 +6357,15 @@ void RegisterInspectorCustomRenderers()
         // Also clear when entering/exiting prefab editor mode since entities are cleared and recreated
         bool stateChanged = (lastEditorState != currentEditorState) || 
                            (lastPrefabEditorMode != currentPrefabEditorMode);
+        bool prefabModeChanged = (lastPrefabEditorMode != currentPrefabEditorMode);
         if (stateChanged)
         {
-            // Save the current state of all preview instances to preserve edited values
-            // This happens for ALL transitions to ensure values persist across multiple play/stop cycles
-            // Note: When transitioning prefab modes, old entities don't exist anymore so the HasComponent
-            // check will skip them naturally.
-            for (auto& [key, instanceRef] : editorPreviewInstances)
+            // Preserve preview edits only for in-place state transitions (edit <-> play).
+            // Prefab mode transitions clear/rebuild ECS and can recycle entity IDs, so carrying
+            // cached preview instances across those boundaries can write state into wrong scripts.
+            if (!prefabModeChanged)
             {
-                if (Scripting::IsValidInstance(instanceRef))
+                for (auto& [key, instanceRef] : editorPreviewInstances)
                 {
                     // Parse the key to get entity and script index
                     size_t underscorePos = key.find('_');
@@ -6381,6 +6381,11 @@ void RegisterInspectorCustomRenderers()
                             auto& scriptCompToSave = ecs.GetComponent<ScriptComponentData>(parsedEntity);
                             if (scriptIdx < scriptCompToSave.scripts.size())
                             {
+                                const auto& expectedPath = scriptCompToSave.scripts[scriptIdx].scriptPath;
+                                if (!Scripting::IsValidInstanceForScript(instanceRef, expectedPath)) {
+                                    continue;
+                                }
+
                                 // Always preserve the current state - either from preview or runtime instance
                                 std::string currentState = Scripting::SerializeInstanceToJson(instanceRef);
                                 if (!currentState.empty())
@@ -6547,39 +6552,26 @@ void RegisterInspectorCustomRenderers()
 
             // Try to use runtime instance first if available and valid
             if (scriptData.instanceCreated && scriptData.instanceId != -1 &&
-                Scripting::IsValidInstance(scriptData.instanceId))
+                Scripting::IsValidInstanceForScript(scriptData.instanceId, scriptData.scriptPath))
             {
-                // Validate the runtime instance is still a proper Lua table
-                lua_State* validateL = Scripting::GetLuaState();
-                bool isRuntimeValid = false;
-                if (validateL)
-                {
-                    lua_rawgeti(validateL, LUA_REGISTRYINDEX, scriptData.instanceId);
-                    isRuntimeValid = lua_istable(validateL, -1);
-                    lua_pop(validateL, 1);
-                }
+                // Use the valid runtime instance
+                instanceToInspect = scriptData.instanceId;
+                usingPreviewInstance = false;
 
-                if (isRuntimeValid)
+                // Sync pendingInstanceState with runtime state to preserve any runtime changes.
+                // Guard: a freshly-created Lua instance serialises to "{}" and must NOT
+                // overwrite the pending state that was loaded from disk (e.g. audio GUIDs).
+                std::string runtimeState = Scripting::SerializeInstanceToJson(scriptData.instanceId);
+                if (!runtimeState.empty() && runtimeState != "{}")
                 {
-                    // Use the valid runtime instance
-                    instanceToInspect = scriptData.instanceId;
-                    usingPreviewInstance = false;
-
-                    // Sync pendingInstanceState with runtime state to preserve any runtime changes.
-                    // Guard: a freshly-created Lua instance serialises to "{}" and must NOT
-                    // overwrite the pending state that was loaded from disk (e.g. audio GUIDs).
-                    std::string runtimeState = Scripting::SerializeInstanceToJson(scriptData.instanceId);
-                    if (!runtimeState.empty() && runtimeState != "{}")
-                    {
-                        scriptData.pendingInstanceState = runtimeState;
-                    }
+                    scriptData.pendingInstanceState = runtimeState;
                 }
-                else
-                {
-                    // Runtime instance is invalid, fall through to create preview
-                    scriptData.instanceCreated = false;
-                    scriptData.instanceId = -1;
-                }
+            }
+            else if (scriptData.instanceCreated && scriptData.instanceId != -1)
+            {
+                // Runtime instance is invalid/stale, fall through to create preview
+                scriptData.instanceCreated = false;
+                scriptData.instanceId = -1;
             }
 
             // If no valid runtime instance, create or use preview instance
@@ -6597,15 +6589,7 @@ void RegisterInspectorCustomRenderers()
                 auto it = editorPreviewInstances.find(uniqueKey);
                 if (it != editorPreviewInstances.end())
                 {
-                    // Validate the instance is still a proper Lua table
-                    lua_State* validateL = Scripting::GetLuaState();
-                    bool isValid = false;
-                    if (validateL && Scripting::IsValidInstance(it->second))
-                    {
-                        lua_rawgeti(validateL, LUA_REGISTRYINDEX, it->second);
-                        isValid = lua_istable(validateL, -1);
-                        lua_pop(validateL, 1);
-                    }
+                    bool isValid = Scripting::IsValidInstanceForScript(it->second, scriptData.scriptPath);
 
                     if (isValid)
                     {
@@ -6628,7 +6612,7 @@ void RegisterInspectorCustomRenderers()
                 {
                     // Create new preview instance
                     int previewInstance = Scripting::CreateInstanceFromFile(scriptData.scriptPath);
-                    if (Scripting::IsValidInstance(previewInstance))
+                    if (Scripting::IsValidInstanceForScript(previewInstance, scriptData.scriptPath))
                     {
                         editorPreviewInstances[uniqueKey] = previewInstance;
                         editorPreviewScriptPaths[uniqueKey] = scriptData.scriptPath;
@@ -6662,7 +6646,7 @@ void RegisterInspectorCustomRenderers()
                 }
             }
 
-            if (!Scripting::IsValidInstance(instanceToInspect))
+            if (!Scripting::IsValidInstanceForScript(instanceToInspect, scriptData.scriptPath))
             {
                 // If using a preview instance that's no longer valid, clean it up
                 if (usingPreviewInstance)
