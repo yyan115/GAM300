@@ -1,0 +1,15 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "006d9327a2159615-0004b3a8a40075fd",
+        "source": "../../Resources/Textures/M6/statue_statue_Metallic.png",
+        "compiled": "../../Resources/Textures/M6/statue_statue_Metallic.dds"
+    },
+    "TextureMetaData": {
+        "type": "metallic",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

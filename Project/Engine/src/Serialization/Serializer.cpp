@@ -3569,54 +3569,16 @@ void Serializer::DeserializeSiblingIndexComponent(SiblingIndexComponent& sibling
 }
 
 void Serializer::DeserializeCameraComponent(CameraComponent& cameraComp, const rapidjson::Value& cameraJSON) {
-    if (cameraJSON.HasMember("data") && cameraJSON["data"].IsArray()) {
-        const auto& d = cameraJSON["data"];
-
-        rapidjson::SizeType idx = 0;
-        cameraComp.enabled = Serializer::GetBool(d, idx++);
-        cameraComp.isActive = Serializer::GetBool(d, idx++);
-        cameraComp.priority = Serializer::GetInt(d, idx++);
-
-        // Skip target and up in the old format (they're not in the reflection data array)
-        // These are handled separately by custom serialization
-
-        cameraComp.yaw = Serializer::GetFloat(d, idx++);
-        cameraComp.pitch = Serializer::GetFloat(d, idx++);
-        cameraComp.useFreeRotation = Serializer::GetBool(d, idx++);
-        cameraComp.fov = Serializer::GetFloat(d, idx++);
-        cameraComp.nearPlane = Serializer::GetFloat(d, idx++);
-        cameraComp.farPlane = Serializer::GetFloat(d, idx++);
-        cameraComp.orthoSize = Serializer::GetFloat(d, idx++);
-        cameraComp.movementSpeed = Serializer::GetFloat(d, idx++);
-        cameraComp.mouseSensitivity = Serializer::GetFloat(d, idx++);
-        cameraComp.minZoom = Serializer::GetFloat(d, idx++);
-        cameraComp.maxZoom = Serializer::GetFloat(d, idx++);
-        cameraComp.zoomSpeed = Serializer::GetFloat(d, idx++);
-        cameraComp.shakeIntensity = Serializer::GetFloat(d, idx++);
-        cameraComp.shakeDuration = Serializer::GetFloat(d, idx++);
-        cameraComp.shakeFrequency = Serializer::GetFloat(d, idx++);
-        if (d.Size() > idx) {
-            // Use helper function to extract skybox texture GUID
-            GUID_string skyboxGUIDStr = extractGUIDString(d[idx]);
-            idx++;
-            cameraComp.skyboxTextureGUID = GUIDUtilities::ConvertStringToGUID128(skyboxGUIDStr);
+    // Use reflection system to deserialize all registered fields from the "data" array
+    try {
+        if (cameraJSON.HasMember("data") && cameraJSON["data"].IsArray()) {
+            TypeResolver<CameraComponent>::Get()->Deserialize(&cameraComp, cameraJSON);
         }
-        // Post-processing fields (index-based)
-        if (d.Size() > idx) cameraComp.blurEnabled = Serializer::GetBool(d, idx++);
-        if (d.Size() > idx) cameraComp.blurIntensity = Serializer::GetFloat(d, idx++);
-        if (d.Size() > idx) cameraComp.blurRadius = Serializer::GetFloat(d, idx++);
-        if (d.Size() > idx) cameraComp.blurPasses = Serializer::GetInt(d, idx++);
-        if (d.Size() > idx) cameraComp.bloomEnabled = Serializer::GetBool(d, idx++);
-        if (d.Size() > idx) cameraComp.bloomThreshold = Serializer::GetFloat(d, idx++);
-        if (d.Size() > idx) cameraComp.bloomIntensity = Serializer::GetFloat(d, idx++);
-        if (d.Size() > idx) cameraComp.vignetteEnabled = Serializer::GetBool(d, idx++);
-        if (d.Size() > idx) cameraComp.vignetteIntensity = Serializer::GetFloat(d, idx++);
-        if (d.Size() > idx) cameraComp.vignetteSmoothness = Serializer::GetFloat(d, idx++);
-        if (d.Size() > idx) cameraComp.colorGradingEnabled = Serializer::GetBool(d, idx++);
-        if (d.Size() > idx) cameraComp.cgBrightness = Serializer::GetFloat(d, idx++);
-        if (d.Size() > idx) cameraComp.cgContrast = Serializer::GetFloat(d, idx++);
-        if (d.Size() > idx) cameraComp.cgSaturation = Serializer::GetFloat(d, idx++);
     }
+    catch (const std::exception& e) {
+        ENGINE_LOG_ERROR("Failed to deserialize CameraComponent via reflection: " + std::string(e.what()));
+    }
+
 
     // Check if we have custom serialized target and up vectors
     if (cameraJSON.HasMember("target") && cameraJSON["target"].IsObject()) {

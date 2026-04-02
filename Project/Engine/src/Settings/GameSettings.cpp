@@ -220,7 +220,8 @@ void GameSettingsManager::ApplySettings() {
     WindowManager::SetVSync(m_settings.vsync);
     WindowManager::SetFullscreen(m_settings.fullscreen);
 
-    // Graphics
+    /*
+    // Graphics - Commented out to allow CameraComponent/Editor to have full control
     auto& pm = PostProcessingManager::GetInstance();
     auto* hdr = pm.GetHDREffect();
     if (hdr) {
@@ -259,6 +260,7 @@ void GameSettingsManager::ApplySettings() {
         ssao->SetBias(m_settings.ssaoBias);
         ssao->SetIntensity(m_settings.ssaoIntensity);
     }
+    */
 }
 
 void GameSettingsManager::MarkDirty() {

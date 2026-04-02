@@ -1,0 +1,15 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "006d9327f8c11a81-0004b3a8a60075ff",
+        "source": "../../Resources/Textures/M6/statue_statue_Height.png",
+        "compiled": "../../Resources/Textures/M6/statue_statue_Height.dds"
+    },
+    "TextureMetaData": {
+        "type": "height",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

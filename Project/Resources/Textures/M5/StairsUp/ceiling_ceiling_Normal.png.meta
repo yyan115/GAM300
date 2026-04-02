@@ -6,7 +6,7 @@
         "compiled": "../../Resources/Textures/M5/StairsUp/ceiling_ceiling_Normal.dds"
     },
     "TextureMetaData": {
-        "type": "diffuse",
+        "type": "normal",
         "flipUVs": false,
         "generateMipmaps": true,
         "textureWrapMode": "Clamp",

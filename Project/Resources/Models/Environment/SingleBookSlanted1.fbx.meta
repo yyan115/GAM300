@@ -1,0 +1,11 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "006d9327924db3fc-0004b3b9c402bc63",
+        "source": "../../Resources/Models/Environment/SingleBookSlanted1.fbx",
+        "compiled": "../../Resources/Models/Environment/SingleBookSlanted1.mesh"
+    },
+    "ModelMetaData": {
+        "optimizeMeshes": true
+    }
+}
