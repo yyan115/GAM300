@@ -1,0 +1,15 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "006d93278be66b2f-0004b3b59e027c2b",
+        "source": "../../Resources/Models/Environment/Cushion_Base_color.png",
+        "compiled": "../../Resources/Models/Environment/Cushion_Base_color.dds"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

@@ -80,11 +80,11 @@ void SceneInstance::Initialize()
 	ENGINE_PRINT("[Engine] Post-processing initialized\n");
 
 	// Reset runtime state (vignette, blur, etc.) so it doesn't leak from previous scene
-	PostProcessingManager::GetInstance().ResetRuntimeState();
+	//PostProcessingManager::GetInstance().ResetRuntimeState();
 
 	// Configure HDR settings from GameSettings
-	GameSettingsManager::GetInstance().ApplySettings();
-	ENGINE_PRINT("[SceneInstance] HDR and post-processing applied from GameSettings\n");
+	//GameSettingsManager::GetInstance().ApplySettings();
+	//ENGINE_PRINT("[SceneInstance] HDR and post-processing applied from GameSettings\n");
 
 	// CreateHDRTestScene(ecsManager); // Commented out - only use for HDR testing
 	
