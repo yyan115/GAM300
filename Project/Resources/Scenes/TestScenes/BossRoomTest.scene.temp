@@ -1,0 +1,2081 @@
+{
+    "entities": [
+        {
+            "id": 0,
+            "guid": "002ffad90e19d33b-0004b299b80030f9",
+            "components": {
+                "NameComponent": {
+                    "name": "Main Camera"
+                },
+                "TagComponent": {
+                    "tagIndex": 0
+                },
+                "LayerComponent": {
+                    "layerIndex": 0
+                },
+                "SiblingIndexComponent": {
+                    "siblingIndex": 0
+                },
+                "Transform": {
+                    "type": "Transform",
+                    "data": [
+                        {
+                            "type": "Vector3D",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 5
+                                }
+                            ]
+                        },
+                        {
+                            "type": "Vector3D",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                }
+                            ]
+                        },
+                        {
+                            "type": "Quaternion",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                }
+                            ]
+                        }
+                    ]
+                },
+                "CameraComponent": {
+                    "type": "CameraComponent",
+                    "data": [
+                        {
+                            "type": "bool",
+                            "data": true
+                        },
+                        {
+                            "type": "bool",
+                            "data": true
+                        },
+                        {
+                            "type": "int",
+                            "data": 0
+                        },
+                        {
+                            "type": "float",
+                            "data": -90
+                        },
+                        {
+                            "type": "float",
+                            "data": 0
+                        },
+                        {
+                            "type": "bool",
+                            "data": true
+                        },
+                        {
+                            "type": "float",
+                            "data": 45
+                        },
+                        {
+                            "type": "float",
+                            "data": 0.1
+                        },
+                        {
+                            "type": "float",
+                            "data": 1000
+                        },
+                        {
+                            "type": "float",
+                            "data": 5
+                        },
+                        {
+                            "type": "float",
+                            "data": 2.5
+                        },
+                        {
+                            "type": "float",
+                            "data": 0.1
+                        },
+                        {
+                            "type": "float",
+                            "data": 1
+                        },
+                        {
+                            "type": "float",
+                            "data": 90
+                        },
+                        {
+                            "type": "float",
+                            "data": 0
+                        },
+                        {
+                            "type": "float",
+                            "data": 0
+                        },
+                        {
+                            "type": "float",
+                            "data": 0
+                        },
+                        {
+                            "type": "float",
+                            "data": 0
+                        },
+                        "0000000000000000-0000000000000000",
+                        {
+                            "type": "bool",
+                            "data": false
+                        },
+                        {
+                            "type": "float",
+                            "data": 0.5
+                        },
+                        {
+                            "type": "float",
+                            "data": 2
+                        },
+                        {
+                            "type": "int",
+                            "data": 2
+                        },
+                        {
+                            "type": "bool",
+                            "data": false
+                        },
+                        {
+                            "type": "float",
+                            "data": 0.5
+                        },
+                        {
+                            "type": "float",
+                            "data": 5
+                        },
+                        {
+                            "type": "float",
+                            "data": 0
+                        },
+                        {
+                            "type": "int",
+                            "data": 8
+                        },
+                        {
+                            "type": "bool",
+                            "data": false
+                        },
+                        {
+                            "type": "float",
+                            "data": 1
+                        },
+                        {
+                            "type": "float",
+                            "data": 1
+                        },
+                        {
+                            "type": "float",
+                            "data": 0.5
+                        },
+                        {
+                            "type": "bool",
+                            "data": false
+                        },
+                        {
+                            "type": "float",
+                            "data": 0.5
+                        },
+                        {
+                            "type": "float",
+                            "data": 0.5
+                        },
+                        {
+                            "type": "bool",
+                            "data": false
+                        },
+                        {
+                            "type": "float",
+                            "data": 0
+                        },
+                        {
+                            "type": "float",
+                            "data": 1
+                        },
+                        {
+                            "type": "float",
+                            "data": 1
+                        },
+                        {
+                            "type": "bool",
+                            "data": false
+                        },
+                        {
+                            "type": "float",
+                            "data": 0.5
+                        },
+                        {
+                            "type": "float",
+                            "data": 0.5
+                        },
+                        {
+                            "type": "bool",
+                            "data": false
+                        },
+                        {
+                            "type": "float",
+                            "data": 0.5
+                        },
+                        {
+                            "type": "float",
+                            "data": 1
+                        },
+                        {
+                            "type": "bool",
+                            "data": true
+                        },
+                        {
+                            "type": "float",
+                            "data": 1
+                        }
+                    ],
+                    "target": {
+                        "type": "glm::vec3",
+                        "data": [
+                            0.0,
+                            0.0,
+                            -1.0
+                        ]
+                    },
+                    "up": {
+                        "type": "glm::vec3",
+                        "data": [
+                            0.0,
+                            1.0,
+                            0.0
+                        ]
+                    },
+                    "backgroundColor": {
+                        "type": "glm::vec3",
+                        "data": [
+                            0.19200000166893005,
+                            0.3009999990463257,
+                            0.4749999940395355
+                        ]
+                    },
+                    "clearFlags": 0,
+                    "projectionType": 0,
+                    "useSkybox": true,
+                    "skyboxTexturePath": "",
+                    "blurEnabled": false,
+                    "blurIntensity": 0.5,
+                    "blurRadius": 2.0,
+                    "blurPasses": 2,
+                    "blurLayerMask": 4294967295,
+                    "dirBlurEnabled": false,
+                    "dirBlurIntensity": 0.5,
+                    "dirBlurStrength": 5.0,
+                    "dirBlurAngle": 0.0,
+                    "dirBlurSamples": 8,
+                    "bloomEnabled": false,
+                    "bloomThreshold": 1.0,
+                    "bloomIntensity": 1.0,
+                    "bloomSpread": 0.5,
+                    "vignetteEnabled": false,
+                    "vignetteIntensity": 0.5,
+                    "vignetteSmoothness": 0.5,
+                    "vignetteColor": {
+                        "type": "glm::vec3",
+                        "data": [
+                            0.0,
+                            0.0,
+                            0.0
+                        ]
+                    },
+                    "colorGradingEnabled": false,
+                    "cgBrightness": 0.0,
+                    "cgContrast": 1.0,
+                    "cgSaturation": 1.0,
+                    "cgTint": {
+                        "type": "glm::vec3",
+                        "data": [
+                            1.0,
+                            1.0,
+                            1.0
+                        ]
+                    },
+                    "chromaticAberrationEnabled": false,
+                    "chromaticAberrationIntensity": 0.5,
+                    "chromaticAberrationPadding": 0.5
+                },
+                "ActiveComponent": {
+                    "type": "ActiveComponent",
+                    "data": [
+                        {
+                            "type": "bool",
+                            "data": true
+                        }
+                    ]
+                }
+            }
+        },
+        {
+            "PrefabPath": "../../Resources/Prefabs/NewRooms/BossRoomV2.prefab",
+            "id": 37,
+            "guid": "002ffad95d0398cd-0004b29a6e003145",
+            "Name": "BossRoomV2",
+            "SiblingIndex": 2,
+            "Children": [
+                {
+                    "id": 38,
+                    "guid": "002ffad92b7760fb-0004b29a6e003147",
+                    "Name": "Room Light",
+                    "SiblingIndex": 88,
+                    "ParentComponent": {
+                        "type": "ParentComponent",
+                        "data": [
+                            "002ffad95d0398cd-0004b29a6e003145"
+                        ]
+                    }
+                },
+                {
+                    "id": 39,
+                    "guid": "002ffad94eeb4635-0004b29bee00314b",
+                    "Name": "BossRoom_Wall3",
+                    "SiblingIndex": 50001,
+                    "ParentComponent": {
+                        "type": "ParentComponent",
+                        "data": [
+                            "002ffad95d0398cd-0004b29a6e003145"
+                        ]
+                    },
+                    "Children": [
+                        {
+                            "id": 40,
+                            "guid": "00272e014d734d26-0004b30eca00004d",
+                            "Name": "Wall3",
+                            "SiblingIndex": 0,
+                            "ParentComponent": {
+                                "type": "ParentComponent",
+                                "data": [
+                                    "002ffad94eeb4635-0004b29bee00314b"
+                                ]
+                            },
+                            "Children": [
+                                {
+                                    "id": 41,
+                                    "guid": "00272e010d5524e8-0004b30eca00004f",
+                                    "Name": "pasted__pasted__BossRoom",
+                                    "SiblingIndex": 0,
+                                    "ParentComponent": {
+                                        "type": "ParentComponent",
+                                        "data": [
+                                            "00272e014d734d26-0004b30eca00004d"
+                                        ]
+                                    }
+                                },
+                                {
+                                    "id": 42,
+                                    "guid": "00272e014cc9828b-0004b30eca000051",
+                                    "Name": "pasted__group41",
+                                    "SiblingIndex": 1,
+                                    "ParentComponent": {
+                                        "type": "ParentComponent",
+                                        "data": [
+                                            "00272e014d734d26-0004b30eca00004d"
+                                        ]
+                                    },
+                                    "Children": [
+                                        {
+                                            "id": 43,
+                                            "guid": "00272e015d342b2f-0004b30eca000053",
+                                            "Name": "pasted__wall8",
+                                            "SiblingIndex": 0,
+                                            "ParentComponent": {
+                                                "type": "ParentComponent",
+                                                "data": [
+                                                    "00272e014cc9828b-0004b30eca000051"
+                                                ]
+                                            }
+                                        },
+                                        {
+                                            "id": 44,
+                                            "guid": "00272e0159d421cc-0004b30eca000055",
+                                            "Name": "pasted__wall9",
+                                            "SiblingIndex": 1,
+                                            "ParentComponent": {
+                                                "type": "ParentComponent",
+                                                "data": [
+                                                    "00272e014cc9828b-0004b30eca000051"
+                                                ]
+                                            }
+                                        },
+                                        {
+                                            "id": 45,
+                                            "guid": "00272e011edced97-0004b30eca000057",
+                                            "Name": "pasted__wall12",
+                                            "SiblingIndex": 2,
+                                            "ParentComponent": {
+                                                "type": "ParentComponent",
+                                                "data": [
+                                                    "00272e014cc9828b-0004b30eca000051"
+                                                ]
+                                            }
+                                        },
+                                        {
+                                            "id": 46,
+                                            "guid": "00272e010a637881-0004b30eca000059",
+                                            "Name": "pasted__wall13",
+                                            "SiblingIndex": 3,
+                                            "ParentComponent": {
+                                                "type": "ParentComponent",
+                                                "data": [
+                                                    "00272e014cc9828b-0004b30eca000051"
+                                                ]
+                                            }
+                                        },
+                                        {
+                                            "id": 47,
+                                            "guid": "00272e010e0c5c18-0004b30eca00005b",
+                                            "Name": "pasted__wall14",
+                                            "SiblingIndex": 4,
+                                            "ParentComponent": {
+                                                "type": "ParentComponent",
+                                                "data": [
+                                                    "00272e014cc9828b-0004b30eca000051"
+                                                ]
+                                            }
+                                        },
+                                        {
+                                            "id": 48,
+                                            "guid": "00272e0165299223-0004b30eca00005d",
+                                            "Name": "pasted__wall16",
+                                            "SiblingIndex": 5,
+                                            "ParentComponent": {
+                                                "type": "ParentComponent",
+                                                "data": [
+                                                    "00272e014cc9828b-0004b30eca000051"
+                                                ]
+                                            }
+                                        },
+                                        {
+                                            "id": 49,
+                                            "guid": "00272e015933bd75-0004b30eca00005f",
+                                            "Name": "pasted__wall15",
+                                            "SiblingIndex": 6,
+                                            "ParentComponent": {
+                                                "type": "ParentComponent",
+                                                "data": [
+                                                    "00272e014cc9828b-0004b30eca000051"
+                                                ]
+                                            }
+                                        },
+                                        {
+                                            "id": 50,
+                                            "guid": "00272e012f0805e2-0004b30eca000061",
+                                            "Name": "pasted__wall17",
+                                            "SiblingIndex": 7,
+                                            "ParentComponent": {
+                                                "type": "ParentComponent",
+                                                "data": [
+                                                    "00272e014cc9828b-0004b30eca000051"
+                                                ]
+                                            }
+                                        },
+                                        {
+                                            "id": 51,
+                                            "guid": "00272e01686abefb-0004b30eca000063",
+                                            "Name": "pasted__wall18",
+                                            "SiblingIndex": 8,
+                                            "ParentComponent": {
+                                                "type": "ParentComponent",
+                                                "data": [
+                                                    "00272e014cc9828b-0004b30eca000051"
+                                                ]
+                                            }
+                                        }
+                                    ]
+                                }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "id": 52,
+                    "guid": "002ffad97b8fc44a-0004b29d48003169",
+                    "Name": "BossRoom_Arena",
+                    "SiblingIndex": 50001,
+                    "ParentComponent": {
+                        "type": "ParentComponent",
+                        "data": [
+                            "002ffad95d0398cd-0004b29a6e003145"
+                        ]
+                    },
+                    "Children": [
+                        {
+                            "id": 53,
+                            "guid": "00272e0143e82bd3-0004b30eca000065",
+                            "Name": "Bossroom",
+                            "SiblingIndex": 0,
+                            "ParentComponent": {
+                                "type": "ParentComponent",
+                                "data": [
+                                    "002ffad97b8fc44a-0004b29d48003169"
+                                ]
+                            },
+                            "Children": [
+                                {
+                                    "id": 54,
+                                    "guid": "00272e014e629e07-0004b30eca000067",
+                                    "Name": "Arena",
+                                    "SiblingIndex": 0,
+                                    "ParentComponent": {
+                                        "type": "ParentComponent",
+                                        "data": [
+                                            "00272e0143e82bd3-0004b30eca000065"
+                                        ]
+                                    },
+                                    "Children": [
+                                        {
+                                            "id": 55,
+                                            "guid": "00272e013489da2d-0004b30eca000069",
+                                            "Name": "Arena",
+                                            "SiblingIndex": 0,
+                                            "ParentComponent": {
+                                                "type": "ParentComponent",
+                                                "data": [
+                                                    "00272e014e629e07-0004b30eca000067"
+                                                ]
+                                            }
+                                        },
+                                        {
+                                            "id": 56,
+                                            "guid": "00272e0171bca531-0004b30eca00006b",
+                                            "Name": "railing",
+                                            "SiblingIndex": 1,
+                                            "ParentComponent": {
+                                                "type": "ParentComponent",
+                                                "data": [
+                                                    "00272e014e629e07-0004b30eca000067"
+                                                ]
+                                            },
+                                            "Children": [
+                                                {
+                                                    "id": 57,
+                                                    "guid": "00272e013c75e168-0004b30eca00006d",
+                                                    "Name": "ailing14",
+                                                    "SiblingIndex": 0,
+                                                    "ParentComponent": {
+                                                        "type": "ParentComponent",
+                                                        "data": [
+                                                            "00272e0171bca531-0004b30eca00006b"
+                                                        ]
+                                                    },
+                                                    "Children": [
+                                                        {
+                                                            "id": 58,
+                                                            "guid": "00272e015dfd59f3-0004b30eca00006f",
+                                                            "Name": "pasted__pasted__pCube577",
+                                                            "SiblingIndex": 0,
+                                                            "ParentComponent": {
+                                                                "type": "ParentComponent",
+                                                                "data": [
+                                                                    "00272e013c75e168-0004b30eca00006d"
+                                                                ]
+                                                            }
+                                                        },
+                                                        {
+                                                            "id": 59,
+                                                            "guid": "00272e017ed13d03-0004b30eca000071",
+                                                            "Name": "pasted__pasted__pCube578",
+                                                            "SiblingIndex": 1,
+                                                            "ParentComponent": {
+                                                                "type": "ParentComponent",
+                                                                "data": [
+                                                                    "00272e013c75e168-0004b30eca00006d"
+                                                                ]
+                                                            }
+                                                        },
+                                                        {
+                                                            "id": 60,
+                                                            "guid": "00272e012e87a790-0004b30eca000073",
+                                                            "Name": "pasted__pasted__pCube579",
+                                                            "SiblingIndex": 2,
+                                                            "ParentComponent": {
+                                                                "type": "ParentComponent",
+                                                                "data": [
+                                                                    "00272e013c75e168-0004b30eca00006d"
+                                                                ]
+                                                            }
+                                                        },
+                                                        {
+                                                            "id": 61,
+                                                            "guid": "00272e0125b27dc7-0004b30eca000075",
+                                                            "Name": "pasted__pasted__pCube580",
+                                                            "SiblingIndex": 3,
+                                                            "ParentComponent": {
+                                                                "type": "ParentComponent",
+                                                                "data": [
+                                                                    "00272e013c75e168-0004b30eca00006d"
+                                                                ]
+                                                            }
+                                                        },
+                                                        {
+                                                            "id": 62,
+                                                            "guid": "00272e015e1ee4f1-0004b30eca000077",
+                                                            "Name": "pasted__pasted__pCube581",
+                                                            "SiblingIndex": 4,
+                                                            "ParentComponent": {
+                                                                "type": "ParentComponent",
+                                                                "data": [
+                                                                    "00272e013c75e168-0004b30eca00006d"
+                                                                ]
+                                                            }
+                                                        },
+                                                        {
+                                                            "id": 63,
+                                                            "guid": "00272e0168e59bea-0004b30eca000079",
+                                                            "Name": "pasted__pasted__pCube582",
+                                                            "SiblingIndex": 5,
+                                                            "ParentComponent": {
+                                                                "type": "ParentComponent",
+                                                                "data": [
+                                                                    "00272e013c75e168-0004b30eca00006d"
+                                                                ]
+                                                            }
+                                                        },
+                                                        {
+                                                            "id": 64,
+                                                            "guid": "00272e0153d521ff-0004b30eca00007b",
+                                                            "Name": "pasted__pasted__pCube583",
+                                                            "SiblingIndex": 6,
+                                                            "ParentComponent": {
+                                                                "type": "ParentComponent",
+                                                                "data": [
+                                                                    "00272e013c75e168-0004b30eca00006d"
+                                                                ]
+                                                            }
+                                                        },
+                                                        {
+                                                            "id": 65,
+                                                            "guid": "00272e012b979677-0004b30eca00007d",
+                                                            "Name": "pasted__pasted__pCube584",
+                                                            "SiblingIndex": 7,
+                                                            "ParentComponent": {
+                                                                "type": "ParentComponent",
+                                                                "data": [
+                                                                    "00272e013c75e168-0004b30eca00006d"
+                                                                ]
+                                                            }
+                                                        },
+                                                        {
+                                                            "id": 66,
+                                                            "guid": "00272e01483b5422-0004b30eca00007f",
+                                                            "Name": "pasted__pasted__pCube585",
+                                                            "SiblingIndex": 8,
+                                                            "ParentComponent": {
+                                                                "type": "ParentComponent",
+                                                                "data": [
+                                                                    "00272e013c75e168-0004b30eca00006d"
+                                                                ]
+                                                            }
+                                                        },
+                                                        {
+                                                            "id": 67,
+                                                            "guid": "00272e014af337c1-0004b30eca000081",
+                                                            "Name": "pasted__pasted__pCube586",
+                                                            "SiblingIndex": 9,
+                                                            "ParentComponent": {
+                                                                "type": "ParentComponent",
+                                                                "data": [
+                                                                    "00272e013c75e168-0004b30eca00006d"
+                                                                ]
+                                                            }
+                                                        }
+                                                    ]
+                                                },
+                                                {
+                                                    "id": 68,
+                                                    "guid": "00272e011b8e75dc-0004b30eca000083",
+                                                    "Name": "pCylinder2",
+                                                    "SiblingIndex": 1,
+                                                    "ParentComponent": {
+                                                        "type": "ParentComponent",
+                                                        "data": [
+                                                            "00272e0171bca531-0004b30eca00006b"
+                                                        ]
+                                                    }
+                                                },
+                                                {
+                                                    "id": 69,
+                                                    "guid": "00272e0113162963-0004b30eca000085",
+                                                    "Name": "group39",
+                                                    "SiblingIndex": 2,
+                                                    "ParentComponent": {
+                                                        "type": "ParentComponent",
+                                                        "data": [
+                                                            "00272e0171bca531-0004b30eca00006b"
+                                                        ]
+                                                    },
+                                                    "Children": [
+                                                        {
+                                                            "id": 70,
+                                                            "guid": "00272e0108cce6c5-0004b30eca000087",
+                                                            "Name": "pasted__pasted__pCube588",
+                                                            "SiblingIndex": 0,
+                                                            "ParentComponent": {
+                                                                "type": "ParentComponent",
+                                                                "data": [
+                                                                    "00272e0113162963-0004b30eca000085"
+                                                                ]
+                                                            }
+                                                        },
+                                                        {
+                                                            "id": 71,
+                                                            "guid": "00272e0134317fb0-0004b30eca000089",
+                                                            "Name": "pasted__pasted__pCube587",
+                                                            "SiblingIndex": 1,
+                                                            "ParentComponent": {
+                                                                "type": "ParentComponent",
+                                                                "data": [
+                                                                    "00272e0113162963-0004b30eca000085"
+                                                                ]
+                                                            }
+                                                        }
+                                                    ]
+                                                },
+                                                {
+                                                    "id": 72,
+                                                    "guid": "00272e013b70f025-0004b30eca00008b",
+                                                    "Name": "group29",
+                                                    "SiblingIndex": 3,
+                                                    "ParentComponent": {
+                                                        "type": "ParentComponent",
+                                                        "data": [
+                                                            "00272e0171bca531-0004b30eca00006b"
+                                                        ]
+                                                    },
+                                                    "Children": [
+                                                        {
+                                                            "id": 73,
+                                                            "guid": "00272e013f323dbc-0004b30eca00008d",
+                                                            "Name": "pCylinder3",
+                                                            "SiblingIndex": 0,
+                                                            "ParentComponent": {
+                                                                "type": "ParentComponent",
+                                                                "data": [
+                                                                    "00272e013b70f025-0004b30eca00008b"
+                                                                ]
+                                                            }
+                                                        },
+                                                        {
+                                                            "id": 74,
+                                                            "guid": "00272e01002faa0f-0004b30eca00008f",
+                                                            "Name": "pSphere1",
+                                                            "SiblingIndex": 1,
+                                                            "ParentComponent": {
+                                                                "type": "ParentComponent",
+                                                                "data": [
+                                                                    "00272e013b70f025-0004b30eca00008b"
+                                                                ]
+                                                            }
+                                                        }
+                                                    ]
+                                                },
+                                                {
+                                                    "id": 75,
+                                                    "guid": "00272e01338013df-0004b30eca000091",
+                                                    "Name": "pCylinder4",
+                                                    "SiblingIndex": 4,
+                                                    "ParentComponent": {
+                                                        "type": "ParentComponent",
+                                                        "data": [
+                                                            "00272e0171bca531-0004b30eca00006b"
+                                                        ]
+                                                    }
+                                                },
+                                                {
+                                                    "id": 76,
+                                                    "guid": "00272e0157388b0e-0004b30eca000093",
+                                                    "Name": "group30",
+                                                    "SiblingIndex": 5,
+                                                    "ParentComponent": {
+                                                        "type": "ParentComponent",
+                                                        "data": [
+                                                            "00272e0171bca531-0004b30eca00006b"
+                                                        ]
+                                                    },
+                                                    "Children": [
+                                                        {
+                                                            "id": 77,
+                                                            "guid": "00272e016a6b14e8-0004b30eca000095",
+                                                            "Name": "pCylinder3",
+                                                            "SiblingIndex": 0,
+                                                            "ParentComponent": {
+                                                                "type": "ParentComponent",
+                                                                "data": [
+                                                                    "00272e0157388b0e-0004b30eca000093"
+                                                                ]
+                                                            }
+                                                        },
+                                                        {
+                                                            "id": 78,
+                                                            "guid": "00272e01067b1848-0004b30eca000097",
+                                                            "Name": "pSphere1",
+                                                            "SiblingIndex": 1,
+                                                            "ParentComponent": {
+                                                                "type": "ParentComponent",
+                                                                "data": [
+                                                                    "00272e0157388b0e-0004b30eca000093"
+                                                                ]
+                                                            }
+                                                        }
+                                                    ]
+                                                },
+                                                {
+                                                    "id": 79,
+                                                    "guid": "00272e0170d84aea-0004b30eca000099",
+                                                    "Name": "group31",
+                                                    "SiblingIndex": 6,
+                                                    "ParentComponent": {
+                                                        "type": "ParentComponent",
+                                                        "data": [
+                                                            "00272e0171bca531-0004b30eca00006b"
+                                                        ]
+                                                    },
+                                                    "Children": [
+                                                        {
+                                                            "id": 80,
+                                                            "guid": "00272e016853bbdd-0004b30eca00009b",
+                                                            "Name": "pCylinder3",
+                                                            "SiblingIndex": 0,
+                                                            "ParentComponent": {
+                                                                "type": "ParentComponent",
+                                                                "data": [
+                                                                    "00272e0170d84aea-0004b30eca000099"
+                                                                ]
+                                                            }
+                                                        },
+                                                        {
+                                                            "id": 81,
+                                                            "guid": "00272e01765c5a01-0004b30eca00009d",
+                                                            "Name": "pSphere1",
+                                                            "SiblingIndex": 1,
+                                                            "ParentComponent": {
+                                                                "type": "ParentComponent",
+                                                                "data": [
+                                                                    "00272e0170d84aea-0004b30eca000099"
+                                                                ]
+                                                            }
+                                                        }
+                                                    ]
+                                                },
+                                                {
+                                                    "id": 82,
+                                                    "guid": "00272e0125256e2f-0004b30eca00009f",
+                                                    "Name": "group32",
+                                                    "SiblingIndex": 7,
+                                                    "ParentComponent": {
+                                                        "type": "ParentComponent",
+                                                        "data": [
+                                                            "00272e0171bca531-0004b30eca00006b"
+                                                        ]
+                                                    },
+                                                    "Children": [
+                                                        {
+                                                            "id": 83,
+                                                            "guid": "00272e0143867b53-0004b30eca0000a1",
+                                                            "Name": "pCylinder3",
+                                                            "SiblingIndex": 0,
+                                                            "ParentComponent": {
+                                                                "type": "ParentComponent",
+                                                                "data": [
+                                                                    "00272e0125256e2f-0004b30eca00009f"
+                                                                ]
+                                                            }
+                                                        },
+                                                        {
+                                                            "id": 84,
+                                                            "guid": "00272e012c7632bd-0004b30eca0000a3",
+                                                            "Name": "pSphere1",
+                                                            "SiblingIndex": 1,
+                                                            "ParentComponent": {
+                                                                "type": "ParentComponent",
+                                                                "data": [
+                                                                    "00272e0125256e2f-0004b30eca00009f"
+                                                                ]
+                                                            }
+                                                        }
+                                                    ]
+                                                },
+                                                {
+                                                    "id": 85,
+                                                    "guid": "00272e01464810c7-0004b30eca0000a5",
+                                                    "Name": "group33",
+                                                    "SiblingIndex": 8,
+                                                    "ParentComponent": {
+                                                        "type": "ParentComponent",
+                                                        "data": [
+                                                            "00272e0171bca531-0004b30eca00006b"
+                                                        ]
+                                                    },
+                                                    "Children": [
+                                                        {
+                                                            "id": 86,
+                                                            "guid": "00272e0176e4c38c-0004b30eca0000a7",
+                                                            "Name": "pCylinder3",
+                                                            "SiblingIndex": 0,
+                                                            "ParentComponent": {
+                                                                "type": "ParentComponent",
+                                                                "data": [
+                                                                    "00272e01464810c7-0004b30eca0000a5"
+                                                                ]
+                                                            }
+                                                        },
+                                                        {
+                                                            "id": 87,
+                                                            "guid": "00272e0118282424-0004b30eca0000a9",
+                                                            "Name": "pSphere1",
+                                                            "SiblingIndex": 1,
+                                                            "ParentComponent": {
+                                                                "type": "ParentComponent",
+                                                                "data": [
+                                                                    "00272e01464810c7-0004b30eca0000a5"
+                                                                ]
+                                                            }
+                                                        }
+                                                    ]
+                                                },
+                                                {
+                                                    "id": 88,
+                                                    "guid": "00272e016d408e2d-0004b30eca0000ab",
+                                                    "Name": "group34",
+                                                    "SiblingIndex": 9,
+                                                    "ParentComponent": {
+                                                        "type": "ParentComponent",
+                                                        "data": [
+                                                            "00272e0171bca531-0004b30eca00006b"
+                                                        ]
+                                                    },
+                                                    "Children": [
+                                                        {
+                                                            "id": 89,
+                                                            "guid": "00272e0115c85f01-0004b30eca0000ad",
+                                                            "Name": "pCylinder3",
+                                                            "SiblingIndex": 0,
+                                                            "ParentComponent": {
+                                                                "type": "ParentComponent",
+                                                                "data": [
+                                                                    "00272e016d408e2d-0004b30eca0000ab"
+                                                                ]
+                                                            }
+                                                        },
+                                                        {
+                                                            "id": 90,
+                                                            "guid": "00272e01084ae2d2-0004b30eca0000af",
+                                                            "Name": "pSphere1",
+                                                            "SiblingIndex": 1,
+                                                            "ParentComponent": {
+                                                                "type": "ParentComponent",
+                                                                "data": [
+                                                                    "00272e016d408e2d-0004b30eca0000ab"
+                                                                ]
+                                                            }
+                                                        }
+                                                    ]
+                                                },
+                                                {
+                                                    "id": 91,
+                                                    "guid": "00272e0170211340-0004b30eca0000b1",
+                                                    "Name": "group35",
+                                                    "SiblingIndex": 10,
+                                                    "ParentComponent": {
+                                                        "type": "ParentComponent",
+                                                        "data": [
+                                                            "00272e0171bca531-0004b30eca00006b"
+                                                        ]
+                                                    },
+                                                    "Children": [
+                                                        {
+                                                            "id": 92,
+                                                            "guid": "00272e0128fff350-0004b30eca0000b3",
+                                                            "Name": "pCylinder3",
+                                                            "SiblingIndex": 0,
+                                                            "ParentComponent": {
+                                                                "type": "ParentComponent",
+                                                                "data": [
+                                                                    "00272e0170211340-0004b30eca0000b1"
+                                                                ]
+                                                            }
+                                                        },
+                                                        {
+                                                            "id": 93,
+                                                            "guid": "00272e011485b14a-0004b30eca0000b5",
+                                                            "Name": "pSphere1",
+                                                            "SiblingIndex": 1,
+                                                            "ParentComponent": {
+                                                                "type": "ParentComponent",
+                                                                "data": [
+                                                                    "00272e0170211340-0004b30eca0000b1"
+                                                                ]
+                                                            }
+                                                        }
+                                                    ]
+                                                },
+                                                {
+                                                    "id": 94,
+                                                    "guid": "00272e0137337fce-0004b30eca0000b7",
+                                                    "Name": "group36",
+                                                    "SiblingIndex": 11,
+                                                    "ParentComponent": {
+                                                        "type": "ParentComponent",
+                                                        "data": [
+                                                            "00272e0171bca531-0004b30eca00006b"
+                                                        ]
+                                                    },
+                                                    "Children": [
+                                                        {
+                                                            "id": 95,
+                                                            "guid": "00272e0162370a6b-0004b30eca0000b9",
+                                                            "Name": "pCylinder3",
+                                                            "SiblingIndex": 0,
+                                                            "ParentComponent": {
+                                                                "type": "ParentComponent",
+                                                                "data": [
+                                                                    "00272e0137337fce-0004b30eca0000b7"
+                                                                ]
+                                                            }
+                                                        },
+                                                        {
+                                                            "id": 96,
+                                                            "guid": "00272e01672673c5-0004b30eca0000bb",
+                                                            "Name": "pSphere1",
+                                                            "SiblingIndex": 1,
+                                                            "ParentComponent": {
+                                                                "type": "ParentComponent",
+                                                                "data": [
+                                                                    "00272e0137337fce-0004b30eca0000b7"
+                                                                ]
+                                                            }
+                                                        }
+                                                    ]
+                                                },
+                                                {
+                                                    "id": 97,
+                                                    "guid": "00272e0143644f86-0004b30eca0000bd",
+                                                    "Name": "group37",
+                                                    "SiblingIndex": 12,
+                                                    "ParentComponent": {
+                                                        "type": "ParentComponent",
+                                                        "data": [
+                                                            "00272e0171bca531-0004b30eca00006b"
+                                                        ]
+                                                    },
+                                                    "Children": [
+                                                        {
+                                                            "id": 98,
+                                                            "guid": "00272e016f0aa894-0004b30eca0000bf",
+                                                            "Name": "pCylinder3",
+                                                            "SiblingIndex": 0,
+                                                            "ParentComponent": {
+                                                                "type": "ParentComponent",
+                                                                "data": [
+                                                                    "00272e0143644f86-0004b30eca0000bd"
+                                                                ]
+                                                            }
+                                                        },
+                                                        {
+                                                            "id": 99,
+                                                            "guid": "00272e013d746103-0004b30eca0000c1",
+                                                            "Name": "pSphere1",
+                                                            "SiblingIndex": 1,
+                                                            "ParentComponent": {
+                                                                "type": "ParentComponent",
+                                                                "data": [
+                                                                    "00272e0143644f86-0004b30eca0000bd"
+                                                                ]
+                                                            }
+                                                        }
+                                                    ]
+                                                },
+                                                {
+                                                    "id": 100,
+                                                    "guid": "00272e010d7eb484-0004b30eca0000c3",
+                                                    "Name": "group38",
+                                                    "SiblingIndex": 13,
+                                                    "ParentComponent": {
+                                                        "type": "ParentComponent",
+                                                        "data": [
+                                                            "00272e0171bca531-0004b30eca00006b"
+                                                        ]
+                                                    },
+                                                    "Children": [
+                                                        {
+                                                            "id": 101,
+                                                            "guid": "00272e0168056d50-0004b30eca0000c5",
+                                                            "Name": "pCylinder3",
+                                                            "SiblingIndex": 0,
+                                                            "ParentComponent": {
+                                                                "type": "ParentComponent",
+                                                                "data": [
+                                                                    "00272e010d7eb484-0004b30eca0000c3"
+                                                                ]
+                                                            }
+                                                        },
+                                                        {
+                                                            "id": 102,
+                                                            "guid": "00272e01625db4a0-0004b30eca0000c7",
+                                                            "Name": "pSphere1",
+                                                            "SiblingIndex": 1,
+                                                            "ParentComponent": {
+                                                                "type": "ParentComponent",
+                                                                "data": [
+                                                                    "00272e010d7eb484-0004b30eca0000c3"
+                                                                ]
+                                                            }
+                                                        }
+                                                    ]
+                                                },
+                                                {
+                                                    "id": 103,
+                                                    "guid": "00272e01525ac3a2-0004b30eca0000c9",
+                                                    "Name": "group40",
+                                                    "SiblingIndex": 14,
+                                                    "ParentComponent": {
+                                                        "type": "ParentComponent",
+                                                        "data": [
+                                                            "00272e0171bca531-0004b30eca00006b"
+                                                        ]
+                                                    },
+                                                    "Children": [
+                                                        {
+                                                            "id": 104,
+                                                            "guid": "00272e0121bcfa87-0004b30eca0000cb",
+                                                            "Name": "pasted__pasted__pCube588",
+                                                            "SiblingIndex": 0,
+                                                            "ParentComponent": {
+                                                                "type": "ParentComponent",
+                                                                "data": [
+                                                                    "00272e01525ac3a2-0004b30eca0000c9"
+                                                                ]
+                                                            }
+                                                        },
+                                                        {
+                                                            "id": 105,
+                                                            "guid": "00272e013094fbe5-0004b30eca0000cd",
+                                                            "Name": "pasted__pasted__pCube587",
+                                                            "SiblingIndex": 1,
+                                                            "ParentComponent": {
+                                                                "type": "ParentComponent",
+                                                                "data": [
+                                                                    "00272e01525ac3a2-0004b30eca0000c9"
+                                                                ]
+                                                            }
+                                                        }
+                                                    ]
+                                                },
+                                                {
+                                                    "id": 106,
+                                                    "guid": "00272e013aaea521-0004b30eca0000cf",
+                                                    "Name": "group41",
+                                                    "SiblingIndex": 15,
+                                                    "ParentComponent": {
+                                                        "type": "ParentComponent",
+                                                        "data": [
+                                                            "00272e0171bca531-0004b30eca00006b"
+                                                        ]
+                                                    },
+                                                    "Children": [
+                                                        {
+                                                            "id": 107,
+                                                            "guid": "00272e0162503272-0004b30eca0000d1",
+                                                            "Name": "pasted__pasted__pCube588",
+                                                            "SiblingIndex": 0,
+                                                            "ParentComponent": {
+                                                                "type": "ParentComponent",
+                                                                "data": [
+                                                                    "00272e013aaea521-0004b30eca0000cf"
+                                                                ]
+                                                            }
+                                                        },
+                                                        {
+                                                            "id": 108,
+                                                            "guid": "00272e0119557ede-0004b30eca0000d3",
+                                                            "Name": "pasted__pasted__pCube587",
+                                                            "SiblingIndex": 1,
+                                                            "ParentComponent": {
+                                                                "type": "ParentComponent",
+                                                                "data": [
+                                                                    "00272e013aaea521-0004b30eca0000cf"
+                                                                ]
+                                                            }
+                                                        }
+                                                    ]
+                                                },
+                                                {
+                                                    "id": 109,
+                                                    "guid": "00272e0117bb3179-0004b30eca0000d5",
+                                                    "Name": "group42",
+                                                    "SiblingIndex": 16,
+                                                    "ParentComponent": {
+                                                        "type": "ParentComponent",
+                                                        "data": [
+                                                            "00272e0171bca531-0004b30eca00006b"
+                                                        ]
+                                                    },
+                                                    "Children": [
+                                                        {
+                                                            "id": 110,
+                                                            "guid": "00272e01212bf518-0004b30eca0000d7",
+                                                            "Name": "pasted__pasted__pCube588",
+                                                            "SiblingIndex": 0,
+                                                            "ParentComponent": {
+                                                                "type": "ParentComponent",
+                                                                "data": [
+                                                                    "00272e0117bb3179-0004b30eca0000d5"
+                                                                ]
+                                                            }
+                                                        },
+                                                        {
+                                                            "id": 111,
+                                                            "guid": "00272e01693e7717-0004b30eca0000d9",
+                                                            "Name": "pasted__pasted__pCube587",
+                                                            "SiblingIndex": 1,
+                                                            "ParentComponent": {
+                                                                "type": "ParentComponent",
+                                                                "data": [
+                                                                    "00272e0117bb3179-0004b30eca0000d5"
+                                                                ]
+                                                            }
+                                                        }
+                                                    ]
+                                                },
+                                                {
+                                                    "id": 112,
+                                                    "guid": "00272e014d7e1dae-0004b30eca0000db",
+                                                    "Name": "group43",
+                                                    "SiblingIndex": 17,
+                                                    "ParentComponent": {
+                                                        "type": "ParentComponent",
+                                                        "data": [
+                                                            "00272e0171bca531-0004b30eca00006b"
+                                                        ]
+                                                    },
+                                                    "Children": [
+                                                        {
+                                                            "id": 113,
+                                                            "guid": "00272e0148123615-0004b30eca0000dd",
+                                                            "Name": "pasted__pasted__pCube588",
+                                                            "SiblingIndex": 0,
+                                                            "ParentComponent": {
+                                                                "type": "ParentComponent",
+                                                                "data": [
+                                                                    "00272e014d7e1dae-0004b30eca0000db"
+                                                                ]
+                                                            }
+                                                        },
+                                                        {
+                                                            "id": 114,
+                                                            "guid": "00272e0114697681-0004b30eca0000df",
+                                                            "Name": "pasted__pasted__pCube587",
+                                                            "SiblingIndex": 1,
+                                                            "ParentComponent": {
+                                                                "type": "ParentComponent",
+                                                                "data": [
+                                                                    "00272e014d7e1dae-0004b30eca0000db"
+                                                                ]
+                                                            }
+                                                        }
+                                                    ]
+                                                },
+                                                {
+                                                    "id": 115,
+                                                    "guid": "00272e014fd2250a-0004b30eca0000e1",
+                                                    "Name": "group44",
+                                                    "SiblingIndex": 18,
+                                                    "ParentComponent": {
+                                                        "type": "ParentComponent",
+                                                        "data": [
+                                                            "00272e0171bca531-0004b30eca00006b"
+                                                        ]
+                                                    },
+                                                    "Children": [
+                                                        {
+                                                            "id": 116,
+                                                            "guid": "00272e01022f2eae-0004b30eca0000e3",
+                                                            "Name": "pasted__pasted__pCube588",
+                                                            "SiblingIndex": 0,
+                                                            "ParentComponent": {
+                                                                "type": "ParentComponent",
+                                                                "data": [
+                                                                    "00272e014fd2250a-0004b30eca0000e1"
+                                                                ]
+                                                            }
+                                                        },
+                                                        {
+                                                            "id": 117,
+                                                            "guid": "00272e010a740698-0004b30eca0000e5",
+                                                            "Name": "pasted__pasted__pCube587",
+                                                            "SiblingIndex": 1,
+                                                            "ParentComponent": {
+                                                                "type": "ParentComponent",
+                                                                "data": [
+                                                                    "00272e014fd2250a-0004b30eca0000e1"
+                                                                ]
+                                                            }
+                                                        }
+                                                    ]
+                                                },
+                                                {
+                                                    "id": 118,
+                                                    "guid": "00272e016a5d2fd9-0004b30eca0000e7",
+                                                    "Name": "group45",
+                                                    "SiblingIndex": 19,
+                                                    "ParentComponent": {
+                                                        "type": "ParentComponent",
+                                                        "data": [
+                                                            "00272e0171bca531-0004b30eca00006b"
+                                                        ]
+                                                    },
+                                                    "Children": [
+                                                        {
+                                                            "id": 119,
+                                                            "guid": "00272e016fde1a8b-0004b30eca0000e9",
+                                                            "Name": "pasted__pasted__pCube588",
+                                                            "SiblingIndex": 0,
+                                                            "ParentComponent": {
+                                                                "type": "ParentComponent",
+                                                                "data": [
+                                                                    "00272e016a5d2fd9-0004b30eca0000e7"
+                                                                ]
+                                                            }
+                                                        },
+                                                        {
+                                                            "id": 120,
+                                                            "guid": "00272e014c7c21f6-0004b30eca0000eb",
+                                                            "Name": "pasted__pasted__pCube587",
+                                                            "SiblingIndex": 1,
+                                                            "ParentComponent": {
+                                                                "type": "ParentComponent",
+                                                                "data": [
+                                                                    "00272e016a5d2fd9-0004b30eca0000e7"
+                                                                ]
+                                                            }
+                                                        }
+                                                    ]
+                                                },
+                                                {
+                                                    "id": 121,
+                                                    "guid": "00272e012faaa327-0004b30eca0000ed",
+                                                    "Name": "group46",
+                                                    "SiblingIndex": 20,
+                                                    "ParentComponent": {
+                                                        "type": "ParentComponent",
+                                                        "data": [
+                                                            "00272e0171bca531-0004b30eca00006b"
+                                                        ]
+                                                    },
+                                                    "Children": [
+                                                        {
+                                                            "id": 122,
+                                                            "guid": "00272e01030b3396-0004b30eca0000ef",
+                                                            "Name": "pasted__pasted__pCube588",
+                                                            "SiblingIndex": 0,
+                                                            "ParentComponent": {
+                                                                "type": "ParentComponent",
+                                                                "data": [
+                                                                    "00272e012faaa327-0004b30eca0000ed"
+                                                                ]
+                                                            }
+                                                        },
+                                                        {
+                                                            "id": 123,
+                                                            "guid": "00272e0108164314-0004b30eca0000f1",
+                                                            "Name": "pasted__pasted__pCube587",
+                                                            "SiblingIndex": 1,
+                                                            "ParentComponent": {
+                                                                "type": "ParentComponent",
+                                                                "data": [
+                                                                    "00272e012faaa327-0004b30eca0000ed"
+                                                                ]
+                                                            }
+                                                        }
+                                                    ]
+                                                },
+                                                {
+                                                    "id": 124,
+                                                    "guid": "00272e015dbd9ec5-0004b30eca0000f3",
+                                                    "Name": "group47",
+                                                    "SiblingIndex": 21,
+                                                    "ParentComponent": {
+                                                        "type": "ParentComponent",
+                                                        "data": [
+                                                            "00272e0171bca531-0004b30eca00006b"
+                                                        ]
+                                                    },
+                                                    "Children": [
+                                                        {
+                                                            "id": 125,
+                                                            "guid": "00272e0158d660b0-0004b30eca0000f5",
+                                                            "Name": "pasted__pasted__pCube588",
+                                                            "SiblingIndex": 0,
+                                                            "ParentComponent": {
+                                                                "type": "ParentComponent",
+                                                                "data": [
+                                                                    "00272e015dbd9ec5-0004b30eca0000f3"
+                                                                ]
+                                                            }
+                                                        },
+                                                        {
+                                                            "id": 126,
+                                                            "guid": "00272e0162aa491a-0004b30eca0000f7",
+                                                            "Name": "pasted__pasted__pCube587",
+                                                            "SiblingIndex": 1,
+                                                            "ParentComponent": {
+                                                                "type": "ParentComponent",
+                                                                "data": [
+                                                                    "00272e015dbd9ec5-0004b30eca0000f3"
+                                                                ]
+                                                            }
+                                                        }
+                                                    ]
+                                                },
+                                                {
+                                                    "id": 127,
+                                                    "guid": "00272e0111001ae6-0004b30eca0000f9",
+                                                    "Name": "pCylinder5",
+                                                    "SiblingIndex": 22,
+                                                    "ParentComponent": {
+                                                        "type": "ParentComponent",
+                                                        "data": [
+                                                            "00272e0171bca531-0004b30eca00006b"
+                                                        ]
+                                                    }
+                                                }
+                                            ]
+                                        }
+                                    ]
+                                }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "id": 128,
+                    "guid": "00272e01711ea736-0004b30f9e0000ff",
+                    "Name": "BossRoom_Floor",
+                    "SiblingIndex": 50001,
+                    "ParentComponent": {
+                        "type": "ParentComponent",
+                        "data": [
+                            "002ffad95d0398cd-0004b29a6e003145"
+                        ]
+                    },
+                    "Children": [
+                        {
+                            "id": 129,
+                            "guid": "005190bed84a7642-0004b3759800004d",
+                            "Name": "Bossroom",
+                            "SiblingIndex": 0,
+                            "ParentComponent": {
+                                "type": "ParentComponent",
+                                "data": [
+                                    "00272e01711ea736-0004b30f9e0000ff"
+                                ]
+                            },
+                            "Children": [
+                                {
+                                    "id": 130,
+                                    "guid": "005190be9cde32d4-0004b3759800004f",
+                                    "Name": "floor",
+                                    "SiblingIndex": 0,
+                                    "ParentComponent": {
+                                        "type": "ParentComponent",
+                                        "data": [
+                                            "005190bed84a7642-0004b3759800004d"
+                                        ]
+                                    }
+                                }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "id": 131,
+                    "guid": "00272e0136bea56f-0004b31454000153",
+                    "Name": "BossRoom_Wall1",
+                    "SiblingIndex": 50001,
+                    "ParentComponent": {
+                        "type": "ParentComponent",
+                        "data": [
+                            "002ffad95d0398cd-0004b29a6e003145"
+                        ]
+                    },
+                    "Children": [
+                        {
+                            "id": 132,
+                            "guid": "005190beff343afd-0004b37598000051",
+                            "Name": "wall1",
+                            "SiblingIndex": 0,
+                            "ParentComponent": {
+                                "type": "ParentComponent",
+                                "data": [
+                                    "00272e0136bea56f-0004b31454000153"
+                                ]
+                            }
+                        }
+                    ]
+                },
+                {
+                    "id": 133,
+                    "guid": "00272e01004d33d0-0004b320960001b9",
+                    "Name": "BossRoom_Wall2",
+                    "SiblingIndex": 50002,
+                    "ParentComponent": {
+                        "type": "ParentComponent",
+                        "data": [
+                            "002ffad95d0398cd-0004b29a6e003145"
+                        ]
+                    },
+                    "Children": [
+                        {
+                            "id": 134,
+                            "guid": "005190bea4edff15-0004b37598000053",
+                            "Name": "wall2",
+                            "SiblingIndex": 0,
+                            "ParentComponent": {
+                                "type": "ParentComponent",
+                                "data": [
+                                    "00272e01004d33d0-0004b320960001b9"
+                                ]
+                            }
+                        }
+                    ]
+                },
+                {
+                    "id": 135,
+                    "guid": "00272e015316f581-0004b3161600015f",
+                    "Name": "BossRoom_Plank1",
+                    "SiblingIndex": 50001,
+                    "ParentComponent": {
+                        "type": "ParentComponent",
+                        "data": [
+                            "002ffad95d0398cd-0004b29a6e003145"
+                        ]
+                    },
+                    "Children": [
+                        {
+                            "id": 136,
+                            "guid": "005190bea95a3d0f-0004b37598000055",
+                            "Name": "Bossroom",
+                            "SiblingIndex": 0,
+                            "ParentComponent": {
+                                "type": "ParentComponent",
+                                "data": [
+                                    "00272e015316f581-0004b3161600015f"
+                                ]
+                            },
+                            "Children": [
+                                {
+                                    "id": 137,
+                                    "guid": "005190be974dd712-0004b37598000057",
+                                    "Name": "Planks",
+                                    "SiblingIndex": 0,
+                                    "ParentComponent": {
+                                        "type": "ParentComponent",
+                                        "data": [
+                                            "005190bea95a3d0f-0004b37598000055"
+                                        ]
+                                    },
+                                    "Children": [
+                                        {
+                                            "id": 138,
+                                            "guid": "005190be9eb0f908-0004b37598000059",
+                                            "Name": "Plank1",
+                                            "SiblingIndex": 0,
+                                            "ParentComponent": {
+                                                "type": "ParentComponent",
+                                                "data": [
+                                                    "005190be974dd712-0004b37598000057"
+                                                ]
+                                            }
+                                        }
+                                    ]
+                                }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "id": 139,
+                    "guid": "00272e015869fafa-0004b32b7a000257",
+                    "Name": "BossRoom_Plank2",
+                    "SiblingIndex": 50001,
+                    "ParentComponent": {
+                        "type": "ParentComponent",
+                        "data": [
+                            "002ffad95d0398cd-0004b29a6e003145"
+                        ]
+                    },
+                    "Children": [
+                        {
+                            "id": 140,
+                            "guid": "005190bedcc81206-0004b3759800005b",
+                            "Name": "Bossroom",
+                            "SiblingIndex": 0,
+                            "ParentComponent": {
+                                "type": "ParentComponent",
+                                "data": [
+                                    "00272e015869fafa-0004b32b7a000257"
+                                ]
+                            },
+                            "Children": [
+                                {
+                                    "id": 141,
+                                    "guid": "005190bef2c41506-0004b3759800005d",
+                                    "Name": "Planks",
+                                    "SiblingIndex": 0,
+                                    "ParentComponent": {
+                                        "type": "ParentComponent",
+                                        "data": [
+                                            "005190bedcc81206-0004b3759800005b"
+                                        ]
+                                    },
+                                    "Children": [
+                                        {
+                                            "id": 142,
+                                            "guid": "005190bea0524d48-0004b3759800005f",
+                                            "Name": "Plank2",
+                                            "SiblingIndex": 0,
+                                            "ParentComponent": {
+                                                "type": "ParentComponent",
+                                                "data": [
+                                                    "005190bef2c41506-0004b3759800005d"
+                                                ]
+                                            }
+                                        }
+                                    ]
+                                }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "id": 143,
+                    "guid": "00272e01492d90f6-0004b32d4a0002f9",
+                    "Name": "BossRoom_Ceiling",
+                    "SiblingIndex": 50001,
+                    "ParentComponent": {
+                        "type": "ParentComponent",
+                        "data": [
+                            "002ffad95d0398cd-0004b29a6e003145"
+                        ]
+                    },
+                    "Children": [
+                        {
+                            "id": 144,
+                            "guid": "005190be9aeeaf19-0004b37598000061",
+                            "Name": "Bossroom",
+                            "SiblingIndex": 0,
+                            "ParentComponent": {
+                                "type": "ParentComponent",
+                                "data": [
+                                    "00272e01492d90f6-0004b32d4a0002f9"
+                                ]
+                            },
+                            "Children": [
+                                {
+                                    "id": 145,
+                                    "guid": "005190be81480c9b-0004b37598000063",
+                                    "Name": "Ceiling",
+                                    "SiblingIndex": 0,
+                                    "ParentComponent": {
+                                        "type": "ParentComponent",
+                                        "data": [
+                                            "005190be9aeeaf19-0004b37598000061"
+                                        ]
+                                    },
+                                    "Children": [
+                                        {
+                                            "id": 146,
+                                            "guid": "005190bebf62d4c1-0004b37598000065",
+                                            "Name": "ceiling_bottom_low",
+                                            "SiblingIndex": 0,
+                                            "ParentComponent": {
+                                                "type": "ParentComponent",
+                                                "data": [
+                                                    "005190be81480c9b-0004b37598000063"
+                                                ]
+                                            }
+                                        },
+                                        {
+                                            "id": 147,
+                                            "guid": "005190bebba66a25-0004b37598000067",
+                                            "Name": "ceilingtoplow1",
+                                            "SiblingIndex": 1,
+                                            "ParentComponent": {
+                                                "type": "ParentComponent",
+                                                "data": [
+                                                    "005190be81480c9b-0004b37598000063"
+                                                ]
+                                            }
+                                        }
+                                    ]
+                                }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "id": 148,
+                    "guid": "004f69d1ab280c38-0004b37d0e001057",
+                    "Name": "Candles",
+                    "SiblingIndex": 50002,
+                    "ParentComponent": {
+                        "type": "ParentComponent",
+                        "data": [
+                            "002ffad95d0398cd-0004b29a6e003145"
+                        ]
+                    },
+                    "Children": [
+                        {
+                            "id": 149,
+                            "guid": "00272e017030df48-0004b33086000351",
+                            "Name": "CandleSmallWithFlame",
+                            "SiblingIndex": 50001,
+                            "ParentComponent": {
+                                "type": "ParentComponent",
+                                "data": [
+                                    "004f69d1ab280c38-0004b37d0e001057"
+                                ]
+                            }
+                        },
+                        {
+                            "id": 150,
+                            "guid": "004f69d1bb8ae5de-0004b37d32001059",
+                            "Name": "CandleSmallWithFlame (1)",
+                            "SiblingIndex": 50001,
+                            "ParentComponent": {
+                                "type": "ParentComponent",
+                                "data": [
+                                    "004f69d1ab280c38-0004b37d0e001057"
+                                ]
+                            }
+                        },
+                        {
+                            "id": 151,
+                            "guid": "004f69d1ee930bac-0004b3825e00105b",
+                            "Name": "CandleSmallWithFlame (2)",
+                            "SiblingIndex": 50001,
+                            "ParentComponent": {
+                                "type": "ParentComponent",
+                                "data": [
+                                    "004f69d1ab280c38-0004b37d0e001057"
+                                ]
+                            }
+                        },
+                        {
+                            "id": 152,
+                            "guid": "004f69d18a4ec774-0004b3827c00105d",
+                            "Name": "CandleSmallWithFlame (2) (1)",
+                            "SiblingIndex": 50001,
+                            "ParentComponent": {
+                                "type": "ParentComponent",
+                                "data": [
+                                    "004f69d1ab280c38-0004b37d0e001057"
+                                ]
+                            }
+                        },
+                        {
+                            "id": 153,
+                            "guid": "004f69d1ce110d3e-0004b382be00105f",
+                            "Name": "CandleSmallWithFlame (1) (1)",
+                            "SiblingIndex": 50001,
+                            "ParentComponent": {
+                                "type": "ParentComponent",
+                                "data": [
+                                    "004f69d1ab280c38-0004b37d0e001057"
+                                ]
+                            }
+                        },
+                        {
+                            "id": 154,
+                            "guid": "004f69d18563a3d5-0004b3a8360010ad",
+                            "Name": "CandleSmallWithFlame (3)",
+                            "SiblingIndex": 50001,
+                            "ParentComponent": {
+                                "type": "ParentComponent",
+                                "data": [
+                                    "004f69d1ab280c38-0004b37d0e001057"
+                                ]
+                            }
+                        },
+                        {
+                            "id": 155,
+                            "guid": "004f69d1d72821c7-0004b3a8360010af",
+                            "Name": "CandleSmallWithFlame (1) (2)",
+                            "SiblingIndex": 50001,
+                            "ParentComponent": {
+                                "type": "ParentComponent",
+                                "data": [
+                                    "004f69d1ab280c38-0004b37d0e001057"
+                                ]
+                            }
+                        },
+                        {
+                            "id": 156,
+                            "guid": "004f69d1ec94aa8a-0004b3a8360010b1",
+                            "Name": "CandleSmallWithFlame (2) (2)",
+                            "SiblingIndex": 50001,
+                            "ParentComponent": {
+                                "type": "ParentComponent",
+                                "data": [
+                                    "004f69d1ab280c38-0004b37d0e001057"
+                                ]
+                            }
+                        },
+                        {
+                            "id": 157,
+                            "guid": "004f69d1a3ba038d-0004b3a8360010b3",
+                            "Name": "CandleSmallWithFlame (2) (1) (1)",
+                            "SiblingIndex": 50001,
+                            "ParentComponent": {
+                                "type": "ParentComponent",
+                                "data": [
+                                    "004f69d1ab280c38-0004b37d0e001057"
+                                ]
+                            }
+                        },
+                        {
+                            "id": 158,
+                            "guid": "004f69d1cf6875d1-0004b3a8360010b5",
+                            "Name": "CandleSmallWithFlame (1) (1) (1)",
+                            "SiblingIndex": 50001,
+                            "ParentComponent": {
+                                "type": "ParentComponent",
+                                "data": [
+                                    "004f69d1ab280c38-0004b37d0e001057"
+                                ]
+                            }
+                        }
+                    ]
+                },
+                {
+                    "id": 29,
+                    "guid": "002ffad979829fb9-0004b29a6e003135",
+                    "Name": "Fog (1)",
+                    "SiblingIndex": 87,
+                    "ParentComponent": {
+                        "type": "ParentComponent",
+                        "data": [
+                            "002ffad95d0398cd-0004b29a6e003145"
+                        ]
+                    }
+                },
+                {
+                    "id": 316,
+                    "guid": "0050584f39608ba1-0004b3d82600122f",
+                    "Name": "Columns",
+                    "SiblingIndex": 50001,
+                    "ParentComponent": {
+                        "type": "ParentComponent",
+                        "data": [
+                            "002ffad95d0398cd-0004b29a6e003145"
+                        ]
+                    },
+                    "Children": [
+                        {
+                            "id": 236,
+                            "guid": "0050584f2547295e-0004b3d34c00118f",
+                            "Name": "column_low_rightfront",
+                            "SiblingIndex": 50001,
+                            "ParentComponent": {
+                                "type": "ParentComponent",
+                                "data": [
+                                    "0050584f39608ba1-0004b3d82600122f"
+                                ]
+                            }
+                        },
+                        {
+                            "id": 239,
+                            "guid": "0050584f172d064e-0004b3d34c001195",
+                            "Name": "column_low_rightback",
+                            "SiblingIndex": 50001,
+                            "ParentComponent": {
+                                "type": "ParentComponent",
+                                "data": [
+                                    "0050584f39608ba1-0004b3d82600122f"
+                                ]
+                            }
+                        },
+                        {
+                            "id": 238,
+                            "guid": "0050584f792f16b3-0004b3d34c001193",
+                            "Name": "column_low_leftback",
+                            "SiblingIndex": 50001,
+                            "ParentComponent": {
+                                "type": "ParentComponent",
+                                "data": [
+                                    "0050584f39608ba1-0004b3d82600122f"
+                                ]
+                            }
+                        },
+                        {
+                            "id": 237,
+                            "guid": "0050584f1abad876-0004b3d34c001191",
+                            "Name": "column_low_leftfront",
+                            "SiblingIndex": 50001,
+                            "ParentComponent": {
+                                "type": "ParentComponent",
+                                "data": [
+                                    "0050584f39608ba1-0004b3d82600122f"
+                                ]
+                            }
+                        }
+                    ]
+                },
+                {
+                    "id": 355,
+                    "guid": "0050584f28019672-0004b3d8f600127d",
+                    "Name": "Cloths",
+                    "SiblingIndex": 50001,
+                    "ParentComponent": {
+                        "type": "ParentComponent",
+                        "data": [
+                            "002ffad95d0398cd-0004b29a6e003145"
+                        ]
+                    },
+                    "Children": [
+                        {
+                            "id": 34,
+                            "guid": "002ffad97443854a-0004b29a6e00313f",
+                            "Name": "ClothLeft",
+                            "SiblingIndex": 94,
+                            "ParentComponent": {
+                                "type": "ParentComponent",
+                                "data": [
+                                    "0050584f28019672-0004b3d8f600127d"
+                                ]
+                            }
+                        },
+                        {
+                            "id": 36,
+                            "guid": "002ffad9030087a2-0004b29a6e003143",
+                            "Name": "ClothBack",
+                            "SiblingIndex": 94,
+                            "ParentComponent": {
+                                "type": "ParentComponent",
+                                "data": [
+                                    "0050584f28019672-0004b3d8f600127d"
+                                ]
+                            }
+                        },
+                        {
+                            "id": 470,
+                            "guid": "0050584f50b09bcc-0004b3d9c2001363",
+                            "Name": "ClothRight",
+                            "SiblingIndex": 50001,
+                            "ParentComponent": {
+                                "type": "ParentComponent",
+                                "data": [
+                                    "0050584f28019672-0004b3d8f600127d"
+                                ]
+                            }
+                        }
+                    ]
+                }
+            ]
+        }
+    ],
+    "layers": [
+        {
+            "index": 0,
+            "name": "Default"
+        },
+        {
+            "index": 1,
+            "name": "TransparentFX"
+        },
+        {
+            "index": 2,
+            "name": "Ignore Raycast"
+        },
+        {
+            "index": 3,
+            "name": "Water"
+        },
+        {
+            "index": 4,
+            "name": "UI"
+        },
+        {
+            "index": 5,
+            "name": "Player"
+        },
+        {
+            "index": 6,
+            "name": "Enemy"
+        },
+        {
+            "index": 7,
+            "name": "Ground"
+        },
+        {
+            "index": 8,
+            "name": "Obstacle"
+        },
+        {
+            "index": 9,
+            "name": "Collectible"
+        },
+        {
+            "index": 10,
+            "name": "test"
+        }
+    ],
+    "lightingSystem": {
+        "ambientMode": 0,
+        "ambientSky": [
+            0.05000000074505806,
+            0.05000000074505806,
+            0.05000000074505806
+        ],
+        "ambientEquator": [
+            0.029999999329447746,
+            0.029999999329447746,
+            0.029999999329447746
+        ],
+        "ambientGround": [
+            0.009999999776482582,
+            0.009999999776482582,
+            0.009999999776482582
+        ],
+        "ambientIntensity": 1.0
+    }
+}
