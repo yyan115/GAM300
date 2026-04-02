@@ -1,0 +1,15 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "002424dc826c72af-0004b3c99e000007",
+        "source": "../../Resources/Textures/M6/Fan_Base_color.png",
+        "compiled": "../../Resources/Textures/M6/Fan_Base_color.dds"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

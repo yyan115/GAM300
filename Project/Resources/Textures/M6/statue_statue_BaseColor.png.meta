@@ -1,0 +1,15 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "006d9327cd8224c1-0004b3a8a8007601",
+        "source": "../../Resources/Textures/M6/statue_statue_BaseColor.png",
+        "compiled": "../../Resources/Textures/M6/statue_statue_BaseColor.dds"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

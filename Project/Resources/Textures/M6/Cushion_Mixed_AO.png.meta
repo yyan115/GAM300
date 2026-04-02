@@ -1,0 +1,15 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "006d9327dda0ba7c-0004b3b5b8027c2f",
+        "source": "../../Resources/Textures/M6/Cushion_Mixed_AO.png",
+        "compiled": "../../Resources/Textures/M6/Cushion_Mixed_AO.dds"
+    },
+    "TextureMetaData": {
+        "type": "ao",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}
