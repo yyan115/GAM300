@@ -20,7 +20,7 @@ void ParallelSystemOrchestrator::Update() {
     {
         PROFILE_SCOPED("HierarchyCache::PreWarm");
         { PROFILE_SCOPED("HC::Clear"); mainECS.ClearActiveHierarchyCache(); }
-        { PROFILE_SCOPED("HC::Warm");  mainECS.PreWarmActiveHierarchyCache(); }
+        //{ PROFILE_SCOPED("HC::Warm");  mainECS.PreWarmActiveHierarchyCache(); }
     }
 
     bool gamePaused = TimeManager::IsPaused();
@@ -78,11 +78,11 @@ void ParallelSystemOrchestrator::Update() {
     PROFILE_PLOT_TIMED("Video", mainECS.videoSystem->Update((float)TimeManager::GetDeltaTime()));
 
     // Refresh cache again if transforms changed hierarchy active states (rare but possible)
-    {
-        PROFILE_SCOPED("HierarchyCache::Refresh");
-        { PROFILE_SCOPED("HC::Clear"); mainECS.ClearActiveHierarchyCache(); }
-        { PROFILE_SCOPED("HC::Warm");  mainECS.PreWarmActiveHierarchyCache(); }
-    }
+    //{
+    //    PROFILE_SCOPED("HierarchyCache::Refresh");
+    //    { PROFILE_SCOPED("HC::Clear"); mainECS.ClearActiveHierarchyCache(); }
+    //    { PROFILE_SCOPED("HC::Warm");  mainECS.PreWarmActiveHierarchyCache(); }
+    //}
 
     // -------------------------------------------------------------------------
     // 4. RENDER PREP PHASE (Sequential)
@@ -100,10 +100,10 @@ void ParallelSystemOrchestrator::Draw() {
     auto& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
 
     // Ensure cache is fully populated before parallel draw tasks (read-only is thread-safe)
-    {
-        PROFILE_SCOPED("HierarchyCache::DrawPreWarm");
-        ecs.PreWarmActiveHierarchyCache();
-    }
+    //{
+    //    PROFILE_SCOPED("HierarchyCache::DrawPreWarm");
+    //    ecs.PreWarmActiveHierarchyCache();
+    //}
 
     frameChannel.Submit([&] {
         auto& ecs = ECSRegistry::GetInstance().GetActiveECSManager();

@@ -1220,10 +1220,10 @@ void Serializer::SerializePrefabOverridesRecursive(ECSManager& sceneECS, Entity 
     // 3. Recurse Children
     if (sceneECS.HasComponent<ChildrenComponent>(instanceEnt)) {
         auto& instChildren = sceneECS.GetComponent<ChildrenComponent>(instanceEnt).children;
-        //if (baselineEnt == static_cast<Entity>(-1) || !sceneECS.HasComponent<ChildrenComponent>(baselineEnt)) {
-        //    // No baseline - serialize all instance children as new additions
-        //    return;
-        //}
+        if (baselineEnt == static_cast<Entity>(-1) || !sceneECS.HasComponent<ChildrenComponent>(baselineEnt)) {
+            // No baseline - serialize all instance children as new additions
+            return;
+        }
         auto& baseChildren = sceneECS.GetComponent<ChildrenComponent>(baselineEnt).children;
 
         std::list<GUID_128> deletedBaseChildren{};

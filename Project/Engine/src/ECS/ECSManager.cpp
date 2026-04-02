@@ -336,7 +336,7 @@ std::vector<Entity> ECSManager::GetAllRootEntities() {
 	for (const auto& entity : GetAllEntities()) {
 		if (!HasComponent<ParentComponent>(entity)) {
 			rootEntities.push_back(entity);
-		}
+		} 
 	}
 
 	return rootEntities;
@@ -344,15 +344,19 @@ std::vector<Entity> ECSManager::GetAllRootEntities() {
 
 bool ECSManager::IsEntityActiveInHierarchy(Entity entity) {
 	// Check per-frame cache first
-	auto cacheIt = m_activeHierarchyCache.find(entity);
-	if (cacheIt != m_activeHierarchyCache.end()) {
-		return cacheIt->second;
+	{
+		std::shared_lock<std::shared_mutex> readLock(m_cacheMutex);
+		auto cacheIt = m_activeHierarchyCache.find(entity);
+		if (cacheIt != m_activeHierarchyCache.end()) {
+			return cacheIt->second;
+		}
 	}
 
 	// Check if entity itself is active
 	if (HasComponent<ActiveComponent>(entity)) {
 		auto& activeComp = GetComponent<ActiveComponent>(entity);
 		if (!activeComp.isActive) {
+			std::unique_lock<std::shared_mutex> writeLock(m_cacheMutex);
 			m_activeHierarchyCache[entity] = false;
 			return false;
 		}
@@ -377,6 +381,7 @@ bool ECSManager::IsEntityActiveInHierarchy(Entity entity) {
 		if (HasComponent<ActiveComponent>(parentEntity)) {
 			auto& parentActiveComp = GetComponent<ActiveComponent>(parentEntity);
 			if (!parentActiveComp.isActive) {
+				std::unique_lock<std::shared_mutex> writeLock(m_cacheMutex);
 				m_activeHierarchyCache[entity] = false;
 				return false; // Parent is inactive, so this entity is inactive in hierarchy
 			}
@@ -386,6 +391,7 @@ bool ECSManager::IsEntityActiveInHierarchy(Entity entity) {
 		currentEntity = parentEntity;
 	}
 
+	std::unique_lock<std::shared_mutex> writeLock(m_cacheMutex);
 	m_activeHierarchyCache[entity] = true;
 	return true; // Entity and all ancestors are active
 }

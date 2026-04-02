@@ -28,9 +28,9 @@ bool LightingSystem::Initialise()
         }
         // Each map updates on a different frame within the cycle so only 1 map
         // renders per frame instead of all at once, and no map is stale > updateInterval frames
-        pointShadowMaps[i].cacheConfig.updateInterval = 2;
-        pointShadowMaps[i].cacheConfig.maxStaleFrames = 4;
-        pointShadowMaps[i].SetPhaseOffset(i);
+        pointShadowMaps[i].cacheConfig.updateInterval = 1;
+        pointShadowMaps[i].cacheConfig.maxStaleFrames = 1;
+        pointShadowMaps[i].SetPhaseOffset(i % 2);
     }
 
     std::cout << "[LightingSystem] Initialized" << std::endl;
