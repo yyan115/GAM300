@@ -1,0 +1,15 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "006d9327a3c9beff-0004b3c28202fc91",
+        "source": "../../Resources/Textures/M6/VaseStand_Mixed_AO.png",
+        "compiled": "../../Resources/Textures/M6/VaseStand_Mixed_AO.dds"
+    },
+    "TextureMetaData": {
+        "type": "ao",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

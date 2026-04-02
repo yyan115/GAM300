@@ -1,0 +1,15 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "000e5e230a12c7e5-0004b3d50800f6bd",
+        "source": "../../Resources/Textures/M6/Vase3Texture4_Normal_OpenGL.png",
+        "compiled": "../../Resources/Textures/M6/Vase3Texture4_Normal_OpenGL.dds"
+    },
+    "TextureMetaData": {
+        "type": "normal",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}
