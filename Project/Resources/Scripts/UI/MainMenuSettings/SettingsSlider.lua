@@ -3,15 +3,17 @@ local Component = require("extension.mono_helper")
 
 local event_bus = _G.event_bus
 
--- Unified Settings Slider Script
--- Attach to each slider notch entity and configure via fields
--- settingType: "master", "bgm", "sfx", or "gamma"
+-- Unified Settings Slider Controller
+-- Attach ONE instance to the SettingsUI entity.
+-- Enable each slider via boolean fields. For each enabled type the script
+-- finds "<Prefix>Notch" and "<Prefix>Fill" automatically.
+-- Bounds are derived from the Fill entity's Transform (Fill sprite covers the track).
 return Component {
     fields = {
-        sliderNotch = "MasterNotch",  -- Name of the notch entity (this entity)
-        sliderBar = "MasterBar",      -- Name of the bar entity
-        sliderFill = "",              -- Name of the fill entity (optional, leave empty if no fill)
-        settingType = "master",       -- "master", "bgm", "sfx", or "gamma"
+        enableMaster  = true,
+        enableBGM     = true,
+        enableSFX     = true,
+        enableGamma   = true,
     },
 
     Awake = function(self)
@@ -24,322 +26,190 @@ return Component {
     end,
 
     Start = function(self)
-        -- Helper to strip quotes from string values (in case user entered them in editor)
-        local function stripQuotes(str)
-            if type(str) ~= "string" then return str end
-            return str:gsub('^"(.*)"$', '%1'):gsub("^'(.*)'$", '%1')
-        end
-
-        -- Clean field values
-        local notchName = stripQuotes(self.sliderNotch)
-        local barName = stripQuotes(self.sliderBar)
-        local fillName = stripQuotes(self.sliderFill)
-        local settingType = stripQuotes(self.settingType)
-
-        -- Debug: Show what field values we received
-        print("[SettingsSlider] Start called with fields:")
-        print("  sliderNotch = " .. tostring(notchName))
-        print("  sliderBar = " .. tostring(barName))
-        print("  sliderFill = " .. tostring(fillName))
-        print("  settingType = " .. tostring(settingType))
-
-        -- Initialize GameSettings (safe to call multiple times)
-        if GameSettings then
-            GameSettings.Init()
-        else
+        if not GameSettings then
             print("[SettingsSlider] Warning: GameSettings not available")
             return
         end
+        GameSettings.Init()
 
-        -- Normalize settingType to lowercase for consistent comparison
-        if not settingType then
-            print("[SettingsSlider] Warning: settingType field not set")
-            self._settingType = "master"
-        else
-            self._settingType = string.lower(settingType)
-        end
+        -- Value ranges: { min, max } per settingType
+        local VALUE_RANGES = {
+            master             = { 0.0,   1.0 },
+            bgm                = { 0.0,   1.0 },
+            sfx                = { 0.0,   1.0 },
+            gamma              = { 1.0,   3.0 },
+            exposure           = { 0.1,   5.0 },
+            bloomthreshold     = { 0.0,   5.0 },
+            bloomintensity     = { 0.0,   5.0 },
+            bloomscatter       = { 0.0,   1.0 },
+            vignetteintensity  = { 0.0,   1.0 },
+            vignettesmoothness = { 0.0,   1.0 },
+            cgbrightness       = { -1.0,  1.0 },
+            cgcontrast         = { 0.0,   2.0 },
+            cgsaturation       = { 0.0,   2.0 },
+            caintensity        = { 0.0,   1.0 },
+            capadding          = { 0.0,   1.0 },
+            ssaoradius         = { 0.1,   2.0 },
+            ssaobias           = { 0.001, 0.1 },
+            ssaointensity      = { 0.0,   5.0 },
+        }
 
-        -- Cache references to slider entities
-        local notchEntity = Engine.GetEntityByName(notchName)
-        self._sliderTransform = GetComponent(notchEntity, "Transform")
+        -- GameSettings getter/setter pairs per settingType
+        local SETTINGS_API = {
+            master             = { function() return GameSettings.GetMasterVolume() end,      function(v) GameSettings.SetMasterVolume(v) end },
+            bgm                = { function() return GameSettings.GetBGMVolume() end,         function(v) GameSettings.SetBGMVolume(v) end },
+            sfx                = { function() return GameSettings.GetSFXVolume() end,         function(v) GameSettings.SetSFXVolume(v) end },
+            gamma              = { function() return GameSettings.GetGamma() end,             function(v) GameSettings.SetGamma(v) end },
+            exposure           = { function() return GameSettings.GetExposure() end,          function(v) GameSettings.SetExposure(v) end },
+            bloomthreshold     = { function() return GameSettings.GetBloomThreshold() end,    function(v) GameSettings.SetBloomThreshold(v) end },
+            bloomintensity     = { function() return GameSettings.GetBloomIntensity() end,    function(v) GameSettings.SetBloomIntensity(v) end },
+            bloomscatter       = { function() return GameSettings.GetBloomScatter() end,      function(v) GameSettings.SetBloomScatter(v) end },
+            vignetteintensity  = { function() return GameSettings.GetVignetteIntensity() end, function(v) GameSettings.SetVignetteIntensity(v) end },
+            vignettesmoothness = { function() return GameSettings.GetVignetteSmoothness() end,function(v) GameSettings.SetVignetteSmoothness(v) end },
+            cgbrightness       = { function() return GameSettings.GetCGBrightness() end,      function(v) GameSettings.SetCGBrightness(v) end },
+            cgcontrast         = { function() return GameSettings.GetCGContrast() end,        function(v) GameSettings.SetCGContrast(v) end },
+            cgsaturation       = { function() return GameSettings.GetCGSaturation() end,      function(v) GameSettings.SetCGSaturation(v) end },
+            caintensity        = { function() return GameSettings.GetCAIntensity() end,       function(v) GameSettings.SetCAIntensity(v) end },
+            capadding          = { function() return GameSettings.GetCAPadding() end,         function(v) GameSettings.SetCAPadding(v) end },
+            ssaoradius         = { function() return GameSettings.GetSSAORadius() end,        function(v) GameSettings.SetSSAORadius(v) end },
+            ssaobias           = { function() return GameSettings.GetSSAOBias() end,          function(v) GameSettings.SetSSAOBias(v) end },
+            ssaointensity      = { function() return GameSettings.GetSSAOIntensity() end,     function(v) GameSettings.SetSSAOIntensity(v) end },
+        }
 
-        -- Cache audio component for click SFX (prefer notch, fallback to bar)
-        self._audio = GetComponent(notchEntity, "AudioComponent")
+        -- Map boolean fields to (prefix, settingType)
+        local SLIDER_DEFS = {
+            { field = "enableMaster",  prefix = "Master",  type = "master"  },
+            { field = "enableBGM",     prefix = "BGM",     type = "bgm"     },
+            { field = "enableSFX",     prefix = "SFX",     type = "sfx"     },
+            { field = "enableGamma",   prefix = "Gamma",   type = "gamma"   },
+        }
 
-        local barEntity = Engine.GetEntityByName(barName)
-        self._barTransform = GetComponent(barEntity, "Transform")
-        if not self._audio then
-            self._audio = GetComponent(barEntity, "AudioComponent")
-        end
+        self._sliders = {}
+        self._valueRanges = VALUE_RANGES
+        self._settingsAPI = SETTINGS_API
 
-        if not self._sliderTransform or not self._barTransform then
-            print("[SettingsSlider] Warning: Could not find slider entities for " .. self._settingType)
-            return
-        end
+        for _, def in ipairs(SLIDER_DEFS) do
+            if self[def.field] then
+                local notchEntity = Engine.GetEntityByName(def.prefix .. "Notch")
+                local fillEntity  = Engine.GetEntityByName(def.prefix .. "Fill")
 
-        -- Calculate slider bounds based on bar dimensions
-        local offsetX = self._barTransform.localScale.x / 2.0
-        local offsetY = self._barTransform.localScale.y / 2.0
-        self._maxSliderX = self._barTransform.localPosition.x + offsetX
-        self._minSliderX = self._barTransform.localPosition.x - offsetX
-        self._maxSliderY = self._barTransform.localPosition.y + offsetY
-        self._minSliderY = self._barTransform.localPosition.y - offsetY
-
-        -- Cache fill bar sprite (optional) - uses SpriteRenderComponent fill mode
-        self._fillSprite = nil
-        if fillName and fillName ~= "" then
-            local fillEntity = Engine.GetEntityByName(fillName)
-            if fillEntity then
-                self._fillSprite = GetComponent(fillEntity, "SpriteRenderComponent")
-                if self._fillSprite then
-                    print("[SettingsSlider] Fill bar configured: " .. fillName)
+                if not notchEntity or not fillEntity then
+                    print("[SettingsSlider] Warning: Missing entities for " .. def.prefix .. " (need " .. def.prefix .. "Notch and " .. def.prefix .. "Fill)")
                 else
-                    print("[SettingsSlider] Warning: Fill entity missing SpriteRenderComponent: " .. fillName)
-                end
-            else
-                print("[SettingsSlider] Warning: Fill entity not found: " .. fillName)
-            end
-        end
+                    local notchTransform = GetComponent(notchEntity, "Transform")
+                    local fillTransform  = GetComponent(fillEntity,  "Transform")
+                    local fillSprite     = GetComponent(fillEntity,  "SpriteRenderComponent")
 
-        -- Track dragging state
-        self._isDragging = false
+                    if not notchTransform or not fillTransform then
+                        print("[SettingsSlider] Warning: Missing Transform on " .. def.prefix .. " entities")
+                    else
+                        local offsetX = fillTransform.localScale.x / 2.0
+                        local offsetY = fillTransform.localScale.y / 2.0
+                        local slider = {
+                            settingType    = def.type,
+                            notchTransform = notchTransform,
+                            fillSprite     = fillSprite,
+                            audio          = GetComponent(notchEntity, "AudioComponent"),
+                            minX           = fillTransform.localPosition.x - offsetX,
+                            maxX           = fillTransform.localPosition.x + offsetX,
+                            minY           = fillTransform.localPosition.y - offsetY,
+                            maxY           = fillTransform.localPosition.y + offsetY,
+                            isDragging     = false,
+                        }
 
-        -- Get min/max values based on setting type
-        if self._settingType == "gamma" then
-            self._minValue = 1.0
-            self._maxValue = 3.0
-        elseif self._settingType == "exposure" then
-            self._minValue = 0.1
-            self._maxValue = 5.0
-        elseif self._settingType == "bloomthreshold" then
-            self._minValue = 0.0
-            self._maxValue = 5.0
-        elseif self._settingType == "bloomintensity" then
-            self._minValue = 0.0
-            self._maxValue = 5.0
-        elseif self._settingType == "bloomscatter" then
-            self._minValue = 0.0
-            self._maxValue = 1.0
-        elseif self._settingType == "vignetteintensity" then
-            self._minValue = 0.0
-            self._maxValue = 1.0
-        elseif self._settingType == "vignettesmoothness" then
-            self._minValue = 0.0
-            self._maxValue = 1.0
-        elseif self._settingType == "cgbrightness" then
-            self._minValue = -1.0
-            self._maxValue = 1.0
-        elseif self._settingType == "cgcontrast" then
-            self._minValue = 0.0
-            self._maxValue = 2.0
-        elseif self._settingType == "cgsaturation" then
-            self._minValue = 0.0
-            self._maxValue = 2.0
-        elseif self._settingType == "caintensity" then
-            self._minValue = 0.0
-            self._maxValue = 1.0
-        elseif self._settingType == "capadding" then
-            self._minValue = 0.0
-            self._maxValue = 1.0
-        elseif self._settingType == "ssaoradius" then
-            self._minValue = 0.1
-            self._maxValue = 2.0
-        elseif self._settingType == "ssaobias" then
-            self._minValue = 0.001
-            self._maxValue = 0.1
-        elseif self._settingType == "ssaointensity" then
-            self._minValue = 0.0
-            self._maxValue = 5.0
-        else
-            self._minValue = 0.0
-            self._maxValue = 1.0
-        end
-
-        -- Set initial slider position from saved settings
-        local savedValue = self:GetCurrentValue()
-        local normalized = self:ValueToNormalized(savedValue)
-        local savedPosX = self._minSliderX + (normalized * (self._maxSliderX - self._minSliderX))
-        self._sliderTransform.localPosition.x = savedPosX
-        self._sliderTransform.isDirty = true
-
-        -- Update fill bar to match initial position
-        self:UpdateFillBar(normalized)
-
-        print("[SettingsSlider] " .. self._settingType .. " initialized with value: " .. savedValue)
-    end,
-
-    -- Update the fill bar based on normalized value (0-1)
-    UpdateFillBar = function(self, normalized)
-        if not self._fillSprite then
-            return
-        end
-        self._fillSprite.fillValue = normalized
-    end,
-
-    Update = function(self, dt)
-        -- Skip if not properly initialized
-        if not self._sliderTransform or not self._barTransform or not self._settingType then
-            return
-        end
-
-        -- React to settings_reset event: reposition notch and fill to match new GameSettings value
-        if self._pendingReset then
-            self._pendingReset = false
-            local resetValue = self:GetCurrentValue()
-            local resetNormalized = self:ValueToNormalized(resetValue)
-            local resetPosX = self._minSliderX + (resetNormalized * (self._maxSliderX - self._minSliderX))
-            self._sliderTransform.localPosition.x = resetPosX
-            self._sliderTransform.isDirty = true
-            self:UpdateFillBar(resetNormalized)
-        end
-
-        local pointerPressed = Input.IsPointerPressed()
-        local pointerJustPressed = Input.IsPointerJustPressed()
-
-        -- Handle drag start - only if pointer just pressed within our bounds
-        if pointerPressed and not self._isDragging then
-            local pointerPos = Input.GetPointerPosition()
-            if pointerPos then
-                local gameCoordinate = Engine.GetGameCoordinate(pointerPos.x, pointerPos.y)
-                local gameX = gameCoordinate[1]
-                local gameY = gameCoordinate[2]
-
-                -- Check if click is within this slider's bounds
-                if gameX >= self._minSliderX and gameX <= self._maxSliderX and
-                   gameY >= self._minSliderY and gameY <= self._maxSliderY then
-                    self._isDragging = true
-
-                    if self._audio then
-                        self._audio:Play()
+                        self:_initSliderPosition(slider)
+                        table.insert(self._sliders, slider)
+                        print("[SettingsSlider] Initialized: " .. def.type)
                     end
                 end
             end
         end
+    end,
 
-        -- Handle drag end
-        if not pointerPressed then
-            self._isDragging = false
+    Update = function(self, dt)
+        if not self._sliders or #self._sliders == 0 then return end
+
+        -- Only process when SettingsUI is active
+        local settingsUIEntity = Engine.GetEntityByName("SettingsUI")
+        if settingsUIEntity then
+            local activeComp = GetComponent(settingsUIEntity, "ActiveComponent")
+            if activeComp and not activeComp.isActive then
+                for _, slider in ipairs(self._sliders) do
+                    slider.isDragging = false
+                end
+                return
+            end
         end
 
-        -- Handle dragging - only if we started the drag
-        if self._isDragging and pointerPressed then
+        -- React to settings_reset event
+        if self._pendingReset then
+            self._pendingReset = false
+            for _, slider in ipairs(self._sliders) do
+                self:_initSliderPosition(slider)
+            end
+        end
+
+        local pointerPressed = Input.IsPointerPressed()
+
+        -- Cache pointer position once per frame
+        local gameX, gameY
+        if pointerPressed then
             local pointerPos = Input.GetPointerPosition()
-            if not pointerPos then return end
-            local gameCoordinate = Engine.GetGameCoordinate(pointerPos.x, pointerPos.y)
-            local gameX = gameCoordinate[1]
+            if pointerPos then
+                local gc = Engine.GetGameCoordinate(pointerPos.x, pointerPos.y)
+                gameX, gameY = gc[1], gc[2]
+            end
+        end
 
-            -- Clamp X position to slider bounds (allow dragging even if Y is outside)
-            local clampedX = math.max(self._minSliderX, math.min(gameX, self._maxSliderX))
-            self._sliderTransform.localPosition.x = clampedX
-            self._sliderTransform.isDirty = true
+        for _, slider in ipairs(self._sliders) do
+            -- Start drag
+            if pointerPressed and not slider.isDragging and gameX then
+                if gameX >= slider.minX and gameX <= slider.maxX and
+                   gameY >= slider.minY and gameY <= slider.maxY then
+                    slider.isDragging = true
+                    if event_bus and event_bus.publish then
+                        event_bus.publish("pause_menu.slider", {})
+                    end
+                end
+            end
 
-            -- Calculate normalized value (0-1)
-            local normalized = (clampedX - self._minSliderX) / (self._maxSliderX - self._minSliderX)
+            -- End drag
+            if not pointerPressed then
+                slider.isDragging = false
+            end
 
-            -- Apply snapping at edges
-            if normalized < 0.01 then normalized = 0 end
-            if normalized > 0.99 then normalized = 1.0 end
+            -- Process drag
+            if slider.isDragging and pointerPressed and gameX then
+                local clampedX = math.max(slider.minX, math.min(gameX, slider.maxX))
+                slider.notchTransform.localPosition.x = clampedX
+                slider.notchTransform.isDirty = true
 
-            -- Update the fill bar to follow the notch
-            self:UpdateFillBar(normalized)
+                local normalized = (clampedX - slider.minX) / (slider.maxX - slider.minX)
+                if normalized < 0.01 then normalized = 0 end
+                if normalized > 0.99 then normalized = 1.0 end
 
-            -- Convert to actual value and apply
-            local newValue = self:NormalizedToValue(normalized)
-            self:SetCurrentValue(newValue)
+                if slider.fillSprite then slider.fillSprite.fillValue = normalized end
+
+                local api = self._settingsAPI[slider.settingType]
+                if api then
+                    local range = self._valueRanges[slider.settingType] or { 0.0, 1.0 }
+                    api[2](range[1] + normalized * (range[2] - range[1]))
+                end
+            end
         end
     end,
 
-    -- Convert a setting value to normalized 0-1 range
-    ValueToNormalized = function(self, value)
-        return (value - self._minValue) / (self._maxValue - self._minValue)
-    end,
+    -- Set notch position and fill to match the current saved setting value
+    _initSliderPosition = function(self, slider)
+        local api   = self._settingsAPI[slider.settingType]
+        local range = self._valueRanges[slider.settingType] or { 0.0, 1.0 }
+        if not api then return end
 
-    -- Convert normalized 0-1 to actual setting value
-    NormalizedToValue = function(self, normalized)
-        return self._minValue + (normalized * (self._maxValue - self._minValue))
-    end,
-
-    -- Get current value from GameSettings based on settingType
-    GetCurrentValue = function(self)
-        if self._settingType == "master" then
-            return GameSettings.GetMasterVolume()
-        elseif self._settingType == "bgm" then
-            return GameSettings.GetBGMVolume()
-        elseif self._settingType == "sfx" then
-            return GameSettings.GetSFXVolume()
-        elseif self._settingType == "gamma" then
-            return GameSettings.GetGamma()
-        elseif self._settingType == "exposure" then
-            return GameSettings.GetExposure()
-        elseif self._settingType == "bloomthreshold" then
-            return GameSettings.GetBloomThreshold()
-        elseif self._settingType == "bloomintensity" then
-            return GameSettings.GetBloomIntensity()
-        elseif self._settingType == "bloomscatter" then
-            return GameSettings.GetBloomScatter()
-        elseif self._settingType == "vignetteintensity" then
-            return GameSettings.GetVignetteIntensity()
-        elseif self._settingType == "vignettesmoothness" then
-            return GameSettings.GetVignetteSmoothness()
-        elseif self._settingType == "cgbrightness" then
-            return GameSettings.GetCGBrightness()
-        elseif self._settingType == "cgcontrast" then
-            return GameSettings.GetCGContrast()
-        elseif self._settingType == "cgsaturation" then
-            return GameSettings.GetCGSaturation()
-        elseif self._settingType == "caintensity" then
-            return GameSettings.GetCAIntensity()
-        elseif self._settingType == "capadding" then
-            return GameSettings.GetCAPadding()
-        elseif self._settingType == "ssaoradius" then
-            return GameSettings.GetSSAORadius()
-        elseif self._settingType == "ssaobias" then
-            return GameSettings.GetSSAOBias()
-        elseif self._settingType == "ssaointensity" then
-            return GameSettings.GetSSAOIntensity()
-        end
-        return 1.0
-    end,
-
-    -- Set value in GameSettings based on settingType
-    SetCurrentValue = function(self, value)
-        if self._settingType == "master" then
-            GameSettings.SetMasterVolume(value)
-        elseif self._settingType == "bgm" then
-            GameSettings.SetBGMVolume(value)
-        elseif self._settingType == "sfx" then
-            GameSettings.SetSFXVolume(value)
-        elseif self._settingType == "gamma" then
-            GameSettings.SetGamma(value)
-        elseif self._settingType == "exposure" then
-            GameSettings.SetExposure(value)
-        elseif self._settingType == "bloomthreshold" then
-            GameSettings.SetBloomThreshold(value)
-        elseif self._settingType == "bloomintensity" then
-            GameSettings.SetBloomIntensity(value)
-        elseif self._settingType == "bloomscatter" then
-            GameSettings.SetBloomScatter(value)
-        elseif self._settingType == "vignetteintensity" then
-            GameSettings.SetVignetteIntensity(value)
-        elseif self._settingType == "vignettesmoothness" then
-            GameSettings.SetVignetteSmoothness(value)
-        elseif self._settingType == "cgbrightness" then
-            GameSettings.SetCGBrightness(value)
-        elseif self._settingType == "cgcontrast" then
-            GameSettings.SetCGContrast(value)
-        elseif self._settingType == "cgsaturation" then
-            GameSettings.SetCGSaturation(value)
-        elseif self._settingType == "caintensity" then
-            GameSettings.SetCAIntensity(value)
-        elseif self._settingType == "capadding" then
-            GameSettings.SetCAPadding(value)
-        elseif self._settingType == "ssaoradius" then
-            GameSettings.SetSSAORadius(value)
-        elseif self._settingType == "ssaobias" then
-            GameSettings.SetSSAOBias(value)
-        elseif self._settingType == "ssaointensity" then
-            GameSettings.SetSSAOIntensity(value)
-        end
+        local value      = api[1]()
+        local normalized = (value - range[1]) / (range[2] - range[1])
+        slider.notchTransform.localPosition.x = slider.minX + (normalized * (slider.maxX - slider.minX))
+        slider.notchTransform.isDirty = true
+        if slider.fillSprite then slider.fillSprite.fillValue = normalized end
     end,
 
     OnDisable = function(self)

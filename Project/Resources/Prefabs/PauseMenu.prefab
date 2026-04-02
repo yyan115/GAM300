@@ -2,7 +2,7 @@
     "prefab_entities": [
         {
             "id": 0,
-            "guid": "004f31f387158b8a-0004b0fd060082d9",
+            "guid": "00730c4eafac93c2-0004b3586800d8d7",
             "components": {
                 "PrefabLinkComponent": {
                     "type": "PrefabLinkComponent",
@@ -91,13 +91,13 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "004f31f3e5d34af9-0004b0fd060082db",
-                                "004f31f3ab6de5b8-0004b0fd060082e9",
-                                "004f31f3f62e64c0-0004b0fd06008321",
-                                "004f31f3c0b0a8b8-0004b0fd0600832d",
-                                "004f31f3a7a42927-0004b0fd06008333",
-                                "004f31f3f9ddedae-0004b0fd06008335",
-                                "004f31f3aa3765a4-0004b0fd06008337"
+                                "00730c4ee23393b7-0004b3586800d8d9",
+                                "00730c4ec2ecbd7d-0004b3586800d8e7",
+                                "00730c4ee71e4773-0004b3586800d917",
+                                "00730c4e8e2cfcd3-0004b3586800d923",
+                                "00730c4ed8198ab9-0004b3586800d929",
+                                "00730c4edaa91c03-0004b3586800d92b",
+                                "00730c4ed4081a1f-0004b3586800d92d"
                             ]
                         }
                     ]
@@ -115,7 +115,7 @@
         },
         {
             "id": 1,
-            "guid": "004f31f3e5d34af9-0004b0fd060082db",
+            "guid": "00730c4ee23393b7-0004b3586800d8d9",
             "components": {
                 "NameComponent": {
                     "name": "PauseMenuUI"
@@ -195,12 +195,12 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "004f31f3b863c606-0004b0fd060082dd",
-                                "004f31f3c3dbbd5d-0004b0fd060082df",
-                                "004f31f3f12613f3-0004b0fd060082e1",
-                                "004f31f3f5a169c1-0004b0fd060082e3",
-                                "004f31f3c194b6ef-0004b0fd060082e5",
-                                "004f31f3f157ee8e-0004b0fd060082e7"
+                                "00730c4ec4815103-0004b3586800d8db",
+                                "00730c4ed9f3225d-0004b3586800d8dd",
+                                "00730c4ece1771bf-0004b3586800d8df",
+                                "00730c4eea404d0c-0004b3586800d8e1",
+                                "00730c4ee5478130-0004b3586800d8e3",
+                                "00730c4eb4e95061-0004b3586800d8e5"
                             ]
                         }
                     ]
@@ -208,77 +208,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004f31f387158b8a-0004b0fd060082d9"
-                    ]
-                },
-                "AudioComponent": {
-                    "type": "AudioComponent",
-                    "data": [
-                        {
-                            "type": "bool",
-                            "data": true
-                        },
-                        "0037d81b07b695ee-000400f740000007",
-                        {
-                            "type": "bool",
-                            "data": false
-                        },
-                        {
-                            "type": "bool",
-                            "data": false
-                        },
-                        {
-                            "type": "bool",
-                            "data": false
-                        },
-                        {
-                            "type": "bool",
-                            "data": false
-                        },
-                        {
-                            "type": "int",
-                            "data": 128
-                        },
-                        {
-                            "type": "float",
-                            "data": 1
-                        },
-                        {
-                            "type": "float",
-                            "data": 1
-                        },
-                        {
-                            "type": "float",
-                            "data": 0
-                        },
-                        {
-                            "type": "float",
-                            "data": 1
-                        },
-                        {
-                            "type": "bool",
-                            "data": false
-                        },
-                        {
-                            "type": "float",
-                            "data": 0
-                        },
-                        {
-                            "type": "float",
-                            "data": 1
-                        },
-                        {
-                            "type": "float",
-                            "data": 1
-                        },
-                        {
-                            "type": "float",
-                            "data": 100
-                        },
-                        {
-                            "type": "std::string",
-                            "data": "UI"
-                        }
+                        "00730c4eafac93c2-0004b3586800d8d7"
                     ]
                 },
                 "ActiveComponent": {
@@ -300,55 +230,75 @@
                             "entryFunction": "OnInit",
                             "autoInvokeEntry": true,
                             "instanceState": {
-                                "ContinueSpriteGUIDs": [
-                                    "005d94016700d768-00047775e600ad69",
-                                    "005d940146094bbd-00047773ce00ad59"
+                                "enableMaster": true,
+                                "__created_at": 1775106811.0,
+                                "_hoverSub": {
+                                    "id": 604.0,
+                                    "event": "pause_menu.hover"
+                                },
+                                "enableBGM": true,
+                                "BackSpriteGUIDs": [
+                                    "00000000-0000-0000-0000-000000000000",
+                                    "00000000-0000-0000-0000-000000000000"
                                 ],
-                                "_call_lifecycle": null,
-                                "Every": null,
-                                "DisableSafe": null,
-                                "SerializeFields": null,
-                                "StartSafe": null,
-                                "DeserializeFields": null,
-                                "UpdateSafe": null,
-                                "ButtonSFX": [
-                                    "0037d81b0c6c0a46-000400f740000005",
+                                "enableSFX": true,
+                                "Update": null,
+                                "YesSpriteGUIDs": [
+                                    "00000000-0000-0000-0000-000000000000",
+                                    "00000000-0000-0000-0000-000000000000"
+                                ],
+                                "SliderSFX": [
                                     "0037d81b07b695ee-000400f740000007"
                                 ],
-                                "__meta": {},
-                                "MainMenuSpriteGUIDs": [
-                                    "005d94014d252074-000477755c00ad65",
-                                    "005d94012a3072cf-00047773fe00ad5f"
-                                ],
-                                "Destroy": null,
-                                "SettingSpriteGUIDs": [
-                                    "005d9401444074ff-000477754000ad63",
-                                    "005d94011d6d6277-00047773ec00ad5d"
-                                ],
-                                "__created_at": 1775043589.0,
-                                "OnClickControlsButton": null,
-                                "After": null,
-                                "_private": {},
-                                "OnClickMainMenuButton": null,
-                                "OnClickContinueButton": null,
-                                "Subscribe": null,
                                 "ControlsSpriteGUIDs": [
                                     "005d940146ad3e3f-000477758600ad67",
                                     "005d94010cbbcf21-00047773dc00ad5b"
                                 ],
-                                "AwakeSafe": null,
-                                "Update": null,
-                                "__field_list": {
-                                    "SettingSpriteGUIDs": {},
-                                    "ContinueSpriteGUIDs": {},
-                                    "ButtonSFX": {},
-                                    "ControlsSpriteGUIDs": {},
-                                    "MainMenuSpriteGUIDs": {}
+                                "BaseVolume": 1.0,
+                                "_clickSub": {
+                                    "id": 605.0,
+                                    "event": "pause_menu.click"
                                 },
-                                "Unsubscribe": null,
-                                "OnClickSettingButton": null,
+                                "NoSpriteGUIDs": [
+                                    "00000000-0000-0000-0000-000000000000",
+                                    "00000000-0000-0000-0000-000000000000"
+                                ],
                                 "_subscriptions": {},
-                                "Start": null
+                                "_pendingReset": false,
+                                "_updateButtonStates": null,
+                                "_transform_fetched": false,
+                                "__field_list": {},
+                                "enableGamma": true,
+                                "ContinueSpriteGUIDs": [
+                                    "005d94016700d768-00047775e600ad69",
+                                    "005d940146094bbd-00047773ce00ad59"
+                                ],
+                                "mainMenuScene": "Resources/Scenes/01_MainMenu.scene",
+                                "__meta": {},
+                                "_private": {},
+                                "PitchVariation": 0.08,
+                                "_settingsResetSub": {
+                                    "id": 34.0,
+                                    "event": "settings_reset"
+                                },
+                                "SettingSpriteGUIDs": [
+                                    "005d9401444074ff-000477754000ad63",
+                                    "005d94011d6d6277-00047773ec00ad5d"
+                                ],
+                                "ClickSFX": [
+                                    "0037d81b07b695ee-000400f740000007"
+                                ],
+                                "_sliderSub": {
+                                    "id": 606.0,
+                                    "event": "pause_menu.slider"
+                                },
+                                "HoverSFX": [
+                                    "0037d81b0c6c0a46-000400f740000005"
+                                ],
+                                "MainMenuSpriteGUIDs": [
+                                    "005d94014d252074-000477755c00ad65",
+                                    "005d94012a3072cf-00047773fe00ad5f"
+                                ]
                             }
                         }
                     ]
@@ -357,7 +307,7 @@
         },
         {
             "id": 2,
-            "guid": "004f31f3b863c606-0004b0fd060082dd",
+            "guid": "00730c4ec4815103-0004b3586800d8db",
             "components": {
                 "NameComponent": {
                     "name": "PauseBG"
@@ -565,7 +515,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004f31f3e5d34af9-0004b0fd060082db"
+                        "00730c4ee23393b7-0004b3586800d8d9"
                     ]
                 },
                 "ActiveComponent": {
@@ -581,7 +531,7 @@
         },
         {
             "id": 3,
-            "guid": "004f31f3c3dbbd5d-0004b0fd060082df",
+            "guid": "00730c4ed9f3225d-0004b3586800d8dd",
             "components": {
                 "NameComponent": {
                     "name": "PauseText"
@@ -812,7 +762,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004f31f3e5d34af9-0004b0fd060082db"
+                        "00730c4ee23393b7-0004b3586800d8d9"
                     ]
                 },
                 "ActiveComponent": {
@@ -828,7 +778,7 @@
         },
         {
             "id": 4,
-            "guid": "004f31f3f12613f3-0004b0fd060082e1",
+            "guid": "00730c4ece1771bf-0004b3586800d8df",
             "components": {
                 "NameComponent": {
                     "name": "ContinueButton"
@@ -1036,77 +986,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004f31f3e5d34af9-0004b0fd060082db"
-                    ]
-                },
-                "AudioComponent": {
-                    "type": "AudioComponent",
-                    "data": [
-                        {
-                            "type": "bool",
-                            "data": true
-                        },
-                        "0037d81b07b695ee-000400f740000007",
-                        {
-                            "type": "bool",
-                            "data": false
-                        },
-                        {
-                            "type": "bool",
-                            "data": false
-                        },
-                        {
-                            "type": "bool",
-                            "data": false
-                        },
-                        {
-                            "type": "bool",
-                            "data": false
-                        },
-                        {
-                            "type": "int",
-                            "data": 128
-                        },
-                        {
-                            "type": "float",
-                            "data": 1
-                        },
-                        {
-                            "type": "float",
-                            "data": 1
-                        },
-                        {
-                            "type": "float",
-                            "data": 0
-                        },
-                        {
-                            "type": "float",
-                            "data": 1
-                        },
-                        {
-                            "type": "bool",
-                            "data": false
-                        },
-                        {
-                            "type": "float",
-                            "data": 0
-                        },
-                        {
-                            "type": "float",
-                            "data": 1
-                        },
-                        {
-                            "type": "float",
-                            "data": 1
-                        },
-                        {
-                            "type": "float",
-                            "data": 100
-                        },
-                        {
-                            "type": "std::string",
-                            "data": "UI"
-                        }
+                        "00730c4ee23393b7-0004b3586800d8d9"
                     ]
                 },
                 "ActiveComponent": {
@@ -1161,7 +1041,7 @@
         },
         {
             "id": 5,
-            "guid": "004f31f3f5a169c1-0004b0fd060082e3",
+            "guid": "00730c4eea404d0c-0004b3586800d8e1",
             "components": {
                 "NameComponent": {
                     "name": "SettingsButton"
@@ -1369,77 +1249,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004f31f3e5d34af9-0004b0fd060082db"
-                    ]
-                },
-                "AudioComponent": {
-                    "type": "AudioComponent",
-                    "data": [
-                        {
-                            "type": "bool",
-                            "data": true
-                        },
-                        "0037d81b07b695ee-000400f740000007",
-                        {
-                            "type": "bool",
-                            "data": false
-                        },
-                        {
-                            "type": "bool",
-                            "data": false
-                        },
-                        {
-                            "type": "bool",
-                            "data": false
-                        },
-                        {
-                            "type": "bool",
-                            "data": false
-                        },
-                        {
-                            "type": "int",
-                            "data": 128
-                        },
-                        {
-                            "type": "float",
-                            "data": 1
-                        },
-                        {
-                            "type": "float",
-                            "data": 1
-                        },
-                        {
-                            "type": "float",
-                            "data": 0
-                        },
-                        {
-                            "type": "float",
-                            "data": 1
-                        },
-                        {
-                            "type": "bool",
-                            "data": false
-                        },
-                        {
-                            "type": "float",
-                            "data": 0
-                        },
-                        {
-                            "type": "float",
-                            "data": 1
-                        },
-                        {
-                            "type": "float",
-                            "data": 1
-                        },
-                        {
-                            "type": "float",
-                            "data": 100
-                        },
-                        {
-                            "type": "std::string",
-                            "data": "UI"
-                        }
+                        "00730c4ee23393b7-0004b3586800d8d9"
                     ]
                 },
                 "ActiveComponent": {
@@ -1494,7 +1304,7 @@
         },
         {
             "id": 6,
-            "guid": "004f31f3c194b6ef-0004b0fd060082e5",
+            "guid": "00730c4ee5478130-0004b3586800d8e3",
             "components": {
                 "NameComponent": {
                     "name": "MainMenuButton"
@@ -1702,77 +1512,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004f31f3e5d34af9-0004b0fd060082db"
-                    ]
-                },
-                "AudioComponent": {
-                    "type": "AudioComponent",
-                    "data": [
-                        {
-                            "type": "bool",
-                            "data": true
-                        },
-                        "0037d81b07b695ee-000400f740000007",
-                        {
-                            "type": "bool",
-                            "data": false
-                        },
-                        {
-                            "type": "bool",
-                            "data": false
-                        },
-                        {
-                            "type": "bool",
-                            "data": false
-                        },
-                        {
-                            "type": "bool",
-                            "data": false
-                        },
-                        {
-                            "type": "int",
-                            "data": 128
-                        },
-                        {
-                            "type": "float",
-                            "data": 1
-                        },
-                        {
-                            "type": "float",
-                            "data": 1
-                        },
-                        {
-                            "type": "float",
-                            "data": 0
-                        },
-                        {
-                            "type": "float",
-                            "data": 1
-                        },
-                        {
-                            "type": "bool",
-                            "data": false
-                        },
-                        {
-                            "type": "float",
-                            "data": 0
-                        },
-                        {
-                            "type": "float",
-                            "data": 1
-                        },
-                        {
-                            "type": "float",
-                            "data": 1
-                        },
-                        {
-                            "type": "float",
-                            "data": 100
-                        },
-                        {
-                            "type": "std::string",
-                            "data": "UI"
-                        }
+                        "00730c4ee23393b7-0004b3586800d8d9"
                     ]
                 },
                 "ActiveComponent": {
@@ -1827,7 +1567,7 @@
         },
         {
             "id": 7,
-            "guid": "004f31f3f157ee8e-0004b0fd060082e7",
+            "guid": "00730c4eb4e95061-0004b3586800d8e5",
             "components": {
                 "NameComponent": {
                     "name": "ControlsButton"
@@ -2035,77 +1775,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004f31f3e5d34af9-0004b0fd060082db"
-                    ]
-                },
-                "AudioComponent": {
-                    "type": "AudioComponent",
-                    "data": [
-                        {
-                            "type": "bool",
-                            "data": true
-                        },
-                        "0037d81b07b695ee-000400f740000007",
-                        {
-                            "type": "bool",
-                            "data": false
-                        },
-                        {
-                            "type": "bool",
-                            "data": false
-                        },
-                        {
-                            "type": "bool",
-                            "data": false
-                        },
-                        {
-                            "type": "bool",
-                            "data": false
-                        },
-                        {
-                            "type": "int",
-                            "data": 128
-                        },
-                        {
-                            "type": "float",
-                            "data": 1
-                        },
-                        {
-                            "type": "float",
-                            "data": 1
-                        },
-                        {
-                            "type": "float",
-                            "data": 0
-                        },
-                        {
-                            "type": "float",
-                            "data": 1
-                        },
-                        {
-                            "type": "bool",
-                            "data": false
-                        },
-                        {
-                            "type": "float",
-                            "data": 0
-                        },
-                        {
-                            "type": "float",
-                            "data": 1
-                        },
-                        {
-                            "type": "float",
-                            "data": 1
-                        },
-                        {
-                            "type": "float",
-                            "data": 100
-                        },
-                        {
-                            "type": "std::string",
-                            "data": "UI"
-                        }
+                        "00730c4ee23393b7-0004b3586800d8d9"
                     ]
                 },
                 "ActiveComponent": {
@@ -2160,7 +1830,7 @@
         },
         {
             "id": 8,
-            "guid": "004f31f3ab6de5b8-0004b0fd060082e9",
+            "guid": "00730c4ec2ecbd7d-0004b3586800d8e7",
             "components": {
                 "NameComponent": {
                     "name": "SettingsUI"
@@ -2240,11 +1910,11 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "004f31f3dddb5ad2-0004b0fd060082eb",
-                                "004f31f3fa20c118-0004b0fd060082f7",
-                                "004f31f39f400533-0004b0fd06008305",
-                                "004f31f3c9b5d935-0004b0fd0600831d",
-                                "004f31f3ade8620a-0004b0fd0600831f"
+                                "00730c4eca6ca4d7-0004b3586800d8e9",
+                                "00730c4e80fe25cd-0004b3586800d8f5",
+                                "00730c4ebb695af3-0004b3586800d903",
+                                "00730c4e94c668e7-0004b3586800d913",
+                                "00730c4e9fca7a10-0004b3586800d915"
                             ]
                         }
                     ]
@@ -2252,7 +1922,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004f31f387158b8a-0004b0fd060082d9"
+                        "00730c4eafac93c2-0004b3586800d8d7"
                     ]
                 },
                 "ActiveComponent": {
@@ -2273,7 +1943,180 @@
                             "preserveKeys": [],
                             "entryFunction": "OnInit",
                             "autoInvokeEntry": true,
-                            "instanceState": {}
+                            "instanceState": {
+                                "_call_lifecycle": null,
+                                "YesSpriteGUIDs": [
+                                    "00000000-0000-0000-0000-000000000000",
+                                    "00000000-0000-0000-0000-000000000000"
+                                ],
+                                "_pendingReset": false,
+                                "BaseVolume": 1.0,
+                                "Every": null,
+                                "DisableSafe": null,
+                                "SettingSpriteGUIDs": [
+                                    "00000000-0000-0000-0000-000000000000",
+                                    "00000000-0000-0000-0000-000000000000"
+                                ],
+                                "PitchVariation": 0.08,
+                                "enableBGM": true,
+                                "MainMenuSpriteGUIDs": {},
+                                "Subscribe": null,
+                                "DeserializeFields": null,
+                                "Unsubscribe": null,
+                                "__meta": {},
+                                "BackSpriteGUIDs": [
+                                    "00000000-0000-0000-0000-000000000000",
+                                    "00000000-0000-0000-0000-000000000000"
+                                ],
+                                "SliderSFX": [
+                                    "0037d81b07b695ee-000400f740000007"
+                                ],
+                                "_subscriptions": {},
+                                "_transform_fetched": false,
+                                "enableMaster": true,
+                                "OnClickMainMenuButton": null,
+                                "ClickSFX": [
+                                    "0037d81b07b695ee-000400f740000007"
+                                ],
+                                "_clickSub": {
+                                    "event": "pause_menu.click",
+                                    "id": 605.0
+                                },
+                                "OnClickControlsButton": null,
+                                "_private": {},
+                                "After": null,
+                                "OnClickContinueButton": null,
+                                "HoverSFX": [
+                                    "0037d81b0c6c0a46-000400f740000005"
+                                ],
+                                "OnClickSettingButton": null,
+                                "AwakeSafe": null,
+                                "ControlsSpriteGUIDs": [
+                                    "005d940146ad3e3f-000477758600ad67",
+                                    "005d94010cbbcf21-00047773dc00ad5b"
+                                ],
+                                "_sliderSub": {
+                                    "event": "pause_menu.slider",
+                                    "id": 606.0
+                                },
+                                "SerializeFields": null,
+                                "_settingsResetSub": {
+                                    "event": "settings_reset",
+                                    "id": 34.0
+                                },
+                                "mainMenuScene": "Resources/Scenes/01_MainMenu.scene",
+                                "enableSFX": true,
+                                "NoSpriteGUIDs": [
+                                    "00000000-0000-0000-0000-000000000000",
+                                    "00000000-0000-0000-0000-000000000000"
+                                ],
+                                "UpdateSafe": null,
+                                "Start": null,
+                                "__created_at": 1775106811.0,
+                                "ContinueSpriteGUIDs": [
+                                    "005d94016700d768-00047775e600ad69",
+                                    "005d940146094bbd-00047773ce00ad59"
+                                ],
+                                "enableGamma": true,
+                                "__field_list": {},
+                                "Destroy": null,
+                                "_hoverSub": {
+                                    "event": "pause_menu.hover",
+                                    "id": 604.0
+                                },
+                                "StartSafe": null
+                            }
+                        },
+                        {
+                            "scriptGuidStr": "0058c63758894902-0003fd00f0000001",
+                            "scriptPath": "../../Resources/Scripts/UI/MainMenuSettings/SettingsSlider.lua",
+                            "enabled": true,
+                            "preserveKeys": [],
+                            "entryFunction": "OnInit",
+                            "autoInvokeEntry": true,
+                            "instanceState": {
+                                "_call_lifecycle": null,
+                                "YesSpriteGUIDs": [
+                                    "00000000-0000-0000-0000-000000000000",
+                                    "00000000-0000-0000-0000-000000000000"
+                                ],
+                                "_pendingReset": false,
+                                "BaseVolume": 1.0,
+                                "Every": null,
+                                "DisableSafe": null,
+                                "SettingSpriteGUIDs": [
+                                    "00000000-0000-0000-0000-000000000000",
+                                    "00000000-0000-0000-0000-000000000000"
+                                ],
+                                "PitchVariation": 0.08,
+                                "enableBGM": true,
+                                "MainMenuSpriteGUIDs": {},
+                                "Subscribe": null,
+                                "DeserializeFields": null,
+                                "Unsubscribe": null,
+                                "__meta": {},
+                                "BackSpriteGUIDs": [
+                                    "00000000-0000-0000-0000-000000000000",
+                                    "00000000-0000-0000-0000-000000000000"
+                                ],
+                                "SliderSFX": [
+                                    "0037d81b07b695ee-000400f740000007"
+                                ],
+                                "_subscriptions": {},
+                                "_transform_fetched": false,
+                                "enableMaster": true,
+                                "OnClickMainMenuButton": null,
+                                "ClickSFX": [
+                                    "0037d81b07b695ee-000400f740000007"
+                                ],
+                                "_clickSub": {
+                                    "event": "pause_menu.click",
+                                    "id": 605.0
+                                },
+                                "OnClickControlsButton": null,
+                                "_private": {},
+                                "After": null,
+                                "OnClickContinueButton": null,
+                                "HoverSFX": [
+                                    "0037d81b0c6c0a46-000400f740000005"
+                                ],
+                                "OnClickSettingButton": null,
+                                "AwakeSafe": null,
+                                "ControlsSpriteGUIDs": [
+                                    "005d940146ad3e3f-000477758600ad67",
+                                    "005d94010cbbcf21-00047773dc00ad5b"
+                                ],
+                                "_sliderSub": {
+                                    "event": "pause_menu.slider",
+                                    "id": 606.0
+                                },
+                                "SerializeFields": null,
+                                "_settingsResetSub": {
+                                    "event": "settings_reset",
+                                    "id": 34.0
+                                },
+                                "mainMenuScene": "Resources/Scenes/01_MainMenu.scene",
+                                "enableSFX": true,
+                                "NoSpriteGUIDs": [
+                                    "00000000-0000-0000-0000-000000000000",
+                                    "00000000-0000-0000-0000-000000000000"
+                                ],
+                                "UpdateSafe": null,
+                                "Start": null,
+                                "__created_at": 1775106811.0,
+                                "ContinueSpriteGUIDs": [
+                                    "005d94016700d768-00047775e600ad69",
+                                    "005d940146094bbd-00047773ce00ad59"
+                                ],
+                                "enableGamma": true,
+                                "__field_list": {},
+                                "Destroy": null,
+                                "_hoverSub": {
+                                    "event": "pause_menu.hover",
+                                    "id": 604.0
+                                },
+                                "StartSafe": null
+                            }
                         }
                     ]
                 }
@@ -2281,7 +2124,7 @@
         },
         {
             "id": 9,
-            "guid": "004f31f3dddb5ad2-0004b0fd060082eb",
+            "guid": "00730c4eca6ca4d7-0004b3586800d8e9",
             "components": {
                 "NameComponent": {
                     "name": "BG + Banner"
@@ -2361,11 +2204,11 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "004f31f3ac224ed6-0004b0fd060082ed",
-                                "004f31f3bc2046a9-0004b0fd060082ef",
-                                "004f31f3b31454ec-0004b0fd060082f1",
-                                "004f31f3a1bee599-0004b0fd060082f3",
-                                "004f31f3898b8f9f-0004b0fd060082f5"
+                                "00730c4ef1d2e7cf-0004b3586800d8eb",
+                                "00730c4ed939031d-0004b3586800d8ed",
+                                "00730c4ed46f9a49-0004b3586800d8ef",
+                                "00730c4eb8d16f01-0004b3586800d8f1",
+                                "00730c4eb0e35ab2-0004b3586800d8f3"
                             ]
                         }
                     ]
@@ -2373,7 +2216,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004f31f3ab6de5b8-0004b0fd060082e9"
+                        "00730c4ec2ecbd7d-0004b3586800d8e7"
                     ]
                 },
                 "ActiveComponent": {
@@ -2389,7 +2232,7 @@
         },
         {
             "id": 10,
-            "guid": "004f31f3ac224ed6-0004b0fd060082ed",
+            "guid": "00730c4ef1d2e7cf-0004b3586800d8eb",
             "components": {
                 "NameComponent": {
                     "name": "SettingsBanner"
@@ -2597,7 +2440,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004f31f3dddb5ad2-0004b0fd060082eb"
+                        "00730c4eca6ca4d7-0004b3586800d8e9"
                     ]
                 },
                 "ActiveComponent": {
@@ -2613,7 +2456,7 @@
         },
         {
             "id": 11,
-            "guid": "004f31f3bc2046a9-0004b0fd060082ef",
+            "guid": "00730c4ed939031d-0004b3586800d8ed",
             "components": {
                 "NameComponent": {
                     "name": "AudioLine"
@@ -2821,7 +2664,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004f31f3dddb5ad2-0004b0fd060082eb"
+                        "00730c4eca6ca4d7-0004b3586800d8e9"
                     ]
                 },
                 "ActiveComponent": {
@@ -2837,7 +2680,7 @@
         },
         {
             "id": 12,
-            "guid": "004f31f3b31454ec-0004b0fd060082f1",
+            "guid": "00730c4ed46f9a49-0004b3586800d8ef",
             "components": {
                 "NameComponent": {
                     "name": "GraphicsLine"
@@ -3045,7 +2888,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004f31f3dddb5ad2-0004b0fd060082eb"
+                        "00730c4eca6ca4d7-0004b3586800d8e9"
                     ]
                 },
                 "ActiveComponent": {
@@ -3061,7 +2904,7 @@
         },
         {
             "id": 13,
-            "guid": "004f31f3a1bee599-0004b0fd060082f3",
+            "guid": "00730c4eb8d16f01-0004b3586800d8f1",
             "components": {
                 "NameComponent": {
                     "name": "SettingsBG"
@@ -3269,7 +3112,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004f31f3dddb5ad2-0004b0fd060082eb"
+                        "00730c4eca6ca4d7-0004b3586800d8e9"
                     ]
                 },
                 "ActiveComponent": {
@@ -3285,7 +3128,7 @@
         },
         {
             "id": 14,
-            "guid": "004f31f3898b8f9f-0004b0fd060082f5",
+            "guid": "00730c4eb0e35ab2-0004b3586800d8f3",
             "components": {
                 "NameComponent": {
                     "name": "BackScreen"
@@ -3493,7 +3336,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004f31f3dddb5ad2-0004b0fd060082eb"
+                        "00730c4eca6ca4d7-0004b3586800d8e9"
                     ]
                 },
                 "ActiveComponent": {
@@ -3509,7 +3352,7 @@
         },
         {
             "id": 15,
-            "guid": "004f31f3fa20c118-0004b0fd060082f7",
+            "guid": "00730c4e80fe25cd-0004b3586800d8f5",
             "components": {
                 "NameComponent": {
                     "name": "SettingText"
@@ -3589,12 +3432,12 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "004f31f3febd97af-0004b0fd060082f9",
-                                "004f31f39f8dde2e-0004b0fd060082fb",
-                                "004f31f3850a5ab9-0004b0fd060082fd",
-                                "004f31f394a80931-0004b0fd060082ff",
-                                "004f31f3ed40a9b7-0004b0fd06008301",
-                                "004f31f38eb55d9f-0004b0fd06008303"
+                                "00730c4ea53f8935-0004b3586800d8f7",
+                                "00730c4efd7a420b-0004b3586800d8f9",
+                                "00730c4ef041ae12-0004b3586800d8fb",
+                                "00730c4ee8a329a2-0004b3586800d8fd",
+                                "00730c4ec0ab379f-0004b3586800d8ff",
+                                "00730c4e93b825fe-0004b3586800d901"
                             ]
                         }
                     ]
@@ -3602,7 +3445,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004f31f3ab6de5b8-0004b0fd060082e9"
+                        "00730c4ec2ecbd7d-0004b3586800d8e7"
                     ]
                 },
                 "ActiveComponent": {
@@ -3618,7 +3461,7 @@
         },
         {
             "id": 16,
-            "guid": "004f31f3febd97af-0004b0fd060082f9",
+            "guid": "00730c4ea53f8935-0004b3586800d8f7",
             "components": {
                 "NameComponent": {
                     "name": "AudioText"
@@ -3849,7 +3692,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004f31f3fa20c118-0004b0fd060082f7"
+                        "00730c4e80fe25cd-0004b3586800d8f5"
                     ]
                 },
                 "ActiveComponent": {
@@ -3865,7 +3708,7 @@
         },
         {
             "id": 17,
-            "guid": "004f31f39f8dde2e-0004b0fd060082fb",
+            "guid": "00730c4efd7a420b-0004b3586800d8f9",
             "components": {
                 "NameComponent": {
                     "name": "MasterText"
@@ -4096,7 +3939,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004f31f3fa20c118-0004b0fd060082f7"
+                        "00730c4e80fe25cd-0004b3586800d8f5"
                     ]
                 },
                 "ActiveComponent": {
@@ -4112,7 +3955,7 @@
         },
         {
             "id": 18,
-            "guid": "004f31f3850a5ab9-0004b0fd060082fd",
+            "guid": "00730c4ef041ae12-0004b3586800d8fb",
             "components": {
                 "NameComponent": {
                     "name": "BGMText"
@@ -4343,7 +4186,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004f31f3fa20c118-0004b0fd060082f7"
+                        "00730c4e80fe25cd-0004b3586800d8f5"
                     ]
                 },
                 "ActiveComponent": {
@@ -4359,7 +4202,7 @@
         },
         {
             "id": 19,
-            "guid": "004f31f394a80931-0004b0fd060082ff",
+            "guid": "00730c4ee8a329a2-0004b3586800d8fd",
             "components": {
                 "NameComponent": {
                     "name": "SFXText"
@@ -4590,7 +4433,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004f31f3fa20c118-0004b0fd060082f7"
+                        "00730c4e80fe25cd-0004b3586800d8f5"
                     ]
                 },
                 "ActiveComponent": {
@@ -4606,7 +4449,7 @@
         },
         {
             "id": 20,
-            "guid": "004f31f3ed40a9b7-0004b0fd06008301",
+            "guid": "00730c4ec0ab379f-0004b3586800d8ff",
             "components": {
                 "NameComponent": {
                     "name": "GraphicsText"
@@ -4837,7 +4680,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004f31f3fa20c118-0004b0fd060082f7"
+                        "00730c4e80fe25cd-0004b3586800d8f5"
                     ]
                 },
                 "ActiveComponent": {
@@ -4853,7 +4696,7 @@
         },
         {
             "id": 21,
-            "guid": "004f31f38eb55d9f-0004b0fd06008303",
+            "guid": "00730c4e93b825fe-0004b3586800d901",
             "components": {
                 "NameComponent": {
                     "name": "GammaText"
@@ -5084,7 +4927,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004f31f3fa20c118-0004b0fd060082f7"
+                        "00730c4e80fe25cd-0004b3586800d8f5"
                     ]
                 },
                 "ActiveComponent": {
@@ -5100,7 +4943,7 @@
         },
         {
             "id": 22,
-            "guid": "004f31f39f400533-0004b0fd06008305",
+            "guid": "00730c4ebb695af3-0004b3586800d903",
             "components": {
                 "NameComponent": {
                     "name": "SettingSliders"
@@ -5180,17 +5023,13 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "004f31f3e5576816-0004b0fd06008307",
-                                "004f31f3db2da468-0004b0fd06008309",
-                                "004f31f3fceaf69e-0004b0fd0600830b",
-                                "004f31f3cedde62f-0004b0fd0600830d",
-                                "004f31f3d8bf039e-0004b0fd0600830f",
-                                "004f31f38edf8674-0004b0fd06008311",
-                                "004f31f3e48ce700-0004b0fd06008313",
-                                "004f31f3b30effa4-0004b0fd06008315",
-                                "004f31f3b6ba5354-0004b0fd06008317",
-                                "004f31f3ad6c87e1-0004b0fd06008319",
-                                "004f31f3a03bffa5-0004b0fd0600831b"
+                                "00730c4ea3b651e3-0004b3586800d905",
+                                "00730c4ef098a81b-0004b3586800d907",
+                                "00730c4ece4a0225-0004b3586800d909",
+                                "00730c4e992bb6f3-0004b3586800d90b",
+                                "00730c4eb52fc5c2-0004b3586800d90d",
+                                "00730c4e9eb81fc3-0004b3586800d90f",
+                                "00730c4eafa8ae4c-0004b3586800d911"
                             ]
                         }
                     ]
@@ -5198,7 +5037,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004f31f3ab6de5b8-0004b0fd060082e9"
+                        "00730c4ec2ecbd7d-0004b3586800d8e7"
                     ]
                 },
                 "ActiveComponent": {
@@ -5214,903 +5053,7 @@
         },
         {
             "id": 23,
-            "guid": "004f31f3e5576816-0004b0fd06008307",
-            "components": {
-                "NameComponent": {
-                    "name": "MasterBar"
-                },
-                "TagComponent": {
-                    "tagIndex": 0
-                },
-                "LayerComponent": {
-                    "layerIndex": 0
-                },
-                "SiblingIndexComponent": {
-                    "siblingIndex": 50002
-                },
-                "Transform": {
-                    "type": "Transform",
-                    "data": [
-                        {
-                            "type": "Vector3D",
-                            "data": [
-                                {
-                                    "type": "float",
-                                    "data": 800
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 685
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                }
-                            ]
-                        },
-                        {
-                            "type": "Vector3D",
-                            "data": [
-                                {
-                                    "type": "float",
-                                    "data": 680
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 12
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 1
-                                }
-                            ]
-                        },
-                        {
-                            "type": "Quaternion",
-                            "data": [
-                                {
-                                    "type": "float",
-                                    "data": 1
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                }
-                            ]
-                        }
-                    ]
-                },
-                "SpriteRenderComponent": {
-                    "type": "SpriteRenderComponent",
-                    "data": [
-                        {
-                            "type": "bool",
-                            "data": true
-                        },
-                        "006b8ee8e0bb49aa-0004a764f6006001",
-                        "00374a216e66dbbc-000331fc80000069",
-                        {
-                            "type": "Vector3D",
-                            "data": [
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                }
-                            ]
-                        },
-                        {
-                            "type": "Vector3D",
-                            "data": [
-                                {
-                                    "type": "float",
-                                    "data": 100
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 100
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 1
-                                }
-                            ]
-                        },
-                        {
-                            "type": "float",
-                            "data": 0
-                        },
-                        {
-                            "type": "Vector3D",
-                            "data": [
-                                {
-                                    "type": "float",
-                                    "data": 1
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 1
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 1
-                                }
-                            ]
-                        },
-                        {
-                            "type": "float",
-                            "data": 1
-                        },
-                        {
-                            "type": "bool",
-                            "data": false
-                        },
-                        {
-                            "type": "bool",
-                            "data": true
-                        },
-                        {
-                            "type": "int",
-                            "data": 3
-                        },
-                        {
-                            "type": "int",
-                            "data": 53
-                        },
-                        {
-                            "type": "Vector3D",
-                            "data": [
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                }
-                            ]
-                        },
-                        {
-                            "type": "int",
-                            "data": 0
-                        },
-                        {
-                            "type": "int",
-                            "data": 1
-                        },
-                        {
-                            "type": "float",
-                            "data": 1
-                        },
-                        {
-                            "type": "float",
-                            "data": 0.5
-                        },
-                        {
-                            "type": "float",
-                            "data": 0.3
-                        },
-                        {
-                            "type": "float",
-                            "data": 0.3
-                        },
-                        {
-                            "type": "bool",
-                            "data": false
-                        }
-                    ]
-                },
-                "ParentComponent": {
-                    "type": "ParentComponent",
-                    "data": [
-                        "004f31f39f400533-0004b0fd06008305"
-                    ]
-                },
-                "ActiveComponent": {
-                    "type": "ActiveComponent",
-                    "data": [
-                        {
-                            "type": "bool",
-                            "data": true
-                        }
-                    ]
-                }
-            }
-        },
-        {
-            "id": 24,
-            "guid": "004f31f3db2da468-0004b0fd06008309",
-            "components": {
-                "NameComponent": {
-                    "name": "BGMBar"
-                },
-                "TagComponent": {
-                    "tagIndex": 0
-                },
-                "LayerComponent": {
-                    "layerIndex": 0
-                },
-                "SiblingIndexComponent": {
-                    "siblingIndex": 50002
-                },
-                "Transform": {
-                    "type": "Transform",
-                    "data": [
-                        {
-                            "type": "Vector3D",
-                            "data": [
-                                {
-                                    "type": "float",
-                                    "data": 800
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 585
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                }
-                            ]
-                        },
-                        {
-                            "type": "Vector3D",
-                            "data": [
-                                {
-                                    "type": "float",
-                                    "data": 680
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 12
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 1
-                                }
-                            ]
-                        },
-                        {
-                            "type": "Quaternion",
-                            "data": [
-                                {
-                                    "type": "float",
-                                    "data": 1
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                }
-                            ]
-                        }
-                    ]
-                },
-                "SpriteRenderComponent": {
-                    "type": "SpriteRenderComponent",
-                    "data": [
-                        {
-                            "type": "bool",
-                            "data": true
-                        },
-                        "006b8ee8e0bb49aa-0004a764f6006001",
-                        "00374a216e66dbbc-000331fc80000069",
-                        {
-                            "type": "Vector3D",
-                            "data": [
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                }
-                            ]
-                        },
-                        {
-                            "type": "Vector3D",
-                            "data": [
-                                {
-                                    "type": "float",
-                                    "data": 100
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 100
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 1
-                                }
-                            ]
-                        },
-                        {
-                            "type": "float",
-                            "data": 0
-                        },
-                        {
-                            "type": "Vector3D",
-                            "data": [
-                                {
-                                    "type": "float",
-                                    "data": 1
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 1
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 1
-                                }
-                            ]
-                        },
-                        {
-                            "type": "float",
-                            "data": 1
-                        },
-                        {
-                            "type": "bool",
-                            "data": false
-                        },
-                        {
-                            "type": "bool",
-                            "data": true
-                        },
-                        {
-                            "type": "int",
-                            "data": 3
-                        },
-                        {
-                            "type": "int",
-                            "data": 53
-                        },
-                        {
-                            "type": "Vector3D",
-                            "data": [
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                }
-                            ]
-                        },
-                        {
-                            "type": "int",
-                            "data": 0
-                        },
-                        {
-                            "type": "int",
-                            "data": 1
-                        },
-                        {
-                            "type": "float",
-                            "data": 1
-                        },
-                        {
-                            "type": "float",
-                            "data": 0.5
-                        },
-                        {
-                            "type": "float",
-                            "data": 0.3
-                        },
-                        {
-                            "type": "float",
-                            "data": 0.3
-                        },
-                        {
-                            "type": "bool",
-                            "data": false
-                        }
-                    ]
-                },
-                "ParentComponent": {
-                    "type": "ParentComponent",
-                    "data": [
-                        "004f31f39f400533-0004b0fd06008305"
-                    ]
-                },
-                "ActiveComponent": {
-                    "type": "ActiveComponent",
-                    "data": [
-                        {
-                            "type": "bool",
-                            "data": true
-                        }
-                    ]
-                }
-            }
-        },
-        {
-            "id": 25,
-            "guid": "004f31f3fceaf69e-0004b0fd0600830b",
-            "components": {
-                "NameComponent": {
-                    "name": "SFXBar"
-                },
-                "TagComponent": {
-                    "tagIndex": 0
-                },
-                "LayerComponent": {
-                    "layerIndex": 0
-                },
-                "SiblingIndexComponent": {
-                    "siblingIndex": 50002
-                },
-                "Transform": {
-                    "type": "Transform",
-                    "data": [
-                        {
-                            "type": "Vector3D",
-                            "data": [
-                                {
-                                    "type": "float",
-                                    "data": 800
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 485
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                }
-                            ]
-                        },
-                        {
-                            "type": "Vector3D",
-                            "data": [
-                                {
-                                    "type": "float",
-                                    "data": 680
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 12
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 1
-                                }
-                            ]
-                        },
-                        {
-                            "type": "Quaternion",
-                            "data": [
-                                {
-                                    "type": "float",
-                                    "data": 1
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                }
-                            ]
-                        }
-                    ]
-                },
-                "SpriteRenderComponent": {
-                    "type": "SpriteRenderComponent",
-                    "data": [
-                        {
-                            "type": "bool",
-                            "data": true
-                        },
-                        "006b8ee8e0bb49aa-0004a764f6006001",
-                        "00374a216e66dbbc-000331fc80000069",
-                        {
-                            "type": "Vector3D",
-                            "data": [
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                }
-                            ]
-                        },
-                        {
-                            "type": "Vector3D",
-                            "data": [
-                                {
-                                    "type": "float",
-                                    "data": 100
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 100
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 1
-                                }
-                            ]
-                        },
-                        {
-                            "type": "float",
-                            "data": 0
-                        },
-                        {
-                            "type": "Vector3D",
-                            "data": [
-                                {
-                                    "type": "float",
-                                    "data": 1
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 1
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 1
-                                }
-                            ]
-                        },
-                        {
-                            "type": "float",
-                            "data": 1
-                        },
-                        {
-                            "type": "bool",
-                            "data": false
-                        },
-                        {
-                            "type": "bool",
-                            "data": true
-                        },
-                        {
-                            "type": "int",
-                            "data": 3
-                        },
-                        {
-                            "type": "int",
-                            "data": 53
-                        },
-                        {
-                            "type": "Vector3D",
-                            "data": [
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                }
-                            ]
-                        },
-                        {
-                            "type": "int",
-                            "data": 0
-                        },
-                        {
-                            "type": "int",
-                            "data": 1
-                        },
-                        {
-                            "type": "float",
-                            "data": 1
-                        },
-                        {
-                            "type": "float",
-                            "data": 0.5
-                        },
-                        {
-                            "type": "float",
-                            "data": 0.3
-                        },
-                        {
-                            "type": "float",
-                            "data": 0.3
-                        },
-                        {
-                            "type": "bool",
-                            "data": false
-                        }
-                    ]
-                },
-                "ParentComponent": {
-                    "type": "ParentComponent",
-                    "data": [
-                        "004f31f39f400533-0004b0fd06008305"
-                    ]
-                },
-                "ActiveComponent": {
-                    "type": "ActiveComponent",
-                    "data": [
-                        {
-                            "type": "bool",
-                            "data": true
-                        }
-                    ]
-                }
-            }
-        },
-        {
-            "id": 26,
-            "guid": "004f31f3cedde62f-0004b0fd0600830d",
-            "components": {
-                "NameComponent": {
-                    "name": "GammaBar"
-                },
-                "TagComponent": {
-                    "tagIndex": 0
-                },
-                "LayerComponent": {
-                    "layerIndex": 0
-                },
-                "SiblingIndexComponent": {
-                    "siblingIndex": 50002
-                },
-                "Transform": {
-                    "type": "Transform",
-                    "data": [
-                        {
-                            "type": "Vector3D",
-                            "data": [
-                                {
-                                    "type": "float",
-                                    "data": 1050
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 164.985
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                }
-                            ]
-                        },
-                        {
-                            "type": "Vector3D",
-                            "data": [
-                                {
-                                    "type": "float",
-                                    "data": 500
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 12
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 1
-                                }
-                            ]
-                        },
-                        {
-                            "type": "Quaternion",
-                            "data": [
-                                {
-                                    "type": "float",
-                                    "data": 1
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                }
-                            ]
-                        }
-                    ]
-                },
-                "SpriteRenderComponent": {
-                    "type": "SpriteRenderComponent",
-                    "data": [
-                        {
-                            "type": "bool",
-                            "data": true
-                        },
-                        "006b8ee8e0bb49aa-0004a764f6006001",
-                        "00374a216e66dbbc-000331fc80000069",
-                        {
-                            "type": "Vector3D",
-                            "data": [
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                }
-                            ]
-                        },
-                        {
-                            "type": "Vector3D",
-                            "data": [
-                                {
-                                    "type": "float",
-                                    "data": 100
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 100
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 1
-                                }
-                            ]
-                        },
-                        {
-                            "type": "float",
-                            "data": 0
-                        },
-                        {
-                            "type": "Vector3D",
-                            "data": [
-                                {
-                                    "type": "float",
-                                    "data": 1
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 1
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 1
-                                }
-                            ]
-                        },
-                        {
-                            "type": "float",
-                            "data": 1
-                        },
-                        {
-                            "type": "bool",
-                            "data": false
-                        },
-                        {
-                            "type": "bool",
-                            "data": true
-                        },
-                        {
-                            "type": "int",
-                            "data": 3
-                        },
-                        {
-                            "type": "int",
-                            "data": 53
-                        },
-                        {
-                            "type": "Vector3D",
-                            "data": [
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                },
-                                {
-                                    "type": "float",
-                                    "data": 0
-                                }
-                            ]
-                        },
-                        {
-                            "type": "int",
-                            "data": 0
-                        },
-                        {
-                            "type": "int",
-                            "data": 1
-                        },
-                        {
-                            "type": "float",
-                            "data": 1
-                        },
-                        {
-                            "type": "float",
-                            "data": 0.5
-                        },
-                        {
-                            "type": "float",
-                            "data": 0.3
-                        },
-                        {
-                            "type": "float",
-                            "data": 0.3
-                        },
-                        {
-                            "type": "bool",
-                            "data": false
-                        }
-                    ]
-                },
-                "ParentComponent": {
-                    "type": "ParentComponent",
-                    "data": [
-                        "004f31f39f400533-0004b0fd06008305"
-                    ]
-                },
-                "ActiveComponent": {
-                    "type": "ActiveComponent",
-                    "data": [
-                        {
-                            "type": "bool",
-                            "data": false
-                        }
-                    ]
-                }
-            }
-        },
-        {
-            "id": 27,
-            "guid": "004f31f3d8bf039e-0004b0fd0600830f",
+            "guid": "00730c4ea3b651e3-0004b3586800d905",
             "components": {
                 "NameComponent": {
                     "name": "MasterFill"
@@ -6318,7 +5261,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004f31f39f400533-0004b0fd06008305"
+                        "00730c4ebb695af3-0004b3586800d903"
                     ]
                 },
                 "ActiveComponent": {
@@ -6333,8 +5276,8 @@
             }
         },
         {
-            "id": 28,
-            "guid": "004f31f38edf8674-0004b0fd06008311",
+            "id": 24,
+            "guid": "00730c4ef098a81b-0004b3586800d907",
             "components": {
                 "NameComponent": {
                     "name": "BGMFill"
@@ -6542,7 +5485,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004f31f39f400533-0004b0fd06008305"
+                        "00730c4ebb695af3-0004b3586800d903"
                     ]
                 },
                 "ActiveComponent": {
@@ -6557,8 +5500,8 @@
             }
         },
         {
-            "id": 29,
-            "guid": "004f31f3e48ce700-0004b0fd06008313",
+            "id": 25,
+            "guid": "00730c4ece4a0225-0004b3586800d909",
             "components": {
                 "NameComponent": {
                     "name": "SFXFill"
@@ -6766,7 +5709,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004f31f39f400533-0004b0fd06008305"
+                        "00730c4ebb695af3-0004b3586800d903"
                     ]
                 },
                 "ActiveComponent": {
@@ -6781,8 +5724,8 @@
             }
         },
         {
-            "id": 30,
-            "guid": "004f31f3b30effa4-0004b0fd06008315",
+            "id": 26,
+            "guid": "00730c4e992bb6f3-0004b3586800d90b",
             "components": {
                 "NameComponent": {
                     "name": "MasterNotch"
@@ -6990,77 +5933,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004f31f39f400533-0004b0fd06008305"
-                    ]
-                },
-                "AudioComponent": {
-                    "type": "AudioComponent",
-                    "data": [
-                        {
-                            "type": "bool",
-                            "data": true
-                        },
-                        "0037d81b07b695ee-000400f740000007",
-                        {
-                            "type": "bool",
-                            "data": false
-                        },
-                        {
-                            "type": "bool",
-                            "data": false
-                        },
-                        {
-                            "type": "bool",
-                            "data": false
-                        },
-                        {
-                            "type": "bool",
-                            "data": false
-                        },
-                        {
-                            "type": "int",
-                            "data": 128
-                        },
-                        {
-                            "type": "float",
-                            "data": 1
-                        },
-                        {
-                            "type": "float",
-                            "data": 1
-                        },
-                        {
-                            "type": "float",
-                            "data": 0
-                        },
-                        {
-                            "type": "float",
-                            "data": 1
-                        },
-                        {
-                            "type": "bool",
-                            "data": false
-                        },
-                        {
-                            "type": "float",
-                            "data": 0
-                        },
-                        {
-                            "type": "float",
-                            "data": 1
-                        },
-                        {
-                            "type": "float",
-                            "data": 1
-                        },
-                        {
-                            "type": "float",
-                            "data": 100
-                        },
-                        {
-                            "type": "std::string",
-                            "data": "SFX"
-                        }
+                        "00730c4ebb695af3-0004b3586800d903"
                     ]
                 },
                 "ActiveComponent": {
@@ -7069,38 +5942,6 @@
                         {
                             "type": "bool",
                             "data": true
-                        }
-                    ]
-                },
-                "ScriptComponent": {
-                    "scripts": [
-                        {
-                            "scriptGuidStr": "0058c63758894902-0003fd00f0000001",
-                            "scriptPath": "../../Resources/Scripts/UI/MainMenuSettings/SettingsSlider.lua",
-                            "enabled": true,
-                            "preserveKeys": [],
-                            "entryFunction": "OnInit",
-                            "autoInvokeEntry": true,
-                            "instanceState": {
-                                "Start": null,
-                                "_call_lifecycle": null,
-                                "Every": null,
-                                "DisableSafe": null,
-                                "SerializeFields": null,
-                                "__field_list": {},
-                                "__meta": {},
-                                "_private": {},
-                                "Destroy": null,
-                                "StartSafe": null,
-                                "__created_at": 1775043754.0,
-                                "After": null,
-                                "AwakeSafe": null,
-                                "UpdateSafe": null,
-                                "Unsubscribe": null,
-                                "Subscribe": null,
-                                "_subscriptions": {},
-                                "DeserializeFields": null
-                            }
                         }
                     ]
                 },
@@ -7120,8 +5961,8 @@
             }
         },
         {
-            "id": 31,
-            "guid": "004f31f3b6ba5354-0004b0fd06008317",
+            "id": 27,
+            "guid": "00730c4eb52fc5c2-0004b3586800d90d",
             "components": {
                 "NameComponent": {
                     "name": "BGMNotch"
@@ -7329,77 +6170,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004f31f39f400533-0004b0fd06008305"
-                    ]
-                },
-                "AudioComponent": {
-                    "type": "AudioComponent",
-                    "data": [
-                        {
-                            "type": "bool",
-                            "data": true
-                        },
-                        "0037d81b07b695ee-000400f740000007",
-                        {
-                            "type": "bool",
-                            "data": false
-                        },
-                        {
-                            "type": "bool",
-                            "data": false
-                        },
-                        {
-                            "type": "bool",
-                            "data": false
-                        },
-                        {
-                            "type": "bool",
-                            "data": false
-                        },
-                        {
-                            "type": "int",
-                            "data": 128
-                        },
-                        {
-                            "type": "float",
-                            "data": 1
-                        },
-                        {
-                            "type": "float",
-                            "data": 1
-                        },
-                        {
-                            "type": "float",
-                            "data": 0
-                        },
-                        {
-                            "type": "float",
-                            "data": 1
-                        },
-                        {
-                            "type": "bool",
-                            "data": false
-                        },
-                        {
-                            "type": "float",
-                            "data": 0
-                        },
-                        {
-                            "type": "float",
-                            "data": 1
-                        },
-                        {
-                            "type": "float",
-                            "data": 1
-                        },
-                        {
-                            "type": "float",
-                            "data": 100
-                        },
-                        {
-                            "type": "std::string",
-                            "data": "SFX"
-                        }
+                        "00730c4ebb695af3-0004b3586800d903"
                     ]
                 },
                 "ActiveComponent": {
@@ -7408,38 +6179,6 @@
                         {
                             "type": "bool",
                             "data": true
-                        }
-                    ]
-                },
-                "ScriptComponent": {
-                    "scripts": [
-                        {
-                            "scriptGuidStr": "0058c63758894902-0003fd00f0000001",
-                            "scriptPath": "../../Resources/Scripts/UI/MainMenuSettings/SettingsSlider.lua",
-                            "enabled": true,
-                            "preserveKeys": [],
-                            "entryFunction": "OnInit",
-                            "autoInvokeEntry": true,
-                            "instanceState": {
-                                "Start": null,
-                                "_call_lifecycle": null,
-                                "Every": null,
-                                "DisableSafe": null,
-                                "SerializeFields": null,
-                                "__field_list": {},
-                                "__meta": {},
-                                "_private": {},
-                                "Destroy": null,
-                                "StartSafe": null,
-                                "__created_at": 1775043754.0,
-                                "After": null,
-                                "AwakeSafe": null,
-                                "UpdateSafe": null,
-                                "Unsubscribe": null,
-                                "Subscribe": null,
-                                "_subscriptions": {},
-                                "DeserializeFields": null
-                            }
                         }
                     ]
                 },
@@ -7459,8 +6198,8 @@
             }
         },
         {
-            "id": 32,
-            "guid": "004f31f3ad6c87e1-0004b0fd06008319",
+            "id": 28,
+            "guid": "00730c4e9eb81fc3-0004b3586800d90f",
             "components": {
                 "NameComponent": {
                     "name": "SFXNotch"
@@ -7668,77 +6407,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004f31f39f400533-0004b0fd06008305"
-                    ]
-                },
-                "AudioComponent": {
-                    "type": "AudioComponent",
-                    "data": [
-                        {
-                            "type": "bool",
-                            "data": true
-                        },
-                        "0037d81b07b695ee-000400f740000007",
-                        {
-                            "type": "bool",
-                            "data": false
-                        },
-                        {
-                            "type": "bool",
-                            "data": false
-                        },
-                        {
-                            "type": "bool",
-                            "data": false
-                        },
-                        {
-                            "type": "bool",
-                            "data": false
-                        },
-                        {
-                            "type": "int",
-                            "data": 128
-                        },
-                        {
-                            "type": "float",
-                            "data": 1
-                        },
-                        {
-                            "type": "float",
-                            "data": 1
-                        },
-                        {
-                            "type": "float",
-                            "data": 0
-                        },
-                        {
-                            "type": "float",
-                            "data": 1
-                        },
-                        {
-                            "type": "bool",
-                            "data": false
-                        },
-                        {
-                            "type": "float",
-                            "data": 0
-                        },
-                        {
-                            "type": "float",
-                            "data": 1
-                        },
-                        {
-                            "type": "float",
-                            "data": 1
-                        },
-                        {
-                            "type": "float",
-                            "data": 100
-                        },
-                        {
-                            "type": "std::string",
-                            "data": "SFX"
-                        }
+                        "00730c4ebb695af3-0004b3586800d903"
                     ]
                 },
                 "ActiveComponent": {
@@ -7747,38 +6416,6 @@
                         {
                             "type": "bool",
                             "data": true
-                        }
-                    ]
-                },
-                "ScriptComponent": {
-                    "scripts": [
-                        {
-                            "scriptGuidStr": "0058c63758894902-0003fd00f0000001",
-                            "scriptPath": "../../Resources/Scripts/UI/MainMenuSettings/SettingsSlider.lua",
-                            "enabled": true,
-                            "preserveKeys": [],
-                            "entryFunction": "OnInit",
-                            "autoInvokeEntry": true,
-                            "instanceState": {
-                                "Start": null,
-                                "_call_lifecycle": null,
-                                "Every": null,
-                                "DisableSafe": null,
-                                "SerializeFields": null,
-                                "__field_list": {},
-                                "__meta": {},
-                                "_private": {},
-                                "Destroy": null,
-                                "StartSafe": null,
-                                "__created_at": 1775043754.0,
-                                "After": null,
-                                "AwakeSafe": null,
-                                "UpdateSafe": null,
-                                "Unsubscribe": null,
-                                "Subscribe": null,
-                                "_subscriptions": {},
-                                "DeserializeFields": null
-                            }
                         }
                     ]
                 },
@@ -7798,8 +6435,8 @@
             }
         },
         {
-            "id": 33,
-            "guid": "004f31f3a03bffa5-0004b0fd0600831b",
+            "id": 29,
+            "guid": "00730c4eafa8ae4c-0004b3586800d911",
             "components": {
                 "NameComponent": {
                     "name": "GammaNotch"
@@ -8007,7 +6644,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004f31f39f400533-0004b0fd06008305"
+                        "00730c4ebb695af3-0004b3586800d903"
                     ]
                 },
                 "AudioComponent": {
@@ -8090,36 +6727,7 @@
                     ]
                 },
                 "ScriptComponent": {
-                    "scripts": [
-                        {
-                            "scriptGuidStr": "0058c63758894902-0003fd00f0000001",
-                            "scriptPath": "../../Resources/Scripts/UI/MainMenuSettings/SettingsSlider.lua",
-                            "enabled": true,
-                            "preserveKeys": [],
-                            "entryFunction": "OnInit",
-                            "autoInvokeEntry": true,
-                            "instanceState": {
-                                "Start": null,
-                                "_call_lifecycle": null,
-                                "Every": null,
-                                "DisableSafe": null,
-                                "SerializeFields": null,
-                                "__field_list": {},
-                                "__meta": {},
-                                "_private": {},
-                                "Destroy": null,
-                                "StartSafe": null,
-                                "__created_at": 1775043754.0,
-                                "After": null,
-                                "AwakeSafe": null,
-                                "UpdateSafe": null,
-                                "Unsubscribe": null,
-                                "Subscribe": null,
-                                "_subscriptions": {},
-                                "DeserializeFields": null
-                            }
-                        }
-                    ]
+                    "scripts": []
                 },
                 "ButtonComponent": {
                     "type": "ButtonComponent",
@@ -8137,8 +6745,8 @@
             }
         },
         {
-            "id": 34,
-            "guid": "004f31f3c9b5d935-0004b0fd0600831d",
+            "id": 30,
+            "guid": "00730c4e94c668e7-0004b3586800d913",
             "components": {
                 "NameComponent": {
                     "name": "CloseButton"
@@ -8346,77 +6954,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004f31f3ab6de5b8-0004b0fd060082e9"
-                    ]
-                },
-                "AudioComponent": {
-                    "type": "AudioComponent",
-                    "data": [
-                        {
-                            "type": "bool",
-                            "data": true
-                        },
-                        "0037d81b07b695ee-000400f740000007",
-                        {
-                            "type": "bool",
-                            "data": false
-                        },
-                        {
-                            "type": "bool",
-                            "data": false
-                        },
-                        {
-                            "type": "bool",
-                            "data": false
-                        },
-                        {
-                            "type": "bool",
-                            "data": false
-                        },
-                        {
-                            "type": "int",
-                            "data": 128
-                        },
-                        {
-                            "type": "float",
-                            "data": 1
-                        },
-                        {
-                            "type": "float",
-                            "data": 1
-                        },
-                        {
-                            "type": "float",
-                            "data": 0
-                        },
-                        {
-                            "type": "float",
-                            "data": 1
-                        },
-                        {
-                            "type": "bool",
-                            "data": false
-                        },
-                        {
-                            "type": "float",
-                            "data": 0
-                        },
-                        {
-                            "type": "float",
-                            "data": 1
-                        },
-                        {
-                            "type": "float",
-                            "data": 1
-                        },
-                        {
-                            "type": "float",
-                            "data": 100
-                        },
-                        {
-                            "type": "std::string",
-                            "data": "SFX"
-                        }
+                        "00730c4ec2ecbd7d-0004b3586800d8e7"
                     ]
                 },
                 "ActiveComponent": {
@@ -8438,24 +6976,87 @@
                             "entryFunction": "OnInit",
                             "autoInvokeEntry": true,
                             "instanceState": {
-                                "Start": null,
                                 "_call_lifecycle": null,
+                                "YesSpriteGUIDs": [
+                                    "00000000-0000-0000-0000-000000000000",
+                                    "00000000-0000-0000-0000-000000000000"
+                                ],
+                                "_pendingReset": false,
+                                "BaseVolume": 1.0,
                                 "Every": null,
                                 "DisableSafe": null,
-                                "SerializeFields": null,
-                                "__field_list": {},
-                                "__meta": {},
-                                "_private": {},
-                                "Destroy": null,
-                                "StartSafe": null,
-                                "__created_at": 1775043754.0,
-                                "After": null,
-                                "AwakeSafe": null,
-                                "UpdateSafe": null,
-                                "Unsubscribe": null,
+                                "SettingSpriteGUIDs": [
+                                    "00000000-0000-0000-0000-000000000000",
+                                    "00000000-0000-0000-0000-000000000000"
+                                ],
+                                "PitchVariation": 0.08,
+                                "enableBGM": true,
+                                "MainMenuSpriteGUIDs": {},
                                 "Subscribe": null,
+                                "DeserializeFields": null,
+                                "Unsubscribe": null,
+                                "__meta": {},
+                                "BackSpriteGUIDs": [
+                                    "00000000-0000-0000-0000-000000000000",
+                                    "00000000-0000-0000-0000-000000000000"
+                                ],
+                                "SliderSFX": [
+                                    "0037d81b07b695ee-000400f740000007"
+                                ],
                                 "_subscriptions": {},
-                                "DeserializeFields": null
+                                "_transform_fetched": false,
+                                "enableMaster": true,
+                                "OnClickMainMenuButton": null,
+                                "ClickSFX": [
+                                    "0037d81b07b695ee-000400f740000007"
+                                ],
+                                "_clickSub": {
+                                    "event": "pause_menu.click",
+                                    "id": 605.0
+                                },
+                                "OnClickControlsButton": null,
+                                "_private": {},
+                                "After": null,
+                                "OnClickContinueButton": null,
+                                "HoverSFX": [
+                                    "0037d81b0c6c0a46-000400f740000005"
+                                ],
+                                "OnClickSettingButton": null,
+                                "AwakeSafe": null,
+                                "ControlsSpriteGUIDs": [
+                                    "005d940146ad3e3f-000477758600ad67",
+                                    "005d94010cbbcf21-00047773dc00ad5b"
+                                ],
+                                "_sliderSub": {
+                                    "event": "pause_menu.slider",
+                                    "id": 606.0
+                                },
+                                "SerializeFields": null,
+                                "_settingsResetSub": {
+                                    "event": "settings_reset",
+                                    "id": 34.0
+                                },
+                                "mainMenuScene": "Resources/Scenes/01_MainMenu.scene",
+                                "enableSFX": true,
+                                "NoSpriteGUIDs": [
+                                    "00000000-0000-0000-0000-000000000000",
+                                    "00000000-0000-0000-0000-000000000000"
+                                ],
+                                "UpdateSafe": null,
+                                "Start": null,
+                                "__created_at": 1775106811.0,
+                                "ContinueSpriteGUIDs": [
+                                    "005d94016700d768-00047775e600ad69",
+                                    "005d940146094bbd-00047773ce00ad59"
+                                ],
+                                "enableGamma": true,
+                                "__field_list": {},
+                                "Destroy": null,
+                                "_hoverSub": {
+                                    "event": "pause_menu.hover",
+                                    "id": 604.0
+                                },
+                                "StartSafe": null
                             }
                         }
                     ]
@@ -8502,8 +7103,8 @@
             }
         },
         {
-            "id": 35,
-            "guid": "004f31f3ade8620a-0004b0fd0600831f",
+            "id": 31,
+            "guid": "00730c4e9fca7a10-0004b3586800d915",
             "components": {
                 "NameComponent": {
                     "name": "ResetButton"
@@ -8711,77 +7312,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004f31f3ab6de5b8-0004b0fd060082e9"
-                    ]
-                },
-                "AudioComponent": {
-                    "type": "AudioComponent",
-                    "data": [
-                        {
-                            "type": "bool",
-                            "data": true
-                        },
-                        "0037d81b07b695ee-000400f740000007",
-                        {
-                            "type": "bool",
-                            "data": false
-                        },
-                        {
-                            "type": "bool",
-                            "data": false
-                        },
-                        {
-                            "type": "bool",
-                            "data": false
-                        },
-                        {
-                            "type": "bool",
-                            "data": false
-                        },
-                        {
-                            "type": "int",
-                            "data": 128
-                        },
-                        {
-                            "type": "float",
-                            "data": 1
-                        },
-                        {
-                            "type": "float",
-                            "data": 1
-                        },
-                        {
-                            "type": "float",
-                            "data": 0
-                        },
-                        {
-                            "type": "float",
-                            "data": 1
-                        },
-                        {
-                            "type": "bool",
-                            "data": false
-                        },
-                        {
-                            "type": "float",
-                            "data": 0
-                        },
-                        {
-                            "type": "float",
-                            "data": 1
-                        },
-                        {
-                            "type": "float",
-                            "data": 1
-                        },
-                        {
-                            "type": "float",
-                            "data": 100
-                        },
-                        {
-                            "type": "std::string",
-                            "data": "SFX"
-                        }
+                        "00730c4ec2ecbd7d-0004b3586800d8e7"
                     ]
                 },
                 "ActiveComponent": {
@@ -8803,24 +7334,87 @@
                             "entryFunction": "OnInit",
                             "autoInvokeEntry": true,
                             "instanceState": {
-                                "Start": null,
                                 "_call_lifecycle": null,
+                                "YesSpriteGUIDs": [
+                                    "00000000-0000-0000-0000-000000000000",
+                                    "00000000-0000-0000-0000-000000000000"
+                                ],
+                                "_pendingReset": false,
+                                "BaseVolume": 1.0,
                                 "Every": null,
                                 "DisableSafe": null,
-                                "SerializeFields": null,
-                                "__field_list": {},
-                                "__meta": {},
-                                "_private": {},
-                                "Destroy": null,
-                                "StartSafe": null,
-                                "__created_at": 1775043754.0,
-                                "After": null,
-                                "AwakeSafe": null,
-                                "UpdateSafe": null,
-                                "Unsubscribe": null,
+                                "SettingSpriteGUIDs": [
+                                    "00000000-0000-0000-0000-000000000000",
+                                    "00000000-0000-0000-0000-000000000000"
+                                ],
+                                "PitchVariation": 0.08,
+                                "enableBGM": true,
+                                "MainMenuSpriteGUIDs": {},
                                 "Subscribe": null,
+                                "DeserializeFields": null,
+                                "Unsubscribe": null,
+                                "__meta": {},
+                                "BackSpriteGUIDs": [
+                                    "00000000-0000-0000-0000-000000000000",
+                                    "00000000-0000-0000-0000-000000000000"
+                                ],
+                                "SliderSFX": [
+                                    "0037d81b07b695ee-000400f740000007"
+                                ],
                                 "_subscriptions": {},
-                                "DeserializeFields": null
+                                "_transform_fetched": false,
+                                "enableMaster": true,
+                                "OnClickMainMenuButton": null,
+                                "ClickSFX": [
+                                    "0037d81b07b695ee-000400f740000007"
+                                ],
+                                "_clickSub": {
+                                    "event": "pause_menu.click",
+                                    "id": 605.0
+                                },
+                                "OnClickControlsButton": null,
+                                "_private": {},
+                                "After": null,
+                                "OnClickContinueButton": null,
+                                "HoverSFX": [
+                                    "0037d81b0c6c0a46-000400f740000005"
+                                ],
+                                "OnClickSettingButton": null,
+                                "AwakeSafe": null,
+                                "ControlsSpriteGUIDs": [
+                                    "005d940146ad3e3f-000477758600ad67",
+                                    "005d94010cbbcf21-00047773dc00ad5b"
+                                ],
+                                "_sliderSub": {
+                                    "event": "pause_menu.slider",
+                                    "id": 606.0
+                                },
+                                "SerializeFields": null,
+                                "_settingsResetSub": {
+                                    "event": "settings_reset",
+                                    "id": 34.0
+                                },
+                                "mainMenuScene": "Resources/Scenes/01_MainMenu.scene",
+                                "enableSFX": true,
+                                "NoSpriteGUIDs": [
+                                    "00000000-0000-0000-0000-000000000000",
+                                    "00000000-0000-0000-0000-000000000000"
+                                ],
+                                "UpdateSafe": null,
+                                "Start": null,
+                                "__created_at": 1775106811.0,
+                                "ContinueSpriteGUIDs": [
+                                    "005d94016700d768-00047775e600ad69",
+                                    "005d940146094bbd-00047773ce00ad59"
+                                ],
+                                "enableGamma": true,
+                                "__field_list": {},
+                                "Destroy": null,
+                                "_hoverSub": {
+                                    "event": "pause_menu.hover",
+                                    "id": 604.0
+                                },
+                                "StartSafe": null
                             }
                         }
                     ]
@@ -8867,8 +7461,8 @@
             }
         },
         {
-            "id": 36,
-            "guid": "004f31f3f62e64c0-0004b0fd06008321",
+            "id": 32,
+            "guid": "00730c4ee71e4773-0004b3586800d917",
             "components": {
                 "NameComponent": {
                     "name": "ConfirmationPromptUI"
@@ -8948,11 +7542,11 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "004f31f3d105f2fa-0004b0fd06008323",
-                                "004f31f3c5320f6c-0004b0fd06008325",
-                                "004f31f3af44c522-0004b0fd06008327",
-                                "004f31f3aa06c2f3-0004b0fd06008329",
-                                "004f31f3ce976ff5-0004b0fd0600832b"
+                                "00730c4e9b1bc37b-0004b3586800d919",
+                                "00730c4ee257f14e-0004b3586800d91b",
+                                "00730c4ef47a9b1e-0004b3586800d91d",
+                                "00730c4ea314dcae-0004b3586800d91f",
+                                "00730c4ea7082319-0004b3586800d921"
                             ]
                         }
                     ]
@@ -8960,77 +7554,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004f31f387158b8a-0004b0fd060082d9"
-                    ]
-                },
-                "AudioComponent": {
-                    "type": "AudioComponent",
-                    "data": [
-                        {
-                            "type": "bool",
-                            "data": true
-                        },
-                        "0000000000000000-0000000000000000",
-                        {
-                            "type": "bool",
-                            "data": false
-                        },
-                        {
-                            "type": "bool",
-                            "data": false
-                        },
-                        {
-                            "type": "bool",
-                            "data": false
-                        },
-                        {
-                            "type": "bool",
-                            "data": false
-                        },
-                        {
-                            "type": "int",
-                            "data": 128
-                        },
-                        {
-                            "type": "float",
-                            "data": 1
-                        },
-                        {
-                            "type": "float",
-                            "data": 1
-                        },
-                        {
-                            "type": "float",
-                            "data": 0
-                        },
-                        {
-                            "type": "float",
-                            "data": 1
-                        },
-                        {
-                            "type": "bool",
-                            "data": false
-                        },
-                        {
-                            "type": "float",
-                            "data": 0
-                        },
-                        {
-                            "type": "float",
-                            "data": 1
-                        },
-                        {
-                            "type": "float",
-                            "data": 1
-                        },
-                        {
-                            "type": "float",
-                            "data": 100
-                        },
-                        {
-                            "type": "std::string",
-                            "data": "UI"
-                        }
+                        "00730c4eafac93c2-0004b3586800d8d7"
                     ]
                 },
                 "ActiveComponent": {
@@ -9052,24 +7576,87 @@
                             "entryFunction": "OnInit",
                             "autoInvokeEntry": true,
                             "instanceState": {
-                                "Start": null,
                                 "_call_lifecycle": null,
+                                "YesSpriteGUIDs": [
+                                    "00000000-0000-0000-0000-000000000000",
+                                    "00000000-0000-0000-0000-000000000000"
+                                ],
+                                "_pendingReset": false,
+                                "BaseVolume": 1.0,
                                 "Every": null,
                                 "DisableSafe": null,
-                                "SerializeFields": null,
-                                "__field_list": {},
-                                "__meta": {},
-                                "_private": {},
-                                "Destroy": null,
-                                "StartSafe": null,
-                                "__created_at": 1775043754.0,
-                                "After": null,
-                                "AwakeSafe": null,
-                                "UpdateSafe": null,
-                                "Unsubscribe": null,
+                                "SettingSpriteGUIDs": [
+                                    "00000000-0000-0000-0000-000000000000",
+                                    "00000000-0000-0000-0000-000000000000"
+                                ],
+                                "PitchVariation": 0.08,
+                                "enableBGM": true,
+                                "MainMenuSpriteGUIDs": {},
                                 "Subscribe": null,
+                                "DeserializeFields": null,
+                                "Unsubscribe": null,
+                                "__meta": {},
+                                "BackSpriteGUIDs": [
+                                    "00000000-0000-0000-0000-000000000000",
+                                    "00000000-0000-0000-0000-000000000000"
+                                ],
+                                "SliderSFX": [
+                                    "0037d81b07b695ee-000400f740000007"
+                                ],
                                 "_subscriptions": {},
-                                "DeserializeFields": null
+                                "_transform_fetched": false,
+                                "enableMaster": true,
+                                "OnClickMainMenuButton": null,
+                                "ClickSFX": [
+                                    "0037d81b07b695ee-000400f740000007"
+                                ],
+                                "_clickSub": {
+                                    "event": "pause_menu.click",
+                                    "id": 605.0
+                                },
+                                "OnClickControlsButton": null,
+                                "_private": {},
+                                "After": null,
+                                "OnClickContinueButton": null,
+                                "HoverSFX": [
+                                    "0037d81b0c6c0a46-000400f740000005"
+                                ],
+                                "OnClickSettingButton": null,
+                                "AwakeSafe": null,
+                                "ControlsSpriteGUIDs": [
+                                    "005d940146ad3e3f-000477758600ad67",
+                                    "005d94010cbbcf21-00047773dc00ad5b"
+                                ],
+                                "_sliderSub": {
+                                    "event": "pause_menu.slider",
+                                    "id": 606.0
+                                },
+                                "SerializeFields": null,
+                                "_settingsResetSub": {
+                                    "event": "settings_reset",
+                                    "id": 34.0
+                                },
+                                "mainMenuScene": "Resources/Scenes/01_MainMenu.scene",
+                                "enableSFX": true,
+                                "NoSpriteGUIDs": [
+                                    "00000000-0000-0000-0000-000000000000",
+                                    "00000000-0000-0000-0000-000000000000"
+                                ],
+                                "UpdateSafe": null,
+                                "Start": null,
+                                "__created_at": 1775106811.0,
+                                "ContinueSpriteGUIDs": [
+                                    "005d94016700d768-00047775e600ad69",
+                                    "005d940146094bbd-00047773ce00ad59"
+                                ],
+                                "enableGamma": true,
+                                "__field_list": {},
+                                "Destroy": null,
+                                "_hoverSub": {
+                                    "event": "pause_menu.hover",
+                                    "id": 604.0
+                                },
+                                "StartSafe": null
                             }
                         }
                     ]
@@ -9077,8 +7664,8 @@
             }
         },
         {
-            "id": 37,
-            "guid": "004f31f3d105f2fa-0004b0fd06008323",
+            "id": 33,
+            "guid": "00730c4e9b1bc37b-0004b3586800d919",
             "components": {
                 "NameComponent": {
                     "name": "ConfirmationBG"
@@ -9286,7 +7873,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004f31f3f62e64c0-0004b0fd06008321"
+                        "00730c4ee71e4773-0004b3586800d917"
                     ]
                 },
                 "ActiveComponent": {
@@ -9301,8 +7888,8 @@
             }
         },
         {
-            "id": 38,
-            "guid": "004f31f3c5320f6c-0004b0fd06008325",
+            "id": 34,
+            "guid": "00730c4ee257f14e-0004b3586800d91b",
             "components": {
                 "NameComponent": {
                     "name": "ConfirmationText"
@@ -9533,7 +8120,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004f31f3f62e64c0-0004b0fd06008321"
+                        "00730c4ee71e4773-0004b3586800d917"
                     ]
                 },
                 "ActiveComponent": {
@@ -9548,8 +8135,8 @@
             }
         },
         {
-            "id": 39,
-            "guid": "004f31f3af44c522-0004b0fd06008327",
+            "id": 35,
+            "guid": "00730c4ef47a9b1e-0004b3586800d91d",
             "components": {
                 "NameComponent": {
                     "name": "YesButton"
@@ -9757,77 +8344,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004f31f3f62e64c0-0004b0fd06008321"
-                    ]
-                },
-                "AudioComponent": {
-                    "type": "AudioComponent",
-                    "data": [
-                        {
-                            "type": "bool",
-                            "data": true
-                        },
-                        "0037d81b07b695ee-000400f740000007",
-                        {
-                            "type": "bool",
-                            "data": false
-                        },
-                        {
-                            "type": "bool",
-                            "data": false
-                        },
-                        {
-                            "type": "bool",
-                            "data": false
-                        },
-                        {
-                            "type": "bool",
-                            "data": false
-                        },
-                        {
-                            "type": "int",
-                            "data": 128
-                        },
-                        {
-                            "type": "float",
-                            "data": 1
-                        },
-                        {
-                            "type": "float",
-                            "data": 1
-                        },
-                        {
-                            "type": "float",
-                            "data": 0
-                        },
-                        {
-                            "type": "float",
-                            "data": 1
-                        },
-                        {
-                            "type": "bool",
-                            "data": false
-                        },
-                        {
-                            "type": "float",
-                            "data": 0
-                        },
-                        {
-                            "type": "float",
-                            "data": 1
-                        },
-                        {
-                            "type": "float",
-                            "data": 1
-                        },
-                        {
-                            "type": "float",
-                            "data": 100
-                        },
-                        {
-                            "type": "std::string",
-                            "data": "UI"
-                        }
+                        "00730c4ee71e4773-0004b3586800d917"
                     ]
                 },
                 "ActiveComponent": {
@@ -9881,8 +8398,8 @@
             }
         },
         {
-            "id": 40,
-            "guid": "004f31f3aa06c2f3-0004b0fd06008329",
+            "id": 36,
+            "guid": "00730c4ea314dcae-0004b3586800d91f",
             "components": {
                 "NameComponent": {
                     "name": "NoButton"
@@ -10090,77 +8607,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004f31f3f62e64c0-0004b0fd06008321"
-                    ]
-                },
-                "AudioComponent": {
-                    "type": "AudioComponent",
-                    "data": [
-                        {
-                            "type": "bool",
-                            "data": true
-                        },
-                        "0037d81b07b695ee-000400f740000007",
-                        {
-                            "type": "bool",
-                            "data": false
-                        },
-                        {
-                            "type": "bool",
-                            "data": false
-                        },
-                        {
-                            "type": "bool",
-                            "data": false
-                        },
-                        {
-                            "type": "bool",
-                            "data": false
-                        },
-                        {
-                            "type": "int",
-                            "data": 128
-                        },
-                        {
-                            "type": "float",
-                            "data": 1
-                        },
-                        {
-                            "type": "float",
-                            "data": 1
-                        },
-                        {
-                            "type": "float",
-                            "data": 0
-                        },
-                        {
-                            "type": "float",
-                            "data": 1
-                        },
-                        {
-                            "type": "bool",
-                            "data": false
-                        },
-                        {
-                            "type": "float",
-                            "data": 0
-                        },
-                        {
-                            "type": "float",
-                            "data": 1
-                        },
-                        {
-                            "type": "float",
-                            "data": 1
-                        },
-                        {
-                            "type": "float",
-                            "data": 100
-                        },
-                        {
-                            "type": "std::string",
-                            "data": "UI"
-                        }
+                        "00730c4ee71e4773-0004b3586800d917"
                     ]
                 },
                 "ActiveComponent": {
@@ -10214,8 +8661,8 @@
             }
         },
         {
-            "id": 41,
-            "guid": "004f31f3ce976ff5-0004b0fd0600832b",
+            "id": 37,
+            "guid": "00730c4ea7082319-0004b3586800d921",
             "components": {
                 "NameComponent": {
                     "name": "PromptBG"
@@ -10423,7 +8870,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004f31f3f62e64c0-0004b0fd06008321"
+                        "00730c4ee71e4773-0004b3586800d917"
                     ]
                 },
                 "ActiveComponent": {
@@ -10438,8 +8885,8 @@
             }
         },
         {
-            "id": 42,
-            "guid": "004f31f3c0b0a8b8-0004b0fd0600832d",
+            "id": 38,
+            "guid": "00730c4e8e2cfcd3-0004b3586800d923",
             "components": {
                 "NameComponent": {
                     "name": "ControlsUI"
@@ -10519,8 +8966,8 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "004f31f3c632b4e5-0004b0fd0600832f",
-                                "004f31f3965d3cb8-0004b0fd06008331"
+                                "00730c4ecd6a963b-0004b3586800d925",
+                                "00730c4ef91c03b1-0004b3586800d927"
                             ]
                         }
                     ]
@@ -10528,77 +8975,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004f31f387158b8a-0004b0fd060082d9"
-                    ]
-                },
-                "AudioComponent": {
-                    "type": "AudioComponent",
-                    "data": [
-                        {
-                            "type": "bool",
-                            "data": true
-                        },
-                        "0000000000000000-0000000000000000",
-                        {
-                            "type": "bool",
-                            "data": false
-                        },
-                        {
-                            "type": "bool",
-                            "data": false
-                        },
-                        {
-                            "type": "bool",
-                            "data": false
-                        },
-                        {
-                            "type": "bool",
-                            "data": false
-                        },
-                        {
-                            "type": "int",
-                            "data": 128
-                        },
-                        {
-                            "type": "float",
-                            "data": 1
-                        },
-                        {
-                            "type": "float",
-                            "data": 1
-                        },
-                        {
-                            "type": "float",
-                            "data": 0
-                        },
-                        {
-                            "type": "float",
-                            "data": 1
-                        },
-                        {
-                            "type": "bool",
-                            "data": false
-                        },
-                        {
-                            "type": "float",
-                            "data": 0
-                        },
-                        {
-                            "type": "float",
-                            "data": 1
-                        },
-                        {
-                            "type": "float",
-                            "data": 1
-                        },
-                        {
-                            "type": "float",
-                            "data": 100
-                        },
-                        {
-                            "type": "std::string",
-                            "data": "UI"
-                        }
+                        "00730c4eafac93c2-0004b3586800d8d7"
                     ]
                 },
                 "ActiveComponent": {
@@ -10620,24 +8997,87 @@
                             "entryFunction": "OnInit",
                             "autoInvokeEntry": true,
                             "instanceState": {
-                                "Start": null,
                                 "_call_lifecycle": null,
+                                "YesSpriteGUIDs": [
+                                    "00000000-0000-0000-0000-000000000000",
+                                    "00000000-0000-0000-0000-000000000000"
+                                ],
+                                "_pendingReset": false,
+                                "BaseVolume": 1.0,
                                 "Every": null,
                                 "DisableSafe": null,
-                                "SerializeFields": null,
-                                "__field_list": {},
-                                "__meta": {},
-                                "_private": {},
-                                "Destroy": null,
-                                "StartSafe": null,
-                                "__created_at": 1775043754.0,
-                                "After": null,
-                                "AwakeSafe": null,
-                                "UpdateSafe": null,
-                                "Unsubscribe": null,
+                                "SettingSpriteGUIDs": [
+                                    "00000000-0000-0000-0000-000000000000",
+                                    "00000000-0000-0000-0000-000000000000"
+                                ],
+                                "PitchVariation": 0.08,
+                                "enableBGM": true,
+                                "MainMenuSpriteGUIDs": {},
                                 "Subscribe": null,
+                                "DeserializeFields": null,
+                                "Unsubscribe": null,
+                                "__meta": {},
+                                "BackSpriteGUIDs": [
+                                    "00000000-0000-0000-0000-000000000000",
+                                    "00000000-0000-0000-0000-000000000000"
+                                ],
+                                "SliderSFX": [
+                                    "0037d81b07b695ee-000400f740000007"
+                                ],
                                 "_subscriptions": {},
-                                "DeserializeFields": null
+                                "_transform_fetched": false,
+                                "enableMaster": true,
+                                "OnClickMainMenuButton": null,
+                                "ClickSFX": [
+                                    "0037d81b07b695ee-000400f740000007"
+                                ],
+                                "_clickSub": {
+                                    "event": "pause_menu.click",
+                                    "id": 605.0
+                                },
+                                "OnClickControlsButton": null,
+                                "_private": {},
+                                "After": null,
+                                "OnClickContinueButton": null,
+                                "HoverSFX": [
+                                    "0037d81b0c6c0a46-000400f740000005"
+                                ],
+                                "OnClickSettingButton": null,
+                                "AwakeSafe": null,
+                                "ControlsSpriteGUIDs": [
+                                    "005d940146ad3e3f-000477758600ad67",
+                                    "005d94010cbbcf21-00047773dc00ad5b"
+                                ],
+                                "_sliderSub": {
+                                    "event": "pause_menu.slider",
+                                    "id": 606.0
+                                },
+                                "SerializeFields": null,
+                                "_settingsResetSub": {
+                                    "event": "settings_reset",
+                                    "id": 34.0
+                                },
+                                "mainMenuScene": "Resources/Scenes/01_MainMenu.scene",
+                                "enableSFX": true,
+                                "NoSpriteGUIDs": [
+                                    "00000000-0000-0000-0000-000000000000",
+                                    "00000000-0000-0000-0000-000000000000"
+                                ],
+                                "UpdateSafe": null,
+                                "Start": null,
+                                "__created_at": 1775106811.0,
+                                "ContinueSpriteGUIDs": [
+                                    "005d94016700d768-00047775e600ad69",
+                                    "005d940146094bbd-00047773ce00ad59"
+                                ],
+                                "enableGamma": true,
+                                "__field_list": {},
+                                "Destroy": null,
+                                "_hoverSub": {
+                                    "event": "pause_menu.hover",
+                                    "id": 604.0
+                                },
+                                "StartSafe": null
                             }
                         }
                     ]
@@ -10645,8 +9085,8 @@
             }
         },
         {
-            "id": 43,
-            "guid": "004f31f3c632b4e5-0004b0fd0600832f",
+            "id": 39,
+            "guid": "00730c4ecd6a963b-0004b3586800d925",
             "components": {
                 "NameComponent": {
                     "name": "ControlsBackground"
@@ -10854,7 +9294,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004f31f3c0b0a8b8-0004b0fd0600832d"
+                        "00730c4e8e2cfcd3-0004b3586800d923"
                     ]
                 },
                 "ActiveComponent": {
@@ -10869,8 +9309,8 @@
             }
         },
         {
-            "id": 44,
-            "guid": "004f31f3965d3cb8-0004b0fd06008331",
+            "id": 40,
+            "guid": "00730c4ef91c03b1-0004b3586800d927",
             "components": {
                 "NameComponent": {
                     "name": "ControlsBackButton"
@@ -11078,77 +9518,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004f31f3c0b0a8b8-0004b0fd0600832d"
-                    ]
-                },
-                "AudioComponent": {
-                    "type": "AudioComponent",
-                    "data": [
-                        {
-                            "type": "bool",
-                            "data": true
-                        },
-                        "0037d81b07b695ee-000400f740000007",
-                        {
-                            "type": "bool",
-                            "data": false
-                        },
-                        {
-                            "type": "bool",
-                            "data": false
-                        },
-                        {
-                            "type": "bool",
-                            "data": false
-                        },
-                        {
-                            "type": "bool",
-                            "data": false
-                        },
-                        {
-                            "type": "int",
-                            "data": 128
-                        },
-                        {
-                            "type": "float",
-                            "data": 1
-                        },
-                        {
-                            "type": "float",
-                            "data": 1
-                        },
-                        {
-                            "type": "float",
-                            "data": 0
-                        },
-                        {
-                            "type": "float",
-                            "data": 1
-                        },
-                        {
-                            "type": "bool",
-                            "data": false
-                        },
-                        {
-                            "type": "float",
-                            "data": 0
-                        },
-                        {
-                            "type": "float",
-                            "data": 1
-                        },
-                        {
-                            "type": "float",
-                            "data": 1
-                        },
-                        {
-                            "type": "float",
-                            "data": 100
-                        },
-                        {
-                            "type": "std::string",
-                            "data": "UI"
-                        }
+                        "00730c4e8e2cfcd3-0004b3586800d923"
                     ]
                 },
                 "ActiveComponent": {
@@ -11202,8 +9572,8 @@
             }
         },
         {
-            "id": 45,
-            "guid": "004f31f3a7a42927-0004b0fd06008333",
+            "id": 41,
+            "guid": "00730c4ed8198ab9-0004b3586800d929",
             "components": {
                 "NameComponent": {
                     "name": "BlackScreen"
@@ -11411,7 +9781,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004f31f387158b8a-0004b0fd060082d9"
+                        "00730c4eafac93c2-0004b3586800d8d7"
                     ]
                 },
                 "ActiveComponent": {
@@ -11426,8 +9796,8 @@
             }
         },
         {
-            "id": 46,
-            "guid": "004f31f3f9ddedae-0004b0fd06008335",
+            "id": 42,
+            "guid": "00730c4edaa91c03-0004b3586800d92b",
             "components": {
                 "NameComponent": {
                     "name": "ButtonHandler"
@@ -11504,7 +9874,77 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004f31f387158b8a-0004b0fd060082d9"
+                        "00730c4eafac93c2-0004b3586800d8d7"
+                    ]
+                },
+                "AudioComponent": {
+                    "type": "AudioComponent",
+                    "data": [
+                        {
+                            "type": "bool",
+                            "data": true
+                        },
+                        "0000000000000000-0000000000000000",
+                        {
+                            "type": "bool",
+                            "data": false
+                        },
+                        {
+                            "type": "bool",
+                            "data": false
+                        },
+                        {
+                            "type": "bool",
+                            "data": false
+                        },
+                        {
+                            "type": "bool",
+                            "data": false
+                        },
+                        {
+                            "type": "int",
+                            "data": 128
+                        },
+                        {
+                            "type": "float",
+                            "data": 1
+                        },
+                        {
+                            "type": "float",
+                            "data": 1
+                        },
+                        {
+                            "type": "float",
+                            "data": 0
+                        },
+                        {
+                            "type": "float",
+                            "data": 1
+                        },
+                        {
+                            "type": "bool",
+                            "data": false
+                        },
+                        {
+                            "type": "float",
+                            "data": 0
+                        },
+                        {
+                            "type": "float",
+                            "data": 1
+                        },
+                        {
+                            "type": "float",
+                            "data": 1
+                        },
+                        {
+                            "type": "float",
+                            "data": 100
+                        },
+                        {
+                            "type": "std::string",
+                            "data": "UI"
+                        }
                     ]
                 },
                 "ActiveComponent": {
@@ -11526,24 +9966,87 @@
                             "entryFunction": "OnInit",
                             "autoInvokeEntry": true,
                             "instanceState": {
-                                "Start": null,
                                 "_call_lifecycle": null,
+                                "YesSpriteGUIDs": [
+                                    "00000000-0000-0000-0000-000000000000",
+                                    "00000000-0000-0000-0000-000000000000"
+                                ],
+                                "_pendingReset": false,
+                                "BaseVolume": 1.0,
                                 "Every": null,
                                 "DisableSafe": null,
-                                "SerializeFields": null,
-                                "__field_list": {},
-                                "__meta": {},
-                                "_private": {},
-                                "Destroy": null,
-                                "StartSafe": null,
-                                "__created_at": 1775043754.0,
-                                "After": null,
-                                "AwakeSafe": null,
-                                "UpdateSafe": null,
-                                "Unsubscribe": null,
+                                "SettingSpriteGUIDs": [
+                                    "00000000-0000-0000-0000-000000000000",
+                                    "00000000-0000-0000-0000-000000000000"
+                                ],
+                                "PitchVariation": 0.08,
+                                "enableBGM": true,
+                                "MainMenuSpriteGUIDs": {},
                                 "Subscribe": null,
+                                "DeserializeFields": null,
+                                "Unsubscribe": null,
+                                "__meta": {},
+                                "BackSpriteGUIDs": [
+                                    "00000000-0000-0000-0000-000000000000",
+                                    "00000000-0000-0000-0000-000000000000"
+                                ],
+                                "SliderSFX": [
+                                    "0037d81b07b695ee-000400f740000007"
+                                ],
                                 "_subscriptions": {},
-                                "DeserializeFields": null
+                                "_transform_fetched": false,
+                                "enableMaster": true,
+                                "OnClickMainMenuButton": null,
+                                "ClickSFX": [
+                                    "0037d81b07b695ee-000400f740000007"
+                                ],
+                                "_clickSub": {
+                                    "event": "pause_menu.click",
+                                    "id": 605.0
+                                },
+                                "OnClickControlsButton": null,
+                                "_private": {},
+                                "After": null,
+                                "OnClickContinueButton": null,
+                                "HoverSFX": [
+                                    "0037d81b0c6c0a46-000400f740000005"
+                                ],
+                                "OnClickSettingButton": null,
+                                "AwakeSafe": null,
+                                "ControlsSpriteGUIDs": [
+                                    "005d940146ad3e3f-000477758600ad67",
+                                    "005d94010cbbcf21-00047773dc00ad5b"
+                                ],
+                                "_sliderSub": {
+                                    "event": "pause_menu.slider",
+                                    "id": 606.0
+                                },
+                                "SerializeFields": null,
+                                "_settingsResetSub": {
+                                    "event": "settings_reset",
+                                    "id": 34.0
+                                },
+                                "mainMenuScene": "Resources/Scenes/01_MainMenu.scene",
+                                "enableSFX": true,
+                                "NoSpriteGUIDs": [
+                                    "00000000-0000-0000-0000-000000000000",
+                                    "00000000-0000-0000-0000-000000000000"
+                                ],
+                                "UpdateSafe": null,
+                                "Start": null,
+                                "__created_at": 1775106811.0,
+                                "ContinueSpriteGUIDs": [
+                                    "005d94016700d768-00047775e600ad69",
+                                    "005d940146094bbd-00047773ce00ad59"
+                                ],
+                                "enableGamma": true,
+                                "__field_list": {},
+                                "Destroy": null,
+                                "_hoverSub": {
+                                    "event": "pause_menu.hover",
+                                    "id": 604.0
+                                },
+                                "StartSafe": null
                             }
                         },
                         {
@@ -11554,24 +10057,87 @@
                             "entryFunction": "OnInit",
                             "autoInvokeEntry": true,
                             "instanceState": {
-                                "Start": null,
                                 "_call_lifecycle": null,
+                                "YesSpriteGUIDs": [
+                                    "00000000-0000-0000-0000-000000000000",
+                                    "00000000-0000-0000-0000-000000000000"
+                                ],
+                                "_pendingReset": false,
+                                "BaseVolume": 1.0,
                                 "Every": null,
                                 "DisableSafe": null,
-                                "SerializeFields": null,
-                                "__field_list": {},
-                                "__meta": {},
-                                "_private": {},
-                                "Destroy": null,
-                                "StartSafe": null,
-                                "__created_at": 1775043754.0,
-                                "After": null,
-                                "AwakeSafe": null,
-                                "UpdateSafe": null,
-                                "Unsubscribe": null,
+                                "SettingSpriteGUIDs": [
+                                    "00000000-0000-0000-0000-000000000000",
+                                    "00000000-0000-0000-0000-000000000000"
+                                ],
+                                "PitchVariation": 0.08,
+                                "enableBGM": true,
+                                "MainMenuSpriteGUIDs": {},
                                 "Subscribe": null,
+                                "DeserializeFields": null,
+                                "Unsubscribe": null,
+                                "__meta": {},
+                                "BackSpriteGUIDs": [
+                                    "00000000-0000-0000-0000-000000000000",
+                                    "00000000-0000-0000-0000-000000000000"
+                                ],
+                                "SliderSFX": [
+                                    "0037d81b07b695ee-000400f740000007"
+                                ],
                                 "_subscriptions": {},
-                                "DeserializeFields": null
+                                "_transform_fetched": false,
+                                "enableMaster": true,
+                                "OnClickMainMenuButton": null,
+                                "ClickSFX": [
+                                    "0037d81b07b695ee-000400f740000007"
+                                ],
+                                "_clickSub": {
+                                    "event": "pause_menu.click",
+                                    "id": 605.0
+                                },
+                                "OnClickControlsButton": null,
+                                "_private": {},
+                                "After": null,
+                                "OnClickContinueButton": null,
+                                "HoverSFX": [
+                                    "0037d81b0c6c0a46-000400f740000005"
+                                ],
+                                "OnClickSettingButton": null,
+                                "AwakeSafe": null,
+                                "ControlsSpriteGUIDs": [
+                                    "005d940146ad3e3f-000477758600ad67",
+                                    "005d94010cbbcf21-00047773dc00ad5b"
+                                ],
+                                "_sliderSub": {
+                                    "event": "pause_menu.slider",
+                                    "id": 606.0
+                                },
+                                "SerializeFields": null,
+                                "_settingsResetSub": {
+                                    "event": "settings_reset",
+                                    "id": 34.0
+                                },
+                                "mainMenuScene": "Resources/Scenes/01_MainMenu.scene",
+                                "enableSFX": true,
+                                "NoSpriteGUIDs": [
+                                    "00000000-0000-0000-0000-000000000000",
+                                    "00000000-0000-0000-0000-000000000000"
+                                ],
+                                "UpdateSafe": null,
+                                "Start": null,
+                                "__created_at": 1775106811.0,
+                                "ContinueSpriteGUIDs": [
+                                    "005d94016700d768-00047775e600ad69",
+                                    "005d940146094bbd-00047773ce00ad59"
+                                ],
+                                "enableGamma": true,
+                                "__field_list": {},
+                                "Destroy": null,
+                                "_hoverSub": {
+                                    "event": "pause_menu.hover",
+                                    "id": 604.0
+                                },
+                                "StartSafe": null
                             }
                         }
                     ]
@@ -11579,8 +10145,8 @@
             }
         },
         {
-            "id": 47,
-            "guid": "004f31f3aa3765a4-0004b0fd06008337",
+            "id": 43,
+            "guid": "00730c4ed4081a1f-0004b3586800d92d",
             "components": {
                 "NameComponent": {
                     "name": "PauseListener"
@@ -11657,7 +10223,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "004f31f387158b8a-0004b0fd060082d9"
+                        "00730c4eafac93c2-0004b3586800d8d7"
                     ]
                 },
                 "ActiveComponent": {
@@ -11679,24 +10245,87 @@
                             "entryFunction": "OnInit",
                             "autoInvokeEntry": true,
                             "instanceState": {
-                                "Start": null,
                                 "_call_lifecycle": null,
+                                "YesSpriteGUIDs": [
+                                    "00000000-0000-0000-0000-000000000000",
+                                    "00000000-0000-0000-0000-000000000000"
+                                ],
+                                "_pendingReset": false,
+                                "BaseVolume": 1.0,
                                 "Every": null,
                                 "DisableSafe": null,
-                                "SerializeFields": null,
-                                "__field_list": {},
-                                "__meta": {},
-                                "_private": {},
-                                "Destroy": null,
-                                "StartSafe": null,
-                                "__created_at": 1775043754.0,
-                                "After": null,
-                                "AwakeSafe": null,
-                                "UpdateSafe": null,
-                                "Unsubscribe": null,
+                                "SettingSpriteGUIDs": [
+                                    "00000000-0000-0000-0000-000000000000",
+                                    "00000000-0000-0000-0000-000000000000"
+                                ],
+                                "PitchVariation": 0.08,
+                                "enableBGM": true,
+                                "MainMenuSpriteGUIDs": {},
                                 "Subscribe": null,
+                                "DeserializeFields": null,
+                                "Unsubscribe": null,
+                                "__meta": {},
+                                "BackSpriteGUIDs": [
+                                    "00000000-0000-0000-0000-000000000000",
+                                    "00000000-0000-0000-0000-000000000000"
+                                ],
+                                "SliderSFX": [
+                                    "0037d81b07b695ee-000400f740000007"
+                                ],
                                 "_subscriptions": {},
-                                "DeserializeFields": null
+                                "_transform_fetched": false,
+                                "enableMaster": true,
+                                "OnClickMainMenuButton": null,
+                                "ClickSFX": [
+                                    "0037d81b07b695ee-000400f740000007"
+                                ],
+                                "_clickSub": {
+                                    "event": "pause_menu.click",
+                                    "id": 605.0
+                                },
+                                "OnClickControlsButton": null,
+                                "_private": {},
+                                "After": null,
+                                "OnClickContinueButton": null,
+                                "HoverSFX": [
+                                    "0037d81b0c6c0a46-000400f740000005"
+                                ],
+                                "OnClickSettingButton": null,
+                                "AwakeSafe": null,
+                                "ControlsSpriteGUIDs": [
+                                    "005d940146ad3e3f-000477758600ad67",
+                                    "005d94010cbbcf21-00047773dc00ad5b"
+                                ],
+                                "_sliderSub": {
+                                    "event": "pause_menu.slider",
+                                    "id": 606.0
+                                },
+                                "SerializeFields": null,
+                                "_settingsResetSub": {
+                                    "event": "settings_reset",
+                                    "id": 34.0
+                                },
+                                "mainMenuScene": "Resources/Scenes/01_MainMenu.scene",
+                                "enableSFX": true,
+                                "NoSpriteGUIDs": [
+                                    "00000000-0000-0000-0000-000000000000",
+                                    "00000000-0000-0000-0000-000000000000"
+                                ],
+                                "UpdateSafe": null,
+                                "Start": null,
+                                "__created_at": 1775106811.0,
+                                "ContinueSpriteGUIDs": [
+                                    "005d94016700d768-00047775e600ad69",
+                                    "005d940146094bbd-00047773ce00ad59"
+                                ],
+                                "enableGamma": true,
+                                "__field_list": {},
+                                "Destroy": null,
+                                "_hoverSub": {
+                                    "event": "pause_menu.hover",
+                                    "id": 604.0
+                                },
+                                "StartSafe": null
                             }
                         }
                     ]

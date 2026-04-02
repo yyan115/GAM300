@@ -22,6 +22,7 @@
 #include "ECS/NameComponent.hpp"
 #include "ECS/TagComponent.hpp"
 #include "ECS/LayerComponent.hpp"
+#include "ECS/SiblingIndexComponent.hpp"
 #include "Transform/TransformComponent.hpp"
 #include "Graphics/Model/ModelRenderComponent.hpp"
 #include <ECS/ECSRegistry.hpp>
@@ -420,6 +421,12 @@ ENGINE_API Entity InstantiatePrefabIntoEntity(const std::string& prefabPath, Ent
 	Transform prevTransform = ecs.GetComponent<Transform>(intoEntity);
     std::string prevName = ecs.GetComponent<NameComponent>(intoEntity).name;
 
+    // Capture SiblingIndex to preserve hierarchy position
+    int prevSiblingIndex = 0;
+    if (ecs.HasComponent<SiblingIndexComponent>(intoEntity)) {
+        prevSiblingIndex = ecs.GetComponent<SiblingIndexComponent>(intoEntity).siblingIndex;
+    }
+
     // Capture Parent Info
     Entity parentEntity = static_cast<Entity>(-1);
     if (ecs.HasComponent<ParentComponent>(intoEntity)) {
@@ -457,6 +464,13 @@ ENGINE_API Entity InstantiatePrefabIntoEntity(const std::string& prefabPath, Ent
     if (ecs.HasComponent<NameComponent>(prefab)) {
         auto& nameComp = ecs.GetComponent<NameComponent>(prefab);
         nameComp.name = prevName;
+    }
+
+    // Restore the previous sibling index to preserve hierarchy position.
+    if (ecs.HasComponent<SiblingIndexComponent>(prefab)) {
+        ecs.GetComponent<SiblingIndexComponent>(prefab).siblingIndex = prevSiblingIndex;
+    } else {
+        ecs.AddComponent<SiblingIndexComponent>(prefab, SiblingIndexComponent{ prevSiblingIndex });
     }
 
     // Restore Parent Link

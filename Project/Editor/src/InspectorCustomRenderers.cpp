@@ -6565,9 +6565,11 @@ void RegisterInspectorCustomRenderers()
                     instanceToInspect = scriptData.instanceId;
                     usingPreviewInstance = false;
 
-                    // Sync pendingInstanceState with runtime state to preserve any runtime changes
+                    // Sync pendingInstanceState with runtime state to preserve any runtime changes.
+                    // Guard: a freshly-created Lua instance serialises to "{}" and must NOT
+                    // overwrite the pending state that was loaded from disk (e.g. audio GUIDs).
                     std::string runtimeState = Scripting::SerializeInstanceToJson(scriptData.instanceId);
-                    if (!runtimeState.empty())
+                    if (!runtimeState.empty() && runtimeState != "{}")
                     {
                         scriptData.pendingInstanceState = runtimeState;
                     }
@@ -7041,12 +7043,11 @@ void RegisterInspectorCustomRenderers()
         // (Don't check the instance for a fields table, because Component mixin flattens them)
         hasFieldsTable = !parsedFields.empty();
 
-        // WORKAROUND: In edit mode, preview instances may be incomplete because Lua modules
-        // don't load properly. If we parsed fields from the file but the instance has
-        // fewer fields, try to get field values from pendingInstanceState JSON.
-        // We consider the instance incomplete if it has fewer fields than we parsed from file
-        bool previewInstanceIncomplete = usingPreviewInstance &&
-                                          hasFieldsTable &&
+        // WORKAROUND: In edit mode, the inspected instance may be incomplete (preview OR runtime),
+        // especially in prefab workflows where script instances can exist without exposed fields.
+        // If we parsed fields from file but the inspected instance has fewer fields, fall back
+        // to pendingInstanceState/Lua defaults so inspector fields remain visible and editable.
+        bool previewInstanceIncomplete = hasFieldsTable &&
                                           (fieldMap.size() < parsedFields.size());
 
         // Debug output for workaround detection (always log to help diagnose)
@@ -7058,7 +7059,7 @@ void RegisterInspectorCustomRenderers()
             ENGINE_PRINT("  pendingInstanceState.size() = ", scriptData.pendingInstanceState.size());
         }
 
-        // If preview instance is incomplete, try to parse pendingInstanceState to get field values
+        // If the inspected instance is incomplete, parse pendingInstanceState for saved field values
         std::unordered_map<std::string, std::string> savedFieldValues;
         if (previewInstanceIncomplete && !scriptData.pendingInstanceState.empty())
         {
@@ -7118,7 +7119,7 @@ void RegisterInspectorCustomRenderers()
                 }
                 else if (previewInstanceIncomplete)
                 {
-                    // WORKAROUND: Preview instance is incomplete, create a synthetic field entry
+                    // WORKAROUND: Inspected instance is incomplete, create a synthetic field entry
                     // using the saved value from pendingInstanceState if available
                     // Skip private fields
                     if (!parsedField.name.empty() && parsedField.name[0] == '_')
@@ -7949,6 +7950,9 @@ void RegisterInspectorCustomRenderers()
                         ENGINE_PRINT("Error updating synthetic field: ", field.name.c_str());
                     }
 
+                    // Invalidate cache so the next frame re-reads the updated value immediately
+                    inspector.InvalidateCache(scriptData.scriptPath, instanceToInspect);
+
                     // Take snapshot for undo
                     SnapshotManager::GetInstance().TakeSnapshot("Modify Script Property: " + field.name);
                 }
@@ -7961,6 +7965,9 @@ void RegisterInspectorCustomRenderers()
                     scriptData.pendingInstanceState = Scripting::SerializeInstanceToJson(instanceToInspect);
                     ENGINE_PRINT("SAVE DEBUG: Updated pendingInstanceState for field '", field.name.c_str(), "' to: ", newValue.c_str());
                     ENGINE_PRINT("  pendingInstanceState.size = ", scriptData.pendingInstanceState.size());
+
+                    // Invalidate cache so the next frame re-reads the updated value immediately
+                    inspector.InvalidateCache(scriptData.scriptPath, instanceToInspect);
 
                     // Take snapshot for undo
                     SnapshotManager::GetInstance().TakeSnapshot("Modify Script Property: " + field.name);

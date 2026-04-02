@@ -33,6 +33,8 @@ private:
     void LoadPrefabSandbox();
     // Pushes saved prefab to live instances (uses active ECS)
     static void PropagateToInstances();
+    // Pushes saved prefab to live instances for a specific prefab path
+    static void PropagateToInstancesForPath(const std::string& pathToPrefab);
 
     // --- sandbox "Prefab Mode" state ---
     ECSManager sandboxECS{};                   // isolated world just for editing

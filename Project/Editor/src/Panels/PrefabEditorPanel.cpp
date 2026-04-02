@@ -200,9 +200,6 @@ void PrefabEditor::StopEditingPrefab() {
 
     SaveEntityToPrefabFile(ecs, AssetManager::GetInstance(), sandboxEntity, prefabPath);
 
-    //// Propagate changes to all prefab instances.
-    //PropagateToInstances();
-
 	ecs.DestroyEntity(sandboxEntity);
 
 	sandboxEntity = static_cast<Entity>(-1);
@@ -210,15 +207,11 @@ void PrefabEditor::StopEditingPrefab() {
 	isInPrefabEditorMode = false;
 
 	// Restore the previous scene state from the temp file.
+    // The temp scene was saved when prefab editing started, so it contains
+    // any instance overrides the user had made before editing the prefab.
+    // When this scene is next loaded or saved, it will pick up the updated
+    // prefab file and apply the stored overrides on top.
 	SceneManager::GetInstance().ReloadTempScene();
-
- //   // Restore previously active entities.
- //   for (const auto& e : previouslyActiveEntities) {
- //       if (ecs.HasComponent<ActiveComponent>(e))
- //           ecs.GetComponent<ActiveComponent>(e).isActive = true;
- //   }
-	//previouslyActiveEntities.clear();
-	//SetUnsavedChanges(false);
 
     GUIManager::ClearSelectedEntities();
 }
@@ -399,6 +392,15 @@ void PrefabEditor::LoadPrefabSandbox()
 #if PREFABEDITOR_ENABLE_PROPAGATION
 void PrefabEditor::PropagateToInstances()
 {
+    PropagateToInstancesForPath(prefabPath);
+}
+
+void PrefabEditor::PropagateToInstancesForPath(const std::string& pathToPrefab)
+{
+    if (pathToPrefab.empty()) {
+        return;
+    }
+
     ECSManager& liveECS = ECSRegistry::GetInstance().GetActiveECSManager();
 
     if (!liveECS.IsComponentTypeRegistered<PrefabLinkComponent>()) {
@@ -407,20 +409,27 @@ void PrefabEditor::PropagateToInstances()
         return;
     }
 
-    const std::string myPath = CanonicalPrefabPath(prefabPath);
+    const std::string myPath = CanonicalPrefabPath(pathToPrefab);
     const std::string myNorm = NormalizePath(myPath);
 
-    auto sandboxEntities = liveECS.transformSystem->GetAllChildEntitiesSet(sandboxEntity);
+    // Collect entities to update first (avoid iterator invalidation)
+    std::vector<Entity> entitiesToUpdate;
 
     for (Entity e : liveECS.GetAllEntities()) {
-        const bool isSandboxDescendant = sandboxEntities.count(e) > 0;
-        if (e == sandboxEntity || isSandboxDescendant || !liveECS.HasComponent<PrefabLinkComponent>(e)) continue;
+        if (!liveECS.HasComponent<PrefabLinkComponent>(e)) continue;
         const auto& link = liveECS.GetComponent<PrefabLinkComponent>(e);
         const std::string refNorm = NormalizePath(CanonicalPrefabPath(link.prefabPath));
         if (refNorm != myNorm) continue;
 
-        InstantiatePrefabIntoEntity(prefabPath, e);
+        entitiesToUpdate.push_back(e);
     }
+
+    // Now update each prefab instance
+    for (Entity e : entitiesToUpdate) {
+        InstantiatePrefabIntoEntity(pathToPrefab, e);
+    }
+
+    ENGINE_PRINT("[PrefabEditor] Propagated prefab changes to ", entitiesToUpdate.size(), " instance(s).\n");
 }
 #endif
 

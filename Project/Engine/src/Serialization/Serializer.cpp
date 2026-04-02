@@ -739,10 +739,16 @@ rapidjson::Value Serializer::SerializeEntity(Entity entity, rapidjson::Document:
                         if (!instJson.empty()) {
                             rapidjson::Document tmp;
                             if (!tmp.Parse(instJson.c_str()).HasParseError()) {
-                                rapidjson::Value instVal;
-                                instVal.CopyFrom(tmp, alloc);
-                                scriptDataObj.AddMember("instanceState", instVal, alloc);
-                                savedInstanceState = true;
+                                // An empty object "{}" means the Lua instance was never populated
+                                // (e.g. hot-reload created a blank instance). Do NOT treat it as a
+                                // valid saved state — fall through to pendingInstanceState so that
+                                // configured values (audio GUIDs etc.) are not erased.
+                                if (!tmp.IsObject() || !tmp.ObjectEmpty()) {
+                                    rapidjson::Value instVal;
+                                    instVal.CopyFrom(tmp, alloc);
+                                    scriptDataObj.AddMember("instanceState", instVal, alloc);
+                                    savedInstanceState = true;
+                                }
                             }
                             else {
                                 // fallback: store as raw string
@@ -1957,6 +1963,92 @@ void Serializer::ApplyPrefabOverridesRecursive(ECSManager& ecs, Entity& currentE
                         }
                         if (!foundInOverride) {
                             scriptComp.scripts.push_back(std::move(prefabScript));
+                        }
+                    }
+
+                    // Merge prefab instanceState into override instanceState:
+                    // Propagates prefab-configured array values (e.g. GUID arrays) into the
+                    // override when the override contains only empty/default values for that field.
+                    // This ensures that edits made in the prefab editor flow through to scene
+                    // instances on the next reload, without clobbering genuine scene-level overrides.
+                    //
+                    // A field in the override is treated as "default/unset" if it is:
+                    //   (a) an empty object {} — serialization artifact from a Lua table with no entries, or
+                    //   (b) an array where every element is the zero GUID "00000000-0000-0000-0000-000000000000"
+                    //       — the placeholder inserted when a user hasn't configured a value yet.
+                    // In both cases, if the prefab has a non-empty, non-zero array for the same field,
+                    // the prefab's value wins.
+
+                    // Helper: returns true if every string element is the zero GUID placeholder.
+                    auto isAllZeroGuids = [](const rapidjson::Value& arr) -> bool {
+                        if (!arr.IsArray() || arr.Empty()) return true;
+                        for (const auto& elem : arr.GetArray()) {
+                            if (!elem.IsString()) return false;
+                            const char* s = elem.GetString();
+                            if (std::strcmp(s, "00000000-0000-0000-0000-000000000000") != 0 &&
+                                std::strcmp(s, "0000000000000000-0000000000000000") != 0)
+                                return false;
+                        }
+                        return true;
+                    };
+
+                    // Helper: returns true if the array has at least one non-zero GUID element.
+                    auto hasRealGuid = [](const rapidjson::Value& arr) -> bool {
+                        if (!arr.IsArray()) return false;
+                        for (const auto& elem : arr.GetArray()) {
+                            if (elem.IsString()) {
+                                const char* s = elem.GetString();
+                                if (std::strcmp(s, "00000000-0000-0000-0000-000000000000") != 0 &&
+                                    std::strcmp(s, "0000000000000000-0000000000000000") != 0)
+                                    return true;
+                            }
+                        }
+                        return false;
+                    };
+
+                    for (auto& overrideScript : scriptComp.scripts) {
+                        const ScriptData* prefabScript = nullptr;
+                        for (const auto& ps : prefabScripts) {
+                            if (ps.scriptPath == overrideScript.scriptPath) {
+                                prefabScript = &ps;
+                                break;
+                            }
+                        }
+                        if (!prefabScript || prefabScript->pendingInstanceState.empty() ||
+                            overrideScript.pendingInstanceState.empty())
+                            continue;
+
+                        rapidjson::Document prefabDoc, overrideDoc;
+                        if (prefabDoc.Parse(prefabScript->pendingInstanceState.c_str()).HasParseError() ||
+                            overrideDoc.Parse(overrideScript.pendingInstanceState.c_str()).HasParseError() ||
+                            !prefabDoc.IsObject() || !overrideDoc.IsObject())
+                            continue;
+
+                        bool modified = false;
+                        for (auto it = prefabDoc.MemberBegin(); it != prefabDoc.MemberEnd(); ++it) {
+                            const char* key = it->name.GetString();
+                            const rapidjson::Value& prefabVal = it->value;
+                            if (!prefabVal.IsArray() || !hasRealGuid(prefabVal)) continue;
+                            if (!overrideDoc.HasMember(key)) continue;
+                            const rapidjson::Value& overrideVal = overrideDoc[key];
+
+                            bool overrideIsDefault =
+                                (overrideVal.IsObject() && overrideVal.ObjectEmpty()) ||
+                                (overrideVal.IsArray() && isAllZeroGuids(overrideVal));
+
+                            if (overrideIsDefault) {
+                                rapidjson::Value copy;
+                                copy.CopyFrom(prefabVal, overrideDoc.GetAllocator());
+                                overrideDoc[key] = std::move(copy);
+                                modified = true;
+                            }
+                        }
+
+                        if (modified) {
+                            rapidjson::StringBuffer buf;
+                            rapidjson::Writer<rapidjson::StringBuffer> writer(buf);
+                            overrideDoc.Accept(writer);
+                            overrideScript.pendingInstanceState = buf.GetString();
                         }
                     }
                 }
