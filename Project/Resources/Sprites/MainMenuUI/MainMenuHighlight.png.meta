@@ -1,9 +1,9 @@
 {
     "AssetMetaData": {
         "version": 7,
-        "guid": "0043ce37f03bdada-0004b698c00023c9",
-        "source": "../../Resources/Sprites/MainMenuUI/HealthBarBack.png",
-        "compiled": "../../Resources/Sprites/MainMenuUI/HealthBarBack.dds"
+        "guid": "0043ce37e1cf4dd9-0004b698c20023cd",
+        "source": "../../Resources/Sprites/MainMenuUI/MainMenuHighlight.png",
+        "compiled": "../../Resources/Sprites/MainMenuUI/MainMenuHighlight.dds"
     },
     "TextureMetaData": {
         "type": "diffuse",
