@@ -1,0 +1,15 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "007b345c7a73cf23-0004b6a28c007c91",
+        "source": "../../Resources/Textures/BossRoom/Cloth2/Cloth2_Normal_OpenGL.png",
+        "compiled": "../../Resources/Textures/BossRoom/Cloth2/Cloth2_Normal_OpenGL.dds"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

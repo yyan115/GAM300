@@ -1,0 +1,11 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "007b345c4937d93e-0004b680d6003367",
+        "source": "../../Resources/Models/Rooms/Room6V2/bossrm_door_L.fbx",
+        "compiled": "../../Resources/Models/Rooms/Room6V2/bossrm_door_L.mesh"
+    },
+    "ModelMetaData": {
+        "optimizeMeshes": true
+    }
+}
