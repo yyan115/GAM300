@@ -1,6 +1,7 @@
 -- UI/CrosshairController.lua
 -- Manages the crosshair sprite: swaps texture and tints color based on
--- chain aim mode and whether aim assist is locked onto an enemy.
+-- chain aim mode and whether the crosshair is over an enemy (aim assist
+-- lock-on OR camera raycast hitting an Enemy/Boss tagged entity).
 --
 -- Attach this script to the Crosshair UI entity that has a SpriteRenderComponent.
 -- Set DefaultSpriteGUID and AimSpriteGUID in the editor to the GUIDs from the
@@ -16,27 +17,39 @@ return Component {
         -- Texture GUIDs (copy from .png.meta files)
         DefaultSpriteGUID = "006dfc96b345cd00-000474f3c0007229",  -- CrosshairDefault
         AimSpriteGUID     = "006dfc96f87b9ff3-000474f2ae005605",  -- CrosshairAim
+        PulseScale        = 1.5,   -- max scale multiplier during pulse (e.g. 1.5 = 150%)
+        PulseDuration     = 0.25,  -- seconds for one full pulse
     },
 
     Start = function(self)
         self._sprite = self:GetComponent("SpriteRenderComponent")
-        self._isAiming    = false
-        self._isLocked    = false
+        self._transform = self:GetComponent("Transform")
+        self._isAiming       = false
+        self._onEnemy        = false
+        self._wasOnEnemy     = false
+
+        -- Pulse animation state
+        self._pulseTimer     = 0
+        self._isPulsing      = false
+
+        -- Store base scale from Transform
+        if self._transform then
+            self._baseScaleX = self._transform.localScale.x
+            self._baseScaleY = self._transform.localScale.y
+        end
 
         if event_bus and event_bus.subscribe then
-            -- Chain aim mode on/off
             self._aimSub = event_bus.subscribe("chain.aim_camera", function(payload)
                 if not payload then return end
                 self._isAiming = payload.active or false
                 if not self._isAiming then
-                    self._isLocked = false
+                    self._onEnemy = false
                 end
             end)
 
-            -- Aim assist locked onto an enemy
-            self._lockSub = event_bus.subscribe("chain.aim_assist_locked", function(payload)
+            self._enemySub = event_bus.subscribe("chain.crosshair_on_enemy", function(payload)
                 if not payload then return end
-                self._isLocked = payload.locked or false
+                self._onEnemy = payload.active or false
             end)
         end
     end,
@@ -44,22 +57,56 @@ return Component {
     Update = function(self, dt)
         if not self._sprite then return end
 
-        if self._isAiming then
-            -- Switch to aim crosshair
+        -- Also read global in case event_bus subscription failed
+        local aiming = self._isAiming or _G.CHAIN_AIM_ACTIVE
+
+        -- Trigger pulse when crosshair first lands on enemy while aiming
+        if aiming and self._onEnemy and not self._wasOnEnemy then
+            self._isPulsing  = true
+            self._pulseTimer = 0
+        end
+        self._wasOnEnemy = self._onEnemy
+
+        -- Cancel pulse immediately when leaving aim mode
+        if not aiming and self._isPulsing then
+            self._isPulsing  = false
+            self._pulseTimer = 0
+        end
+
+        -- Advance pulse animation
+        if self._isPulsing then
+            self._pulseTimer = self._pulseTimer + dt
+            if self._pulseTimer >= self.PulseDuration then
+                self._isPulsing  = false
+                self._pulseTimer = 0
+            end
+        end
+
+        -- Apply scale on Transform (pulse uses a sine curve: 0 -> 1 -> 0)
+        if self._transform and self._baseScaleX then
+            local scaleMult = 1.0
+            if self._isPulsing then
+                local t = self._pulseTimer / self.PulseDuration   -- 0..1
+                scaleMult = 1.0 + (self.PulseScale - 1.0) * math.sin(t * math.pi)
+            end
+            self._transform.localScale.x = self._baseScaleX * scaleMult
+            self._transform.localScale.y = self._baseScaleY * scaleMult
+            self._transform.isDirty = true
+        end
+
+        if aiming then
             self._sprite:SetTextureFromGUID(self.AimSpriteGUID)
-            if self._isLocked then
-                -- Tint red when locked onto enemy
+            if self._onEnemy then
+                -- Tint red when crosshair is over enemy/boss
                 self._sprite.color.x = 1.0
                 self._sprite.color.y = 0.0
                 self._sprite.color.z = 0.0
             else
-                -- White when aiming but not locked
                 self._sprite.color.x = 1.0
                 self._sprite.color.y = 1.0
                 self._sprite.color.z = 1.0
             end
         else
-            -- Default dot crosshair
             self._sprite:SetTextureFromGUID(self.DefaultSpriteGUID)
             self._sprite.color.x = 1.0
             self._sprite.color.y = 1.0
@@ -72,8 +119,8 @@ return Component {
             if self._aimSub then
                 pcall(function() event_bus.unsubscribe(self._aimSub) end)
             end
-            if self._lockSub then
-                pcall(function() event_bus.unsubscribe(self._lockSub) end)
+            if self._enemySub then
+                pcall(function() event_bus.unsubscribe(self._enemySub) end)
             end
         end
     end,
