@@ -160,6 +160,7 @@ function M.updateChainAim(self, dt)
         if event_bus and event_bus.publish then
             event_bus.publish("ChainAim_basis", { forward = { x = fx, y = fy, z = fz } })
             event_bus.publish("ChainAim_worldTarget", { x = wx, y = wy, z = wz })
+            event_bus.publish("chain.aim_assist_locked", { locked = self._assistTargetX ~= nil })
         end
     end
 
