@@ -1,0 +1,15 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "007680776a1b9234-0004b0b7d0001033",
+        "source": "../../Resources/Textures/BossRoom/Floor/bossrm_floor_floor_Height.png",
+        "compiled": "../../Resources/Textures/BossRoom/Floor/bossrm_floor_floor_Height.dds"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

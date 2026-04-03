@@ -69,6 +69,7 @@ namespace Scripting {
     SCRIPTING_API int CreateInstanceFromFile(const std::string& scriptPath);
     SCRIPTING_API void DestroyInstance(int instanceRef);
     SCRIPTING_API bool IsValidInstance(int instanceRef);
+    SCRIPTING_API bool IsValidInstanceForScript(int instanceRef, const std::string& expectedScriptPath);
 
     // Call named function on instance (no variadic args support in this helper).
     // Returns true on success (function executed with no errors).

@@ -16,6 +16,7 @@ prior written consent of DigiPen Institute of Technology is prohibited.
 #include <filesystem>
 #include <vector>
 #include <string>
+#include <deque>
 #include <unordered_map>
 #include <unordered_set>
 #include <memory>
@@ -50,6 +51,11 @@ private:
         AssetInfo(const std::string& path, const GUID_128& g, bool isDir);
     };
 
+    struct SearchableAssetEntry {
+        AssetInfo asset{};
+        std::string lowerFileName{};
+    };
+
     // Asset type enumeration for filtering
     enum class AssetType {
         All,
@@ -72,6 +78,8 @@ private:
     AssetType selectedAssetType{};
     std::vector<AssetInfo> currentAssets{};
     std::vector<AssetInfo> searchResults{};  // Recursive search results across all directories
+    std::vector<SearchableAssetEntry> searchableAssetIndex{};
+    std::atomic<bool> searchCacheDirty{ true };
     std::unordered_set<GUID_128> selectedAssets{};
     GUID_128 lastSelectedAsset{};
     bool isOpeningScene = false;
@@ -94,6 +102,9 @@ private:
     // Thumbnail cache for texture previews (GUID -> Texture ID)
     // Using uint32_t instead of GLuint to avoid OpenGL dependency in header
     std::unordered_map<uint64_t, uint32_t> thumbnailCache{};
+    std::deque<AssetInfo> pendingSearchThumbnailLoads{};
+    std::unordered_set<uint64_t> pendingSearchThumbnailKeys{};
+    static constexpr int MAX_SEARCH_THUMBNAILS_PER_FRAME = 6;
     static constexpr int THUMBNAIL_SIZE = 96;
     
     // Directory tree state
@@ -108,12 +119,14 @@ private:
     // Asset management
     void RefreshAssets();
     void RefreshSearchResults();
+    void RebuildSearchCache();
     void CollectAssetsRecursive(const std::string& directory, std::vector<AssetInfo>& outResults);
     void NavigateToDirectory(const std::string& directory);
     void UpdateBreadcrumbs();
     bool PassesFilter(const AssetInfo& asset) const;
     AssetType GetAssetTypeFromExtension(const std::string& extension) const;
     bool IsSearchActive() const;
+    static std::string ToLowerCopy(const std::string& value);
 
     // Hot-reloading methods
     void InitializeFileWatcher();
@@ -168,6 +181,9 @@ private:
     uint32_t GetOrCreateThumbnail(const GUID_128& guid, const std::string& assetPath);
     void ClearThumbnailCache();
     void RemoveThumbnailFromCache(const GUID_128& guid);
+    void QueueSearchThumbnailLoad(const AssetInfo& asset);
+    void ProcessPendingSearchThumbnailLoads();
+    void ClearPendingSearchThumbnailLoads();
     
     // Directory tree helpers
     void EnsureDirectoryExpanded(const std::string& directoryPath);

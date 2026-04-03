@@ -26,6 +26,7 @@
 #ifdef ANDROID
 #include <Input/AndroidInputManager.h>
 #endif
+#include "Script/LuaBindableSystems.hpp"
 #include <Asset Manager/MetaFilesManager.hpp>
 #include <ECS/ECSRegistry.hpp>
 #include "Game AI/BrainSystems.hpp"
@@ -723,6 +724,12 @@ void Engine::Update() {
         PROFILE_SCOPED("Engine::InputUpdate");
         g_inputManager->Update(static_cast<float>(TimeManager::GetUnscaledDeltaTime()));
     }
+
+    // Update raw keyboard state for edge detection (Keyboard.IsKeyPressed / IsKeyHeld)
+    // Desktop only — KeyboardWrappers are debug-only and unused on Android
+#ifndef ANDROID
+    KeyboardWrappers::UpdateKeyStates();
+#endif
 
     // Commented out as not used to fix warnings.
     // ECSManager& ecs = ECSRegistry::GetInstance().GetActiveECSManager();

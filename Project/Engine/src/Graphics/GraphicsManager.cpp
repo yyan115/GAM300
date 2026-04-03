@@ -557,7 +557,9 @@ void GraphicsManager::Render()
 				RenderParticles(*particleItem);
 			}
 			else if (auto* fogItem = dynamic_cast<FogVolumeComponent*>(item)) {
+#ifndef ANDROID
 				RenderFogVolume(*fogItem);
+#endif
 			}
 		}
 	}

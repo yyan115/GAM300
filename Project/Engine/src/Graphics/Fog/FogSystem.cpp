@@ -62,6 +62,10 @@ bool FogSystem::Initialise(bool forceInit)
 
 void FogSystem::Update()
 {
+#ifdef ANDROID
+    return;
+#endif
+
     PROFILE_FUNCTION();
 
     ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();

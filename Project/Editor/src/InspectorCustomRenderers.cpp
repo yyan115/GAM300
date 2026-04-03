@@ -74,6 +74,7 @@ prior written consent of DigiPen Institute of Technology is prohibited.
 #include "ScriptInspector.h"
 #include "Panels/TagsLayersPanel.hpp"
 #include "Panels/PanelManager.hpp"
+#include "Panels/PrefabEditorPanel.hpp"
 #include "GUIManager.hpp"
 #include "Hierarchy/EntityGUIDRegistry.hpp"
 extern "C" {
@@ -6347,20 +6348,24 @@ void RegisterInspectorCustomRenderers()
 
         // Track state transitions to detect when we need to invalidate cached instances
         static EditorState::State lastEditorState = EditorState::GetInstance().GetState();
+        static bool lastPrefabEditorMode = PrefabEditor::IsInPrefabEditorMode();
         EditorState::State currentEditorState = EditorState::GetInstance().GetState();
-        // Commented out to fix warning C4189 - unused variable
-        // bool isInPlayMode = (currentEditorState == EditorState::State::PLAY_MODE ||
-        //                     currentEditorState == EditorState::State::PAUSED);
+        bool currentPrefabEditorMode = PrefabEditor::IsInPrefabEditorMode();
 
         // Clear all cached preview instances when transitioning between modes
         // This is necessary because scene deserialization creates new instances with new registry refs
-        if (lastEditorState != currentEditorState)
+        // Also clear when entering/exiting prefab editor mode since entities are cleared and recreated
+        bool stateChanged = (lastEditorState != currentEditorState) || 
+                           (lastPrefabEditorMode != currentPrefabEditorMode);
+        bool prefabModeChanged = (lastPrefabEditorMode != currentPrefabEditorMode);
+        if (stateChanged)
         {
-            // Save the current state of all preview instances to preserve edited values
-            // This happens for ALL transitions to ensure values persist across multiple play/stop cycles
-            for (auto& [key, instanceRef] : editorPreviewInstances)
+            // Preserve preview edits only for in-place state transitions (edit <-> play).
+            // Prefab mode transitions clear/rebuild ECS and can recycle entity IDs, so carrying
+            // cached preview instances across those boundaries can write state into wrong scripts.
+            if (!prefabModeChanged)
             {
-                if (Scripting::IsValidInstance(instanceRef))
+                for (auto& [key, instanceRef] : editorPreviewInstances)
                 {
                     // Parse the key to get entity and script index
                     size_t underscorePos = key.find('_');
@@ -6376,14 +6381,16 @@ void RegisterInspectorCustomRenderers()
                             auto& scriptCompToSave = ecs.GetComponent<ScriptComponentData>(parsedEntity);
                             if (scriptIdx < scriptCompToSave.scripts.size())
                             {
+                                const auto& expectedPath = scriptCompToSave.scripts[scriptIdx].scriptPath;
+                                if (!Scripting::IsValidInstanceForScript(instanceRef, expectedPath)) {
+                                    continue;
+                                }
+
                                 // Always preserve the current state - either from preview or runtime instance
                                 std::string currentState = Scripting::SerializeInstanceToJson(instanceRef);
                                 if (!currentState.empty())
                                 {
                                     scriptCompToSave.scripts[scriptIdx].pendingInstanceState = currentState;
-                                    ENGINE_PRINT("Preserved instance state for entity ", parsedEntity, " script ", scriptIdx,
-                                               " (transition: ", static_cast<int>(lastEditorState), " -> ",
-                                               static_cast<int>(currentEditorState), ")");
                                 }
                             }
                         }
@@ -6403,6 +6410,7 @@ void RegisterInspectorCustomRenderers()
             editorPreviewScriptPaths.clear();
         }
         lastEditorState = currentEditorState;
+        lastPrefabEditorMode = currentPrefabEditorMode;
 
         // Render each script in the vector
         int scriptIndexToRemove = -1;
@@ -6544,37 +6552,26 @@ void RegisterInspectorCustomRenderers()
 
             // Try to use runtime instance first if available and valid
             if (scriptData.instanceCreated && scriptData.instanceId != -1 &&
-                Scripting::IsValidInstance(scriptData.instanceId))
+                Scripting::IsValidInstanceForScript(scriptData.instanceId, scriptData.scriptPath))
             {
-                // Validate the runtime instance is still a proper Lua table
-                lua_State* validateL = Scripting::GetLuaState();
-                bool isRuntimeValid = false;
-                if (validateL)
-                {
-                    lua_rawgeti(validateL, LUA_REGISTRYINDEX, scriptData.instanceId);
-                    isRuntimeValid = lua_istable(validateL, -1);
-                    lua_pop(validateL, 1);
-                }
+                // Use the valid runtime instance
+                instanceToInspect = scriptData.instanceId;
+                usingPreviewInstance = false;
 
-                if (isRuntimeValid)
+                // Sync pendingInstanceState with runtime state to preserve any runtime changes.
+                // Guard: a freshly-created Lua instance serialises to "{}" and must NOT
+                // overwrite the pending state that was loaded from disk (e.g. audio GUIDs).
+                std::string runtimeState = Scripting::SerializeInstanceToJson(scriptData.instanceId);
+                if (!runtimeState.empty() && runtimeState != "{}")
                 {
-                    // Use the valid runtime instance
-                    instanceToInspect = scriptData.instanceId;
-                    usingPreviewInstance = false;
-
-                    // Sync pendingInstanceState with runtime state to preserve any runtime changes
-                    std::string runtimeState = Scripting::SerializeInstanceToJson(scriptData.instanceId);
-                    if (!runtimeState.empty())
-                    {
-                        scriptData.pendingInstanceState = runtimeState;
-                    }
+                    scriptData.pendingInstanceState = runtimeState;
                 }
-                else
-                {
-                    // Runtime instance is invalid, fall through to create preview
-                    scriptData.instanceCreated = false;
-                    scriptData.instanceId = -1;
-                }
+            }
+            else if (scriptData.instanceCreated && scriptData.instanceId != -1)
+            {
+                // Runtime instance is invalid/stale, fall through to create preview
+                scriptData.instanceCreated = false;
+                scriptData.instanceId = -1;
             }
 
             // If no valid runtime instance, create or use preview instance
@@ -6592,15 +6589,7 @@ void RegisterInspectorCustomRenderers()
                 auto it = editorPreviewInstances.find(uniqueKey);
                 if (it != editorPreviewInstances.end())
                 {
-                    // Validate the instance is still a proper Lua table
-                    lua_State* validateL = Scripting::GetLuaState();
-                    bool isValid = false;
-                    if (validateL && Scripting::IsValidInstance(it->second))
-                    {
-                        lua_rawgeti(validateL, LUA_REGISTRYINDEX, it->second);
-                        isValid = lua_istable(validateL, -1);
-                        lua_pop(validateL, 1);
-                    }
+                    bool isValid = Scripting::IsValidInstanceForScript(it->second, scriptData.scriptPath);
 
                     if (isValid)
                     {
@@ -6623,7 +6612,7 @@ void RegisterInspectorCustomRenderers()
                 {
                     // Create new preview instance
                     int previewInstance = Scripting::CreateInstanceFromFile(scriptData.scriptPath);
-                    if (Scripting::IsValidInstance(previewInstance))
+                    if (Scripting::IsValidInstanceForScript(previewInstance, scriptData.scriptPath))
                     {
                         editorPreviewInstances[uniqueKey] = previewInstance;
                         editorPreviewScriptPaths[uniqueKey] = scriptData.scriptPath;
@@ -6657,7 +6646,7 @@ void RegisterInspectorCustomRenderers()
                 }
             }
 
-            if (!Scripting::IsValidInstance(instanceToInspect))
+            if (!Scripting::IsValidInstanceForScript(instanceToInspect, scriptData.scriptPath))
             {
                 // If using a preview instance that's no longer valid, clean it up
                 if (usingPreviewInstance)
@@ -7038,12 +7027,11 @@ void RegisterInspectorCustomRenderers()
         // (Don't check the instance for a fields table, because Component mixin flattens them)
         hasFieldsTable = !parsedFields.empty();
 
-        // WORKAROUND: In edit mode, preview instances may be incomplete because Lua modules
-        // don't load properly. If we parsed fields from the file but the instance has
-        // fewer fields, try to get field values from pendingInstanceState JSON.
-        // We consider the instance incomplete if it has fewer fields than we parsed from file
-        bool previewInstanceIncomplete = usingPreviewInstance &&
-                                          hasFieldsTable &&
+        // WORKAROUND: In edit mode, the inspected instance may be incomplete (preview OR runtime),
+        // especially in prefab workflows where script instances can exist without exposed fields.
+        // If we parsed fields from file but the inspected instance has fewer fields, fall back
+        // to pendingInstanceState/Lua defaults so inspector fields remain visible and editable.
+        bool previewInstanceIncomplete = hasFieldsTable &&
                                           (fieldMap.size() < parsedFields.size());
 
         // Debug output for workaround detection (always log to help diagnose)
@@ -7055,7 +7043,7 @@ void RegisterInspectorCustomRenderers()
             ENGINE_PRINT("  pendingInstanceState.size() = ", scriptData.pendingInstanceState.size());
         }
 
-        // If preview instance is incomplete, try to parse pendingInstanceState to get field values
+        // If the inspected instance is incomplete, parse pendingInstanceState for saved field values
         std::unordered_map<std::string, std::string> savedFieldValues;
         if (previewInstanceIncomplete && !scriptData.pendingInstanceState.empty())
         {
@@ -7115,7 +7103,7 @@ void RegisterInspectorCustomRenderers()
                 }
                 else if (previewInstanceIncomplete)
                 {
-                    // WORKAROUND: Preview instance is incomplete, create a synthetic field entry
+                    // WORKAROUND: Inspected instance is incomplete, create a synthetic field entry
                     // using the saved value from pendingInstanceState if available
                     // Skip private fields
                     if (!parsedField.name.empty() && parsedField.name[0] == '_')
@@ -7946,6 +7934,9 @@ void RegisterInspectorCustomRenderers()
                         ENGINE_PRINT("Error updating synthetic field: ", field.name.c_str());
                     }
 
+                    // Invalidate cache so the next frame re-reads the updated value immediately
+                    inspector.InvalidateCache(scriptData.scriptPath, instanceToInspect);
+
                     // Take snapshot for undo
                     SnapshotManager::GetInstance().TakeSnapshot("Modify Script Property: " + field.name);
                 }
@@ -7958,6 +7949,9 @@ void RegisterInspectorCustomRenderers()
                     scriptData.pendingInstanceState = Scripting::SerializeInstanceToJson(instanceToInspect);
                     ENGINE_PRINT("SAVE DEBUG: Updated pendingInstanceState for field '", field.name.c_str(), "' to: ", newValue.c_str());
                     ENGINE_PRINT("  pendingInstanceState.size = ", scriptData.pendingInstanceState.size());
+
+                    // Invalidate cache so the next frame re-reads the updated value immediately
+                    inspector.InvalidateCache(scriptData.scriptPath, instanceToInspect);
 
                     // Take snapshot for undo
                     SnapshotManager::GetInstance().TakeSnapshot("Modify Script Property: " + field.name);

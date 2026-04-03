@@ -1,0 +1,11 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "006d9327ba19a2c7-0004b3b59e027c27",
+        "source": "../../Resources/Models/Environment/Cushion1.fbx",
+        "compiled": "../../Resources/Models/Environment/Cushion1.mesh"
+    },
+    "ModelMetaData": {
+        "optimizeMeshes": true
+    }
+}

@@ -39,6 +39,7 @@ prior written consent of DigiPen Institute of Technology is prohibited.
 #include <FileWatch.hpp>
 #include <random>
 #include <iomanip>
+#include <cctype>
 
 // Global drag-drop state for cross-window material dragging
 GUID_128 DraggedMaterialGuid = {0, 0};
@@ -143,6 +144,7 @@ AssetBrowserPanel::AssetBrowserPanel()
     // Always expand Resources folder by default (Unity behavior)
     expandedDirectories.insert(rootAssetDirectory);
     RefreshAssets();
+    RebuildSearchCache();
 }
 
 AssetBrowserPanel::~AssetBrowserPanel() {
@@ -302,6 +304,7 @@ void AssetBrowserPanel::ProcessFileChange(const std::string& relativePath, const
 }
 
 void AssetBrowserPanel::QueueRefresh() {
+    searchCacheDirty.store(true);
     // Set atomic flag to indicate refresh is needed
     refreshPending.store(true);
 }
@@ -389,6 +392,12 @@ void AssetBrowserPanel::OnImGuiRender() {
         ImGui::BeginChild("##AssetGrid", ImVec2(0, 0), false);  // No border
         RenderAssetGrid();
         ImGui::EndChild();
+
+        if (IsSearchActive()) {
+            ProcessPendingSearchThumbnailLoads();
+        } else {
+            ClearPendingSearchThumbnailLoads();
+        }
 
         ImGui::EndChild();
     }
@@ -506,6 +515,7 @@ void AssetBrowserPanel::RenderToolbar() {
             searchQuery.clear();
             activeSearchQuery.clear();
             searchResults.clear();
+            ClearPendingSearchThumbnailLoads();
         }
     }
 
@@ -864,8 +874,19 @@ void AssetBrowserPanel::RenderAssetGrid()
                               lowerExt == ".tga" || lowerExt == ".dds");
         
         if (isTextureAsset && !asset.isDirectory) {
-            //Show actual texture thumbnail instead of icon
-            uint32_t textureId = GetOrCreateThumbnail(asset.guid, asset.filePath);
+            // Avoid expensive first-search hitch by only using cached thumbnails while searching.
+            uint32_t textureId = 0;
+            const uint64_t cacheKey = asset.guid.high ^ asset.guid.low;
+            const auto cachedThumbnail = thumbnailCache.find(cacheKey);
+            if (cachedThumbnail != thumbnailCache.end()) {
+                textureId = cachedThumbnail->second;
+            }
+            else if (searching) {
+                QueueSearchThumbnailLoad(asset);
+            }
+            else {
+                textureId = GetOrCreateThumbnail(asset.guid, asset.filePath);
+            }
             
             if (textureId != 0) {
                 // Add subtle border for texture thumbnails
@@ -1173,6 +1194,7 @@ void AssetBrowserPanel::RenderAssetGrid()
 
                     EnsurePrefabLinkOn(ecs, dropped, finalRelativePath);
 
+                    searchCacheDirty.store(true);
                     RefreshAssets();
                 }
             }
@@ -1260,6 +1282,32 @@ bool AssetBrowserPanel::IsSearchActive() const {
     return !searchQuery.empty();
 }
 
+std::string AssetBrowserPanel::ToLowerCopy(const std::string& value) {
+    std::string lowered = value;
+    std::transform(lowered.begin(), lowered.end(), lowered.begin(),
+        [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
+    return lowered;
+}
+
+void AssetBrowserPanel::RebuildSearchCache() {
+    std::vector<AssetInfo> discoveredAssets;
+    CollectAssetsRecursive(rootAssetDirectory, discoveredAssets);
+
+    // Keep ordering stable and deterministic for search result rendering.
+    std::sort(discoveredAssets.begin(), discoveredAssets.end(), [](const AssetInfo& a, const AssetInfo& b) {
+        return a.fileName < b.fileName;
+    });
+
+    searchableAssetIndex.clear();
+    searchableAssetIndex.reserve(discoveredAssets.size());
+
+    for (const auto& asset : discoveredAssets) {
+        searchableAssetIndex.push_back(SearchableAssetEntry{ asset, ToLowerCopy(asset.fileName) });
+    }
+
+    searchCacheDirty.store(false);
+}
+
 void AssetBrowserPanel::CollectAssetsRecursive(const std::string& directory, std::vector<AssetInfo>& outResults) {
     try {
         for (const auto& entry : std::filesystem::directory_iterator(directory)) {
@@ -1302,15 +1350,20 @@ void AssetBrowserPanel::CollectAssetsRecursive(const std::string& directory, std
 void AssetBrowserPanel::RefreshSearchResults() {
     searchResults.clear();
     activeSearchQuery = searchQuery;
+    ClearPendingSearchThumbnailLoads();
 
     if (searchQuery.empty()) return;
 
-    CollectAssetsRecursive(rootAssetDirectory, searchResults);
+    if (searchCacheDirty.load()) {
+        RebuildSearchCache();
+    }
 
-    // Sort alphabetically by filename
-    std::sort(searchResults.begin(), searchResults.end(), [](const AssetInfo& a, const AssetInfo& b) {
-        return a.fileName < b.fileName;
-    });
+    const std::string lowerSearch = ToLowerCopy(searchQuery);
+    for (const auto& entry : searchableAssetIndex) {
+        if (entry.lowerFileName.find(lowerSearch) != std::string::npos) {
+            searchResults.push_back(entry.asset);
+        }
+    }
 }
 
 void AssetBrowserPanel::NavigateToDirectory(const std::string& directory) {
@@ -1321,6 +1374,7 @@ void AssetBrowserPanel::NavigateToDirectory(const std::string& directory) {
         searchQuery.clear();
         activeSearchQuery.clear();
         searchResults.clear();
+        ClearPendingSearchThumbnailLoads();
 
         // Only refresh and update if directory actually changed
         if (currentDirectory != normalizedPath) {
@@ -1352,7 +1406,7 @@ void AssetBrowserPanel::UpdateBreadcrumbs() {
 
 bool AssetBrowserPanel::PassesFilter(const AssetInfo& asset) const {
     // Search filter
-    if (!searchQuery.empty()) {
+    if (!searchQuery.empty() && activeSearchQuery != searchQuery) {
         std::string lowerFileName = asset.fileName;
         std::string lowerSearch = searchQuery;
         std::transform(lowerFileName.begin(), lowerFileName.end(), lowerFileName.begin(), ::tolower);
@@ -1490,6 +1544,7 @@ void AssetBrowserPanel::ShowCreateAssetMenu() {
 
         if (ImGui::MenuItem(ICON_FA_GLOBE " Scene")) {
             SceneManager::GetInstance().CreateNewScene(currentDirectory);
+            searchCacheDirty.store(true);
             RefreshAssets();
         }
 
@@ -1539,6 +1594,7 @@ void AssetBrowserPanel::ConfirmDeleteAsset() {
         }
 
         // Refresh the asset list
+        searchCacheDirty.store(true);
         RefreshAssets();
     }
     catch (const std::exception& e) {
@@ -1598,6 +1654,7 @@ void AssetBrowserPanel::RenameAsset(const AssetInfo& asset, const std::string& n
             SceneManager::GetInstance().UpdateScenePath(oldPath.string(), newPath.string());
         }
 
+        searchCacheDirty.store(true);
         RefreshAssets();
     }
     else {
@@ -1900,10 +1957,10 @@ uint32_t AssetBrowserPanel::GetOrCreateThumbnail(const GUID_128& guid, const std
     uint64_t cacheKey = guid.high ^ guid.low;
     
     // Check if thumbnail already exists in cache
-    //auto it = thumbnailCache.find(cacheKey);
-    //if (it != thumbnailCache.end()) {
-    //    return it->second;
-    //}
+    auto it = thumbnailCache.find(cacheKey);
+    if (it != thumbnailCache.end()) {
+        return it->second;
+    }
 
     // Load texture using AssetManager and ResourceManager (GUID-based)
     std::shared_ptr<Texture> texture = nullptr;
@@ -1939,6 +1996,58 @@ void AssetBrowserPanel::RemoveThumbnailFromCache(const GUID_128& guid) {
     if (it != thumbnailCache.end()) {
         thumbnailCache.erase(it);
     }
+
+    pendingSearchThumbnailKeys.erase(cacheKey);
+}
+
+void AssetBrowserPanel::QueueSearchThumbnailLoad(const AssetInfo& asset) {
+    if (asset.isDirectory) {
+        return;
+    }
+
+    const uint64_t cacheKey = asset.guid.high ^ asset.guid.low;
+    if (thumbnailCache.find(cacheKey) != thumbnailCache.end()) {
+        return;
+    }
+
+    if (pendingSearchThumbnailKeys.find(cacheKey) != pendingSearchThumbnailKeys.end()) {
+        return;
+    }
+
+    pendingSearchThumbnailLoads.push_back(asset);
+    pendingSearchThumbnailKeys.insert(cacheKey);
+}
+
+void AssetBrowserPanel::ProcessPendingSearchThumbnailLoads() {
+    int loadedThisFrame = 0;
+
+    while (!pendingSearchThumbnailLoads.empty() && loadedThisFrame < MAX_SEARCH_THUMBNAILS_PER_FRAME) {
+        AssetInfo asset = pendingSearchThumbnailLoads.front();
+        pendingSearchThumbnailLoads.pop_front();
+
+        const uint64_t cacheKey = asset.guid.high ^ asset.guid.low;
+        pendingSearchThumbnailKeys.erase(cacheKey);
+
+        const std::string lowerExt = ToLowerCopy(asset.extension);
+        const bool isTextureAsset = (lowerExt == ".png" || lowerExt == ".jpg" ||
+                                     lowerExt == ".jpeg" || lowerExt == ".bmp" ||
+                                     lowerExt == ".tga" || lowerExt == ".dds");
+        if (!isTextureAsset) {
+            continue;
+        }
+
+        if (thumbnailCache.find(cacheKey) != thumbnailCache.end()) {
+            continue;
+        }
+
+        GetOrCreateThumbnail(asset.guid, asset.filePath);
+        ++loadedThisFrame;
+    }
+}
+
+void AssetBrowserPanel::ClearPendingSearchThumbnailLoads() {
+    pendingSearchThumbnailLoads.clear();
+    pendingSearchThumbnailKeys.clear();
 }
 
 // ============================================================================

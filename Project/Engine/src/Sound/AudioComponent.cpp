@@ -76,7 +76,11 @@ void AudioComponent::PlayOneShot(std::string guidStr) {
     ChannelHandle oneShotChannel;
     
     if (Spatialize && SpatialBlend > 0.0f) {
-        oneShotChannel = audioMgr.PlayAudioAtPosition(clipToPlay, Position, false, Volume, SpatialBlend, MinDistance, MaxDistance);
+        if (!OutputAudioMixerGroup.empty()) {
+            oneShotChannel = audioMgr.PlayAudioAtPositionOnBus(clipToPlay, OutputAudioMixerGroup, Position, false, Volume, SpatialBlend, MinDistance, MaxDistance);
+        } else {
+            oneShotChannel = audioMgr.PlayAudioAtPosition(clipToPlay, Position, false, Volume, SpatialBlend, MinDistance, MaxDistance);
+        }
     } else if (!OutputAudioMixerGroup.empty()) {
         oneShotChannel = audioMgr.PlayAudioOnBus(clipToPlay, OutputAudioMixerGroup, false, Volume);
     } else {
@@ -338,7 +342,11 @@ ChannelHandle AudioComponent::PlayInternal(bool oneShot) {
     ChannelHandle channel = 0;
     
     if (Spatialize && SpatialBlend > 0.0f) {
-        channel = audioMgr.PlayAudioAtPosition(CachedAudioAsset, Position, Loop && !oneShot, Volume, SpatialBlend, MinDistance, MaxDistance);
+        if (!OutputAudioMixerGroup.empty()) {
+            channel = audioMgr.PlayAudioAtPositionOnBus(CachedAudioAsset, OutputAudioMixerGroup, Position, Loop && !oneShot, Volume, SpatialBlend, MinDistance, MaxDistance);
+        } else {
+            channel = audioMgr.PlayAudioAtPosition(CachedAudioAsset, Position, Loop && !oneShot, Volume, SpatialBlend, MinDistance, MaxDistance);
+        }
     } else if (!OutputAudioMixerGroup.empty()) {
         channel = audioMgr.PlayAudioOnBus(CachedAudioAsset, OutputAudioMixerGroup, Loop && !oneShot, Volume);
     } else {

@@ -22,6 +22,7 @@
 #include "ECS/NameComponent.hpp"
 #include "ECS/TagComponent.hpp"
 #include "ECS/LayerComponent.hpp"
+#include "ECS/SiblingIndexComponent.hpp"
 #include "Transform/TransformComponent.hpp"
 #include "Graphics/Model/ModelRenderComponent.hpp"
 #include <ECS/ECSRegistry.hpp>
@@ -175,7 +176,7 @@ static void ApplyReflectedComponent(ECSManager& ecs,
 }
 
 // ============ INSTANTIATE (new entity) ============ 
-Entity SpawnPrefab(const rapidjson::Value& ents, ECSManager& ecs, bool isSerializing = false) {
+Entity SpawnPrefab(const rapidjson::Value& ents, ECSManager& ecs, bool isSerializing = false, bool preserveSourceGuids = false) {
     std::unordered_map<GUID_128, GUID_128> guidRemap;
     std::vector<Entity> newEntities;
 
@@ -189,9 +190,19 @@ Entity SpawnPrefab(const rapidjson::Value& ents, ECSManager& ecs, bool isSeriali
 
         GUID_128 oldGUID = Serializer::DeserializeEntityGUID(entObj);
 
-        // Generate a new GUID for the new entity instance.
-        GUID_string newGUIDStr = GUIDUtilities::GenerateGUIDString();
-        GUID_128 newGUID = GUIDUtilities::ConvertStringToGUID128(newGUIDStr);
+        GUID_128 newGUID{};
+        bool canPreserveGuid = preserveSourceGuids &&
+                               !(oldGUID == GUID_128{}) &&
+                               guidRemap.find(oldGUID) == guidRemap.end();
+        if (canPreserveGuid) {
+            // Prefab editor sandbox load: keep file GUIDs stable so save does not churn GUIDs.
+            newGUID = oldGUID;
+        }
+        else {
+            // Scene/runtime instantiation: generate unique instance GUIDs.
+            GUID_string newGUIDStr = GUIDUtilities::GenerateGUIDString();
+            newGUID = GUIDUtilities::ConvertStringToGUID128(newGUIDStr);
+        }
 
         // Create a new entity with the new GUID.
         Entity newEntity = ecs.CreateEntityWithGUID(newGUID);
@@ -265,7 +276,7 @@ Entity SpawnPrefab(const rapidjson::Value& ents, ECSManager& ecs, bool isSeriali
 	return newEntities.empty() ? static_cast<Entity>(-1) : newEntities[0];
 }
 
-ENGINE_API Entity InstantiatePrefabFromFile(const std::string& prefabPath, bool isSerializing)
+ENGINE_API Entity InstantiatePrefabFromFile(const std::string& prefabPath, bool isSerializing, bool preserveSourceGuids)
 {
     //ENGINE_LOG_INFO("[PrefabIO_v2] InstantiatePrefabFromFile called with: " + prefabPath);
     ECSManager& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
@@ -336,7 +347,7 @@ ENGINE_API Entity InstantiatePrefabFromFile(const std::string& prefabPath, bool 
     }
 
     const rapidjson::Value& ents = doc["prefab_entities"];
-    Entity prefab = SpawnPrefab(ents, ecs, isSerializing);
+    Entity prefab = SpawnPrefab(ents, ecs, isSerializing, preserveSourceGuids);
     EnsurePrefabLinkOn(ecs, prefab, finalRelativePath);
 
     // Ensure the BoneNameToEntityMap is populated if the prefab has a ModelRenderComponent.
@@ -420,6 +431,12 @@ ENGINE_API Entity InstantiatePrefabIntoEntity(const std::string& prefabPath, Ent
 	Transform prevTransform = ecs.GetComponent<Transform>(intoEntity);
     std::string prevName = ecs.GetComponent<NameComponent>(intoEntity).name;
 
+    // Capture SiblingIndex to preserve hierarchy position
+    int prevSiblingIndex = 0;
+    if (ecs.HasComponent<SiblingIndexComponent>(intoEntity)) {
+        prevSiblingIndex = ecs.GetComponent<SiblingIndexComponent>(intoEntity).siblingIndex;
+    }
+
     // Capture Parent Info
     Entity parentEntity = static_cast<Entity>(-1);
     if (ecs.HasComponent<ParentComponent>(intoEntity)) {
@@ -457,6 +474,13 @@ ENGINE_API Entity InstantiatePrefabIntoEntity(const std::string& prefabPath, Ent
     if (ecs.HasComponent<NameComponent>(prefab)) {
         auto& nameComp = ecs.GetComponent<NameComponent>(prefab);
         nameComp.name = prevName;
+    }
+
+    // Restore the previous sibling index to preserve hierarchy position.
+    if (ecs.HasComponent<SiblingIndexComponent>(prefab)) {
+        ecs.GetComponent<SiblingIndexComponent>(prefab).siblingIndex = prevSiblingIndex;
+    } else {
+        ecs.AddComponent<SiblingIndexComponent>(prefab, SiblingIndexComponent{ prevSiblingIndex });
     }
 
     // Restore Parent Link

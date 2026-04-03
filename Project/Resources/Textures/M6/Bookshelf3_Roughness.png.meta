@@ -1,0 +1,15 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "000e5e231c1d3819-0004b3e1f601d759",
+        "source": "../../Resources/Textures/M6/Bookshelf3_Roughness.png",
+        "compiled": "../../Resources/Textures/M6/Bookshelf3_Roughness.dds"
+    },
+    "TextureMetaData": {
+        "type": "roughness",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

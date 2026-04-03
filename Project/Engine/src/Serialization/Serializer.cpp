@@ -734,15 +734,21 @@ rapidjson::Value Serializer::SerializeEntity(Entity entity, rapidjson::Document:
             bool savedInstanceState = false;
             if (sd.instanceCreated && sd.instanceId >= 0 && Scripting::GetLuaState()) {
                 try {
-                    if (Scripting::IsValidInstance(sd.instanceId)) {
+                    if (Scripting::IsValidInstanceForScript(sd.instanceId, sd.scriptPath)) {
                         std::string instJson = Scripting::SerializeInstanceToJson(sd.instanceId);
                         if (!instJson.empty()) {
                             rapidjson::Document tmp;
                             if (!tmp.Parse(instJson.c_str()).HasParseError()) {
-                                rapidjson::Value instVal;
-                                instVal.CopyFrom(tmp, alloc);
-                                scriptDataObj.AddMember("instanceState", instVal, alloc);
-                                savedInstanceState = true;
+                                // An empty object "{}" means the Lua instance was never populated
+                                // (e.g. hot-reload created a blank instance). Do NOT treat it as a
+                                // valid saved state — fall through to pendingInstanceState so that
+                                // configured values (audio GUIDs etc.) are not erased.
+                                if (!tmp.IsObject() || !tmp.ObjectEmpty()) {
+                                    rapidjson::Value instVal;
+                                    instVal.CopyFrom(tmp, alloc);
+                                    scriptDataObj.AddMember("instanceState", instVal, alloc);
+                                    savedInstanceState = true;
+                                }
                             }
                             else {
                                 // fallback: store as raw string
@@ -1107,7 +1113,7 @@ void Serializer::SerializePrefabInstanceDelta(ECSManager& sceneECS, Entity insta
                 bool savedInstanceState = false;
                 if (sd.instanceCreated && sd.instanceId >= 0 && Scripting::GetLuaState()) {
                     try {
-                        if (Scripting::IsValidInstance(sd.instanceId)) {
+                        if (Scripting::IsValidInstanceForScript(sd.instanceId, sd.scriptPath)) {
                             std::string instJson = Scripting::SerializeInstanceToJson(sd.instanceId);
                             if (!instJson.empty()) {
                                 rapidjson::Document tmp;
@@ -1957,6 +1963,174 @@ void Serializer::ApplyPrefabOverridesRecursive(ECSManager& ecs, Entity& currentE
                         }
                         if (!foundInOverride) {
                             scriptComp.scripts.push_back(std::move(prefabScript));
+                        }
+                    }
+
+                    // Merge prefab instanceState into override instanceState:
+                    // Propagates prefab-configured array values (e.g. GUID arrays) into the
+                    // override when the override contains only empty/default values for that field.
+                    // This ensures that edits made in the prefab editor flow through to scene
+                    // instances on the next reload, without clobbering genuine scene-level overrides.
+                    //
+                    // A field in the override is treated as "default/unset" if it is:
+                    //   (a) an empty object {} — serialization artifact from a Lua table with no entries, or
+                    //   (b) an array where every element is the zero GUID "00000000-0000-0000-0000-000000000000"
+                    //       — the placeholder inserted when a user hasn't configured a value yet.
+                    // In both cases, if the prefab has a non-empty, non-zero array for the same field,
+                    // the prefab's value wins.
+
+                    // Helper: supports both GUID formats used by the project.
+                    auto isZeroGuidString = [](const char* s) -> bool {
+                        return std::strcmp(s, "00000000-0000-0000-0000-000000000000") == 0 ||
+                               std::strcmp(s, "0000000000000000-0000000000000000") == 0;
+                    };
+
+                    auto isGuidString = [&](const char* s) -> bool {
+                        if (!s) return false;
+                        const size_t len = std::strlen(s);
+                        if (len == 36) {
+                            return s[8] == '-' && s[13] == '-' && s[18] == '-' && s[23] == '-';
+                        }
+                        if (len == 33) {
+                            return s[16] == '-';
+                        }
+                        return false;
+                    };
+
+                    // Helper: returns true if every string element is the zero GUID placeholder.
+                    auto isAllZeroGuids = [&](const rapidjson::Value& arr) -> bool {
+                        if (!arr.IsArray() || arr.Empty()) return true;
+                        for (const auto& elem : arr.GetArray()) {
+                            if (!elem.IsString()) return false;
+                            if (!isZeroGuidString(elem.GetString())) return false;
+                        }
+                        return true;
+                    };
+
+                    auto isGuidArrayLikeObject = [&](const rapidjson::Value& obj) -> bool {
+                        if (!obj.IsObject()) return false;
+                        for (auto m = obj.MemberBegin(); m != obj.MemberEnd(); ++m) {
+                            const rapidjson::Value& name = m->name;
+                            const rapidjson::Value& val = m->value;
+                            if (!name.IsString() || !val.IsString()) return false;
+                            const char* key = name.GetString();
+                            if (!key || *key == '\0') return false;
+                            for (const char* c = key; *c; ++c) {
+                                if (*c < '0' || *c > '9') return false;
+                            }
+                            if (!isGuidString(val.GetString())) return false;
+                        }
+                        return true;
+                    };
+
+                    auto isAllZeroGuidObject = [&](const rapidjson::Value& obj) -> bool {
+                        if (!obj.IsObject() || obj.ObjectEmpty()) return true;
+                        for (auto m = obj.MemberBegin(); m != obj.MemberEnd(); ++m) {
+                            if (!m->value.IsString()) return false;
+                            if (!isZeroGuidString(m->value.GetString())) return false;
+                        }
+                        return true;
+                    };
+
+                    auto isPrefabGuidCandidate = [&](const rapidjson::Value& v) -> bool {
+                        if (v.IsArray()) return true;
+                        if (v.IsString() && isGuidString(v.GetString())) return true;
+                        if (isGuidArrayLikeObject(v)) return true;
+                        return false;
+                    };
+
+                    // Helper: field trackers (`__field_list` and `fields.__field_list`) encode
+                    // touched fields. If a field list exists but does not contain this key, treat
+                    // the field as untouched so prefab updates can flow through.
+                    auto isUntouchedByFieldList = [](const rapidjson::Value& docObj, const char* key) -> bool {
+                        auto evaluateHolder = [&](const rapidjson::Value& holder, bool& sawFieldList, bool& explicitTouch) {
+                            if (!holder.IsObject() || !holder.HasMember("__field_list")) return;
+                            const rapidjson::Value& fl = holder["__field_list"];
+                            if (!fl.IsObject()) return;
+
+                            sawFieldList = true;
+                            if (!fl.HasMember(key)) return;
+
+                            const rapidjson::Value& marker = fl[key];
+                            if (marker.IsObject() && marker.ObjectEmpty()) {
+                                // Explicitly marked as unset/default.
+                                return;
+                            }
+
+                            // Any non-empty marker means this field was explicitly touched.
+                            explicitTouch = true;
+                        };
+
+                        if (!docObj.IsObject()) return false;
+
+                        bool sawFieldList = false;
+                        bool explicitTouch = false;
+
+                        evaluateHolder(docObj, sawFieldList, explicitTouch);
+                        if (docObj.HasMember("fields")) {
+                            evaluateHolder(docObj["fields"], sawFieldList, explicitTouch);
+                        }
+
+                        if (explicitTouch) return false;
+                        if (!sawFieldList) return false;
+                        return true;
+                    };
+
+                    for (auto& overrideScript : scriptComp.scripts) {
+                        const ScriptData* prefabScript = nullptr;
+                        for (const auto& ps : prefabScripts) {
+                            if (ps.scriptPath == overrideScript.scriptPath) {
+                                prefabScript = &ps;
+                                break;
+                            }
+                        }
+                        if (!prefabScript || prefabScript->pendingInstanceState.empty() ||
+                            overrideScript.pendingInstanceState.empty())
+                            continue;
+
+                        rapidjson::Document prefabDoc, overrideDoc;
+                        if (prefabDoc.Parse(prefabScript->pendingInstanceState.c_str()).HasParseError() ||
+                            overrideDoc.Parse(overrideScript.pendingInstanceState.c_str()).HasParseError() ||
+                            !prefabDoc.IsObject() || !overrideDoc.IsObject())
+                            continue;
+
+                        bool modified = false;
+                        for (auto it = prefabDoc.MemberBegin(); it != prefabDoc.MemberEnd(); ++it) {
+                            const char* key = it->name.GetString();
+                            const rapidjson::Value& prefabVal = it->value;
+                            if (!isPrefabGuidCandidate(prefabVal)) continue;
+                            if (!overrideDoc.HasMember(key)) {
+                                // New prefab-side GUID field: add it so instances inherit it.
+                                rapidjson::Value keyCopy;
+                                keyCopy.SetString(key, overrideDoc.GetAllocator());
+                                rapidjson::Value valCopy;
+                                valCopy.CopyFrom(prefabVal, overrideDoc.GetAllocator());
+                                overrideDoc.AddMember(keyCopy, valCopy, overrideDoc.GetAllocator());
+                                modified = true;
+                                continue;
+                            }
+                            const rapidjson::Value& overrideVal = overrideDoc[key];
+
+                            bool overrideIsDefault =
+                                (overrideVal.IsObject() && overrideVal.ObjectEmpty()) ||
+                                (overrideVal.IsArray() && isAllZeroGuids(overrideVal)) ||
+                                (overrideVal.IsString() && isZeroGuidString(overrideVal.GetString())) ||
+                                (isGuidArrayLikeObject(overrideVal) && isAllZeroGuidObject(overrideVal)) ||
+                                isUntouchedByFieldList(overrideDoc, key);
+
+                            if (overrideIsDefault) {
+                                rapidjson::Value copy;
+                                copy.CopyFrom(prefabVal, overrideDoc.GetAllocator());
+                                overrideDoc[key] = std::move(copy);
+                                modified = true;
+                            }
+                        }
+
+                        if (modified) {
+                            rapidjson::StringBuffer buf;
+                            rapidjson::Writer<rapidjson::StringBuffer> writer(buf);
+                            overrideDoc.Accept(writer);
+                            overrideScript.pendingInstanceState = buf.GetString();
                         }
                     }
                 }
@@ -3569,54 +3743,16 @@ void Serializer::DeserializeSiblingIndexComponent(SiblingIndexComponent& sibling
 }
 
 void Serializer::DeserializeCameraComponent(CameraComponent& cameraComp, const rapidjson::Value& cameraJSON) {
-    if (cameraJSON.HasMember("data") && cameraJSON["data"].IsArray()) {
-        const auto& d = cameraJSON["data"];
-
-        rapidjson::SizeType idx = 0;
-        cameraComp.enabled = Serializer::GetBool(d, idx++);
-        cameraComp.isActive = Serializer::GetBool(d, idx++);
-        cameraComp.priority = Serializer::GetInt(d, idx++);
-
-        // Skip target and up in the old format (they're not in the reflection data array)
-        // These are handled separately by custom serialization
-
-        cameraComp.yaw = Serializer::GetFloat(d, idx++);
-        cameraComp.pitch = Serializer::GetFloat(d, idx++);
-        cameraComp.useFreeRotation = Serializer::GetBool(d, idx++);
-        cameraComp.fov = Serializer::GetFloat(d, idx++);
-        cameraComp.nearPlane = Serializer::GetFloat(d, idx++);
-        cameraComp.farPlane = Serializer::GetFloat(d, idx++);
-        cameraComp.orthoSize = Serializer::GetFloat(d, idx++);
-        cameraComp.movementSpeed = Serializer::GetFloat(d, idx++);
-        cameraComp.mouseSensitivity = Serializer::GetFloat(d, idx++);
-        cameraComp.minZoom = Serializer::GetFloat(d, idx++);
-        cameraComp.maxZoom = Serializer::GetFloat(d, idx++);
-        cameraComp.zoomSpeed = Serializer::GetFloat(d, idx++);
-        cameraComp.shakeIntensity = Serializer::GetFloat(d, idx++);
-        cameraComp.shakeDuration = Serializer::GetFloat(d, idx++);
-        cameraComp.shakeFrequency = Serializer::GetFloat(d, idx++);
-        if (d.Size() > idx) {
-            // Use helper function to extract skybox texture GUID
-            GUID_string skyboxGUIDStr = extractGUIDString(d[idx]);
-            idx++;
-            cameraComp.skyboxTextureGUID = GUIDUtilities::ConvertStringToGUID128(skyboxGUIDStr);
+    // Use reflection system to deserialize all registered fields from the "data" array
+    try {
+        if (cameraJSON.HasMember("data") && cameraJSON["data"].IsArray()) {
+            TypeResolver<CameraComponent>::Get()->Deserialize(&cameraComp, cameraJSON);
         }
-        // Post-processing fields (index-based)
-        if (d.Size() > idx) cameraComp.blurEnabled = Serializer::GetBool(d, idx++);
-        if (d.Size() > idx) cameraComp.blurIntensity = Serializer::GetFloat(d, idx++);
-        if (d.Size() > idx) cameraComp.blurRadius = Serializer::GetFloat(d, idx++);
-        if (d.Size() > idx) cameraComp.blurPasses = Serializer::GetInt(d, idx++);
-        if (d.Size() > idx) cameraComp.bloomEnabled = Serializer::GetBool(d, idx++);
-        if (d.Size() > idx) cameraComp.bloomThreshold = Serializer::GetFloat(d, idx++);
-        if (d.Size() > idx) cameraComp.bloomIntensity = Serializer::GetFloat(d, idx++);
-        if (d.Size() > idx) cameraComp.vignetteEnabled = Serializer::GetBool(d, idx++);
-        if (d.Size() > idx) cameraComp.vignetteIntensity = Serializer::GetFloat(d, idx++);
-        if (d.Size() > idx) cameraComp.vignetteSmoothness = Serializer::GetFloat(d, idx++);
-        if (d.Size() > idx) cameraComp.colorGradingEnabled = Serializer::GetBool(d, idx++);
-        if (d.Size() > idx) cameraComp.cgBrightness = Serializer::GetFloat(d, idx++);
-        if (d.Size() > idx) cameraComp.cgContrast = Serializer::GetFloat(d, idx++);
-        if (d.Size() > idx) cameraComp.cgSaturation = Serializer::GetFloat(d, idx++);
     }
+    catch (const std::exception& e) {
+        ENGINE_LOG_ERROR("Failed to deserialize CameraComponent via reflection: " + std::string(e.what()));
+    }
+
 
     // Check if we have custom serialized target and up vectors
     if (cameraJSON.HasMember("target") && cameraJSON["target"].IsObject()) {
@@ -3747,67 +3883,19 @@ void Serializer::DeserializeCameraComponent(CameraComponent& cameraComp, const r
 
 // Helper function to deserialize a single script instance
 static void DeserializeSingleScript(ScriptData& sd, const std::string& instJson) {
-    try {
-        int instId = Scripting::CreateInstanceFromFile(sd.scriptPath);
-        if (Scripting::IsValidInstance(instId)) {
-            sd.instanceId = instId;
-            sd.instanceCreated = true;
+    // 1. DO NOT touch the Lua state or Scripting:: namespace here!
+    // Firing Lua functions during scene deserialization causes EDEADLK mutex deadlocks.
 
-            // register preserveKeys with runtime
-            if (!sd.preserveKeys.empty()) {
-                Scripting::RegisterInstancePreserveKeys(instId, sd.preserveKeys);
-            }
+    // 2. Just save the raw JSON state.
+    if (!instJson.empty()) {
+        sd.pendingInstanceState = instJson;
+    }
 
-            // deserialize instance state if available
-            if (!instJson.empty()) {
-                bool ok = Scripting::DeserializeJsonToInstance(instId, instJson);
-                if (!ok) {
-                    std::cerr << "[DeserializeSingleScript] Scripting::DeserializeJsonToInstance failed for " << sd.scriptPath << "\n";
-                    // fallback: store pending state
-                    sd.pendingInstanceState = instJson;
-                }
-                else {
-                    // Successfully deserialized, clear any pending state
-                    sd.pendingInstanceState = instJson;
-                }
-            }
-
-            // optionally call entry function
-            if (sd.autoInvokeEntry && !sd.entryFunction.empty()) {
-                bool called = Scripting::CallInstanceFunction(instId, sd.entryFunction);
-                if (!called) {
-                    ENGINE_PRINT(EngineLogging::LogLevel::Debug, "DeserializeSingleScript: entry call failed: ", sd.entryFunction.c_str());
-                }
-            }
-        }
-        else {
-            ENGINE_PRINT(EngineLogging::LogLevel::Warn, "DeserializeSingleScript: CreateInstanceFromFile failed for ", sd.scriptPath.c_str());
-            // Store pending state for later
-            if (!instJson.empty()) {
-                sd.pendingInstanceState = instJson;
-            }
-            sd.instanceId = -1;
-            sd.instanceCreated = false;
-        }
-    }
-    catch (const std::exception& e) {
-        std::cerr << "[DeserializeSingleScript] exception: " << e.what() << "\n";
-        // Store pending state for later
-        if (!instJson.empty()) {
-            sd.pendingInstanceState = instJson;
-        }
-        sd.instanceId = -1;
-        sd.instanceCreated = false;
-    }
-    catch (...) {
-        std::cerr << "[DeserializeSingleScript] unknown exception\n";
-        // Store pending state for later
-        if (!instJson.empty()) {
-            sd.pendingInstanceState = instJson;
-        }
-        sd.instanceId = -1;
-        sd.instanceCreated = false;
-    }
+    // 3. Mark the instance as uncreated. 
+    // ScriptSystem::Update() will safely scoop this up on the very next frame, 
+    // call AttachScript(), and inject the pendingInstanceState perfectly.
+    sd.instanceId = -1;
+    sd.instanceCreated = false;
 }
 
 void Serializer::DeserializeScriptComponent(Entity entity, const rapidjson::Value& scriptJSON) {

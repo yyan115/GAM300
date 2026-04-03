@@ -76,6 +76,9 @@ namespace Scripting {
         // Returns true on success.
         bool SetFieldFromString(lua_State* L, int instanceRef, const FieldInfo& field, const std::string& valueString) const;
 
+        // Invalidate cached field info for a specific instance, forcing re-inspection next frame.
+        void InvalidateCache(const std::string& scriptPath, int instanceRef);
+
         // Helpers for editor stub generation. Returns a Lua file content containing
         // field declarations/comments for the editor autocomplete.
         std::string GenerateEditorStub(const std::string& scriptPath, const std::vector<FieldInfo>& fields) const;

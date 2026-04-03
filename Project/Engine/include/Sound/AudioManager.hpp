@@ -74,6 +74,7 @@ public:
     // Play/Stop/Pause API
     ChannelHandle PlayAudio(std::shared_ptr<Audio> audioAsset, bool loop = false, float volume = 1.0f);
     ChannelHandle PlayAudioAtPosition(std::shared_ptr<Audio> audioAsset, const Vector3D& position, bool loop = false, float volume = 1.0f, float attenuation = 1.0f, float minDistance = 1.0f, float maxDistance = 100.0f);
+    ChannelHandle PlayAudioAtPositionOnBus(std::shared_ptr<Audio> audioAsset, const std::string& busName, const Vector3D& position, bool loop = false, float volume = 1.0f, float attenuation = 1.0f, float minDistance = 1.0f, float maxDistance = 100.0f);
     ChannelHandle PlayAudioOnBus(std::shared_ptr<Audio> audioAsset, const std::string& busName, bool loop = false, float volume = 1.0f);
     
     void Stop(ChannelHandle channel);

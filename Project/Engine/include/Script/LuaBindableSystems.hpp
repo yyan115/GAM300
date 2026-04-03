@@ -200,15 +200,48 @@ namespace InputWrappers {
 #include "Platform/IPlatform.h"
 
 namespace KeyboardWrappers {
+    // Per-frame state for edge detection (pressed vs held)
+    inline std::unordered_set<int> s_currentKeys;
+    inline std::unordered_set<int> s_previousKeys;
+
+    // Call once per frame (from Engine) to snapshot current key states
+    inline void UpdateKeyStates() {
+        s_previousKeys = std::move(s_currentKeys);
+        s_currentKeys.clear();
+
+        auto* platform = WindowManager::GetPlatform();
+        if (!platform) return;
+
+        // Snapshot all keys that are currently held (A through ALT, skip UNKNOWN)
+        for (int i = static_cast<int>(Input::Key::A); i < static_cast<int>(Input::Key::UNKNOWN); ++i) {
+            if (platform->IsKeyPressed(static_cast<Input::Key>(i))) {
+                s_currentKeys.insert(i);
+            }
+        }
+    }
+
+    // "pressed" — true ONLY on the first frame the key goes down (one-shot / edge-triggered)
     inline bool IsKeyPressed(int keyCode) {
+        return s_currentKeys.count(keyCode) > 0 && s_previousKeys.count(keyCode) == 0;
+    }
+
+    // "held" — true every frame the key is physically down
+    inline bool IsKeyHeld(int keyCode) {
         auto* platform = WindowManager::GetPlatform();
         if (!platform) return false;
         return platform->IsKeyPressed(static_cast<Input::Key>(keyCode));
     }
 
+    // "pressed" — true ONLY on the first frame the digit key goes down (one-shot)
     inline bool IsDigitPressed(int digit) {
         if (digit < 0 || digit > 9) return false;
         return IsKeyPressed(static_cast<int>(Input::Key::NUM_0) + digit);
+    }
+
+    // "held" — true every frame the digit key is physically down
+    inline bool IsDigitHeld(int digit) {
+        if (digit < 0 || digit > 9) return false;
+        return IsKeyHeld(static_cast<int>(Input::Key::NUM_0) + digit);
     }
 
     inline bool IsMouseButtonPressed(int button) {

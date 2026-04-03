@@ -1,3 +1,15 @@
+--[[
+================================================================================
+CONTROLS MENU BUTTON HANDLER
+================================================================================
+PURPOSE:
+    Handles hover effects and click actions for controls menu buttons.
+    Audio is delegated to PauseMenuAudio via event_bus.
+
+SINGLE RESPONSIBILITY: Handle button interactions. Audio via event_bus.
+================================================================================
+--]]
+
 require("extension.engine_bootstrap")
 local Component = require("extension.mono_helper")
 
@@ -5,8 +17,6 @@ local event_bus = _G.event_bus
 
 return Component {
     fields = {
-        -- Audio: [1] = hover SFX, [2] = click SFX
-        buttonSFX = {},
         -- Sprite GUIDs: [1] = normal, [2] = hover
         BackSpriteGUIDs = {},
     },
@@ -17,8 +27,6 @@ return Component {
             GameSettings.Init()
         end
 
-        -- Cache audio component from Buttons entity
-        self._audio = self:GetComponent("AudioComponent")
         self._pageWasActive = false
 
         -- Setup button data with sprite swapping support
@@ -91,9 +99,9 @@ return Component {
             else
                 -- Handle hover enter
                 if isHovering and not data.wasHovered then
-                    -- Play hover sound
-                    if self._audio and self.buttonSFX and self.buttonSFX[1] then
-                        self._audio:PlayOneShot(self.buttonSFX[1])
+                    -- Publish hover event for PauseMenuAudio
+                    if event_bus and event_bus.publish then
+                        event_bus.publish("pause_menu.hover", {})
                     end
                     -- Switch to hover sprite
                     if data.sprite and data.spriteGUIDs and data.spriteGUIDs[2] then
@@ -113,9 +121,9 @@ return Component {
     end,
 
     OnClickBackButton = function(self)
-        local audiocomp = GetComponent(Engine.GetEntityByName("ControlsBackButton"), "AudioComponent")
-        if audiocomp then
-            audiocomp:Play()
+        -- Publish click event for PauseMenuAudio
+        if event_bus and event_bus.publish then
+            event_bus.publish("pause_menu.click", {})
         end
 
         -- Disable Controls UI, enable Pause UI
