@@ -3883,67 +3883,19 @@ void Serializer::DeserializeCameraComponent(CameraComponent& cameraComp, const r
 
 // Helper function to deserialize a single script instance
 static void DeserializeSingleScript(ScriptData& sd, const std::string& instJson) {
-    try {
-        int instId = Scripting::CreateInstanceFromFile(sd.scriptPath);
-        if (Scripting::IsValidInstanceForScript(instId, sd.scriptPath)) {
-            sd.instanceId = instId;
-            sd.instanceCreated = true;
+    // 1. DO NOT touch the Lua state or Scripting:: namespace here!
+    // Firing Lua functions during scene deserialization causes EDEADLK mutex deadlocks.
 
-            // register preserveKeys with runtime
-            if (!sd.preserveKeys.empty()) {
-                Scripting::RegisterInstancePreserveKeys(instId, sd.preserveKeys);
-            }
+    // 2. Just save the raw JSON state.
+    if (!instJson.empty()) {
+        sd.pendingInstanceState = instJson;
+    }
 
-            // deserialize instance state if available
-            if (!instJson.empty()) {
-                bool ok = Scripting::DeserializeJsonToInstance(instId, instJson);
-                if (!ok) {
-                    std::cerr << "[DeserializeSingleScript] Scripting::DeserializeJsonToInstance failed for " << sd.scriptPath << "\n";
-                    // fallback: store pending state
-                    sd.pendingInstanceState = instJson;
-                }
-                else {
-                    // Successfully deserialized, clear any pending state
-                    sd.pendingInstanceState = instJson;
-                }
-            }
-
-            // optionally call entry function
-            if (sd.autoInvokeEntry && !sd.entryFunction.empty()) {
-                bool called = Scripting::CallInstanceFunction(instId, sd.entryFunction);
-                if (!called) {
-                    ENGINE_PRINT(EngineLogging::LogLevel::Debug, "DeserializeSingleScript: entry call failed: ", sd.entryFunction.c_str());
-                }
-            }
-        }
-        else {
-            ENGINE_PRINT(EngineLogging::LogLevel::Warn, "DeserializeSingleScript: CreateInstanceFromFile failed for ", sd.scriptPath.c_str());
-            // Store pending state for later
-            if (!instJson.empty()) {
-                sd.pendingInstanceState = instJson;
-            }
-            sd.instanceId = -1;
-            sd.instanceCreated = false;
-        }
-    }
-    catch (const std::exception& e) {
-        std::cerr << "[DeserializeSingleScript] exception: " << e.what() << "\n";
-        // Store pending state for later
-        if (!instJson.empty()) {
-            sd.pendingInstanceState = instJson;
-        }
-        sd.instanceId = -1;
-        sd.instanceCreated = false;
-    }
-    catch (...) {
-        std::cerr << "[DeserializeSingleScript] unknown exception\n";
-        // Store pending state for later
-        if (!instJson.empty()) {
-            sd.pendingInstanceState = instJson;
-        }
-        sd.instanceId = -1;
-        sd.instanceCreated = false;
-    }
+    // 3. Mark the instance as uncreated. 
+    // ScriptSystem::Update() will safely scoop this up on the very next frame, 
+    // call AttachScript(), and inject the pendingInstanceState perfectly.
+    sd.instanceId = -1;
+    sd.instanceCreated = false;
 }
 
 void Serializer::DeserializeScriptComponent(Entity entity, const rapidjson::Value& scriptJSON) {
