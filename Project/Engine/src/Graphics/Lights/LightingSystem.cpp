@@ -18,7 +18,10 @@ bool LightingSystem::Initialise()
         shadowsEnabled = false;
     }
 
-    // Initialize point light shadow maps with round-robin staggered updates
+    // Initialize point light shadow maps — update every frame for visible lights.
+    // Frustum culling (IsSphereVisible) already skips off-screen lights, so updating
+    // every frame is cheap. Staggered phase offsets caused visible glitter because
+    // half the lights held a stale map each frame, making shadow edges flicker.
     pointShadowMaps.resize(MAX_POINT_LIGHT_SHADOWS);
     for (int i = 0; i < MAX_POINT_LIGHT_SHADOWS; ++i)
     {
@@ -26,11 +29,9 @@ bool LightingSystem::Initialise()
         {
             std::cout << "[LightingSystem] Warning: Point shadow map " << i << " failed" << std::endl;
         }
-        // Each map updates on a different frame within the cycle so only 1 map
-        // renders per frame instead of all at once, and no map is stale > updateInterval frames
-        pointShadowMaps[i].cacheConfig.updateInterval = 1;
-        pointShadowMaps[i].cacheConfig.maxStaleFrames = 1;
-        pointShadowMaps[i].SetPhaseOffset(i % 2);
+        pointShadowMaps[i].cacheConfig.updateInterval = 0;  // No minimum gap between updates
+        pointShadowMaps[i].cacheConfig.maxStaleFrames = 1;  // Force update if 1 frame is stale
+        pointShadowMaps[i].SetPhaseOffset(0);               // All lights sync — no alternating flicker
     }
 
     std::cout << "[LightingSystem] Initialized" << std::endl;

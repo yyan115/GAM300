@@ -23,7 +23,7 @@ bool PointShadowMap::Initialize(int res)
         glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_DEPTH_COMPONENT24,
             resolution, resolution, 0, GL_DEPTH_COMPONENT, GL_UNSIGNED_INT, nullptr);
 #else
-        glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_DEPTH_COMPONENT16,
+        glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_DEPTH_COMPONENT24,
             resolution, resolution, 0, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
 #endif
     }
@@ -107,7 +107,7 @@ void PointShadowMap::Shutdown()
     initialized = false;
 
     // Reset cache state
-    m_cachedLightPos = glm::vec3(std::numeric_limits<float>::max());
+    m_cachedLightPos = glm::vec3(FLT_MAX);
     m_cachedFarPlane = -1.0f;
     m_framesSinceUpdate = 999;
     m_forceDirty = true;
