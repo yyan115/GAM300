@@ -457,21 +457,38 @@ void SceneManager::UpdateAsyncLoad() {
         break;
     }
     case SceneLoadState::PARSING_JSON: {
-        PROFILE_SCOPED("AsyncLoad::ParseJSON");
-        ENGINE_PRINT("[AsyncLoad] PARSING_JSON for: " + asyncScenePath);
-        IPlatform* platform = WindowManager::GetPlatform();
-        if (!platform || !platform->FileExists(asyncScenePath)) {
-            ENGINE_PRINT("[SceneManager] Async load failed - file not found: " + asyncScenePath);
-            loadState = SceneLoadState::IDLE;
+        // First entry: validate file and kick off background parse
+        if (!asyncParseFuture.valid()) {
+            PROFILE_SCOPED("AsyncLoad::KickOffParse");
+            ENGINE_PRINT("[AsyncLoad] PARSING_JSON for: " + asyncScenePath);
+            IPlatform* platform = WindowManager::GetPlatform();
+            if (!platform || !platform->FileExists(asyncScenePath)) {
+                ENGINE_PRINT("[SceneManager] Async load failed - file not found: " + asyncScenePath);
+                loadState = SceneLoadState::IDLE;
+                break;
+            }
+
+            std::string pathCopy = asyncScenePath;
+            asyncParseFuture = std::async(std::launch::async, [this, platform, pathCopy]() -> bool {
+                auto data = platform->ReadAsset(pathCopy);
+                if (data.empty()) return false;
+                rapidjson::MemoryStream ms(
+                    reinterpret_cast<const char*>(data.data()), data.size());
+                asyncDoc.ParseStream(ms);
+                return !asyncDoc.HasParseError() && asyncDoc.IsObject();
+            });
             break;
         }
 
-        auto data = platform->ReadAsset(asyncScenePath);
-        rapidjson::MemoryStream ms(
-            reinterpret_cast<const char*>(data.data()), data.size());
-        asyncDoc.ParseStream(ms);
+        // Subsequent frames: check if parse is done
+        if (asyncParseFuture.wait_for(std::chrono::seconds(0)) != std::future_status::ready) {
+            break;
+        }
 
-        if (asyncDoc.HasParseError() || !asyncDoc.IsObject()) {
+        bool parseSuccess = asyncParseFuture.get();
+        asyncParseFuture = {};
+
+        if (!parseSuccess) {
             ENGINE_PRINT("[SceneManager] Async load failed - JSON parse error: " + asyncScenePath);
             loadState = SceneLoadState::IDLE;
             break;
