@@ -1,0 +1,15 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "007d76a35d7fdeae-0004b623760023f3",
+        "source": "../../Resources/Textures/M6/Lantern_LanternRect_Roughness.png",
+        "compiled": "../../Resources/Textures/M6/Lantern_LanternRect_Roughness.dds"
+    },
+    "TextureMetaData": {
+        "type": "roughness",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

@@ -48,11 +48,13 @@ return Component {
         self.active         = false
         self.slashTriggered = false
         self.timer          = 0
+        self.isEventPending = false
         self.totalDegreesTurned = 0
         if self.model then self.model.isVisible = false end
 
         if _G.event_bus then
             self._slashSub = _G.event_bus.subscribe("onClawSlashTrigger", function(data)
+                print(string.format("[EnemyClawSlashVFX] Entity %d onClawSlashTrigger received", self.entityId))
                 self:OnEventReceived(data)
             end)
         end
@@ -66,10 +68,12 @@ return Component {
         self.active         = true
         self.slashTriggered = false
         self.timer          = 0
+        self.isEventPending = true
 
         self._enemyAnim = GetComponent(data.entityId, "AnimationComponent")
         self._enemyTransform = Engine.FindTransformByID(data.entityId)
 
+        self.model = self:GetComponent("ModelRenderComponent")
         if self.model then self.model.isVisible = false end
     end,
 
@@ -99,6 +103,9 @@ return Component {
 
         self.timer = 0
         self.slashTriggered = true
+        self.isEventPending = false
+        print(string.format("[EnemyClawSlashVFX] Entity %d set visible", self.entityId));
+        self.model = self:GetComponent("ModelRenderComponent")
         if self.model then self.model.isVisible = true end
     end,
 
@@ -109,7 +116,7 @@ return Component {
         if not self.slashTriggered then
             -- ... (Your existing Trigger logic)
             local anim = self._enemyAnim
-            if anim:GetCurrentState() == "Melee Attack" and anim:GetNormalizedTime() >= self.TriggerNormalizedTime then
+            if self.isEventPending and anim:GetCurrentState() == "Melee Attack" and anim:GetNormalizedTime() >= self.TriggerNormalizedTime then
                 self:ActivateSlash()
             end
         else
@@ -152,6 +159,7 @@ return Component {
         self.slashTriggered = false
         self.rotationEnded = false
         self.totalDegreesTurned = 0
+        self.model = self:GetComponent("ModelRenderComponent")
         if self.model then self.model.isVisible = false end
     end,
 }

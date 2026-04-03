@@ -4,9 +4,12 @@ local ChaseState = {}
 function ChaseState:Enter(ai)
     -- Optional: force first repath on enter
     print("[GroundChaseState] ENTER")
-    ai._animator:SetBool("PatrolEnabled", true)
+    ai:ClearPath()
+    ai:StopCC()
+    ai._pathRepathT = 999
+
     ai._animator:SetBool("PlayerInDetectionRange", true)
-    ai._pathRepathT = (ai.PathRepathInterval or 0.45)
+    ai._animator:SetBool("PatrolEnabled", true)
     ai._footstepTimer = 0
 
     -- Play alert SFX once when first detecting player (entering chase)
@@ -24,7 +27,7 @@ function ChaseState:Update(ai, dt)
     local d2 = ai:GetPlayerDistanceSq()
 
     -- Too far -> Patrol
-    if d2 > (diseng * diseng) then
+    if d2 > (diseng * diseng) and not ai.aggressive then
         ai:StopCC()
         ai.fsm:Change("Patrol", ai.states.Patrol)
         return

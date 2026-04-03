@@ -1,0 +1,15 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "007d76a3299aacd7-0004b623700023eb",
+        "source": "../../Resources/Textures/M6/Lantern_LanternRect_Emissive.png",
+        "compiled": "../../Resources/Textures/M6/Lantern_LanternRect_Emissive.dds"
+    },
+    "TextureMetaData": {
+        "type": "emissive",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}
