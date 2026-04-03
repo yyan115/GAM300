@@ -152,7 +152,7 @@ return Component {
     -- Button callbacks: pure event publishers (logic lives in Awake subscribers above)
     OnClickPlayButton = function(self)
         if _G.event_bus then
-            _G.event_bus.publish("main_menu.click", {})
+            _G.event_bus.publish("main_menu.clickplaygame", {})
             _G.event_bus.publish("play_game_start", {})
         end
     end,

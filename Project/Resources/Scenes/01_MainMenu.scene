@@ -563,76 +563,6 @@
                         }
                     ]
                 },
-                "AudioComponent": {
-                    "type": "AudioComponent",
-                    "data": [
-                        {
-                            "type": "bool",
-                            "data": true
-                        },
-                        "0037d81b75c76d96-000400f740000003",
-                        {
-                            "type": "bool",
-                            "data": false
-                        },
-                        {
-                            "type": "bool",
-                            "data": false
-                        },
-                        {
-                            "type": "bool",
-                            "data": false
-                        },
-                        {
-                            "type": "bool",
-                            "data": false
-                        },
-                        {
-                            "type": "int",
-                            "data": 128
-                        },
-                        {
-                            "type": "float",
-                            "data": 0.795181
-                        },
-                        {
-                            "type": "float",
-                            "data": 1
-                        },
-                        {
-                            "type": "float",
-                            "data": 0
-                        },
-                        {
-                            "type": "float",
-                            "data": 1
-                        },
-                        {
-                            "type": "bool",
-                            "data": false
-                        },
-                        {
-                            "type": "float",
-                            "data": 0
-                        },
-                        {
-                            "type": "float",
-                            "data": 1
-                        },
-                        {
-                            "type": "float",
-                            "data": 1
-                        },
-                        {
-                            "type": "float",
-                            "data": 100
-                        },
-                        {
-                            "type": "std::string",
-                            "data": "SFX"
-                        }
-                    ]
-                },
                 "ActiveComponent": {
                     "type": "ActiveComponent",
                     "data": [
@@ -34369,7 +34299,10 @@
                                 ],
                                 "OnDisable": null,
                                 "BaseVolume": 1.0,
-                                "_subscriptions": {}
+                                "_subscriptions": {},
+                                "PlayGameSFX": [
+                                    "0037d81b75c76d96-000400f740000003"
+                                ]
                             }
                         }
                     ]

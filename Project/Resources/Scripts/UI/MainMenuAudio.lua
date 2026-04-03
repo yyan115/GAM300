@@ -31,6 +31,7 @@ return Component {
         HoverSFX = {},
         ClickSFX = {},
         SliderSFX = {},
+        PlayGameSFX = {},
         
         PitchVariation  = 0.08,
         BaseVolume      = 1.0,
@@ -60,6 +61,10 @@ return Component {
         self._clickSub = _G.event_bus.subscribe("main_menu.click", function(data)
             if not self._audio then return end
             AudioHelper.PlayRandomSFXPitched(self._audio, self.ClickSFX, self.PitchVariation, self.BaseVolume)
+        end)
+        self._clickplaygameSub = _G.event_bus.subscribe("main_menu.clickplaygame", function(data)
+            if not self._audio then return end
+            AudioHelper.PlayRandomSFX(self._audio, self.PlayGameSFX, self.BaseVolume)
         end)
 
         self._sliderSub = _G.event_bus.subscribe("main_menu.slider", function(data)
