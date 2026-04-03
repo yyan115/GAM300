@@ -1,0 +1,15 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "007d76a347ff8a8a-0004b623700023e9",
+        "source": "../../Resources/Textures/M6/Lantern_LanternRect_BaseColor.png",
+        "compiled": "../../Resources/Textures/M6/Lantern_LanternRect_BaseColor.dds"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}
