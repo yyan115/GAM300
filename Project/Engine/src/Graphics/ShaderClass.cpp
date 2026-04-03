@@ -357,6 +357,19 @@ bool Shader::SetupShader(const std::string& path) {
 	}
 #endif
 
+	// Auto-bind known UBO blocks to predefined binding points.
+	// CameraBlock (binding=0): view, projection, cameraPos — uploaded once per frame.
+	{
+		static const struct { const char* name; GLuint binding; } kBlocks[] = {
+			{ "CameraBlock", 0 },
+		};
+		for (auto& b : kBlocks) {
+			GLuint idx = glGetUniformBlockIndex(ID, b.name);
+			if (idx != GL_INVALID_INDEX)
+				glUniformBlockBinding(ID, idx, b.binding);
+		}
+	}
+
 	return true;
 }
 
@@ -376,6 +389,10 @@ std::string Shader::CompileToResource(const std::string& path, bool forAndroid) 
 
 	binarySupported = true;
 	std::filesystem::path p(path);
+	// Save the source base path before p gets reassigned later.
+	// This is needed to copy .vert/.frag source files for Android fallback.
+	std::string sourceBasePath = (p.parent_path() / p.stem()).generic_string();
+
 	if (!SetupShader(path)) {
 		ENGINE_PRINT(EngineLogging::LogLevel::Error, "[SHADER]: Shader compilation failed. Aborting resource compilation.\n");
 		return std::string{};
@@ -402,6 +419,19 @@ std::string Shader::CompileToResource(const std::string& path, bool forAndroid) 
 	p = shaderPath;
 	std::filesystem::create_directories(p.parent_path());
 	std::ofstream shaderFile(shaderPath, std::ios::binary);
+#ifndef ANDROID
+	// If the install directory is read-only (e.g. Program Files), fall back to LocalAppData
+	if (!shaderFile.is_open()) {
+		const char* localAppData = getenv("LOCALAPPDATA");
+		if (localAppData) {
+			p = std::filesystem::path(localAppData) / "DigiPen" / "Kusane" / "ShaderCache" / std::filesystem::path(shaderPath).filename();
+			std::filesystem::create_directories(p.parent_path());
+			shaderFile.open(p, std::ios::binary);
+			if (shaderFile.is_open())
+				shaderPath = p.generic_string();
+		}
+	}
+#endif
 	if (shaderFile.is_open()) {
 		// Write the binary format to the file.
 		shaderFile.write(reinterpret_cast<const char*>(&binaryFormat), sizeof(binaryFormat));
@@ -425,9 +455,10 @@ std::string Shader::CompileToResource(const std::string& path, bool forAndroid) 
 				std::string androidFragPath = (AssetManager::GetInstance().GetAndroidResourcesPath() / fragPath).generic_string();
 				std::filesystem::path newFragPath = FileUtilities::SanitizePathForAndroid(std::filesystem::path(androidFragPath));
 				androidFragPath = newFragPath.generic_string();
-				std::filesystem::copy_file(path + ".vert", androidVertPath,
+				// sourceBasePath was saved before p was reassigned to the android shader path
+				std::filesystem::copy_file(sourceBasePath + ".vert", androidVertPath,
 					std::filesystem::copy_options::overwrite_existing);
-				std::filesystem::copy_file(path + ".frag", androidFragPath,
+				std::filesystem::copy_file(sourceBasePath + ".frag", androidFragPath,
 					std::filesystem::copy_options::overwrite_existing);
 			}
 			catch (const std::filesystem::filesystem_error& e) {
@@ -509,10 +540,12 @@ bool Shader::LoadResource(const std::string& resourcePath, const std::string& as
 		if (status == GL_FALSE) {
 			ENGINE_PRINT(EngineLogging::LogLevel::Error, "[SHADER]: Failed to load shader program from binary. Recompiling shader...\n");
 #ifndef ANDROID
-			if (CompileToResource(assetPath).empty()) {
+			std::string newCachePath = CompileToResource(assetPath);
+			if (newCachePath.empty()) {
 				ENGINE_PRINT(EngineLogging::LogLevel::Error, "[SHADER]: Recompilation failed. Aborting load.\n");
 				return false;
 			}
+			return LoadResource(newCachePath, assetPath);
 #else
 			if (!SetupShader(assetPath)) {
 				ENGINE_LOG_INFO("[SHADER]: Android shader setup failed. Aborting load.");
@@ -520,7 +553,18 @@ bool Shader::LoadResource(const std::string& resourcePath, const std::string& as
 			}
 			else return true;
 #endif
-			return LoadResource(resourcePath);
+		}
+
+		// Bind known UBO blocks for the binary-loaded program.
+		{
+			static const struct { const char* name; GLuint binding; } kBlocks[] = {
+				{ "CameraBlock", 0 },
+			};
+			for (auto& b : kBlocks) {
+				GLuint idx = glGetUniformBlockIndex(ID, b.name);
+				if (idx != GL_INVALID_INDEX)
+					glUniformBlockBinding(ID, idx, b.binding);
+			}
 		}
 
 		return true;
@@ -697,6 +741,17 @@ void Shader::setMat4(const std::string& name, const glm::mat4& mat)
 	GLint location = getUniformLocation(name);
 	if (location != -1) {
 		glUniformMatrix4fv(location, 1, GL_FALSE, &mat[0][0]);
+	}
+}
+
+void Shader::setMat4Array(const std::string& firstName, const glm::mat4* matrices, GLsizei count)
+{
+	if (count <= 0) return;
+	// Look up the base element once — GL treats array uniforms as contiguous
+	// locations, so uploading from [0] with count>1 fills the entire array.
+	GLint location = getUniformLocation(firstName);
+	if (location != -1) {
+		glUniformMatrix4fv(location, count, GL_FALSE, glm::value_ptr(matrices[0]));
 	}
 }
 

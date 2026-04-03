@@ -1,0 +1,15 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "006d9327d94a86e3-0004b3a8a20075fb",
+        "source": "../../Resources/Textures/M6/statue_statue_Normal.png",
+        "compiled": "../../Resources/Textures/M6/statue_statue_Normal.dds"
+    },
+    "TextureMetaData": {
+        "type": "normal",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

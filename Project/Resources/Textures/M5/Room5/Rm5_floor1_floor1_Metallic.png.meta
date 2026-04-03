@@ -1,0 +1,15 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "004598ffaec98c6d-00047c898002ccef",
+        "source": "../../Resources/Textures/M5/Room5/Rm5_floor1_floor1_Metallic.png",
+        "compiled": "../../Resources/Textures/M5/Room5/Rm5_floor1_floor1_Metallic.dds"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

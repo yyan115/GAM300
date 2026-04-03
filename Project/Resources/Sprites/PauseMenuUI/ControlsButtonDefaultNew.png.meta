@@ -7,8 +7,9 @@
     },
     "TextureMetaData": {
         "type": "diffuse",
-        "flipUVs": false,
+        "flipUVs": true,
         "generateMipmaps": true,
-        "textureWrapMode": "Clamp"
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
     }
 }

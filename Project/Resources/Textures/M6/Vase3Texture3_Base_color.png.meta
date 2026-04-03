@@ -1,0 +1,15 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "000e5e232a1d1669-0004b3d50e00f6c3",
+        "source": "../../Resources/Textures/M6/Vase3Texture3_Base_color.png",
+        "compiled": "../../Resources/Textures/M6/Vase3Texture3_Base_color.dds"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

@@ -1,0 +1,15 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "002c80ed610a3e46-00047a9cac03c7a1",
+        "source": "../../Resources/Textures/M5/Room4/wall2_3_wall2_3_Metallic.png",
+        "compiled": "../../Resources/Textures/M5/Room4/wall2_3_wall2_3_Metallic.dds"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

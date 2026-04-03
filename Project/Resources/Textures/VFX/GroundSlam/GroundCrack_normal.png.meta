@@ -6,9 +6,10 @@
         "compiled": "../../Resources/Textures/VFX/GroundSlam/GroundCrack_normal.dds"
     },
     "TextureMetaData": {
-        "type": "diffuse",
+        "type": "normal",
         "flipUVs": false,
         "generateMipmaps": true,
-        "textureWrapMode": "Clamp"
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
     }
 }

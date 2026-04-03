@@ -89,7 +89,8 @@ return Component {
         weaponOnHand = "LowPolyFeatherChain",
 
         -- Tooltip entity name (sprite that appears when player is near)
-        tooltipEntity = "",
+        tooltipEntity        = "",
+        tooltipEntityAndroid = "",
 
         -- Weapon Fly Timing and Offsets
         weaponFlyDuration = 0.5,
@@ -103,9 +104,6 @@ return Component {
 
         -- Delay (in seconds) before any animation/SFX plays after the player enters the trigger radius
         triggerDelay = 3.0,
-
-        pickupSFX = {},     -- table of AudioClips for pickup
-        doorOpenSFX = {},   -- table of AudioClips for door
 
         hasOpened = false,
         openingTime = 0.0,
@@ -144,8 +142,10 @@ return Component {
 
         -- Tooltip sprite entity (shown when player is near, hidden after interaction)
         self._tooltipShown = false
-        if self.tooltipEntity ~= "" then
-            self._tooltipEnt = Engine.GetEntityByName(self.tooltipEntity)
+        local isAndroid = Platform and Platform.IsAndroid and Platform.IsAndroid()
+        local tooltipName = (isAndroid and self.tooltipEntityAndroid ~= "" and self.tooltipEntityAndroid) or self.tooltipEntity
+        if tooltipName ~= "" then
+            self._tooltipEnt = Engine.GetEntityByName(tooltipName)
         end
 
         if not self.leftTransform or not self.rightTransform then
@@ -216,10 +216,9 @@ return Component {
                 self.isOpening = true
                 self.openingTime = 0.0
 
-                -- Play door open SFX
-                local DoorTriggerSFX = self:GetComponent("AudioComponent")
-                if DoorTriggerSFX and self.doorOpenSFX[1] then
-                    DoorTriggerSFX:PlayOneShot(self.doorOpenSFX[1])
+                -- Notify EnvironmentAudio to play door open SFX
+                if event_bus and event_bus.publish then
+                    event_bus.publish("env_door_opened", true)
                 end
             end
         end
@@ -254,10 +253,9 @@ return Component {
                 local pickupActiveComp = GetComponent(self.weaponPickupEnt, "ActiveComponent")
                 local handActiveComp   = GetComponent(self.weaponOnHandEnt, "ActiveComponent")
 
-                -- Play pickup SFX exactly when it hits the hand
-                local pickupWeaponSFX = self:GetComponent("AudioComponent")
-                if pickupWeaponSFX and self.pickupSFX[1] then
-                    pickupWeaponSFX:PlayOneShot(self.pickupSFX[1])
+                -- Notify EnvironmentAudio to play weapon-caught SFX
+                if event_bus and event_bus.publish then
+                    event_bus.publish("env_weapon_caught", true)
                 end
 
                 if pickupActiveComp then pickupActiveComp.isActive = false end

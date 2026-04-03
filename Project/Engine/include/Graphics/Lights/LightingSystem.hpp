@@ -17,8 +17,8 @@ public:
     const int MAX_VISIBLE_POINT_LIGHTS = 8;
     static const int MAX_POINT_LIGHT_SHADOWS = 4;
 #else
-    const int MAX_VISIBLE_POINT_LIGHTS = 16;
-    static const int MAX_POINT_LIGHT_SHADOWS = 8;
+    const int MAX_VISIBLE_POINT_LIGHTS = 24;
+    static const int MAX_POINT_LIGHT_SHADOWS = 4;
 #endif
 
     
@@ -31,6 +31,7 @@ public:
     bool Initialise();
     void Update();
     void Shutdown();
+    void ResetDefaults();
 
     void ApplyLighting(Shader& shader);
 
@@ -42,9 +43,9 @@ public:
 
     // Shadow settings
     bool shadowsEnabled = true;
-    int shadowMapResolution = 1024;
+    int shadowMapResolution = 256;
     float shadowDistance = 25.0f;  // How far shadows extend from camera
-    int pointShadowMapResolution = 512;
+    int pointShadowMapResolution = 128;
     float pointLightShadowFarPlane = 25.0f;
 
     void SetShadowRenderCallback(std::function<void(Shader&)> callback) {
@@ -63,9 +64,9 @@ public:
     };
 
     AmbientMode ambientMode = AmbientMode::Color;
-    glm::vec3 ambientSky = glm::vec3(0.7f, 0.7f, 0.7f);
-    glm::vec3 ambientEquator = glm::vec3(0.5f, 0.5f, 0.5f);
-    glm::vec3 ambientGround = glm::vec3(0.3f, 0.3f, 0.3f);
+    glm::vec3 ambientSky = glm::vec3(0.05f, 0.05f, 0.05f);
+    glm::vec3 ambientEquator = glm::vec3(0.03f, 0.03f, 0.03f);
+    glm::vec3 ambientGround = glm::vec3(0.01f, 0.01f, 0.01f);
     float ambientIntensity = 1.0f;  // Multiplier for ambient lighting
 
     void SetAmbientMode(AmbientMode mode) { ambientMode = mode; }

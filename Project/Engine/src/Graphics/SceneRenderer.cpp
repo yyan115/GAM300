@@ -1,6 +1,6 @@
 #include "pch.h"
 #include "Graphics/SceneRenderer.hpp"
-#include "Graphics/Camera/Camera.h"
+#include "Graphics/Camera/Camera.hpp"
 #include "Graphics/Camera/CameraComponent.hpp"
 #include "Engine.h"
 #include "ECS/ECSRegistry.hpp"
@@ -499,11 +499,8 @@ void SceneRenderer::RenderSelectionOutline(Model* model,
         outlineShader->setFloat("outlineThickness", 0.0f);
         outlineShader->setBool("isAnimated", isAnimated);
 
-        if (isAnimated) {
-            for (size_t i = 0; i < boneMatrices.size(); ++i) {
-                outlineShader->setMat4("finalBonesMatrices[" + std::to_string(i) + "]", boneMatrices[i]);
-            }
-        }
+        if (isAnimated && !boneMatrices.empty())
+            outlineShader->setMat4Array("finalBonesMatrices[0]", boneMatrices.data(), static_cast<GLsizei>(boneMatrices.size()));
 
         model->DrawDepthOnly();
 
@@ -525,11 +522,8 @@ void SceneRenderer::RenderSelectionOutline(Model* model,
         outlineShader->setVec4("outlineColor", glm::vec4(1.0f, 0.647f, 0.0f, 1.0f));
         outlineShader->setBool("isAnimated", isAnimated);
 
-        if (isAnimated) {
-            for (size_t i = 0; i < boneMatrices.size(); ++i) {
-                outlineShader->setMat4("finalBonesMatrices[" + std::to_string(i) + "]", boneMatrices[i]);
-            }
-        }
+        if (isAnimated && !boneMatrices.empty())
+            outlineShader->setMat4Array("finalBonesMatrices[0]", boneMatrices.data(), static_cast<GLsizei>(boneMatrices.size()));
 
         model->DrawDepthOnly();
 

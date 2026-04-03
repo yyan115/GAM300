@@ -1,0 +1,15 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "00132a97e70cb51c-000483de9a021c79",
+        "source": "../../Resources/Textures/M5/WoodenBarrier_Roughness.png",
+        "compiled": "../../Resources/Textures/M5/WoodenBarrier_Roughness.dds"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

@@ -34,6 +34,26 @@ local function eulerToQuat(pitch, yaw, roll)
     }
 end
 
+local function quatAxisAngle(ax, ay, az, deg)
+    local rad = math.rad(deg) * 0.5
+    local s = math.sin(rad)
+    return {
+        w = math.cos(rad),
+        x = ax * s,
+        y = ay * s,
+        z = az * s
+    }
+end
+
+local function quatMul(a, b)
+    return {
+        w = a.w*b.w - a.x*b.x - a.y*b.y - a.z*b.z,
+        x = a.w*b.x + a.x*b.w + a.y*b.z - a.z*b.y,
+        y = a.w*b.y - a.x*b.z + a.y*b.w + a.z*b.x,
+        z = a.w*b.z + a.x*b.y - a.y*b.x + a.z*b.w
+    }
+end
+
 -- Convert dt to seconds (handles engines that pass ms), clamp to avoid huge leaps
 local function toDtSec(dt)
     local dtSec = dt or 0
@@ -223,7 +243,7 @@ return Component {
         -- end
     end,
 
-    Launch = function(self, spawnX, spawnY, spawnZ, targetX, targetY, targetZ, token, slot, sfxGuid, variant)
+    Launch = function(self, spawnX, spawnY, spawnZ, targetX, targetY, targetZ, token, slot, variant)
         -- already flying -> can't relaunch
         if self.active then
             -- debug
@@ -275,8 +295,25 @@ return Component {
         self.dirZ = dz / dist
 
         local yaw = math.deg(atan2(self.dirX, self.dirZ))
-        local q = eulerToQuat(90, yaw, 0)
-        self:SetRotation(q.w, q.x, q.y, q.z)
+
+        if slot and tostring(slot):sub(1, 3) == "P3F" then
+            -- Feather Bomb only:
+            -- 1) face outward toward destination
+            -- 2) tilt 45 degrees downward
+            -- 3) apply model flip needed for this knife mesh
+            local qYaw  = quatAxisAngle(0, 1, 0, yaw)
+            local qTilt = quatAxisAngle(1, 0, 0, -45)
+            local qFlip = quatAxisAngle(0, 0, 1, 180)
+
+            local q = quatMul(qYaw, quatMul(qTilt, qFlip))
+            self:SetRotation(q.w, q.x, q.y, q.z)
+        else
+            -- original behavior for all other knives
+            local flatLen = math.sqrt(self.dirX * self.dirX + self.dirZ * self.dirZ)
+            local aimPitch = -math.deg(atan2(self.dirY, flatLen))
+            local q = eulerToQuat(90 + aimPitch, yaw, 0)
+            self:SetRotation(q.w, q.x, q.y, q.z)
+        end
 
         self.active = true
         self.age = 0
@@ -324,9 +361,19 @@ return Component {
 
         if self.collider then self.collider.enabled = false end
 
-        -- Play ranged attack SFX from knife position (3D audio)
-        if sfxGuid and self._audio then
-            self._audio:PlayOneShot(sfxGuid)
+        -- Play ranged attack SFX from knife position (3D audio).
+        -- AudioSystem updates audioComp.Position from worldPosition each frame, but
+        -- TransformSystem hasn't propagated our new localPosition to worldPosition yet.
+        -- Fix: manually set Position to the spawn coords before the event fires.
+        if self._audio then
+            local pos = self._audio.Position
+            pos.x = spawnX
+            pos.y = spawnY
+            pos.z = spawnZ
+            self._audio.Position = pos
+            if _G.event_bus and _G.event_bus.publish then
+                _G.event_bus.publish("enemy_sfx", { entityId = self.entityId, sfxType = "rangedAttack" })
+            end
         end
 
         return true

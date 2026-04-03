@@ -1,0 +1,15 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "0002ceba47a66be2-0004a7da42001001",
+        "source": "../../Resources/Sprites/PlayerHUD/DashJumpControlAndroid.png",
+        "compiled": "../../Resources/Sprites/PlayerHUD/DashJumpControlAndroid.dds"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

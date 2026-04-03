@@ -10,9 +10,42 @@ struct GameSettingsData {
     float bgmVolume = 1.0f;
     float sfxVolume = 1.0f;
 
-    // Graphics settings
+    // Graphics settings - Basic
     float gamma = 2.2f;      // 1.0 - 3.0 range (2.2 = standard gamma)
     float exposure = 1.0f;   // 0.1 - 5.0 range
+    int toneMappingMode = 2; // 0: Reinhard, 1: Exposure, 2: ACES
+    bool vsync = true;
+    bool fullscreen = false;
+
+    // Bloom
+    bool bloomEnabled = true;
+    float bloomThreshold = 1.0f;
+    float bloomIntensity = 1.0f;
+    float bloomScatter = 0.5f;
+
+    // Vignette
+    bool vignetteEnabled = false;
+    float vignetteIntensity = 0.5f;
+    float vignetteSmoothness = 0.5f;
+    float vignetteColor[3] = { 0.0f, 0.0f, 0.0f };
+
+    // Color Grading
+    bool colorGradingEnabled = false;
+    float cgBrightness = 0.0f;
+    float cgContrast = 1.0f;
+    float cgSaturation = 1.0f;
+    float cgTint[3] = { 1.0f, 1.0f, 1.0f };
+
+    // Chromatic Aberration
+    bool caEnabled = false;
+    float caIntensity = 0.5f;
+    float caPadding = 0.5f;
+
+    // SSAO
+    bool ssaoEnabled = true;
+    float ssaoRadius = 0.5f;
+    float ssaoBias = 0.025f;
+    float ssaoIntensity = 1.0f;
 };
 
 // GameSettingsManager - singleton manager for persistent game settings
@@ -56,6 +89,39 @@ public:
     void SetSFXVolume(float volume);
     void SetGamma(float gamma);
     void SetExposure(float exposure);
+    void SetToneMappingMode(int mode);
+    void SetVSync(bool enabled);
+    void SetFullscreen(bool enabled);
+
+    // Bloom
+    void SetBloomEnabled(bool enabled);
+    void SetBloomThreshold(float threshold);
+    void SetBloomIntensity(float intensity);
+    void SetBloomScatter(float scatter);
+
+    // Vignette
+    void SetVignetteEnabled(bool enabled);
+    void SetVignetteIntensity(float intensity);
+    void SetVignetteSmoothness(float smoothness);
+    void SetVignetteColor(float r, float g, float b);
+
+    // Color Grading
+    void SetColorGradingEnabled(bool enabled);
+    void SetCGBrightness(float brightness);
+    void SetCGContrast(float contrast);
+    void SetCGSaturation(float saturation);
+    void SetCGTint(float r, float g, float b);
+
+    // Chromatic Aberration
+    void SetCAEnabled(bool enabled);
+    void SetCAIntensity(float intensity);
+    void SetCAPadding(float padding);
+
+    // SSAO
+    void SetSSAOEnabled(bool enabled);
+    void SetSSAORadius(float radius);
+    void SetSSAOBias(float bias);
+    void SetSSAOIntensity(float intensity);
 
     // Getters (thread-safe)
     float GetMasterVolume() const;
@@ -63,19 +129,26 @@ public:
     float GetSFXVolume() const;
     float GetGamma() const;
     float GetExposure() const;
+    int GetToneMappingMode() const;
+    bool GetVSync() const;
+    bool GetFullscreen() const;
 
-    // Get default values (static for Lua bindings)
-    static float GetDefaultMasterVolume() { return 1.0f; }
-    static float GetDefaultBGMVolume() { return 1.0f; }
-    static float GetDefaultSFXVolume() { return 1.0f; }
-    static float GetDefaultGamma() { return 2.2f; }
-    static float GetDefaultExposure() { return 1.0f; }
-
-    // Check if settings have unsaved changes
-    bool IsDirty() const { return m_dirty; }
+    // Get default values
+    float GetDefaultMasterVolume() { return 1.0f; }
+    float GetDefaultBGMVolume() { return 1.0f; }
+    float GetDefaultSFXVolume() { return 1.0f; }
+    float GetDefaultGamma() { return 2.2f; }
+    float GetDefaultExposure() { return 1.0f; }
 
     // Get the current settings data (read-only)
     const GameSettingsData& GetSettings() const { return m_settings; }
+
+    // Get mutable settings (use with caution, call MarkDirty() after changes)
+    GameSettingsData& GetSettingsMutable() { return m_settings; }
+    void MarkDirty();
+
+    // Check if settings have unsaved changes
+    bool IsDirty() const { return m_dirty; }
 
 private:
     GameSettingsManager() = default;
@@ -87,9 +160,6 @@ private:
 
     // Settings file path
     std::string GetSettingsFilePath() const;
-
-    // Mark settings as modified
-    void MarkDirty();
 
     // Current settings
     GameSettingsData m_settings;

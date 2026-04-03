@@ -1,0 +1,15 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "004598ffefa5cd2f-00047c869a02ccd1",
+        "source": "../../Resources/Textures/M5/Room5/Rm5_wall3_wall3_Normal.png",
+        "compiled": "../../Resources/Textures/M5/Room5/Rm5_wall3_wall3_Normal.dds"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

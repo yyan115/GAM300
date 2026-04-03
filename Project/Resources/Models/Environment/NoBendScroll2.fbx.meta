@@ -1,0 +1,11 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "005ef4479e1f1c1e-000481eedc010199",
+        "source": "../../Resources/Models/Environment/NoBendScroll2.fbx",
+        "compiled": "../../Resources/Models/Environment/NoBendScroll2.mesh"
+    },
+    "ModelMetaData": {
+        "optimizeMeshes": true
+    }
+}

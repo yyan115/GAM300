@@ -1,0 +1,11 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "006f9d9d65b2e179-0004a3776c00b287",
+        "source": "../../Resources/Models/Environment/DoorBreakable.fbx",
+        "compiled": "../../Resources/Models/Environment/DoorBreakable.mesh"
+    },
+    "ModelMetaData": {
+        "optimizeMeshes": true
+    }
+}

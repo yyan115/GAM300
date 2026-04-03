@@ -4,6 +4,7 @@
 #include <memory>
 #include <glm/glm.hpp>
 #include "InstanceBatch.hpp"
+#include "ECS/ECSManager.hpp"
 
 class Model;
 class Material;
@@ -75,9 +76,17 @@ public:
 
 	void RenderBatchesDepthOnly(const glm::mat4& lightSpaceMatrix);
 
+	// Camera-space depth prepass — renders all opaque instanced batches into the depth buffer
+	// using the provided prepass shader (depth write only, no colour output).
+	void RenderBatchesDepthPrepass(const glm::mat4& view, const glm::mat4& projection, Shader& depthShader);
+
 	void SetFrustum(const Frustum* frustum) { m_frustum = frustum; }
 
 	const InstancingStats& GetStats() const { return m_stats; }
+
+	void PrewarmScene(ECSManager& ecsManager);
+
+	bool WasRenderedInstanced(const ModelRenderComponent& component) const;
 
 private:
 	InstancingManager() = default;

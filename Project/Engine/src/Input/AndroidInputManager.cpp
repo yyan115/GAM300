@@ -6,6 +6,7 @@
 #include "ECS/NameComponent.hpp"
 #include "Transform/TransformComponent.hpp"
 #include "Graphics/GraphicsManager.hpp"
+#include "TimeManager.hpp"
 #include <WindowManager.hpp>
 #include <rapidjson/document.h>
 #include <rapidjson/error/en.h>
@@ -30,7 +31,8 @@ AndroidInputManager::AndroidInputManager() {
 // ========== IInputSystem Interface Implementation ==========
 
 bool AndroidInputManager::IsActionPressed(const std::string& action) {
-    return m_currentActions.count(action) > 0;
+    return m_currentActions.count(action) > 0 &&
+           m_previousActions.count(action) == 0;
 }
 
 bool AndroidInputManager::IsActionJustPressed(const std::string& action) {
@@ -85,33 +87,25 @@ glm::vec2 AndroidInputManager::GetAxis(const std::string& axisName) {
         return glm::vec2(0.0f);
     }
 
-    // Look axis: return drag delta from non-UI touches (for camera rotation)
+    // Look axis: return the committed drag delta (accumulated last frame, snapshotted in Update).
+    // We do NOT require m_isDragging here so that the final frame after finger-lift is
+    // also delivered (OnTouchUp clears m_isDragging before Update snapshots the delta).
     if (axisName == "Look") {
-        // Return the delta from the drag touch (touch not on any UI entity)
-        if (m_isDragging && m_dragTouchId != -1) {
-            auto it = m_activeTouches.find(m_dragTouchId);
-            if (it != m_activeTouches.end()) {
-                // Return pixel delta - Lua script handles sensitivity
-                // Normalize by viewport for consistent behavior across resolutions
-                float viewportWidth = static_cast<float>(WindowManager::GetViewportWidth());
-                float viewportHeight = static_cast<float>(WindowManager::GetViewportHeight());
+        if (m_committedDragDelta.x != 0.0f || m_committedDragDelta.y != 0.0f) {
+            float viewportWidth  = static_cast<float>(WindowManager::GetViewportWidth());
+            float viewportHeight = static_cast<float>(WindowManager::GetViewportHeight());
+            if (viewportWidth  <= 0) viewportWidth  = 1920.0f;
+            if (viewportHeight <= 0) viewportHeight = 1080.0f;
 
-                if (viewportWidth <= 0) viewportWidth = 1920.0f;
-                if (viewportHeight <= 0) viewportHeight = 1080.0f;
+            float normDeltaX = m_committedDragDelta.x / viewportWidth;
+            float normDeltaY = m_committedDragDelta.y / viewportHeight;
 
-                // Normalize delta to 0-1 range (relative to viewport)
-                float normDeltaX = m_dragDelta.x / viewportWidth;
-                float normDeltaY = m_dragDelta.y / viewportHeight;
-
-                // Debug log periodically
-                static int lookLogCount = 0;
-                if ((normDeltaX != 0 || normDeltaY != 0) && ++lookLogCount % 30 == 1) {
-                    LOGI("[AndroidInput] GetAxis(Look) = (%.4f, %.4f) dragDelta=(%.1f,%.1f)",
-                         normDeltaX, normDeltaY, m_dragDelta.x, m_dragDelta.y);
-                }
-
-                return glm::vec2(normDeltaX, normDeltaY);
+            static int lookLogCount = 0;
+            if (++lookLogCount % 30 == 1) {
+                LOGI("[AndroidInput] GetAxis(Look) = (%.4f, %.4f) committed=(%.1f,%.1f)",
+                     normDeltaX, normDeltaY, m_committedDragDelta.x, m_committedDragDelta.y);
             }
+            return glm::vec2(normDeltaX, normDeltaY);
         }
         return glm::vec2(0.0f);
     }
@@ -138,9 +132,16 @@ bool AndroidInputManager::IsPointerPressed() {
 }
 
 bool AndroidInputManager::IsPointerJustPressed() {
-    // Check if any non-handled touch just began
+    // Check if any non-handled touch just began (normal tap)
     for (const auto& [id, touch] : m_activeTouches) {
         if (!touch.isHandled && touch.phase == TouchPhase::Began) {
+            return true;
+        }
+    }
+    // Also catch quick taps: Down+Up both arrived this frame before Update ran.
+    // beganConsumed==false means the touch never lived through a full Update cycle (true quick tap).
+    for (const auto& tp : m_endedTouches) {
+        if (!tp.isHandled && !tp.beganConsumed) {
             return true;
         }
     }
@@ -148,10 +149,16 @@ bool AndroidInputManager::IsPointerJustPressed() {
 }
 
 glm::vec2 AndroidInputManager::GetPointerPosition() {
-    // Return position of first non-handled touch
+    // Return position of first non-handled active touch
     for (const auto& [id, touch] : m_activeTouches) {
         if (!touch.isHandled) {
             return touch.position;
+        }
+    }
+    // Quick-tap fallback: Down+Up both arrived this frame — return the ended touch position
+    for (const auto& tp : m_endedTouches) {
+        if (!tp.isHandled && !tp.beganConsumed) {
+            return tp.position;
         }
     }
     return glm::vec2(0.0f);
@@ -249,14 +256,31 @@ InputManager::Touch AndroidInputManager::GetTouchById(int touchId) {
 void AndroidInputManager::Update(float deltaTime) {
     m_currentTime += deltaTime;
 
+    // Clear ended touches from last frame
+    m_endedTouches.clear();
+
+    // Drain touch events from the UI thread (swap under lock, process outside lock)
+    {
+        std::lock_guard<std::mutex> lock(m_touchEventMutex);
+        m_touchEventQueueSwap.swap(m_touchEventQueue);
+    }
+    for (const auto& ev : m_touchEventQueueSwap) {
+        switch (ev.type) {
+            case TouchEvent::Type::Down: ProcessTouchDown(ev.pointerId, ev.x, ev.y); break;
+            case TouchEvent::Type::Move: ProcessTouchMove(ev.pointerId, ev.x, ev.y); break;
+            case TouchEvent::Type::Up:   ProcessTouchUp(ev.pointerId, ev.x, ev.y);   break;
+        }
+    }
+    m_touchEventQueueSwap.clear();
+
     // Save previous state
     m_previousActions = m_currentActions;
     m_currentActions.clear();
 
-    // Clear ended touches from last frame
-    m_endedTouches.clear();
-
-    // Reset drag delta (will be set in OnTouchMove if dragging)
+    // Commit whatever OnTouchMove accumulated since last frame, then reset for next frame.
+    // Touch events on Android fire before Update() runs, so reading m_dragDelta directly
+    // after the reset would always return 0. GetAxis("Look") reads m_committedDragDelta.
+    m_committedDragDelta = m_dragDelta;
     m_dragDelta = glm::vec2(0.0f);
 
     // Update entity transforms (look up from ECS)
@@ -290,6 +314,12 @@ void AndroidInputManager::Update(float deltaTime) {
             m_currentActions.insert(entityAction.actionName);
         }
     }
+
+    // Merge pending actions (quick taps where OnTouchDown+OnTouchUp both fired before this Update)
+    for (const auto& action : m_pendingActions) {
+        m_currentActions.insert(action);
+    }
+    m_pendingActions.clear();
 
     // Detect gestures
     DetectGestures(deltaTime);
@@ -354,6 +384,10 @@ bool AndroidInputManager::LoadConfig(const std::string& path) {
                 EntityAction entityAction;
                 entityAction.actionName = actionName;
                 entityAction.entityName = androidBinding["entity"].GetString();
+
+                if (androidBinding.HasMember("hitShape") && androidBinding["hitShape"].IsString()) {
+                    entityAction.circleHitbox = std::string(androidBinding["hitShape"].GetString()) == "circle";
+                }
 
                 m_entityActions.push_back(entityAction);
                 LOGI("[AndroidInputManager] Loaded entity action: %s -> %s",
@@ -425,9 +459,26 @@ void AndroidInputManager::RenderOverlay(int screenWidth, int screenHeight) {
     // Entity-based system doesn't need to render overlays
 }
 
-// ========== Touch Event Handlers ==========
+// ========== Touch Event Handlers (UI thread — enqueue only, no state mutation) ==========
 
 void AndroidInputManager::OnTouchDown(int pointerId, float x, float y) {
+    std::lock_guard<std::mutex> lock(m_touchEventMutex);
+    m_touchEventQueue.push_back({TouchEvent::Type::Down, pointerId, x, y});
+}
+
+void AndroidInputManager::OnTouchMove(int pointerId, float x, float y) {
+    std::lock_guard<std::mutex> lock(m_touchEventMutex);
+    m_touchEventQueue.push_back({TouchEvent::Type::Move, pointerId, x, y});
+}
+
+void AndroidInputManager::OnTouchUp(int pointerId, float x, float y) {
+    std::lock_guard<std::mutex> lock(m_touchEventMutex);
+    m_touchEventQueue.push_back({TouchEvent::Type::Up, pointerId, x, y});
+}
+
+// ========== Touch Event Processors (game thread — called from Update drain) ==========
+
+void AndroidInputManager::ProcessTouchDown(int pointerId, float x, float y) {
     // x, y are NORMALIZED (0-1) from AndroidPlatform::HandleTouchEvent
     // Convert to viewport pixel coords for consistency with desktop (ButtonSystem expects pixels)
     float viewportWidth = static_cast<float>(WindowManager::GetViewportWidth());
@@ -463,8 +514,14 @@ void AndroidInputManager::OnTouchDown(int pointerId, float x, float y) {
     LOGI("[AndroidInput] TouchDown id=%d norm=(%.3f,%.3f) pixel=(%.1f,%.1f) game=(%.1f,%.1f) viewport=(%.0f,%.0f) gameRes=(%d,%d)",
          pointerId, x, y, pixelPos.x, pixelPos.y, gameX, gameY, viewportWidth, viewportHeight, gameResWidth, gameResHeight);
 
+    // When the game is paused, only process the Pause entity action so UI buttons
+    // (ButtonSystem) can receive touches instead of game buttons consuming them.
+    bool gamePaused = TimeManager::IsPaused();
+
     // Check if touch hits any entity action
     for (auto& entityAction : m_entityActions) {
+        if (gamePaused && entityAction.actionName != "Pause") continue;
+
         if (!entityAction.entityFound) {
             LOGI("[AndroidInput]   Skipping '%s' - entity not found", entityAction.entityName.c_str());
             continue;
@@ -475,22 +532,33 @@ void AndroidInputManager::OnTouchDown(int pointerId, float x, float y) {
         }
 
         // Check if touch is inside entity bounds
-        float halfWidth = entityAction.entitySize.x / 2.0f;
-        float halfHeight = entityAction.entitySize.y / 2.0f;
-        float minX = entityAction.entityCenter.x - halfWidth;
-        float maxX = entityAction.entityCenter.x + halfWidth;
-        float minY = entityAction.entityCenter.y - halfHeight;
-        float maxY = entityAction.entityCenter.y + halfHeight;
+        bool hit = false;
+        if (entityAction.circleHitbox) {
+            float radius = std::min(entityAction.entitySize.x, entityAction.entitySize.y) / 2.0f;
+            float dx = gamePos.x - entityAction.entityCenter.x;
+            float dy = gamePos.y - entityAction.entityCenter.y;
+            hit = (dx * dx + dy * dy) <= (radius * radius);
+            LOGI("[AndroidInput]   Checking '%s' (circle r=%.1f): center=(%.1f,%.1f) touch=(%.1f,%.1f)",
+                 entityAction.entityName.c_str(), radius,
+                 entityAction.entityCenter.x, entityAction.entityCenter.y, gamePos.x, gamePos.y);
+        } else {
+            float halfWidth  = entityAction.entitySize.x / 2.0f;
+            float halfHeight = entityAction.entitySize.y / 2.0f;
+            float minX = entityAction.entityCenter.x - halfWidth;
+            float maxX = entityAction.entityCenter.x + halfWidth;
+            float minY = entityAction.entityCenter.y - halfHeight;
+            float maxY = entityAction.entityCenter.y + halfHeight;
+            hit = gamePos.x >= minX && gamePos.x <= maxX &&
+                  gamePos.y >= minY && gamePos.y <= maxY;
+            LOGI("[AndroidInput]   Checking '%s' (rect): bounds=(%.1f,%.1f)-(%.1f,%.1f) touch=(%.1f,%.1f)",
+                 entityAction.entityName.c_str(), minX, minY, maxX, maxY, gamePos.x, gamePos.y);
+        }
 
-        LOGI("[AndroidInput]   Checking '%s': bounds=(%.1f,%.1f)-(%.1f,%.1f) touch=(%.1f,%.1f)",
-             entityAction.entityName.c_str(), minX, minY, maxX, maxY, gamePos.x, gamePos.y);
-
-        if (gamePos.x >= minX && gamePos.x <= maxX &&
-            gamePos.y >= minY && gamePos.y <= maxY) {
-
+        if (hit) {
             entityAction.isPressed = true;
             entityAction.activeTouchId = pointerId;
             entityAction.touchPositionRelative = gamePos - entityAction.entityCenter;
+            m_pendingActions.insert(entityAction.actionName);  // Buffer for quick taps
 
             touch.isHandled = true;
             touch.entityName = entityAction.entityName;
@@ -514,7 +582,7 @@ void AndroidInputManager::OnTouchDown(int pointerId, float x, float y) {
     m_activeTouches[pointerId] = touch;
 }
 
-void AndroidInputManager::OnTouchMove(int pointerId, float x, float y) {
+void AndroidInputManager::ProcessTouchMove(int pointerId, float x, float y) {
     auto it = m_activeTouches.find(pointerId);
     if (it == m_activeTouches.end()) return;
 
@@ -549,13 +617,14 @@ void AndroidInputManager::OnTouchMove(int pointerId, float x, float y) {
         }
     }
 
-    // Update drag delta if this is the drag touch
+    // Update drag delta if this is the drag touch (accumulate — Android delivers
+    // multiple move events per rendered frame; overwriting would discard most of them)
     if (pointerId == m_dragTouchId) {
-        m_dragDelta = it->second.delta;
+        m_dragDelta += it->second.delta;
     }
 }
 
-void AndroidInputManager::OnTouchUp(int pointerId, float x, float y) {
+void AndroidInputManager::ProcessTouchUp(int pointerId, float x, float y) {
     auto it = m_activeTouches.find(pointerId);
     if (it == m_activeTouches.end()) return;
 
@@ -645,7 +714,14 @@ void AndroidInputManager::UpdateEntityTransforms() {
 bool AndroidInputManager::IsTouchInsideEntity(const EntityAction& entity, glm::vec2 touchPos) {
     if (!entity.entityFound) return false;
 
-    float halfWidth = entity.entitySize.x / 2.0f;
+    if (entity.circleHitbox) {
+        float radius = std::min(entity.entitySize.x, entity.entitySize.y) / 2.0f;
+        float dx = touchPos.x - entity.entityCenter.x;
+        float dy = touchPos.y - entity.entityCenter.y;
+        return (dx * dx + dy * dy) <= (radius * radius);
+    }
+
+    float halfWidth  = entity.entitySize.x / 2.0f;
     float halfHeight = entity.entitySize.y / 2.0f;
     float minX = entity.entityCenter.x - halfWidth;
     float maxX = entity.entityCenter.x + halfWidth;

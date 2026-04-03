@@ -1,0 +1,11 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "00132a97a356b0c1-000483deb4021c83",
+        "source": "../../Resources/Models/Environment/WoodenBarrier.fbx",
+        "compiled": "../../Resources/Models/Environment/WoodenBarrier.mesh"
+    },
+    "ModelMetaData": {
+        "optimizeMeshes": true
+    }
+}

@@ -31,9 +31,21 @@ uniform float edgeSoftness;
 // Optional noise texture
 uniform sampler2D noiseMap;
 uniform bool hasNoiseMap;
+uniform int  noiseTextureMappingAxis;  // 0=XZ (top-down), 1=XY (front), 2=YZ (side)
 
-// Camera
-uniform vec3 cameraPos;
+// Optional color/material texture — tints fog with designer-authored image
+uniform sampler2D colorMap;
+uniform bool      hasColorMap;
+uniform float     colorTextureIntensity;
+uniform float     colorTextureScale;
+
+// Camera UBO (binding = 0)
+layout(std140) uniform CameraBlock {
+    mat4 view;
+    mat4 projection;
+    vec3 cameraPos;
+    float _pad;
+};
 
 // World-to-local transform for ray-box intersection
 uniform mat4 modelInverse;
@@ -76,13 +88,31 @@ float valueNoise(vec3 p)
 }
 
 // Fractional Brownian Motion - layered noise for natural wisps
+// 3 octaves instead of 4: ~25% cheaper with negligible visual difference
 float fbm(vec3 p)
 {
     float value = 0.0;
     float amplitude = 0.5;
     float frequency = 1.0;
 
-    for (int i = 0; i < 4; i++)
+    for (int i = 0; i < 3; i++)
+    {
+        value += amplitude * valueNoise(p * frequency);
+        amplitude *= 0.5;
+        frequency *= 2.0;
+    }
+    return value;
+}
+
+// Cheaper 2-octave fbm used only for domain warp — retains visible motion
+// at roughly half the cost of the full fbm
+float fbmWarp(vec3 p)
+{
+    float value = 0.0;
+    float amplitude = 0.5;
+    float frequency = 1.0;
+
+    for (int i = 0; i < 2; i++)
     {
         value += amplitude * valueNoise(p * frequency);
         amplitude *= 0.5;
@@ -205,7 +235,7 @@ void main()
     // --- 3. Ray march through the volume ---
     // Multiple samples along the ray accumulate density, creating visible internal
     // structure (wisps, patches) that actually animate when noise is scrolled/warped.
-    const int MARCH_STEPS = 16;
+    const int MARCH_STEPS = 8;
     float stepSize    = thickness / float(MARCH_STEPS);
     float transmittance = 1.0;
 
@@ -222,14 +252,14 @@ void main()
             time * scrollSpeedX * 0.5
         );
 
-        // Domain warping: distort the noise coordinate with a second FBM evaluation.
-        // Creates the swirling, organic motion of smoke.
+        // Domain warping: distort the noise coordinate for swirling smoke effect.
+        // Uses 2-octave fbmWarp instead of full 4-octave fbm — half the cost, motion still visible.
         if (warpStrength > 0.0)
         {
             vec3 warp = vec3(
-                fbm(noiseCoord + vec3(1.7, 9.2, 3.4)),
-                fbm(noiseCoord + vec3(8.3, 2.8, 5.1)),
-                fbm(noiseCoord + vec3(4.5, 6.1, 1.9))
+                fbmWarp(noiseCoord + vec3(1.7, 9.2, 3.4)),
+                fbmWarp(noiseCoord + vec3(8.3, 2.8, 5.1)),
+                fbmWarp(noiseCoord + vec3(4.5, 6.1, 1.9))
             );
             noiseCoord += warpStrength * warp;
         }
@@ -237,7 +267,14 @@ void main()
         float noiseValue;
         if (hasNoiseMap)
         {
-            vec2 noiseUV = samplePos.xz * noiseScale + vec2(time * scrollSpeedX, time * scrollSpeedY);
+            vec2 baseUV;
+            if (noiseTextureMappingAxis == 1)       // XY — front-facing (good for rising smoke)
+                baseUV = samplePos.xy;
+            else if (noiseTextureMappingAxis == 2)  // YZ — side-facing
+                baseUV = samplePos.yz;
+            else                                    // XZ — top-down (default)
+                baseUV = samplePos.xz;
+            vec2 noiseUV = baseUV * noiseScale + vec2(time * scrollSpeedX, time * scrollSpeedY);
             noiseValue = texture(noiseMap, noiseUV).r;
         }
         else
@@ -294,6 +331,17 @@ void main()
         discard;
     }
 
-    FragColor = vec4(fogColor, finalAlpha);
+    // Color texture: sample at ray midpoint in local XZ space, tint fogColor
+    vec3 finalColor = fogColor;
+    if (hasColorMap)
+    {
+        float tMid = (tEntry + tExit) * 0.5;
+        vec3  midLocal = localCamPos + tMid * localRayDir;
+        vec2  colorUV  = (clamp(midLocal.xz + 0.5, 0.0, 1.0)) * colorTextureScale;
+        vec3  texTint  = texture(colorMap, colorUV).rgb;
+        finalColor = fogColor * mix(vec3(1.0), texTint, colorTextureIntensity);
+    }
+
+    FragColor = vec4(finalColor, finalAlpha);
     BloomEmission = vec4(0.0);
 }

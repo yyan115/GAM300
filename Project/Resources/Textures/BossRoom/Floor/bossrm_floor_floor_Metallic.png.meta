@@ -1,0 +1,15 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "00768077727433a2-0004b0b7d2001035",
+        "source": "../../Resources/Textures/BossRoom/Floor/bossrm_floor_floor_Metallic.png",
+        "compiled": "../../Resources/Textures/BossRoom/Floor/bossrm_floor_floor_Metallic.dds"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

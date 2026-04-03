@@ -97,7 +97,10 @@ struct AudioReverbZoneComponent
     
     // For ECS AudioSystem integration
     void ENGINE_API UpdateComponent();
-    
+
+    // Mark component as needing FMOD update (call after modifying parameters in inspector)
+    ENGINE_API void MarkDirty();
+
 private:
     // Internal state tracking
     bool presetApplied{ false };

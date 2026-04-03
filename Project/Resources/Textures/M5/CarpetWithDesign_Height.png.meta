@@ -1,0 +1,15 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "0006f5c85315725f-0004825aa2000007",
+        "source": "../../Resources/Textures/M5/CarpetWithDesign_Height.png",
+        "compiled": "../../Resources/Textures/M5/CarpetWithDesign_Height.dds"
+    },
+    "TextureMetaData": {
+        "type": "height",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

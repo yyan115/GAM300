@@ -1,0 +1,11 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "0006daf91ee00daf-0004b1aff000101b",
+        "source": "../../Resources/Models/Rooms/BossRoomV2/BossRoom_Plank1.fbx",
+        "compiled": "../../Resources/Models/Rooms/BossRoomV2/BossRoom_Plank1.mesh"
+    },
+    "ModelMetaData": {
+        "optimizeMeshes": true
+    }
+}

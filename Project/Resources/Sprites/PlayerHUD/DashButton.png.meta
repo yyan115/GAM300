@@ -1,0 +1,15 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "007c731eeb97fc4d-0004a7f1760031a9",
+        "source": "../../Resources/Sprites/PlayerHUD/DashButton.png",
+        "compiled": "../../Resources/Sprites/PlayerHUD/DashButton.dds"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

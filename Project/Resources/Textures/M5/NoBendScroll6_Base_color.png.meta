@@ -1,0 +1,15 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "0006f5c85ae2306e-0004826114001e51",
+        "source": "../../Resources/Textures/M5/NoBendScroll6_Base_color.png",
+        "compiled": "../../Resources/Textures/M5/NoBendScroll6_Base_color.dds"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

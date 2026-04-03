@@ -77,3 +77,4 @@
 #include "Dialogue/DialogueComponent.hpp"
 
 #include "ECS/ActiveComponent.hpp"
+#include "Graphics/BloomComponent.hpp"

@@ -25,9 +25,39 @@
 	#pragma comment(lib, "shell32.lib")
 #endif
 #include <Asset Manager/AssetManager.hpp>
+#include <Settings/GameSettings.hpp>
+
+namespace {
+std::string NormalizeScenePathForRuntime(const std::string& scenePath)
+{
+    std::string normalized;
+    normalized.reserve(scenePath.size());
+
+    for (char c : scenePath) {
+        if (c == '"' || c == '\'') {
+            continue;
+        }
+        normalized.push_back(c == '\\' ? '/' : c);
+    }
+
+#ifdef EDITOR
+    if (!normalized.empty()) {
+        std::filesystem::path pathObj(normalized);
+        if (!pathObj.is_absolute() && normalized.rfind("Resources/", 0) == 0) {
+            const std::string rootAssetDir = AssetManager::GetInstance().GetRootAssetDirectory();
+            if (!rootAssetDir.empty()) {
+                normalized = (std::filesystem::path(rootAssetDir) / normalized.substr(10)).generic_string();
+            }
+        }
+    }
+#endif
+
+    return normalized;
+}
+}
 
 SceneManager::~SceneManager() {
-	//ExitScene();
+    //ExitScene();
 }
 
 SceneManager& SceneManager::GetInstance() {
@@ -37,9 +67,10 @@ SceneManager& SceneManager::GetInstance() {
 
 // Temporary function to load the test scene.
 void SceneManager::LoadTestScene() {
-	ECSRegistry::GetInstance().CreateECSManager("Resources/Scenes/FakeScene.scene");
-	currentScene = std::make_unique<SceneInstance>("Resources/Scenes/FakeScene.scene");
-	currentScenePath = "Resources/Scenes/FakeScene.scene";
+    const std::string testScenePath = NormalizeScenePathForRuntime("Resources/Scenes/FakeScene.scene");
+	ECSRegistry::GetInstance().CreateECSManager(testScenePath);
+	currentScene = std::make_unique<SceneInstance>(testScenePath);
+	currentScenePath = testScenePath;
 	currentSceneName = "FakeScene";
 	currentScene->Initialize();
 }
@@ -48,6 +79,7 @@ void SceneManager::LoadTestScene() {
 // The current scene is exited and cleaned up before loading the new scene.
 // Also sets the new scene as the active ECSManager in the ECSRegistry.
 void SceneManager::LoadScene(const std::string& scenePath, bool fromGameCode) {
+    const std::string resolvedScenePath = NormalizeScenePathForRuntime(scenePath);
 
     if (loadState != SceneLoadState::IDLE) {
         ENGINE_PRINT("[SceneManager] Cannot LoadScene while async load is in progress");
@@ -59,44 +91,44 @@ void SceneManager::LoadScene(const std::string& scenePath, bool fromGameCode) {
 
     if (!isDeferredExecution && currentScene &&
         (fromGameCode || !currentScene->updateSynchronized || !currentScene->drawSynchronized)) {
-		ENGINE_PRINT("[SceneManager] Deferring scene load to next frame: " + scenePath);
+		ENGINE_PRINT("[SceneManager] Deferring scene load to next frame: " + resolvedScenePath);
 		// If the update/draw calls are not synchronized yet, defer loading to the next frame so that the scheduler can finish its work.
 		// If calling from Lua/game code, defer loading to the next frame to allow the function call to be returned properly
 		// before shutting down the scripting system in currentScene->Exit().
         loadSceneNextFrame = true;
-        sceneToLoadNextFrame = scenePath;
+        sceneToLoadNextFrame = resolvedScenePath;
         deferredSceneFromLua = fromGameCode;  // Remember if this was from game code
         return;
     }
 
 #if 1
 #ifdef EDITOR
-	// Only reset to edit mode if loading scene from editor UI (not from game code)
-	// When game code transitions scenes (e.g., main menu to game), we should stay in play mode
-	if (!fromGameCode && (Engine::IsPlayMode() || Engine::IsPaused())) {
-		// This is a manual scene load from editor while playing - exit play mode
-		Engine::SetGameState(GameState::EDIT_MODE);
-	}
+    // Only reset to edit mode if loading scene from editor UI (not from game code)
+    // When game code transitions scenes (e.g., main menu to game), we should stay in play mode
+    if (!fromGameCode && (Engine::IsPlayMode() || Engine::IsPaused())) {
+        // This is a manual scene load from editor while playing - exit play mode
+        Engine::SetGameState(GameState::EDIT_MODE);
+    }
 
 #endif
-	// Stop all audio when loading a new scene
-	AudioManager::GetInstance().StopAll();
+    // Stop all audio when loading a new scene
+    AudioManager::GetInstance().StopAll();
 
-	// Exit and clean up the current scene if it exists.
-	if (currentScene)
+    // Exit and clean up the current scene if it exists.
+    if (currentScene)
     {
-		currentScene->Exit();
+        currentScene->Exit();
 
 		ECSRegistry::GetInstance().GetECSManager(currentScenePath).ClearAllEntities();
-		ECSRegistry::GetInstance().RenameECSManager(currentScenePath, scenePath);
+		ECSRegistry::GetInstance().RenameECSManager(currentScenePath, resolvedScenePath);
 	}
 	else {
-		ECSRegistry::GetInstance().CreateECSManager(scenePath);
+		ECSRegistry::GetInstance().CreateECSManager(resolvedScenePath);
 	}
 
 	// Create and initialize the new scene.
-	currentScene = std::make_unique<SceneInstance>(scenePath);
-	currentScenePath = scenePath;
+	currentScene = std::make_unique<SceneInstance>(resolvedScenePath);
+	currentScenePath = resolvedScenePath;
 	std::filesystem::path p(currentScenePath);
 	currentSceneName = p.stem().generic_string();
 
@@ -104,14 +136,14 @@ void SceneManager::LoadScene(const std::string& scenePath, bool fromGameCode) {
     currentScene->InitializeJoltPhysics();
 
 	// Deserialize the new scene data.
-	Serializer::DeserializeScene(scenePath);
+	Serializer::DeserializeScene(resolvedScenePath);
     
 	// Initialize the new scene.
 	currentScene->Initialize();
 
-	// Save this as the last opened scene (for editor persistence)
+    // Save this as the last opened scene (for editor persistence)
 #ifdef EDITOR
-	SaveLastOpenedScenePath(scenePath);
+	SaveLastOpenedScenePath(resolvedScenePath);
 #endif
 #else
 #pragma region NEW
@@ -192,7 +224,7 @@ void SceneManager::LoadScene(const std::string& scenePath, bool fromGameCode) {
         if (coInitialized) CoUninitialize();
     }
 #else
-    // Mobile / other: safe fallback � do not attempt desktop dialogs
+    // Mobile / other: safe fallback   do not attempt desktop dialogs
     chosenPath = "scene.json";
     ENGINE_LOG_INFO(std::string("[LoadScene] Non-Windows platform; using fallback filename: ") + chosenPath);
 #endif
@@ -289,9 +321,7 @@ void SceneManager::UpdateScene(double dt) {
             isExecutingDeferredLoad = false;
         }
     }
-    // Block Update only after loading screen is destroyed (step 16+)
-    if (loadState == SceneLoadState::INITIALIZING_SYSTEMS && asyncSystemInitStep >= 16) return;
-    if (loadState == SceneLoadState::COMPLETE) return;
+
 
     if (currentScene) {
         currentScene->Update(dt);
@@ -299,9 +329,6 @@ void SceneManager::UpdateScene(double dt) {
 }
 
 void SceneManager::DrawScene() {
-    // Block Draw only after loading screen is destroyed (step 16+)
-    if (loadState == SceneLoadState::INITIALIZING_SYSTEMS && asyncSystemInitStep >= 16) return;
-    if (loadState == SceneLoadState::COMPLETE) return;
 
     if (currentScene) {
         currentScene->Draw();
@@ -309,25 +336,19 @@ void SceneManager::DrawScene() {
 }
 
 void SceneManager::ExitScene() {
-	if (currentScene) {
-		//Serializer::GetInstance().SerializeScene(currentScenePath);
-		currentScene->Exit();
-		currentScene.reset();
-		currentScenePath.clear();
-	}
+    if (currentScene) {
+        //Serializer::GetInstance().SerializeScene(currentScenePath);
+        currentScene->Exit();
+        currentScene.reset();
+        currentScenePath.clear();
+    }
 }
 
 
 void SceneManager::LoadSceneAsync(const std::string& scenePath, bool fromGameCode) {
     if (loadState != SceneLoadState::IDLE) return;
 
-    // Strip ALL quote characters from path
-    asyncScenePath.clear();
-    for (char c : scenePath) {
-        if (c != '"' && c != '\'') {
-            asyncScenePath += c;
-        }
-    }
+    asyncScenePath = NormalizeScenePathForRuntime(scenePath);
 
     ENGINE_PRINT("[SceneManager] LoadSceneAsync raw: [" + scenePath + "]");
     ENGINE_PRINT("[SceneManager] LoadSceneAsync cleaned: [" + asyncScenePath + "]");
@@ -353,16 +374,90 @@ bool SceneManager::IsLoading() const {
 }
 
 void SceneManager::UpdateAsyncLoad() {
+    PROFILE_FUNCTION();
+
+    if (asyncSwapPending) {
+        PROFILE_SCOPED("AsyncLoad::SceneSwap");
+        asyncSwapPending = false;
+
+        ECSRegistry::GetInstance().SetActiveECSManager(asyncScenePath);
+
+        {
+            PROFILE_SCOPED("AsyncLoad::ExitOldScene");
+            AudioManager::GetInstance().StopAll();
+            if (currentScene) {
+                ECSRegistry::GetInstance().SetActiveECSManager(currentScenePath);
+                currentScene->Exit();
+                currentScene.reset();
+                ECSRegistry::GetInstance().SetActiveECSManager(asyncScenePath);
+                ECSRegistry::GetInstance()
+                    .GetECSManager(currentScenePath).ClearAllEntities(false);
+                ECSRegistry::GetInstance()
+                    .DestroyECSManager(currentScenePath);
+            }
+        }
+
+        {
+            PROFILE_SCOPED("AsyncLoad::ReinitGraphics");
+            GraphicsManager& gfx = GraphicsManager::GetInstance();
+            gfx.Initialize(RunTimeVar::window.width, RunTimeVar::window.height);
+
+            // Re-set the camera for the new scene immediately so LightingSystem 
+            // can collect data in the next Update()
+            ECSManager& ecs = ECSRegistry::GetInstance().GetECSManager(asyncScenePath);
+            if (ecs.cameraSystem) {
+                Entity activeCam = ecs.cameraSystem->GetActiveCameraEntity();
+                if (activeCam != UINT32_MAX && ecs.cameraSystem->GetActiveCamera()) {
+                    gfx.SetCamera(ecs.cameraSystem->GetActiveCamera());
+                    gfx.UpdateFrustum();
+                }
+            }
+
+            PostProcessingManager::GetInstance().Initialize();
+            // Reset runtime state (vignette, blur, etc.) so it doesn't leak from previous scene
+            PostProcessingManager::GetInstance().ResetRuntimeState();
+
+            // Configure HDR settings from GameSettings
+            GameSettingsManager::GetInstance().ApplySettings();
+        }
+
+        currentScene = std::move(pendingScene);
+        currentScenePath = asyncScenePath;
+        currentSceneName = std::filesystem::path(currentScenePath)
+            .stem().generic_string();
+
+        {
+            PROFILE_SCOPED("AsyncLoad::InitOrchestrator");
+            currentScene->initializeOrchestrator();
+        }
+
+        {
+            PROFILE_SCOPED("AsyncLoad::InitScripts");
+            ECSManager& ecsRef = ECSRegistry::GetInstance().GetECSManager(currentScenePath);
+            ecsRef.scriptSystem->Shutdown();
+            ecsRef.scriptSystem->Initialise(ecsRef);
+            ecsRef.dialogueSystem->Shutdown();
+            ecsRef.dialogueSystem->Initialise(ecsRef);
+        }
+
+        asyncDoc = rapidjson::Document();
+        asyncScenePath.clear();
+        loadState = SceneLoadState::IDLE;
+        return;
+    }
+
     if (loadState != SceneLoadState::IDLE) {
         ENGINE_PRINT("[AsyncLoad] Enter UpdateAsyncLoad, state=" + std::to_string((int)loadState));
     }
     switch (loadState) {
     case SceneLoadState::UNLOADING_CURRENT: {
+        PROFILE_SCOPED("AsyncLoad::CreateECSManager");
         ECSRegistry::GetInstance().CreateECSManager(asyncScenePath);
         loadState = SceneLoadState::PARSING_JSON;
         break;
     }
     case SceneLoadState::PARSING_JSON: {
+        PROFILE_SCOPED("AsyncLoad::ParseJSON");
         ENGINE_PRINT("[AsyncLoad] PARSING_JSON for: " + asyncScenePath);
         IPlatform* platform = WindowManager::GetPlatform();
         if (!platform || !platform->FileExists(asyncScenePath)) {
@@ -390,13 +485,17 @@ void SceneManager::UpdateAsyncLoad() {
 
         pendingScene = std::make_unique<SceneInstance>(asyncScenePath);
         ECSRegistry::GetInstance().SetActiveECSManager(asyncScenePath);
-        pendingScene->InitializeJoltPhysics();
+        {
+            PROFILE_SCOPED("AsyncLoad::InitJoltPhysics");
+            pendingScene->InitializeJoltPhysics();
+        }
         ECSRegistry::GetInstance().SetActiveECSManager(currentScenePath);
 
         loadState = SceneLoadState::DESERIALIZING;
         break;
     }
     case SceneLoadState::DESERIALIZING: {
+        PROFILE_SCOPED("AsyncLoad::DeserializeChunk");
         if (asyncEntityTotal == 0) {
             loadState = SceneLoadState::INITIALIZING;
             break;
@@ -442,78 +541,39 @@ void SceneManager::UpdateAsyncLoad() {
 
         ECSManager& ecs = ECSRegistry::GetInstance().GetECSManager(asyncScenePath);
 
+        PROFILE_SCOPED("AsyncLoad::InitSystem");
+
         switch (asyncSystemInitStep) {
-        case 0: ecs.transformSystem->Initialise(); break;
-        case 1: ecs.cameraSystem->Initialise(); break;
-        case 2:
-        {
+        case 0: { PROFILE_SCOPED("SysInit::Transform");      ecs.transformSystem->Initialise();      break; }
+        case 1: { PROFILE_SCOPED("SysInit::Camera");         ecs.cameraSystem->Initialise();         break; }
+        case 2: {
+            PROFILE_SCOPED("SysInit::Model");
             Entity activeCam = ecs.cameraSystem->GetActiveCameraEntity();
             GraphicsManager& gfx = GraphicsManager::GetInstance();
             if (activeCam != UINT32_MAX && ecs.cameraSystem->GetActiveCamera())
                 gfx.SetCamera(ecs.cameraSystem->GetActiveCamera());
-        }
-        ecs.modelSystem->Initialise();
-        break;
-        case 3: ecs.debugDrawSystem->Initialise(); break;
-        case 4: ecs.textSystem->Initialise(); break;
-        case 5: ecs.spriteSystem->Initialise(); break;
-        case 6: ecs.particleSystem->Initialise(); break;
-        case 7: ecs.animationSystem->Initialise(); break;
-        case 8: pendingScene->InitializePhysics(); break;
-        case 9: ecs.spriteAnimationSystem->Initialise(); break;
-        case 10: ecs.uiAnchorSystem->Initialise(ecs); break;
-        case 11: ecs.buttonSystem->Initialise(ecs); break;
-        case 12: ecs.sliderSystem->Initialise(ecs); break;
-        case 13: ecs.videoSystem->Initialise(ecs); break;
-        case 14: ecs.dialogueSystem->Initialise(ecs); break;
-        case 15: ecs.fogSystem->Initialise(); break;
-        case 16:
-            AudioManager::GetInstance().StopAll();
-            if (currentScene) {
-                ECSRegistry::GetInstance().SetActiveECSManager(currentScenePath);
-                currentScene->Exit();
-                currentScene.reset();
-                ECSRegistry::GetInstance().SetActiveECSManager(asyncScenePath);
-                ECSRegistry::GetInstance()
-                    .GetECSManager(currentScenePath).ClearAllEntities(false);
-                ECSRegistry::GetInstance()
-                    .DestroyECSManager(currentScenePath);
-            }
-            {
-                GraphicsManager& gfx = GraphicsManager::GetInstance();
-                gfx.Initialize(RunTimeVar::window.width, RunTimeVar::window.height);
-                PostProcessingManager::GetInstance().Initialize();
-                auto* hdr = PostProcessingManager::GetInstance().GetHDREffect();
-                if (hdr) {
-                    hdr->SetEnabled(true);
-                    hdr->SetExposure(1.f);
-                    hdr->SetGamma(2.2f);
-                    hdr->SetToneMappingMode(HDREffect::ToneMappingMode::REINHARD);
-                }
-            }
-            currentScene = std::move(pendingScene);
-            currentScenePath = asyncScenePath;
-            currentSceneName = std::filesystem::path(currentScenePath)
-                .stem().generic_string();
-            currentScene->initializeOrchestrator();
+            ecs.modelSystem->Initialise();
             break;
-        case 17:
-        {
-            ECSManager& ecsRef = ECSRegistry::GetInstance().GetECSManager(currentScenePath);
-            ecsRef.scriptSystem->Shutdown();
-            ecsRef.scriptSystem->Initialise(ecsRef);
-            // Dialogue init ran before the loading scene was destroyed, and the loading scene
-            // clears the global NarrativeDialogueManager during Exit(). Rebuild it now that the
-            // new scene fully owns the runtime state.
-            ecsRef.dialogueSystem->Shutdown();
-            ecsRef.dialogueSystem->Initialise(ecsRef);
         }
-        loadState = SceneLoadState::COMPLETE;
+        case 3:  { PROFILE_SCOPED("SysInit::DebugDraw");      ecs.debugDrawSystem->Initialise();      break; }
+        case 4:  { PROFILE_SCOPED("SysInit::Text");            ecs.textSystem->Initialise();           break; }
+        case 5:  { PROFILE_SCOPED("SysInit::Sprite");          ecs.spriteSystem->Initialise();         break; }
+        case 6:  { PROFILE_SCOPED("SysInit::Particle");        ecs.particleSystem->Initialise();       break; }
+        case 7:  { PROFILE_SCOPED("SysInit::Animation");       ecs.animationSystem->Initialise();      break; }
+        case 8:  { PROFILE_SCOPED("SysInit::Physics");         pendingScene->InitializePhysics();      break; }
+        case 9:  { PROFILE_SCOPED("SysInit::SpriteAnimation"); ecs.spriteAnimationSystem->Initialise(); break; }
+        case 10: { PROFILE_SCOPED("SysInit::UIAnchor");        ecs.uiAnchorSystem->Initialise(ecs);   break; }
+        case 11: { PROFILE_SCOPED("SysInit::Button");          ecs.buttonSystem->Initialise(ecs);     break; }
+        case 12: { PROFILE_SCOPED("SysInit::Slider");          ecs.sliderSystem->Initialise(ecs);     break; }
+        case 13: { PROFILE_SCOPED("SysInit::Video");           ecs.videoSystem->Initialise(ecs);      break; }
+        case 14: { PROFILE_SCOPED("SysInit::Dialogue");        ecs.dialogueSystem->Initialise(ecs);   break; }
+        case 15: { PROFILE_SCOPED("SysInit::Fog");             ecs.fogSystem->Initialise();            break; }
+        case 16: { PROFILE_SCOPED("SysInit::SwapPending");     asyncSwapPending = true;                break; }
         break;
-        }
 
+        }
         // Restore loading screen as active for Update/Draw (only if still alive)
-        if (loadState == SceneLoadState::INITIALIZING_SYSTEMS && asyncSystemInitStep < 16) {
+        if (loadState == SceneLoadState::INITIALIZING_SYSTEMS) {
             ECSRegistry::GetInstance().SetActiveECSManager(currentScenePath);
         }
 
@@ -528,12 +588,12 @@ void SceneManager::UpdateAsyncLoad() {
         break;
     }
     default: break;
-    
+
     }
 }
 
 
-void SceneManager::SaveScene() 
+void SceneManager::SaveScene()
 {
     Serializer::SerializeScene(currentScenePath);
 
@@ -553,10 +613,10 @@ void SceneManager::SaveScene()
         }
     }
     else {
-		ENGINE_LOG_DEBUG("[SceneManager] Current scene path is already in Editor/Resources/Scenes: " + currentScenePath);
+        ENGINE_LOG_DEBUG("[SceneManager] Current scene path is already in Editor/Resources/Scenes: " + currentScenePath);
     }
 
-	std::filesystem::path projectRootScenesPath(std::filesystem::path(AssetManager::GetInstance().GetRootAssetDirectory()) / std::filesystem::path(currentScenePath.substr(currentScenePath.find("Scenes"))));
+    std::filesystem::path projectRootScenesPath(std::filesystem::path(AssetManager::GetInstance().GetRootAssetDirectory()) / std::filesystem::path(currentScenePath.substr(currentScenePath.find("Scenes"))));
     if (currentScenePath != projectRootScenesPath.generic_string()) {
         if (FileUtilities::StrictDirectoryExists(projectRootScenesPath.parent_path())) {
             if (FileUtilities::CopyFile(currentScenePath, projectRootScenesPath.generic_string())) {
@@ -565,143 +625,143 @@ void SceneManager::SaveScene()
             else {
                 ENGINE_LOG_WARN("[SceneManager] Failed to copy scene to Root Project/Resources/Scenes: " + projectRootScenesPath.generic_string());
             }
-	    }
+        }
         else {
-		    ENGINE_LOG_WARN("[SceneManager] Root Project/Resources/Scenes path does not exist: " + projectRootScenesPath.generic_string());
+            ENGINE_LOG_WARN("[SceneManager] Root Project/Resources/Scenes path does not exist: " + projectRootScenesPath.generic_string());
         }
     }
     else {
-		ENGINE_LOG_DEBUG("[SceneManager] Current scene path is already in Root Project/Resources/Scenes: " + currentScenePath);
+        ENGINE_LOG_DEBUG("[SceneManager] Current scene path is already in Root Project/Resources/Scenes: " + currentScenePath);
     }
 
-// COMMENTED PART BELOW OPENS A FILE DIALOG WINDOW TO SAVE THE SCENE TO A SPECIFIC LOCATION, TO BE IMPLEMENTED M2.
-//    namespace fs = std::filesystem;
-//    std::string targetPath;
-//
-//#if defined(_WIN32)
-//
-//    // Try modern Vista+ dialog first (IFileSaveDialog)
-//    bool gotPath = false;
-//    HRESULT hrCo = CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED);
-//    bool coInitialized = SUCCEEDED(hrCo);
-//
-//    if (coInitialized)
-//    {
-//        IFileSaveDialog* pFileSave = nullptr;
-//        HRESULT hr = CoCreateInstance(CLSID_FileSaveDialog, nullptr, CLSCTX_INPROC_SERVER, IID_PPV_ARGS(&pFileSave));
-//        if (SUCCEEDED(hr) && pFileSave)
-//        {
-//            const COMDLG_FILTERSPEC fileTypes[] =
-//            {
-//                { L"Scene Files (*.scene)", L"*.scene" },
-//                { L"All Files (*.*)",     L"*.*"   }
-//            };
-//
-//            pFileSave->SetFileTypes(ARRAYSIZE(fileTypes), fileTypes);
-//            pFileSave->SetDefaultExtension(L"scene");
-//            pFileSave->SetFileName(L"New Scene.scene"); // suggested filename
-//
-//            hr = pFileSave->Show(nullptr); // pass HWND if available
-//            if (SUCCEEDED(hr))
-//            {
-//                IShellItem* pItem = nullptr;
-//                if (SUCCEEDED(pFileSave->GetResult(&pItem)) && pItem)
-//                {
-//                    PWSTR pszFilePath = nullptr;
-//                    if (SUCCEEDED(pItem->GetDisplayName(SIGDN_FILESYSPATH, &pszFilePath)) && pszFilePath)
-//                    {
-//                        fs::path chosen(pszFilePath);
-//                        targetPath = chosen.string();
-//                        CoTaskMemFree(pszFilePath);
-//                        gotPath = true;
-//                    }
-//                    pItem->Release();
-//                }
-//            }
-//            else
-//            {
-//                // If user cancelled, HRESULT == HRESULT_FROM_WIN32(ERROR_CANCELLED)
-//                if (hr == HRESULT_FROM_WIN32(ERROR_CANCELLED))
-//                {
-//                    // User cancelled the save dialog � do nothing.
-//                    pFileSave->Release();
-//                    if (coInitialized) CoUninitialize();
-//                    return;
-//                }
-//            }
-//
-//            pFileSave->Release();
-//        }
-//        // Uninitialize COM for this call (matching CoInitializeEx)
-//        if (coInitialized) CoUninitialize();
-//    }
-//
-//    // If modern dialog didn't succeed (either COM failed or dialog not available), fallback to legacy API
-//    #pragma region MISSING WINDOWS LIB
-//        //if (!gotPath)
-//        //{
-//        //    wchar_t szFile[MAX_PATH] = L"scene.json";
-//        //    OPENFILENAMEW ofn = {};
-//        //    ofn.lStructSize = sizeof(ofn);
-//        //    ofn.hwndOwner = nullptr; // replace with your HWND if available
-//        //    ofn.lpstrFile = szFile;
-//        //    ofn.nMaxFile = ARRAYSIZE(szFile);
-//        //    ofn.lpstrFilter = L"JSON Files (*.json)\0*.json\0All Files (*.*)\0*.*\0\0";
-//        //    ofn.lpstrTitle = L"Save scene as...";
-//        //    ofn.Flags = OFN_OVERWRITEPROMPT | OFN_PATHMUSTEXIST;
-//
-//        //    if (GetSaveFileNameW(&ofn))
-//        //    {
-//        //        fs::path chosen(szFile);
-//        //        targetPath = chosen.string();
-//        //        gotPath = true;
-//        //    }
-//        //    else
-//        //    {
-//        //        DWORD err = CommDlgExtendedError();
-//        //        if (err != 0)
-//        //        {
-//        //            ENGINE_LOG_WARN("[SaveScene] GetSaveFileNameW failed, error = " + err);
-//        //        }
-//        //        else
-//        //        {
-//        //            // user cancelled the legacy dialog as well -> abort
-//        //            return;
-//        //        }
-//        //    }
-//        //}
-//    #pragma endregion
-//
-//#else
-//    // Non-Windows (mobile / other): DO NOT call any OS desktop dialogs.
-//    // Fallback to a safe default filename. Serializer has its own fallback behavior
-//    // for directory creation � it will try to write to cwd if needed.
-//    targetPath = "scene.json";
-//    ENGINE_LOG_INFO("[SaveScene] Non-Windows platform; using fallback filename: " + targetPath);
-//#endif
-//
-//    // Final guard: ensure we have a target path
-//    if (targetPath.empty())
-//    {
-//        ENGINE_LOG_WARN("[SaveScene] No valid target path provided; aborting save.");
-//        return;
-//    }
-//
-//    // Call serializer. Wrap in try/catch to prevent exceptions bubbling up.
-//    try
-//    {
-//        // If Serializer signature differs (bool return, etc.), adapt this call accordingly.
-//        Serializer::SerializeScene(targetPath);
-//        ENGINE_LOG_INFO("[SaveScene] serialize requested for: " + targetPath);
-//    }
-//    catch (const std::exception& ex)
-//    {
-//        ENGINE_LOG_WARN("[SaveScene] exception while saving scene: " + static_cast<std::string>(ex.what()));
-//    }
-//    catch (...)
-//    {
-//        ENGINE_LOG_WARN("[SaveScene] unknown exception while saving scene");
-//    }
+    // COMMENTED PART BELOW OPENS A FILE DIALOG WINDOW TO SAVE THE SCENE TO A SPECIFIC LOCATION, TO BE IMPLEMENTED M2.
+    //    namespace fs = std::filesystem;
+    //    std::string targetPath;
+    //
+    //#if defined(_WIN32)
+    //
+    //    // Try modern Vista+ dialog first (IFileSaveDialog)
+    //    bool gotPath = false;
+    //    HRESULT hrCo = CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED);
+    //    bool coInitialized = SUCCEEDED(hrCo);
+    //
+    //    if (coInitialized)
+    //    {
+    //        IFileSaveDialog* pFileSave = nullptr;
+    //        HRESULT hr = CoCreateInstance(CLSID_FileSaveDialog, nullptr, CLSCTX_INPROC_SERVER, IID_PPV_ARGS(&pFileSave));
+    //        if (SUCCEEDED(hr) && pFileSave)
+    //        {
+    //            const COMDLG_FILTERSPEC fileTypes[] =
+    //            {
+    //                { L"Scene Files (*.scene)", L"*.scene" },
+    //                { L"All Files (*.*)",     L"*.*"   }
+    //            };
+    //
+    //            pFileSave->SetFileTypes(ARRAYSIZE(fileTypes), fileTypes);
+    //            pFileSave->SetDefaultExtension(L"scene");
+    //            pFileSave->SetFileName(L"New Scene.scene"); // suggested filename
+    //
+    //            hr = pFileSave->Show(nullptr); // pass HWND if available
+    //            if (SUCCEEDED(hr))
+    //            {
+    //                IShellItem* pItem = nullptr;
+    //                if (SUCCEEDED(pFileSave->GetResult(&pItem)) && pItem)
+    //                {
+    //                    PWSTR pszFilePath = nullptr;
+    //                    if (SUCCEEDED(pItem->GetDisplayName(SIGDN_FILESYSPATH, &pszFilePath)) && pszFilePath)
+    //                    {
+    //                        fs::path chosen(pszFilePath);
+    //                        targetPath = chosen.string();
+    //                        CoTaskMemFree(pszFilePath);
+    //                        gotPath = true;
+    //                    }
+    //                    pItem->Release();
+    //                }
+    //            }
+    //            else
+    //            {
+    //                // If user cancelled, HRESULT == HRESULT_FROM_WIN32(ERROR_CANCELLED)
+    //                if (hr == HRESULT_FROM_WIN32(ERROR_CANCELLED))
+    //                {
+    //                    // User cancelled the save dialog   do nothing.
+    //                    pFileSave->Release();
+    //                    if (coInitialized) CoUninitialize();
+    //                    return;
+    //                }
+    //            }
+    //
+    //            pFileSave->Release();
+    //        }
+    //        // Uninitialize COM for this call (matching CoInitializeEx)
+    //        if (coInitialized) CoUninitialize();
+    //    }
+    //
+    //    // If modern dialog didn't succeed (either COM failed or dialog not available), fallback to legacy API
+    //    #pragma region MISSING WINDOWS LIB
+    //        //if (!gotPath)
+    //        //{
+    //        //    wchar_t szFile[MAX_PATH] = L"scene.json";
+    //        //    OPENFILENAMEW ofn = {};
+    //        //    ofn.lStructSize = sizeof(ofn);
+    //        //    ofn.hwndOwner = nullptr; // replace with your HWND if available
+    //        //    ofn.lpstrFile = szFile;
+    //        //    ofn.nMaxFile = ARRAYSIZE(szFile);
+    //        //    ofn.lpstrFilter = L"JSON Files (*.json)\0*.json\0All Files (*.*)\0*.*\0\0";
+    //        //    ofn.lpstrTitle = L"Save scene as...";
+    //        //    ofn.Flags = OFN_OVERWRITEPROMPT | OFN_PATHMUSTEXIST;
+    //
+    //        //    if (GetSaveFileNameW(&ofn))
+    //        //    {
+    //        //        fs::path chosen(szFile);
+    //        //        targetPath = chosen.string();
+    //        //        gotPath = true;
+    //        //    }
+    //        //    else
+    //        //    {
+    //        //        DWORD err = CommDlgExtendedError();
+    //        //        if (err != 0)
+    //        //        {
+    //        //            ENGINE_LOG_WARN("[SaveScene] GetSaveFileNameW failed, error = " + err);
+    //        //        }
+    //        //        else
+    //        //        {
+    //        //            // user cancelled the legacy dialog as well -> abort
+    //        //            return;
+    //        //        }
+    //        //    }
+    //        //}
+    //    #pragma endregion
+    //
+    //#else
+    //    // Non-Windows (mobile / other): DO NOT call any OS desktop dialogs.
+    //    // Fallback to a safe default filename. Serializer has its own fallback behavior
+    //    // for directory creation   it will try to write to cwd if needed.
+    //    targetPath = "scene.json";
+    //    ENGINE_LOG_INFO("[SaveScene] Non-Windows platform; using fallback filename: " + targetPath);
+    //#endif
+    //
+    //    // Final guard: ensure we have a target path
+    //    if (targetPath.empty())
+    //    {
+    //        ENGINE_LOG_WARN("[SaveScene] No valid target path provided; aborting save.");
+    //        return;
+    //    }
+    //
+    //    // Call serializer. Wrap in try/catch to prevent exceptions bubbling up.
+    //    try
+    //    {
+    //        // If Serializer signature differs (bool return, etc.), adapt this call accordingly.
+    //        Serializer::SerializeScene(targetPath);
+    //        ENGINE_LOG_INFO("[SaveScene] serialize requested for: " + targetPath);
+    //    }
+    //    catch (const std::exception& ex)
+    //    {
+    //        ENGINE_LOG_WARN("[SaveScene] exception while saving scene: " + static_cast<std::string>(ex.what()));
+    //    }
+    //    catch (...)
+    //    {
+    //        ENGINE_LOG_WARN("[SaveScene] unknown exception while saving scene");
+    //    }
 }
 
 void SceneManager::InitializeScenePhysics() {
@@ -713,16 +773,16 @@ void SceneManager::ShutDownScenePhysics() {
 }
 
 void SceneManager::SaveTempScene() {
-	// Serialize the current scene data to a temporary file.
-	std::string tempScenePath = currentScenePath + ".temp";
+    // Serialize the current scene data to a temporary file.
+    std::string tempScenePath = currentScenePath + ".temp";
     //FileUtilities::CopyFile(currentScenePath, tempScenePath);
-	Serializer::SerializeScene(tempScenePath);
+    Serializer::SerializeScene(tempScenePath);
 }
 
 void SceneManager::ReloadTempScene() {
-	std::string tempScenePath = currentScenePath + ".temp";
-	if (std::filesystem::exists(tempScenePath)) {
-		Serializer::ReloadScene(tempScenePath, currentScenePath);
+    std::string tempScenePath = currentScenePath + ".temp";
+    if (std::filesystem::exists(tempScenePath)) {
+        Serializer::ReloadScene(tempScenePath, currentScenePath);
 
         ECSManager& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
 
@@ -742,89 +802,89 @@ void SceneManager::ReloadTempScene() {
         //        animComp.ResetPreview(ent);
         //    }
         //}
-	}
-	else {
-		// Handle the case where the temp file doesn't exist (e.g., for newly created scenes)
-		ENGINE_PRINT(EngineLogging::LogLevel::Error, "Temp file does not exist, skipping reload: ", tempScenePath, "\n");
-		return; // Early exit if needed
-	}
+    }
+    else {
+        // Handle the case where the temp file doesn't exist (e.g., for newly created scenes)
+        ENGINE_PRINT(EngineLogging::LogLevel::Error, "Temp file does not exist, skipping reload: ", tempScenePath, "\n");
+        return; // Early exit if needed
+    }
 }
 
 std::string SceneManager::GetSceneName() const {
-	return currentSceneName;
+    return currentSceneName;
 }
 
 void SceneManager::UpdateScenePath(const std::string& oldPath, const std::string& newPath) {
-	if (currentScenePath == oldPath) {
-		currentScenePath = newPath;
-		std::filesystem::path p(newPath);
-		currentSceneName = p.stem().generic_string();
+    if (currentScenePath == oldPath) {
+        currentScenePath = newPath;
+        std::filesystem::path p(newPath);
+        currentSceneName = p.stem().generic_string();
 
-		SaveLastOpenedScenePath(newPath);
+        SaveLastOpenedScenePath(newPath);
 
-		ENGINE_LOG_INFO("[SceneManager] Updated scene path from " + oldPath + " to " + newPath);
-	}
+        ENGINE_LOG_INFO("[SceneManager] Updated scene path from " + oldPath + " to " + newPath);
+    }
 }
 
 void SceneManager::SaveLastOpenedScenePath(const std::string& scenePath) {
-	namespace fs = std::filesystem;
-	try {
-		// Use project root directory (parent of current working directory which is usually Build/EditorRelease)
-		fs::path projectRoot = fs::current_path().parent_path().parent_path();
-		fs::path settingsDir = projectRoot / "ProjectSettings";
+    namespace fs = std::filesystem;
+    try {
+        // Use project root directory (parent of current working directory which is usually Build/EditorRelease)
+        fs::path projectRoot = fs::current_path().parent_path().parent_path();
+        fs::path settingsDir = projectRoot / "ProjectSettings";
 
-		// Create ProjectSettings directory if it doesn't exist
-		if (!fs::exists(settingsDir)) {
-			fs::create_directories(settingsDir);
-		}
+        // Create ProjectSettings directory if it doesn't exist
+        if (!fs::exists(settingsDir)) {
+            fs::create_directories(settingsDir);
+        }
 
-		fs::path lastSceneFile = settingsDir / "last_scene.txt";
-		std::ofstream file(lastSceneFile);
-		if (file.is_open()) {
-			file << scenePath;
-			file.close();
-			ENGINE_LOG_INFO("[SceneManager] Saved last opened scene path to: " + lastSceneFile.string());
-		}
-		else {
-			ENGINE_LOG_WARN("[SceneManager] Failed to save last opened scene path");
-		}
-	}
-	catch (const std::exception& ex) {
-		ENGINE_LOG_WARN(std::string("[SceneManager] Exception saving last scene path: ") + ex.what());
-	}
+        fs::path lastSceneFile = settingsDir / "last_scene.txt";
+        std::ofstream file(lastSceneFile);
+        if (file.is_open()) {
+            file << scenePath;
+            file.close();
+            ENGINE_LOG_INFO("[SceneManager] Saved last opened scene path to: " + lastSceneFile.string());
+        }
+        else {
+            ENGINE_LOG_WARN("[SceneManager] Failed to save last opened scene path");
+        }
+    }
+    catch (const std::exception& ex) {
+        ENGINE_LOG_WARN(std::string("[SceneManager] Exception saving last scene path: ") + ex.what());
+    }
 }
 
 std::string SceneManager::LoadLastOpenedScenePath() {
-	namespace fs = std::filesystem;
-	try {
-		// Use project root directory (parent of current working directory which is usually Build/EditorRelease)
-		fs::path projectRoot = fs::current_path().parent_path().parent_path();
-		fs::path settingsDir = projectRoot / "ProjectSettings";
-		fs::path lastSceneFile = settingsDir / "last_scene.txt";
+    namespace fs = std::filesystem;
+    try {
+        // Use project root directory (parent of current working directory which is usually Build/EditorRelease)
+        fs::path projectRoot = fs::current_path().parent_path().parent_path();
+        fs::path settingsDir = projectRoot / "ProjectSettings";
+        fs::path lastSceneFile = settingsDir / "last_scene.txt";
 
-		std::ifstream file(lastSceneFile);
-		if (file.is_open()) {
-			std::string scenePath;
-			std::getline(file, scenePath);
-			file.close();
-			if (!scenePath.empty() && fs::exists(scenePath)) {
-				ENGINE_LOG_INFO("[SceneManager] Loaded last opened scene path: " + scenePath);
-				return scenePath;
-			}
-			else if (!scenePath.empty()) {
-				ENGINE_LOG_WARN("[SceneManager] Last opened scene no longer exists: " + scenePath);
-			}
-		}
-		else {
-			ENGINE_LOG_INFO("[SceneManager] No last scene file found at: " + lastSceneFile.string());
-		}
-	}
-	catch (const std::exception& ex) {
-		ENGINE_LOG_WARN(std::string("[SceneManager] Exception loading last scene path: ") + ex.what());
-	}
+        std::ifstream file(lastSceneFile);
+        if (file.is_open()) {
+            std::string scenePath;
+            std::getline(file, scenePath);
+            file.close();
+            if (!scenePath.empty() && fs::exists(scenePath)) {
+                ENGINE_LOG_INFO("[SceneManager] Loaded last opened scene path: " + scenePath);
+                return scenePath;
+            }
+            else if (!scenePath.empty()) {
+                ENGINE_LOG_WARN("[SceneManager] Last opened scene no longer exists: " + scenePath);
+            }
+        }
+        else {
+            ENGINE_LOG_INFO("[SceneManager] No last scene file found at: " + lastSceneFile.string());
+        }
+    }
+    catch (const std::exception& ex) {
+        ENGINE_LOG_WARN(std::string("[SceneManager] Exception loading last scene path: ") + ex.what());
+    }
 
-	// Return default scene if no saved path or file doesn't exist
-	return "";
+    // Return default scene if no saved path or file doesn't exist
+    return "";
 }
 
 void SceneManager::CreateNewScene(const std::string& directory, bool loadAfterCreate) {

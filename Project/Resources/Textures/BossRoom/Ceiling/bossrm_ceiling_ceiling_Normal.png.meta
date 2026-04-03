@@ -1,0 +1,15 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "007680771cdb326f-0004b0b7cc00102d",
+        "source": "../../Resources/Textures/BossRoom/Ceiling/bossrm_ceiling_ceiling_Normal.png",
+        "compiled": "../../Resources/Textures/BossRoom/Ceiling/bossrm_ceiling_ceiling_Normal.dds"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

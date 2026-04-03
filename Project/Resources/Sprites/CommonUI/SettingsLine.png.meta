@@ -1,0 +1,15 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "006b8ee8b7a2e15a-0004a764f2005ff7",
+        "source": "../../Resources/Sprites/CommonUI/SettingsLine.png",
+        "compiled": "../../Resources/Sprites/CommonUI/SettingsLine.dds"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": true,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

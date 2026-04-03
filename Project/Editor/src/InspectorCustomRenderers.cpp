@@ -74,6 +74,7 @@ prior written consent of DigiPen Institute of Technology is prohibited.
 #include "ScriptInspector.h"
 #include "Panels/TagsLayersPanel.hpp"
 #include "Panels/PanelManager.hpp"
+#include "Panels/PrefabEditorPanel.hpp"
 #include "GUIManager.hpp"
 #include "Hierarchy/EntityGUIDRegistry.hpp"
 extern "C" {
@@ -1187,6 +1188,48 @@ void RegisterInspectorCustomRenderers()
             collider.version++;
         }
 
+        // Mass (used by CharacterController)
+        ImGui::Text("Mass");
+        ImGui::SameLine(labelWidth);
+        ImGui::SetNextItemWidth(-1);
+
+        static std::unordered_map<Entity, float> startMass;
+        static std::unordered_map<Entity, bool> isEditingMass;
+
+        if (ImGui::IsItemActivated()) {
+            startMass[entity] = collider.mass;
+            isEditingMass[entity] = true;
+        }
+
+        if (ImGui::DragFloat("##Mass", &collider.mass, 1.0f, 0.01f, FLT_MAX, "%.1f")) {
+            isEditingMass[entity] = true;
+        }
+
+        if (isEditingMass[entity] && !ImGui::IsItemActive()) {
+            float oldVal = startMass[entity];
+            float newVal = collider.mass;
+            if (oldVal != newVal && UndoSystem::GetInstance().IsEnabled()) {
+                UndoSystem::GetInstance().RecordLambdaChange(
+                    [entity, newVal]() {
+                        ECSManager& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
+                        if (ecs.HasComponent<ColliderComponent>(entity)) {
+                            ecs.GetComponent<ColliderComponent>(entity).mass = newVal;
+                            ecs.GetComponent<ColliderComponent>(entity).version++;
+                        }
+                    },
+                    [entity, oldVal]() {
+                        ECSManager& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
+                        if (ecs.HasComponent<ColliderComponent>(entity)) {
+                            ecs.GetComponent<ColliderComponent>(entity).mass = oldVal;
+                            ecs.GetComponent<ColliderComponent>(entity).version++;
+                        }
+                    },
+                    "Edit Collider Mass"
+                );
+            }
+            isEditingMass[entity] = false;
+        }
+
         return shapeChanged || shapeParamsChanged;
     });
 
@@ -1798,6 +1841,53 @@ void RegisterInspectorCustomRenderers()
                         }
                     }
                     EditorComponents::EndDragDropTarget();
+                }
+
+                // --- SFX (drag-drop audio) ---
+                ImGui::Text("SFX");
+                if (ImGui::IsItemHovered()) ImGui::SetTooltip("Audio clip to play when this board becomes active (drag-drop from Asset Browser)");
+                ImGui::SameLine(labelWidth);
+                {
+                    std::string sfxDisplay = "None (Audio)";
+                    if (!board.sfxGuidStr.empty()) {
+                        GUID_128 sfxGuid = GUIDUtilities::ConvertStringToGUID128(board.sfxGuidStr);
+                        std::string sfxPath = AssetManager::GetInstance().GetAssetPathFromGUID(sfxGuid);
+                        if (!sfxPath.empty())
+                            sfxDisplay = sfxPath.substr(sfxPath.find_last_of("/\\") + 1);
+                        else
+                            sfxDisplay = board.sfxGuidStr;
+                    }
+                    EditorComponents::DrawDragDropButton(sfxDisplay.c_str(), ImGui::GetContentRegionAvail().x);
+                    if (ImGui::BeginDragDropTarget()) {
+                        if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("AUDIO_DRAG")) {
+                            std::string newGuidStr = GUIDUtilities::ConvertGUID128ToString(DraggedAudioGuid);
+                            std::string oldGuidStr = board.sfxGuidStr;
+                            board.sfxGuidStr = newGuidStr;
+                            if (UndoSystem::GetInstance().IsEnabled()) {
+                                size_t idx = i;
+                                UndoSystem::GetInstance().RecordLambdaChange(
+                                    [entity, idx, newGuidStr]() { auto& e = ECSRegistry::GetInstance().GetActiveECSManager(); if (e.HasComponent<VideoComponent>(entity)) { auto& b = e.GetComponent<VideoComponent>(entity).boards; if (idx < b.size()) b[idx].sfxGuidStr = newGuidStr; } },
+                                    [entity, idx, oldGuidStr]() { auto& e = ECSRegistry::GetInstance().GetActiveECSManager(); if (e.HasComponent<VideoComponent>(entity)) { auto& b = e.GetComponent<VideoComponent>(entity).boards; if (idx < b.size()) b[idx].sfxGuidStr = oldGuidStr; } },
+                                    "Assign Board SFX");
+                            }
+                        }
+                        ImGui::EndDragDropTarget();
+                    }
+                    if (!board.sfxGuidStr.empty()) {
+                        ImGui::SameLine();
+                        if (ImGui::SmallButton("X##ClearSFX")) {
+                            std::string oldGuidStr = board.sfxGuidStr;
+                            board.sfxGuidStr = "";
+                            if (UndoSystem::GetInstance().IsEnabled()) {
+                                size_t idx = i;
+                                UndoSystem::GetInstance().RecordLambdaChange(
+                                    [entity, idx]() { auto& e = ECSRegistry::GetInstance().GetActiveECSManager(); if (e.HasComponent<VideoComponent>(entity)) { auto& b = e.GetComponent<VideoComponent>(entity).boards; if (idx < b.size()) b[idx].sfxGuidStr = ""; } },
+                                    [entity, idx, oldGuidStr]() { auto& e = ECSRegistry::GetInstance().GetActiveECSManager(); if (e.HasComponent<VideoComponent>(entity)) { auto& b = e.GetComponent<VideoComponent>(entity).boards; if (idx < b.size()) b[idx].sfxGuidStr = oldGuidStr; } },
+                                    "Clear Board SFX");
+                            }
+                        }
+                        if (ImGui::IsItemHovered()) ImGui::SetTooltip("Clear SFX");
+                    }
                 }
 
                 // --- Duration + Fade Duration (same line) ---
@@ -2849,6 +2939,47 @@ void RegisterInspectorCustomRenderers()
             ImGui::Unindent(10.0f);
         }
 
+        // ==================== Distance-Based Fading ====================
+        if (ImGui::CollapsingHeader("Distance Fading##PP", ImGuiTreeNodeFlags_DefaultOpen)) {
+            ImGui::Indent(10.0f);
+
+            static std::unordered_map<Entity, float> startFadeNear, startFadeFar;
+
+            ImGui::Text("Fade Near");
+            ImGui::SameLine(labelWidth);
+            ImGui::SetNextItemWidth(-1);
+            if (!isEditingPP[entity]) startFadeNear[entity] = camera.fadeNear;
+            if (ImGui::DragFloat("##FadeNear", &camera.fadeNear, 0.1f, 0.0f, 1000.0f)) { isEditingPP[entity] = true; }
+            if (isEditingPP[entity] && !ImGui::IsItemActive()) {
+                float oldVal = startFadeNear[entity]; float newVal = camera.fadeNear;
+                if (oldVal != newVal && UndoSystem::GetInstance().IsEnabled()) {
+                    UndoSystem::GetInstance().RecordLambdaChange(
+                        [entity, newVal]() { auto& ecs = ECSRegistry::GetInstance().GetActiveECSManager(); if (ecs.HasComponent<CameraComponent>(entity)) ecs.GetComponent<CameraComponent>(entity).fadeNear = newVal; },
+                        [entity, oldVal]() { auto& ecs = ECSRegistry::GetInstance().GetActiveECSManager(); if (ecs.HasComponent<CameraComponent>(entity)) ecs.GetComponent<CameraComponent>(entity).fadeNear = oldVal; },
+                        "Change Fade Near");
+                }
+                isEditingPP[entity] = false;
+            }
+
+            ImGui::Text("Fade Far");
+            ImGui::SameLine(labelWidth);
+            ImGui::SetNextItemWidth(-1);
+            if (!isEditingPP[entity]) startFadeFar[entity] = camera.fadeFar;
+            if (ImGui::DragFloat("##FadeFar", &camera.fadeFar, 0.1f, 0.0f, 1000.0f)) { isEditingPP[entity] = true; }
+            if (isEditingPP[entity] && !ImGui::IsItemActive()) {
+                float oldVal = startFadeFar[entity]; float newVal = camera.fadeFar;
+                if (oldVal != newVal && UndoSystem::GetInstance().IsEnabled()) {
+                    UndoSystem::GetInstance().RecordLambdaChange(
+                        [entity, newVal]() { auto& ecs = ECSRegistry::GetInstance().GetActiveECSManager(); if (ecs.HasComponent<CameraComponent>(entity)) ecs.GetComponent<CameraComponent>(entity).fadeFar = newVal; },
+                        [entity, oldVal]() { auto& ecs = ECSRegistry::GetInstance().GetActiveECSManager(); if (ecs.HasComponent<CameraComponent>(entity)) ecs.GetComponent<CameraComponent>(entity).fadeFar = oldVal; },
+                        "Change Fade Far");
+                }
+                isEditingPP[entity] = false;
+            }
+
+            ImGui::Unindent(10.0f);
+        }
+
         return false;
     });
 
@@ -3283,7 +3414,8 @@ void RegisterInspectorCustomRenderers()
         "colorGradingEnabled", "cgBrightness", "cgContrast", "cgSaturation",
         "chromaticAberrationEnabled", "chromaticAberrationIntensity", "chromaticAberrationPadding",
         "ssaoEnabled", "ssaoRadius", "ssaoIntensity",
-        "envReflectionEnabled", "envReflectionIntensity"
+        "envReflectionEnabled", "envReflectionIntensity",
+        "fadeNear", "fadeFar"
     }) {
         ReflectionRenderer::RegisterFieldRenderer("CameraComponent", field,
             [](const char*, void*, Entity, ECSManager&) { return true; });
@@ -4127,6 +4259,7 @@ void RegisterInspectorCustomRenderers()
         if (ImGui::DragFloat("##MinDistance", &reverbZone.MinDistance, 0.1f, 0.0f, reverbZone.MaxDistance, "%.2f"))
         {
             reverbZone.MinDistance = std::max(0.0f, reverbZone.MinDistance);
+            reverbZone.MarkDirty();
         }
 
         // Max Distance (editable drag)
@@ -4136,6 +4269,7 @@ void RegisterInspectorCustomRenderers()
         if (ImGui::DragFloat("##MaxDistance", &reverbZone.MaxDistance, 0.1f, reverbZone.MinDistance, 10000.0f, "%.2f"))
         {
             reverbZone.MaxDistance = std::max(reverbZone.MinDistance, reverbZone.MaxDistance);
+            reverbZone.MarkDirty();
         }
 
         ImGui::Separator();
@@ -4170,62 +4304,110 @@ void RegisterInspectorCustomRenderers()
             ImGui::Text("Decay Time (s)");
             ImGui::SameLine(labelWidth);
             ImGui::SetNextItemWidth(-1);
-            ImGui::DragFloat("##DecayTime", &reverbZone.decayTime, 0.01f, 0.1f, 20.0f, "%.2f");
+            if (ImGui::DragFloat("##DecayTime", &reverbZone.decayTime, 0.01f, 0.1f, 20.0f, "%.2f"))
+            {
+                reverbZone.reverbPresetIndex = static_cast<int>(AudioReverbZoneComponent::ReverbPreset::Custom);
+                reverbZone.MarkDirty();
+            }
 
             ImGui::Text("Early Delay (s)");
             ImGui::SameLine(labelWidth);
             ImGui::SetNextItemWidth(-1);
-            ImGui::DragFloat("##EarlyDelay", &reverbZone.earlyDelay, 0.001f, 0.0f, 0.3f, "%.3f");
+            if (ImGui::DragFloat("##EarlyDelay", &reverbZone.earlyDelay, 0.001f, 0.0f, 0.3f, "%.3f"))
+            {
+                reverbZone.reverbPresetIndex = static_cast<int>(AudioReverbZoneComponent::ReverbPreset::Custom);
+                reverbZone.MarkDirty();
+            }
 
             ImGui::Text("Late Delay (s)");
             ImGui::SameLine(labelWidth);
             ImGui::SetNextItemWidth(-1);
-            ImGui::DragFloat("##LateDelay", &reverbZone.lateDelay, 0.001f, 0.0f, 0.1f, "%.3f");
+            if (ImGui::DragFloat("##LateDelay", &reverbZone.lateDelay, 0.001f, 0.0f, 0.1f, "%.3f"))
+            {
+                reverbZone.reverbPresetIndex = static_cast<int>(AudioReverbZoneComponent::ReverbPreset::Custom);
+                reverbZone.MarkDirty();
+            }
 
             ImGui::Text("HF Reference (Hz)");
             ImGui::SameLine(labelWidth);
             ImGui::SetNextItemWidth(-1);
-            ImGui::DragFloat("##HFReference", &reverbZone.hfReference, 10.0f, 20.0f, 20000.0f, "%.0f");
+            if (ImGui::DragFloat("##HFReference", &reverbZone.hfReference, 10.0f, 20.0f, 20000.0f, "%.0f"))
+            {
+                reverbZone.reverbPresetIndex = static_cast<int>(AudioReverbZoneComponent::ReverbPreset::Custom);
+                reverbZone.MarkDirty();
+            }
 
             ImGui::Text("HF Decay Ratio");
             ImGui::SameLine(labelWidth);
             ImGui::SetNextItemWidth(-1);
-            ImGui::DragFloat("##HFDecayRatio", &reverbZone.hfDecayRatio, 0.01f, 0.1f, 2.0f, "%.2f");
+            if (ImGui::DragFloat("##HFDecayRatio", &reverbZone.hfDecayRatio, 0.01f, 0.1f, 2.0f, "%.2f"))
+            {
+                reverbZone.reverbPresetIndex = static_cast<int>(AudioReverbZoneComponent::ReverbPreset::Custom);
+                reverbZone.MarkDirty();
+            }
 
             ImGui::Text("Diffusion (%)");
             ImGui::SameLine(labelWidth);
             ImGui::SetNextItemWidth(-1);
-            ImGui::DragFloat("##Diffusion", &reverbZone.diffusion, 1.0f, 0.0f, 100.0f, "%.0f");
+            if (ImGui::DragFloat("##Diffusion", &reverbZone.diffusion, 1.0f, 0.0f, 100.0f, "%.0f"))
+            {
+                reverbZone.reverbPresetIndex = static_cast<int>(AudioReverbZoneComponent::ReverbPreset::Custom);
+                reverbZone.MarkDirty();
+            }
 
             ImGui::Text("Density (%)");
             ImGui::SameLine(labelWidth);
             ImGui::SetNextItemWidth(-1);
-            ImGui::DragFloat("##Density", &reverbZone.density, 1.0f, 0.0f, 100.0f, "%.0f");
+            if (ImGui::DragFloat("##Density", &reverbZone.density, 1.0f, 0.0f, 100.0f, "%.0f"))
+            {
+                reverbZone.reverbPresetIndex = static_cast<int>(AudioReverbZoneComponent::ReverbPreset::Custom);
+                reverbZone.MarkDirty();
+            }
 
             ImGui::Text("Low Shelf Freq (Hz)");
             ImGui::SameLine(labelWidth);
             ImGui::SetNextItemWidth(-1);
-            ImGui::DragFloat("##LowShelfFreq", &reverbZone.lowShelfFrequency, 10.0f, 20.0f, 1000.0f, "%.0f");
+            if (ImGui::DragFloat("##LowShelfFreq", &reverbZone.lowShelfFrequency, 10.0f, 20.0f, 1000.0f, "%.0f"))
+            {
+                reverbZone.reverbPresetIndex = static_cast<int>(AudioReverbZoneComponent::ReverbPreset::Custom);
+                reverbZone.MarkDirty();
+            }
 
             ImGui::Text("Low Shelf Gain (dB)");
             ImGui::SameLine(labelWidth);
             ImGui::SetNextItemWidth(-1);
-            ImGui::DragFloat("##LowShelfGain", &reverbZone.lowShelfGain, 0.1f, -36.0f, 12.0f, "%.1f");
+            if (ImGui::DragFloat("##LowShelfGain", &reverbZone.lowShelfGain, 0.1f, -36.0f, 12.0f, "%.1f"))
+            {
+                reverbZone.reverbPresetIndex = static_cast<int>(AudioReverbZoneComponent::ReverbPreset::Custom);
+                reverbZone.MarkDirty();
+            }
 
             ImGui::Text("High Cut (Hz)");
             ImGui::SameLine(labelWidth);
             ImGui::SetNextItemWidth(-1);
-            ImGui::DragFloat("##HighCut", &reverbZone.highCut, 10.0f, 20.0f, 20000.0f, "%.0f");
+            if (ImGui::DragFloat("##HighCut", &reverbZone.highCut, 10.0f, 20.0f, 20000.0f, "%.0f"))
+            {
+                reverbZone.reverbPresetIndex = static_cast<int>(AudioReverbZoneComponent::ReverbPreset::Custom);
+                reverbZone.MarkDirty();
+            }
 
             ImGui::Text("Early/Late Mix (%)");
             ImGui::SameLine(labelWidth);
             ImGui::SetNextItemWidth(-1);
-            ImGui::DragFloat("##EarlyLateMix", &reverbZone.earlyLateMix, 1.0f, 0.0f, 100.0f, "%.0f");
+            if (ImGui::DragFloat("##EarlyLateMix", &reverbZone.earlyLateMix, 1.0f, 0.0f, 100.0f, "%.0f"))
+            {
+                reverbZone.reverbPresetIndex = static_cast<int>(AudioReverbZoneComponent::ReverbPreset::Custom);
+                reverbZone.MarkDirty();
+            }
 
             ImGui::Text("Wet Level (dB)");
             ImGui::SameLine(labelWidth);
             ImGui::SetNextItemWidth(-1);
-            ImGui::DragFloat("##WetLevel", &reverbZone.wetLevel, 0.1f, -80.0f, 20.0f, "%.1f");
+            if (ImGui::DragFloat("##WetLevel", &reverbZone.wetLevel, 0.1f, -80.0f, 20.0f, "%.1f"))
+            {
+                reverbZone.reverbPresetIndex = static_cast<int>(AudioReverbZoneComponent::ReverbPreset::Custom);
+                reverbZone.MarkDirty();
+            }
 
             ImGui::Unindent();
         }
@@ -5015,6 +5197,39 @@ void RegisterInspectorCustomRenderers()
             isEditingIntensity[entity] = false;
         }
 
+        // Range
+        ImGui::Text("Range");
+        ImGui::SameLine(labelWidth);
+        ImGui::SetNextItemWidth(-1);
+        if (!isEditingRange[entity]) startRange[entity] = light.range;
+        if (ImGui::IsItemActivated()) { startRange[entity] = light.range; isEditingRange[entity] = true; }
+        if (ImGui::DragFloat("##Range", &light.range, 0.5f, 0.0f, 500.0f)) {
+            isEditingRange[entity] = true;
+        }
+        if (ImGui::IsItemHovered()) ImGui::SetTooltip("Max distance the light reaches. 0 = unlimited (use attenuation only).");
+        if (isEditingRange[entity] && !ImGui::IsItemActive()) {
+            float oldVal = startRange[entity];
+            float newVal = light.range;
+            if (oldVal != newVal && UndoSystem::GetInstance().IsEnabled()) {
+                UndoSystem::GetInstance().RecordLambdaChange(
+                    [entity, newVal]() {
+                        ECSManager& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
+                        if (ecs.HasComponent<PointLightComponent>(entity)) {
+                            ecs.GetComponent<PointLightComponent>(entity).range = newVal;
+                        }
+                    },
+                    [entity, oldVal]() {
+                        ECSManager& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
+                        if (ecs.HasComponent<PointLightComponent>(entity)) {
+                            ecs.GetComponent<PointLightComponent>(entity).range = oldVal;
+                        }
+                    },
+                    "Change Point Light Range"
+                );
+            }
+            isEditingRange[entity] = false;
+        }
+
         ImGui::Separator();
         ImGui::Text("Attenuation");
 
@@ -5245,38 +5460,6 @@ void RegisterInspectorCustomRenderers()
                     "Toggle Point Light Shadows"
                 );
             }
-        }
-
-        // Shadow Range
-        ImGui::Text("Shadow Range");
-        ImGui::SameLine(labelWidth);
-        ImGui::SetNextItemWidth(-1);
-        if (!isEditingRange[entity]) startRange[entity] = light.range;
-        if (ImGui::IsItemActivated()) { startRange[entity] = light.range; isEditingRange[entity] = true; }
-        if (ImGui::DragFloat("##ShadowRange", &light.range, 0.5f, 0.1f, 500.0f)) {
-            isEditingRange[entity] = true;
-        }
-        if (isEditingRange[entity] && !ImGui::IsItemActive()) {
-            float oldVal = startRange[entity];
-            float newVal = light.range;
-            if (oldVal != newVal && UndoSystem::GetInstance().IsEnabled()) {
-                UndoSystem::GetInstance().RecordLambdaChange(
-                    [entity, newVal]() {
-                        ECSManager& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
-                        if (ecs.HasComponent<PointLightComponent>(entity)) {
-                            ecs.GetComponent<PointLightComponent>(entity).range = newVal;
-                        }
-                    },
-                    [entity, oldVal]() {
-                        ECSManager& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
-                        if (ecs.HasComponent<PointLightComponent>(entity)) {
-                            ecs.GetComponent<PointLightComponent>(entity).range = oldVal;
-                        }
-                    },
-                    "Change Point Light Shadow Range"
-                );
-            }
-            isEditingRange[entity] = false;
         }
 
         return true; // Return true to skip default field rendering
@@ -6165,20 +6348,24 @@ void RegisterInspectorCustomRenderers()
 
         // Track state transitions to detect when we need to invalidate cached instances
         static EditorState::State lastEditorState = EditorState::GetInstance().GetState();
+        static bool lastPrefabEditorMode = PrefabEditor::IsInPrefabEditorMode();
         EditorState::State currentEditorState = EditorState::GetInstance().GetState();
-        // Commented out to fix warning C4189 - unused variable
-        // bool isInPlayMode = (currentEditorState == EditorState::State::PLAY_MODE ||
-        //                     currentEditorState == EditorState::State::PAUSED);
+        bool currentPrefabEditorMode = PrefabEditor::IsInPrefabEditorMode();
 
         // Clear all cached preview instances when transitioning between modes
         // This is necessary because scene deserialization creates new instances with new registry refs
-        if (lastEditorState != currentEditorState)
+        // Also clear when entering/exiting prefab editor mode since entities are cleared and recreated
+        bool stateChanged = (lastEditorState != currentEditorState) || 
+                           (lastPrefabEditorMode != currentPrefabEditorMode);
+        bool prefabModeChanged = (lastPrefabEditorMode != currentPrefabEditorMode);
+        if (stateChanged)
         {
-            // Save the current state of all preview instances to preserve edited values
-            // This happens for ALL transitions to ensure values persist across multiple play/stop cycles
-            for (auto& [key, instanceRef] : editorPreviewInstances)
+            // Preserve preview edits only for in-place state transitions (edit <-> play).
+            // Prefab mode transitions clear/rebuild ECS and can recycle entity IDs, so carrying
+            // cached preview instances across those boundaries can write state into wrong scripts.
+            if (!prefabModeChanged)
             {
-                if (Scripting::IsValidInstance(instanceRef))
+                for (auto& [key, instanceRef] : editorPreviewInstances)
                 {
                     // Parse the key to get entity and script index
                     size_t underscorePos = key.find('_');
@@ -6194,14 +6381,16 @@ void RegisterInspectorCustomRenderers()
                             auto& scriptCompToSave = ecs.GetComponent<ScriptComponentData>(parsedEntity);
                             if (scriptIdx < scriptCompToSave.scripts.size())
                             {
+                                const auto& expectedPath = scriptCompToSave.scripts[scriptIdx].scriptPath;
+                                if (!Scripting::IsValidInstanceForScript(instanceRef, expectedPath)) {
+                                    continue;
+                                }
+
                                 // Always preserve the current state - either from preview or runtime instance
                                 std::string currentState = Scripting::SerializeInstanceToJson(instanceRef);
                                 if (!currentState.empty())
                                 {
                                     scriptCompToSave.scripts[scriptIdx].pendingInstanceState = currentState;
-                                    ENGINE_PRINT("Preserved instance state for entity ", parsedEntity, " script ", scriptIdx,
-                                               " (transition: ", static_cast<int>(lastEditorState), " -> ",
-                                               static_cast<int>(currentEditorState), ")");
                                 }
                             }
                         }
@@ -6221,6 +6410,7 @@ void RegisterInspectorCustomRenderers()
             editorPreviewScriptPaths.clear();
         }
         lastEditorState = currentEditorState;
+        lastPrefabEditorMode = currentPrefabEditorMode;
 
         // Render each script in the vector
         int scriptIndexToRemove = -1;
@@ -6362,37 +6552,26 @@ void RegisterInspectorCustomRenderers()
 
             // Try to use runtime instance first if available and valid
             if (scriptData.instanceCreated && scriptData.instanceId != -1 &&
-                Scripting::IsValidInstance(scriptData.instanceId))
+                Scripting::IsValidInstanceForScript(scriptData.instanceId, scriptData.scriptPath))
             {
-                // Validate the runtime instance is still a proper Lua table
-                lua_State* validateL = Scripting::GetLuaState();
-                bool isRuntimeValid = false;
-                if (validateL)
-                {
-                    lua_rawgeti(validateL, LUA_REGISTRYINDEX, scriptData.instanceId);
-                    isRuntimeValid = lua_istable(validateL, -1);
-                    lua_pop(validateL, 1);
-                }
+                // Use the valid runtime instance
+                instanceToInspect = scriptData.instanceId;
+                usingPreviewInstance = false;
 
-                if (isRuntimeValid)
+                // Sync pendingInstanceState with runtime state to preserve any runtime changes.
+                // Guard: a freshly-created Lua instance serialises to "{}" and must NOT
+                // overwrite the pending state that was loaded from disk (e.g. audio GUIDs).
+                std::string runtimeState = Scripting::SerializeInstanceToJson(scriptData.instanceId);
+                if (!runtimeState.empty() && runtimeState != "{}")
                 {
-                    // Use the valid runtime instance
-                    instanceToInspect = scriptData.instanceId;
-                    usingPreviewInstance = false;
-
-                    // Sync pendingInstanceState with runtime state to preserve any runtime changes
-                    std::string runtimeState = Scripting::SerializeInstanceToJson(scriptData.instanceId);
-                    if (!runtimeState.empty())
-                    {
-                        scriptData.pendingInstanceState = runtimeState;
-                    }
+                    scriptData.pendingInstanceState = runtimeState;
                 }
-                else
-                {
-                    // Runtime instance is invalid, fall through to create preview
-                    scriptData.instanceCreated = false;
-                    scriptData.instanceId = -1;
-                }
+            }
+            else if (scriptData.instanceCreated && scriptData.instanceId != -1)
+            {
+                // Runtime instance is invalid/stale, fall through to create preview
+                scriptData.instanceCreated = false;
+                scriptData.instanceId = -1;
             }
 
             // If no valid runtime instance, create or use preview instance
@@ -6410,15 +6589,7 @@ void RegisterInspectorCustomRenderers()
                 auto it = editorPreviewInstances.find(uniqueKey);
                 if (it != editorPreviewInstances.end())
                 {
-                    // Validate the instance is still a proper Lua table
-                    lua_State* validateL = Scripting::GetLuaState();
-                    bool isValid = false;
-                    if (validateL && Scripting::IsValidInstance(it->second))
-                    {
-                        lua_rawgeti(validateL, LUA_REGISTRYINDEX, it->second);
-                        isValid = lua_istable(validateL, -1);
-                        lua_pop(validateL, 1);
-                    }
+                    bool isValid = Scripting::IsValidInstanceForScript(it->second, scriptData.scriptPath);
 
                     if (isValid)
                     {
@@ -6441,7 +6612,7 @@ void RegisterInspectorCustomRenderers()
                 {
                     // Create new preview instance
                     int previewInstance = Scripting::CreateInstanceFromFile(scriptData.scriptPath);
-                    if (Scripting::IsValidInstance(previewInstance))
+                    if (Scripting::IsValidInstanceForScript(previewInstance, scriptData.scriptPath))
                     {
                         editorPreviewInstances[uniqueKey] = previewInstance;
                         editorPreviewScriptPaths[uniqueKey] = scriptData.scriptPath;
@@ -6475,7 +6646,7 @@ void RegisterInspectorCustomRenderers()
                 }
             }
 
-            if (!Scripting::IsValidInstance(instanceToInspect))
+            if (!Scripting::IsValidInstanceForScript(instanceToInspect, scriptData.scriptPath))
             {
                 // If using a preview instance that's no longer valid, clean it up
                 if (usingPreviewInstance)
@@ -6856,12 +7027,11 @@ void RegisterInspectorCustomRenderers()
         // (Don't check the instance for a fields table, because Component mixin flattens them)
         hasFieldsTable = !parsedFields.empty();
 
-        // WORKAROUND: In edit mode, preview instances may be incomplete because Lua modules
-        // don't load properly. If we parsed fields from the file but the instance has
-        // fewer fields, try to get field values from pendingInstanceState JSON.
-        // We consider the instance incomplete if it has fewer fields than we parsed from file
-        bool previewInstanceIncomplete = usingPreviewInstance &&
-                                          hasFieldsTable &&
+        // WORKAROUND: In edit mode, the inspected instance may be incomplete (preview OR runtime),
+        // especially in prefab workflows where script instances can exist without exposed fields.
+        // If we parsed fields from file but the inspected instance has fewer fields, fall back
+        // to pendingInstanceState/Lua defaults so inspector fields remain visible and editable.
+        bool previewInstanceIncomplete = hasFieldsTable &&
                                           (fieldMap.size() < parsedFields.size());
 
         // Debug output for workaround detection (always log to help diagnose)
@@ -6873,7 +7043,7 @@ void RegisterInspectorCustomRenderers()
             ENGINE_PRINT("  pendingInstanceState.size() = ", scriptData.pendingInstanceState.size());
         }
 
-        // If preview instance is incomplete, try to parse pendingInstanceState to get field values
+        // If the inspected instance is incomplete, parse pendingInstanceState for saved field values
         std::unordered_map<std::string, std::string> savedFieldValues;
         if (previewInstanceIncomplete && !scriptData.pendingInstanceState.empty())
         {
@@ -6933,7 +7103,7 @@ void RegisterInspectorCustomRenderers()
                 }
                 else if (previewInstanceIncomplete)
                 {
-                    // WORKAROUND: Preview instance is incomplete, create a synthetic field entry
+                    // WORKAROUND: Inspected instance is incomplete, create a synthetic field entry
                     // using the saved value from pendingInstanceState if available
                     // Skip private fields
                     if (!parsedField.name.empty() && parsedField.name[0] == '_')
@@ -7764,6 +7934,9 @@ void RegisterInspectorCustomRenderers()
                         ENGINE_PRINT("Error updating synthetic field: ", field.name.c_str());
                     }
 
+                    // Invalidate cache so the next frame re-reads the updated value immediately
+                    inspector.InvalidateCache(scriptData.scriptPath, instanceToInspect);
+
                     // Take snapshot for undo
                     SnapshotManager::GetInstance().TakeSnapshot("Modify Script Property: " + field.name);
                 }
@@ -7776,6 +7949,9 @@ void RegisterInspectorCustomRenderers()
                     scriptData.pendingInstanceState = Scripting::SerializeInstanceToJson(instanceToInspect);
                     ENGINE_PRINT("SAVE DEBUG: Updated pendingInstanceState for field '", field.name.c_str(), "' to: ", newValue.c_str());
                     ENGINE_PRINT("  pendingInstanceState.size = ", scriptData.pendingInstanceState.size());
+
+                    // Invalidate cache so the next frame re-reads the updated value immediately
+                    inspector.InvalidateCache(scriptData.scriptPath, instanceToInspect);
 
                     // Take snapshot for undo
                     SnapshotManager::GetInstance().TakeSnapshot("Modify Script Property: " + field.name);
@@ -9064,6 +9240,10 @@ void RegisterInspectorCustomRenderers()
         static std::unordered_map<Entity, float>    startEdgeSoftness;
         static std::unordered_map<Entity, bool>     isEditingEdgeSoftness;
         static std::unordered_map<Entity, bool>     startUseHeightFade;
+        static std::unordered_map<Entity, float>    startColorTextureIntensity;
+        static std::unordered_map<Entity, bool>     isEditingColorTextureIntensity;
+        static std::unordered_map<Entity, float>    startColorTextureScale;
+        static std::unordered_map<Entity, bool>     isEditingColorTextureScale;
 
         // Initialize tracking state
         if (isEditingFogColor.find(entity)       == isEditingFogColor.end())       isEditingFogColor[entity]       = false;
@@ -9077,7 +9257,9 @@ void RegisterInspectorCustomRenderers()
         if (isEditingWarpStrength.find(entity)   == isEditingWarpStrength.end())   isEditingWarpStrength[entity]   = false;
         if (isEditingHeightFadeStart.find(entity)== isEditingHeightFadeStart.end())isEditingHeightFadeStart[entity]= false;
         if (isEditingHeightFadeEnd.find(entity)  == isEditingHeightFadeEnd.end())  isEditingHeightFadeEnd[entity]  = false;
-        if (isEditingEdgeSoftness.find(entity)   == isEditingEdgeSoftness.end())   isEditingEdgeSoftness[entity]   = false;
+        if (isEditingEdgeSoftness.find(entity)          == isEditingEdgeSoftness.end())          isEditingEdgeSoftness[entity]          = false;
+        if (isEditingColorTextureIntensity.find(entity) == isEditingColorTextureIntensity.end()) isEditingColorTextureIntensity[entity] = false;
+        if (isEditingColorTextureScale.find(entity)     == isEditingColorTextureScale.end())     isEditingColorTextureScale[entity]     = false;
 
         // --- Shape ---
         ImGui::Text("Shape");
@@ -9348,6 +9530,127 @@ void RegisterInspectorCustomRenderers()
             }
         }
 
+        ImGui::Separator();
+        ImGui::Text("Textures");
+
+        // --- Noise Texture ---
+        ImGui::Text("Noise Texture");
+        ImGui::SameLine(labelWidth);
+        ImGui::PushID("FogNoiseTexture");
+        {
+            std::string noisePath = AssetManager::GetInstance().GetAssetPathFromGUID(fog.noiseTextureGUID);
+            std::string noiseDisplay = noisePath.empty() ? "None (Texture)" : noisePath.substr(noisePath.find_last_of("/\\") + 1);
+            float btnWidth = ImGui::GetContentRegionAvail().x;
+            EditorComponents::DrawDragDropButton(noiseDisplay.c_str(), btnWidth);
+            if (EditorComponents::BeginDragDropTarget())
+            {
+                ImGui::SetTooltip("Drop noise texture here");
+                if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("TEXTURE_PAYLOAD"))
+                {
+                    SnapshotManager::GetInstance().TakeSnapshot("Assign Fog Noise Texture");
+                    const char* texturePath = (const char*)payload->Data;
+                    std::string pathStr(texturePath, payload->DataSize);
+                    pathStr.erase(std::find(pathStr.begin(), pathStr.end(), '\0'), pathStr.end());
+                    fog.noiseTextureGUID = AssetManager::GetInstance().GetGUID128FromAssetMeta(pathStr);
+                    fog.noiseTexturePath = AssetManager::GetInstance().GetAssetPathFromGUID(fog.noiseTextureGUID);
+                    fog.noiseTexture = ResourceManager::GetInstance().GetResourceFromGUID<Texture>(fog.noiseTextureGUID, fog.noiseTexturePath);
+                    EditorComponents::EndDragDropTarget();
+                }
+                else EditorComponents::EndDragDropTarget();
+            }
+        }
+        ImGui::PopID();
+
+        // --- Noise Texture Mapping Axis ---
+        ImGui::Text("  Mapping Axis");
+        ImGui::SameLine(labelWidth);
+        ImGui::SetNextItemWidth(-1);
+        {
+            const char* axisNames[] = { "XZ (Top-Down)", "XY (Front)", "YZ (Side)" };
+            int axisIndex = fog.noiseTextureMappingAxis;
+            int oldAxisIndex = axisIndex;
+            EditorComponents::PushComboColors();
+            if (ImGui::Combo("##FogNoiseMappingAxis", &axisIndex, axisNames, 3))
+            {
+                fog.noiseTextureMappingAxis = axisIndex;
+                if (oldAxisIndex != axisIndex && UndoSystem::GetInstance().IsEnabled())
+                {
+                    int newVal = axisIndex, oldVal = oldAxisIndex;
+                    UndoSystem::GetInstance().RecordLambdaChange(
+                        [entity, newVal]() { ECSManager& e = ECSRegistry::GetInstance().GetActiveECSManager(); if (e.HasComponent<FogVolumeComponent>(entity)) e.GetComponent<FogVolumeComponent>(entity).noiseTextureMappingAxis = newVal; },
+                        [entity, oldVal]() { ECSManager& e = ECSRegistry::GetInstance().GetActiveECSManager(); if (e.HasComponent<FogVolumeComponent>(entity)) e.GetComponent<FogVolumeComponent>(entity).noiseTextureMappingAxis = oldVal; },
+                        "Change Fog Noise Mapping Axis");
+                }
+            }
+            EditorComponents::PopComboColors();
+        }
+
+        // --- Color Texture ---
+        ImGui::Text("Color Texture");
+        ImGui::SameLine(labelWidth);
+        ImGui::PushID("FogColorTexture");
+        {
+            std::string colorPath = AssetManager::GetInstance().GetAssetPathFromGUID(fog.colorTextureGUID);
+            std::string colorDisplay = colorPath.empty() ? "None (Texture)" : colorPath.substr(colorPath.find_last_of("/\\") + 1);
+            float btnWidth = ImGui::GetContentRegionAvail().x;
+            EditorComponents::DrawDragDropButton(colorDisplay.c_str(), btnWidth);
+            if (EditorComponents::BeginDragDropTarget())
+            {
+                ImGui::SetTooltip("Drop color texture here");
+                if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("TEXTURE_PAYLOAD"))
+                {
+                    SnapshotManager::GetInstance().TakeSnapshot("Assign Fog Color Texture");
+                    const char* texturePath = (const char*)payload->Data;
+                    std::string pathStr(texturePath, payload->DataSize);
+                    pathStr.erase(std::find(pathStr.begin(), pathStr.end(), '\0'), pathStr.end());
+                    fog.colorTextureGUID = AssetManager::GetInstance().GetGUID128FromAssetMeta(pathStr);
+                    fog.colorTexturePath = AssetManager::GetInstance().GetAssetPathFromGUID(fog.colorTextureGUID);
+                    fog.colorTexture = ResourceManager::GetInstance().GetResourceFromGUID<Texture>(fog.colorTextureGUID, fog.colorTexturePath);
+                    EditorComponents::EndDragDropTarget();
+                }
+                else EditorComponents::EndDragDropTarget();
+            }
+        }
+        ImGui::PopID();
+
+        // --- Color Texture Intensity ---
+        ImGui::Text("  Color Intensity");
+        ImGui::SameLine(labelWidth);
+        ImGui::SetNextItemWidth(-1);
+        if (!isEditingColorTextureIntensity[entity]) startColorTextureIntensity[entity] = fog.colorTextureIntensity;
+        if (ImGui::IsItemActivated()) { startColorTextureIntensity[entity] = fog.colorTextureIntensity; isEditingColorTextureIntensity[entity] = true; }
+        if (ImGui::DragFloat("##FogColorTexIntensity", &fog.colorTextureIntensity, 0.01f, 0.0f, 1.0f))
+            isEditingColorTextureIntensity[entity] = true;
+        if (isEditingColorTextureIntensity[entity] && !ImGui::IsItemActive())
+        {
+            float oldVal = startColorTextureIntensity[entity]; float newVal = fog.colorTextureIntensity;
+            if (oldVal != newVal && UndoSystem::GetInstance().IsEnabled())
+                UndoSystem::GetInstance().RecordLambdaChange(
+                    [entity, newVal]() { ECSManager& e = ECSRegistry::GetInstance().GetActiveECSManager(); if (e.HasComponent<FogVolumeComponent>(entity)) e.GetComponent<FogVolumeComponent>(entity).colorTextureIntensity = newVal; },
+                    [entity, oldVal]() { ECSManager& e = ECSRegistry::GetInstance().GetActiveECSManager(); if (e.HasComponent<FogVolumeComponent>(entity)) e.GetComponent<FogVolumeComponent>(entity).colorTextureIntensity = oldVal; },
+                    "Change Fog Color Texture Intensity");
+            isEditingColorTextureIntensity[entity] = false;
+        }
+
+        // --- Color Texture Scale ---
+        ImGui::Text("  Color Scale");
+        ImGui::SameLine(labelWidth);
+        ImGui::SetNextItemWidth(-1);
+        if (!isEditingColorTextureScale[entity]) startColorTextureScale[entity] = fog.colorTextureScale;
+        if (ImGui::IsItemActivated()) { startColorTextureScale[entity] = fog.colorTextureScale; isEditingColorTextureScale[entity] = true; }
+        if (ImGui::DragFloat("##FogColorTexScale", &fog.colorTextureScale, 0.01f, 0.1f, 10.0f))
+            isEditingColorTextureScale[entity] = true;
+        if (isEditingColorTextureScale[entity] && !ImGui::IsItemActive())
+        {
+            float oldVal = startColorTextureScale[entity]; float newVal = fog.colorTextureScale;
+            if (oldVal != newVal && UndoSystem::GetInstance().IsEnabled())
+                UndoSystem::GetInstance().RecordLambdaChange(
+                    [entity, newVal]() { ECSManager& e = ECSRegistry::GetInstance().GetActiveECSManager(); if (e.HasComponent<FogVolumeComponent>(entity)) e.GetComponent<FogVolumeComponent>(entity).colorTextureScale = newVal; },
+                    [entity, oldVal]() { ECSManager& e = ECSRegistry::GetInstance().GetActiveECSManager(); if (e.HasComponent<FogVolumeComponent>(entity)) e.GetComponent<FogVolumeComponent>(entity).colorTextureScale = oldVal; },
+                    "Change Fog Color Texture Scale");
+            isEditingColorTextureScale[entity] = false;
+        }
+
         return true; // Skip default reflection rendering
     });
 
@@ -9366,14 +9669,20 @@ void RegisterInspectorCustomRenderers()
     ReflectionRenderer::RegisterFieldRenderer("FogVolumeComponent", "heightFadeStart",  [](const char*, void*, Entity, ECSManager&) { return true; });
     ReflectionRenderer::RegisterFieldRenderer("FogVolumeComponent", "heightFadeEnd",    [](const char*, void*, Entity, ECSManager&) { return true; });
     ReflectionRenderer::RegisterFieldRenderer("FogVolumeComponent", "edgeSoftness",     [](const char*, void*, Entity, ECSManager&) { return true; });
-    ReflectionRenderer::RegisterFieldRenderer("FogVolumeComponent", "noiseTextureGUID", [](const char*, void*, Entity, ECSManager&) { return true; });
-    ReflectionRenderer::RegisterFieldRenderer("FogVolumeComponent", "fogShader",        [](const char*, void*, Entity, ECSManager&) { return true; });
-    ReflectionRenderer::RegisterFieldRenderer("FogVolumeComponent", "noiseTexture",     [](const char*, void*, Entity, ECSManager&) { return true; });
-    ReflectionRenderer::RegisterFieldRenderer("FogVolumeComponent", "noiseTexturePath", [](const char*, void*, Entity, ECSManager&) { return true; });
-    ReflectionRenderer::RegisterFieldRenderer("FogVolumeComponent", "fogVAO",           [](const char*, void*, Entity, ECSManager&) { return true; });
-    ReflectionRenderer::RegisterFieldRenderer("FogVolumeComponent", "fogVBO",           [](const char*, void*, Entity, ECSManager&) { return true; });
-    ReflectionRenderer::RegisterFieldRenderer("FogVolumeComponent", "fogEBO",           [](const char*, void*, Entity, ECSManager&) { return true; });
-    ReflectionRenderer::RegisterFieldRenderer("FogVolumeComponent", "worldTransform",   [](const char*, void*, Entity, ECSManager&) { return true; });
+    ReflectionRenderer::RegisterFieldRenderer("FogVolumeComponent", "noiseTextureGUID",             [](const char*, void*, Entity, ECSManager&) { return true; });
+    ReflectionRenderer::RegisterFieldRenderer("FogVolumeComponent", "noiseTextureMappingAxis",     [](const char*, void*, Entity, ECSManager&) { return true; });
+    ReflectionRenderer::RegisterFieldRenderer("FogVolumeComponent", "colorTextureGUID",        [](const char*, void*, Entity, ECSManager&) { return true; });
+    ReflectionRenderer::RegisterFieldRenderer("FogVolumeComponent", "colorTextureIntensity",   [](const char*, void*, Entity, ECSManager&) { return true; });
+    ReflectionRenderer::RegisterFieldRenderer("FogVolumeComponent", "colorTextureScale",       [](const char*, void*, Entity, ECSManager&) { return true; });
+    ReflectionRenderer::RegisterFieldRenderer("FogVolumeComponent", "fogShader",               [](const char*, void*, Entity, ECSManager&) { return true; });
+    ReflectionRenderer::RegisterFieldRenderer("FogVolumeComponent", "noiseTexture",            [](const char*, void*, Entity, ECSManager&) { return true; });
+    ReflectionRenderer::RegisterFieldRenderer("FogVolumeComponent", "noiseTexturePath",        [](const char*, void*, Entity, ECSManager&) { return true; });
+    ReflectionRenderer::RegisterFieldRenderer("FogVolumeComponent", "colorTexture",            [](const char*, void*, Entity, ECSManager&) { return true; });
+    ReflectionRenderer::RegisterFieldRenderer("FogVolumeComponent", "colorTexturePath",        [](const char*, void*, Entity, ECSManager&) { return true; });
+    ReflectionRenderer::RegisterFieldRenderer("FogVolumeComponent", "fogVAO",                  [](const char*, void*, Entity, ECSManager&) { return true; });
+    ReflectionRenderer::RegisterFieldRenderer("FogVolumeComponent", "fogVBO",                  [](const char*, void*, Entity, ECSManager&) { return true; });
+    ReflectionRenderer::RegisterFieldRenderer("FogVolumeComponent", "fogEBO",                  [](const char*, void*, Entity, ECSManager&) { return true; });
+    ReflectionRenderer::RegisterFieldRenderer("FogVolumeComponent", "worldTransform",          [](const char*, void*, Entity, ECSManager&) { return true; });
 
     // ==================== SPRITE ANIMATION COMPONENT ====================
     // Register the sprite animation inspector (defined in SpriteAnimationInspector.cpp)

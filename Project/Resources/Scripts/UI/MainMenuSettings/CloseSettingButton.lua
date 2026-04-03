@@ -13,18 +13,43 @@ return Component {
         self._transform = self:GetComponent("Transform")
         self._audio = self:GetComponent("AudioComponent")
         self._sprite = self:GetComponent("SpriteRenderComponent")
+        self._button = self:GetComponent("ButtonComponent")
         self._isHovered = false
+        self._wasSettingsActive = false
+
         self._SettingsUIEntity = Engine.GetEntityByName("SettingsUI")
         if self._SettingsUIEntity then
             self._settingsUIActive = GetComponent(self._SettingsUIEntity, "ActiveComponent")
         end
+
+        -- Start non-interactable; enabled only when SettingsUI is open
+        if self._button then
+            self._button.interactable = false
+        end
     end,
 
     Update = function(self, dt)
-        if not self._settingsUIActive or not self._settingsUIActive.isActive then
+        local isActive = self._settingsUIActive and self._settingsUIActive.isActive
+
+        -- Rising edge: SettingsUI just became active
+        if isActive and not self._wasSettingsActive then
+            self._isHovered = false
+            -- Reset to normal sprite in case it was left on hover sprite
+            if self._sprite and self.spriteGUIDs and self.spriteGUIDs[1] then
+                self._sprite:SetTextureFromGUID(self.spriteGUIDs[1])
+            end
+            if self._button then
+                self._button.interactable = true
+            end
+        end
+
+        self._wasSettingsActive = isActive
+
+        -- Early exit if SettingsUI is not active
+        if not isActive then
             return
         end
-        
+
         self:_updateHover()
     end,
 
@@ -56,29 +81,41 @@ return Component {
             -- Switch to hover sprite
             if self._sprite and self.spriteGUIDs and self.spriteGUIDs[2] then
                 self._sprite:SetTextureFromGUID(self.spriteGUIDs[2])
-            else
-                print("[CloseSettingButton] Cannot switch to hover sprite - sprite: " .. tostring(self._sprite) .. ", spriteGUIDs: " .. tostring(self.spriteGUIDs) .. ", spriteGUIDs[2]: " .. tostring(self.spriteGUIDs and self.spriteGUIDs[2]))
             end
         elseif not isHovering and self._isHovered then
             self._isHovered = false
             -- Switch back to normal sprite
             if self._sprite and self.spriteGUIDs and self.spriteGUIDs[1] then
                 self._sprite:SetTextureFromGUID(self.spriteGUIDs[1])
-            else
-                print("[CloseSettingButton] Cannot switch to normal sprite - sprite: " .. tostring(self._sprite) .. ", spriteGUIDs: " .. tostring(self.spriteGUIDs) .. ", spriteGUIDs[1]: " .. tostring(self.spriteGUIDs and self.spriteGUIDs[1]))
             end
         end
     end,
 
     OnClickCloseButton = function(self)
-            if self._audio and self.HoverSFX and self.HoverSFX[2] then
-                self._audio:PlayOneShot(self.HoverSFX[2])
+        -- Only process if settings is actually active
+        local isActive = self._settingsUIActive and self._settingsUIActive.isActive
+        if not isActive then return end
+
+        if self._audio and self.HoverSFX and self.HoverSFX[2] then
+            self._audio:PlayOneShot(self.HoverSFX[2])
+        end
+
+        -- Disable both buttons immediately so they can't be clicked again
+        if self._button then
+            self._button.interactable = false
+        end
+        local resetEntity = Engine.GetEntityByName("ResetButton")
+        if resetEntity then
+            local resetBtn = GetComponent(resetEntity, "ButtonComponent")
+            if resetBtn then
+                resetBtn.interactable = false
             end
+        end
 
         -- Save settings when closing menu (only writes if dirty)
         GameSettings.SaveIfDirty()
 
-        -- BUTTONS TO ENABLE
+        -- Re-enable main menu buttons
         local targetButtons = {
             "PlayGame",
             "Credits",
@@ -108,7 +145,7 @@ return Component {
             end
         end
 
-        -- CLOSE SETTINGS UI
+        -- Close SettingsUI
         local settingUIEntity = Engine.GetEntityByName("SettingsUI")
         if settingUIEntity and settingUIEntity ~= -1 then
             local activeComp = GetComponent(settingUIEntity, "ActiveComponent")

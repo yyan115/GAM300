@@ -26,6 +26,7 @@
 #ifdef ANDROID
 #include <Input/AndroidInputManager.h>
 #endif
+#include "Script/LuaBindableSystems.hpp"
 #include <Asset Manager/MetaFilesManager.hpp>
 #include <ECS/ECSRegistry.hpp>
 #include "Game AI/BrainSystems.hpp"
@@ -667,7 +668,7 @@ bool Engine::InitializeGraphicsResources() {
 // 	SceneManager::GetInstance().LoadScene(AssetManager::GetInstance().GetRootAssetDirectory() + "/Scenes/01_MainMenu.scene");
 // 	ENGINE_LOG_INFO("Loaded main menu scene");
 // #endif
-	SceneManager::GetInstance().LoadScene(AssetManager::GetInstance().GetRootAssetDirectory() + "/Scenes/01_MainMenu.scene");
+	SceneManager::GetInstance().LoadScene(AssetManager::GetInstance().GetRootAssetDirectory() + "/Scenes/00_SplashScreen.scene");
 #endif
 
 #ifdef ANDROID
@@ -706,7 +707,12 @@ bool Engine::InitializeAssets() {
 }
 
 void Engine::Update() {
-    TimeManager::UpdateDeltaTime();
+    PROFILE_FUNCTION();
+
+    {
+        PROFILE_SCOPED("Engine::DeltaTime");
+        TimeManager::UpdateDeltaTime();
+    }
 
 #if !defined(EDITOR) && !defined(ANDROID) && defined(NDEBUG)
     UpdateStandaloneWindowTitleWithFps();
@@ -715,8 +721,15 @@ void Engine::Update() {
     // Update input FIRST so systems have fresh input state this frame
     // This fixes the 1-frame input delay that caused buttons to require double-clicks
     if (g_inputManager) {
+        PROFILE_SCOPED("Engine::InputUpdate");
         g_inputManager->Update(static_cast<float>(TimeManager::GetUnscaledDeltaTime()));
     }
+
+    // Update raw keyboard state for edge detection (Keyboard.IsKeyPressed / IsKeyHeld)
+    // Desktop only — KeyboardWrappers are debug-only and unused on Android
+#ifndef ANDROID
+    KeyboardWrappers::UpdateKeyStates();
+#endif
 
     // Commented out as not used to fix warnings.
     // ECSManager& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
@@ -724,11 +737,15 @@ void Engine::Update() {
     //RunBrainInitSystem(ecs);
 
     //RunBrainUpdateSystem(ecs, static_cast<float>(TimeManager::GetDeltaTime()));
-    SceneManager::GetInstance().UpdateAsyncLoad();
+    {
+        PROFILE_SCOPED("Engine::AsyncLoad");
+        SceneManager::GetInstance().UpdateAsyncLoad();
+    }
 
 	// Only update the scene if the game should be running (not paused)
 	if (ShouldRunGameLogic())
     {
+        PROFILE_SCOPED("Engine::UpdateScene");
         SceneManager::GetInstance().UpdateScene(TimeManager::GetDeltaTime()); // REPLACE WITH DT LATER
 	}
 }

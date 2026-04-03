@@ -69,11 +69,11 @@ void main() {
     } else {
         // === Blur Pass (simple 4x4 box blur) ===
         float result = 0.0;
-        for (int x = -2; x < 2; ++x) {
-            for (int y = -2; y < 2; ++y) {
+        for (int x = -2; x <= 2; ++x) {
+            for (int y = -2; y <= 2; ++y) {
                 result += texture(depthTexture, TexCoords + vec2(float(x), float(y)) * texelSize).r;
             }
         }
-        FragColor = result / 16.0;
+        FragColor = result / 25.0;
     }
 }

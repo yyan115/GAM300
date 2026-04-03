@@ -1,0 +1,15 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "004598ffd1e9f2de-00047c898202ccf3",
+        "source": "../../Resources/Textures/M5/Room5/Rm5_floor1_floor1_Roughness.png",
+        "compiled": "../../Resources/Textures/M5/Room5/Rm5_floor1_floor1_Roughness.dds"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

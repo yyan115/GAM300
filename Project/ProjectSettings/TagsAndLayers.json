@@ -8,6 +8,7 @@
         "Player",
         "GameController",
         "Enemy",
+        "Boss",
         "NPC",
         "Collectible",
         "DialogueText",
@@ -16,7 +17,10 @@
         "SkipButton",
         "Checkpoint",
         "LockOn",
-        "Throwable"
+        "Throwable",
+        "Vfx",
+        "NoCameraCollision",
+        "Staircase"
     ],
     "layers": [
         {

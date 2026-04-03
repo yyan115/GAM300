@@ -49,6 +49,8 @@ return Component {
         collisionLerpIn              = 20.0,
         collisionLerpOut             = 5.0,
         maxCameraHeightAbovePlayer   = 4.0,
+        collisionIgnoreScripts       = {"EnemyAI", "FlyingEnemyLogic"},
+        collisionIgnoreTags          = {"NoCameraCollision"},
 
         -- === Action Mode ===
         actionModeEnabled      = false,
@@ -96,11 +98,12 @@ return Component {
 
         -- === Motion Blur ===
         MotionBlurEnabled   = true,   -- master toggle; set false to disable without removing the system
-        MotionBlurThreshold = 2.0,    -- camera speed (world units/sec) below which no blur is applied
-        MotionBlurMaxSpeed  = 14.0,   -- camera speed at which blur reaches full MotionBlurMaxIntensity
+        MotionBlurThreshold = 3.0,    -- camera speed (world units/sec) below which no blur is applied
+        MotionBlurMaxSpeed  = 22.0,   -- camera speed at which blur reaches full MotionBlurMaxIntensity
 
         -- === Rotation ===
         lockCameraRotation = false,
+        androidFollowLerpSpeed = 20.0,  -- orbit catch-up on touch; tune up if still sluggish, down if snappy
 
         -- === Enemy Detection ===
         enableEnemyDetection = true,
@@ -154,6 +157,11 @@ return Component {
 
         -- Respawn teleport flag
         self._teleportToPlayer = false
+
+        -- Distance-based fade: cache CameraComponent and base values
+        self._camComp       = self:GetComponent("CameraComponent")
+        self._baseFadeNear  = self._camComp and self._camComp.fadeNear or 3.0
+        self._baseFadeFar   = self._camComp and self._camComp.fadeFar  or 5.0
 
         -- Motion blur
         self._lastCamX = nil
@@ -308,12 +316,19 @@ return Component {
         if not (self.GetPosition and self.SetPosition and self.SetRotation) then return end
         if not self._hasTarget then return end
 
+        local isAndroid = Platform and Platform.IsAndroid and Platform.IsAndroid()
+
         -- Teleport to respawn point without lerp
         if self._teleportToPlayer then
             print(string.format("[CameraFollow] Teleporting to %.2f %.2f %.2f",
                 self._targetPos.x, self._targetPos.y, self._targetPos.z))
             self:SetPosition(self._targetPos.x, self._targetPos.y, self._targetPos.z)
             self._teleportToPlayer = false
+            -- FIX: clear last-position so the next frame doesn't measure an
+            -- enormous teleport delta and fire a spurious full-intensity blur spike.
+            self._lastCamX = nil
+            self._lastCamY = nil
+            self._lastCamZ = nil
             return
         end
 
@@ -354,7 +369,6 @@ return Component {
 
         -- ── Input (mouse look + scroll zoom) ────────────────────────────────
         if not self._cinematicActive then
-            local isAndroid = Platform and Platform.IsAndroid and Platform.IsAndroid()
             if not self._loggedPlatform then
                 print("[CameraFollow] isAndroid=" .. tostring(isAndroid))
                 self._loggedPlatform = true
@@ -460,6 +474,17 @@ return Component {
             desiredX, desiredY, desiredZ, dt
         )
 
+        -- ── Scale fade distances based on post-collision camera distance ─
+        if self._camComp and radius > 0.01 then
+            local dx = desiredX - cameraTarget.x
+            local dy = desiredY - cameraTarget.y
+            local dz = desiredZ - cameraTarget.z
+            local actualDist = math.sqrt(dx*dx + dy*dy + dz*dz)
+            local ratio = actualDist / radius
+            self._camComp.fadeNear = self._baseFadeNear * ratio
+            self._camComp.fadeFar  = self._baseFadeFar  * ratio
+        end
+
         -- ── Blend position with chain aim when active ─────────────────────
         local blend = self._chainAimBlend
         local newX, newY, newZ
@@ -485,7 +510,8 @@ return Component {
                 cx, cy, cz = px or 0.0, py or 0.0, pz or 0.0
             end
 
-            local normalRate = self.followLerp or 10.0
+            local normalRate = (isAndroid and (self.androidFollowLerpSpeed or 20.0))
+                or self.followLerp or 10.0
             local chainRate  = 120.0
             local effectiveRate = normalRate + (chainRate - normalRate) * blend
             local lerpT = 1.0 - math.exp(-effectiveRate * dt)
@@ -514,7 +540,7 @@ return Component {
 
         -- ── Motion blur ──────────────────────────────────────────────────────
         -- Measure how far the camera actually moved this frame; publish normalised
-        -- intensity so camera_effects can drive blur without knowing positions.
+        -- intensity and screen-space angle so camera_effects can drive dirBlur correctly.
         if self.MotionBlurEnabled and self._lastCamX then
             local dx    = newX - self._lastCamX
             local dy    = newY - self._lastCamY
@@ -523,8 +549,33 @@ return Component {
             local lo    = self.MotionBlurThreshold or 2.0
             local hi    = self.MotionBlurMaxSpeed  or 14.0
             local intensity = math.max(0.0, math.min(1.0, (speed - lo) / (hi - lo)))
+
+            -- FIX: project the world-space delta onto the camera's screen plane to
+            -- derive the actual blur angle. Without this, dirBlurAngle was always 0
+            -- (blur permanently pointing right regardless of movement direction).
+            -- Uses _G.CAMERA_FWD_* which is normalised and written just above.
+            local cfX = _G.CAMERA_FWD_X or 0
+            local cfY = _G.CAMERA_FWD_Y or 0
+            local cfZ = _G.CAMERA_FWD_Z or 0
+            -- Screen-right = forward × worldUp(0,1,0) = (-fwdZ, 0, fwdX)
+            local rX, rZ = -cfZ, cfX
+            local rLen = math.sqrt(rX*rX + rZ*rZ)
+            local angle = 0
+            if rLen > 0.001 then
+                rX, rZ = rX / rLen, rZ / rLen
+                -- Screen-up = right × forward
+                local uX =  -rZ * cfY
+                local uY =   rZ * cfX - rX * cfZ
+                local uZ =   rX * cfY
+                local sX = dx * rX + dz * rZ            -- dot(delta, screen-right)
+                local sY = dx * uX + dy * uY + dz * uZ  -- dot(delta, screen-up)
+                if math.abs(sX) > 0.0001 or math.abs(sY) > 0.0001 then
+                    angle = math.deg(math.atan2 and math.atan2(sY, sX) or math.atan(sY, sX))
+                end
+            end
+
             if event_bus and event_bus.publish then
-                event_bus.publish("fx_motion_blur", { intensity = intensity })
+                event_bus.publish("fx_motion_blur", { intensity = intensity, angle = angle })
             end
         end
         self._lastCamX = newX

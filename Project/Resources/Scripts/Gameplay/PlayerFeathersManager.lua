@@ -1,7 +1,6 @@
 require("extension.engine_bootstrap")
 local Component = require("extension.mono_helper")
 local TransformMixin = require("extension.transform_mixin")
-
 local event_bus = _G.event_bus
 
 return Component {
@@ -11,7 +10,6 @@ return Component {
         FeathersCollectedTextName = "FeathersCollectedText",
         FeathersSpriteEntityName = "FeathersSprite",
         FeathersCollectionAnimationFrames = 25,
-        featherPickupSFX = {},
     },
 
     Awake = function(self)
@@ -40,9 +38,6 @@ return Component {
                         feathersSpriteAnimator:Resume()
                     end
 
-                    if self._audio then
-                        self._audio:PlayOneShot(self.featherPickupSFX[1])
-                    end
                 end
             end)
 
@@ -68,7 +63,6 @@ return Component {
 
     Start = function(self)
         self._transform = self:GetComponent("Transform")
-        self._audio = self:GetComponent("AudioComponent")
 
         self._feathersCollectedTextEntity = Engine.GetEntityByName(self.FeathersCollectedTextName)
         if self._feathersCollectedTextEntity then

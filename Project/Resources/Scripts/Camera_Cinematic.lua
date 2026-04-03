@@ -95,6 +95,16 @@ return Component {
                 self.cinematicActive = active
                 print("[CinematicCamera] cinematicActive set to " .. tostring(active) .. " via event")
             end)
+
+            self._cinematicStayTimerSub = event_bus.subscribe("cinematic.stayDuration", function(stayDuration)
+                self.stayDuration = stayDuration
+                print("[CinematicCamera] stayDuration set to " .. tostring(stayDuration) .. " via event")
+            end)
+
+            self._cinematicTransitionTimerSub = event_bus.subscribe("cinematic.transitionDuration", function(transitionDuration)
+                self.transitionDuration = transitionDuration
+                print("[CinematicCamera] transitionDuration set to " .. tostring(transitionDuration) .. " via event")
+            end)
         end
 
         print("[CinematicCamera] Initialized")

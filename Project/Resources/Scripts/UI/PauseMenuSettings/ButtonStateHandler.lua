@@ -24,12 +24,14 @@ return Component {
         -- Initialize storage tables for button groups
         self._pauseButtons   = {}
         self._settingButtons = {}
+        self._controlsButtons = {}
         self._confirmButtons = {}
 
         -- Define the button-to-menu mapping
         local menuMapping = {
-            { names = {"ContinueButton", "SettingsButton", "MainMenuButton"}, storage = self._pauseButtons },
+            { names = {"ContinueButton", "ControlsButton", "SettingsButton", "MainMenuButton"}, storage = self._pauseButtons },
             { names = {"BackButton", "ResetButton"}, storage = self._settingButtons },
+            { names = {"ControlsBackButton"}, storage = self._controlsButtons },
             { names = {"YesButton", "NoButton"}, storage = self._confirmButtons }
         }
 
@@ -52,10 +54,12 @@ return Component {
         -- Cache UI ActiveComponent references
         local pauseMenuEntity   = Engine.GetEntityByName("PauseMenuUI")
         local settingMenuEntity = Engine.GetEntityByName("SettingsUI")
+        local controlsMenuEntity = Engine.GetEntityByName("ControlsUI")
         local confirmMenuEntity = Engine.GetEntityByName("ConfirmationPromptUI")
 
         self._pauseMenuUI   = pauseMenuEntity and GetComponent(pauseMenuEntity, "ActiveComponent")
         self._settingMenuUI = settingMenuEntity and GetComponent(settingMenuEntity, "ActiveComponent")
+        self._controlsMenuUI = controlsMenuEntity and GetComponent(controlsMenuEntity, "ActiveComponent")
         self._confirmMenuUI = confirmMenuEntity and GetComponent(confirmMenuEntity, "ActiveComponent")
 
         -- Force initial state update
@@ -70,26 +74,36 @@ return Component {
         -- Get current menu states
         local confirmActive = self._confirmMenuUI and self._confirmMenuUI.isActive
         local settingActive = self._settingMenuUI and self._settingMenuUI.isActive
+        local controlsActive = self._controlsMenuUI and self._controlsMenuUI.isActive
         local pauseActive = self._pauseMenuUI and self._pauseMenuUI.isActive
 
-        -- Enable buttons based on which menu is active (priority order: Confirmation > Settings > Pause)
+        -- Enable buttons based on which menu is active (priority order: Confirmation > Controls > Settings > Pause)
         -- Only one menu should be active at a time, and only its buttons should be interactable.
         if confirmActive then
             SetGroupInteractable(self._pauseButtons, false)
             SetGroupInteractable(self._settingButtons, false)
+            SetGroupInteractable(self._controlsButtons, false)
             SetGroupInteractable(self._confirmButtons, true)
+        elseif controlsActive then
+            SetGroupInteractable(self._pauseButtons, false)
+            SetGroupInteractable(self._settingButtons, false)
+            SetGroupInteractable(self._controlsButtons, true)
+            SetGroupInteractable(self._confirmButtons, false)
         elseif settingActive then
             SetGroupInteractable(self._pauseButtons, false)
             SetGroupInteractable(self._settingButtons, true)
+            SetGroupInteractable(self._controlsButtons, false)
             SetGroupInteractable(self._confirmButtons, false)
         elseif pauseActive then
             SetGroupInteractable(self._pauseButtons, true)
             SetGroupInteractable(self._settingButtons, false)
+            SetGroupInteractable(self._controlsButtons, false)
             SetGroupInteractable(self._confirmButtons, false)
         else
             -- No menu visible - disable all buttons
             SetGroupInteractable(self._pauseButtons, false)
             SetGroupInteractable(self._settingButtons, false)
+            SetGroupInteractable(self._controlsButtons, false)
             SetGroupInteractable(self._confirmButtons, false)
         end
     end,

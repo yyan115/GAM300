@@ -1,0 +1,15 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "0011f2c39e3ceb8b-000481419e02422f",
+        "source": "../../Resources/Textures/M5/BossRoom/BossCloth1_Metallic.png",
+        "compiled": "../../Resources/Textures/M5/BossRoom/BossCloth1_Metallic.dds"
+    },
+    "TextureMetaData": {
+        "type": "metallic",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

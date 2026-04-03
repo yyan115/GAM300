@@ -1,0 +1,15 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "005ef44785d8edd6-000482049e01a831",
+        "source": "../../Resources/Textures/M5/PictureFrame2_Normal_OpenGL.png",
+        "compiled": "../../Resources/Textures/M5/PictureFrame2_Normal_OpenGL.dds"
+    },
+    "TextureMetaData": {
+        "type": "normal",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

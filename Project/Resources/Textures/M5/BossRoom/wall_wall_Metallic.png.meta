@@ -1,0 +1,15 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "0057a38252b221f5-00047cf22a0077eb",
+        "source": "../../Resources/Textures/M5/BossRoom/wall_wall_Metallic.png",
+        "compiled": "../../Resources/Textures/M5/BossRoom/wall_wall_Metallic.dds"
+    },
+    "TextureMetaData": {
+        "type": "metallic",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

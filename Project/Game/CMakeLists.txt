@@ -134,9 +134,10 @@ endif()
 # Copy resources (only for executable builds)
 if(NOT CMAKE_BUILD_TYPE MATCHES "Editor")
     add_custom_command(TARGET Game POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy_directory
-        ${CMAKE_SOURCE_DIR}/Resources
-        ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/Resources
+        COMMAND ${CMAKE_COMMAND}
+            -DSRC="${CMAKE_SOURCE_DIR}/Resources"
+            -DDST="${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/Resources"
+            -P "${CMAKE_SOURCE_DIR}/cmake/CopyResources.cmake"
     )
 
     # Platform-specific: Copy required libraries
@@ -162,17 +163,3 @@ if(NOT CMAKE_BUILD_TYPE MATCHES "Editor")
     endif()
 endif()
 
-# ==============================================================================
-# Install rules — used by CPack to build the installer (Windows Release only)
-# ==============================================================================
-if(WIN32 AND NOT CMAKE_BUILD_TYPE MATCHES "Editor")
-    install(TARGETS Game DESTINATION .)
-    install(DIRECTORY ${CMAKE_SOURCE_DIR}/Resources DESTINATION .)
-    install(FILES ${CMAKE_SOURCE_DIR}/Libraries/FMOD/core/lib/x64/fmod.dll DESTINATION .)
-    install(DIRECTORY ${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/bin/
-        DESTINATION . FILES_MATCHING PATTERN "*.dll"
-    )
-    if(EXISTS "${CMAKE_SOURCE_DIR}/Installer/VC_redist.x64.exe")
-        install(FILES ${CMAKE_SOURCE_DIR}/Installer/VC_redist.x64.exe DESTINATION .)
-    endif()
-endif()

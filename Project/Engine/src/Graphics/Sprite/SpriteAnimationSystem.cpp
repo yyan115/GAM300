@@ -10,6 +10,7 @@
 
 bool SpriteAnimationSystem::Initialise()
 {
+    wasInEditMode = true; // Reset so the next edit->play transition is always detected
     ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
 
     // Initialize all sprites with their first frame
@@ -52,11 +53,12 @@ bool SpriteAnimationSystem::Initialise()
                 sprite.uvScale = frame.uvScale;
 
                 // Ensure sprite has a shader
-                if (sprite.shaderGUID == GUID_128{}) {
-                    GUID_128 spriteShaderGUID = MetaFilesManager::GetGUID128FromAssetFile(ResourceManager::GetPlatformShaderPath("sprite"));
-                    sprite.shaderGUID = spriteShaderGUID;
-                    std::string shaderPath = AssetManager::GetInstance().GetAssetPathFromGUID(spriteShaderGUID);
-                    sprite.shader = ResourceManager::GetInstance().GetResourceFromGUID<Shader>(spriteShaderGUID, shaderPath);
+                if (!sprite.shader) {
+                    std::string platformShaderPath = ResourceManager::GetPlatformShaderPath("sprite");
+                    sprite.shader = ResourceManager::GetInstance().GetResource<Shader>(platformShaderPath);
+                    if (sprite.shaderGUID == GUID_128{}) {
+                        sprite.shaderGUID = MetaFilesManager::GetGUID128FromAssetFile(platformShaderPath);
+                    }
                 }
             }
         }
@@ -144,12 +146,12 @@ void SpriteAnimationSystem::Update()
         const SpriteFrame& frame = clip.frames[anim.currentFrameIndex];
 
         // Ensure sprite has a shader if it doesn't have one
-        if (sprite.shaderGUID == GUID_128{}) {
-            // Set default sprite shader
-            GUID_128 spriteShaderGUID = MetaFilesManager::GetGUID128FromAssetFile(ResourceManager::GetPlatformShaderPath("sprite"));
-            sprite.shaderGUID = spriteShaderGUID;
-            std::string shaderPath = AssetManager::GetInstance().GetAssetPathFromGUID(spriteShaderGUID);
-            sprite.shader = ResourceManager::GetInstance().GetResourceFromGUID<Shader>(spriteShaderGUID, shaderPath);
+        if (!sprite.shader) {
+            std::string platformShaderPath = ResourceManager::GetPlatformShaderPath("sprite");
+            sprite.shader = ResourceManager::GetInstance().GetResource<Shader>(platformShaderPath);
+            if (sprite.shaderGUID == GUID_128{}) {
+                sprite.shaderGUID = MetaFilesManager::GetGUID128FromAssetFile(platformShaderPath);
+            }
         }
 
         // Update texture if different

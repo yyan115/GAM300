@@ -1,7 +1,34 @@
 -- Resources/Scripts/GamePlay/FlyingAttackState.lua
 local FlyingAttack = {}
 
+local function toDtSec(dt)
+    local dtSec = dt or 0
+    if dtSec > 1.0 then dtSec = dtSec * 0.001 end
+    if dtSec <= 0 then return 0 end
+    if dtSec > 0.05 then dtSec = 0.05 end
+    return dtSec
+end
+
+local function interruptOut(ai)
+    ai._animator:SetBool("ReadyToAttack", false)
+    ai._readyLatched = false
+    ai._readySettleT = 0
+    ai._didAttackThisCycle = false
+    ai._attackWindupT = 0
+
+    local attackR, _, diseng = ai:GetRanges()
+    if not ai:IsPlayerInRange(diseng) then
+        ai.fsm:Change("Chase", ai.states.Chase)
+    elseif not ai:IsPlayerInRange(attackR) then
+        ai.fsm:Change("Chase", ai.states.Chase)
+    else
+        ai.fsm:Change("Hurt", ai.states.Hurt)
+    end
+end
+
 function FlyingAttack:Enter(ai)
+    ai._currentAttackToken = ai:BeginAttackWindow()
+
     ai._attackT = 0
     ai._attackWindupT = 0
     ai._didAttackThisCycle = false
@@ -20,10 +47,8 @@ function FlyingAttack:Enter(ai)
 end
 
 function FlyingAttack:Update(ai, dt)
-    local dtSec = dt or 0
-    if dtSec > 1.0 then dtSec = dtSec * 0.001 end
+    local dtSec = toDtSec(dt)
     if dtSec <= 0 then return end
-    if dtSec > 0.05 then dtSec = 0.05 end
 
     ai:MaintainHover(dtSec)
     ai:FacePlayer()
@@ -36,6 +61,12 @@ function FlyingAttack:Update(ai, dt)
         ai._animator:SetBool("PlayerInAttackRange", false)
         ai._readyLatched = false
         ai.fsm:Change("Chase", ai.states.Chase)
+        return
+    end
+
+    -- if this attack window was interrupted (hurt / hook / knockup / token invalid), stop here
+    if not ai:IsAttackWindowValid(ai._currentAttackToken) then
+        interruptOut(ai)
         return
     end
 
@@ -54,7 +85,7 @@ function FlyingAttack:Update(ai, dt)
     end
 
     -- In attack range -> latch ReadyToAttack after settle
-    local settleDelay = ai.ReadyToAttackDelay or 0.15  -- tune 0.10~0.25
+    local settleDelay = ai.ReadyToAttackDelay or 0.15
     if not ai._readyLatched then
         ai._readySettleT = (ai._readySettleT or 0) + dtSec
         if ai._readySettleT >= settleDelay then
@@ -77,6 +108,12 @@ function FlyingAttack:Update(ai, dt)
         return
     end
 
+    -- interrupted during windup? do not fire
+    if not ai:IsAttackWindowValid(ai._currentAttackToken) then
+        interruptOut(ai)
+        return
+    end
+
     -- do attack once per cycle
     if ai._didAttackThisCycle then
         return
@@ -85,10 +122,21 @@ function FlyingAttack:Update(ai, dt)
 
     -- Ranged: throw knives
     ai._animator:SetBool("Ranged", true)
+
+    -- final guard before firing
+    if not ai:IsAttackWindowValid(ai._currentAttackToken) then
+        interruptOut(ai)
+        return
+    end
+
     local ok = ai:SpawnKnife()
 
-    -- restart cooldown
-    ai._attackCooldownT = tonumber(ai.AttackCooldown) or 3.0
+    -- restart cooldown only if the attack really fired
+    if ok then
+        ai._attackCooldownT = tonumber(ai.AttackCooldown) or 3.0
+    else
+        ai._attackCooldownT = 0
+    end
 
     -- reset windup for next cycle
     ai._attackWindupT = 0
@@ -96,6 +144,8 @@ function FlyingAttack:Update(ai, dt)
 end
 
 function FlyingAttack:Exit(ai)
+    ai:CancelPendingAttack("EXIT_ATTACK")
+
     ai._animator:SetBool("PlayerInAttackRange", false)
     ai._animator:SetBool("Ranged", false)
 

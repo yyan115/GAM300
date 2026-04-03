@@ -47,6 +47,7 @@
 #include "UndoableWidgets.hpp"
 #include <algorithm>
 #include <cctype>
+#include <string_view>
 #include <Panels/PrefabEditorPanel.hpp>
 #include <Prefab/PrefabLinkComponent.hpp>
 
@@ -64,6 +65,21 @@ namespace {
     };
 
     static EntityClipboard g_EntityClipboard;
+
+    // needleLower must already be lowercase.
+    static bool ContainsCaseInsensitive(std::string_view haystack, std::string_view needleLower) {
+        if (needleLower.empty()) {
+            return true;
+        }
+
+        auto it = std::search(haystack.begin(), haystack.end(),
+            needleLower.begin(), needleLower.end(),
+            [](char a, char b) {
+                return static_cast<char>(std::tolower(static_cast<unsigned char>(a))) == b;
+            });
+
+        return it != haystack.end();
+    }
 }
 
 SceneHierarchyPanel::SceneHierarchyPanel()
@@ -165,18 +181,99 @@ void SceneHierarchyPanel::OnImGuiRender() {
         {
             float buttonWidth = ImGui::GetFrameHeight(); // square buttons
             float spacing = ImGui::GetStyle().ItemSpacing.x;
-            float searchWidth = ImGui::GetContentRegionAvail().x - (buttonWidth * 2 + spacing * 2);
 
-            ImGui::SetNextItemWidth(searchWidth);
+            static const char* kSearchFilters[] = {
+                "Name",
+                "Lua Script",
+                "Component",
+                "Tag",
+                "Layer"
+            };
+
+            static const char* kSearchFilterShort[] = {
+                "Name",
+                "Lua",
+                "Comp",
+                "Tag",
+                "Layer"
+            };
+
+            const bool hasSearchText = searchBuffer[0] != '\0';
+            float filterWidth = std::clamp(
+                ImGui::CalcTextSize(kSearchFilterShort[static_cast<int>(searchFilter)]).x + buttonWidth + 14.0f,
+                72.0f,
+                104.0f);
+
+            const float rightControlsWidth = buttonWidth * 2.0f + spacing;
+            float searchGroupWidth = ImGui::GetContentRegionAvail().x - rightControlsWidth - spacing;
+            if (searchGroupWidth < 180.0f) {
+                searchGroupWidth = 180.0f;
+            }
+
+            float inputWidth = searchGroupWidth - filterWidth - spacing;
+            if (hasSearchText) {
+                inputWidth -= (buttonWidth + spacing);
+            }
+            if (inputWidth < 70.0f) {
+                inputWidth = 70.0f;
+            }
+
+            ImGui::SetNextItemWidth(inputWidth);
             if (ImGui::InputTextWithHint("##HierarchySearch", ICON_FA_MAGNIFYING_GLASS " Search entities...",
                                          searchBuffer, sizeof(searchBuffer))) {
                 searchQuery = searchBuffer;
+                if (searchQuery.empty()) {
+                    searchFilter = SearchFilter::Name;
+                }
                 searchDirty = true;
+            }
+
+            if (hasSearchText) {
+                ImGui::SameLine();
+                if (ImGui::Button(ICON_FA_XMARK "##HierarchySearchClear", ImVec2(buttonWidth, 0))) {
+                    searchBuffer[0] = '\0';
+                    searchQuery.clear();
+                    searchQueryLower.clear();
+                    searchFilter = SearchFilter::Name;
+                    searchDirty = true;
+                }
+                if (ImGui::IsItemHovered()) {
+                    ImGui::SetTooltip("Clear search");
+                }
+            }
+
+            ImGui::SameLine();
+            std::string filterIndicatorLabel =
+                std::string(ICON_FA_FILTER) + " " + kSearchFilterShort[static_cast<int>(searchFilter)] + "##HierarchySearchFilter";
+            if (ImGui::Button(filterIndicatorLabel.c_str(), ImVec2(filterWidth, 0))) {
+                ImGui::OpenPopup("##HierarchySearchFilterPopup");
+            }
+            if (ImGui::IsItemHovered()) {
+                ImGui::SetTooltip("Search filter: %s", kSearchFilters[static_cast<int>(searchFilter)]);
+            }
+
+            if (ImGui::BeginPopup("##HierarchySearchFilterPopup")) {
+                for (int i = 0; i < IM_ARRAYSIZE(kSearchFilters); ++i) {
+                    const bool isSelected = (searchFilter == static_cast<SearchFilter>(i));
+                    if (ImGui::Selectable(kSearchFilters[i], isSelected)) {
+                        searchFilter = static_cast<SearchFilter>(i);
+                        searchDirty = true;
+                    }
+                }
+                ImGui::EndPopup();
             }
 
             ImGui::SameLine();
             if (ImGui::Button(ICON_FA_COMPRESS, ImVec2(buttonWidth, 0))) {
                 collapseExpandAction = CollapseExpandAction::CollapseAll;
+
+                // Also clear cached open-state storage so deep descendants collapse.
+                if (ImGuiStorage* treeStorage = ImGui::GetStateStorage()) {
+                    treeStorage->Clear();
+                }
+
+                expandedEntities.clear();
+                searchForceExpandedNodes.clear();
             }
             if (ImGui::IsItemHovered()) ImGui::SetTooltip("Collapse All");
 
@@ -196,8 +293,10 @@ void SceneHierarchyPanel::OnImGuiRender() {
             RebuildSearchCache();
         }
 
-		std::string sceneDisplayName;
-        if (!PrefabEditor::IsInPrefabEditorMode()) {
+        const bool inPrefabMode = PrefabEditor::IsInPrefabEditorMode();
+
+        std::string sceneDisplayName;
+        if (!inPrefabMode) {
             std::string sceneName = SceneManager::GetInstance().GetSceneName();
             sceneDisplayName = std::string(ICON_FA_EARTH_AMERICAS) + " " + sceneName;
 
@@ -209,16 +308,51 @@ void SceneHierarchyPanel::OnImGuiRender() {
         else {
             bool goBack = false;
             if (ImGui::Button(ICON_FA_ARROW_LEFT)) {
-                // TODO: Handle your back button logic here
                 PrefabEditor::StopEditingPrefab();
                 goBack = true;
+            }
+            if (ImGui::IsItemHovered()) {
+                ImGui::SetTooltip("Back to Scene");
             }
 
             ImGui::SameLine();
 
             if (!goBack) {
-			    std::string prefabName = ecsManager.GetComponent<NameComponent>(PrefabEditor::GetSandboxEntity()).name;
+                const Entity sandboxRoot = PrefabEditor::GetSandboxEntity();
+                std::string prefabName = "Prefab";
+                if (sandboxRoot != static_cast<Entity>(-1) && ecsManager.HasComponent<NameComponent>(sandboxRoot)) {
+                    prefabName = ecsManager.GetComponent<NameComponent>(sandboxRoot).name;
+                }
                 sceneDisplayName = std::string(ICON_FA_CUBE) + " Prefab: " + prefabName;
+
+                const float actionBtnWidth = 30.0f;
+                const float actionBtnsWidth = actionBtnWidth * 2.0f + ImGui::GetStyle().ItemSpacing.x;
+                ImGui::SameLine(ImGui::GetWindowWidth() - actionBtnsWidth - 12.0f);
+
+                if (ImGui::Button(ICON_FA_FLOPPY_DISK, ImVec2(actionBtnWidth, 0))) {
+                    PrefabEditor::SaveEditedPrefab();
+                }
+                if (ImGui::IsItemHovered()) {
+                    ImGui::SetTooltip("Save Prefab");
+                }
+
+                const bool previewLightEnabled = PrefabEditor::IsPreviewLightEnabled();
+                ImGui::SameLine();
+                if (!previewLightEnabled) {
+                    ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.6f, 0.6f, 0.6f, 1.0f));
+                }
+                if (ImGui::Button(ICON_FA_LIGHTBULB, ImVec2(actionBtnWidth, 0))) {
+                    PrefabEditor::SetPreviewLightEnabled(!previewLightEnabled);
+                }
+                if (!previewLightEnabled) {
+                    ImGui::PopStyleColor();
+                }
+                if (ImGui::IsItemHovered()) {
+                    ImGui::SetTooltip(previewLightEnabled ? "Disable Preview Light" : "Enable Preview Light");
+                }
+            }
+            else {
+                sceneDisplayName = std::string(ICON_FA_CUBE) + " Prefab";
             }
             // Add visual separation: MUCH darker background for scene header (like Unity)
             ImGui::PushStyleColor(ImGuiCol_Header, EditorComponents::PANEL_BG_SCENE_HEADER);
@@ -310,55 +444,124 @@ void SceneHierarchyPanel::OnImGuiRender() {
         // Reset collapse/expand action after tree is fully drawn
         collapseExpandAction = CollapseExpandAction::None;
 
-        //ImGui::Separator();
+        auto drawHierarchyBackgroundContextMenu = [&]() {
+            const bool popupInPrefabMode = PrefabEditor::IsInPrefabEditorMode();
+            const Entity sandboxRoot = PrefabEditor::GetSandboxEntity();
+            const bool canCreateInPrefab = !popupInPrefabMode || sandboxRoot != static_cast<Entity>(-1);
 
-        // Context menu for creating new objects
-        if (ImGui::BeginPopupContextWindow()) {
-            if (ImGui::MenuItem("Create Empty")) {
-                Entity newEntity = CreateEmptyEntity();
-                GUIManager::SetSelectedEntity(newEntity);
+            auto createAndSelect = [&](Entity createdEntity) {
+                if (createdEntity == static_cast<Entity>(-1)) {
+                    return;
+                }
+
+                if (popupInPrefabMode && sandboxRoot != static_cast<Entity>(-1) && createdEntity != sandboxRoot) {
+                    ReparentEntity(createdEntity, sandboxRoot);
+                }
+                GUIManager::SetSelectedEntity(createdEntity);
+            };
+
+            if (ImGui::BeginMenu("Create")) {
+                if (ImGui::MenuItem("Empty Entity", nullptr, false, canCreateInPrefab)) {
+                    createAndSelect(CreateEmptyEntity("Empty Entity"));
+                }
+                if (ImGui::MenuItem("Cube", nullptr, false, !popupInPrefabMode)) {
+                    createAndSelect(CreateCubeEntity());
+                }
+                if (ImGui::MenuItem("Camera", nullptr, false, !popupInPrefabMode)) {
+                    createAndSelect(CreateCameraEntity());
+                }
+                ImGui::EndMenu();
             }
-            if (ImGui::MenuItem("Create Cube")) {
-                Entity newEntity = CreateCubeEntity();
-                GUIManager::SetSelectedEntity(newEntity);
+
+            if (ImGui::MenuItem("Paste", "Ctrl+V", false, g_EntityClipboard.hasData)) {
+                PasteEntities();
             }
+
             ImGui::Separator();
-            if (ImGui::MenuItem("Create Camera")) {
-                Entity newEntity = CreateCameraEntity();
-                GUIManager::SetSelectedEntity(newEntity);
-            }
-            ImGui::EndPopup();
-        }
 
-        // Handle unparenting of an entity
+            if (ImGui::MenuItem("Collapse All")) {
+                collapseExpandAction = CollapseExpandAction::CollapseAll;
+                if (ImGuiStorage* treeStorage = ImGui::GetStateStorage()) {
+                    treeStorage->Clear();
+                }
+                expandedEntities.clear();
+                searchForceExpandedNodes.clear();
+            }
+
+            if (ImGui::MenuItem("Expand All")) {
+                collapseExpandAction = CollapseExpandAction::ExpandAll;
+            }
+
+            if (popupInPrefabMode && ImGui::MenuItem("Save Prefab")) {
+                PrefabEditor::SaveEditedPrefab();
+            }
+
+            if (ImGui::MenuItem("Clear Selection", nullptr, false, !GUIManager::GetSelectedEntities().empty())) {
+                GUIManager::ClearSelectedEntities();
+            }
+        };
+
+        // Handle unparenting of an entity and spawning prefabs at root
         // Take up all remaining space in the window
         ImVec2 avail = ImGui::GetContentRegionAvail();
         if (avail.y > 0) {
             ImGui::InvisibleButton("HierarchyBackground", avail);
 
-            ImGuiWindow* win = ImGui::GetCurrentWindow();
-            const ImRect visible = win->InnerRect; // absolute screen coords of the visible region
-
-            const ImGuiPayload* active = ImGui::GetDragDropPayload();
-            const bool entityDragActive = (active && (active->IsDataType("HIERARCHY_ENTITY") || (active->IsDataType("PREFAB_PATH"))));
-
-            // Foreground visual (never occluded by items)
-            if (entityDragActive)
-            {
-                ImDrawList* fdl = ImGui::GetForegroundDrawList(win->Viewport);
-                fdl->AddRectFilled(visible.Min, visible.Max, IM_COL32(100, 150, 255, 25), 6.0f);
-                fdl->AddRect(visible.Min, visible.Max, IM_COL32(100, 150, 255, 200), 6.0f, 0, 3.0f);
+            // Right-clicking true empty panel area opens hierarchy background context menu.
+            if (ImGui::BeginPopupContextItem("##HierarchyBackgroundContext", ImGuiPopupFlags_MouseButtonRight)) {
+                drawHierarchyBackgroundContextMenu();
+                ImGui::EndPopup();
             }
-            if (ImGui::BeginDragDropTarget()) {
-                if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("HIERARCHY_ENTITY")) {
+        }
+        else {
+            // Fallback: if list completely fills panel, still allow background context via window-level popup.
+            if (ImGui::BeginPopupContextWindow("##HierarchyWindowContextFallback", ImGuiPopupFlags_MouseButtonRight | ImGuiPopupFlags_NoOpenOverItems)) {
+                drawHierarchyBackgroundContextMenu();
+                ImGui::EndPopup();
+            }
+        }
+
+        // Use the window's inner rect as a custom drop target.
+        // This ensures the background is a valid drop target even if the tree fills the window.
+        ImGuiWindow* win = ImGui::GetCurrentWindow();
+        const ImRect visible = win->InnerRect;
+
+        const ImGuiPayload* active = ImGui::GetDragDropPayload();
+        const bool entityDragActive = (active && (active->IsDataType("HIERARCHY_ENTITY") || (active->IsDataType("PREFAB_PATH"))));
+
+        // Foreground visual (never occluded by items)
+        if (entityDragActive)
+        {
+            ImDrawList* fdl = ImGui::GetForegroundDrawList(win->Viewport);
+            fdl->AddRectFilled(visible.Min, visible.Max, IM_COL32(100, 150, 255, 25), 6.0f);
+            fdl->AddRect(visible.Min, visible.Max, IM_COL32(100, 150, 255, 200), 6.0f, 0, 3.0f);
+        }
+
+        // Use BeginDragDropTargetCustom for the background area to ensure it works even if window is full
+        if (ImGui::BeginDragDropTargetCustom(visible, ImGui::GetID("##HierarchyBgDrop"))) {
+            if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("HIERARCHY_ENTITY", ImGuiDragDropFlags_AcceptBeforeDelivery)) {
+                ImGui::SetTooltip("Drop to unparent entity");
+                
+                if (payload->IsDelivery()) {
                     Entity dragged = *(Entity*)payload->Data;
-                    UnparentEntity(dragged);
+                    if (PrefabEditor::IsInPrefabEditorMode()) {
+                        const Entity sandboxRoot = PrefabEditor::GetSandboxEntity();
+                        if (sandboxRoot != static_cast<Entity>(-1) && dragged != sandboxRoot) {
+                            ReparentEntity(dragged, sandboxRoot);
+                        }
+                    }
+                    else {
+                        UnparentEntity(dragged);
+                    }
                 }
-                ImGui::EndDragDropTarget();
             }
 
-            if (ImGui::BeginDragDropTarget()) {
-                if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("PREFAB_PATH")) {
+            if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("PREFAB_PATH", ImGuiDragDropFlags_AcceptBeforeDelivery)) {
+                const char* pathCStr = static_cast<const char*>(payload->Data);
+                std::string prefabName = std::filesystem::path(pathCStr).stem().string();
+                ImGui::SetTooltip("Drop to spawn prefab at root: %s", prefabName.c_str());
+
+                if (payload->IsDelivery()) {
                     const char* prefabPath = static_cast<const char*>(payload->Data);
                     const Entity entity = InstantiatePrefabFromFile(prefabPath);
                     if (entity == INVALID_ENTITY) {
@@ -377,10 +580,9 @@ void SceneHierarchyPanel::OnImGuiRender() {
                     // Select the dragged prefab.
                     GUIManager::SetSelectedEntity(entity);
                 }
-                ImGui::EndDragDropTarget();
             }
+            ImGui::EndDragDropTarget();
         }
-
     }
     UpdateFocusState();  // Track focus for keyboard shortcut handling
     ImGui::End();
@@ -414,8 +616,10 @@ void SceneHierarchyPanel::DrawEntityNode(const std::string& entityName, Entity e
     if (!renamingEntity)
         assert(!entityName.empty() && "Entity name cannot be empty");
 
+    const bool collapseAllActive = (collapseExpandAction == CollapseExpandAction::CollapseAll);
+
     // Check if this entity should be auto-expanded (has a selected descendant)
-    bool forceOpen = expandedEntities.count(entityId) > 0;
+    bool forceOpen = expandedEntities.count(entityId) > 0 && !collapseAllActive;
 
     ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_SpanAvailWidth;
     if (!hasChildren) flags |= ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen;
@@ -522,14 +726,14 @@ void SceneHierarchyPanel::DrawEntityNode(const std::string& entityName, Entity e
         }
 
         // Auto-expand ancestor nodes during search (and track them for restore)
-        if (!searchQuery.empty() && hasChildren &&
+        if (!collapseAllActive && !searchQuery.empty() && hasChildren &&
             searchVisibleEntities.count(entityId) && !searchMatchedEntities.count(entityId)) {
             ImGui::SetNextItemOpen(true, ImGuiCond_Always);
             searchForceExpandedNodes.insert(entityId);
         }
 
         // Collapse nodes that were force-expanded by search when search is cleared
-        if (searchQuery.empty() && hasChildren && searchForceExpandedNodes.count(entityId)) {
+        if (!collapseAllActive && searchQuery.empty() && hasChildren && searchForceExpandedNodes.count(entityId)) {
             ImGui::SetNextItemOpen(false, ImGuiCond_Always);
         }
 
@@ -575,15 +779,18 @@ void SceneHierarchyPanel::DrawEntityNode(const std::string& entityName, Entity e
             if (io.KeyShift && lastClickedEntity != static_cast<Entity>(-1)) {
                 // Shift+Click: range selection
                 SelectRange(lastClickedEntity, entityId);
-            } else if (io.KeyCtrl) {
+            }
+            else if (io.KeyCtrl) {
                 // Ctrl+Click: toggle selection
                 if (GUIManager::IsEntitySelected(entityId)) {
                     GUIManager::RemoveSelectedEntity(entityId);
-                } else {
+                }
+                else {
                     GUIManager::AddSelectedEntity(entityId);
                 }
                 lastClickedEntity = entityId;
-            } else {
+            }
+            else {
                 // Single click: select only this entity
                 GUIManager::SetSelectedEntity(entityId);
                 lastClickedEntity = entityId;
@@ -660,6 +867,13 @@ void SceneHierarchyPanel::DrawEntityNode(const std::string& entityName, Entity e
                 }
             }
         }
+
+        // Right-click should target/select the clicked entity so the row highlights
+        // and context actions apply to the expected item.
+        if (ImGui::IsItemClicked(ImGuiMouseButton_Right) && !GUIManager::IsEntitySelected(entityId)) {
+            GUIManager::SetSelectedEntity(entityId);
+            lastClickedEntity = entityId;
+        }
     }
 
     // --- DRAG SOURCE from a hierarchy row (exactly one payload) ---
@@ -682,17 +896,42 @@ void SceneHierarchyPanel::DrawEntityNode(const std::string& entityName, Entity e
 
     // Drop target on the item itself (for reparenting - making it a child)
     if (ImGui::BeginDragDropTarget()) {
-        if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("HIERARCHY_ENTITY")) {
+        if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("HIERARCHY_ENTITY", ImGuiDragDropFlags_AcceptBeforeDelivery)) {
             Entity dragged = *(Entity*)payload->Data;
-            ReparentEntity(dragged, entityId);
+            if (dragged != entityId) {
+                ImGui::SetTooltip("Drop to parent under: %s", entityName.c_str());
+
+                if (payload->IsDelivery()) {
+                    ReparentEntity(dragged, entityId);
+                }
+            }
+        }
+
+        if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("PREFAB_PATH", ImGuiDragDropFlags_AcceptBeforeDelivery)) {
+            const char* pathCStr = static_cast<const char*>(payload->Data);
+            std::string prefabName = std::filesystem::path(pathCStr).stem().string();
+            ImGui::SetTooltip("Drop to spawn prefab under: %s", entityName.c_str());
+
+            if (payload->IsDelivery()) {
+                const char* prefabPath = static_cast<const char*>(payload->Data);
+                const Entity entity = InstantiatePrefabFromFile(prefabPath);
+                if (entity != INVALID_ENTITY) {
+                    ReparentEntity(entity, entityId);
+                    GUIManager::SetSelectedEntity(entity);
+                }
+            }
         }
         ImGui::EndDragDropTarget();
     }
 
     if (ImGui::BeginPopupContextItem())
     {
+        ECSManager& popupEcsManager = ECSRegistry::GetInstance().GetActiveECSManager();
         const std::vector<Entity>& selectedEntities = GUIManager::GetSelectedEntities();
         bool isMultiSelect = selectedEntities.size() > 1;
+        const bool inPrefabMode = PrefabEditor::IsInPrefabEditorMode();
+        const Entity sandboxRoot = PrefabEditor::GetSandboxEntity();
+        const bool isSandboxRoot = inPrefabMode && (entityId == sandboxRoot);
 
         // Copy menu item
         if (ImGui::MenuItem("Copy", "Ctrl+C")) {
@@ -725,11 +964,39 @@ void SceneHierarchyPanel::DrawEntityNode(const std::string& entityName, Entity e
                 GUIManager::SetSelectedEntities(duplicated);
             }
         }
+        if (ImGui::MenuItem("Create Child Entity", nullptr, false, !isMultiSelect)) {
+            Entity newChild = CreateEmptyEntity("Empty Entity");
+            if (newChild != static_cast<Entity>(-1)) {
+                ReparentEntity(newChild, entityId);
+                GUIManager::SetSelectedEntity(newChild);
+            }
+        }
+
+        bool canRemoveParent = !isMultiSelect && popupEcsManager.HasComponent<ParentComponent>(entityId);
+        if (canRemoveParent && inPrefabMode) {
+            const GUID_128 parentGuid = popupEcsManager.GetComponent<ParentComponent>(entityId).parent;
+            const Entity currentParent = EntityGUIDRegistry::GetInstance().GetEntityByGUID(parentGuid);
+            if (currentParent == sandboxRoot) {
+                canRemoveParent = false;
+            }
+        }
+
+        if (ImGui::MenuItem("Remove Parent", nullptr, false, canRemoveParent)) {
+            if (inPrefabMode && sandboxRoot != static_cast<Entity>(-1)) {
+                ReparentEntity(entityId, sandboxRoot);
+            }
+            else {
+                UnparentEntity(entityId);
+            }
+            GUIManager::SetSelectedEntity(entityId);
+        }
+
         if (ImGui::MenuItem("Rename", "F2", false, !isMultiSelect)) {
             renamingEntity = entityId;
             startRenaming  = true;
         }
-        if (ImGui::MenuItem("Delete", "Del")) {
+        const bool canDeleteEntity = !(inPrefabMode && isSandboxRoot);
+        if (ImGui::MenuItem("Delete", "Del", false, canDeleteEntity)) {
             try {
                 ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
 
@@ -741,6 +1008,9 @@ void SceneHierarchyPanel::DrawEntityNode(const std::string& entityName, Entity e
                     GUIManager::ClearSelectedEntities();
 
                     for (Entity entity : entitiesToDelete) {
+                        if (inPrefabMode && entity == sandboxRoot) {
+                            continue;
+                        }
                         if (ecsManager.TryGetComponent<NameComponent>(entity).has_value()) {
                             ecsManager.DestroyEntity(entity);
                         }
@@ -1918,9 +2188,7 @@ void SceneHierarchyPanel::RebuildSearchCache() {
 
     // Find all matching entities
     for (Entity entity : allEntities) {
-        if (!ecsManager.HasComponent<NameComponent>(entity)) continue;
-        const std::string& entityNameRef = ecsManager.GetComponent<NameComponent>(entity).name;
-        if (EntityMatchesSearch(entityNameRef)) {
+        if (EntityMatchesSearch(entity, ecsManager)) {
             searchMatchedEntities.insert(entity);
             searchVisibleEntities.insert(entity);
             // Walk up ancestor chain to make the path visible
@@ -1929,12 +2197,89 @@ void SceneHierarchyPanel::RebuildSearchCache() {
     }
 }
 
-bool SceneHierarchyPanel::EntityMatchesSearch(const std::string& searchName) const {
-    // Case-insensitive substring match
-    std::string nameLower = searchName;
-    std::transform(nameLower.begin(), nameLower.end(), nameLower.begin(),
-                   [](unsigned char c) { return std::tolower(c); });
-    return nameLower.find(searchQueryLower) != std::string::npos;
+bool SceneHierarchyPanel::EntityMatchesSearch(Entity entity, ECSManager& ecsManager) const {
+    auto containsSearch = [this](const std::string& value) {
+        return ContainsCaseInsensitive(value, searchQueryLower);
+    };
+
+    switch (searchFilter) {
+    case SearchFilter::Name:
+        if (!ecsManager.HasComponent<NameComponent>(entity)) return false;
+        return containsSearch(ecsManager.GetComponent<NameComponent>(entity).name);
+
+    case SearchFilter::LuaScript:
+        if (!ecsManager.HasComponent<ScriptComponentData>(entity)) return false;
+        for (const auto& scriptData : ecsManager.GetComponent<ScriptComponentData>(entity).scripts) {
+            if (containsSearch(scriptData.scriptPath) || containsSearch(scriptData.entryFunction)) {
+                return true;
+            }
+        }
+        return false;
+
+    case SearchFilter::Component:
+        return MatchesComponentSearch(entity, ecsManager);
+
+    case SearchFilter::Tag:
+        if (!ecsManager.HasComponent<TagComponent>(entity)) return false;
+        return containsSearch(ecsManager.GetComponent<TagComponent>(entity).GetTagName());
+
+    case SearchFilter::Layer:
+        if (!ecsManager.HasComponent<LayerComponent>(entity)) return false;
+        return containsSearch(ecsManager.GetComponent<LayerComponent>(entity).GetLayerName());
+    }
+
+    return false;
+}
+
+bool SceneHierarchyPanel::MatchesComponentSearch(Entity entity, ECSManager& ecsManager) const {
+    auto componentNameMatches = [this](std::string_view componentNameLower) {
+        return componentNameLower.find(searchQueryLower) != std::string_view::npos;
+    };
+
+    if (componentNameMatches("namecomponent") && ecsManager.HasComponent<NameComponent>(entity)) return true;
+    if (componentNameMatches("transform") && ecsManager.HasComponent<Transform>(entity)) return true;
+    if (componentNameMatches("activecomponent") && ecsManager.HasComponent<ActiveComponent>(entity)) return true;
+    if (componentNameMatches("parentcomponent") && ecsManager.HasComponent<ParentComponent>(entity)) return true;
+    if (componentNameMatches("childrencomponent") && ecsManager.HasComponent<ChildrenComponent>(entity)) return true;
+    if (componentNameMatches("siblingindexcomponent") && ecsManager.HasComponent<SiblingIndexComponent>(entity)) return true;
+    if (componentNameMatches("prefablinkcomponent") && ecsManager.HasComponent<PrefabLinkComponent>(entity)) return true;
+
+    if (componentNameMatches("modelrendercomponent") && ecsManager.HasComponent<ModelRenderComponent>(entity)) return true;
+    if (componentNameMatches("spriterendercomponent") && ecsManager.HasComponent<SpriteRenderComponent>(entity)) return true;
+    if (componentNameMatches("textrendercomponent") && ecsManager.HasComponent<TextRenderComponent>(entity)) return true;
+    if (componentNameMatches("cameracomponent") && ecsManager.HasComponent<CameraComponent>(entity)) return true;
+    if (componentNameMatches("lightcomponent") && ecsManager.HasComponent<LightComponent>(entity)) return true;
+    if (componentNameMatches("directionallightcomponent") && ecsManager.HasComponent<DirectionalLightComponent>(entity)) return true;
+    if (componentNameMatches("pointlightcomponent") && ecsManager.HasComponent<PointLightComponent>(entity)) return true;
+    if (componentNameMatches("spotlightcomponent") && ecsManager.HasComponent<SpotLightComponent>(entity)) return true;
+    if (componentNameMatches("animationcomponent") && ecsManager.HasComponent<AnimationComponent>(entity)) return true;
+    if (componentNameMatches("spriteanimationcomponent") && ecsManager.HasComponent<SpriteAnimationComponent>(entity)) return true;
+    if (componentNameMatches("particlecomponent") && ecsManager.HasComponent<ParticleComponent>(entity)) return true;
+    if (componentNameMatches("debugdrawcomponent") && ecsManager.HasComponent<DebugDrawComponent>(entity)) return true;
+
+    if (componentNameMatches("audiocomponent") && ecsManager.HasComponent<AudioComponent>(entity)) return true;
+    if (componentNameMatches("audiolistenercomponent") && ecsManager.HasComponent<AudioListenerComponent>(entity)) return true;
+    if (componentNameMatches("audioreverbzonecomponent") && ecsManager.HasComponent<AudioReverbZoneComponent>(entity)) return true;
+
+    if (componentNameMatches("collidercomponent") && ecsManager.HasComponent<ColliderComponent>(entity)) return true;
+    if (componentNameMatches("rigidbodycomponent") && ecsManager.HasComponent<RigidBodyComponent>(entity)) return true;
+
+    if (componentNameMatches("tagcomponent") && ecsManager.HasComponent<TagComponent>(entity)) return true;
+    if (componentNameMatches("layercomponent") && ecsManager.HasComponent<LayerComponent>(entity)) return true;
+
+    if (componentNameMatches("buttoncomponent") && ecsManager.HasComponent<ButtonComponent>(entity)) return true;
+    if (componentNameMatches("slidercomponent") && ecsManager.HasComponent<SliderComponent>(entity)) return true;
+    if (componentNameMatches("uianchorcomponent") && ecsManager.HasComponent<UIAnchorComponent>(entity)) return true;
+
+    if (ecsManager.HasComponent<ScriptComponentData>(entity) &&
+        (componentNameMatches("scriptcomponentdata") || componentNameMatches("lua script") || componentNameMatches("script"))) {
+        return true;
+    }
+
+    if (componentNameMatches("braincomponent") && ecsManager.HasComponent<BrainComponent>(entity)) return true;
+    if (componentNameMatches("videocomponent") && ecsManager.HasComponent<VideoComponent>(entity)) return true;
+
+    return false;
 }
 
 void SceneHierarchyPanel::CollectAncestors(Entity entity, std::unordered_set<Entity>& ancestors) {

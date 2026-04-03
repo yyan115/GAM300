@@ -25,6 +25,7 @@ namespace RunTimeVar {
 
         bool isFullscreen = false;
         bool isFocused = true;
+        bool vsync = true;
     };
 
     struct Input {

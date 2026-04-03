@@ -1,0 +1,15 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "006b8ee88987b3b7-0004a764f4005ffb",
+        "source": "../../Resources/Sprites/CommonUI/ResetBtnHighlighted.png",
+        "compiled": "../../Resources/Sprites/CommonUI/ResetBtnHighlighted.dds"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": true,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

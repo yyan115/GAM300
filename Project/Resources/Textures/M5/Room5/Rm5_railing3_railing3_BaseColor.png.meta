@@ -1,0 +1,15 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "00269aea6283c845-00047c489000e801",
+        "source": "../../Resources/Textures/M5/Room5/Rm5_railing3_railing3_BaseColor.png",
+        "compiled": "../../Resources/Textures/M5/Room5/Rm5_railing3_railing3_BaseColor.dds"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

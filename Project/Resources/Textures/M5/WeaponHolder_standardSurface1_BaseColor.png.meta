@@ -1,0 +1,15 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "0011f2c3f307f37c-000480ffd2000f35",
+        "source": "../../Resources/Textures/M5/WeaponHolder_standardSurface1_BaseColor.png",
+        "compiled": "../../Resources/Textures/M5/WeaponHolder_standardSurface1_BaseColor.dds"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

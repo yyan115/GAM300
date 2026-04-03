@@ -1,0 +1,15 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "0057a3822856b45e-00047cf23600786b",
+        "source": "../../Resources/Textures/M5/BossRoom/floor_low_floor1_BaseColor.png",
+        "compiled": "../../Resources/Textures/M5/BossRoom/floor_low_floor1_BaseColor.dds"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

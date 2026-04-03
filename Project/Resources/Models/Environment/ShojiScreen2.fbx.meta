@@ -1,0 +1,11 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "00241f14ac94c4ec-00047d3e2e01841f",
+        "source": "../../Resources/Models/Environment/ShojiScreen2.fbx",
+        "compiled": "../../Resources/Models/Environment/ShojiScreen2.mesh"
+    },
+    "ModelMetaData": {
+        "optimizeMeshes": true
+    }
+}

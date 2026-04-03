@@ -46,6 +46,8 @@ endif()
 # MSVC warning suppressions
 if(MSVC)
     add_compile_options(
+        /Zm500
+        /bigobj
         # C4251: 'class X needs dll-interface to be used by clients of class Y'
         # Source: Engine headers with exported classes containing STL members
         # Reason: Safe when all code is built together with same compiler/runtime.
@@ -95,6 +97,7 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra")
     set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -g -O0")
     set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3 -DNDEBUG")
+    set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_RELWITHDEBINFO} -O3 -DNDEBUG")
     set(CMAKE_CXX_FLAGS_EDITORDEBUG "${CMAKE_CXX_FLAGS_DEBUG}")
     set(CMAKE_CXX_FLAGS_EDITORRELEASE "${CMAKE_CXX_FLAGS_RELEASE}")
     set(CMAKE_C_FLAGS_EDITORDEBUG "${CMAKE_C_FLAGS_DEBUG}")

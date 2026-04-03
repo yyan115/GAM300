@@ -1,0 +1,15 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "003f1e494a2c2848-00049ee9da00007f",
+        "source": "../../Resources/Textures/M6/BookStack3_Base_color.png",
+        "compiled": "../../Resources/Textures/M6/BookStack3_Base_color.dds"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

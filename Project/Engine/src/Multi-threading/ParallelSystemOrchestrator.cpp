@@ -17,8 +17,11 @@ void ParallelSystemOrchestrator::Update() {
     PROFILE_PLOT_TIMED("Script", mainECS.scriptSystem->Update());
 
     // Clear/Pre-warm cache for the parallel threads to read safely
-    mainECS.ClearActiveHierarchyCache();
-    mainECS.PreWarmActiveHierarchyCache();
+    {
+        PROFILE_SCOPED("HierarchyCache::PreWarm");
+        { PROFILE_SCOPED("HC::Clear"); mainECS.ClearActiveHierarchyCache(); }
+        //{ PROFILE_SCOPED("HC::Warm");  mainECS.PreWarmActiveHierarchyCache(); }
+    }
 
     bool gamePaused = TimeManager::IsPaused();
 
@@ -55,8 +58,11 @@ void ParallelSystemOrchestrator::Update() {
         }
         });
 
-    // Wait for Simulation to finish before updating Transforms
-    frameChannel.join();
+    // Wait for Simulation to finish before updating Transforms.
+    {
+        PROFILE_SCOPED("SimulationJoin");
+        { PROFILE_SCOPED("SJ::WaitForJobs"); frameChannel.join(); }
+    }
 
     // -------------------------------------------------------------------------
     // 3. TRANSFORM PHASE (Sequential)
@@ -72,8 +78,11 @@ void ParallelSystemOrchestrator::Update() {
     PROFILE_PLOT_TIMED("Video", mainECS.videoSystem->Update((float)TimeManager::GetDeltaTime()));
 
     // Refresh cache again if transforms changed hierarchy active states (rare but possible)
-    mainECS.ClearActiveHierarchyCache();
-    mainECS.PreWarmActiveHierarchyCache();
+    //{
+    //    PROFILE_SCOPED("HierarchyCache::Refresh");
+    //    { PROFILE_SCOPED("HC::Clear"); mainECS.ClearActiveHierarchyCache(); }
+    //    { PROFILE_SCOPED("HC::Warm");  mainECS.PreWarmActiveHierarchyCache(); }
+    //}
 
     // -------------------------------------------------------------------------
     // 4. RENDER PREP PHASE (Sequential)
@@ -91,7 +100,10 @@ void ParallelSystemOrchestrator::Draw() {
     auto& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
 
     // Ensure cache is fully populated before parallel draw tasks (read-only is thread-safe)
-    ecs.PreWarmActiveHierarchyCache();
+    //{
+    //    PROFILE_SCOPED("HierarchyCache::DrawPreWarm");
+    //    ecs.PreWarmActiveHierarchyCache();
+    //}
 
     frameChannel.Submit([&] {
         auto& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
@@ -111,10 +123,13 @@ void ParallelSystemOrchestrator::Draw() {
     //    });
     frameChannel.Submit([&] {
         auto& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
-        ecs.debugDrawSystem->Update();
+        PROFILE_PLOT_TIMED("DebugDraw", ecs.debugDrawSystem->Update());
         });
 
-    frameChannel.join(); // waits for actual work to finish
+    {
+        PROFILE_SCOPED("DrawJoin");
+        frameChannel.join(); // waits for actual work to finish
+    }
 
     // Fog runs on the main thread (lazy init may create OpenGL VAO/VBO/EBO)
     if (ecs.fogSystem)
@@ -124,5 +139,5 @@ void ParallelSystemOrchestrator::Draw() {
     PROFILE_PLOT_TIMED("Particle", ecs.particleSystem->Update());
 
     // Set all isDirty flags to false after rendering
-    ecs.transformSystem->PostUpdate();
+    PROFILE_PLOT_TIMED("PostUpdate", ecs.transformSystem->PostUpdate());
 }

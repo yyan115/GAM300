@@ -54,6 +54,10 @@ EVENTS PUBLISHED:
     player_position                     → world position each frame
     playerRespawned                     → respawn complete; carries spawn position
     vault_jump                          → confirmed vault jump executed
+    player_jumped                       → consumed by PlayerAudio for jump SFX
+    player_landed                       → consumed by PlayerAudio for land SFX
+    player_dashed                       → consumed by PlayerAudio for dash SFX
+    player_footstep                     → consumed by PlayerAudio for footstep SFX
 
 -- TO ADD new events: subscribe in Awake under the appropriate section header,
 -- unsubscribe in OnDisable, and document the event name + payload above.
@@ -68,7 +72,6 @@ _G.CHAIN_DEBUG = _G.CHAIN_DEBUG ~= nil and _G.CHAIN_DEBUG or false
 local function dbg(...) if _G.CHAIN_DEBUG then print(...) end end
 local Component      = require("extension.mono_helper")
 local TransformMixin = require("extension.transform_mixin")
-local AudioHelper    = require("extension.audio_helper")
 
 local event_bus = _G.event_bus
 
@@ -195,8 +198,11 @@ return Component {
         SlamShakeIntensity  =  0.6,
         SlamShakeDuration   =  0.7,
         SlamShakeFrequency  = 25.0,
-        LandingDuration     = 0.4,   -- Seconds of recovery before movement restores.
-        RollHeightThreshold = 1.0,   -- Fall distance (world units) that triggers roll instead of soft land.
+        LandingDuration     = 0.65,   -- Seconds of recovery before movement restores.
+        RollHeightThreshold = 2.0,   -- Fall distance (world units) that triggers roll instead of soft land.
+        SlamSlowMoScale     = 0.15,  -- Time scale during slam hit-stop (0=frozen, 1=normal).
+        SlamSlowMoDuration  = 0.18,  -- Seconds the slow-mo lasts before snapping back.
+        SlamHoverDuration   = 0.1,   -- Seconds player freezes in air before slam descent begins.
         -- TO ADD landing SFX variation or ledge-grab: add fields here.
 
         -- === Squash & stretch ===
@@ -215,15 +221,6 @@ return Component {
         footstepInterval    = 0.30,   -- Seconds between footstep SFX triggers while running.
         -- TO ADD new feel tuning: add field here.
 
-        -- === Audio ===
-        -- Populate with clip GUIDs in the editor. Each accepts a list for random selection.
-        -- TO ADD new SFX: add a field here and call playRandomSFX in the relevant Update section.
-        playerFootstepSFX = {},
-        playerHurtSFX     = {},
-        playerJumpSFX     = {},
-        playerLandSFX     = {},
-        playerDeadSFX     = {},
-        playerDashSFX     = {},
     },
 
     -- ==========================================================================
@@ -294,7 +291,6 @@ return Component {
         sub(self, "_playerDeadSub", "playerDead", function(playerDead)
             if playerDead then
                 self._playerDeadPending = playerDead
-                AudioHelper.playRandomSFX(self._audio, self.playerDeadSFX)
             end
         end)
 
@@ -302,7 +298,6 @@ return Component {
             if hit then
                 self._isDamageStun = true
                 if self._animator then self._animator:SetBool("IsJumping", false) end
-                AudioHelper.playRandomSFX(self._audio, self.playerHurtSFX)
                 -- Hit reaction: horizontal squash (pushed-sideways feel)
                 self:_squashTrigger("horizontal", 0.5)
             end
@@ -319,10 +314,9 @@ return Component {
             if respawn then self._respawnPlayer = true end
         end)
 
-        sub(self, "_activatedCheckpointSub", "activatedCheckpoint", function(entityId)
-            if entityId then self._activatedCheckpoint = entityId end
+        sub(self, "_activatedCheckpointSub", "activatedCheckpoint", function(data)
+            if data and data.child then self._activatedCheckpoint = data.child end
         end)
-
         sub(self, "_freezePlayerSub", "freeze_player", function(frozen)
             if frozen then
                 self._freezePending     = true
@@ -416,17 +410,20 @@ return Component {
                 -- Flag section 21 to use LiftAttackHeight this frame.
                 -- Also zero horizontal input for PostLiftAirLock secs so the
                 -- player is carried by the jump arc — feels committed, not floaty.
+                if self._animator then self._animator:SetBool("IsLifting", true) end
                 self._liftAttackJump  = true
                 self._postLiftAirLock = self.PostLiftAirLock or 0.30
                 self._lungeDirX = dirX
                 self._lungeDirZ = dirZ
             elseif data and data.isSlam then
-                self._isAirSlam  = true
-                self._isJumping  = true
-                self._slamVelY   = self.AirSlamInitialSpeed or 2.0
-                self._velX       = 0
-                self._velZ       = 0
-                self._lungeTimer = 0
+                self._isAirSlam   = true
+                self._isJumping   = true
+                self._slamHover   = true
+                self._slamHoverTimer = self.SlamHoverDuration or 0.1
+                self._slamVelY    = self.AirSlamInitialSpeed or 2.0
+                self._velX        = 0
+                self._velZ        = 0
+                self._lungeTimer  = 0
                 if self._animator then self._animator:SetBool("IsSlamming", true) end
             elseif data and data.isAerial then
                 -- Air time extension: restore Y velocity to AirLiftTargetVelY only when
@@ -529,7 +526,6 @@ return Component {
         self._collider  = self:GetComponent("ColliderComponent")
         self._animator  = self:GetComponent("AnimationComponent")
         self._transform = self:GetComponent("Transform")
-        self._audio     = self:GetComponent("AudioComponent")
         self._rigidbody = self:GetComponent("RigidBodyComponent")
 
         dbg("transform y: ", self._transform.localPosition.y)
@@ -552,6 +548,8 @@ return Component {
         self._isJumping         = false
         self._isLanding         = false
         self._isRolling         = false
+        self._rollDirX          = 0
+        self._rollDirZ          = 0
         self._isDamageStun      = false
         self._playerDead        = false
         self._playerDeadPending = false
@@ -591,6 +589,8 @@ return Component {
         -- _slamLanding is a one-frame flag for full-intensity landing squash.
         self._liftAttackJump       = false
         self._isAirSlam            = false
+        self._slamHover            = false
+        self._slamHoverTimer       = 0
         self._slamVelY             = 0
         self._slamLanding          = false
         self._lastGroundedY        = 0
@@ -1036,8 +1036,12 @@ return Component {
         -- _G.player_air_height is read by ComboManager to decide whether an airborne
         -- attack should auto-slam instead of starting the aerial combo.
         if isGrounded then
-            local gPos = CharacterController.GetPosition(self._controller)
-            if gPos then self._lastGroundedY = gPos.y end
+            -- Don't overwrite _lastGroundedY on the landing frame (while _isJumping
+            -- is still true) — the fall distance calculation needs the takeoff Y.
+            if not self._isJumping then
+                local gPos = CharacterController.GetPosition(self._controller)
+                if gPos then self._lastGroundedY = gPos.y end
+            end
             _G.player_air_height = 0
         else
             local airPos = CharacterController.GetPosition(self._controller)
@@ -1057,7 +1061,38 @@ return Component {
             return
         end
 
-        -- ── 19. Dash ──────────────────────────────────────────────────────────
+        -- ── 19. Roll movement ─────────────────────────────────────────────────
+        -- While rolling, push the player forward in the stored roll direction.
+        -- Input can steer forward only (same rules as dash steering — no braking).
+        if self._isRolling and isGrounded then
+            if isMoving then
+                local inputLen  = math.sqrt(moveX*moveX + moveZ*moveZ)
+                local inputDirX = moveX / inputLen
+                local inputDirZ = moveZ / inputLen
+                local dot = inputDirX * self._rollDirX + inputDirZ * self._rollDirZ
+                if dot > 0 then
+                    local maxRotRad = math.rad(self.DashSteerSpeed or 180.0) * dt
+                    local t   = math.min(maxRotRad, 1.0)
+                    local newX = self._rollDirX + (inputDirX - self._rollDirX) * t
+                    local newZ = self._rollDirZ + (inputDirZ - self._rollDirZ) * t
+                    local len  = math.sqrt(newX*newX + newZ*newZ)
+                    if len > 0.001 then
+                        self._rollDirX = newX / len
+                        self._rollDirZ = newZ / len
+                    end
+                end
+            end
+            CharacterController.Move(self._controller,
+                self._rollDirX * self.Speed, 0, self._rollDirZ * self.Speed)
+            local position = CharacterController.GetPosition(self._controller)
+            if position then
+                self:SetPosition(position.x, position.y, position.z)
+                if event_bus and event_bus.publish then event_bus.publish("player_position", position) end
+            end
+            return  -- Skip normal movement while rolling.
+        end
+
+        -- ── 20. Dash ──────────────────────────────────────────────────────────
         -- ComboManager fires dash_performed. All dash physics lives here.
         --
         -- Early-cancel: an input during an active dash is held (not dropped) and
@@ -1124,7 +1159,7 @@ return Component {
             end
             if not earlyCancel then self._animator:SetBool("IsDashing", true) end
             self._animator:SetTrigger("Dash")
-            AudioHelper.playRandomSFX(self._audio, self.playerDashSFX)
+            if event_bus and event_bus.publish then event_bus.publish("player_dashed", {}) end
 
         elseif self._dashRequested and self._isDashing then
             -- Inside dash, before early-cancel window. Hold the request.
@@ -1294,7 +1329,7 @@ return Component {
         local isLiftAttack = self._liftAttackJump
         self._liftAttackJump = false
 
-        if not self._isLanding and not self._freezePending
+        if not self._isLanding and not self._freezePending and not self._slamBuffering
             and (isLiftAttack or (interp and interp:IsJumpJustPressed())) and isGrounded
         then
             local jumpH
@@ -1308,11 +1343,7 @@ return Component {
             CharacterController.Jump(self._controller, jumpH)
             isJumping = true
             self._animator:SetBool("IsJumping", true)
-            --put here for now, don't remove comment block
-            --if not isLiftAttack then
-            --    playRandomSFX(self._audio, self.playerJumpSFX)
-            --end
-            AudioHelper.playRandomSFX(self._audio, self.playerJumpSFX)
+            if event_bus and event_bus.publish then event_bus.publish("player_jumped", {}) end
             local launchPos = CharacterController.GetPosition(self._controller)
             self._peakAirY  = launchPos and launchPos.y or 0
 
@@ -1343,6 +1374,21 @@ return Component {
         -- SetVelocity writes directly to the physics body, overriding CC gravity
         -- accumulation and giving full manual control of the descent curve.
         if self._isAirSlam then
+            -- Hover: freeze in air briefly before descent begins.
+            if self._slamHover then
+                self._slamHoverTimer = self._slamHoverTimer - dt
+                CharacterController.SetVelocity(self._controller, 0, 0, 0)
+                if self._slamHoverTimer <= 0 then
+                    self._slamHover = false
+                end
+                local hoverPos = CharacterController.GetPosition(self._controller)
+                if hoverPos then
+                    self:SetPosition(hoverPos.x, hoverPos.y, hoverPos.z)
+                    if event_bus and event_bus.publish then event_bus.publish("player_position", hoverPos) end
+                end
+                return
+            end
+
             local slamPos = CharacterController.GetPosition(self._controller)
             -- Raycast straight down from feet. Ray length covers max distance
             -- the player can travel in one frame at full slam speed (~50/60 = 0.84)
@@ -1369,31 +1415,43 @@ return Component {
                 )
                 CharacterController.SetVelocity(self._controller, 0, -self._slamVelY, 0)
             else
-                -- Hit floor via raycast — fire everything immediately.
+                -- Hit floor — fire everything immediately and return clean.
                 print(string.format("[SLAM] HIT FLOOR at pos.y=%.3f | firing effects", slamPos and slamPos.y or -999))
-                self._isAirSlam = false
-                self._isJumping = false
-                self._slamVelY  = 0
+                self._isAirSlam  = false
+                self._isJumping  = false
+                self._isLanding  = true
+                self._slamVelY   = 0
+                self._velX       = 0
+                self._velZ       = 0
                 CharacterController.SetVelocity(self._controller, 0, 0, 0)
                 if self._animator then
+                    self._animator:SetBool("IsJumping",  false)
                     self._animator:SetBool("IsSlamming", false)
                     self._animator:SetTrigger("SlamLanded")
                 end
                 self:_squashTrigger("vertical", 1.0)
-                print(string.format("[SLAM] event_bus=%s", tostring(event_bus ~= nil)))
                 if event_bus and event_bus.publish then
+                    event_bus.publish("slam_landed", {})
                     event_bus.publish("camera_shake", {
                         intensity = self.SlamShakeIntensity or 0.6,
                         duration  = self.SlamShakeDuration  or 0.45,
                         frequency = self.SlamShakeFrequency or 18.0,
                     })
-                    print("[SLAM] camera_shake published")
                     event_bus.publish("fx_chromatic", {
                         intensity = 0.8,
                         duration  = 0.3,
                     })
-                    print("[SLAM] fx_chromatic published")
+                    event_bus.publish("fx_time_scale", {
+                        scale    = self.SlamSlowMoScale    or 0.15,
+                        duration = self.SlamSlowMoDuration or 0.18,
+                    })
                 end
+                local position = CharacterController.GetPosition(self._controller)
+                if position then
+                    self:SetPosition(position.x, position.y, position.z)
+                    if event_bus and event_bus.publish then event_bus.publish("player_position", position) end
+                end
+                return  -- Next frame runs with _isLanding=true and clean state.
             end
         elseif not isJumping then
             if isMoving then
@@ -1486,7 +1544,7 @@ return Component {
         local isEffectivelyMoving = isMoving or coastVelMag > 0.1
 
         if not isGrounded then
-            if not self._isJumping then
+            if not self._isJumping and not self._isLanding then
                 -- Became airborne without jump press (walked off a ledge).
                 self._isJumping = true
                 self._isRunning = false
@@ -1516,31 +1574,45 @@ return Component {
                 self._vaultAscentLock       = false
                 self._airLiftCooldownTimer  = 0
                 self._postLiftAirLock       = 0
-                self._animator:SetBool("IsJumping", false)
-                AudioHelper.playRandomSFX(self._audio, self.playerLandSFX)
 
                 local landPos  = CharacterController.GetPosition(self._controller)
                 local landY    = landPos and landPos.y or 0
-                local fallDist = (self._peakAirY or landY) - landY
+                -- Use launch height (last grounded Y), not peak air Y, so a normal
+                -- jump on flat ground gives fallDist ~0 instead of the full jump arc.
+                local fallDist = (self._lastGroundedY or landY) - landY
 
-                local intensity, hardLand
+                local intensity
                 -- Landing intensity: small hop = 0.3, big drop = 1.0
                 intensity = math.max(0.3, math.min(1.0, fallDist / 3.0))
-                hardLand  = fallDist >= (self.RollHeightThreshold or 2.5)
 
-                self:_squashTrigger("vertical", intensity)
-
-                if hardLand then
-                    self._isRolling = true
+                -- Set destination state BEFORE clearing IsJumping so the animator
+                -- sees the correct target condition when IsJumping flips to false.
+                self._animator:SetBool("IsLifting", false)
+                if fallDist >= (self.RollHeightThreshold or 2.5) then
+                    -- High fall -> roll
+                    self._isRolling  = true
+                    self._rollDirX   = self._facingX or 0
+                    self._rollDirZ   = self._facingZ or 0
                     self._animator:SetBool("IsRolling", true)
                     self._animator:SetBool("IsRunning", false)
-                    self._isRunning = false
-                else
+                    self._isRunning  = false
+                elseif isEffectivelyMoving then
+                    -- Coasting (no keys but still has velocity) -> run directly
                     self._isRolling = false
                     self._animator:SetBool("IsRolling", false)
-                    self._animator:SetBool("IsRunning", isEffectivelyMoving)
-                    self._isRunning = isEffectivelyMoving
+                    self._animator:SetBool("IsRunning", true)
+                    self._isRunning = true
+                else
+                    -- Stationary landing
+                    self._isRolling = false
+                    self._animator:SetBool("IsRolling", false)
+                    self._animator:SetBool("IsRunning", false)
+                    self._isRunning = false
                 end
+                self._animator:SetBool("IsJumping", false)
+
+                self:_squashTrigger("vertical", intensity)
+                if event_bus and event_bus.publish then event_bus.publish("player_landed", {}) end
 
             elseif isEffectivelyMoving and not self._isRunning then
                 self._animator:SetBool("IsRunning", true)
@@ -1558,12 +1630,12 @@ return Component {
         -- ── 23. Footsteps ─────────────────────────────────────────────────────
         if self._isRunning and isGrounded and not self._isLanding then
             if not self._wasRunning then
-                AudioHelper.playRandomSFX(self._audio, self.playerFootstepSFX, 0.5)
+                if event_bus and event_bus.publish then event_bus.publish("player_footstep", {}) end
                 self._footstepTimer = 0
             end
             self._footstepTimer = self._footstepTimer + dt
             if self._footstepTimer >= (self.footstepInterval or 0.35) then
-                AudioHelper.playRandomSFX(self._audio, self.playerFootstepSFX, 0.5)
+                if event_bus and event_bus.publish then event_bus.publish("player_footstep", {}) end
                 self._footstepTimer = 0
             end
         else

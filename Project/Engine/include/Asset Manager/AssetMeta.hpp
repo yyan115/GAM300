@@ -31,6 +31,7 @@ public:
 	std::string type;
 	bool flipUVs = false;
 	bool generateMipmaps = true;
+	int maxSize = 2048; // Max texture dimension at import time. Larger textures are downscaled.
 
 	enum class TextureWrapMode {
 		Clamp = 0,
@@ -41,7 +42,7 @@ public:
 	TextureWrapMode textureWrapMode = TextureWrapMode::Clamp; // Set to Clamp by default
 	std::string textureWrapModeStr = "Clamp"; // String representation for serialization
 
-	void PopulateTextureMeta(const std::string& _type, bool _flipUVs, bool _generateMipmaps, const TextureWrapMode& _textureWrapMode);
+	void PopulateTextureMeta(const std::string& _type, bool _flipUVs, bool _generateMipmaps, const TextureWrapMode& _textureWrapMode, int _maxSize = 2048);
 	void PopulateAssetMetaFromFile(const std::string& metaFilePath) override;
 	Type GetType() const override { return Type::Texture; }
 };

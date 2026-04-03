@@ -112,7 +112,7 @@ return Component {
                 clipDuration = 1.4,
                 duration     = 1.4,
                 damage      = 10,
-                knockback   = 20.0,
+                knockback   = 1.5,
                 canMove     = false,
                 comboWindow = 0.25,
                 lunge       = { speed = 3.0, duration = 0.10 },
@@ -130,7 +130,7 @@ return Component {
                 clipDuration = 1.4,
                 duration     = 1.4,
                 damage      = 12,
-                knockback   = 20.0,
+                knockback   = 1.5,
                 canMove     = false,
                 comboWindow = 0.25,
                 lunge       = { speed = 3.5, duration = 0.11 },
@@ -148,7 +148,7 @@ return Component {
                 clipDuration = 1.2,
                 duration     = 1.2,
                 damage      = 20,
-                knockback   = 200.0,
+                knockback   = 4.0,
                 canMove     = false,
                 comboWindow = nil,
                 lunge       = { speed = 5.0, duration = 0.18 },
@@ -176,7 +176,7 @@ return Component {
                     if input:HasBufferedDash() then
                         input:ConsumeBufferedDash()
                         self._queuedCombo = nil
-                        print("[ComboManager] DASH CANCEL: heavy_charge → dash")
+                        print("[ComboManager] DASH CANCEL: heavy_charge -> dash")
                         self:_transitionTo("dash")
                         return
                     end
@@ -184,7 +184,7 @@ return Component {
                     -- Jump cancel: exit charge cleanly; PlayerMovement fires the jump this frame
                     if input:IsJumpJustPressed() and not _G.player_is_jumping then
                         self._queuedCombo = nil
-                        print("[ComboManager] JUMP CANCEL: heavy_charge → idle")
+                        print("[ComboManager] JUMP CANCEL: heavy_charge -> idle")
                         self:_transitionTo("idle")
                         return
                     end
@@ -211,7 +211,7 @@ return Component {
                 clipDuration = 1.2,
                 duration     = 1.2,
                 damage      = 30,
-                knockback   = 20.0,
+                knockback   = 3.0,
                 canMove     = false,
                 comboWindow = nil,
                 lunge       = { speed = 6.0, duration = 0.22 },  -- heavy shove
@@ -293,7 +293,7 @@ return Component {
                 clipDuration = 0.8,
                 duration     = 0.8,
                 damage       = 15,
-                knockback    = 80.0,
+                knockback    = 5.0,
                 canMove      = true,
                 isAerial     = true,
                 comboWindow  = 0.25,
@@ -311,7 +311,7 @@ return Component {
                 clipDuration = 0.85,
                 duration     = 0.85,
                 damage       = 12,
-                knockback    = 25.0,
+                knockback    = 1.0,
                 canMove      = true,
                 isAerial     = true,
                 comboWindow  = 0.2,
@@ -328,7 +328,7 @@ return Component {
                 clipDuration = 0.85,
                 duration     = 0.85,
                 damage       = 14,
-                knockback    = 30.0,
+                knockback    = 1.0,
                 canMove      = true,
                 isAerial     = true,
                 comboWindow  = 0.2,
@@ -348,7 +348,7 @@ return Component {
                 clipDuration = 1.1,
                 duration     = 1.1,
                 damage       = 30,
-                knockback    = 180.0,
+                knockback    = 8.0,
                 canMove      = false,
                 isAerial     = true,
                 isSlam       = true,
@@ -412,19 +412,19 @@ return Component {
             self._subHitEntity = _G.event_bus.subscribe("chain.endpoint_hit_entity", function(payload)
                 if payload and payload.isThrowable then
                     self._chainHasThrowable = true
-                    print("[ComboManager] Throwable hooked — chain_attack blocked")
+                    print("[ComboManager] Throwable hooked - chain_attack blocked")
                 end
             end)
             self._subRetracted = _G.event_bus.subscribe("chain.endpoint_retracted", function()
                 if self._chainHasThrowable then
                     self._chainHasThrowable = false
-                    print("[ComboManager] Throwable released — chain_attack unblocked")
+                    print("[ComboManager] Throwable released - chain_attack unblocked")
                 end
             end)
             self._subThrowFired = _G.event_bus.subscribe("chain.throwable_throw", function()
                 if self._chainHasThrowable then
                     self._chainHasThrowable = false
-                    print("[ComboManager] Throwable thrown — chain_attack unblocked")
+                    print("[ComboManager] Throwable thrown - chain_attack unblocked")
                 end
             end)
             self._chainExtendedSub = _G.event_bus.subscribe("chain.extended_changed", function(payload)
@@ -454,6 +454,17 @@ return Component {
             self._attackHitSub = _G.event_bus.subscribe("attack_hit_confirmed", function()
                 if self._currentStateData and self._currentStateData.isAerial then
                     self._lastAerialHitLanded = true
+                end
+            end)
+        end
+
+        if _G.event_bus and _G.event_bus.subscribe then
+            self._slamLandedSub = _G.event_bus.subscribe("slam_landed", function()
+                -- Slam has hit the ground — PlayerMovement owns the landing from here.
+                -- Force ComboManager to idle immediately so player_is_attacking clears
+                -- and section 13 in PlayerMovement stops blocking movement/animation.
+                if self._currentStateId == "air_slam" then
+                    self:_transitionTo("idle")
                 end
             end)
         end
@@ -512,6 +523,17 @@ return Component {
         -- ══════════════════════════════════════════════════════════════════
         -- Block all combo input near interactable (tooltip active)
         if _G.playerNearInteractable then return end
+
+        -- Before weapon pickup, only dash is available; skip all combat logic
+        if not _G.playerHasWeapon then
+            if input:HasBufferedDash() and not _G.player_is_dashing then
+                input:ConsumeBufferedDash()
+                if event_bus then
+                    event_bus.publish("dash_performed", {})
+                end
+            end
+            return
+        end
 
         -- When attacks are disabled, drain stale buffers, force idle if mid-combo,
         -- and skip the state machine entirely. Chain weapon events (published above)
@@ -613,7 +635,7 @@ return Component {
             if input:HasBufferedDash() and state.transitions.dash then
                 input:ConsumeBufferedDash()
                 self._queuedCombo = nil
-                print("[ComboManager] DASH CANCEL: " .. state.id .. " → dash")
+                print("[ComboManager] DASH CANCEL: " .. state.id .. " -> dash")
                 self:_transitionTo("dash")
                 return
             end
@@ -622,14 +644,14 @@ return Component {
                 if state.transitions.jump then
                     -- Lift attack: this state explicitly launches into an aerial state
                     self._queuedCombo = nil
-                    print("[ComboManager] LIFT ATTACK: " .. state.id .. " → " .. state.transitions.jump)
+                    print("[ComboManager] LIFT ATTACK: " .. state.id .. " -> " .. state.transitions.jump)
                     self:_transitionTo(state.transitions.jump)
                     return
                 elseif not state.isAerial then
                     -- Jump cancel: no lift on this state — exit to idle so
                     -- PlayerMovement's jump check fires naturally this frame.
                     self._queuedCombo = nil
-                    print("[ComboManager] JUMP CANCEL: " .. state.id .. " → idle")
+                    print("[ComboManager] JUMP CANCEL: " .. state.id .. " -> idle")
                     self:_transitionTo("idle")
                     return
                 end
@@ -721,7 +743,7 @@ return Component {
                     input:ConsumeBufferedChain()
                 end
             else
-                print("[ComboManager] chain input suppressed — throwable hooked")
+                print("[ComboManager] chain input suppressed - throwable hooked")
             end
 
         elseif input:HasBufferedDash() then
@@ -877,7 +899,7 @@ return Component {
             })
         end
 
-        print("[ComboManager] " .. oldState.id .. " → " .. stateId
+        print("[ComboManager] " .. oldState.id .. " -> " .. stateId
             .. " (ComboStep: " .. newState.animParam .. ")")
 
         -- ── State entry callbacks ─────────────────────────────────────────

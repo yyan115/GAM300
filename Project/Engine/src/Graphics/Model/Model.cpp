@@ -846,6 +846,10 @@ bool Model::LoadResource(const std::string& resourcePath, const std::string& ass
         }
 
         CalculateBoundingBox();
+
+        // Now that all meshes are loaded into RAM, push them to the GPU immediately!
+        PrewarmMeshes();
+
         return true;
     }
 
@@ -884,6 +888,13 @@ bool Model::ReloadResource(const std::string& resourcePath, const std::string& a
     return LoadResource(resourcePath, assetPath);
 }
 
+void Model::PrewarmMeshes()
+{
+    for (Mesh& mesh : meshes) {
+        mesh.Prewarm();
+    }
+}
+
 std::shared_ptr<AssetMeta> Model::ExtendMetaFile(const std::string& assetPath, std::shared_ptr<AssetMeta> currentMetaData, bool forAndroid)
 {
     std::string metaFilePath{};
@@ -906,6 +917,11 @@ std::shared_ptr<AssetMeta> Model::ExtendMetaFile(const std::string& assetPath, s
     ifs.close();
 
     auto& allocator = doc.GetAllocator();
+
+    // Remove existing ModelMetaData if it exists to avoid double members
+    if (doc.HasMember("ModelMetaData")) {
+        doc.RemoveMember("ModelMetaData");
+    }
 
     rapidjson::Value modelMetaData(rapidjson::kObjectType);
 
@@ -965,9 +981,8 @@ void Model::Draw(Shader& shader, const Camera& camera, const ModelRenderComponen
         constexpr size_t MAX_BONES = 100;
         const auto& t = modelComp->mFinalBoneMatrices;
         const size_t n = std::min(t.size(), MAX_BONES);
-        // Upload as you already do (or via one glUniformMatrix4fv with [0])
-        for (size_t i = 0; i < n; ++i)
-            shader.setMat4("finalBonesMatrices[" + std::to_string(i) + "]", t[i]);
+        if (n > 0)
+            shader.setMat4Array("finalBonesMatrices[0]", t.data(), static_cast<GLsizei>(n));
     }
 
 	for (size_t i = 0; i < meshes.size(); ++i)
@@ -1013,9 +1028,8 @@ void Model::Draw(Shader& shader, const Camera& camera, std::shared_ptr<Material>
         constexpr size_t MAX_BONES = 100;
         const auto& t = modelComp.mFinalBoneMatrices;
         const size_t n = std::min(t.size(), MAX_BONES);
-        // Upload as you already do (or via one glUniformMatrix4fv with [0])
-        for (size_t i = 0; i < n; ++i)
-            shader.setMat4("finalBonesMatrices[" + std::to_string(i) + "]", t[i]);
+        if (n > 0)
+            shader.setMat4Array("finalBonesMatrices[0]", t.data(), static_cast<GLsizei>(n));
     }
 
 	for (size_t i = 0; i < meshes.size(); ++i)
@@ -1058,9 +1072,8 @@ void Model::Draw(Shader& shader, const Camera& camera, std::shared_ptr<Material>
         constexpr size_t MAX_BONES = 100;
         const auto& t = modelComp.mFinalBoneMatrices;
         const size_t n = std::min(t.size(), MAX_BONES);
-        // Upload as you already do (or via one glUniformMatrix4fv with [0])
-        for (size_t i = 0; i < n; ++i)
-            shader.setMat4("finalBonesMatrices[" + std::to_string(i) + "]", t[i]);
+        if (n > 0)
+            shader.setMat4Array("finalBonesMatrices[0]", t.data(), static_cast<GLsizei>(n));
     }
 
     for (size_t i = 0; i < meshes.size(); ++i)

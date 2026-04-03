@@ -28,9 +28,9 @@ bool LightingSystem::Initialise()
         }
         // Each map updates on a different frame within the cycle so only 1 map
         // renders per frame instead of all at once, and no map is stale > updateInterval frames
-        pointShadowMaps[i].cacheConfig.updateInterval = 2;
-        pointShadowMaps[i].cacheConfig.maxStaleFrames = 4;
-        pointShadowMaps[i].SetPhaseOffset(i);
+        pointShadowMaps[i].cacheConfig.updateInterval = 1;
+        pointShadowMaps[i].cacheConfig.maxStaleFrames = 1;
+        pointShadowMaps[i].SetPhaseOffset(i % 2);
     }
 
     std::cout << "[LightingSystem] Initialized" << std::endl;
@@ -57,8 +57,19 @@ void LightingSystem::Shutdown()
     std::cout << "[LightingSystem] Shutdown" << std::endl;
 }
 
+void LightingSystem::ResetDefaults()
+{
+    ambientMode = AmbientMode::Color;
+    ambientSky = glm::vec3(0.05f, 0.05f, 0.05f);
+    ambientEquator = glm::vec3(0.03f, 0.03f, 0.03f);
+    ambientGround = glm::vec3(0.01f, 0.01f, 0.01f);
+    ambientIntensity = 1.0f;
+}
+
 void LightingSystem::RenderShadowMaps()
 {
+    PROFILE_FUNCTION();
+
     if (!shadowsEnabled || !shadowRenderCallback)
     {
         return;
@@ -67,6 +78,7 @@ void LightingSystem::RenderShadowMaps()
     // Render directional shadow
     if (directionalLightData.hasDirectionalLight)
     {
+        PROFILE_SCOPED("Shadow::Directional");
         Camera* camera = GraphicsManager::GetInstance().GetCurrentCamera();
         glm::vec3 sceneCenter = camera ? camera->Position : glm::vec3(0.0f);
 
@@ -108,6 +120,7 @@ void LightingSystem::RenderShadowMaps()
             float lightRange = pointLightData.range[i];
             if (pointShadowMaps[shadowIndex].NeedsUpdate(lightPos, lightRange))
             {
+                PROFILE_SCOPED("Shadow::PointLight");
                 GraphicsManager::GetInstance().SetPointShadowCullData(lightPos, lightRange);
                 pointShadowMaps[shadowIndex].Render(lightPos, lightRange, shadowRenderCallback);
                 GraphicsManager::GetInstance().ClearPointShadowCullData();
@@ -167,6 +180,7 @@ void LightingSystem::ApplyLighting(Shader& shader)
         shader.setFloat(base + ".linear", pointLightData.linear[i]);
         shader.setFloat(base + ".quadratic", pointLightData.quadratic[i]);
         shader.setFloat(base + ".intensity", pointLightData.intensity[i]);
+        shader.setFloat(base + ".range", pointLightData.range[i]);
     }
 
     // Set active spot lights
@@ -302,13 +316,18 @@ void LightingSystem::CollectLightData()
             {
                 directionalLightData.hasDirectionalLight = true;
 
-                glm::vec3 direction(0.2f, -1.0f, -0.3f);
+                glm::vec3 baseDirection = light.direction.ConvertToGLM();
+                glm::vec3 direction = baseDirection;
                 if (ecsManager.HasComponent<Transform>(entity))
                 {
                     auto& transform = ecsManager.GetComponent<Transform>(entity);
                     glm::mat4 worldMat = transform.worldMatrix.ConvertToGLM();
                     glm::mat3 rotationMatrix = glm::mat3(worldMat);
-                    direction = glm::normalize(rotationMatrix * direction);
+                    direction = glm::normalize(rotationMatrix * baseDirection);
+                }
+                else
+                {
+                    direction = glm::normalize(baseDirection);
                 }
 
                 directionalLightData.direction = direction;

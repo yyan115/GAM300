@@ -13,6 +13,7 @@
 #include "Video/VideoComponent.hpp"
 #include "Asset Manager/AssetManager.hpp"
 #include "Graphics/PostProcessing/PostProcessingManager.hpp"
+#include <Panels/PrefabEditorPanel.hpp>
 
 
 EditorState& EditorState::GetInstance() {
@@ -52,6 +53,12 @@ EditorState::State EditorState::GetState() const {
 void EditorState::Play() {
     State currentState = GetState();
     if (currentState == State::EDIT_MODE) {
+        // If we are in prefab editor mode and the play button is pressed, stop prefab editor mode (save the prefab) and restore the previous temp scene first.
+        // This is so that if we play while in prefab editor mode, the scene doesn't get overwritten.
+        if (PrefabEditor::IsInPrefabEditorMode()) {
+            PrefabEditor::StopEditingPrefab();
+        }
+
         // Save the current scene state before entering play mode
         SceneManager::GetInstance().SaveTempScene();
 
@@ -96,6 +103,7 @@ void EditorState::Play() {
         }
 
         ecs.animationSystem->Initialise();
+        ecs.spriteAnimationSystem->Initialise();
         SceneManager::GetInstance().InitializeScenePhysics();
 
     } else if (currentState == State::PAUSED) {

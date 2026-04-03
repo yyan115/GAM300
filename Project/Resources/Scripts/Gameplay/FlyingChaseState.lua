@@ -2,15 +2,10 @@
 local FlyingChase = {}
 
 function FlyingChase:Enter(ai)
-    ai._alerted = ai._alerted or false
-    if not ai._alerted then
-        ai._alerted = true
-        if ai.PlayAlertSFX then ai:PlayAlertSFX() end
-    end
-
     ai._animator:SetBool("Flying", true)
     ai._animator:SetBool("PatrolEnabled", true)
     ai._animator:SetBool("PlayerInDetectionRange", true)
+    ai:_publishSFX("alert")
 end
 
 function FlyingChase:Update(ai, dt)

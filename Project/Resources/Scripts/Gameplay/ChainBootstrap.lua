@@ -113,7 +113,8 @@ return Component {
         --   HitWall  <- ChainHitWall1, ChainHitWall2, ChainHitWall3
         --
         -- Awaiting new assets:
-        --   Flop     <- ChainFlop1/2/3     (looping, chain swinging loose)
+        --   FlopSlow <- ChainFlopSlow1..6  (loop, chain barely moving)
+        --   FlopFast <- ChainFlopFast1..6  (loop, chain swinging hard)
         --   WallRub  <- ChainWallRub1/2    (looping, chain scraping geometry)
         --   Aim      <- ChainAim1          (looping, helicopter spin overhead)
         --   Taut     <- ChainTaut1/2/3     (one-shot, chain snapping to tension)
@@ -122,16 +123,30 @@ return Component {
         AudioClips_Retract  = {},
         AudioClips_HitFlesh = {},
         AudioClips_HitWall  = {},
-        AudioClips_Flop     = {},
+        AudioClips_Flop     = {},   -- looping, chain swinging loose (single set)
         AudioClips_WallRub  = {},
         AudioClips_Aim      = {},
         AudioClips_Taut     = {},
-        AudioClips_Lax      = {},
+        AudioClips_LaxSlow  = {},   -- lax one-shot set: chain moving little
+        AudioClips_LaxFast  = {},   -- lax one-shot set: chain moving a lot
+
+        -- Speed threshold (world units/sec) for picking LaxSlow vs LaxFast on lax trigger.
+        AudioLaxSpeedThreshold = 3.0,
+
+        -- Speed threshold (world units/sec) for flop slow vs fast set per link.
+        AudioFlopSpeedThreshold = 3.0,
+
+        -- Maximum number of links that can play flop audio simultaneously.
+        -- Fastest-moving links are chosen each frame up to this limit.
+        AudioMaxActiveLinks = 3,
+
+        -- Lax volume multiplier on top of AudioVolume. 2.0 = double.
+        AudioLaxVolumeMultiplier = 2.0,
 
         -- HitFlesh plays louder than the global AudioVolume since enemy impact
         -- needs to cut through other sounds clearly.
-        -- 1.0 = same as global volume, 1.5 = 50% louder.
-        AudioHitFleshVolumeMultiplier = 1.5,
+        -- 1.0 = same as global volume, 2.5 = 150% louder.
+        AudioHitFleshVolumeMultiplier = 2.5,
     },
 
     _unpack_pos = function(self, a, b, c)
@@ -260,10 +275,11 @@ return Component {
             -- points at camera forward within SpinReleaseAngleTolerance.
             self._pendingSpinRelease = true
             dbg("[ChainBootstrap] SpinRelease pending — waiting for correct angle window")
-            -- Held from retracted: fire with camera forward on release.
-            local dir = self._cameraForward
+            -- Held from retracted: fire toward crosshair world point on release.
+            local dir = self:_directionToAimPoint()
+            local wt  = self._cameraAimWorldPoint  -- pass world target for per-frame tracking
             dbg(string.format("[ChainBootstrap] AimFire release -> StartExtension (%.3f,%.3f,%.3f)", dir[1],dir[2],dir[3]))
-            self.controller:StartExtension(dir, self.MaxLength, self.LinkMaxDistance)
+            self.controller:StartExtension(dir, self.MaxLength, self.LinkMaxDistance, wt)
             if _G.event_bus and _G.event_bus.publish then
                 _G.event_bus.publish("force_player_rotation_to_direction", {x = dir[1], z = dir[3]})
                 _G.event_bus.publish("chain.throw_chain", true)
@@ -572,7 +588,8 @@ return Component {
                 wallRub  = self.AudioClips_WallRub,
                 aim      = self.AudioClips_Aim,
                 taut     = self.AudioClips_Taut,
-                lax      = self.AudioClips_Lax,
+                laxSlow  = self.AudioClips_LaxSlow,
+                laxFast  = self.AudioClips_LaxFast,
             },
             {
                 volume             = self.AudioVolume,
@@ -582,6 +599,10 @@ return Component {
                 pitchVariation     = self.AudioPitchVariation,
                 volVariation       = self.AudioVolumeVariation,
                 hitFleshVolMult    = self.AudioHitFleshVolumeMultiplier,
+                laxSpeedThreshold  = self.AudioLaxSpeedThreshold,
+                flopSpeedThreshold = self.AudioFlopSpeedThreshold,
+                maxActiveLinks     = self.AudioMaxActiveLinks,
+                laxVolMult         = self.AudioLaxVolumeMultiplier,
             }
         )
         self.audioHandler:Start()
@@ -609,6 +630,12 @@ return Component {
                     if mag > 0.0001 then
                         self._cameraForward = {fx/mag, fy/mag, fz/mag}
                     end
+                end
+            end)
+
+            self._cameraWorldTargetSub = _G.event_bus.subscribe("ChainAim_worldTarget", function(payload)
+                if payload then
+                    self._cameraAimWorldPoint = { x = payload.x, y = payload.y, z = payload.z }
                 end
             end)
 
@@ -666,7 +693,7 @@ return Component {
                                                         or nil
                         
                         -- Track the enemy ID exactly like you track the throwable ID
-                        self._hookedEnemyEntityId     = (not self._hookedIsThrowable and payload.rootTag == "Enemy") and payload.rootEntityId or nil
+                        self._hookedEnemyEntityId     = (not self._hookedIsThrowable and (payload.rootTag == "Enemy" or payload.rootTag == "Boss")) and payload.rootEntityId or nil
 
                         -- Snapshot lockedEndPoint at moment of hit (unchanged)
                         if self._endpointTransform then
@@ -719,6 +746,27 @@ return Component {
                 end)
             end)
         end
+    end,
+
+    -- Returns a normalised fire direction from the chain hand toward the crosshair
+    -- world target published by camera_chain_aim. The world target is the camera
+    -- raycast hit point (where the crosshair actually points in the world).
+    -- Falls back to raw camera forward if no world target is available yet.
+    _directionToAimPoint = function(self)
+        local wp = self._cameraAimWorldPoint
+        if wp then
+            local sp = self.controller and self.controller.startPos
+            if sp then
+                local dx = wp.x - sp[1]
+                local dy = wp.y - sp[2]
+                local dz = wp.z - sp[3]
+                local len = math.sqrt(dx*dx + dy*dy + dz*dz)
+                if len > 0.001 then
+                    return {dx/len, dy/len, dz/len}
+                end
+            end
+        end
+        return self._cameraForward
     end,
 
     -- Returns a normalised direction {x,y,z} toward the closest LockOn target within
@@ -891,8 +939,10 @@ return Component {
     end,
 
     Update = function(self, dt)
-        if not self.controller then return end
+        PROFILE_SCOPED("ChainBootstrap::Update")
+        if not self.controller then PROFILE_SCOPED_END() return end
 
+        PROFILE_SCOPED("CB::PendingTapFire")
         if self._pendingTapFire then
             if self._pendingPlayerForward then
                 local pf = self._pendingPlayerForward
@@ -915,8 +965,10 @@ return Component {
                 self._pendingPlayerForward = nil
             end
         end
+        PROFILE_SCOPED_END()
 
         -- Continuous hold logic -----------------------------------------------
+        PROFILE_SCOPED("CB::HoldLogic")
         if self._chain_pressing and self._chain_held then
             local len        = (self.controller.chainLen or 0)
             local isExt      = self.controller.isExtending or false
@@ -988,8 +1040,10 @@ return Component {
                 self._spinCurrentSpeed = self:_tickSpin(dt)
             end
         end
+        PROFILE_SCOPED_END() -- CB::HoldLogic
         ----------------------------------------------------------------------
 
+        PROFILE_SCOPED("CB::PlayerTransform")
         self.playerTransform = Engine.FindTransformByName(self.PlayerName)
         if self.playerTransform then
             local sx, sy, sz = self:_read_world_pos(self.playerTransform)
@@ -997,7 +1051,9 @@ return Component {
         else
             dbg("Cannot find the bloody player, WHY. YOU NAMED WRONG IS IT OR ENGINE FAILING AGAIN.")
         end
+        PROFILE_SCOPED_END()
 
+        PROFILE_SCOPED("CB::ControllerUpdate")
         local settings = {
             ChainSpeed = self.ChainSpeed,
             MaxLength = self.MaxLength,
@@ -1030,6 +1086,7 @@ return Component {
         }
 
         local positions, startPos, endPos = self.controller:Update(dt, settings)
+        PROFILE_SCOPED_END() -- CB::ControllerUpdate
         local activeN = self.controller.activeN
 
         -- Publish chain extended state change so other scripts (ComboManager)
@@ -1054,6 +1111,7 @@ return Component {
         -- While spinning (held or pending release), blend Verlet positions with
         -- scripted circular positions and check the release angle window.
         -- =====================================================================
+        PROFILE_SCOPED("CB::SpinOverride")
         local spinHeld    = self._intentAimFire and self._chain_pressing and self._chain_held
         local spinPending = self._pendingSpinRelease
 
@@ -1167,17 +1225,20 @@ return Component {
 
                 if math.abs(a) <= extendedTol then
                     dbg(string.format("[ChainBootstrap] SpinRelease fired at normAngle=%.3f tolRad=%.3f", a, extendedTol))
-                    local cf = self._cameraForward
+                    local cf = self:_directionToAimPoint()
+                    local wt = self._cameraAimWorldPoint
                     self:_resetSpin()
-                    self.controller:StartExtension(cf, self.MaxLength, self.LinkMaxDistance)
+                    self.controller:StartExtension(cf, self.MaxLength, self.LinkMaxDistance, wt)
                 end
             end
         end
+        PROFILE_SCOPED_END() -- CB::SpinOverride
         -- =====================================================================
 
         -- Publish movement constraint — only when chain is taut (attached and idle).
         -- Publishing during extension/retraction incorrectly locks player movement
         -- even when well within the chain's range.
+        PROFILE_SCOPED("CB::Constraints")
         local chainIdle     = not self.controller.isExtending and not self.controller.isRetracting
         local chainAttached = self.controller.endPointLocked or self.controller._raycastSnapped
         if self.controller.constraintResult and chainIdle and chainAttached
@@ -1201,19 +1262,27 @@ return Component {
         if self.controller.throwableTension and _G.event_bus and _G.event_bus.publish then
             _G.event_bus.publish("chain.throwable_tension", self.controller.throwableTension)
         end
+        PROFILE_SCOPED_END() -- CB::Constraints
 
+        PROFILE_SCOPED("CB::ApplyPositions")
         self.linkHandler:ApplyPositions(positions, activeN)
+        PROFILE_SCOPED_END()
 
+        PROFILE_SCOPED("CB::ApplyRotations")
         local maxStep = (self.RotationMaxStepRadians or (self.RotationMaxStep and math.rad(self.RotationMaxStep))) or math.rad(60)
         self.linkHandler:ApplyRotations(positions, startPos, endPos, maxStep, true, activeN)
+        PROFILE_SCOPED_END()
 
         -- === Audio ===
+        PROFILE_SCOPED("CB::AudioUpdate")
         if self.audioHandler then
             pcall(function()
                 self.audioHandler:Update(dt, self.controller:GetPublicState(), positions, activeN)
             end)
         end
+        PROFILE_SCOPED_END()
 
+        PROFILE_SCOPED("CB::EndpointUpdate")
         local public = self.controller:GetPublicState()
         self.m_CurrentLength = public.ChainLength
         self.m_IsExtending = public.IsExtending
@@ -1362,6 +1431,8 @@ return Component {
                 end -- if not spinActive
             end
         end
+        PROFILE_SCOPED_END() -- CB::EndpointUpdate
+        PROFILE_SCOPED_END() -- ChainBootstrap::Update
     end,
 
     OnDisable = function(self)
@@ -1389,7 +1460,7 @@ return Component {
 
     StartExtension = function(self)
         if self.controller then
-            local dir = self._cameraForward
+            local dir = self:_directionToAimPoint()
             self.controller:StartExtension(dir, self.MaxLength, self.LinkMaxDistance)
             if _G.event_bus and _G.event_bus.publish then
                 _G.event_bus.publish("force_player_rotation_to_direction", {x = dir[1], z = dir[3]})

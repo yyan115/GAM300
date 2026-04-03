@@ -41,6 +41,8 @@
 #ifdef __ANDROID__
 #include <android/log.h>
 #endif
+#include <cmath>
+#include <Hierarchy/EntityGUIDRegistry.hpp>
 #include <Hierarchy/ParentComponent.hpp>
 
 
@@ -70,6 +72,80 @@ inline bool JoltAssertFailed(const char* expr, const char* msg, const char* file
     return false;
 }
 
+namespace {
+constexpr float kMinSafePhysicsDt = 1.0e-6f;
+
+bool IsFiniteVector3D(const Vector3D& value)
+{
+    return std::isfinite(value.x) && std::isfinite(value.y) && std::isfinite(value.z);
+}
+
+bool IsFiniteQuaternion(const Quaternion& value)
+{
+    return std::isfinite(value.w) && std::isfinite(value.x) &&
+        std::isfinite(value.y) && std::isfinite(value.z);
+}
+
+bool IsFiniteJoltVec3(const JPH::Vec3& value)
+{
+    return std::isfinite(value.GetX()) && std::isfinite(value.GetY()) && std::isfinite(value.GetZ());
+}
+
+bool IsFiniteJoltRVec3(const JPH::RVec3& value)
+{
+    return std::isfinite(value.GetX()) && std::isfinite(value.GetY()) && std::isfinite(value.GetZ());
+}
+
+bool IsFiniteJoltQuat(const JPH::Quat& value)
+{
+    return std::isfinite(value.GetW()) && std::isfinite(value.GetX()) &&
+        std::isfinite(value.GetY()) && std::isfinite(value.GetZ());
+}
+
+float GetSafePhysicsDt(float fixedDt)
+{
+    if (std::isfinite(fixedDt) && fixedDt > kMinSafePhysicsDt) {
+        return fixedDt;
+    }
+    return 1.0f / 60.0f;
+}
+
+JPH::Quat NormalizeOrFallback(const JPH::Quat& value, const JPH::Quat& fallback)
+{
+    JPH::Quat safeFallback = JPH::Quat::sIdentity();
+    if (IsFiniteJoltQuat(fallback)) {
+        const float fallbackLenSq = fallback.GetW() * fallback.GetW() + fallback.GetX() * fallback.GetX() +
+            fallback.GetY() * fallback.GetY() + fallback.GetZ() * fallback.GetZ();
+        if (fallbackLenSq > kMinSafePhysicsDt) {
+            const JPH::Quat normalizedFallback = fallback.Normalized();
+            if (IsFiniteJoltQuat(normalizedFallback)) {
+                safeFallback = normalizedFallback;
+            }
+        }
+    }
+    if (!IsFiniteJoltQuat(value)) {
+        return safeFallback;
+    }
+
+    const float lenSq = value.GetW() * value.GetW() + value.GetX() * value.GetX() +
+        value.GetY() * value.GetY() + value.GetZ() * value.GetZ();
+    if (!(lenSq > kMinSafePhysicsDt)) {
+        return safeFallback;
+    }
+
+    const JPH::Quat normalized = value.Normalized();
+    return IsFiniteJoltQuat(normalized) ? normalized : safeFallback;
+}
+
+JPH::Quat MakeSafeJoltQuat(const Quaternion& value, const JPH::Quat& fallback)
+{
+    if (!IsFiniteQuaternion(value)) {
+        return NormalizeOrFallback(fallback, JPH::Quat::sIdentity());
+    }
+    return NormalizeOrFallback(JPH::Quat(value.x, value.y, value.z, value.w), fallback);
+}
+}
+
 
 
 bool PhysicsSystem::InitialiseJolt() {
@@ -97,7 +173,11 @@ bool PhysicsSystem::InitialiseJolt() {
 
 #ifdef __ANDROID__
         __android_log_print(ANDROID_LOG_INFO, "GAM300", "[Jolt] Registering Jolt types...");
-        __android_log_print(ANDROID_LOG_INFO, "GAM300", "[Jolt] JPH_PROFILE_ENABLED=%d", JPH_PROFILE_ENABLED);
+#ifdef JPH_PROFILE_ENABLED
+        __android_log_print(ANDROID_LOG_INFO, "GAM300", "[Jolt] JPH_PROFILE_ENABLED=%d", 1);
+#else
+        __android_log_print(ANDROID_LOG_INFO, "GAM300", "[Jolt] JPH_PROFILE_ENABLED=%d", 0);
+#endif
         //__android_log_print(ANDROID_LOG_INFO, "GAM300", "[Jolt] JPH_OBJECT_STREAM=%d", JPH_OBJECT_STREAM);
         //__android_log_print(ANDROID_LOG_INFO, "GAM300", "[Jolt] JPH_FLOATING_POINT_EXCEPTIONS_ENABLED=%d", JPH_FLOATING_POINT_EXCEPTIONS_ENABLED);
         __android_log_print(ANDROID_LOG_INFO, "GAM300", "[Jolt] JPH_DISABLE_CUSTOM_ALLOCATOR=%d",
@@ -203,6 +283,23 @@ void PhysicsSystem::Initialise(ECSManager& ecsManager) {
     // We must drain and discard them into the void so they don't instantly 
     // cancel out interactions for newly recycled Entity IDs in the new session!
     if (contactListener) {
+        auto resolveRootEntity = [&ecsManager](int rawEntity) -> int {
+            Entity current = static_cast<Entity>(rawEntity);
+            auto& guidRegistry = EntityGUIDRegistry::GetInstance();
+
+            while (ecsManager.HasComponent<ParentComponent>(current)) {
+                auto& parentComp = ecsManager.GetComponent<ParentComponent>(current);
+                Entity parentEntity = guidRegistry.GetEntityByGUID(parentComp.parent);
+                if (parentEntity == static_cast<Entity>(-1) || parentEntity == UINT32_MAX) {
+                    break;
+                }
+                current = parentEntity;
+            }
+
+            return static_cast<int>(current);
+        };
+        contactListener->SetRootResolver(resolveRootEntity);
+
         std::vector<CollisionEvent> staleEnters, staleExits;
         contactListener->DrainEvents(staleEnters, staleExits);
 
@@ -227,6 +324,7 @@ void PhysicsSystem::PostInitialize(ECSManager& ecsManager) {
 //DYNAMIC: USE PHYSICS SIMULATION. IF ANY CHANGES TO BE MADE, ADJUST VIA FORCES, NOT POS
 void PhysicsSystem::Update(float fixedDt, ECSManager& ecsManager) {
     PROFILE_FUNCTION();
+    const float safeFixedDt = GetSafePhysicsDt(fixedDt);
 #ifdef __ANDROID__
     static int updateCount = 0;
     if (updateCount++ % 60 == 0) {
@@ -316,31 +414,57 @@ void PhysicsSystem::Update(float fixedDt, ECSManager& ecsManager) {
                 col.center.y * tr.worldScale.y,
                 col.center.z * tr.worldScale.z
             };
+            if (!IsFiniteVector3D(tr.worldScale) || !IsFiniteVector3D(scaledOffset) || !IsFiniteVector3D(tr.worldPosition)) {
+                continue;
+            }
 
             // FIX: Use World Rotation
-            JPH::Quat targetRot = JPH::Quat(tr.worldRotation.x, tr.worldRotation.y,
-                tr.worldRotation.z, tr.worldRotation.w).Normalized();
+            JPH::Quat currentRot = NormalizeOrFallback(bi.GetRotation(bodyId), JPH::Quat::sIdentity());
+            JPH::Quat targetRot = MakeSafeJoltQuat(tr.worldRotation, currentRot);
 
             // Rotate offset to world space
             JPH::Vec3 offsetInWorld = targetRot * JPH::Vec3(scaledOffset.x, scaledOffset.y, scaledOffset.z);
+            if (!IsFiniteJoltVec3(offsetInWorld)) {
+                continue;
+            }
 
             // FIX: Use World Position as base
             JPH::RVec3 basePos(tr.worldPosition.x, tr.worldPosition.y, tr.worldPosition.z);
+            if (!IsFiniteJoltRVec3(basePos)) {
+                continue;
+            }
             JPH::RVec3 targetPos = basePos + offsetInWorld;
+            if (!IsFiniteJoltRVec3(targetPos)) {
+                continue;
+            }
 
             // Get current Jolt position (World Space)
             JPH::RVec3 currentPos = bi.GetPosition(bodyId);
-            JPH::Quat currentRot = bi.GetRotation(bodyId);
+            if (!IsFiniteJoltRVec3(currentPos)) {
+                continue;
+            }
 
             // Calculate velocities required to reach target
-            JPH::Vec3 linearVel = (targetPos - currentPos) / fixedDt;
+            JPH::Vec3 linearVel = (targetPos - currentPos) / safeFixedDt;
+            if (!IsFiniteJoltVec3(linearVel)) {
+                linearVel = JPH::Vec3::sZero();
+            }
 
             // Calculate angular velocity
             JPH::Quat deltaRot = targetRot * currentRot.Conjugated();
-            JPH::Vec3 axis;
-            float angle;
-            deltaRot.GetAxisAngle(axis, angle);
-            JPH::Vec3 angularVel = axis * (angle / fixedDt);
+            JPH::Vec3 axis = JPH::Vec3::sZero();
+            float angle = 0.0f;
+            if (IsFiniteJoltQuat(deltaRot)) {
+                deltaRot.GetAxisAngle(axis, angle);
+                if (!IsFiniteJoltVec3(axis) || !std::isfinite(angle)) {
+                    axis = JPH::Vec3::sZero();
+                    angle = 0.0f;
+                }
+            }
+            JPH::Vec3 angularVel = axis * (angle / safeFixedDt);
+            if (!IsFiniteJoltVec3(angularVel)) {
+                angularVel = JPH::Vec3::sZero();
+            }
 
             // [FIX START] Handle Triggers differently from Physical Objects
             if (rb.isTrigger) {
@@ -361,7 +485,7 @@ void PhysicsSystem::Update(float fixedDt, ECSManager& ecsManager) {
                 // This enables friction/pushing of characters standing on them.
                 bi.SetLinearVelocity(bodyId, linearVel);
                 bi.SetAngularVelocity(bodyId, angularVel);
-                bi.MoveKinematic(bodyId, targetPos, targetRot, fixedDt);
+                bi.MoveKinematic(bodyId, targetPos, targetRot, safeFixedDt);
             }
 
             //bi.SetLinearVelocity(bodyId, linearVel);
@@ -405,13 +529,23 @@ void PhysicsSystem::Update(float fixedDt, ECSManager& ecsManager) {
                 if (tr.isDirty) {
                     // Lua just set this, so World values are STALE. Use LOCAL values.
                     // (Assuming feather is a root object with no parent)
+                    if (!IsFiniteVector3D(tr.localPosition)) {
+                        continue;
+                    }
                     newPos = JPH::Vec3(tr.localPosition.x, tr.localPosition.y, tr.localPosition.z);
-                    newRot = JPH::Quat(tr.localRotation.x, tr.localRotation.y, tr.localRotation.z, tr.localRotation.w);
+                    newRot = MakeSafeJoltQuat(tr.localRotation, bi.GetRotation(bodyId));
                 }
                 else {
                     // Safe to use World values
+                    if (!IsFiniteVector3D(tr.worldPosition)) {
+                        continue;
+                    }
                     newPos = JPH::Vec3(tr.worldPosition.x, tr.worldPosition.y, tr.worldPosition.z);
-                    newRot = JPH::Quat(tr.worldRotation.x, tr.worldRotation.y, tr.worldRotation.z, tr.worldRotation.w);
+                    newRot = MakeSafeJoltQuat(tr.worldRotation, bi.GetRotation(bodyId));
+                }
+
+                if (!IsFiniteJoltVec3(newPos) || !IsFiniteJoltQuat(newRot)) {
+                    continue;
                 }
 
                 // 2. Force the Physics Body to match it
@@ -449,7 +583,7 @@ void PhysicsSystem::Update(float fixedDt, ECSManager& ecsManager) {
     }
 
     // ========== RUN PHYSICS SIMULATION ==========
-    physics.Update(fixedDt, /*collisionSteps=*/1, temp.get(), jobs.get());
+    physics.Update(safeFixedDt, /*collisionSteps=*/1, temp.get(), jobs.get());
 
     // ========== DISPATCH COLLISION/TRIGGER EVENTS TO LUA ==========
     if (contactListener && ecsManager.scriptSystem) {
@@ -724,6 +858,7 @@ void PhysicsSystem::CreatePhysicsBody(Entity e, ECSManager& ecsManager) {
 
     if (col.layer == Layers::HURTBOX) { /*...*/ }
     else if (col.layer == Layers::CHAIN_HITBOX) { /*...*/ }
+    else if (col.layer == Layers::CHARACTER) { /* preserve editor/CharacterController layer */ }
     else if (rb.isTrigger) col.layer = Layers::SENSOR;
     else if (ecsLayerIndex == groundIdx) col.layer = Layers::NAV_GROUND;
     else if (ecsLayerIndex == obstacleIdx) col.layer = Layers::NAV_OBSTACLE;

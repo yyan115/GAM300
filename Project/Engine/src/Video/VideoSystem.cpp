@@ -9,6 +9,9 @@
 #include "Graphics/Camera/CameraComponent.hpp"
 #include "Graphics/PostProcessing/PostProcessingManager.hpp"
 #include "Asset Manager/ResourceManager.hpp"
+#include "Asset Manager/AssetManager.hpp"
+#include "Sound/AudioManager.hpp"
+#include "Sound/Audio.hpp"
 #include "Hierarchy/EntityGUIDRegistry.hpp"
 #include "Utilities/GUID.hpp"
 #include "Input/InputManager.h"
@@ -71,6 +74,9 @@ void VideoSystem::BeginCutscene(VideoComponent& vc)
     vc.boardElapsedTime = 0.0f;
     vc.lastComputedBlur = 0.0f;
 
+    // Ensure no stale board SFX keeps playing when cutscene restarts/loops.
+    StopBoardSFX(vc);
+
     // Save camera's original blur settings so we can restore after cutscene
     auto cameraSystem = m_ecs->GetSystem<CameraSystem>();
     Entity camEntity = cameraSystem ? cameraSystem->GetActiveCameraEntity() : UINT32_MAX;
@@ -84,8 +90,9 @@ void VideoSystem::BeginCutscene(VideoComponent& vc)
         vc.savedCameraBlur = true;
     }
 
-    // Set initial board image
+    // Set initial board image and play SFX
     SwapBoardImage(vc, 0);
+    PlayBoardSFX(vc, 0);
 
     // If first board has no fade, skip directly to displaying
     if (vc.boards[0].fadeDuration <= 0.0f)
@@ -117,6 +124,7 @@ void VideoSystem::AdvanceToBoard(VideoComponent& vc, int boardIndex)
     if (nextBoard.continueText)
     {
         SwapBoardImage(vc, boardIndex);
+        PlayBoardSFX(vc, boardIndex);
 
         // Preserve typewriter state
         vc.previousBoardChars = vc.revealedChars;
@@ -163,6 +171,7 @@ void VideoSystem::AdvanceToBoard(VideoComponent& vc, int boardIndex)
     if (nextBoard.fadeDuration <= 0.0f || currentDisablesFadeOut)
     {
         SwapBoardImage(vc, boardIndex);
+        PlayBoardSFX(vc, boardIndex);
 
         vc.previousBoardChars = 0;
         vc.typewriterTimer = 0.0f;
@@ -212,6 +221,8 @@ void VideoSystem::AdvanceToBoard(VideoComponent& vc, int boardIndex)
 
 void VideoSystem::BeginEndingFade(VideoComponent& vc)
 {
+    StopBoardSFX(vc);
+
     // Check if the current board has fade-out disabled
     if (vc.currentBoardIndex >= 0 && vc.currentBoardIndex < static_cast<int>(vc.boards.size())
         && vc.boards[vc.currentBoardIndex].disableFadeOut)
@@ -226,6 +237,8 @@ void VideoSystem::BeginEndingFade(VideoComponent& vc)
 
 void VideoSystem::FinishCutscene(VideoComponent& vc)
 {
+    StopBoardSFX(vc);
+
     vc.cutsceneEnded = true;
     vc.phase = VideoComponent::Phase::Finished;
     ClearText(vc);
@@ -389,6 +402,35 @@ void VideoSystem::ApplyBlur(VideoComponent& vc, float dt)
         blur->SetRadius(radius);
         blur->SetPasses(passes);
     }
+}
+
+// ============================================================================
+// Audio
+// ============================================================================
+
+void VideoSystem::PlayBoardSFX(VideoComponent& vc, int boardIndex)
+{
+    if (boardIndex < 0 || boardIndex >= static_cast<int>(vc.boards.size())) return;
+
+    // Board changed: stop previous board's SFX before starting the new one.
+    StopBoardSFX(vc);
+
+    const std::string& guidStr = vc.boards[boardIndex].sfxGuidStr;
+    if (guidStr.empty()) return;
+
+    GUID_128 guid = GUIDUtilities::ConvertStringToGUID128(guidStr);
+    std::string assetPath = AssetManager::GetInstance().GetAssetPathFromGUID(guid);
+    auto clip = ResourceManager::GetInstance().GetResourceFromGUID<Audio>(guid, assetPath);
+    if (!clip) return;
+    vc.activeBoardSfxChannel = AudioManager::GetInstance().PlayAudio(clip);
+}
+
+void VideoSystem::StopBoardSFX(VideoComponent& vc)
+{
+    if (vc.activeBoardSfxChannel == 0) return;
+
+    AudioManager::GetInstance().Stop(vc.activeBoardSfxChannel);
+    vc.activeBoardSfxChannel = 0;
 }
 
 // ============================================================================
@@ -592,8 +634,9 @@ void VideoSystem::Update(float dt)
 
             if (progress >= 1.0f)
             {
-                // Swap image at midpoint
+                // Swap image at midpoint and play SFX
                 SwapBoardImage(vc, nextBoard);
+                PlayBoardSFX(vc, nextBoard);
 
                 // Handle typewriter continuation
                 if (vc.boards[nextBoard].continueText)

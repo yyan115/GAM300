@@ -1,0 +1,15 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "00155f4ecec5f01d-00047d6046013865",
+        "source": "../../Resources/Textures/M5/BossRoom/ceiling_bottom_low_BaseColor.png",
+        "compiled": "../../Resources/Textures/M5/BossRoom/ceiling_bottom_low_BaseColor.dds"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

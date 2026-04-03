@@ -127,20 +127,32 @@ return Component {
         end
         
         local playerRot = self._playerTransform.localRotation
-        local playerYawRad = math.atan(2.0 * (playerRot.w * playerRot.y + playerRot.x * playerRot.z),
-                                    1.0 - 2.0 * (playerRot.y * playerRot.y + playerRot.z * playerRot.z))        
-        self._playerYawQuat = eulerToQuat(0, math.deg(playerYawRad), 0)
-        
-        local daggerPos = self._daggerTransform.worldPosition
+        local q = playerRot
+
+        -- Derive forward and right vectors directly from quaternion
+        local forwardX = 2 * (q.x * q.z + q.w * q.y)
+        local forwardZ = 1 - 2 * (q.x * q.x + q.y * q.y)
+
+        local rightX = 1 - 2 * (q.y * q.y + q.z * q.z)
+        local rightZ = 2 * (q.x * q.z - q.w * q.y)
+
+        -- Spawn position using correct world-space vectors
         local forward = self.OffsetDistance
         local side = self.SideOffset or 0
 
-        local combinedOffsetX = (math.sin(playerYawRad) * forward) - (math.cos(playerYawRad) * side)
-        local combinedOffsetZ = (math.cos(playerYawRad) * forward) + (math.sin(playerYawRad) * side)
+        local combinedOffsetX = (forwardX * forward) - (rightX * side)
+        local combinedOffsetZ = (forwardZ * forward) - (rightZ * side)
 
-        self._transform.localPosition.x = daggerPos.x + combinedOffsetX
-        self._transform.localPosition.y = daggerPos.y + self.OffsetHeight
-        self._transform.localPosition.z = daggerPos.z + combinedOffsetZ
+        -- Yaw for sweep rotation derived from actual forward vector
+        local playerYawRad = math.atan(forwardX, forwardZ)
+        self._playerYawQuat = eulerToQuat(0, math.deg(playerYawRad), 0)
+
+        local daggerPos = self._daggerTransform.worldPosition
+        local playerScale = self._playerTransform.localScale
+
+        self._transform.localPosition.x = (daggerPos.x + combinedOffsetX) / playerScale.x
+        self._transform.localPosition.y = (daggerPos.y + self.OffsetHeight) / playerScale.y
+        self._transform.localPosition.z = (daggerPos.z + combinedOffsetZ) / playerScale.z
         
         self.active = true
         self.age = 0

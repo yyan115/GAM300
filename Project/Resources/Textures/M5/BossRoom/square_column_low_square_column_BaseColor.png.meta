@@ -1,0 +1,15 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "0011f2c3b956f9fa-0004813c2a0232d9",
+        "source": "../../Resources/Textures/M5/BossRoom/square_column_low_square_column_BaseColor.png",
+        "compiled": "../../Resources/Textures/M5/BossRoom/square_column_low_square_column_BaseColor.dds"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

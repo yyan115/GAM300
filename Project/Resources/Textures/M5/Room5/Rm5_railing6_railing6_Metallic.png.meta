@@ -1,0 +1,15 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "00269aea34511482-00047c48d200e8af",
+        "source": "../../Resources/Textures/M5/Room5/Rm5_railing6_railing6_Metallic.png",
+        "compiled": "../../Resources/Textures/M5/Room5/Rm5_railing6_railing6_Metallic.dds"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

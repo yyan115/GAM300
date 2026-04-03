@@ -23,6 +23,9 @@ return Component {
         local confirmUIEntity = Engine.GetEntityByName("ConfirmationPromptUI")
         self._confirmComp = GetComponent(confirmUIEntity, "ActiveComponent")
 
+        local controlsUIEntity = Engine.GetEntityByName("ControlsUI")
+        self._controlsComp = controlsUIEntity and GetComponent(controlsUIEntity, "ActiveComponent") or nil
+
         local blackScreenUIEntity = Engine.GetEntityByName("BlackScreen")
         self._blackScreenComp = GetComponent(blackScreenUIEntity, "ActiveComponent")
 
@@ -67,16 +70,13 @@ return Component {
         if isPressed and self._pauseTimer <= 0 and not self._playerDead then
             self._pauseTimer = 0.1  -- Cooldown to prevent double-fire
 
+            local onSubPage = self._settingsComp.isActive or
+                              (self._controlsComp and self._controlsComp.isActive)
+
+            if not onSubPage then
+
             if self._confirmComp.isActive then
                 self._confirmComp.isActive = false
-                self._pauseComp.isActive = true  -- Go back to Pause menu
-                -- Enable pause buttons immediately
-                for _, buttonComp in pairs(self._pauseButtons) do
-                    if buttonComp then buttonComp.interactable = true end
-                end
-
-            elseif self._settingsComp.isActive then
-                self._settingsComp.isActive = false
                 self._pauseComp.isActive = true  -- Go back to Pause menu
                 -- Enable pause buttons immediately
                 for _, buttonComp in pairs(self._pauseButtons) do
@@ -91,6 +91,10 @@ return Component {
                 -- Unpause all game audio
                 Audio.SetBusPaused("BGM", false)
                 Audio.SetBusPaused("SFX", false)
+
+                if event_bus and event_bus.publish then
+                    event_bus.publish("game_paused", false)
+                end
             else
                 -- Pause game
                 self._pauseComp.isActive = true
@@ -107,10 +111,16 @@ return Component {
                 -- Pause all game audio (UI on "UI" bus still plays)
                 Audio.SetBusPaused("BGM", true)
                 Audio.SetBusPaused("SFX", true)
+
+                if event_bus and event_bus.publish then
+                    event_bus.publish("game_paused", true)
+                end
             end
+            end  -- if not onSubPage
         end
 
-        local isMenuActive = self._confirmComp.isActive or self._settingsComp.isActive or self._pauseComp.isActive
+        local isMenuActive = self._confirmComp.isActive or self._settingsComp.isActive or self._pauseComp.isActive or
+                             (self._controlsComp and self._controlsComp.isActive)
 
         if isMenuActive then
             self._blackScreenComp.isActive = true

@@ -2,7 +2,7 @@
     "prefab_entities": [
         {
             "id": 0,
-            "guid": "005009d96ce3c9ed-00047c00dc0054c7",
+            "guid": "00272304e10fd96f-0004a41872007075",
             "components": {
                 "PrefabLinkComponent": {
                     "type": "PrefabLinkComponent",
@@ -188,7 +188,7 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
-                                "005009d91fdb72f5-00047c00dc0054c9"
+                                "00272304a7ae9697-0004a41872007077"
                             ]
                         }
                     ]
@@ -387,6 +387,10 @@
                             "data": 0.5
                         },
                         {
+                            "type": "float",
+                            "data": 70
+                        },
+                        {
                             "type": "Vector3D",
                             "data": [
                                 {
@@ -441,31 +445,58 @@
                             "entryFunction": "OnInit",
                             "autoInvokeEntry": true,
                             "instanceState": {
-                                "TriggerDuration": 0.3,
-                                "__meta": {},
-                                "AliveDuration": 10.0,
-                                "_transform_fetched": false,
-                                "__created_at": 1772507285.0,
-                                "MaxSpawnTorque": 10.0,
-                                "SpawnForce": 0.2,
-                                "_private": {},
-                                "_isTriggerDisabled": false,
+                                "_call_lifecycle": null,
                                 "MinSpawnTorque": 2.0,
+                                "_private": {},
+                                "MaxSpawnTorque": 10.0,
                                 "__field_list": {
-                                    "MinSpawnTorque": 2.0,
                                     "TriggerDuration": 0.3,
-                                    "MaxSpawnTorque": 10.0,
-                                    "SpawnForceY": 0.1,
                                     "SpawnForce": 0.2,
-                                    "AliveDuration": 10.0
+                                    "SpawnForceY": 0.1,
+                                    "MaxSpawnTorque": 10.0,
+                                    "AliveDuration": 10.0,
+                                    "MinSpawnTorque": 2.0
                                 },
-                                "SpawnForceY": 0.1,
+                                "__created_at": 1772507285.0,
                                 "_subscriptions": {},
+                                "__meta": {},
+                                "SpawnForce": 0.2,
+                                "SetPosition": null,
+                                "GetRandomTorque": null,
+                                "OnDisable": null,
+                                "AwakeSafe": null,
+                                "SpawnForceY": 0.1,
+                                "AliveDuration": 10.0,
+                                "SerializeFields": null,
                                 "_dropSFXPlayed": false,
+                                "After": null,
+                                "Move": null,
+                                "OnCollisionEnter": null,
+                                "TriggerDuration": 0.3,
                                 "_aliveDuration": 10.0,
+                                "Every": null,
+                                "_isTriggerDisabled": false,
+                                "_transform_fetched": false,
                                 "_triggerDuration": 0.3,
+                                "Destroy": null,
+                                "DeserializeFields": null,
+                                "DisableSafe": null,
+                                "GetRotation": null,
+                                "SetRotation": null,
+                                "StartSafe": null,
+                                "GetTransform": null,
+                                "Subscribe": null,
+                                "GetScale": null,
+                                "Awake": null,
+                                "Start": null,
+                                "UpdateSafe": null,
+                                "Update": null,
+                                "GetPosition": null,
+                                "DebugTransform": null,
+                                "SetScale": null,
+                                "Unsubscribe": null,
                                 "featherDropSFX": [
-                                    "0078994fadbb08d9-00047bfe4c00000b"
+                                    "00272304974ce836-0004a4106a000027"
                                 ]
                             }
                         }
@@ -496,7 +527,7 @@
         },
         {
             "id": 1,
-            "guid": "005009d91fdb72f5-00047c00dc0054c9",
+            "guid": "00272304a7ae9697-0004a41872007077",
             "components": {
                 "NameComponent": {
                     "name": "Feather"
@@ -573,7 +604,7 @@
                 "ParentComponent": {
                     "type": "ParentComponent",
                     "data": [
-                        "005009d96ce3c9ed-00047c00dc0054c7"
+                        "00272304e10fd96f-0004a41872007075"
                     ]
                 },
                 "RigidBodyComponent": {
@@ -698,6 +729,10 @@
                         {
                             "type": "float",
                             "data": 0.5
+                        },
+                        {
+                            "type": "float",
+                            "data": 70
                         },
                         {
                             "type": "Vector3D",

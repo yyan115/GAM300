@@ -2,7 +2,6 @@
 require("extension.engine_bootstrap")
 local Component      = require("extension.mono_helper")
 local TransformMixin = require("extension.transform_mixin")
-local AudioHelper    = require("extension.audio_helper")
 
 local StateMachine = require("Gameplay.StateMachine")
 local ChooseState  = require("Gameplay.MinibossChooseState")
@@ -135,7 +134,7 @@ return Component {
         HitIFrame      = 0.2,
         HookedDuration = 4.0,
 
-        -- “Transformation” (phase transition) lock
+        -- "Transformation" (phase transition) lock
         PhaseTransformDuration = 3.2,
 
         PlayerName = "Player",
@@ -144,7 +143,7 @@ return Component {
         Gravity      = -9.81,
         MaxFallSpeed = -25.0,
 
-        -- Optional: small “stick to ground” behaviour
+        -- small "stick to ground" behaviour
         GroundStickVel = -0.2,
 
         IntroDuration = 5.0,
@@ -174,6 +173,24 @@ return Component {
         ShoutPostDelay = 2.15,
         ShoutCooldown = 999, -- checkpoint only (or set if you want it to recur)
 
+        ShoutShakeIntensity       = 0.85,
+        ShoutShakeDuration        = 0.55,
+        ShoutShakeFrequency       = 24.0,
+        ShoutFxChromaticIntensity = 4.45,
+        ShoutFxChromaticDuration  = 0.55,
+        ShoutFxBlurIntensity      = 0.35,
+        ShoutFxBlurRadius         = 2.5,
+        ShoutFxBlurDuration       = 0.25,
+
+        PhaseShakeIntensity       = 0.85,
+        PhaseShakeDuration        = 2.55,
+        PhaseShakeFrequency       = 48.0,
+        PhaseFxChromaticIntensity = 2.75,
+        PhaseFxChromaticDuration  = 0.80,
+        PhaseFxBlurIntensity      = 2.55,
+        PhaseFxBlurRadius         = 3.5,
+        PhaseFxBlurDuration       = 1.25,
+
         -- Air movement
         AirHeight = 1.0,
         AirMoveSpeed = 9.0,
@@ -196,6 +213,13 @@ return Component {
         GridCenterX = 0.0,
         GridCenterZ = 0.0,
 
+        ArenaCenterX = 0.0,
+        ArenaCenterZ = 0.0,
+        ArenaRadius  = 12.0,
+        ArenaLeashBuffer = 0.6,
+        ReturnToArenaSpeedMultiplier = 1.15,
+        PlayerArenaExtraRadius = 0.75,
+
         P2_BurstRounds = 3,
         P2_BurstGap = 1.25, -- small pause between bursts
 
@@ -206,6 +230,7 @@ return Component {
         P3_FeatherTargetYOffset = 0.25,   -- aim slightly above ground
 
         P3_DiveCommitRadius = 0.20,       -- how close in XZ before slamming down
+        P3_DivePreDelay = 1.00,           -- how long to wait before the dive smash
         P3_DivePostDelay = 0.50,          -- how long to wait after the dive smash
         P3_FateAfterHookDelay = 2.00,     -- wait after interrupt before casting Fate Sealed
 
@@ -221,14 +246,6 @@ return Component {
 
         HurtReactDuration = 0.35,   -- how long we "reserve" time for hurt anim to play
 
-        -- SFX clip arrays (populate in editor with audio GUIDs)
-        enemyHurtSFX = {},          -- EnemyHurt
-        enemyDeathSFX = {},         -- Dying
-        enemyMeleeAttackSFX = {},   -- EnemyScratchWoosh
-        enemyMeleeHitSFX = {},      -- EnemyScratchHit
-        enemyRangedAttackSFX = {},  -- EnemyThrowWoosh
-        enemyRangedHitSFX = {},     -- EnemyThrowHit
-        enemyTauntSFX = {},         -- EnemyGrowlAlert
     },
 
     Awake = function(self)
@@ -265,11 +282,12 @@ return Component {
         self._knifeVolleyId = 0
 
         -- action lock system (blocks Choose/Execute/etc)
-        self._inIntro    = false
-        self._introDone  = false
-        self._lockAction = false
-        self._lockReason = nil
-        self._lockTimer  = 0
+        self._inIntro      = false
+        self._introDone    = false
+        self._lockAction   = false
+        self._lockReason   = nil
+        self._lockTimer    = 0
+        self._combatActive = false
 
         -- phase tracking
         self._phase = 1                 -- current phase id
@@ -305,6 +323,7 @@ return Component {
         self._meleeCdT = 0
 
         self._p3_dive_postdelay = self.P3_DivePostDelay
+        self._p3_dive_predelay = self.P3_DivePreDelay
 
         self._pendingRainExplosions = {}  -- { {t=seconds, payload=table}, ... }
     end,
@@ -315,7 +334,6 @@ return Component {
         self._transform = self:GetComponent("Transform")
         self._rb        = self:GetComponent("RigidBodyComponent")
         self._animator  = self:GetComponent("AnimationComponent")
-        self._audio     = self:GetComponent("AudioComponent")
         self._entityName = Engine.GetEntityName(self.entityId)
 
         -- (Re)create controller safely
@@ -330,6 +348,7 @@ return Component {
             end)
             if ok then
                 self._controller = ctrl
+                pcall(function() CharacterController.SetImmovable(self.entityId, true) end)
             else
                 print("[MinibossAI] CharacterController.Create failed")
                 self._controller = nil
@@ -387,7 +406,7 @@ return Component {
         end
 
         -- === Freeze during cinematic ===
-        self._frozenBycinematic = false
+        self._frozenBycinematic = true
         self._freezeEnemySub = nil
         if _G.event_bus and _G.event_bus.subscribe then
             self._freezeEnemySub = _G.event_bus.subscribe("freeze_enemy", function(frozen)
@@ -416,7 +435,7 @@ return Component {
                     return
                 end
                 -- Play melee hit SFX when slash hits player
-                AudioHelper.playRandomSFX(self._audio, self.enemyMeleeHitSFX)
+                self:_publishSFX("meleeHit")
             end)
         end
 
@@ -433,6 +452,26 @@ return Component {
             print("[MinibossAI] chain.enemy_hooked received — calling ApplyHook")
             pcall(function() self:ApplyHook(payload.duration or self.HookedDuration) end)
         end)
+
+        -- === Player death subscription ===
+        self._playerDead = false
+        self._playerDeadSub = nil
+        self._respawnPlayerSub = nil
+
+        if _G.event_bus and _G.event_bus.subscribe then
+            self._playerDeadSub = _G.event_bus.subscribe("playerDead", function(dead)
+                self._playerDead = dead == true
+                if self._playerDead then
+                    self:ResetBossToIdle()
+                end
+            end)
+
+            self._respawnPlayerSub = _G.event_bus.subscribe("respawnPlayer", function(respawn)
+                if respawn then
+                    self._playerDead = false
+                end
+            end)
+        end
 
         -- Seed prevY for grounded heuristic
         local _, y, _ = self:GetPosition()
@@ -452,6 +491,10 @@ return Component {
     Update = function(self, dt)
         local dtSec = toDtSec(dt)
         self._meleeCdT = math.max(0, (self._meleeCdT or 0) - dtSec)
+
+        if not self._frozenBycinematic and not self.dead then
+            self:_ForceBackInsideArena(dtSec)
+        end
 
         if Keyboard.IsDigitPressed(2) then
             self:ApplyHook(self.HookedDuration)
@@ -489,7 +532,7 @@ return Component {
         end
 
         if self._frozenBycinematic then
-            print("[Miniboss] FROZEN by cinematic, skipping Update. lockReason=", tostring(self._lockReason), "lockT=", tostring(self._lockTimer))
+            --print("[Miniboss] FROZEN by cinematic, skipping Update. lockReason=", tostring(self._lockReason), "lockT=", tostring(self._lockTimer))
             return
         end
 
@@ -500,6 +543,37 @@ return Component {
         self._hitLockTimer = math.max(0, (self._hitLockTimer or 0) - dtSec)
         for k, v in pairs(self._moveCooldowns) do
             self._moveCooldowns[k] = math.max(0, v - dtSec)
+        end
+
+        -- Re-engage / disengage logic after intro has already happened once
+        if self._introDone and not self.dead then
+            local px, py, pz = self:GetPlayerPosForAI()
+            local ex, ez = self:GetEnemyPosXZ()
+            if not ex or not ez then
+                self._combatActive = false
+                self:_EndMove()
+                self._moveQueue = {}
+                self:_ReturnToArenaCenter(dtSec)
+                return
+            end
+
+            -- if player missing, dead, or outside arena -> disengage and return center
+            if self._playerDead or (not px) or (not self:_IsPlayerInsideArena()) then
+                self._combatActive = false
+            else
+                local dx, dz = px - ex, pz - ez
+                local r = self.AggroRange or 15.0
+                if (dx*dx + dz*dz) <= (r*r) then
+                    self._combatActive = true
+                end
+            end
+
+            if not self._combatActive then
+                self:_EndMove()
+                self._moveQueue = {}
+                self:_ReturnToArenaCenter(dtSec)
+                return
+            end
         end
 
         -- 3) Phase change detection (NEW system only)
@@ -568,7 +642,7 @@ return Component {
                     self._deathFadeTimer = (self._deathFadeTimer or 0) + dtSec
                     self._deathFadeSprite.alpha = math.min(self._deathFadeTimer / 1.0, 1.0)
                     if self._deathFadeSprite.alpha >= 1.0 then
-                        Scene.Load("Resources/Scenes/01_MainMenu.scene")
+                        Scene.Load("Resources/Scenes/05_EndCutscene.scene")
                     end
                 end
             end
@@ -692,6 +766,7 @@ return Component {
 
         if ok and ctrl then
             self._controller = ctrl
+            pcall(function() CharacterController.SetImmovable(self.entityId, true) end)
             -- Sync CC to current Transform position
             local x,y,z = self:GetPosition()
             if CharacterController.SetPosition then
@@ -704,6 +779,82 @@ return Component {
         self._controller = nil
         print("[Miniboss] CreateCC failed: CharacterController.Create error")
         return false
+    end,
+
+    _IsInsideArenaXZ = function(self, x, z)
+        local cx = self.ArenaCenterX or 0.0
+        local cz = self.ArenaCenterZ or 0.0
+        local r  = (self.ArenaRadius or 12.0) - (self.ArenaLeashBuffer or 0.6)
+
+        local dx = x - cx
+        local dz = z - cz
+        return (dx*dx + dz*dz) <= (r*r)
+    end,
+
+    _ClampToArenaXZ = function(self, x, z)
+        local cx = self.ArenaCenterX or 0.0
+        local cz = self.ArenaCenterZ or 0.0
+        local r  = (self.ArenaRadius or 12.0) - (self.ArenaLeashBuffer or 0.6)
+
+        local dx = x - cx
+        local dz = z - cz
+        local d2 = dx*dx + dz*dz
+        if d2 <= r*r then
+            return x, z
+        end
+
+        local d = math.sqrt(d2)
+        if d < 1e-6 then
+            return cx, cz
+        end
+
+        local nx = dx / d
+        local nz = dz / d
+        return cx + nx * r, cz + nz * r
+    end,
+
+    _ForceBackInsideArena = function(self, dtSec)
+        local x, y, z = self:GetPosition()
+        if not x then return end
+        if self:_IsInsideArenaXZ(x, z) then return end
+
+        local tx, tz = self:_ClampToArenaXZ(x, z)
+
+        if self._phase == 2 or self._phase == 3 or self._inAir then
+            self:_MoveToXZ_Air(tx, tz, dtSec)
+        else
+            local oldSpeed = self.MoveSpeed
+            self.MoveSpeed = (self.MoveSpeed or self.Speed or 6.0) * (self.ReturnToArenaSpeedMultiplier or 1.15)
+            self:_MoveToXZ_Ground(tx, tz, dtSec)
+            self.MoveSpeed = oldSpeed
+        end
+    end,
+
+    _IsPlayerInsideArena = function(self)
+        local px, py, pz = self:GetPlayerPosForAI()
+        if not px then return false end
+
+        local cx = self.ArenaCenterX or 0.0
+        local cz = self.ArenaCenterZ or 0.0
+
+        local baseR = (self.ArenaRadius or 12.0) - (self.ArenaLeashBuffer or 0.6)
+        local extra = self.PlayerArenaExtraRadius or 0.75
+        local r = baseR + extra
+
+        local dx = px - cx
+        local dz = pz - cz
+        return (dx*dx + dz*dz) <= (r*r)
+    end,
+
+    _ReturnToArenaCenter = function(self, dtSec)
+        local tx = self.ArenaCenterX or 0.0
+        local tz = self.ArenaCenterZ or 0.0
+
+        if self._phase == 2 or self._phase == 3 or self._inAir then
+            return self:_MoveToXZ_Air(tx, tz, dtSec)
+        else
+            return self:_MoveToXZ_Ground(tx, tz, dtSec)
+        end
     end,
 
     _EnterAirMode = function(self)
@@ -811,6 +962,20 @@ return Component {
         end
     end,
 
+    _FaceXZ = function(self, tx, tz)
+        local x, y, z = self:GetPosition()
+        if x == nil then return end
+
+        local dx = tx - x
+        local dz = tz - z
+        local d2 = dx*dx + dz*dz
+        if d2 < 1e-6 then return end
+
+        local yaw = math.deg(atan2(dx, dz))
+        local q = eulerToQuat(0, yaw, 0)
+        self:SetRotation(q.w, q.x, q.y, q.z)
+    end,
+
     GetEnemyPosXZ = function(self)
         if self._controller then
             local pos = CharacterController.GetPosition(self._controller)
@@ -818,6 +983,12 @@ return Component {
         end
         local x, _, z = self:GetPosition()
         return x, z
+    end,
+
+    _publishSFX = function(self, sfxType)
+        if _G.event_bus and _G.event_bus.publish then
+            _G.event_bus.publish("miniboss_sfx", { entityId = self.entityId, sfxType = sfxType })
+        end
     end,
 
     GetPlayerPosForAI = function(self)
@@ -888,6 +1059,43 @@ return Component {
                 self:_EnterGroundMode()
             end
         end
+    end,
+
+    _MoveToXZ_Ground = function(self, tx, tz, dtSec)
+        if dtSec <= 0 then return false end
+        if not self._controller then return true end
+
+        local pos = CharacterController.GetPosition(self._controller)
+        if not pos then return true end
+
+        local x, y, z = pos.x, pos.y, pos.z
+        local dx, dz = tx - x, tz - z
+
+        local r = self.ArenaReturnStopDistance or 0.25
+        local d2 = dx*dx + dz*dz
+        if d2 <= r*r then
+            pcall(function() self:StopCC() end)
+            self:FacePlayer()
+            return true
+        end
+
+        local d = math.sqrt(d2)
+        if d < 1e-6 then
+            pcall(function() self:StopCC() end)
+            return true
+        end
+
+        local spd = self.MoveSpeed or 6.0
+        local step = math.min(spd * dtSec, d)
+
+        local mx = (dx / d) * step
+        local mz = (dz / d) * step
+
+        self:_FaceXZ(tx, tz)
+        pcall(function()
+            CharacterController.Move(self._controller, mx, 0, mz)
+        end)
+        return false
     end,
 
     _MoveToXZ_Air = function(self, tx, tz, dtSec)
@@ -1029,7 +1237,10 @@ return Component {
 
         if self._animator then self._animator:SetTrigger("Taunt") end
         print("[Miniboss] StartBossPhaseTransition ->", newPhase, "duration=", tostring(self.PhaseTransformDuration))
-        AudioHelper.playRandomSFX(self._audio, self.enemyTauntSFX)
+        self:_publishSFX("taunt")
+
+        self:_TriggerBossPhaseShake()
+        self:_TriggerBossPhaseFx()
     end,
 
     FinishBossPhaseTransition = function(self)
@@ -1232,6 +1443,9 @@ return Component {
             return
         end
 
+        -- Interrupt current attack/cast so delayed hitboxes/projectiles do not fire
+        self:_CancelCurrentAttackMove("HURT")
+
         -- 1) Always queue a short “hurt reaction window”
         self:EnqueueMoveFront("HurtReact", { duration = self.HurtReactDuration or 0.35 })
 
@@ -1260,7 +1474,7 @@ return Component {
         end
 
         -- Play hurt SFX
-        AudioHelper.playRandomSFX(self._audio, self.enemyHurtSFX)
+        self:_publishSFX("hurt")
 
         -- If we crossed a phase threshold, start NEW transition immediately
         local computed = self:_ComputePhase()
@@ -1331,7 +1545,7 @@ return Component {
         self.dead = true
 
         -- Play death SFX
-        AudioHelper.playRandomSFX(self._audio, self.enemyDeathSFX)
+        self:_publishSFX("death")
 
         -- hard-lock forever
         self._lockAction = true
@@ -1348,6 +1562,10 @@ return Component {
         --     self:PlayClip(self.ClipDeath, false)
         -- end
         self._animator:SetTrigger("Death")
+
+        if _G.event_bus and _G.event_bus.publish then
+            _G.event_bus.publish("boss_killed")
+        end
 
         print("[Miniboss][Death] DEAD")
     end,
@@ -1379,6 +1597,8 @@ return Component {
             if self._freezeEnemySub then pcall(function() _G.event_bus.unsubscribe(self._freezeEnemySub) end) end
             if self._chainEndpointHitSub then pcall(function() _G.event_bus.unsubscribe(self._chainEndpointHitSub) end) end
             if self._chainEnemyHookedSub then pcall(function() _G.event_bus.unsubscribe(self._chainEnemyHookedSub) end) end
+            if self._playerDeadSub then pcall(function() _G.event_bus.unsubscribe(self._playerDeadSub) end) self._playerDeadSub = nil end
+            if self._respawnPlayerSub then pcall(function() _G.event_bus.unsubscribe(self._respawnPlayerSub) end) self._respawnPlayerSub = nil end
         end
         self._damageSub = nil
         self._comboDamageSub = nil
@@ -1407,6 +1627,8 @@ return Component {
             if self._freezeEnemySub then pcall(function() _G.event_bus.unsubscribe(self._freezeEnemySub) end) end
             if self._chainEndpointHitSub then pcall(function() _G.event_bus.unsubscribe(self._chainEndpointHitSub) end) end
             if self._chainEnemyHookedSub then pcall(function() _G.event_bus.unsubscribe(self._chainEnemyHookedSub) end) end
+            if self._playerDeadSub then pcall(function() _G.event_bus.unsubscribe(self._playerDeadSub) end) self._playerDeadSub = nil end
+            if self._respawnPlayerSub then pcall(function() _G.event_bus.unsubscribe(self._respawnPlayerSub) end) self._respawnPlayerSub = nil end
         end
         self._damageSub = nil
         self._comboDamageSub = nil
@@ -1472,7 +1694,7 @@ return Component {
             ex, ey, ez = self:GetPosition()
         end
         if not ex then return nil end
-        return ex, (ey or 0) + 1.0, ez
+        return ex, (ey or 0) + 1.8, ez
     end,
 
     _DirToPlayerXZ = function(self)
@@ -1517,14 +1739,7 @@ return Component {
             end)
         end
 
-        -- Pick a random ranged attack SFX for the knife to play from its position
-        local sfxClip = nil
-        local clips = self.enemyRangedAttackSFX
-        if clips and #clips > 0 then
-            sfxClip = clips[math.random(1, #clips)]
-        end
-
-        local ok = knife:Launch(sx, sy, sz, tx, ty, tz, token, tag, sfxClip, "BOSS")
+        local ok = knife:Launch(sx, sy, sz, tx, ty, tz, token, tag, "BOSS")
         if not ok then
             print(string.format("[Miniboss][Knife] Launch FAILED tag=%s token=%s", tostring(tag), tostring(token)))
         end
@@ -1772,7 +1987,10 @@ return Component {
 
     _DoShoutAOE = function(self)
         if self._animator then self._animator:SetTrigger("Taunt") end
-        AudioHelper.playRandomSFX(self._audio, self.enemyTauntSFX)
+        self:_publishSFX("taunt")
+
+        self:_TriggerBossShoutShake()
+        self:_TriggerBossShoutFx()
 
         if _G.event_bus and _G.event_bus.publish then
             local x,y,z = self:GetPosition()
@@ -1783,6 +2001,56 @@ return Component {
                 radius = self.ShoutRadius or 4.0,
                 dmg = self.ShoutDamage or 2,
                 kb = self.ShoutKnockback or 240.0,
+            })
+        end
+    end,
+
+    _TriggerBossShoutShake = function(self)
+        if _G.event_bus and _G.event_bus.publish then
+            _G.event_bus.publish("camera_shake", {
+                intensity = self.ShoutShakeIntensity or 0.85,
+                duration  = self.ShoutShakeDuration or 0.55,
+                frequency = self.ShoutShakeFrequency or 24.0,
+            })
+        end
+    end,
+
+    _TriggerBossShoutFx = function(self)
+        if _G.event_bus and _G.event_bus.publish then
+            _G.event_bus.publish("fx_chromatic", {
+                intensity = self.ShoutFxChromaticIntensity or 4.45,
+                duration  = self.ShoutFxChromaticDuration or 0.55,
+            })
+
+            _G.event_bus.publish("fx_blur", {
+                intensity = self.ShoutFxBlurIntensity or 0.35,
+                radius    = self.ShoutFxBlurRadius or 2.5,
+                duration  = self.ShoutFxBlurDuration or 0.25,
+            })
+        end
+    end,
+
+    _TriggerBossPhaseShake = function(self)
+        if _G.event_bus and _G.event_bus.publish then
+            _G.event_bus.publish("camera_shake", {
+                intensity = self.PhaseShakeIntensity or 0.85,
+                duration  = self.PhaseShakeDuration or 2.55,
+                frequency = self.PhaseShakeFrequency or 48.0,
+            })
+        end
+    end,
+
+    _TriggerBossPhaseFx = function(self)
+        if _G.event_bus and _G.event_bus.publish then
+            _G.event_bus.publish("fx_chromatic", {
+                intensity = self.PhaseFxChromaticIntensity or 2.75,
+                duration  = self.PhaseFxChromaticDuration or 2.55,
+            })
+
+            _G.event_bus.publish("fx_blur", {
+                intensity = self.PhaseFxBlurIntensity or 0.55,
+                radius    = self.PhaseFxBlurRadius or 3.5,
+                duration  = self.PhaseFxBlurDuration or 1.25,
             })
         end
     end,
@@ -1818,6 +2086,31 @@ return Component {
         self.currentMoveDef = nil
     end,
 
+    _CancelCurrentAttackMove = function(self, reason)
+        if self._moveFinished or not self._move then return end
+
+        local kind = self._move.kind
+        if not kind then return end
+
+        -- Only cancel actual attack/cast moves, not passive hurt react
+        local cancelKinds = {
+            BossMelee       = true,
+            P1RangedCharged = true,
+            ShoutAOE        = true,
+            Basic           = true,
+            BurstFire       = true,
+            AntiDodge       = true,
+            FateSealed      = true,
+            DeathLotus      = true,
+        }
+
+        if cancelKinds[kind] then
+            self._move.cancelled = true
+            self._move.cancelReason = reason or "INTERRUPTED"
+            self:_EndMove()
+        end
+    end,
+
     TickMove = function(self, dtSec)
         if self._moveFinished or not self._move then return end
         local m = self._move
@@ -1847,11 +2140,15 @@ return Component {
 
                 -- start shout anim now
                 if self._animator then self._animator:SetTrigger("Taunt") end
-                AudioHelper.playRandomSFX(self._audio, self.enemyTauntSFX)
+                self:_publishSFX("taunt")
             end
 
             if not m.didFire and m.t >= (m.fireAt or 0) then
                 m.didFire = true
+
+                self:_TriggerBossShoutShake()
+                self:_TriggerBossShoutFx()
+
                 if _G.event_bus and _G.event_bus.publish then
                     local x,y,z = self:GetPosition()
                     print("[MinibossAI] ShoutAOE HIT (queued + delayed)")
@@ -1907,7 +2204,7 @@ return Component {
                         kbUp = 0.0,
                     })
                 end
-                AudioHelper.playRandomSFX(self._audio, self.enemyMeleeAttackSFX)
+                self:_publishSFX("meleeAttack")
             end
 
             if m.t >= (m.hitAt + (m.postDelay or 0.4)) then
@@ -2522,7 +2819,23 @@ return Component {
         -- Approach offset target instead of exact player position
         local dx, dz = d.gx - x, d.gz - z
         local r = self.P3_DiveCommitRadius or 0.20
+
+        -- reached dive position
         if (dx*dx + dz*dz) <= (r*r) then
+
+            -- start predelay timer if first arrival
+            if not self._p3_dive_predelay then
+                self._p3_dive_predelay = self.P3_DivePreDelay or 0.5
+            end
+
+            -- wait in air above player
+            if self._p3_dive_predelay > 0 then
+                self._p3_dive_predelay = self._p3_dive_predelay - dtSec
+                return false
+            end
+
+            -- commit dive
+            self._p3_dive_predelay = nil
             self:BeginSlamDown("DiveSmash")
             return false
         end
@@ -2543,6 +2856,7 @@ return Component {
             self._phase3Dive = nil
             self._slamActive = false
             self._phase3DiveStarted = false
+            self._p3_dive_predelay = nil
 
             local tx,ty,tz = self:_GetAirWaypoint(5)
             local arrived = self:_MoveToXZ_Air(tx,tz,dtSec)
@@ -2562,7 +2876,7 @@ return Component {
 
                 print("[Miniboss] Phase 3 Step 1 SetTrigger(FeatherBomb)")
                 if self._animator then self._animator:SetTrigger("FeatherBomb") end
-                AudioHelper.playRandomSFX(self._audio, self.enemyRangedAttackSFX)
+                self:_publishSFX("rangedAttack")
 
                 return
             end
@@ -2648,6 +2962,57 @@ return Component {
         end
     end,
 
+    ResetBossToIdle = function(self)
+        print("[MinibossAI] ResetBossToIdle")
+
+        self._move = nil
+        self._moveFinished = true
+        self.currentMove = nil
+        self.currentMoveDef = nil
+        self._moveQueue = {}
+
+        self:UnlockActions()
+        self._transforming = false
+        self._pendingPhase = nil
+        self._immuneDamage = false
+        self._immuneChain = false
+
+        self._phase2BurstRoundsDone = 0
+        self._phase2BurstGapT = 0
+        self._phase2Numpad = nil
+        self._phase3Dive = nil
+        self._phase3DiveStarted = false
+        self._slamActive = false
+        self._diveSlamLanded = false
+        self._p3_dive_predelay = nil
+
+        self._moveCooldowns = {}
+        self._meleeCdT = 0
+
+        -- no cutscene replay, but boss must re-aggro later
+        self._introDone = true
+        self._inIntro = false
+        self._combatActive = false
+
+        if self.StopCC then
+            pcall(function() self:StopCC() end)
+        end
+        if self._rb then
+            pcall(function() self._rb.linearVel = { x=0, y=0, z=0 } end)
+            pcall(function() self._rb.impulseApplied = { x=0, y=0, z=0 } end)
+        end
+
+        if self._animator then
+            pcall(function() self._animator:SetBool("PlayerInDetectionRange", false) end)
+            pcall(function() self._animator:SetBool("PlayerInAttackRange", false) end)
+            pcall(function() self._animator:SetBool("ReadyToAttack", false) end)
+            pcall(function() self._animator:ResetTrigger("Melee") end)
+            pcall(function() self._animator:ResetTrigger("Ranged") end)
+            pcall(function() self._animator:ResetTrigger("Taunt") end)
+            pcall(function() self._animator:ResetTrigger("Hooked") end)
+        end
+    end,
+
     -------------------------------------------------
     -- Move implementations (entry points)
     -------------------------------------------------
@@ -2680,7 +3045,7 @@ return Component {
     end,
 
     FateSealed = function(self, chargeTime)
-        AudioHelper.playRandomSFX(self._audio, self.enemyMeleeAttackSFX)
+        self:_publishSFX("meleeAttack")
         self:_BeginMove("FateSealed", {
             chargeDur = chargeTime,
             dashDur = 0.4,

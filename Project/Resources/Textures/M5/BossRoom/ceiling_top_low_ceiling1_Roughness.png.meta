@@ -1,0 +1,15 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "00155f4e92aeeb9b-00047d6046013863",
+        "source": "../../Resources/Textures/M5/BossRoom/ceiling_top_low_ceiling1_Roughness.png",
+        "compiled": "../../Resources/Textures/M5/BossRoom/ceiling_top_low_ceiling1_Roughness.dds"
+    },
+    "TextureMetaData": {
+        "type": "roughness",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

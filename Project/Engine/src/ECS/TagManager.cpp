@@ -85,6 +85,7 @@ void TagManager::InitializeDefaultTags() {
     AddTag("Player");
     AddTag("GameController");
     AddTag("Enemy");
+    AddTag("Boss");
     AddTag("NPC");
     AddTag("Collectible");
 }

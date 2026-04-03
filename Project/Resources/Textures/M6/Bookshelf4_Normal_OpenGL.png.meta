@@ -1,0 +1,15 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "000e5e235fda3649-0004b3e21e01d769",
+        "source": "../../Resources/Textures/M6/Bookshelf4_Normal_OpenGL.png",
+        "compiled": "../../Resources/Textures/M6/Bookshelf4_Normal_OpenGL.dds"
+    },
+    "TextureMetaData": {
+        "type": "normal",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

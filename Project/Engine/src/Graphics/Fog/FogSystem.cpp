@@ -37,6 +37,19 @@ bool FogSystem::Initialise(bool forceInit)
                     fogComp.noiseTextureGUID, texturePath);
             }
         }
+
+        // Load color texture if GUID is set
+        if (fogComp.colorTextureGUID.high != 0 || fogComp.colorTextureGUID.low != 0)
+        {
+            std::string texturePath = AssetManager::GetInstance().GetAssetPathFromGUID(fogComp.colorTextureGUID);
+            fogComp.colorTexturePath = texturePath;
+            if (!texturePath.empty())
+            {
+                fogComp.colorTexture = ResourceManager::GetInstance().GetResourceFromGUID<Texture>(
+                    fogComp.colorTextureGUID, texturePath);
+            }
+        }
+
         InitializeFogComponent(fogComp);
 
         ENGINE_PRINT("[FogSystem] Initialized fog volume for entity\n");
@@ -49,6 +62,10 @@ bool FogSystem::Initialise(bool forceInit)
 
 void FogSystem::Update()
 {
+#ifdef ANDROID
+    return;
+#endif
+
     PROFILE_FUNCTION();
 
     ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
@@ -82,6 +99,18 @@ void FogSystem::Update()
                 {
                     fogComp.noiseTexture = ResourceManager::GetInstance().GetResourceFromGUID<Texture>(
                         fogComp.noiseTextureGUID, texPath);
+                }
+            }
+
+            // Load color texture if GUID set but texture not loaded
+            if (!fogComp.colorTexture && (fogComp.colorTextureGUID.high != 0 || fogComp.colorTextureGUID.low != 0))
+            {
+                std::string texPath = AssetManager::GetInstance().GetAssetPathFromGUID(fogComp.colorTextureGUID);
+                fogComp.colorTexturePath = texPath;
+                if (!texPath.empty())
+                {
+                    fogComp.colorTexture = ResourceManager::GetInstance().GetResourceFromGUID<Texture>(
+                        fogComp.colorTextureGUID, texPath);
                 }
             }
 

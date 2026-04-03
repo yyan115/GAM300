@@ -106,6 +106,7 @@ FieldModificationResult ReflectionRenderer::RenderComponentWithFieldTracking(voi
         if (memberName == "capsuleHalfHeight") continue;    // Handled by shapeTypeID custom renderer
         if (memberName == "cylinderRadius") continue;       // Handled by shapeTypeID custom renderer
         if (memberName == "cylinderHalfHeight") continue;   // Handled by shapeTypeID custom renderer
+        if (memberName == "mass") continue;                  // Handled by shapeTypeID custom renderer
         if (memberName == "isShaking") continue;            // Camera internal shake state
         if (memberName == "shakeTimer") continue;           // Camera internal shake timer
         if (memberName == "shakeOffset") continue;          // Camera internal shake offset
@@ -138,10 +139,8 @@ FieldModificationResult ReflectionRenderer::RenderComponentWithFieldTracking(voi
         }
     }
 
-    if (result.wasModified && PrefabEditor::IsInPrefabEditorMode()) {
-        std::cout << "[ReflectionRenderer] Modified prefab component, saving prefab changes..." << std::endl;
-        PrefabEditor::SaveEditedPrefab();
-    }
+    // Prefab saves are manual from the hierarchy toolbar to avoid noisy autosave
+    // when merely expanding/inspecting component UIs.
 
     return result;
 }

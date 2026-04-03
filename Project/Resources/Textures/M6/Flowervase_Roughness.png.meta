@@ -1,0 +1,15 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "006f9d9d18569c6e-0004a364800081e7",
+        "source": "../../Resources/Textures/M6/Flowervase_Roughness.png",
+        "compiled": "../../Resources/Textures/M6/Flowervase_Roughness.dds"
+    },
+    "TextureMetaData": {
+        "type": "roughness",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

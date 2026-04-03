@@ -31,7 +31,8 @@ public:
 	float depthOffsetUnits = -1.0f;
 
 	// Don't serialize these.
-	std::shared_ptr<Model> model; 
+	float distanceFadeOpacity = 1.0f; // Set per-frame by ModelSystem distance fade
+	std::shared_ptr<Model> model;
 	std::shared_ptr<Shader> shader;
 	// Single material for the entire model (like Unity)
 	std::shared_ptr<Material> material;

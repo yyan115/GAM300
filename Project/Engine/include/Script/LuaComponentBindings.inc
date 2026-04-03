@@ -181,6 +181,21 @@ BEGIN_COMPONENT(CameraComponent, "CameraComponent")
     // Post-Processing: Chromatic Aberration
     PROPERTY("chromaticAberrationEnabled", &CameraComponent::chromaticAberrationEnabled)
     PROPERTY("chromaticAberrationIntensity", &CameraComponent::chromaticAberrationIntensity)
+
+    PROPERTY("colorGradingEnabled", &CameraComponent::colorGradingEnabled)
+    PROPERTY("cgBrightness", &CameraComponent::cgBrightness)
+    PROPERTY("cgContrast", &CameraComponent::cgContrast)
+    PROPERTY("cgSaturation", &CameraComponent::cgSaturation)
+    METHOD("cgTint", &CameraComponent::SetTint)
+
+    PROPERTY("dirBlurEnabled",   &CameraComponent::dirBlurEnabled)
+    PROPERTY("dirBlurIntensity", &CameraComponent::dirBlurIntensity)
+    PROPERTY("dirBlurStrength",  &CameraComponent::dirBlurStrength)
+    PROPERTY("dirBlurAngle",     &CameraComponent::dirBlurAngle)
+    PROPERTY("dirBlurSamples",   &CameraComponent::dirBlurSamples)
+    // Distance-Based Fading
+    PROPERTY("fadeNear", &CameraComponent::fadeNear)
+    PROPERTY("fadeFar",  &CameraComponent::fadeFar)
 END_COMPONENT()
 
 // ============================================================================
@@ -474,6 +489,16 @@ BEGIN_COMPONENT(DialogueComponent, "DialogueComponent")
     PROPERTY("currentIndex", &DialogueComponent::currentIndex)
     PROPERTY("appearanceModeID", &DialogueComponent::appearanceModeID)
     PROPERTY("textSpeed", &DialogueComponent::textSpeed)
+END_COMPONENT()
+
+// ============================================================================
+// Bloom Component
+// ============================================================================
+
+BEGIN_COMPONENT(BloomComponent, "BloomComponent")
+    PROPERTY("enabled", &BloomComponent::enabled)
+    PROPERTY("bloomColor", &BloomComponent::bloomColor)
+    PROPERTY("bloomIntensity", &BloomComponent::bloomIntensity)
 END_COMPONENT()
 
 // Add more BEGIN_COMPONENT(...) ... PROPERTY(...) ... METHOD(...) ... END_COMPONENT() blocks here.

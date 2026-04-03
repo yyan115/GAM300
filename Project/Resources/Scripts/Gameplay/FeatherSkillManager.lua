@@ -113,7 +113,6 @@ return Component {
         SkillLightCastedDiffuseG = 0,
         SkillLightCastedDiffuseB = 0,
 
-        FeatherSkillReleaseSFX = {},
     },
 
     Awake = function(self)
@@ -128,12 +127,6 @@ return Component {
 
     Start = function(self)
         local transform = self:GetComponent("Transform")
-        local playerEntity = Engine.GetEntityByName("Player")
-        if playerEntity then
-            self._playeraudio = GetComponent(playerEntity, "AudioComponent")
-            print("[FeatherSkillManager] Cached player audio component: " .. tostring(self._playeraudio))
-        end
-
         if not transform then return end
         
         self._lockedCamX     = _G.CAMERA_POS_X or 0.0
@@ -143,8 +136,22 @@ return Component {
         self._lockedCamFwdY  = _G.CAMERA_FWD_Y or 0.0
         self._lockedCamFwdZ  = _G.CAMERA_FWD_Z or -1.0
 
+        -- [FIX] The engine recycles Entity IDs, but sometimes fails to clear stale parent/child 
+        -- relationships. Before we calculate our world position, we must ensure we are 
+        -- NOT parented to a dead enemy (which would teleport us to its last position).
+        if Engine and Engine.SetParentEntity then
+            Engine.SetParentEntity(self.entityId, -1)
+        end
+
+        -- Now that we are unparented from any stale hierarchy, re-parent to the player 
+        -- so we spawn at the correct location (the player's hand).
+        if playerEntity and Engine.SetParentEntity then
+            Engine.SetParentEntity(self.entityId, playerEntity)
+        end
+
         local wPos, wRot = getWorldTransform(self.entityId)
 
+        -- Finally, unparent so we can move independently in world space.
         if Engine.SetParentEntity then
             Engine.SetParentEntity(self.entityId, -1)
         end
@@ -213,13 +220,11 @@ return Component {
                         skillPointLightComp.diffuse.z = self.SkillLightInitialDiffuseB / 255.0
                     end
                 else
-                    local childTransform = GetComponent(childId, "Transform")
-                    if childTransform then
-                        local cr = childTransform.localRotation
-                        table.insert(self._childFeathers, {
-                            entityId = childId,
-                            baseRot = { w = cr.w, x = cr.x, y = cr.y, z = cr.z }
-                        })
+                    -- [FIX] Do NOT destroy children! They might be valid game objects (like the 
+                    -- chain endpoint) that were parented to a dead enemy whose ID was recycled.
+                    -- Just unparent them so they don't interfere with us.
+                    if Engine and Engine.SetParentEntity then
+                        Engine.SetParentEntity(childId, -1)
                     end
                 end
             end
@@ -272,6 +277,8 @@ return Component {
                 entityId = newFeatherId,
                 baseRot = { w = zQuat.w, x = zQuat.x, y = zQuat.y, z = zQuat.z }
             })
+
+            print(string.format("[FeatherSkillManager] Spawned feather projectile entity %d at %f %f %f", newFeatherId, childTransform.localPosition.x, childTransform.localPosition.y, childTransform.localPosition.z))
         end
 
         if index == 0 then
@@ -374,11 +381,8 @@ return Component {
             if self._windupTimer <= 0.0 then
                 self._state = 3
 
-                if self._playeraudio and self.FeatherSkillReleaseSFX and self.FeatherSkillReleaseSFX[1] then
-                    print("[FeatherSkillManager] Playing feather blast release SFX: " .. tostring(self.FeatherSkillReleaseSFX[1]))
-                    self._playeraudio:PlayOneShot(self.FeatherSkillReleaseSFX[1])
-                else
-                    print("[FeatherSkillManager] ERROR: _playeraudio=" .. tostring(self._playeraudio) .. " FeatherSkillReleaseSFX[1]=" .. tostring(self.FeatherSkillReleaseSFX and self.FeatherSkillReleaseSFX[1]))
+                if event_bus and event_bus.publish then
+                    event_bus.publish("feather_skill_release", {})
                 end
             end
 

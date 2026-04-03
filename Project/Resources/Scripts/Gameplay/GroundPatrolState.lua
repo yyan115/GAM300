@@ -53,6 +53,7 @@ function PatrolState:Enter(ai)
     ai._patrolWaitT  = 0
     ai._switchLockT  = 0
     ai._enteredT     = 0
+    ai._footstepTimer = 0
 
     ai._stuckT       = 0
     ai._lastX        = nil
@@ -188,6 +189,16 @@ function PatrolState:Update(ai, dt)
         ai._stuckT = (ai._stuckT or 0) + dtSec
     else
         ai._stuckT = 0
+    end
+
+    if not ai._isPatrolWait and movedSq > movedEpsSq then
+        ai._footstepTimer = (ai._footstepTimer or 0) + dtSec
+        if ai._footstepTimer >= (ai.PatrolFootstepInterval or 0.5) then
+            ai._footstepTimer = 0
+            ai:_publishSFX("footstep")
+        end
+    else
+        ai._footstepTimer = 0
     end
 
     -- if (ai._stuckT or 0) >= 0.75 and (ai._switchLockT or 0) <= 0 then

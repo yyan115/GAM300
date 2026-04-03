@@ -1,0 +1,15 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "005ef447addaba3b-000481fb26017a9f",
+        "source": "../../Resources/Textures/M5/NoBendScroll5_Normal_OpenGL.png",
+        "compiled": "../../Resources/Textures/M5/NoBendScroll5_Normal_OpenGL.dds"
+    },
+    "TextureMetaData": {
+        "type": "normal",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

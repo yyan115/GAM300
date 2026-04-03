@@ -1,0 +1,11 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "005834d7a31b6c55-0004a0b488008c0d",
+        "source": "../../Resources/Models/Sphere.fbx",
+        "compiled": "../../Resources/Models/Sphere.mesh"
+    },
+    "ModelMetaData": {
+        "optimizeMeshes": true
+    }
+}

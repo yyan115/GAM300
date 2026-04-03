@@ -1,0 +1,15 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "005ef447a4c708b8-00048204a001a835",
+        "source": "../../Resources/Textures/M5/PictureFrame2_Height.png",
+        "compiled": "../../Resources/Textures/M5/PictureFrame2_Height.dds"
+    },
+    "TextureMetaData": {
+        "type": "height",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

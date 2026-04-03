@@ -195,7 +195,8 @@ void MaterialInspector::DrawMaterialAsset(std::shared_ptr<Material> material, co
             {Material::TextureType::METALLIC, "Metallic"},
             {Material::TextureType::ROUGHNESS, "Roughness"},
             {Material::TextureType::AMBIENT_OCCLUSION, "Ambient Occlusion"},
-            {Material::TextureType::HEIGHT, "Height"}
+            {Material::TextureType::HEIGHT, "Height"},
+            {Material::TextureType::OPACITY, "Opacity"}
         };
 
         for (const auto& textureType : textureTypes) {

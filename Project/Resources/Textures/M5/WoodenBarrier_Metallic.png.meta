@@ -1,0 +1,15 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "00132a97ee0baa11-000483de96021c73",
+        "source": "../../Resources/Textures/M5/WoodenBarrier_Metallic.png",
+        "compiled": "../../Resources/Textures/M5/WoodenBarrier_Metallic.dds"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

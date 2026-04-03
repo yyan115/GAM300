@@ -6,13 +6,17 @@ local event_bus = _G.event_bus
 return Component {
     fields = {
         checkpointEntityName = "Checkpoint1",
-        tooltipEntityName    = "checkpointTooltip",
-        CheckpointRadius     = 50.0,
+        tooltipEntityName    = "CheckpointTooltip",
+        CheckpointRadius     = 2.5,
     },
 
     Start = function(self)
         self._activated = false
         self._tooltipShown = false
+
+        -- [TEMP FIX] Strip all double quotes from entity names
+        self.checkpointEntityName = self.checkpointEntityName:gsub('"', '')
+        self.tooltipEntityName = self.tooltipEntityName:gsub('"', '')
 
         -- Find player
         self._playerEnt = Engine.GetEntityByName("Player")
@@ -83,19 +87,19 @@ return Component {
         if not self._cpEnt then return end
         local children = Engine.GetChildrenEntities(self._cpEnt)
 
-        if children[3] then
-            local tr = GetComponent(children[3], "Transform")
+        if children[4] then
+            local tr = GetComponent(children[4], "Transform")
             if tr then
                 self._respawnPos = tr.worldPosition
             end
             if event_bus and event_bus.publish then
-                event_bus.publish("activatedCheckpoint", children[3])
+                event_bus.publish("activatedCheckpoint", {child = children[4], parent = self._cpEnt})
                 event_bus.publish("playerHeal", 5)
             end
         end
 
-        if children[2] then
-            local lc = GetComponent(children[2], "SpotLightComponent")
+        if children[3] then
+            local lc = GetComponent(children[3], "SpotLightComponent")
             if lc then lc.enabled = true end
         end
 

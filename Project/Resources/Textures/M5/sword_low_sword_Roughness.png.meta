@@ -1,0 +1,15 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "00132a97f8d53b6b-000483de94021c6d",
+        "source": "../../Resources/Textures/M5/sword_low_sword_Roughness.png",
+        "compiled": "../../Resources/Textures/M5/sword_low_sword_Roughness.dds"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

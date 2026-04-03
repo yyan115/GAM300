@@ -1,0 +1,15 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "006f9d9d3aa3f09d-0004a364840081ef",
+        "source": "../../Resources/Textures/M6/ScrollVase2_Mixed_AO.png",
+        "compiled": "../../Resources/Textures/M6/ScrollVase2_Mixed_AO.dds"
+    },
+    "TextureMetaData": {
+        "type": "ao",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

@@ -4,9 +4,14 @@ layout (location = 1) in vec3 aNormal;
 layout (location = 5) in ivec4 aBoneIds;
 layout (location = 6) in vec4  aWeights;
 
+layout(std140) uniform CameraBlock {
+    mat4 view;
+    mat4 projection;
+    vec3 cameraPos;
+    float _pad;
+};
+
 uniform mat4 model;
-uniform mat4 view;
-uniform mat4 projection;
 uniform float outlineThickness;
 
 // Animation support

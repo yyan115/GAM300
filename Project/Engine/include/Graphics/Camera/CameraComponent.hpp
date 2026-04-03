@@ -122,6 +122,12 @@ public:
     bool envReflectionEnabled = true;
     float envReflectionIntensity = 1.0f;
 
+    // === Distance-Based Fading ===
+    float fadeNear = 3.0f;    // Distance at which objects start fading in
+    float fadeFar  = 5.0f;    // Distance at which objects are fully visible
+
     CameraComponent() = default;
     ~CameraComponent() = default;
+
+    void SetTint(float r=1.0f, float g = 1.0f, float b = 1.0f);
 };

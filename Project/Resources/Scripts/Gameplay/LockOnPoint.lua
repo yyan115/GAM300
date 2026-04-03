@@ -2,8 +2,8 @@
 -- Attach to the LockOn child entity on an enemy (one tier below root),
 -- OR to the root of a throwable object (tag: "Throwable").
 --
--- ENEMY mode (tag == "Enemy" on root):
---   Existing behaviour preserved — sweeps against PartEntityIds body parts,
+-- ENEMY/BOSS mode (tag == "Enemy" or "Boss" on root):
+--   Existing behaviour preserved - sweeps against PartEntityIds body parts,
 --   publishes "chain.lockon_sweep_hit" with closest part pos so
 --   ChainEndpointController snaps to the nearest bone.
 --
@@ -83,7 +83,7 @@ return Component {
             if ok and tag then
                 if tag == "Throwable" then
                     self._isThrowable = true
-                elseif tag == "Enemy" then
+                elseif tag == "Enemy" or tag == "Boss" then
                     self._isEnemy = true
                 end
             end

@@ -1,0 +1,15 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "002c80ed2b9ba1be-00047a9c9e03c78b",
+        "source": "../../Resources/Textures/M5/Room4/floor_floor_Height.png",
+        "compiled": "../../Resources/Textures/M5/Room4/floor_floor_Height.dds"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

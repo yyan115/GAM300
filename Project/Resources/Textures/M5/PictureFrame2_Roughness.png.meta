@@ -1,0 +1,15 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "005ef4479c02ad9c-000482049e01a82f",
+        "source": "../../Resources/Textures/M5/PictureFrame2_Roughness.png",
+        "compiled": "../../Resources/Textures/M5/PictureFrame2_Roughness.dds"
+    },
+    "TextureMetaData": {
+        "type": "roughness",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

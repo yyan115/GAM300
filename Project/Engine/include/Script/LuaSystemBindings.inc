@@ -27,8 +27,12 @@
 //   local x, y = Keyboard.GetMouseX(), Keyboard.GetMouseY()
 
 BEGIN_SYSTEM("Keyboard")
+    // "pressed" — true only on the frame the key first goes down (one-shot)
     FUNCTION("IsKeyPressed", KeyboardWrappers::IsKeyPressed)
     FUNCTION("IsDigitPressed", KeyboardWrappers::IsDigitPressed)
+    // "held" — true every frame the key is physically down
+    FUNCTION("IsKeyHeld", KeyboardWrappers::IsKeyHeld)
+    FUNCTION("IsDigitHeld", KeyboardWrappers::IsDigitHeld)
     FUNCTION("IsMouseButtonPressed", KeyboardWrappers::IsMouseButtonPressed)
     FUNCTION("GetMouseX", KeyboardWrappers::GetMouseX)
     FUNCTION("GetMouseY", KeyboardWrappers::GetMouseY)
@@ -309,6 +313,62 @@ BEGIN_SYSTEM("GameSettings")
     FUNCTION("GetGamma", GameSettingsWrappers::GetGamma)
     FUNCTION("SetExposure", GameSettingsWrappers::SetExposure)
     FUNCTION("GetExposure", GameSettingsWrappers::GetExposure)
+    FUNCTION("SetToneMappingMode", GameSettingsWrappers::SetToneMappingMode)
+    FUNCTION("GetToneMappingMode", GameSettingsWrappers::GetToneMappingMode)
+    FUNCTION("SetVSync", GameSettingsWrappers::SetVSync)
+    FUNCTION("GetVSync", GameSettingsWrappers::GetVSync)
+    FUNCTION("SetFullscreen", GameSettingsWrappers::SetFullscreen)
+    FUNCTION("GetFullscreen", GameSettingsWrappers::GetFullscreen)
+
+    // Bloom
+    FUNCTION("SetBloomEnabled", GameSettingsWrappers::SetBloomEnabled)
+    FUNCTION("GetBloomEnabled", GameSettingsWrappers::GetBloomEnabled)
+    FUNCTION("SetBloomThreshold", GameSettingsWrappers::SetBloomThreshold)
+    FUNCTION("GetBloomThreshold", GameSettingsWrappers::GetBloomThreshold)
+    FUNCTION("SetBloomIntensity", GameSettingsWrappers::SetBloomIntensity)
+    FUNCTION("GetBloomIntensity", GameSettingsWrappers::GetBloomIntensity)
+    FUNCTION("SetBloomScatter", GameSettingsWrappers::SetBloomScatter)
+    FUNCTION("GetBloomScatter", GameSettingsWrappers::GetBloomScatter)
+
+    // Vignette
+    FUNCTION("SetVignetteEnabled", GameSettingsWrappers::SetVignetteEnabled)
+    FUNCTION("GetVignetteEnabled", GameSettingsWrappers::GetVignetteEnabled)
+    FUNCTION("SetVignetteIntensity", GameSettingsWrappers::SetVignetteIntensity)
+    FUNCTION("GetVignetteIntensity", GameSettingsWrappers::GetVignetteIntensity)
+    FUNCTION("SetVignetteSmoothness", GameSettingsWrappers::SetVignetteSmoothness)
+    FUNCTION("GetVignetteSmoothness", GameSettingsWrappers::GetVignetteSmoothness)
+    FUNCTION("SetVignetteColor", GameSettingsWrappers::SetVignetteColor)
+    FUNCTION("GetVignetteColor", GameSettingsWrappers::GetVignetteColor)
+
+    // Color Grading
+    FUNCTION("SetColorGradingEnabled", GameSettingsWrappers::SetColorGradingEnabled)
+    FUNCTION("GetColorGradingEnabled", GameSettingsWrappers::GetColorGradingEnabled)
+    FUNCTION("SetCGBrightness", GameSettingsWrappers::SetCGBrightness)
+    FUNCTION("GetCGBrightness", GameSettingsWrappers::GetCGBrightness)
+    FUNCTION("SetCGContrast", GameSettingsWrappers::SetCGContrast)
+    FUNCTION("GetCGContrast", GameSettingsWrappers::GetCGContrast)
+    FUNCTION("SetCGSaturation", GameSettingsWrappers::SetCGSaturation)
+    FUNCTION("GetCGSaturation", GameSettingsWrappers::GetCGSaturation)
+    FUNCTION("SetCGTint", GameSettingsWrappers::SetCGTint)
+    FUNCTION("GetCGTint", GameSettingsWrappers::GetCGTint)
+
+    // Chromatic Aberration
+    FUNCTION("SetCAEnabled", GameSettingsWrappers::SetCAEnabled)
+    FUNCTION("GetCAEnabled", GameSettingsWrappers::GetCAEnabled)
+    FUNCTION("SetCAIntensity", GameSettingsWrappers::SetCAIntensity)
+    FUNCTION("GetCAIntensity", GameSettingsWrappers::GetCAIntensity)
+    FUNCTION("SetCAPadding", GameSettingsWrappers::SetCAPadding)
+    FUNCTION("GetCAPadding", GameSettingsWrappers::GetCAPadding)
+
+    // SSAO
+    FUNCTION("SetSSAOEnabled", GameSettingsWrappers::SetSSAOEnabled)
+    FUNCTION("GetSSAOEnabled", GameSettingsWrappers::GetSSAOEnabled)
+    FUNCTION("SetSSAORadius", GameSettingsWrappers::SetSSAORadius)
+    FUNCTION("GetSSAORadius", GameSettingsWrappers::GetSSAORadius)
+    FUNCTION("SetSSAOBias", GameSettingsWrappers::SetSSAOBias)
+    FUNCTION("GetSSAOBias", GameSettingsWrappers::GetSSAOBias)
+    FUNCTION("SetSSAOIntensity", GameSettingsWrappers::SetSSAOIntensity)
+    FUNCTION("GetSSAOIntensity", GameSettingsWrappers::GetSSAOIntensity)
 
     // Default values (for UI reset)
     FUNCTION("GetDefaultMasterVolume", GameSettingsWrappers::GetDefaultMasterVolume)
@@ -367,6 +427,11 @@ BEGIN_SYSTEM("CharacterController")
     FUNCTION("DisableCollision", CharacterControllerWrappers::DisableCollision)
     FUNCTION("UpdateAll", CharacterControllerWrappers::UpdateAll)
     FUNCTION("ClearAll", CharacterControllerWrappers::ClearAll)
+    FUNCTION("SetJuggleMode", CharacterControllerWrappers::SetJuggleMode)
+    FUNCTION("IsJuggling", CharacterControllerWrappers::IsJuggling)
+    FUNCTION("SetMass", CharacterControllerWrappers::SetMass)
+    FUNCTION("GetMass", CharacterControllerWrappers::GetMass)
+    FUNCTION("SetImmovable", CharacterControllerWrappers::SetImmovable)
 END_SYSTEM()
 
 BEGIN_SYSTEM("PhysicsSystem")
@@ -454,6 +519,9 @@ BEGIN_SYSTEM("Engine")
 
     FUNCTION("FindAudioCompByName", &Lua_FindAudioCompByName)
     FUNCTION("FindAudioCompByID", &Lua_FindAudioCompByID)
+
+    FUNCTION("SetModelOpacity", &MaterialWrappers::SetModelOpacity)
+    FUNCTION("GetModelOpacity", &MaterialWrappers::GetModelOpacity)
 END_SYSTEM()
 
 
@@ -484,6 +552,7 @@ BEGIN_SYSTEM("DialogueManager")
     FUNCTION("IsDialogueActive", &DialogueManagerWrappers::IsDialogueActive)
     FUNCTION("IsAnyDialogueActive", &DialogueManagerWrappers::IsAnyDialogueActive)
     FUNCTION("GetCurrentIndex", &DialogueManagerWrappers::GetCurrentIndex)
+    FUNCTION("GetCurrentEntryAutoTime", &DialogueManagerWrappers::GetCurrentEntryAutoTime)
 END_SYSTEM()
 
 // ============================================================================

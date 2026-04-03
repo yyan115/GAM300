@@ -1,0 +1,15 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "004598ffc7b0dba2-00047c975c02f27d",
+        "source": "../../Resources/Textures/M5/Room6/Rm6_ceiling_ceiling_BaseColor.png",
+        "compiled": "../../Resources/Textures/M5/Room6/Rm6_ceiling_ceiling_BaseColor.dds"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

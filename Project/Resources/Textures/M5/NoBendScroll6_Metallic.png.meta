@@ -1,0 +1,15 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "0006f5c80771ac2d-0004826116001e55",
+        "source": "../../Resources/Textures/M5/NoBendScroll6_Metallic.png",
+        "compiled": "../../Resources/Textures/M5/NoBendScroll6_Metallic.dds"
+    },
+    "TextureMetaData": {
+        "type": "metallic",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

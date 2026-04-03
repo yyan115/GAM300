@@ -23,9 +23,11 @@
 #include "Asset Manager/ResourceManager.hpp"
 #include "RaycastUtil.hpp"
 #include <imgui.h>
+#include <imgui_internal.h>
 #include <ImGuizmo.h>
 #include "EditorState.hpp"
 #include "Prefab/PrefabIO.hpp"
+#include "Panels/PrefabEditorPanel.hpp"
 #include "GUIManager.hpp"
 #include <cstring>
 #include <cmath>
@@ -1203,6 +1205,8 @@ void ScenePanel::OnImGuiRender()
         if (sceneViewWidth < 100) sceneViewWidth = 100;
         if (sceneViewHeight < 100) sceneViewHeight = 100;
 
+        PrefabEditor::SyncPreviewLightToSceneCamera(editorCamera.Position, editorCamera.Front, editorCamera.Up);
+
         // Always render the scene with our editor camera to the framebuffer
         RenderSceneWithEditorCamera(sceneViewWidth, sceneViewHeight);
 
@@ -1292,6 +1296,9 @@ void ScenePanel::OnImGuiRender()
             // Handle model drag-and-drop (must be inside child window)
             HandleModelDragDrop((float)sceneViewWidth, (float)sceneViewHeight);
 
+            // Handle prefab drag-and-drop from Asset Browser
+            AcceptPrefabDropInScene(childPos, childSize);
+
             ImGui::EndChild();
         }
         else
@@ -1325,41 +1332,106 @@ void ScenePanel::OnImGuiRender()
 
 void ScenePanel::AcceptPrefabDropInScene(const ImVec2& sceneTopLeft, const ImVec2& sceneSize)
 {
-    // Make the whole scene image a drop target
-    ImGui::SetCursorScreenPos(sceneTopLeft);
-    ImGui::InvisibleButton("##ScenePrefabDropTarget", sceneSize, ImGuiButtonFlags_MouseButtonLeft);
-
-    if (!ImGui::BeginDragDropTarget())
+    // Use BeginDragDropTargetCustom with the scene viewport's rectangle.
+    // This allows the area to be a drop target without creating an invisible button that blocks mouse input for gizmos.
+    ImRect sceneRect(sceneTopLeft, ImVec2(sceneTopLeft.x + sceneSize.x, sceneTopLeft.y + sceneSize.y));
+    
+    if (!ImGui::BeginDragDropTargetCustom(sceneRect, ImGui::GetID("##ScenePrefabDropTarget")))
         return;
 
-    if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("PREFAB_PATH"))
+    if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("PREFAB_PATH", ImGuiDragDropFlags_AcceptBeforeDelivery))
     {
         // Payload is a null-terminated C string we set in the Asset Browser
         const char* pathCStr = static_cast<const char*>(payload->Data);
         std::filesystem::path prefabPath(pathCStr);
 
-        // Create an entity immediately so the user gets feedback
-        ECSManager& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
-        Entity e = ecs.CreateEntity();
+        // Show tooltip during preview
+        std::string prefabName = prefabPath.stem().string();
+        ImGui::SetTooltip("Drop to spawn prefab: %s", prefabName.c_str());
 
-        // Give it a friendly name based on the file name
-        std::string displayName = prefabPath.stem().string();
-        if (ecs.HasComponent<NameComponent>(e))
+        // Only instantiate on delivery (mouse release)
+        if (payload->IsDelivery())
         {
-            ecs.GetComponent<NameComponent>(e).name = displayName;
-        }
-        else
-        {
-            ecs.AddComponent<NameComponent>(e, NameComponent{ displayName });
-        }
+            // 1. Get mouse position relative to scene viewport
+            ImVec2 mousePos = ImGui::GetMousePos();
+            float localX = mousePos.x - sceneTopLeft.x;
+            float localY = mousePos.y - sceneTopLeft.y;
 
-        // TODO (optional): actually instantiate the prefab contents here
-        // AssetManager& assets = AssetManager::GetInstance();
-        // Prefab prefab = assets.LoadPrefab(prefabPath.string()); // your loader
-        // prefab.instantiatePrefab(ecs, static_cast<EntityID>(e));
+            // 2. Convert to World Ray
+            EditorState& editorState = EditorState::GetInstance();
+            bool is2DMode = editorState.Is2DMode();
+            float aspectRatio = sceneSize.x / sceneSize.y;
 
-        // Simple console feedback
-        ENGINE_PRINT("[ScenePanel] Spawned entity from prefab: ", prefabPath, " -> entity ", (uint64_t)e, "\n");
+            glm::mat4 view, proj;
+            if (is2DMode) {
+                // Get game resolution for 2D projection
+                int gameWidth = RunTimeVar::window.width;
+                int gameHeight = RunTimeVar::window.height;
+                auto gamePanelPtr = GUIManager::GetPanelManager().GetPanel("Game");
+                auto gamePanel = std::dynamic_pointer_cast<GamePanel>(gamePanelPtr);
+                if (gamePanel) {
+                    gamePanel->GetTargetGameResolution(gameWidth, gameHeight);
+                }
+                view = editorCamera.Get2DViewMatrix();
+                proj = editorCamera.GetOrthographicProjectionMatrix(aspectRatio, sceneSize.x, sceneSize.y, gameWidth, gameHeight);
+            } else {
+                view = editorCamera.GetViewMatrix();
+                proj = editorCamera.GetProjectionMatrix(aspectRatio);
+            }
+
+            Matrix4x4 mView = Matrix4x4::ConvertToMatrix4x4(view);
+            Matrix4x4 mProj = Matrix4x4::ConvertToMatrix4x4(proj);
+
+            RaycastUtil::Ray ray = RaycastUtil::ScreenToWorldRay(localX, localY, sceneSize.x, sceneSize.y, mView, mProj);
+
+            // 3. Find spawn position
+            glm::vec3 spawnPos(0.0f);
+            RaycastUtil::RaycastHit hit = RaycastUtil::RaycastScene(ray, INVALID_ENTITY, true, is2DMode);
+
+            if (hit.hit) {
+                spawnPos = hit.point;
+            } else {
+                if (is2DMode) {
+                    // In 2D mode, typically we want to spawn at Z=0
+                    if (std::abs(ray.direction.z) > 1e-6f) {
+                        float t = -ray.origin.z / ray.direction.z;
+                        spawnPos = ray.origin + t * ray.direction;
+                    } else {
+                        spawnPos = ray.origin;
+                        spawnPos.z = 0.0f;
+                    }
+                } else {
+                    // In 3D mode, spawn at some distance
+                    spawnPos = ray.origin + ray.direction * 10.0f;
+                }
+            }
+
+            // 4. Take snapshot for undo
+            SnapshotManager::GetInstance().TakeSnapshot("Instantiate Prefab");
+
+            // 5. Instantiate the prefab
+            Entity entity = InstantiatePrefabFromFile(pathCStr);
+
+            if (entity != INVALID_ENTITY) {
+                // 6. Set the position
+                ECSManager& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
+                if (ecs.HasComponent<Transform>(entity)) {
+                    auto& transform = ecs.GetComponent<Transform>(entity);
+                    transform.localPosition = Vector3D(spawnPos.x, spawnPos.y, spawnPos.z);
+                    transform.isDirty = true;
+                    
+                    // Also update world matrix immediately so it's ready for next frame/selection
+                    // Usually systems handle this but for editor feedback it's good to be immediate
+                }
+
+                // Select the new entity
+                GUIManager::SetSelectedEntity(entity);
+                
+                ENGINE_PRINT("[ScenePanel] Instantiated prefab: ", pathCStr, " at (", spawnPos.x, ", ", spawnPos.y, ", ", spawnPos.z, ")\n");
+            } else {
+                ENGINE_PRINT(EngineLogging::LogLevel::Error, "[ScenePanel] Failed to instantiate prefab: ", pathCStr, "\n");
+            }
+        }
     }
 
     ImGui::EndDragDropTarget();

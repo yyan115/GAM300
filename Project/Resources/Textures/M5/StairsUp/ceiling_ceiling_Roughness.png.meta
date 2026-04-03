@@ -6,9 +6,10 @@
         "compiled": "../../Resources/Textures/M5/StairsUp/ceiling_ceiling_Roughness.dds"
     },
     "TextureMetaData": {
-        "type": "diffuse",
+        "type": "roughness",
         "flipUVs": false,
         "generateMipmaps": true,
-        "textureWrapMode": "Clamp"
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
     }
 }

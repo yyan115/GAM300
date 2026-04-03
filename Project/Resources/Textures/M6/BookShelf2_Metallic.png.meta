@@ -1,0 +1,15 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "003f1e496f5a3b0b-00049ee78600007d",
+        "source": "../../Resources/Textures/M6/BookShelf2_Metallic.png",
+        "compiled": "../../Resources/Textures/M6/BookShelf2_Metallic.dds"
+    },
+    "TextureMetaData": {
+        "type": "metallic",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

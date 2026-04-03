@@ -1,0 +1,15 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "0011f2c3b5de0c8a-0004813ca8023307",
+        "source": "../../Resources/Textures/M5/BossRoom/door_low_door_BaseColor.png",
+        "compiled": "../../Resources/Textures/M5/BossRoom/door_low_door_BaseColor.dds"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

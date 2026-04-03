@@ -25,7 +25,7 @@ void AssetInspector::DrawAssetMetaInfo(std::shared_ptr<AssetMeta> assetMeta, con
         else if (assetMeta->GetType() == AssetMeta::Type::Texture) {
             std::shared_ptr<TextureMeta> textureMeta = static_pointer_cast<TextureMeta>(assetMeta);
 			currentTextureMeta->PopulateAssetMeta(assetMeta->guid, assetMeta->sourceFilePath, assetMeta->compiledFilePath, assetMeta->version, assetMeta->androidCompiledFilePath);
-			currentTextureMeta->PopulateTextureMeta(textureMeta->type, textureMeta->flipUVs, textureMeta->generateMipmaps, textureMeta->textureWrapMode);
+			currentTextureMeta->PopulateTextureMeta(textureMeta->type, textureMeta->flipUVs, textureMeta->generateMipmaps, textureMeta->textureWrapMode, textureMeta->maxSize);
         }
     }
 
@@ -126,6 +126,29 @@ void AssetInspector::DrawAssetMetaInfo(std::shared_ptr<AssetMeta> assetMeta, con
                             }
 						}
                         ImGui::EndCombo();
+                    }
+
+                    // Max Size
+                    ImGui::TableNextRow();
+                    ImGui::TableSetColumnIndex(0);
+                    ImGui::TextUnformatted("Max Size");
+                    ImGui::TableSetColumnIndex(1);
+                    ImGui::SetNextItemWidth(-FLT_MIN);
+                    {
+                        static const int maxSizeOptions[] = { 512, 1024, 2048, 4096 };
+                        std::string currentMaxSizeStr = std::to_string(currentTextureMeta->maxSize);
+                        if (ImGui::BeginCombo("##Max Size", currentMaxSizeStr.c_str())) {
+                            for (int n = 0; n < 4; n++) {
+                                bool isSelected = (currentTextureMeta->maxSize == maxSizeOptions[n]);
+                                if (ImGui::Selectable(std::to_string(maxSizeOptions[n]).c_str(), isSelected)) {
+                                    currentTextureMeta->maxSize = maxSizeOptions[n];
+                                }
+                                if (isSelected) {
+                                    ImGui::SetItemDefaultFocus();
+                                }
+                            }
+                            ImGui::EndCombo();
+                        }
                     }
 
                     ImGui::EndTable();

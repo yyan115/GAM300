@@ -12,6 +12,11 @@
 #include "ECS/LayerComponent.hpp"
 #include "Graphics/PostProcessing/PostProcessingManager.hpp"
 #include "Graphics/BloomComponent.hpp"
+#include "ECS/TagComponent.hpp"
+#include "ECS/TagManager.hpp"
+#include "Graphics/Camera/Camera.hpp"
+#include "Graphics/Camera/CameraComponent.hpp"
+#include "Graphics/Camera/CameraSystem.hpp"
 
 #ifdef ANDROID
 #include <android/log.h>
@@ -21,6 +26,11 @@
 
 bool ModelSystem::Initialise() 
 {
+    // DISABLE COLOR AND DEPTH WRITES BEFORE DUMMY DRAWING!
+    // This stops exploding vertices from rendering to the editor viewport.
+    glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
+    glDepthMask(GL_FALSE);
+
     ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
     for (const auto& entity : entities) {
         auto& modelComp = ecsManager.GetComponent<ModelRenderComponent>(entity);
@@ -47,8 +57,37 @@ bool ModelSystem::Initialise()
         if (modelComp.model) {
             ModelFactory::PopulateBoneNameToEntityMap(entity, modelComp.boneNameToEntityMap, *modelComp.model, true);
             modelComp.childBonesSaved = true;
+
+            // Force shader compilation / activation
+            modelComp.shader->Activate();
+
+            // Force textures to page into VRAM
+            if (modelComp.material) {
+                modelComp.material->ApplyToShader(*modelComp.shader);
+            }
+
+            for (auto& mesh : modelComp.model->meshes)
+            {
+                // This calls your setupMesh() and sets vaoSetup = true
+                // while the loading screen is still up!
+                mesh.Prewarm();
+
+                // THE DUMMY DRAW: Force the driver to execute the pipeline!
+                // We only draw 3 indices (1 triangle) to make it lightning fast.
+                mesh.vao.Bind();
+                glDrawElements(GL_TRIANGLES, 3, GL_UNSIGNED_INT, 0);
+                mesh.vao.Unbind();
+            }
         }
     }
+
+    // Restore normal graphics state for gameplay
+    glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+    glDepthMask(GL_TRUE);
+    glEnable(GL_DEPTH_TEST);
+    glEnable(GL_CULL_FACE); // Or whatever your default is
+
+    ENGINE_PRINT("[ModelSystem] Dummy Draw Prewarm complete! Driver is fully warmed up.\n");
 
     ENGINE_PRINT("[ModelSystem] Initialized\n");
     return true;
@@ -174,6 +213,50 @@ void ModelSystem::Update()
             int layerIdx = GetEffectiveLayerIndex(entity, ecsManager);
             if (exMask & (1u << layerIdx))
                 modelRenderItem->excludeFromPostProcess = true;
+        }
+
+        // Distance-based camera fade: only fade entities with specific tags
+        if (!isRenderingForEditor) {
+            Camera* cam = gfxManager.GetCurrentCamera();
+            if (cam) {
+                bool shouldFade = false;
+                if (ecsManager.HasComponent<TagComponent>(entity)) {
+                    static int tagEnemy    = TagManager::GetInstance().GetTagIndex("Enemy");
+                    static int tagNPC      = TagManager::GetInstance().GetTagIndex("NPC");
+                    static int tagCollect  = TagManager::GetInstance().GetTagIndex("Collectible");
+                    static int tagNoCamCol = TagManager::GetInstance().GetTagIndex("NoCameraCollision");
+
+                    int tagIdx = ecsManager.GetComponent<TagComponent>(entity).tagIndex;
+                    shouldFade = (tagIdx == tagEnemy || tagIdx == tagNPC ||
+                                  tagIdx == tagCollect || tagIdx == tagNoCamCol);
+                }
+
+                if (shouldFade) {
+                    glm::vec3 entityPos = glm::vec3(glmWorldMatrix[3]);
+                    glm::vec3 camPos = cam->Position;
+                    float dist = glm::length(entityPos - camPos);
+
+                    float fadeNear = 3.0f;
+                    float fadeFar  = 5.0f;
+
+                    // Use active camera component's fade settings if available
+                    Entity activeCamEntity = ecsManager.cameraSystem ? ecsManager.cameraSystem->GetActiveCameraEntity() : UINT32_MAX;
+                    if (activeCamEntity != UINT32_MAX && ecsManager.HasComponent<CameraComponent>(activeCamEntity)) {
+                        auto& camComp = ecsManager.GetComponent<CameraComponent>(activeCamEntity);
+                        fadeNear = camComp.fadeNear;
+                        fadeFar  = camComp.fadeFar;
+                    }
+
+                    constexpr float fadeMin  = 0.0f;
+
+                    float t = 0.0f;
+                    if (fadeFar > fadeNear) {
+                        t = (dist - fadeNear) / (fadeFar - fadeNear);
+                        t = glm::clamp(t, 0.0f, 1.0f);
+                    }
+                    modelRenderItem->distanceFadeOpacity = fadeMin + t * (1.0f - fadeMin);
+                }
+            }
         }
 
         gfxManager.Submit(std::move(modelRenderItem));

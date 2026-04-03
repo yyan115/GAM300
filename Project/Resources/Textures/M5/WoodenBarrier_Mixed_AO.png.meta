@@ -1,0 +1,15 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "00132a97b836b4de-000483de98021c75",
+        "source": "../../Resources/Textures/M5/WoodenBarrier_Mixed_AO.png",
+        "compiled": "../../Resources/Textures/M5/WoodenBarrier_Mixed_AO.dds"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

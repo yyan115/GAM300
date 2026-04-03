@@ -99,7 +99,7 @@
     "states": [
         {
             "id": "Hurt1",
-            "clipIndex": 4,
+            "clipIndex": 3,
             "loop": false,
             "speed": 2.499999761581421,
             "crossfadeDuration": 0.0,
@@ -110,7 +110,7 @@
         },
         {
             "id": "Idle",
-            "clipIndex": 3,
+            "clipIndex": 11,
             "loop": true,
             "speed": 1.0,
             "crossfadeDuration": 0.0,
@@ -121,7 +121,7 @@
         },
         {
             "id": "Hooked",
-            "clipIndex": 6,
+            "clipIndex": 5,
             "loop": false,
             "speed": 1.0,
             "crossfadeDuration": 0.0,
@@ -132,7 +132,7 @@
         },
         {
             "id": "Death",
-            "clipIndex": 9,
+            "clipIndex": 7,
             "loop": false,
             "speed": 1.0,
             "crossfadeDuration": 0.0,
@@ -143,7 +143,7 @@
         },
         {
             "id": "Hurt3",
-            "clipIndex": 6,
+            "clipIndex": 5,
             "loop": false,
             "speed": 2.000000238418579,
             "crossfadeDuration": 0.0,
@@ -165,7 +165,7 @@
         },
         {
             "id": "Ranged Attack",
-            "clipIndex": 8,
+            "clipIndex": 6,
             "loop": true,
             "speed": 1.7000001668930054,
             "crossfadeDuration": 0.0,
@@ -176,7 +176,7 @@
         },
         {
             "id": "Hurt2",
-            "clipIndex": 5,
+            "clipIndex": 4,
             "loop": false,
             "speed": 2.000000238418579,
             "crossfadeDuration": 0.0,
@@ -209,7 +209,7 @@
         },
         {
             "id": "Flying Patrol",
-            "clipIndex": 13,
+            "clipIndex": 11,
             "loop": true,
             "speed": 1.0,
             "crossfadeDuration": 0.20000000298023224,
@@ -220,7 +220,7 @@
         },
         {
             "id": "Stand Up",
-            "clipIndex": 12,
+            "clipIndex": 10,
             "loop": false,
             "speed": 1.0,
             "crossfadeDuration": 0.20000000298023224,
@@ -231,7 +231,7 @@
         },
         {
             "id": "Flying Chase",
-            "clipIndex": 7,
+            "clipIndex": 11,
             "loop": true,
             "speed": 1.0,
             "crossfadeDuration": 0.20000000298023224,
@@ -242,7 +242,7 @@
         },
         {
             "id": "Falling",
-            "clipIndex": 10,
+            "clipIndex": 8,
             "loop": true,
             "speed": 2.0,
             "crossfadeDuration": 0.20000000298023224,
@@ -253,7 +253,7 @@
         },
         {
             "id": "Fall Impact",
-            "clipIndex": 11,
+            "clipIndex": 9,
             "loop": false,
             "speed": 1.0,
             "crossfadeDuration": 0.20000000298023224,
@@ -1486,11 +1486,9 @@
         "Resources/Animations/Enemy/Enemy@Walk.fbx",
         "Resources/Animations/Enemy/Enemy@Run.fbx",
         "Resources/Animations/Enemy/Enemy@AttackScratch.fbx",
-        "Resources/Animations/Enemy/Flying/KarasuFlying@IdleRangedGround.fbx",
         "Resources/Animations/Enemy/Flying/KarasuFlying@Hurt1.fbx",
         "Resources/Animations/Enemy/Flying/KarasuFlying@Hurt2.fbx",
         "Resources/Animations/Enemy/Flying/KarasuFlying@Hurt3.fbx",
-        "Resources/Animations/Enemy/Flying/KarasuFlying@FlyPatrol.fbx",
         "Resources/Animations/Enemy/Flying/KarasuFlying@FeatherAttack.fbx",
         "Resources/Animations/Enemy/Flying/KarasuFlying@Death.fbx",
         "Resources/Animations/Enemy/Flying/KarasuFlying@Falling.fbx",

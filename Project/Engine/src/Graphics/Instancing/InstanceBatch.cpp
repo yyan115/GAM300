@@ -74,7 +74,27 @@ void InstanceBatch::AddInstance(const glm::mat4& modelMatrix, const glm::vec3& b
 {
     InstanceData data;
     data.modelMatrix = modelMatrix;
-    data.normalMatrix = glm::mat4(glm::transpose(glm::inverse(glm::mat3(modelMatrix))));
+
+    // Normal matrix = transpose(inverse(mat3(model))).
+    // glm::inverse is expensive (determinant + adjugate). For the common case of
+    // uniform scale we can skip the inverse: the normal matrix is just the rotation
+    // matrix, which is the upper-left 3x3 of the model matrix divided by the scale.
+    // Non-uniform scale falls back to the full inverse.
+    const glm::mat3 m3(modelMatrix);
+    float sx2 = glm::dot(m3[0], m3[0]);
+    float sy2 = glm::dot(m3[1], m3[1]);
+    float sz2 = glm::dot(m3[2], m3[2]);
+    if (glm::abs(sx2 - sy2) < 1e-4f && glm::abs(sx2 - sz2) < 1e-4f && sx2 > 1e-8f)
+    {
+        // Uniform scale: normal matrix = rotation matrix (normalised columns)
+        float invScale = 1.0f / glm::sqrt(sx2);
+        data.normalMatrix = glm::mat4(m3 * invScale);
+    }
+    else
+    {
+        data.normalMatrix = glm::mat4(glm::transpose(glm::inverse(m3)));
+    }
+
     data.bloomData = glm::vec4(bloomColor, bloomIntensity);
 
     m_instances.push_back(data);
@@ -132,26 +152,26 @@ size_t InstanceBatch::GetSortKey() const
 
 void InstanceBatch::UpdateInstanceBuffer()
 {
-    if (!m_bufferDirty || m_instances.empty()) 
-    {
-        return;
-    }
+    // Force a default capacity so we aren't allocating tiny memory chunks
+    if (m_bufferCapacity < 100) m_bufferCapacity = 100;
 
-    // If the VBO hasn't been created yet (ID 0), we MUST initialize it 
-    // with the full m_bufferCapacity, otherwise VBO::UpdateData will 
-    // create a tiny buffer that matches only the current frame's data size.
     if (m_instanceVBO.ID == 0)
     {
         m_instanceVBO.InitializeBuffer(m_bufferCapacity * sizeof(InstanceData), GL_DYNAMIC_DRAW);
     }
 
-    // Check if we need to grow the buffer
-    if (m_instances.size() > m_bufferCapacity) 
+    if (!m_bufferDirty || m_instances.empty())
+    {
+        return;
+    }
+
+    // Check if we need to grow the buffer (Buffer Orphaning)
+    if (m_instances.size() > m_bufferCapacity)
     {
         size_t newCapacity = m_bufferCapacity;
-        while (newCapacity < m_instances.size()) 
+        while (newCapacity < m_instances.size())
         {
-            newCapacity *= GROWTH_FACTOR;
+            newCapacity *= 2; // Assuming your GROWTH_FACTOR is 2
         }
         m_instanceVBO.InitializeBuffer(newCapacity * sizeof(InstanceData), GL_DYNAMIC_DRAW);
         m_bufferCapacity = newCapacity;
@@ -160,4 +180,11 @@ void InstanceBatch::UpdateInstanceBuffer()
     // Upload instance data
     m_instanceVBO.UpdateData(m_instances.data(), m_instances.size() * sizeof(InstanceData), 0);
     m_bufferDirty = false;
+}
+
+void InstanceBatch::Prewarm() {
+    if (m_instanceVBO.ID == 0) {
+        if (m_bufferCapacity < 100) m_bufferCapacity = 100;
+        m_instanceVBO.InitializeBuffer(m_bufferCapacity * sizeof(InstanceData), GL_DYNAMIC_DRAW);
+    }
 }

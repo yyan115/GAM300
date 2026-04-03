@@ -1,0 +1,15 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "005ef447a9a5bdfd-000481eed2010189",
+        "source": "../../Resources/Textures/M5/NoBendScroll2_Mixed_AO.png",
+        "compiled": "../../Resources/Textures/M5/NoBendScroll2_Mixed_AO.dds"
+    },
+    "TextureMetaData": {
+        "type": "ao",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

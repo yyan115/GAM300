@@ -28,18 +28,55 @@ local function buildIgnoreSet(self)
     return set
 end
 
+-- Recursively adds an entity and all its descendants to the set.
+local function addDescendants(set, entityId)
+    if not entityId or entityId < 0 then return end
+    set[entityId] = true
+    if not Engine.GetChildrenEntities then return end
+    local children = Engine.GetChildrenEntities(entityId)
+    if children then
+        for i = 1, #children do
+            addDescendants(set, children[i])
+        end
+    end
+end
+
+-- Builds a cached set of entity IDs whose tag matches collisionIgnoreTags.
+-- Includes all descendants so child colliders are covered.
+-- Only runs once since these are static objects; result stored in self._tagIgnoreSet.
+local function getTagIgnoreSet(self)
+    if self._tagIgnoreSet then return self._tagIgnoreSet end
+    local set = {}
+    local ignoreTags = self.collisionIgnoreTags
+    if not ignoreTags or #ignoreTags == 0 or not Engine or not Engine.GetEntitiesByTag then
+        self._tagIgnoreSet = set
+        return set
+    end
+    for _, tagName in ipairs(ignoreTags) do
+        local entities = Engine.GetEntitiesByTag(tagName)
+        if entities then
+            for i = 1, #entities do
+                addDescendants(set, entities[i])
+            end
+        end
+    end
+    self._tagIgnoreSet = set
+    return set
+end
+
 -- Returns true if the given entity ID (or any ancestor) should be ignored.
 -- Walks up the parent chain so child collider entities resolve to root enemies.
 local function isIgnoredEntity(self, entityId)
     if not entityId or entityId < 0 then return false end
 
-    local ignoreSet = buildIgnoreSet(self)
-    local deadSet   = self._deadEnemies or {}
+    local ignoreSet    = buildIgnoreSet(self)
+    local deadSet      = self._deadEnemies or {}
+    local tagIgnoreSet = getTagIgnoreSet(self)
 
     local id = entityId
     for _ = 1, 4 do  -- max 4 levels up to avoid runaway loops
         if id < 0 then break end
-        if deadSet[id] or ignoreSet[id] then return true end
+        if deadSet[id] or ignoreSet[id] or tagIgnoreSet[id] then return true end
         if not (Engine and Engine.GetParentEntity) then break end
         id = Engine.GetParentEntity(id)
     end

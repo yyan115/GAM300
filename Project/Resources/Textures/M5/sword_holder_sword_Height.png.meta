@@ -6,9 +6,10 @@
         "compiled": "../../Resources/Textures/M5/sword_holder_sword_Height.dds"
     },
     "TextureMetaData": {
-        "type": "diffuse",
+        "type": "height",
         "flipUVs": false,
         "generateMipmaps": true,
-        "textureWrapMode": "Clamp"
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
     }
 }

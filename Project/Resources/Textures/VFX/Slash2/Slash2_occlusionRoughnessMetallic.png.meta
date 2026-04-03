@@ -6,9 +6,10 @@
         "compiled": "../../Resources/Textures/VFX/Slash2/Slash2_occlusionRoughnessMetallic.dds"
     },
     "TextureMetaData": {
-        "type": "diffuse",
+        "type": "roughness",
         "flipUVs": false,
         "generateMipmaps": true,
-        "textureWrapMode": "Clamp"
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
     }
 }

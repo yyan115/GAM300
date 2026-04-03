@@ -25,7 +25,7 @@ function M.updateMouseLook(self, dt)
     local isAndroid      = Platform and Platform.IsAndroid and Platform.IsAndroid()
     local baseSensitivity = self.mouseSensitivity or 0.15
     -- Android touch coords are normalized (0-1); needs much higher sensitivity than pixel deltas
-    local sensitivity    = isAndroid and 800.0 or baseSensitivity
+    local sensitivity    = isAndroid and 550.0 or baseSensitivity
 
     local xoffset = lookAxis.x * sensitivity
     local yoffset = lookAxis.y * sensitivity
@@ -54,6 +54,12 @@ function M.updateMouseLook(self, dt)
                 self.minPitch or -80.0,
                 self.maxPitch or 80.0
             )
+
+            -- Flag that the player is manually aiming so aim assist backs off
+            local mag = math.sqrt(xoffset * xoffset + yoffset * yoffset)
+            if mag > (self.chainAimManualThreshold or 0.3) then
+                self._chainAimManualTimer = self.chainAimManualCooldown or 0.4
+            end
         end
 
         -- Track normal (non-action) pitch for smooth transitions

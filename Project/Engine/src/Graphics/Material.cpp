@@ -162,6 +162,7 @@ void Material::BindTextures(Shader& shader) const
 	bool hasAO = HasTexture(TextureType::AMBIENT_OCCLUSION);
 	bool hasMetallic = HasTexture(TextureType::METALLIC);
 	bool hasRoughness = HasTexture(TextureType::ROUGHNESS);
+	bool hasOpacity = HasTexture(TextureType::OPACITY);
 
 #if defined(ANDROID) || defined(__ANDROID__)
 	// Android shader has samplers outside of Material struct (OpenGL ES compatibility)
@@ -180,6 +181,7 @@ void Material::BindTextures(Shader& shader) const
 	shader.setBool("hasAOMap", hasAO);
 	shader.setBool("hasMetallicMap", hasMetallic);
 	shader.setBool("hasRoughnessMap", hasRoughness);
+	shader.setBool("hasOpacityMap", hasOpacity);
 #else
 	shader.setBool("material.hasDiffuseMap", hasDiffuse);
 	shader.setBool("material.hasSpecularMap", hasSpecular);
@@ -189,6 +191,7 @@ void Material::BindTextures(Shader& shader) const
 	shader.setBool("material.hasAOMap", hasAO);
 	shader.setBool("material.hasMetallicMap", hasMetallic);
 	shader.setBool("material.hasRoughnessMap", hasRoughness);
+	shader.setBool("material.hasOpacityMap", hasOpacity);
 #endif
 
 	// Bind each texture type
@@ -286,6 +289,7 @@ std::string Material::TextureTypeToString(TextureType type) const
 		case TextureType::SPECULAR: return "specularMap";
 		case TextureType::NORMAL: return "normalMap";
 		case TextureType::HEIGHT: return "heightMap";
+		case TextureType::OPACITY: return "opacityMap";
 		case TextureType::AMBIENT_OCCLUSION: return "aoMap";
 		case TextureType::METALLIC: return "metallicMap";
 		case TextureType::ROUGHNESS: return "roughnessMap";
@@ -330,26 +334,18 @@ std::filesystem::path Material::ResolveToProjectRoot(const std::filesystem::path
 
 		projectRoot = foundProjectRoot;
 
-		// Debug logging
-		ENGINE_PRINT("[Material] DEBUG - Current path: " , std::filesystem::current_path(), "\n");
-		ENGINE_PRINT("[Material] DEBUG - Found project root: ", projectRoot, "\n");
-		ENGINE_PRINT("[Material] DEBUG - Input path: " , path, "\n");
-
 		// For relative paths, resolve them from current directory first
 		if (resolvedPath.is_relative()) {
 			// Resolve relative to current working directory
 			resolvedPath = std::filesystem::current_path() / resolvedPath;
-			ENGINE_PRINT("[Material] DEBUG - Resolved from current: ", resolvedPath, "\n");
 		} else {
 			// For absolute paths, combine with project root
 			resolvedPath = projectRoot / resolvedPath;
 		}
-		ENGINE_PRINT("[Material] DEBUG - Combined path: " , resolvedPath, "\n");
 	}
 
 	// Normalize the path to resolve any .. components
 	std::filesystem::path finalPath = std::filesystem::weakly_canonical(resolvedPath);
-	ENGINE_PRINT("[Material] DEBUG - Final resolved path: " , finalPath, "\n");
 
 	return finalPath;
 }
@@ -566,12 +562,12 @@ std::string Material::CompileToResource(const std::string& assetPath, bool forAn
 	}
 
 	materialPath = FileUtilities::SanitizeFilePath(materialPath);
-	std::cout << "[Material] SAVE - Input path: " << assetPath << std::endl;
-	std::cout << "[Material] SAVE - Computed path: " << materialPath << std::endl;
-	std::cout << "[Material] SAVE - Working directory: " << std::filesystem::current_path() << std::endl;
-	std::cout << "[Material] SAVE - Material name: " << m_name << std::endl;
-	std::cout << "[Material] SAVE - Number of textures: " << m_textureInfo.size() << std::endl;
-	std::cout << "[Material] SAVE - Ambient: (" << m_ambient.x << ", " << m_ambient.y << ", " << m_ambient.z << ")" << std::endl;
+	//std::cout << "[Material] SAVE - Input path: " << assetPath << std::endl;
+	//std::cout << "[Material] SAVE - Computed path: " << materialPath << std::endl;
+	//std::cout << "[Material] SAVE - Working directory: " << std::filesystem::current_path() << std::endl;
+	//std::cout << "[Material] SAVE - Material name: " << m_name << std::endl;
+	//std::cout << "[Material] SAVE - Number of textures: " << m_textureInfo.size() << std::endl;
+	//std::cout << "[Material] SAVE - Ambient: (" << m_ambient.x << ", " << m_ambient.y << ", " << m_ambient.z << ")" << std::endl;
 
 	p = materialPath;
 	std::filesystem::create_directories(p.parent_path());
@@ -635,12 +631,12 @@ std::string Material::CompileUpdatedAssetToResource(const std::string& assetPath
 	}
 
 	materialPath = FileUtilities::SanitizeFilePath(materialPath);
-	ENGINE_PRINT("[Material] SAVE - Input path: ", assetPath, "\n");
-	ENGINE_PRINT("[Material] SAVE - Computed path: ", materialPath, "\n");
-	ENGINE_PRINT("[Material] SAVE - Working directory: ", std::filesystem::current_path(), "\n");
-	ENGINE_PRINT("[Material] SAVE - Material name: ", m_name, "\n");
-	ENGINE_PRINT("[Material] SAVE - Number of textures: ", m_textureInfo.size(), "\n");
-	ENGINE_PRINT("[Material] SAVE - Ambient: (", m_ambient.x, ", ", m_ambient.y, ", ", m_ambient.z, ")\n");
+	//ENGINE_PRINT("[Material] SAVE - Input path: ", assetPath, "\n");
+	//ENGINE_PRINT("[Material] SAVE - Computed path: ", materialPath, "\n");
+	//ENGINE_PRINT("[Material] SAVE - Working directory: ", std::filesystem::current_path(), "\n");
+	//ENGINE_PRINT("[Material] SAVE - Material name: ", m_name, "\n");
+	//ENGINE_PRINT("[Material] SAVE - Number of textures: ", m_textureInfo.size(), "\n");
+	//ENGINE_PRINT("[Material] SAVE - Ambient: (", m_ambient.x, ", ", m_ambient.y, ", ", m_ambient.z, ")\n");
 
 	p = materialPath;
 	std::filesystem::create_directories(p.parent_path());
@@ -689,7 +685,7 @@ std::string Material::CompileUpdatedAssetToResource(const std::string& assetPath
 }
 
 bool Material::LoadResource(const std::string& resourcePath, const std::string& assetPath) {
-	ENGINE_LOG_INFO("[Material] Loading material: " + resourcePath);
+	//ENGINE_LOG_INFO("[Material] Loading material: " + resourcePath);
 	std::filesystem::path resourcePathFS;
 
 	if (!resourcePath.empty()) {
@@ -701,19 +697,19 @@ bool Material::LoadResource(const std::string& resourcePath, const std::string& 
 		resourcePathFS = (assetPathFS.parent_path() / assetPathFS.stem()).generic_string() + ".mat";
 	}
 
-	ENGINE_LOG_INFO("[Material] Resolving project root");
+	//ENGINE_LOG_INFO("[Material] Resolving project root");
 #ifdef EDITOR
 	resourcePathFS = ResolveToProjectRoot(resourcePathFS);
 #endif
 	std::string finalResourcePath = resourcePathFS.generic_string();
 
-	ENGINE_PRINT("[Material] LOAD - Input path: ", assetPath, "\n");
-	ENGINE_PRINT("[Material] LOAD - Computed path: ", finalResourcePath, "\n");
-	ENGINE_PRINT("[Material] LOAD - Working directory: ", std::filesystem::current_path(), "\n");
+	//ENGINE_PRINT("[Material] LOAD - Input path: ", assetPath, "\n");
+	//ENGINE_PRINT("[Material] LOAD - Computed path: ", finalResourcePath, "\n");
+	//ENGINE_PRINT("[Material] LOAD - Working directory: ", std::filesystem::current_path(), "\n");
 
 
 	if (!GetMaterialPropertiesFromAsset(finalResourcePath)) {
-		ENGINE_LOG_INFO("[Material] Compiling material: " + assetPath);
+		//ENGINE_LOG_INFO("[Material] Compiling material: " + assetPath);
 		AssetManager::GetInstance().CompileAsset<Material>(assetPath);
 		LoadResource(resourcePath, assetPath);
 	}

@@ -1,0 +1,15 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "005ef447c1e5662e-000481eed401018f",
+        "source": "../../Resources/Textures/M5/NoBendScroll_Roughness.png",
+        "compiled": "../../Resources/Textures/M5/NoBendScroll_Roughness.dds"
+    },
+    "TextureMetaData": {
+        "type": "roughness",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

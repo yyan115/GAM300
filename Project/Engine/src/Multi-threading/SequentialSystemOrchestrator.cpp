@@ -10,7 +10,10 @@ void SequentialSystemOrchestrator::Update() {
 	auto& mainECS = ECSRegistry::GetInstance().GetActiveECSManager();
 
 	// Clear per-frame cache so all systems share the same hierarchy lookups
-	mainECS.ClearActiveHierarchyCache();
+	{
+		PROFILE_SCOPED("HierarchyCache::Clear");
+		mainECS.ClearActiveHierarchyCache();
+	}
 
 	// Update systems.
 	PROFILE_PLOT_TIMED("Script",              mainECS.scriptSystem->Update());
@@ -22,7 +25,10 @@ void SequentialSystemOrchestrator::Update() {
 	PROFILE_PLOT_TIMED("Lighting",            mainECS.lightingSystem->Update());
 
 	// Scripts may have changed entity active states; flush cache so subsequent systems see updates
-	mainECS.ClearActiveHierarchyCache();
+	{
+		PROFILE_SCOPED("HierarchyCache::Flush");
+		mainECS.ClearActiveHierarchyCache();
+	}
 
 	PROFILE_PLOT_TIMED("UIAnchor",        mainECS.uiAnchorSystem->Update());
 	PROFILE_PLOT_TIMED("Button",          mainECS.buttonSystem->Update());
@@ -50,9 +56,7 @@ void SequentialSystemOrchestrator::Draw() {
 	if (mainECS.particleSystem)
 		PROFILE_PLOT_TIMED("Particle", mainECS.particleSystem->Update());
 	if (mainECS.debugDrawSystem)
-	{
-		mainECS.debugDrawSystem->Update();
-	}
+		PROFILE_PLOT_TIMED("DebugDraw", mainECS.debugDrawSystem->Update());
 	if (mainECS.fogSystem)
 		PROFILE_PLOT_TIMED("Fog", mainECS.fogSystem->Update());
 }

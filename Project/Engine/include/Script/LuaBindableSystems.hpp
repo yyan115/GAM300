@@ -200,15 +200,48 @@ namespace InputWrappers {
 #include "Platform/IPlatform.h"
 
 namespace KeyboardWrappers {
+    // Per-frame state for edge detection (pressed vs held)
+    inline std::unordered_set<int> s_currentKeys;
+    inline std::unordered_set<int> s_previousKeys;
+
+    // Call once per frame (from Engine) to snapshot current key states
+    inline void UpdateKeyStates() {
+        s_previousKeys = std::move(s_currentKeys);
+        s_currentKeys.clear();
+
+        auto* platform = WindowManager::GetPlatform();
+        if (!platform) return;
+
+        // Snapshot all keys that are currently held (A through ALT, skip UNKNOWN)
+        for (int i = static_cast<int>(Input::Key::A); i < static_cast<int>(Input::Key::UNKNOWN); ++i) {
+            if (platform->IsKeyPressed(static_cast<Input::Key>(i))) {
+                s_currentKeys.insert(i);
+            }
+        }
+    }
+
+    // "pressed" — true ONLY on the first frame the key goes down (one-shot / edge-triggered)
     inline bool IsKeyPressed(int keyCode) {
+        return s_currentKeys.count(keyCode) > 0 && s_previousKeys.count(keyCode) == 0;
+    }
+
+    // "held" — true every frame the key is physically down
+    inline bool IsKeyHeld(int keyCode) {
         auto* platform = WindowManager::GetPlatform();
         if (!platform) return false;
         return platform->IsKeyPressed(static_cast<Input::Key>(keyCode));
     }
 
+    // "pressed" — true ONLY on the first frame the digit key goes down (one-shot)
     inline bool IsDigitPressed(int digit) {
         if (digit < 0 || digit > 9) return false;
         return IsKeyPressed(static_cast<int>(Input::Key::NUM_0) + digit);
+    }
+
+    // "held" — true every frame the digit key is physically down
+    inline bool IsDigitHeld(int digit) {
+        if (digit < 0 || digit > 9) return false;
+        return IsKeyHeld(static_cast<int>(Input::Key::NUM_0) + digit);
     }
 
     inline bool IsMouseButtonPressed(int button) {
@@ -510,6 +543,39 @@ namespace CharacterControllerWrappers {
         auto& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
         if (ecsManager.characterControllerSystem)
             ecsManager.characterControllerSystem->Shutdown();
+    }
+
+    inline void SetJuggleMode(CharacterController* controller, bool enabled, float yVelocity)
+    {
+        if (controller)
+            controller->SetJuggleMode(enabled, yVelocity);
+    }
+
+    inline bool IsJuggling(CharacterController* controller)
+    {
+        if (controller)
+            return controller->IsJuggling();
+        return false;
+    }
+
+    inline void SetMass(CharacterController* controller, float mass)
+    {
+        if (controller)
+            controller->SetMass(mass);
+    }
+
+    inline float GetMass(CharacterController* controller)
+    {
+        if (controller)
+            return controller->GetMass();
+        return 0.0f;
+    }
+
+    inline void SetImmovable(Entity id, bool immovable)
+    {
+        auto& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
+        if (ecsManager.characterControllerSystem)
+            ecsManager.characterControllerSystem->SetImmovable(id, immovable);
     }
 }
 
@@ -878,6 +944,103 @@ namespace GameSettingsWrappers {
         GameSettingsManager::GetInstance().SetExposure(exposure);
     }
 
+    inline void SetToneMappingMode(int mode) {
+        GameSettingsManager::GetInstance().SetToneMappingMode(mode);
+    }
+
+    inline void SetVSync(bool enabled) {
+        GameSettingsManager::GetInstance().SetVSync(enabled);
+    }
+
+    inline void SetFullscreen(bool enabled) {
+        GameSettingsManager::GetInstance().SetFullscreen(enabled);
+    }
+
+    // Bloom
+    inline void SetBloomEnabled(bool enabled) {
+        GameSettingsManager::GetInstance().SetBloomEnabled(enabled);
+    }
+
+    inline void SetBloomThreshold(float threshold) {
+        GameSettingsManager::GetInstance().SetBloomThreshold(threshold);
+    }
+
+    inline void SetBloomIntensity(float intensity) {
+        GameSettingsManager::GetInstance().SetBloomIntensity(intensity);
+    }
+
+    inline void SetBloomScatter(float scatter) {
+        GameSettingsManager::GetInstance().SetBloomScatter(scatter);
+    }
+
+    // Vignette
+    inline void SetVignetteEnabled(bool enabled) {
+        GameSettingsManager::GetInstance().SetVignetteEnabled(enabled);
+    }
+
+    inline void SetVignetteIntensity(float intensity) {
+        GameSettingsManager::GetInstance().SetVignetteIntensity(intensity);
+    }
+
+    inline void SetVignetteSmoothness(float smoothness) {
+        GameSettingsManager::GetInstance().SetVignetteSmoothness(smoothness);
+    }
+
+    inline void SetVignetteColor(float r, float g, float b) {
+        GameSettingsManager::GetInstance().SetVignetteColor(r, g, b);
+    }
+
+    // Color Grading
+    inline void SetColorGradingEnabled(bool enabled) {
+        GameSettingsManager::GetInstance().SetColorGradingEnabled(enabled);
+    }
+
+    inline void SetCGBrightness(float brightness) {
+        GameSettingsManager::GetInstance().SetCGBrightness(brightness);
+    }
+
+    inline void SetCGContrast(float contrast) {
+        GameSettingsManager::GetInstance().SetCGContrast(contrast);
+    }
+
+    inline void SetCGSaturation(float saturation) {
+        GameSettingsManager::GetInstance().SetCGSaturation(saturation);
+    }
+
+    inline void SetCGTint(float r, float g, float b) {
+        GameSettingsManager::GetInstance().SetCGTint(r, g, b);
+    }
+
+    // Chromatic Aberration
+    inline void SetCAEnabled(bool enabled) {
+        GameSettingsManager::GetInstance().SetCAEnabled(enabled);
+    }
+
+    inline void SetCAIntensity(float intensity) {
+        GameSettingsManager::GetInstance().SetCAIntensity(intensity);
+    }
+
+    inline void SetCAPadding(float padding) {
+        GameSettingsManager::GetInstance().SetCAPadding(padding);
+    }
+
+    // SSAO
+    inline void SetSSAOEnabled(bool enabled) {
+        GameSettingsManager::GetInstance().SetSSAOEnabled(enabled);
+    }
+
+    inline void SetSSAORadius(float radius) {
+        GameSettingsManager::GetInstance().SetSSAORadius(radius);
+    }
+
+    inline void SetSSAOBias(float bias) {
+        GameSettingsManager::GetInstance().SetSSAOBias(bias);
+    }
+
+    inline void SetSSAOIntensity(float intensity) {
+        GameSettingsManager::GetInstance().SetSSAOIntensity(intensity);
+    }
+
     // Graphics getters
     inline float GetGamma() {
         return GameSettingsManager::GetInstance().GetGamma();
@@ -887,25 +1050,123 @@ namespace GameSettingsWrappers {
         return GameSettingsManager::GetInstance().GetExposure();
     }
 
+    inline int GetToneMappingMode() {
+        return GameSettingsManager::GetInstance().GetToneMappingMode();
+    }
+
+    inline bool GetVSync() {
+        return GameSettingsManager::GetInstance().GetVSync();
+    }
+
+    inline bool GetFullscreen() {
+        return GameSettingsManager::GetInstance().GetFullscreen();
+    }
+
+    inline bool GetBloomEnabled() {
+        return GameSettingsManager::GetInstance().GetSettings().bloomEnabled;
+    }
+
+    inline float GetBloomThreshold() {
+        return GameSettingsManager::GetInstance().GetSettings().bloomThreshold;
+    }
+
+    inline float GetBloomIntensity() {
+        return GameSettingsManager::GetInstance().GetSettings().bloomIntensity;
+    }
+
+    inline float GetBloomScatter() {
+        return GameSettingsManager::GetInstance().GetSettings().bloomScatter;
+    }
+
+    inline bool GetVignetteEnabled() {
+        return GameSettingsManager::GetInstance().GetSettings().vignetteEnabled;
+    }
+
+    inline float GetVignetteIntensity() {
+        return GameSettingsManager::GetInstance().GetSettings().vignetteIntensity;
+    }
+
+    inline float GetVignetteSmoothness() {
+        return GameSettingsManager::GetInstance().GetSettings().vignetteSmoothness;
+    }
+
+    inline void GetVignetteColor(lua_State* L) {
+        const auto& c = GameSettingsManager::GetInstance().GetSettings().vignetteColor;
+        lua_pushnumber(L, c[0]);
+        lua_pushnumber(L, c[1]);
+        lua_pushnumber(L, c[2]);
+    }
+
+    inline bool GetColorGradingEnabled() {
+        return GameSettingsManager::GetInstance().GetSettings().colorGradingEnabled;
+    }
+
+    inline float GetCGBrightness() {
+        return GameSettingsManager::GetInstance().GetSettings().cgBrightness;
+    }
+
+    inline float GetCGContrast() {
+        return GameSettingsManager::GetInstance().GetSettings().cgContrast;
+    }
+
+    inline float GetCGSaturation() {
+        return GameSettingsManager::GetInstance().GetSettings().cgSaturation;
+    }
+
+    inline void GetCGTint(lua_State* L) {
+        const auto& c = GameSettingsManager::GetInstance().GetSettings().cgTint;
+        lua_pushnumber(L, c[0]);
+        lua_pushnumber(L, c[1]);
+        lua_pushnumber(L, c[2]);
+    }
+
+    inline bool GetCAEnabled() {
+        return GameSettingsManager::GetInstance().GetSettings().caEnabled;
+    }
+
+    inline float GetCAIntensity() {
+        return GameSettingsManager::GetInstance().GetSettings().caIntensity;
+    }
+
+    inline float GetCAPadding() {
+        return GameSettingsManager::GetInstance().GetSettings().caPadding;
+    }
+
+    inline bool GetSSAOEnabled() {
+        return GameSettingsManager::GetInstance().GetSettings().ssaoEnabled;
+    }
+
+    inline float GetSSAORadius() {
+        return GameSettingsManager::GetInstance().GetSettings().ssaoRadius;
+    }
+
+    inline float GetSSAOBias() {
+        return GameSettingsManager::GetInstance().GetSettings().ssaoBias;
+    }
+
+    inline float GetSSAOIntensity() {
+        return GameSettingsManager::GetInstance().GetSettings().ssaoIntensity;
+    }
+
     // Default value getters (for UI reset functionality)
     inline float GetDefaultMasterVolume() {
-        return GameSettingsManager::GetDefaultMasterVolume();
+        return GameSettingsManager::GetInstance().GetDefaultMasterVolume();
     }
 
     inline float GetDefaultBGMVolume() {
-        return GameSettingsManager::GetDefaultBGMVolume();
+        return GameSettingsManager::GetInstance().GetDefaultBGMVolume();
     }
 
     inline float GetDefaultSFXVolume() {
-        return GameSettingsManager::GetDefaultSFXVolume();
+        return GameSettingsManager::GetInstance().GetDefaultSFXVolume();
     }
 
     inline float GetDefaultGamma() {
-        return GameSettingsManager::GetDefaultGamma();
+        return GameSettingsManager::GetInstance().GetDefaultGamma();
     }
 
     inline float GetDefaultExposure() {
-        return GameSettingsManager::GetDefaultExposure();
+        return GameSettingsManager::GetInstance().GetDefaultExposure();
     }
 }
 
@@ -1529,6 +1790,50 @@ namespace EntityQueryWrappers {
 }
 
 // ============================================================================
+// MATERIAL WRAPPERS (Opacity control for distance fading etc.)
+// ============================================================================
+#include "Graphics/Model/ModelRenderComponent.hpp"
+
+namespace MaterialWrappers {
+
+    // Set the material opacity for a 3D model entity (0.0 = invisible, 1.0 = opaque).
+    // Returns false if the entity has no ModelRenderComponent or no material.
+    inline bool SetModelOpacity(Entity entityId, float opacity) {
+        auto& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
+        if (!ecs.HasComponent<ModelRenderComponent>(entityId)) return false;
+
+        auto& mrc = ecs.GetComponent<ModelRenderComponent>(entityId);
+        if (mrc.material) {
+            mrc.material->SetOpacity(opacity);
+            return true;
+        }
+        // Fall back to per-mesh materials from the model
+        if (mrc.model) {
+            for (auto& mesh : mrc.model->meshes) {
+                if (mesh.material) {
+                    mesh.material->SetOpacity(opacity);
+                }
+            }
+            return true;
+        }
+        return false;
+    }
+
+    // Get the material opacity for a 3D model entity. Returns -1 if not found.
+    inline float GetModelOpacity(Entity entityId) {
+        auto& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
+        if (!ecs.HasComponent<ModelRenderComponent>(entityId)) return -1.0f;
+
+        auto& mrc = ecs.GetComponent<ModelRenderComponent>(entityId);
+        if (mrc.material) return mrc.material->GetOpacity();
+        if (mrc.model && !mrc.model->meshes.empty() && mrc.model->meshes[0].material) {
+            return mrc.model->meshes[0].material->GetOpacity();
+        }
+        return -1.0f;
+    }
+}
+
+// ============================================================================
 // PREFAB WRAPPERS
 // ============================================================================
 #include "Prefab/PrefabIO.hpp"
@@ -1562,5 +1867,8 @@ namespace DialogueManagerWrappers {
     }
     inline int GetCurrentIndex(const std::string& name) {
         return NarrativeDialogueManager::GetInstance().GetCurrentIndex(name);
+    }
+    inline float GetCurrentEntryAutoTime(const std::string& name) {
+        return NarrativeDialogueManager::GetInstance().GetCurrentEntryAutoTime(name);
     }
 }

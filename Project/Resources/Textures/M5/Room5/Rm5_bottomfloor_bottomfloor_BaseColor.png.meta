@@ -1,0 +1,15 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "004598ffabeeaec3-00047c897602cce1",
+        "source": "../../Resources/Textures/M5/Room5/Rm5_bottomfloor_bottomfloor_BaseColor.png",
+        "compiled": "../../Resources/Textures/M5/Room5/Rm5_bottomfloor_bottomfloor_BaseColor.dds"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

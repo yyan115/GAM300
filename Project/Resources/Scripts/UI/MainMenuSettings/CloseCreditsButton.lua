@@ -14,11 +14,17 @@ return Component {
         self._transform = self:GetComponent("Transform")
         self._audio = self:GetComponent("AudioComponent")
         self._sprite = self:GetComponent("SpriteRenderComponent")
+        self._button = self:GetComponent("ButtonComponent")
 
         self._isHovered = false
         self._isFading = false
         self._fadeTimer = 0
-        self._wasCreditsActive = false  -- Track previous active state for rising edge detection
+        self._wasCreditsActive = false
+
+        -- Start non-interactable; enabled only when credits is open
+        if self._button then
+            self._button.interactable = false
+        end
 
         -- Cache entity references
         self._creditsTextEntity = Engine.GetEntityByName("CreditsFullText")
@@ -28,6 +34,12 @@ return Component {
         -- Cache component references
         if self._creditsTextEntity then
             self._creditsTextTransform = GetComponent(self._creditsTextEntity, "Transform")
+            -- Cache the initial position for reset
+            if self._creditsTextTransform then
+                local pos = self._creditsTextTransform.localPosition
+                self._creditsTextInitX = pos.x
+                self._creditsTextInitY = pos.y
+            end
         end
 
         if self._creditsBGEntity then
@@ -48,11 +60,18 @@ return Component {
             self._isFading = false
             self._fadeTimer = 0
             self._isHovered = false
-        end
-        if isActive and not self._isFading then
-            self._sprite.isVisible = true   
+            -- Reset to normal sprite in case it was left on hover sprite
+            if self._sprite and self.spriteGUIDs and self.spriteGUIDs[1] then
+                self._sprite:SetTextureFromGUID(self.spriteGUIDs[1])
+            end
+            if self._button then
+                self._button.interactable = true
+            end
         end
 
+        if isActive and not self._isFading then
+            self._sprite.isVisible = true
+        end
 
         -- Update previous state
         self._wasCreditsActive = isActive
@@ -121,8 +140,17 @@ return Component {
     end,
 
     OnClickCloseCreditsButton = function(self)
+        -- Only process if credits is actually active
+        local isActive = self._creditsUIActive and self._creditsUIActive.isActive
+        if not isActive then return end
+
         if self._audio and self.HoverSFX and self.HoverSFX[2] then
             self._audio:PlayOneShot(self.HoverSFX[2])
+        end
+
+        -- Disable button immediately so it can't be clicked again during fade
+        if self._button then
+            self._button.interactable = false
         end
 
         -- Start fade out
@@ -134,9 +162,8 @@ return Component {
     _resetCreditsPosition = function(self)
         if self._creditsTextTransform then
             local pos = self._creditsTextTransform.localPosition
-            -- Reset to starting position (1030, -2150)
-            pos.x = 1030
-            pos.y = -2150
+            pos.x = self._creditsTextInitX
+            pos.y = self._creditsTextInitY
             self._creditsTextTransform.isDirty = true
         end
     end,
@@ -155,6 +182,9 @@ return Component {
         if self._creditsBGSprite then
             self._creditsBGSprite.alpha = 1.0
         end
+
+        -- Reset tracking so rising edge detection works on next open
+        self._wasCreditsActive = false
 
         -- Re-enable main menu buttons
         local targetButtons = {"PlayGame", "Credits", "ExitGame", "Settings"}

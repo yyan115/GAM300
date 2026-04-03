@@ -36,6 +36,7 @@
 #include "Panels/PerformancePanel.hpp"
 #include "Panels/AssetBrowserPanel.hpp"
 #include "Panels/TagsLayersPanel.hpp"
+#include "Panels/EnvironmentPanel.hpp"
 #include "Panels/SpriteAnimationEditorWindow.hpp"
 #include "Panels/AnimatorEditorWindow.hpp"
 
@@ -48,6 +49,7 @@ GUID_128 GUIManager::selectedAsset = GUID_128{0, 0};
 std::string GUIManager::notificationMessage = "";
 float GUIManager::notificationTimer = 0.0f;
 bool GUIManager::showSelectionOutline = true;
+bool GUIManager::showHelpWindow = false;
 GUIManager::GameBuildStatus GUIManager::gameBuildStatus;
 
 // Function definitions
@@ -138,6 +140,7 @@ void GUIManager::Render() {
 
 	// Render notification overlay
 	RenderNotification();
+	RenderHelpWindow();
 
 	// Render ImGui on top of the scene
 	ImGui::Render();
@@ -208,6 +211,10 @@ void GUIManager::SetupDefaultPanels() {
 	auto tagsLayersPanel = std::make_shared<TagsLayersPanel>();
 	assert(tagsLayersPanel != nullptr && "Failed to create TagsLayersPanel");
 	panelManager->RegisterPanel(tagsLayersPanel);
+
+	auto environmentPanel = std::make_shared<EnvironmentPanel>();
+	assert(environmentPanel != nullptr && "Failed to create EnvironmentPanel");
+	panelManager->RegisterPanel(environmentPanel);
 
 	// Register the sprite animation editor window (no-op deleter to avoid double-free of singleton)
 	auto spriteAnimEditor = std::shared_ptr<EditorPanel>(GetSpriteAnimationEditor(), [](EditorPanel*){});
@@ -332,44 +339,42 @@ void GUIManager::RenderMenuBar() {
 					});
 			}
 			ImGui::EndDisabled();
-			ImGui::BeginDisabled(gameBuildStatus.isBuilding);
-			if (ImGui::MenuItem(ICON_FA_BOX_ARCHIVE " Build Installer")) {
-				gameBuildStatus.isBuilding = true;
-				gameBuildStatus.step.store(1);
-				gameBuildStatus.future = std::async(std::launch::async, [] {
-					// Write a batch file that sets up the VS environment via vcvarsall
-					// before running cmake — needed when editor is launched outside of VS
-					std::filesystem::create_directories(INSTALLER_OUTPUT_DIR);
-					std::string batPath = std::string(INSTALLER_OUTPUT_DIR) + "\\build_installer.bat";
-					{
-						std::ofstream bat(batPath);
-						bat << "@echo off\r\n";
-						bat << "for /f \"usebackq tokens=*\" %%i in (`\"C:\\Program Files (x86)\\Microsoft Visual Studio\\Installer\\vswhere.exe\" -latest -property installationPath`) do (\r\n";
-						bat << "  call \"%%i\\VC\\Auxiliary\\Build\\vcvarsall.bat\" x64\r\n";
-						bat << ")\r\n";
-						bat << "cd /d \"" PROJECT_SOURCE_DIR "\"\r\n";
-						bat << "cmake --preset release\r\n";
-						bat << "if errorlevel 1 exit /b 1\r\n";
-						bat << "cmake --build \"" INTERMEDIATE_RELEASE_DIR "\"\r\n";
-						bat << "if errorlevel 1 exit /b 1\r\n";
-						bat << "cd /d \"" INTERMEDIATE_RELEASE_DIR "\"\r\n";
-						bat << "cpack -C Release -B \"" INSTALLER_OUTPUT_DIR "\"\r\n";
-					}
-
-					gameBuildStatus.step.store(1);
-					// Step tracking: we can't know exactly which step the bat is on,
-					// so advance steps on a timer as a visual hint
-					std::thread([]{
-						std::this_thread::sleep_for(std::chrono::seconds(5));
-						if (gameBuildStatus.isBuilding) gameBuildStatus.step.store(2);
-						std::this_thread::sleep_for(std::chrono::seconds(10));
-						if (gameBuildStatus.isBuilding) gameBuildStatus.step.store(3);
-					}).detach();
-
-					return system(("\"" + batPath + "\"").c_str());
-				});
-			}
-			ImGui::EndDisabled();
+			// ImGui::BeginDisabled(gameBuildStatus.isBuilding);
+			// if (ImGui::MenuItem(ICON_FA_BOX_ARCHIVE " Build Installer")) {
+			// 	gameBuildStatus.isBuilding = true;
+			// 	gameBuildStatus.step.store(1);
+			// 	gameBuildStatus.future = std::async(std::launch::async, [] {
+			// 		// Write a batch file that sets up the VS environment via vcvarsall
+			// 		// before running cmake — needed when editor is launched outside of VS
+			// 		std::filesystem::create_directories(INSTALLER_OUTPUT_DIR);
+			// 		std::string batPath = std::string(INSTALLER_OUTPUT_DIR) + "\\build_installer.bat";
+			// 		{
+			// 			std::ofstream bat(batPath);
+			// 			bat << "@echo off\r\n";
+			// 			bat << "for /f \"usebackq tokens=*\" %%i in (`\"C:\\Program Files (x86)\\Microsoft Visual Studio\\Installer\\vswhere.exe\" -latest -property installationPath`) do (\r\n";
+			// 			bat << "  call \"%%i\\VC\\Auxiliary\\Build\\vcvarsall.bat\" x64\r\n";
+			// 			bat << ")\r\n";
+			// 			bat << "cd /d \"" PROJECT_SOURCE_DIR "\"\r\n";
+			// 			bat << "cmake --preset release\r\n";
+			// 			bat << "if errorlevel 1 exit /b 1\r\n";
+			// 			bat << "cmake --build \"" INTERMEDIATE_RELEASE_DIR "\"\r\n";
+			// 			bat << "if errorlevel 1 exit /b 1\r\n";
+			// 			bat << "cd /d \"" INTERMEDIATE_RELEASE_DIR "\"\r\n";
+			// 			bat << "cpack -C Release -B \"" INSTALLER_OUTPUT_DIR "\"\r\n";
+			// 		}
+			// 		gameBuildStatus.step.store(1);
+			// 		// Step tracking: we can't know exactly which step the bat is on,
+			// 		// so advance steps on a timer as a visual hint
+			// 		std::thread([]{
+			// 			std::this_thread::sleep_for(std::chrono::seconds(5));
+			// 			if (gameBuildStatus.isBuilding) gameBuildStatus.step.store(2);
+			// 			std::this_thread::sleep_for(std::chrono::seconds(10));
+			// 			if (gameBuildStatus.isBuilding) gameBuildStatus.step.store(3);
+			// 		}).detach();
+			// 		return system(("\"" + batPath + "\"").c_str());
+			// 	});
+			// }
+			// ImGui::EndDisabled();
 			ImGui::Separator();
 			if (ImGui::MenuItem(ICON_FA_RIGHT_FROM_BRACKET " Exit", "Alt+F4")) {
 				// TODO: Exit application
@@ -419,8 +424,8 @@ void GUIManager::RenderMenuBar() {
 		}
 
 		if (ImGui::BeginMenu("Help")) {
-			if (ImGui::MenuItem(ICON_FA_CIRCLE_INFO " About")) {
-				// TODO: About dialog
+			if (ImGui::MenuItem(ICON_FA_CIRCLE_INFO " Help / About", "F1")) {
+				showHelpWindow = true;
 			}
 			ImGui::EndMenu();
 		}
@@ -437,13 +442,18 @@ void GUIManager::RenderMenuBar() {
 		}
 		AssetManager::GetInstance().androidCompilationStatus.finishedCompiling = false;
 		AssetManager::GetInstance().androidCompilationStatus.isCompiling = false;
+		ENGINE_LOG_INFO("[GUIManager] Android assets compiled successfully!");
+		ShowNotification("Android assets compiled successfully!", 3.0f);
 	}
 	else if (AssetManager::GetInstance().androidCompilationStatus.isCompiling)
 	{
-		ImGui::Begin("Compiling assets for Android...");
+		ImVec2 center = ImVec2(ImGui::GetIO().DisplaySize.x * 0.5f, ImGui::GetIO().DisplaySize.y * 0.5f);
+		ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
+		ImGui::SetNextWindowSize(ImVec2(360, 80), ImGuiCond_Appearing);
+		ImGui::Begin("Compiling assets for Android...", nullptr, ImGuiWindowFlags_NoCollapse);
 		float fraction = (float)AssetManager::GetInstance().androidCompilationStatus.numCompiledAssets / (float)AssetManager::GetInstance().GetAssetMetaMapSize();
 		std::string overlay = std::to_string((int)(fraction * 100)) + "%";
-		ImGui::ProgressBar(fraction, ImVec2(300, 0), overlay.c_str());
+		ImGui::ProgressBar(fraction, ImVec2(-1, 0), overlay.c_str());
 		ImGui::End();
 	}
 
@@ -642,6 +652,11 @@ void GUIManager::HandleKeyboardShortcuts() {
 
 	SnapshotManager& snapshotMgr = SnapshotManager::GetInstance();
 
+	// Help: F1
+	if (ImGui::IsKeyPressed(ImGuiKey_F1, false)) {
+		showHelpWindow = !showHelpWindow;
+	}
+
 	// Undo: Ctrl+Z
 	if (io.KeyCtrl && !io.KeyShift && ImGui::IsKeyPressed(ImGuiKey_Z, false)) {
 		if (snapshotMgr.CanUndo()) {
@@ -728,6 +743,92 @@ void GUIManager::HandleKeyboardShortcuts() {
 void GUIManager::ShowNotification(const std::string& message, float duration) {
 	notificationMessage = message;
 	notificationTimer = duration;
+}
+
+void GUIManager::RenderHelpWindow() {
+	if (!showHelpWindow) {
+		return;
+	}
+
+	ImGui::SetNextWindowSize(ImVec2(760.0f, 560.0f), ImGuiCond_FirstUseEver);
+	if (!ImGui::Begin("Help & About", &showHelpWindow)) {
+		ImGui::End();
+		return;
+	}
+
+	ImGui::TextUnformatted("GAM300 Editor");
+	ImGui::TextDisabled("Engine Engine - Internal Editor");
+	ImGui::Separator();
+
+	std::string activeSceneName = SceneManager::GetInstance().GetSceneName();
+	ImGui::Text("Current Scene: %s", activeSceneName.empty() ? "(unnamed)" : activeSceneName.c_str());
+	ImGui::Text("Selected Entities: %zu", selectedEntities.size());
+
+	if (ImGui::BeginTabBar("##HelpTabs")) {
+		if (ImGui::BeginTabItem("Overview")) {
+			ImGui::TextWrapped("This editor lets you build scenes with panel-based workflows. Start from Scene Hierarchy to create/select entities, then edit components in Inspector.");
+			ImGui::Spacing();
+			ImGui::BulletText("Scene Hierarchy: create, organize, parent/unparent entities");
+			ImGui::BulletText("Inspector: edit components and values");
+			ImGui::BulletText("Scene Panel: navigate and frame selected objects");
+			ImGui::BulletText("Asset Browser: drag assets/prefabs into scene and hierarchy");
+			ImGui::EndTabItem();
+		}
+
+		if (ImGui::BeginTabItem("Shortcuts")) {
+			if (ImGui::BeginTable("##HelpShortcuts", 2, ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg | ImGuiTableFlags_SizingStretchProp)) {
+				ImGui::TableSetupColumn("Action", ImGuiTableColumnFlags_WidthStretch, 0.7f);
+				ImGui::TableSetupColumn("Shortcut", ImGuiTableColumnFlags_WidthStretch, 0.3f);
+				ImGui::TableHeadersRow();
+
+				auto row = [](const char* action, const char* key) {
+					ImGui::TableNextRow();
+					ImGui::TableSetColumnIndex(0);
+					ImGui::TextUnformatted(action);
+					ImGui::TableSetColumnIndex(1);
+					ImGui::TextUnformatted(key);
+				};
+
+				row("Help / About", "F1");
+				row("Save Scene", "Ctrl+S");
+				row("Load Scene", "Ctrl+O");
+				row("Undo", "Ctrl+Z");
+				row("Redo", "Ctrl+Y");
+				row("Copy Selected Entity", "Ctrl+C");
+				row("Paste Entity", "Ctrl+V");
+				row("Duplicate Entity", "Ctrl+D");
+				row("Delete Entity", "Del");
+				row("Rename Entity", "F2");
+				row("Frame Selected", "F");
+
+				ImGui::EndTable();
+			}
+
+			ImGui::TextDisabled("Entity shortcuts apply when Scene Hierarchy or Scene panel is focused.");
+			ImGui::EndTabItem();
+		}
+
+		if (ImGui::BeginTabItem("Hierarchy Tips")) {
+			ImGui::BulletText("Right-click empty hierarchy area opens create/context menu");
+			ImGui::BulletText("Right-click entity row selects and highlights that entity");
+			ImGui::BulletText("Drag entity rows to reorder or reparent");
+			ImGui::BulletText("Use collapse/expand controls in hierarchy header");
+			ImGui::BulletText("Use search filters (Name/Lua/Comp/Tag/Layer) for targeted lookups");
+			ImGui::EndTabItem();
+		}
+
+		if (ImGui::BeginTabItem("Troubleshooting")) {
+			ImGui::BulletText("If layout looks broken: View > Reset Layout");
+			ImGui::BulletText("If scene changes are missing: use File > Save Scene");
+			ImGui::BulletText("If a panel disappeared: Window menu to reopen it");
+			ImGui::BulletText("If controls stop reacting in play mode: check cursor lock state");
+			ImGui::EndTabItem();
+		}
+
+		ImGui::EndTabBar();
+	}
+
+	ImGui::End();
 }
 
 void GUIManager::RenderNotification() {

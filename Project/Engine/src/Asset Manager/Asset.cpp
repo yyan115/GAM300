@@ -89,7 +89,7 @@ std::shared_ptr<AssetMeta> IAsset::GenerateBaseMetaFile(GUID_128 guid128, const 
 	//	}
 	//}
 
-	ENGINE_PRINT("[IAsset] Generated base meta file ", metaFilePath, "\n");
+	//ENGINE_PRINT("[IAsset] Generated base meta file ", metaFilePath, "\n");
 
 	MetaFilesManager::AddGUID128Mapping(assetPath, guid128);
 

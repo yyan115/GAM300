@@ -1,0 +1,15 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "006d9327f2395dba-0004b3b96a02bc5d",
+        "source": "../../Resources/Textures/M6/BookSlanted1_Roughness.png",
+        "compiled": "../../Resources/Textures/M6/BookSlanted1_Roughness.dds"
+    },
+    "TextureMetaData": {
+        "type": "roughness",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

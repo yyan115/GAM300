@@ -1,0 +1,15 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "0057a38255ac7ef6-00047cf230007843",
+        "source": "../../Resources/Textures/M5/BossRoom/floor_low_floor1_Roughness.png",
+        "compiled": "../../Resources/Textures/M5/BossRoom/floor_low_floor1_Roughness.dds"
+    },
+    "TextureMetaData": {
+        "type": "roughness",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

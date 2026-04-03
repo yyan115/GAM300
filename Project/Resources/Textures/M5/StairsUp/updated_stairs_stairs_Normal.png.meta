@@ -6,9 +6,10 @@
         "compiled": "../../Resources/Textures/M5/StairsUp/updated_stairs_stairs_Normal.dds"
     },
     "TextureMetaData": {
-        "type": "diffuse",
+        "type": "normal",
         "flipUVs": false,
         "generateMipmaps": true,
-        "textureWrapMode": "Clamp"
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
     }
 }

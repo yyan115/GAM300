@@ -27,11 +27,16 @@ out vec3 color;
 out vec2 TexCoords;
 out vec4 FragPosLightSpace;
 
+layout(std140) uniform CameraBlock {
+    mat4 view;
+    mat4 projection;
+    vec3 cameraPos;
+    float _pad;
+};
+
 uniform mat4 model;
-uniform mat4 view;
-uniform mat4 projection;
 uniform mat4 lightSpaceMatrix;
-uniform mat3 normalMatrix;  // Pass this from CPU instead of computing inverse()
+uniform mat3 normalMatrixCPU;  // Pass this from CPU instead of computing inverse()
 
 uniform bool useInstancing;
 
@@ -66,7 +71,7 @@ void main()
     else
     {
         modelMatrix = model;
-        nrmMatrix = normalMatrix;
+        nrmMatrix = normalMatrixCPU;
     }
 
     // Start in object space

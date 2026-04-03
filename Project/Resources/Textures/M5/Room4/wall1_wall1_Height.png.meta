@@ -1,0 +1,15 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "002c80ed395ab202-00047a9ca403c795",
+        "source": "../../Resources/Textures/M5/Room4/wall1_wall1_Height.png",
+        "compiled": "../../Resources/Textures/M5/Room4/wall1_wall1_Height.dds"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

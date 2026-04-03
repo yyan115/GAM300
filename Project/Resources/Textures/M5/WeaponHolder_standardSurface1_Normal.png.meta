@@ -1,0 +1,15 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "0011f2c3aa67eb93-000480ffd4000f37",
+        "source": "../../Resources/Textures/M5/WeaponHolder_standardSurface1_Normal.png",
+        "compiled": "../../Resources/Textures/M5/WeaponHolder_standardSurface1_Normal.dds"
+    },
+    "TextureMetaData": {
+        "type": "normal",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

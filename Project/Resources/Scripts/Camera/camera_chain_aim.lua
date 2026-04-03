@@ -18,16 +18,12 @@ local function shortestDelta(from, to)
     return d
 end
 
--- Returns true if there is an unobstructed line from the player to the enemy.
--- Casts from player center-mass toward the enemy; if geometry is hit before
--- reaching the enemy the line-of-sight is blocked.
-local function hasLineOfSight(self, ex, ey, ez)
+-- Returns true if there is an unobstructed line from the given origin to the enemy.
+-- ox/oy/oz should be the camera position, which is outside the player's physics
+-- capsule. Starting inside the capsule causes Physics.Raycast to return -1 (no hit)
+-- making every enemy appear visible regardless of walls.
+local function hasLineOfSight(ox, oy, oz, ex, ey, ez)
     if not (Physics and Physics.Raycast) then return true end
-
-    -- Ray origin: player position raised to center-mass
-    local ox = self._targetPos.x
-    local oy = self._targetPos.y + (self.chainAimAssistHeightOffset or 1.0)
-    local oz = self._targetPos.z
 
     local dx = ex - ox
     local dy = ey - oy
@@ -37,10 +33,10 @@ local function hasLineOfSight(self, ex, ey, ez)
 
     local ndx, ndy, ndz = dx / dist, dy / dist, dz / dist
 
-    -- Physics.Raycast returns hit distance (>= 0) or -1 if no hit.
-    -- If something is hit closer than the enemy (with 0.3 tolerance), LOS is blocked.
+    -- hitDist > 0 means geometry was hit. If it's closer than the enemy
+    -- (with 0.3 m tolerance for the enemy's own collider) the LOS is blocked.
     local hitDist = Physics.Raycast(ox, oy, oz, ndx, ndy, ndz, dist)
-    if hitDist >= 0 and hitDist < dist - 0.3 then
+    if hitDist and hitDist > 0 and hitDist < dist - 0.3 then
         return false
     end
     return true
@@ -102,38 +98,68 @@ function M.updateChainAim(self, dt)
     camX = camX - math.cos(lookYawRad) * sideOffset
     camZ = camZ + math.sin(lookYawRad) * sideOffset
 
-    -- Soft aim assist: gently pull _chainAimYaw/_chainAimPitch toward the
-    -- nearest enemy within the configured angular window.
-    if self._chainAiming and self._chainAimYaw then
-        M.updateAimAssist(self, dt, camX, camY, camZ)
+    -- Tick down the manual-aim cooldown so aim assist stays off while the
+    -- player is actively moving the camera.
+    if self._chainAimManualTimer and self._chainAimManualTimer > 0 then
+        self._chainAimManualTimer = self._chainAimManualTimer - dt
     end
 
-    -- Publish forward basis for chain-throw direction while actively aiming.
+    -- Soft aim assist: gently pull _chainAimYaw/_chainAimPitch toward the
+    -- nearest enemy within the configured angular window.
+    -- Skip when the player is manually aiming so it doesn't fight their input.
+    local manuallyAiming = self._chainAimManualTimer and self._chainAimManualTimer > 0
+    if self._chainAiming and self._chainAimYaw and not manuallyAiming then
+        M.updateAimAssist(self, dt, camX, camY, camZ)
+    elseif manuallyAiming then
+        -- Clear stale assist target so the chain fires where the player is
+        -- actually looking, not at the last auto-aimed enemy.
+        self._assistTargetX = nil
+        self._assistTargetY = nil
+        self._assistTargetZ = nil
+        self._assistPrevTargetYaw   = nil
+        self._assistPrevTargetPitch = nil
+    end
+
+    -- Publish forward basis and crosshair world target for chain-throw direction.
     -- When aim assist has a locked target, fire from player toward that enemy
     -- so the chain travels toward the actual enemy rather than along raw camera angles.
     if self._chainAiming then
-        local fx, fy, fz
-        if self._assistTargetX and self._targetPos then
-            local dx = self._assistTargetX - self._targetPos.x
-            local dy = self._assistTargetY - self._targetPos.y
-            local dz = self._assistTargetZ - self._targetPos.z
-            local len = math.sqrt(dx*dx + dy*dy + dz*dz)
-            if len > 0.001 then
-                fx, fy, fz = dx/len, dy/len, dz/len
+        -- Camera forward direction (always from camera look angles).
+        local aimYaw   = self._chainAimYaw   or self._yaw
+        local aimPitch = self._chainAimPitch or self._pitch
+        local yr = math.rad(aimYaw)
+        local pr = math.rad(aimPitch)
+        local fx = math.sin(yr) * math.cos(pr)
+        local fy = -math.sin(pr)
+        local fz = math.cos(yr) * math.cos(pr)
+
+        -- World target: if aim assist has a locked enemy, use its position
+        -- directly. Otherwise raycast from camera to find the crosshair hit.
+        -- ChainBootstrap computes the actual fire direction from the chain's
+        -- start position (hand bone) toward this world target.
+        local wx, wy, wz
+        if self._assistTargetX then
+            wx = self._assistTargetX
+            wy = self._assistTargetY
+            wz = self._assistTargetZ
+        else
+            local crosshairMaxDist = 100.0
+            local hitDist = crosshairMaxDist
+            if Physics and Physics.Raycast then
+                local d = Physics.Raycast(camX, camY, camZ, fx, fy, fz, crosshairMaxDist)
+                if d and d > 0 then hitDist = d end
             end
+            -- Use camera position as origin so the world target matches exactly
+            -- where the crosshair is pointing. Previously this used the player's
+            -- eye position with the camera's hit distance, causing parallax error.
+            wx = camX + fx * hitDist
+            wy = camY + fy * hitDist
+            wz = camZ + fz * hitDist
         end
-        if not fx then
-            -- No assist target — use camera look angles
-            local aimYaw   = self._chainAimYaw   or self._yaw
-            local aimPitch = self._chainAimPitch or self._pitch
-            local yr = math.rad(aimYaw)
-            local pr = math.rad(aimPitch)
-            fx = math.sin(yr) * math.cos(pr)
-            fy = -math.sin(pr)
-            fz = math.cos(yr) * math.cos(pr)
-        end
+
         if event_bus and event_bus.publish then
             event_bus.publish("ChainAim_basis", { forward = { x = fx, y = fy, z = fz } })
+            event_bus.publish("ChainAim_worldTarget", { x = wx, y = wy, z = wz })
         end
     end
 
@@ -190,7 +216,8 @@ function M.updateAimAssist(self, dt, camX, camY, camZ)
         if entities then
             for i = 1, #entities do
                 local entityId = entities[i]
-                if not (Engine.IsEntityActive and not Engine.IsEntityActive(entityId)) then
+                local isDead = self._deadEnemies and self._deadEnemies[entityId]
+                if not isDead and not (Engine.IsEntityActive and not Engine.IsEntityActive(entityId)) then
                     local ex, ey, ez = Engine.GetEntityPosition(entityId)
                     if ex then
                         -- Use camera position as origin for angular calculation
@@ -200,7 +227,7 @@ function M.updateAimAssist(self, dt, camX, camY, camZ)
                         local dz = ez - camZ
                         local distSq = dx*dx + dy*dy + dz*dz
                         if distSq <= assistRange * assistRange
-                        and hasLineOfSight(self, ex, ey + heightOffset, ez) then
+                        and hasLineOfSight(camX, camY, camZ, ex, ey + heightOffset, ez) then
                             local len3d = math.sqrt(dx*dx + dy*dy + dz*dz)
                             if len3d > 0.01 then
                                 local targetYaw   = math.deg(atan2(dx, dz))

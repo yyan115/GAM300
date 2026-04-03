@@ -2,6 +2,7 @@
 #include "pch.h"
 #include "Reflection/ReflectionBase.hpp"
 #include "ECS/Entity.hpp"
+#include <cstdint>
 #include <string>
 #include <vector>
 
@@ -11,6 +12,9 @@ struct CutsceneBoard {
 
 	// --- Image ---
 	std::string imagePath;              // Drag-drop texture path
+
+	// --- Audio ---
+	std::string sfxGuidStr;             // GUID of SFX to play when this board becomes active (empty = none)
 
 	// --- Text ---
 	std::string text;                   // Dialogue text to display
@@ -73,6 +77,7 @@ struct ENGINE_API VideoComponent {
 	int previousBoardChars = 0;
 	bool skipRequested = false;
 	bool cutsceneEnded = false;
+	uint64_t activeBoardSfxChannel = 0; // Runtime channel handle for board SFX (0 = none)
 
 	// Resolved entity handles
 	Entity textEntity = 0;

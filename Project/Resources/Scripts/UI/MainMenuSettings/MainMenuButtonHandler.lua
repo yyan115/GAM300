@@ -4,6 +4,7 @@ local Component = require("extension.mono_helper")
 return Component {
     fields = {
         fadeDuration = 1.0,
+        bgmFadeInDuration = 2.0,      -- Duration for BGM fade in on scene start
         fadeScreenName = "MenuFadeScreen",
         targetScene = "Resources/Scenes/02_IntroCutscene.scene",
         androidTargetScene = "Resources/Scenes/04_Level.scene",
@@ -15,6 +16,8 @@ return Component {
     _fadeTimer = 0,
     _bgmAudio = nil,
     _bgmInitialVolume = 1.0,
+    _isFadingIn = false,
+    _fadeInTimer = 0,
 
     Start = function(self)
         -- Ensure game is not paused when entering main menu (defensive reset)
@@ -44,12 +47,16 @@ return Component {
             end
         end
 
-        -- Get reference to BGM AudioComponent
+        -- Get reference to BGM AudioComponent and start fade in
         local bgmEntity = Engine.GetEntityByName(self.bgmEntityName)
         if bgmEntity then
             self._bgmAudio = GetComponent(bgmEntity, "AudioComponent")
             if self._bgmAudio then
                 self._bgmInitialVolume = self._bgmAudio.Volume
+                -- Start silent and fade in
+                self._bgmAudio:SetVolume(0)
+                self._isFadingIn = true
+                self._fadeInTimer = 0
             end
         end
     end,
@@ -58,6 +65,9 @@ return Component {
     OnClickPlayButton = function(self)
         -- Play click SFX
         self:_playClickSFX("PlayGame")
+
+        -- Stop BGM fade in if still in progress
+        self._isFadingIn = false
 
         -- Start fade transition
         self._isFading = true
@@ -88,10 +98,27 @@ return Component {
     OnClickQuitButton = function(self)
         -- Play click SFX
         self:_playClickSFX("ExitGame")
-        if Screen and Screen.RequestClose then
-            Screen.RequestClose()
-        else
-            print("[MainMenuButtonHandler] Warning: Screen.RequestClose missing")
+
+        local QuitPromptEntity = Engine.GetEntityByName("QuitPromptUI")
+        local QuitPromptUI = GetComponent(QuitPromptEntity, "ActiveComponent")
+        QuitPromptUI.isActive = true
+
+
+        -- Disable buttons and hide text when settings menu is active
+        local targetButtons = {"PlayGame", "Credits", "ExitGame", "Settings"}
+        local targetTexts = {"PlayGameText", "SettingText", "CreditsText", "ExitGameText"}
+        for _, buttonName in ipairs(targetButtons) do
+            local entity = Engine.GetEntityByName(buttonName)
+            if entity then
+                local button = GetComponent(entity, "ButtonComponent")
+                if button then
+                    button.interactable = false
+                else
+                    print("[MainMenuButtonHandler] Warning: ButtonComponent missing on " .. buttonName)
+                end
+            else
+                print("[MainMenuButtonHandler] Warning: Button entity " .. buttonName .. " not found")
+            end
         end
     end,
 
@@ -156,23 +183,12 @@ return Component {
 
         -- Disable main menu buttons and hide text when credits is active
         local targetButtons = {"PlayGame", "Credits", "ExitGame", "Settings"}
-        local targetTexts = {"PlayGameText", "SettingText", "CreditsText", "ExitGameText"}
         for _, buttonName in ipairs(targetButtons) do
             local entity = Engine.GetEntityByName(buttonName)
             if entity then
                 local button = GetComponent(entity, "ButtonComponent")
                 if button then
                     button.interactable = false
-                end
-            end
-        end
-        -- Hide button text to prevent z-order issues with CreditsUI overlay
-        for _, textName in ipairs(targetTexts) do
-            local textEntity = Engine.GetEntityByName(textName)
-            if textEntity then
-                local textActive = GetComponent(textEntity, "ActiveComponent")
-                if textActive then
-                    textActive.isActive = false
                 end
             end
         end
@@ -192,6 +208,17 @@ return Component {
 
     -- Update handles fade transition and scene loading
     Update = function(self, dt)
+        -- Handle BGM fade in on scene start
+        if self._isFadingIn and self._bgmAudio then
+            self._fadeInTimer = self._fadeInTimer + dt
+            local duration = self.bgmFadeInDuration or 2.0
+            local progress = math.min(self._fadeInTimer / duration, 1.0)
+            self._bgmAudio:SetVolume(self._bgmInitialVolume * progress)
+            if progress >= 1.0 then
+                self._isFadingIn = false
+            end
+        end
+
         -- Handle fade transition
         if self._isFading and self._fadeSprite then
         -- --Disable Highlight of button when transitioning

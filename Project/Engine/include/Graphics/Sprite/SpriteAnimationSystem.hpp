@@ -1,4 +1,5 @@
 #pragma once
+#include "pch.h"
 #include <memory>
 #include <vector>
 #include "ECS/System.hpp"
@@ -9,7 +10,7 @@ public:
     SpriteAnimationSystem() = default;
     ~SpriteAnimationSystem() = default;
 
-    bool Initialise();
+    bool ENGINE_API Initialise();
     void Update();
 
 private:

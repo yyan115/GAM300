@@ -1,0 +1,15 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "0057a382374f2b16-00047cf22200770d",
+        "source": "../../Resources/Textures/M5/BossRoom/floor_low_floor1_Metallic.png",
+        "compiled": "../../Resources/Textures/M5/BossRoom/floor_low_floor1_Metallic.dds"
+    },
+    "TextureMetaData": {
+        "type": "metallic",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

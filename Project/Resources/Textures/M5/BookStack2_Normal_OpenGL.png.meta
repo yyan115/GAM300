@@ -6,9 +6,10 @@
         "compiled": "../../Resources/Textures/M5/BookStack2_Normal_OpenGL.dds"
     },
     "TextureMetaData": {
-        "type": "normal",
+        "type": "diffuse",
         "flipUVs": false,
         "generateMipmaps": true,
-        "textureWrapMode": "Clamp"
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
     }
 }

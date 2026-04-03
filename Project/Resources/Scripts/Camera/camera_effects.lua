@@ -14,20 +14,22 @@ EFFECTS MANAGED:
 ALL timers use Time.GetUnscaledDeltaTime() so effects survive time dilation.
 
 EVENTS CONSUMED:
-    fx_vignette         { intensity, smoothness?, duration? }  nil duration = hold
-    fx_chromatic        { intensity, duration? }               nil duration = hold
-    fx_blur             { intensity, radius?, duration? }      nil duration = hold
-    fx_motion_blur      { intensity }                          → driven each frame by camera_follow
-    fx_time_scale       { scale, duration? }                   nil duration = hold
-    fx_vignette_clear   {}
-    fx_chromatic_clear  {}
-    fx_blur_clear       {}
-    fx_time_scale_clear {}
-    fx_clear_all        {}    → cancel every active effect immediately
-    fx_sequence         { name }  → run a named scripted sequence from SEQUENCES
-    fx_sequence_cancel  {}        → abort the currently running sequence
-    dodge_success       { attackType, payload }  → chromatic spike + freeze-frame slow-mo
-    vault_jump          {}                        → chromatic spike + freeze-frame slow-mo on confirmed vault
+    fx_vignette            { intensity, smoothness?, duration? }                      nil duration = hold
+    fx_chromatic           { intensity, duration? }                                   nil duration = hold
+    fx_blur                { intensity, radius?, duration? }                          nil duration = hold
+    fx_motion_blur         { intensity, angle? }                                      → driven each frame by camera_follow; angle = movement direction in degrees
+    fx_color_grading       { brightness?, contrast?, saturation?, tint?, duration? }  nil duration = hold
+    fx_time_scale          { scale, duration? }                                       nil duration = hold
+    fx_vignette_clear      {}
+    fx_chromatic_clear     {}
+    fx_blur_clear          {}
+    fx_color_grading_clear {}
+    fx_time_scale_clear    {}
+    fx_clear_all           {}    → cancel every active effect immediately
+    fx_sequence            { name }  → run a named scripted sequence from SEQUENCES
+    fx_sequence_cancel     {}        → abort the currently running sequence
+    dodge_success          { attackType, payload }  → chromatic spike + freeze-frame slow-mo
+    vault_jump             {}                        → chromatic spike + freeze-frame slow-mo on confirmed vault
 
 EVENTS PUBLISHED:
     fx_time_scale_restored  {}  → fires when time scale returns to 1.0
@@ -94,8 +96,8 @@ return Component {
 
     fields = {
         -- === Vignette ===
-        BaselineVignetteIntensity  = 0.25,   -- always-on base intensity; events push above this
-        BaselineVignetteSmoothness = 0.5,
+        BaselineVignetteIntensity  = 0.65,   -- always-on base intensity; events push above this
+        BaselineVignetteSmoothness = 0.35,
         VignetteFadeSpeed          = 6.0,    -- lerp speed back to baseline
 
         -- === Chromatic Aberration ===
@@ -106,9 +108,24 @@ return Component {
         DefaultBlurRadius = 2.0,
 
         -- === Motion Blur ===
-        MotionBlurMaxIntensity = 0.6,   -- peak blur intensity at full camera speed (0=off, 1=max).
-        MotionBlurFadeSpeed    = 12.0,  -- lerp speed for motion blur response. Higher = snappier onset and decay.
-        MotionBlurRadius       = 1.5,   -- blur radius used when motion blur is the dominant contribution.
+        -- Uses directional blur (dirBlur*), NOT gaussian blur, for correct motion-blur look.
+        -- camera_follow should publish fx_motion_blur { intensity=0-1, angle=degrees }
+        -- where angle is the camera movement direction (0=right, 90=up, etc).
+        MotionBlurEnabled      = true,   -- master toggle; set false to disable motion blur entirely.
+        MotionBlurMaxIntensity = 0.25,   -- peak dirBlurIntensity at full camera speed (0=off, 1=max).
+        MotionBlurMaxStrength  = 3.5,    -- peak dirBlurStrength (pixel spread) at full camera speed.
+        MotionBlurFadeSpeed    = 12.0,   -- lerp speed for motion blur response. Higher = snappier onset and decay.
+        MotionBlurSamples      = 8,      -- dirBlurSamples quality (4–16).
+
+        -- === Color Grading ===
+        -- Baseline values always applied; fx_color_grading events push above/below these.
+        BaselineCgBrightness = -0.05,  -- additive brightness offset. 0 = neutral.
+        BaselineCgContrast   = 1.3,    -- contrast multiplier. 1 = neutral.
+        BaselineCgSaturation = 0.85,   -- saturation multiplier. 1 = neutral, 0 = greyscale.
+        BaselineCgTintR      = 1.1,    -- tint red channel. warm amber push.
+        BaselineCgTintG      = 0.92,   -- tint green channel. slightly warm.
+        BaselineCgTintB      = 0.75,   -- tint blue channel. reduce blue for warm look.
+        ColorGradingFadeSpeed = 5.0,   -- lerp speed back to baseline after a timed event.
 
         -- === Time Scale ===
         TimeScaleRestoreSpeed = 4.0,   -- how fast time lerps back to 1.0 after a timed slow-mo
@@ -202,19 +219,58 @@ return Component {
         end)
 
         -- === Motion Blur ===
-        -- Driven every frame by camera_follow; intensity is pre-normalised (0–1).
+        -- Driven every frame by camera_follow.
+        -- intensity is pre-normalised (0-1); angle is movement direction in degrees.
         self._motionBlurSub = event_bus.subscribe("fx_motion_blur", function(p)
             if not p then return end
-            self._motionBlurTarget = (p.intensity or 0) * (self.MotionBlurMaxIntensity or 0.6)
+            self._motionBlurTarget       = (p.intensity or 0) * (self.MotionBlurMaxIntensity or 0.6)
+            self._motionBlurStrengthTarget = (p.intensity or 0) * (self.MotionBlurMaxStrength or 8.0)
+            if p.angle ~= nil then
+                self._motionBlurAngle = p.angle
+            end
+        end)
+
+        -- === Color Grading ===
+        self._colorGradingSub = event_bus.subscribe("fx_color_grading", function(p)
+            if not p then return end
+            self._cgBrightnessTarget = p.brightness  ~= nil and p.brightness  or self.BaselineCgBrightness
+            self._cgContrastTarget   = p.contrast    ~= nil and p.contrast    or self.BaselineCgContrast
+            self._cgSaturationTarget = p.saturation  ~= nil and p.saturation  or self.BaselineCgSaturation
+            if p.tint then
+                self._cgTintTargetR = p.tint[1] or self.BaselineCgTintR
+                self._cgTintTargetG = p.tint[2] or self.BaselineCgTintG
+                self._cgTintTargetB = p.tint[3] or self.BaselineCgTintB
+            end
+            self._cgDuration = p.duration
+            self._cgTimer    = 0
+            self._cgHeld     = (p.duration == nil)
+        end)
+
+        self._colorGradingClearSub = event_bus.subscribe("fx_color_grading_clear", function()
+            self._cgBrightnessTarget = self.BaselineCgBrightness
+            self._cgContrastTarget   = self.BaselineCgContrast
+            self._cgSaturationTarget = self.BaselineCgSaturation
+            self._cgTintTargetR      = self.BaselineCgTintR
+            self._cgTintTargetG      = self.BaselineCgTintG
+            self._cgTintTargetB      = self.BaselineCgTintB
+            self._cgHeld             = false
         end)
 
         -- === Clear All ===
         self._clearAllSub = event_bus.subscribe("fx_clear_all", function()
-            self._vignetteTarget  = self.BaselineVignetteIntensity; self._vignetteHeld  = false
-            self._chromaticTarget = 0;                              self._chromaticHeld = false
-            self._blurTarget      = 0;                              self._blurHeld      = false
-            self._timeScaleTarget = 1.0;                            self._timeScaleHeld = false
-            self._motionBlurTarget = 0
+            self._vignetteTarget     = self.BaselineVignetteIntensity; self._vignetteHeld  = false
+            self._chromaticTarget    = 0;                              self._chromaticHeld = false
+            self._blurTarget         = 0;                              self._blurHeld      = false
+            self._timeScaleTarget    = 1.0;                            self._timeScaleHeld = false
+            self._motionBlurTarget         = 0
+            self._motionBlurStrengthTarget = 0
+            self._cgBrightnessTarget = self.BaselineCgBrightness
+            self._cgContrastTarget   = self.BaselineCgContrast
+            self._cgSaturationTarget = self.BaselineCgSaturation
+            self._cgTintTargetR      = self.BaselineCgTintR
+            self._cgTintTargetG      = self.BaselineCgTintG
+            self._cgTintTargetB      = self.BaselineCgTintB
+            self._cgHeld             = false
         end)
 
         -- === Dodge Success ===
@@ -291,7 +347,7 @@ return Component {
         self._vignetteTimer         = 0
         self._vignetteHeld          = false
 
-        self._camera.vignetteEnabled    = true
+        self._camera.vignetteEnabled    = false
         self._camera.vignetteIntensity  = self._vignetteCurrent
         self._camera.vignetteSmoothness = self._vignetteSmoothCurrent
 
@@ -319,8 +375,39 @@ return Component {
         self._camera.blurRadius    = self._blurRadCurrent
 
         -- === Motion blur state ===
-        self._motionBlurTarget  = 0   -- set each frame by fx_motion_blur from camera_follow
-        self._motionBlurCurrent = 0   -- lerped toward target; drives camera when dominant
+        self._motionBlurTarget          = 0
+        self._motionBlurCurrent         = 0
+        self._motionBlurStrengthTarget  = 0
+        self._motionBlurStrengthCurrent = 0
+        self._motionBlurAngle           = 0
+
+        self._camera.dirBlurEnabled   = false
+        self._camera.dirBlurIntensity = 0
+        self._camera.dirBlurStrength  = 0
+        self._camera.dirBlurAngle     = 0
+        self._camera.dirBlurSamples   = self.MotionBlurSamples or 8
+
+        -- === Color grading state ===
+        self._cgBrightnessCurrent = self.BaselineCgBrightness
+        self._cgBrightnessTarget  = self.BaselineCgBrightness
+        self._cgContrastCurrent   = self.BaselineCgContrast
+        self._cgContrastTarget    = self.BaselineCgContrast
+        self._cgSaturationCurrent = self.BaselineCgSaturation
+        self._cgSaturationTarget  = self.BaselineCgSaturation
+        self._cgTintCurrentR      = self.BaselineCgTintR
+        self._cgTintCurrentG      = self.BaselineCgTintG
+        self._cgTintCurrentB      = self.BaselineCgTintB
+        self._cgTintTargetR       = self.BaselineCgTintR
+        self._cgTintTargetG       = self.BaselineCgTintG
+        self._cgTintTargetB       = self.BaselineCgTintB
+        self._cgDuration          = nil
+        self._cgTimer             = 0
+        self._cgHeld              = false
+
+        self._camera.colorGradingEnabled = true
+        self._camera.cgBrightness        = self._cgBrightnessCurrent
+        self._camera.cgContrast          = self._cgContrastCurrent
+        self._camera.cgSaturation        = self._cgSaturationCurrent
 
         -- === Time scale state ===
         self._timeScaleTarget   = 1.0
@@ -404,7 +491,8 @@ return Component {
             self._camera.chromaticAberrationIntensity = self._chromaticCurrent
         end
 
-        -- === Blur =============================================================
+        -- === Gaussian Blur ====================================================
+        -- fx_blur events only. Motion blur is handled separately via dirBlur below.
         do
             if not self._blurHeld and self._blurDuration then
                 self._blurTimer = self._blurTimer + udt
@@ -418,17 +506,54 @@ return Component {
             self._blurCurrent    = self._blurCurrent    + (self._blurTarget    - self._blurCurrent)    * t
             self._blurRadCurrent = self._blurRadCurrent + (self._blurRadTarget - self._blurRadCurrent) * t
 
-            -- Motion blur lerps independently; the stronger signal wins so manual
-            -- blur events and camera-speed blur never fight each other.
+            self._camera.blurEnabled   = self._blurCurrent > 0.001
+            self._camera.blurIntensity = self._blurCurrent
+            self._camera.blurRadius    = self._blurRadCurrent
+        end
+
+        -- === Motion Blur (Directional) ========================================
+        do
+            local mbTarget    = (self.MotionBlurEnabled ~= false) and self._motionBlurTarget         or 0
+            local mbStrTarget = (self.MotionBlurEnabled ~= false) and self._motionBlurStrengthTarget or 0
             local mt = math.min((self.MotionBlurFadeSpeed or 12.0) * udt, 1.0)
-            self._motionBlurCurrent = self._motionBlurCurrent + (self._motionBlurTarget - self._motionBlurCurrent) * mt
+            self._motionBlurCurrent         = self._motionBlurCurrent         + (mbTarget    - self._motionBlurCurrent)         * mt
+            self._motionBlurStrengthCurrent = self._motionBlurStrengthCurrent + (mbStrTarget - self._motionBlurStrengthCurrent) * mt
 
-            local finalIntensity = math.max(self._blurCurrent, self._motionBlurCurrent)
-            local motionDominant = self._motionBlurCurrent > self._blurCurrent
+            local active = self._motionBlurCurrent > 0.001
+            self._camera.dirBlurEnabled   = active
+            self._camera.dirBlurIntensity = self._motionBlurCurrent
+            self._camera.dirBlurStrength  = self._motionBlurStrengthCurrent
+            self._camera.dirBlurAngle     = self._motionBlurAngle or 0
+            self._camera.dirBlurSamples   = self.MotionBlurSamples or 8
+        end
 
-            self._camera.blurEnabled   = finalIntensity > 0.001
-            self._camera.blurIntensity = finalIntensity
-            self._camera.blurRadius    = motionDominant and (self.MotionBlurRadius or 1.5) or self._blurRadCurrent
+        -- === Color Grading ====================================================
+        do
+            if not self._cgHeld and self._cgDuration then
+                self._cgTimer = self._cgTimer + udt
+                if self._cgTimer >= self._cgDuration then
+                    self._cgDuration         = nil
+                    self._cgBrightnessTarget = self.BaselineCgBrightness
+                    self._cgContrastTarget   = self.BaselineCgContrast
+                    self._cgSaturationTarget = self.BaselineCgSaturation
+                    self._cgTintTargetR      = self.BaselineCgTintR
+                    self._cgTintTargetG      = self.BaselineCgTintG
+                    self._cgTintTargetB      = self.BaselineCgTintB
+                end
+            end
+
+            local t = math.min((self.ColorGradingFadeSpeed or 5.0) * udt, 1.0)
+            self._cgBrightnessCurrent = self._cgBrightnessCurrent + (self._cgBrightnessTarget - self._cgBrightnessCurrent) * t
+            self._cgContrastCurrent   = self._cgContrastCurrent   + (self._cgContrastTarget   - self._cgContrastCurrent)   * t
+            self._cgSaturationCurrent = self._cgSaturationCurrent + (self._cgSaturationTarget - self._cgSaturationCurrent) * t
+            self._cgTintCurrentR      = self._cgTintCurrentR      + (self._cgTintTargetR      - self._cgTintCurrentR)      * t
+            self._cgTintCurrentG      = self._cgTintCurrentG      + (self._cgTintTargetG      - self._cgTintCurrentG)      * t
+            self._cgTintCurrentB      = self._cgTintCurrentB      + (self._cgTintTargetB      - self._cgTintCurrentB)      * t
+
+            self._camera.cgBrightness = self._cgBrightnessCurrent
+            self._camera.cgContrast   = self._cgContrastCurrent
+            self._camera.cgSaturation = self._cgSaturationCurrent
+            --self._camera:cgTint(self._cgTintCurrentR, self._cgTintCurrentG, self._cgTintCurrentB)
         end
 
         -- === Time Scale =======================================================
@@ -464,6 +589,7 @@ return Component {
                 "_chromaticSub", "_chromaticClearSub",
                 "_blurSub", "_blurClearSub",
                 "_motionBlurSub",
+                "_colorGradingSub", "_colorGradingClearSub",
                 "_timeScaleSub", "_timeScaleClearSub",
                 "_clearAllSub",
                 "_dodgeSuccessSub", "_vaultJumpSub",
@@ -477,8 +603,13 @@ return Component {
         Time.SetTimeScale(1.0)
         if self._camera then
             self._camera.blurEnabled                  = false
+            self._camera.dirBlurEnabled               = false
             self._camera.chromaticAberrationEnabled   = false
             self._camera.vignetteIntensity            = self.BaselineVignetteIntensity
+            self._camera.colorGradingEnabled          = true
+            self._camera.cgBrightness                 = self.BaselineCgBrightness
+            self._camera.cgContrast                   = self.BaselineCgContrast
+            self._camera.cgSaturation                 = self.BaselineCgSaturation
         end
     end,
 }

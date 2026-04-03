@@ -6,9 +6,10 @@
         "compiled": "../../Resources/Textures/M5/StairsUp/updated_stairs_stairs_Metallic.dds"
     },
     "TextureMetaData": {
-        "type": "diffuse",
+        "type": "metallic",
         "flipUVs": false,
         "generateMipmaps": true,
-        "textureWrapMode": "Clamp"
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
     }
 }

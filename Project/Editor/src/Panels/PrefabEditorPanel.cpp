@@ -26,10 +26,14 @@
 #include <Panels/ScenePanel.hpp>
 #include <ECS/ActiveComponent.hpp>
 #include <Scene/SceneManager.hpp>
+#include "Scripting.h"
+#include <Graphics/Lights/LightComponent.hpp>
 
 bool PrefabEditor::isInPrefabEditorMode = false;
 //bool PrefabEditor::hasUnsavedChanges = false;
 Entity PrefabEditor::sandboxEntity = static_cast<Entity>(-1);
+Entity PrefabEditor::prefabPreviewLight = static_cast<Entity>(-1);
+bool PrefabEditor::previewLightEnabled = true;
 std::string PrefabEditor::prefabPath{};
 //std::vector<Entity> PrefabEditor::previouslyActiveEntities{};
 
@@ -59,6 +63,13 @@ namespace {
         std::filesystem::path canon = std::filesystem::weakly_canonical(p, ec);
         return (ec ? std::filesystem::path(p) : canon).generic_string();
     }
+
+    static bool IsEntityPresentInECS(ECSManager& ecs, Entity entity)
+    {
+        const auto allEntities = ecs.GetAllEntities();
+        return std::find(allEntities.begin(), allEntities.end(), entity) != allEntities.end();
+    }
+
 }
 
 //PrefabEditorPanel::PrefabEditorPanel()
@@ -84,12 +95,19 @@ void PrefabEditor::StartEditingPrefab(const std::string& _prefabPath)
     if (!IsInPrefabEditorMode()) {
         SceneManager::GetInstance().SaveTempScene();
     }
+    else {
+        // If we were previously editing another prefab, save the previous prefab changes first.
+        PrefabEditor::SaveEditedPrefab();
+    }
+
+    // The preview light (if any) will be destroyed by ClearAllEntities below.
+    prefabPreviewLight = static_cast<Entity>(-1);
 
     // Clear all entities in the current scene.
     ecs.ClearAllEntities();
 
     // Instantiate the prefab to edit.
-    Entity prefab = InstantiatePrefabFromFile(_prefabPath);
+    Entity prefab = InstantiatePrefabFromFile(_prefabPath, false, true);
     GUIManager::SetSelectedEntity(prefab);
 
     //if (sandboxEntity != static_cast<Entity>(-1)) {
@@ -160,14 +178,27 @@ void PrefabEditor::StartEditingPrefab(const std::string& _prefabPath)
  //           ecs.GetComponent<ActiveComponent>(e).isActive = false;
  //       }
 	//}
+
+    // Preview light is created lazily by SyncPreviewLightToSceneCamera() and follows
+    // the editor Scene camera, so there is no static prefab-root light.
+
+    // Reload scripts so the inspector can create preview instances for script components.
+    // ClearAllEntities() above invalidates the module cache; without this, CreateInstanceFromFile
+    // fails and no script fields are shown until the user presses the hot reload button manually.
+    Scripting::RequestReloadNow();
+    if (Scripting::GetLuaState()) Scripting::Tick(0.0f);
 }
 
 void PrefabEditor::StopEditingPrefab() {
     ECSManager& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
-    SaveEntityToPrefabFile(ecs, AssetManager::GetInstance(), sandboxEntity, prefabPath);
 
-    //// Propagate changes to all prefab instances.
-    //PropagateToInstances();
+    // Remove the preview light before saving so it is never written into the prefab file.
+    if (prefabPreviewLight != static_cast<Entity>(-1)) {
+        ecs.DestroyEntity(prefabPreviewLight);
+        prefabPreviewLight = static_cast<Entity>(-1);
+    }
+
+    SaveEntityToPrefabFile(ecs, AssetManager::GetInstance(), sandboxEntity, prefabPath);
 
 	ecs.DestroyEntity(sandboxEntity);
 
@@ -176,15 +207,11 @@ void PrefabEditor::StopEditingPrefab() {
 	isInPrefabEditorMode = false;
 
 	// Restore the previous scene state from the temp file.
+    // The temp scene was saved when prefab editing started, so it contains
+    // any instance overrides the user had made before editing the prefab.
+    // When this scene is next loaded or saved, it will pick up the updated
+    // prefab file and apply the stored overrides on top.
 	SceneManager::GetInstance().ReloadTempScene();
-
- //   // Restore previously active entities.
- //   for (const auto& e : previouslyActiveEntities) {
- //       if (ecs.HasComponent<ActiveComponent>(e))
- //           ecs.GetComponent<ActiveComponent>(e).isActive = true;
- //   }
-	//previouslyActiveEntities.clear();
-	//SetUnsavedChanges(false);
 
     GUIManager::ClearSelectedEntities();
 }
@@ -192,6 +219,100 @@ void PrefabEditor::StopEditingPrefab() {
 void PrefabEditor::SaveEditedPrefab() {
     std::cout << "[PrefabEditor] Saving prefab..." << std::endl;
     SaveEntityToPrefabFile(ECSRegistry::GetInstance().GetActiveECSManager(), AssetManager::GetInstance(), sandboxEntity, prefabPath);
+}
+
+void PrefabEditor::SetPreviewLightEnabled(bool enabled)
+{
+    previewLightEnabled = enabled;
+
+    if (!isInPrefabEditorMode) {
+        return;
+    }
+
+    ECSManager& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
+
+    if (!previewLightEnabled) {
+        if (prefabPreviewLight != static_cast<Entity>(-1) && IsEntityPresentInECS(ecs, prefabPreviewLight)) {
+            ecs.DestroyEntity(prefabPreviewLight);
+        }
+        prefabPreviewLight = static_cast<Entity>(-1);
+        return;
+    }
+
+    if (prefabPreviewLight == static_cast<Entity>(-1) || !IsEntityPresentInECS(ecs, prefabPreviewLight)) {
+        return;
+    }
+
+    if (ecs.HasComponent<PointLightComponent>(prefabPreviewLight)) {
+        ecs.GetComponent<PointLightComponent>(prefabPreviewLight).enabled = previewLightEnabled;
+    }
+    if (ecs.HasComponent<ActiveComponent>(prefabPreviewLight)) {
+        ecs.GetComponent<ActiveComponent>(prefabPreviewLight).isActive = previewLightEnabled;
+    }
+}
+
+void PrefabEditor::SyncPreviewLightToSceneCamera(const glm::vec3& cameraPosition,
+                                                 const glm::vec3& cameraForward,
+                                                 const glm::vec3& cameraUp)
+{
+    if (!isInPrefabEditorMode) {
+        return;
+    }
+
+    ECSManager& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
+
+    if (!previewLightEnabled) {
+        if (prefabPreviewLight != static_cast<Entity>(-1) && IsEntityPresentInECS(ecs, prefabPreviewLight)) {
+            ecs.DestroyEntity(prefabPreviewLight);
+        }
+        prefabPreviewLight = static_cast<Entity>(-1);
+        return;
+    }
+
+    if (prefabPreviewLight == static_cast<Entity>(-1) || !IsEntityPresentInECS(ecs, prefabPreviewLight)) {
+        Entity lightEntity = ecs.CreateEntity();
+        if (lightEntity == static_cast<Entity>(-1)) {
+            return;
+        }
+
+        if (ecs.HasComponent<NameComponent>(lightEntity)) {
+            ecs.GetComponent<NameComponent>(lightEntity).name = "__PrefabPreviewLight__";
+        }
+
+        if (ecs.HasComponent<ActiveComponent>(lightEntity)) {
+            ecs.GetComponent<ActiveComponent>(lightEntity).isActive = previewLightEnabled;
+        }
+
+        PointLightComponent previewLight;
+        previewLight.enabled = previewLightEnabled;
+        previewLight.intensity = 3.0f;
+        previewLight.range = 30.0f;
+        previewLight.linear = 0.022f;
+        previewLight.quadratic = 0.0019f;
+        previewLight.diffuse = Vector3D(1.0f, 0.98f, 0.92f);
+        previewLight.ambient = Vector3D(0.55f, 0.55f, 0.55f);
+        ecs.AddComponent<PointLightComponent>(lightEntity, previewLight);
+
+        prefabPreviewLight = lightEntity;
+    }
+
+    if (ecs.HasComponent<ActiveComponent>(prefabPreviewLight)) {
+        ecs.GetComponent<ActiveComponent>(prefabPreviewLight).isActive = true;
+    }
+
+    if (ecs.HasComponent<PointLightComponent>(prefabPreviewLight)) {
+        ecs.GetComponent<PointLightComponent>(prefabPreviewLight).enabled = previewLightEnabled;
+    }
+
+    if (!previewLightEnabled || !ecs.HasComponent<Transform>(prefabPreviewLight)) {
+        return;
+    }
+
+    const glm::vec3 offsetPosition = cameraPosition + cameraForward * 0.4f + cameraUp * 0.15f;
+    Transform& lightTransform = ecs.GetComponent<Transform>(prefabPreviewLight);
+    lightTransform.localPosition = Vector3D(offsetPosition.x, offsetPosition.y, offsetPosition.z);
+    lightTransform.isDirty = true;
+    ecs.transformSystem->UpdateTransform(prefabPreviewLight);
 }
 
 //void PrefabEditorPanel::OnImGuiRender()
@@ -252,7 +373,7 @@ void PrefabEditor::LoadPrefabSandbox()
     sandboxECS.~ECSManager();
     new (&sandboxECS) ECSManager();
 
-    sandboxEntity = InstantiatePrefabFromFile(prefabPath);
+    sandboxEntity = InstantiatePrefabFromFile(prefabPath, false, true);
 
     //if (!sandboxECS.HasComponent<NameComponent>(sandboxEntity))
     //    sandboxECS.AddComponent<NameComponent>(sandboxEntity, NameComponent{});
@@ -265,12 +386,21 @@ void PrefabEditor::LoadPrefabSandbox()
     //    prefabPath,
     //    sandboxEntity,
     //    /*keepExistingPosition=*/false,
-    //    /*resolveAssets=*/false);   // <— key change
+    //    /*resolveAssets=*/false);   // < key change
 }
 
 #if PREFABEDITOR_ENABLE_PROPAGATION
 void PrefabEditor::PropagateToInstances()
 {
+    PropagateToInstancesForPath(prefabPath);
+}
+
+void PrefabEditor::PropagateToInstancesForPath(const std::string& pathToPrefab)
+{
+    if (pathToPrefab.empty()) {
+        return;
+    }
+
     ECSManager& liveECS = ECSRegistry::GetInstance().GetActiveECSManager();
 
     if (!liveECS.IsComponentTypeRegistered<PrefabLinkComponent>()) {
@@ -279,19 +409,27 @@ void PrefabEditor::PropagateToInstances()
         return;
     }
 
-    const std::string myPath = CanonicalPrefabPath(prefabPath);
+    const std::string myPath = CanonicalPrefabPath(pathToPrefab);
     const std::string myNorm = NormalizePath(myPath);
 
-    auto sandboxEntities = liveECS.transformSystem->GetAllChildEntitiesSet(sandboxEntity);
+    // Collect entities to update first (avoid iterator invalidation)
+    std::vector<Entity> entitiesToUpdate;
 
     for (Entity e : liveECS.GetAllEntities()) {
-        if (e == sandboxEntity || sandboxEntities.contains(e) || !liveECS.HasComponent<PrefabLinkComponent>(e)) continue;
+        if (!liveECS.HasComponent<PrefabLinkComponent>(e)) continue;
         const auto& link = liveECS.GetComponent<PrefabLinkComponent>(e);
         const std::string refNorm = NormalizePath(CanonicalPrefabPath(link.prefabPath));
         if (refNorm != myNorm) continue;
 
-        InstantiatePrefabIntoEntity(prefabPath, e);
+        entitiesToUpdate.push_back(e);
     }
+
+    // Now update each prefab instance
+    for (Entity e : entitiesToUpdate) {
+        InstantiatePrefabIntoEntity(pathToPrefab, e);
+    }
+
+    ENGINE_PRINT("[PrefabEditor] Propagated prefab changes to ", entitiesToUpdate.size(), " instance(s).\n");
 }
 #endif
 
