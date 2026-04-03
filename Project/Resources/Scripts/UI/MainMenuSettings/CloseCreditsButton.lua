@@ -1,5 +1,6 @@
 require("extension.engine_bootstrap")
 local Component = require("extension.mono_helper")
+local event_bus = _G.event_bus
 
 return Component {
     fields = {
@@ -12,7 +13,6 @@ return Component {
 
     Start = function(self)
         self._transform = self:GetComponent("Transform")
-        self._audio = self:GetComponent("AudioComponent")
         self._sprite = self:GetComponent("SpriteRenderComponent")
         self._button = self:GetComponent("ButtonComponent")
 
@@ -123,8 +123,8 @@ return Component {
 
         if isHovering and not self._isHovered then
             self._isHovered = true
-            if self._audio and self.HoverSFX and self.HoverSFX[1] then
-                self._audio:PlayOneShot(self.HoverSFX[1])
+            if event_bus and event_bus.publish then
+                event_bus.publish("main_menu.hover", {})
             end
             -- Switch to hover sprite
             if self._sprite and self.spriteGUIDs and self.spriteGUIDs[2] then
@@ -144,8 +144,8 @@ return Component {
         local isActive = self._creditsUIActive and self._creditsUIActive.isActive
         if not isActive then return end
 
-        if self._audio and self.HoverSFX and self.HoverSFX[2] then
-            self._audio:PlayOneShot(self.HoverSFX[2])
+        if event_bus and event_bus.publish then
+            event_bus.publish("main_menu.click", {})
         end
 
         -- Disable button immediately so it can't be clicked again during fade
