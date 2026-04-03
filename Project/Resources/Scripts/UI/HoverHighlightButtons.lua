@@ -1,164 +1,114 @@
 require("extension.engine_bootstrap")
 local Component = require("extension.mono_helper")
 
-local targetButtons = 
-{   "PlayGame", 
-    "Credits", 
-    "ExitGame",
-    "Settings" 
-}
+local TARGET_BUTTONS = {"PlayGame", "Credits", "ExitGame", "Settings"}
+local UI_MENUS       = {"SettingsUI", "CreditsUI", "QuitPromptUI"}
 
-local UIMenus = 
-{
-    "SettingsUI",
-    "CreditsUI",
-    "QuitPromptUI"
-}
+local NORMAL_TEXT_COLOR  = {0.8, 0.8, 0.8}
+local HOVERED_TEXT_COLOR = {0.0, 0.0, 0.0}
+
+local function applyTextColor(textComponent, color)
+    if not textComponent then return end
+    textComponent.color.x = color[1]
+    textComponent.color.y = color[2]
+    textComponent.color.z = color[3]
+end
 
 return Component {
     Start = function(self)
-        self.lastState = 1
+        self.lastState    = nil
         self.buttonBounds = {}
-        self.UIState = {}
+        self.UIState      = {}
         self._lockedState = false
 
-        self._audio = self:GetComponent("AudioComponent")
+        for index, name in ipairs(TARGET_BUTTONS) do
+            local e = Engine.GetEntityByName(name)
+            if e then
+                local transform = GetComponent(e, "Transform")
+                local pos, scale = transform.localPosition, transform.localScale
+                local sprite     = GetComponent(e, "SpriteRenderComponent")
 
-        for index, value in ipairs(targetButtons) do
-            local targetEntity = Engine.GetEntityByName(value)
-            if targetEntity then
-                local transform = GetComponent(targetEntity, "Transform")
-                local pos   = transform.localPosition
-                local scale = transform.localScale
-
-                local component = GetComponent(targetEntity, "SpriteRenderComponent")
-
-                local buttonChild = Engine.GetChildAtIndex(targetEntity, 0)
-                local textComponent = nil
-                if buttonChild then
-                    textComponent = GetComponent(buttonChild, "TextRenderComponent")
-                end
+                local child = Engine.GetChildAtIndex(e, 0)
+                local text  = child and GetComponent(child, "TextRenderComponent")
 
                 self.buttonBounds[index] = {
-                    spriteComponent = component,
-                    textComponent = textComponent,
-                    minX = pos.x - (scale.x / 2),
-                    maxX = pos.x + (scale.x / 2),
-                    minY = pos.y - (scale.y / 2),
-                    maxY = pos.y + (scale.y / 2)
+                    spriteComponent = sprite,
+                    textComponent   = text,
+                    minX = pos.x - scale.x * 0.5,
+                    maxX = pos.x + scale.x * 0.5,
+                    minY = pos.y - scale.y * 0.5,
+                    maxY = pos.y + scale.y * 0.5,
                 }
 
-                if textComponent then
-                    textComponent.color.x = 0.8
-                    textComponent.color.y = 0.8
-                    textComponent.color.z = 0.8
-                end
-
-                if component then
-                    component.isVisible = (index == self.lastState)
-                end
+                applyTextColor(text, NORMAL_TEXT_COLOR)
+                if sprite then sprite.isVisible = false end
             end
         end
 
-        for index, value in ipairs(UIMenus) do
-            local UIEntity = Engine.GetEntityByName(value)
-            if UIEntity then
-                local activeComponent = GetComponent(UIEntity, "ActiveComponent")
-                self.UIState[index] = {
-                    component = activeComponent
-                }
+        for index, name in ipairs(UI_MENUS) do
+            local e = Engine.GetEntityByName(name)
+            if e then
+                self.UIState[index] = { component = GetComponent(e, "ActiveComponent") }
             end
         end
     end,
 
     Update = function(self, dt)
-
         local pointerPos = Input.GetPointerPosition()
         if not pointerPos then return end
 
-        local mouseCoordinate = Engine.GetGameCoordinate(pointerPos.x, pointerPos.y)
-        if not mouseCoordinate then return end
-
-        local inputX = mouseCoordinate[1]
-        local inputY = mouseCoordinate[2]
+        local mc = Engine.GetGameCoordinate(pointerPos.x, pointerPos.y)
+        if not mc then return end
+        local inputX, inputY = mc[1], mc[2]
         if not inputX or not inputY then return end
 
-        local anyUIOpen = false
-        for _, states in ipairs(self.UIState) do
-            if states.component and states.component.isActive then
-                anyUIOpen = true
-                break
-            end
-        end
-
-        if anyUIOpen then
-            return
+        -- Suppress hover when any overlay is open
+        for _, state in ipairs(self.UIState) do
+            if state.component and state.component.isActive then return end
         end
 
         self._lockedState = false
 
+        -- Find hovered button
         local hoveredIndex = nil
-
         for index, bounds in ipairs(self.buttonBounds) do
-            if bounds.minX and bounds.maxX and bounds.minY and bounds.maxY and
-               inputX >= bounds.minX and inputX <= bounds.maxX and
+            if inputX >= bounds.minX and inputX <= bounds.maxX and
                inputY >= bounds.minY and inputY <= bounds.maxY then
-
                 hoveredIndex = index
-
-                if Input.IsPointerPressed() then
-                    self._lockedState = true
-                end
-
+                if Input.IsPointerPressed() then self._lockedState = true end
                 break
             end
         end
 
+        -- No hover: hide all highlights and clear tracked state
         if not hoveredIndex then
             for _, data in ipairs(self.buttonBounds) do
-                if data.spriteComponent then
-                    data.spriteComponent.isVisible = false
-                end
-                if data.textComponent then
-                    data.textComponent.color.x = 0.8
-                    data.textComponent.color.y = 0.8
-                    data.textComponent.color.z = 0.8
-                end
+                if data.spriteComponent then data.spriteComponent.isVisible = false end
+                applyTextColor(data.textComponent, NORMAL_TEXT_COLOR)
             end
+            self.lastState = nil  -- reset so re-entering the same button triggers hover again
             return
         end
 
+        -- Same button as before: nothing to do
         if hoveredIndex == self.lastState then return end
 
+        -- Deactivate old, activate new
         local oldData = self.buttonBounds[self.lastState]
-        local newData = self.buttonBounds[hoveredIndex]
-
         if oldData then
-            if oldData.spriteComponent then
-                oldData.spriteComponent.isVisible = false
-            end
-            if oldData.textComponent then
-                oldData.textComponent.color.x = 0.8
-                oldData.textComponent.color.y = 0.8
-                oldData.textComponent.color.z = 0.8
-            end
+            if oldData.spriteComponent then oldData.spriteComponent.isVisible = false end
+            applyTextColor(oldData.textComponent, NORMAL_TEXT_COLOR)
         end
 
+        local newData = self.buttonBounds[hoveredIndex]
         if newData then
-            if newData.spriteComponent then
-                newData.spriteComponent.isVisible = true
-            end
-            if newData.textComponent then
-                newData.textComponent.color.x = 0.0
-                newData.textComponent.color.y = 0.0
-                newData.textComponent.color.z = 0.0
-            end
+            if newData.spriteComponent then newData.spriteComponent.isVisible = true end
+            applyTextColor(newData.textComponent, HOVERED_TEXT_COLOR)
         end
 
         self.lastState = hoveredIndex
 
-        if self._audio then
-            self._audio:Play()
-        end
+        -- Hover SFX via centralised audio handler
+        if _G.event_bus then _G.event_bus.publish("main_menu.hover", {}) end
     end,
 }

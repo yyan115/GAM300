@@ -42,7 +42,7 @@ return Component {
         
         -- Guard against double-Awake (hot-reload / stop-play cycle)
         if _G.event_bus and _G.event_bus.unsubscribe then
-            local stale = { "_hoverSub", "_clickSub", "_sliderSub" }
+            local stale = { "_hoverSub", "_clickSub", "_clickplaygameSub", "_sliderSub" }
             for _, key in ipairs(stale) do
                 if self[key] then _G.event_bus.unsubscribe(self[key]); self[key] = nil end
             end
@@ -99,7 +99,7 @@ return Component {
 
     OnDisable = function(self)
         if _G.event_bus and _G.event_bus.unsubscribe then
-            local subs = { "_hoverSub", "_clickSub", "_sliderSub" }
+            local subs = { "_hoverSub", "_clickSub", "_clickplaygameSub", "_sliderSub" }
             for _, key in ipairs(subs) do
                 if self[key] then _G.event_bus.unsubscribe(self[key]); self[key] = nil end
             end
