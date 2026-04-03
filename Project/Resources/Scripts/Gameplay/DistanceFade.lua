@@ -23,6 +23,12 @@ return Component {
     Update = function(self, dt)
         if not self._entityId then return end
 
+        -- Disable fading during Chain Aim Mode so nearby enemies stay fully visible
+        if _G.CHAIN_AIM_ACTIVE then
+            Engine.SetModelOpacity(self._entityId, 1.0)
+            return
+        end
+
         local ex, ey, ez = Engine.GetEntityPosition(self._entityId)
         if not ex then return end
 
