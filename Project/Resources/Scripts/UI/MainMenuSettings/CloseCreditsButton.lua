@@ -4,7 +4,9 @@ local Component = require("extension.mono_helper")
 return Component {
 
     fields = {
-        fadeDuration = 0.5,
+        fadeDuration = 0.5, -- Duration for fade out when manually closing
+        -- Sprite GUIDs array: [1] = normal sprite, [2] = hover sprite
+        -- Drag-drop textures from editor (recognized via "sprite" in field name)
         spriteGUIDs = {},
         HoverSFX = {},
     },
@@ -18,18 +20,21 @@ return Component {
         self._isHovered = false
         self._wasCreditsActive = false
 
+        -- Start non-interactable; enabled only when credits is open
         if self._button then
             self._button.interactable = false
         end
 
+        -- Cache entity references
         self._creditsUIEntity = Engine.GetEntityByName("CreditsUI")
         self._creditsUIActive = self._creditsUIEntity and GetComponent(self._creditsUIEntity, "ActiveComponent")
     end,
 
     Update = function(self, dt)
-
+        -- Check current active state
         local isActive = self._creditsUIActive and self._creditsUIActive.isActive
 
+        -- Detect rising edge (CreditsUI just became active) - reset state
         if isActive and not self._wasCreditsActive then
             if self._button then
                 self._button.interactable = true
@@ -40,15 +45,18 @@ return Component {
             end
         end
 
+        -- Update previous state
         self._wasCreditsActive = isActive
 
+        -- Early exit if CreditsUI is not active
         if not isActive then return end
 
+        -- Handle hover detection and sprite swapping
         self:_updateHover()
     end,
 
     OnClickCloseCreditsButton = function(self)
-
+        -- Only process if credits is actually active
         local isActive = self._creditsUIActive and self._creditsUIActive.isActive
         if not isActive then return end
 
@@ -56,6 +64,7 @@ return Component {
             self._audio:PlayOneShot(self.HoverSFX[2])
         end
 
+        -- Disable button immediately so it can't be clicked again during fade
         if self._button then
             self._button.interactable = false
         end
@@ -69,6 +78,7 @@ return Component {
         end
     end,
 
+    -- Simple hover detection and sprite swap
     _updateHover = function(self)
         if not self._transform then return end
 
