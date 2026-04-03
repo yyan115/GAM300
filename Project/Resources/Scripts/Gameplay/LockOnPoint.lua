@@ -61,9 +61,10 @@ return Component {
         if not self._entityId and self.entityId then self._entityId = self.entityId end
 
         -- Walk up to root and detect mode via tag.
-        self._rootEntityId = self._entityId
-        self._isThrowable  = false
-        self._isEnemy      = false
+        self._rootEntityId   = self._entityId
+        self._isThrowable    = false
+        self._isEnemy        = false
+        self._isInteractable = false
 
         if Engine and Engine.GetParentEntity and self._entityId then
             local current = self._entityId
@@ -85,6 +86,8 @@ return Component {
                     self._isThrowable = true
                 elseif tag == "Enemy" or tag == "Boss" then
                     self._isEnemy = true
+                elseif tag == "Interactable" then
+                    self._isInteractable = true
                 end
             end
         end
@@ -207,8 +210,8 @@ return Component {
         local segDX, segDY, segDZ = ex - px, ey - py, ez - pz
         local segLenSq = segDX*segDX + segDY*segDY + segDZ*segDZ
 
-        -- ── Throwable mode: single root-entity check ───────────────────────
-        if self._isThrowable then
+        -- ── Throwable / Interactable mode: single root-entity check ───────────────────────
+        if self._isThrowable or self._isInteractable then
             if not self._rootEntityId then return end
             repeat
                 local transform = Engine.FindTransformByID(self._rootEntityId)

@@ -433,29 +433,59 @@ return Component {
                 print("[ChainBootstrap] Throwable TAP: THROW -> StartRetraction")
             else
                 -- Normal (enemy or no hook): retract.
-                -- Determine what we are attached to
+                -- Determine what we are attached to.
                 local isEnemy = self.controller.endPointLocked
-                local isWall = self.controller._raycastSnapped
+                local isWall  = self.controller._raycastSnapped
+ 
+                -- ChainInteractable (Mash mode) installs _G.chain_retract_veto to hold
+                -- the chain attached while the mash loop is running.
+                -- When the veto returns true, we skip retraction and publish a pull
+                -- attempt instead so the interactable can count it.
+                local vetoed = false
+                if type(_G.chain_retract_veto) == "function" then
+                    local ok, result = pcall(_G.chain_retract_veto)
+                    vetoed = ok and result == true
+                end
+ 
+                if vetoed then
+                    -- Let the interactable handle this tap as a mash pull.
+                    if _G.event_bus and _G.event_bus.publish then
+                        _G.event_bus.publish("chain.pull_attempt", {})
+                    end
+                    dbg("[ChainBootstrap] TAP on idle attached: vetoed by chain_retract_veto -> chain.pull_attempt")
+                    -- Physics "Tug" (optional, for weight)
+                    if self.controller and self.controller.Tug then
+                        self.controller:Tug(0.3)
+                    end
 
-                self.controller:StartRetraction()
-
-                -- If chain is attached to an enemy, notify AI to trigger hooked/slam behaviour
-                if isEnemy then
-                    if self._hookedEnemyEntityId then
+                    -- Immediate re-check so the LAST mash feels instant
+                    if type(_G.chain_retract_veto) == "function" then
+                        local ok, result = pcall(_G.chain_retract_veto)
+                        vetoed = ok and result == true
+                    else
+                        vetoed = false
+                    end
+                else
+                    self.controller:StartRetraction()
+ 
+                    -- If chain is attached to an enemy, notify AI to trigger hooked/slam behaviour.
+                    if isEnemy then
+                        if self._hookedEnemyEntityId then
+                            if _G.event_bus and _G.event_bus.publish then
+                                _G.event_bus.publish("chain.enemy_hooked", {
+                                    entityId = self._hookedEnemyEntityId,
+                                    duration = 2.0,
+                                })
+                            end
+                        end
+                    -- Only publish chain.retract_chain if attached to a wall/nothing.
+                    else
                         if _G.event_bus and _G.event_bus.publish then
-                            _G.event_bus.publish("chain.enemy_hooked", {
-                                entityId = self._hookedEnemyEntityId,
-                                duration = 2.0,
-                            })
+                            _G.event_bus.publish("chain.retract_chain", true)
                         end
                     end
-                -- Only publish chain.retract_chain event if the chain is attached to a wall/nothing.
-                else
-                    if _G.event_bus and _G.event_bus.publish then
-                        _G.event_bus.publish("chain.retract_chain", true)
-                    end
+                    print("[ChainBootstrap] TAP on extended idle -> StartRetraction (no throwable)")
                 end
-                print("[ChainBootstrap] TAP on extended idle -> StartRetraction (no throwable)")
             end
         end
 

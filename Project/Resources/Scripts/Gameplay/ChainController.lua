@@ -133,6 +133,13 @@ function M:PerformRaycast(sx,sy,sz,maxDistance)
     return nil
 end
 
+function M:Tug(strength)
+    -- Temporarily shorten the target length to make the chain look taut.
+    -- The solver will naturally return it to normal next frame.
+    if self.chainLen then
+        self.chainLen = math.max(0.1, self.chainLen - (strength or 0.3))
+    end
+end
 -- ---------------------------------------------------------------------------
 -- LOS anchor system
 -- ---------------------------------------------------------------------------
