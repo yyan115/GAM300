@@ -266,7 +266,7 @@ return Component {
                 id           = "dash",
                 animParam    = 30,
                 clipDuration = nil,  -- dash animation timing owned by PlayerMovement
-                duration     = 1.0,
+                duration     = 0,
                 damage      = 0,
                 canMove     = false,
                 comboWindow = nil,
