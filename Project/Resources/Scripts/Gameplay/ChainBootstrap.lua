@@ -641,6 +641,8 @@ return Component {
 
         self._lastPublishedExtended = false
         self._retractTriggeredThisPress = false
+        self._wasFlopping    = false   -- track flop transitions for chain.detached
+        self._wasWallSnapped = false   -- track wall-snap transitions for chain.detached
         self._endpointTransform = nil
         if self.ChainEndpointName and self.ChainEndpointName ~= "" then
             self._endpointTransform = Engine.FindTransformByName(self.ChainEndpointName)
@@ -1324,6 +1326,32 @@ return Component {
             self._endpointTransform = Engine.FindTransformByName(self.ChainEndpointName)
         end
 
+        -- ── Interactable veto cleanup ─────────────────────────────────────────
+        -- Detect the first frame the chain enters flop or wall-snap mode and
+        -- publish chain.detached so ChainInteractable can clear its veto.
+        --
+        -- Two cases require this:
+        --   (a) Flop: chain reached max length or player walked too far —
+        --       endpoint is now in free Verlet physics, not attached to anything.
+        --   (b) Wall-snap: chain hit static geometry and locked onto it —
+        --       endpoint is on a wall, not on the interactable it passed through.
+        --
+        -- chain.detached is only published on the FALSE→TRUE edge so it fires
+        -- exactly once per transition, not every frame.
+        local nowFlopping    = public.Flopping       or false
+        local nowWallSnapped = public.RaycastSnapped or false
+
+        if (nowFlopping and not self._wasFlopping) then
+            local reason = nowFlopping and "flop" or "wall-snap"
+            print(string.format("[ChainBootstrap] Chain entered %s — publishing chain.detached to clear interactable veto", reason))
+            if _G.event_bus and _G.event_bus.publish then
+                _G.event_bus.publish("chain.detached", {})
+            end
+        end
+        self._wasFlopping    = nowFlopping
+        self._wasWallSnapped = nowWallSnapped
+        -- ─────────────────────────────────────────────────────────────────────
+
         if self._endpointTransform then
             local chainIsActive = (self.m_CurrentLength or 0) > 1e-4 or self.m_IsExtending or public.Flopping
             if chainIsActive then
@@ -1433,11 +1461,13 @@ return Component {
                 -- can manage RB keepalive and trigger window regardless of lock state
                 if _G.event_bus and _G.event_bus.publish then
                     _G.event_bus.publish("chain.endpoint_moved", {
-                        position = { x = endPos[1], y = endPos[2], z = endPos[3] },
-                        isLocked = public.EndPointLocked,
-                        chainLength = self.m_CurrentLength,
-                        isExtending = self.m_IsExtending,
+                        position     = { x = endPos[1], y = endPos[2], z = endPos[3] },
+                        isLocked     = public.EndPointLocked,
+                        chainLength  = self.m_CurrentLength,
+                        isExtending  = self.m_IsExtending,
                         isRetracting = self.m_IsRetracting,
+                        isFlopping   = public.Flopping,           -- chain in free-fall physics
+                        isWallSnapped = public.RaycastSnapped,    -- chain locked onto static geometry
                     })
                 end
 

@@ -51,12 +51,13 @@ return Component {
         end
 
         -- Per-throw state
-        self._isHooked     = false   -- endpoint entered HitRadius this throw
-        self._hitFired     = false   -- prevents double-trigger within same throw
-        self._actionFired  = false   -- Pull: prevents double-trigger per retraction
-        self._mashProgress = 0       -- Mash: completed pull/retract count
-        self._mashDone     = false   -- Mash: final behaviour already fired
-        self._mashCounted  = false   -- Mash fallback: prevent counting multiple frames of isRetracting
+        self._isHooked      = false   -- endpoint entered HitRadius this throw
+        self._hitFired      = false   -- prevents double-trigger within same throw
+        self._actionFired   = false   -- Pull: prevents double-trigger per retraction
+        self._mashProgress  = 0       -- Mash: completed pull/retract count
+        self._mashDone      = false   -- Mash: final behaviour already fired
+        self._mashCounted   = false   -- Mash fallback: prevent counting multiple frames of isRetracting
+        self._detachDisarmed = false  -- set when chain detaches mid-throw; blocks hit re-detection until retraction completes
 
         -- Rolling endpoint positions (for segment sweep)
         self._endpointPos  = nil
@@ -80,6 +81,11 @@ return Component {
         -- Mash primary: Bootstrap patch vetoed a retraction tap
         self._subPullAttempt = _G.event_bus.subscribe("chain.pull_attempt", function(payload)
             if payload then pcall(function() self:_onPullAttempt(payload) end) end
+        end)
+
+        self._subDetached = _G.event_bus.subscribe("chain.detached", function()
+            print("[ChainInteractable] Chain detached/flopped — clearing veto (hit detection disarmed until retract)")
+            pcall(function() self:_onDetach() end)
         end)
 
         local rawMode = self.BehaviorMode or "Hit"
@@ -144,26 +150,15 @@ return Component {
             end
         end
 
-        -- ── Mash FALLBACK: retraction slipped through (no Bootstrap patch) ─
-        if mode == "Mash" and self._isHooked and not self._mashDone and not self._mashCounted then
-            if payload.isRetracting then
-                self._mashCounted = true   -- latch: only count once per retraction
-                self._mashProgress = self._mashProgress + 1
-                local max = math.max(1, tonumber(self.MashCount) or 3)
-                print(string.format("[ChainInteractable] Mash fallback %d/%d", self._mashProgress, max))
-                pcall(function() self:OnBehaviourMash(self._mashProgress, max) end)
-                if self._mashProgress >= max then
-                    self._mashDone = true
-                    _G.chain_retract_veto = nil
-                    print("[ChainInteractable] Mash fallback FINAL — OnBehaviourMashFinal firing")
-                    pcall(function() self:OnBehaviourMashFinal() end)
-                end
-            end
-        end
 
         -- ── Hit detection: segment sweep against own world position ────────
-        -- Skip once a hit is already registered this throw.
+        -- Skip once a hit is already registered this throw, or if the chain
+        -- has detached mid-throw (_detachDisarmed), or if the endpoint is
+        -- currently locked onto a static wall / in free-fall physics —
+        -- in those states the chain is no longer travelling toward us.
         if self._hitFired then return end
+        if self._detachDisarmed then return end
+        if payload.isFlopping    then return end
         if not self._endpointPos then return end
 
         local ox, oy, oz = self:_getWorldPos()
@@ -224,7 +219,19 @@ return Component {
         elseif mode == "Pull" then
             -- Install veto to authorize retraction manually
             _G.chain_retract_veto = function()
-                return self._isHooked and not self._actionFired
+                -- 1. If we aren't even hooked anymore, stop vetoing immediately
+                if not self._isHooked then 
+                    _G.chain_retract_veto = nil
+                    return false 
+                end
+
+                -- 2. If the logic is "Hit" or "Pull" (no mash), we only veto once
+                if self.BehaviorMode ~= "Mash" then
+                    return true -- Bootstrap will fire pull_attempt, then we authorize
+                end
+
+                -- 3. If it's "Mash", veto until count is reached
+                return (self._mashCurrent < self.MashCount)
             end
             print("[ChainInteractable] Pull — Veto installed. Waiting for player to pull.")
 
@@ -252,14 +259,36 @@ return Component {
             -- Re-arm so the next throw can land and count as the next mash.
             print(string.format("[ChainInteractable] Mash — retracted at progress %d/%d, re-arming",
                 self._mashProgress, math.max(1, tonumber(self.MashCount) or 3)))
-            self._hitFired    = false
-            self._mashCounted = false
+            self._hitFired        = false
+            self._mashCounted     = false
+            self._detachDisarmed  = false   -- re-arm hit detection for the next throw
             -- Keep _isHooked true and _mashProgress as-is (session continues)
             return
         end
 
         -- After MashFinal or any non-Mash mode: full reset
         self:_clearState()
+    end,
+
+    -- -------------------------------------------------------------------------
+    -- chain.detached: chain flopped or snapped to a wall mid-throw.
+    -- Clears the veto and hooked state but KEEPS _hitFired = true so the
+    -- proximity check cannot re-register a hit on the same throw.
+    -- _detachDisarmed is also set to block hit detection until the chain
+    -- fully retracts and _clearState() resets it.
+    -- -------------------------------------------------------------------------
+    _onDetach = function(self)
+        self._isHooked        = false
+        self._actionFired     = false
+        self._mashProgress    = 0
+        self._mashDone        = false
+        self._mashCounted     = false
+        self._detachDisarmed  = true   -- prevents hit re-detection for this throw
+        self._endpointPos     = nil
+        self._endpointPrev    = nil
+        -- NOTE: _hitFired intentionally NOT reset — keeps proximity check locked
+        -- out for the remainder of this throw.
+        if _G.chain_retract_veto ~= nil then _G.chain_retract_veto = nil end
     end,
 
     -- -------------------------------------------------------------------------
@@ -297,14 +326,15 @@ return Component {
     end,
 
     _clearState = function(self)
-        self._isHooked     = false
-        self._hitFired     = false
-        self._actionFired  = false
-        self._mashProgress = 0
-        self._mashDone     = false
-        self._mashCounted  = false
-        self._endpointPos  = nil
-        self._endpointPrev = nil
+        self._isHooked        = false
+        self._hitFired        = false
+        self._actionFired     = false
+        self._mashProgress    = 0
+        self._mashDone        = false
+        self._mashCounted     = false
+        self._detachDisarmed  = false   -- re-arm for the next throw
+        self._endpointPos     = nil
+        self._endpointPrev    = nil
         if _G.chain_retract_veto ~= nil then _G.chain_retract_veto = nil end
     end,
 
@@ -318,6 +348,7 @@ return Component {
             if self._subMoved       then pcall(function() _G.event_bus.unsubscribe(self._subMoved)       end) end
             if self._subRetracted   then pcall(function() _G.event_bus.unsubscribe(self._subRetracted)   end) end
             if self._subPullAttempt then pcall(function() _G.event_bus.unsubscribe(self._subPullAttempt) end) end
+            if self._subDetached then pcall(function() _G.event_bus.unsubscribe(self._subDetached) end) end
         end
     end,
 
