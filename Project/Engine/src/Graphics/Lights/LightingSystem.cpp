@@ -58,6 +58,29 @@ void LightingSystem::Shutdown()
     std::cout << "[LightingSystem] Shutdown" << std::endl;
 }
 
+void LightingSystem::SetPointShadowQuality(int quality)
+{
+    const int resolutions[] = { 128, 256, 512 };
+    int newRes = resolutions[std::clamp(quality, 0, 2)];
+
+    if (newRes == pointShadowMapResolution) return;
+
+    pointShadowMapResolution = newRes;
+
+    for (auto& psm : pointShadowMaps)
+        psm.Shutdown();
+
+    for (int i = 0; i < MAX_POINT_LIGHT_SHADOWS; ++i)
+    {
+        if (!pointShadowMaps[i].Initialize(pointShadowMapResolution))
+            std::cout << "[LightingSystem] Warning: Point shadow map " << i << " failed at res " << newRes << std::endl;
+
+        pointShadowMaps[i].cacheConfig.updateInterval = 0;
+        pointShadowMaps[i].cacheConfig.maxStaleFrames = 1;
+        pointShadowMaps[i].SetPhaseOffset(0);
+    }
+}
+
 void LightingSystem::ResetDefaults()
 {
     ambientMode = AmbientMode::Color;

@@ -5,6 +5,9 @@
 #include <IconsFontAwesome6.h>
 #include "Graphics/GraphicsManager.hpp"
 #include "Graphics/Instancing/InstancingManager.hpp"
+#include "ECS/ECSRegistry.hpp"
+#include "ECS/ECSManager.hpp"
+#include "Graphics/Lights/LightingSystem.hpp"
 
 #ifdef _WIN32
 #include <Windows.h>
@@ -141,6 +144,21 @@ void PerformancePanel::OnImGuiRender() {
         auto& gfx = GraphicsManager::GetInstance();
         const auto& instStats = InstancingManager::GetInstance().GetStats();
         const auto& sortStats = gfx.GetSortingStats();
+
+        // Shadow quality
+        {
+            static const char* qualityLabels[] = { "Low (128)", "Medium (256)", "High (512)" };
+            if (ImGui::Combo("Shadow Quality", &m_shadowQuality, qualityLabels, 3))
+            {
+                auto& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
+                if (ecs.lightingSystem)
+                    ecs.lightingSystem->SetPointShadowQuality(m_shadowQuality);
+            }
+            if (ImGui::IsItemHovered())
+                ImGui::SetTooltip("Point light shadow map resolution.\nLow = cheaper, High = sharper shadows.");
+        }
+
+        ImGui::Spacing();
 
         // Depth prepass toggle
         bool prepassEnabled = gfx.IsDepthPrepassEnabled();

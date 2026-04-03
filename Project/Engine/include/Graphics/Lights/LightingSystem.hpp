@@ -52,6 +52,9 @@ public:
         shadowRenderCallback = callback;
     }
 
+    // Rebuild point shadow maps at a new resolution. quality: 0=Low(128), 1=Medium(256), 2=High(512)
+    ENGINE_API void SetPointShadowQuality(int quality);
+
     int GetActiveShadowCasterCount() const { return activeShadowCasterCount; }
 
     // ========================================================================
