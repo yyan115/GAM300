@@ -35,10 +35,12 @@ std::vector<FieldInfo> ScriptInspector::InspectInstance(lua_State* L, int instan
 {
     if (!L || instanceRef == LUA_NOREF) return {};
 
-    // quick caching by scriptPath
+    // Cache key is per-instance (scriptPath + instanceRef) so different Lua instances
+    // of the same script (e.g. scene runtime vs prefab preview) don't share cached values.
+    std::string cacheKey = scriptPath + ":" + std::to_string(instanceRef);
     {
         std::lock_guard<std::mutex> lk(m_cacheMutex);
-        auto it = m_cache.find(scriptPath);
+        auto it = m_cache.find(cacheKey);
         if (it != m_cache.end()) {
             auto now = std::chrono::steady_clock::now();
             double elapsed = std::chrono::duration<double>(now - it->second.lastInspect).count();
@@ -53,10 +55,10 @@ std::vector<FieldInfo> ScriptInspector::InspectInstance(lua_State* L, int instan
     if (!lua_istable(L, -1)) {
         lua_pop(L, 1);
         SI_LOG(EngineLogging::LogLevel::Warn, "ScriptInspector::InspectInstance - instanceRef is not a table (script=%s)", scriptPath.c_str());
-        // Clear the cache for this script path since the instance is no longer valid
+        // Clear the cache for this instance since it is no longer valid
         {
             std::lock_guard<std::mutex> lk(m_cacheMutex);
-            m_cache.erase(scriptPath);
+            m_cache.erase(cacheKey);
         }
         return {};
     }
@@ -74,7 +76,7 @@ std::vector<FieldInfo> ScriptInspector::InspectInstance(lua_State* L, int instan
         entry.fields = fields;
         entry.ttlSeconds = cacheTtlSeconds;
         entry.lastInspect = std::chrono::steady_clock::now();
-        m_cache[scriptPath] = std::move(entry);
+        m_cache[cacheKey] = std::move(entry);
     }
 
     return fields;
@@ -316,6 +318,12 @@ std::string ScriptInspector::LuaValueToString(lua_State* L, int idx, FieldType e
 }
 
 // Set a field on a live instance using valueString representation (editor edited)
+void ScriptInspector::InvalidateCache(const std::string& scriptPath, int instanceRef)
+{
+    std::lock_guard<std::mutex> lk(m_cacheMutex);
+    m_cache.erase(scriptPath + ":" + std::to_string(instanceRef));
+}
+
 bool ScriptInspector::SetFieldFromString(lua_State* L, int instanceRef, const FieldInfo& field, const std::string& valueString) const
 {
     if (!L || instanceRef == LUA_NOREF) return false;

@@ -3,6 +3,7 @@
 #include <memory>
 #include <vector>
 #include <unordered_map>
+#include <shared_mutex>
 
 #include "EntityManager.hpp"
 #include "ComponentManager.hpp"
@@ -185,4 +186,5 @@ private:
 
 	// Per-frame cache for IsEntityActiveInHierarchy (cleared each frame by orchestrator)
 	std::unordered_map<Entity, bool> m_activeHierarchyCache;
+	std::shared_mutex m_cacheMutex;
 };

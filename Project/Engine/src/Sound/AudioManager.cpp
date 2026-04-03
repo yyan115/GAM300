@@ -272,6 +272,69 @@ ChannelHandle AudioManager::PlayAudioAtPosition(std::shared_ptr<Audio> audioAsse
     return chId;
 }
 
+ChannelHandle AudioManager::PlayAudioAtPositionOnBus(std::shared_ptr<Audio> audioAsset, const std::string& busName, const Vector3D& position, bool loop, float volume, float attenuation, float minDistance, float maxDistance) {
+    if (ShuttingDown.load() || GlobalPaused.load()) return 0;
+
+    std::unique_lock<std::shared_mutex> lock(Mutex);
+    if (!System || !audioAsset || !audioAsset->sound) return 0;
+
+    FMOD_CHANNELGROUP* group = GetOrCreateBus(busName);
+    if (!group) return 0;
+
+    FMOD_CHANNEL* channel = nullptr;
+
+    // Play paused so we can configure the channel before it starts
+    FMOD_RESULT res = FMOD_System_PlaySound(System, audioAsset->sound, nullptr, true, &channel);
+    if (res != FMOD_OK) {
+        ENGINE_PRINT(EngineLogging::LogLevel::Error, "[AudioManager] ERROR: PlayAtPositionOnBus failed: ", FMOD_ErrorString(res), "\n");
+        return 0;
+    }
+
+    // Attach to bus
+    FMOD_Channel_SetChannelGroup(channel, group);
+
+    // Per-channel looping and 3D mode
+    FMOD_MODE channelMode = FMOD_3D | FMOD_3D_LINEARROLLOFF;
+    channelMode |= (loop ? FMOD_LOOP_NORMAL : FMOD_LOOP_OFF);
+    FMOD_Channel_SetMode(channel, channelMode);
+    FMOD_Channel_SetLoopCount(channel, loop ? -1 : 0);
+
+    // Set 3D position
+    FMOD_VECTOR pos = { position.x, position.y, position.z };
+    FMOD_VECTOR vel = { 0.0f, 0.0f, 0.0f };
+    FMOD_Channel_Set3DAttributes(channel, &pos, &vel);
+
+    // Set 3D min/max distance for distance attenuation
+    res = FMOD_Channel_Set3DMinMaxDistance(channel, minDistance, maxDistance);
+    if (res != FMOD_OK) {
+        ENGINE_PRINT(EngineLogging::LogLevel::Warn, "[AudioManager] Failed to set 3D min/max distance: ", FMOD_ErrorString(res), "\n");
+    }
+
+    // Set 3D level (attenuation controls 2D/3D blend: 0.0 = 2D, 1.0 = full 3D)
+    res = FMOD_Channel_Set3DLevel(channel, attenuation);
+    if (res != FMOD_OK) {
+        ENGINE_PRINT(EngineLogging::LogLevel::Warn, "[AudioManager] Failed to set 3D level: ", FMOD_ErrorString(res), "\n");
+    }
+
+    float finalVolume = volume * MasterVolume.load();
+    FMOD_Channel_SetVolume(channel, finalVolume);
+
+    // Unpause to start playback
+    FMOD_Channel_SetPaused(channel, false);
+
+    ChannelHandle chId = NextChannelHandle++;
+    ChannelData chd;
+    chd.Channel = channel;
+    chd.Id = chId;
+    chd.State = AudioSourceState::Playing;
+    chd.AssetPath = audioAsset->assetPath;
+    ChannelMap[chId] = chd;
+
+    FMOD_Channel_SetUserData(channel, reinterpret_cast<void*>(static_cast<uintptr_t>(chId)));
+
+    return chId;
+}
+
 ChannelHandle AudioManager::PlayAudioOnBus(std::shared_ptr<Audio> audioAsset, const std::string& busName, bool loop, float volume) {
     if (ShuttingDown.load() || GlobalPaused.load()) return 0;
 

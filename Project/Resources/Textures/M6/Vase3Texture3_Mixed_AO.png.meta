@@ -1,0 +1,15 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "000e5e23268f8cc8-0004b3d50c00f6c1",
+        "source": "../../Resources/Textures/M6/Vase3Texture3_Mixed_AO.png",
+        "compiled": "../../Resources/Textures/M6/Vase3Texture3_Mixed_AO.dds"
+    },
+    "TextureMetaData": {
+        "type": "ao",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

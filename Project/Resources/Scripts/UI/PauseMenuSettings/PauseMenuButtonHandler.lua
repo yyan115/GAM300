@@ -1,12 +1,21 @@
+--[[
+================================================================================
+PAUSE MENU BUTTON HANDLER
+================================================================================
+PURPOSE:
+    Handles hover effects and click actions for the main pause menu buttons.
+    Audio is delegated to PauseMenuAudio via event_bus.
+
+SINGLE RESPONSIBILITY: Handle button interactions. Audio via event_bus.
+================================================================================
+--]]
+
 require("extension.engine_bootstrap")
 local event_bus = _G.event_bus
 local Component = require("extension.mono_helper")
 
--- [CRITICAL FIX] Ensure we call Component with { } to return a TABLE, not the function.
 return Component {
     fields = {
-        -- Audio: [1] = hover SFX, [2] = click SFX
-        ButtonSFX = {},
         -- Sprite GUIDs: [1] = normal, [2] = hover
         ContinueSpriteGUIDs = {},
         ControlsSpriteGUIDs = {},
@@ -15,8 +24,6 @@ return Component {
     },
 
     Start = function(self)
-        -- Cache audio component from PauseMenuUI entity
-        self._audio = self:GetComponent("AudioComponent")
         self._pageWasActive = false
 
         -- Detect platform
@@ -146,9 +153,9 @@ return Component {
             else
                 -- Handle hover enter
                 if isHovering and not data.wasHovered then
-                    -- Play hover sound
-                    if self._audio and self.ButtonSFX and self.ButtonSFX[1] then
-                        self._audio:PlayOneShot(self.ButtonSFX[1])
+                    -- Publish hover event for PauseMenuAudio
+                    if event_bus and event_bus.publish then
+                        event_bus.publish("pause_menu.hover", {})
                     end
                     -- Switch to hover sprite
                     if data.sprite and data.spriteGUIDs and data.spriteGUIDs[2] then
@@ -168,10 +175,9 @@ return Component {
     end,
 
     OnClickContinueButton = function(self)
-        local btn = Engine.GetEntityByName("ContinueButton")
-        if btn then
-            local audiocomp = GetComponent(btn, "AudioComponent")
-            if audiocomp then audiocomp:Play() end
+        -- Publish click event for PauseMenuAudio
+        if event_bus and event_bus.publish then
+            event_bus.publish("pause_menu.click", {})
         end
         
         if Screen then Screen.SetCursorLocked(true) end
@@ -196,10 +202,9 @@ return Component {
     end,
 
     OnClickControlsButton = function(self)
-        local btn = Engine.GetEntityByName("ControlsButton")
-        if btn then
-            local audiocomp = GetComponent(btn, "AudioComponent")
-            if audiocomp then audiocomp:Play() end
+        -- Publish click event for PauseMenuAudio
+        if event_bus and event_bus.publish then
+            event_bus.publish("pause_menu.click", {})
         end
 
         local PauseUIEntity = Engine.GetEntityByName("PauseMenuUI")
@@ -216,10 +221,9 @@ return Component {
     end,
     
     OnClickSettingButton = function(self)
-        local btn = Engine.GetEntityByName("SettingsButton")
-        if btn then
-            local audiocomp = GetComponent(btn, "AudioComponent")
-            if audiocomp then audiocomp:Play() end
+        -- Publish click event for PauseMenuAudio
+        if event_bus and event_bus.publish then
+            event_bus.publish("pause_menu.click", {})
         end
 
         local PauseUIEntity = Engine.GetEntityByName("PauseMenuUI")
@@ -236,10 +240,9 @@ return Component {
     end,
 
     OnClickMainMenuButton = function(self)
-        local btn = Engine.GetEntityByName("MainMenuButton")
-        if btn then
-            local audiocomp = GetComponent(btn, "AudioComponent")
-            if audiocomp then audiocomp:Play() end
+        -- Publish click event for PauseMenuAudio
+        if event_bus and event_bus.publish then
+            event_bus.publish("pause_menu.click", {})
         end
 
         local pauseUIEntity = Engine.GetEntityByName("PauseMenuUI")

@@ -1,5 +1,19 @@
+--[[
+================================================================================
+CONFIRMATION MENU HANDLER
+================================================================================
+PURPOSE:
+    Handles hover effects and click actions for confirmation prompt buttons.
+    Audio is delegated to PauseMenuAudio via event_bus.
+
+SINGLE RESPONSIBILITY: Handle button interactions. Audio via event_bus.
+================================================================================
+--]]
+
 require("extension.engine_bootstrap")
 local Component = require("extension.mono_helper")
+
+local event_bus = _G.event_bus
 
 return Component {
     fields = {
@@ -7,7 +21,6 @@ return Component {
         -- Sprite GUIDs: [1] = normal, [2] = hover
         YesSpriteGUIDs = {},
         NoSpriteGUIDs = {},
-        buttonSFX = {},  -- Audio: [1] = hover SFX, [2] = click SFX
     },
 
     Start = function(self)
@@ -17,9 +30,6 @@ return Component {
             { base = "YesButton", spriteGUIDs = self.YesSpriteGUIDs },
             { base = "NoButton", spriteGUIDs = self.NoSpriteGUIDs },
         }
-
-        -- Cache audio component from Buttons entity
-        self._audio = self:GetComponent("AudioComponent")
 
         for index, config in ipairs(buttonMapping) do
             local baseEnt = Engine.GetEntityByName(config.base)
@@ -61,9 +71,9 @@ return Component {
 
             -- Handle hover enter
             if isHovering and not data.wasHovered then
-                -- Play hover sound
-                if self._audio and self.buttonSFX and self.buttonSFX[1] then
-                    self._audio:PlayOneShot(self.buttonSFX[1])
+                -- Publish hover event for PauseMenuAudio
+                if event_bus and event_bus.publish then
+                    event_bus.publish("pause_menu.hover", {})
                 end
                 -- Switch to hover sprite
                 if data.sprite and data.spriteGUIDs and data.spriteGUIDs[2] then
@@ -82,9 +92,9 @@ return Component {
     end,
 
     OnClickYesButton = function(self)
-        local audiocomp = GetComponent(Engine.GetEntityByName("YesButton"), "AudioComponent")
-        if audiocomp then
-            audiocomp:Play()
+        -- Publish click event for PauseMenuAudio
+        if event_bus and event_bus.publish then
+            event_bus.publish("pause_menu.click", {})
         end
 
         print("[ConfirmationMenuHandler] Returning to main menu")
@@ -96,9 +106,9 @@ return Component {
     end,
 
     OnClickNoButton = function(self)
-        local audiocomp = GetComponent(Engine.GetEntityByName("NoButton"), "AudioComponent")
-        if audiocomp then
-            audiocomp:Play()
+        -- Publish click event for PauseMenuAudio
+        if event_bus and event_bus.publish then
+            event_bus.publish("pause_menu.click", {})
         end
 
         -- Close Confirmation UI, open Pause UI

@@ -1,0 +1,15 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "000e5e231f447336-0004b3e1fa01d75d",
+        "source": "../../Resources/Textures/M6/Bookshelf3_Mixed_AO.png",
+        "compiled": "../../Resources/Textures/M6/Bookshelf3_Mixed_AO.dds"
+    },
+    "TextureMetaData": {
+        "type": "ao",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

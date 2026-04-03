@@ -1,0 +1,15 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "006d9327d4d88822-0004b3b96602bc57",
+        "source": "../../Resources/Textures/M6/Slanted2_Mixed_AO.png",
+        "compiled": "../../Resources/Textures/M6/Slanted2_Mixed_AO.dds"
+    },
+    "TextureMetaData": {
+        "type": "ao",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

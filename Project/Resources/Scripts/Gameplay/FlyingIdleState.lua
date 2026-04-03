@@ -14,6 +14,11 @@ function FlyingIdle:Enter(ai)
 end
 
 function FlyingIdle:Update(ai, dt)
+    if ai.aggressive then
+        ai.fsm:Change("Chase", ai.states.Chase)
+        return
+    end
+
     if ai.health <= 0 then ai.dead = true return end
 
     if ai.MaintainHover then

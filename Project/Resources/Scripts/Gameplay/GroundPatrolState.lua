@@ -103,6 +103,11 @@ function PatrolState:Enter(ai)
 end
 
 function PatrolState:Update(ai, dt)
+    if ai.aggressive then
+        ai.fsm:Change("Chase", ai.states.Chase)
+        return
+    end
+
     local dtSec = dt or 0
     if dtSec > 1.0 then dtSec = dtSec * 0.001 end
     if dtSec <= 0 then return end

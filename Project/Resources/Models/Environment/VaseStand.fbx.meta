@@ -1,0 +1,11 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "006d93278cfd4d28-0004b3c29002fc97",
+        "source": "../../Resources/Models/Environment/VaseStand.fbx",
+        "compiled": "../../Resources/Models/Environment/VaseStand.mesh"
+    },
+    "ModelMetaData": {
+        "optimizeMeshes": true
+    }
+}
