@@ -177,6 +177,20 @@ void SceneHierarchyPanel::OnImGuiRender() {
             }
         }
 
+        // Handle 'P' key to open selected prefab in Prefab Editor.
+        if (ImGui::IsWindowFocused() && ImGui::IsKeyPressed(ImGuiKey_P)) {
+            Entity selectedEntity = GUIManager::GetSelectedEntity();
+            if (selectedEntity != static_cast<Entity>(-1)) {
+                ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
+                if (ecsManager.HasComponent<PrefabLinkComponent>(selectedEntity)) {
+                    const std::string& prefabPath = ecsManager.GetComponent<PrefabLinkComponent>(selectedEntity).prefabPath;
+                    if (!prefabPath.empty()) {
+                        PrefabEditor::StartEditingPrefab(prefabPath);
+                    }
+                }
+            }
+        }
+
         // Search bar + Collapse/Expand buttons
         {
             float buttonWidth = ImGui::GetFrameHeight(); // square buttons
@@ -718,7 +732,21 @@ void SceneHierarchyPanel::DrawEntityNode(const std::string& entityName, Entity e
             }
         } catch (...) {}
 
-        std::string displayName = std::string(ICON_FA_CUBE) + " " + entityName;
+        const bool hasPrefabLinkComponent = ecsManager.HasComponent<PrefabLinkComponent>(entityId);
+        std::string prefabLinkPath;
+        if (hasPrefabLinkComponent) {
+            prefabLinkPath = ecsManager.GetComponent<PrefabLinkComponent>(entityId).prefabPath;
+        }
+
+        const bool isLinkedToPrefab = hasPrefabLinkComponent && !prefabLinkPath.empty();
+        const bool hasBrokenPrefabLink = hasPrefabLinkComponent && prefabLinkPath.empty();
+
+        std::string displayIcon = ICON_FA_CUBE;
+        if (hasBrokenPrefabLink) {
+            displayIcon = ICON_FA_LINK_SLASH;
+        }
+
+        std::string displayName = displayIcon + " " + entityName;
 
         // Set open state if force expanding
         if (forceOpen && hasChildren) {
@@ -745,16 +773,23 @@ void SceneHierarchyPanel::DrawEntityNode(const std::string& entityName, Entity e
         }
 
         // Determine text color based on prefab status and active state
-        bool isPrefab = ecsManager.HasComponent<PrefabLinkComponent>(entityId);
         bool pushedColor = false;
 
-        if (isPrefab) {
+        if (isLinkedToPrefab) {
             if (isEntityActive) {
                 // Active prefab: bright sky blue
                 ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.55f, 0.8f, 0.95f, 1.0f));
             } else {
                 // Inactive prefab: darker/desaturated blue (like Unity)
                 ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.3f, 0.45f, 0.55f, 1.0f));
+            }
+            pushedColor = true;
+        } else if (hasBrokenPrefabLink) {
+            if (isEntityActive) {
+                // Broken prefab link: orange to indicate disconnected state.
+                ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.95f, 0.65f, 0.3f, 1.0f));
+            } else {
+                ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.55f, 0.4f, 0.25f, 1.0f));
             }
             pushedColor = true;
         } else if (!isEntityActive) {
@@ -932,6 +967,11 @@ void SceneHierarchyPanel::DrawEntityNode(const std::string& entityName, Entity e
         const bool inPrefabMode = PrefabEditor::IsInPrefabEditorMode();
         const Entity sandboxRoot = PrefabEditor::GetSandboxEntity();
         const bool isSandboxRoot = inPrefabMode && (entityId == sandboxRoot);
+        const bool hasPrefabLink = popupEcsManager.HasComponent<PrefabLinkComponent>(entityId);
+        std::string linkedPrefabPath;
+        if (hasPrefabLink) {
+            linkedPrefabPath = popupEcsManager.GetComponent<PrefabLinkComponent>(entityId).prefabPath;
+        }
 
         // Copy menu item
         if (ImGui::MenuItem("Copy", "Ctrl+C")) {
@@ -952,6 +992,60 @@ void SceneHierarchyPanel::DrawEntityNode(const std::string& entityName, Entity e
         // Paste menu item
         if (ImGui::MenuItem("Paste", "Ctrl+V", false, g_EntityClipboard.hasData)) {
             PasteEntities();
+        }
+
+        if (!isMultiSelect && hasPrefabLink) {
+            const bool canOpenMainPrefab = !linkedPrefabPath.empty();
+            if (ImGui::MenuItem("Edit Main Prefab", ICON_FA_CUBES_STACKED, false, canOpenMainPrefab)) {
+                PrefabEditor::StartEditingPrefab(linkedPrefabPath);
+            }
+        }
+
+        const bool canUnpackPrefab = hasPrefabLink;
+
+        if (canUnpackPrefab) {
+            if (ImGui::MenuItem("Unpack Prefab",ICON_FA_LINK_SLASH)) {
+                auto unpackPrefabRecursively = [&](Entity rootEntity) {
+                    std::vector<Entity> pending;
+                    pending.push_back(rootEntity);
+
+                    while (!pending.empty()) {
+                        Entity current = pending.back();
+                        pending.pop_back();
+
+                        if (popupEcsManager.HasComponent<PrefabLinkComponent>(current)) {
+                            popupEcsManager.RemoveComponent<PrefabLinkComponent>(current);
+                        }
+
+                        if (popupEcsManager.HasComponent<ChildrenComponent>(current)) {
+                            const auto& children = popupEcsManager.GetComponent<ChildrenComponent>(current).children;
+                            for (const auto& childGuid : children) {
+                                Entity childEntity = EntityGUIDRegistry::GetInstance().GetEntityByGUID(childGuid);
+                                if (childEntity != INVALID_ENTITY) {
+                                    pending.push_back(childEntity);
+                                }
+                            }
+                        }
+                    }
+                };
+
+                std::vector<Entity> unpackTargets;
+                if (isMultiSelect) {
+                    unpackTargets = selectedEntities;
+                }
+                else {
+                    unpackTargets.push_back(entityId);
+                }
+
+                SnapshotManager::GetInstance().TakeSnapshot(
+                    isMultiSelect ? "Unpack Prefabs" : ("Unpack Prefab: " + entityName));
+
+                for (Entity target : unpackTargets) {
+                    if (popupEcsManager.HasComponent<PrefabLinkComponent>(target)) {
+                        unpackPrefabRecursively(target);
+                    }
+                }
+            }
         }
 
         ImGui::Separator();

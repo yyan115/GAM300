@@ -6345,6 +6345,8 @@ void RegisterInspectorCustomRenderers()
         // Use static maps to store preview instances per entity+script index
         static std::unordered_map<std::string, int> editorPreviewInstances; // key: "entity_scriptIndex"
         static std::unordered_map<std::string, std::string> editorPreviewScriptPaths;
+        static std::unordered_map<std::string, bool> scriptFieldsExpandedState;
+        static std::unordered_map<std::string, bool> scriptHasFieldsState;
 
         // Track state transitions to detect when we need to invalidate cached instances
         static EditorState::State lastEditorState = EditorState::GetInstance().GetState();
@@ -6408,6 +6410,8 @@ void RegisterInspectorCustomRenderers()
             }
             editorPreviewInstances.clear();
             editorPreviewScriptPaths.clear();
+            scriptFieldsExpandedState.clear();
+            scriptHasFieldsState.clear();
         }
         lastEditorState = currentEditorState;
         lastPrefabEditorMode = currentPrefabEditorMode;
@@ -6418,6 +6422,13 @@ void RegisterInspectorCustomRenderers()
         {
             ScriptData& scriptData = scriptComp.scripts[scriptIdx];
             std::string uniqueKey = std::to_string(entity) + "_" + std::to_string(scriptIdx);
+            bool scriptHasFields = false;
+            if (auto hasFieldsIt = scriptHasFieldsState.find(uniqueKey); hasFieldsIt != scriptHasFieldsState.end()) {
+                scriptHasFields = hasFieldsIt->second;
+            }
+
+            auto [expandedIt, inserted] = scriptFieldsExpandedState.emplace(uniqueKey, true);
+            bool& scriptFieldsExpanded = expandedIt->second;
 
             ImGui::PushID(static_cast<int>(scriptIdx));
 
@@ -6434,6 +6445,20 @@ void RegisterInspectorCustomRenderers()
             if (ImGui::IsItemHovered())
             {
                 ImGui::SetTooltip("Remove this script");
+            }
+
+            if (scriptHasFields)
+            {
+                ImGui::SameLine();
+                std::string foldoutLabel = std::string(scriptFieldsExpanded ? ICON_FA_CHEVRON_DOWN : ICON_FA_CHEVRON_RIGHT) + "##ScriptFoldout";
+                if (ImGui::SmallButton(foldoutLabel.c_str()))
+                {
+                    scriptFieldsExpanded = !scriptFieldsExpanded;
+                }
+                if (ImGui::IsItemHovered())
+                {
+                    ImGui::SetTooltip("Show/Hide script fields");
+                }
             }
 
             // Script path display
@@ -6523,6 +6548,8 @@ void RegisterInspectorCustomRenderers()
                     scriptData.scriptPath = pathStr;
                     scriptData.instanceCreated = false;
                     scriptData.instanceId = -1;
+                    scriptHasFieldsState[uniqueKey] = false;
+                    scriptFieldsExpandedState[uniqueKey] = true;
 
                     // Clear preview instance for this script
                     editorPreviewInstances.erase(uniqueKey);
@@ -6542,6 +6569,7 @@ void RegisterInspectorCustomRenderers()
             // If no script assigned, skip field rendering
             if (scriptData.scriptPath.empty())
             {
+                scriptHasFieldsState[uniqueKey] = false;
                 ImGui::PopID();
                 continue;
             }
@@ -7250,8 +7278,16 @@ void RegisterInspectorCustomRenderers()
         // If no fields found after filtering, nothing to show
         if (filteredFields.empty())
         {
+            scriptHasFieldsState[uniqueKey] = false;
             ImGui::PopID();
             continue; // Skip to next script
+        }
+
+        scriptHasFieldsState[uniqueKey] = true;
+        if (!scriptFieldsExpanded)
+        {
+            ImGui::PopID();
+            continue;
         }
 
         // Read __editor metadata directly from the Lua instance as a fallback
@@ -7973,6 +8009,8 @@ void RegisterInspectorCustomRenderers()
             std::string uniqueKey = std::to_string(entity) + "_" + std::to_string(scriptIndexToRemove);
             editorPreviewInstances.erase(uniqueKey);
             editorPreviewScriptPaths.erase(uniqueKey);
+            scriptFieldsExpandedState.erase(uniqueKey);
+            scriptHasFieldsState.erase(uniqueKey);
 
             // Remove the script
             scriptComp.scripts.erase(scriptComp.scripts.begin() + scriptIndexToRemove);
