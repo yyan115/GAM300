@@ -17,12 +17,26 @@ return Component {
         -- Texture GUIDs (copy from .png.meta files)
         DefaultSpriteGUID = "006dfc96b345cd00-000474f3c0007229",  -- CrosshairDefault
         AimSpriteGUID     = "006dfc96f87b9ff3-000474f2ae005605",  -- CrosshairAim
+        PulseScale        = 1.5,   -- max scale multiplier during pulse (e.g. 1.5 = 150%)
+        PulseDuration     = 0.25,  -- seconds for one full pulse
     },
 
     Start = function(self)
         self._sprite = self:GetComponent("SpriteRenderComponent")
+        self._transform = self:GetComponent("Transform")
         self._isAiming       = false
         self._onEnemy        = false
+        self._wasOnEnemy     = false
+
+        -- Pulse animation state
+        self._pulseTimer     = 0
+        self._isPulsing      = false
+
+        -- Store base scale from Transform
+        if self._transform then
+            self._baseScaleX = self._transform.localScale.x
+            self._baseScaleY = self._transform.localScale.y
+        end
 
         if event_bus and event_bus.subscribe then
             self._aimSub = event_bus.subscribe("chain.aim_camera", function(payload)
@@ -45,6 +59,40 @@ return Component {
 
         -- Also read global in case event_bus subscription failed
         local aiming = self._isAiming or _G.CHAIN_AIM_ACTIVE
+
+        -- Trigger pulse when crosshair first lands on enemy while aiming
+        if aiming and self._onEnemy and not self._wasOnEnemy then
+            self._isPulsing  = true
+            self._pulseTimer = 0
+        end
+        self._wasOnEnemy = self._onEnemy
+
+        -- Cancel pulse immediately when leaving aim mode
+        if not aiming and self._isPulsing then
+            self._isPulsing  = false
+            self._pulseTimer = 0
+        end
+
+        -- Advance pulse animation
+        if self._isPulsing then
+            self._pulseTimer = self._pulseTimer + dt
+            if self._pulseTimer >= self.PulseDuration then
+                self._isPulsing  = false
+                self._pulseTimer = 0
+            end
+        end
+
+        -- Apply scale on Transform (pulse uses a sine curve: 0 -> 1 -> 0)
+        if self._transform and self._baseScaleX then
+            local scaleMult = 1.0
+            if self._isPulsing then
+                local t = self._pulseTimer / self.PulseDuration   -- 0..1
+                scaleMult = 1.0 + (self.PulseScale - 1.0) * math.sin(t * math.pi)
+            end
+            self._transform.localScale.x = self._baseScaleX * scaleMult
+            self._transform.localScale.y = self._baseScaleY * scaleMult
+            self._transform.isDirty = true
+        end
 
         if aiming then
             self._sprite:SetTextureFromGUID(self.AimSpriteGUID)
