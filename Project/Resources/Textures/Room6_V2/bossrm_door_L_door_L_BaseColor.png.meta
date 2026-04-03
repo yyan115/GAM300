@@ -1,0 +1,15 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "007b345c63986846-0004b687d80045d3",
+        "source": "../../Resources/Textures/Room6_V2/bossrm_door_L_door_L_BaseColor.png",
+        "compiled": "../../Resources/Textures/Room6_V2/bossrm_door_L_door_L_BaseColor.dds"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

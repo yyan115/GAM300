@@ -1,0 +1,15 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "007b345c4b5540b2-0004b6a286007c85",
+        "source": "../../Resources/Textures/BossRoom/Cloth3/Cloth3_Metallic.png",
+        "compiled": "../../Resources/Textures/BossRoom/Cloth3/Cloth3_Metallic.dds"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

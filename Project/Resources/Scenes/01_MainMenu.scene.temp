@@ -359,7 +359,7 @@
                     "layerIndex": 0
                 },
                 "SiblingIndexComponent": {
-                    "siblingIndex": 2
+                    "siblingIndex": 3
                 },
                 "Transform": {
                     "type": "Transform",
@@ -369,7 +369,7 @@
                             "data": [
                                 {
                                     "type": "float",
-                                    "data": 400
+                                    "data": 265
                                 },
                                 {
                                     "type": "float",
@@ -386,11 +386,11 @@
                             "data": [
                                 {
                                     "type": "float",
-                                    "data": 500
+                                    "data": 379
                                 },
                                 {
                                     "type": "float",
-                                    "data": 100
+                                    "data": 93
                                 },
                                 {
                                     "type": "float",
@@ -428,7 +428,7 @@
                             "type": "bool",
                             "data": false
                         },
-                        "00328d6a4e55cb37-0003611882000089",
+                        "0043ce37e1cf4dd9-0004b698c20023cd",
                         "00374a216e66dbbc-000331fc80000069",
                         {
                             "type": "Vector3D",
@@ -563,12 +563,159 @@
                         }
                     ]
                 },
+                "AudioComponent": {
+                    "type": "AudioComponent",
+                    "data": [
+                        {
+                            "type": "bool",
+                            "data": true
+                        },
+                        "0037d81b75c76d96-000400f740000003",
+                        {
+                            "type": "bool",
+                            "data": false
+                        },
+                        {
+                            "type": "bool",
+                            "data": false
+                        },
+                        {
+                            "type": "bool",
+                            "data": false
+                        },
+                        {
+                            "type": "bool",
+                            "data": false
+                        },
+                        {
+                            "type": "int",
+                            "data": 128
+                        },
+                        {
+                            "type": "float",
+                            "data": 0.795181
+                        },
+                        {
+                            "type": "float",
+                            "data": 1
+                        },
+                        {
+                            "type": "float",
+                            "data": 0
+                        },
+                        {
+                            "type": "float",
+                            "data": 1
+                        },
+                        {
+                            "type": "bool",
+                            "data": false
+                        },
+                        {
+                            "type": "float",
+                            "data": 0
+                        },
+                        {
+                            "type": "float",
+                            "data": 1
+                        },
+                        {
+                            "type": "float",
+                            "data": 1
+                        },
+                        {
+                            "type": "float",
+                            "data": 100
+                        },
+                        {
+                            "type": "std::string",
+                            "data": "SFX"
+                        }
+                    ]
+                },
                 "ActiveComponent": {
                     "type": "ActiveComponent",
                     "data": [
                         {
                             "type": "bool",
                             "data": true
+                        }
+                    ]
+                },
+                "ScriptComponent": {
+                    "scripts": [
+                        {
+                            "scriptGuidStr": "005e6c80c3c62142-0003fe066a000001",
+                            "scriptPath": "../../Resources/Scripts/UI/MainMenuSettings/MainMenuButtonHandler.lua",
+                            "enabled": true,
+                            "preserveKeys": [],
+                            "entryFunction": "OnInit",
+                            "autoInvokeEntry": true,
+                            "instanceState": {
+                                "_subscriptions": {},
+                                "Subscribe": null,
+                                "Start": null,
+                                "OnClickPlayButton": null,
+                                "Destroy": null,
+                                "_fadeInTimer": 4.0150221032090485,
+                                "SerializeFields": null,
+                                "Unsubscribe": null,
+                                "AwakeSafe": null,
+                                "DeserializeFields": null,
+                                "androidTargetScene": "Resources/Scenes/04_Level.scene",
+                                "bgmEntityName": "BGM",
+                                "_fadeAlpha": 0.0,
+                                "DisableSafe": null,
+                                "entityId": 1.0,
+                                "__created_at": 1774731292.0,
+                                "bgmFadeInDuration": 4.0,
+                                "fadeDuration": 3.0,
+                                "GetComponent": null,
+                                "fields": {
+                                    "_subscriptions": {},
+                                    "__created_at": 1770232752.0,
+                                    "bgmFadeInDuration": 4.0,
+                                    "fadeDuration": 3.0,
+                                    "__field_list": {
+                                        "targetScene": "Resources/Scenes/02_IntroCutscene.scene",
+                                        "bgmEntityName": "BGM",
+                                        "fadeScreenName": "MenuFadeScreen",
+                                        "fadeDuration": 1.0
+                                    },
+                                    "__meta": {},
+                                    "bgmEntityName": "BGM",
+                                    "targetScene": "Resources/Scenes/02_IntroCutscene.scene",
+                                    "fadeScreenName": "MenuFadeScreen",
+                                    "_private": {}
+                                },
+                                "_isFadingIn": false,
+                                "_bgmInitialVolume": 1.0,
+                                "_bgmAudio": null,
+                                "_private": {},
+                                "Update": null,
+                                "OnClickQuitButton": null,
+                                "_fadeTimer": 0.0,
+                                "_isFading": false,
+                                "OnClickCreditButton": null,
+                                "Every": null,
+                                "OnClickSettingButton": null,
+                                "__meta": {},
+                                "_call_lifecycle": null,
+                                "fadeScreenName": "MenuFadeScreen",
+                                "_playClickSFX": null,
+                                "__field_list": {
+                                    "fadeScreenName": "MenuFadeScreen",
+                                    "bgmFadeInDuration": 2.0,
+                                    "fadeDuration": 1.0,
+                                    "targetScene": "Resources/Scenes/02_IntroCutscene.scene",
+                                    "bgmEntityName": "BGM",
+                                    "androidTargetScene": "Resources/Scenes/04_Level.scene"
+                                },
+                                "targetScene": "Resources/Scenes/02_IntroCutscene.scene",
+                                "UpdateSafe": null,
+                                "After": null,
+                                "StartSafe": null
+                            }
                         }
                     ]
                 },
@@ -637,11 +784,11 @@
                             "data": [
                                 {
                                     "type": "float",
-                                    "data": -0.3
+                                    "data": -0.4
                                 },
                                 {
                                     "type": "float",
-                                    "data": -0.2
+                                    "data": -0.15
                                 },
                                 {
                                     "type": "float",
@@ -702,7 +849,7 @@
                         },
                         {
                             "type": "unsigned",
-                            "data": 48
+                            "data": 40
                         },
                         "00602042db559215-00036778be000001",
                         "00374a2171ad928d-000331fc8200006d",
@@ -711,11 +858,11 @@
                             "data": [
                                 {
                                     "type": "float",
-                                    "data": 250
+                                    "data": 113.4
                                 },
                                 {
                                     "type": "float",
-                                    "data": 557.2
+                                    "data": 563.25
                                 },
                                 {
                                     "type": "float",
@@ -728,15 +875,15 @@
                             "data": [
                                 {
                                     "type": "float",
-                                    "data": 1
+                                    "data": 0.8
                                 },
                                 {
                                     "type": "float",
-                                    "data": 1
+                                    "data": 0.8
                                 },
                                 {
                                     "type": "float",
-                                    "data": 1
+                                    "data": 0.8
                                 }
                             ]
                         },
@@ -874,7 +1021,7 @@
                     "layerIndex": 0
                 },
                 "SiblingIndexComponent": {
-                    "siblingIndex": 3
+                    "siblingIndex": 4
                 },
                 "Transform": {
                     "type": "Transform",
@@ -884,7 +1031,7 @@
                             "data": [
                                 {
                                     "type": "float",
-                                    "data": 400
+                                    "data": 265
                                 },
                                 {
                                     "type": "float",
@@ -901,11 +1048,11 @@
                             "data": [
                                 {
                                     "type": "float",
-                                    "data": 500
+                                    "data": 379
                                 },
                                 {
                                     "type": "float",
-                                    "data": 100
+                                    "data": 93
                                 },
                                 {
                                     "type": "float",
@@ -943,7 +1090,7 @@
                             "type": "bool",
                             "data": false
                         },
-                        "00328d6a4e55cb37-0003611882000089",
+                        "0043ce37e1cf4dd9-0004b698c20023cd",
                         "00374a216e66dbbc-000331fc80000069",
                         {
                             "type": "Vector3D",
@@ -1078,6 +1225,76 @@
                         }
                     ]
                 },
+                "AudioComponent": {
+                    "type": "AudioComponent",
+                    "data": [
+                        {
+                            "type": "bool",
+                            "data": true
+                        },
+                        "0037d81b07b695ee-000400f740000007",
+                        {
+                            "type": "bool",
+                            "data": false
+                        },
+                        {
+                            "type": "bool",
+                            "data": false
+                        },
+                        {
+                            "type": "bool",
+                            "data": false
+                        },
+                        {
+                            "type": "bool",
+                            "data": false
+                        },
+                        {
+                            "type": "int",
+                            "data": 128
+                        },
+                        {
+                            "type": "float",
+                            "data": 1
+                        },
+                        {
+                            "type": "float",
+                            "data": 1
+                        },
+                        {
+                            "type": "float",
+                            "data": 0
+                        },
+                        {
+                            "type": "float",
+                            "data": 1
+                        },
+                        {
+                            "type": "bool",
+                            "data": false
+                        },
+                        {
+                            "type": "float",
+                            "data": 0
+                        },
+                        {
+                            "type": "float",
+                            "data": 1
+                        },
+                        {
+                            "type": "float",
+                            "data": 1
+                        },
+                        {
+                            "type": "float",
+                            "data": 100
+                        },
+                        {
+                            "type": "std::string",
+                            "data": "SFX"
+                        }
+                    ]
+                },
                 "ActiveComponent": {
                     "type": "ActiveComponent",
                     "data": [
@@ -1152,11 +1369,11 @@
                             "data": [
                                 {
                                     "type": "float",
-                                    "data": -0.3
+                                    "data": -0.4
                                 },
                                 {
                                     "type": "float",
-                                    "data": -0.173
+                                    "data": -0.15
                                 },
                                 {
                                     "type": "float",
@@ -1217,7 +1434,7 @@
                         },
                         {
                             "type": "unsigned",
-                            "data": 48
+                            "data": 40
                         },
                         "00602042db559215-00036778be000001",
                         "00374a2171ad928d-000331fc8200006d",
@@ -1226,11 +1443,11 @@
                             "data": [
                                 {
                                     "type": "float",
-                                    "data": 250
+                                    "data": 113.4
                                 },
                                 {
                                     "type": "float",
-                                    "data": 441.9
+                                    "data": 445.25
                                 },
                                 {
                                     "type": "float",
@@ -1243,15 +1460,15 @@
                             "data": [
                                 {
                                     "type": "float",
-                                    "data": 1
+                                    "data": 0.8
                                 },
                                 {
                                     "type": "float",
-                                    "data": 1
+                                    "data": 0.8
                                 },
                                 {
                                     "type": "float",
-                                    "data": 1
+                                    "data": 0.8
                                 }
                             ]
                         },
@@ -1389,7 +1606,7 @@
                     "layerIndex": 0
                 },
                 "SiblingIndexComponent": {
-                    "siblingIndex": 4
+                    "siblingIndex": 5
                 },
                 "Transform": {
                     "type": "Transform",
@@ -1399,7 +1616,7 @@
                             "data": [
                                 {
                                     "type": "float",
-                                    "data": 400
+                                    "data": 265
                                 },
                                 {
                                     "type": "float",
@@ -1416,11 +1633,11 @@
                             "data": [
                                 {
                                     "type": "float",
-                                    "data": 500
+                                    "data": 379
                                 },
                                 {
                                     "type": "float",
-                                    "data": 100
+                                    "data": 93
                                 },
                                 {
                                     "type": "float",
@@ -1458,7 +1675,7 @@
                             "type": "bool",
                             "data": false
                         },
-                        "00328d6a4e55cb37-0003611882000089",
+                        "0043ce37e1cf4dd9-0004b698c20023cd",
                         "00374a216e66dbbc-000331fc80000069",
                         {
                             "type": "Vector3D",
@@ -1593,6 +1810,76 @@
                         }
                     ]
                 },
+                "AudioComponent": {
+                    "type": "AudioComponent",
+                    "data": [
+                        {
+                            "type": "bool",
+                            "data": true
+                        },
+                        "0037d81b07b695ee-000400f740000007",
+                        {
+                            "type": "bool",
+                            "data": false
+                        },
+                        {
+                            "type": "bool",
+                            "data": false
+                        },
+                        {
+                            "type": "bool",
+                            "data": false
+                        },
+                        {
+                            "type": "bool",
+                            "data": false
+                        },
+                        {
+                            "type": "int",
+                            "data": 128
+                        },
+                        {
+                            "type": "float",
+                            "data": 1
+                        },
+                        {
+                            "type": "float",
+                            "data": 1
+                        },
+                        {
+                            "type": "float",
+                            "data": 0
+                        },
+                        {
+                            "type": "float",
+                            "data": 1
+                        },
+                        {
+                            "type": "bool",
+                            "data": false
+                        },
+                        {
+                            "type": "float",
+                            "data": 0
+                        },
+                        {
+                            "type": "float",
+                            "data": 1
+                        },
+                        {
+                            "type": "float",
+                            "data": 1
+                        },
+                        {
+                            "type": "float",
+                            "data": 100
+                        },
+                        {
+                            "type": "std::string",
+                            "data": "SFX"
+                        }
+                    ]
+                },
                 "ActiveComponent": {
                     "type": "ActiveComponent",
                     "data": [
@@ -1667,11 +1954,11 @@
                             "data": [
                                 {
                                     "type": "float",
-                                    "data": -0.3
+                                    "data": -0.4
                                 },
                                 {
                                     "type": "float",
-                                    "data": -0.196
+                                    "data": -0.15
                                 },
                                 {
                                     "type": "float",
@@ -1732,7 +2019,7 @@
                         },
                         {
                             "type": "unsigned",
-                            "data": 48
+                            "data": 40
                         },
                         "00602042db559215-00036778be000001",
                         "00374a2171ad928d-000331fc8200006d",
@@ -1741,11 +2028,11 @@
                             "data": [
                                 {
                                     "type": "float",
-                                    "data": 250
+                                    "data": 113.4
                                 },
                                 {
                                     "type": "float",
-                                    "data": 321.6
+                                    "data": 327.25
                                 },
                                 {
                                     "type": "float",
@@ -1758,15 +2045,15 @@
                             "data": [
                                 {
                                     "type": "float",
-                                    "data": 1
+                                    "data": 0.8
                                 },
                                 {
                                     "type": "float",
-                                    "data": 1
+                                    "data": 0.8
                                 },
                                 {
                                     "type": "float",
-                                    "data": 1
+                                    "data": 0.8
                                 }
                             ]
                         },
@@ -1904,7 +2191,7 @@
                     "layerIndex": 0
                 },
                 "SiblingIndexComponent": {
-                    "siblingIndex": 5
+                    "siblingIndex": 6
                 },
                 "Transform": {
                     "type": "Transform",
@@ -1914,7 +2201,7 @@
                             "data": [
                                 {
                                     "type": "float",
-                                    "data": 400
+                                    "data": 265
                                 },
                                 {
                                     "type": "float",
@@ -1931,11 +2218,11 @@
                             "data": [
                                 {
                                     "type": "float",
-                                    "data": 500
+                                    "data": 379
                                 },
                                 {
                                     "type": "float",
-                                    "data": 100
+                                    "data": 93
                                 },
                                 {
                                     "type": "float",
@@ -1973,7 +2260,7 @@
                             "type": "bool",
                             "data": false
                         },
-                        "00328d6a4e55cb37-0003611882000089",
+                        "0043ce37e1cf4dd9-0004b698c20023cd",
                         "00374a216e66dbbc-000331fc80000069",
                         {
                             "type": "Vector3D",
@@ -2108,6 +2395,76 @@
                         }
                     ]
                 },
+                "AudioComponent": {
+                    "type": "AudioComponent",
+                    "data": [
+                        {
+                            "type": "bool",
+                            "data": true
+                        },
+                        "0037d81b07b695ee-000400f740000007",
+                        {
+                            "type": "bool",
+                            "data": false
+                        },
+                        {
+                            "type": "bool",
+                            "data": false
+                        },
+                        {
+                            "type": "bool",
+                            "data": false
+                        },
+                        {
+                            "type": "bool",
+                            "data": false
+                        },
+                        {
+                            "type": "int",
+                            "data": 128
+                        },
+                        {
+                            "type": "float",
+                            "data": 1
+                        },
+                        {
+                            "type": "float",
+                            "data": 1
+                        },
+                        {
+                            "type": "float",
+                            "data": 0
+                        },
+                        {
+                            "type": "float",
+                            "data": 1
+                        },
+                        {
+                            "type": "bool",
+                            "data": false
+                        },
+                        {
+                            "type": "float",
+                            "data": 0
+                        },
+                        {
+                            "type": "float",
+                            "data": 1
+                        },
+                        {
+                            "type": "float",
+                            "data": 1
+                        },
+                        {
+                            "type": "float",
+                            "data": 100
+                        },
+                        {
+                            "type": "std::string",
+                            "data": "SFX"
+                        }
+                    ]
+                },
                 "ActiveComponent": {
                     "type": "ActiveComponent",
                     "data": [
@@ -2182,7 +2539,7 @@
                             "data": [
                                 {
                                     "type": "float",
-                                    "data": -0.3
+                                    "data": -0.4
                                 },
                                 {
                                     "type": "float",
@@ -2247,7 +2604,7 @@
                         },
                         {
                             "type": "unsigned",
-                            "data": 48
+                            "data": 40
                         },
                         "00602042db559215-00036778be000001",
                         "00374a2171ad928d-000331fc8200006d",
@@ -2256,11 +2613,11 @@
                             "data": [
                                 {
                                     "type": "float",
-                                    "data": 250
+                                    "data": 113.4
                                 },
                                 {
                                     "type": "float",
-                                    "data": 212.2
+                                    "data": 213.25
                                 },
                                 {
                                     "type": "float",
@@ -2273,15 +2630,15 @@
                             "data": [
                                 {
                                     "type": "float",
-                                    "data": 1
+                                    "data": 0.8
                                 },
                                 {
                                     "type": "float",
-                                    "data": 1
+                                    "data": 0.8
                                 },
                                 {
                                     "type": "float",
-                                    "data": 1
+                                    "data": 0.8
                                 }
                             ]
                         },
@@ -2419,7 +2776,7 @@
                     "layerIndex": 0
                 },
                 "SiblingIndexComponent": {
-                    "siblingIndex": 1
+                    "siblingIndex": 2
                 },
                 "Transform": {
                     "type": "Transform",
@@ -2429,11 +2786,11 @@
                             "data": [
                                 {
                                     "type": "float",
-                                    "data": 500
+                                    "data": 335
                                 },
                                 {
                                     "type": "float",
-                                    "data": 778.7
+                                    "data": 735
                                 },
                                 {
                                     "type": "float",
@@ -2446,11 +2803,11 @@
                             "data": [
                                 {
                                     "type": "float",
-                                    "data": 600
+                                    "data": 503
                                 },
                                 {
                                     "type": "float",
-                                    "data": 200
+                                    "data": 128
                                 },
                                 {
                                     "type": "float",
@@ -2488,7 +2845,7 @@
                             "type": "bool",
                             "data": true
                         },
-                        "00328d6a031c72ad-00036118820000a7",
+                        "0043ce3781058bef-0004b698be0023c7",
                         "00374a216e66dbbc-000331fc80000069",
                         {
                             "type": "Vector3D",
@@ -2637,7 +2994,7 @@
                     "layerIndex": 0
                 },
                 "SiblingIndexComponent": {
-                    "siblingIndex": 6
+                    "siblingIndex": 7
                 },
                 "Transform": {
                     "type": "Transform",
@@ -2753,55 +3110,6 @@
                                 "DisableSafe": null,
                                 "After": null,
                                 "Subscribe": null
-                            }
-                        },
-                        {
-                            "scriptGuidStr": "008f6b4e6f9c2d41-0004c00100000001",
-                            "scriptPath": "../../Resources/Scripts/UI/MainMenuSettings/MainMenuSettingsSlider.lua",
-                            "enabled": true,
-                            "preserveKeys": [],
-                            "entryFunction": "OnInit",
-                            "autoInvokeEntry": true
-                        },
-                        {
-                            "scriptGuidStr": "0054fb434423d354-0003e8028a000001",
-                            "scriptPath": "../../Resources/Scripts/UI/MainMenuSettings/MainMenuSettingsButtonHandler.lua",
-                            "enabled": true,
-                            "preserveKeys": [],
-                            "entryFunction": "OnInit",
-                            "autoInvokeEntry": true,
-                            "instanceState": {
-                                "AwakeSafe": null,
-                                "StartSafe": null,
-                                "__meta": {},
-                                "Start": null,
-                                "_private": {},
-                                "Update": null,
-                                "_call_lifecycle": null,
-                                "__engine_script_path": "../../resources/scripts/ui/mainmenusettings/mainmenusettingsbuttonhandler.lua",
-                                "__created_at": 1775223861.0,
-                                "_subscriptions": {},
-                                "UpdateSafe": null,
-                                "__field_list": {
-                                    "ResetSpriteGUIDs": {},
-                                    "CloseSpriteGUIDs": {}
-                                },
-                                "ResetSpriteGUIDs": [
-                                    "006b8ee8884c511d-0004a764f4005ff9",
-                                    "006b8ee88987b3b7-0004a764f4005ffb"
-                                ],
-                                "CloseSpriteGUIDs": [
-                                    "0059b8a5bf843eef-00049ee15a017e33",
-                                    "0059b8a59dbb80ff-00049ee152017e2f"
-                                ],
-                                "SerializeFields": null,
-                                "Subscribe": null,
-                                "DeserializeFields": null,
-                                "After": null,
-                                "Unsubscribe": null,
-                                "Every": null,
-                                "DisableSafe": null,
-                                "Destroy": null
                             }
                         }
                     ]
@@ -5469,7 +5777,7 @@
                         },
                         {
                             "type": "unsigned",
-                            "data": 36
+                            "data": 32
                         },
                         "00602042db559215-00036778be000001",
                         "00374a2171ad928d-000331fc8200006d",
@@ -5709,10 +6017,14 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
+                                "00032e870a1853b1-00036d3022000043",
+                                "00032e875add228e-00036d30d8000045",
+                                "00032e870d444bd5-00036d30d8000047",
+                                "0025038ab1bab8bb-0003fcf656000003",
                                 "006ae0b15af69c6f-00041469fc000119",
                                 "006ae0b11a64d031-0004146af600011b",
                                 "006ae0b131ef588f-0004146b2c00011d",
-                                "007e9a437450f76b-0004b67c4e007981",
+                                "0043ce37fe160d94-0004b69f00002445",
                                 "00032e87635f619f-00036d310c000049",
                                 "00032e8711fa1564-00036d318200004b",
                                 "00032e8708b1a6d1-00036d318400004d",
@@ -5740,6 +6052,902 @@
         },
         {
             "id": 25,
+            "guid": "00032e870a1853b1-00036d3022000043",
+            "components": {
+                "NameComponent": {
+                    "name": "MasterBar"
+                },
+                "TagComponent": {
+                    "tagIndex": 0
+                },
+                "LayerComponent": {
+                    "layerIndex": 0
+                },
+                "SiblingIndexComponent": {
+                    "siblingIndex": 13
+                },
+                "Transform": {
+                    "type": "Transform",
+                    "data": [
+                        {
+                            "type": "Vector3D",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 800
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 685
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                }
+                            ]
+                        },
+                        {
+                            "type": "Vector3D",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 680
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 12
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                }
+                            ]
+                        },
+                        {
+                            "type": "Quaternion",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                }
+                            ]
+                        }
+                    ]
+                },
+                "SpriteRenderComponent": {
+                    "type": "SpriteRenderComponent",
+                    "data": [
+                        {
+                            "type": "bool",
+                            "data": true
+                        },
+                        "006b8ee8e0bb49aa-0004a764f6006001",
+                        "00374a216e66dbbc-000331fc80000069",
+                        {
+                            "type": "Vector3D",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                }
+                            ]
+                        },
+                        {
+                            "type": "Vector3D",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 100
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 100
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                }
+                            ]
+                        },
+                        {
+                            "type": "float",
+                            "data": 0
+                        },
+                        {
+                            "type": "Vector3D",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                }
+                            ]
+                        },
+                        {
+                            "type": "float",
+                            "data": 1
+                        },
+                        {
+                            "type": "bool",
+                            "data": false
+                        },
+                        {
+                            "type": "bool",
+                            "data": true
+                        },
+                        {
+                            "type": "int",
+                            "data": 0
+                        },
+                        {
+                            "type": "int",
+                            "data": 3
+                        },
+                        {
+                            "type": "Vector3D",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                }
+                            ]
+                        },
+                        {
+                            "type": "int",
+                            "data": 0
+                        },
+                        {
+                            "type": "int",
+                            "data": 1
+                        },
+                        {
+                            "type": "float",
+                            "data": 1
+                        },
+                        {
+                            "type": "float",
+                            "data": 0.5
+                        },
+                        {
+                            "type": "float",
+                            "data": 0.3
+                        },
+                        {
+                            "type": "float",
+                            "data": 0.3
+                        },
+                        {
+                            "type": "bool",
+                            "data": false
+                        }
+                    ]
+                },
+                "ParentComponent": {
+                    "type": "ParentComponent",
+                    "data": [
+                        "003fcab0259e1313-00041544a4000231"
+                    ]
+                },
+                "ActiveComponent": {
+                    "type": "ActiveComponent",
+                    "data": [
+                        {
+                            "type": "bool",
+                            "data": true
+                        }
+                    ]
+                }
+            }
+        },
+        {
+            "id": 26,
+            "guid": "00032e875add228e-00036d30d8000045",
+            "components": {
+                "NameComponent": {
+                    "name": "BGMBar"
+                },
+                "TagComponent": {
+                    "tagIndex": 0
+                },
+                "LayerComponent": {
+                    "layerIndex": 0
+                },
+                "SiblingIndexComponent": {
+                    "siblingIndex": 14
+                },
+                "Transform": {
+                    "type": "Transform",
+                    "data": [
+                        {
+                            "type": "Vector3D",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 800
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 585
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                }
+                            ]
+                        },
+                        {
+                            "type": "Vector3D",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 680
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 12
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                }
+                            ]
+                        },
+                        {
+                            "type": "Quaternion",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                }
+                            ]
+                        }
+                    ]
+                },
+                "SpriteRenderComponent": {
+                    "type": "SpriteRenderComponent",
+                    "data": [
+                        {
+                            "type": "bool",
+                            "data": true
+                        },
+                        "006b8ee8e0bb49aa-0004a764f6006001",
+                        "00374a216e66dbbc-000331fc80000069",
+                        {
+                            "type": "Vector3D",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                }
+                            ]
+                        },
+                        {
+                            "type": "Vector3D",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 100
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 100
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                }
+                            ]
+                        },
+                        {
+                            "type": "float",
+                            "data": 0
+                        },
+                        {
+                            "type": "Vector3D",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                }
+                            ]
+                        },
+                        {
+                            "type": "float",
+                            "data": 1
+                        },
+                        {
+                            "type": "bool",
+                            "data": false
+                        },
+                        {
+                            "type": "bool",
+                            "data": true
+                        },
+                        {
+                            "type": "int",
+                            "data": 0
+                        },
+                        {
+                            "type": "int",
+                            "data": 3
+                        },
+                        {
+                            "type": "Vector3D",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                }
+                            ]
+                        },
+                        {
+                            "type": "int",
+                            "data": 0
+                        },
+                        {
+                            "type": "int",
+                            "data": 1
+                        },
+                        {
+                            "type": "float",
+                            "data": 1
+                        },
+                        {
+                            "type": "float",
+                            "data": 0.5
+                        },
+                        {
+                            "type": "float",
+                            "data": 0.3
+                        },
+                        {
+                            "type": "float",
+                            "data": 0.3
+                        },
+                        {
+                            "type": "bool",
+                            "data": false
+                        }
+                    ]
+                },
+                "ParentComponent": {
+                    "type": "ParentComponent",
+                    "data": [
+                        "003fcab0259e1313-00041544a4000231"
+                    ]
+                },
+                "ActiveComponent": {
+                    "type": "ActiveComponent",
+                    "data": [
+                        {
+                            "type": "bool",
+                            "data": true
+                        }
+                    ]
+                }
+            }
+        },
+        {
+            "id": 27,
+            "guid": "00032e870d444bd5-00036d30d8000047",
+            "components": {
+                "NameComponent": {
+                    "name": "SFXBar"
+                },
+                "TagComponent": {
+                    "tagIndex": 0
+                },
+                "LayerComponent": {
+                    "layerIndex": 0
+                },
+                "SiblingIndexComponent": {
+                    "siblingIndex": 15
+                },
+                "Transform": {
+                    "type": "Transform",
+                    "data": [
+                        {
+                            "type": "Vector3D",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 800
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 485
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                }
+                            ]
+                        },
+                        {
+                            "type": "Vector3D",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 680
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 12
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                }
+                            ]
+                        },
+                        {
+                            "type": "Quaternion",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                }
+                            ]
+                        }
+                    ]
+                },
+                "SpriteRenderComponent": {
+                    "type": "SpriteRenderComponent",
+                    "data": [
+                        {
+                            "type": "bool",
+                            "data": true
+                        },
+                        "006b8ee8e0bb49aa-0004a764f6006001",
+                        "00374a216e66dbbc-000331fc80000069",
+                        {
+                            "type": "Vector3D",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                }
+                            ]
+                        },
+                        {
+                            "type": "Vector3D",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 100
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 100
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                }
+                            ]
+                        },
+                        {
+                            "type": "float",
+                            "data": 0
+                        },
+                        {
+                            "type": "Vector3D",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                }
+                            ]
+                        },
+                        {
+                            "type": "float",
+                            "data": 1
+                        },
+                        {
+                            "type": "bool",
+                            "data": false
+                        },
+                        {
+                            "type": "bool",
+                            "data": true
+                        },
+                        {
+                            "type": "int",
+                            "data": 0
+                        },
+                        {
+                            "type": "int",
+                            "data": 3
+                        },
+                        {
+                            "type": "Vector3D",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                }
+                            ]
+                        },
+                        {
+                            "type": "int",
+                            "data": 0
+                        },
+                        {
+                            "type": "int",
+                            "data": 1
+                        },
+                        {
+                            "type": "float",
+                            "data": 1
+                        },
+                        {
+                            "type": "float",
+                            "data": 0.5
+                        },
+                        {
+                            "type": "float",
+                            "data": 0.3
+                        },
+                        {
+                            "type": "float",
+                            "data": 0.3
+                        },
+                        {
+                            "type": "bool",
+                            "data": false
+                        }
+                    ]
+                },
+                "ParentComponent": {
+                    "type": "ParentComponent",
+                    "data": [
+                        "003fcab0259e1313-00041544a4000231"
+                    ]
+                },
+                "ActiveComponent": {
+                    "type": "ActiveComponent",
+                    "data": [
+                        {
+                            "type": "bool",
+                            "data": true
+                        }
+                    ]
+                }
+            }
+        },
+        {
+            "id": 28,
+            "guid": "0025038ab1bab8bb-0003fcf656000003",
+            "components": {
+                "NameComponent": {
+                    "name": "GammaBar"
+                },
+                "TagComponent": {
+                    "tagIndex": 0
+                },
+                "LayerComponent": {
+                    "layerIndex": 0
+                },
+                "SiblingIndexComponent": {
+                    "siblingIndex": 14
+                },
+                "Transform": {
+                    "type": "Transform",
+                    "data": [
+                        {
+                            "type": "Vector3D",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 800
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 235
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                }
+                            ]
+                        },
+                        {
+                            "type": "Vector3D",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 680
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 12
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                }
+                            ]
+                        },
+                        {
+                            "type": "Quaternion",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                }
+                            ]
+                        }
+                    ]
+                },
+                "SpriteRenderComponent": {
+                    "type": "SpriteRenderComponent",
+                    "data": [
+                        {
+                            "type": "bool",
+                            "data": true
+                        },
+                        "006b8ee8e0bb49aa-0004a764f6006001",
+                        "00374a216e66dbbc-000331fc80000069",
+                        {
+                            "type": "Vector3D",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                }
+                            ]
+                        },
+                        {
+                            "type": "Vector3D",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 100
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 100
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                }
+                            ]
+                        },
+                        {
+                            "type": "float",
+                            "data": 0
+                        },
+                        {
+                            "type": "Vector3D",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                }
+                            ]
+                        },
+                        {
+                            "type": "float",
+                            "data": 1
+                        },
+                        {
+                            "type": "bool",
+                            "data": false
+                        },
+                        {
+                            "type": "bool",
+                            "data": true
+                        },
+                        {
+                            "type": "int",
+                            "data": 0
+                        },
+                        {
+                            "type": "int",
+                            "data": 3
+                        },
+                        {
+                            "type": "Vector3D",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                }
+                            ]
+                        },
+                        {
+                            "type": "int",
+                            "data": 0
+                        },
+                        {
+                            "type": "int",
+                            "data": 1
+                        },
+                        {
+                            "type": "float",
+                            "data": 1
+                        },
+                        {
+                            "type": "float",
+                            "data": 0.5
+                        },
+                        {
+                            "type": "float",
+                            "data": 0.3
+                        },
+                        {
+                            "type": "float",
+                            "data": 0.3
+                        },
+                        {
+                            "type": "bool",
+                            "data": false
+                        }
+                    ]
+                },
+                "ParentComponent": {
+                    "type": "ParentComponent",
+                    "data": [
+                        "003fcab0259e1313-00041544a4000231"
+                    ]
+                },
+                "ActiveComponent": {
+                    "type": "ActiveComponent",
+                    "data": [
+                        {
+                            "type": "bool",
+                            "data": true
+                        }
+                    ]
+                }
+            }
+        },
+        {
+            "id": 29,
             "guid": "006ae0b15af69c6f-00041469fc000119",
             "components": {
                 "NameComponent": {
@@ -5963,7 +7171,7 @@
             }
         },
         {
-            "id": 26,
+            "id": 30,
             "guid": "006ae0b11a64d031-0004146af600011b",
             "components": {
                 "NameComponent": {
@@ -6187,7 +7395,7 @@
             }
         },
         {
-            "id": 27,
+            "id": 31,
             "guid": "006ae0b131ef588f-0004146b2c00011d",
             "components": {
                 "NameComponent": {
@@ -6411,8 +7619,8 @@
             }
         },
         {
-            "id": 28,
-            "guid": "007e9a437450f76b-0004b67c4e007981",
+            "id": 32,
+            "guid": "0043ce37fe160d94-0004b69f00002445",
             "components": {
                 "NameComponent": {
                     "name": "GammaFill"
@@ -6424,7 +7632,7 @@
                     "layerIndex": 0
                 },
                 "SiblingIndexComponent": {
-                    "siblingIndex": 50002
+                    "siblingIndex": 18
                 },
                 "Transform": {
                     "type": "Transform",
@@ -6438,7 +7646,7 @@
                                 },
                                 {
                                     "type": "float",
-                                    "data": 237.941
+                                    "data": 235
                                 },
                                 {
                                     "type": "float",
@@ -6635,7 +7843,7 @@
             }
         },
         {
-            "id": 29,
+            "id": 33,
             "guid": "00032e87635f619f-00036d310c000049",
             "components": {
                 "NameComponent": {
@@ -6847,6 +8055,76 @@
                         "003fcab0259e1313-00041544a4000231"
                     ]
                 },
+                "AudioComponent": {
+                    "type": "AudioComponent",
+                    "data": [
+                        {
+                            "type": "bool",
+                            "data": true
+                        },
+                        "0037d81b07b695ee-000400f740000007",
+                        {
+                            "type": "bool",
+                            "data": false
+                        },
+                        {
+                            "type": "bool",
+                            "data": false
+                        },
+                        {
+                            "type": "bool",
+                            "data": false
+                        },
+                        {
+                            "type": "bool",
+                            "data": false
+                        },
+                        {
+                            "type": "int",
+                            "data": 128
+                        },
+                        {
+                            "type": "float",
+                            "data": 1
+                        },
+                        {
+                            "type": "float",
+                            "data": 1
+                        },
+                        {
+                            "type": "float",
+                            "data": 0
+                        },
+                        {
+                            "type": "float",
+                            "data": 1
+                        },
+                        {
+                            "type": "bool",
+                            "data": false
+                        },
+                        {
+                            "type": "float",
+                            "data": 0
+                        },
+                        {
+                            "type": "float",
+                            "data": 1
+                        },
+                        {
+                            "type": "float",
+                            "data": 1
+                        },
+                        {
+                            "type": "float",
+                            "data": 100
+                        },
+                        {
+                            "type": "std::string",
+                            "data": "SFX"
+                        }
+                    ]
+                },
                 "ActiveComponent": {
                     "type": "ActiveComponent",
                     "data": [
@@ -6859,8 +8137,8 @@
                 "ScriptComponent": {
                     "scripts": [
                         {
-                            "scriptGuidStr": "008f6b4e6f9c2d41-0004c00100000001",
-                            "scriptPath": "../../Resources/Scripts/UI/MainMenuSettings/MainMenuSettingsSlider.lua",
+                            "scriptGuidStr": "0058c63758894902-0003fd00f0000001",
+                            "scriptPath": "../../Resources/Scripts/UI/MainMenuSettings/SettingsSlider.lua",
                             "enabled": true,
                             "preserveKeys": [],
                             "entryFunction": "OnInit",
@@ -6957,7 +8235,7 @@
             }
         },
         {
-            "id": 30,
+            "id": 34,
             "guid": "00032e8711fa1564-00036d318200004b",
             "components": {
                 "NameComponent": {
@@ -7169,6 +8447,76 @@
                         "003fcab0259e1313-00041544a4000231"
                     ]
                 },
+                "AudioComponent": {
+                    "type": "AudioComponent",
+                    "data": [
+                        {
+                            "type": "bool",
+                            "data": true
+                        },
+                        "0037d81b07b695ee-000400f740000007",
+                        {
+                            "type": "bool",
+                            "data": false
+                        },
+                        {
+                            "type": "bool",
+                            "data": false
+                        },
+                        {
+                            "type": "bool",
+                            "data": false
+                        },
+                        {
+                            "type": "bool",
+                            "data": false
+                        },
+                        {
+                            "type": "int",
+                            "data": 128
+                        },
+                        {
+                            "type": "float",
+                            "data": 1
+                        },
+                        {
+                            "type": "float",
+                            "data": 1
+                        },
+                        {
+                            "type": "float",
+                            "data": 0
+                        },
+                        {
+                            "type": "float",
+                            "data": 1
+                        },
+                        {
+                            "type": "bool",
+                            "data": false
+                        },
+                        {
+                            "type": "float",
+                            "data": 0
+                        },
+                        {
+                            "type": "float",
+                            "data": 1
+                        },
+                        {
+                            "type": "float",
+                            "data": 1
+                        },
+                        {
+                            "type": "float",
+                            "data": 100
+                        },
+                        {
+                            "type": "std::string",
+                            "data": "SFX"
+                        }
+                    ]
+                },
                 "ActiveComponent": {
                     "type": "ActiveComponent",
                     "data": [
@@ -7181,8 +8529,8 @@
                 "ScriptComponent": {
                     "scripts": [
                         {
-                            "scriptGuidStr": "008f6b4e6f9c2d41-0004c00100000001",
-                            "scriptPath": "../../Resources/Scripts/UI/MainMenuSettings/MainMenuSettingsSlider.lua",
+                            "scriptGuidStr": "0058c63758894902-0003fd00f0000001",
+                            "scriptPath": "../../Resources/Scripts/UI/MainMenuSettings/SettingsSlider.lua",
                             "enabled": true,
                             "preserveKeys": [],
                             "entryFunction": "OnInit",
@@ -7277,7 +8625,7 @@
             }
         },
         {
-            "id": 31,
+            "id": 35,
             "guid": "00032e8708b1a6d1-00036d318400004d",
             "components": {
                 "NameComponent": {
@@ -7489,6 +8837,76 @@
                         "003fcab0259e1313-00041544a4000231"
                     ]
                 },
+                "AudioComponent": {
+                    "type": "AudioComponent",
+                    "data": [
+                        {
+                            "type": "bool",
+                            "data": true
+                        },
+                        "0037d81b07b695ee-000400f740000007",
+                        {
+                            "type": "bool",
+                            "data": false
+                        },
+                        {
+                            "type": "bool",
+                            "data": false
+                        },
+                        {
+                            "type": "bool",
+                            "data": false
+                        },
+                        {
+                            "type": "bool",
+                            "data": false
+                        },
+                        {
+                            "type": "int",
+                            "data": 128
+                        },
+                        {
+                            "type": "float",
+                            "data": 1
+                        },
+                        {
+                            "type": "float",
+                            "data": 1
+                        },
+                        {
+                            "type": "float",
+                            "data": 0
+                        },
+                        {
+                            "type": "float",
+                            "data": 1
+                        },
+                        {
+                            "type": "bool",
+                            "data": false
+                        },
+                        {
+                            "type": "float",
+                            "data": 0
+                        },
+                        {
+                            "type": "float",
+                            "data": 1
+                        },
+                        {
+                            "type": "float",
+                            "data": 1
+                        },
+                        {
+                            "type": "float",
+                            "data": 100
+                        },
+                        {
+                            "type": "std::string",
+                            "data": "SFX"
+                        }
+                    ]
+                },
                 "ActiveComponent": {
                     "type": "ActiveComponent",
                     "data": [
@@ -7501,8 +8919,8 @@
                 "ScriptComponent": {
                     "scripts": [
                         {
-                            "scriptGuidStr": "008f6b4e6f9c2d41-0004c00100000001",
-                            "scriptPath": "../../Resources/Scripts/UI/MainMenuSettings/MainMenuSettingsSlider.lua",
+                            "scriptGuidStr": "0058c63758894902-0003fd00f0000001",
+                            "scriptPath": "../../Resources/Scripts/UI/MainMenuSettings/SettingsSlider.lua",
                             "enabled": true,
                             "preserveKeys": [],
                             "entryFunction": "OnInit",
@@ -7597,7 +9015,7 @@
             }
         },
         {
-            "id": 32,
+            "id": 36,
             "guid": "0025038aed809293-0003fcf656000005",
             "components": {
                 "NameComponent": {
@@ -7754,7 +9172,7 @@
                         },
                         {
                             "type": "int",
-                            "data": 5
+                            "data": 4
                         },
                         {
                             "type": "Vector3D",
@@ -7809,6 +9227,76 @@
                         "003fcab0259e1313-00041544a4000231"
                     ]
                 },
+                "AudioComponent": {
+                    "type": "AudioComponent",
+                    "data": [
+                        {
+                            "type": "bool",
+                            "data": true
+                        },
+                        "005e6c80ff60bdd1-0003fe0996000007",
+                        {
+                            "type": "bool",
+                            "data": false
+                        },
+                        {
+                            "type": "bool",
+                            "data": false
+                        },
+                        {
+                            "type": "bool",
+                            "data": false
+                        },
+                        {
+                            "type": "bool",
+                            "data": false
+                        },
+                        {
+                            "type": "int",
+                            "data": 128
+                        },
+                        {
+                            "type": "float",
+                            "data": 1
+                        },
+                        {
+                            "type": "float",
+                            "data": 1
+                        },
+                        {
+                            "type": "float",
+                            "data": 0
+                        },
+                        {
+                            "type": "float",
+                            "data": 1
+                        },
+                        {
+                            "type": "bool",
+                            "data": false
+                        },
+                        {
+                            "type": "float",
+                            "data": 0
+                        },
+                        {
+                            "type": "float",
+                            "data": 1
+                        },
+                        {
+                            "type": "float",
+                            "data": 1
+                        },
+                        {
+                            "type": "float",
+                            "data": 100
+                        },
+                        {
+                            "type": "std::string",
+                            "data": "SFX"
+                        }
+                    ]
+                },
                 "ActiveComponent": {
                     "type": "ActiveComponent",
                     "data": [
@@ -7821,8 +9309,8 @@
                 "ScriptComponent": {
                     "scripts": [
                         {
-                            "scriptGuidStr": "008f6b4e6f9c2d41-0004c00100000001",
-                            "scriptPath": "../../Resources/Scripts/UI/MainMenuSettings/MainMenuSettingsSlider.lua",
+                            "scriptGuidStr": "0058c63758894902-0003fd00f0000001",
+                            "scriptPath": "../../Resources/Scripts/UI/MainMenuSettings/SettingsSlider.lua",
                             "enabled": true,
                             "preserveKeys": [],
                             "entryFunction": "OnInit",
@@ -7915,7 +9403,7 @@
             }
         },
         {
-            "id": 33,
+            "id": 37,
             "guid": "00032e873bc4dd38-00036d2d6600003b",
             "components": {
                 "NameComponent": {
@@ -7997,7 +9485,7 @@
                             "type": "bool",
                             "data": true
                         },
-                        "0059b8a5bf843eef-00049ee15a017e33",
+                        "006b8ee8c1909084-0004a764f4005fff",
                         "00374a216e66dbbc-000331fc80000069",
                         {
                             "type": "Vector3D",
@@ -8127,12 +9615,157 @@
                         "00032e877a997c98-00036d2b58000001"
                     ]
                 },
+                "AudioComponent": {
+                    "type": "AudioComponent",
+                    "data": [
+                        {
+                            "type": "bool",
+                            "data": true
+                        },
+                        "0037d81b07b695ee-000400f740000007",
+                        {
+                            "type": "bool",
+                            "data": false
+                        },
+                        {
+                            "type": "bool",
+                            "data": false
+                        },
+                        {
+                            "type": "bool",
+                            "data": false
+                        },
+                        {
+                            "type": "bool",
+                            "data": false
+                        },
+                        {
+                            "type": "int",
+                            "data": 128
+                        },
+                        {
+                            "type": "float",
+                            "data": 1
+                        },
+                        {
+                            "type": "float",
+                            "data": 1
+                        },
+                        {
+                            "type": "float",
+                            "data": 0
+                        },
+                        {
+                            "type": "float",
+                            "data": 1
+                        },
+                        {
+                            "type": "bool",
+                            "data": false
+                        },
+                        {
+                            "type": "float",
+                            "data": 0
+                        },
+                        {
+                            "type": "float",
+                            "data": 1
+                        },
+                        {
+                            "type": "float",
+                            "data": 1
+                        },
+                        {
+                            "type": "float",
+                            "data": 100
+                        },
+                        {
+                            "type": "std::string",
+                            "data": "SFX"
+                        }
+                    ]
+                },
                 "ActiveComponent": {
                     "type": "ActiveComponent",
                     "data": [
                         {
                             "type": "bool",
                             "data": true
+                        }
+                    ]
+                },
+                "ScriptComponent": {
+                    "scripts": [
+                        {
+                            "scriptGuidStr": "0054fb434423d354-0003e8028a000001",
+                            "scriptPath": "../../Resources/Scripts/UI/MainMenuSettings/CloseSettingButton.lua",
+                            "enabled": true,
+                            "preserveKeys": [],
+                            "entryFunction": "OnInit",
+                            "autoInvokeEntry": true,
+                            "instanceState": {
+                                "_subscriptions": {},
+                                "Subscribe": null,
+                                "_isHovered": true,
+                                "Start": null,
+                                "_updateHover": null,
+                                "OnClickCloseButton": null,
+                                "Destroy": null,
+                                "HoverSFX": [
+                                    "0037d81b0c6c0a46-000400f740000005",
+                                    "0037d81b07b695ee-000400f740000007"
+                                ],
+                                "SerializeFields": null,
+                                "Unsubscribe": null,
+                                "_SettingsUIEntity": 10.0,
+                                "AwakeSafe": null,
+                                "_wasSettingsActive": false,
+                                "_transform": null,
+                                "_audio": null,
+                                "DisableSafe": null,
+                                "entityId": 34.0,
+                                "__created_at": 1774731292.0,
+                                "Every": null,
+                                "GetComponent": null,
+                                "fields": {
+                                    "HoverSFX": [
+                                        "0037d81b0c6c0a46-000400f740000005",
+                                        "0037d81b07b695ee-000400f740000007"
+                                    ],
+                                    "_subs_map": {},
+                                    "__created_at": 1769791047.0,
+                                    "_subscriptions": {},
+                                    "_private": {},
+                                    "spriteGUIDs": [
+                                        "006b8ee88c4a7888-0004a764f4005ffd",
+                                        "006b8ee8c1909084-0004a764f4005fff"
+                                    ],
+                                    "__field_list": {
+                                        "HoverSFX": {},
+                                        "spriteGUIDs": {}
+                                    },
+                                    "__meta": {}
+                                },
+                                "_button": null,
+                                "Update": null,
+                                "_settingsUIActive": null,
+                                "_call_lifecycle": null,
+                                "__meta": {},
+                                "_private": {},
+                                "spriteGUIDs": [
+                                    "006b8ee88c4a7888-0004a764f4005ffd",
+                                    "006b8ee8c1909084-0004a764f4005fff"
+                                ],
+                                "StartSafe": null,
+                                "__field_list": {
+                                    "HoverSFX": {},
+                                    "spriteGUIDs": {}
+                                },
+                                "DeserializeFields": null,
+                                "UpdateSafe": null,
+                                "After": null,
+                                "_sprite": null
+                            }
                         }
                     ]
                 },
@@ -8151,7 +9784,7 @@
                                         },
                                         {
                                             "type": "std::string",
-                                            "data": "../../Resources/Scripts/UI/MainMenuSettings/MainMenuSettingsButtonHandler.lua"
+                                            "data": "../../Resources/Scripts/UI/MainMenuSettings/CloseSettingButton.lua"
                                         },
                                         {
                                             "type": "std::string",
@@ -8171,14 +9804,14 @@
                         },
                         {
                             "type": "bool",
-                            "data": true
+                            "data": false
                         }
                     ]
                 }
             }
         },
         {
-            "id": 34,
+            "id": 38,
             "guid": "0010f9e2f7acec2a-0003fcfb2e000001",
             "components": {
                 "NameComponent": {
@@ -8390,12 +10023,167 @@
                         "00032e877a997c98-00036d2b58000001"
                     ]
                 },
+                "AudioComponent": {
+                    "type": "AudioComponent",
+                    "data": [
+                        {
+                            "type": "bool",
+                            "data": true
+                        },
+                        "0037d81b07b695ee-000400f740000007",
+                        {
+                            "type": "bool",
+                            "data": false
+                        },
+                        {
+                            "type": "bool",
+                            "data": false
+                        },
+                        {
+                            "type": "bool",
+                            "data": false
+                        },
+                        {
+                            "type": "bool",
+                            "data": false
+                        },
+                        {
+                            "type": "int",
+                            "data": 128
+                        },
+                        {
+                            "type": "float",
+                            "data": 1
+                        },
+                        {
+                            "type": "float",
+                            "data": 1
+                        },
+                        {
+                            "type": "float",
+                            "data": 0
+                        },
+                        {
+                            "type": "float",
+                            "data": 1
+                        },
+                        {
+                            "type": "bool",
+                            "data": false
+                        },
+                        {
+                            "type": "float",
+                            "data": 0
+                        },
+                        {
+                            "type": "float",
+                            "data": 1
+                        },
+                        {
+                            "type": "float",
+                            "data": 1
+                        },
+                        {
+                            "type": "float",
+                            "data": 100
+                        },
+                        {
+                            "type": "std::string",
+                            "data": "SFX"
+                        }
+                    ]
+                },
                 "ActiveComponent": {
                     "type": "ActiveComponent",
                     "data": [
                         {
                             "type": "bool",
                             "data": true
+                        }
+                    ]
+                },
+                "ScriptComponent": {
+                    "scripts": [
+                        {
+                            "scriptGuidStr": "001e8426f932eb96-0003fb33ee000005",
+                            "scriptPath": "../../Resources/Scripts/UI/MainMenuSettings/ResetSettingsButton.lua",
+                            "enabled": true,
+                            "preserveKeys": [],
+                            "entryFunction": "OnInit",
+                            "autoInvokeEntry": true,
+                            "instanceState": {
+                                "_subscriptions": {},
+                                "Subscribe": null,
+                                "_isHovered": false,
+                                "Start": null,
+                                "_updateHover": null,
+                                "Destroy": null,
+                                "HoverSFX": [
+                                    "0037d81b0c6c0a46-000400f740000005",
+                                    "0037d81b07b695ee-000400f740000007"
+                                ],
+                                "SerializeFields": null,
+                                "Unsubscribe": null,
+                                "AwakeSafe": null,
+                                "_wasSettingsActive": false,
+                                "_transform": null,
+                                "_audio": null,
+                                "DisableSafe": null,
+                                "entityId": 35.0,
+                                "__created_at": 1774731292.0,
+                                "Every": null,
+                                "GetComponent": null,
+                                "fields": {
+                                    "masterBar": "MasterBar",
+                                    "sfxNotch": "SFXNotch",
+                                    "bgmBar": "BGMBar",
+                                    "masterNotch": "MasterNotch",
+                                    "__field_list": {
+                                        "masterBar": "MasterBar",
+                                        "sfxBar": "SFXBar",
+                                        "bgmBar": "BGMBar",
+                                        "masterNotch": "MasterNotch",
+                                        "spriteGUIDs": {},
+                                        "bgmNotch": "BGMNotch",
+                                        "sfxNotch": "SFXNotch"
+                                    },
+                                    "__meta": {},
+                                    "HoverSFX": [
+                                        "0037d81b0c6c0a46-000400f740000005",
+                                        "0037d81b07b695ee-000400f740000007"
+                                    ],
+                                    "sfxBar": "SFXBar",
+                                    "bgmNotch": "BGMNotch",
+                                    "__created_at": 1769775063.0,
+                                    "_subs_map": {},
+                                    "spriteGUIDs": [
+                                        "006b8ee8884c511d-0004a764f4005ff9",
+                                        "006b8ee88987b3b7-0004a764f4005ffb"
+                                    ],
+                                    "_subscriptions": {},
+                                    "_private": {}
+                                },
+                                "_button": null,
+                                "Update": null,
+                                "_settingsUIActive": null,
+                                "_call_lifecycle": null,
+                                "StartSafe": null,
+                                "__meta": {},
+                                "spriteGUIDs": [
+                                    "006b8ee8884c511d-0004a764f4005ff9",
+                                    "006b8ee88987b3b7-0004a764f4005ffb"
+                                ],
+                                "OnClickResetButton": null,
+                                "_private": {},
+                                "__field_list": {
+                                    "HoverSFX": {},
+                                    "spriteGUIDs": {}
+                                },
+                                "DeserializeFields": null,
+                                "UpdateSafe": null,
+                                "After": null,
+                                "_sprite": null
+                            }
                         }
                     ]
                 },
@@ -8414,11 +10202,11 @@
                                         },
                                         {
                                             "type": "std::string",
-                                            "data": "../../Resources/Scripts/UI/MainMenuSettings/MainMenuSettingsButtonHandler.lua"
+                                            "data": "../../Resources/Scripts/UI/MainMenuSettings/ResetSettingsButton.lua"
                                         },
                                         {
                                             "type": "std::string",
-                                            "data": "0054fb434423d354-0003e8028a000001"
+                                            "data": "001e8426f932eb96-0003fb33ee000005"
                                         },
                                         {
                                             "type": "std::string",
@@ -8434,14 +10222,14 @@
                         },
                         {
                             "type": "bool",
-                            "data": true
+                            "data": false
                         }
                     ]
                 }
             }
         },
         {
-            "id": 35,
+            "id": 39,
             "guid": "00032e8720beb774-00036d32c2000053",
             "components": {
                 "NameComponent": {
@@ -8454,7 +10242,7 @@
                     "layerIndex": 0
                 },
                 "SiblingIndexComponent": {
-                    "siblingIndex": 7
+                    "siblingIndex": 8
                 },
                 "Transform": {
                     "type": "Transform",
@@ -8548,69 +10336,50 @@
                             "entryFunction": "OnInit",
                             "autoInvokeEntry": true,
                             "instanceState": {
-                                "_subscriptions": {},
-                                "Subscribe": null,
-                                "Start": null,
-                                "Destroy": null,
-                                "_wasActive": true,
-                                "SerializeFields": null,
-                                "Unsubscribe": null,
-                                "fastScrollSpeed": 400.0,
-                                "_isScrolling": true,
-                                "_creditsTextTransform": null,
-                                "DisableSafe": null,
-                                "_closeCreditsUI": null,
-                                "entityId": 36.0,
-                                "__created_at": 1774731292.0,
-                                "fadeDuration": 1.0,
-                                "scrollSpeed": 100.0,
-                                "_creditsUIActive": null,
-                                "GetComponent": null,
-                                "_isFading": false,
-                                "_creditsBGSprite": null,
-                                "_creditsUIEntity": 36.0,
-                                "_creditsTextInitY": -1550.0,
-                                "_creditsTextInitX": 975.0,
-                                "_creditsBGEntity": 37.0,
-                                "_private": {},
-                                "endY": 2900.0,
-                                "__meta": {},
-                                "DeserializeFields": null,
                                 "startY": -1550.0,
-                                "Every": null,
-                                "_resetCredits": null,
-                                "_call_lifecycle": null,
+                                "_creditsUIEntity": 36.0,
+                                "__meta": {},
+                                "_creditsTextInitY": -1550.0,
+                                "_creditsBGEntity": 37.0,
+                                "endY": 2900.0,
+                                "_isScrolling": true,
+                                "fastScrollSpeed": 400.0,
+                                "fields": {
+                                    "startY": -1550.0,
+                                    "__meta": {},
+                                    "__field_list": {
+                                        "startY": -2150.0,
+                                        "fadeDuration": 1.0,
+                                        "scrollSpeed": 100.0,
+                                        "endY": 3500.0
+                                    },
+                                    "_subscriptions": {},
+                                    "_private": {},
+                                    "endY": 2900.0,
+                                    "fastScrollSpeed": 400.0,
+                                    "__created_at": 1772626301.0,
+                                    "scrollSpeed": 100.0,
+                                    "fadeDuration": 1.0
+                                },
+                                "_wasActive": true,
+                                "entityId": 36.0,
                                 "_fadeTimer": 0.0,
-                                "AwakeSafe": null,
+                                "_creditsTextInitX": 975.0,
                                 "_creditsTextEntity": 38.0,
                                 "__field_list": {
-                                    "endY": 3500.0,
                                     "startY": -1550.0,
+                                    "endY": 3500.0,
                                     "fadeDuration": 1.0,
                                     "scrollSpeed": 100.0,
                                     "fastScrollSpeed": 400.0
                                 },
-                                "StartSafe": null,
-                                "Update": null,
-                                "UpdateSafe": null,
-                                "After": null,
-                                "fields": {
-                                    "endY": 2900.0,
-                                    "__created_at": 1772626301.0,
-                                    "fadeDuration": 1.0,
-                                    "scrollSpeed": 100.0,
-                                    "__field_list": {
-                                        "endY": 3500.0,
-                                        "startY": -2150.0,
-                                        "scrollSpeed": 100.0,
-                                        "fadeDuration": 1.0
-                                    },
-                                    "__meta": {},
-                                    "startY": -1550.0,
-                                    "fastScrollSpeed": 400.0,
-                                    "_subscriptions": {},
-                                    "_private": {}
-                                }
+                                "fadeDuration": 1.0,
+                                "_isFading": false,
+                                "_private": {},
+                                "__engine_script_path": "../../resources/scripts/ui/mainmenusettings/creditshandler.lua",
+                                "__created_at": 1774731292.0,
+                                "scrollSpeed": 100.0,
+                                "_subscriptions": {}
                             }
                         }
                     ]
@@ -8618,7 +10387,7 @@
             }
         },
         {
-            "id": 36,
+            "id": 40,
             "guid": "00032e87030a66d2-00036d320200004f",
             "components": {
                 "NameComponent": {
@@ -8842,7 +10611,7 @@
             }
         },
         {
-            "id": 37,
+            "id": 41,
             "guid": "00032e876ace1a85-00036d32de000055",
             "components": {
                 "NameComponent": {
@@ -9066,7 +10835,7 @@
             }
         },
         {
-            "id": 38,
+            "id": 42,
             "guid": "00066903e9afd1a2-00040b25e4000005",
             "components": {
                 "NameComponent": {
@@ -9146,7 +10915,7 @@
                     "data": [
                         {
                             "type": "bool",
-                            "data": false
+                            "data": true
                         },
                         "0059b8a5bf843eef-00049ee15a017e33",
                         "00374a216e66dbbc-000331fc80000069",
@@ -9276,6 +11045,76 @@
                     "type": "ParentComponent",
                     "data": [
                         "00032e8720beb774-00036d32c2000053"
+                    ]
+                },
+                "AudioComponent": {
+                    "type": "AudioComponent",
+                    "data": [
+                        {
+                            "type": "bool",
+                            "data": true
+                        },
+                        "0037d81b07b695ee-000400f740000007",
+                        {
+                            "type": "bool",
+                            "data": false
+                        },
+                        {
+                            "type": "bool",
+                            "data": false
+                        },
+                        {
+                            "type": "bool",
+                            "data": false
+                        },
+                        {
+                            "type": "bool",
+                            "data": false
+                        },
+                        {
+                            "type": "int",
+                            "data": 128
+                        },
+                        {
+                            "type": "float",
+                            "data": 1
+                        },
+                        {
+                            "type": "float",
+                            "data": 1
+                        },
+                        {
+                            "type": "float",
+                            "data": 0
+                        },
+                        {
+                            "type": "float",
+                            "data": 1
+                        },
+                        {
+                            "type": "bool",
+                            "data": false
+                        },
+                        {
+                            "type": "float",
+                            "data": 0
+                        },
+                        {
+                            "type": "float",
+                            "data": 1
+                        },
+                        {
+                            "type": "float",
+                            "data": 1
+                        },
+                        {
+                            "type": "float",
+                            "data": 100
+                        },
+                        {
+                            "type": "std::string",
+                            "data": "SFX"
+                        }
                     ]
                 },
                 "ActiveComponent": {
@@ -9416,7 +11255,7 @@
             }
         },
         {
-            "id": 39,
+            "id": 43,
             "guid": "006665ce1ba4f0f0-00036f5cce000007",
             "components": {
                 "NameComponent": {
@@ -9429,7 +11268,7 @@
                     "layerIndex": 0
                 },
                 "SiblingIndexComponent": {
-                    "siblingIndex": 8
+                    "siblingIndex": 9
                 },
                 "Transform": {
                     "type": "Transform",
@@ -9573,7 +11412,7 @@
             }
         },
         {
-            "id": 40,
+            "id": 44,
             "guid": "002132e8a8f21422-0003ea9626000003",
             "components": {
                 "NameComponent": {
@@ -9586,7 +11425,7 @@
                     "layerIndex": 0
                 },
                 "SiblingIndexComponent": {
-                    "siblingIndex": 9
+                    "siblingIndex": 10
                 },
                 "Transform": {
                     "type": "Transform",
@@ -9809,7 +11648,7 @@
             }
         },
         {
-            "id": 41,
+            "id": 45,
             "guid": "00697d8654c3d187-0003fe13fe000025",
             "components": {
                 "NameComponent": {
@@ -9822,7 +11661,7 @@
                     "layerIndex": 0
                 },
                 "SiblingIndexComponent": {
-                    "siblingIndex": 10
+                    "siblingIndex": 11
                 },
                 "Transform": {
                     "type": "Transform",
@@ -10027,7 +11866,7 @@
             }
         },
         {
-            "id": 42,
+            "id": 46,
             "guid": "002c80ed79de870e-00047a985003c5cd",
             "components": {
                 "NameComponent": {
@@ -10125,7 +11964,7 @@
             }
         },
         {
-            "id": 43,
+            "id": 47,
             "guid": "002c80ed009050e6-00047a7e6c01f449",
             "components": {
                 "NameComponent": {
@@ -10443,7 +12282,7 @@
             }
         },
         {
-            "id": 44,
+            "id": 48,
             "guid": "002c80ed0175093a-00047a7e6c01f44b",
             "components": {
                 "NameComponent": {
@@ -10559,7 +12398,7 @@
             }
         },
         {
-            "id": 45,
+            "id": 49,
             "guid": "002c80ed3f4369f3-00047a7e6c01f44d",
             "components": {
                 "NameComponent": {
@@ -10652,7 +12491,7 @@
             }
         },
         {
-            "id": 46,
+            "id": 50,
             "guid": "002c80ed2b52ead7-00047a7e6c01f44f",
             "components": {
                 "NameComponent": {
@@ -10745,7 +12584,7 @@
             }
         },
         {
-            "id": 47,
+            "id": 51,
             "guid": "002c80ed6789daa0-00047a7e6c01f451",
             "components": {
                 "NameComponent": {
@@ -10838,7 +12677,7 @@
             }
         },
         {
-            "id": 48,
+            "id": 52,
             "guid": "002c80ed6b799fce-00047a7e6c01f453",
             "components": {
                 "NameComponent": {
@@ -10947,7 +12786,7 @@
             }
         },
         {
-            "id": 49,
+            "id": 53,
             "guid": "002c80ed3fa8f663-00047a7e6c01f455",
             "components": {
                 "NameComponent": {
@@ -11040,7 +12879,7 @@
             }
         },
         {
-            "id": 50,
+            "id": 54,
             "guid": "002c80ed1531d46f-00047a7e6c01f457",
             "components": {
                 "NameComponent": {
@@ -11133,7 +12972,7 @@
             }
         },
         {
-            "id": 51,
+            "id": 55,
             "guid": "002c80ed6cf65762-00047a7e6c01f459",
             "components": {
                 "NameComponent": {
@@ -11226,7 +13065,7 @@
             }
         },
         {
-            "id": 52,
+            "id": 56,
             "guid": "002c80ed43bc128d-00047a7e6c01f45b",
             "components": {
                 "NameComponent": {
@@ -11319,7 +13158,7 @@
             }
         },
         {
-            "id": 53,
+            "id": 57,
             "guid": "002c80ed24bd99fc-00047a7e6c01f45d",
             "components": {
                 "NameComponent": {
@@ -11412,7 +13251,7 @@
             }
         },
         {
-            "id": 54,
+            "id": 58,
             "guid": "002c80ed48fc97f4-00047a7e6c01f45f",
             "components": {
                 "NameComponent": {
@@ -11505,7 +13344,7 @@
             }
         },
         {
-            "id": 55,
+            "id": 59,
             "guid": "002c80ed722e1078-00047a7e6c01f461",
             "components": {
                 "NameComponent": {
@@ -11612,7 +13451,7 @@
             }
         },
         {
-            "id": 56,
+            "id": 60,
             "guid": "002c80ed609cd8f7-00047a7e6c01f463",
             "components": {
                 "NameComponent": {
@@ -11705,7 +13544,7 @@
             }
         },
         {
-            "id": 57,
+            "id": 61,
             "guid": "002c80ed425db8ba-00047a7e6c01f465",
             "components": {
                 "NameComponent": {
@@ -11798,7 +13637,7 @@
             }
         },
         {
-            "id": 58,
+            "id": 62,
             "guid": "002c80ed1ea94bbe-00047a7e6c01f467",
             "components": {
                 "NameComponent": {
@@ -11891,7 +13730,7 @@
             }
         },
         {
-            "id": 59,
+            "id": 63,
             "guid": "002c80ed260b102b-00047a7e6c01f469",
             "components": {
                 "NameComponent": {
@@ -11984,7 +13823,7 @@
             }
         },
         {
-            "id": 60,
+            "id": 64,
             "guid": "002c80ed59706eff-00047a7e6c01f46b",
             "components": {
                 "NameComponent": {
@@ -12091,7 +13930,7 @@
             }
         },
         {
-            "id": 61,
+            "id": 65,
             "guid": "002c80ed3ad985ab-00047a7e6c01f46d",
             "components": {
                 "NameComponent": {
@@ -12184,7 +14023,7 @@
             }
         },
         {
-            "id": 62,
+            "id": 66,
             "guid": "002c80ed7e602d2b-00047a7e6c01f46f",
             "components": {
                 "NameComponent": {
@@ -12277,7 +14116,7 @@
             }
         },
         {
-            "id": 63,
+            "id": 67,
             "guid": "002c80ed44fa813f-00047a7e6c01f471",
             "components": {
                 "NameComponent": {
@@ -12370,7 +14209,7 @@
             }
         },
         {
-            "id": 64,
+            "id": 68,
             "guid": "002c80ed4d5d95b7-00047a7e6c01f473",
             "components": {
                 "NameComponent": {
@@ -12463,7 +14302,7 @@
             }
         },
         {
-            "id": 65,
+            "id": 69,
             "guid": "002c80ed5c8f8d23-00047a7e6c01f475",
             "components": {
                 "NameComponent": {
@@ -12570,7 +14409,7 @@
             }
         },
         {
-            "id": 66,
+            "id": 70,
             "guid": "002c80ed0b5be05b-00047a7e6c01f477",
             "components": {
                 "NameComponent": {
@@ -12663,7 +14502,7 @@
             }
         },
         {
-            "id": 67,
+            "id": 71,
             "guid": "002c80ed0fe4dfc4-00047a7e6c01f479",
             "components": {
                 "NameComponent": {
@@ -12756,7 +14595,7 @@
             }
         },
         {
-            "id": 68,
+            "id": 72,
             "guid": "002c80ed5cd313cc-00047a7e6c01f47b",
             "components": {
                 "NameComponent": {
@@ -12849,7 +14688,7 @@
             }
         },
         {
-            "id": 69,
+            "id": 73,
             "guid": "002c80ed56f6bd47-00047a7e6c01f47d",
             "components": {
                 "NameComponent": {
@@ -12942,7 +14781,7 @@
             }
         },
         {
-            "id": 70,
+            "id": 74,
             "guid": "002c80ed14ab1706-00047a7e6c01f47f",
             "components": {
                 "NameComponent": {
@@ -13047,7 +14886,7 @@
             }
         },
         {
-            "id": 71,
+            "id": 75,
             "guid": "002c80ed50d4d37d-00047a7e6c01f481",
             "components": {
                 "NameComponent": {
@@ -13153,7 +14992,7 @@
             }
         },
         {
-            "id": 72,
+            "id": 76,
             "guid": "002c80ed6f1a3240-00047a7e6c01f483",
             "components": {
                 "NameComponent": {
@@ -13246,7 +15085,7 @@
             }
         },
         {
-            "id": 73,
+            "id": 77,
             "guid": "002c80ed16679ed5-00047a7e6c01f485",
             "components": {
                 "NameComponent": {
@@ -13339,7 +15178,7 @@
             }
         },
         {
-            "id": 74,
+            "id": 78,
             "guid": "002c80ed0f8c74ab-00047a7e6c01f487",
             "components": {
                 "NameComponent": {
@@ -13432,7 +15271,7 @@
             }
         },
         {
-            "id": 75,
+            "id": 79,
             "guid": "002c80ed4cd36809-00047a7e6c01f489",
             "components": {
                 "NameComponent": {
@@ -13525,7 +15364,7 @@
             }
         },
         {
-            "id": 76,
+            "id": 80,
             "guid": "002c80ed0099484c-00047a7e6c01f48b",
             "components": {
                 "NameComponent": {
@@ -13629,7 +15468,7 @@
             }
         },
         {
-            "id": 77,
+            "id": 81,
             "guid": "002c80ed50ad03e0-00047a7e6c01f48d",
             "components": {
                 "NameComponent": {
@@ -13722,7 +15561,7 @@
             }
         },
         {
-            "id": 78,
+            "id": 82,
             "guid": "002c80ed19226010-00047a7e6c01f48f",
             "components": {
                 "NameComponent": {
@@ -13830,7 +15669,7 @@
             }
         },
         {
-            "id": 79,
+            "id": 83,
             "guid": "002c80ed4775c440-00047a7e6c01f491",
             "components": {
                 "NameComponent": {
@@ -13923,7 +15762,7 @@
             }
         },
         {
-            "id": 80,
+            "id": 84,
             "guid": "002c80ed5389aac5-00047a7e6c01f493",
             "components": {
                 "NameComponent": {
@@ -14016,7 +15855,7 @@
             }
         },
         {
-            "id": 81,
+            "id": 85,
             "guid": "002c80ed1d910339-00047a7e6c01f495",
             "components": {
                 "NameComponent": {
@@ -14109,7 +15948,7 @@
             }
         },
         {
-            "id": 82,
+            "id": 86,
             "guid": "002c80ed4e054282-00047a7e6c01f497",
             "components": {
                 "NameComponent": {
@@ -14202,7 +16041,7 @@
             }
         },
         {
-            "id": 83,
+            "id": 87,
             "guid": "002c80ed3b8436cc-00047a7e6c01f499",
             "components": {
                 "NameComponent": {
@@ -14295,7 +16134,7 @@
             }
         },
         {
-            "id": 84,
+            "id": 88,
             "guid": "002c80ed3314c509-00047a7e6c01f49b",
             "components": {
                 "NameComponent": {
@@ -14400,7 +16239,7 @@
             }
         },
         {
-            "id": 85,
+            "id": 89,
             "guid": "002c80ed13ccb80c-00047a7e6c01f49d",
             "components": {
                 "NameComponent": {
@@ -14493,7 +16332,7 @@
             }
         },
         {
-            "id": 86,
+            "id": 90,
             "guid": "002c80ed4c85f830-00047a7e6c01f49f",
             "components": {
                 "NameComponent": {
@@ -14586,7 +16425,7 @@
             }
         },
         {
-            "id": 87,
+            "id": 91,
             "guid": "002c80ed622eb249-00047a7e6c01f4a1",
             "components": {
                 "NameComponent": {
@@ -14691,7 +16530,7 @@
             }
         },
         {
-            "id": 88,
+            "id": 92,
             "guid": "002c80ed1e287aee-00047a7e6c01f4a3",
             "components": {
                 "NameComponent": {
@@ -14784,7 +16623,7 @@
             }
         },
         {
-            "id": 89,
+            "id": 93,
             "guid": "002c80ed5f94cf21-00047a7e6c01f4a5",
             "components": {
                 "NameComponent": {
@@ -14877,7 +16716,7 @@
             }
         },
         {
-            "id": 90,
+            "id": 94,
             "guid": "002c80ed3eec9c13-00047a7e6c01f4a7",
             "components": {
                 "NameComponent": {
@@ -14997,7 +16836,7 @@
             }
         },
         {
-            "id": 91,
+            "id": 95,
             "guid": "002c80ed29c6a664-00047a7e6c01f4a9",
             "components": {
                 "NameComponent": {
@@ -15090,7 +16929,7 @@
             }
         },
         {
-            "id": 92,
+            "id": 96,
             "guid": "002c80ed6a5946e3-00047a7e6c01f4ab",
             "components": {
                 "NameComponent": {
@@ -15183,7 +17022,7 @@
             }
         },
         {
-            "id": 93,
+            "id": 97,
             "guid": "002c80ed2b79a712-00047a7e6c01f4ad",
             "components": {
                 "NameComponent": {
@@ -15276,7 +17115,7 @@
             }
         },
         {
-            "id": 94,
+            "id": 98,
             "guid": "002c80ed000dabaa-00047a7e6c01f4af",
             "components": {
                 "NameComponent": {
@@ -15369,7 +17208,7 @@
             }
         },
         {
-            "id": 95,
+            "id": 99,
             "guid": "002c80ed5d11ed82-00047a7e6c01f4b1",
             "components": {
                 "NameComponent": {
@@ -15462,7 +17301,7 @@
             }
         },
         {
-            "id": 96,
+            "id": 100,
             "guid": "002c80ed4a380b53-00047a7e6c01f4b3",
             "components": {
                 "NameComponent": {
@@ -15555,7 +17394,7 @@
             }
         },
         {
-            "id": 97,
+            "id": 101,
             "guid": "002c80ed30be42e8-00047a7e6c01f4b5",
             "components": {
                 "NameComponent": {
@@ -15648,7 +17487,7 @@
             }
         },
         {
-            "id": 98,
+            "id": 102,
             "guid": "002c80ed4f92c792-00047a7e6e01f4b7",
             "components": {
                 "NameComponent": {
@@ -15741,7 +17580,7 @@
             }
         },
         {
-            "id": 99,
+            "id": 103,
             "guid": "002c80ed7fc51cd3-00047a7e6e01f4b9",
             "components": {
                 "NameComponent": {
@@ -15834,7 +17673,7 @@
             }
         },
         {
-            "id": 100,
+            "id": 104,
             "guid": "002c80ed5415a6be-00047a7e6e01f4bb",
             "components": {
                 "NameComponent": {
@@ -15927,7 +17766,7 @@
             }
         },
         {
-            "id": 101,
+            "id": 105,
             "guid": "002c80ed6b06a635-00047a7e6e01f4bd",
             "components": {
                 "NameComponent": {
@@ -16020,7 +17859,7 @@
             }
         },
         {
-            "id": 102,
+            "id": 106,
             "guid": "002c80ed658cd7b8-00047a7e6e01f4bf",
             "components": {
                 "NameComponent": {
@@ -16113,7 +17952,7 @@
             }
         },
         {
-            "id": 103,
+            "id": 107,
             "guid": "002c80ed2aa3c141-00047a7e6e01f4c1",
             "components": {
                 "NameComponent": {
@@ -16206,7 +18045,7 @@
             }
         },
         {
-            "id": 104,
+            "id": 108,
             "guid": "002c80ed6c724f82-00047a7e6e01f4c3",
             "components": {
                 "NameComponent": {
@@ -16299,7 +18138,7 @@
             }
         },
         {
-            "id": 105,
+            "id": 109,
             "guid": "002c80ed0cda12bf-00047a7e6e01f4c5",
             "components": {
                 "NameComponent": {
@@ -16392,7 +18231,7 @@
             }
         },
         {
-            "id": 106,
+            "id": 110,
             "guid": "002c80ed131b3589-00047a7e6e01f4c7",
             "components": {
                 "NameComponent": {
@@ -16485,7 +18324,7 @@
             }
         },
         {
-            "id": 107,
+            "id": 111,
             "guid": "002c80ed1aef4eea-00047a7e6e01f4c9",
             "components": {
                 "NameComponent": {
@@ -16578,7 +18417,7 @@
             }
         },
         {
-            "id": 108,
+            "id": 112,
             "guid": "002c80ed38d153ba-00047a7e6e01f4cb",
             "components": {
                 "NameComponent": {
@@ -16671,7 +18510,7 @@
             }
         },
         {
-            "id": 109,
+            "id": 113,
             "guid": "002c80ed60faa02d-00047a7e6e01f4cd",
             "components": {
                 "NameComponent": {
@@ -16775,7 +18614,7 @@
             }
         },
         {
-            "id": 110,
+            "id": 114,
             "guid": "002c80ed0c936e9e-00047a7e6e01f4cf",
             "components": {
                 "NameComponent": {
@@ -16881,7 +18720,7 @@
             }
         },
         {
-            "id": 111,
+            "id": 115,
             "guid": "002c80ed5f6a7172-00047a7e6e01f4d1",
             "components": {
                 "NameComponent": {
@@ -16985,7 +18824,7 @@
             }
         },
         {
-            "id": 112,
+            "id": 116,
             "guid": "002c80ed4d9da66e-00047a7e6e01f4d3",
             "components": {
                 "NameComponent": {
@@ -17089,7 +18928,7 @@
             }
         },
         {
-            "id": 113,
+            "id": 117,
             "guid": "002c80ed7a11827b-00047a7e6e01f4d5",
             "components": {
                 "NameComponent": {
@@ -17193,7 +19032,7 @@
             }
         },
         {
-            "id": 114,
+            "id": 118,
             "guid": "002c80ed4e843428-00047a7e6e01f4d7",
             "components": {
                 "NameComponent": {
@@ -17286,7 +19125,7 @@
             }
         },
         {
-            "id": 115,
+            "id": 119,
             "guid": "002c80ed17822669-00047a7e6e01f4d9",
             "components": {
                 "NameComponent": {
@@ -17390,7 +19229,7 @@
             }
         },
         {
-            "id": 116,
+            "id": 120,
             "guid": "002c80ed6f7b3845-00047a7e6e01f4db",
             "components": {
                 "NameComponent": {
@@ -17494,7 +19333,7 @@
             }
         },
         {
-            "id": 117,
+            "id": 121,
             "guid": "002c80ed6d680ecf-00047a7e6e01f4dd",
             "components": {
                 "NameComponent": {
@@ -17598,7 +19437,7 @@
             }
         },
         {
-            "id": 118,
+            "id": 122,
             "guid": "002c80ed2ae25e10-00047a7e6e01f4df",
             "components": {
                 "NameComponent": {
@@ -17691,7 +19530,7 @@
             }
         },
         {
-            "id": 119,
+            "id": 123,
             "guid": "002c80ed286cffa5-00047a7e6e01f4e1",
             "components": {
                 "NameComponent": {
@@ -17795,7 +19634,7 @@
             }
         },
         {
-            "id": 120,
+            "id": 124,
             "guid": "002c80ed5f1ade29-00047a7e6e01f4e3",
             "components": {
                 "NameComponent": {
@@ -17899,7 +19738,7 @@
             }
         },
         {
-            "id": 121,
+            "id": 125,
             "guid": "002c80ed55e32e28-00047a7e6e01f4e5",
             "components": {
                 "NameComponent": {
@@ -18005,7 +19844,7 @@
             }
         },
         {
-            "id": 122,
+            "id": 126,
             "guid": "002c80ed36ee64ab-00047a7e6e01f4e7",
             "components": {
                 "NameComponent": {
@@ -18109,7 +19948,7 @@
             }
         },
         {
-            "id": 123,
+            "id": 127,
             "guid": "002c80ed4a9ddca7-00047a7e6e01f4e9",
             "components": {
                 "NameComponent": {
@@ -18213,7 +20052,7 @@
             }
         },
         {
-            "id": 124,
+            "id": 128,
             "guid": "002c80ed570a155a-00047a7e6e01f4eb",
             "components": {
                 "NameComponent": {
@@ -18317,7 +20156,7 @@
             }
         },
         {
-            "id": 125,
+            "id": 129,
             "guid": "002c80ed46dba8a9-00047a7e6e01f4ed",
             "components": {
                 "NameComponent": {
@@ -18425,7 +20264,7 @@
             }
         },
         {
-            "id": 126,
+            "id": 130,
             "guid": "002c80ed37de409a-00047a7e6e01f4ef",
             "components": {
                 "NameComponent": {
@@ -18529,7 +20368,7 @@
             }
         },
         {
-            "id": 127,
+            "id": 131,
             "guid": "002c80ed35d1e65c-00047a7e6e01f4f1",
             "components": {
                 "NameComponent": {
@@ -18633,7 +20472,7 @@
             }
         },
         {
-            "id": 128,
+            "id": 132,
             "guid": "002c80ed05d8aa0f-00047a7e6e01f4f3",
             "components": {
                 "NameComponent": {
@@ -18737,7 +20576,7 @@
             }
         },
         {
-            "id": 129,
+            "id": 133,
             "guid": "002c80ed3a577bd3-00047a7e6e01f4f5",
             "components": {
                 "NameComponent": {
@@ -18830,7 +20669,7 @@
             }
         },
         {
-            "id": 130,
+            "id": 134,
             "guid": "002c80ed03ec58d3-00047a7e6e01f4f7",
             "components": {
                 "NameComponent": {
@@ -18934,7 +20773,7 @@
             }
         },
         {
-            "id": 131,
+            "id": 135,
             "guid": "002c80ed7f43a999-00047a7e6e01f4f9",
             "components": {
                 "NameComponent": {
@@ -19038,7 +20877,7 @@
             }
         },
         {
-            "id": 132,
+            "id": 136,
             "guid": "002c80ed0737b99f-00047a7e6e01f4fb",
             "components": {
                 "NameComponent": {
@@ -19142,7 +20981,7 @@
             }
         },
         {
-            "id": 133,
+            "id": 137,
             "guid": "002c80ed6c3b9a28-00047a7e6e01f4fd",
             "components": {
                 "NameComponent": {
@@ -19235,7 +21074,7 @@
             }
         },
         {
-            "id": 134,
+            "id": 138,
             "guid": "002c80ed45def157-00047a7e6e01f4ff",
             "components": {
                 "NameComponent": {
@@ -19339,7 +21178,7 @@
             }
         },
         {
-            "id": 135,
+            "id": 139,
             "guid": "002c80ed0a59b843-00047a7e6e01f501",
             "components": {
                 "NameComponent": {
@@ -19443,7 +21282,7 @@
             }
         },
         {
-            "id": 136,
+            "id": 140,
             "guid": "002c80ed498c7e35-00047a7e6e01f503",
             "components": {
                 "NameComponent": {
@@ -19547,7 +21386,7 @@
             }
         },
         {
-            "id": 137,
+            "id": 141,
             "guid": "002c80ed466b7eae-00047a7e6e01f505",
             "components": {
                 "NameComponent": {
@@ -19640,7 +21479,7 @@
             }
         },
         {
-            "id": 138,
+            "id": 142,
             "guid": "002c80ed0b138819-00047a7e6e01f507",
             "components": {
                 "NameComponent": {
@@ -19744,7 +21583,7 @@
             }
         },
         {
-            "id": 139,
+            "id": 143,
             "guid": "002c80ed018c524b-00047a7e6e01f509",
             "components": {
                 "NameComponent": {
@@ -19848,7 +21687,7 @@
             }
         },
         {
-            "id": 140,
+            "id": 144,
             "guid": "002c80ed13dc92b8-00047a7e6e01f50b",
             "components": {
                 "NameComponent": {
@@ -19952,7 +21791,7 @@
             }
         },
         {
-            "id": 141,
+            "id": 145,
             "guid": "002c80ed468558de-00047a7e6e01f50d",
             "components": {
                 "NameComponent": {
@@ -20045,7 +21884,7 @@
             }
         },
         {
-            "id": 142,
+            "id": 146,
             "guid": "002c80ed24b1b866-00047a7e6e01f50f",
             "components": {
                 "NameComponent": {
@@ -20149,7 +21988,7 @@
             }
         },
         {
-            "id": 143,
+            "id": 147,
             "guid": "002c80ed65f6d064-00047a7e6e01f511",
             "components": {
                 "NameComponent": {
@@ -20253,7 +22092,7 @@
             }
         },
         {
-            "id": 144,
+            "id": 148,
             "guid": "002c80ed1db8fd68-00047a7e6e01f513",
             "components": {
                 "NameComponent": {
@@ -20357,7 +22196,7 @@
             }
         },
         {
-            "id": 145,
+            "id": 149,
             "guid": "002c80ed1880f10f-00047a7e6e01f515",
             "components": {
                 "NameComponent": {
@@ -20450,7 +22289,7 @@
             }
         },
         {
-            "id": 146,
+            "id": 150,
             "guid": "002c80ed43be04d0-00047a7e6e01f517",
             "components": {
                 "NameComponent": {
@@ -20554,7 +22393,7 @@
             }
         },
         {
-            "id": 147,
+            "id": 151,
             "guid": "002c80ed04bcc17a-00047a7e6e01f519",
             "components": {
                 "NameComponent": {
@@ -20658,7 +22497,7 @@
             }
         },
         {
-            "id": 148,
+            "id": 152,
             "guid": "002c80ed0406db9b-00047a7e6e01f51b",
             "components": {
                 "NameComponent": {
@@ -20762,7 +22601,7 @@
             }
         },
         {
-            "id": 149,
+            "id": 153,
             "guid": "002c80ed1dd7fc97-00047a7e6e01f51d",
             "components": {
                 "NameComponent": {
@@ -20870,7 +22709,7 @@
             }
         },
         {
-            "id": 150,
+            "id": 154,
             "guid": "002c80ed7887184d-00047a7e6e01f51f",
             "components": {
                 "NameComponent": {
@@ -20974,7 +22813,7 @@
             }
         },
         {
-            "id": 151,
+            "id": 155,
             "guid": "002c80ed3108d1b6-00047a7e6e01f521",
             "components": {
                 "NameComponent": {
@@ -21078,7 +22917,7 @@
             }
         },
         {
-            "id": 152,
+            "id": 156,
             "guid": "002c80ed2f862575-00047a7e6e01f523",
             "components": {
                 "NameComponent": {
@@ -21182,7 +23021,7 @@
             }
         },
         {
-            "id": 153,
+            "id": 157,
             "guid": "002c80ed5d716e7e-00047a7e6e01f525",
             "components": {
                 "NameComponent": {
@@ -21275,7 +23114,7 @@
             }
         },
         {
-            "id": 154,
+            "id": 158,
             "guid": "002c80ed4df81bf8-00047a7e6e01f527",
             "components": {
                 "NameComponent": {
@@ -21379,7 +23218,7 @@
             }
         },
         {
-            "id": 155,
+            "id": 159,
             "guid": "002c80ed47fe1b8d-00047a7e6e01f529",
             "components": {
                 "NameComponent": {
@@ -21483,7 +23322,7 @@
             }
         },
         {
-            "id": 156,
+            "id": 160,
             "guid": "002c80ed3f3eb7b1-00047a7e6e01f52b",
             "components": {
                 "NameComponent": {
@@ -21587,7 +23426,7 @@
             }
         },
         {
-            "id": 157,
+            "id": 161,
             "guid": "002c80ed199d4325-00047a7e6e01f52d",
             "components": {
                 "NameComponent": {
@@ -21680,7 +23519,7 @@
             }
         },
         {
-            "id": 158,
+            "id": 162,
             "guid": "002c80ed3e734678-00047a7e6e01f52f",
             "components": {
                 "NameComponent": {
@@ -21784,7 +23623,7 @@
             }
         },
         {
-            "id": 159,
+            "id": 163,
             "guid": "002c80ed7b1b0f9e-00047a7e6e01f531",
             "components": {
                 "NameComponent": {
@@ -21888,7 +23727,7 @@
             }
         },
         {
-            "id": 160,
+            "id": 164,
             "guid": "002c80ed1f8eeafd-00047a7e6e01f533",
             "components": {
                 "NameComponent": {
@@ -21992,7 +23831,7 @@
             }
         },
         {
-            "id": 161,
+            "id": 165,
             "guid": "002c80ed2ea6ec2f-00047a7e6e01f535",
             "components": {
                 "NameComponent": {
@@ -22085,7 +23924,7 @@
             }
         },
         {
-            "id": 162,
+            "id": 166,
             "guid": "002c80ed0be2eada-00047a7e6e01f537",
             "components": {
                 "NameComponent": {
@@ -22189,7 +24028,7 @@
             }
         },
         {
-            "id": 163,
+            "id": 167,
             "guid": "002c80ed16c92648-00047a7e6e01f539",
             "components": {
                 "NameComponent": {
@@ -22293,7 +24132,7 @@
             }
         },
         {
-            "id": 164,
+            "id": 168,
             "guid": "002c80ed6c47621a-00047a7e6e01f53b",
             "components": {
                 "NameComponent": {
@@ -22397,7 +24236,7 @@
             }
         },
         {
-            "id": 165,
+            "id": 169,
             "guid": "002c80ed33e6e8f4-00047a7e6e01f53d",
             "components": {
                 "NameComponent": {
@@ -22490,7 +24329,7 @@
             }
         },
         {
-            "id": 166,
+            "id": 170,
             "guid": "002c80ed74eea663-00047a7e6e01f53f",
             "components": {
                 "NameComponent": {
@@ -22594,7 +24433,7 @@
             }
         },
         {
-            "id": 167,
+            "id": 171,
             "guid": "002c80ed41a4553f-00047a7e6e01f541",
             "components": {
                 "NameComponent": {
@@ -22698,7 +24537,7 @@
             }
         },
         {
-            "id": 168,
+            "id": 172,
             "guid": "002c80ed3855fd5f-00047a7e6e01f543",
             "components": {
                 "NameComponent": {
@@ -22802,7 +24641,7 @@
             }
         },
         {
-            "id": 169,
+            "id": 173,
             "guid": "002c80ed14cd64e5-00047a7e6e01f545",
             "components": {
                 "NameComponent": {
@@ -22895,7 +24734,7 @@
             }
         },
         {
-            "id": 170,
+            "id": 174,
             "guid": "002c80ed425b5b35-00047a7e6e01f547",
             "components": {
                 "NameComponent": {
@@ -22999,7 +24838,7 @@
             }
         },
         {
-            "id": 171,
+            "id": 175,
             "guid": "002c80ed67b5ddf0-00047a7e6e01f549",
             "components": {
                 "NameComponent": {
@@ -23103,7 +24942,7 @@
             }
         },
         {
-            "id": 172,
+            "id": 176,
             "guid": "002c80ed41c4fef8-00047a7e6e01f54b",
             "components": {
                 "NameComponent": {
@@ -23209,7 +25048,7 @@
             }
         },
         {
-            "id": 173,
+            "id": 177,
             "guid": "002c80ed21ea6474-00047a7e6e01f54d",
             "components": {
                 "NameComponent": {
@@ -23313,7 +25152,7 @@
             }
         },
         {
-            "id": 174,
+            "id": 178,
             "guid": "002c80ed653b8f77-00047a7e6e01f54f",
             "components": {
                 "NameComponent": {
@@ -23417,7 +25256,7 @@
             }
         },
         {
-            "id": 175,
+            "id": 179,
             "guid": "002c80ed575522a8-00047a7e6e01f551",
             "components": {
                 "NameComponent": {
@@ -23521,7 +25360,7 @@
             }
         },
         {
-            "id": 176,
+            "id": 180,
             "guid": "002c80ed0dfac95f-00047a7e6e01f553",
             "components": {
                 "NameComponent": {
@@ -23625,7 +25464,7 @@
             }
         },
         {
-            "id": 177,
+            "id": 181,
             "guid": "002c80ed693b0349-00047a7e6e01f555",
             "components": {
                 "NameComponent": {
@@ -23729,7 +25568,7 @@
             }
         },
         {
-            "id": 178,
+            "id": 182,
             "guid": "002c80ed3c59ade4-00047a7e6e01f557",
             "components": {
                 "NameComponent": {
@@ -23822,7 +25661,7 @@
             }
         },
         {
-            "id": 179,
+            "id": 183,
             "guid": "002c80ed679d6e76-00047a7e6e01f559",
             "components": {
                 "NameComponent": {
@@ -23915,7 +25754,7 @@
             }
         },
         {
-            "id": 180,
+            "id": 184,
             "guid": "002c80ed102de9d8-00047a7e6e01f55b",
             "components": {
                 "NameComponent": {
@@ -24008,7 +25847,7 @@
             }
         },
         {
-            "id": 181,
+            "id": 185,
             "guid": "002c80ed5b06b833-00047a7e6e01f55d",
             "components": {
                 "NameComponent": {
@@ -24101,7 +25940,7 @@
             }
         },
         {
-            "id": 182,
+            "id": 186,
             "guid": "004790c748313326-00047cb8e40001bb",
             "components": {
                 "NameComponent": {
@@ -24202,7 +26041,7 @@
             }
         },
         {
-            "id": 183,
+            "id": 187,
             "guid": "006a1317f7523f1b-00047ca992000079",
             "components": {
                 "NameComponent": {
@@ -24426,7 +26265,7 @@
             }
         },
         {
-            "id": 184,
+            "id": 188,
             "guid": "006a1317aa69a9fc-00047cae8600031b",
             "components": {
                 "NameComponent": {
@@ -24673,7 +26512,7 @@
             }
         },
         {
-            "id": 185,
+            "id": 189,
             "guid": "006a13179db3b60d-00047cae22000317",
             "components": {
                 "NameComponent": {
@@ -24885,6 +26724,76 @@
                         "004790c748313326-00047cb8e40001bb"
                     ]
                 },
+                "AudioComponent": {
+                    "type": "AudioComponent",
+                    "data": [
+                        {
+                            "type": "bool",
+                            "data": true
+                        },
+                        "0037d81b07b695ee-000400f740000007",
+                        {
+                            "type": "bool",
+                            "data": false
+                        },
+                        {
+                            "type": "bool",
+                            "data": false
+                        },
+                        {
+                            "type": "bool",
+                            "data": false
+                        },
+                        {
+                            "type": "bool",
+                            "data": false
+                        },
+                        {
+                            "type": "int",
+                            "data": 128
+                        },
+                        {
+                            "type": "float",
+                            "data": 1
+                        },
+                        {
+                            "type": "float",
+                            "data": 1
+                        },
+                        {
+                            "type": "float",
+                            "data": 0
+                        },
+                        {
+                            "type": "float",
+                            "data": 1
+                        },
+                        {
+                            "type": "bool",
+                            "data": false
+                        },
+                        {
+                            "type": "float",
+                            "data": 0
+                        },
+                        {
+                            "type": "float",
+                            "data": 1
+                        },
+                        {
+                            "type": "float",
+                            "data": 1
+                        },
+                        {
+                            "type": "float",
+                            "data": 100
+                        },
+                        {
+                            "type": "std::string",
+                            "data": "SFX"
+                        }
+                    ]
+                },
                 "ActiveComponent": {
                     "type": "ActiveComponent",
                     "data": [
@@ -25012,7 +26921,7 @@
             }
         },
         {
-            "id": 186,
+            "id": 190,
             "guid": "006a1317f85ad776-00047cae7a000319",
             "components": {
                 "NameComponent": {
@@ -25224,6 +27133,76 @@
                         "004790c748313326-00047cb8e40001bb"
                     ]
                 },
+                "AudioComponent": {
+                    "type": "AudioComponent",
+                    "data": [
+                        {
+                            "type": "bool",
+                            "data": true
+                        },
+                        "0037d81b07b695ee-000400f740000007",
+                        {
+                            "type": "bool",
+                            "data": false
+                        },
+                        {
+                            "type": "bool",
+                            "data": false
+                        },
+                        {
+                            "type": "bool",
+                            "data": false
+                        },
+                        {
+                            "type": "bool",
+                            "data": false
+                        },
+                        {
+                            "type": "int",
+                            "data": 128
+                        },
+                        {
+                            "type": "float",
+                            "data": 1
+                        },
+                        {
+                            "type": "float",
+                            "data": 1
+                        },
+                        {
+                            "type": "float",
+                            "data": 0
+                        },
+                        {
+                            "type": "float",
+                            "data": 1
+                        },
+                        {
+                            "type": "bool",
+                            "data": false
+                        },
+                        {
+                            "type": "float",
+                            "data": 0
+                        },
+                        {
+                            "type": "float",
+                            "data": 1
+                        },
+                        {
+                            "type": "float",
+                            "data": 1
+                        },
+                        {
+                            "type": "float",
+                            "data": 100
+                        },
+                        {
+                            "type": "std::string",
+                            "data": "SFX"
+                        }
+                    ]
+                },
                 "ActiveComponent": {
                     "type": "ActiveComponent",
                     "data": [
@@ -25351,7 +27330,7 @@
             }
         },
         {
-            "id": 187,
+            "id": 191,
             "guid": "007fd3f4874fd776-0004a72d22000095",
             "components": {
                 "NameComponent": {
@@ -25364,7 +27343,7 @@
                     "layerIndex": 0
                 },
                 "SiblingIndexComponent": {
-                    "siblingIndex": 11
+                    "siblingIndex": 12
                 },
                 "Transform": {
                     "type": "Transform",
@@ -25456,7 +27435,7 @@
             }
         },
         {
-            "id": 188,
+            "id": 192,
             "guid": "007fd3f4972be0b1-0004a72d22000097",
             "components": {
                 "NameComponent": {
@@ -25650,7 +27629,7 @@
             }
         },
         {
-            "id": 189,
+            "id": 193,
             "guid": "007fd3f4b05a177d-0004a72d22000099",
             "components": {
                 "NameComponent": {
@@ -25761,7 +27740,7 @@
             }
         },
         {
-            "id": 190,
+            "id": 194,
             "guid": "007fd3f4bc946b8e-0004a72d2200009b",
             "components": {
                 "NameComponent": {
@@ -26114,7 +28093,7 @@
             }
         },
         {
-            "id": 191,
+            "id": 195,
             "guid": "007fd3f495ed15e3-0004a72d2200009d",
             "components": {
                 "NameComponent": {
@@ -26480,7 +28459,7 @@
             }
         },
         {
-            "id": 192,
+            "id": 196,
             "guid": "007fd3f48767ed6f-0004a72d2200009f",
             "components": {
                 "NameComponent": {
@@ -26736,7 +28715,7 @@
             }
         },
         {
-            "id": 193,
+            "id": 197,
             "guid": "007fd3f4c8bf3c55-0004a72d220000a1",
             "components": {
                 "NameComponent": {
@@ -26992,7 +28971,7 @@
             }
         },
         {
-            "id": 194,
+            "id": 198,
             "guid": "007fd3f4ad48f6ff-0004a72d220000a3",
             "components": {
                 "NameComponent": {
@@ -27248,7 +29227,7 @@
             }
         },
         {
-            "id": 195,
+            "id": 199,
             "guid": "007fd3f489d17b50-0004a72d220000a5",
             "components": {
                 "NameComponent": {
@@ -27612,7 +29591,7 @@
             }
         },
         {
-            "id": 196,
+            "id": 200,
             "guid": "007fd3f4c668ec1c-0004a72d220000a7",
             "components": {
                 "NameComponent": {
@@ -27716,7 +29695,7 @@
             }
         },
         {
-            "id": 197,
+            "id": 201,
             "guid": "007fd3f49d63c817-0004a72d220000a9",
             "components": {
                 "NameComponent": {
@@ -27820,7 +29799,7 @@
             }
         },
         {
-            "id": 198,
+            "id": 202,
             "guid": "007fd3f4db57df33-0004a72d220000ab",
             "components": {
                 "NameComponent": {
@@ -27913,7 +29892,7 @@
             }
         },
         {
-            "id": 199,
+            "id": 203,
             "guid": "007fd3f4a6c9fd09-0004a72d220000ad",
             "components": {
                 "NameComponent": {
@@ -28277,7 +30256,7 @@
             }
         },
         {
-            "id": 200,
+            "id": 204,
             "guid": "007fd3f4d070e7c3-0004a72d220000af",
             "components": {
                 "NameComponent": {
@@ -28370,7 +30349,7 @@
             }
         },
         {
-            "id": 201,
+            "id": 205,
             "guid": "007fd3f4d11c02fb-0004a72d220000b1",
             "components": {
                 "NameComponent": {
@@ -28560,7 +30539,7 @@
             }
         },
         {
-            "id": 202,
+            "id": 206,
             "guid": "007fd3f48357cfb7-0004a72d220000b3",
             "components": {
                 "NameComponent": {
@@ -28750,7 +30729,7 @@
             }
         },
         {
-            "id": 203,
+            "id": 207,
             "guid": "007fd3f4f478d945-0004a72d220000b5",
             "components": {
                 "NameComponent": {
@@ -29103,7 +31082,7 @@
             }
         },
         {
-            "id": 204,
+            "id": 208,
             "guid": "007fd3f4b3953da0-0004a72d220000b7",
             "components": {
                 "NameComponent": {
@@ -29213,7 +31192,7 @@
             }
         },
         {
-            "id": 205,
+            "id": 209,
             "guid": "007fd3f4b489ada9-0004a72d220000b9",
             "components": {
                 "NameComponent": {
@@ -29566,7 +31545,7 @@
             }
         },
         {
-            "id": 206,
+            "id": 210,
             "guid": "007fd3f48d6f836e-0004a72d220000bb",
             "components": {
                 "NameComponent": {
@@ -29919,7 +31898,7 @@
             }
         },
         {
-            "id": 207,
+            "id": 211,
             "guid": "007fd3f4b1d43ef7-0004a72d220000bd",
             "components": {
                 "NameComponent": {
@@ -30272,7 +32251,7 @@
             }
         },
         {
-            "id": 208,
+            "id": 212,
             "guid": "007fd3f4d5aacd10-0004a72d220000bf",
             "components": {
                 "NameComponent": {
@@ -30625,7 +32604,7 @@
             }
         },
         {
-            "id": 209,
+            "id": 213,
             "guid": "007fd3f4ba297ad7-0004a72d220000c1",
             "components": {
                 "NameComponent": {
@@ -30978,7 +32957,7 @@
             }
         },
         {
-            "id": 210,
+            "id": 214,
             "guid": "007fd3f4bd35530c-0004a72d220000c3",
             "components": {
                 "NameComponent": {
@@ -31168,7 +33147,7 @@
             }
         },
         {
-            "id": 211,
+            "id": 215,
             "guid": "007fd3f4d80c163a-0004a72d220000c5",
             "components": {
                 "NameComponent": {
@@ -31358,7 +33337,7 @@
             }
         },
         {
-            "id": 212,
+            "id": 216,
             "guid": "007fd3f497c87a7a-0004a72d220000c9",
             "components": {
                 "NameComponent": {
@@ -31569,7 +33548,7 @@
             }
         },
         {
-            "id": 213,
+            "id": 217,
             "guid": "007fd3f4b68ed3df-0004a72d220000cb",
             "components": {
                 "NameComponent": {
@@ -31757,7 +33736,7 @@
             }
         },
         {
-            "id": 214,
+            "id": 218,
             "guid": "007fd3f4c96005c7-0004a72d220000cd",
             "components": {
                 "NameComponent": {
@@ -31968,7 +33947,7 @@
             }
         },
         {
-            "id": 215,
+            "id": 219,
             "guid": "007fd3f4a9a3337c-0004a72d220000cf",
             "components": {
                 "NameComponent": {
@@ -32321,7 +34300,7 @@
             }
         },
         {
-            "id": 216,
+            "id": 220,
             "guid": "007fd3f481f50c68-0004a72d220000e3",
             "components": {
                 "NameComponent": {
@@ -32515,7 +34494,7 @@
             }
         },
         {
-            "id": 217,
+            "id": 221,
             "guid": "007fd3f4f8198c3b-0004a72d220000e5",
             "components": {
                 "NameComponent": {
@@ -32705,7 +34684,7 @@
             }
         },
         {
-            "id": 218,
+            "id": 222,
             "guid": "007fd3f4e1ee8a2e-0004a72d220000e7",
             "components": {
                 "NameComponent": {
@@ -32896,10 +34875,10 @@
         },
         {
             "PrefabPath": "../../Resources/Prefabs/Lantern.prefab",
-            "id": 219,
+            "id": 223,
             "guid": "001dc74ce32d0fdd-0004a9e658022423",
             "Name": "Lantern",
-            "SiblingIndex": 50000,
+            "SiblingIndex": 15,
             "ComponentOverrides": [
                 {
                     "Transform": {
@@ -32988,13 +34967,13 @@
                 },
                 {
                     "SiblingIndexComponent": {
-                        "siblingIndex": 50000
+                        "siblingIndex": 15
                     }
                 }
             ],
             "Children": [
                 {
-                    "id": 220,
+                    "id": 224,
                     "guid": "001dc74c9d271972-0004a9e658022425",
                     "Name": "Light (1) (2)",
                     "SiblingIndex": 50001,
@@ -33111,7 +35090,7 @@
                     ]
                 },
                 {
-                    "id": 221,
+                    "id": 225,
                     "guid": "001dc74cb0da1503-0004a9e658022427",
                     "Name": "column_low (4) (1)",
                     "SiblingIndex": 50001,
@@ -33123,7 +35102,7 @@
                     }
                 },
                 {
-                    "id": 222,
+                    "id": 226,
                     "guid": "001dc74cea6237eb-0004a9e658022429",
                     "Name": "Light (1) (1) (1)",
                     "SiblingIndex": 50001,
@@ -33242,7 +35221,7 @@
             ]
         },
         {
-            "id": 223,
+            "id": 227,
             "guid": "007d76a3679a99fa-0004b630620024c1",
             "components": {
                 "NameComponent": {
@@ -33255,7 +35234,7 @@
                     "layerIndex": 0
                 },
                 "SiblingIndexComponent": {
-                    "siblingIndex": 50001
+                    "siblingIndex": 16
                 },
                 "Transform": {
                     "type": "Transform",
@@ -33460,7 +35439,7 @@
             }
         },
         {
-            "id": 224,
+            "id": 228,
             "guid": "007d76a3389de472-0004b630620024c3",
             "components": {
                 "NameComponent": {
@@ -33654,7 +35633,7 @@
             }
         },
         {
-            "id": 225,
+            "id": 229,
             "guid": "007d76a358cdb0a9-0004b630620024c5",
             "components": {
                 "NameComponent": {
@@ -33844,7 +35823,7 @@
             }
         },
         {
-            "id": 226,
+            "id": 230,
             "guid": "007d76a342fe3676-0004b630620024c7",
             "components": {
                 "NameComponent": {
@@ -34038,11 +36017,109 @@
             }
         },
         {
-            "id": 227,
-            "guid": "007e9a432d1319c4-0004b68004008b43",
+            "id": 231,
+            "guid": "0043ce37977a037a-0004b693160011b1",
             "components": {
                 "NameComponent": {
-                    "name": "ButtonHandler"
+                    "name": "WeaponPickupVFX"
+                },
+                "TagComponent": {
+                    "tagIndex": 0
+                },
+                "LayerComponent": {
+                    "layerIndex": 0
+                },
+                "SiblingIndexComponent": {
+                    "siblingIndex": 17
+                },
+                "Transform": {
+                    "type": "Transform",
+                    "data": [
+                        {
+                            "type": "Vector3D",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 0.02
+                                },
+                                {
+                                    "type": "float",
+                                    "data": -0.4
+                                },
+                                {
+                                    "type": "float",
+                                    "data": -2.5
+                                }
+                            ]
+                        },
+                        {
+                            "type": "Vector3D",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                }
+                            ]
+                        },
+                        {
+                            "type": "Quaternion",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                }
+                            ]
+                        }
+                    ]
+                },
+                "ChildrenComponent": {
+                    "type": "ChildrenComponent",
+                    "data": [
+                        {
+                            "type": "std::vector<GUID_128>",
+                            "data": [
+                                "0043ce37ddcde1fa-0004b693160011b9"
+                            ]
+                        }
+                    ]
+                },
+                "ActiveComponent": {
+                    "type": "ActiveComponent",
+                    "data": [
+                        {
+                            "type": "bool",
+                            "data": true
+                        }
+                    ]
+                }
+            }
+        },
+        {
+            "id": 232,
+            "guid": "0043ce37ddcde1fa-0004b693160011b9",
+            "components": {
+                "NameComponent": {
+                    "name": "WeaponPickupPillarGlow"
                 },
                 "TagComponent": {
                     "tagIndex": 0
@@ -34065,7 +36142,7 @@
                                 },
                                 {
                                     "type": "float",
-                                    "data": 0
+                                    "data": 0.189194
                                 },
                                 {
                                     "type": "float",
@@ -34113,21 +36190,297 @@
                         }
                     ]
                 },
-                "AudioComponent": {
-                    "type": "AudioComponent",
+                "ParticleComponent": {
+                    "type": "ParticleComponent",
                     "data": [
                         {
                             "type": "bool",
                             "data": true
                         },
-                        "0000000000000000-0000000000000000",
+                        "0069659c861b45a4-000479195000006d",
                         {
-                            "type": "bool",
-                            "data": false
+                            "type": "Vector3D",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                }
+                            ]
+                        },
+                        {
+                            "type": "float",
+                            "data": 75
+                        },
+                        {
+                            "type": "int",
+                            "data": 1000
+                        },
+                        {
+                            "type": "float",
+                            "data": 3
+                        },
+                        {
+                            "type": "float",
+                            "data": 0.4
+                        },
+                        {
+                            "type": "float",
+                            "data": 0.3
+                        },
+                        {
+                            "type": "Vector3D",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 0.87451
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0.847059
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0.580392
+                                }
+                            ]
+                        },
+                        {
+                            "type": "float",
+                            "data": 0.01
+                        },
+                        {
+                            "type": "Vector3D",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                }
+                            ]
+                        },
+                        {
+                            "type": "float",
+                            "data": 0
+                        },
+                        {
+                            "type": "Vector3D",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                }
+                            ]
+                        },
+                        {
+                            "type": "float",
+                            "data": 0
+                        },
+                        {
+                            "type": "Vector3D",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                }
+                            ]
                         },
                         {
                             "type": "bool",
                             "data": false
+                        }
+                    ]
+                },
+                "ParentComponent": {
+                    "type": "ParentComponent",
+                    "data": [
+                        "0043ce37977a037a-0004b693160011b1"
+                    ]
+                },
+                "ActiveComponent": {
+                    "type": "ActiveComponent",
+                    "data": [
+                        {
+                            "type": "bool",
+                            "data": true
+                        }
+                    ]
+                }
+            }
+        },
+        {
+            "id": 233,
+            "guid": "0043ce37fd3ecb83-0004b698fa0023cf",
+            "components": {
+                "NameComponent": {
+                    "name": "SideBG"
+                },
+                "TagComponent": {
+                    "tagIndex": 0
+                },
+                "LayerComponent": {
+                    "layerIndex": 0
+                },
+                "SiblingIndexComponent": {
+                    "siblingIndex": 1
+                },
+                "Transform": {
+                    "type": "Transform",
+                    "data": [
+                        {
+                            "type": "Vector3D",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 414
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 540
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                }
+                            ]
+                        },
+                        {
+                            "type": "Vector3D",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 828
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 1080
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                }
+                            ]
+                        },
+                        {
+                            "type": "Quaternion",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                }
+                            ]
+                        }
+                    ]
+                },
+                "SpriteRenderComponent": {
+                    "type": "SpriteRenderComponent",
+                    "data": [
+                        {
+                            "type": "bool",
+                            "data": true
+                        },
+                        "0043ce37ea44c096-0004b698c00023cb",
+                        "00374a216e66dbbc-000331fc80000069",
+                        {
+                            "type": "Vector3D",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                }
+                            ]
+                        },
+                        {
+                            "type": "Vector3D",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 100
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 100
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                }
+                            ]
+                        },
+                        {
+                            "type": "float",
+                            "data": 0
+                        },
+                        {
+                            "type": "Vector3D",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                }
+                            ]
+                        },
+                        {
+                            "type": "float",
+                            "data": 1
                         },
                         {
                             "type": "bool",
@@ -34139,47 +36492,56 @@
                         },
                         {
                             "type": "int",
-                            "data": 128
-                        },
-                        {
-                            "type": "float",
-                            "data": 1
-                        },
-                        {
-                            "type": "float",
-                            "data": 1
-                        },
-                        {
-                            "type": "float",
                             "data": 0
                         },
                         {
+                            "type": "int",
+                            "data": -1
+                        },
+                        {
+                            "type": "Vector3D",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                }
+                            ]
+                        },
+                        {
+                            "type": "int",
+                            "data": 0
+                        },
+                        {
+                            "type": "int",
+                            "data": 1
+                        },
+                        {
                             "type": "float",
                             "data": 1
+                        },
+                        {
+                            "type": "float",
+                            "data": 0.5
+                        },
+                        {
+                            "type": "float",
+                            "data": 0.3
+                        },
+                        {
+                            "type": "float",
+                            "data": 0.3
                         },
                         {
                             "type": "bool",
                             "data": false
-                        },
-                        {
-                            "type": "float",
-                            "data": 0
-                        },
-                        {
-                            "type": "float",
-                            "data": 1
-                        },
-                        {
-                            "type": "float",
-                            "data": 1
-                        },
-                        {
-                            "type": "float",
-                            "data": 100
-                        },
-                        {
-                            "type": "std::string",
-                            "data": "UI"
                         }
                     ]
                 },
@@ -34189,121 +36551,6 @@
                         {
                             "type": "bool",
                             "data": true
-                        }
-                    ]
-                },
-                "ScriptComponent": {
-                    "scripts": [
-                        {
-                            "scriptGuidStr": "005e6c80c3c62142-0003fe066a000001",
-                            "scriptPath": "../../Resources/Scripts/UI/MainMenuSettings/MainMenuButtonHandler.lua",
-                            "enabled": true,
-                            "preserveKeys": [],
-                            "entryFunction": "OnInit",
-                            "autoInvokeEntry": true,
-                            "instanceState": {
-                                "_private": {},
-                                "__engine_script_path": "../../resources/scripts/ui/mainmenusettings/mainmenubuttonhandler.lua",
-                                "Every": null,
-                                "_subscriptions": {},
-                                "androidTargetScene": "Resources/Scenes/04_Level.scene",
-                                "After": null,
-                                "OnClickSettingButton": null,
-                                "fadeScreenName": "MenuFadeScreen",
-                                "Start": null,
-                                "OnClickPlayButton": null,
-                                "bgmFadeInDuration": 4.0,
-                                "__meta": {},
-                                "UpdateSafe": null,
-                                "SerializeFields": null,
-                                "DisableSafe": null,
-                                "targetScene": "Resources/Scenes/02_IntroCutscene.scene",
-                                "Update": null,
-                                "DeserializeFields": null,
-                                "StartSafe": null,
-                                "Unsubscribe": null,
-                                "_call_lifecycle": null,
-                                "_playClickSFX": null,
-                                "AwakeSafe": null,
-                                "Subscribe": null,
-                                "bgmEntityName": "BGM",
-                                "fadeDuration": 3.0,
-                                "OnClickQuitButton": null,
-                                "Destroy": null,
-                                "OnClickCreditButton": null,
-                                "__created_at": 1775224223.0,
-                                "__field_list": {
-                                    "fadeScreenName": "MenuFadeScreen",
-                                    "bgmEntityName": "BGM",
-                                    "fadeDuration": 1.0,
-                                    "bgmFadeInDuration": 2.0,
-                                    "targetScene": "Resources/Scenes/02_IntroCutscene.scene",
-                                    "androidTargetScene": "Resources/Scenes/04_Level.scene"
-                                }
-                            }
-                        },
-                        {
-                            "scriptGuidStr": "00264478a739b124-0004b05efe000001",
-                            "scriptPath": "../../Resources/Scripts/UI/MainMenuAudio.lua",
-                            "enabled": true,
-                            "preserveKeys": [],
-                            "entryFunction": "OnInit",
-                            "autoInvokeEntry": true,
-                            "instanceState": {
-                                "After": null,
-                                "__field_list": {
-                                    "HoverSFX": {},
-                                    "SliderSFX": {},
-                                    "PitchVariation": 0.08,
-                                    "ClickSFX": {},
-                                    "BaseVolume": 1.0
-                                },
-                                "_hoverSub": {
-                                    "event": "main_menu.hover",
-                                    "id": 1.0
-                                },
-                                "__created_at": 1775226351.0,
-                                "__engine_script_path": "../../resources/scripts/ui/mainmenuaudio.lua",
-                                "Subscribe": null,
-                                "Awake": null,
-                                "AwakeSafe": null,
-                                "HoverSFX": [
-                                    "0037d81b0c6c0a46-000400f740000005"
-                                ],
-                                "__meta": {},
-                                "_sliderSub": {
-                                    "event": "main_menu.slider",
-                                    "id": 3.0
-                                },
-                                "_clickSub": {
-                                    "event": "main_menu.click",
-                                    "id": 2.0
-                                },
-                                "DisableSafe": null,
-                                "Unsubscribe": null,
-                                "Destroy": null,
-                                "PitchVariation": 0.08,
-                                "SerializeFields": null,
-                                "_call_lifecycle": null,
-                                "StartSafe": null,
-                                "ClickSFX": [
-                                    "0037d81b07b695ee-000400f740000007"
-                                ],
-                                "UpdateSafe": null,
-                                "_private": {},
-                                "Every": null,
-                                "Start": null,
-                                "DeserializeFields": null,
-                                "SliderSFX": [
-                                    "0037d81b07b695ee-000400f740000007"
-                                ],
-                                "OnDisable": null,
-                                "BaseVolume": 1.0,
-                                "_subscriptions": {},
-                                "PlayGameSFX": [
-                                    "0037d81b75c76d96-000400f740000003"
-                                ]
-                            }
                         }
                     ]
                 }

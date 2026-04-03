@@ -236,6 +236,7 @@ return Component {
 
         P3_FeatherCastTime = 0.25,         -- longer "windup" before firing all 5
         P3_FeatherCooldown = 2.00,         -- longer cooldown after firing (between rounds)
+        P3_FeatherBombExplosionPrefabPath = "Resources/Prefabs/MinibossFeatherBombExplosion.prefab",
 
         -- Tile activation timing (keep activating tile, but slower)
         P3_FeatherActivateDelay = 0.90,    -- telegraph delay before tile becomes dangerous
@@ -516,6 +517,31 @@ return Component {
                     local e = q[i]
                     e.t = (e.t or 0) - dtSec
                     if e.t <= 0 then
+                        -- The payload contains an array of 5 targeted cells. 
+                        -- We must spawn an explosion for each one.
+                        if e.payload and e.payload.cells then
+                            for _, cellNum in ipairs(e.payload.cells) do
+                                
+                                -- 1. Calculate the exact world X and Z for this specific cell
+                                local gx, gz = self:_GetGridXZ(cellNum)
+                                
+                                -- 2. Get the ground Y level
+                                local gy = (Nav and Nav.GetGroundY and Nav.GetGroundY(self.entityId)) or select(2, self:GetPosition()) or 0
+                                
+                                -- 3. Instantiate the prefab
+                                local explosionPrefabId = Prefab.InstantiatePrefab(self.P3_FeatherBombExplosionPrefabPath)
+                                local explosionPrefabTr = GetComponent(explosionPrefabId, "Transform")
+
+                                -- 4. Set the prefab's position to the ground at the cell's center
+                                if explosionPrefabTr then
+                                    explosionPrefabTr.localPosition.x = gx
+                                    explosionPrefabTr.localPosition.y = gy
+                                    explosionPrefabTr.localPosition.z = gz
+                                    explosionPrefabTr.isDirty = true
+                                end
+                            end
+                        end
+
                         if _G.event_bus and _G.event_bus.publish then
                             _G.event_bus.publish("boss_rain_explosives", e.payload)
                         end
