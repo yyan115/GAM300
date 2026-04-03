@@ -1754,6 +1754,30 @@ namespace EntityQueryWrappers {
         return 1;
     }
 
+    inline int GetChildAtIndex(Entity entity, int index) {
+        ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
+
+        // 1. Safety check to ensure the entity actually exists and has a ChildrenComponent
+        if (!ecsManager.HasComponent<ChildrenComponent>(entity)) {
+            return -1;
+        }
+
+        auto& childComp = ecsManager.GetComponent<ChildrenComponent>(entity);
+        auto childGUID = childComp.children[index];
+        return EntityGUIDRegistry::GetInstance().GetEntityByGUID(childGUID);
+    }
+
+    inline int GetChildCount(Entity entity) {
+        ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
+
+        // 1. Safety check to ensure the entity actually exists and has a ChildrenComponent
+        if (!ecsManager.HasComponent<ChildrenComponent>(entity)) {
+            return -1;
+        }
+
+        return ecsManager.GetComponent<ChildrenComponent>(entity).children.size();
+    }
+
     inline int FindChildEntityByName(Entity parentId, const std::string& targetName) {
         ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
 
