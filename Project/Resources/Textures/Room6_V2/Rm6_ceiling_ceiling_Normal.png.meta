@@ -1,0 +1,15 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "00518207346d0c3a-0004b63e8a002257",
+        "source": "../../Resources/Textures/Room6_V2/Rm6_ceiling_ceiling_Normal.png",
+        "compiled": "../../Resources/Textures/Room6_V2/Rm6_ceiling_ceiling_Normal.dds"
+    },
+    "TextureMetaData": {
+        "type": "normal",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}
