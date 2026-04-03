@@ -1,9 +1,9 @@
 {
     "AssetMetaData": {
         "version": 7,
-        "guid": "00328d6a4e55cb37-0003611882000089",
-        "source": "../../Resources/Sprites/MainMenuUI/HoverHighlight.png",
-        "compiled": "../../Resources/Sprites/MainMenuUI/HoverHighlight.dds"
+        "guid": "0043ce3781058bef-0004b698be0023c7",
+        "source": "../../Resources/Sprites/MainMenuUI/LOGO.png",
+        "compiled": "../../Resources/Sprites/MainMenuUI/LOGO.dds"
     },
     "TextureMetaData": {
         "type": "diffuse",
