@@ -673,7 +673,7 @@ return Component {
                 self:StopCC()
 
                 -- IMPORTANT: clear stale attack intent again on landing
-                self:_ResetCombatAnimatorParams()
+                --self:_ResetCombatAnimatorParams()
 
                 -- landing hurt
                 self:_PlayRandomHurtAnim()
@@ -695,7 +695,7 @@ return Component {
             self:StopCC()
 
             if self._knockupRecoverT <= 0 then
-                self:_ResetCombatAnimatorParams()
+                --self:_ResetCombatAnimatorParams()
                 self:ClearPath()
                 self:StopCC()
                 self.fsm:ForceChange("Idle", self.states.Idle)
@@ -862,6 +862,7 @@ return Component {
 
     _ClearHurtAnims = function(self)
         if not self._animator then return end
+        print("[EnemyAI] _ClearHurtAnims Animator:SetBool(Hurt, false)")
         self._animator:SetBool("Hurt1", false)
         self._animator:SetBool("Hurt2", false)
         self._animator:SetBool("Hurt3", false)
@@ -876,6 +877,7 @@ return Component {
         self._animator:SetBool("ReadyToAttack", false)
 
         -- clear hurt bools too; we will re-apply the one we want explicitly
+        print("[EnemyAI] _ResetCombatAnimatorParams Animator:SetBool(Hurt, false)")
         self._animator:SetBool("Hurt1", false)
         self._animator:SetBool("Hurt2", false)
         self._animator:SetBool("Hurt3", false)
@@ -893,7 +895,7 @@ return Component {
 
         -- also clear obvious combat intent so animation/state doesn't keep arming
         self.attackTimer = 0
-        self:_ResetCombatAnimatorParams()
+        --self:_ResetCombatAnimatorParams()
         self:StopCC()
     end,
 
@@ -1784,7 +1786,7 @@ return Component {
         self:StopCC()
 
         -- IMPORTANT: hard reset combat intent before going airborne
-        self:_ResetCombatAnimatorParams()
+        --self:_ResetCombatAnimatorParams()
 
         -- reset any simple attack timers/flags that may resume later
         self.attackTimer = 0
@@ -1932,10 +1934,13 @@ return Component {
         if not self._hurtTriggeredByFeather then
             local myRandomValue = math.random(1, 3)
             if myRandomValue == 1 then
+                print("[EnemyAI] Animator:SetBool(Hurt1, true)")
                 self._animator:SetBool("Hurt1", true)
             elseif myRandomValue == 2 then
+                print("[EnemyAI] Animator:SetBool(Hurt2, true)")
                 self._animator:SetBool("Hurt2", true)
             elseif myRandomValue == 3 then
+                print("[EnemyAI] Animator:SetBool(Hurt3, true)")
                 self._animator:SetBool("Hurt3", true)
             end
 
