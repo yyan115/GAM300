@@ -292,6 +292,7 @@ return Component {
         self._lockReason   = nil
         self._lockTimer    = 0
         self._combatActive = false
+        self._bossHealthBarShown = false
 
         -- phase tracking
         self._phase = 1                 -- current phase id
@@ -490,6 +491,10 @@ return Component {
         -- no old FSM combat loop
         self._postIntroRecoverT = 0
         self._phaseRecoverT = 0
+
+        self:_publishBossHealth()
+        self:_setBossHealthBarVisible(false)
+        self._bossHealthBarShown = false
     end,
 
     Update = function(self, dt)
@@ -510,6 +515,13 @@ return Component {
 
         if Keyboard.IsDigitPressed(6) then
             self:ForceNextPhase()
+        end
+
+        -- Show boss HP bar only after the intro/cinematic is fully over
+        if self._introDone and (not self._inIntro) and (not self.dead) and (not self._bossHealthBarShown) then
+            self._bossHealthBarShown = true
+            self:_publishBossHealth()
+            self:_setBossHealthBarVisible(true)
         end
 
         -- -- Tick pending rain explosion "land" events
@@ -1020,6 +1032,19 @@ return Component {
         end
     end,
 
+    _publishBossHealth = function(self)
+        if _G.event_bus and _G.event_bus.publish then
+            _G.event_bus.publish("bossMaxhealth", self.MaxHealth or 1)
+            _G.event_bus.publish("bossCurrentHealth", self.health or 0)
+        end
+    end,
+
+    _setBossHealthBarVisible = function(self, visible)
+        if _G.event_bus and _G.event_bus.publish then
+            _G.event_bus.publish("bossHealthBarVisible", visible == true)
+        end
+    end,
+
     GetPlayerPosForAI = function(self)
         local tr = self._playerTr
         if not tr then
@@ -1457,6 +1482,8 @@ return Component {
         self._hitLockTimer = self.HitIFrame or 0.2
         self.health = math.max(0, (self.health or 0) - (dmg or 1))
 
+        self:_publishBossHealth()
+
         local myRandomValue = math.random(1, 3)
         if myRandomValue == 1 then
             self._animator:SetTrigger("Hurt1")
@@ -1588,6 +1615,10 @@ return Component {
     Die = function(self)
         if self.dead then return end
         self.dead = true
+
+        self:_publishBossHealth()
+        self:_setBossHealthBarVisible(false)
+        self._bossHealthBarShown = false
 
         -- Play death SFX
         self:_publishSFX("death")
@@ -3174,6 +3205,10 @@ return Component {
             pcall(function() self._animator:ResetTrigger("Taunt") end)
             pcall(function() self._animator:ResetTrigger("Hooked") end)
         end
+
+        self:_publishBossHealth()
+        self:_setBossHealthBarVisible(false)
+        self._bossHealthBarShown = false
     end,
 
     -------------------------------------------------
