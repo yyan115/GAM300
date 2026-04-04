@@ -1,129 +1,114 @@
 require("extension.engine_bootstrap")
 local Component = require("extension.mono_helper")
 
-local targetButtons = 
-{   "PlayGame", 
-    "Credits", 
-    "ExitGame",
-    "Settings" }
+local TARGET_BUTTONS = {"PlayGame", "Credits", "ExitGame", "Settings"}
+local UI_MENUS       = {"SettingsUI", "CreditsUI", "QuitPromptUI"}
 
-local UIMenus = 
-{
-    "SettingsUI",
-    "CreditsUI",
-    "QuitPromptUI"
-}
+local NORMAL_TEXT_COLOR  = {0.8, 0.8, 0.8}
+local HOVERED_TEXT_COLOR = {0.0, 0.0, 0.0}
+
+local function applyTextColor(textComponent, color)
+    if not textComponent then return end
+    textComponent.color.x = color[1]
+    textComponent.color.y = color[2]
+    textComponent.color.z = color[3]
+end
 
 return Component {
     Start = function(self)
-        self.lastState = 1      --1 = PLAY GAME
-        self.buttonBounds = {} -- TABLE TO STORE ALL MIN/MAX DATA
-        self.UIState = {}
+        self.lastState    = nil
+        self.buttonBounds = {}
+        self.UIState      = {}
         self._lockedState = false
 
-        -- Cache audio component for hover SFX
-        self._audio = self:GetComponent("AudioComponent")
+        for index, name in ipairs(TARGET_BUTTONS) do
+            local e = Engine.GetEntityByName(name)
+            if e then
+                local transform = GetComponent(e, "Transform")
+                local pos, scale = transform.localPosition, transform.localScale
+                local sprite     = GetComponent(e, "SpriteRenderComponent")
 
-        --GET ALL THE MIN MAX X Y FOR EACH BUTTON AND STORE IT
-        for index, value in ipairs(targetButtons) do
-            local targetEntity = Engine.GetEntityByName(value)
-            if targetEntity then
-                local transform = GetComponent(targetEntity, "Transform")
-                local pos   = transform.localPosition
-                local scale = transform.localScale
+                local child = Engine.GetChildAtIndex(e, 0)
+                local text  = child and GetComponent(child, "TextRenderComponent")
 
-                local component = GetComponent(targetEntity, "SpriteRenderComponent")
-
-                --Store DATA
                 self.buttonBounds[index] = {
-                    spriteComponent = component,            --Store the sprite component to use later
-                    minX = pos.x - (scale.x / 2),
-                    maxX = pos.x + (scale.x / 2),
-                    minY = pos.y - (scale.y / 2),
-                    maxY = pos.y + (scale.y / 2)                
+                    spriteComponent = sprite,
+                    textComponent   = text,
+                    minX = pos.x - scale.x * 0.5,
+                    maxX = pos.x + scale.x * 0.5,
+                    minY = pos.y - scale.y * 0.5,
+                    maxY = pos.y + scale.y * 0.5,
                 }
+
+                applyTextColor(text, NORMAL_TEXT_COLOR)
+                if sprite then sprite.isVisible = false end
             end
         end
 
-        --STORE COMPONENTS FOR EACH UI ENTITY
-        for index, value in ipairs(UIMenus) do
-            local UIEntity = Engine.GetEntityByName(value)
-            if UIEntity then
-                local activeComponent = GetComponent(UIEntity, "ActiveComponent")
-                self.UIState[index] = {
-                    component = activeComponent       
-                }
+        for index, name in ipairs(UI_MENUS) do
+            local e = Engine.GetEntityByName(name)
+            if e then
+                self.UIState[index] = { component = GetComponent(e, "ActiveComponent") }
             end
         end
     end,
 
-Update = function(self, dt)
+    Update = function(self, dt)
+        local pointerPos = Input.GetPointerPosition()
+        if not pointerPos then return end
 
-    --GET GAME COORDINATE FOR MOUSE (unified input system)
-    local pointerPos = Input.GetPointerPosition()
-    if not pointerPos then return end
+        local mc = Engine.GetGameCoordinate(pointerPos.x, pointerPos.y)
+        if not mc then return end
+        local inputX, inputY = mc[1], mc[2]
+        if not inputX or not inputY then return end
 
-    local mouseCoordinate = Engine.GetGameCoordinate(pointerPos.x, pointerPos.y)
-    if not mouseCoordinate then return end
-
-    local inputX = mouseCoordinate[1]
-    local inputY = mouseCoordinate[2]
-    if not inputX or not inputY then return end
-
-    -- CHECK IF ANY UI IS OPEN
-    local anyUIOpen = false
-    for _, states in ipairs(self.UIState) do
-        if states.component and states.component.isActive then
-            anyUIOpen = true
-            break
+        -- Suppress hover when any overlay is open
+        for _, state in ipairs(self.UIState) do
+            if state.component and state.component.isActive then return end
         end
-    end
 
-    -- If any UI is open, skip all hover processing to prevent button highlights
-    -- from appearing in front of the UI overlay
-    if anyUIOpen then
-        return
-    end
+        self._lockedState = false
 
-    -- If no UI is open, unlock the state
-    self._lockedState = false
-
-    -- If locked, don't process hover logic
-    if self._lockedState then
-        return
-    end
-
-    for index, bounds in ipairs(self.buttonBounds) do
-
-        --HOVERING OVER A BUTTON (skip if bounds are nil)
-        if bounds.minX and bounds.maxX and bounds.minY and bounds.maxY and
-           inputX >= bounds.minX and inputX <= bounds.maxX and
-           inputY >= bounds.minY and inputY <= bounds.maxY then
-
-                --IF BUTTON IS CLICKED, LOCK HIGHLIGHT FOR THE BUTTON.
-                if Input.IsPointerPressed() then
-                    self._lockedState = true
-                end
-
-                --CHECK IF BUTTON HOVERED IS THE SAME AS PREVIOUS STATE
-                if index == self.lastState then return end
-
-                --OLD BUTTON
-                local oldButtonHighlight = self.buttonBounds[self.lastState].spriteComponent
-
-                --NEW BUTTON
-                local newButtonHighlight = self.buttonBounds[index].spriteComponent
-
-                if oldButtonHighlight and newButtonHighlight then
-                    oldButtonHighlight.isVisible = false
-                    newButtonHighlight.isVisible = true
-                    self.lastState = index  --update state
-
-                    -- Play hover SFX
-                    if self._audio then
-                        self._audio:Play()
-                    end
-                end
+        -- Find hovered button
+        local hoveredIndex = nil
+        for index, bounds in ipairs(self.buttonBounds) do
+            if inputX >= bounds.minX and inputX <= bounds.maxX and
+               inputY >= bounds.minY and inputY <= bounds.maxY then
+                hoveredIndex = index
+                if Input.IsPointerPressed() then self._lockedState = true end
+                break
+            end
         end
-    end
-end,}
+
+        -- No hover: hide all highlights and clear tracked state
+        if not hoveredIndex then
+            for _, data in ipairs(self.buttonBounds) do
+                if data.spriteComponent then data.spriteComponent.isVisible = false end
+                applyTextColor(data.textComponent, NORMAL_TEXT_COLOR)
+            end
+            self.lastState = nil  -- reset so re-entering the same button triggers hover again
+            return
+        end
+
+        -- Same button as before: nothing to do
+        if hoveredIndex == self.lastState then return end
+
+        -- Deactivate old, activate new
+        local oldData = self.buttonBounds[self.lastState]
+        if oldData then
+            if oldData.spriteComponent then oldData.spriteComponent.isVisible = false end
+            applyTextColor(oldData.textComponent, NORMAL_TEXT_COLOR)
+        end
+
+        local newData = self.buttonBounds[hoveredIndex]
+        if newData then
+            if newData.spriteComponent then newData.spriteComponent.isVisible = true end
+            applyTextColor(newData.textComponent, HOVERED_TEXT_COLOR)
+        end
+
+        self.lastState = hoveredIndex
+
+        -- Hover SFX via centralised audio handler
+        if _G.event_bus then _G.event_bus.publish("main_menu.hover", {}) end
+    end,
+}

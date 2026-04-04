@@ -1,0 +1,15 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "005182073f5527a9-0004b63ea2002275",
+        "source": "../../Resources/Textures/Room6_V2/Rm6_wall2_wall2_Normal.png",
+        "compiled": "../../Resources/Textures/Room6_V2/Rm6_wall2_wall2_Normal.dds"
+    },
+    "TextureMetaData": {
+        "type": "normal",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

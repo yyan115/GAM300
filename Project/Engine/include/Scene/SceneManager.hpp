@@ -1,5 +1,6 @@
 #pragma once
 #include <string>
+#include <future>
 #include <Scene/Scene.hpp>
 #include "Engine.h"
 
@@ -88,4 +89,5 @@ private:
 	int                     entitiesPerChunk = 1;
 	std::unique_ptr<IScene> pendingScene;  // IScene not SceneInstance, matching your currentScene type
 	int						asyncSystemInitStep = 0;
+	std::future<bool>       asyncParseFuture;
 };

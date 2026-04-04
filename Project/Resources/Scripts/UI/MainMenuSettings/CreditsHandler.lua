@@ -3,11 +3,11 @@ local Component = require("extension.mono_helper")
 
 return Component {
     fields = {
-        scrollSpeed = 100,           -- Pixels per second (normal)
-        fastScrollSpeed = 400,       -- Pixels per second when screen is held
-        startY = -1550,              -- Starting Y position
-        endY = 3500,                 -- Target Y position (when scrolling ends)
-        fadeDuration = 1.0,          -- Duration for fade out
+        scrollSpeed = 100,          -- Pixels per second (normal)
+        fastScrollSpeed = 400,      -- Pixels per second when screen is held
+        startY = -1550,             -- Starting Y position
+        endY = 3500,                -- Target Y position (when scrolling ends)
+        fadeDuration = 1.0,         -- Duration for fade out
     },
 
     Start = function(self)
@@ -15,6 +15,7 @@ return Component {
         self._isFading = false
         self._fadeTimer = 0
         self._wasActive = false
+
         print("[CreditsHandler] Start called")
 
         -- Cache entity references
@@ -29,24 +30,34 @@ return Component {
         -- Cache component references
         if self._creditsTextEntity then
             self._creditsTextTransform = GetComponent(self._creditsTextEntity, "Transform")
-            print("[CreditsHandler] CreditsText Transform: " .. tostring(self._creditsTextTransform))
+
             -- Cache the initial position for reset
             if self._creditsTextTransform then
                 local pos = self._creditsTextTransform.localPosition
                 self._creditsTextInitX = pos.x
                 self._creditsTextInitY = pos.y
             end
+
+            self._creditsTextSprite = GetComponent(self._creditsTextEntity, "SpriteRenderComponent")
         end
 
         if self._creditsBGEntity then
             self._creditsBGSprite = GetComponent(self._creditsBGEntity, "SpriteRenderComponent")
-            print("[CreditsHandler] CreditsBG Sprite: " .. tostring(self._creditsBGSprite))
         end
 
         if self._creditsUIEntity then
             self._creditsUIActive = GetComponent(self._creditsUIEntity, "ActiveComponent")
-            print("[CreditsHandler] CreditsUI Active: " .. tostring(self._creditsUIActive))
         end
+
+        -- Global reference for close button
+        _G.CreditsHandler = self
+    end,
+
+    BeginClose = function(self)
+        if self._isFading then return end
+        self._isScrolling = false
+        self._isFading = true
+        self._fadeTimer = 0
     end,
 
     Update = function(self, dt)
@@ -54,7 +65,6 @@ return Component {
         if self._creditsUIActive then
             local isActive = self._creditsUIActive.isActive
 
-            -- Detect when CreditsUI becomes active (rising edge)
             if isActive and not self._wasActive then
                 print("[CreditsHandler] CreditsUI activated! Starting scroll...")
                 self:_resetCredits()
@@ -98,13 +108,21 @@ return Component {
             self._creditsTextTransform.isDirty = true
         end
 
-        -- Handle fade out
-        if self._isFading and self._creditsBGSprite then
+         -- Handle fade out
+        if self._isFading then
+
             self._fadeTimer = self._fadeTimer + dt
             local fadeProgress = math.min(self._fadeTimer / self.fadeDuration, 1.0)
+            local alpha = 1.0 - fadeProgress
 
             -- Fade out the background (alpha from 1 to 0)
-            self._creditsBGSprite.alpha = 1.0 - fadeProgress
+            if self._creditsBGSprite then
+                self._creditsBGSprite.alpha = alpha
+            end
+
+            if self._creditsTextSprite then
+                self._creditsTextSprite.alpha = alpha
+            end
 
             -- Once fade is complete, disable CreditsUI
             if fadeProgress >= 1.0 then
@@ -114,9 +132,8 @@ return Component {
         end
     end,
 
-    -- Reset credits to initial state
+     -- Reset credits to initial state
     _resetCredits = function(self)
-        -- Reset text position to start
         if self._creditsTextTransform then
             local pos = self._creditsTextTransform.localPosition
             pos.x = self._creditsTextInitX
@@ -127,6 +144,10 @@ return Component {
         -- Reset background alpha
         if self._creditsBGSprite then
             self._creditsBGSprite.alpha = 1.0
+        end
+
+        if self._creditsTextSprite then
+            self._creditsTextSprite.alpha = 1.0
         end
 
         self._fadeTimer = 0
@@ -140,16 +161,6 @@ return Component {
         end
 
         -- Reset visual state for next open
-        if self._creditsBGSprite then
-            self._creditsBGSprite.alpha = 1.0
-        end
-        if self._creditsTextTransform then
-            local pos = self._creditsTextTransform.localPosition
-            pos.x = self._creditsTextInitX
-            pos.y = self._creditsTextInitY
-            self._creditsTextTransform.isDirty = true
-        end
-
         -- Re-enable main menu buttons
         local targetButtons = {"PlayGame", "Credits", "ExitGame", "Settings"}
         for _, buttonName in ipairs(targetButtons) do
@@ -171,15 +182,6 @@ return Component {
                 if textActive then
                     textActive.isActive = true
                 end
-            end
-        end
-
-        -- Disable close button
-        local closeButtonEntity = Engine.GetEntityByName("CloseCreditsButton")
-        if closeButtonEntity then
-            local closeButton = GetComponent(closeButtonEntity, "ButtonComponent")
-            if closeButton then
-                closeButton.interactable = false
             end
         end
 

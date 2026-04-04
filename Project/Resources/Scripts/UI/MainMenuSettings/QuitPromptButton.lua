@@ -1,5 +1,6 @@
 require("extension.engine_bootstrap")
 local Component = require("extension.mono_helper")
+local event_bus = _G.event_bus
 
 return Component {
     fields = {
@@ -11,7 +12,6 @@ return Component {
 
     Start = function(self)
         self._transform = self:GetComponent("Transform")
-        self._audio = self:GetComponent("AudioComponent")
         self._sprite = self:GetComponent("SpriteRenderComponent")
         self._isHovered = false
         self._ScreenRequestClose = false
@@ -72,9 +72,8 @@ return Component {
         if isHovering and not self._isHovered then
             self._isHovered = true
             
-            -- Play Hover Sound
-            if self._audio and self.SFX[1] then
-                self._audio:PlayOneShot(self.SFX[1])
+            if event_bus and event_bus.publish then
+                event_bus.publish("main_menu.hover", {})
             end
             
             -- Swap to Highlighted Sprite
@@ -94,9 +93,8 @@ return Component {
     end,
 
     ClosePrompt = function(self)
-            -- Play Click SFX
-            if self._audio and self.SFX and self.SFX[2] then
-                self._audio:PlayOneShot(self.SFX[2])
+            if event_bus and event_bus.publish then
+                event_bus.publish("main_menu.click", {})
             end
 
             local YesEntity = Engine.GetEntityByName("YesButton")
@@ -128,9 +126,8 @@ return Component {
         end,
 
     ExitGame = function(self)
-        -- Play Click SFX
-        if self._audio and self.SFX and self.SFX[2] then
-            self._audio:PlayOneShot(self.SFX[2])
+        if event_bus and event_bus.publish then
+            event_bus.publish("main_menu.click", {})
         end
 
         self._ScreenRequestClose = true

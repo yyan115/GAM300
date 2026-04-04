@@ -27,7 +27,11 @@ local function interruptOut(ai)
     local d2 = ai:GetPlayerDistanceSq()
 
     if d2 > (diseng * diseng) then
-        ai.fsm:Change("Patrol", ai.states.Patrol)
+        if ai.aggressive then
+            ai.fsm:Change("Chase", ai.states.Chase)
+        else
+            ai.fsm:Change("Patrol", ai.states.Patrol)
+        end
         return
     end
 
@@ -54,16 +58,19 @@ function AttackState:Enter(ai)
     ai._animator:SetBool("PatrolEnabled", false)
     ai._animator:SetBool("ReadyToAttack", false)
 
-    -- Clear both attack mode bools first so we do not carry stale mode
-    ai._animator:SetBool("Melee", false)
-    ai._animator:SetBool("Ranged", false)
+    if ai.IsMelee then
+        ai._animator:SetBool("Melee", true)
+    else
+        ai._animator:SetBool("Ranged", true)
+    end
 
     ai._skipFirstCooldown = not ai._hasAttackedBefore
 
     if ai.IsMelee and ai._skipFirstCooldown then
         ai.attackTimer = ai.FirstMeleeAttackHeadStart or 0.20
     else
-        ai.attackTimer = 0
+        -- [FIX] Force it to be ready to swing immediately upon re-entering range!
+        ai.attackTimer = 999
     end
 
     ai.meleeAnimTriggered  = false
@@ -109,8 +116,12 @@ function AttackState:Update(ai, dt)
             local d2 = ai:GetPlayerDistanceSq()
 
             if ai.IsMelee then
-                if d2 > (meleeR * meleeR) then
-                    ai.fsm:Change("Chase", ai.states.Chase)
+                if d2 > (diseng * diseng) then
+                    if ai.aggressive then
+                        ai.fsm:Change("Chase", ai.states.Chase)
+                    else
+                        ai.fsm:Change("Patrol", ai.states.Patrol)
+                    end
                     return
                 end
             else
@@ -131,12 +142,15 @@ function AttackState:Update(ai, dt)
     local attackR, meleeR, diseng = ai:GetRanges()
     local d2 = ai:GetPlayerDistanceSq()
 
-    -- Only allow state exit if not committed AND anim hasn't triggered yet
     if ai.IsMelee then
-        if (not ai._attackCommitted) and (not ai.meleeAnimTriggered) and d2 > (meleeR * meleeR) then
+        if (not ai._attackCommitted) and (not ai.meleeAnimTriggered) and d2 > (diseng * diseng) then
             ai._animator:SetBool("ReadyToAttack", false)
             ai._readyLatched = false
-            ai.fsm:Change("Chase", ai.states.Chase)
+            if ai.aggressive then
+                ai.fsm:Change("Chase", ai.states.Chase)
+            else
+                ai.fsm:Change("Patrol", ai.states.Patrol)
+            end
             return
         end
     else
@@ -160,72 +174,72 @@ function AttackState:Update(ai, dt)
     -- Melee
     if ai.IsMelee then
         ai.attackTimer = (ai.attackTimer or 0) + dtSec
+        
+        local impactWait = ai.MeleeAnimDelay or 0.5
         local cd = ai.MeleeAttackCooldown or (ai.config.AttackCooldown or 1.0)
 
-        if not ai.meleeAnimTriggered and (ai._skipFirstCooldown or ai.attackTimer >= ai.MeleeAnimDelay) then
-            -- interrupted during windup? do not proceed
+        -- PHASE 1: IMMEDIATELY TRIGGER ANIMATION (Start the Wind-up)
+        -- We swing IF the animation isn't playing AND (it's the first hit OR cooldown has finished)
+        if not ai.meleeAnimTriggered and (ai._skipFirstCooldown or ai.attackTimer >= cd) then
             if not ai:IsAttackWindowValid(ai._currentAttackToken) then
                 interruptOut(ai)
                 return
             end
 
-            if not ai._attackCommitted then
-                ai._attackCommitted   = true
-                ai._attackCommitTimer = 0
-            end
-
-            if d2 <= (meleeR * meleeR) then
-                ai._animator:SetBool("Ranged", false)
-                ai._animator:SetBool("Melee", true)
-                ai.meleeAnimTriggered = true
-
-                if _G.event_bus and _G.event_bus.publish then
-                    local ex, _, ez = ai:GetPosition()
-                    _G.event_bus.publish("melee_incoming", {
-                        dmg           = (ai.MeleeDamage or 1),
-                        src           = "GroundEnemy",
-                        enemyEntityId = ai.entityId,
-                        x             = ex or 0,
-                        z             = ez or 0,
-                    })
+            -- Range check before committing to the swing
+            local d2check1 = ai:GetPlayerDistanceSq()
+            local _, meleeRcheck1, diseng1 = ai:GetRanges()
+            
+            if d2check1 > (meleeRcheck1 * meleeRcheck1) then
+                if d2check1 > (diseng1 * diseng1) then
+                    ai.fsm:Change("Patrol", ai.states.Patrol)
+                else
+                    ai.fsm:Change("Chase", ai.states.Chase)
                 end
-                ai:_publishSFX(ai.IsMelee and "meleeAttack" or "rangedAttack")
-                if _G.event_bus then
-                    local x, y, z = ai:GetPosition()
-                    local qW, qX, qY, qZ = ai:GetRotation()
-                    _G.event_bus.publish("onClawSlashTrigger", {
-                        pos      = { x = x,  y = y,  z = z  },
-                        rot      = { w = qW, x = qX, y = qY, z = qZ },
-                        entityId = ai.entityId,
-                        variant  = "NORMAL",
-                        claimed  = false,
-                    })
-                end
-            elseif d2 > (diseng * diseng) then
-                ai.fsm:Change("Patrol", ai.states.Patrol)
-                return
-            else
-                ai.fsm:Change("Chase", ai.states.Chase)
                 return
             end
+
+            -- START THE ATTACK: Reset the timer to 0 to track this specific swing!
+            ai.attackTimer = 0
+            ai._skipFirstCooldown = false
+            ai.meleeAnimTriggered = true
+            ai._damageDealt = false
+            ai._attackCommitted = true
+
+            ai._animator:SetBool("Ranged", false)
+            ai._animator:SetBool("Melee", true)
         end
 
-        if ai.attackTimer >= cd then
-            -- final guard before actual damage lands
+        -- PHASE 2: IMPACT -> DEAL DAMAGE
+        -- Triggers exactly when the timer reaches the wind-up duration
+        if ai.meleeAnimTriggered and not ai._damageDealt and ai.attackTimer >= impactWait then
             if not ai:IsAttackWindowValid(ai._currentAttackToken) then
                 interruptOut(ai)
                 return
             end
 
-            ai.attackTimer = 0
-            ai._hasAttackedBefore = true
-            ai._skipFirstCooldown = false
+            ai._damageDealt = true
+            
+            local d2check2 = ai:GetPlayerDistanceSq()
+            local _, meleeRcheck2, _ = ai:GetRanges()
 
-            local d2check = ai:GetPlayerDistanceSq()
-            local _, meleeRcheck, _ = ai:GetRanges()
-            if d2check <= (meleeRcheck * meleeRcheck) then
-                ai:_publishSFX(ai.IsMelee and "meleeHit"    or "rangedHit")
+            -- Publish attack SFX & Visuals
+            ai:_publishSFX("meleeAttack")
+            if _G.event_bus then
+                local x, y, z = ai:GetPosition()
+                local qW, qX, qY, qZ = ai:GetRotation()
+                _G.event_bus.publish("onClawSlashTrigger", {
+                    pos      = { x = x,  y = y,  z = z  },
+                    rot      = { w = qW, x = qX, y = qY, z = qZ },
+                    entityId = ai.entityId,
+                    variant  = "NORMAL",
+                    claimed  = false,
+                })
+            end
 
+            -- Only deal damage if the player didn't dodge out of range during the wind-up
+            if d2check2 <= (meleeRcheck2 * meleeRcheck2) then
+                ai:_publishSFX("meleeHit")
                 if _G.event_bus and _G.event_bus.publish then
                     local ex, _, ez = ai:GetPosition()
                     _G.event_bus.publish("meleeHitPlayerDmg", {
@@ -237,24 +251,28 @@ function AttackState:Update(ai, dt)
                     })
                 end
             end
-
-            ai.meleeAnimTriggered = false
-            ai._attackCommitted   = false
-            ai._attackCommitTimer = 0
-            ai._animator:SetBool("Melee", false)
-            ai._animator:SetBool("ReadyToAttack", false)
-            ai._readyLatched      = false
-            ai._readySettleT      = 0
-
-            ai._attackRecovering  = true
-            ai._attackRecoveryT   = 0
         end
 
+        -- PHASE 3: REPEAT
+        -- Once the total cooldown time has elapsed, reset flags so Phase 1 can trigger again
+        if ai._damageDealt and ai.attackTimer >= cd then
+            ai.meleeAnimTriggered = false
+            ai._attackCommitted = false
+            
+            ai._animator:SetBool("Melee", false)
+            ai._animator:SetBool("ReadyToAttack", false)
+
+            -- Note: We DO NOT reset ai.attackTimer to 0 here. 
+            -- We leave it >= cd so Phase 1 instantly sees it is ready to swing again!
+        end
     -- Ranged
     else
         ai.attackTimer = (ai.attackTimer or 0) + dtSec
 
-        if not ai.rangedAnimTriggered and ai.attackTimer >= ai.RangedAnimDelay then
+        local spawnFeatherDelay = ai.RangedAnimDelay or 0.5
+        local cd = ai.AttackCooldown
+
+        if not ai.rangedAnimTriggered and (ai._skipFirstCooldown or ai.attackTimer >= cd) then
             -- interrupted during windup? do not proceed
             if not ai:IsAttackWindowValid(ai._currentAttackToken) then
                 interruptOut(ai)
@@ -270,10 +288,20 @@ function AttackState:Update(ai, dt)
                 -- IMPORTANT: keep PlayerInAttackRange true for ranged too
                 ai._animator:SetBool("Melee", false)
                 ai._animator:SetBool("Ranged", true)
+                
+                -- START THE ATTACK: Reset the timer to 0 to track this specific swing!
                 ai.rangedAnimTriggered = true
+                ai.attackTimer = 0
+                ai._skipFirstCooldown = false
+                ai._damageDealt = false
+                ai._attackCommitted = true
 
             elseif d2 > (diseng * diseng) then
-                ai.fsm:Change("Patrol", ai.states.Patrol)
+                if ai.aggressive then
+                    ai.fsm:Change("Chase", ai.states.Chase)
+                else
+                    ai.fsm:Change("Patrol", ai.states.Patrol)
+                end
                 return
             else
                 ai.fsm:Change("Chase", ai.states.Chase)
@@ -281,12 +309,14 @@ function AttackState:Update(ai, dt)
             end
         end
 
-        if ai.attackTimer >= (ai.config.AttackCooldown or 3.0) then
+        if ai.rangedAnimTriggered and not ai._damageDealt and ai.attackTimer >= spawnFeatherDelay then
             -- final guard before projectile actually spawns
             if not ai:IsAttackWindowValid(ai._currentAttackToken) then
                 interruptOut(ai)
                 return
             end
+
+            ai._damageDealt = true
 
             local ok = ai:SpawnKnife()
             if ok then
@@ -303,12 +333,27 @@ function AttackState:Update(ai, dt)
                 ai.attackTimer = (ai.config.AttackCooldown or 3.0)
             end
         end
+
+        -- PHASE 3: REPEAT
+        -- Once the total cooldown time has elapsed, reset flags so Phase 1 can trigger again
+        if ai._damageDealt and ai.attackTimer >= cd then
+            ai.rangedAnimTriggered = false
+            ai._attackCommitted = false
+            
+            ai._animator:SetBool("Ranged", false)
+            ai._animator:SetBool("ReadyToAttack", false)
+
+            -- Note: We DO NOT reset ai.attackTimer to 0 here. 
+            -- We leave it >= cd so Phase 1 instantly sees it is ready to swing again!
+        end
     end
 end
 
 function AttackState:Exit(ai)
     stopCC(ai)
-    ai:CancelPendingAttack("EXIT_ATTACK")
+    ai._currentAttackToken = nil
+    ai._attackCancelled = false
+    ai._attackCancelReason = nil
 
     ai._animator:SetBool("PlayerInAttackRange", false)
     ai._animator:SetBool("ReadyToAttack", false)

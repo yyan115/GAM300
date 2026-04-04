@@ -210,6 +210,7 @@ return Component {
         slider.notchTransform.localPosition.x = slider.minX + (normalized * (slider.maxX - slider.minX))
         slider.notchTransform.isDirty = true
         if slider.fillSprite then slider.fillSprite.fillValue = normalized end
+        api[2](value)  -- re-apply so the renderer reflects the value (needed after reset)
     end,
 
     OnDisable = function(self)

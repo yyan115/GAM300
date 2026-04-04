@@ -1,0 +1,15 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "007b345c0507f198-0004b6a288007c89",
+        "source": "../../Resources/Textures/BossRoom/Cloth3/Cloth3_Opacity.png",
+        "compiled": "../../Resources/Textures/BossRoom/Cloth3/Cloth3_Opacity.dds"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

@@ -236,6 +236,7 @@ return Component {
         -- Aim camera off — suppressed if we are entering spin-release mode
         -- (_intentAimFire means we were spinning; _resetSpin will publish it after fire)
         if not self._intentAimFire then
+            _G.CHAIN_AIM_ACTIVE = false
             if _G.event_bus and _G.event_bus.publish then
                 _G.event_bus.publish("chain.aim_camera", {active = false})
             end
@@ -513,6 +514,7 @@ return Component {
             self._intentAimFire = true
             -- Snapshot player body facing NOW — frozen for the entire spin.
             -- Requesting once here; response arrives next frame via _subPlayerForward.
+            _G.CHAIN_AIM_ACTIVE = true
             if _G.event_bus and _G.event_bus.publish then
                 _G.event_bus.publish("request_player_forward", true)
                 _G.event_bus.publish("chain.aim_camera", {active = true})
@@ -975,6 +977,7 @@ return Component {
         self._spinFacingLocked   = false
         self._spinPrevFacingX    = nil
         self._spinPrevFacingZ    = nil
+        _G.CHAIN_AIM_ACTIVE = false
         if _G.event_bus and _G.event_bus.publish then
             _G.event_bus.publish("chain.aim_camera", {active = false})
         end

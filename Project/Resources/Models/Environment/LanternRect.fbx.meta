@@ -1,0 +1,11 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "007d76a3734c14d6-0004b6238a0023f5",
+        "source": "../../Resources/Models/Environment/LanternRect.fbx",
+        "compiled": "../../Resources/Models/Environment/LanternRect.mesh"
+    },
+    "ModelMetaData": {
+        "optimizeMeshes": true
+    }
+}

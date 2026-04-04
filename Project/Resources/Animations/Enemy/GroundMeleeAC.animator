@@ -16,17 +16,17 @@
             "defaultValue": 0.0
         },
         {
-            "name": "Melee",
-            "type": "Bool",
-            "defaultValue": 0.0
-        },
-        {
             "name": "PlayerInDetectionRange",
             "type": "Bool",
             "defaultValue": 0.0
         },
         {
             "name": "Hurt1",
+            "type": "Bool",
+            "defaultValue": 0.0
+        },
+        {
+            "name": "Melee",
             "type": "Bool",
             "defaultValue": 0.0
         },
@@ -760,7 +760,7 @@
             "to": "Hurt1",
             "anyState": false,
             "hasExitTime": true,
-            "exitTime": 0.0,
+            "exitTime": 0.029999999329447746,
             "transitionDuration": 0.0,
             "conditions": [
                 {
@@ -775,8 +775,8 @@
             "to": "Hurt2",
             "anyState": false,
             "hasExitTime": true,
-            "exitTime": 0.0,
-            "transitionDuration": 0.0,
+            "exitTime": 0.029999999329447746,
+            "transitionDuration": 0.05000000074505806,
             "conditions": [
                 {
                     "paramName": "Hurt2",
@@ -790,7 +790,7 @@
             "to": "Hurt3",
             "anyState": false,
             "hasExitTime": true,
-            "exitTime": 0.0,
+            "exitTime": 0.019999999552965164,
             "transitionDuration": 0.0,
             "conditions": [
                 {
@@ -845,8 +845,8 @@
             "to": "Ground Chase",
             "anyState": false,
             "hasExitTime": true,
-            "exitTime": 0.05000000074505806,
-            "transitionDuration": 0.05000000074505806,
+            "exitTime": 0.20999999344348907,
+            "transitionDuration": 0.20000000298023224,
             "conditions": [
                 {
                     "paramName": "Melee",
@@ -895,6 +895,11 @@
             "conditions": [
                 {
                     "paramName": "PlayerInDetectionRange",
+                    "mode": "Equals",
+                    "threshold": 0.0
+                },
+                {
+                    "paramName": "PlayerInAttackRange",
                     "mode": "Equals",
                     "threshold": 0.0
                 }
@@ -1220,8 +1225,8 @@
             "to": "Melee Attack",
             "anyState": false,
             "hasExitTime": true,
-            "exitTime": 0.05000000074505806,
-            "transitionDuration": 0.03999999910593033,
+            "exitTime": 0.009999999776482582,
+            "transitionDuration": 0.009999999776482582,
             "conditions": [
                 {
                     "paramName": "Melee",

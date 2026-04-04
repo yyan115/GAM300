@@ -109,10 +109,10 @@ void ParallelSystemOrchestrator::Draw() {
         auto& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
         PROFILE_PLOT_TIMED("Model", ecs.modelSystem->Update());
         });
-    frameChannel.Submit([&] {
-        auto& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
-        PROFILE_PLOT_TIMED("Text", ecs.textSystem->Update());
-        });
+    //frameChannel.Submit([&] {
+    //    auto& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
+    //    PROFILE_PLOT_TIMED("Text", ecs.textSystem->Update());
+    //    });
     frameChannel.Submit([&] {
         auto& ecs = ECSRegistry::GetInstance().GetActiveECSManager();
         PROFILE_PLOT_TIMED("Sprite", ecs.spriteSystem->Update());
@@ -130,6 +130,9 @@ void ParallelSystemOrchestrator::Draw() {
         PROFILE_SCOPED("DrawJoin");
         frameChannel.join(); // waits for actual work to finish
     }
+
+	// Text system runs on the main thread (lazy init may create OpenGL VAO/VBO/EBO)
+    PROFILE_PLOT_TIMED("Text", ecs.textSystem->Update());
 
     // Fog runs on the main thread (lazy init may create OpenGL VAO/VBO/EBO)
     if (ecs.fogSystem)

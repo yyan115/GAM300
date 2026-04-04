@@ -18,6 +18,7 @@ EVENTS CONSUMED:
         "meleeHit"     → enemyMeleeHitSFX
         "rangedAttack" → enemyRangedAttackSFX
         "rangedHit"    → enemyRangedHitSFX
+        "groundSlam"   → enemyGroundSlamSFX
 
 FIELDS (populate clip arrays in editor with audio GUIDs):
     enemyHurtSFX         — hurt sounds
@@ -27,6 +28,7 @@ FIELDS (populate clip arrays in editor with audio GUIDs):
     enemyMeleeHitSFX     — melee hit impact sounds
     enemyRangedAttackSFX — ranged attack sounds (direct boss audio; not knife spatial)
     enemyRangedHitSFX    — ranged hit impact sounds
+    enemyGroundSlamSFX   — ground slam impact sounds
 
 NOTE: enemyRangedAttackSFX here covers boss-played ranged SFX (e.g. Phase 3
 feather bomb). The knife-throw spatial audio uses a separate field still on
@@ -50,6 +52,7 @@ return Component {
         enemyMeleeHitSFX     = {},
         enemyRangedAttackSFX = {},
         enemyRangedHitSFX    = {},
+        enemyGroundSlamSFX   = {},
     },
 
     Awake = function(self)
@@ -81,7 +84,9 @@ return Component {
                 AudioHelper.PlayRandomSFX(audio, self.enemyRangedAttackSFX)
             elseif t == "rangedHit" then
                 AudioHelper.PlayRandomSFX(audio, self.enemyRangedHitSFX)
-            end
+            elseif t == "groundSlam" then
+                AudioHelper.PlayRandomSFX(audio, self.enemyGroundSlamSFX)
+            end         
         end)
     end,
 

@@ -18,6 +18,11 @@ function FlyingPatrol:Enter(ai)
 end
 
 function FlyingPatrol:Update(ai, dt)
+    if ai.aggressive then
+        ai.fsm:Change("Chase", ai.states.Chase)
+        return
+    end
+
     -- always keep hover stable in flying states
     ai:MaintainHover(dt)
 
