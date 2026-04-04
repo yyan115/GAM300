@@ -1,8 +1,8 @@
 {
     "AssetMetaData": {
         "version": 7,
-        "guid": "0069659cd7f183cd-0004791876000007",
-        "source": "../../Resources/Scripts/GamePlay/EnemyFeatherCollectible.lua",
-        "compiled": "../../Resources/Scripts/GamePlay/EnemyFeatherCollectible.lua"
+        "guid": "0030b16615c10ed6-0004b8330c00001b",
+        "source": "../../Resources/Scripts/Gameplay/EnemyFeatherCollectible.lua",
+        "compiled": "../../Resources/Scripts/Gameplay/EnemyFeatherCollectible.lua"
     }
 }

@@ -1,8 +1,8 @@
 {
     "AssetMetaData": {
         "version": 7,
-        "guid": "0069659cf69ebacc-0004791876000011",
-        "source": "../../Resources/Scripts/GamePlay/FlyingAttackState.lua",
-        "compiled": "../../Resources/Scripts/GamePlay/FlyingAttackState.lua"
+        "guid": "0030b16642d3cae1-0004b8330c000025",
+        "source": "../../Resources/Scripts/Gameplay/FlyingAttackState.lua",
+        "compiled": "../../Resources/Scripts/Gameplay/FlyingAttackState.lua"
     }
 }

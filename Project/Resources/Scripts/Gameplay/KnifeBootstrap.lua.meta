@@ -1,8 +1,8 @@
 {
     "AssetMetaData": {
         "version": 7,
-        "guid": "0069659ce4d3e8e5-000479187600002d",
-        "source": "../../Resources/Scripts/GamePlay/KnifeBootstrap.lua",
-        "compiled": "../../Resources/Scripts/GamePlay/KnifeBootstrap.lua"
+        "guid": "0030b1666983563c-0004b8330c000047",
+        "source": "../../Resources/Scripts/Gameplay/KnifeBootstrap.lua",
+        "compiled": "../../Resources/Scripts/Gameplay/KnifeBootstrap.lua"
     }
 }

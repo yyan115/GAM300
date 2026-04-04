@@ -1,8 +1,8 @@
 {
     "AssetMetaData": {
         "version": 7,
-        "guid": "0069659cadc1482f-000479187600002f",
-        "source": "../../Resources/Scripts/GamePlay/MinibossBattlecryState.lua",
-        "compiled": "../../Resources/Scripts/GamePlay/MinibossBattlecryState.lua"
+        "guid": "0030b166742eb952-0004b8330c00004f",
+        "source": "../../Resources/Scripts/Gameplay/MinibossBattlecryState.lua",
+        "compiled": "../../Resources/Scripts/Gameplay/MinibossBattlecryState.lua"
     }
 }

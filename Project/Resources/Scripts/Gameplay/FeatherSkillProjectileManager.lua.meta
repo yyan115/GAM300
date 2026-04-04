@@ -1,8 +1,8 @@
 {
     "AssetMetaData": {
         "version": 7,
-        "guid": "0069659ce4d2b67b-000479187600000d",
-        "source": "../../Resources/Scripts/GamePlay/FeatherSkillProjectileManager.lua",
-        "compiled": "../../Resources/Scripts/GamePlay/FeatherSkillProjectileManager.lua"
+        "guid": "0030b16639abf0b8-0004b8330c000021",
+        "source": "../../Resources/Scripts/Gameplay/FeatherSkillProjectileManager.lua",
+        "compiled": "../../Resources/Scripts/Gameplay/FeatherSkillProjectileManager.lua"
     }
 }

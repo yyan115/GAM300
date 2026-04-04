@@ -1,8 +1,8 @@
 {
     "AssetMetaData": {
         "version": 7,
-        "guid": "000ba2bb535141a0-000421b658000003",
-        "source": "../../Resources/Scripts/GamePlay/PickupHover.lua",
-        "compiled": "../../Resources/Scripts/GamePlay/PickupHover.lua"
+        "guid": "0030b1662f230009-0004b8330c000059",
+        "source": "../../Resources/Scripts/Gameplay/PickupHover.lua",
+        "compiled": "../../Resources/Scripts/Gameplay/PickupHover.lua"
     }
 }
