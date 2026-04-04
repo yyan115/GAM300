@@ -278,31 +278,33 @@ return Component {
         if self._pendingImpulse then
             local p = self._pendingImpulse
             self._pendingImpulse = nil
+            print(string.format("[BreakableDoor] '%s': _pendingImpulse firing for dynName='%s'", self._doorName, tostring(p.dynName)))
             pcall(function()
                 local dynEnt = Engine.GetEntityByName(p.dynName)
-                if not dynEnt then
-                    print(string.format("[BreakableDoor] WARNING: dynamic door '%s' not found for impulse", p.dynName))
-                    return
-                end
+                print(string.format("[BreakableDoor] '%s': pendingImpulse GetEntityByName('%s') = %s", self._doorName, p.dynName, tostring(dynEnt)))
+                if not dynEnt then return end
+
                 local rb = GetComponent(dynEnt, "RigidBodyComponent")
-                if not rb then
-                    print(string.format("[BreakableDoor] WARNING: no RigidBodyComponent on '%s'", p.dynName))
-                    return
-                end
+                print(string.format("[BreakableDoor] '%s': RigidBodyComponent = %s", self._doorName, tostring(rb)))
+                if not rb then return end
+
+                print(string.format("[BreakableDoor] '%s': calling AddImpulse(%.1f, %.1f, %.1f)", self._doorName, p.ix, p.iy, p.iz))
                 rb:AddImpulse(p.ix, p.iy, p.iz)
-                print(string.format("[BreakableDoor] '%s' impulse (%.1f,%.1f,%.1f)", p.dynName, p.ix, p.iy, p.iz))
+                print(string.format("[BreakableDoor] '%s': AddImpulse done", self._doorName))
+
                 if p.torx ~= 0 or p.tory ~= 0 or p.torz ~= 0 then
+                    print(string.format("[BreakableDoor] '%s': calling AddTorque(%.1f, %.1f, %.1f)", self._doorName, p.torx, p.tory, p.torz))
                     rb:AddTorque(p.torx, p.tory, p.torz)
-                    print(string.format("[BreakableDoor] '%s' torque (%.1f,%.1f,%.1f)", p.dynName, p.torx, p.tory, p.torz))
+                    print(string.format("[BreakableDoor] '%s': AddTorque done", self._doorName))
                 end
             end)
-            -- Deactivate static door now that physics owns the dynamic one
             pcall(function()
                 if self._entityId then
                     local ac = GetComponent(self._entityId, "ActiveComponent")
+                    print(string.format("[BreakableDoor] '%s': deactivating static, ActiveComponent = %s", self._doorName, tostring(ac)))
                     if ac then
                         ac.isActive = false
-                        print(string.format("[BreakableDoor] Static door '%s' -> deactivated", self._doorName))
+                        print(string.format("[BreakableDoor] '%s': static door deactivated", self._doorName))
                     end
                 end
             end)
@@ -412,12 +414,11 @@ return Component {
 
     _breakDoor = function(self)
         self._mashDone    = true
-        self._currentStep = 0   -- stop Update from re-pinning static door
+        self._currentStep = 0
 
-        -- Activate the dynamic door this frame.
-        -- Impulse/torque deferred to next frame via _pendingImpulse so the
-        -- physics body has time to initialize before forces are applied.
         local dynName = self._cleanName(self.DynamicDoorName)
+        print(string.format("[BreakableDoor] _breakDoor called on '%s', dynName='%s'", self._doorName, dynName))
+
         if dynName == "" then
             print(string.format("[BreakableDoor] '%s': DynamicDoorName not set -- skipping", self._doorName))
             pcall(function()
@@ -431,45 +432,37 @@ return Component {
 
         pcall(function()
             local dynEnt = Engine.GetEntityByName(dynName)
-            if not dynEnt then
-                print(string.format("[BreakableDoor] WARNING: dynamic door entity '%s' not found", dynName))
-                return
-            end
+            print(string.format("[BreakableDoor] '%s': GetEntityByName('%s') = %s", self._doorName, dynName, tostring(dynEnt)))
+            if not dynEnt then return end
 
             local dynTr = nil
             if Engine then
-                if Engine.FindTransformByID then dynTr = Engine.FindTransformByID(dynEnt)
-                elseif Engine.FindTransformByEntity then dynTr = Engine.FindTransformByEntity(dynEnt)
-                elseif Engine.GetTransformForEntity then dynTr = Engine.GetTransformForEntity(dynEnt)
+                if      Engine.FindTransformByID     then dynTr = Engine.FindTransformByID(dynEnt)
+                elseif  Engine.FindTransformByEntity then dynTr = Engine.FindTransformByEntity(dynEnt)
+                elseif  Engine.GetTransformForEntity then dynTr = Engine.GetTransformForEntity(dynEnt)
                 end
             end
+            print(string.format("[BreakableDoor] '%s': dynTr = %s", self._doorName, tostring(dynTr)))
 
             if dynTr and self._transform then
-                -- Sync Position
                 local px, py, pz = self:_getWorldPos()
-                if px then
-                    self:_writePos(dynTr, px, py, pz)
-                end
-
-                -- Sync Rotation
+                print(string.format("[BreakableDoor] '%s': static world pos = (%s, %s, %s)", self._doorName, tostring(px), tostring(py), tostring(pz)))
+                if px then self:_writePos(dynTr, px, py, pz) end
                 local rot = self._transform.localRotation
+                print(string.format("[BreakableDoor] '%s': static localRotation = %s", self._doorName, tostring(rot)))
                 if rot and (type(rot) == "table" or type(rot) == "userdata") then
                     self:_writeRot(dynTr, rot.w or 1, rot.x or 0, rot.y or 0, rot.z or 0)
                 end
-                
-                print(string.format("[BreakableDoor] Synced transform to dynamic door '%s'", dynName))
             end
-            
+
             local ac = GetComponent(dynEnt, "ActiveComponent")
+            print(string.format("[BreakableDoor] '%s': ActiveComponent = %s", self._doorName, tostring(ac)))
             if ac then
                 ac.isActive = true
-                print(string.format("[BreakableDoor] Dynamic door '%s' -> activated", dynName))
-            else
-                print(string.format("[BreakableDoor] WARNING: no ActiveComponent on dynamic door '%s'", dynName))
+                print(string.format("[BreakableDoor] '%s': dynamic door activated", self._doorName))
             end
         end)
 
-        -- Queue impulse + torque for next frame
         self._pendingImpulse = {
             dynName = dynName,
             ix   = tonumber(self.ImpulseX) or 0,
@@ -479,7 +472,9 @@ return Component {
             tory = tonumber(self.TorqueY)  or 0,
             torz = tonumber(self.TorqueZ)  or 0,
         }
-        print(string.format("[BreakableDoor] '%s' impulse+torque deferred to next frame", dynName))
+        print(string.format("[BreakableDoor] '%s': _pendingImpulse queued: ix=%.1f iy=%.1f iz=%.1f torx=%.1f tory=%.1f torz=%.1f",
+            self._doorName, self._pendingImpulse.ix, self._pendingImpulse.iy, self._pendingImpulse.iz,
+            self._pendingImpulse.torx, self._pendingImpulse.tory, self._pendingImpulse.torz))
     end,
 
     -- =========================================================================
