@@ -1,0 +1,15 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "002a96c7782d2730-0004b907de000045",
+        "source": "../../Resources/Sprites/PlayerHUD/Android/ChainSlam2/ChainSlamSpritev2_8.png",
+        "compiled": "../../Resources/Sprites/PlayerHUD/Android/ChainSlam2/ChainSlamSpritev2_8.dds"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

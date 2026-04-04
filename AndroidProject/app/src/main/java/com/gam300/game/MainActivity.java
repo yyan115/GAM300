@@ -151,7 +151,7 @@ public class MainActivity extends AppCompatActivity implements SurfaceHolder.Cal
         Log.i(TAG, "Surface changed: " + width + "x" + height);
 
         // Initialize engine first with surface dimensions and AssetManager
-        initEngine(getAssets(), width, height);
+        initEngine(getAssets(), getFilesDir().getAbsolutePath(), width, height);
 
         // Now set surface after engine is initialized
         setSurface(holder.getSurface());
@@ -218,7 +218,7 @@ public class MainActivity extends AppCompatActivity implements SurfaceHolder.Cal
 
     // Native methods - must match JNI function names exactly
     public native String stringFromJNI();
-    public native void initEngine(android.content.res.AssetManager assetManager, int width, int height);
+    public native void initEngine(android.content.res.AssetManager assetManager, String filesDir, int width, int height);
     public native void setSurface(Surface surface);
     public native void renderFrame();
     public native void destroyEngine();

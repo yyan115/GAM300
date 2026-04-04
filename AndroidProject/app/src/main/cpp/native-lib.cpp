@@ -36,12 +36,17 @@ Java_com_gam300_game_MainActivity_stringFromJNI(JNIEnv* env, jobject /* this */)
 }
 
 extern "C" JNIEXPORT void JNICALL
-Java_com_gam300_game_MainActivity_initEngine(JNIEnv* env, jobject thiz, jobject assetManager, jint width, jint height) {
+Java_com_gam300_game_MainActivity_initEngine(JNIEnv* env, jobject thiz, jobject assetManager, jstring filesDir, jint width, jint height) {
     LOGI("Initializing GAM300 Engine: %dx%d", width, height);
 
     if (!engineInitialized) {
         // Get native AssetManager and set it in the platform FIRST
         AAssetManager* nativeAssetManager = AAssetManager_fromJava(env, assetManager);
+
+        // Extract writable files directory path
+        const char* filesDirCStr = env->GetStringUTFChars(filesDir, nullptr);
+        std::string filesDirStr = filesDirCStr ? filesDirCStr : "";
+        env->ReleaseStringUTFChars(filesDir, filesDirCStr);
 
         // NEW: Initialize FMOD for Android JNI (required before any FMOD calls)
         JavaVM* jvm;
@@ -62,7 +67,8 @@ Java_com_gam300_game_MainActivity_initEngine(JNIEnv* env, jobject thiz, jobject 
         if (platform) {
             AndroidPlatform* androidPlatform = static_cast<AndroidPlatform*>(platform);
             androidPlatform->SetAssetManager(nativeAssetManager);
-            LOGI("AssetManager set in Android platform");
+            androidPlatform->SetWritablePath(filesDirStr);
+            LOGI("AssetManager set in Android platform, writable path: %s", filesDirStr.c_str());
 
             // Initialize assets first (preserve original order)
             Engine::InitializeAssets();

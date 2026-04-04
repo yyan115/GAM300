@@ -70,6 +70,7 @@ public:
     SpriteRenderComponent() = default;
     ~SpriteRenderComponent() = default;
 
-    // Lua-friendly texture setter (avoids shared_ptr in Lua bindings)
+    // Lua-friendly texture setters (avoids shared_ptr in Lua bindings)
     void SetTextureFromGUID(const std::string& guidString);
+    void SetTextureFromPath(const std::string& path);
 };
