@@ -195,10 +195,26 @@ return Component {
             self._basePos.x,  self._basePos.y,  self._basePos.z,
             self._baseQuat.w, self._baseQuat.x, self._baseQuat.y, self._baseQuat.z))
 
-        -- ── Global registry + broken flag ─────────────────────────────────
-        if not _G.BreakableDoorRegistry then _G.BreakableDoorRegistry = {} end
-        _G.BreakableDoorRegistry[self._doorName] = self
-        if _G.BreakableDoorsBroken == nil then _G.BreakableDoorsBroken = false end
+        -- ── Global registry + per-group broken flag ───────────────────────
+        -- Each door (or linked pair) gets its own broken state so that unrelated
+        -- standalone doors are not blocked when another group finishes.
+        -- Group key: sorted "DoorA|DoorB" for a pair, or just "DoorName" standalone.
+        if not _G.BreakableDoorRegistry_D3     then _G.BreakableDoorRegistry_D3     = {} end
+        if not _G.BreakableDoorGroupBroken_D3  then _G.BreakableDoorGroupBroken_D3  = {} end
+        _G.BreakableDoorRegistry_D3[self._doorName] = self
+
+        local linkedRaw  = self._cleanName(self.LinkedDoorName)
+        if linkedRaw ~= "" then
+            local a, b = self._doorName, linkedRaw
+            if b < a then a, b = b, a end          -- sort so both sides get the same key
+            self._groupKey = a .. "|" .. b
+        else
+            self._groupKey = self._doorName
+        end
+        -- Initialise this group's broken state only if not already set.
+        if _G.BreakableDoorGroupBroken_D3[self._groupKey] == nil then
+            _G.BreakableDoorGroupBroken_D3[self._groupKey] = false
+        end
 
         -- ── Deactivate dynamic door at start ──────────────────────────────
         local dynName = self._cleanName(self.DynamicDoorName)
@@ -334,9 +350,9 @@ return Component {
         self._currentStep  = 0
         self._endpointPos  = nil
         self._endpointPrev = nil
-        if _G.chain_retract_veto ~= nil then _G.chain_retract_veto = nil end
-        if _G.BreakableDoorRegistry then
-            _G.BreakableDoorRegistry[self._doorName] = nil
+        if _G.chain_retract_veto_D3 ~= nil then _G.chain_retract_veto_D3 = nil end
+        if _G.BreakableDoorRegistry_D3 then
+            _G.BreakableDoorRegistry_D3[self._doorName] = nil
         end
         if _G.event_bus and _G.event_bus.unsubscribe then
             if self._subMoved       then pcall(function() _G.event_bus.unsubscribe(self._subMoved)       end) end
@@ -378,8 +394,6 @@ return Component {
 
     -- =========================================================================
     -- INTERNAL — load clip then play a one-shot on this door's AudioComponent.
-    -- SetClip must be called before PlayOneShot — PlayOneShot plays whatever
-    -- clip is currently loaded; it does not accept a GUID argument.
     -- =========================================================================
 
     _playDoorSound = function(self, clipList, vol)
@@ -426,7 +440,7 @@ return Component {
 
         local linkedName = self._cleanName(self.LinkedDoorName)
         if linkedName ~= "" then
-            local linked = _G.BreakableDoorRegistry and _G.BreakableDoorRegistry[linkedName]
+            local linked = _G.BreakableDoorRegistry_D3 and _G.BreakableDoorRegistry_D3[linkedName]
             if linked then
                 pcall(function()
                     linked._currentStep = step
@@ -517,16 +531,16 @@ return Component {
 
     -- =========================================================================
     -- INTERNAL — drive the full final-mash sequence for self + linked door.
-    -- Guarded by _G.BreakableDoorsBroken so only one instance runs it once.
+    -- Guarded by _G.BreakableDoorGroupBroken_D3 so only one instance runs it once per group.
     -- =========================================================================
 
     _doFinalMash = function(self)
-        if _G.BreakableDoorsBroken then
+        if _G.BreakableDoorGroupBroken_D3[self._groupKey] then
             print("[BreakableDoor] Already broken — skipping duplicate final mash")
             return
         end
-        _G.BreakableDoorsBroken = true
-        _G.chain_retract_veto   = nil
+        _G.BreakableDoorGroupBroken_D3[self._groupKey] = true
+        _G.chain_retract_veto_D3   = nil
         print("[BreakableDoor] FINAL MASH — breaking doors!")
 
         self:_playDoorSound(self.FinalMashSoundClip, self.FinalMashSoundVolume)
@@ -551,7 +565,7 @@ return Component {
         -- Break linked door first (so both go inactive in the same frame)
         local linkedName = self._cleanName(self.LinkedDoorName)
         if linkedName ~= "" then
-            local linked = _G.BreakableDoorRegistry and _G.BreakableDoorRegistry[linkedName]
+            local linked = _G.BreakableDoorRegistry_D3 and _G.BreakableDoorRegistry_D3[linkedName]
             if linked then
                 pcall(function() linked:_breakDoor() end)
             else
@@ -568,7 +582,7 @@ return Component {
     -- =========================================================================
 
     _onEndpointMoved = function(self, payload)
-        if _G.BreakableDoorsBroken then return end
+        if _G.BreakableDoorGroupBroken_D3[self._groupKey] then return end
         if self._mashDone          then return end
 
         -- Track previous endpoint position for segment-sweep
@@ -617,7 +631,7 @@ return Component {
         self._isHooked     = true
         self._mashProgress = 0
         self._mashDone     = false
-        _G.chain_retract_veto = function()
+        _G.chain_retract_veto_D3 = function()
             return self._isHooked and not self._mashDone
         end
         print(string.format("[BreakableDoor] HIT on '%s' — waiting for mash", self._doorName))
@@ -664,7 +678,7 @@ return Component {
         self._detachDisarmed = false
         self._endpointPos    = nil
         self._endpointPrev   = nil
-        if _G.chain_retract_veto ~= nil then _G.chain_retract_veto = nil end
+        if _G.chain_retract_veto_D3 ~= nil then _G.chain_retract_veto_D3 = nil end
     end,
 
     -- =========================================================================
@@ -677,7 +691,7 @@ return Component {
         self._detachDisarmed = true
         self._endpointPos    = nil
         self._endpointPrev   = nil
-        if _G.chain_retract_veto ~= nil then _G.chain_retract_veto = nil end
+        if _G.chain_retract_veto_D3 ~= nil then _G.chain_retract_veto_D3 = nil end
     end,
 
     -- =========================================================================
