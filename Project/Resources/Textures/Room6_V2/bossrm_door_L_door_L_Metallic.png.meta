@@ -6,7 +6,7 @@
         "compiled": "../../Resources/Textures/Room6_V2/bossrm_door_L_door_L_Metallic.dds"
     },
     "TextureMetaData": {
-        "type": "diffuse",
+        "type": "metallic",
         "flipUVs": false,
         "generateMipmaps": true,
         "textureWrapMode": "Clamp",

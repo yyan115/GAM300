@@ -6,7 +6,7 @@
         "compiled": "../../Resources/Textures/Room6_V2/bossrm_door_L_door_L_Height.dds"
     },
     "TextureMetaData": {
-        "type": "diffuse",
+        "type": "height",
         "flipUVs": false,
         "generateMipmaps": true,
         "textureWrapMode": "Clamp",
