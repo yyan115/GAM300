@@ -707,7 +707,8 @@ void VideoSystem::Update(float dt)
         {
             if (!vc.nextScenePath.empty())
             {
-                SceneManager::GetInstance().LoadScene(vc.nextScenePath);
+                SceneManager::GetInstance().LoadScene(vc.nextScenePath, true);
+                vc.nextScenePath.clear();  // Only trigger load once
             }
             else if (vc.loop)
             {

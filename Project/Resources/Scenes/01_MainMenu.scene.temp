@@ -1213,7 +1213,7 @@
                         },
                         {
                             "type": "std::string",
-                            "data": "Setting"
+                            "data": "Settings"
                         },
                         {
                             "type": "unsigned",
