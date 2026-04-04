@@ -199,9 +199,7 @@ return Component {
                 local e = Engine.GetEntityByName(name)
                 if e then
                     local btn = GetComponent(e, "ButtonComponent")
-                    local spr = GetComponent(e, "SpriteRenderComponent")
                     if btn then btn.interactable = false end
-                    if spr then spr.isVisible = false end
                 end
             end
 

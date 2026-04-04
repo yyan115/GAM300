@@ -90,8 +90,15 @@ return Component {
             return
         end
 
-        -- Same button as before: nothing to do
-        if hoveredIndex == self.lastState then return end
+        -- Same button as before: re-assert visibility in case another system cleared it
+        if hoveredIndex == self.lastState then
+            local data = self.buttonBounds[hoveredIndex]
+            if data then
+                if data.spriteComponent then data.spriteComponent.isVisible = true end
+                applyTextColor(data.textComponent, HOVERED_TEXT_COLOR)
+            end
+            return
+        end
 
         -- Deactivate old, activate new
         local oldData = self.buttonBounds[self.lastState]
