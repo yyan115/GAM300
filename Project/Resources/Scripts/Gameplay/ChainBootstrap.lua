@@ -674,7 +674,17 @@ return Component {
             self._chainSubDown = _G.event_bus.subscribe("chain.down", function(payload) if not payload then return end pcall(function() self:_on_chain_down(payload) end) end)
             self._chainSubUp   = _G.event_bus.subscribe("chain.up",   function(payload) if not payload then return end pcall(function() self:_on_chain_up(payload)   end) end)
             self._chainSubHold = _G.event_bus.subscribe("chain.hold", function(payload) if not payload then return end pcall(function() self:_on_chain_hold(payload) end) end)
-
+            self._chainSubRetract = _G.event_bus.subscribe("chain.retract", function(payload)
+                pcall(function()
+                    if self.controller then
+                        self.controller:StartRetraction()
+                        -- Tell other systems (like audio/animation) that the chain is retracting
+                        if _G.event_bus and _G.event_bus.publish then
+                            _G.event_bus.publish("chain.retract_chain", true)
+                        end
+                    end
+                end)
+            end)
             self._subPlayerForward = _G.event_bus.subscribe("player_forward_response", function(payload)
                 if not payload then return end
                 local x = payload.x
@@ -1512,6 +1522,7 @@ return Component {
             if self._chainSubDown     then pcall(function() _G.event_bus.unsubscribe(self._chainSubDown)     end) end
             if self._chainSubUp       then pcall(function() _G.event_bus.unsubscribe(self._chainSubUp)       end) end
             if self._chainSubHold     then pcall(function() _G.event_bus.unsubscribe(self._chainSubHold)     end) end
+            if self._chainSubRetract  then pcall(function() _G.event_bus.unsubscribe(self._chainSubRetract)  end) end
             if self._subPlayerForward then pcall(function() _G.event_bus.unsubscribe(self._subPlayerForward) end) end
             if self._subHookedPos         then pcall(function() _G.event_bus.unsubscribe(self._subHookedPos)         end) end
             if self._subHitEntity         then pcall(function() _G.event_bus.unsubscribe(self._subHitEntity)         end) end
