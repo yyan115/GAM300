@@ -467,6 +467,7 @@ END_COMPONENT()
 BEGIN_COMPONENT(VideoComponent, "VideoComponent")
     PROPERTY("cutsceneEnded", &VideoComponent::cutsceneEnded)
     PROPERTY("skipRequested", &VideoComponent::skipRequested)
+    PROPERTY("currentBoardIndex", &VideoComponent::currentBoardIndex)
 END_COMPONENT()
 
 

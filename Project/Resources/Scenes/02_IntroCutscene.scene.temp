@@ -624,7 +624,7 @@
                                         },
                                         {
                                             "type": "std::string",
-                                            "data": "High above the silent mountains, stood a temple untouched by war. A sanctuary of sky and stone... Home.\nfewfewf"
+                                            "data": "High above the silent mountains, stood a temple untouched by war. A sanctuary of sky and stone... Home."
                                         },
                                         {
                                             "type": "float",
@@ -1768,6 +1768,10 @@
                         {
                             "type": "float",
                             "data": 0
+                        },
+                        {
+                            "type": "int",
+                            "data": -1
                         }
                     ]
                 }
@@ -2030,7 +2034,7 @@
                                 },
                                 {
                                     "type": "float",
-                                    "data": 0.12
+                                    "data": 0.03
                                 },
                                 {
                                     "type": "float",
@@ -2104,7 +2108,7 @@
                                 },
                                 {
                                     "type": "float",
-                                    "data": 161.92
+                                    "data": 142.48
                                 },
                                 {
                                     "type": "float",
@@ -2314,6 +2318,18 @@
                         {
                             "type": "bool",
                             "data": true
+                        }
+                    ]
+                },
+                "ScriptComponent": {
+                    "scripts": [
+                        {
+                            "scriptGuidStr": "0072117877d37ecc-0004b8f38e002415",
+                            "scriptPath": "../../Resources/Scripts/UI/DialogueTextAligner.lua",
+                            "enabled": true,
+                            "preserveKeys": [],
+                            "entryFunction": "OnInit",
+                            "autoInvokeEntry": true
                         }
                     ]
                 }
