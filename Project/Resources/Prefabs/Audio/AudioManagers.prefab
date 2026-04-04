@@ -343,7 +343,15 @@
                                 ],
                                 "BGMNarrativeVolume": 0.1,
                                 "_private": {},
-                                "_bgmFadeTimer": 0.0
+                                "_bgmFadeTimer": 0.0,
+                                "MashSoundClip": [
+                                    "00394345284c9778-0004200cb6012d6b",
+                                    "0039434546c0b12e-0004200cb8012d6d"
+                                ],
+                                "FinalMashSoundClip": [
+                                    "0039434545120025-0004200cb8012d6f",
+                                    "007e8273402cba6b-0004a4247e000017"
+                                ]
                             }
                         }
                     ]

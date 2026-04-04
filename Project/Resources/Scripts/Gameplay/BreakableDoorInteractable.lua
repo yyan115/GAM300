@@ -89,12 +89,6 @@ return Component {
         -- Leave blank for a standalone door.
         LinkedDoorName      = "",
 
-        -- ── Door sounds ───────────────────────────────────────────────────
-        MashSoundClip        = {},
-        MashSoundVolume      = 0.8,
-        FinalMashSoundClip   = {},
-        FinalMashSoundVolume = 1.0,
-
         -- ── Camera effects ────────────────────────────────────────────────
         MashShakeIntensity      = 0.25,
         MashShakeDuration       = 0.20,
@@ -243,24 +237,6 @@ return Component {
         self._endpointPrev   = nil
         self._currentStep    = 0   -- 0 = closed; counts up with each mash tap
 
-        -- ── Cache AudioComponent for door sounds ──────────────────────────
-        self._audioComp = nil
-        pcall(function()
-            if self._entityId then
-                local ac = GetComponent and GetComponent(self._entityId, "AudioComponent")
-                if ac then
-                    self._audioComp = ac
-                elseif Engine and Engine.FindAudioCompByName and self._doorName then
-                    self._audioComp = Engine.FindAudioCompByName(self._doorName)
-                end
-            end
-        end)
-        if self._audioComp then
-            print(string.format("[BreakableDoor] '%s' AudioComponent found", self._doorName))
-        else
-            print(string.format("[BreakableDoor] '%s' no AudioComponent — door sounds will be silent", self._doorName))
-        end
-
         -- ── Subscribe to chain events ─────────────────────────────────────
         if not (_G.event_bus and _G.event_bus.subscribe) then
             print("[BreakableDoor] WARNING: event_bus not available — interactions will not fire")
@@ -393,28 +369,6 @@ return Component {
     end,
 
     -- =========================================================================
-    -- INTERNAL — load clip then play a one-shot on this door's AudioComponent.
-    -- =========================================================================
-
-    _playDoorSound = function(self, clipList, vol)
-        local clip
-        if type(clipList) == "table" then
-            if #clipList == 0 then return end
-            clip = clipList[math.random(1, #clipList)]
-        else
-            clip = tostring(clipList or ""):match("^%s*(.-)%s*$")
-        end
-        if not clip or clip == "" then return end
-        local ac = self._audioComp
-        if not ac then return end
-        pcall(function()
-            ac:SetClip(clip)
-            ac:SetVolume(math.max(0.0, math.min(1.0, tonumber(vol) or 1.0)))
-            ac:PlayOneShot()
-        end)
-    end,
-
-    -- =========================================================================
     -- INTERNAL — apply a mash step to BOTH this door and the linked door.
     -- Linked door gets its transform updated directly (no re-propagation, no
     -- recursion risk).
@@ -424,9 +378,8 @@ return Component {
         self._currentStep = step
         self:_applyStepTransform(step)
 
-        self:_playDoorSound(self.MashSoundClip, self.MashSoundVolume)
-
         if _G.event_bus and _G.event_bus.publish then
+            _G.event_bus.publish("door_mash_sound", { doorName = self._doorName })
             _G.event_bus.publish("camera_shake", {
                 intensity = tonumber(self.MashShakeIntensity)     or 0.25,
                 duration  = tonumber(self.MashShakeDuration)      or 0.20,
@@ -543,9 +496,8 @@ return Component {
         _G.chain_retract_veto   = nil
         print("[BreakableDoor] FINAL MASH — breaking doors!")
 
-        self:_playDoorSound(self.FinalMashSoundClip, self.FinalMashSoundVolume)
-
         if _G.event_bus and _G.event_bus.publish then
+            _G.event_bus.publish("door_final_mash_sound", { doorName = self._doorName })
             _G.event_bus.publish("camera_shake", {
                 intensity = tonumber(self.FinalShakeIntensity)     or 0.70,
                 duration  = tonumber(self.FinalShakeDuration)      or 0.45,
