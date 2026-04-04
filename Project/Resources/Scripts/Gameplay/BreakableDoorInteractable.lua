@@ -195,6 +195,7 @@ return Component {
         -- Group key: sorted "DoorA|DoorB" for a pair, or just "DoorName" standalone.
         if not _G.BreakableDoorRegistry     then _G.BreakableDoorRegistry     = {} end
         if not _G.BreakableDoorGroupBroken  then _G.BreakableDoorGroupBroken  = {} end
+        if not _G.BreakableDoorMashProgress then _G.BreakableDoorMashProgress = {} end
         _G.BreakableDoorRegistry[self._doorName] = self
 
         local linkedRaw  = self._cleanName(self.LinkedDoorName)
@@ -208,6 +209,11 @@ return Component {
         -- Initialise this group's broken state only if not already set.
         if _G.BreakableDoorGroupBroken[self._groupKey] == nil then
             _G.BreakableDoorGroupBroken[self._groupKey] = false
+        end
+        -- Initialise persistent mash progress for this group only if not already set.
+        -- This survives chain detach/reattach cycles so progress is never lost.
+        if _G.BreakableDoorMashProgress[self._groupKey] == nil then
+            _G.BreakableDoorMashProgress[self._groupKey] = 0
         end
 
         -- ── Deactivate dynamic door at start ──────────────────────────────
@@ -574,9 +580,11 @@ return Component {
         if ddx*ddx + ddy*ddy + ddz*ddz > radiusSq then return end
 
         -- HIT confirmed
+        -- Restore persisted progress so mashes already landed before a detach
+        -- are not lost when the chain reattaches to this door/group.
         self._hitFired     = true
         self._isHooked     = true
-        self._mashProgress = 0
+        self._mashProgress = _G.BreakableDoorMashProgress[self._groupKey] or 0
         self._mashDone     = false
         _G.chain_retract_veto = function()
             return self._isHooked and not self._mashDone
@@ -593,6 +601,8 @@ return Component {
         if self._mashDone     then return end
 
         self._mashProgress = self._mashProgress + 1
+        -- Persist progress globally so a detach + reattach doesn't reset the count.
+        _G.BreakableDoorMashProgress[self._groupKey] = self._mashProgress
         local max = math.max(1, tonumber(self.MashCount) or 1)
         print(string.format("[BreakableDoor] Mash %d/%d on '%s'", self._mashProgress, max, self._doorName))
 
