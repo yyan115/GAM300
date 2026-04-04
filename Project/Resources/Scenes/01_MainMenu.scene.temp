@@ -23733,6 +23733,7 @@
                         {
                             "type": "std::vector<GUID_128>",
                             "data": [
+                                "00344b360d44f976-0004b8948a07b92d",
                                 "006a1317f7523f1b-00047ca992000079",
                                 "006a1317aa69a9fc-00047cae8600031b",
                                 "006a13179db3b60d-00047cae22000317",
@@ -23754,6 +23755,230 @@
         },
         {
             "id": 183,
+            "guid": "00344b360d44f976-0004b8948a07b92d",
+            "components": {
+                "NameComponent": {
+                    "name": "BlackTint"
+                },
+                "TagComponent": {
+                    "tagIndex": 0
+                },
+                "LayerComponent": {
+                    "layerIndex": 0
+                },
+                "SiblingIndexComponent": {
+                    "siblingIndex": 19
+                },
+                "Transform": {
+                    "type": "Transform",
+                    "data": [
+                        {
+                            "type": "Vector3D",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 1250
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 550
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                }
+                            ]
+                        },
+                        {
+                            "type": "Vector3D",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 3000
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 1200
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                }
+                            ]
+                        },
+                        {
+                            "type": "Quaternion",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                }
+                            ]
+                        }
+                    ]
+                },
+                "SpriteRenderComponent": {
+                    "type": "SpriteRenderComponent",
+                    "data": [
+                        {
+                            "type": "bool",
+                            "data": true
+                        },
+                        "003514c13e543018-00040b1292000001",
+                        "00374a216e66dbbc-000331fc80000069",
+                        {
+                            "type": "Vector3D",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                }
+                            ]
+                        },
+                        {
+                            "type": "Vector3D",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 100
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 100
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 1
+                                }
+                            ]
+                        },
+                        {
+                            "type": "float",
+                            "data": 0
+                        },
+                        {
+                            "type": "Vector3D",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                }
+                            ]
+                        },
+                        {
+                            "type": "float",
+                            "data": 0.686275
+                        },
+                        {
+                            "type": "bool",
+                            "data": false
+                        },
+                        {
+                            "type": "bool",
+                            "data": true
+                        },
+                        {
+                            "type": "int",
+                            "data": 0
+                        },
+                        {
+                            "type": "int",
+                            "data": 2
+                        },
+                        {
+                            "type": "Vector3D",
+                            "data": [
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                },
+                                {
+                                    "type": "float",
+                                    "data": 0
+                                }
+                            ]
+                        },
+                        {
+                            "type": "int",
+                            "data": 0
+                        },
+                        {
+                            "type": "int",
+                            "data": 1
+                        },
+                        {
+                            "type": "float",
+                            "data": 1
+                        },
+                        {
+                            "type": "float",
+                            "data": 0.5
+                        },
+                        {
+                            "type": "float",
+                            "data": 0.3
+                        },
+                        {
+                            "type": "float",
+                            "data": 0.3
+                        },
+                        {
+                            "type": "bool",
+                            "data": false
+                        }
+                    ]
+                },
+                "ParentComponent": {
+                    "type": "ParentComponent",
+                    "data": [
+                        "004790c748313326-00047cb8e40001bb"
+                    ]
+                },
+                "ActiveComponent": {
+                    "type": "ActiveComponent",
+                    "data": [
+                        {
+                            "type": "bool",
+                            "data": true
+                        }
+                    ]
+                }
+            }
+        },
+        {
+            "id": 184,
             "guid": "006a1317f7523f1b-00047ca992000079",
             "components": {
                 "NameComponent": {
@@ -23793,11 +24018,11 @@
                             "data": [
                                 {
                                     "type": "float",
-                                    "data": 978.9
+                                    "data": 1189
                                 },
                                 {
                                     "type": "float",
-                                    "data": 300
+                                    "data": 318
                                 },
                                 {
                                     "type": "float",
@@ -23835,7 +24060,7 @@
                             "type": "bool",
                             "data": true
                         },
-                        "006a1317a172f785-00047ca88e000001",
+                        "00344b3678d60384-0004b893e807b92b",
                         "00374a216e66dbbc-000331fc80000069",
                         {
                             "type": "Vector3D",
@@ -23910,7 +24135,7 @@
                         },
                         {
                             "type": "int",
-                            "data": 2
+                            "data": 3
                         },
                         {
                             "type": "Vector3D",
@@ -23977,7 +24202,7 @@
             }
         },
         {
-            "id": 184,
+            "id": 185,
             "guid": "006a1317aa69a9fc-00047cae8600031b",
             "components": {
                 "NameComponent": {
@@ -24067,7 +24292,7 @@
                             "type": "unsigned",
                             "data": 32
                         },
-                        "00602042db559215-00036778be000001",
+                        "005d9401210da764-0004777c0a00ade7",
                         "00374a2171ad928d-000331fc8200006d",
                         {
                             "type": "Vector3D",
@@ -24091,15 +24316,15 @@
                             "data": [
                                 {
                                     "type": "float",
-                                    "data": 1
+                                    "data": 0
                                 },
                                 {
                                     "type": "float",
-                                    "data": 1
+                                    "data": 0
                                 },
                                 {
                                     "type": "float",
-                                    "data": 1
+                                    "data": 0
                                 }
                             ]
                         },
@@ -24117,7 +24342,7 @@
                         },
                         {
                             "type": "int",
-                            "data": 3
+                            "data": 4
                         },
                         {
                             "type": "Matrix4x4",
@@ -24224,7 +24449,7 @@
             }
         },
         {
-            "id": 185,
+            "id": 186,
             "guid": "006a13179db3b60d-00047cae22000317",
             "components": {
                 "NameComponent": {
@@ -24306,7 +24531,7 @@
                             "type": "bool",
                             "data": true
                         },
-                        "007c7b811bd2e089-00047d15be00b1f5",
+                        "007c7b810cab88f7-00047d15de00b1fb",
                         "00374a216e66dbbc-000331fc80000069",
                         {
                             "type": "Vector3D",
@@ -24381,7 +24606,7 @@
                         },
                         {
                             "type": "int",
-                            "data": 3
+                            "data": 4
                         },
                         {
                             "type": "Vector3D",
@@ -24563,7 +24788,7 @@
             }
         },
         {
-            "id": 186,
+            "id": 187,
             "guid": "006a1317f85ad776-00047cae7a000319",
             "components": {
                 "NameComponent": {
@@ -24645,7 +24870,7 @@
                             "type": "bool",
                             "data": true
                         },
-                        "007c7b817820b87f-00047d16ec00b1fd",
+                        "007c7b815635396f-00047d170800b201",
                         "00374a216e66dbbc-000331fc80000069",
                         {
                             "type": "Vector3D",
@@ -24720,7 +24945,7 @@
                         },
                         {
                             "type": "int",
-                            "data": 3
+                            "data": 4
                         },
                         {
                             "type": "Vector3D",
@@ -24902,7 +25127,7 @@
             }
         },
         {
-            "id": 187,
+            "id": 188,
             "guid": "007fd3f4874fd776-0004a72d22000095",
             "components": {
                 "NameComponent": {
@@ -25007,7 +25232,7 @@
             }
         },
         {
-            "id": 188,
+            "id": 189,
             "guid": "007fd3f4972be0b1-0004a72d22000097",
             "components": {
                 "NameComponent": {
@@ -25201,7 +25426,7 @@
             }
         },
         {
-            "id": 189,
+            "id": 190,
             "guid": "007fd3f4b05a177d-0004a72d22000099",
             "components": {
                 "NameComponent": {
@@ -25312,7 +25537,7 @@
             }
         },
         {
-            "id": 190,
+            "id": 191,
             "guid": "007fd3f4bc946b8e-0004a72d2200009b",
             "components": {
                 "NameComponent": {
@@ -25665,7 +25890,7 @@
             }
         },
         {
-            "id": 191,
+            "id": 192,
             "guid": "007fd3f495ed15e3-0004a72d2200009d",
             "components": {
                 "NameComponent": {
@@ -26031,7 +26256,7 @@
             }
         },
         {
-            "id": 192,
+            "id": 193,
             "guid": "007fd3f48767ed6f-0004a72d2200009f",
             "components": {
                 "NameComponent": {
@@ -26287,7 +26512,7 @@
             }
         },
         {
-            "id": 193,
+            "id": 194,
             "guid": "007fd3f4c8bf3c55-0004a72d220000a1",
             "components": {
                 "NameComponent": {
@@ -26543,7 +26768,7 @@
             }
         },
         {
-            "id": 194,
+            "id": 195,
             "guid": "007fd3f4ad48f6ff-0004a72d220000a3",
             "components": {
                 "NameComponent": {
@@ -26799,7 +27024,7 @@
             }
         },
         {
-            "id": 195,
+            "id": 196,
             "guid": "007fd3f489d17b50-0004a72d220000a5",
             "components": {
                 "NameComponent": {
@@ -27163,7 +27388,7 @@
             }
         },
         {
-            "id": 196,
+            "id": 197,
             "guid": "007fd3f4c668ec1c-0004a72d220000a7",
             "components": {
                 "NameComponent": {
@@ -27267,7 +27492,7 @@
             }
         },
         {
-            "id": 197,
+            "id": 198,
             "guid": "007fd3f49d63c817-0004a72d220000a9",
             "components": {
                 "NameComponent": {
@@ -27371,7 +27596,7 @@
             }
         },
         {
-            "id": 198,
+            "id": 199,
             "guid": "007fd3f4db57df33-0004a72d220000ab",
             "components": {
                 "NameComponent": {
@@ -27464,7 +27689,7 @@
             }
         },
         {
-            "id": 199,
+            "id": 200,
             "guid": "007fd3f4a6c9fd09-0004a72d220000ad",
             "components": {
                 "NameComponent": {
@@ -27828,7 +28053,7 @@
             }
         },
         {
-            "id": 200,
+            "id": 201,
             "guid": "007fd3f4d070e7c3-0004a72d220000af",
             "components": {
                 "NameComponent": {
@@ -27921,7 +28146,7 @@
             }
         },
         {
-            "id": 201,
+            "id": 202,
             "guid": "007fd3f4d11c02fb-0004a72d220000b1",
             "components": {
                 "NameComponent": {
@@ -28111,7 +28336,7 @@
             }
         },
         {
-            "id": 202,
+            "id": 203,
             "guid": "007fd3f48357cfb7-0004a72d220000b3",
             "components": {
                 "NameComponent": {
@@ -28301,7 +28526,7 @@
             }
         },
         {
-            "id": 203,
+            "id": 204,
             "guid": "007fd3f4f478d945-0004a72d220000b5",
             "components": {
                 "NameComponent": {
@@ -28654,7 +28879,7 @@
             }
         },
         {
-            "id": 204,
+            "id": 205,
             "guid": "007fd3f4b3953da0-0004a72d220000b7",
             "components": {
                 "NameComponent": {
@@ -28764,7 +28989,7 @@
             }
         },
         {
-            "id": 205,
+            "id": 206,
             "guid": "007fd3f4b489ada9-0004a72d220000b9",
             "components": {
                 "NameComponent": {
@@ -29117,7 +29342,7 @@
             }
         },
         {
-            "id": 206,
+            "id": 207,
             "guid": "007fd3f48d6f836e-0004a72d220000bb",
             "components": {
                 "NameComponent": {
@@ -29470,7 +29695,7 @@
             }
         },
         {
-            "id": 207,
+            "id": 208,
             "guid": "007fd3f4b1d43ef7-0004a72d220000bd",
             "components": {
                 "NameComponent": {
@@ -29823,7 +30048,7 @@
             }
         },
         {
-            "id": 208,
+            "id": 209,
             "guid": "007fd3f4d5aacd10-0004a72d220000bf",
             "components": {
                 "NameComponent": {
@@ -30176,7 +30401,7 @@
             }
         },
         {
-            "id": 209,
+            "id": 210,
             "guid": "007fd3f4ba297ad7-0004a72d220000c1",
             "components": {
                 "NameComponent": {
@@ -30529,7 +30754,7 @@
             }
         },
         {
-            "id": 210,
+            "id": 211,
             "guid": "007fd3f4bd35530c-0004a72d220000c3",
             "components": {
                 "NameComponent": {
@@ -30719,7 +30944,7 @@
             }
         },
         {
-            "id": 211,
+            "id": 212,
             "guid": "007fd3f4d80c163a-0004a72d220000c5",
             "components": {
                 "NameComponent": {
@@ -30909,7 +31134,7 @@
             }
         },
         {
-            "id": 212,
+            "id": 213,
             "guid": "007fd3f497c87a7a-0004a72d220000c9",
             "components": {
                 "NameComponent": {
@@ -31120,7 +31345,7 @@
             }
         },
         {
-            "id": 213,
+            "id": 214,
             "guid": "007fd3f4b68ed3df-0004a72d220000cb",
             "components": {
                 "NameComponent": {
@@ -31308,7 +31533,7 @@
             }
         },
         {
-            "id": 214,
+            "id": 215,
             "guid": "007fd3f4c96005c7-0004a72d220000cd",
             "components": {
                 "NameComponent": {
@@ -31519,7 +31744,7 @@
             }
         },
         {
-            "id": 215,
+            "id": 216,
             "guid": "007fd3f4a9a3337c-0004a72d220000cf",
             "components": {
                 "NameComponent": {
@@ -31872,7 +32097,7 @@
             }
         },
         {
-            "id": 216,
+            "id": 217,
             "guid": "007fd3f481f50c68-0004a72d220000e3",
             "components": {
                 "NameComponent": {
@@ -32066,7 +32291,7 @@
             }
         },
         {
-            "id": 217,
+            "id": 218,
             "guid": "007fd3f4f8198c3b-0004a72d220000e5",
             "components": {
                 "NameComponent": {
@@ -32256,7 +32481,7 @@
             }
         },
         {
-            "id": 218,
+            "id": 219,
             "guid": "007fd3f4e1ee8a2e-0004a72d220000e7",
             "components": {
                 "NameComponent": {
@@ -32447,7 +32672,7 @@
         },
         {
             "PrefabPath": "../../Resources/Prefabs/Lantern.prefab",
-            "id": 219,
+            "id": 220,
             "guid": "001dc74ce32d0fdd-0004a9e658022423",
             "Name": "Lantern",
             "SiblingIndex": 15,
@@ -32545,7 +32770,7 @@
             ],
             "Children": [
                 {
-                    "id": 220,
+                    "id": 221,
                     "guid": "001dc74c9d271972-0004a9e658022425",
                     "Name": "Light (1) (2)",
                     "SiblingIndex": 50001,
@@ -32662,7 +32887,7 @@
                     ]
                 },
                 {
-                    "id": 221,
+                    "id": 222,
                     "guid": "001dc74cb0da1503-0004a9e658022427",
                     "Name": "column_low (4) (1)",
                     "SiblingIndex": 50001,
@@ -32674,7 +32899,7 @@
                     }
                 },
                 {
-                    "id": 222,
+                    "id": 223,
                     "guid": "001dc74cea6237eb-0004a9e658022429",
                     "Name": "Light (1) (1) (1)",
                     "SiblingIndex": 50001,
@@ -32793,7 +33018,7 @@
             ]
         },
         {
-            "id": 223,
+            "id": 224,
             "guid": "007d76a3679a99fa-0004b630620024c1",
             "components": {
                 "NameComponent": {
@@ -33011,7 +33236,7 @@
             }
         },
         {
-            "id": 224,
+            "id": 225,
             "guid": "007d76a3389de472-0004b630620024c3",
             "components": {
                 "NameComponent": {
@@ -33205,7 +33430,7 @@
             }
         },
         {
-            "id": 225,
+            "id": 226,
             "guid": "007d76a358cdb0a9-0004b630620024c5",
             "components": {
                 "NameComponent": {
@@ -33395,7 +33620,7 @@
             }
         },
         {
-            "id": 226,
+            "id": 227,
             "guid": "007d76a342fe3676-0004b630620024c7",
             "components": {
                 "NameComponent": {
@@ -33589,7 +33814,7 @@
             }
         },
         {
-            "id": 227,
+            "id": 228,
             "guid": "0043ce37977a037a-0004b693160011b1",
             "components": {
                 "NameComponent": {
@@ -33687,7 +33912,7 @@
             }
         },
         {
-            "id": 228,
+            "id": 229,
             "guid": "0043ce37ddcde1fa-0004b693160011b9",
             "components": {
                 "NameComponent": {
@@ -33911,7 +34136,7 @@
             }
         },
         {
-            "id": 229,
+            "id": 230,
             "guid": "0043ce37fd3ecb83-0004b698fa0023cf",
             "components": {
                 "NameComponent": {
@@ -34129,7 +34354,7 @@
             }
         },
         {
-            "id": 230,
+            "id": 231,
             "guid": "0061fb7a6fc3a78d-0004b7059a00000b",
             "components": {
                 "NameComponent": {
