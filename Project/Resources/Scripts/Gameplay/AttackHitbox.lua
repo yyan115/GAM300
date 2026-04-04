@@ -87,7 +87,7 @@ return Component {
 
                 if data and data.isSlam then
                     self._currentHitType = "SLAM"
-                elseif data and (data.state == "lift_attack") then
+                elseif data and data.isLift then
                     self._currentHitType = "LIFT"
                 elseif data and data.isAerial then
                     self._currentHitType = "AIR"
@@ -104,6 +104,19 @@ return Component {
 
                 print(string.format("[AttackHitbox] HIT WINDOW OPEN: hitType=%s damage=%d knockback=%.1f",
                     self._currentHitType, self._currentDamage, self._currentKnockback))
+
+                -- LIFT: the weapon sweeps upward so OnTriggerEnter may never fire
+                -- against a grounded enemy. Broadcast a proximity event instead —
+                -- each EnemyAI instance will self-check its distance to the player
+                -- and apply the hit if close enough.
+                if self._currentHitType == "LIFT" then
+                    if event_bus and event_bus.publish then
+                        event_bus.publish("lift_attack_active", {
+                            damage    = self._currentDamage,
+                            knockback = self._currentKnockback,
+                        })
+                    end
+                end
 
                 if self._rb then self._rb:SetEnabled(true) end
             end)
