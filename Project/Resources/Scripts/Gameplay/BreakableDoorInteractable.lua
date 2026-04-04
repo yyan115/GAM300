@@ -195,10 +195,26 @@ return Component {
             self._basePos.x,  self._basePos.y,  self._basePos.z,
             self._baseQuat.w, self._baseQuat.x, self._baseQuat.y, self._baseQuat.z))
 
-        -- ── Global registry + broken flag ─────────────────────────────────
-        if not _G.BreakableDoorRegistry then _G.BreakableDoorRegistry = {} end
+        -- ── Global registry + per-group broken flag ───────────────────────
+        -- Each door (or linked pair) gets its own broken state so that unrelated
+        -- standalone doors are not blocked when another group finishes.
+        -- Group key: sorted "DoorA|DoorB" for a pair, or just "DoorName" standalone.
+        if not _G.BreakableDoorRegistry     then _G.BreakableDoorRegistry     = {} end
+        if not _G.BreakableDoorGroupBroken  then _G.BreakableDoorGroupBroken  = {} end
         _G.BreakableDoorRegistry[self._doorName] = self
-        if _G.BreakableDoorsBroken == nil then _G.BreakableDoorsBroken = false end
+
+        local linkedRaw  = self._cleanName(self.LinkedDoorName)
+        if linkedRaw ~= "" then
+            local a, b = self._doorName, linkedRaw
+            if b < a then a, b = b, a end          -- sort so both sides get the same key
+            self._groupKey = a .. "|" .. b
+        else
+            self._groupKey = self._doorName
+        end
+        -- Initialise this group's broken state only if not already set.
+        if _G.BreakableDoorGroupBroken[self._groupKey] == nil then
+            _G.BreakableDoorGroupBroken[self._groupKey] = false
+        end
 
         -- ── Deactivate dynamic door at start ──────────────────────────────
         local dynName = self._cleanName(self.DynamicDoorName)
@@ -378,8 +394,6 @@ return Component {
 
     -- =========================================================================
     -- INTERNAL — load clip then play a one-shot on this door's AudioComponent.
-    -- SetClip must be called before PlayOneShot — PlayOneShot plays whatever
-    -- clip is currently loaded; it does not accept a GUID argument.
     -- =========================================================================
 
     _playDoorSound = function(self, clipList, vol)
@@ -517,15 +531,15 @@ return Component {
 
     -- =========================================================================
     -- INTERNAL — drive the full final-mash sequence for self + linked door.
-    -- Guarded by _G.BreakableDoorsBroken so only one instance runs it once.
+    -- Guarded by _G.BreakableDoorGroupBroken so only one instance runs it once per group.
     -- =========================================================================
 
     _doFinalMash = function(self)
-        if _G.BreakableDoorsBroken then
+        if _G.BreakableDoorGroupBroken[self._groupKey] then
             print("[BreakableDoor] Already broken — skipping duplicate final mash")
             return
         end
-        _G.BreakableDoorsBroken = true
+        _G.BreakableDoorGroupBroken[self._groupKey] = true
         _G.chain_retract_veto   = nil
         print("[BreakableDoor] FINAL MASH — breaking doors!")
 
@@ -568,7 +582,7 @@ return Component {
     -- =========================================================================
 
     _onEndpointMoved = function(self, payload)
-        if _G.BreakableDoorsBroken then return end
+        if _G.BreakableDoorGroupBroken[self._groupKey] then return end
         if self._mashDone          then return end
 
         -- Track previous endpoint position for segment-sweep
