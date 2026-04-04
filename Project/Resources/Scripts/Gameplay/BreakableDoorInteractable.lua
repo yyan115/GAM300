@@ -90,15 +90,20 @@ return Component {
         LinkedDoorName      = "",
 
         -- ── Door sounds ───────────────────────────────────────────────────
-        -- Audio clip GUID played on every normal mash tap (before the final).
-        MashSoundClip       = {},
-        -- Volume for the normal-mash sound (0.0 – 1.0).
-        MashSoundVolume     = 0.8,
-
-        -- Audio clip GUID played on the final mash (door breaks).
-        FinalMashSoundClip  = {},
-        -- Volume for the final-mash sound (0.0 – 1.0).
+        MashSoundClip        = {},
+        MashSoundVolume      = 0.8,
+        FinalMashSoundClip   = {},
         FinalMashSoundVolume = 1.0,
+
+        -- ── Camera effects ────────────────────────────────────────────────
+        MashShakeIntensity      = 0.25,
+        MashShakeDuration       = 0.20,
+        MashChromaticIntensity  = 0.30,
+        MashChromaticDuration   = 0.25,
+        FinalShakeIntensity     = 0.70,
+        FinalShakeDuration      = 0.45,
+        FinalChromaticIntensity = 0.75,
+        FinalChromaticDuration  = 0.50,
     },
 
     -- =========================================================================
@@ -226,7 +231,6 @@ return Component {
         self._audioComp = nil
         pcall(function()
             if self._entityId then
-                -- Try component lookup first; fall back to name-based search.
                 local ac = GetComponent and GetComponent(self._entityId, "AudioComponent")
                 if ac then
                     self._audioComp = ac
@@ -373,19 +377,26 @@ return Component {
     end,
 
     -- =========================================================================
-    -- INTERNAL — play a one-shot sound on this door's AudioComponent.
-    -- clipGuid : audio clip GUID string (from inspector field)
-    -- vol      : volume, 0.0–1.0
+    -- INTERNAL — load clip then play a one-shot on this door's AudioComponent.
+    -- SetClip must be called before PlayOneShot — PlayOneShot plays whatever
+    -- clip is currently loaded; it does not accept a GUID argument.
     -- =========================================================================
 
-    _playDoorSound = function(self, clipGuid, vol)
-        local clip = tostring(clipGuid or ""):match("^%s*(.-)%s*$")
-        if clip == "" then return end
+    _playDoorSound = function(self, clipList, vol)
+        local clip
+        if type(clipList) == "table" then
+            if #clipList == 0 then return end
+            clip = clipList[math.random(1, #clipList)]
+        else
+            clip = tostring(clipList or ""):match("^%s*(.-)%s*$")
+        end
+        if not clip or clip == "" then return end
         local ac = self._audioComp
         if not ac then return end
         pcall(function()
+            ac:SetClip(clip)
             ac:SetVolume(math.max(0.0, math.min(1.0, tonumber(vol) or 1.0)))
-            ac:PlayOneShot(clip)
+            ac:PlayOneShot()
         end)
     end,
 
@@ -399,8 +410,19 @@ return Component {
         self._currentStep = step
         self:_applyStepTransform(step)
 
-        -- Play normal-mash sound (only on the primary/hooked door, not the linked mirror).
         self:_playDoorSound(self.MashSoundClip, self.MashSoundVolume)
+
+        if _G.event_bus and _G.event_bus.publish then
+            _G.event_bus.publish("camera_shake", {
+                intensity = tonumber(self.MashShakeIntensity)     or 0.25,
+                duration  = tonumber(self.MashShakeDuration)      or 0.20,
+                frequency = 25.0,
+            })
+            _G.event_bus.publish("fx_chromatic", {
+                intensity = tonumber(self.MashChromaticIntensity) or 0.30,
+                duration  = tonumber(self.MashChromaticDuration)  or 0.25,
+            })
+        end
 
         local linkedName = self._cleanName(self.LinkedDoorName)
         if linkedName ~= "" then
@@ -507,8 +529,19 @@ return Component {
         _G.chain_retract_veto   = nil
         print("[BreakableDoor] FINAL MASH — breaking doors!")
 
-        -- Play final-mash sound immediately (before any deactivation).
         self:_playDoorSound(self.FinalMashSoundClip, self.FinalMashSoundVolume)
+
+        if _G.event_bus and _G.event_bus.publish then
+            _G.event_bus.publish("camera_shake", {
+                intensity = tonumber(self.FinalShakeIntensity)     or 0.70,
+                duration  = tonumber(self.FinalShakeDuration)      or 0.45,
+                frequency = 20.0,
+            })
+            _G.event_bus.publish("fx_chromatic", {
+                intensity = tonumber(self.FinalChromaticIntensity) or 0.75,
+                duration  = tonumber(self.FinalChromaticDuration)  or 0.50,
+            })
+        end
 
         -- Trigger chain retraction now that the veto is cleared
         if _G.event_bus and _G.event_bus.publish then
