@@ -1474,26 +1474,32 @@ void GraphicsManager::RunDepthPrepass(const glm::mat4& view, const glm::mat4& pr
 
 void GraphicsManager::RenderSceneForShadows(Shader& depthShader)
 {
-	static int frameCount = 0;
-	frameCount++;
-	if (frameCount <= 5) {
-		std::cout << "[Shadow] RenderSceneForShadows called - frame " << frameCount
-			<< ", queue size: " << renderQueue.size() << std::endl;
-	}
+	// Iterate ECS entities directly instead of renderQueue.
+	// renderQueue only contains camera-frustum-visible objects, so objects just
+	// outside the camera view would be missing from shadow maps, causing shadows
+	// to pop out the moment their caster left the screen edge.
+	// Shadow rendering only needs the light-sphere cull (objects outside the
+	// light's range can't cast visible shadows anyway).
+	ECSManager& ecsManager = ECSRegistry::GetInstance().GetActiveECSManager();
+	if (!ecsManager.modelSystem)
+		return;
 
 	int count = 0;
-	for (const auto& renderItem : renderQueue)
+	for (const auto& entity : ecsManager.modelSystem->entities)
 	{
-		const ModelRenderComponent* modelItem = dynamic_cast<const ModelRenderComponent*>(renderItem.get());
-		if (!modelItem || !modelItem->isVisible || !modelItem->model)
+		if (!ecsManager.IsEntityActiveInHierarchy(entity))
 			continue;
 
-		glm::mat4 modelMatrix = modelItem->transform.ConvertToGLM();
+		auto& modelComp = ecsManager.GetComponent<ModelRenderComponent>(entity);
+		if (!modelComp.isVisible || !modelComp.model)
+			continue;
+
+		glm::mat4 modelMatrix = ecsManager.GetComponent<Transform>(entity).worldMatrix.ConvertToGLM();
 
 		// Point light sphere culling: skip objects outside the light's range
 		if (m_shadowFarPlane > 0.0f)
 		{
-			AABB worldBBox = modelItem->model->GetBoundingBox().Transform(modelMatrix);
+			AABB worldBBox = modelComp.model->GetBoundingBox().Transform(modelMatrix);
 			float sqDist = 0.0f;
 			for (int i = 0; i < 3; ++i)
 			{
@@ -1511,16 +1517,16 @@ void GraphicsManager::RenderSceneForShadows(Shader& depthShader)
 		depthShader.setMat4("model", modelMatrix);
 
 		// Handle animation
-		depthShader.setBool("isAnimated", modelItem->HasAnimation());
-		if (modelItem->HasAnimation() && modelItem->animator)
+		depthShader.setBool("isAnimated", modelComp.HasAnimation());
+		if (modelComp.HasAnimation() && modelComp.animator)
 		{
-			const auto& transforms = modelItem->mFinalBoneMatrices;
+			const auto& transforms = modelComp.mFinalBoneMatrices;
 			if (!transforms.empty())
 				depthShader.setMat4Array("finalBonesMatrices[0]", transforms.data(), static_cast<GLsizei>(transforms.size()));
 		}
 
 		// Draw model geometry only (no materials)
-		modelItem->model->DrawDepthOnly();
+		modelComp.model->DrawDepthOnly();
 	}
 
 	// Also render instanced batches — they bypass the renderQueue so they'd otherwise
