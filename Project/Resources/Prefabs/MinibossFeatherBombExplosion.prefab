@@ -1,7 +1,7 @@
 {
     "prefab_entities": [
         {
-            "id": 2887,
+            "id": 0,
             "guid": "0014fa288ea54126-0004b6cb220151f3",
             "components": {
                 "PrefabLinkComponent": {
@@ -476,22 +476,48 @@
                             "entryFunction": "OnInit",
                             "autoInvokeEntry": true,
                             "instanceState": {
-                                "FlashDuration": 0.3,
-                                "__created_at": 1775232054.0,
-                                "TargetBloomIntensity": 10.0,
-                                "__meta": {},
-                                "_private": {},
-                                "_subscriptions": {},
+                                "DeserializeFields": null,
                                 "__field_list": {
-                                    "TargetBloomIntensity": 10.0,
+                                    "FlashDuration": 0.2,
                                     "AOEExplosionRadius": 5.0,
                                     "AOEExplosionDmg": 10.0,
-                                    "FlashDuration": 0.2
+                                    "TargetBloomIntensity": 10.0
                                 },
-                                "__engine_script_path": "../../resources/scripts/gameplay/minibossfeatherbombexplosion.lua",
+                                "_subscriptions": {},
+                                "Move": null,
+                                "__created_at": 1775232054.0,
+                                "__meta": {},
+                                "GetTransform": null,
+                                "Start": null,
+                                "Update": null,
+                                "Every": null,
+                                "_private": {},
+                                "SetRotation": null,
+                                "Subscribe": null,
+                                "UpdateSafe": null,
+                                "Destroy": null,
+                                "SetScale": null,
+                                "AwakeSafe": null,
+                                "StartSafe": null,
+                                "GetRotation": null,
+                                "AOEExplosionRadius": 2.0,
+                                "SerializeFields": null,
+                                "_call_lifecycle": null,
+                                "SetPosition": null,
                                 "_transform_fetched": false,
+                                "__engine_script_path": "../../resources/scripts/gameplay/minibossfeatherbombexplosion.lua",
+                                "DisableSafe": null,
                                 "AOEExplosionDmg": 10.0,
-                                "AOEExplosionRadius": 2.0
+                                "OnDisable": null,
+                                "FlashDuration": 0.3,
+                                "DebugTransform": null,
+                                "After": null,
+                                "GetScale": null,
+                                "Awake": null,
+                                "TargetBloomIntensity": 5.0,
+                                "GetPosition": null,
+                                "Unsubscribe": null,
+                                "TargetLightIntensity": 0.75
                             }
                         }
                     ]
@@ -505,7 +531,7 @@
                         },
                         {
                             "type": "float",
-                            "data": 10
+                            "data": 0
                         }
                     ],
                     "bloomColor": {
@@ -520,7 +546,7 @@
             }
         },
         {
-            "id": 2888,
+            "id": 1,
             "guid": "0014fa2880471190-0004b6cb220151f5",
             "components": {
                 "NameComponent": {
