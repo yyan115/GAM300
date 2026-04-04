@@ -164,6 +164,8 @@ return Component {
 
         -- Ranged charge (phase 1 Move1)
         P1_RangedCharge = 0.75,
+        -- Duration in melee range before firing the feather bomb punisher move in phase 1
+        P1_MeleePunishTime = 5.0,
 
         -- Shout AOE
         ShoutRadius = 4.0,
@@ -236,6 +238,7 @@ return Component {
 
         P3_FeatherCastTime = 0.25,         -- longer "windup" before firing all 5
         P3_FeatherCooldown = 2.00,         -- longer cooldown after firing (between rounds)
+        FeatherBombProjectilePrefab = "Resources/Prefabs/Knife_FeatherBomb.prefab",
         P3_FeatherBombExplosionPrefabPath = "Resources/Prefabs/MinibossFeatherBombExplosion.prefab",
 
         -- Tile activation timing (keep activating tile, but slower)
@@ -509,47 +512,47 @@ return Component {
             self:ForceNextPhase()
         end
 
-        -- Tick pending rain explosion "land" events
-        do
-            local q = self._pendingRainExplosions
-            if q and #q > 0 then
-                for i = #q, 1, -1 do
-                    local e = q[i]
-                    e.t = (e.t or 0) - dtSec
-                    if e.t <= 0 then
-                        -- The payload contains an array of 5 targeted cells. 
-                        -- We must spawn an explosion for each one.
-                        if e.payload and e.payload.cells then
-                            for _, cellNum in ipairs(e.payload.cells) do
+        -- -- Tick pending rain explosion "land" events
+        -- do
+        --     local q = self._pendingRainExplosions
+        --     if q and #q > 0 then
+        --         for i = #q, 1, -1 do
+        --             local e = q[i]
+        --             e.t = (e.t or 0) - dtSec
+        --             if e.t <= 0 then
+        --                 -- The payload contains an array of 5 targeted cells. 
+        --                 -- We must spawn an explosion for each one.
+        --                 if e.payload and e.payload.cells then
+        --                     for _, cellNum in ipairs(e.payload.cells) do
                                 
-                                -- 1. Calculate the exact world X and Z for this specific cell
-                                local gx, gz = self:_GetGridXZ(cellNum)
+        --                         -- 1. Calculate the exact world X and Z for this specific cell
+        --                         local gx, gz = self:_GetGridXZ(cellNum)
                                 
-                                -- 2. Get the ground Y level
-                                local gy = (Nav and Nav.GetGroundY and Nav.GetGroundY(self.entityId)) or select(2, self:GetPosition()) or 0
+        --                         -- 2. Get the ground Y level
+        --                         local gy = (Nav and Nav.GetGroundY and Nav.GetGroundY(self.entityId)) or select(2, self:GetPosition()) or 0
                                 
-                                -- 3. Instantiate the prefab
-                                local explosionPrefabId = Prefab.InstantiatePrefab(self.P3_FeatherBombExplosionPrefabPath)
-                                local explosionPrefabTr = GetComponent(explosionPrefabId, "Transform")
+        --                         -- 3. Instantiate the prefab
+        --                         local explosionPrefabId = Prefab.InstantiatePrefab(self.P3_FeatherBombExplosionPrefabPath)
+        --                         local explosionPrefabTr = GetComponent(explosionPrefabId, "Transform")
 
-                                -- 4. Set the prefab's position to the ground at the cell's center
-                                if explosionPrefabTr then
-                                    explosionPrefabTr.localPosition.x = gx
-                                    explosionPrefabTr.localPosition.y = gy
-                                    explosionPrefabTr.localPosition.z = gz
-                                    explosionPrefabTr.isDirty = true
-                                end
-                            end
-                        end
+        --                         -- 4. Set the prefab's position to the ground at the cell's center
+        --                         if explosionPrefabTr then
+        --                             explosionPrefabTr.localPosition.x = gx
+        --                             explosionPrefabTr.localPosition.y = gy
+        --                             explosionPrefabTr.localPosition.z = gz
+        --                             explosionPrefabTr.isDirty = true
+        --                         end
+        --                     end
+        --                 end
 
-                        if _G.event_bus and _G.event_bus.publish then
-                            _G.event_bus.publish("boss_rain_explosives", e.payload)
-                        end
-                        table.remove(q, i)
-                    end
-                end
-            end
-        end
+        --                 if _G.event_bus and _G.event_bus.publish then
+        --                     _G.event_bus.publish("boss_rain_explosives", e.payload)
+        --                 end
+        --                 table.remove(q, i)
+        --             end
+        --         end
+        --     end
+        -- end
 
         -- 1) Ground physics only when NOT in air
         if not self._inAir then
@@ -1470,11 +1473,26 @@ return Component {
             return
         end
 
-        -- Interrupt current attack/cast so delayed hitboxes/projectiles do not fire
-        self:_CancelCurrentAttackMove("HURT")
+        -- [NEW] Check for Super Armor!
+        local isUninterruptible = self:IsInMove("P1FeatherBombPunish")
 
-        -- 1) Always queue a short “hurt reaction window”
-        self:EnqueueMoveFront("HurtReact", { duration = self.HurtReactDuration or 0.35 })
+        -- Only play hurt animations and interrupt moves if NOT in super armor
+        if not isUninterruptible then
+            local myRandomValue = math.random(1, 3)
+            if myRandomValue == 1 then
+                self._animator:SetTrigger("Hurt1")
+            elseif myRandomValue == 2 then
+                self._animator:SetTrigger("Hurt2")
+            else
+                self._animator:SetTrigger("Hurt3")
+            end
+
+            -- Interrupt current attack/cast so delayed hitboxes/projectiles do not fire
+            self:_CancelCurrentAttackMove("HURT")
+
+            -- Always queue a short “hurt reaction window”
+            self:EnqueueMoveFront("HurtReact", { duration = self.HurtReactDuration or 0.35 })
+        end
 
         -- 2) Queue shout ONLY if we crossed a Phase 1 checkpoint
         if (self._phase or self:_ComputePhase()) == 1 then
@@ -2091,7 +2109,7 @@ return Component {
             windup = self.BossMeleeWindup or 0.4,
             range  = self.BossMeleeRange or 2.95,
             dmg    = 4,
-            postDelay = 0.4
+            postDelay = 1.0
         })
     end,
 
@@ -2235,6 +2253,66 @@ return Component {
             end
 
             if m.t >= (m.hitAt + (m.postDelay or 0.4)) then
+                self:_EndMove()
+            end
+            return
+        end
+
+        -------------------------------------------------
+        -- Phase 1: Melee Punish (Single Feather Bomb)
+        -------------------------------------------------
+        if m.kind == "P1FeatherBombPunish" then
+            if m.step == 0 then
+                self:FacePlayer()
+                if self._animator then self._animator:SetTrigger("FeatherBomb") end
+                self:_publishSFX("rangedAttack")
+                
+                m.step = 1
+                m.fireAt = (m.charge or 0.5)
+            end
+
+            if not m.didFire and m.t >= m.fireAt then
+                m.didFire = true
+                
+                -- Find the specific grid cell the player is standing on
+                local cellNum = self:_GetPlayerGridNumpad()
+                local yOff = self.P3_FeatherTargetYOffset or 0.25
+                local gx, gz = self:_GetGridXZ(cellNum)
+                local gy = (Nav and Nav.GetGroundY and Nav.GetGroundY(self.entityId)) or select(2, self:GetPosition()) or 0
+                local sx, sy, sz = self:_GetSpawnPos()
+                
+                -- 1. Spawn the new smart projectile
+                local bombId = Prefab.InstantiatePrefab(self.FeatherBombProjectilePrefab)
+                
+                -- 2. Leave a note on the Global Blackboard
+                _G.PendingFeatherBombs = _G.PendingFeatherBombs or {}
+                _G.PendingFeatherBombs[bombId] = {
+                    sx = sx, sy = sy, sz = sz,
+                    tx = gx, ty = gy + yOff, tz = gz,
+                    targetCell = cellNum
+                }
+                
+                -- -- Shoot the knife to that exact cell
+                -- self:SpawnKnifeSingleAtWorld(gx, gy + (self.P3_FeatherTargetYOffset or 0.25), gz, "P3F_Punish")
+
+                -- -- Queue the explosion when the knife "lands"
+                -- local delay = self.P3_FeatherActivateDelay or 0.90
+                -- self._pendingRainExplosions[#self._pendingRainExplosions + 1] = {
+                --     t = delay,
+                --     payload = {
+                --         entityId = self.entityId,
+                --         cells = { cellNum }, -- Targets only the player's cell
+                --         dmg = 2,
+                --         step = self.GridStep or 4.0,
+                --         cx = self.GridCenterX or 0.0,
+                --         cz = self.GridCenterZ or 0.0,
+                --     }
+                -- }
+                
+                m.doneAt = m.t + (m.postDelay or 0.75)
+            end
+
+            if m.doneAt and m.t >= m.doneAt then
                 self:_EndMove()
             end
             return
@@ -2513,20 +2591,56 @@ return Component {
     end,
 
     _UpdatePhase1 = function(self, dtSec)
-        -- If any queued reaction exists, run it first
-        if self:TryStartQueuedMove() then return end
+        -- =========================================================
+        -- 1. ALWAYS TRACK THE PLAYER (Even during other attacks)
+        -- =========================================================
+        local px,py,pz = self:GetPlayerPosForAI()
+        local inMeleeRange = false
+        
+        if px then
+            local ex,ez = self:GetEnemyPosXZ()
+            local dx,dz = px-ex, pz-ez
+            local d2 = dx*dx + dz*dz
+            local meleeR = self.BossMeleeRange or 2.2
+            
+            if d2 <= meleeR*meleeR then
+                inMeleeRange = true
+            end
+        end
 
+        if inMeleeRange then
+            self._p1MeleeTimer = (self._p1MeleeTimer or 0) + dtSec
+        else
+            self._p1MeleeTimer = 0 -- Reset instantly if they run away
+        end
+
+        -- =========================================================
+        -- 2. GUARDS: Stop here if the boss is mid-attack or locked
+        -- =========================================================
+        if self:TryStartQueuedMove() then return end
         if not self:IsCurrentMoveFinished() then return end
         if self:IsActionLocked() then return end
-
-        local px,py,pz = self:GetPlayerPosForAI()
         if not px then return end
-        local ex,ez = self:GetEnemyPosXZ()
-        local dx,dz = px-ex, pz-ez
-        local d2 = dx*dx + dz*dz
+        if self:IsInMove("HurtReact") or (self._hitLockTimer > 0) then return end
 
-        local meleeR = self.BossMeleeRange or 2.2
-        if d2 <= meleeR*meleeR then
+        -- =========================================================
+        -- 3. CHOOSE NEXT MOVE (Boss is idle and ready)
+        -- =========================================================
+        
+        -- PRIORITY 1: Anti-Camper Punish
+        if self._p1MeleeTimer >= (self.P1_MeleePunishTime or 3.0) then
+            self._p1MeleeTimer = 0 -- Reset so it doesn't chain-cast
+            self._meleeCdT = self.BossMeleeCooldown or 2.5 -- Reset normal melee cooldown so it doesn't chain cast
+            
+            self:_BeginMove("P1FeatherBombPunish", {
+                charge = 1.0,
+                postDelay = 0.75
+            })
+            return
+        end
+
+        -- PRIORITY 2: Normal Melee
+        if inMeleeRange then
             if (self._meleeCdT or 0) <= 0 then
                 self._meleeCdT = self.BossMeleeCooldown or 2.5
                 self:_DoMeleeAttack()
@@ -2534,7 +2648,7 @@ return Component {
             return
         end
 
-        -- ranged w/ charge
+        -- PRIORITY 3: Normal Ranged
         self:_BeginMove("P1RangedCharged", {
             charge = self.P1_RangedCharge or 0.75,
             spread = 0.6,
@@ -2704,33 +2818,54 @@ return Component {
     end,
 
     _DoRainExplosives = function(self)
-        -- Phase 3 "feathers": shoot knives to 5 random cells
+        -- -- Phase 3 "feathers": shoot knives to 5 random cells
+        -- local cells = self:_PickRainCells5()
+        -- local yOff = self.P3_FeatherTargetYOffset or 0.25
+
+        -- for i=1,#cells do
+        --     local n = cells[i]
+        --     local gx, gz = self:_GetGridXZ(n)
+        --     local gy = (Nav and Nav.GetGroundY and Nav.GetGroundY(self.entityId)) or select(2, self:GetPosition()) or 0
+        --     self:SpawnKnifeSingleAtWorld(gx, (gy or 0) + yOff, gz, "P3F"..tostring(n))
+        -- end
+
+        -- -- Queue the explosion check to happen when bombs "land"
+        -- local delay = self.P3_FeatherActivateDelay or 0.90
+
+        -- self._pendingRainExplosions[#self._pendingRainExplosions + 1] = {
+        --     t = delay,
+        --     payload = {
+        --         entityId = self.entityId,
+        --         cells = cells,
+        --         dmg = 2,
+
+        --         -- grid config so PlayerHealth can compute what cell they’re in
+        --         step = self.GridStep or 4.0,
+        --         cx = self.GridCenterX or 0.0,
+        --         cz = self.GridCenterZ or 0.0,
+        --     }
+        -- }
+
         local cells = self:_PickRainCells5()
         local yOff = self.P3_FeatherTargetYOffset or 0.25
+        local sx, sy, sz = self:_GetSpawnPos()
 
         for i=1,#cells do
-            local n = cells[i]
-            local gx, gz = self:_GetGridXZ(n)
+            local cellNum = cells[i]
+            local gx, gz = self:_GetGridXZ(cellNum)
             local gy = (Nav and Nav.GetGroundY and Nav.GetGroundY(self.entityId)) or select(2, self:GetPosition()) or 0
-            self:SpawnKnifeSingleAtWorld(gx, (gy or 0) + yOff, gz, "P3F"..tostring(n))
-        end
-
-        -- Queue the explosion check to happen when bombs "land"
-        local delay = self.P3_FeatherActivateDelay or 0.90
-
-        self._pendingRainExplosions[#self._pendingRainExplosions + 1] = {
-            t = delay,
-            payload = {
-                entityId = self.entityId,
-                cells = cells,
-                dmg = 2,
-
-                -- grid config so PlayerHealth can compute what cell they’re in
-                step = self.GridStep or 4.0,
-                cx = self.GridCenterX or 0.0,
-                cz = self.GridCenterZ or 0.0,
+            
+            -- 1. Spawn the new smart projectile
+            local bombId = Prefab.InstantiatePrefab(self.FeatherBombProjectilePrefab)
+            
+            -- 2. Leave a note on the Global Blackboard for when the bomb wakes up
+            _G.PendingFeatherBombs = _G.PendingFeatherBombs or {}
+            _G.PendingFeatherBombs[bombId] = {
+                sx = sx, sy = sy, sz = sz,
+                tx = gx, ty = gy + yOff, tz = gz,
+                targetCell = cellNum
             }
-        }
+        end
     end,
 
     _GetPlayerGridNumpad = function(self)
