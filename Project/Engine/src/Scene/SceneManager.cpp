@@ -105,8 +105,9 @@ void SceneManager::LoadScene(const std::string& scenePath, bool fromGameCode) {
 #ifdef EDITOR
     // Only reset to edit mode if loading scene from editor UI (not from game code)
     // When game code transitions scenes (e.g., main menu to game), we should stay in play mode
-    if (!fromGameCode && (Engine::IsPlayMode() || Engine::IsPaused())) {
-        // This is a manual scene load from editor while playing - exit play mode
+    if (!fromGameCode && !isDeferredExecution && (Engine::IsPlayMode() || Engine::IsPaused())) {
+        // This is a manual scene load from editor UI while playing - exit play mode
+        // Skip for deferred loads — those always originate from gameplay (scene transitions)
         Engine::SetGameState(GameState::EDIT_MODE);
     }
 
