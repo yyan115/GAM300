@@ -434,29 +434,59 @@ return Component {
                 print("[ChainBootstrap] Throwable TAP: THROW -> StartRetraction")
             else
                 -- Normal (enemy or no hook): retract.
-                -- Determine what we are attached to
+                -- Determine what we are attached to.
                 local isEnemy = self.controller.endPointLocked
-                local isWall = self.controller._raycastSnapped
+                local isWall  = self.controller._raycastSnapped
+ 
+                -- ChainInteractable (Mash mode) installs _G.chain_retract_veto to hold
+                -- the chain attached while the mash loop is running.
+                -- When the veto returns true, we skip retraction and publish a pull
+                -- attempt instead so the interactable can count it.
+                local vetoed = false
+                if type(_G.chain_retract_veto) == "function" then
+                    local ok, result = pcall(_G.chain_retract_veto)
+                    vetoed = ok and result == true
+                end
+ 
+                if vetoed then
+                    -- Let the interactable handle this tap as a mash pull.
+                    if _G.event_bus and _G.event_bus.publish then
+                        _G.event_bus.publish("chain.pull_attempt", {})
+                    end
+                    dbg("[ChainBootstrap] TAP on idle attached: vetoed by chain_retract_veto -> chain.pull_attempt")
+                    -- Physics "Tug" (optional, for weight)
+                    if self.controller and self.controller.Tug then
+                        self.controller:Tug(0.3)
+                    end
 
-                self.controller:StartRetraction()
-
-                -- If chain is attached to an enemy, notify AI to trigger hooked/slam behaviour
-                if isEnemy then
-                    if self._hookedEnemyEntityId then
+                    -- Immediate re-check so the LAST mash feels instant
+                    if type(_G.chain_retract_veto) == "function" then
+                        local ok, result = pcall(_G.chain_retract_veto)
+                        vetoed = ok and result == true
+                    else
+                        vetoed = false
+                    end
+                else
+                    self.controller:StartRetraction()
+ 
+                    -- If chain is attached to an enemy, notify AI to trigger hooked/slam behaviour.
+                    if isEnemy then
+                        if self._hookedEnemyEntityId then
+                            if _G.event_bus and _G.event_bus.publish then
+                                _G.event_bus.publish("chain.enemy_hooked", {
+                                    entityId = self._hookedEnemyEntityId,
+                                    duration = 2.0,
+                                })
+                            end
+                        end
+                    -- Only publish chain.retract_chain if attached to a wall/nothing.
+                    else
                         if _G.event_bus and _G.event_bus.publish then
-                            _G.event_bus.publish("chain.enemy_hooked", {
-                                entityId = self._hookedEnemyEntityId,
-                                duration = 2.0,
-                            })
+                            _G.event_bus.publish("chain.retract_chain", true)
                         end
                     end
-                -- Only publish chain.retract_chain event if the chain is attached to a wall/nothing.
-                else
-                    if _G.event_bus and _G.event_bus.publish then
-                        _G.event_bus.publish("chain.retract_chain", true)
-                    end
+                    print("[ChainBootstrap] TAP on extended idle -> StartRetraction (no throwable)")
                 end
-                print("[ChainBootstrap] TAP on extended idle -> StartRetraction (no throwable)")
             end
         end
 
@@ -613,6 +643,8 @@ return Component {
 
         self._lastPublishedExtended = false
         self._retractTriggeredThisPress = false
+        self._wasFlopping    = false   -- track flop transitions for chain.detached
+        self._wasWallSnapped = false   -- track wall-snap transitions for chain.detached
         self._endpointTransform = nil
         if self.ChainEndpointName and self.ChainEndpointName ~= "" then
             self._endpointTransform = Engine.FindTransformByName(self.ChainEndpointName)
@@ -644,7 +676,17 @@ return Component {
             self._chainSubDown = _G.event_bus.subscribe("chain.down", function(payload) if not payload then return end pcall(function() self:_on_chain_down(payload) end) end)
             self._chainSubUp   = _G.event_bus.subscribe("chain.up",   function(payload) if not payload then return end pcall(function() self:_on_chain_up(payload)   end) end)
             self._chainSubHold = _G.event_bus.subscribe("chain.hold", function(payload) if not payload then return end pcall(function() self:_on_chain_hold(payload) end) end)
-
+            self._chainSubRetract = _G.event_bus.subscribe("chain.retract", function(payload)
+                pcall(function()
+                    if self.controller then
+                        self.controller:StartRetraction()
+                        -- Tell other systems (like audio/animation) that the chain is retracting
+                        if _G.event_bus and _G.event_bus.publish then
+                            _G.event_bus.publish("chain.retract_chain", true)
+                        end
+                    end
+                end)
+            end)
             self._subPlayerForward = _G.event_bus.subscribe("player_forward_response", function(payload)
                 if not payload then return end
                 local x = payload.x
@@ -1297,6 +1339,32 @@ return Component {
             self._endpointTransform = Engine.FindTransformByName(self.ChainEndpointName)
         end
 
+        -- ── Interactable veto cleanup ─────────────────────────────────────────
+        -- Detect the first frame the chain enters flop or wall-snap mode and
+        -- publish chain.detached so ChainInteractable can clear its veto.
+        --
+        -- Two cases require this:
+        --   (a) Flop: chain reached max length or player walked too far —
+        --       endpoint is now in free Verlet physics, not attached to anything.
+        --   (b) Wall-snap: chain hit static geometry and locked onto it —
+        --       endpoint is on a wall, not on the interactable it passed through.
+        --
+        -- chain.detached is only published on the FALSE→TRUE edge so it fires
+        -- exactly once per transition, not every frame.
+        local nowFlopping    = public.Flopping       or false
+        local nowWallSnapped = public.RaycastSnapped or false
+
+        if (nowFlopping and not self._wasFlopping) then
+            local reason = nowFlopping and "flop" or "wall-snap"
+            print(string.format("[ChainBootstrap] Chain entered %s — publishing chain.detached to clear interactable veto", reason))
+            if _G.event_bus and _G.event_bus.publish then
+                _G.event_bus.publish("chain.detached", {})
+            end
+        end
+        self._wasFlopping    = nowFlopping
+        self._wasWallSnapped = nowWallSnapped
+        -- ─────────────────────────────────────────────────────────────────────
+
         if self._endpointTransform then
             local chainIsActive = (self.m_CurrentLength or 0) > 1e-4 or self.m_IsExtending or public.Flopping
             if chainIsActive then
@@ -1406,11 +1474,13 @@ return Component {
                 -- can manage RB keepalive and trigger window regardless of lock state
                 if _G.event_bus and _G.event_bus.publish then
                     _G.event_bus.publish("chain.endpoint_moved", {
-                        position = { x = endPos[1], y = endPos[2], z = endPos[3] },
-                        isLocked = public.EndPointLocked,
-                        chainLength = self.m_CurrentLength,
-                        isExtending = self.m_IsExtending,
+                        position     = { x = endPos[1], y = endPos[2], z = endPos[3] },
+                        isLocked     = public.EndPointLocked,
+                        chainLength  = self.m_CurrentLength,
+                        isExtending  = self.m_IsExtending,
                         isRetracting = self.m_IsRetracting,
+                        isFlopping   = public.Flopping,           -- chain in free-fall physics
+                        isWallSnapped = public.RaycastSnapped,    -- chain locked onto static geometry
                     })
                 end
 
@@ -1455,6 +1525,7 @@ return Component {
             if self._chainSubDown     then pcall(function() _G.event_bus.unsubscribe(self._chainSubDown)     end) end
             if self._chainSubUp       then pcall(function() _G.event_bus.unsubscribe(self._chainSubUp)       end) end
             if self._chainSubHold     then pcall(function() _G.event_bus.unsubscribe(self._chainSubHold)     end) end
+            if self._chainSubRetract  then pcall(function() _G.event_bus.unsubscribe(self._chainSubRetract)  end) end
             if self._subPlayerForward then pcall(function() _G.event_bus.unsubscribe(self._subPlayerForward) end) end
             if self._subHookedPos         then pcall(function() _G.event_bus.unsubscribe(self._subHookedPos)         end) end
             if self._subHitEntity         then pcall(function() _G.event_bus.unsubscribe(self._subHitEntity)         end) end

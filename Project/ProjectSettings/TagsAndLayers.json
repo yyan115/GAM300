@@ -20,7 +20,8 @@
         "Throwable",
         "Vfx",
         "NoCameraCollision",
-        "Staircase"
+        "Staircase",
+        "Interactable"
     ],
     "layers": [
         {

@@ -330,7 +330,7 @@ return Component {
         self:_dbg("[ChainEndpointController] OnTriggerEnter entity='" .. otherName .. "' root='" .. rootName .. "' tag='" .. tostring(tag) .. "'")
         dbg(string.format("[ChainEndpointController][TRIGGER] tag check — entity='%s' root='%s' tag='%s'", otherName, rootName, tostring(tag)))
 
-        local isHookable = (tag == "Enemy") or (tag == "Boss") or (tag == "Throwable")
+        local isHookable = (tag == "Enemy") or (tag == "Boss") or (tag == "Throwable") or (tag == "Interactable")
         if not isHookable then
             dbg("[ChainEndpointController][TRIGGER] REJECTED -- tag='" .. tostring(tag) .. "' not hookable")
             self:_dbg("[ChainEndpointController] OnTriggerEnter ignored -- root='" .. rootName .. "' tag='" .. tostring(tag) .. "' not hookable")
@@ -403,7 +403,7 @@ return Component {
             if ok then tag = t end
         end
 
-        local isHookable = (tag == "Enemy") or (tag == "Boss") or (tag == "Throwable")
+        local isHookable = (tag == "Enemy") or (tag == "Boss") or (tag == "Throwable") or (tag == "Interactable")
         if not isHookable then return end
 
         dbg("[ChainEndpointController] Sweep hit confirmed — hooking entity='" .. otherName .. "' root='" .. rootName .. "'")
