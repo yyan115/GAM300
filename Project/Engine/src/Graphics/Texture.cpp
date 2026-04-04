@@ -195,6 +195,15 @@ std::string Texture::CompileToResource(const std::string& assetPath, bool forAnd
 		dstCmpFmt = CMP_FORMAT_BC5;
 		gliFormat = gli::FORMAT_RG_ATI2N_UNORM_BLOCK16;
 	}
+	else if (metaData->type == "sprite") {
+		// UI and Sprites must remain UNCOMPRESSED to preserve sharp, pixel-perfect alpha edges.
+		// Using BC1/BC3 creates 4x4 block artifacts on transparent borders.
+		dstCmpFmt = needsAlpha ? CMP_FORMAT_RGBA_8888 : CMP_FORMAT_RGB_888;
+
+		// Typically, UI is drawn directly to the screen without 3D lighting, 
+		// so standard UNORM is perfectly fine here.
+		gliFormat = needsAlpha ? gli::FORMAT_RGBA8_UNORM_PACK8 : gli::FORMAT_RGB8_UNORM_PACK8;
+	}
 	else if (numColCh > 3) {
 		// Source file genuinely has an alpha channel — keep it.
 		dstCmpFmt = CMP_FORMAT_BC3;
@@ -332,18 +341,38 @@ bool Texture::LoadResource(const std::string& resourcePath, const std::string& a
 
 	glBindTexture(target, ID);
 
+	// Check if the loaded DDS/KTX is actually block-compressed
+	bool isCompressed = gli::is_compressed(texture.format());
+
 	// Upload every mip level that was baked into the DDS/KTX at compile time.
 	for (std::size_t level = 0; level < texture.levels(); ++level) {
-		glCompressedTexImage2D(
-			target,
-			static_cast<GLint>(level),
-			format.Internal,
-			static_cast<GLsizei>(texture.extent(level).x),
-			static_cast<GLsizei>(texture.extent(level).y),
-			0,
-			static_cast<GLsizei>(texture.size(level)),
-			texture.data(0, 0, level)
-		);
+		if (isCompressed) {
+			// Used for 3D PBR Textures (BC1, BC3, BC5, ETC2)
+			glCompressedTexImage2D(
+				target,
+				static_cast<GLint>(level),
+				format.Internal,
+				static_cast<GLsizei>(texture.extent(level).x),
+				static_cast<GLsizei>(texture.extent(level).y),
+				0,
+				static_cast<GLsizei>(texture.size(level)),
+				texture.data(0, 0, level)
+			);
+		}
+		else {
+			// Used for UI and Sprites (Raw uncompressed RGBA pixels)
+			glTexImage2D(
+				target,
+				static_cast<GLint>(level),
+				format.Internal,
+				static_cast<GLsizei>(texture.extent(level).x),
+				static_cast<GLsizei>(texture.extent(level).y),
+				0,
+				format.External, // e.g., GL_RGBA
+				format.Type,     // e.g., GL_UNSIGNED_BYTE
+				texture.data(0, 0, level)
+			);
+		}
 	}
 
 	// Set texture wrapping mode.

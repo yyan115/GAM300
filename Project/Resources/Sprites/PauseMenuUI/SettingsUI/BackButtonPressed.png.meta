@@ -6,7 +6,7 @@
         "compiled": "../../Resources/Sprites/PauseMenuUI/SettingsUI/BackButtonPressed.dds"
     },
     "TextureMetaData": {
-        "type": "diffuse",
+        "type": "sprite",
         "flipUVs": true,
         "generateMipmaps": true,
         "textureWrapMode": "Clamp",
