@@ -15,6 +15,8 @@ EVENTS CONSUMED:
     env_weapon_caught      → play pickupSFX      (weapon physically reaches player's hand)
     env_door_opened        → play doorOpenSFX    (a door begins to open)
     game_paused            → Pause/UnPause the WeaponPickup hover audio
+    door_mash_sound        → play MashSoundClip on the breakable door entity
+    door_final_mash_sound  → play FinalMashSoundClip on the breakable door entity
     boss_narrative_started → fade BGM bus down to BGMNarrativeVolume
     boss_narrative_ended   → stop BGM1, play BossBGM, fade BGM bus back to full
     boss_killed            → stop BossBGM, unmute+play BGM1, fade BGM bus back to full
@@ -42,6 +44,8 @@ return Component {
         weaponPickupEntityName = "LowPolyFeatherChainPickUp",
         pickupSFX              = {},
         doorOpenSFX            = {},
+        MashSoundClip          = {},
+        FinalMashSoundClip     = {},
         BGMFadeDuration        = 2.0,
         BGMNarrativeVolume     = 0.1,
     },
@@ -61,6 +65,7 @@ return Component {
         if _G.event_bus and _G.event_bus.unsubscribe then
             local stale = {
                 "_pickupAuraSub", "_pickupSub", "_doorSub", "_gamePausedSub",
+                "_doorMashSub", "_doorFinalMashSub",
                 "_narrativeStartedSub", "_narrativeEndedSub",
                 "_bossKilledSub", "_playerDeadSub", "_respawnPlayerSub",
             }
@@ -100,6 +105,22 @@ return Component {
         -- Door opened
         self._doorSub = _G.event_bus.subscribe("env_door_opened", function(_)
             AudioHelper.PlayRandomSFX(self._audio, self.doorOpenSFX)
+        end)
+
+        -- Breakable door mash sound — clips configured here, played on the door entity
+        self._doorMashSub = _G.event_bus.subscribe("door_mash_sound", function(data)
+            if not data or not data.doorName then return end
+            local ent = Engine.GetEntityByName(data.doorName)
+            if not ent then return end
+            AudioHelper.PlayRandomSFX(GetComponent(ent, "AudioComponent"), self.MashSoundClip)
+        end)
+
+        -- Breakable door final-mash sound — clips configured here, played on the door entity
+        self._doorFinalMashSub = _G.event_bus.subscribe("door_final_mash_sound", function(data)
+            if not data or not data.doorName then return end
+            local ent = Engine.GetEntityByName(data.doorName)
+            if not ent then return end
+            AudioHelper.PlayRandomSFX(GetComponent(ent, "AudioComponent"), self.FinalMashSoundClip)
         end)
 
         -- Boss narrative started — fade BGM bus down to narrative volume
@@ -220,6 +241,7 @@ return Component {
         if _G.event_bus and _G.event_bus.unsubscribe then
             local subs = {
                 "_pickupAuraSub", "_pickupSub", "_doorSub", "_gamePausedSub",
+                "_doorMashSub", "_doorFinalMashSub",
                 "_narrativeStartedSub", "_narrativeEndedSub",
                 "_bossKilledSub", "_playerDeadSub", "_respawnPlayerSub",
             }

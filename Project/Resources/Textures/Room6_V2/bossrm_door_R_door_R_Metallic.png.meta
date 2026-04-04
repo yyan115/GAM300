@@ -1,0 +1,15 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "007b345c64d787ed-0004b687e4004901",
+        "source": "../../Resources/Textures/Room6_V2/bossrm_door_R_door_R_Metallic.png",
+        "compiled": "../../Resources/Textures/Room6_V2/bossrm_door_R_door_R_Metallic.dds"
+    },
+    "TextureMetaData": {
+        "type": "metallic",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

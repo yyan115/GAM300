@@ -1,0 +1,15 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "0043ce37e1cf4dd9-0004b698c20023cd",
+        "source": "../../Resources/Sprites/MainMenuUI/MainMenuHighlight.png",
+        "compiled": "../../Resources/Sprites/MainMenuUI/MainMenuHighlight.dds"
+    },
+    "TextureMetaData": {
+        "type": "sprite",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

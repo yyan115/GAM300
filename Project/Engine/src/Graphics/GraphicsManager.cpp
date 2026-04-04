@@ -1058,14 +1058,8 @@ void GraphicsManager::RenderParticles(const ParticleComponent& item) {
 		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);  // Standard alpha: physical/solid
 	glDepthMask(GL_FALSE);
 
-#ifdef ANDROID
-	__android_log_print(ANDROID_LOG_INFO, "GAM300", "item.particleShader->Activate");
-#endif
 	item.particleShader->Activate();
 
-#ifdef ANDROID
-	__android_log_print(ANDROID_LOG_INFO, "GAM300", "Setup camera matrices ONCE for all particles");
-#endif
 	// Setup camera matrices ONCE for all particles
 	if (currentCamera) {
 		glm::mat4 view = currentCamera->GetViewMatrix();
@@ -1085,9 +1079,6 @@ void GraphicsManager::RenderParticles(const ParticleComponent& item) {
 		item.particleShader->setVec3("cameraUp", currentCamera->Up);
 	}
 
-#ifdef ANDROID
-	__android_log_print(ANDROID_LOG_INFO, "GAM300", "Bind texture if available");
-#endif
 	// Bind texture if available
 	if (item.particleTexture) {
 		glActiveTexture(GL_TEXTURE0);
@@ -1101,9 +1092,6 @@ void GraphicsManager::RenderParticles(const ParticleComponent& item) {
 		item.particleShader->setVec3("bloomColor", item.bloomColor);
 	}
 
-#ifdef ANDROID
-	__android_log_print(ANDROID_LOG_INFO, "GAM300", "Draw ALL particles with ONE instanced draw call using indices");
-#endif
 	// Draw ALL particles with ONE instanced draw call using indices
 	item.particleVAO->Bind();
 	if (item.quadEBO) item.quadEBO->Bind();  // explicitly ensure EBO is bound
@@ -1111,17 +1099,8 @@ void GraphicsManager::RenderParticles(const ParticleComponent& item) {
 	glGetIntegerv(GL_ELEMENT_ARRAY_BUFFER_BINDING, &eboBinding);
 	assert(eboBinding != 0 && "VAO has no EBO bound after setup");
 
-#ifdef ANDROID
-	__android_log_print(ANDROID_LOG_INFO, "GAM300", "Binded");
-#endif
 	glDrawElementsInstanced(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0, static_cast<GLsizei>(item.particles.size()));
-#ifdef ANDROID
-	__android_log_print(ANDROID_LOG_INFO, "GAM300", "glDrawElementsInstanced");
-#endif
 	item.particleVAO->Unbind();
-#ifdef ANDROID
-	__android_log_print(ANDROID_LOG_INFO, "GAM300", "Unbinded");
-#endif
 	//item.quadEBO->Unbind();
 
 	glDepthMask(GL_TRUE);

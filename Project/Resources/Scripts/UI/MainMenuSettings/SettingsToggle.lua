@@ -33,7 +33,6 @@ return Component {
         -- Cache components
         self._button = GetComponent(self.entity, "ButtonComponent")
         self._sprite = GetComponent(self.entity, "SpriteRenderComponent")
-        self._audio = GetComponent(self.entity, "AudioComponent")
 
         -- Set initial state
         self:UpdateVisuals()
@@ -51,8 +50,8 @@ return Component {
             self:SetCurrentValue(not current)
             self:UpdateVisuals()
             
-            if self._audio then
-                self._audio:Play()
+            if event_bus and event_bus.publish then
+                event_bus.publish("main_menu.click", {})
             end
         end
     end,

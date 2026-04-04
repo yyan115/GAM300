@@ -220,6 +220,13 @@ void GameSettingsManager::ApplySettings() {
     WindowManager::SetVSync(m_settings.vsync);
     WindowManager::SetFullscreen(m_settings.fullscreen);
 
+    // Gamma
+    auto& pm = PostProcessingManager::GetInstance();
+    auto* hdr = pm.GetHDREffect();
+    if (hdr) {
+        hdr->SetGamma(m_settings.gamma);
+    }
+
     /*
     // Graphics - Commented out to allow CameraComponent/Editor to have full control
     auto& pm = PostProcessingManager::GetInstance();

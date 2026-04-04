@@ -27,7 +27,7 @@ public:
 
 class ENGINE_API TextureMeta : public AssetMeta {
 public:
-	static const std::array<std::string, 8> textureTypes;
+	static const std::array<std::string, 9> textureTypes;
 	std::string type;
 	bool flipUVs = false;
 	bool generateMipmaps = true;

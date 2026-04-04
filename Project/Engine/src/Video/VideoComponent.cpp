@@ -33,6 +33,7 @@ REFL_REGISTER_START(VideoComponent)
 	REFL_REGISTER_PROPERTY(cutsceneEnded)
 	REFL_REGISTER_PROPERTY(skipRequested)
 	REFL_REGISTER_PROPERTY(startDelay)
+	REFL_REGISTER_PROPERTY(currentBoardIndex)
 REFL_REGISTER_END
 
 #pragma endregion

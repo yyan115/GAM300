@@ -7,115 +7,61 @@ local event_bus = _G.event_bus
 return Component {
     mixins = { TransformMixin },
 
-    fields = {
+    fields = {},
 
-    },
-
+    -- Animation Triggers
     PlayAimThrowAnimation = function(self)
         local animator = self:GetComponent("AnimationComponent")
-        animator:SetBool("IsAimingChain", true)
+        if animator then animator:SetBool("IsAimingChain", true) end
     end,
 
     PlayThrowChainAnimation = function(self)
         local animator = self:GetComponent("AnimationComponent")
-        animator:SetBool("IsAimingChain", false)
-        animator:SetTrigger("ThrowChain")
+        if animator then 
+            animator:SetBool("IsAimingChain", false)
+            animator:SetTrigger("ThrowChain")
+        end
     end,
 
     PlayPullChainAnimation = function(self)
         local animator = self:GetComponent("AnimationComponent")
-        animator:SetTrigger("PullChain")
+        if animator then animator:SetTrigger("PullChain") end
     end,
 
     PlaySlamChainAnimation = function(self)
         local animator = self:GetComponent("AnimationComponent")
-        animator:SetTrigger("SlamChain")
+        if animator then animator:SetTrigger("SlamChain") end
     end,
 
     PlayRetractChainAnimation = function(self)
         local animator = self:GetComponent("AnimationComponent")
-        animator:SetTrigger("RetractChain")
+        if animator then animator:SetTrigger("RetractChain") end
     end,
 
-    Awake = function(self)
-
-    end,
-
+    -- Lifecycle
     Start = function(self)
         if event_bus and event_bus.subscribe then
-            -- Prevent double-subscription on the SAME instance
-            if self._chainAimSub then return end
+            -- 1. Aiming / Throwing
+            self._chainAimSub   = event_bus.subscribe("chain.aim_camera", function(p) if p and p.active then self:PlayAimThrowAnimation() end end)
+            self._chainThrowSub = event_bus.subscribe("chain.throw_chain", function(p) if p then self:PlayThrowChainAnimation() end end)
 
-            print("[PlayerChainAnimation] Subscribing to chain.aim_camera")
-            self._chainAimSub = event_bus.subscribe("chain.aim_camera", function(payload)
-                if payload and payload.active then
-                    self:PlayAimThrowAnimation()
-                end
-            end)
+            -- 2. Pulling/Mashing (WE ADDED THIS)
+            -- Both a successful pull AND a restricted attempt trigger the "Pull" animation
+            local onPull = function(p) if p then self:PlayRetractChainAnimation() end end
+            self._chainPullSub    = event_bus.subscribe("chain.pull_chain", onPull)
+            self._chainAttemptSub = event_bus.subscribe("chain.pull_attempt", onPull)
 
-            if self._chainThrowSub then return end
-
-            print("[PlayerChainAnimation] Subscribing to chain.throw_chain")
-            self._chainThrowSub = event_bus.subscribe("chain.throw_chain", function(payload)
-                if payload then
-                    self:PlayThrowChainAnimation()
-                end
-            end)
-
-            if self._chainPullSub then return end
-
-            print("[PlayerChainAnimation] Subscribing to chain.pull_chain")
-            self._chainPullSub = event_bus.subscribe("chain.pull_chain", function(payload)
-                if payload then
-                    self:PlayPullChainAnimation()
-                end
-            end)
-
-            print("[PlayerChainAnimation] Subscribing to chain.retract_chain")
-            self._chainPullSub = event_bus.subscribe("chain.retract_chain", function(payload)
-                if payload then
-                    self:PlayRetractChainAnimation()
-                end
-            end)
-
-            if self._chainSlamSub then return end
-
-            print("[PlayerChainAnimation] Subscribing to chain.slam_chain")
-            self._chainSlamSub = event_bus.subscribe("chain.slam_chain", function(payload)
-                if payload then
-                    self:PlaySlamChainAnimation()
-                end
-            end)
-        else
-            print("[PlayerHealth] ERROR: event_bus not available!")
+            -- 3. Retracting / Slamming
+            self._chainRetractSub = event_bus.subscribe("chain.retract_chain", function(p) if p then self:PlayRetractChainAnimation() end end)
+            self._chainSlamSub    = event_bus.subscribe("chain.slam_chain", function(p) if p then self:PlaySlamChainAnimation() end end)
         end
-    end,
-
-    Update = function(self, dt)
-
     end,
 
     OnDisable = function(self)
         if _G.event_bus and _G.event_bus.unsubscribe then
-            if self._chainAimSub then
-                pcall(function()
-                    _G.event_bus.unsubscribe(self._chainAimSub)
-                end)
-                self._chainAimSub = nil
-            end
-
-            if self._chainPullSub then
-                pcall(function()
-                    _G.event_bus.unsubscribe(self._chainPullSub)
-                end)
-                self._chainPullSub = nil
-            end
-
-            if self._chainSlamSub then
-                pcall(function()
-                    _G.event_bus.unsubscribe(self._chainSlamSub)
-                end)
-                self._chainSlamSub = nil
+            local subs = { "_chainAimSub", "_chainThrowSub", "_chainPullSub", "_chainAttemptSub", "_chainRetractSub", "_chainSlamSub" }
+            for _, s in ipairs(subs) do
+                if self[s] then pcall(function() _G.event_bus.unsubscribe(self[s]) end); self[s] = nil end
             end
         end
     end,

@@ -6,7 +6,7 @@
         "compiled": "../../Resources/Sprites/PlayerHUD/TheTempleHallTxt.dds"
     },
     "TextureMetaData": {
-        "type": "diffuse",
+        "type": "sprite",
         "flipUVs": true,
         "generateMipmaps": true,
         "textureWrapMode": "Clamp",

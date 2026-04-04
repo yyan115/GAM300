@@ -1,0 +1,15 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "00344b3643343aab-0004b8b134093bd9",
+        "source": "../../Resources/Sprites/BossUI/BossEnemyHealthBarFill.png",
+        "compiled": "../../Resources/Sprites/BossUI/BossEnemyHealthBarFill.dds"
+    },
+    "TextureMetaData": {
+        "type": "sprite",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

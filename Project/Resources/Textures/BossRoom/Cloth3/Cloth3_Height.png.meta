@@ -1,0 +1,15 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "007b345c0b81078b-0004b6a284007c83",
+        "source": "../../Resources/Textures/BossRoom/Cloth3/Cloth3_Height.png",
+        "compiled": "../../Resources/Textures/BossRoom/Cloth3/Cloth3_Height.dds"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

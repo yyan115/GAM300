@@ -266,7 +266,7 @@ return Component {
                 id           = "dash",
                 animParam    = 30,
                 clipDuration = nil,  -- dash animation timing owned by PlayerMovement
-                duration     = 1.0,
+                duration     = 0,
                 damage      = 0,
                 canMove     = false,
                 comboWindow = nil,
@@ -293,9 +293,10 @@ return Component {
                 clipDuration = 0.8,
                 duration     = 0.8,
                 damage       = 15,
-                knockback    = 5.0,
+                knockback    = 4.0,
                 canMove      = true,
                 isAerial     = true,
+                isLift       = true,
                 comboWindow  = 0.25,
                 lunge        = { speed = 3.0, duration = 0.12 },
                 transitions  = {
@@ -923,6 +924,7 @@ return Component {
                     lunge     = newState.lunge,
                     isAerial  = newState.isAerial or false,
                     isSlam    = newState.isSlam or false,
+                    isLift    = newState.isLift  or false,
                 })
             end
         end

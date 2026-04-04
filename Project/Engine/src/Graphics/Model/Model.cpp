@@ -847,8 +847,8 @@ bool Model::LoadResource(const std::string& resourcePath, const std::string& ass
 
         CalculateBoundingBox();
 
-        // Now that all meshes are loaded into RAM, push them to the GPU immediately!
-        PrewarmMeshes();
+        //// Now that all meshes are loaded into RAM, push them to the GPU immediately!
+        //PrewarmMeshes();
 
         return true;
     }

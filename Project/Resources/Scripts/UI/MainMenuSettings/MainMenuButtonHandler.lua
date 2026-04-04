@@ -1,267 +1,220 @@
 require("extension.engine_bootstrap")
 local Component = require("extension.mono_helper")
 
+local MAIN_MENU_BUTTONS = {"PlayGame", "Credits", "ExitGame", "Settings"}
+local MAIN_MENU_TEXTS   = {"PlayGameText", "SettingText", "CreditsText", "ExitGameText"}
+
+local function setButtonsInteractable(interactable)
+    for _, name in ipairs(MAIN_MENU_BUTTONS) do
+        local e = Engine.GetEntityByName(name)
+        if e then
+            local btn = GetComponent(e, "ButtonComponent")
+            if btn then btn.interactable = interactable end
+        end
+    end
+end
+
+local function setTextsActive(active)
+    for _, name in ipairs(MAIN_MENU_TEXTS) do
+        local e = Engine.GetEntityByName(name)
+        if e then
+            local comp = GetComponent(e, "ActiveComponent")
+            if comp then comp.isActive = active end
+        end
+    end
+end
+
 return Component {
     fields = {
-        fadeDuration = 1.0,
-        bgmFadeInDuration = 2.0,      -- Duration for BGM fade in on scene start
-        fadeScreenName = "MenuFadeScreen",
-        targetScene = "Resources/Scenes/02_IntroCutscene.scene",
+        fadeDuration      = 1.0,
+        bgmFadeInDuration = 2.0,
+        fadeScreenName    = "MenuFadeScreen",
+        targetScene       = "Resources/Scenes/02_IntroCutscene.scene",
         androidTargetScene = "Resources/Scenes/04_Level.scene",
-        bgmEntityName = "BGM"
+        bgmEntityName     = "BGM"
     },
-    _pendingScene = nil,
-    _isFading = false,
-    _fadeAlpha = 0,
-    _fadeTimer = 0,
-    _bgmAudio = nil,
+    _pendingScene    = nil,
+    _isFading        = false,
+    _fadeAlpha       = 0,
+    _fadeTimer       = 0,
+    _bgmAudio        = nil,
     _bgmInitialVolume = 1.0,
-    _isFadingIn = false,
-    _fadeInTimer = 0,
+    _isFadingIn      = false,
+    _fadeInTimer     = 0,
+
+    Awake = function(self)
+        -- Guard against double-Awake (hot-reload / stop-play cycle)
+        local stale = {"_playGameSub", "_quitSub", "_settingsSub", "_creditsSub"}
+        if _G.event_bus and _G.event_bus.unsubscribe then
+            for _, key in ipairs(stale) do
+                if self[key] then _G.event_bus.unsubscribe(self[key]); self[key] = nil end
+            end
+        end
+
+        if not (_G.event_bus and _G.event_bus.subscribe) then return end
+        local eb = _G.event_bus
+
+        self._playGameSub = eb.subscribe("play_game_start", function()
+            if self._isFading then return end
+            self._isFadingIn = false
+            self._isFading   = true
+            self._fadeTimer  = 0
+            self._fadeAlpha  = 0
+
+            local fe = Engine.GetEntityByName(self.fadeScreenName)
+            if fe then
+                self._fadeActive = GetComponent(fe, "ActiveComponent")
+                self._fadeSprite = GetComponent(fe, "SpriteRenderComponent")
+                if self._fadeActive then self._fadeActive.isActive = true end
+                if self._fadeSprite then
+                    self._fadeSprite.color.x = 0
+                    self._fadeSprite.color.y = 0
+                    self._fadeSprite.color.z = 0
+                    self._fadeSprite.alpha   = 0
+                end
+            end
+            self._pendingScene = self.targetScene
+        end)
+
+        self._quitSub = eb.subscribe("quit_clicked", function()
+            local e = Engine.GetEntityByName("QuitPromptUI")
+            if e then
+                local active = GetComponent(e, "ActiveComponent")
+                if active then active.isActive = true end
+            end
+            setButtonsInteractable(false)
+        end)
+
+        self._settingsSub = eb.subscribe("settings_clicked", function()
+            local e = Engine.GetEntityByName("SettingsUI")
+            if e then
+                local active = GetComponent(e, "ActiveComponent")
+                if active then active.isActive = true end
+            end
+            setButtonsInteractable(false)
+            setTextsActive(false)
+        end)
+
+        self._creditsSub = eb.subscribe("credits_clicked", function()
+            local e = Engine.GetEntityByName("CreditsUI")
+            if e then
+                local active = GetComponent(e, "ActiveComponent")
+                if active then active.isActive = true end
+            end
+            setButtonsInteractable(false)
+        end)
+    end,
 
     Start = function(self)
-        -- Ensure game is not paused when entering main menu (defensive reset)
-        -- This handles cases where we return from gameplay while paused
+        -- Ensure game is not paused when entering main menu
         Time.SetPaused(false)
         Time.SetTimeScale(1.0)
 
-        -- Reset state for scene reloads
         self._pendingScene = nil
-        self._isFading = false
-        self._fadeAlpha = 0
-        self._fadeTimer = 0
+        self._isFading     = false
+        self._fadeAlpha    = 0
+        self._fadeTimer    = 0
 
         local fadeEntity = Engine.GetEntityByName(self.fadeScreenName)
         if fadeEntity then
             local fadeActive = GetComponent(fadeEntity, "ActiveComponent")
             local fadeSprite = GetComponent(fadeEntity, "SpriteRenderComponent")
-            if fadeActive then
-                fadeActive.isActive = false
-            end
+            if fadeActive then fadeActive.isActive = false end
             if fadeSprite then
-                -- Set color to black for fade-to-black effect
                 fadeSprite.color.x = 0
                 fadeSprite.color.y = 0
                 fadeSprite.color.z = 0
-                fadeSprite.alpha = 0
+                fadeSprite.alpha   = 0
             end
         end
 
-        -- Get reference to BGM AudioComponent and start fade in
         local bgmEntity = Engine.GetEntityByName(self.bgmEntityName)
         if bgmEntity then
             self._bgmAudio = GetComponent(bgmEntity, "AudioComponent")
             if self._bgmAudio then
                 self._bgmInitialVolume = self._bgmAudio.Volume
-                -- Start silent and fade in
                 self._bgmAudio:SetVolume(0)
-                self._isFadingIn = true
+                self._isFadingIn  = true
                 self._fadeInTimer = 0
             end
         end
     end,
 
-    -- Play Button Function
+    OnDisable = function(self)
+        local subs = {"_playGameSub", "_quitSub", "_settingsSub", "_creditsSub"}
+        if _G.event_bus and _G.event_bus.unsubscribe then
+            for _, key in ipairs(subs) do
+                if self[key] then _G.event_bus.unsubscribe(self[key]); self[key] = nil end
+            end
+        end
+    end,
+
+    -- Button callbacks: pure event publishers (logic lives in Awake subscribers above)
     OnClickPlayButton = function(self)
-        -- Play click SFX
-        self:_playClickSFX("PlayGame")
-
-        -- Stop BGM fade in if still in progress
-        self._isFadingIn = false
-
-        -- Start fade transition
-        self._isFading = true
-        self._fadeTimer = 0
-        self._fadeAlpha = 0
-
-        -- Enable and setup the fade screen
-        local fadeEntity = Engine.GetEntityByName(self.fadeScreenName)
-        if fadeEntity then
-            self._fadeActive = GetComponent(fadeEntity, "ActiveComponent")
-            self._fadeSprite = GetComponent(fadeEntity, "SpriteRenderComponent")
-            if self._fadeActive then
-                self._fadeActive.isActive = true
-            end
-            if self._fadeSprite then
-                -- Set color to black for fade-to-black effect
-                self._fadeSprite.color.x = 0
-                self._fadeSprite.color.y = 0
-                self._fadeSprite.color.z = 0
-                self._fadeSprite.alpha = 0
-            end
+        if _G.event_bus then
+            _G.event_bus.publish("main_menu.clickplaygame", {})
+            _G.event_bus.publish("play_game_start", {})
         end
-
-        self._pendingScene = self.targetScene
     end,
 
-    -- Quit Button Function
     OnClickQuitButton = function(self)
-        -- Play click SFX
-        self:_playClickSFX("ExitGame")
-
-        local QuitPromptEntity = Engine.GetEntityByName("QuitPromptUI")
-        local QuitPromptUI = GetComponent(QuitPromptEntity, "ActiveComponent")
-        QuitPromptUI.isActive = true
-
-
-        -- Disable buttons and hide text when settings menu is active
-        local targetButtons = {"PlayGame", "Credits", "ExitGame", "Settings"}
-        local targetTexts = {"PlayGameText", "SettingText", "CreditsText", "ExitGameText"}
-        for _, buttonName in ipairs(targetButtons) do
-            local entity = Engine.GetEntityByName(buttonName)
-            if entity then
-                local button = GetComponent(entity, "ButtonComponent")
-                if button then
-                    button.interactable = false
-                else
-                    print("[MainMenuButtonHandler] Warning: ButtonComponent missing on " .. buttonName)
-                end
-            else
-                print("[MainMenuButtonHandler] Warning: Button entity " .. buttonName .. " not found")
-            end
+        if _G.event_bus then
+            _G.event_bus.publish("main_menu.click", {})
+            _G.event_bus.publish("quit_clicked", {})
         end
     end,
 
-    -- Settings Button Function
     OnClickSettingButton = function(self)
-        -- Play click SFX
-        self:_playClickSFX("Settings")
-
-        local settingUIEntity = Engine.GetEntityByName("SettingsUI")
-        if settingUIEntity then
-            local settingUI = GetComponent(settingUIEntity, "ActiveComponent")
-            if settingUI then
-                settingUI.isActive = true
-            else
-                print("[MainMenuButtonHandler] Warning: SettingsUI ActiveComponent missing")
-            end
-        else
-            print("[MainMenuButtonHandler] Warning: SettingsUI entity not found")
-        end
-
-        -- Disable buttons and hide text when settings menu is active
-        local targetButtons = {"PlayGame", "Credits", "ExitGame", "Settings"}
-        local targetTexts = {"PlayGameText", "SettingText", "CreditsText", "ExitGameText"}
-        for _, buttonName in ipairs(targetButtons) do
-            local entity = Engine.GetEntityByName(buttonName)
-            if entity then
-                local button = GetComponent(entity, "ButtonComponent")
-                if button then
-                    button.interactable = false
-                else
-                    print("[MainMenuButtonHandler] Warning: ButtonComponent missing on " .. buttonName)
-                end
-            else
-                print("[MainMenuButtonHandler] Warning: Button entity " .. buttonName .. " not found")
-            end
-        end
-        -- Hide button text to prevent z-order issues with SettingsUI overlay
-        for _, textName in ipairs(targetTexts) do
-            local textEntity = Engine.GetEntityByName(textName)
-            if textEntity then
-                local textActive = GetComponent(textEntity, "ActiveComponent")
-                if textActive then
-                    textActive.isActive = false
-                end
-            end
+        if _G.event_bus then
+            _G.event_bus.publish("main_menu.click", {})
+            _G.event_bus.publish("settings_clicked", {})
         end
     end,
 
-    -- Credits Button Function
     OnClickCreditButton = function(self)
-        -- Play click SFX
-        self:_playClickSFX("Credits")
-
-        -- Enable CreditsUI
-        local creditsUIEntity = Engine.GetEntityByName("CreditsUI")
-        if creditsUIEntity then
-            local creditsUI = GetComponent(creditsUIEntity, "ActiveComponent")
-            if creditsUI then
-                creditsUI.isActive = true
-            end
-        end
-
-        -- Disable main menu buttons and hide text when credits is active
-        local targetButtons = {"PlayGame", "Credits", "ExitGame", "Settings"}
-        for _, buttonName in ipairs(targetButtons) do
-            local entity = Engine.GetEntityByName(buttonName)
-            if entity then
-                local button = GetComponent(entity, "ButtonComponent")
-                if button then
-                    button.interactable = false
-                end
-            end
+        if _G.event_bus then
+            _G.event_bus.publish("main_menu.click", {})
+            _G.event_bus.publish("credits_clicked", {})
         end
     end,
 
-    -- Helper function to play click SFX from a named button entity
-    _playClickSFX = function(self, entityName)
-        if not entityName then return end
-        local entity = Engine.GetEntityByName(entityName)
-        if not entity then return end
-
-        local audio = GetComponent(entity, "AudioComponent")
-        if audio then
-            audio:Play()
-        end
-    end,
-
-    -- Update handles fade transition and scene loading
     Update = function(self, dt)
-        -- Handle BGM fade in on scene start
+        -- BGM fade in on scene start
         if self._isFadingIn and self._bgmAudio then
             self._fadeInTimer = self._fadeInTimer + dt
-            local duration = self.bgmFadeInDuration or 2.0
-            local progress = math.min(self._fadeInTimer / duration, 1.0)
+            local progress = math.min(self._fadeInTimer / (self.bgmFadeInDuration or 2.0), 1.0)
             self._bgmAudio:SetVolume(self._bgmInitialVolume * progress)
-            if progress >= 1.0 then
-                self._isFadingIn = false
-            end
+            if progress >= 1.0 then self._isFadingIn = false end
         end
 
-        -- Handle fade transition
+        -- Fade to black + scene load
         if self._isFading and self._fadeSprite then
-        -- --Disable Highlight of button when transitioning
-            local highlightButtonEntity = Engine.GetEntityByName("HighlightButtons")
-            local highlightButton = GetComponent(highlightButtonEntity, "ActiveComponent")
-            highlightButton.isActive = false
+            local highlightEntity = Engine.GetEntityByName("HighlightButtons")
+            if highlightEntity then
+                local highlight = GetComponent(highlightEntity, "ActiveComponent")
+                if highlight then highlight.isActive = false end
+            end
 
-            local targetButtons = {"PlayGame", "Credits", "ExitGame", "Settings"}
-            for _, buttonName in ipairs(targetButtons) do
-                local entity = Engine.GetEntityByName(buttonName)
-                if entity then
-                    local button = GetComponent(entity, "ButtonComponent")
-                    local sprite = GetComponent(entity, "SpriteRenderComponent")
-                    if button then
-                        button.interactable = false
-                    end
-                    -- Disable the Highlight of the buttons (Failsafe)
-                    if sprite then
-                        sprite.isVisible = false
-                    end
+            for _, name in ipairs(MAIN_MENU_BUTTONS) do
+                local e = Engine.GetEntityByName(name)
+                if e then
+                    local btn = GetComponent(e, "ButtonComponent")
+                    if btn then btn.interactable = false end
                 end
             end
 
             self._fadeTimer = self._fadeTimer + dt
-            local duration = self.fadeDuration or 1.0
-            self._fadeAlpha = math.min(self._fadeTimer / duration, 1.0)
+            self._fadeAlpha = math.min(self._fadeTimer / (self.fadeDuration or 1.0), 1.0)
             self._fadeSprite.alpha = self._fadeAlpha
 
-            -- Fade out BGM volume alongside screen fade
             if self._bgmAudio then
-                local bgmVolume = self._bgmInitialVolume * (1.0 - self._fadeAlpha)
-                self._bgmAudio:SetVolume(bgmVolume)
+                self._bgmAudio:SetVolume(self._bgmInitialVolume * (1.0 - self._fadeAlpha))
             end
 
-            -- Once fade is complete, load the scene
             if self._fadeAlpha >= 1.0 then
                 self._isFading = false
-                if self._pendingScene then
-                    if Scene and Scene.Load then
-                        Scene.Load(self._pendingScene)
-                    else
-                        print("[MainMenuButtonHandler] Warning: Scene.Load missing, cannot load " .. tostring(self._pendingScene))
-                    end
+                if self._pendingScene and Scene and Scene.Load then
+                    Scene.Load(self._pendingScene)
                     self._pendingScene = nil
                 end
             end

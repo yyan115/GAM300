@@ -1,4 +1,3 @@
--- LoadingHandler.lua
 require("extension.engine_bootstrap")
 local Component = require("extension.mono_helper")
 
@@ -7,7 +6,7 @@ return Component {
         barFillName     = "LoadingBarFill",
         loadingTextName = "PercentText",
         targetScene     = "Resources/Scenes/04_Level.scene",
-        fullScaleX      = 1580.0   -- absolute target X scale at 100%
+        fullScaleX      = 1280.0   -- absolute target X scale at 100%
     },
 
     _progress = 0,
@@ -16,7 +15,7 @@ return Component {
     _barTransform = nil,
     _textEntity = nil,
     _text = nil,
-    _barBasePosX = nil,
+    _barOriginX = nil,
 
     Start = function(self)
         self._progress = 0
@@ -31,12 +30,13 @@ return Component {
             self._barTransform = GetComponent(self._barEntity, "Transform")
 
             if self._barTransform then
-                -- Save the center position, ignore whatever the authored scale was
-                self._barBasePosX = self._barTransform.localPosition.x
+                -- Save the left-edge origin, ignore whatever the authored scale was
+                local containerWidth = self.fullScaleX or 1280.0
+                self._barOriginX = self._barTransform.localPosition.x - (containerWidth / 2)
 
                 -- Initialize to 0%
                 self._barTransform.localScale.x    = 0.0
-                self._barTransform.localPosition.x = self._barBasePosX
+                self._barTransform.localPosition.x = self._barOriginX
                 self._barTransform.isDirty         = true
             end
         end
@@ -62,10 +62,11 @@ return Component {
         if p < 0 then p = 0 elseif p > 1 then p = 1 end
 
         -- fullScaleX is the absolute X scale at 100% — no multiplier on top
-        local newScaleX = (self.fullScaleX or 1580.0) * p
+        local newScaleX = (self.fullScaleX or 1280.0) * p
+        local newPosX   = self._barOriginX + (newScaleX / 2)
 
         self._barTransform.localScale.x    = newScaleX
-        self._barTransform.localPosition.x = self._barBasePosX
+        self._barTransform.localPosition.x = newPosX
         self._barTransform.isDirty         = true
     end,
 

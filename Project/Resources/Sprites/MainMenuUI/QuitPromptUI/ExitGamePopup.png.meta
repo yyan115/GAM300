@@ -1,0 +1,15 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "00344b3678d60384-0004b893e807b92b",
+        "source": "../../Resources/Sprites/MainMenuUI/QuitPromptUI/ExitGamePopup.png",
+        "compiled": "../../Resources/Sprites/MainMenuUI/QuitPromptUI/ExitGamePopup.dds"
+    },
+    "TextureMetaData": {
+        "type": "sprite",
+        "flipUVs": true,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

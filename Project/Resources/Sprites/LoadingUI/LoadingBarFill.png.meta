@@ -6,7 +6,7 @@
         "compiled": "../../Resources/Sprites/LoadingUI/LoadingBarFill.dds"
     },
     "TextureMetaData": {
-        "type": "diffuse",
+        "type": "sprite",
         "flipUVs": true,
         "generateMipmaps": true,
         "textureWrapMode": "Clamp",

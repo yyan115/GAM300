@@ -1,0 +1,15 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "0022d8ddb5835139-0004b90190001209",
+        "source": "../../Resources/Cutscenes/Kusane_EndingCutscene/Ending_Final_9.PNG",
+        "compiled": "../../Resources/Cutscenes/Kusane_EndingCutscene/Ending_Final_9.dds"
+    },
+    "TextureMetaData": {
+        "type": "sprite",
+        "flipUVs": true,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

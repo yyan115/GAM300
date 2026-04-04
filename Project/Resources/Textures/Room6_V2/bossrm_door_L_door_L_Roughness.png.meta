@@ -1,0 +1,15 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "007b345c5bb10879-0004b687de004833",
+        "source": "../../Resources/Textures/Room6_V2/bossrm_door_L_door_L_Roughness.png",
+        "compiled": "../../Resources/Textures/Room6_V2/bossrm_door_L_door_L_Roughness.dds"
+    },
+    "TextureMetaData": {
+        "type": "roughness",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}
