@@ -6,6 +6,11 @@ function IdleState:Enter(ai)
 end
 
 function IdleState:Update(ai, dt)
+    if ai.aggressive then
+        ai.fsm:Change("Chase", ai.states.Chase)
+        return
+    end
+
     if ai:IsPlayerInRange(ai.config.AttackDisengageRange or ai.config.DetectionRange) then
         ai.fsm:Change("Chase", ai.states.Chase)
         return

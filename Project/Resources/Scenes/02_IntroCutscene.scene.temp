@@ -610,7 +610,7 @@
                         },
                         {
                             "type": "std::string",
-                            "data": ""
+                            "data": "Resources/Scenes/03_Loading.scene"
                         },
                         {
                             "type": "std::vector<CutsceneBoard>",
@@ -628,7 +628,7 @@
                                         },
                                         {
                                             "type": "float",
-                                            "data": 30
+                                            "data": 20
                                         },
                                         {
                                             "type": "bool",
@@ -685,7 +685,7 @@
                                         },
                                         {
                                             "type": "float",
-                                            "data": 30
+                                            "data": 20
                                         },
                                         {
                                             "type": "bool",
@@ -742,7 +742,7 @@
                                         },
                                         {
                                             "type": "float",
-                                            "data": 30
+                                            "data": 20
                                         },
                                         {
                                             "type": "bool",
@@ -799,7 +799,7 @@
                                         },
                                         {
                                             "type": "float",
-                                            "data": 50
+                                            "data": 20
                                         },
                                         {
                                             "type": "bool",
@@ -856,7 +856,7 @@
                                         },
                                         {
                                             "type": "float",
-                                            "data": 50
+                                            "data": 20
                                         },
                                         {
                                             "type": "bool",
@@ -913,7 +913,7 @@
                                         },
                                         {
                                             "type": "float",
-                                            "data": 50
+                                            "data": 20
                                         },
                                         {
                                             "type": "bool",
@@ -970,7 +970,7 @@
                                         },
                                         {
                                             "type": "float",
-                                            "data": 50
+                                            "data": 20
                                         },
                                         {
                                             "type": "bool",
@@ -1023,11 +1023,11 @@
                                         },
                                         {
                                             "type": "std::string",
-                                            "data": "The wind whispers through broken stone...\nKusane... last daughter of a fallen clan."
+                                            "data": "The wind whispered through broken stone. Kusane, last daughter of a fallen clan. Bloodied. Broken. Alone. Each step forward, is stolen from the edge of death."
                                         },
                                         {
                                             "type": "float",
-                                            "data": 50
+                                            "data": 15
                                         },
                                         {
                                             "type": "bool",
@@ -1084,7 +1084,7 @@
                                         },
                                         {
                                             "type": "float",
-                                            "data": 50
+                                            "data": 20
                                         },
                                         {
                                             "type": "bool",
@@ -1141,7 +1141,7 @@
                                         },
                                         {
                                             "type": "float",
-                                            "data": 50
+                                            "data": 20
                                         },
                                         {
                                             "type": "bool",
@@ -1198,7 +1198,7 @@
                                         },
                                         {
                                             "type": "float",
-                                            "data": 50
+                                            "data": 20
                                         },
                                         {
                                             "type": "bool",
@@ -1255,7 +1255,7 @@
                                         },
                                         {
                                             "type": "float",
-                                            "data": 30
+                                            "data": 20
                                         },
                                         {
                                             "type": "bool",
@@ -1263,7 +1263,7 @@
                                         },
                                         {
                                             "type": "float",
-                                            "data": 11
+                                            "data": 10
                                         },
                                         {
                                             "type": "float",
@@ -1320,7 +1320,7 @@
                                         },
                                         {
                                             "type": "float",
-                                            "data": 1
+                                            "data": 3
                                         },
                                         {
                                             "type": "float",
@@ -1369,7 +1369,7 @@
                                         },
                                         {
                                             "type": "float",
-                                            "data": 50
+                                            "data": 20
                                         },
                                         {
                                             "type": "bool",
@@ -1426,7 +1426,7 @@
                                         },
                                         {
                                             "type": "float",
-                                            "data": 50
+                                            "data": 20
                                         },
                                         {
                                             "type": "bool",
@@ -1483,7 +1483,7 @@
                                         },
                                         {
                                             "type": "float",
-                                            "data": 50
+                                            "data": 20
                                         },
                                         {
                                             "type": "bool",
@@ -1540,7 +1540,7 @@
                                         },
                                         {
                                             "type": "float",
-                                            "data": 50
+                                            "data": 20
                                         },
                                         {
                                             "type": "bool",
@@ -1654,7 +1654,7 @@
                                         },
                                         {
                                             "type": "float",
-                                            "data": 50
+                                            "data": 20
                                         },
                                         {
                                             "type": "bool",
@@ -1711,7 +1711,7 @@
                                         },
                                         {
                                             "type": "float",
-                                            "data": 50
+                                            "data": 20
                                         },
                                         {
                                             "type": "bool",

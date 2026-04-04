@@ -475,14 +475,21 @@ return Component {
         )
 
         -- ── Scale fade distances based on post-collision camera distance ─
+        -- During chain aim the camera is very close to the player, so skip
+        -- scaling and set distances to 0 so nothing fades.
         if self._camComp and radius > 0.01 then
-            local dx = desiredX - cameraTarget.x
-            local dy = desiredY - cameraTarget.y
-            local dz = desiredZ - cameraTarget.z
-            local actualDist = math.sqrt(dx*dx + dy*dy + dz*dz)
-            local ratio = actualDist / radius
-            self._camComp.fadeNear = self._baseFadeNear * ratio
-            self._camComp.fadeFar  = self._baseFadeFar  * ratio
+            if self._chainAiming then
+                self._camComp.fadeNear = 0.0
+                self._camComp.fadeFar  = 0.01
+            else
+                local dx = desiredX - cameraTarget.x
+                local dy = desiredY - cameraTarget.y
+                local dz = desiredZ - cameraTarget.z
+                local actualDist = math.sqrt(dx*dx + dy*dy + dz*dz)
+                local ratio = actualDist / radius
+                self._camComp.fadeNear = self._baseFadeNear * ratio
+                self._camComp.fadeFar  = self._baseFadeFar  * ratio
+            end
         end
 
         -- ── Blend position with chain aim when active ─────────────────────

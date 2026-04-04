@@ -1,0 +1,15 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "007b345c0e012078-0004b6a288007c8b",
+        "source": "../../Resources/Textures/BossRoom/Cloth2/Cloth2_Base_color.png",
+        "compiled": "../../Resources/Textures/BossRoom/Cloth2/Cloth2_Base_color.dds"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

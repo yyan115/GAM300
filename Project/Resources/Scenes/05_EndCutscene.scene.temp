@@ -634,7 +634,7 @@
                         },
                         {
                             "type": "std::string",
-                            "data": ""
+                            "data": "Resources/Scenes/01_MainMenu.scene"
                         },
                         {
                             "type": "std::vector<CutsceneBoard>",

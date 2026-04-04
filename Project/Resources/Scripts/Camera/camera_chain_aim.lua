@@ -157,9 +157,43 @@ function M.updateChainAim(self, dt)
             wz = camZ + fz * hitDist
         end
 
+        -- Determine if crosshair is over an enemy: aim assist locked OR raycast hit
+        local crosshairOnEnemy = self._assistTargetX ~= nil
+        if not crosshairOnEnemy
+           and Physics and Physics.RaycastGetEntity
+           and Engine and Engine.GetEntityTag and Engine.GetParentEntity then
+            local ok, r1, r2 = pcall(Physics.RaycastGetEntity, camX, camY, camZ, fx, fy, fz, 100.0)
+            if ok then
+                local hitId = r2 or -1
+                if type(r1) == "table" or type(r1) == "userdata" then
+                    hitId = r1.entityId or r1[2] or -1
+                end
+                if hitId and hitId >= 0 then
+                    local rootId = hitId
+                    local safety = 20
+                    while safety > 0 do
+                        local pOk, parentId = pcall(Engine.GetParentEntity, rootId)
+                        if pOk and parentId and parentId >= 0 then
+                            rootId = parentId
+                        else
+                            break
+                        end
+                        safety = safety - 1
+                    end
+                    local tOk, tag = pcall(Engine.GetEntityTag, rootId)
+                    if tOk and (tag == "Enemy" or tag == "Boss") then
+                        if not (self._deadEnemies and self._deadEnemies[rootId]) then
+                            crosshairOnEnemy = true
+                        end
+                    end
+                end
+            end
+        end
+
         if event_bus and event_bus.publish then
             event_bus.publish("ChainAim_basis", { forward = { x = fx, y = fy, z = fz } })
             event_bus.publish("ChainAim_worldTarget", { x = wx, y = wy, z = wz })
+            event_bus.publish("chain.crosshair_on_enemy", { active = crosshairOnEnemy })
         end
     end
 

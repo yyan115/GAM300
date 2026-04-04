@@ -339,6 +339,11 @@ return Component {
         self._knockupRecoverT = 0
         self._knockupJustLanded = false
 
+        self.aggressive = self.aggressive or false
+        self.AlertRadiusOnHit = self.AlertRadiusOnHit or 10.0
+        self._lastAlertTime = 0
+        self._alertCooldown = 0.20
+
         -- Capture authored scale once so the effect always springs back to the
         -- editor-set proportions rather than a hardcoded 1,1,1.
         local _initScale      = self._transform and self._transform.localScale
@@ -379,6 +384,9 @@ return Component {
             self._playerDead = false
             self._playerDeadSub = _G.event_bus.subscribe("playerDead", function(playerDead)
                 self._playerDead = playerDead
+                if playerDead then
+                    self:OnPlayerDied({ dead = true })
+                end
             end)
 
             self._comboDamageSub = _G.event_bus.subscribe("deal_damage_to_entity", function(payload)
@@ -405,6 +413,10 @@ return Component {
                 if payload.entityId ~= self.entityId then return end
                 print("[EnemyAI] chain.enemy_hooked received — calling ApplyHook duration=" .. tostring(payload.duration))
                 pcall(function() self:ApplyHook(payload.duration) end)
+            end)
+
+            self._onEnemyAlertSub = _G.event_bus.subscribe("enemy_alert", function(msg)
+                self:OnEnemyAlert(msg)
             end)
         end
 
@@ -673,7 +685,7 @@ return Component {
                 self:StopCC()
 
                 -- IMPORTANT: clear stale attack intent again on landing
-                self:_ResetCombatAnimatorParams()
+                --self:_ResetCombatAnimatorParams()
 
                 -- landing hurt
                 self:_PlayRandomHurtAnim()
@@ -695,7 +707,7 @@ return Component {
             self:StopCC()
 
             if self._knockupRecoverT <= 0 then
-                self:_ResetCombatAnimatorParams()
+                --self:_ResetCombatAnimatorParams()
                 self:ClearPath()
                 self:StopCC()
                 self.fsm:ForceChange("Idle", self.states.Idle)
@@ -862,6 +874,7 @@ return Component {
 
     _ClearHurtAnims = function(self)
         if not self._animator then return end
+        print("[EnemyAI] _ClearHurtAnims Animator:SetBool(Hurt, false)")
         self._animator:SetBool("Hurt1", false)
         self._animator:SetBool("Hurt2", false)
         self._animator:SetBool("Hurt3", false)
@@ -876,6 +889,7 @@ return Component {
         self._animator:SetBool("ReadyToAttack", false)
 
         -- clear hurt bools too; we will re-apply the one we want explicitly
+        print("[EnemyAI] _ResetCombatAnimatorParams Animator:SetBool(Hurt, false)")
         self._animator:SetBool("Hurt1", false)
         self._animator:SetBool("Hurt2", false)
         self._animator:SetBool("Hurt3", false)
@@ -893,7 +907,7 @@ return Component {
 
         -- also clear obvious combat intent so animation/state doesn't keep arming
         self.attackTimer = 0
-        self:_ResetCombatAnimatorParams()
+        --self:_ResetCombatAnimatorParams()
         self:StopCC()
     end,
 
@@ -1784,7 +1798,7 @@ return Component {
         self:StopCC()
 
         -- IMPORTANT: hard reset combat intent before going airborne
-        self:_ResetCombatAnimatorParams()
+        --self:_ResetCombatAnimatorParams()
 
         -- reset any simple attack timers/flags that may resume later
         self.attackTimer = 0
@@ -1923,6 +1937,10 @@ return Component {
             return
         end
 
+        -- This hit alerts nearby enemies from THIS enemy's position
+        self:SetAggressive(true)
+        self:BroadcastAggroAlert(self.AlertRadiusOnHit or 8.0)
+
         -- interrupt any delayed melee/ranged attack that has not fired yet
         self:CancelPendingAttack("HURT")
 
@@ -1932,10 +1950,13 @@ return Component {
         if not self._hurtTriggeredByFeather then
             local myRandomValue = math.random(1, 3)
             if myRandomValue == 1 then
+                print("[EnemyAI] Animator:SetBool(Hurt1, true)")
                 self._animator:SetBool("Hurt1", true)
             elseif myRandomValue == 2 then
+                print("[EnemyAI] Animator:SetBool(Hurt2, true)")
                 self._animator:SetBool("Hurt2", true)
             elseif myRandomValue == 3 then
+                print("[EnemyAI] Animator:SetBool(Hurt3, true)")
                 self._animator:SetBool("Hurt3", true)
             end
 
@@ -2017,6 +2038,82 @@ return Component {
         -- Publish a chain.pull_chain event so the player knows to play the PullChain animation.
         if _G.event_bus and _G.event_bus.publish then
             _G.event_bus.publish("chain.pull_chain", true)
+        end
+    end,
+
+    BroadcastAggroAlert = function(self, radius)
+        if not (_G.event_bus and _G.event_bus.publish) then return end
+
+        local x, _, z = self:GetPosition()
+        _G.event_bus.publish("enemy_alert", {
+            x = x or 0,
+            z = z or 0,
+            radius = radius or self.AlertRadiusOnHit or 8.0,
+            sourceEntityId = self.entityId,
+            source = "combat",
+        })
+    end,
+
+    SetAggressive = function(self, value)
+        self.aggressive = value and true or false
+    end,
+
+    OnEnemyAlert = function(self, msg)
+        if not msg then return end
+        if self.dead then return end
+        if self.fsm.currentName == "Death" then return end
+        if self._frozenBycinematic then return end
+        if self.IsPassive then return end
+
+        -- use controller-aware position
+        local ex, ez = self:GetEnemyPosXZ()
+        if ex == nil or ez == nil then return end
+
+        local ax = msg.x or 0
+        local az = msg.z or 0
+        local r  = msg.radius or 0
+
+        local dx = ax - ex
+        local dz = az - ez
+        if (dx * dx + dz * dz) > (r * r) then
+            return
+        end
+
+        self:SetAggressive(true)
+
+        -- hard reset stale patrol / attack / path state before chase
+        self:CancelPendingAttack("ALERTED")
+        self:ClearPath()
+        self:StopCC()
+
+        self._patrolWaitT = 0
+        self._isPatrolWait = false
+        self._readyLatched = false
+        self._readySettleT = 0
+
+        if self.fsm and self.states and self.states.Chase then
+            local s = self.fsm.currentName
+            if s ~= "Death" and s ~= "Hooked" then
+                self.fsm:ForceChange("Chase", self.states.Chase)
+            end
+        end
+    end,
+
+    OnPlayerDied = function(self, msg)
+        self:SetAggressive(false)
+
+        -- optional: clear attack intent too
+        if self.CancelPendingAttack then
+            self:CancelPendingAttack("PLAYER_DIED")
+        end
+
+        -- if enemy is alive and not in special states, return to patrol
+        if self.dead then return end
+        if not (self.fsm and self.states) then return end
+
+        local s = self.fsm.currentName
+        if s ~= "Death" and s ~= "Hooked" and s ~= "Hurt" then
+            self.fsm:Change("Patrol", self.states.Patrol)
         end
     end,
 
@@ -2127,7 +2224,6 @@ return Component {
                 self._damageSub = nil
             end
 
-            -- NEW: Unsubscribe from combo damage
             if self._comboDamageSub then
                 pcall(function()
                     _G.event_bus.unsubscribe(self._comboDamageSub)
@@ -2145,6 +2241,11 @@ return Component {
             if self._chainHookSub then
                 pcall(function() _G.event_bus.unsubscribe(self._chainHookSub) end)
                 self._chainHookSub = nil
+            end
+
+            if self._onEnemyAlertSub then
+                pcall(function() _G.event_bus.unsubscribe(self._onEnemyAlertSub) end)
+                self._onEnemyAlertSub = nil
             end
         end
         self._frozenBycinematic = false
@@ -2173,6 +2274,7 @@ return Component {
             if self._playerDeadSub then pcall(function() _G.event_bus.unsubscribe(self._playerDeadSub) end) self._playerDeadSub = nil end
             if self._chainEndpointHitSub then pcall(function() _G.event_bus.unsubscribe(self._chainEndpointHitSub) end) self._chainEndpointHitSub = nil end
             if self._chainHookSub then pcall(function() _G.event_bus.unsubscribe(self._chainHookSub) end) self._chainHookSub = nil end
+            if self._onEnemyAlertSub then pcall(function() _G.event_bus.unsubscribe(self._onEnemyAlertSub) end) self._onEnemyAlertSub = nil end
         end
 
         if self._rb then
@@ -2269,6 +2371,11 @@ return Component {
             if self._chainHookSub then
                 pcall(function() _G.event_bus.unsubscribe(self._chainHookSub) end)
                 self._chainHookSub = nil
+            end
+
+            if self._onEnemyAlertSub then
+                pcall(function() _G.event_bus.unsubscribe(self._onEnemyAlertSub) end)
+                self._onEnemyAlertSub = nil
             end
         end
     end,

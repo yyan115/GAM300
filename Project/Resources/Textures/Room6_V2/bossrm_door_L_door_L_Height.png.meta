@@ -1,0 +1,15 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "007b345c07931878-0004b687da004695",
+        "source": "../../Resources/Textures/Room6_V2/bossrm_door_L_door_L_Height.png",
+        "compiled": "../../Resources/Textures/Room6_V2/bossrm_door_L_door_L_Height.dds"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": false,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

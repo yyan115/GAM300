@@ -1,0 +1,15 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "0043ce3781058bef-0004b698be0023c7",
+        "source": "../../Resources/Sprites/MainMenuUI/LOGO.png",
+        "compiled": "../../Resources/Sprites/MainMenuUI/LOGO.dds"
+    },
+    "TextureMetaData": {
+        "type": "diffuse",
+        "flipUVs": true,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}
