@@ -1,0 +1,15 @@
+{
+    "AssetMetaData": {
+        "version": 7,
+        "guid": "000db95d2e005764-0004b8ddc2002415",
+        "source": "../../Resources/Sprites/CutSceneUI/CutsceneHoverButton.png",
+        "compiled": "../../Resources/Sprites/CutSceneUI/CutsceneHoverButton.dds"
+    },
+    "TextureMetaData": {
+        "type": "sprite",
+        "flipUVs": true,
+        "generateMipmaps": true,
+        "textureWrapMode": "Clamp",
+        "maxSize": 2048
+    }
+}

@@ -343,7 +343,20 @@
                                 ],
                                 "BGMNarrativeVolume": 0.1,
                                 "_private": {},
-                                "_bgmFadeTimer": 0.0
+                                "_bgmFadeTimer": 0.0,
+                                "MashSoundClip": [
+                                    "005d5d268894ebb8-0004b94d68000009",
+                                    "005d5d26a64ec0bc-0004b94d6800000b",
+                                    "005d5d26be838cc8-0004b94d6800000d",
+                                    "005d5d269fb1dcf7-0004b94d6800000f",
+                                    "005d5d26de4f379b-0004b94d68000011"
+                                ],
+                                "FinalMashSoundClip": [
+                                    "005d5d2686909ecf-0004b94d68000001",
+                                    "005d5d26de1f87b3-0004b94d68000003",
+                                    "005d5d26c7c5b1a4-0004b94d68000005",
+                                    "005d5d269f524812-0004b94d68000007"
+                                ]
                             }
                         }
                     ]

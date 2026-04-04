@@ -6,7 +6,7 @@
         "compiled": "../../Resources/Sprites/PlayerHUD/HealthBarBack.dds"
     },
     "TextureMetaData": {
-        "type": "diffuse",
+        "type": "sprite",
         "flipUVs": false,
         "generateMipmaps": true,
         "textureWrapMode": "Clamp",

@@ -297,24 +297,25 @@ float calculatePointShadow(int shadowIndex, vec3 fragPos, vec3 lightPos)
     float currentDepth = length(fragToLight);
 
     // Distance-based PCF: kernel radius scales with distance from the light.
-    // Contact shadows (small distance) → tiny radius → hard edge.
-    // Distant shadows → large radius → soft penumbra.
-    float distNorm  = currentDepth / pointShadowFarPlane;
-    float diskRadius = mix(0.01, 0.15, distNorm);
+    // Minimum 0.03 = ~4 texels at 128-res map → soft enough to hide frame-to-frame
+    // shadow-map refresh differences without visible glitter.
+    float distNorm   = currentDepth / pointShadowFarPlane;
+    float diskRadius = mix(0.03, 0.15, distNorm);
 
-    // 20 fixed offset directions distributed around a sphere
-    const vec3 sampleOffsets[20] = vec3[20](
-        vec3( 1, 1, 1), vec3( 1,-1, 1), vec3(-1,-1, 1), vec3(-1, 1, 1),
-        vec3( 1, 1,-1), vec3( 1,-1,-1), vec3(-1,-1,-1), vec3(-1, 1,-1),
-        vec3( 1, 1, 0), vec3( 1,-1, 0), vec3(-1,-1, 0), vec3(-1, 1, 0),
-        vec3( 1, 0, 1), vec3(-1, 0, 1), vec3( 1, 0,-1), vec3(-1, 0,-1),
-        vec3( 0, 1, 1), vec3( 0,-1, 1), vec3( 0,-1,-1), vec3( 0, 1,-1)
+    // 8 directions distributed across the sphere.
+    // Deliberately avoid exact 45° face-boundary angles (e.g. (1,1,0) normalized)
+    // because GL_NEAREST cubemap sampling at seams is undefined and causes flicker.
+    const vec3 sampleOffsets[8] = vec3[8](
+        vec3( 1.0, 1.0, 0.5), vec3(-1.0, 1.0, 0.5),
+        vec3( 1.0,-1.0,-0.5), vec3(-1.0,-1.0,-0.5),
+        vec3( 1.0, 0.5, 1.0), vec3(-1.0,-0.5, 1.0),
+        vec3( 0.5, 1.0,-1.0), vec3(-0.5,-1.0,-1.0)
     );
 
     float bias = max(0.005, currentDepth * 0.02);
     float shadow = 0.0;
 
-    for (int i = 0; i < 20; ++i)
+    for (int i = 0; i < 8; ++i)
     {
         vec3 sampleDir = fragToLight + normalize(sampleOffsets[i]) * diskRadius;
         float closestDepth;
@@ -326,7 +327,7 @@ float calculatePointShadow(int shadowIndex, vec3 fragPos, vec3 lightPos)
         shadow += currentDepth - bias > closestDepth ? 1.0 : 0.0;
     }
 
-    return shadow / 20.0;
+    return shadow / 8.0;
 }
 
 // ============================================================================

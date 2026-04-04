@@ -6,7 +6,7 @@
 #include <Platform/IPlatform.h>
 #include <WindowManager.hpp>
 
-const std::array<std::string, 8> TextureMeta::textureTypes = { "diffuse", "specular", "normal", "emissive", "metallic", "roughness", "ao", "height" };
+const std::array<std::string, 9> TextureMeta::textureTypes = { "diffuse", "specular", "normal", "emissive", "metallic", "roughness", "ao", "height", "sprite" };
 const std::array<std::string, 2> TextureMeta::textureWrapModes = { "Clamp", "Repeat" };
 
 void AssetMeta::PopulateAssetMeta(GUID_128 _guid, const std::string& _sourcePath, const std::string& _compiledPath, int _ver, const std::string& _androidCompiledPath)

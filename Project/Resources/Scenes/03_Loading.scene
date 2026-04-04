@@ -920,6 +920,10 @@
                         {
                             "type": "float",
                             "data": 0.3
+                        },
+                        {
+                            "type": "bool",
+                            "data": false
                         }
                     ]
                 },
@@ -1076,7 +1080,7 @@
                             "data": [
                                 {
                                     "type": "float",
-                                    "data": 1580
+                                    "data": 1280
                                 },
                                 {
                                     "type": "float",
@@ -1235,6 +1239,10 @@
                         {
                             "type": "float",
                             "data": 0.3
+                        },
+                        {
+                            "type": "bool",
+                            "data": false
                         }
                     ]
                 },
@@ -1370,15 +1378,15 @@
                             "data": [
                                 {
                                     "type": "float",
-                                    "data": 0
+                                    "data": 1
                                 },
                                 {
                                     "type": "float",
-                                    "data": 0
+                                    "data": 1
                                 },
                                 {
                                     "type": "float",
-                                    "data": 0
+                                    "data": 1
                                 }
                             ]
                         },
@@ -1702,6 +1710,10 @@
                         {
                             "type": "float",
                             "data": 0.3
+                        },
+                        {
+                            "type": "bool",
+                            "data": false
                         }
                     ]
                 },
@@ -1746,7 +1758,7 @@
                             "data": [
                                 {
                                     "type": "float",
-                                    "data": 784.864
+                                    "data": 635
                                 },
                                 {
                                     "type": "float",
@@ -1811,7 +1823,7 @@
                         },
                         {
                             "type": "unsigned",
-                            "data": 24
+                            "data": 21
                         },
                         "00602042db559215-00036778be000001",
                         "00374a2171ad928d-000331fc8200006d",
@@ -1820,7 +1832,7 @@
                             "data": [
                                 {
                                     "type": "float",
-                                    "data": 1744.86
+                                    "data": 1595
                                 },
                                 {
                                     "type": "float",
@@ -1837,15 +1849,15 @@
                             "data": [
                                 {
                                     "type": "float",
-                                    "data": 0
+                                    "data": 0.8
                                 },
                                 {
                                     "type": "float",
-                                    "data": 0
+                                    "data": 0.8
                                 },
                                 {
                                     "type": "float",
-                                    "data": 0
+                                    "data": 0.8
                                 }
                             ]
                         },
@@ -2064,38 +2076,23 @@
                             "entryFunction": "OnInit",
                             "autoInvokeEntry": true,
                             "instanceState": {
-                                "DisableSafe": null,
-                                "loadingTextName": "PercentText",
-                                "Update": null,
-                                "Destroy": null,
-                                "Unsubscribe": null,
-                                "_private": {},
-                                "After": null,
-                                "barFillName": "LoadingBarFill",
-                                "_call_lifecycle": null,
-                                "Start": null,
-                                "Subscribe": null,
-                                "DeserializeFields": null,
-                                "fullScaleX": 1630.0,
-                                "_applyBarProgress": null,
-                                "targetScene": "\"Resources/Scenes/04_Level.scene\"",
-                                "_setPercentText": null,
-                                "SerializeFields": null,
-                                "StartSafe": null,
-                                "UpdateSafe": null,
-                                "AwakeSafe": null,
-                                "anchorLeft": true,
-                                "Every": null,
-                                "__created_at": 1772746505.0,
-                                "__meta": {},
                                 "__field_list": {
+                                    "anchorLeft": true,
                                     "fullScaleX": 2.0,
                                     "targetScene": "Resources/Scenes/04_Level.scene",
-                                    "loadingTextName": "PercentText",
                                     "barFillName": "LoadingBarFill",
-                                    "anchorLeft": true
+                                    "loadingTextName": "PercentText"
                                 },
-                                "_subscriptions": {}
+                                "__meta": {},
+                                "loadingTextName": "PercentText",
+                                "__created_at": 1772746505.0,
+                                "__engine_script_path": "../../resources/scripts/ui/loadingscreen/loadinghandler.lua",
+                                "anchorLeft": true,
+                                "_subscriptions": {},
+                                "fullScaleX": 1280.0,
+                                "_private": {},
+                                "targetScene": "\"Resources/Scenes/04_Level.scene\"",
+                                "barFillName": "LoadingBarFill"
                             }
                         }
                     ]

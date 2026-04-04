@@ -6,7 +6,7 @@
         "compiled": "../../Resources/Textures/Room6_V2/bossrm_door_R_door_R_Normal.dds"
     },
     "TextureMetaData": {
-        "type": "diffuse",
+        "type": "normal",
         "flipUVs": false,
         "generateMipmaps": true,
         "textureWrapMode": "Clamp",

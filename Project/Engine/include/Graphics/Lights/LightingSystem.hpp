@@ -45,12 +45,15 @@ public:
     bool shadowsEnabled = true;
     int shadowMapResolution = 256;
     float shadowDistance = 25.0f;  // How far shadows extend from camera
-    int pointShadowMapResolution = 128;
+    int pointShadowMapResolution = 256;
     float pointLightShadowFarPlane = 25.0f;
 
     void SetShadowRenderCallback(std::function<void(Shader&)> callback) {
         shadowRenderCallback = callback;
     }
+
+    // Rebuild point shadow maps at a new resolution. quality: 0=Low(128), 1=Medium(256), 2=High(512)
+    ENGINE_API void SetPointShadowQuality(int quality);
 
     int GetActiveShadowCasterCount() const { return activeShadowCasterCount; }
 
