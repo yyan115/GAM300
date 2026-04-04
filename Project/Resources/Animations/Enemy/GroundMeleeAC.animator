@@ -16,17 +16,17 @@
             "defaultValue": 0.0
         },
         {
+            "name": "Melee",
+            "type": "Bool",
+            "defaultValue": 0.0
+        },
+        {
             "name": "PlayerInDetectionRange",
             "type": "Bool",
             "defaultValue": 0.0
         },
         {
             "name": "Hurt1",
-            "type": "Bool",
-            "defaultValue": 0.0
-        },
-        {
-            "name": "Melee",
             "type": "Bool",
             "defaultValue": 0.0
         },

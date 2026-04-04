@@ -209,17 +209,6 @@
             }
         },
         {
-            "id": "Falling",
-            "clipIndex": 9,
-            "loop": false,
-            "speed": 2.0,
-            "crossfadeDuration": 0.20000000298023224,
-            "nodePosition": {
-                "x": -109.51815795898438,
-                "y": 151.10987854003906
-            }
-        },
-        {
             "id": "Feather Bomb",
             "clipIndex": 12,
             "loop": false,
@@ -228,6 +217,17 @@
             "nodePosition": {
                 "x": -470.72235107421875,
                 "y": -269.2222900390625
+            }
+        },
+        {
+            "id": "Falling",
+            "clipIndex": 9,
+            "loop": false,
+            "speed": 2.0,
+            "crossfadeDuration": 0.20000000298023224,
+            "nodePosition": {
+                "x": -109.51815795898438,
+                "y": 151.10987854003906
             }
         },
         {
@@ -1143,11 +1143,6 @@
             "transitionDuration": 0.029999999329447746,
             "conditions": [
                 {
-                    "paramName": "Phase3",
-                    "mode": "Equals",
-                    "threshold": 1.0
-                },
-                {
                     "paramName": "FeatherBomb",
                     "mode": "TriggerFired",
                     "threshold": 0.0
@@ -1233,10 +1228,65 @@
             "transitionDuration": 0.6000000238418579,
             "conditions": [
                 {
-                    "paramName": "Phase3",
-                    "mode": "Equals",
-                    "threshold": 1.0
-                },
+                    "paramName": "FeatherBomb",
+                    "mode": "TriggerFired",
+                    "threshold": 0.0
+                }
+            ]
+        },
+        {
+            "from": "Melee Attack",
+            "to": "Feather Bomb",
+            "anyState": false,
+            "hasExitTime": true,
+            "exitTime": 0.6200000047683716,
+            "transitionDuration": 0.6100000143051147,
+            "conditions": [
+                {
+                    "paramName": "FeatherBomb",
+                    "mode": "TriggerFired",
+                    "threshold": 0.0
+                }
+            ]
+        },
+        {
+            "from": "Hurt1",
+            "to": "Feather Bomb",
+            "anyState": false,
+            "hasExitTime": true,
+            "exitTime": 0.5299999713897705,
+            "transitionDuration": 0.11999999731779099,
+            "conditions": [
+                {
+                    "paramName": "FeatherBomb",
+                    "mode": "TriggerFired",
+                    "threshold": 0.0
+                }
+            ]
+        },
+        {
+            "from": "Hurt2",
+            "to": "Feather Bomb",
+            "anyState": false,
+            "hasExitTime": true,
+            "exitTime": 0.550000011920929,
+            "transitionDuration": 0.18000000715255737,
+            "conditions": [
+                {
+                    "paramName": "FeatherBomb",
+                    "mode": "TriggerFired",
+                    "threshold": 0.0
+                }
+            ]
+        },
+        {
+            "from": "Hurt3",
+            "to": "Feather Bomb",
+            "anyState": false,
+            "hasExitTime": true,
+            "exitTime": 0.550000011920929,
+            "transitionDuration": 0.12999999523162842,
+            "conditions": [
                 {
                     "paramName": "FeatherBomb",
                     "mode": "TriggerFired",
