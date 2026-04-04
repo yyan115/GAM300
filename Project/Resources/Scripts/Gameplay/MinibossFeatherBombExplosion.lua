@@ -9,6 +9,7 @@ return Component {
     fields = {
         AOEExplosionDmg = 10.0,
         AOEExplosionRadius = 5.0,
+        AOEExplosionKnockback = 50.0,
         FlashDuration = 0.2,
         TargetBloomIntensity = 10.0,
         TargetLightIntensity = 1.0,
@@ -39,6 +40,7 @@ return Component {
         self._transform.localScale.x = self.AOEExplosionRadius
         self._transform.localScale.y = self.AOEExplosionRadius
         self._transform.localScale.z = self.AOEExplosionRadius
+        self._transform.isDirty = true
 
         self._flashDuration = self.FlashDuration
     end,
@@ -70,6 +72,40 @@ return Component {
 
         if self._flashDuration <= 0.0 then
             Engine.DestroyEntity(self.entityId)
+        end
+    end,
+
+    _toRoot = function(self, entityId)
+        local targetId = entityId
+        if Engine and Engine.GetParentEntity then
+            while true do
+                local parentId = Engine.GetParentEntity(targetId)
+                if not parentId or parentId < 0 then break end
+                targetId = parentId
+            end
+        end
+        return targetId
+    end,
+
+    OnTriggerEnter = function(self, otherEntityId)
+        local rootId = self:_toRoot(otherEntityId)
+        local name = Engine.GetEntityName(otherEntityId)
+        print(string.format("Collided with entity entity %s", name))
+        local tagComp = GetComponent(rootId, "TagComponent")
+        
+        if tagComp and Tag.Compare(tagComp.tagIndex, "Player") then
+            print("ONTRIGGERENTER")
+            -- Trigger the damage logic via Event Bus
+            local x,y,z = self:GetPosition()
+            if _G.event_bus and _G.event_bus.publish then
+                _G.event_bus.publish("boss_rain_explosives", {
+                    entityId = self.entityId,
+                    x=x,y=y,z=z,
+                    radius = self.AOEExplosionRadius or 4.0,
+                    dmg = self.AOEExplosionDmg or 2,
+                    kb = self.AOEExplosionKnockback or 240.0,
+                })
+            end
         end
     end,
 
