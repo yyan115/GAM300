@@ -1818,7 +1818,7 @@
                             "data": [
                                 {
                                     "type": "float",
-                                    "data": 1784
+                                    "data": 1400
                                 },
                                 {
                                     "type": "float",
@@ -2104,7 +2104,7 @@
                             "data": [
                                 {
                                     "type": "float",
-                                    "data": 325.6
+                                    "data": 460
                                 },
                                 {
                                     "type": "float",
@@ -2329,7 +2329,32 @@
                             "enabled": true,
                             "preserveKeys": [],
                             "entryFunction": "OnInit",
-                            "autoInvokeEntry": true
+                            "autoInvokeEntry": true,
+                            "instanceState": {
+                                "Subscribe": null,
+                                "__engine_script_path": "../../resources/scripts/ui/dialoguetextaligner.lua",
+                                "After": null,
+                                "UpdateSafe": null,
+                                "DeserializeFields": null,
+                                "yShift": 0.09,
+                                "__meta": {},
+                                "_call_lifecycle": null,
+                                "AwakeSafe": null,
+                                "SerializeFields": null,
+                                "Start": null,
+                                "__field_list": {
+                                    "yShift": 0.08
+                                },
+                                "__created_at": 1775308981.0,
+                                "Destroy": null,
+                                "DisableSafe": null,
+                                "Update": null,
+                                "StartSafe": null,
+                                "_subscriptions": {},
+                                "Every": null,
+                                "Unsubscribe": null,
+                                "_private": {}
+                            }
                         }
                     ]
                 }

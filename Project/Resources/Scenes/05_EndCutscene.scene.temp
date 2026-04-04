@@ -428,7 +428,7 @@
                             "type": "bool",
                             "data": true
                         },
-                        "0037ed6d8eb7402f-0003f91b9c000001",
+                        "0022d8ddfb6aa8c5-0004b9019200120b",
                         "00374a216e66dbbc-000331fc80000069",
                         {
                             "type": "Vector3D",
@@ -644,7 +644,7 @@
                                     "data": [
                                         {
                                             "type": "std::string",
-                                            "data": "../../Resources/Cutscenes/Kusane_EndingCutscene/Ending_WIP_1.PNG"
+                                            "data": "../../Resources/Cutscenes/Kusane_EndingCutscene/Ending_Final_1.PNG"
                                         },
                                         {
                                             "type": "std::string",
@@ -701,7 +701,7 @@
                                     "data": [
                                         {
                                             "type": "std::string",
-                                            "data": "../../Resources/Cutscenes/Kusane_EndingCutscene/Ending_WIP_2.PNG"
+                                            "data": "../../Resources/Cutscenes/Kusane_EndingCutscene/Ending_Final_2.PNG"
                                         },
                                         {
                                             "type": "std::string",
@@ -758,7 +758,7 @@
                                     "data": [
                                         {
                                             "type": "std::string",
-                                            "data": "../../Resources/Cutscenes/Kusane_EndingCutscene/Ending_WIP_3.PNG"
+                                            "data": "../../Resources/Cutscenes/Kusane_EndingCutscene/Ending_Final_3.PNG"
                                         },
                                         {
                                             "type": "std::string",
@@ -815,7 +815,7 @@
                                     "data": [
                                         {
                                             "type": "std::string",
-                                            "data": "../../Resources/Cutscenes/Kusane_EndingCutscene/Ending_WIP_4.PNG"
+                                            "data": "../../Resources/Cutscenes/Kusane_EndingCutscene/Ending_Final_4.PNG"
                                         },
                                         {
                                             "type": "std::string",
@@ -872,7 +872,7 @@
                                     "data": [
                                         {
                                             "type": "std::string",
-                                            "data": "../../Resources/Cutscenes/Kusane_EndingCutscene/Ending_WIP_5.PNG"
+                                            "data": "../../Resources/Cutscenes/Kusane_EndingCutscene/Ending_Final_5.PNG"
                                         },
                                         {
                                             "type": "std::string",
@@ -929,7 +929,7 @@
                                     "data": [
                                         {
                                             "type": "std::string",
-                                            "data": "../../Resources/Cutscenes/Kusane_EndingCutscene/Ending_WIP_6.PNG"
+                                            "data": "../../Resources/Cutscenes/Kusane_EndingCutscene/Ending_Final_6.PNG"
                                         },
                                         {
                                             "type": "std::string",
@@ -986,7 +986,7 @@
                                     "data": [
                                         {
                                             "type": "std::string",
-                                            "data": "../../Resources/Cutscenes/Kusane_EndingCutscene/Ending_WIP_7.PNG"
+                                            "data": "../../Resources/Cutscenes/Kusane_EndingCutscene/Ending_Final_7.PNG"
                                         },
                                         {
                                             "type": "std::string",
@@ -1043,7 +1043,7 @@
                                     "data": [
                                         {
                                             "type": "std::string",
-                                            "data": "../../Resources/Cutscenes/Kusane_EndingCutscene/Ending_WIP_8.PNG"
+                                            "data": "../../Resources/Cutscenes/Kusane_EndingCutscene/Ending_Final_8.PNG"
                                         },
                                         {
                                             "type": "std::string",
@@ -1100,7 +1100,7 @@
                                     "data": [
                                         {
                                             "type": "std::string",
-                                            "data": "../../Resources/Cutscenes/Kusane_EndingCutscene/Ending_WIP_9.PNG"
+                                            "data": "../../Resources/Cutscenes/Kusane_EndingCutscene/Ending_Final_9.PNG"
                                         },
                                         {
                                             "type": "std::string",
@@ -1222,6 +1222,10 @@
                         {
                             "type": "float",
                             "data": 0
+                        },
+                        {
+                            "type": "int",
+                            "data": -1
                         }
                     ]
                 }
@@ -1268,7 +1272,7 @@
                             "data": [
                                 {
                                     "type": "float",
-                                    "data": 1784
+                                    "data": 1400
                                 },
                                 {
                                     "type": "float",
@@ -1554,7 +1558,7 @@
                             "data": [
                                 {
                                     "type": "float",
-                                    "data": 325.6
+                                    "data": 460
                                 },
                                 {
                                     "type": "float",
@@ -2154,7 +2158,7 @@
             }
         },
         {
-            "id": 6,
+            "id": 5,
             "guid": "007add1d2b2e522b-0003fbaf56000003",
             "components": {
                 "NameComponent": {
@@ -2372,7 +2376,7 @@
             }
         },
         {
-            "id": 7,
+            "id": 6,
             "guid": "0031005078c6e368-00041a0e9e000121",
             "components": {
                 "NameComponent": {
