@@ -124,6 +124,9 @@ return Component {
         MeleeRange          = 1.2,   -- Distance at which melee hit registers.
         MeleeDamage         = 3,     -- Damage dealt per melee swing.
         MeleeAttackCooldown = 5.0,   -- Seconds between melee swings.
+        LiftRange           = 2.5,   -- Max distance from player at which a lift attack connects.
+                                     -- Slightly wider than MeleeRange to compensate for the
+                                     -- upward-sweep animation that bypasses trigger overlap.
 
         -- === Hit response ===
         HurtDuration      = 2.0,    -- Seconds spent in the Hurt state after taking a hit.
@@ -184,7 +187,7 @@ return Component {
         -- === Aerial juggle ===
         -- When the player lands a LIFT hit the enemy becomes airborne and is
         -- held up by subsequent AIR hits. A SLAM hit drives them into the floor.
-        JuggleLiftVelY   = 8.0,   -- Upward velocity applied on lift_attack hit.
+        JuggleLiftVelY   = 2.0,   -- Upward velocity applied on lift_attack hit.
         JuggleAirBoost   = 4.0,   -- Upward velocity boost per air-combo hit to maintain juggle height.
         JuggleSlamVelY   = 20.0,  -- Downward velocity applied on air_slam hit.
         JuggleGravity    = -18.0, -- Gravity while juggled (separate from world gravity).
@@ -399,6 +402,26 @@ return Component {
                 local hitType   = string.upper(payload.hitType or "COMBO")
                 local knockback = payload.knockback  -- may be nil; ApplyHit will fall back to KnockbackStrength
                 self:ApplyHit(damage, hitType, knockback)
+            end)
+
+            -- LIFT proximity detection:
+            -- AttackHitbox publishes this when a lift window opens. We self-check
+            -- distance because the upward-sweep animation means OnTriggerEnter
+            -- may never fire against a grounded enemy.
+            self._liftAttackSub = _G.event_bus.subscribe("lift_attack_active", function(payload)
+                if self.dead then return end
+                if self:IsFlying() then return end
+                if self._isKnockedUp then return end
+                if self._isJuggled then return end
+
+                local range = tonumber(self.LiftRange) or 2.5
+                local distSq = self:GetPlayerDistanceSq()
+                if distSq <= range * range then
+                    local dmg = (payload and payload.damage)    or 15
+                    local kb  = (payload and payload.knockback) or 0
+                    print(string.format("[EnemyAI] lift_attack_active proximity HIT: entity=%s distSq=%.2f", tostring(self.entityId), distSq))
+                    self:ApplyHit(dmg, "LIFT", kb)
+                end
             end)
 
             self._chainEndpointHitSub = _G.event_bus.subscribe("chain.endpoint_hit_entity", function(payload)
@@ -1745,7 +1768,7 @@ return Component {
             self._juggleY       = transformY or 0
         end
         -- If already juggled, _juggleGroundY stays at the true floor — only reset velocity.
-        self._juggleVY      = tonumber(self.JuggleLiftVelY) or 8.0
+        self._juggleVY      =  2.0 --should be changed to determine by combomanager knockback
         self._isJuggled     = true
         self._juggleAirTime = 0
     end,
@@ -1863,13 +1886,27 @@ return Component {
         --   SLAM → ForceChange("Hurt") fired on the same frame as the slam velocity
         --   was set, which under certain timing re-triggered ApplyJuggleLift on the
         --   Hurt state's next hit event, making the enemy appear to "lift" on slam.
-        -- TODO : LIFT juggle is disabled — behaviour is inconsistent and needs
-        -- investigation. LIFT hits currently fall through to normal hurt/knockback.
-        -- if hitType == "LIFT" then
-        --     self:ApplyJuggleLift()
-        --     ...
-        -- end
-        if hitType == "AIR" then
+        -- LIFT: launch the enemy upward using the knockup system (reliable).
+        -- ApplyJuggleLift is intentionally disabled (inconsistent overlap timing).
+        -- ApplyKnockup reuses the same arc/gravity loop and CC teardown/recreate
+        -- that the debug key (Keyboard.IsDigitPressed(9) / "KNOCKUP") validates.
+        if hitType == "LIFT" then
+            if self:IsFlying() then return end
+
+            if self.health <= 0 then
+                self.health = 0
+                self:_squashTrigger("vertical", 0.5)
+                self:_publishSFX("death")
+                if _G.event_bus and _G.event_bus.publish then
+                    _G.event_bus.publish("enemy_died", { entityId = self.entityId })
+                end
+                self.fsm:Change("Death", self.states.Death)
+                return
+            end
+
+            self:ApplyKnockup(knockback)
+            return
+        elseif hitType == "AIR" then
             if self:IsFlying() then
                 -- Flying enemy is airborne via hover, not the juggle system.
                 -- Skip juggle boost and fall through to the normal hurt FSM below.
@@ -2231,6 +2268,11 @@ return Component {
                 self._comboDamageSub = nil
             end
 
+            if self._liftAttackSub then
+                pcall(function() _G.event_bus.unsubscribe(self._liftAttackSub) end)
+                self._liftAttackSub = nil
+            end
+
             if self._freezeEnemySub then
                 pcall(function()
                     _G.event_bus.unsubscribe(self._freezeEnemySub)
@@ -2269,6 +2311,7 @@ return Component {
         if _G.event_bus and _G.event_bus.unsubscribe then
             if self._damageSub then pcall(function() _G.event_bus.unsubscribe(self._damageSub) end) self._damageSub = nil end
             if self._comboDamageSub then pcall(function() _G.event_bus.unsubscribe(self._comboDamageSub) end) self._comboDamageSub = nil end
+            if self._liftAttackSub then pcall(function() _G.event_bus.unsubscribe(self._liftAttackSub) end) self._liftAttackSub = nil end
             if self._freezeEnemySub then pcall(function() _G.event_bus.unsubscribe(self._freezeEnemySub) end) self._freezeEnemySub = nil end
             if self._respawnPlayerSub then pcall(function() _G.event_bus.unsubscribe(self._respawnPlayerSub) end) self._respawnPlayerSub = nil end
             if self._playerDeadSub then pcall(function() _G.event_bus.unsubscribe(self._playerDeadSub) end) self._playerDeadSub = nil end
@@ -2359,6 +2402,11 @@ return Component {
                     _G.event_bus.unsubscribe(self._comboDamageSub)
                 end)
                 self._comboDamageSub = nil
+            end
+
+            if self._liftAttackSub then
+                pcall(function() _G.event_bus.unsubscribe(self._liftAttackSub) end)
+                self._liftAttackSub = nil
             end
 
             if self._freezeEnemySub then
